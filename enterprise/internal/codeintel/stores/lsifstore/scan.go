@@ -192,3 +192,46 @@ func (s *Store) scanSingleMonikerLocationsObject(rows *sql.Rows) (MonikerLocatio
 
 	return record, nil
 }
+
+type QualifiedMonikerLocations struct {
+	DumpID int
+	MonikerLocations
+}
+
+// scanQualifiedMonikerLocations reads moniker locations values from the given row object.
+func (s *Store) scanQualifiedMonikerLocations(rows *sql.Rows, queryErr error) (_ []QualifiedMonikerLocations, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	var values []QualifiedMonikerLocations
+	for rows.Next() {
+		record, err := s.scanSingleQualifiedMonikerLocationsObject(rows)
+		if err != nil {
+			return nil, err
+		}
+
+		values = append(values, record)
+	}
+
+	return values, nil
+}
+
+// scanSingleQualifiedMonikerLocationsObject populates a qualified moniker locations value
+// from the given cursor.
+func (s *Store) scanSingleQualifiedMonikerLocationsObject(rows *sql.Rows) (QualifiedMonikerLocations, error) {
+	var rawData []byte
+	var record QualifiedMonikerLocations
+	if err := rows.Scan(&record.DumpID, &record.Scheme, &record.Identifier, &rawData); err != nil {
+		return QualifiedMonikerLocations{}, err
+	}
+
+	data, err := s.serializer.UnmarshalLocations(rawData)
+	if err != nil {
+		return QualifiedMonikerLocations{}, err
+	}
+	record.Locations = data
+
+	return record, nil
+}

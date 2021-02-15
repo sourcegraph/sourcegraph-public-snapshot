@@ -7,7 +7,7 @@ import { hot } from 'react-hot-loader/root'
 import { Route } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
 import { combineLatest, from, Subscription, fromEvent, of } from 'rxjs'
-import { startWith, switchMap } from 'rxjs/operators'
+import { bufferCount, startWith, switchMap } from 'rxjs/operators'
 import { setLinkComponent } from '../../shared/src/components/Link'
 import {
     Controller as ExtensionsController,
@@ -78,6 +78,7 @@ import {
 } from './enterprise/code-monitoring/backend'
 import { aggregateStreamingSearch } from './search/stream'
 import { ISearchContext } from '../../shared/src/graphql/schema'
+import { logCodeInsightsChanges } from './insights/analytics'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
@@ -311,6 +312,15 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                 },
                 () => this.setState({ authenticatedUser: null })
             )
+        )
+
+        // Observe settings mutations for analytics
+        this.subscriptions.add(
+            from(this.platformContext.settings)
+                .pipe(bufferCount(2, 1))
+                .subscribe(([oldSettings, newSettings]) => {
+                    logCodeInsightsChanges(oldSettings, newSettings, eventLogger)
+                })
         )
 
         // React to OS theme change

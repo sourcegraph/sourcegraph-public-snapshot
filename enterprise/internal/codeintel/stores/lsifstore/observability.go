@@ -8,6 +8,7 @@ import (
 )
 
 type operations struct {
+	bulkMonikerResults *observation.Operation
 	clear              *observation.Operation
 	definitions        *observation.Operation
 	diagnostics        *observation.Operation
@@ -16,6 +17,7 @@ type operations struct {
 	monikerResults     *observation.Operation
 	monikersByPosition *observation.Operation
 	packageInformation *observation.Operation
+	pagedReferences    *observation.Operation
 	ranges             *observation.Operation
 	references         *observation.Operation
 	writeDefinitions   *observation.Operation
@@ -42,6 +44,7 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
+		bulkMonikerResults: op("BulkMonikerResults"),
 		clear:              op("Clear"),
 		definitions:        op("Definitions"),
 		diagnostics:        op("Diagnostics"),
@@ -50,6 +53,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		monikerResults:     op("MonikerResults"),
 		monikersByPosition: op("MonikersByPosition"),
 		packageInformation: op("PackageInformation"),
+		pagedReferences:    op("PagedReferences"),
 		ranges:             op("Ranges"),
 		references:         op("References"),
 		writeDefinitions:   op("WriteDefinitions"),

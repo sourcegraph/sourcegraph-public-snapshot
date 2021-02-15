@@ -57,7 +57,7 @@ type LSIFStore interface {
 	Definitions(ctx context.Context, bundleID int, path string, line, character int) ([]lsifstore.Location, error)
 	References(ctx context.Context, bundleID int, path string, line, character int) ([]lsifstore.Location, error)
 	Hover(ctx context.Context, bundleID int, path string, line, character int) (string, lsifstore.Range, bool, error)
-	Diagnostics(ctx context.Context, bundleID int, prefix string, skip, take int) ([]lsifstore.Diagnostic, int, error)
+	Diagnostics(ctx context.Context, bundleID int, prefix string, limit, offset int) ([]lsifstore.Diagnostic, int, error)
 	MonikersByPosition(ctx context.Context, bundleID int, path string, line, character int) ([][]lsifstore.MonikerData, error)
 	MonikerResults(ctx context.Context, bundleID int, tableName, scheme, identifier string, skip, take int) ([]lsifstore.Location, int, error)
 	PackageInformation(ctx context.Context, bundleID int, path string, packageInformationID string) (lsifstore.PackageInformationData, bool, error)
