@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/google/zoekt"
@@ -108,17 +109,18 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 
 	var (
 		code  = "200" // final code to record
-		first = true
+		first sync.Once
 	)
 
-	obs := ZoektStreamObserver(func(zsr *zoekt.SearchResult) {
-		if first && isLeaf {
-			first = false
-			tr.LogFields(
-				log.Int64("rpc.queue_latency_ms", writeRequestStart.Sub(start).Milliseconds()),
-				log.Int64("rpc.write_duration_ms", writeRequestDone.Sub(writeRequestStart).Milliseconds()),
-			)
-		}
+	err := m.StreamSearcher.StreamSearch(ctx, q, opts, ZoektStreamFunc(func(zsr *zoekt.SearchResult) {
+		first.Do(func() {
+			if isLeaf {
+				tr.LogFields(
+					log.Int64("rpc.queue_latency_ms", writeRequestStart.Sub(start).Milliseconds()),
+					log.Int64("rpc.write_duration_ms", writeRequestDone.Sub(writeRequestStart).Milliseconds()),
+				)
+			}
+		})
 
 		if zsr != nil {
 			tr.LogFields(
@@ -138,10 +140,10 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 				log.Int("stats.ngram_matches", zsr.Stats.NgramMatches),
 				log.Int64("stats.wait_ms", zsr.Stats.Wait.Milliseconds()),
 			)
-		}
-	})
 
-	err := m.StreamSearcher.StreamSearch(ctx, q, opts, WithObserver(c, obs))
+			c.Send(zsr)
+		}
+	}))
 	if err != nil {
 		return err
 	}
