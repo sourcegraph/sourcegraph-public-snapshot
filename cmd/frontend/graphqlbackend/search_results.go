@@ -842,7 +842,9 @@ func (r *searchResolver) evaluate(ctx context.Context, q query.Q) (*SearchResult
 	}
 	if pattern == nil {
 		r.setQuery(scopeParameters)
-		return r.evaluateLeaf(ctx)
+		result, err := r.evaluateLeaf(ctx)
+		result.SearchResults = r.selectResults(result.SearchResults)
+		return result, err
 	}
 	result, err := r.evaluatePatternExpression(ctx, scopeParameters, pattern)
 	if err != nil {

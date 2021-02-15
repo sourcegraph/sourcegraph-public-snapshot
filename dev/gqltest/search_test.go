@@ -921,6 +921,11 @@ func TestSearch(t *testing.T) {
 				counts{Repo: 1},
 			},
 			{
+				`select repo, only file`,
+				`file:go-diff.go select:repo`,
+				counts{Repo: 1},
+			},
+			{
 				`select file`,
 				`repo:go-diff patterntype:literal HunkNoChunksize select:file`,
 				counts{File: 1},
