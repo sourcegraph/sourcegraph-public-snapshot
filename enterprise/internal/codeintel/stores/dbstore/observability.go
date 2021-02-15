@@ -10,8 +10,11 @@ import (
 type operations struct {
 	addUploadPart                          *observation.Operation
 	calculateVisibleUploads                *observation.Operation
+	commitGraphMetadata                    *observation.Operation
+	definitionDumps                        *observation.Operation
 	deleteIndexByID                        *observation.Operation
 	deleteIndexesWithoutRepository         *observation.Operation
+	deleteOldIndexes                       *observation.Operation
 	deleteOverlappingDumps                 *observation.Operation
 	deleteUploadByID                       *observation.Operation
 	deleteUploadsStuckUploading            *observation.Operation
@@ -19,10 +22,10 @@ type operations struct {
 	dequeue                                *observation.Operation
 	dequeueIndex                           *observation.Operation
 	dirtyRepositories                      *observation.Operation
-	commitGraphMetadata                    *observation.Operation
 	findClosestDumps                       *observation.Operation
 	findClosestDumpsFromGraphFragment      *observation.Operation
 	getDumpByID                            *observation.Operation
+	getDumpsByIDs                          *observation.Operation
 	getIndexByID                           *observation.Operation
 	getIndexConfigurationByRepositoryID    *observation.Operation
 	getIndexes                             *observation.Operation
@@ -48,6 +51,7 @@ type operations struct {
 	markRepositoryAsDirty                  *observation.Operation
 	packageReferencePager                  *observation.Operation
 	queueSize                              *observation.Operation
+	referenceIDsAndFilters                 *observation.Operation
 	repoName                               *observation.Operation
 	repoUsageStatistics                    *observation.Operation
 	requeue                                *observation.Operation
@@ -55,7 +59,6 @@ type operations struct {
 	resetIndexableRepositories             *observation.Operation
 	sameRepoPager                          *observation.Operation
 	softDeleteOldUploads                   *observation.Operation
-	deleteOldIndexes                       *observation.Operation
 	updateIndexableRepository              *observation.Operation
 	updateIndexConfigurationByRepositoryID *observation.Operation
 	updatePackageReferences                *observation.Operation
@@ -81,8 +84,11 @@ func newOperations(observationContext *observation.Context) *operations {
 	return &operations{
 		addUploadPart:                          op("AddUploadPart"),
 		calculateVisibleUploads:                op("CalculateVisibleUploads"),
+		commitGraphMetadata:                    op("CommitGraphMetadata"),
+		definitionDumps:                        op("DefinitionDumps"),
 		deleteIndexByID:                        op("DeleteIndexByID"),
 		deleteIndexesWithoutRepository:         op("DeleteIndexesWithoutRepository"),
+		deleteOldIndexes:                       op("DeleteOldIndexes"),
 		deleteOverlappingDumps:                 op("DeleteOverlappingDumps"),
 		deleteUploadByID:                       op("DeleteUploadByID"),
 		deleteUploadsStuckUploading:            op("DeleteUploadsStuckUploading"),
@@ -90,10 +96,10 @@ func newOperations(observationContext *observation.Context) *operations {
 		dequeue:                                op("Dequeue"),
 		dequeueIndex:                           op("DequeueIndex"),
 		dirtyRepositories:                      op("DirtyRepositories"),
-		commitGraphMetadata:                    op("CommitGraphMetadata"),
 		findClosestDumps:                       op("FindClosestDumps"),
 		findClosestDumpsFromGraphFragment:      op("FindClosestDumpsFromGraphFragment"),
 		getDumpByID:                            op("GetDumpByID"),
+		getDumpsByIDs:                          op("GetDumpsByIDs"),
 		getIndexByID:                           op("GetIndexByID"),
 		getIndexConfigurationByRepositoryID:    op("GetIndexConfigurationByRepositoryID"),
 		getIndexes:                             op("GetIndexes"),
@@ -119,6 +125,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		markRepositoryAsDirty:                  op("MarkRepositoryAsDirty"),
 		packageReferencePager:                  op("PackageReferencePager"),
 		queueSize:                              op("QueueSize"),
+		referenceIDsAndFilters:                 op("ReferenceIDsAndFilters"),
 		repoName:                               op("RepoName"),
 		repoUsageStatistics:                    op("RepoUsageStatistics"),
 		requeue:                                op("Requeue"),
@@ -126,7 +133,6 @@ func newOperations(observationContext *observation.Context) *operations {
 		resetIndexableRepositories:             op("ResetIndexableRepositories"),
 		sameRepoPager:                          op("SameRepoPager"),
 		softDeleteOldUploads:                   op("SoftDeleteOldUploads"),
-		deleteOldIndexes:                       op("DeleteOldIndexes"),
 		updateIndexableRepository:              op("UpdateIndexableRepository"),
 		updateIndexConfigurationByRepositoryID: op("UpdateIndexConfigurationByRepositoryID"),
 		updatePackageReferences:                op("UpdatePackageReferences"),

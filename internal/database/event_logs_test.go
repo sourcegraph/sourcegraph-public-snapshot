@@ -277,14 +277,14 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 	}
 }
 
-func TestEventLogs_CodeIntelligenceCombinedWAU(t *testing.T) {
+func TestEventLogs_codeIntelligenceWeeklyUsersCount(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
-	names := []string{"codeintel.lsifHover", "codeintel.searchReferences.xrepo", "unknown event"}
+	names := []string{"codeintel.lsifHover", "codeintel.searchReferences", "unknown event"}
 	users1 := []uint32{10, 20, 30, 40, 50, 60, 70, 80}
 	users2 := []uint32{15, 25, 35, 45, 55, 65, 75, 85}
 
@@ -323,7 +323,12 @@ func TestEventLogs_CodeIntelligenceCombinedWAU(t *testing.T) {
 		}
 	}
 
-	count, err := EventLogs(db).codeIntelligenceCombinedWAU(ctx, now)
+	eventNames := []string{
+		"codeintel.lsifHover",
+		"codeintel.searchReferences",
+	}
+
+	count, err := EventLogs(db).codeIntelligenceWeeklyUsersCount(ctx, eventNames, now)
 	if err != nil {
 		t.Fatal(err)
 	}

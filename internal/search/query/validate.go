@@ -8,7 +8,19 @@ import (
 
 	"github.com/go-enry/go-enry/v2"
 	"github.com/pkg/errors"
+
+	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 )
+
+// IsBasic returns whether a query is a basic query. A basic query is one which
+// does not have a DNF-expansion. I.e., there is only one disjunct. A basic
+// query implies that it has no subexpressions that we need to evaluate. IsBasic
+// is used in our codebase where legacy code has not been updated to handle
+// queries with multiple expressions (like alerts), and assume only one
+// evaluatable query.
+func IsBasic(nodes []Node) bool {
+	return len(Dnf(nodes)) == 1
+}
 
 // exists traverses every node in nodes and returns early as soon as fn is satisfied.
 func exists(nodes []Node, fn func(node Node) bool) bool {
@@ -53,16 +65,6 @@ func containsPattern(node Node) bool {
 	return exists([]Node{node}, func(node Node) bool {
 		_, ok := node.(Pattern)
 		return ok
-	})
-}
-
-// containsField returns true if the field exists in the query.
-func containsField(nodes []Node, field string) bool {
-	return exists(nodes, func(node Node) bool {
-		if p, ok := node.(Parameter); ok && p.Field == field {
-			return true
-		}
-		return false
 	})
 }
 
@@ -211,6 +213,11 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		return fmt.Errorf("unrecognized field %q", field)
 	}
 
+	isValidSelect := func() error {
+		_, err := filter.SelectPathFromString(value)
+		return err
+	}
+
 	satisfies := func(fns ...func() error) error {
 		for _, fn := range fns {
 			if err := fn(); err != nil {
@@ -284,6 +291,9 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 	case
 		FieldRev:
 		return satisfies(isSingular, isNotNegated)
+	case
+		FieldSelect:
+		return satisfies(isSingular, isNotNegated, isValidSelect)
 	default:
 		return isUnrecognizedField()
 	}
@@ -340,7 +350,7 @@ func validateRepoHasFile(nodes []Node) error {
 		if field == FieldRepoHasFile {
 			seenRepoHasFile = true
 		}
-		if field == FieldType && strings.ToLower(value) == "symbol" {
+		if field == FieldType && strings.EqualFold(value, "symbol") {
 			seenTypeSymbol = true
 		}
 	})
@@ -445,9 +455,8 @@ func ParseYesNoOnly(s string) YesNoOnly {
 		if b, err := strconv.ParseBool(s); err == nil {
 			if b {
 				return Yes
-			} else {
-				return No
 			}
+			return No
 		}
 		return Invalid
 	}

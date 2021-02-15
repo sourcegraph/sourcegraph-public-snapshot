@@ -1401,6 +1401,8 @@ type Webhooks struct {
 type WorkspaceConfiguration struct {
 	// In description: The repositories in which to apply the workspace configuration. Supports globbing.
 	In string `json:"in,omitempty"`
+	// OnlyFetchWorkspace description: If this is true only the files in the workspace (and additional .gitignore) are downloaded instead of an archive of the full repository.
+	OnlyFetchWorkspace bool `json:"onlyFetchWorkspace,omitempty"`
 	// RootAtLocationOf description: The name of the file that sits at the root of the desired workspace.
 	RootAtLocationOf string `json:"rootAtLocationOf"`
 }

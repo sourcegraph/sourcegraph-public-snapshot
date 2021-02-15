@@ -68,7 +68,7 @@ func (s *IndexScheduler) Handle(ctx context.Context) error {
 
 	configuredRepositoryIDs, err := s.dbStore.GetRepositoriesWithIndexConfiguration(ctx)
 	if err != nil {
-		return errors.Wrap(err, "store.GetRepositoriesWithIndexConfiguration")
+		return errors.Wrap(err, "dbstore.GetRepositoriesWithIndexConfiguration")
 	}
 
 	indexableRepositories, err := s.dbStore.IndexableRepositories(ctx, store.IndexableRepositoryQueryOptions{
@@ -79,7 +79,7 @@ func (s *IndexScheduler) Handle(ctx context.Context) error {
 		MinimumSearchRatio:          s.minimumSearchRatio,
 	})
 	if err != nil {
-		return errors.Wrap(err, "store.IndexableRepositories")
+		return errors.Wrap(err, "dbstore.IndexableRepositories")
 	}
 
 	var indexableRepositoryIDs []int

@@ -5,7 +5,11 @@ import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
-import { ConfiguredRegistryExtension, toConfiguredRegistryExtension } from '../../../../shared/src/extensions/extension'
+import {
+    ConfiguredRegistryExtension,
+    splitExtensionID,
+    toConfiguredRegistryExtension,
+} from '../../../../shared/src/extensions/extension'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
@@ -22,7 +26,6 @@ import { ErrorMessage } from '../../components/alerts'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { AuthenticatedUser } from '../../auth'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
-import { splitExtensionID } from './extension'
 
 export const registryExtensionFragment = gql`
     fragment RegistryExtensionFields on RegistryExtension {

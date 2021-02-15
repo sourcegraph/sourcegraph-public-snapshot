@@ -651,19 +651,83 @@ FROM (
 GROUP BY current_month, current_week, current_day
 `
 
-// CodeIntelligenceCombinedWAU returns the WAU (current week) with any code intelligence event.
-func (l *EventLogStore) CodeIntelligenceCombinedWAU(ctx context.Context) (int, error) {
-	return l.codeIntelligenceCombinedWAU(ctx, time.Now().UTC())
+// CodeIntelligencePreciseWAUs returns the WAU (current week) with precise-based code intelligence events.
+func (l *EventLogStore) CodeIntelligencePreciseWAUs(ctx context.Context) (int, error) {
+	eventNames := []string{
+		"codeintel.lsifHover",
+		"codeintel.lsifDefinitions",
+		"codeintel.lsifReferences",
+	}
+
+	return l.codeIntelligenceWeeklyUsersCount(ctx, eventNames, time.Now().UTC())
 }
 
-func (l *EventLogStore) codeIntelligenceCombinedWAU(ctx context.Context, now time.Time) (wau int, _ error) {
+// CodeIntelligenceSearchBasedWAUs returns the WAU (current week) with searched-base code intelligence events.
+func (l *EventLogStore) CodeIntelligenceSearchBasedWAUs(ctx context.Context) (int, error) {
+	eventNames := []string{
+		"codeintel.searchHover",
+		"codeintel.searchDefinitions",
+		"codeintel.searchReferences",
+	}
+
+	return l.codeIntelligenceWeeklyUsersCount(ctx, eventNames, time.Now().UTC())
+}
+
+// CodeIntelligenceWAUs returns the WAU (current week) with any (precise or search-based) code intelligence event.
+func (l *EventLogStore) CodeIntelligenceWAUs(ctx context.Context) (int, error) {
+	eventNames := []string{
+		"codeintel.lsifHover",
+		"codeintel.lsifDefinitions",
+		"codeintel.lsifReferences",
+		"codeintel.searchHover",
+		"codeintel.searchDefinitions",
+		"codeintel.searchReferences",
+	}
+
+	return l.codeIntelligenceWeeklyUsersCount(ctx, eventNames, time.Now().UTC())
+}
+
+// CodeIntelligenceCrossRepositoryWAUs returns the WAU (current week) with any (precise or search-based) cross-repository code intelligence event.
+func (l *EventLogStore) CodeIntelligenceCrossRepositoryWAUs(ctx context.Context) (int, error) {
+	eventNames := []string{
+		"codeintel.lsifDefinitions.xrepo",
+		"codeintel.lsifReferences.xrepo",
+		"codeintel.searchDefinitions.xrepo",
+		"codeintel.searchReferences.xrepo",
+	}
+
+	return l.codeIntelligenceWeeklyUsersCount(ctx, eventNames, time.Now().UTC())
+}
+
+// CodeIntelligencePreciseCrossRepositoryWAUs returns the WAU (current week) with precise-based cross-repository code intelligence events.
+func (l *EventLogStore) CodeIntelligencePreciseCrossRepositoryWAUs(ctx context.Context) (int, error) {
+	eventNames := []string{
+		"codeintel.lsifDefinitions.xrepo",
+		"codeintel.lsifReferences.xrepo",
+	}
+
+	return l.codeIntelligenceWeeklyUsersCount(ctx, eventNames, time.Now().UTC())
+}
+
+// CodeIntelligenceSearchBasedCrossRepositoryWAUs returns the WAU (current week) with searched-base cross-repository code intelligence events.
+func (l *EventLogStore) CodeIntelligenceSearchBasedCrossRepositoryWAUs(ctx context.Context) (int, error) {
+	eventNames := []string{
+		"codeintel.searchDefinitions.xrepo",
+		"codeintel.searchReferences.xrepo",
+	}
+
+	return l.codeIntelligenceWeeklyUsersCount(ctx, eventNames, time.Now().UTC())
+}
+
+func (l *EventLogStore) codeIntelligenceWeeklyUsersCount(ctx context.Context, eventNames []string, now time.Time) (wau int, _ error) {
 	l.ensureStore()
 
-	query := sqlf.Sprintf(codeIntelWeeklyUsersQuery, now)
+	var names []*sqlf.Query
+	for _, name := range eventNames {
+		names = append(names, sqlf.Sprintf("%s", name))
+	}
 
-	if err := l.QueryRow(ctx, query).Scan(
-		&wau,
-	); err != nil {
+	if err := l.QueryRow(ctx, sqlf.Sprintf(codeIntelWeeklyUsersQuery, now, sqlf.Join(names, ", "))).Scan(&wau); err != nil {
 		return 0, err
 	}
 
@@ -671,12 +735,12 @@ func (l *EventLogStore) codeIntelligenceCombinedWAU(ctx context.Context, now tim
 }
 
 var codeIntelWeeklyUsersQuery = `
--- source: internal/database/event_logs.go:CodeIntelligenceCombinedWAU
+-- source: internal/database/event_logs.go:codeIntelligenceWeeklyUsersCount
 SELECT COUNT(DISTINCT ` + userIDQueryFragment + `)
 FROM event_logs
 WHERE
   timestamp >= ` + makeDateTruncExpression("week", "%s::timestamp") + `
-  AND name IN (` + strings.Join(codeIntelEventNames, ", ") + `);
+  AND name IN (%s);
 `
 
 // AggregatedCodeIntelEvents calculates AggregatedEvent for each every unique event type related to code intel.
@@ -687,7 +751,25 @@ func (l *EventLogStore) AggregatedCodeIntelEvents(ctx context.Context) ([]types.
 func (l *EventLogStore) aggregatedCodeIntelEvents(ctx context.Context, now time.Time) (events []types.CodeIntelAggregatedEvent, err error) {
 	l.ensureStore()
 
-	query := sqlf.Sprintf(aggregatedCodeIntelEventsQuery, now, now)
+	var eventNames = []string{
+		"codeintel.lsifHover",
+		"codeintel.lsifDefinitions",
+		"codeintel.lsifDefinitions.xrepo",
+		"codeintel.lsifReferences",
+		"codeintel.lsifReferences.xrepo",
+		"codeintel.searchHover",
+		"codeintel.searchDefinitions",
+		"codeintel.searchDefinitions.xrepo",
+		"codeintel.searchReferences",
+		"codeintel.searchReferences.xrepo",
+	}
+
+	var eventNameQueries []*sqlf.Query
+	for _, name := range eventNames {
+		eventNameQueries = append(eventNameQueries, sqlf.Sprintf("%s", name))
+	}
+
+	query := sqlf.Sprintf(aggregatedCodeIntelEventsQuery, now, now, sqlf.Join(eventNameQueries, ", "))
 
 	rows, err := l.Query(ctx, query)
 	if err != nil {
@@ -718,19 +800,6 @@ func (l *EventLogStore) aggregatedCodeIntelEvents(ctx context.Context, now time.
 	return events, nil
 }
 
-var codeIntelEventNames = []string{
-	"'codeintel.lsifHover'",
-	"'codeintel.searchHover'",
-	"'codeintel.lsifDefinitions'",
-	"'codeintel.lsifDefinitions.xrepo'",
-	"'codeintel.searchDefinitions'",
-	"'codeintel.searchDefinitions.xrepo'",
-	"'codeintel.lsifReferences'",
-	"'codeintel.lsifReferences.xrepo'",
-	"'codeintel.searchReferences'",
-	"'codeintel.searchReferences.xrepo'",
-}
-
 var aggregatedCodeIntelEventsQuery = `
 -- source: internal/database/event_logs.go:aggregatedCodeIntelEvents
 WITH events AS (
@@ -742,7 +811,7 @@ WITH events AS (
   FROM event_logs
   WHERE
     timestamp >= ` + makeDateTruncExpression("week", "%s::timestamp") + `
-    AND name IN (` + strings.Join(codeIntelEventNames, ", ") + `)
+    AND name IN (%s)
 )
 SELECT
   name,

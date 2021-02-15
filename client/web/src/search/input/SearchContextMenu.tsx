@@ -1,6 +1,14 @@
 import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import React, { useCallback, useRef, useEffect, KeyboardEvent as ReactKeyboardEvent } from 'react'
+import React, {
+    useCallback,
+    useRef,
+    useEffect,
+    KeyboardEvent as ReactKeyboardEvent,
+    FormEvent,
+    useMemo,
+    useState,
+} from 'react'
 import { DropdownItem } from 'reactstrap'
 import { SearchContextProps } from '..'
 
@@ -92,6 +100,17 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
         firstMenuItem?.addEventListener('keydown', onFirstMenuItemKeyDown)
         return () => firstMenuItem?.removeEventListener('keydown', onFirstMenuItemKeyDown)
     }, [])
+    const [searchFilter, setSearchFilter] = useState('')
+    const onSearchFilterChanged = useCallback(
+        (event: FormEvent<HTMLInputElement>) => setSearchFilter(event ? event.currentTarget.value : ''),
+        []
+    )
+
+    const filteredList = useMemo(
+        () =>
+            availableSearchContexts.filter(context => context.spec.toLowerCase().includes(searchFilter.toLowerCase())),
+        [availableSearchContexts, searchFilter]
+    )
 
     return (
         <div className="search-context-menu">
@@ -101,13 +120,14 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                 </span>
                 <input
                     ref={inputElement}
+                    onInput={onSearchFilterChanged}
                     type="search"
                     placeholder="Find a context"
                     className="search-context-menu__header-input"
                 />
             </div>
             <div className="search-context-menu__list">
-                {availableSearchContexts.map(context => (
+                {filteredList.map(context => (
                     <SearchContextMenuItem
                         key={context.id}
                         spec={context.spec}
@@ -117,6 +137,11 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                         setSelectedSearchContextSpec={setSelectedSearchContextSpec}
                     />
                 ))}
+                {filteredList.length === 0 && (
+                    <DropdownItem className="search-context-menu__item" disabled={true}>
+                        No contexts found
+                    </DropdownItem>
+                )}
             </div>
             <div className="search-context-menu__footer">
                 <button
