@@ -1935,22 +1935,17 @@ func (r *searchResolver) selectResults(results []SearchResultResolver) []SearchR
 
 	dedup := NewDeduper()
 	for _, result := range results {
-		var current SearchResultResolver
-		switch v := result.(type) {
-		case *FileMatchResolver:
-			current = v.Select(sm)
-		case *RepositoryResolver:
-			current = v.Select(sm)
-		case *CommitSearchResultResolver:
-			current = v.Select(sm)
-		default:
-			current = result
+		if v, ok := result.(interface {
+			Select(filter.SelectPath) SearchResultResolver
+		}); ok {
+			result = v.Select(sm)
 		}
 
-		if current == nil {
+		if result == nil {
 			continue
 		}
-		dedup.Add(current)
+
+		dedup.Add(result)
 	}
 	return dedup.Results()
 }
