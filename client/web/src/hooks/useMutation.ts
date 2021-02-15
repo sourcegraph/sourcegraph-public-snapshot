@@ -55,8 +55,7 @@ export function useMutation<TData = unknown, TVariables = unknown>(
                             }
 
                             return handleResponse({ data: response.data, error, loading: false })
-                        }),
-                        catchError(error => throwError(asError(error)))
+                        })
                     )
                     .subscribe()
             )
