@@ -227,10 +227,7 @@ func (s *Store) RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) 
 }
 
 const upsertRepoNameFmtStr = `
-<<<<<<< HEAD
-=======
 -- source: enterprise/internal/insights/store/store.go:RecordSeriesPoint
->>>>>>> origin/main
 WITH e AS(
 	INSERT INTO repo_names(name)
 	VALUES (%s)
@@ -243,10 +240,7 @@ UNION
 `
 
 const upsertMetadataFmtStr = `
-<<<<<<< HEAD
-=======
 -- source: enterprise/internal/insights/store/store.go:RecordSeriesPoint
->>>>>>> origin/main
 WITH e AS(
     INSERT INTO metadata(metadata)
     VALUES (%s)
