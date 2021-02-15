@@ -90,6 +90,8 @@ func (h honeycombTracer) TraceQuery(ctx context.Context, queryString string, ope
 		// don't truncate durations of less than 1 millisecond.
 		ev.AddField("durationMilliseconds", d.Seconds()*1000)
 		ev.AddField("hasQueryErrors", len(queryErrors) > 0)
+		ev.AddField("requestName", sgtrace.GraphQLRequestName(ctx))
+		ev.AddField("requestSource", sgtrace.RequestSource(ctx))
 
 		cost, err := estimateQueryCost(queryString)
 		if err != nil {
