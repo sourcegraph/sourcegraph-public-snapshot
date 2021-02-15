@@ -1,8 +1,8 @@
 import { useMemo, useEffect, useCallback, useState } from 'react'
-import { Subscription, throwError } from 'rxjs'
-import { catchError, map } from 'rxjs/operators'
+import { Subscription } from 'rxjs'
+import { map } from 'rxjs/operators'
 import { isErrorGraphQLResult } from '../../../shared/src/graphql/graphql'
-import { asError, createAggregateError } from '../../../shared/src/util/errors'
+import { createAggregateError } from '../../../shared/src/util/errors'
 import { requestGraphQL } from '../backend/graphql'
 
 export interface MutationResult<TData> {
