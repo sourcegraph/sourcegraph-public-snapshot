@@ -8,12 +8,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 )
 
-func NewDocSymbolResolver(symbols []*resolvers.AdjustedSymbol, id string, locationResolver *CachedLocationResolver) (gql.DocSymbolResolver, error) {
+func NewDocSymbolResolver(symbols []*resolvers.AdjustedSymbol, id string, locationResolver *CachedLocationResolver, queryResolver *QueryResolver) (gql.DocSymbolResolver, error) {
 	foundSymbol := findSymbol(symbols, id)
 	if foundSymbol == nil {
 		return nil, fmt.Errorf("Failed to find symbol with id %s", id)
 	}
-	return newDocSymbolResolver(foundSymbol, locationResolver), nil
+	return newDocSymbolResolver(foundSymbol, locationResolver, queryResolver), nil
 }
 
 func findSymbol(symbols []*resolvers.AdjustedSymbol, id string) *resolvers.AdjustedSymbol {

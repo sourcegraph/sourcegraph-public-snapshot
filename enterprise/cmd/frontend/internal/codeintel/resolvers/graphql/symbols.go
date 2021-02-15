@@ -13,12 +13,14 @@ import (
 type DocSymbolConnectionResolver struct {
 	symbols          []gql.DocSymbolResolver
 	locationResolver *CachedLocationResolver
+	queryResolver    *QueryResolver
 }
 
-func NewDocSymbolConnectionResolver(symbols []*resolvers.AdjustedSymbol, locationResolver *CachedLocationResolver) gql.DocSymbolConnectionResolver {
+func NewDocSymbolConnectionResolver(symbols []*resolvers.AdjustedSymbol, locationResolver *CachedLocationResolver, queryResolver *QueryResolver) gql.DocSymbolConnectionResolver {
+	// TODO(beyang): consolidate locationResolver into queryResolver?
 	symbolResolvers := make([]gql.DocSymbolResolver, len(symbols))
 	for i := range symbols {
-		symbolResolvers[i] = newDocSymbolResolver(symbols[i], locationResolver)
+		symbolResolvers[i] = newDocSymbolResolver(symbols[i], locationResolver, queryResolver)
 	}
 	return &DocSymbolConnectionResolver{symbols: symbolResolvers, locationResolver: locationResolver}
 }
@@ -34,10 +36,12 @@ func (r *DocSymbolConnectionResolver) PageInfo(ctx context.Context) (*graphqluti
 type docSymbolResolver struct {
 	adjustedSymbol   *resolvers.AdjustedSymbol
 	locationResolver *CachedLocationResolver
+	queryResolver    *QueryResolver
 }
 
-func newDocSymbolResolver(symbol *resolvers.AdjustedSymbol, locationResolver *CachedLocationResolver) *docSymbolResolver {
-	return &docSymbolResolver{adjustedSymbol: symbol, locationResolver: locationResolver}
+func newDocSymbolResolver(symbol *resolvers.AdjustedSymbol, locationResolver *CachedLocationResolver, queryResolver *QueryResolver) *docSymbolResolver {
+	// TODO(beyang): consolidate locationResolver into queryResolver?
+	return &docSymbolResolver{adjustedSymbol: symbol, locationResolver: locationResolver, queryResolver: queryResolver}
 }
 
 func (r *docSymbolResolver) ID(ctx context.Context) (string, error) {
@@ -77,14 +81,30 @@ func (r *docSymbolResolver) Definitions(ctx context.Context) (gql.LocationConnec
 	return NewLocationConnectionResolver(adjustedLocations, nil, r.locationResolver), nil
 }
 
+func (r *docSymbolResolver) Hover(ctx context.Context) (gql.HoverResolver, error) {
+	// TODO(beyang): lookup hover by moniker if needed
+	if len(r.adjustedSymbol.AdjustedLocations) == 0 {
+		return nil, nil
+	}
+	// NEXT: need to create a new QueryResolver instance (with a particular path) to serve Hover
+	hover, err := r.queryResolver.Hover(ctx, &gql.LSIFQueryPositionArgs{
+		Line:      int32(r.adjustedSymbol.AdjustedLocations[0].AdjustedRange.Start.Line),
+		Character: int32(r.adjustedSymbol.AdjustedLocations[0].AdjustedRange.Start.Character + 1),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return hover, nil
+}
+
 func (r *docSymbolResolver) Children(ctx context.Context) ([]gql.DocSymbolResolver, error) {
 	childrenResolvers := make([]gql.DocSymbolResolver, len(r.adjustedSymbol.Children))
 	for i, child := range r.adjustedSymbol.Children {
-		childrenResolvers[i] = newDocSymbolResolver(child, r.locationResolver)
+		childrenResolvers[i] = newDocSymbolResolver(child, r.locationResolver, r.queryResolver)
 	}
 	return childrenResolvers, nil
 }
 
 func (r *docSymbolResolver) Root(ctx context.Context) (gql.DocSymbolResolver, error) {
-	return newDocSymbolResolver(r.adjustedSymbol.Root, r.locationResolver), nil
+	return newDocSymbolResolver(r.adjustedSymbol.Root, r.locationResolver, r.queryResolver), nil
 }

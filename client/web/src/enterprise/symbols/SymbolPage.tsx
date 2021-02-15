@@ -102,7 +102,7 @@ export const SymbolPage: React.FunctionComponent<Props> = ({
         <>
             <div>Symbol: {symbol.text}</div>
             <div>Definition</div>
-            <div>{symbol.detail}</div>
+            <div>Detail: {symbol.detail}</div>
             <div>Examples</div>
             <div>Children</div>
         </>

@@ -5278,6 +5278,8 @@ type DocSymbol {
 
     children: [DocSymbol!]!
 
+    hover: Hover
+
     root: DocSymbol!
 }
 

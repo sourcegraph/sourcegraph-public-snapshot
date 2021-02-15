@@ -47,6 +47,7 @@ type DocSymbolResolver interface {
 	Kind(ctx context.Context) (string, error)   /* enum SymbolKind */
 	Tags(ctx context.Context) ([]string, error) /* enum SymbolTag */
 	Definitions(ctx context.Context) (LocationConnectionResolver, error)
+	Hover(ctx context.Context) (HoverResolver, error)
 	Children(ctx context.Context) ([]DocSymbolResolver, error)
 	Root(ctx context.Context) (DocSymbolResolver, error)
 }
