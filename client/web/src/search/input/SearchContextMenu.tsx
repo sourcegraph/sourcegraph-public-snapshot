@@ -65,16 +65,14 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
         setTimeout(() => inputElement.current?.focus(), 0)
     }
 
-    // Triggering the reset button using a keyboard does not trigger a click event (for some reason).
-    // We have to manually check for space and enter keypress and trigger the reset.
-    const onResetButtonKeyDown = useCallback(
-        (event: ReactKeyboardEvent<HTMLButtonElement>): void => {
-            if (event.key === ' ' || event.key === 'Enter') {
-                reset()
-            }
-        },
-        [reset]
-    )
+    // Reactstrap is preventing default behavior on all non-DropdownItem elements inside a Dropdown,
+    // so we need to stop propagation to allow normal behavior (e.g. enter and space to activate buttons)
+    // See Reactstrap bug: https://github.com/reactstrap/reactstrap/issues/2099
+    const onResetButtonKeyDown = useCallback((event: ReactKeyboardEvent<HTMLButtonElement>): void => {
+        if (event.key === ' ' || event.key === 'Enter') {
+            event.stopPropagation()
+        }
+    }, [])
 
     useEffect(() => {
         focusInputElement()
@@ -100,6 +98,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
         firstMenuItem?.addEventListener('keydown', onFirstMenuItemKeyDown)
         return () => firstMenuItem?.removeEventListener('keydown', onFirstMenuItemKeyDown)
     }, [])
+
     const [searchFilter, setSearchFilter] = useState('')
     const onSearchFilterChanged = useCallback(
         (event: FormEvent<HTMLInputElement>) => setSearchFilter(event ? event.currentTarget.value : ''),
@@ -112,8 +111,18 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
         [availableSearchContexts, searchFilter]
     )
 
+    const onMenuKeyDown = useCallback(
+        (event: ReactKeyboardEvent<HTMLDivElement>): void => {
+            if (event.key === 'Escape') {
+                closeMenu()
+                event.stopPropagation()
+            }
+        },
+        [closeMenu]
+    )
+
     return (
-        <div className="search-context-menu">
+        <div className="search-context-menu" onKeyDown={onMenuKeyDown}>
             <div className="search-context-menu__header d-flex">
                 <span aria-hidden="true" className="search-context-menu__header-prompt">
                     <ChevronRightIcon className="icon-inline" />
