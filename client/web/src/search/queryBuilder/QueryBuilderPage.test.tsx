@@ -7,7 +7,11 @@ describe('QueryBuilderPage', () => {
     test('simple', () =>
         expect(
             createRenderer().render(
-                <QueryBuilderPage patternType={SearchPatternType.literal} versionContext={undefined} />
+                <QueryBuilderPage
+                    patternType={SearchPatternType.literal}
+                    versionContext={undefined}
+                    selectedSearchContextSpec="global"
+                />
             )
         ).toMatchSnapshot())
 })

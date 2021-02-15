@@ -28,7 +28,7 @@ exports[`QueryBuilderPage simple 1`] = `
     />
     <Link
       className="btn btn-primary disabled"
-      to="/search?q=&patternType=literal"
+      to="/search?q=&patternType=literal&context=global"
     >
       Search
     </Link>

@@ -26,7 +26,7 @@ import { RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { EmptyRepositoryPage, RepositoryCloningInProgressPage } from './RepositoryGitDataContainer'
 import { RevisionsPopover } from './RevisionsPopover'
-import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps } from '../search'
+import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps, SearchContextProps } from '../search'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { ErrorMessage } from '../components/alerts'
 import * as H from 'history'
@@ -53,6 +53,7 @@ export interface RepoRevisionContainerContext
         CaseSensitivityProps,
         CopyQueryButtonProps,
         VersionContextProps,
+        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         RevisionSpec,
         BreadcrumbSetters {
     repo: RepositoryFields
@@ -81,6 +82,7 @@ interface RepoRevisionContainerProps
         CaseSensitivityProps,
         CopyQueryButtonProps,
         VersionContextProps,
+        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         RevisionSpec,
         BreadcrumbSetters {
     routes: readonly RepoRevisionContainerRoute[]

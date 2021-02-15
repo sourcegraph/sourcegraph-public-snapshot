@@ -480,7 +480,6 @@ function search({
     trace,
 }: StreamSearchOptions): Observable<SearchEvent> {
     return new Observable<SearchEvent>(observer => {
-        console.trace()
         let finalQuery = `${query} ${caseSensitive ? 'case:yes' : ''}`
         if (searchContextSpec && !isContextFilterInQuery(finalQuery)) {
             finalQuery = `context:${searchContextSpec} ${finalQuery}`

@@ -10,6 +10,7 @@ describe('search/index', () => {
             patternType: SearchPatternType.literal,
             caseSensitive: true,
             versionContext: undefined,
+            searchContextSpec: undefined,
         })
 
         expect(
@@ -19,6 +20,7 @@ describe('search/index', () => {
             patternType: SearchPatternType.literal,
             caseSensitive: false,
             versionContext: undefined,
+            searchContextSpec: undefined,
         })
 
         expect(
@@ -28,6 +30,7 @@ describe('search/index', () => {
             patternType: SearchPatternType.regexp,
             caseSensitive: true,
             versionContext: undefined,
+            searchContextSpec: undefined,
         })
 
         expect(parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph+case:yes&patternType=literal')).toStrictEqual({
@@ -35,6 +38,7 @@ describe('search/index', () => {
             patternType: SearchPatternType.literal,
             caseSensitive: true,
             versionContext: undefined,
+            searchContextSpec: undefined,
         })
 
         expect(
@@ -46,6 +50,7 @@ describe('search/index', () => {
             patternType: SearchPatternType.regexp,
             caseSensitive: false,
             versionContext: undefined,
+            searchContextSpec: undefined,
         })
 
         expect(parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph&patternType=literal')).toStrictEqual({
@@ -53,6 +58,7 @@ describe('search/index', () => {
             patternType: SearchPatternType.literal,
             caseSensitive: false,
             versionContext: undefined,
+            searchContextSpec: undefined,
         })
     })
 
@@ -66,6 +72,7 @@ describe('search/index', () => {
             patternType: SearchPatternType.literal,
             caseSensitive: true,
             versionContext: undefined,
+            searchContextSpec: undefined,
         })
 
         expect(
@@ -77,6 +84,7 @@ describe('search/index', () => {
             patternType: SearchPatternType.literal,
             caseSensitive: false,
             versionContext: undefined,
+            searchContextSpec: undefined,
         })
 
         expect(
@@ -88,6 +96,7 @@ describe('search/index', () => {
             patternType: SearchPatternType.regexp,
             caseSensitive: true,
             versionContext: undefined,
+            searchContextSpec: undefined,
         })
 
         expect(
@@ -99,6 +108,7 @@ describe('search/index', () => {
             patternType: SearchPatternType.literal,
             caseSensitive: true,
             versionContext: undefined,
+            searchContextSpec: undefined,
         })
 
         expect(
@@ -111,6 +121,7 @@ describe('search/index', () => {
             patternType: SearchPatternType.regexp,
             caseSensitive: false,
             versionContext: undefined,
+            searchContextSpec: undefined,
         })
 
         expect(
@@ -120,6 +131,7 @@ describe('search/index', () => {
             patternType: SearchPatternType.literal,
             caseSensitive: false,
             versionContext: undefined,
+            searchContextSpec: undefined,
         })
     })
 

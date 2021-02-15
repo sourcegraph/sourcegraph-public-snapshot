@@ -35,6 +35,7 @@ const defaultProps: StreamingSearchResultsProps = {
     caseSensitive: false,
     patternType: SearchPatternType.literal,
     versionContext: undefined,
+    selectedSearchContextSpec: 'global',
     availableVersionContexts: [],
     previousVersionContext: null,
 
