@@ -1434,6 +1434,24 @@ Indexes:
 
 ```
 
+## View query:
+
+```sql
+ SELECT changeset_specs.id AS changeset_spec_id,
+    COALESCE(changesets.id, (0)::bigint) AS changeset_id,
+    changeset_specs.repo_id,
+    changeset_specs.campaign_spec_id,
+    changesets.owned_by_campaign_id AS owner_campaign_id,
+    repo.name AS repo_name,
+    changeset_specs.title AS changeset_name
+   FROM ((changeset_specs
+     LEFT JOIN changesets ON (((changesets.repo_id = changeset_specs.repo_id) AND (changesets.current_spec_id IS NOT NULL) AND (EXISTS ( SELECT 1
+           FROM changeset_specs changeset_specs_1
+          WHERE ((changeset_specs_1.id = changesets.current_spec_id) AND (changeset_specs_1.head_ref = changeset_specs.head_ref)))))))
+     JOIN repo ON ((changeset_specs.repo_id = repo.id)))
+  WHERE ((changeset_specs.external_id IS NULL) AND (repo.deleted_at IS NULL));
+```
+
 # View "public.external_service_sync_jobs_with_next_sync_at"
 ```
        Column        |           Type           | Modifiers 
@@ -1450,6 +1468,24 @@ Indexes:
  external_service_id | bigint                   | 
  next_sync_at        | timestamp with time zone | 
 
+```
+
+## View query:
+
+```sql
+ SELECT j.id,
+    j.state,
+    j.failure_message,
+    j.started_at,
+    j.finished_at,
+    j.process_after,
+    j.num_resets,
+    j.num_failures,
+    j.execution_logs,
+    j.external_service_id,
+    e.next_sync_at
+   FROM (external_services e
+     JOIN external_service_sync_jobs j ON ((e.id = j.external_service_id)));
 ```
 
 # View "public.lsif_dumps"
@@ -1477,6 +1513,31 @@ Indexes:
 
 ```
 
+## View query:
+
+```sql
+ SELECT u.id,
+    u.commit,
+    u.root,
+    u.uploaded_at,
+    u.state,
+    u.failure_message,
+    u.started_at,
+    u.finished_at,
+    u.repository_id,
+    u.indexer,
+    u.num_parts,
+    u.uploaded_parts,
+    u.process_after,
+    u.num_resets,
+    u.upload_size,
+    u.num_failures,
+    u.associated_index_id,
+    u.finished_at AS processed_at
+   FROM lsif_uploads u
+  WHERE (u.state = 'completed'::text);
+```
+
 # View "public.lsif_dumps_with_repository_name"
 ```
        Column        |           Type           | Modifiers 
@@ -1501,6 +1562,33 @@ Indexes:
  processed_at        | timestamp with time zone | 
  repository_name     | citext                   | 
 
+```
+
+## View query:
+
+```sql
+ SELECT u.id,
+    u.commit,
+    u.root,
+    u.uploaded_at,
+    u.state,
+    u.failure_message,
+    u.started_at,
+    u.finished_at,
+    u.repository_id,
+    u.indexer,
+    u.num_parts,
+    u.uploaded_parts,
+    u.process_after,
+    u.num_resets,
+    u.upload_size,
+    u.num_failures,
+    u.associated_index_id,
+    u.processed_at,
+    r.name AS repository_name
+   FROM (lsif_dumps u
+     JOIN repo r ON ((r.id = u.repository_id)))
+  WHERE (r.deleted_at IS NULL);
 ```
 
 # View "public.lsif_indexes_with_repository_name"
@@ -1530,6 +1618,34 @@ Indexes:
 
 ```
 
+## View query:
+
+```sql
+ SELECT u.id,
+    u.commit,
+    u.queued_at,
+    u.state,
+    u.failure_message,
+    u.started_at,
+    u.finished_at,
+    u.repository_id,
+    u.process_after,
+    u.num_resets,
+    u.num_failures,
+    u.docker_steps,
+    u.root,
+    u.indexer,
+    u.indexer_args,
+    u.outfile,
+    u.log_contents,
+    u.execution_logs,
+    u.local_steps,
+    r.name AS repository_name
+   FROM (lsif_indexes u
+     JOIN repo r ON ((r.id = u.repository_id)))
+  WHERE (r.deleted_at IS NULL);
+```
+
 # View "public.lsif_uploads_with_repository_name"
 ```
        Column        |           Type           | Modifiers 
@@ -1555,6 +1671,32 @@ Indexes:
 
 ```
 
+## View query:
+
+```sql
+ SELECT u.id,
+    u.commit,
+    u.root,
+    u.uploaded_at,
+    u.state,
+    u.failure_message,
+    u.started_at,
+    u.finished_at,
+    u.repository_id,
+    u.indexer,
+    u.num_parts,
+    u.uploaded_parts,
+    u.process_after,
+    u.num_resets,
+    u.upload_size,
+    u.num_failures,
+    u.associated_index_id,
+    r.name AS repository_name
+   FROM (lsif_uploads u
+     JOIN repo r ON ((r.id = u.repository_id)))
+  WHERE (r.deleted_at IS NULL);
+```
+
 # View "public.site_config"
 ```
    Column    |  Type   | Modifiers 
@@ -1562,6 +1704,14 @@ Indexes:
  site_id     | uuid    | 
  initialized | boolean | 
 
+```
+
+## View query:
+
+```sql
+ SELECT global_state.site_id,
+    global_state.initialized
+   FROM global_state;
 ```
 
 # View "public.tracking_changeset_specs_and_changesets"
@@ -1575,6 +1725,21 @@ Indexes:
  repo_name         | citext  | 
  changeset_name    | text    | 
 
+```
+
+## View query:
+
+```sql
+ SELECT changeset_specs.id AS changeset_spec_id,
+    COALESCE(changesets.id, (0)::bigint) AS changeset_id,
+    changeset_specs.repo_id,
+    changeset_specs.campaign_spec_id,
+    repo.name AS repo_name,
+    COALESCE((changesets.metadata ->> 'Title'::text), (changesets.metadata ->> 'title'::text)) AS changeset_name
+   FROM ((changeset_specs
+     LEFT JOIN changesets ON (((changesets.repo_id = changeset_specs.repo_id) AND (changesets.external_id = changeset_specs.external_id))))
+     JOIN repo ON ((changeset_specs.repo_id = repo.id)))
+  WHERE ((changeset_specs.external_id IS NOT NULL) AND (repo.deleted_at IS NULL));
 ```
 
 # Type cm_email_priority
