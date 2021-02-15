@@ -12,6 +12,29 @@ import { useMutation } from '../../hooks/useMutation'
 import { IconRadioButtons } from '../IconRadioButtons'
 import { Happy, Sad, VeryHappy, VerySad } from './FeedbackIcons'
 
+export const HAPPINESS_FEEDBACK_OPTIONS = [
+    {
+        name: 'Very sad',
+        value: 1,
+        icon: VerySad,
+    },
+    {
+        name: 'Sad',
+        value: 2,
+        icon: Sad,
+    },
+    {
+        name: 'Happy',
+        value: 3,
+        icon: Happy,
+    },
+    {
+        name: 'Very Happy',
+        value: 4,
+        icon: VeryHappy,
+    },
+]
+
 const SUBMIT_HAPPINESS_FEEDBACK_QUERY = gql`
     mutation SubmitHappinessFeedback($input: HappinessFeedbackSubmissionInput!) {
         submitHappinessFeedback(input: $input) {
@@ -94,28 +117,7 @@ const FeedbackPromptContent: React.FunctionComponent<Props> = ({ closePrompt }) 
                     <IconRadioButtons
                         role="menuitem"
                         name="emoji-selector"
-                        icons={[
-                            {
-                                name: 'Very sad',
-                                value: 1,
-                                icon: VerySad,
-                            },
-                            {
-                                name: 'Sad',
-                                value: 2,
-                                icon: Sad,
-                            },
-                            {
-                                name: 'Happy',
-                                value: 3,
-                                icon: Happy,
-                            },
-                            {
-                                name: 'Very Happy',
-                                value: 4,
-                                icon: VeryHappy,
-                            },
-                        ]}
+                        icons={HAPPINESS_FEEDBACK_OPTIONS}
                         selected={rating}
                         onChange={handleRateChange}
                         disabled={loading}
@@ -158,7 +160,7 @@ export const FeedbackPrompt: React.FunctionComponent = () => {
                 <MessageDrawIcon className="d-lg-none icon-inline" />
                 <span className="d-none d-lg-block">Feedback</span>
             </DropdownToggle>
-            <DropdownMenu right={true} className="web-content feedback-prompt__menu" renderOnMount={false}>
+            <DropdownMenu right={true} className="web-content feedback-prompt__menu">
                 <FeedbackPromptContent closePrompt={forceClose} />
             </DropdownMenu>
         </ButtonDropdown>
