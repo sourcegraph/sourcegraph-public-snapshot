@@ -13,6 +13,6 @@
 }
 
 # Caddy (:3081) -> sourcegraph-frontend (:3082)
-*:3081 {
+:3081 {
   reverse_proxy localhost:3082
 }
