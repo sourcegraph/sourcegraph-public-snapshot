@@ -41,7 +41,7 @@ export const CopyQueryButton: React.FunctionComponent<Props> = (props: Props) =>
         )
     )
 
-    const copyFullQueryTooltip = `Copy full query (${window.navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'} + ⇧ + C)`
+    const copyFullQueryTooltip = `Copy full query\n${window.navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+⇧+C`
     return (
         <>
             <button
