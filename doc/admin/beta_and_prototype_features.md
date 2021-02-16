@@ -2,7 +2,7 @@
 
 Sourcegraph often beta-tests major features before we make them generally available. 
 
-Exposing beta and prototype features gives you an opportunity to try our newest features soonest, and for no additional cost. 
+Exposing beta and prototype features gives you an opportunity to try our newest features sooner.
 
 In return, your feedback helps us make sure that our new features are reliable and useful, and we appreciate any and all feedback you want to provide. You can [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose), email it directly to [feedback@sourcegraph.com](mailto:feedback@sourcegraph.com), or use the in-app feedback modal. 
 
