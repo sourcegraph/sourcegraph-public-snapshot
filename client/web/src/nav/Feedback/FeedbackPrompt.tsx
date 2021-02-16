@@ -2,7 +2,7 @@ import MessageDrawIcon from 'mdi-react/MessageDrawIcon'
 import TickIcon from 'mdi-react/TickIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 import TextAreaAutosize from 'react-textarea-autosize'
-import { Alert, ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
+import { Alert, Button, ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { Link } from '../../../../shared/src/components/Link'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import { LoaderButton } from '../../components/LoaderButton'
@@ -102,7 +102,10 @@ const FeedbackPromptContent: React.FunctionComponent<Props> = ({ closePrompt }) 
             )}
             {!data && (
                 <>
-                    <h3>What‘s on your mind?</h3>
+                    <header className="feedback-prompt__header">
+                        <h3>What‘s on your mind?</h3>
+                        <Button onClick={closePrompt} className="feedback-prompt__header--close" close={true} />
+                    </header>
                     <TextAreaAutosize
                         role="menuitem"
                         tabIndex={0}

@@ -12,6 +12,20 @@
         width: 20rem;
         padding: 1rem;
     }
+    &__header {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        &--close {
+            position: absolute;
+            top: 6px;
+            border: none;
+            background: transparent;
+            font-size: 1.5rem;
+            color: var(--header-icon-color);
+            align-self: flex-end;
+        }
+    }
     &__textarea {
         resize: none;
         margin: 1rem 0;

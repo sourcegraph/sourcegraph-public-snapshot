@@ -24,11 +24,11 @@ describe('FeedbackPrompt', () => {
     })
 
     test('Renders heading correctly', () => {
-        expect(queries.getByText("What's on your mind?")).toBeVisible()
+        expect(queries.getByText('What‘s on your mind?')).toBeVisible()
     })
 
     test('Renders textarea correctly', () => {
-        expect(queries.getByPlaceholderText("What's going well? What could be better?")).toBeVisible()
+        expect(queries.getByPlaceholderText('What‘s going well? What could be better?')).toBeVisible()
     })
 
     test('Renders correct emoji toggles', () => {
@@ -50,7 +50,7 @@ describe('FeedbackPrompt', () => {
 
     describe('Submission', () => {
         beforeEach(() => {
-            const textArea = queries.getByPlaceholderText("What's going well? What could be better?")
+            const textArea = queries.getByPlaceholderText('What‘s going well? What could be better?')
             const radioButton = queries.getByLabelText('Very Happy')
             const sendButton = queries.getByText('Send')
             fireEvent.change(textArea, { target: { value: 'Lorem ipsum dolor sit amet' } })
