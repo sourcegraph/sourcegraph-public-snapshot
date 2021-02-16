@@ -534,6 +534,17 @@ func callSearcherOverRepos(
 				// Make a new repoRev for just the operation of searching this revspec.
 				repoRev := &search.RepositoryRevisions{Repo: repoAllRevs.Repo, Revs: []search.RevisionSpecifier{{RevSpec: rev}}}
 
+				args := *args
+				if args.PatternInfo.IsStructuralPat && searcherReposFilteredFiles != nil {
+					// Modify the search query to only run for the filtered files
+					if v, ok := searcherReposFilteredFiles[string(repoRev.Repo.Name)]; ok {
+						patternCopy := *args.PatternInfo
+						args.PatternInfo = &patternCopy
+						includePatternsCopy := []string{}
+						args.PatternInfo.IncludePatterns = append(includePatternsCopy, v...)
+					}
+				}
+
 				g.Go(func() error {
 					ctx, done := limitCtx, limitDone
 					defer done()

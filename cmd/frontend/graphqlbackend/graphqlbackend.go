@@ -64,13 +64,7 @@ type honeycombTracer struct{}
 func (h honeycombTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]interface{}, varTypes map[string]*introspection.Type) (context.Context, trace.TraceQueryFinishFunc) {
 	start := time.Now()
 	return ctx, func(queryErrors []*gqlerrors.QueryError) {
-		if !honey.Enabled() || traceGraphQLQueriesSample <= 0 || len(queryErrors) > 0 {
-			return
-		}
-
-		cost, err := estimateQueryCost(queryString)
-		if err != nil {
-			log15.Warn("estimating GraphQL cost", "error", err)
+		if !honey.Enabled() || traceGraphQLQueriesSample <= 0 {
 			return
 		}
 
@@ -83,17 +77,32 @@ func (h honeycombTracer) TraceQuery(ctx context.Context, queryString string, ope
 
 		ev := honey.Event("graphql-cost")
 		ev.SampleRate = uint(traceGraphQLQueriesSample)
-
 		ev.AddField("query", queryString)
-		ev.AddField("cost", cost)
-		ev.AddField("costVersion", costEstimateVersion)
 		ev.AddField("anonymous", anonymous)
 		ev.AddField("uid", uid)
 		ev.AddField("operationName", operationName)
 		ev.AddField("isInternal", sgtrace.IsInternalRequest(ctx))
 		d := time.Since(start)
 		ev.AddField("durationMicroseconds", d.Microseconds()) // Deprecated
-		ev.AddField("durationSeconds", d.Seconds())
+		ev.AddField("durationSeconds", d.Seconds())           // Deprecated
+		// Honeycomb has built in support for latency if you use milliseconds. We
+		// multiply seconds by 1000 here instead of using d.Milliseconds() so that we
+		// don't truncate durations of less than 1 millisecond.
+		ev.AddField("durationMilliseconds", d.Seconds()*1000)
+		ev.AddField("hasQueryErrors", len(queryErrors) > 0)
+		ev.AddField("requestName", sgtrace.GraphQLRequestName(ctx))
+		ev.AddField("requestSource", sgtrace.RequestSource(ctx))
+
+		cost, err := estimateQueryCost(queryString)
+		if err != nil {
+			log15.Warn("estimating GraphQL cost", "error", err)
+			ev.AddField("hasCostError", true)
+			ev.AddField("costError", err.Error())
+		} else {
+			ev.AddField("hasCostError", false)
+			ev.AddField("cost", cost)
+			ev.AddField("costVersion", costEstimateVersion)
+		}
 
 		_ = ev.Send()
 	}
