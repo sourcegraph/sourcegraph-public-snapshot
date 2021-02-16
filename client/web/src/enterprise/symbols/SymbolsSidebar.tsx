@@ -7,6 +7,8 @@ import {
     RepositoryFields,
     SymbolPageSymbolFields,
 } from '../../graphql-operations'
+import { NavLink } from 'react-router-dom'
+import { SymbolIcon } from '../../../../shared/src/symbols/SymbolIcon'
 
 export interface SymbolsSidebarOptions {
     containerSymbol?: Symbol
@@ -19,35 +21,7 @@ interface Props {
 }
 
 export const SymbolsSidebar: React.FunctionComponent<Props> = ({ containerSymbol, repo, className = '' }) => (
-    <div>
-        {containerSymbol ? (
-            <ul>
-                <SymbolsHierarchy repo={repo} containerSymbol={containerSymbol} />
-            </ul>
-        ) : (
-            <span>Loading</span>
-        )}
-    </div>
-
-    // <nav className={className}>
-    //     <header className="mb-2">
-    //         <Link to={allSymbolsURL} className="d-block small p-2 pb-1 pl-3">
-    //             &laquo; All symbols
-    //         </Link>
-    //         <h2 className="mb-0">
-    //             <NavLink to={containerSymbol.url} className="d-flex align-items-center p-2" {...commonNavLinkProps}>
-    //                 <SymbolIcon kind={containerSymbol.kind} className="mr-1 flex-shrink-0" />
-    //                 <span className="text-truncate">{containerSymbol.text}</span>
-    //             </NavLink>
-    //         </h2>
-    //     </header>
-
-    //     {containerSymbol.children.nodes.length > 0 ? (
-    //         <ItemList symbols={containerSymbol.children.nodes} itemClassName="pl-2 pr-3 py-1" level={0} />
-    //     ) : (
-    //         <p className="text-muted">No child symbols</p>
-    //     )}
-    // </nav>
+    <div>{containerSymbol ? <ItemList level={0} symbols={[containerSymbol]} repo={repo} /> : <span>Loading</span>}</div>
 )
 
 function urlForSymbol(symbol: Symbol, repo: RepositoryFields): string {
@@ -55,22 +29,51 @@ function urlForSymbol(symbol: Symbol, repo: RepositoryFields): string {
     return `/${repo.name}/-/docs/${symbol.id}`
 }
 
-interface SymbolsHierarchyProps {
-    containerSymbol: Symbol
+interface ItemListProps {
+    level: number
+    symbols: Symbol[]
     repo: RepositoryFields
 }
 
-export const SymbolsHierarchy: React.FunctionComponent<SymbolsHierarchyProps> = ({ containerSymbol, repo }) => {
+export const ItemList: React.FunctionComponent<ItemListProps> = ({ level, symbols, repo }) => {
     return (
-        <li>
-            <a href={urlForSymbol(containerSymbol, repo)}>
-                {containerSymbol?.kind} {containerSymbol?.text}
-            </a>
-            {containerSymbol?.children?.map(child => (
-                <ul key={child.kind + ':' + child.id}>
-                    <SymbolsHierarchy repo={repo} containerSymbol={child} />
-                </ul>
+        <ul className="list-unstyled">
+            {symbols.map(symbol => (
+                <React.Fragment key={symbol.kind + ':' + symbol.id}>
+                    <li>
+                        <NavLink
+                            className="d-flex align-items-center w-100 pl-1"
+                            to={urlForSymbol(symbol, repo)}
+                            style={
+                                level === 0
+                                    ? {
+                                          fontSize: '2rem',
+                                      }
+                                    : {
+                                          fontSize: '0.825rem',
+                                          marginLeft: level > 1 ? `${(level - 1) * 1.1}rem` : 0,
+                                          borderLeftColor: level > 1 ? 'var(--secondary)' : 'transparent',
+                                          borderLeftWidth: 3,
+                                          borderLeftStyle: 'solid',
+                                      }
+                            }
+                            activeStyle={{
+                                borderLeftColor: 'var(--primary)',
+                                borderLeftWidth: 3,
+                                borderLeftStyle: 'solid',
+                            }}
+                            exact={true}
+                        >
+                            <SymbolIcon kind={symbol.kind} /> <span className="text-truncate">{symbol.text}</span>
+                        </NavLink>
+                    </li>
+                    {symbol.children && symbol.children?.length > 0 && (
+                        <li>
+                            <ItemList level={level + 1} symbols={symbol.children} repo={repo} />
+                        </li>
+                    )}
+                </React.Fragment>
             ))}
-        </li>
+        </ul>
     )
 }
