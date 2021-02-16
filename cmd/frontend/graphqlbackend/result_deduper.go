@@ -53,25 +53,6 @@ func (d *searchResultDeduper) Add(r SearchResultResolver) {
 	}
 }
 
-// Seen returns whether the given url exists for a file type in the deduper without
-// modifying the contents of the deduper
-func (d *searchResultDeduper) Seen(r SearchResultResolver) (ok bool) {
-	switch v := r.(type) {
-	case *FileMatchResolver:
-		_, ok = d.seenFileMatches[v.uri]
-	case *RepositoryResolver:
-		_, ok = d.seenRepoMatches[v.URL()]
-	case *CommitSearchResultResolver:
-		if v.DiffPreview() != nil {
-			_, ok = d.seenDiffMatches[v.URL()]
-		} else {
-			_, ok = d.seenCommitMatches[v.URL()]
-		}
-	}
-
-	return ok
-}
-
 // Results returns a slice of SearchResultResolvers, deduplicated from
 // the SearchResultResolvers that were added with Add
 func (d *searchResultDeduper) Results() []SearchResultResolver {
