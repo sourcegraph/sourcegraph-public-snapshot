@@ -1,6 +1,8 @@
 package definitions
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
@@ -98,6 +100,48 @@ func Postgres() *monitoring.Container {
 				},
 			},
 			{
+				Title:  "Table bloat (dead tuples / live tuples)",
+				Hidden: true,
+				Rows: []monitoring.Row{
+					{
+						makePostgresTableBloatPanel(
+							"codeintel_commit_graph_db_bloat",
+							"code intelligence commit graph tables",
+							monitoring.ObservableOwnerCodeIntel,
+							50, // Alert on 50x more dead tuples than live tuples
+							[]string{
+								"lsif_nearest_uploads",
+								"lsif_nearest_uploads_links",
+								"lsif_uploads_visible_from_tip",
+							},
+						),
+						makePostgresTableBloatPanel(
+							"codeintel_package_versions_db_bloat",
+							"code intelligence package version tables",
+							monitoring.ObservableOwnerCodeIntel,
+							50, // Alert on 50x more dead tuples than live tuples
+							[]string{
+								"lsif_packages",
+								"lsif_references",
+							},
+						),
+						makePostgresTableBloatPanel(
+							"codeintel_lsif_db_bloat",
+							"code intelligence LSIF data tables (codeintel-db)",
+							monitoring.ObservableOwnerCodeIntel,
+							50, // Alert on 50x more dead tuples than live tuples
+							[]string{
+								"lsif_data_metadata",
+								"lsif_data_documents",
+								"lsif_data_result_chunks",
+								"lsif_data_definitions",
+								"lsif_data_references",
+							},
+						),
+					},
+				},
+			},
+			{
 				Title:  shared.TitleProvisioningIndicators,
 				Hidden: true,
 				// See docstring for databaseContainerNames
@@ -125,5 +169,33 @@ func Postgres() *monitoring.Container {
 
 		// This is third-party service
 		NoSourcegraphDebugServer: true,
+	}
+}
+
+// makePostgresTableBloatPanel returns an observable that tracks the bloat factor of each of the given
+// tables. We define a table's bloat to be the factor by which the table's current overhead exceeds its
+// minimum overhead, e.g., `(live + dead) / live`.
+func makePostgresTableBloatPanel(name, description string, owner monitoring.ObservableOwner, bloatThreshold float64, tableNames []string) monitoring.Observable {
+	query := fmt.Sprintf(
+		`(%[1]s{relname=~"%[3]s"} + %[2]s{relname=~"%[3]s"}) / %[1]s{relname=~"%[3]s"}`,
+		"pg_stat_user_tables_n_live_tup",
+		"pg_stat_user_tables_n_dead_tup",
+		strings.Join(tableNames, "|"),
+	)
+
+	return monitoring.Observable{
+		Name:        name,
+		Description: description,
+		Owner:       owner,
+		Query:       query,
+		Panel:       monitoring.Panel().LegendFormat("{{relname}}"),
+		Critical:    monitoring.Alert().GreaterOrEqual(bloatThreshold).For(5 * time.Minute),
+		PossibleSolutions: `
+			- Run ANALYZE on the table to correct its statistics
+			- Run VACUUM on the table manually to remove dead tuples
+			- Run VACUUM FULL on the table manually to remove all dead tuples (requires an exclusive table lock)
+			- Reconfigure the Postgres autovacuum daemon with additional resources
+		`,
+		Interpretation: "This value indicates the factor by which a table's overhead outweighs its minimum overhead.",
 	}
 }
