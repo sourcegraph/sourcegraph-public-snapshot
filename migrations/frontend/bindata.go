@@ -100,6 +100,8 @@
 // 1528395781_remove_user_repos_table.up.sql (57B)
 // 1528395782_normalize_spec_fields_on_changeset_specs.down.sql (1.922kB)
 // 1528395782_normalize_spec_fields_on_changeset_specs.up.sql (2.764kB)
+// 1528395783_insights_query_runner_jobs.down.sql (127B)
+// 1528395783_insights_query_runner_jobs.up.sql (852B)
 
 package migrations
 
@@ -2168,6 +2170,46 @@ func _1528395782_normalize_spec_fields_on_changeset_specsUpSql() (*asset, error)
 	return a, nil
 }
 
+var __1528395783_insights_query_runner_jobsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\xf0\xf4\x73\x71\x8d\x50\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\xc8\xcc\x2b\xce\x4c\xcf\x28\x29\x8e\x2f\x2c\x4d\x2d\xaa\x8c\x2f\x2a\xcd\xcb\x4b\x2d\x8a\xcf\xca\x4f\x2a\x8e\x2f\x2e\x49\x2c\x49\x8d\x4f\x2a\x29\x4a\x4d\xb5\x86\x68\x0e\x71\x74\xf2\x71\x25\x4a\xb3\x35\x17\x97\xb3\xbf\xaf\xaf\x67\x88\x35\x17\x20\x00\x00\xff\xff\x7d\x1e\x6f\x28\x7f\x00\x00\x00")
+
+func _1528395783_insights_query_runner_jobsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395783_insights_query_runner_jobsDownSql,
+		"1528395783_insights_query_runner_jobs.down.sql",
+	)
+}
+
+func _1528395783_insights_query_runner_jobsDownSql() (*asset, error) {
+	bytes, err := _1528395783_insights_query_runner_jobsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395783_insights_query_runner_jobs.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x37, 0x3e, 0x7e, 0x7d, 0x11, 0x9e, 0xc0, 0x8f, 0x32, 0x87, 0x70, 0xc1, 0x72, 0xe5, 0x1c, 0x4, 0xa8, 0x3b, 0xa7, 0xf1, 0x6a, 0x8c, 0x17, 0x2d, 0x12, 0xaa, 0x0, 0x57, 0x1d, 0x87, 0xbb, 0xe}}
+	return a, nil
+}
+
+var __1528395783_insights_query_runner_jobsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xa4\x92\x4f\x6b\xdb\x40\x10\xc5\xef\xfe\x14\x73\x49\x6d\xe3\x12\x95\x92\x5c\x6c\x42\x71\xd2\x6d\x50\x6a\xcb\xc5\x52\x20\x21\x84\x65\x25\x8d\xa5\x4d\xa4\x5d\x79\x76\x96\xc6\xfd\xf4\xc5\x92\xff\x14\x1a\xdc\x43\x75\x1a\x78\xbf\xf7\x34\x3b\x33\xd7\xe2\x36\x8c\x26\xbd\xde\xcd\x52\x4c\x13\x01\xc9\xf4\x7a\x26\x20\xfc\x06\xd1\x22\x01\xf1\x10\xc6\x49\x0c\xda\x38\x5d\x94\xec\xe4\xda\x23\x6d\x24\x79\x63\x90\xe4\x8b\x4d\xdd\xa0\x07\x00\xa0\x73\x88\xc5\x32\x9c\xce\xe0\xc7\x32\x9c\x4f\x97\x8f\xf0\x5d\x3c\x7e\x6c\x25\x87\xa4\xd1\x49\x9d\x03\xe3\x1b\xb7\xa1\xd1\xfd\x6c\xb6\x17\x15\x65\x65\x97\xfa\xae\xce\x8a\x11\x8e\x5f\x8b\xe4\xb8\x52\xbe\x62\xe8\xaf\x3d\x7a\xcc\xfb\x1d\xba\x52\xba\xf2\x84\xb2\x46\xe7\x54\x81\x2d\x7a\x08\x21\xc6\x5c\x2a\xde\x85\xe8\x1a\x1d\xab\xba\xe1\x5f\x3b\xab\x36\xda\x95\x47\xe2\x2f\xa0\x21\x9b\xa1\x73\x52\xad\x18\xe9\x3d\xc0\xf8\x5a\x12\x3a\x64\xd7\xfd\x42\x1b\xbe\x38\x3c\xe5\xd0\xf0\xa7\x23\xbc\xeb\xd6\xfd\x13\xc6\x37\xcc\x3c\x6b\x6b\x64\x65\x0b\x07\x2f\xce\x9a\xa7\xe7\xde\x70\xb2\xdf\x56\x18\x7d\x15\x0f\x27\xf6\x23\xdb\x11\xca\x94\x09\x11\x16\xd1\x09\x12\xee\xe3\x30\xba\x85\x8e\x1c\xb4\xb6\xe1\xf6\x2a\x16\xf3\xb9\x88\x92\xad\xb7\xbb\x8c\x13\x09\x61\x0c\xfd\x18\x11\x9e\xd0\x30\x52\x43\xda\x61\xa0\xb7\xa5\x51\x55\xb0\xf7\x05\xa9\xca\x5e\x0b\xb2\xde\xe4\x41\x1b\xd1\x25\x04\x3f\x2d\xbd\x22\x9d\x17\x76\x7c\x67\xd3\xe7\x41\xc9\xdc\xb8\x71\x10\x38\xeb\x29\xc3\x82\x54\x53\x9e\x67\xb6\x0e\xba\x93\xf9\xb2\xbe\x22\x6c\xec\xf8\xec\x52\x14\x9a\x4b\x9f\x9e\x5d\xde\x74\xf2\x11\xff\xb3\x3e\xfb\x7c\x31\x5a\xe9\x0a\xc7\xff\xd5\xd9\x88\x37\x0d\x8e\xee\x6c\xfa\xa1\x51\xbc\x35\x27\x9b\x06\xaf\x2a\xcd\x48\xaa\x1a\xf6\x77\xd3\x0a\x93\x49\xef\x77\x00\x00\x00\xff\xff\x2b\x49\x8c\x28\x54\x03\x00\x00")
+
+func _1528395783_insights_query_runner_jobsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395783_insights_query_runner_jobsUpSql,
+		"1528395783_insights_query_runner_jobs.up.sql",
+	)
+}
+
+func _1528395783_insights_query_runner_jobsUpSql() (*asset, error) {
+	bytes, err := _1528395783_insights_query_runner_jobsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395783_insights_query_runner_jobs.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xfc, 0x94, 0x2a, 0xa0, 0x67, 0x7b, 0xd2, 0x10, 0x1b, 0xc0, 0xa3, 0x4a, 0x68, 0xfa, 0xfc, 0x24, 0x6a, 0xb2, 0x2b, 0xce, 0xe7, 0x71, 0xd0, 0x8, 0x80, 0xac, 0xaa, 0xac, 0x7c, 0xad, 0x74, 0xee}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2359,6 +2401,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395781_remove_user_repos_table.up.sql":                                              _1528395781_remove_user_repos_tableUpSql,
 	"1528395782_normalize_spec_fields_on_changeset_specs.down.sql":                           _1528395782_normalize_spec_fields_on_changeset_specsDownSql,
 	"1528395782_normalize_spec_fields_on_changeset_specs.up.sql":                             _1528395782_normalize_spec_fields_on_changeset_specsUpSql,
+	"1528395783_insights_query_runner_jobs.down.sql":                                         _1528395783_insights_query_runner_jobsDownSql,
+	"1528395783_insights_query_runner_jobs.up.sql":                                           _1528395783_insights_query_runner_jobsUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2505,6 +2549,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395781_remove_user_repos_table.up.sql":                                              {_1528395781_remove_user_repos_tableUpSql, map[string]*bintree{}},
 	"1528395782_normalize_spec_fields_on_changeset_specs.down.sql":                           {_1528395782_normalize_spec_fields_on_changeset_specsDownSql, map[string]*bintree{}},
 	"1528395782_normalize_spec_fields_on_changeset_specs.up.sql":                             {_1528395782_normalize_spec_fields_on_changeset_specsUpSql, map[string]*bintree{}},
+	"1528395783_insights_query_runner_jobs.down.sql":                                         {_1528395783_insights_query_runner_jobsDownSql, map[string]*bintree{}},
+	"1528395783_insights_query_runner_jobs.up.sql":                                           {_1528395783_insights_query_runner_jobsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

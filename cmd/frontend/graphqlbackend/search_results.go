@@ -844,13 +844,7 @@ func (r *searchResolver) evaluate(ctx context.Context, q query.Q) (*SearchResult
 		r.setQuery(scopeParameters)
 		return r.evaluateLeaf(ctx)
 	}
-	result, err := r.evaluatePatternExpression(ctx, scopeParameters, pattern)
-	if err != nil {
-		return nil, err
-	}
-	result.SearchResults = r.selectResults(result.SearchResults)
-	r.sortResults(ctx, result.SearchResults)
-	return result, nil
+	return r.evaluatePatternExpression(ctx, scopeParameters, pattern)
 }
 
 // invalidateRepoCache returns whether resolved repos should be invalidated when
@@ -901,6 +895,7 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 			return nil, err
 		}
 		if newResult != nil {
+			newResult.SearchResults = r.selectResults(newResult.SearchResults)
 			srr = union(srr, newResult)
 			if len(srr.SearchResults) > wantCount {
 				srr.SearchResults = srr.SearchResults[:wantCount]
