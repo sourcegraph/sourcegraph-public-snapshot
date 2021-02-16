@@ -167,10 +167,10 @@ func unzipToTempDir(ctx context.Context, zipFile, tempDir, tempFilePrefix string
 		return "", err
 	}
 
-	return volumeDir, unzip(zipFile, volumeDir)
+	return volumeDir, unzip(ctx, zipFile, volumeDir)
 }
 
-func unzip(zipFile, dest string) error {
+func unzip(ctx context.Context, zipFile, dest string) error {
 	r, err := zip.OpenReader(zipFile)
 	if err != nil {
 		return err
@@ -180,6 +180,12 @@ func unzip(zipFile, dest string) error {
 	outputBase := filepath.Clean(dest) + string(os.PathSeparator)
 
 	for _, f := range r.File {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
 		fpath := filepath.Join(dest, f.Name)
 
 		// Check for ZipSlip. More Info: https://snyk.io/research/zip-slip-vulnerability#go
