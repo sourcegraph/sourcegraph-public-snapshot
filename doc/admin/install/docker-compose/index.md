@@ -12,7 +12,7 @@ If you want to migrate from the single-container server (`sourcegraph/server`) t
   - Use the resource estimator to ensure you provision [enough capacity](../resource_estimator.md)
   - Sourcegraph requires SSD backed storage.
 
-> Before moving forward, we recommend [forking our deployment reference](configure.md#fork-this-repository)
+> WARNING: You need to create a [fork of our deployment reference.](configure.md#fork-this-repository)
 ### Storage
 
 The [Sourcegraph Docker Compose definition](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) uses [Docker volumes](https://docs.docker.com/storage/volumes/) to store its data. These volumes are stored at `/var/lib/docker/volumes` by [default on Linux](https://docs.docker.com/storage/#choose-the-right-type-of-mount).
