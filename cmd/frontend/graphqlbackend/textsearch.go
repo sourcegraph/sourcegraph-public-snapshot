@@ -103,8 +103,8 @@ func (fm *FileMatchResolver) Symbols() []*symbolResolver {
 }
 
 func (fm *FileMatchResolver) LineMatches() []lineMatchResolver {
-	r := make([]lineMatchResolver, 0, len(fm.JLineMatches))
-	for _, lm := range fm.JLineMatches {
+	r := make([]lineMatchResolver, 0, len(fm.LineMatches))
+	for _, lm := range fm.LineMatches {
 		r = append(r, lineMatchResolver{lm})
 	}
 	return r
