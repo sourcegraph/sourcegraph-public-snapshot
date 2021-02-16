@@ -11,29 +11,7 @@ type ZoektStreamer interface {
 	Send(*zoekt.SearchResult)
 }
 
-type ZoektStreamerFunc chan<- *zoekt.SearchResult
-
-func (c ZoektStreamerFunc) Send(res *zoekt.SearchResult) {
-	c <- res
-}
-
-type ZoektStreamObserver func(*zoekt.SearchResult)
-
-type ZoektStreamerWithObserver struct {
-	s ZoektStreamer
-	o ZoektStreamObserver
-}
-
-func (s *ZoektStreamerWithObserver) Send(event *zoekt.SearchResult) {
-	s.o(event)
-	s.s.Send(event)
-}
-
-func WithObserver(s ZoektStreamer, o ZoektStreamObserver) ZoektStreamer {
-	return &ZoektStreamerWithObserver{s, o}
-}
-
-// StreamFunc is a convenience function to create a stream receiver from a
+// ZoektStreamFunc is a convenience function to create a stream receiver from a
 // function.
 type ZoektStreamFunc func(*zoekt.SearchResult)
 

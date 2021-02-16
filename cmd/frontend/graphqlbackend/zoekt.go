@@ -412,7 +412,9 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 	// Start event stream
 	err = func() error {
 		defer close(events)
-		return args.Zoekt.Client.StreamSearch(ctx, finalQuery, &searchOpts, backend.ZoektStreamerFunc(events))
+		return args.Zoekt.Client.StreamSearch(ctx, finalQuery, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
+			events <- event
+		}))
 	}()
 	<-done
 
