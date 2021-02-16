@@ -1,14 +1,9 @@
 import React from 'react'
 import { Symbol } from './SymbolPage'
-import {
-    DocSymbolFields,
-    DocSymbolFieldsFragment,
-    DocSymbolHierarchyFragment,
-    RepositoryFields,
-    SymbolPageSymbolFields,
-} from '../../graphql-operations'
+import { RepositoryFields } from '../../graphql-operations'
 import { NavLink } from 'react-router-dom'
 import { SymbolIcon } from '../../../../shared/src/symbols/SymbolIcon'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
 export interface SymbolsSidebarOptions {
     containerSymbol?: Symbol
@@ -20,9 +15,14 @@ interface Props {
     repo: RepositoryFields
 }
 
-export const SymbolsSidebar: React.FunctionComponent<Props> = ({ containerSymbol, repo, className = '' }) => (
-    <div>{containerSymbol ? <ItemList level={0} symbols={[containerSymbol]} repo={repo} /> : <span>Loading</span>}</div>
-)
+export const SymbolsSidebar: React.FunctionComponent<Props> = ({ containerSymbol, repo, className = '' }) =>
+    containerSymbol === null ? (
+        <p className="p-3 text-muted h3">Not found</p>
+    ) : containerSymbol === undefined ? (
+        <LoadingSpinner className="m-3" />
+    ) : (
+        <ItemList level={0} symbols={[containerSymbol]} repo={repo} />
+    )
 
 function urlForSymbol(symbol: Symbol, repo: RepositoryFields): string {
     // TODO(beyang): this is a hack

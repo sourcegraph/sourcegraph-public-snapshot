@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { Observable } from 'rxjs'
+import { Observable, of } from 'rxjs'
 import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import { requestGraphQL } from '../../backend/graphql'
 import { RepoRevisionContainerContext } from '../../repo/RepoRevisionContainer'
@@ -18,6 +18,13 @@ import { Markdown } from '../../../../shared/src/components/Markdown'
 import { renderMarkdown } from '../../../../shared/src/util/markdown'
 import { Link } from 'react-router-dom'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { FileLocations } from '../../../../branded/src/components/panel/views/FileLocations'
+import { makeRepoURI } from '../../../../shared/src/util/url'
+import { fetchHighlightedFileLineRanges } from '../../repo/backend'
+import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
+import { VersionContextProps } from '../../../../shared/src/search/util'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
+import { Location } from '@sourcegraph/extension-api-types'
 
 export interface Symbol extends DocSymbolFieldsFragment {
     children?: Symbol[]
@@ -38,6 +45,30 @@ const SymbolPageSymbolsGQLFragment = gql`
         definitions {
             nodes {
                 url
+            }
+        }
+        references {
+            nodes {
+                url
+                range {
+                    start {
+                        line
+                        character
+                    }
+                    end {
+                        line
+                        character
+                    }
+                }
+                resource {
+                    path
+                    commit {
+                        oid
+                    }
+                    repository {
+                        name
+                    }
+                }
             }
         }
     }
@@ -94,6 +125,8 @@ export interface SymbolRouteProps {
 export interface Props
     extends Pick<RepoRevisionContainerContext, 'repo' | 'revision'>,
         SymbolsSidebarOptionsSetterProps,
+        SettingsCascadeProps,
+        VersionContextProps,
         RouteComponentProps<SymbolRouteProps> {}
 
 export const SymbolPage: React.FunctionComponent<Props> = ({
@@ -103,18 +136,18 @@ export const SymbolPage: React.FunctionComponent<Props> = ({
         params: { symbolID },
     },
     history,
+    location,
+    settingsCascade,
     setSidebarOptions,
+    ...props
 }) => {
     const symbol = useObservable(querySymbol({ repo: repo.id, commitID: revision, symbolID }))
     useEffect(() => {
         setSidebarOptions({ containerSymbol: symbol?.root as Symbol })
         return () => setSidebarOptions(null)
     }, [symbol || null]) // TODO(beyang): may want to specify dependencies
-    if (!symbol) {
-        return <div>Symbol not found</div>
-    }
 
-    const hoverParts = symbol.hover?.markdown.text.split('---', 2)
+    const hoverParts = symbol?.hover?.markdown.text.split('---', 2)
     const hoverSig = hoverParts?.[0]
     const hoverDoc = hoverParts?.[1]
 
@@ -125,6 +158,7 @@ export const SymbolPage: React.FunctionComponent<Props> = ({
     ) : (
         <>
             <div className="mx-3 mt-3">
+                <style>{'pre code { font-size: 1.2rem; line-height: 2.5rem; }'}</style>
                 {hoverSig &&
                     (symbol.definitions.nodes.length > 0 ? (
                         <Link to={symbol.definitions.nodes[0].url}>
@@ -143,11 +177,34 @@ export const SymbolPage: React.FunctionComponent<Props> = ({
                     ))}
             </div>
             {hoverDoc && <Markdown dangerousInnerHTML={renderMarkdown(hoverDoc)} history={history} className="mx-3" />}
-            {/* <div>Symbol: {symbol.text}</div>
-            <div>Definition</div>
-            <div>Detail: {symbol.detail}</div>
-            <div>Examples</div>
-            <div>Children</div> */}
+            <style>
+                {
+                    'td.line { display: none; } .code-excerpt .code { padding-left: 0.25rem !important; } .result-container__header { display: none; } .result-container { border: solid 1px var(--border-color) !important; border-width: 1px !important; margin: 1rem; }'
+                }
+            </style>
+            {symbol.references.nodes.length > 1 && (
+                <section id="refs" className="mt-2 mx-3">
+                    <h2 className="mt-3 mb-2 h4">Examples</h2>
+                    <FileLocations
+                        location={location}
+                        locations={of(
+                            symbol.references.nodes.map<Location>(reference => ({
+                                uri: makeRepoURI({
+                                    repoName: reference.resource.repository.name,
+                                    commitID: reference.resource.commit.oid,
+                                    filePath: reference.resource.path,
+                                }),
+                                range: reference.range!,
+                            }))
+                        )}
+                        icon={SourceRepositoryIcon}
+                        isLightTheme={true} // TODO: pass through
+                        fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                        settingsCascade={settingsCascade}
+                        versionContext={props.versionContext}
+                    />
+                </section>
+            )}
         </>
     )
 }
