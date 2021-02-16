@@ -82,7 +82,7 @@ func (r *workHandler) Handle(ctx context.Context, workerStore dbworkerstore.Stor
 	// is OK to expose to every user on Sourcegraph (e.g. total result counts are fine, exposing
 	// that a repository exists may or may not be fine, exposing individual results is definitely
 	// not, etc.)
-	return r.insightsStore.RecordSeriesPoint(ctx, &store.RecordSeriesPointArgs{
+	return r.insightsStore.RecordSeriesPoint(ctx, store.RecordSeriesPointArgs{
 		SeriesID: job.SeriesID,
 		Point: store.SeriesPoint{
 			Time:  time.Now(),

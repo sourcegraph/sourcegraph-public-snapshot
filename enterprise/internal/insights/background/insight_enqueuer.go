@@ -25,13 +25,13 @@ func newInsightEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, o
 		Metrics: metrics,
 	})
 
-	// TODO(slimsag): future: before deploying to prod, confirm retention policy is OK with 1 minute
-	// intervals / consider if we need to adjust the interval.
-
-	// Note: We run this goroutine once every 1 minute, and StalledMaxAge in queryrunner is
+	// Note: We run this goroutine once every 10 minutes, and StalledMaxAge in queryrunner/ is
 	// set to 60s. If you change this, make sure the StalledMaxAge is less than this period
 	// otherwise there is a fair chance we could enqueue work faster than it can be completed.
-	return goroutine.NewPeriodicGoroutineWithMetrics(ctx, 1*time.Minute, goroutine.NewHandlerWithErrorMessage(
+	//
+	// See also https://github.com/sourcegraph/sourcegraph/pull/17227#issuecomment-779515187 for some very rough
+	// data retention / scale concerns.
+	return goroutine.NewPeriodicGoroutineWithMetrics(ctx, 10*time.Minute, goroutine.NewHandlerWithErrorMessage(
 		"insights_enqueuer",
 		func(ctx context.Context) error {
 			// TODO(slimsag): future: discover insights from settings store and enqueue them here.
