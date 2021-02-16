@@ -68,6 +68,8 @@ func WithLimit(ctx context.Context, parent Streamer, limit int) (context.Context
 	return ctx, stream, cancel
 }
 
+// WithSelect returns a child Stream of parent that runs the select operation
+// on each event, deduplicating where possible.
 func WithSelect(parent Streamer, s filter.SelectPath) Streamer {
 	var mux sync.Mutex
 	dedup := NewDeduper()
@@ -93,8 +95,10 @@ func WithSelect(parent Streamer, s filter.SelectPath) Streamer {
 				continue
 			}
 
-			seen := dedup.Seen(current)
+			// If the selected file is a file match, send it unconditionally
+			// to ensure we get all line matches for a file.
 			_, isFileMatch := current.(*FileMatchResolver)
+			seen := dedup.Seen(current)
 			if seen && !isFileMatch {
 				continue
 			}
