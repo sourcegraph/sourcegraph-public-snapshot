@@ -275,7 +275,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             showOnboardingTour: false,
             showSearchContext: false,
             availableSearchContexts: [],
-            selectedSearchContextSpec: undefined,
+            selectedSearchContextSpec: 'global',
             defaultSearchContextSpec: 'global', // global is default for now, user will be able to change this at some point
             showEnterpriseHomePanels: false,
             globbing: false,
@@ -449,7 +449,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     showRepogroupHomepage={this.state.showRepogroupHomepage}
                                     showOnboardingTour={this.state.showOnboardingTour}
                                     showSearchContext={this.state.showSearchContext}
-                                    selectedSearchContextSpec={this.state.selectedSearchContextSpec}
+                                    selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
                                     setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
                                     availableSearchContexts={this.state.availableSearchContexts}
                                     defaultSearchContextSpec={this.state.defaultSearchContextSpec}
@@ -522,10 +522,10 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         this.extensionsController.services.workspace.versionContext.next(resolvedVersionContext)
     }
 
+    private getSelectedSearchContextSpec = (): string | undefined =>
+        this.state.showSearchContext ? this.state.selectedSearchContextSpec : undefined
+
     private setSelectedSearchContextSpec = (spec: string): void => {
-        if (!this.state.showSearchContext) {
-            return
-        }
         this.setState(state => ({
             selectedSearchContextSpec: resolveSearchContextSpec(
                 spec,
