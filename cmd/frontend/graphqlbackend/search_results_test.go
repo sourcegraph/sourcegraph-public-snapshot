@@ -59,7 +59,7 @@ func TestSearchResults(t *testing.T) {
 			case *RepositoryResolver:
 				resultDescriptions[i] = fmt.Sprintf("repo:%s", m.innerRepo.Name)
 			case *FileMatchResolver:
-				resultDescriptions[i] = fmt.Sprintf("%s:%d", m.JPath, m.JLineMatches[0].JLineNumber)
+				resultDescriptions[i] = fmt.Sprintf("%s:%d", m.JPath, m.JLineMatches[0].LineNumber)
 			default:
 				t.Fatal("unexpected result type", result)
 			}
@@ -1482,7 +1482,7 @@ func sortResultResolvers(rs []SearchResultResolver) {
 	for _, res := range rs {
 		if fm, ok := res.(*FileMatchResolver); ok {
 			sort.Slice(fm.JLineMatches, func(i, j int) bool {
-				return fm.JLineMatches[i].JPreview < fm.JLineMatches[j].JPreview
+				return fm.JLineMatches[i].Preview < fm.JLineMatches[j].Preview
 			})
 			sort.Slice(fm.symbols, func(i, j int) bool {
 				return fm.symbols[i].symbol.Name < fm.symbols[j].symbol.Name
@@ -1576,26 +1576,26 @@ func TestUnionMerge(t *testing.T) {
 			left: SearchResultsResolver{
 				SearchResults: []SearchResultResolver{
 					fileResult("b", []*lineMatch{
-						{JPreview: "a"},
-						{JPreview: "b"},
+						{Preview: "a"},
+						{Preview: "b"},
 					}, nil),
 				},
 			},
 			right: SearchResultsResolver{
 				SearchResults: []SearchResultResolver{
 					fileResult("b", []*lineMatch{
-						{JPreview: "c"},
-						{JPreview: "d"},
+						{Preview: "c"},
+						{Preview: "d"},
 					}, nil),
 				},
 			},
 			want: SearchResultsResolver{SearchResults: []SearchResultResolver{
 				&FileMatchResolver{FileMatch: FileMatch{
 					JLineMatches: []*lineMatch{
-						{JPreview: "a"},
-						{JPreview: "b"},
-						{JPreview: "c"},
-						{JPreview: "d"},
+						{Preview: "a"},
+						{Preview: "b"},
+						{Preview: "c"},
+						{Preview: "d"},
 					},
 					uri: "b",
 				}},
@@ -1605,31 +1605,31 @@ func TestUnionMerge(t *testing.T) {
 			left: SearchResultsResolver{
 				SearchResults: []SearchResultResolver{
 					fileResult("a", []*lineMatch{
-						{JPreview: "a"},
-						{JPreview: "b"},
+						{Preview: "a"},
+						{Preview: "b"},
 					}, nil),
 				},
 			},
 			right: SearchResultsResolver{
 				SearchResults: []SearchResultResolver{
 					fileResult("b", []*lineMatch{
-						{JPreview: "c"},
-						{JPreview: "d"},
+						{Preview: "c"},
+						{Preview: "d"},
 					}, nil),
 				},
 			},
 			want: SearchResultsResolver{SearchResults: []SearchResultResolver{
 				&FileMatchResolver{FileMatch: FileMatch{
 					JLineMatches: []*lineMatch{
-						{JPreview: "a"},
-						{JPreview: "b"},
+						{Preview: "a"},
+						{Preview: "b"},
 					},
 					uri: "a",
 				}},
 				&FileMatchResolver{FileMatch: FileMatch{
 					JLineMatches: []*lineMatch{
-						{JPreview: "c"},
-						{JPreview: "d"},
+						{Preview: "c"},
+						{Preview: "d"},
 					},
 					uri: "b",
 				}},
