@@ -19,6 +19,12 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Removed
 
+## 3.24.7
+
+### Fixed
+
+- The homebrew recipe for `src-cli` contained the wrong binary name.
+
 ## 3.24.6
 
 ### Fixed
