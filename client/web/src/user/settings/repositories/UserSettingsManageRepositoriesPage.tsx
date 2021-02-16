@@ -308,7 +308,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 })
             }
             setFetchingRepos('loading')
-            const started = new Date().getTime()
+            const started = Date.now()
 
             const externalServiceSubscription = queryExternalServices({
                 first: null,
@@ -321,9 +321,14 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                             // if the background job takes too long we should update the button
                             // text to indicate we're still working on it.
 
-                            // start with six seconds and go up to eight
-                            const timeLimit = fetchingRepos !== 'slow' ? SIX_SECONDS : EIGHT_SECONDS
-                            if (new Date().getTime() - started >= timeLimit) {
+                            const now = Date.now()
+                            const timeDiff = now - started
+
+                            // setting the same state multiple times won't cause
+                            // re-renders in Function components
+                            if (timeDiff >= SIX_SECONDS + EIGHT_SECONDS) {
+                                setFetchingRepos('slower')
+                            } else if (timeDiff >= SIX_SECONDS) {
                                 setFetchingRepos('slow')
                             }
 
@@ -351,16 +356,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     }
                 )
         },
-        [
-            codeHosts.hosts,
-            history,
-            repoState,
-            routingPrefix,
-            selectionState.radio,
-            selectionState.repos,
-            userID,
-            fetchingRepos,
-        ]
+        [codeHosts.hosts, history, repoState, routingPrefix, selectionState.radio, selectionState.repos, userID]
     )
 
     const handleRadioSelect = (changeEvent: React.ChangeEvent<HTMLInputElement>): void => {
@@ -520,11 +516,12 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         className={classNames({
                             'text-muted': selectionState.repos.size === 0,
                             'text-body': selectionState.repos.size !== 0,
-                            'repositories-header': true,
+                            'mb-0': true,
                         })}
                     >
-                        {(selectionState.repos.size > 0 && `${selectionState.repos.size} repositories selected`) ||
-                            'Select all'}
+                        {(selectionState.repos.size > 0 && (
+                            <small>{`${selectionState.repos.size} repositories selected`}</small>
+                        )) || <small>Select all</small>}
                     </label>
                 </td>
             </tr>
@@ -627,7 +624,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         (fetchingRepos === 'slow' && 'Still working...') ||
                         'Fetching quite a lot of code...'
                     }
-                    disabled={isLoading(fetchingRepos)}
+                    disabled={!selectionState.radio || isLoading(fetchingRepos)}
                 />
 
                 <Link
