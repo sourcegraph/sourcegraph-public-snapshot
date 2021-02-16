@@ -10,12 +10,18 @@ type Key interface {
 
 // Encrypter is anything that can encrypt a value
 type Encrypter interface {
-	Encrypt(ctx context.Context, value string) (string, error)
+	Encrypt(ctx context.Context, value []byte) ([]byte, error)
 }
 
 // Decrypter is anything that can decrypt a value
 type Decrypter interface {
-	Decrypt(ctx context.Context, cipherText string) (Secret, error)
+	Decrypt(ctx context.Context, cipherText []byte) (*Secret, error)
+}
+
+func NewSecret(v string) Secret {
+	return Secret{
+		value: v,
+	}
 }
 
 // Secret is a utility type to make it harder to accidentally leak secret

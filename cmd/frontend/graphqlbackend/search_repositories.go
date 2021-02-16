@@ -50,6 +50,7 @@ func searchRepositories(ctx context.Context, args *search.TextParameters, limit 
 		query.FieldRepoHasFile:        {},
 		query.FieldRepoHasCommitAfter: {},
 		query.FieldPatternType:        {},
+		query.FieldSelect:             {},
 	}
 	// Don't return repo results if the search contains fields that aren't on the allowlist.
 	// Matching repositories based whether they contain files at a certain path (etc.) is not yet implemented.

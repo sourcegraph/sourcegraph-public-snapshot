@@ -11,9 +11,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // Note: You can `go test ./resolvers -update` to update the expected `want` values in these tests.
@@ -75,12 +75,11 @@ func TestResolver_InsightConnection(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		conn.(*insightConnectionResolver).mocksSettingsGetLatest = func(ctx context.Context, subject api.SettingsSubject) (*api.Settings, error) {
-			if !subject.Site { // TODO: future: site is an extremely poor name for "global settings", we should change this.
-				t.Fatal("expected only to request settings from global user settings")
-			}
-			return testRealGlobalSettings, nil
-		}
+
+		// Mock the setting store to return the desired settings.
+		settingStore := discovery.NewMockSettingStore()
+		conn.(*insightConnectionResolver).settingStore = settingStore
+		settingStore.GetLatestFunc.SetDefaultReturn(testRealGlobalSettings, nil)
 		return ctx, conn
 	}
 
@@ -128,69 +127,4 @@ func TestResolver_InsightConnection(t *testing.T) {
 		})
 		autogold.Want("second insight: series length", int(2)).Equal(t, len(nodes[1].Series()))
 	})
-}
-
-func Test_parseUserSettings(t *testing.T) {
-	tests := []struct {
-		name  string
-		input *api.Settings
-		want  autogold.Value
-	}{
-		{
-			name:  "nil",
-			input: nil,
-			want:  autogold.Want("nil", [2]interface{}{&schema.Settings{}, nil}),
-		},
-		{
-			name: "empty",
-			input: &api.Settings{
-				Contents: "{}",
-			},
-			want: autogold.Want("empty", [2]interface{}{&schema.Settings{}, nil}),
-		},
-		{
-			name:  "real",
-			input: testRealGlobalSettings,
-			want: autogold.Want("real", [2]interface{}{
-				&schema.Settings{Insights: []*schema.Insight{
-					{
-						Description: "fmt.Errorf/fmt.Printf usage",
-						Series: []*schema.InsightSeries{
-							{
-								Label:  "fmt.Errorf",
-								Search: "errorf",
-							},
-							{
-								Label:  "printf",
-								Search: "fmt.Printf",
-							},
-						},
-						Title: "fmt usage",
-					},
-					{
-						Description: "gitserver exec & close usage",
-						Series: []*schema.InsightSeries{
-							{
-								Label:  "exec",
-								Search: "gitserver.Exec",
-							},
-							{
-								Label:  "close",
-								Search: "gitserver.Close",
-							},
-						},
-						Title: "gitserver usage",
-					},
-				}},
-				nil,
-			}),
-		},
-	}
-	for _, tst := range tests {
-		t.Run(tst.name, func(t *testing.T) {
-			got, err := parseUserSettings(tst.input)
-			tst.want.Equal(t, [2]interface{}{got, err})
-		})
-	}
-
 }
