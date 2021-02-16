@@ -30,6 +30,8 @@ interface Repo {
 }
 
 const PER_PAGE = 25
+const SIX_SECONDS = 6000
+const EIGHT_SECONDS = 8000
 
 // initial state constants
 const emptyRepos: Repo[] = []
@@ -47,9 +49,14 @@ const initialCodeHostState = {
     loaded: false,
     configuredRepos: emptyRepoNames,
 }
-const initialFetchingReposState = {
-    loading: false,
-    slow: false,
+
+type initialFetchingReposState = undefined | 'loading' | 'slow' | 'slower'
+const isLoading = (status: initialFetchingReposState): boolean => {
+    if (!status) {
+        return false
+    }
+
+    return ['loading', 'slow', 'slower'].includes(status)
 }
 
 /**
@@ -72,7 +79,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const [query, setQuery] = useState('')
     const [codeHostFilter, setCodeHostFilter] = useState('')
     const [codeHosts, setCodeHosts] = useState(initialCodeHostState)
-    const [fetchingRepos, setFetchingRepos] = useState(initialFetchingReposState)
+    const [fetchingRepos, setFetchingRepos] = useState<initialFetchingReposState>()
 
     interface GitHubConfig {
         repos: string[]
@@ -300,7 +307,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     setRepoState({ ...repoState, error: String(error) })
                 })
             }
-            setFetchingRepos({ loading: true, slow: false })
+            setFetchingRepos('loading')
             const started = new Date().getTime()
 
             const externalServiceSubscription = queryExternalServices({
@@ -312,13 +319,17 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     repeatUntil(
                         result => {
                             // if the background job takes too long we should update the button
-                            // text to indicate we're still working on it
-                            if (new Date().getTime() - started >= 15000) {
-                                setFetchingRepos({ loading: true, slow: true })
+                            // text to indicate we're still working on it.
+
+                            // start with six seconds and go up to eight
+                            const timeLimit = fetchingRepos !== 'slow' ? SIX_SECONDS : EIGHT_SECONDS
+                            if (new Date().getTime() - started >= timeLimit) {
+                                setFetchingRepos('slow')
                             }
 
                             // if the lastSyncAt has changed for all hosts then we're done
                             if (result.nodes.every(codeHost => codeHost.lastSyncAt !== syncTimes.get(codeHost.id))) {
+                                // setFetchingRepos('loaded')
                                 // push the user back to the repo list page
                                 history.push(routingPrefix + '/repositories')
                                 // cancel the repeatUntil
@@ -340,7 +351,16 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     }
                 )
         },
-        [codeHosts.hosts, history, repoState, routingPrefix, selectionState.radio, selectionState.repos, userID]
+        [
+            codeHosts.hosts,
+            history,
+            repoState,
+            routingPrefix,
+            selectionState.radio,
+            selectionState.repos,
+            userID,
+            fetchingRepos,
+        ]
     )
 
     const handleRadioSelect = (changeEvent: React.ChangeEvent<HTMLInputElement>): void => {
@@ -540,7 +560,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         </tbody>
     )
     return (
-        <div className="p-2">
+        <div className="p-2 user-settings-repos">
             <PageTitle title="Manage Repositories" />
             <h2 className="mb-2">Manage Repositories</h2>
             <p className="text-muted">
@@ -595,18 +615,19 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     </div>
                 </li>
             </ul>
-            <Form className="mt-4 d-flex" onSubmit={submit}>
+            <Form className="mt-4 d-flex " onSubmit={submit}>
                 <LoaderButton
-                    loading={fetchingRepos.loading}
+                    loading={isLoading(fetchingRepos)}
                     className="btn btn-primary test-goto-add-external-service-page mr-2"
                     alwaysShowLabel={true}
                     type="submit"
                     label={
-                        (!fetchingRepos.loading && 'Save changes') ||
-                        (!fetchingRepos.slow && 'Fetching repositories...') ||
-                        'Still working...'
+                        (!fetchingRepos && 'Save changes') ||
+                        (fetchingRepos === 'loading' && 'Fetching repositories...') ||
+                        (fetchingRepos === 'slow' && 'Still working...') ||
+                        'Fetching quite a lot of code...'
                     }
-                    disabled={fetchingRepos.loading}
+                    disabled={isLoading(fetchingRepos)}
                 />
 
                 <Link

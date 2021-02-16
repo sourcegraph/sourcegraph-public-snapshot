@@ -178,7 +178,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     let body: JSX.Element
     if (filters[1] && filters[1].values.length === 1) {
         body = (
-            <div className="card p-3 m-2">
+            <div className="card p-3">
                 <h3 className="mb-1">You have not added any repositories to Sourcegraph</h3>
                 <p className="text-muted mb-0">
                     <Link className="text-primary" to={`${routingPrefix}/code-hosts`}>
