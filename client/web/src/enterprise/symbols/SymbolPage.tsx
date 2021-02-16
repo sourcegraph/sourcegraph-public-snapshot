@@ -151,6 +151,9 @@ export const SymbolPage: React.FunctionComponent<Props> = ({
     const hoverSig = hoverParts?.[0]
     const hoverDoc = hoverParts?.[1]
 
+    // NEXT
+    console.log('# symbol', symbol, hoverSig, hoverDoc, symbol?.detail)
+
     return symbol === null ? (
         <p className="p-3 text-muted h3">Not found</p>
     ) : symbol === undefined ? (
