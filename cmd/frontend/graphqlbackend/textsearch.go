@@ -102,8 +102,12 @@ func (fm *FileMatchResolver) Symbols() []*symbolResolver {
 	return symbols
 }
 
-func (fm *FileMatchResolver) LineMatches() []*lineMatch {
-	return fm.JLineMatches
+func (fm *FileMatchResolver) LineMatches() []lineMatchResolver {
+	r := make([]lineMatchResolver, 0, len(fm.JLineMatches))
+	for _, lm := range fm.JLineMatches {
+		r = append(r, lineMatchResolver{lm})
+	}
+	return r
 }
 
 func (fm *FileMatchResolver) LimitHit() bool {
@@ -177,15 +181,19 @@ type lineMatch struct {
 	JLimitHit         bool       `json:"LimitHit"`
 }
 
-func (lm *lineMatch) Preview() string {
+type lineMatchResolver struct {
+	*lineMatch
+}
+
+func (lm lineMatchResolver) Preview() string {
 	return lm.JPreview
 }
 
-func (lm *lineMatch) LineNumber() int32 {
+func (lm lineMatchResolver) LineNumber() int32 {
 	return lm.JLineNumber
 }
 
-func (lm *lineMatch) OffsetAndLengths() [][]int32 {
+func (lm lineMatchResolver) OffsetAndLengths() [][]int32 {
 	r := make([][]int32, len(lm.JOffsetAndLengths))
 	for i := range lm.JOffsetAndLengths {
 		r[i] = lm.JOffsetAndLengths[i][:]
@@ -193,7 +201,7 @@ func (lm *lineMatch) OffsetAndLengths() [][]int32 {
 	return r
 }
 
-func (lm *lineMatch) LimitHit() bool {
+func (lm lineMatchResolver) LimitHit() bool {
 	return lm.JLimitHit
 }
 
