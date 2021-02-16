@@ -1,5 +1,5 @@
-### What happens if my campaign creation breaks down at 900 changeset out of 1,000? Do I have to re-run it all again?
-Campaigns’ default behavior is to stop if creating diffs on a repo errors. You can choose to ignore errors instead by adding the `[skip-errors](../cli/references/campaigns/preview)` flag to the `src campaigns` command.
+### What happens if my campaign creation breaks down at 900 changesets out of 1,000? Do I have to re-run it all again?
+Campaigns’ default behavior is to stop if creating the diff on a repo errors. You can choose to ignore errors instead by adding the [`skip-errors`](../cli/references/campaigns/preview) flag to the `src campaigns preview` command.
 
 ### Can we close a campaign and still leave the changesets open?
 Yes! There is a confirmation page that shows you all the actions that will occur on the various changesets in the campaign after you close it.
@@ -11,7 +11,7 @@ Since diffs are created locally by the src cli, performance depends on the capac
 Manipulating (commenting, notifying users, etc) changesets at that scale can be clumsy. This is a major area of work for future releases
 
 ### Can I run campaigns in CI?
-Yes. Some of our users have a repository with campaign specs
+TODO
 
 ### My campaign does not open changesets on all the repositories it should. Why?
 Do you have enough permissions? Campaigns will error on the repositories you don’t have access to. See [codehost permissions]().
