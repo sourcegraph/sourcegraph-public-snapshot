@@ -69,7 +69,7 @@ func (d *searchResultDeduper) Seen(r SearchResultResolver) (ok bool) {
 		}
 	}
 
-	return
+	return ok
 }
 
 // Results returns a slice of SearchResultResolvers, deduplicated from
