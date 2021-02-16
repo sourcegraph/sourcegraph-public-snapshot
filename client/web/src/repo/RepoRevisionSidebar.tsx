@@ -76,7 +76,7 @@ export class RepoRevisionSidebar extends React.PureComponent<Props, State> {
                     type="button"
                     className={classNames(
                         'btn btn-icon border-right border-bottom rounded-0',
-                        'repo-revision-sidebar-toggle',
+                        'repo-revision-sidebar__toggle',
                         this.props.className && `${this.props.className}-toggle`
                     )}
                     onClick={this.onSidebarToggle}
@@ -106,8 +106,9 @@ export class RepoRevisionSidebar extends React.PureComponent<Props, State> {
                                 <button
                                     type="button"
                                     onClick={this.onSidebarToggle}
-                                    className={`btn btn-icon tab_bar__close-button ${TabBorderClassName}`}
-                                    title="Collapse panel (Alt+S/Opt+S)"
+                                    className={`btn btn-icon pr-1 repo-revision-sidebar__close-button ${TabBorderClassName}`}
+                                    data-tooltip="Collapse panel (Alt+S/Opt+S)"
+                                    data-placement="right"
                                 >
                                     <ChevronDoubleLeftIcon className="icon-inline" />
                                 </button>

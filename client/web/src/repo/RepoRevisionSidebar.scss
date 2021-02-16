@@ -18,7 +18,7 @@
         width: 0;
     }
 
-    &-toggle {
+    &__toggle {
         width: 2.5rem;
         height: 2.5rem;
         margin-right: -1.25rem;
@@ -30,5 +30,12 @@
 
         display: flex;
         justify-content: center;
+    }
+
+    &__close-button {
+        color: var(--link-color);
+        &:hover {
+            color: var(--link-hover-color);
+        }
     }
 }
