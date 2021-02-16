@@ -107,6 +107,22 @@ func TestEditorRedirect(t *testing.T) {
 			wantRedirectURL: "/github.com/a/b@0ad12f/-/blob/mux.go?utm_source=Atom-v1.2.1#L1:1", // L1:1 is expected (but could be nicer by omitting it)
 		},
 		{
+			name: "open file in repository with unknown code host",
+			q: url.Values{
+				"editor":     []string{"Atom"},
+				"version":    []string{"v1.2.1"},
+				"remote_url": []string{"git@somecodehost.com:a/b"},
+				"branch":     []string{"dev"},
+				"revision":   []string{"0ad12f"},
+				"file":       []string{"mux.go"},
+				"start_row":  []string{"123"},
+				"start_col":  []string{"1"},
+				"end_row":    []string{"123"},
+				"end_col":    []string{"10"},
+			},
+			wantRedirectURL: "/somecodehost.com/a/b@0ad12f/-/blob/mux.go?utm_source=Atom-v1.2.1#L124:2-124:11",
+		},
+		{
 			name: "search",
 			q: url.Values{
 				"editor":  []string{"Atom"},
@@ -154,6 +170,16 @@ func TestEditorRedirect(t *testing.T) {
 				"search_revision":   []string{"0ad12f"},
 			},
 			wantRedirectURL: "/search?patternType=literal&q=repo%3Agithub%5C.com%2Fa%2Fb%24%400ad12f+foobar&utm_source=Atom-v1.2.1",
+		},
+		{
+			name: "search in repository with unknown code host",
+			q: url.Values{
+				"editor":            []string{"Atom"},
+				"version":           []string{"v1.2.1"},
+				"search":            []string{"foobar"},
+				"search_remote_url": []string{"git@somecodehost.com:a/b"},
+			},
+			wantRedirectURL: "/search?patternType=literal&q=repo%3Asomecodehost%5C.com%2Fa%2Fb%24+foobar&utm_source=Atom-v1.2.1",
 		},
 		{
 			name: "search in repository file",
