@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"strings"
 
 	protocol "github.com/sourcegraph/lsif-protocol"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
@@ -30,6 +31,14 @@ func gatherSymbols(state *State) ([]*lsifstore.Symbol, error) {
 			if ok {
 				// TODO(beyang): other rectification?
 				existingSymbol.Children = append(existingSymbol.Children, symbol.Children...)
+				if symbol.Detail != "" {
+					details := make([]string, 0, 2)
+					if existingSymbol.Detail != "" {
+						details = append(details, existingSymbol.Detail)
+					}
+					details = append(details, symbol.Detail)
+					existingSymbol.Detail = strings.Join(details, "\n\n")
+				}
 			} else {
 				symbolByID[symbol.Identifier] = symbol
 			}

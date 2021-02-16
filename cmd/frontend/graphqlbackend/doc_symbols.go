@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
@@ -16,6 +17,7 @@ func (r *GitTreeEntryResolver) DocSymbols(ctx context.Context, args *docSymbolsA
 	if err != nil {
 		return nil, err
 	}
+	log.Printf("############# %v", lsifResolver)
 	symbolsConnection, err := lsifResolver.Symbols(ctx, &args.LSIFSymbolsArgs)
 	if err != nil {
 		return nil, err

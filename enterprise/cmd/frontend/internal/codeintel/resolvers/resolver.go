@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"time"
 
+	logg "log"
+
 	"github.com/opentracing/opentracing-go/log"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -159,6 +161,7 @@ func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataA
 		args.ExactPath,
 		args.ToolName,
 	)
+	logg.Printf("# number of dumps: %v", len(dumps))
 	if err != nil || len(dumps) == 0 {
 		return nil, err
 	}

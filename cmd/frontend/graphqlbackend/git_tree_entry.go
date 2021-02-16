@@ -233,6 +233,7 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName 
 		return nil, err
 	}
 
+	// log.Printf("### HERE %T", EnterpriseResolvers.codeIntelResolver)
 	return EnterpriseResolvers.codeIntelResolver.GitBlobLSIFData(ctx, &GitBlobLSIFDataArgs{
 		Repo:      repo,
 		Commit:    api.CommitID(r.Commit().OID()),

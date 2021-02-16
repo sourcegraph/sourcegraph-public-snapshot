@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"context"
+	"log"
 	"strings"
 
 	"github.com/sourcegraph/go-lsp"
@@ -99,21 +100,21 @@ func (r *docSymbolResolver) References(ctx context.Context) (gql.LocationConnect
 	return refs, nil
 }
 
-func intPtr(i int32) *int32 {
-	return &i
-}
-
 func (r *docSymbolResolver) Hover(ctx context.Context) (gql.HoverResolver, error) {
 	// TODO(beyang): lookup hover by moniker if needed
 	if len(r.adjustedSymbol.AdjustedLocations) == 0 {
 		return nil, nil
 	}
 
-	hover, err := r.queryResolver.Hover(ctx, &gql.LSIFQueryPositionArgs{
+	hoverArgs := &gql.LSIFQueryPositionArgs{
 		Path:      r.adjustedSymbol.AdjustedLocations[0].Path,
 		Line:      int32(r.adjustedSymbol.AdjustedLocations[0].AdjustedRange.Start.Line),
 		Character: int32(r.adjustedSymbol.AdjustedLocations[0].AdjustedRange.Start.Character + 1),
-	})
+	}
+	if r.adjustedSymbol.Text == "mux" {
+		log.Printf("# hoverArgs: %+v", hoverArgs)
+	}
+	hover, err := r.queryResolver.Hover(ctx, hoverArgs)
 	if err != nil {
 		return nil, err
 	}

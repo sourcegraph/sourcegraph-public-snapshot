@@ -161,7 +161,7 @@ export const SymbolPage: React.FunctionComponent<Props> = ({
     ) : (
         <>
             <div className="mx-3 mt-3">
-                <style>{'pre code { font-size: 1.2rem; line-height: 2.5rem; }'}</style>
+                <style>{'.symbol-hover__signature pre code { font-size: 1.2rem; line-height: 2.5rem; }'}</style>
                 {hoverSig &&
                     (symbol.definitions.nodes.length > 0 ? (
                         <Link to={symbol.definitions.nodes[0].url}>
@@ -180,6 +180,9 @@ export const SymbolPage: React.FunctionComponent<Props> = ({
                     ))}
             </div>
             {hoverDoc && <Markdown dangerousInnerHTML={renderMarkdown(hoverDoc)} history={history} className="mx-3" />}
+            {symbol.detail.length > 0 && (
+                <Markdown dangerousInnerHTML={renderMarkdown(symbol.detail)} history={history} className="mx-3" />
+            )}
             <style>
                 {
                     'td.line { display: none; } .code-excerpt .code { padding-left: 0.25rem !important; } .result-container__header { display: none; } .result-container { border: solid 1px var(--border-color) !important; border-width: 1px !important; margin: 1rem; }'
