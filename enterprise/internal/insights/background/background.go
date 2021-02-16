@@ -10,15 +10,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
-<<<<<<< HEAD
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-)
-
-func StartBackgroundJobs(ctx context.Context, db *sql.DB) {
-=======
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -36,7 +27,6 @@ func StartBackgroundJobs(ctx context.Context, mainAppDB *sql.DB) {
 		return
 	}
 
->>>>>>> origin/main
 	// Create a connection to TimescaleDB, so we can record results.
 	timescale, err := insights.InitializeCodeInsightsDB()
 	if err != nil {

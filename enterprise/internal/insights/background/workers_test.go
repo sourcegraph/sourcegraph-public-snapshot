@@ -1,3 +1,0 @@
-package background
-
-// TODO(slimsag)
