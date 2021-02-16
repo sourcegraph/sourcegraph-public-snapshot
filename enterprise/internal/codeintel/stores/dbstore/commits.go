@@ -261,7 +261,7 @@ UPDATE lsif_dirty_repositories SET update_token = GREATEST(update_token, %s), up
 //   - t_lsif_nearest_uploads_links  (mirroring lsif_nearest_uploads_links)
 //   - t_lsif_uploads_visible_at_tip (mirroring lsif_uploads_visible_at_tip)
 //
-// The data in these temporary tables can then be moved into a persisted/permenant table. We previously would perform a
+// The data in these temporary tables can then be moved into a persisted/permanent table. We previously would perform a
 // bulk delete of the records associated with a repository, then reinsert all of the data needed to be persisted. This
 // caused massive table bloat on some instances. Storing into a temporary table and then inserting/updating/deleting
 // records into the persisted table minimizes the number of tuples we need to touch and drastically reduces table bloat.
