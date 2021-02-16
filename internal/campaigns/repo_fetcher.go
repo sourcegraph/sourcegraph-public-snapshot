@@ -96,7 +96,7 @@ func (rf *repoFetcher) zipFor(repo *graphql.Repository, workspacePath string) *r
 			for _, component := range pathComponents {
 				for _, name := range []string{".gitignore", ".gitattributes"} {
 					filename := path.Join(currentPath, name)
-					localPath := filepath.Join(rf.dir, repo.SlugForPath(filename))
+					localPath := filepath.Join(rf.dir, repo.SlugForPath(workspacePath+filename))
 
 					zip.additionalFiles = append(zip.additionalFiles, &additionalFile{
 						filename:  filename,
