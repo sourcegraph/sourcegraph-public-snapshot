@@ -33,15 +33,7 @@ export const IconRadioButtons: React.FunctionComponent<Props> = ({
         <ul className="icon-radio-buttons" role={role}>
             {Object.values(icons).map(({ icon, name: iconName, value }) => (
                 <li key={iconName} className="d-flex">
-                    <label
-                        className={classNames(
-                            {
-                                'icon-radio-buttons__label--inactive': selected !== undefined && value !== selected,
-                                'icon-radio-buttons__label--active': value === selected,
-                            },
-                            'icon-radio-buttons__label'
-                        )}
-                    >
+                    <label className="icon-radio-buttons__label">
                         <input
                             disabled={disabled}
                             type="radio"
@@ -52,7 +44,21 @@ export const IconRadioButtons: React.FunctionComponent<Props> = ({
                             aria-label={iconName}
                             className="icon-radio-buttons__input"
                         />
-                        <span className="icon-radio-buttons__label--emoji">{icon}</span>
+                        <span
+                            className={classNames('icon-radio-buttons__border', {
+                                'icon-radio-buttons__border--inactive': selected !== undefined && value !== selected,
+                                'icon-radio-buttons__border--active': value === selected,
+                            })}
+                            aria-hidden={true}
+                        />
+                        <span
+                            className={classNames('icon-radio-buttons__emoji', {
+                                'icon-radio-buttons__emoji--inactive': selected !== undefined && value !== selected,
+                                'icon-radio-buttons__emoji--active': value === selected,
+                            })}
+                        >
+                            {icon}
+                        </span>
                     </label>
                 </li>
             ))}

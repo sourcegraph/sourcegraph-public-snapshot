@@ -1,5 +1,5 @@
 .icon-radio-buttons {
-    padding: 0 3.6875rem;
+    padding: 0 3.3rem;
     display: flex;
     justify-content: space-around;
 
@@ -9,26 +9,37 @@
         align-items: center;
         height: 2.25rem;
         width: 2.25rem;
+    }
+    &__border {
+        z-index: 1;
+        position: absolute;
+        display: flex;
+        height: 2.25rem;
+        width: 2.25rem;
         cursor: pointer;
         margin: 0;
         border-radius: 50%;
-        border: 1px solid var(--color-bg-4);
-
-        &:hover:not(&--active),
-        &:focus {
-            border: 1px solid var(--color-bg-5);
-            transition: all 0.3s cubic-bezier(0.5, -1, 0.5, 2);
-            transform: scale(1.12);
-            filter: none;
+        transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 50ms ease;
+        border: 1px solid var(--color-bg-5);
+        &:hover {
+            transform: scale(1.08);
         }
-
+        &:active {
+            transform: scale(0.99);
+        }
         &--active {
             border: none;
-            transform: scale(1.6);
+            animation: pop 150ms ease-in-out;
+        }
+    }
+    &__emoji {
+        &--active {
+            border: none;
+            animation: pop 150ms ease-in-out;
+            transform: scale(1.2855555);
         }
         &--inactive {
             filter: grayscale(1);
-            border: none;
         }
     }
 
@@ -36,5 +47,17 @@
         opacity: 0;
         width: 0;
         height: 0;
+    }
+}
+
+@keyframes pop {
+    from {
+        transform: scale(0.97);
+    }
+    20% {
+        transform: scale(1.05);
+    }
+    to {
+        transform: scale(1.2855555);
     }
 }
