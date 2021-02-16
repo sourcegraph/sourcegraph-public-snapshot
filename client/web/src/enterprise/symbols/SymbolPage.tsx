@@ -16,6 +16,8 @@ import {
 } from '../../graphql-operations'
 import { Markdown } from '../../../../shared/src/components/Markdown'
 import { renderMarkdown } from '../../../../shared/src/util/markdown'
+import { Link } from 'react-router-dom'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
 export interface Symbol extends DocSymbolFieldsFragment {
     children?: Symbol[]
@@ -31,6 +33,11 @@ const SymbolPageSymbolsGQLFragment = gql`
         hover {
             markdown {
                 text
+            }
+        }
+        definitions {
+            nodes {
+                url
             }
         }
     }
@@ -111,21 +118,36 @@ export const SymbolPage: React.FunctionComponent<Props> = ({
     const hoverSig = hoverParts?.[0]
     const hoverDoc = hoverParts?.[1]
 
-    return (
+    return symbol === null ? (
+        <p className="p-3 text-muted h3">Not found</p>
+    ) : symbol === undefined ? (
+        <LoadingSpinner className="m-3" />
+    ) : (
         <>
-            {hoverSig && (
-                <Markdown
-                    dangerousInnerHTML={renderMarkdown(hoverSig)}
-                    history={history}
-                    className={`symbol-hover__signature`}
-                />
-            )}
-            {hoverDoc && <Markdown dangerousInnerHTML={renderMarkdown(hoverDoc)} history={history} />}
-            <div>Symbol: {symbol.text}</div>
+            <div className="mx-3 mt-3">
+                {hoverSig &&
+                    (symbol.definitions.nodes.length > 0 ? (
+                        <Link to={symbol.definitions.nodes[0].url}>
+                            <Markdown
+                                dangerousInnerHTML={renderMarkdown(hoverSig)}
+                                history={history}
+                                className={`symbol-hover__signature`}
+                            />
+                        </Link>
+                    ) : (
+                        <Markdown
+                            dangerousInnerHTML={renderMarkdown(hoverSig)}
+                            history={history}
+                            className={`symbol-hover__signature`}
+                        />
+                    ))}
+            </div>
+            {hoverDoc && <Markdown dangerousInnerHTML={renderMarkdown(hoverDoc)} history={history} className="mx-3" />}
+            {/* <div>Symbol: {symbol.text}</div>
             <div>Definition</div>
             <div>Detail: {symbol.detail}</div>
             <div>Examples</div>
-            <div>Children</div>
+            <div>Children</div> */}
         </>
     )
 }
