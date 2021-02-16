@@ -8,20 +8,14 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
 
 ## Requirements
 
-- [Kubernetes](https://kubernetes.io/) v1.15 or later with an SSD storage class
+- [Sourcegraph Enterprise license](configure.md#add-license-key). _You can run through these instructions without one, but you must obtain a license for instances of more than 10 users._
+- [Kubernetes](https://kubernetes.io/) v1.15
+  - Verify that you have enough capacity by following our [resource allocation guidelines](scale.md)
+  - Sourcegraph requires an SSD backed storage class
   - [Cluster role administrator access](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) v1.15 or later
-- Access to server infrastructure on which you can create a Kubernetes cluster (see
-  [resource allocation guidelines](scale.md)).
-- [Sourcegraph Enterprise license](configure.md#add-license-key). You can run through these instructions without one, but you must obtain a license for instances of more than 10 users.
-- A valid domain name for your Sourcegraph instance ([to enable SSL/TLS](configure.md#configure-tlsssl))
-- A valid TLS certificate (whether from a trusted certificate authority such as Comodo, RapidSSL, or others, a self-signed certificate that can be distributed and installed across all users' machines, or the ability to use an existing reverse proxy that provides SSL termination for the connection)
-- Access tokens or other credentials to [connect to your code hosts of choice](../../external_service/index.md)
-- [Administrative access to your single sign-on (SSO) provider of choice](../../index.md)
-
 ## Steps
 
-- [Provision a Kubernetes cluster](k8s.md) on the infrastructure of your choice.
 - Make sure you have configured `kubectl` to [access your cluster](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/).
 
    - If you are using GCP, you'll need to give your user the ability to create roles in Kubernetes [(see GCP's documentation)](https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#prerequisites_for_using_role-based_access_control):
@@ -33,8 +27,12 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
 - Clone the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository and check out the version tag you wish to deploy.
 
    ```bash
-   # Go to https://github.com/sourcegraph/deploy-sourcegraph/tags and select the latest version tag
-   git clone https://github.com/sourcegraph/deploy-sourcegraph && cd deploy-sourcegraph && git checkout ${VERSION}
+   # 🚨 The master branch tracks development. Use the branch of this repository corresponding to the version of Sourcegraph you wish to deploy, e.g. git checkout 3.24
+
+   git clone https://github.com/sourcegraph/deploy-sourcegraph
+   cd deploy-sourcegraph
+   SOURCEGRAPH_VERSION="v3.24.1"
+   git checkout $SOURCEGRAPH_VERSION
    ```
 
 - Configure the `sourcegraph` storage class for the cluster by reading through ["Configure a storage class"](./configure.md#configure-a-storage-class).
