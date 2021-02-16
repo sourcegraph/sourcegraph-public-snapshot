@@ -93,7 +93,7 @@ func (h honeycombTracer) TraceQuery(ctx context.Context, queryString string, ope
 		ev.AddField("requestName", sgtrace.GraphQLRequestName(ctx))
 		ev.AddField("requestSource", sgtrace.RequestSource(ctx))
 
-		cost, err := estimateQueryCost(queryString)
+		cost, err := estimateQueryCost(queryString, variables)
 		if err != nil {
 			log15.Warn("estimating GraphQL cost", "error", err)
 			ev.AddField("hasCostError", true)
