@@ -88,7 +88,7 @@ func newWorkerMetrics(observationContext *observation.Context, workerName string
 	observationContext.Registerer.MustRegister(workerResetFailures)
 
 	workerErrors := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "src_insights_" + workerName + "_errors_total",
+		Name: "src_insights_" + workerName + "_reset_errors_total",
 		Help: "The number of errors that occurred during a worker job.",
 	})
 	observationContext.Registerer.MustRegister(workerErrors)
