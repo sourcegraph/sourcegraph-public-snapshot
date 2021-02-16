@@ -523,8 +523,14 @@ func BenchmarkCalculateVisibleUploads(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 
-	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(3), 0, time.Time{}); err != nil {
-		b.Fatalf("unexpected error while calculating visible uploads: %s", err)
+	for i := 0; i < 5; i++ {
+		if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(3), 0, time.Time{}); err != nil {
+			b.Fatalf("unexpected error while calculating visible uploads: %s", err)
+		}
+
+		//
+		// TODO - check table growth here
+		//
 	}
 }
 

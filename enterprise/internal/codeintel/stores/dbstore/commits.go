@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -174,6 +175,25 @@ func scanCommitGraphMetadata(rows *sql.Rows, queryErr error) (updateToken, dirty
 	return 0, 0, nil, false, nil
 }
 
+// TODO
+func scanBulkInsertCounts(rows *sql.Rows, queryErr error) (_, _, _ int, err error) {
+	if queryErr != nil {
+		return 0, 0, 0, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	if rows.Next() {
+		var c1, c2, c3 int
+		if err := rows.Scan(&c1, &c2, &c3); err != nil {
+			return 0, 0, 0, err
+		}
+
+		return c1, c2, c3, nil
+	}
+
+	return 0, 0, 0, nil
+}
+
 // CalculateVisibleUploads uses the given commit graph and the tip commit of the default branch to determine the
 // set of LSIF uploads that are visible for each commit, and the set of uploads which are visible at the tip. The
 // decorated commit graph is serialized to Postgres for use by find closest dumps queries.
@@ -213,18 +233,37 @@ func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, c
 	graph := commitgraph.NewGraph(commitGraph, commitGraphView)
 
 	// Clear all old visibility data for this repository
-	for _, tableName := range []string{"lsif_nearest_uploads", "lsif_nearest_uploads_links", "lsif_uploads_visible_at_tip"} {
+	for _, tableName := range []string{
+		// "lsif_nearest_uploads",
+		//  "lsif_nearest_uploads_links",
+		"lsif_uploads_visible_at_tip"} {
 		if err := tx.Store.Exec(ctx, sqlf.Sprintf(calculateVisibleUploadsDeleteQuery, sqlf.Sprintf(tableName), repositoryID)); err != nil {
 			return err
 		}
+	}
+
+	// TODO - standardize this a bit
+	// TODO - also apply to visible_at_tip
+
+	// TODO
+	t1 := "CREATE TEMPORARY TABLE t_lsif_nearest_uploads (commit_bytea bytea not null, uploads jsonb not null) ON COMMIT DROP"
+	// TODO
+	if err := tx.Store.Exec(ctx, sqlf.Sprintf(t1)); err != nil {
+		return err
+	}
+	// TODO
+	t2 := "CREATE TEMPORARY TABLE t_lsif_nearest_uploads_links (commit_bytea bytea not null, ancestor_commit_bytea bytea not null, distance integer not null) ON COMMIT DROP"
+	// TODO
+	if err := tx.Store.Exec(ctx, sqlf.Sprintf(t2)); err != nil {
+		return err
 	}
 
 	// Update the set of uploads that are visible from each commit for a given repository.
 	nearestUploadsInserter := batch.NewBatchInserter(
 		ctx,
 		tx.Handle().DB(),
-		"lsif_nearest_uploads",
-		"repository_id",
+		"t_lsif_nearest_uploads",
+		// "repository_id",
 		"commit_bytea",
 		"uploads",
 	)
@@ -236,8 +275,8 @@ func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, c
 	nearestUploadsLinksInserter := batch.NewBatchInserter(
 		ctx,
 		tx.Handle().DB(),
-		"lsif_nearest_uploads_links",
-		"repository_id",
+		"t_lsif_nearest_uploads_links",
+		// "repository_id",
 		"commit_bytea",
 		"ancestor_commit_bytea",
 		"distance",
@@ -254,7 +293,7 @@ func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, c
 
 			if err := nearestUploadsInserter.Insert(
 				ctx,
-				repositoryID,
+				// repositoryID,
 				dbutil.CommitBytea(v.Uploads.Commit),
 				listSerializer.Serialize(v.Uploads.Uploads),
 			); err != nil {
@@ -266,7 +305,7 @@ func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, c
 
 			if err := nearestUploadsLinksInserter.Insert(
 				ctx,
-				repositoryID,
+				// repositoryID,
 				dbutil.CommitBytea(v.Links.Commit),
 				dbutil.CommitBytea(v.Links.AncestorCommit),
 				v.Links.Distance,
@@ -285,6 +324,80 @@ func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, c
 		log.Int("numNearestUploadsRecords", numNearestUploadsRecords),
 		log.Int("numNearestUploadsLinksRecords", numNearestUploadsLinksRecords),
 	)
+
+	//
+	// TODO - can standardize this a bit?
+	//
+
+	// TODO
+	q3 := `
+		WITH updated AS (
+			UPDATE lsif_nearest_uploads nu
+			SET uploads = t.uploads
+			FROM t_lsif_nearest_uploads t
+			WHERE nu.repository_id = %s AND nu.commit_bytea = t.commit_bytea AND nu.uploads != t.uploads
+			RETURNING t.commit_bytea
+		),
+		inserted AS (
+			INSERT INTO lsif_nearest_uploads
+			SELECT %s, t.commit_bytea, t.uploads
+			FROM t_lsif_nearest_uploads t
+			WHERE t.commit_bytea NOT IN (SELECT nu2.commit_bytea FROM lsif_nearest_uploads nu2 WHERE nu2.repository_id = %s)
+			RETURNING commit_bytea
+		),
+		deleted AS (
+			DELETE FROM lsif_nearest_uploads nu
+			WHERE nu.repository_id = %s AND nu.commit_bytea NOT IN (SELECT t.commit_bytea FROM t_lsif_nearest_uploads t)
+			RETURNING nu.commit_bytea
+		)
+		SELECT
+			(SELECT COUNT(*) FROM updated) AS updated,
+			(SELECT COUNT(*) FROM inserted) AS inserted,
+			(SELECT COUNT(*) FROM deleted) AS deleted
+	`
+	// TODO
+	c1, c2, c3, err := scanBulkInsertCounts(tx.Store.Query(ctx, sqlf.Sprintf(q3, repositoryID, repositoryID, repositoryID, repositoryID)))
+	if err != nil {
+		return err
+	}
+	fmt.Printf("A> %d %d %d (%d)\n", c1, c2, c3, numNearestUploadsRecords)
+
+	// TODO
+	q4 := `
+		WITH updated AS (
+			UPDATE lsif_nearest_uploads_links l
+			SET ancestor_commit_bytea = t.ancestor_commit_bytea, distance = t.distance
+			FROM t_lsif_nearest_uploads_links t
+			WHERE l.repository_id = %s AND l.commit_bytea = t.commit_bytea AND l.ancestor_commit_bytea != t.ancestor_commit_bytea AND l.distance != t.distance
+			RETURNING t.commit_bytea
+		),
+		inserted AS (
+			INSERT INTO lsif_nearest_uploads_links
+			SELECT %s, t.commit_bytea, t.ancestor_commit_bytea, t.distance
+			FROM t_lsif_nearest_uploads_links t
+			WHERE t.commit_bytea NOT IN (SELECT l2.commit_bytea FROM lsif_nearest_uploads_links l2 WHERE l2.repository_id = %s)
+			RETURNING commit_bytea
+		),
+		deleted AS (
+			DELETE FROM lsif_nearest_uploads_links l
+			WHERE l.repository_id = %s AND l.commit_bytea NOT IN (SELECT t.commit_bytea FROM t_lsif_nearest_uploads_links t)
+			RETURNING l.commit_bytea
+		)
+		SELECT
+			(SELECT COUNT(*) FROM updated) AS updated,
+			(SELECT COUNT(*) FROM inserted) AS inserted,
+			(SELECT COUNT(*) FROM deleted) AS deleted
+	`
+	// TODO
+	c1, c2, c3, err = scanBulkInsertCounts(tx.Store.Query(ctx, sqlf.Sprintf(q4, repositoryID, repositoryID, repositoryID, repositoryID)))
+	if err != nil {
+		return err
+	}
+	fmt.Printf("B> %d %d %d (%d)\n", c1, c2, c3, numNearestUploadsLinksRecords)
+
+	//
+	// TODO - same below
+	//
 
 	// Update which repositories are visible from the tip of the default branch. This
 	// flag is used to determine which bundles for a repository we open during a global
