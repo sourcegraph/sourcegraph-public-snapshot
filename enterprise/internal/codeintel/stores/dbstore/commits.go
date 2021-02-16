@@ -577,10 +577,6 @@ SELECT
 	(SELECT COUNT(*) FROM del) AS num_del
 `
 
-//
-//
-//
-
 type uploadMetaListSerializer struct {
 	buf     bytes.Buffer
 	scratch []byte
