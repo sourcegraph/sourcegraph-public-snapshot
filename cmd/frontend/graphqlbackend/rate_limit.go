@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/graphql-go/graphql/language/ast"
+	"github.com/graphql-go/graphql/language/kinds"
 	"github.com/graphql-go/graphql/language/parser"
 	"github.com/graphql-go/graphql/language/visitor"
 	"github.com/pkg/errors"
@@ -25,6 +26,7 @@ func estimateQueryCost(query string, variables map[string]interface{}) (*queryCo
 	if variables == nil {
 		variables = make(map[string]interface{})
 	}
+
 	doc, err := parser.Parse(parser.ParseParams{
 		Source: query,
 	})
@@ -32,9 +34,22 @@ func estimateQueryCost(query string, variables map[string]interface{}) (*queryCo
 		return nil, errors.Wrap(err, "parsing query")
 	}
 
+	// We need to separate operations from fragments
+	var operations []ast.Node
+	var fragments []ast.Node
+
+	for i, def := range doc.Definitions {
+		switch def.GetKind() {
+		case kinds.FragmentDefinition:
+			fragments = append(fragments, doc.Definitions[i])
+		case kinds.OperationDefinition:
+			operations = append(operations, doc.Definitions[i])
+		}
+	}
+
 	var totalCost queryCost
-	for _, def := range doc.Definitions {
-		cost, err := calcDefinitionCost(def, variables)
+	for _, def := range operations {
+		cost, err := calcOperationCost(def, variables)
 		if err != nil {
 			return nil, err
 		}
@@ -54,7 +69,7 @@ func estimateQueryCost(query string, variables map[string]interface{}) (*queryCo
 	return &totalCost, nil
 }
 
-func calcDefinitionCost(def ast.Node, variables map[string]interface{}) (*queryCost, error) {
+func calcOperationCost(def ast.Node, variables map[string]interface{}) (*queryCost, error) {
 	var err error
 	fieldCount := 0
 	multiplier := 1
@@ -81,7 +96,7 @@ func calcDefinitionCost(def ast.Node, variables map[string]interface{}) (*queryC
 					err = fmt.Errorf("missing variable: %q", node.Name.Value)
 					return visitor.ActionBreak, nil
 				}
-				limit, err := extractLimit(limitVar)
+				limit, err := extractInt(limitVar)
 				if err != nil {
 					err = errors.Wrap(err, "extracting limit")
 					return visitor.ActionBreak, nil
@@ -122,7 +137,7 @@ var quantityParams = map[string]struct{}{
 	"last":  {},
 }
 
-func extractLimit(i interface{}) (int, error) {
+func extractInt(i interface{}) (int, error) {
 	switch v := i.(type) {
 	case int:
 		return v, nil
