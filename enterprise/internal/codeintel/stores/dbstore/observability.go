@@ -63,6 +63,11 @@ type operations struct {
 	updateIndexConfigurationByRepositoryID *observation.Operation
 	updatePackageReferences                *observation.Operation
 	updatePackages                         *observation.Operation
+
+	writeVisibleUploads        *observation.Operation
+	persistNearestUploads      *observation.Operation
+	persistNearestUploadsLinks *observation.Operation
+	persistUploadsVisibleAtTip *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -78,6 +83,12 @@ func newOperations(observationContext *observation.Context) *operations {
 			Name:         fmt.Sprintf("codeintel.dbstore.%s", name),
 			MetricLabels: []string{name},
 			Metrics:      metrics,
+		})
+	}
+
+	subOp := func(name string) *observation.Operation {
+		return observationContext.Operation(observation.Op{
+			Name: fmt.Sprintf("codeintel.dbstore.%s", name),
 		})
 	}
 
@@ -137,5 +148,10 @@ func newOperations(observationContext *observation.Context) *operations {
 		updateIndexConfigurationByRepositoryID: op("UpdateIndexConfigurationByRepositoryID"),
 		updatePackageReferences:                op("UpdatePackageReferences"),
 		updatePackages:                         op("UpdatePackages"),
+
+		writeVisibleUploads:        subOp("writeVisibleUploads"),
+		persistNearestUploads:      subOp("persistNearestUploads"),
+		persistNearestUploadsLinks: subOp("persistNearestUploadsLinks"),
+		persistUploadsVisibleAtTip: subOp("persistUploadsVisibleAtTip"),
 	}
 }

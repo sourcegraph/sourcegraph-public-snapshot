@@ -523,14 +523,25 @@ func BenchmarkCalculateVisibleUploads(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 50; i++ {
 		if err := store.CalculateVisibleUploads(context.Background(), 50, graph, makeCommit(3), 0, time.Time{}); err != nil {
 			b.Fatalf("unexpected error while calculating visible uploads: %s", err)
 		}
 
-		//
-		// TODO - check table growth here
-		//
+		for _, tableName := range []string{"lsif_nearest_uploads", "lsif_nearest_uploads_links"} {
+			row := dbconn.Global.QueryRowContext(context.Background(), "select pg_relation_size($1);", tableName)
+
+			var size int
+			if err := row.Scan(&size); err != nil {
+				panic(err.Error())
+			}
+
+			if err := row.Err(); err != nil {
+				panic(err.Error())
+			}
+
+			fmt.Printf("> %s -> %d\n", tableName, size)
+		}
 	}
 }
 
