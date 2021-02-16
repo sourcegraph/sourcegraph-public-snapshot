@@ -684,6 +684,21 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		},
 
 		{
+			descr: "prefer rust to renderscript",
+			searchResults: []SearchResultResolver{
+				fileMatch("/channel.rs"),
+			},
+			expectedDynamicFilterStrsRegexp: map[string]int{
+				`repo:^testRepo$`: 1,
+				`lang:rust`:       1,
+			},
+			expectedDynamicFilterStrsGlobbing: map[string]int{
+				`repo:testRepo`: 1,
+				`lang:rust`:     1,
+			},
+		},
+
+		{
 			descr: "javascript filters",
 			searchResults: []SearchResultResolver{
 				fileMatch("/jsrender.min.js.map"),
