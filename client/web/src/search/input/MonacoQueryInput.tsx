@@ -274,7 +274,11 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     }, [editor, autoFocus])
 
     // Always focus the editor on selectedSearchContextSpec change
-    useEffect(() => editor?.focus(), [editor, props.selectedSearchContextSpec])
+    useEffect(() => {
+        if (props.selectedSearchContextSpec) {
+            editor?.focus()
+        }
+    }, [editor, props.selectedSearchContextSpec])
 
     // If an edit wasn't triggered by the user,
     // place the cursor at the end of the query.
