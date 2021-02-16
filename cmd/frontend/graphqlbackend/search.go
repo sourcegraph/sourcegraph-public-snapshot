@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -124,12 +123,6 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (_ SearchImplem
 	defaultLimit := defaultMaxSearchResults
 	if args.Stream != nil {
 		defaultLimit = defaultMaxSearchResultsStreaming
-	}
-
-	if sp, _ := q.StringValue(query.FieldSelect); sp != "" {
-		// Invariant: error already checked
-		selectPath, _ := filter.SelectPathFromString(sp)
-		args.Stream = WithSelect(args.Stream, selectPath)
 	}
 
 	return &searchResolver{
