@@ -78,6 +78,11 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                             result => {
                                 let pending: Status
                                 const now = new Date().getTime()
+
+                                if (result.nodes.length === 0) {
+                                    return true
+                                }
+
                                 for (const node of result.nodes) {
                                     // if the next sync time is not blank, or in the future we must not be syncing
                                     if (node.nextSyncAt !== '' && now - new Date(node.nextSyncAt).getTime() > 0) {
@@ -151,11 +156,20 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         (args: FilteredConnectionQueryArguments): Observable<RepositoriesResult['repositories']> =>
             listUserRepositories({ ...args, id: userID }).pipe(
                 repeatUntil(
-                    (result): boolean =>
-                        result.nodes &&
-                        result.nodes.length > 0 &&
-                        result.nodes.every(nodes => !nodes.mirrorInfo.cloneInProgress && nodes.mirrorInfo.cloned) &&
-                        !(pendingOrError === 'pending'),
+                    (result): boolean => {
+                        // don't repeat the query when user doesn't have repos
+                        if (result.nodes && result.nodes.length === 0) {
+                            return true
+                        }
+
+                        return (
+                            result.nodes &&
+                            result.nodes.length > 0 &&
+                            result.nodes.every(nodes => !nodes.mirrorInfo.cloneInProgress && nodes.mirrorInfo.cloned) &&
+                            !(pendingOrError === 'pending')
+                        )
+                    },
+
                     { delay: 2000 }
                 )
             ),
@@ -216,8 +230,8 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         <div className="user-settings-repositories-page">
             {pendingOrError === 'pending' && (
                 <div className="alert alert-info">
-                    <span className="font-weight-bold">Some repositories are still being fetched.</span>
-                    These repositories may not appear in the list of repositories.
+                    <span className="font-weight-bold">Some repositories are still being updated.</span>
+                    These repositories may not appear up-to-date in the list of repositories.
                 </div>
             )}
             {isErrorLike(pendingOrError) && <ErrorAlert error={pendingOrError} icon={true} history={history} />}

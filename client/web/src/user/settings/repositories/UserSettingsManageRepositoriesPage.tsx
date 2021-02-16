@@ -334,7 +334,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
                             // if the lastSyncAt has changed for all hosts then we're done
                             if (result.nodes.every(codeHost => codeHost.lastSyncAt !== syncTimes.get(codeHost.id))) {
-                                // setFetchingRepos('loaded')
                                 // push the user back to the repo list page
                                 history.push(routingPrefix + '/repositories')
                                 // cancel the repeatUntil
@@ -499,17 +498,13 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const rows: JSX.Element = (
         <tbody>
             <tr className="align-items-baseline d-flex" key="header">
-                <td
-                    role="gridcell"
-                    onClick={selectAll}
-                    className="user-settings-repos__repositorynode p-2 w-100 d-flex align-items-center border-top-0 border-bottom"
-                >
+                <td className="user-settings-repos__repositorynode p-2 w-100 d-flex align-items-center border-top-0 border-bottom">
                     <input
                         id="select-all-repos"
                         className="mr-3"
                         type="checkbox"
                         checked={selectionState.repos.size !== 0 && selectionState.repos.size === filteredRepos.length}
-                        onChange={selectAll}
+                        onClick={selectAll}
                     />
                     <label
                         htmlFor="select-all-repos"
@@ -620,9 +615,9 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     type="submit"
                     label={
                         (!fetchingRepos && 'Save changes') ||
-                        (fetchingRepos === 'loading' && 'Fetching repositories...') ||
+                        (fetchingRepos === 'loading' && 'Saving changes...') ||
                         (fetchingRepos === 'slow' && 'Still working...') ||
-                        'Fetching quite a lot of code...'
+                        "That's a lot of code..."
                     }
                     disabled={!selectionState.radio || isLoading(fetchingRepos)}
                 />
