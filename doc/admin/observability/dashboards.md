@@ -1223,6 +1223,44 @@ A 0 value indicates that no migration is in progress.
 
 <br />
 
+### Postgres: Table bloat (dead tuples / live tuples)
+
+#### postgres: codeintel_commit_graph_db_bloat
+
+This panel indicates code intelligence commit graph tables.
+
+This value indicates the factor by which a table`s overhead outweighs its minimum overhead.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#postgres-codeintel-commit-graph-db-bloat).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### postgres: codeintel_package_versions_db_bloat
+
+This panel indicates code intelligence package version tables.
+
+This value indicates the factor by which a table`s overhead outweighs its minimum overhead.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#postgres-codeintel-package-versions-db-bloat).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### postgres: codeintel_lsif_db_bloat
+
+This panel indicates code intelligence LSIF data tables (codeintel-db).
+
+This value indicates the factor by which a table`s overhead outweighs its minimum overhead.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#postgres-codeintel-lsif-db-bloat).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
 ### Postgres: Provisioning indicators (not available on server)
 
 #### postgres: provisioning_container_cpu_usage_long_term
