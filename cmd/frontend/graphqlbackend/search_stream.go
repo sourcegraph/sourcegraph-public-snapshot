@@ -77,7 +77,7 @@ func WithSelect(parent Streamer, s filter.SelectPath) Streamer {
 	return StreamFunc(func(e SearchEvent) {
 		mux.Lock()
 
-		selected := make([]SearchResultResolver, 0, len(e.Results))
+		selected := e.Results[:0]
 		for _, result := range e.Results {
 			var current SearchResultResolver
 			switch v := result.(type) {
@@ -109,7 +109,9 @@ func WithSelect(parent Streamer, s filter.SelectPath) Streamer {
 		e.Results = selected
 
 		mux.Unlock()
-		parent.Send(e)
+		if parent != nil {
+			parent.Send(e)
+		}
 	})
 }
 
