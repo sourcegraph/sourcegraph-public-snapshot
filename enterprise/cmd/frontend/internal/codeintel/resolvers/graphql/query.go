@@ -93,7 +93,7 @@ func (r *QueryResolver) References(ctx context.Context, args *gql.LSIFPagedQuery
 		return nil, err
 	}
 
-	locations, cursor, err := r.resolver.References(ctx, int(args.Line), int(args.Character), limit, cursor)
+	locations, cursor, err := r.resolver.References(ctx, args.Path, int(args.Line), int(args.Character), limit, cursor)
 	if err != nil {
 		return nil, err
 	}

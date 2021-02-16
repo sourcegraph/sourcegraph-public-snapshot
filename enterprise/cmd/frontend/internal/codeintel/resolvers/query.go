@@ -73,7 +73,7 @@ type AdjustedSymbolLocation struct {
 type QueryResolver interface {
 	Ranges(ctx context.Context, startLine, endLine int) ([]AdjustedCodeIntelligenceRange, error)
 	Definitions(ctx context.Context, line, character int) ([]AdjustedLocation, error)
-	References(ctx context.Context, line, character, limit int, rawCursor string) ([]AdjustedLocation, string, error)
+	References(ctx context.Context, path string, line, character, limit int, rawCursor string) ([]AdjustedLocation, string, error)
 	Symbols(ctx context.Context, path string) ([]*AdjustedSymbol, error)
 	Hover(ctx context.Context, path string, line, character int) (string, lsifstore.Range, bool, error)
 	Diagnostics(ctx context.Context, limit int) ([]AdjustedDiagnostic, int, error)
@@ -253,12 +253,15 @@ func (r *queryResolver) Symbols(ctx context.Context, path string) ([]*AdjustedSy
 // References returns the list of source locations that reference the symbol at the given position.
 // This may include references from other dumps and repositories. If there are multiple bundles
 // associated with this resolver, results from all bundles will be concatenated and returned.
-func (r *queryResolver) References(ctx context.Context, line, character, limit int, rawCursor string) (_ []AdjustedLocation, _ string, err error) {
+func (r *queryResolver) References(ctx context.Context, path string, line, character, limit int, rawCursor string) (_ []AdjustedLocation, _ string, err error) {
+	if path == "" {
+		path = r.path
+	}
 	ctx, endObservation := observeResolver(ctx, &err, "References", r.operations.references, slowReferencesRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", r.repositoryID),
 			log.String("commit", r.commit),
-			log.String("path", r.path),
+			log.String("path", path),
 			log.String("uploadIDs", strings.Join(r.uploadIDs(), ", ")),
 			log.Int("line", line),
 			log.Int("character", character),
@@ -294,7 +297,7 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 			continue
 		}
 
-		adjustedPath, adjustedPosition, ok, err := r.positionAdjuster.AdjustPosition(ctx, r.uploads[i].Commit, r.path, position, false)
+		adjustedPath, adjustedPosition, ok, err := r.positionAdjuster.AdjustPosition(ctx, r.uploads[i].Commit, path, position, false)
 		if err != nil {
 			return nil, "", err
 		}

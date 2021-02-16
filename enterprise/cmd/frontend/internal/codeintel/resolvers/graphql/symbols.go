@@ -81,6 +81,28 @@ func (r *docSymbolResolver) Definitions(ctx context.Context) (gql.LocationConnec
 	return NewLocationConnectionResolver(adjustedLocations, nil, r.locationResolver), nil
 }
 
+func (r *docSymbolResolver) References(ctx context.Context) (gql.LocationConnectionResolver, error) {
+	// TODO(beyang): handle actual pagination
+	refs, err := r.queryResolver.References(ctx, &gql.LSIFPagedQueryPositionArgs{
+		LSIFQueryPositionArgs: gql.LSIFQueryPositionArgs{
+			Path:      r.adjustedSymbol.AdjustedLocations[0].Path,
+			Line:      int32(r.adjustedSymbol.AdjustedLocations[0].AdjustedRange.Start.Line),
+			Character: int32(r.adjustedSymbol.AdjustedLocations[0].AdjustedRange.Start.Character + 1),
+		},
+		ConnectionArgs: graphqlutil.ConnectionArgs{
+			intPtr(3),
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	return refs, nil
+}
+
+func intPtr(i int32) *int32 {
+	return &i
+}
+
 func (r *docSymbolResolver) Hover(ctx context.Context) (gql.HoverResolver, error) {
 	// TODO(beyang): lookup hover by moniker if needed
 	if len(r.adjustedSymbol.AdjustedLocations) == 0 {

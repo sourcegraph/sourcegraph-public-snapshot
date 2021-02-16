@@ -5276,6 +5276,8 @@ type DocSymbol {
 
     definitions: LocationConnection!
 
+    references: LocationConnection!
+
     children: [DocSymbol!]!
 
     hover: Hover
