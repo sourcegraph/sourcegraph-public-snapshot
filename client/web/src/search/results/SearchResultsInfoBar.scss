@@ -1,0 +1,31 @@
+.search-results-info-bar {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-self: stretch;
+    color: #93a9c8;
+    padding: 0.25rem 0.5rem;
+
+    .alert {
+        margin-bottom: 0.5rem;
+    }
+
+    .mdi-icon {
+        margin-right: 0.125rem;
+    }
+
+    &__row {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        height: 100%;
+        flex: 1 0 auto;
+        text-align: right;
+    }
+
+    &__notice {
+        display: flex;
+        align-items: center;
+        margin-right: 1rem;
+    }
+}

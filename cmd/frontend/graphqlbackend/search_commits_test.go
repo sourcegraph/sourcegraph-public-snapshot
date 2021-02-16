@@ -11,11 +11,10 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	//"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -47,35 +46,33 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	}
 	defer git.ResetMocks()
 
-	query, err := query.ParseAndCheck("p")
+	q, err := query.ParseLiteral("p")
 	if err != nil {
 		t.Fatal(err)
 	}
 	repoRevs := &search.RepositoryRevisions{
-		Repo: &types.Repo{ID: 1, Name: "repo"},
+		Repo: &types.RepoName{ID: 1, Name: "repo"},
 		Revs: []search.RevisionSpecifier{{RevSpec: "rev"}},
 	}
 	results, limitHit, timedOut, err := searchCommitsInRepo(ctx, search.CommitParameters{
 		RepoRevs:    repoRevs,
 		PatternInfo: &search.CommitPatternInfo{Pattern: "p", FileMatchLimit: int32(defaultMaxSearchResults)},
-		Query:       query,
+		Query:       q,
 		Diff:        true,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	wantCommit := GitCommitResolver{
-		repoResolver:    &RepositoryResolver{repo: &types.Repo{ID: 1, Name: "repo"}},
-		oid:             "c1",
-		author:          *toSignatureResolver(&gitSignatureWithDate, true),
-		includeUserInfo: true,
-	}
-	wantCommit.once.Do(func() {}) // mark as done
+	wantCommit := toGitCommitResolver(
+		&RepositoryResolver{innerRepo: &types.Repo{ID: 1, Name: "repo"}},
+		"c1",
+		&git.Commit{ID: "c1", Author: gitSignatureWithDate},
+	)
 
-	if want := []*commitSearchResultResolver{
+	if want := []*CommitSearchResultResolver{
 		{
-			commit:      &wantCommit,
+			commit:      wantCommit,
 			diffPreview: &highlightedString{value: "x", highlights: []*highlightedRange{}},
 			icon:        "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgdmVyc2lvbj0iMS4xIiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTE3LDEyQzE3LDE0LjQyIDE1LjI4LDE2LjQ0IDEzLDE2LjlWMjFIMTFWMTYuOUM4LjcyLDE2LjQ0IDcsMTQuNDIgNywxMkM3LDkuNTggOC43Miw3LjU2IDExLDcuMVYzSDEzVjcuMUMxNS4yOCw3LjU2IDE3LDkuNTggMTcsMTJNMTIsOUEzLDMgMCAwLDAgOSwxMkEzLDMgMCAwLDAgMTIsMTVBMywzIDAgMCwwIDE1LDEyQTMsMyAwIDAsMCAxMiw5WiIgLz48L3N2Zz4=",
 			label:       "[repo](/repo) › [](/repo/-/commit/c1): [](/repo/-/commit/c1)",
@@ -97,24 +94,24 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	}
 }
 
-func (r *commitSearchResultResolver) String() string {
+func (r *CommitSearchResultResolver) String() string {
 	return fmt.Sprintf("{commit: %+v diffPreview: %+v messagePreview: %+v}", r.commit, r.diffPreview, r.messagePreview)
 }
 
 func TestExpandUsernamesToEmails(t *testing.T) {
 	resetMocks()
-	db.Mocks.Users.GetByUsername = func(ctx context.Context, username string) (*types.User, error) {
+	database.Mocks.Users.GetByUsername = func(ctx context.Context, username string) (*types.User, error) {
 		if want := "alice"; username != want {
 			t.Errorf("got %q, want %q", username, want)
 		}
 		return &types.User{ID: 123}, nil
 	}
-	db.Mocks.UserEmails.ListByUser = func(_ context.Context, opt db.UserEmailsListOptions) ([]*db.UserEmail, error) {
+	database.Mocks.UserEmails.ListByUser = func(_ context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
 		if want := int32(123); opt.UserID != want {
 			t.Errorf("got %v, want %v", opt.UserID, want)
 		}
 		t := time.Now()
-		return []*db.UserEmail{
+		return []*database.UserEmail{
 			{Email: "alice@example.com", VerifiedAt: &t},
 			{Email: "alice@example.org", VerifiedAt: &t},
 		}, nil
@@ -282,4 +279,15 @@ func Benchmark_highlightMatches(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_ = highlightMatches(rx, lines)
 	}
+}
+
+// searchCommitsInRepo is a blocking version of searchCommitsInRepoStream.
+func searchCommitsInRepo(ctx context.Context, op search.CommitParameters) (results []*CommitSearchResultResolver, limitHit, timedOut bool, err error) {
+	for event := range searchCommitsInRepoStream(ctx, op) {
+		results = append(results, event.Results...)
+		limitHit = event.LimitHit
+		timedOut = event.TimedOut
+		err = event.Error
+	}
+	return results, limitHit, timedOut, err
 }

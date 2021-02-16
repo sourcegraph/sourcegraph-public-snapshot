@@ -4,39 +4,29 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	codeintelapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/api"
-	bundles "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commits"
-	codeintelgitserver "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
-	codeintelhttpapi "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/httpapi"
-	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers"
-	codeintelgqlresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers/graphql"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
-	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/env"
+	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background/commitgraph"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background/indexing"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background/janitor"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
+	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
+	codeintelgqlresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/graphql"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-var bundleManagerURL = env.Get("PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL", "", "HTTP address for internal LSIF bundle manager server.")
-var rawHunkCacheSize = env.Get("PRECISE_CODE_INTEL_HUNK_CACHE_CAPACITY", "1000", "Maximum number of git diff hunk objects that can be loaded into the hunk cache at once.")
-
-func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
-	if bundleManagerURL == "" {
-		return fmt.Errorf("invalid value for PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL: no value supplied")
-	}
-
-	hunkCacheSize, err := strconv.ParseInt(rawHunkCacheSize, 10, 64)
-	if err != nil {
-		return fmt.Errorf("invalid int %q for PRECISE_CODE_INTEL_HUNK_CACHE_CAPACITY: %s", rawHunkCacheSize, err)
+func Init(ctx context.Context, db dbutil.DB, enterpriseServices *enterprise.Services) error {
+	if err := initServices(ctx, db); err != nil {
+		return err
 	}
 
 	observationContext := &observation.Context{
@@ -45,33 +35,132 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	store := store.NewObserved(store.NewWithHandle(basestore.NewHandleWithDB(dbconn.Global)), observationContext)
-	bundleManagerClient := bundles.New(bundleManagerURL)
-	commitUpdater := commits.NewUpdater(store, codeintelgitserver.DefaultClient)
-	api := codeintelapi.NewObserved(codeintelapi.New(store, bundleManagerClient, codeintelgitserver.DefaultClient, commitUpdater), observationContext)
-	hunkCache, err := codeintelresolvers.NewHunkCache(int(hunkCacheSize))
-	if err != nil {
-		return fmt.Errorf("failed to initialize hunk cache: %s", err)
-	}
-
-	enterpriseServices.CodeIntelResolver = codeintelgqlresolvers.NewResolver(codeintelresolvers.NewResolver(
-		store,
-		bundleManagerClient,
-		api,
-		hunkCache,
-	))
-
-	newCodeIntelUploadHandler := func(internal bool) http.Handler {
-		return codeintelhttpapi.NewUploadHandler(store, bundleManagerClient, internal)
-	}
-
-	enterpriseServices.NewCodeIntelUploadHandler = newCodeIntelUploadHandler
-
-	h, err := newInternalProxyHandler(newCodeIntelUploadHandler(true))
+	resolver, err := newResolver(ctx, observationContext)
 	if err != nil {
 		return err
 	}
 
-	enterpriseServices.NewCodeIntelInternalProxyHandler = h
+	uploadHandler, err := newUploadHandler(ctx, db)
+	if err != nil {
+		return err
+	}
+
+	routines := newBackgroundRoutines(observationContext)
+
+	enterpriseServices.CodeIntelResolver = resolver
+	enterpriseServices.NewCodeIntelUploadHandler = uploadHandler
+
+	// TODO(efritz) - return these to the frontend to run.
+	// Requires refactoring of the frontend server setup
+	// so I'm going to kick that can down the road for a
+	// short while.
+	//
+	// Repo updater is currently doing something similar
+	// here and would also be ripe for a refresher of the
+	// startup flow.
+	go goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
+
 	return nil
+}
+
+func newResolver(ctx context.Context, observationContext *observation.Context) (gql.CodeIntelResolver, error) {
+	hunkCache, err := codeintelresolvers.NewHunkCache(config.HunkCacheSize)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize hunk cache: %s", err)
+	}
+
+	innerResolver := codeintelresolvers.NewResolver(
+		&resolvers.DBStoreShim{services.dbStore},
+		services.lsifStore,
+		services.api,
+		services.indexEnqueuer,
+		hunkCache,
+		observationContext,
+	)
+	resolver := codeintelgqlresolvers.NewResolver(innerResolver)
+
+	return resolver, err
+}
+
+func newUploadHandler(ctx context.Context, db dbutil.DB) (func(internal bool) http.Handler, error) {
+	internalHandler, err := NewCodeIntelUploadHandler(ctx, db, true)
+	if err != nil {
+		return nil, err
+	}
+
+	externalHandler, err := NewCodeIntelUploadHandler(ctx, db, false)
+	if err != nil {
+		return nil, err
+	}
+
+	uploadHandler := func(internal bool) http.Handler {
+		if internal {
+			return internalHandler
+		}
+
+		return externalHandler
+	}
+
+	return uploadHandler, nil
+}
+
+func newBackgroundRoutines(observationContext *observation.Context) (routines []goroutine.BackgroundRoutine) {
+	routines = append(routines, newCommitGraphRoutines(observationContext)...)
+	routines = append(routines, newIndexingRoutines(observationContext)...)
+	routines = append(routines, newJanitorRoutines(observationContext)...)
+	return routines
+}
+
+func newCommitGraphRoutines(observationContext *observation.Context) []goroutine.BackgroundRoutine {
+	return []goroutine.BackgroundRoutine{
+		commitgraph.NewUpdater(
+			services.dbStore,
+			services.gitserverClient,
+			config.CommitGraphUpdateTaskInterval,
+			observationContext,
+		),
+	}
+}
+
+func newIndexingRoutines(observationContext *observation.Context) []goroutine.BackgroundRoutine {
+	return []goroutine.BackgroundRoutine{
+		indexing.NewIndexScheduler(
+			services.dbStore,
+			services.indexEnqueuer,
+			config.IndexBatchSize,
+			config.MinimumTimeSinceLastEnqueue,
+			config.MinimumSearchCount,
+			float64(config.MinimumSearchRatio)/100,
+			config.MinimumPreciseCount,
+			config.AutoIndexingTaskInterval,
+			observationContext,
+		),
+		indexing.NewIndexabilityUpdater(
+			services.dbStore,
+			services.gitserverClient,
+			config.MinimumSearchCount,
+			float64(config.MinimumSearchRatio)/100,
+			config.MinimumPreciseCount,
+			config.AutoIndexingSkipManualInterval,
+			config.AutoIndexingTaskInterval,
+			observationContext,
+		),
+	}
+}
+
+func newJanitorRoutines(observationContext *observation.Context) []goroutine.BackgroundRoutine {
+	dbStore := &janitor.DBStoreShim{services.dbStore}
+	uploadWorkerStore := dbstore.WorkerutilUploadStore(services.dbStore, observationContext)
+	indexWorkerStore := dbstore.WorkerutilIndexStore(services.dbStore, observationContext)
+	lsifStore := services.lsifStore
+	metrics := janitor.NewMetrics(observationContext)
+
+	return []goroutine.BackgroundRoutine{
+		janitor.NewAbandonedUploadJanitor(dbStore, config.UploadTimeout, config.CleanupTaskInterval, metrics),
+		janitor.NewDeletedRepositoryJanitor(dbStore, config.CleanupTaskInterval, metrics),
+		janitor.NewHardDeleter(dbStore, lsifStore, config.CleanupTaskInterval, metrics),
+		janitor.NewRecordExpirer(dbStore, config.DataTTL, config.CleanupTaskInterval, metrics),
+		janitor.NewUploadResetter(uploadWorkerStore, config.CleanupTaskInterval, metrics, observationContext),
+		janitor.NewIndexResetter(indexWorkerStore, config.CleanupTaskInterval, metrics, observationContext),
+	}
 }

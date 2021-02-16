@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/prometheus/alertmanager/api/v2/models"
 )
 
@@ -12,12 +15,17 @@ func boolP(v bool) *bool {
 	return &v
 }
 
+const (
+	matcherRegexPrefix = "^("
+	matcherRegexSuffix = ")$"
+)
+
 // newMatchersFromSilence creates Alertmanager alert matchers from a configured silence
 func newMatchersFromSilence(silence string) models.Matchers {
 	return models.Matchers{{
 		Name:    stringP("alertname"),
-		Value:   stringP(silence),
-		IsRegex: boolP(false),
+		Value:   stringP(fmt.Sprintf("%s%s%s", matcherRegexPrefix, silence, matcherRegexSuffix)),
+		IsRegex: boolP(true),
 	}}
 }
 
@@ -25,7 +33,7 @@ func newMatchersFromSilence(silence string) models.Matchers {
 func newSilenceFromMatchers(matchers models.Matchers) string {
 	for _, m := range matchers {
 		if *m.Name == "alertname" {
-			return *m.Value
+			return strings.TrimSuffix(strings.TrimPrefix(*m.Value, matcherRegexPrefix), matcherRegexSuffix)
 		}
 	}
 	return ""

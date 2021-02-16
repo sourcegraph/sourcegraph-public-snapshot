@@ -4,14 +4,12 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
 type changesetEventResolver struct {
-	store             *ee.Store
-	httpFactory       *httpcli.Factory
+	store             *store.Store
 	changesetResolver *changesetResolver
 	*campaigns.ChangesetEvent
 }

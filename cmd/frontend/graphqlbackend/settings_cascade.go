@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 // settingsCascade implements the GraphQL type SettingsCascade (and the deprecated type ConfigurationCascade).
@@ -45,7 +47,7 @@ func (r *settingsCascade) Subjects(ctx context.Context) ([]*settingsSubject, err
 		subjects = append(subjects, r.subject)
 
 	case r.subject.user != nil:
-		orgs, err := db.Orgs.GetByUserID(ctx, r.subject.user.user.ID)
+		orgs, err := database.GlobalOrgs.GetByUserID(ctx, r.subject.user.user.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -77,26 +79,46 @@ func viewerFinalSettings(ctx context.Context) (*configurationResolver, error) {
 }
 
 func (r *settingsCascade) Final(ctx context.Context) (string, error) {
-	var allSettings []string
 	subjects, err := r.Subjects(ctx)
 	if err != nil {
 		return "", err
 	}
-	for _, s := range subjects {
-		settings, err := s.LatestSettings(ctx)
-		if err != nil {
-			return "", err
-		}
-		if settings != nil {
-			allSettings = append(allSettings, settings.settings.Contents)
-		}
+
+	// Each LatestSettings is a roundtrip to the database. So we do the
+	// requests concurrently. If the subject has no settings, then
+	// allSettings[i] will be the empty string. mergeSettings ignores empty
+	// strings.
+	allSettings := make([]string, len(subjects))
+	bounded := goroutine.NewBounded(8)
+	for i := range subjects {
+		i := i
+		bounded.Go(func() error {
+			settings, err := subjects[i].LatestSettings(ctx)
+			if err != nil {
+				return err
+			}
+			if settings != nil {
+				allSettings[i] = settings.settings.Contents
+			}
+			return nil
+		})
 	}
+
+	if err := bounded.Wait(); err != nil {
+		return "", err
+	}
+
 	final, err := mergeSettings(allSettings)
 	return string(final), err
 }
 
 // Deprecated: in the GraphQL API
-func (r *settingsCascade) Merged(ctx context.Context) (*configurationResolver, error) {
+func (r *settingsCascade) Merged(ctx context.Context) (_ *configurationResolver, err error) {
+	tr, ctx := trace.New(ctx, "Merged", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 	var messages []string
 	s, err := r.Final(ctx)
 	if err != nil {

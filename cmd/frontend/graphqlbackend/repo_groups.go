@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 
+	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
@@ -21,16 +22,29 @@ func (r *schemaResolver) RepoGroups(ctx context.Context) ([]*repoGroup, error) {
 		return nil, err
 	}
 
-	groupsByName, err := resolveRepoGroups(settings)
+	groupsByName, err := searchrepos.ResolveRepoGroups(ctx, settings)
 	if err != nil {
 		return nil, err
 	}
 
 	groups := make([]*repoGroup, 0, len(groupsByName))
-	for name, repos := range groupsByName {
-		repoPaths := make([]api.RepoName, len(repos))
-		for i, repo := range repos {
-			repoPaths[i] = repo.Name
+	for name, values := range groupsByName {
+		var repoPaths []api.RepoName
+		for _, value := range values {
+			switch v := value.(type) {
+			case searchrepos.RepoPath:
+				repoPaths = append(repoPaths, api.RepoName(v.String()))
+			case searchrepos.RepoRegexpPattern:
+				// TODO(@sourcegraph/search): decide how to handle
+				// regexp patterns associated with repogroups.
+				// Currently they are skipped. They either need to
+				// resolve to a set of api.RepoNames or return the
+				// pattern as a string.
+				continue
+			default:
+				panic("unreachable")
+
+			}
 		}
 		groups = append(groups, &repoGroup{
 			name:         name,

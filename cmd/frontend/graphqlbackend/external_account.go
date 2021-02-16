@@ -5,8 +5,9 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -19,7 +20,7 @@ func externalAccountByID(ctx context.Context, id graphql.ID) (*externalAccountRe
 	if err != nil {
 		return nil, err
 	}
-	account, err := db.ExternalAccounts.Get(ctx, externalAccountID)
+	account, err := database.GlobalExternalAccounts.Get(ctx, externalAccountID)
 	if err != nil {
 		return nil, err
 	}

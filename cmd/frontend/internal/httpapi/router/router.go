@@ -10,6 +10,8 @@ const (
 	LSIFUpload = "lsif.upload"
 	GraphQL    = "graphql"
 
+	SearchStream = "search.stream"
+
 	SrcCliVersion  = "src-cli.version"
 	SrcCliDownload = "src-cli.download"
 
@@ -69,6 +71,7 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/gitlab-webhooks").Methods("POST").Name(GitLabWebhooks)
 	base.Path("/bitbucket-server-webhooks").Methods("POST").Name(BitbucketServerWebhooks)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
+	base.Path("/search/stream").Methods("GET").Name(SearchStream)
 	base.Path("/src-cli/version").Methods("GET").Name(SrcCliVersion)
 	base.Path("/src-cli/{rest:.*}").Methods("GET").Name(SrcCliDownload)
 
@@ -120,7 +123,7 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/repos/list-enabled").Methods("POST").Name(ReposListEnabled)
 	base.Path("/repos/{RepoName:.*}").Methods("POST").Name(ReposGetByName)
 	base.Path("/configuration").Methods("POST").Name(Configuration)
-	base.Path("/search/configuration").Methods("GET").Name(SearchConfiguration)
+	base.Path("/search/configuration").Methods("GET", "POST").Name(SearchConfiguration)
 	base.Path("/telemetry").Methods("POST").Name(Telemetry)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
 	addRegistryRoute(base)

@@ -59,7 +59,7 @@ func (f *FinalizerOnShutdownFunc) SetDefaultHook(hook func()) {
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// OnShutdown method of the parent MockFinalizer instance inovkes the hook
+// OnShutdown method of the parent MockFinalizer instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
 func (f *FinalizerOnShutdownFunc) PushHook(hook func()) {

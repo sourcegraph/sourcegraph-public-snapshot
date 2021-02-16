@@ -25,6 +25,16 @@ func newStoreShim(store store.Store) workerutil.Store {
 	return &storeShim{Store: store}
 }
 
+// QueuedCount calls into the inner store.
+func (s *storeShim) QueuedCount(ctx context.Context, extraArguments interface{}) (int, error) {
+	conditions, err := convertArguments(extraArguments)
+	if err != nil {
+		return 0, err
+	}
+
+	return s.Store.QueuedCount(ctx, conditions)
+}
+
 // Dequeue calls into the inner store.
 func (s *storeShim) Dequeue(ctx context.Context, extraArguments interface{}) (workerutil.Record, workerutil.Store, bool, error) {
 	conditions, err := convertArguments(extraArguments)

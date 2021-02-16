@@ -4,7 +4,7 @@
     "**/bower_components": true,
     "dist": true,
     "ui/assets": true,
-    "browser/build": true,
+    "client/browser/build": true,
     "**/coverage": true,
     "**/out": true,
     "**/__fixtures__/**": true,
@@ -29,7 +29,10 @@
     },
   ],
   "editor.formatOnSave": true,
-  "go.docsTool": "gogetdoc",
+  "go.useLanguageServer": true,
+  "gopls": {
+    "local": "github.com/sourcegraph/sourcegraph",
+  },
   "jest.pathToJest": "yarn -s test",
   "jest.showCoverageOnLoad": false,
   "jest.autoEnable": false, // until we confirm people like it

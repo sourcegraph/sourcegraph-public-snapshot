@@ -6,9 +6,11 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -20,8 +22,8 @@ func (r TestWorkRecord) RecordID() int {
 	return r.ID
 }
 
-func testStore(options StoreOptions) *store {
-	return newStore(basestore.NewHandleWithDB(dbconn.Global), options)
+func testStore(options Options) *store {
+	return newStore(basestore.NewHandleWithDB(dbconn.Global, sql.TxOptions{}), options, &observation.TestContext)
 }
 
 type TestRecord struct {
@@ -122,7 +124,9 @@ func setupStoreTest(t *testing.T) {
 			finished_at     timestamp with time zone,
 			process_after   timestamp with time zone,
 			num_resets      integer NOT NULL default 0,
-			uploaded_at     timestamp with time zone NOT NULL default NOW()
+			num_failures    integer NOT NULL default 0,
+			uploaded_at     timestamp with time zone NOT NULL default NOW(),
+			execution_logs  json[]
 		)
 	`); err != nil {
 		t.Fatalf("unexpected error creating test table: %s", err)
@@ -137,7 +141,8 @@ func setupStoreTest(t *testing.T) {
 	}
 }
 
-var defaultTestStoreOptions = StoreOptions{
+var defaultTestStoreOptions = Options{
+	Name:              "test",
 	TableName:         "workerutil_test w",
 	Scan:              testScanFirstRecord,
 	OrderByExpression: sqlf.Sprintf("w.uploaded_at"),
@@ -147,6 +152,7 @@ var defaultTestStoreOptions = StoreOptions{
 	},
 	StalledMaxAge: time.Second * 5,
 	MaxNumResets:  5,
+	MaxNumRetries: 3,
 }
 
 func assertDequeueRecordResult(t *testing.T, expectedID int, record interface{}, tx Store, ok bool, err error) {
@@ -186,7 +192,7 @@ func assertDequeueRecordViewResult(t *testing.T, expectedID, expectedNewField in
 	}
 }
 
-func assertDequeueRecordRetryResult(t *testing.T, expectedID, expectedNumResets int, record interface{}, tx Store, ok bool, err error) {
+func assertDequeueRecordRetryResult(t *testing.T, expectedID, record interface{}, tx Store, ok bool, err error) {
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -200,9 +206,6 @@ func assertDequeueRecordRetryResult(t *testing.T, expectedID, expectedNumResets 
 	}
 	if val := record.(TestRecordRetry).State; val != "processing" {
 		t.Errorf("unexpected state. want=%s have=%s", "processing", val)
-	}
-	if val := record.(TestRecordRetry).NumResets; val != expectedNumResets {
-		t.Errorf("unexpected num resets. want=%d have=%d", expectedNumResets, val)
 	}
 }
 

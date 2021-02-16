@@ -21,12 +21,15 @@ import (
 	"github.com/beevik/etree"
 	"github.com/crewjam/saml"
 	"github.com/crewjam/saml/samlidp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -204,6 +207,11 @@ func TestMiddleware(t *testing.T) {
 		return 0, "safeErr", fmt.Errorf("account %v not found in mock", op.ExternalAccount)
 	}
 	defer func() { auth.MockGetAndSaveUser = nil }()
+
+	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+		return &types.User{ID: id, CreatedAt: time.Now()}, nil
+	}
+	defer func() { database.Mocks = database.MockStores{} }()
 
 	// Set up the test handler.
 	authedHandler := http.NewServeMux()

@@ -21,7 +21,9 @@ const MaxDisplayWidth = 80
 // by runParallel.
 type ParallelFn struct {
 	Fn          func(ctx context.Context) error
-	Description string
+	Description func() string
+	Total       func() int
+	Finished    func() int
 }
 
 // braille is an animated spinner based off of the characters used by yarn.
@@ -134,14 +136,21 @@ func formatUpdate(fns []ParallelFn, pendingMap *pendingMap, concurrency int) *pe
 
 	for _, i := range keys[:numLines(concurrency, len(keys))] {
 		if pendingMap.get(i) {
-			content.AddLine(fmt.Sprintf("%s %s", braille, fns[i].Description))
+			content.AddLine(fmt.Sprintf("%s %s", braille, fns[i].Description()))
 		} else {
-			content.AddLine(fmt.Sprintf("%s %s", " ", fns[i].Description))
+			content.AddLine(fmt.Sprintf("%s %s", " ", fns[i].Description()))
 		}
 	}
 
+	total := 0
+	finished := 0
+	for _, fn := range fns {
+		total += fn.Total()
+		finished += fn.Finished()
+	}
+
 	content.AddLine("")
-	content.AddLine(formatProgressBar(len(fns), len(fns)-len(keys)))
+	content.AddLine(formatProgressBar(total, finished))
 	return content
 }
 

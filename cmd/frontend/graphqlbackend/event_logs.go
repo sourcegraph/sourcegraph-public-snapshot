@@ -5,7 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 func (r *UserResolver) EventLogs(ctx context.Context, args *struct {
@@ -16,7 +16,7 @@ func (r *UserResolver) EventLogs(ctx context.Context, args *struct {
 	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
 		return nil, err
 	}
-	var opt db.EventLogsListOptions
+	var opt database.EventLogsListOptions
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	opt.UserID = r.user.ID
 	opt.EventName = args.EventName
@@ -24,11 +24,11 @@ func (r *UserResolver) EventLogs(ctx context.Context, args *struct {
 }
 
 type userEventLogsConnectionResolver struct {
-	opt db.EventLogsListOptions
+	opt database.EventLogsListOptions
 }
 
 func (r *userEventLogsConnectionResolver) Nodes(ctx context.Context) ([]*userEventLogResolver, error) {
-	events, err := db.EventLogs.ListAll(ctx, r.opt)
+	events, err := database.GlobalEventLogs.ListAll(ctx, r.opt)
 	if err != nil {
 		return nil, err
 	}
@@ -42,12 +42,28 @@ func (r *userEventLogsConnectionResolver) Nodes(ctx context.Context) ([]*userEve
 }
 
 func (r *userEventLogsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	count, err := db.EventLogs.CountByUserID(ctx, r.opt.UserID)
+	var count int
+	var err error
+
+	if r.opt.EventName != nil {
+		count, err = database.GlobalEventLogs.CountByUserIDAndEventName(ctx, r.opt.UserID, *r.opt.EventName)
+	} else {
+		count, err = database.GlobalEventLogs.CountByUserID(ctx, r.opt.UserID)
+	}
+
 	return int32(count), err
 }
 
 func (r *userEventLogsConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	count, err := db.EventLogs.CountByUserID(ctx, r.opt.UserID)
+	var count int
+	var err error
+
+	if r.opt.EventName != nil {
+		count, err = database.GlobalEventLogs.CountByUserIDAndEventName(ctx, r.opt.UserID, *r.opt.EventName)
+	} else {
+		count, err = database.GlobalEventLogs.CountByUserID(ctx, r.opt.UserID)
+	}
+
 	if err != nil {
 		return nil, err
 	}

@@ -68,15 +68,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addDocs,
 		}
 
-	case c.isPR() && c.isGoOnly():
-		// If this is a go-only PR, run only the steps necessary to verify the go code.
-		pipelineOperations = []func(*bk.Pipeline){
-			addGoTests,            // ~1.5m
-			addCheck,              // ~1m
-			addGoBuild,            // ~0.5m
-			addPostgresBackcompat, // ~0.25m
-		}
-
 	case c.patchNoTest:
 		// If this is a no-test branch, then run only the Docker build. No tests are run.
 		app := c.branch[27:]
@@ -84,6 +75,15 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addCandidateDockerImage(c, app),
 			wait,
 			addFinalDockerImage(c, app, false),
+		}
+
+	case c.isPR() && c.isGoOnly():
+		// If this is a go-only PR, run only the steps necessary to verify the go code.
+		pipelineOperations = []func(*bk.Pipeline){
+			addGoTests,            // ~1.5m
+			addCheck,              // ~1m
+			addGoBuild,            // ~0.5m
+			addPostgresBackcompat, // ~0.25m
 		}
 
 	case c.isBextReleaseBranch:
@@ -116,6 +116,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addBrowserExt,
 			addWebApp,
 			addSharedTests(c),
+			addBrandedTests,
 			addGoTests,
 			addGoBuild,
 			addDockerfileLint,
@@ -129,20 +130,23 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		//
 		// PERF: Try to order steps such that slower steps are first.
 		pipelineOperations = []func(*bk.Pipeline){
-			triggerE2E(c, env),
+			triggerAsync(c),               // triggers a slow pipeline, so do it first.
 			addBackendIntegrationTests(c), // ~11m
+			addDockerImages(c, false),     // ~8m (candidate images)
 			addLint,                       // ~4.5m
 			addSharedTests(c),             // ~4.5m
 			addWebApp,                     // ~3m
 			addBrowserExt,                 // ~2m
+			addBrandedTests,               // ~1.5m
 			addGoTests,                    // ~1.5m
 			addCheck,                      // ~1m
 			addGoBuild,                    // ~0.5m
 			addPostgresBackcompat,         // ~0.25m
 			addDockerfileLint,             // ~0.2m
-			addDockerImages(c, false),
-			wait,
-			addDockerImages(c, true),
+			wait,                          // wait for all steps to pass
+
+			triggerE2EandQA(c, env),  // trigger e2e late so that it can leverage candidate images
+			addDockerImages(c, true), // publish final images
 		}
 	}
 

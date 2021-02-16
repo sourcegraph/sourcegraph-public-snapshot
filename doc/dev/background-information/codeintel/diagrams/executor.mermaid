@@ -1,0 +1,41 @@
+sequenceDiagram
+  Executor        ->>+ Executor Proxy: Dequeue()
+  Executor Proxy  ->>+ Executor Queue: Dequeue()
+  Executor Queue  ->>+ Database: BeginTx()
+  Executor Queue -->>- Executor Proxy: job
+  Executor Proxy -->>- Executor: job
+
+  loop
+    Executor        ->>+ Executor Proxy: Heartbeat(self.id, [job.id])
+    Executor Proxy  ->>+ Executor Queue: Heartbeat(self.id, [job.id])
+    Executor Queue -->>- Executor Proxy: Ok
+    Executor Proxy -->>- Executor: Ok
+  end
+
+  Executor        ->>+ Executor Proxy: GitClone(job.repo, job.commit)
+  Executor Proxy  ->>+ Gitserver: GitClone(job.repo, job.commit)
+  Gitserver      -->>- Executor Proxy: ...
+  Executor Proxy -->>- Executor: ...
+
+  Executor        ->>+ Firecracker: setupFirecracker()
+  Firecracker    -->>- Executor: vm
+
+  loop dockerStep in job.dockerSteps
+    Executor      ->>+ Firecracker: exec(vm.id, dockerStep.image, dockerStep.command)
+    Firecracker  -->>- Executor: exit code, output
+  end
+
+  Executor        ->>+ Firecracker: teardownFirecracker(vm.id)
+  Firecracker    -->>- Executor: Ok
+
+  Executor        ->>+ Executor Proxy: SetLogContents(job.id, combined exec output)
+  Executor Proxy  ->>+ Executor Queue: SetLogContents(job.id, combined exec output)
+  Executor Queue -->>- Executor Proxy: Ok
+  Executor Proxy -->>- Executor: Ok
+
+  Executor        ->>+ Executor Proxy: MarkComplete(job.id)
+  Executor Proxy  ->>+ Executor Queue: MarkComplete(job.id)
+  Executor Queue  ->> Database: Commit()
+  Database       -->>- Executor Queue: Ok
+  Executor Queue -->>- Executor Proxy: Ok
+  Executor Proxy -->>- Executor: Ok

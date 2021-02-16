@@ -13,9 +13,9 @@ import (
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -127,30 +127,18 @@ func (c *Client) RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 	return result, err
 }
 
-// Repo represents a repository on gitserver. It contains the information necessary to identify and
-// create/clone it.
-type Repo struct {
-	Name api.RepoName // the repository's URI
-
-	// URL is the repository's Git remote URL. If the gitserver already has cloned the repository,
-	// this field is optional (it will use the last-used Git remote URL). If the repository is not
-	// cloned on the gitserver, the request will fail.
-	URL string
-}
-
 // MockEnqueueRepoUpdate mocks (*Client).EnqueueRepoUpdate for tests.
-var MockEnqueueRepoUpdate func(ctx context.Context, repo gitserver.Repo) (*protocol.RepoUpdateResponse, error)
+var MockEnqueueRepoUpdate func(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error)
 
 // EnqueueRepoUpdate requests that the named repository be updated in the near
 // future. It does not wait for the update.
-func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo gitserver.Repo) (*protocol.RepoUpdateResponse, error) {
+func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error) {
 	if MockEnqueueRepoUpdate != nil {
 		return MockEnqueueRepoUpdate(ctx, repo)
 	}
 
 	req := &protocol.RepoUpdateRequest{
-		Repo: repo.Name,
-		URL:  repo.URL,
+		Repo: repo,
 	}
 
 	resp, err := c.httpPost(ctx, "enqueue-repo-update", req)
@@ -319,35 +307,6 @@ func (c *Client) ExcludeRepo(ctx context.Context, id api.RepoID) (*protocol.Excl
 	return &res, nil
 }
 
-// MockStatusMessages mocks (*Client).StatusMessages for tests.
-var MockStatusMessages func(context.Context) (*protocol.StatusMessagesResponse, error)
-
-// StatusMessages returns an array of status messages
-func (c *Client) StatusMessages(ctx context.Context) (*protocol.StatusMessagesResponse, error) {
-	if MockStatusMessages != nil {
-		return MockStatusMessages(ctx)
-	}
-
-	resp, err := c.httpGet(ctx, "status-messages")
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	bs, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to read response body")
-	}
-
-	var res protocol.StatusMessagesResponse
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		return nil, errors.New(string(bs))
-	} else if err = json.Unmarshal(bs, &res); err != nil {
-		return nil, err
-	}
-	return &res, nil
-}
-
 func (c *Client) httpPost(ctx context.Context, method string, payload interface{}) (resp *http.Response, err error) {
 	reqBody, err := json.Marshal(payload)
 	if err != nil {
@@ -355,15 +314,6 @@ func (c *Client) httpPost(ctx context.Context, method string, payload interface{
 	}
 
 	req, err := http.NewRequest("POST", c.URL+"/"+method, bytes.NewReader(reqBody))
-	if err != nil {
-		return nil, err
-	}
-
-	return c.do(ctx, req)
-}
-
-func (c *Client) httpGet(ctx context.Context, method string) (*http.Response, error) {
-	req, err := http.NewRequest("GET", c.URL+"/"+method, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -5,9 +5,12 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 	"path"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 
 	"github.com/dghubble/gologin"
 	goauth2 "github.com/dghubble/gologin/oauth2"
@@ -36,7 +39,7 @@ func getProvider(serviceType, id string) *Provider {
 
 func (p *Provider) ConfigID() providers.ConfigID {
 	return providers.ConfigID{
-		ID:   p.ServiceID,
+		ID:   p.ServiceID + "::" + p.OAuth2Config.ClientID,
 		Type: p.ServiceType,
 	}
 }
@@ -80,10 +83,11 @@ type ProviderOp struct {
 }
 
 func NewProvider(op ProviderOp) *Provider {
+	providerID := op.ServiceID + "::" + op.OAuth2Config.ClientID
 	return &Provider{
 		ProviderOp: op,
-		Login:      stateHandler(true, op.ServiceID, op.StateConfig, op.Login),
-		Callback:   stateHandler(false, op.ServiceID, op.StateConfig, op.Callback),
+		Login:      stateHandler(true, providerID, op.StateConfig, op.Login),
+		Callback:   stateHandler(false, providerID, op.StateConfig, op.Callback),
 	}
 }
 
@@ -104,9 +108,15 @@ func stateHandler(isLogin bool, providerID string, config gologin.CookieConfig, 
 			return
 		}
 		if isLogin {
+			redirect, err := getRedirect(req)
+			if err != nil {
+				log15.Error("Failed to parse URL from Referrer header", "error", err)
+				http.Error(w, "Failed to parse URL from Referrer header.", http.StatusInternalServerError)
+				return
+			}
 			// add Cookie with a random state + redirect
 			stateVal, err := LoginState{
-				Redirect:   req.URL.Query().Get("redirect"),
+				Redirect:   redirect,
 				CSRF:       csrf,
 				ProviderID: providerID,
 			}.Encode()
@@ -166,4 +176,48 @@ func randomState() (string, error) {
 		return "", err
 	}
 	return base64.RawURLEncoding.EncodeToString(b), nil
+}
+
+// if we have a redirect param use that, otherwise we'll try and pull
+// the 'returnTo' param from the referrer URL, this is usually the login
+// page where the user has been dumped to after following a link.
+func getRedirect(req *http.Request) (string, error) {
+	redirect := req.URL.Query().Get("redirect")
+	if redirect != "" {
+		return redirect, nil
+	}
+	referer := req.Referer()
+	if referer == "" {
+		return "", nil
+	}
+	referrerURL, err := url.Parse(referer)
+	if err != nil {
+		return "", err
+	}
+	returnTo := referrerURL.Query().Get("returnTo")
+	// to prevent open redirect vulnerabilities used for phishing
+	// we limit the redirect URL to only permit certain urls
+	if !canRedirect(returnTo) {
+		return "", fmt.Errorf("invalid URL in returnTo parameter: %s", returnTo)
+	}
+	return returnTo, nil
+}
+
+// canRedirect is used to limit the set of URLs we will redirect to
+// after login to prevent open redirect exploits for things like phishing
+func canRedirect(redirect string) bool {
+	unescaped, err := url.QueryUnescape(redirect)
+	if err != nil {
+		return false
+	}
+	redirectURL, err := url.Parse(unescaped)
+	if err != nil {
+		return false
+	}
+	// if we have a non-relative url, make sure it's the same host as the sourcegraph instance
+	if redirectURL.Host != "" && redirectURL.Host != globals.ExternalURL().Host {
+		return false
+	}
+	// TODO: do we want to exclude any internal paths here?
+	return true
 }

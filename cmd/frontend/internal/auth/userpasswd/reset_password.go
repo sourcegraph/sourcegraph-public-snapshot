@@ -5,12 +5,14 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
@@ -43,7 +45,7 @@ func HandleResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	usr, err := db.Users.GetByVerifiedEmail(ctx, formData.Email)
+	usr, err := database.GlobalUsers.GetByVerifiedEmail(ctx, formData.Email)
 	if err != nil {
 		// 🚨 SECURITY: We don't show an error message when the user is not found
 		// as to not leak the existence of a given e-mail address in the database.
@@ -54,7 +56,7 @@ func HandleResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resetURL, err := backend.MakePasswordResetURL(ctx, usr.ID)
-	if err == db.ErrPasswordResetRateLimit {
+	if err == database.ErrPasswordResetRateLimit {
 		httpLogAndError(w, "Too many password reset requests. Try again in a few minutes.", http.StatusTooManyRequests, "err", err)
 		return
 	} else if err != nil {
@@ -68,9 +70,11 @@ func HandleResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 		Data: struct {
 			Username string
 			URL      string
+			Host     string
 		}{
 			Username: usr.Username,
 			URL:      globals.ExternalURL().ResolveReference(resetURL).String(),
+			Host:     globals.ExternalURL().Host,
 		},
 	}); err != nil {
 		httpLogAndError(w, "Could not send reset password email", http.StatusInternalServerError, "err", err)
@@ -78,38 +82,39 @@ func HandleResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-var setPasswordEmailTemplates = txemail.MustValidate(txtypes.Templates{
-	Subject: `Set your Sourcegraph password`,
+var resetPasswordEmailTemplates = txemail.MustValidate(txtypes.Templates{
+	Subject: `Reset your Sourcegraph password ({{.Host}})`,
 	Text: `
-Your administrator created an account for you on Sourcegraph.
+Somebody (likely you) requested a password reset for the user {{.Username}} on Sourcegraph ({{.Host}}).
 
-To set the password for {{.Username}} on Sourcegraph, follow this link:
+To reset the password for {{.Username}} on Sourcegraph, follow this link:
 
   {{.URL}}
 `,
 	HTML: `
 <p>
-  Your administrator created an account for you on Sourcegraph.
+  Somebody (likely you) requested a password reset for <strong>{{.Username}}</strong>
+  on Sourcegraph ({{.Host}}).
 </p>
 
-<p><strong><a href="{{.URL}}">Set password for {{.Username}}</a></strong></p>
+<p><strong><a href="{{.URL}}">Reset password for {{.Username}}</a></strong></p>
 `,
 })
 
 // HandleSetPasswordEmail sends the password reset email directly to the user for users created by site admins.
 func HandleSetPasswordEmail(ctx context.Context, id int32) (string, error) {
-	e, _, err := db.UserEmails.GetPrimaryEmail(ctx, id)
+	e, _, err := database.GlobalUserEmails.GetPrimaryEmail(ctx, id)
 	if err != nil {
 		return "", errors.Wrap(err, "get user primary email")
 	}
 
-	usr, err := db.Users.GetByID(ctx, id)
+	usr, err := database.GlobalUsers.GetByID(ctx, id)
 	if err != nil {
 		return "", errors.Wrap(err, "get user by ID")
 	}
 
 	ru, err := backend.MakePasswordResetURL(ctx, id)
-	if err == db.ErrPasswordResetRateLimit {
+	if err == database.ErrPasswordResetRateLimit {
 		return "", err
 	} else if err != nil {
 		return "", errors.Wrap(err, "make password reset URL")
@@ -122,9 +127,11 @@ func HandleSetPasswordEmail(ctx context.Context, id int32) (string, error) {
 		Data: struct {
 			Username string
 			URL      string
+			Host     string
 		}{
 			Username: usr.Username,
 			URL:      rus,
+			Host:     globals.ExternalURL().Host,
 		},
 	}); err != nil {
 		return "", err
@@ -132,22 +139,21 @@ func HandleSetPasswordEmail(ctx context.Context, id int32) (string, error) {
 	return rus, nil
 }
 
-var resetPasswordEmailTemplates = txemail.MustValidate(txtypes.Templates{
-	Subject: `Reset your Sourcegraph password`,
+var setPasswordEmailTemplates = txemail.MustValidate(txtypes.Templates{
+	Subject: `Set your Sourcegraph password ({{.Host}})`,
 	Text: `
-Somebody (likely you) requested a password reset for the user {{.Username}} on Sourcegraph.
+Your administrator created an account for you on Sourcegraph ({{.Host}}).
 
-To reset the password for {{.Username}} on Sourcegraph, follow this link:
+To set the password for {{.Username}} on Sourcegraph, follow this link:
 
   {{.URL}}
 `,
 	HTML: `
 <p>
-  Somebody (likely you) requested a password reset for <strong>{{.Username}}</strong>
-  on Sourcegraph.
+  Your administrator created an account for you on Sourcegraph ({{.Host}}).
 </p>
 
-<p><strong><a href="{{.URL}}">Reset password for {{.Username}}</a></strong></p>
+<p><strong><a href="{{.URL}}">Set password for {{.Username}}</a></strong></p>
 `,
 })
 
@@ -171,12 +177,12 @@ func HandleResetPasswordCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := db.CheckPasswordLength(params.Password); err != nil {
+	if err := database.CheckPasswordLength(params.Password); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	success, err := db.Users.SetPassword(ctx, params.UserID, params.Code, params.Password)
+	success, err := database.GlobalUsers.SetPassword(ctx, params.UserID, params.Code, params.Password)
 	if err != nil {
 		httpLogAndError(w, "Unexpected error", http.StatusInternalServerError, "err", err)
 		return
@@ -185,6 +191,12 @@ func HandleResetPasswordCode(w http.ResponseWriter, r *http.Request) {
 	if !success {
 		http.Error(w, "Password reset code was invalid or expired.", http.StatusUnauthorized)
 		return
+	}
+
+	if conf.CanSendEmail() {
+		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, params.UserID, "reset the password"); err != nil {
+			log15.Warn("Failed to send email to inform user of password reset", "error", err)
+		}
 	}
 }
 

@@ -145,7 +145,7 @@ func (f branchFilter) add(list []string) {
 }
 
 // ListBranches returns a list of all branches in the repository.
-func ListBranches(ctx context.Context, repo gitserver.Repo, opt BranchesOptions) ([]*Branch, error) {
+func ListBranches(ctx context.Context, repo api.RepoName, opt BranchesOptions) ([]*Branch, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: Branches")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
@@ -180,7 +180,7 @@ func ListBranches(ctx context.Context, repo gitserver.Repo, opt BranchesOptions)
 
 		branch := &Branch{Name: name, Head: ref.CommitID}
 		if opt.IncludeCommit {
-			branch.Commit, err = getCommit(ctx, repo, nil, ref.CommitID, ResolveRevisionOptions{})
+			branch.Commit, err = getCommit(ctx, repo, ref.CommitID, ResolveRevisionOptions{})
 			if err != nil {
 				return nil, err
 			}
@@ -198,7 +198,7 @@ func ListBranches(ctx context.Context, repo gitserver.Repo, opt BranchesOptions)
 
 // branches runs the `git branch` command followed by the given arguments and
 // returns the list of branches if successful.
-func branches(ctx context.Context, repo gitserver.Repo, args ...string) ([]string, error) {
+func branches(ctx context.Context, repo api.RepoName, args ...string) ([]string, error) {
 	cmd := gitserver.DefaultClient.Command("git", append([]string{"branch"}, args...)...)
 	cmd.Repo = repo
 	out, err := cmd.Output(ctx)
@@ -216,7 +216,7 @@ func branches(ctx context.Context, repo gitserver.Repo, args ...string) ([]strin
 
 // GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
 // revspecs).
-func GetBehindAhead(ctx context.Context, repo gitserver.Repo, left, right string) (*BehindAhead, error) {
+func GetBehindAhead(ctx context.Context, repo api.RepoName, left, right string) (*BehindAhead, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: BehindAhead")
 	defer span.Finish()
 
@@ -246,7 +246,7 @@ func GetBehindAhead(ctx context.Context, repo gitserver.Repo, left, right string
 }
 
 // ListTags returns a list of all tags in the repository.
-func ListTags(ctx context.Context, repo gitserver.Repo) ([]*Tag, error) {
+func ListTags(ctx context.Context, repo api.RepoName) ([]*Tag, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: Tags")
 	defer span.Finish()
 
@@ -263,26 +263,33 @@ func ListTags(ctx context.Context, repo gitserver.Repo) ([]*Tag, error) {
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, out))
 	}
 
-	out = bytes.TrimSuffix(out, []byte("\n")) // remove trailing newline
-	if len(out) == 0 {
+	return parseTags(out)
+}
+
+func parseTags(in []byte) ([]*Tag, error) {
+	in = bytes.TrimSuffix(in, []byte("\n")) // remove trailing newline
+	if len(in) == 0 {
 		return nil, nil // no tags
 	}
-	lines := bytes.Split(out, []byte("\n"))
+	lines := bytes.Split(in, []byte("\n"))
 	tags := make([]*Tag, len(lines))
 	for i, line := range lines {
 		parts := bytes.SplitN(line, []byte("\x00"), 3)
 		if len(parts) != 3 {
 			return nil, fmt.Errorf("invalid git tag list output line: %q", line)
 		}
+
+		tag := &Tag{
+			Name:     string(parts[1]),
+			CommitID: api.CommitID(parts[0]),
+		}
+
 		date, err := strconv.ParseInt(string(parts[2]), 10, 64)
-		if err != nil {
-			return nil, err
+		if err == nil {
+			tag.CreatorDate = time.Unix(date, 0).UTC()
 		}
-		tags[i] = &Tag{
-			Name:        string(parts[1]),
-			CommitID:    api.CommitID(parts[0]),
-			CreatorDate: time.Unix(date, 0).UTC(),
-		}
+
+		tags[i] = tag
 	}
 	return tags, nil
 }
@@ -294,7 +301,7 @@ func (p byteSlices) Less(i, j int) bool { return bytes.Compare(p[i], p[j]) < 0 }
 func (p byteSlices) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
 // ListRefs returns a list of all refs in the repository.
-func ListRefs(ctx context.Context, repo gitserver.Repo) ([]Ref, error) {
+func ListRefs(ctx context.Context, repo api.RepoName) ([]Ref, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: ListRefs")
 	defer span.Finish()
 	return showRef(ctx, repo)
@@ -306,7 +313,7 @@ type Ref struct {
 	CommitID api.CommitID
 }
 
-func showRef(ctx context.Context, repo gitserver.Repo, args ...string) ([]Ref, error) {
+func showRef(ctx context.Context, repo api.RepoName, args ...string) ([]Ref, error) {
 	cmd := gitserver.DefaultClient.Command("git", "show-ref")
 	cmd.Args = append(cmd.Args, args...)
 	cmd.Repo = repo

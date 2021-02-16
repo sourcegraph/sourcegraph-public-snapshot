@@ -13,6 +13,7 @@ const config = {
     ecmaFeatures: {
       jsx: true,
     },
+    EXPERIMENTAL_useSourceOfProjectReferenceRedirect: true,
     project: __dirname + '/tsconfig.json',
   },
   settings: {
@@ -30,9 +31,11 @@ const config = {
       },
     ],
   },
+  plugins: ['@sourcegraph/sourcegraph'],
   rules: {
     // Rules that are specific to this repo
     // All other rules should go into https://github.com/sourcegraph/eslint-config
+    '@sourcegraph/sourcegraph/check-help-links': 'error',
     'no-restricted-imports': [
       'error',
       {

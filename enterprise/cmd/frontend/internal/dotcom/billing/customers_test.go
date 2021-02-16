@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
 func TestGetOrAssignUserCustomerID(t *testing.T) {
@@ -20,7 +20,7 @@ func TestGetOrAssignUserCustomerID(t *testing.T) {
 	}
 	defer func() { mockCreateCustomerID = nil }()
 
-	u, err := db.Users.Create(ctx, db.NewUser{Username: "u"})
+	u, err := database.GlobalUsers.Create(ctx, database.NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,8 +1,14 @@
-# How to run a Sourcegraph trial
+# Running a Sourcegraph trial/POC
+
+If you're still fuzzy (all the code intelligence puns intended) on how Sourcegraph can help your team [please reach out](https://about.sourcegraph.com/contact) — we love talking to prospective users, and we can share how some of the world's leading software companies use Sourcegraph internally.
+
+However, if you already know deep down in your bones that Sourcegraph will greatly benefit your teams and you want to verify your hunch, or perhaps you need to prove out the ROI value to your manager; either way, one great way of accomplishing either is by running a Sourcegraph trial or POC (proof of concept) within your team.
+
+## How to run a Sourcegraph trial
 
 Sourcegraph has been deployed inside of thousands of organizations. From our experience working with those that have been successful, and those that haven't, we have collected a set of recommendations for running an effective trial.
 
-> NOTE: Trying Sourcegraph during a Hackathon? Check out our [Hackathon offerings](https://about.sourcegraph.com/hackathons) and let us know!
+> NOTE: Trying Sourcegraph during a Hackathon? Check out our [Hackathon offerings](https://about.sourcegraph.com/hackathons) and [let us know](https://twitter.com/@srcgraph)!
 
 ## 1. Define trial success
 
@@ -32,9 +38,8 @@ For measuring a trial, each company will be different. Common examples we find i
 
     While we don't always encourage this, it can be instructive! Take Sourcegraph away for a day, and see who gets upset. Developers may feel like their superpowers were suddenly taken away.
 
-What did your company use? [Tweet at us](https://twitter.com/@srcgraph), and we'll send you some Sourcegraph swag!
+We have helped hundreds of customers run trials and cannot overemphasize enough how much we can help guide you through this process. To encourage letting us help your trial be a success (not to mention take a lot of the trial's organization off your shoulders) we will grant you an Enterprise license key free of charge for the trial's duration! [Please reach out] https://about.sourcegraph.com/contact/sales and ask for your free license key. 
 
-Interested in learning how Sourcegraph can help your team? [Please reach out](https://about.sourcegraph.com/contact) — we love talking to prospective users, and we can share how some of the world's leading software companies use Sourcegraph internally.
 
 ## 2. Deploy Sourcegraph
 
@@ -50,7 +55,7 @@ As mentioned above, Sourcegraph trials are most successful when they start with 
   (1) investing in the product and exploring features, as they don't expect it to stick around, and;
   (2) sharing links, telling others about it, posting search results, and other socializing.
 
-If you want to run a trial with more than the limit of free users on your instance, just [reach out](https://about.sourcegraph.com/contact) and we'll provide an unlimited license key for up to a month, no questions asked.
+Again, we really encourage you to run a trial with more than just the limit of free users on your instance, so please [reach out](https://about.sourcegraph.com/contact) and we'll provide an unlimited license key for up to a month, no questions asked.
 
 A typical message to the team looks like:
 
@@ -76,6 +81,8 @@ For short trials, however, companies often choose to only set up our search shor
 ## 5. Measure success
 
 Like step 1, this looks different for every company. If you've defined success as a 60% net promoter score (NPS), or 50%+ of your trial team using Sourcegraph every week, this is the time to measure!
+
+How did it go? Any feedback for us? [Tweet at us](https://twitter.com/@srcgraph), and we'll send you some Sourcegraph swag!
 
 ## Let us know!
 

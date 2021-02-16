@@ -135,6 +135,11 @@ func (s *Server) Start() {
 func (s *Server) watchSource() {
 	ctx := context.Background()
 	for {
+		err := s.updateFromSource(ctx)
+		if err != nil {
+			log.Printf("failed to read configuration: %s. Fix your Sourcegraph configuration to resolve this error. Visit https://docs.sourcegraph.com/ to learn more.", err)
+		}
+
 		jitter := time.Duration(rand.Int63n(5 * int64(time.Second)))
 
 		var signalDoneReading chan struct{}
@@ -143,11 +148,6 @@ func (s *Server) watchSource() {
 			// File was changed on FS, so check now.
 		case <-time.After(jitter):
 			// File possibly changed on FS, so check now.
-		}
-
-		err := s.updateFromSource(ctx)
-		if err != nil {
-			log.Printf("failed to read configuration: %s. Fix your Sourcegraph configuration to resolve this error. Visit https://docs.sourcegraph.com/ to learn more.", err)
 		}
 
 		if signalDoneReading != nil {

@@ -49,7 +49,6 @@ you need the [kustomize](https://kustomize.io/) tool installed.
 - [Update site configuration](#update-site-configuration)
 - [Configure TLS/SSL](#configure-tlsssl)
 - [Configure repository cloning via SSH](#configure-repository-cloning-via-ssh)
-- [Configure language servers](#configure-language-servers)
 - [Configure SSDs to boost performance](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/ssd/README.md).
 - [Increase memory or CPU limits](#increase-memory-or-cpu-limits)
 
@@ -313,17 +312,6 @@ Sourcegraph will clone repositories using SSH credentials if they are mounted at
 
 **WARNING:** Do NOT commit the actual `id_rsa` and `known_hosts` files to your fork (unless
 your fork is private **and** you are okay with storing secrets in it).
-
-## Configure language servers
-
-Code intelligence is provided through [Sourcegraph extensions](https://docs.sourcegraph.com/extensions). These language extensions communicate with language servers that are deployed inside your Sourcegraph cluster. See the README.md for each language for configuration information:
-
-- Go: [configure/lang/go/README.md](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/lang/go/README.md)
-- JavaScript/TypeScript: [configure/lang/typescript/README.md](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/lang/typescript/README.md)
-
-## Increase memory or CPU limits
-
-If your instance contains a large number of repositories or monorepos, changing the compute resources allocated to containers can improve performance. See [Kubernetes' official documentation](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/) for information about compute resources and how to specify then, and see [scale.md](scale.md) for specific advice about what resources to tune.
 
 ## Configure gitserver replica count
 

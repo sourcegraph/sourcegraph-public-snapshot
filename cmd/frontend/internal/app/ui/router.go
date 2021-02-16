@@ -18,9 +18,11 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/randstring"
 	"github.com/sourcegraph/sourcegraph/internal/routevar"
@@ -41,6 +43,7 @@ const (
 	routeRepoStats      = "repo-stats"
 	routeInsights       = "insights"
 	routeCampaigns      = "campaigns"
+	routeCodeMonitoring = "code-monitoring"
 	routeThreads        = "threads"
 	routeTree           = "tree"
 	routeBlob           = "blob"
@@ -49,7 +52,6 @@ const (
 	routeSettings       = "settings"
 	routeSiteAdmin      = "site-admin"
 	routeAPIConsole     = "api-console"
-	routeSearchScope    = "scope"
 	routeUser           = "user"
 	routeUserSettings   = "user-settings"
 	routeUserRedirect   = "user-redirect"
@@ -61,14 +63,16 @@ const (
 	routeRegistry       = "registry"
 	routeExtensions     = "extensions"
 	routeHelp           = "help"
-	routeExplore        = "explore"
 	routeRepoGroups     = "repo-groups"
+	routeCncf           = "repo-groups.cncf"
 	routeSnippets       = "snippets"
 	routeSubscriptions  = "subscriptions"
 	routeStats          = "stats"
 	routeViews          = "views"
 
 	routeSearchQueryBuilder = "search.query-builder"
+	routeSearchStream       = "search.stream"
+	routeSearchConsole      = "search.console"
 
 	// Legacy redirects
 	routeLegacyLogin                   = "login"
@@ -98,6 +102,14 @@ func Router() *mux.Router {
 	return uirouter.Router
 }
 
+// InitRouter create the router that serves pages for our web app
+// and assigns it to uirouter.Router.
+// The router can be accessed by calling Router().
+func InitRouter() {
+	router := newRouter()
+	initRouter(router)
+}
+
 var mockServeRepo func(w http.ResponseWriter, r *http.Request)
 
 func newRouter() *mux.Router {
@@ -110,17 +122,19 @@ func newRouter() *mux.Router {
 	r.Path("/search").Methods("GET").Name(routeSearch)
 	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge)
 	r.Path("/search/query-builder").Methods("GET").Name(routeSearchQueryBuilder)
+	r.Path("/search/stream").Methods("GET").Name(routeSearchStream)
+	r.Path("/search/console").Methods("GET").Name(routeSearchConsole)
 	r.Path("/sign-in").Methods("GET").Name(uirouter.RouteSignIn)
 	r.Path("/sign-up").Methods("GET").Name(uirouter.RouteSignUp)
 	r.PathPrefix("/insights").Methods("GET").Name(routeInsights)
 	r.PathPrefix("/campaigns").Methods("GET").Name(routeCampaigns)
+	r.PathPrefix("/code-monitoring").Methods("GET").Name(routeCodeMonitoring)
 	r.PathPrefix("/organizations").Methods("GET").Name(routeOrganizations)
 	r.PathPrefix("/settings").Methods("GET").Name(routeSettings)
 	r.PathPrefix("/site-admin").Methods("GET").Name(routeSiteAdmin)
 	r.Path("/password-reset").Methods("GET").Name(uirouter.RoutePasswordReset)
 	r.Path("/api/console").Methods("GET").Name(routeAPIConsole)
 	r.Path("/{Path:(?:" + strings.Join(mapKeys(aboutRedirects), "|") + ")}").Methods("GET").Name(routeAboutSubdomain)
-	r.Path("/search/scope/{scope}").Methods("GET").Name(routeSearchScope)
 	r.PathPrefix("/users/{username}/settings").Methods("GET").Name(routeUserSettings)
 	r.PathPrefix("/users/{username}").Methods("GET").Name(routeUser)
 	r.PathPrefix("/user").Methods("GET").Name(routeUserRedirect)
@@ -129,16 +143,17 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/registry").Methods("GET").Name(routeRegistry)
 	r.PathPrefix("/extensions").Methods("GET").Name(routeExtensions)
 	r.PathPrefix("/help").Methods("GET").Name(routeHelp)
-	r.PathPrefix("/explore").Methods("GET").Name(routeExplore)
 	r.PathPrefix("/snippets").Methods("GET").Name(routeSnippets)
 	r.PathPrefix("/subscriptions").Methods("GET").Name(routeSubscriptions)
 	r.PathPrefix("/stats").Methods("GET").Name(routeStats)
 	r.PathPrefix("/views").Methods("GET").Name(routeViews)
+	r.Path("/ping-from-self-hosted").Methods("GET", "OPTIONS").Name(uirouter.RoutePingFromSelfHosted)
 
 	// Repogroup pages. Must mirror web/src/Layout.tsx
 	if envvar.SourcegraphDotComMode() {
 		repogroups := []string{"refactor-python2-to-3", "kubernetes", "golang", "react-hooks", "android", "stanford"}
 		r.Path("/{Path:(?:" + strings.Join(repogroups, "|") + ")}").Methods("GET").Name(routeRepoGroups)
+		r.Path("/cncf").Methods("GET").Name(routeCncf)
 	}
 
 	// Legacy redirects
@@ -177,57 +192,54 @@ func newRouter() *mux.Router {
 	return r
 }
 
-func init() {
-	initRouter()
-}
-
 // brandNameSubtitle returns a string with the specified title sequence and the brand name as the
 // last title component. This function indirectly calls conf.Get(), so should not be invoked from
 // any function that is invoked by an init function.
 func brandNameSubtitle(titles ...string) string {
-	return strings.Join(append(titles, conf.BrandName()), " - ")
+	return strings.Join(append(titles, globals.Branding().BrandName), " - ")
 }
 
-func initRouter() {
-	// basic pages with static titles
-	router := newRouter()
+func initRouter(router *mux.Router) {
 	uirouter.Router = router // make accessible to other packages
-	router.Get(routeHome).Handler(handler(serveHome))
-	router.Get(routeThreads).Handler(handler(serveBrandedPageString("Threads")))
-	router.Get(routeInsights).Handler(handler(serveBrandedPageString("Insights")))
-	router.Get(routeCampaigns).Handler(handler(serveBrandedPageString("Campaigns")))
-	router.Get(uirouter.RouteSignIn).Handler(handler(serveSignIn))
-	router.Get(uirouter.RouteSignUp).Handler(handler(serveBrandedPageString("Sign up")))
-	router.Get(routeOrganizations).Handler(handler(serveBrandedPageString("Organization")))
-	router.Get(routeSettings).Handler(handler(serveBrandedPageString("Settings")))
-	router.Get(routeSiteAdmin).Handler(handler(serveBrandedPageString("Admin")))
-	router.Get(uirouter.RoutePasswordReset).Handler(handler(serveBrandedPageString("Reset password")))
-	router.Get(routeAPIConsole).Handler(handler(serveBrandedPageString("API console")))
-	router.Get(routeRepoSettings).Handler(handler(serveBrandedPageString("Repository settings")))
-	router.Get(routeRepoCommit).Handler(handler(serveBrandedPageString("Commit")))
-	router.Get(routeRepoBranches).Handler(handler(serveBrandedPageString("Branches")))
-	router.Get(routeRepoCommits).Handler(handler(serveBrandedPageString("Commits")))
-	router.Get(routeRepoTags).Handler(handler(serveBrandedPageString("Tags")))
-	router.Get(routeRepoCompare).Handler(handler(serveBrandedPageString("Compare")))
-	router.Get(routeRepoStats).Handler(handler(serveBrandedPageString("Stats")))
-	router.Get(routeSearchScope).Handler(handler(serveBrandedPageString("Search scope")))
-	router.Get(routeSurvey).Handler(handler(serveBrandedPageString("Survey")))
-	router.Get(routeSurveyScore).Handler(handler(serveBrandedPageString("Survey")))
-	router.Get(routeRegistry).Handler(handler(serveBrandedPageString("Registry")))
-	router.Get(routeExtensions).Handler(handler(serveBrandedPageString("Extensions")))
-	router.Get(routeExplore).Handler(handler(serveBrandedPageString("Explore")))
-	router.Get(routeHelp).HandlerFunc(serveHelp)
-	router.Get(routeSnippets).Handler(handler(serveBrandedPageString("Snippets")))
-	router.Get(routeSubscriptions).Handler(handler(serveBrandedPageString("Subscriptions")))
-	router.Get(routeStats).Handler(handler(serveBrandedPageString("Stats")))
-	router.Get(routeViews).Handler(handler(serveBrandedPageString("View")))
 
-	router.Get(routeUserSettings).Handler(handler(serveBrandedPageString("User settings")))
-	router.Get(routeUserRedirect).Handler(handler(serveBrandedPageString("User")))
+	// basic pages with static titles
+	router.Get(routeHome).Handler(handler(serveHome))
+	router.Get(routeThreads).Handler(handler(serveBrandedPageString("Threads", nil)))
+	router.Get(routeInsights).Handler(handler(serveBrandedPageString("Insights", nil)))
+	router.Get(routeCampaigns).Handler(handler(serveBrandedPageString("Campaigns", nil)))
+	router.Get(routeCodeMonitoring).Handler(handler(serveBrandedPageString("Code Monitoring", nil)))
+	router.Get(uirouter.RouteSignIn).Handler(handler(serveSignIn))
+	router.Get(uirouter.RouteSignUp).Handler(handler(serveBrandedPageString("Sign up", nil)))
+	router.Get(routeOrganizations).Handler(handler(serveBrandedPageString("Organization", nil)))
+	router.Get(routeSettings).Handler(handler(serveBrandedPageString("Settings", nil)))
+	router.Get(routeSiteAdmin).Handler(handler(serveBrandedPageString("Admin", nil)))
+	router.Get(uirouter.RoutePasswordReset).Handler(handler(serveBrandedPageString("Reset password", nil)))
+	router.Get(routeAPIConsole).Handler(handler(serveBrandedPageString("API console", nil)))
+	router.Get(routeRepoSettings).Handler(handler(serveBrandedPageString("Repository settings", nil)))
+	router.Get(routeRepoCommit).Handler(handler(serveBrandedPageString("Commit", nil)))
+	router.Get(routeRepoBranches).Handler(handler(serveBrandedPageString("Branches", nil)))
+	router.Get(routeRepoCommits).Handler(handler(serveBrandedPageString("Commits", nil)))
+	router.Get(routeRepoTags).Handler(handler(serveBrandedPageString("Tags", nil)))
+	router.Get(routeRepoCompare).Handler(handler(serveBrandedPageString("Compare", nil)))
+	router.Get(routeRepoStats).Handler(handler(serveBrandedPageString("Stats", nil)))
+	router.Get(routeSurvey).Handler(handler(serveBrandedPageString("Survey", nil)))
+	router.Get(routeSurveyScore).Handler(handler(serveBrandedPageString("Survey", nil)))
+	router.Get(routeRegistry).Handler(handler(serveBrandedPageString("Registry", nil)))
+	router.Get(routeExtensions).Handler(handler(serveBrandedPageString("Extensions", nil)))
+	router.Get(routeHelp).HandlerFunc(serveHelp)
+	router.Get(routeSnippets).Handler(handler(serveBrandedPageString("Snippets", nil)))
+	router.Get(routeSubscriptions).Handler(handler(serveBrandedPageString("Subscriptions", nil)))
+	router.Get(routeStats).Handler(handler(serveBrandedPageString("Stats", nil)))
+	router.Get(routeViews).Handler(handler(serveBrandedPageString("View", nil)))
+	router.Get(uirouter.RoutePingFromSelfHosted).Handler(handler(servePingFromSelfHosted))
+
+	router.Get(routeUserSettings).Handler(handler(serveBrandedPageString("User settings", nil)))
+	router.Get(routeUserRedirect).Handler(handler(serveBrandedPageString("User", nil)))
 	router.Get(routeUser).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {
 		return brandNameSubtitle(mux.Vars(r)["username"])
-	})))
-	router.Get(routeSearchQueryBuilder).Handler(handler(serveBrandedPageString("Query builder")))
+	}, nil)))
+	router.Get(routeSearchQueryBuilder).Handler(handler(serveBrandedPageString("Query builder", nil)))
+	router.Get(routeSearchConsole).Handler(handler(serveBrandedPageString("Search console", nil)))
 
 	// Legacy redirects
 	if envvar.SourcegraphDotComMode() {
@@ -243,14 +255,17 @@ func initRouter() {
 	router.Get(routeSearch).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {
 		shortQuery := limitString(r.URL.Query().Get("q"), 25, true)
 		if shortQuery == "" {
-			return conf.BrandName()
+			return globals.Branding().BrandName
 		}
 		// e.g. "myquery - Sourcegraph"
 		return brandNameSubtitle(shortQuery)
-	})))
+	}, nil)))
+
+	// streaming search
+	router.Get(routeSearchStream).Handler(search.StreamHandler())
 
 	// search badge
-	router.Get(routeSearchBadge).Handler(searchBadgeHandler)
+	router.Get(routeSearchBadge).Handler(searchBadgeHandler())
 
 	if envvar.SourcegraphDotComMode() {
 		// about subdomain
@@ -261,7 +276,9 @@ func initRouter() {
 			r.URL.Path = "/" + aboutRedirects[mux.Vars(r)["Path"]]
 			http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
 		}))
-		router.Get(routeRepoGroups).Handler(handler(serveBrandedPageString("Repogroup")))
+		router.Get(routeRepoGroups).Handler(handler(serveBrandedPageString("Repogroup", nil)))
+		cncfDescription := "Search all repositories in the Cloud Native Computing Foundation (CNCF)."
+		router.Get(routeCncf).Handler(handler(serveBrandedPageString("CNCF code search", &cncfDescription)))
 	}
 
 	// repo

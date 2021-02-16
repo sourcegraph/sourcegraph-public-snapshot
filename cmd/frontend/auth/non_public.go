@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -58,20 +59,22 @@ var (
 	// 🚨 SECURITY: These maps define route names that anonymous users can access. They MUST NOT leak any sensitive
 	// data or allow unprivileged users to perform undesired actions.
 	anonymousAccessibleAPIRoutes = map[string]struct{}{
-		router.RobotsTxt:         {},
-		router.Favicon:           {},
-		router.Logout:            {},
-		router.SignUp:            {},
-		router.SiteInit:          {},
-		router.SignIn:            {},
-		router.SignOut:           {},
-		router.ResetPasswordInit: {},
-		router.ResetPasswordCode: {},
+		router.RobotsTxt:          {},
+		router.Favicon:            {},
+		router.Logout:             {},
+		router.SignUp:             {},
+		router.SiteInit:           {},
+		router.SignIn:             {},
+		router.SignOut:            {},
+		router.ResetPasswordInit:  {},
+		router.ResetPasswordCode:  {},
+		router.CheckUsernameTaken: {},
 	}
 	anonymousAccessibleUIRoutes = map[string]struct{}{
-		uirouter.RouteSignIn:        {},
-		uirouter.RouteSignUp:        {},
-		uirouter.RoutePasswordReset: {},
+		uirouter.RouteSignIn:             {},
+		uirouter.RouteSignUp:             {},
+		uirouter.RoutePasswordReset:      {},
+		uirouter.RoutePingFromSelfHosted: {},
 	}
 	// Some routes return non-standard HTTP responses when a user is not
 	// signed in.
@@ -127,7 +130,7 @@ func AllowAnonymousRequest(req *http.Request) bool {
 	}
 
 	// Permission is checked by a shared token
-	if strings.HasPrefix(req.URL.Path, "/.internal-code-intel") {
+	if strings.HasPrefix(req.URL.Path, "/.executors") {
 		return true
 	}
 

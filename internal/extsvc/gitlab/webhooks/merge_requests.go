@@ -1,9 +1,6 @@
 package webhooks
 
 import (
-	"fmt"
-	"time"
-
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 )
@@ -31,58 +28,164 @@ import (
 type MergeRequestEventCommon struct {
 	EventCommon
 
-	MergeRequest *gitlab.MergeRequest `json:"merge_request"`
-	User         *gitlab.User         `json:"user"`
-	Labels       *[]gitlab.Label      `json:"labels"`
+	MergeRequest *gitlab.MergeRequest     `json:"merge_request"`
+	User         *gitlab.User             `json:"user"`
+	Labels       *[]gitlab.Label          `json:"labels"`
+	Changes      mergeRequestEventChanges `json:"changes"`
 }
 
-// MergeRequestEventContainer is a common interface for types that embed
+type mergeRequestEventChanges struct {
+	Title struct {
+		Previous string `json:"previous"`
+		Current  string `json:"current"`
+	} `json:"title"`
+	UpdatedAt struct {
+		Current gitlab.Time `json:"current"`
+	} `json:"updated_at"`
+}
+
+// MergeRequestEventCommonContainer is a common interface for types that embed
 // MergeRequestEvent to provide a method that can return the embedded
 // MergeRequestEvent.
-type MergeRequestEventContainer interface {
-	ToEvent() *MergeRequestEventCommon
+type MergeRequestEventCommonContainer interface {
+	ToEventCommon() *MergeRequestEventCommon
 }
 
+type keyer interface {
+	Key() string
+}
+
+// UpsertableWebhookEvent is a common interface for types that embed
+// ToEvent to provide a method that can return a changeset event
+// derived from the webhook payload.
+type UpsertableWebhookEvent interface {
+	MergeRequestEventCommonContainer
+	ToEvent() keyer
+}
+
+// Type guards:
+var _ UpsertableWebhookEvent = (*MergeRequestCloseEvent)(nil)
+var _ UpsertableWebhookEvent = (*MergeRequestMergeEvent)(nil)
+var _ UpsertableWebhookEvent = (*MergeRequestReopenEvent)(nil)
+var _ UpsertableWebhookEvent = (*MergeRequestDraftEvent)(nil)
+var _ UpsertableWebhookEvent = (*MergeRequestUndraftEvent)(nil)
+
 type MergeRequestApprovedEvent struct{ MergeRequestEventCommon }
-type MergeRequestCloseEvent struct{ MergeRequestEventCommon }
-type MergeRequestMergeEvent struct{ MergeRequestEventCommon }
-type MergeRequestReopenEvent struct{ MergeRequestEventCommon }
 type MergeRequestUnapprovedEvent struct{ MergeRequestEventCommon }
 type MergeRequestUpdateEvent struct{ MergeRequestEventCommon }
 
-func (e *MergeRequestApprovedEvent) ToEvent() *MergeRequestEventCommon {
+type MergeRequestCloseEvent struct{ MergeRequestEventCommon }
+type MergeRequestMergeEvent struct{ MergeRequestEventCommon }
+type MergeRequestReopenEvent struct{ MergeRequestEventCommon }
+type MergeRequestUndraftEvent struct{ MergeRequestEventCommon }
+type MergeRequestDraftEvent struct{ MergeRequestEventCommon }
+
+func (e *MergeRequestApprovedEvent) ToEventCommon() *MergeRequestEventCommon {
 	return &e.MergeRequestEventCommon
 }
-func (e *MergeRequestCloseEvent) ToEvent() *MergeRequestEventCommon {
+func (e *MergeRequestUnapprovedEvent) ToEventCommon() *MergeRequestEventCommon {
 	return &e.MergeRequestEventCommon
 }
-func (e *MergeRequestMergeEvent) ToEvent() *MergeRequestEventCommon {
-	return &e.MergeRequestEventCommon
-}
-func (e *MergeRequestReopenEvent) ToEvent() *MergeRequestEventCommon {
-	return &e.MergeRequestEventCommon
-}
-func (e *MergeRequestUnapprovedEvent) ToEvent() *MergeRequestEventCommon {
-	return &e.MergeRequestEventCommon
-}
-func (e *MergeRequestUpdateEvent) ToEvent() *MergeRequestEventCommon {
+func (e *MergeRequestUpdateEvent) ToEventCommon() *MergeRequestEventCommon {
 	return &e.MergeRequestEventCommon
 }
 
-// We don't define Key() methods on MergeRequestApprovedEvent and
-// MergeRequestUnapprovedEvent because we don't need them when handling
-// webhooks: those events don't include enough information (specifically, the
-// system note ID) for us to create changeset events from them, so those types
-// don't need to implement keyer.
+func (e *MergeRequestUndraftEvent) ToEventCommon() *MergeRequestEventCommon {
+	return &e.MergeRequestEventCommon
+}
 
-func (e *MergeRequestCloseEvent) Key() string  { return e.key("Close") }
-func (e *MergeRequestMergeEvent) Key() string  { return e.key("Merge") }
-func (e *MergeRequestReopenEvent) Key() string { return e.key("Reopen") }
+func (e *MergeRequestUndraftEvent) ToEvent() keyer {
+	user := gitlab.User{}
+	if e.User != nil {
+		user = *e.User
+	}
+	return &gitlab.UnmarkWorkInProgressEvent{
+		Note: &gitlab.Note{
+			Body:      gitlab.SystemNoteBodyUnmarkedWorkInProgress,
+			System:    true,
+			CreatedAt: e.Changes.UpdatedAt.Current,
+			Author:    user,
+		},
+	}
+}
 
-func (e *MergeRequestEventCommon) key(prefix string) string {
-	// We can't key solely off the merge request ID because it may be reopened
-	// and closed multiple times. Instead, we'll use the UpdatedAt field.
-	return fmt.Sprintf("MergeRequest:%s:%d:%s", prefix, e.MergeRequest.IID, e.MergeRequest.UpdatedAt.Format(time.RFC3339))
+func (e *MergeRequestDraftEvent) ToEventCommon() *MergeRequestEventCommon {
+	return &e.MergeRequestEventCommon
+}
+
+func (e *MergeRequestDraftEvent) ToEvent() keyer {
+	user := gitlab.User{}
+	if e.User != nil {
+		user = *e.User
+	}
+	return &gitlab.MarkWorkInProgressEvent{
+		Note: &gitlab.Note{
+			Body:      gitlab.SystemNoteBodyMarkedWorkInProgress,
+			System:    true,
+			CreatedAt: e.Changes.UpdatedAt.Current,
+			Author:    user,
+		},
+	}
+}
+
+func (e *MergeRequestCloseEvent) ToEventCommon() *MergeRequestEventCommon {
+	return &e.MergeRequestEventCommon
+}
+
+func (e *MergeRequestCloseEvent) ToEvent() keyer {
+	user := gitlab.User{}
+	if e.User != nil {
+		user = *e.User
+	}
+	return &gitlab.MergeRequestClosedEvent{
+		ResourceStateEvent: &gitlab.ResourceStateEvent{
+			User:         user,
+			CreatedAt:    e.Changes.UpdatedAt.Current,
+			ResourceType: "merge_request",
+			ResourceID:   e.MergeRequest.ID,
+			State:        gitlab.ResourceStateEventStateClosed,
+		},
+	}
+}
+
+func (e *MergeRequestMergeEvent) ToEventCommon() *MergeRequestEventCommon {
+	return &e.MergeRequestEventCommon
+}
+
+func (e *MergeRequestMergeEvent) ToEvent() keyer {
+	user := gitlab.User{}
+	if e.User != nil {
+		user = *e.User
+	}
+	return &gitlab.MergeRequestMergedEvent{
+		ResourceStateEvent: &gitlab.ResourceStateEvent{
+			User:         user,
+			CreatedAt:    e.Changes.UpdatedAt.Current,
+			ResourceType: "merge_request",
+			ResourceID:   e.MergeRequest.ID,
+			State:        gitlab.ResourceStateEventStateMerged,
+		},
+	}
+}
+
+func (e *MergeRequestReopenEvent) ToEventCommon() *MergeRequestEventCommon {
+	return &e.MergeRequestEventCommon
+}
+
+func (e *MergeRequestReopenEvent) ToEvent() keyer {
+	user := gitlab.User{}
+	if e.User != nil {
+		user = *e.User
+	}
+	return &gitlab.MergeRequestReopenedEvent{
+		ResourceStateEvent: &gitlab.ResourceStateEvent{
+			User:         user,
+			CreatedAt:    e.Changes.UpdatedAt.Current,
+			ResourceType: "merge_request",
+			ResourceID:   e.MergeRequest.ID,
+			State:        gitlab.ResourceStateEventStateReopened,
+		},
+	}
 }
 
 // mergeRequestEvent is an internal type used for initially unmarshalling the
@@ -91,8 +194,9 @@ func (e *MergeRequestEventCommon) key(prefix string) string {
 type mergeRequestEvent struct {
 	EventCommon
 
-	User   *gitlab.User    `json:"user"`
-	Labels *[]gitlab.Label `json:"labels"`
+	User    *gitlab.User             `json:"user"`
+	Labels  *[]gitlab.Label          `json:"labels"`
+	Changes mergeRequestEventChanges `json:"changes"`
 
 	ObjectAttributes mergeRequestEventObjectAttributes `json:"object_attributes"`
 }
@@ -108,6 +212,7 @@ func (mre *mergeRequestEvent) downcast() (interface{}, error) {
 		MergeRequest: mre.ObjectAttributes.MergeRequest,
 		User:         mre.User,
 		Labels:       mre.Labels,
+		Changes:      mre.Changes,
 	}
 
 	// These action values are completely undocumented in GitLab's webhook
@@ -134,6 +239,13 @@ func (mre *mergeRequestEvent) downcast() (interface{}, error) {
 		return &MergeRequestUnapprovedEvent{e}, nil
 
 	case "update":
+		if prev, curr := e.Changes.Title.Previous, e.Changes.Title.Current; prev != "" && curr != "" {
+			if gitlab.IsWIP(prev) && !gitlab.IsWIP(curr) {
+				return &MergeRequestUndraftEvent{e}, nil
+			} else if !gitlab.IsWIP(prev) && gitlab.IsWIP(curr) {
+				return &MergeRequestDraftEvent{e}, nil
+			}
+		}
 		return &MergeRequestUpdateEvent{e}, nil
 	}
 

@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -14,7 +13,7 @@ type hunkResolver struct {
 
 func (r *hunkResolver) Author() signatureResolver {
 	return signatureResolver{
-		person: &personResolver{
+		person: &PersonResolver{
 			name:  r.hunk.Author.Name,
 			email: r.hunk.Author.Email,
 		},
@@ -47,13 +46,5 @@ func (r *hunkResolver) Message() string {
 }
 
 func (r *hunkResolver) Commit(ctx context.Context) (*GitCommitResolver, error) {
-	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.repo)
-	if err != nil {
-		return nil, err
-	}
-	commit, err := git.GetCommit(ctx, *cachedRepo, nil, r.hunk.CommitID, git.ResolveRevisionOptions{})
-	if err != nil {
-		return nil, err
-	}
-	return toGitCommitResolver(r.repo, commit), nil
+	return toGitCommitResolver(r.repo, r.hunk.CommitID, nil), nil
 }

@@ -7,8 +7,9 @@ import (
 	"github.com/RoaringBitmap/roaring"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 var ErrPermsNotFound = errors.New("permissions not found")
@@ -109,7 +110,7 @@ func (p *UserPermissions) Expired(ttl time.Duration, now time.Time) bool {
 func (p *UserPermissions) AuthorizedRepos(repos []*types.Repo) []RepoPerms {
 	// Return directly if it's used for wrong permissions type or no permissions available.
 	if p.Type != PermRepos ||
-		p.IDs == nil || p.IDs.GetCardinality() == 0 {
+		p.IDs == nil || p.IDs.IsEmpty() {
 		return []RepoPerms{}
 	}
 

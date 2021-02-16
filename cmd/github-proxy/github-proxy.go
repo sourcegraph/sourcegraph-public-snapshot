@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
-	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -19,6 +18,7 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
@@ -35,16 +35,10 @@ const port = "3180"
 // requestMu ensures we only do one request at a time to prevent tripping abuse detection.
 var requestMu sync.Mutex
 
-var rateLimitRemainingGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-	Name: "src_github_rate_limit_remaining",
-	Help: "Number of calls to GitHub's API remaining before hitting the rate limit.",
-}, []string{"resource"})
-
-func init() {
-	rateLimitRemainingGauge.WithLabelValues("core").Set(5000)
-	rateLimitRemainingGauge.WithLabelValues("search").Set(30)
-	prometheus.MustRegister(rateLimitRemainingGauge)
-}
+var metricWaitingRequestsGauge = promauto.NewGauge(prometheus.GaugeOpts{
+	Name: "github_proxy_waiting_requests",
+	Help: "Number of proxy requests waiting on the mutex",
+})
 
 // list obtained from httputil of headers not to forward.
 var hopHeaders = map[string]struct{}{
@@ -104,7 +98,9 @@ func main() {
 			Header: h2,
 		}
 
+		metricWaitingRequestsGauge.Inc()
 		requestMu.Lock()
+		metricWaitingRequestsGauge.Dec()
 		resp, err := client.Do(req2)
 		requestMu.Unlock()
 		if err != nil {
@@ -113,18 +109,6 @@ func main() {
 			return
 		}
 		defer resp.Body.Close()
-
-		if limit := resp.Header.Get("X-Ratelimit-Remaining"); limit != "" {
-			limit, _ := strconv.Atoi(limit)
-
-			resource := "core"
-			if strings.HasPrefix(r.URL.Path, "/search/") {
-				resource = "search"
-			} else if r.URL.Path == "/graphql" {
-				resource = "graphql"
-			}
-			rateLimitRemainingGauge.WithLabelValues(resource).Set(float64(limit))
-		}
 
 		for k, v := range resp.Header {
 			w.Header()[k] = v
@@ -150,7 +134,13 @@ func main() {
 	}
 	addr := net.JoinHostPort(host, port)
 	log15.Info("github-proxy: listening", "addr", addr)
-	log.Fatal(http.ListenAndServe(addr, nil))
+	s := http.Server{
+		ReadTimeout:  60 * time.Second,
+		WriteTimeout: 10 * time.Minute,
+		Addr:         addr,
+		Handler:      http.DefaultServeMux,
+	}
+	log.Fatal(s.ListenAndServe())
 }
 
 func instrumentHandler(r prometheus.Registerer, h http.Handler) http.Handler {

@@ -6,11 +6,12 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestHandleSetPasswordEmail(t *testing.T) {
@@ -24,8 +25,8 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 	}
 	defer func() { txemail.MockSend = nil }()
 	defer func() { backend.MockMakePasswordResetURL = nil }()
-	defer func() { db.Mocks.UserEmails.GetPrimaryEmail = nil }()
-	defer func() { db.Mocks.Users.GetByID = nil }()
+	defer func() { database.Mocks.UserEmails.GetPrimaryEmail = nil }()
+	defer func() { database.Mocks.Users.GetByID = nil }()
 
 	backend.MockMakePasswordResetURL = func(context.Context, int32) (*url.URL, error) {
 		query := url.Values{}
@@ -34,11 +35,11 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 		return &url.URL{Path: "/password-reset", RawQuery: query.Encode()}, nil
 	}
 
-	db.Mocks.UserEmails.GetPrimaryEmail = func(context.Context, int32) (string, bool, error) {
+	database.Mocks.UserEmails.GetPrimaryEmail = func(context.Context, int32) (string, bool, error) {
 		return "a@example.com", true, nil
 	}
 
-	db.Mocks.Users.GetByID = func(context.Context, int32) (*types.User, error) {
+	database.Mocks.Users.GetByID = func(context.Context, int32) (*types.User, error) {
 		return &types.User{ID: 1, Username: "test"}, nil
 	}
 

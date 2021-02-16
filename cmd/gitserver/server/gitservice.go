@@ -105,7 +105,7 @@ func (s *gitServiceHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	cmd.Stdout = flowrateWriter(w)
 	cmd.Stdin = body
 	if err := cmd.Run(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log15.Error("gitservice.ServeHTTP", "svc", svc, "repo", repo, "protocol", r.Header.Get("Git-Protocol"), "duration", time.Since(start), "error", err.Error())
 	}
 }
 

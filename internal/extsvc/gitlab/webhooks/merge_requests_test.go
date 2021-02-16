@@ -64,18 +64,20 @@ func TestMergeRequestDowncast(t *testing.T) {
 					t.Errorf("unexpected downcasted type: have %s; want %s", have, tc.want)
 				}
 
-				mr := dc.(MergeRequestEventContainer).ToEvent()
-				if diff := cmp.Diff(mre.EventCommon, mr.EventCommon); diff != "" {
-					t.Errorf("mismatched EventCommon: %s", diff)
-				}
-				if mr.User != mre.User {
-					t.Errorf("mismatched User: have %p; want %p", mr.User, mre.User)
-				}
-				if mr.Labels != mre.Labels {
-					t.Errorf("mismatched Labels: have %p; want %p", mr.Labels, mre.Labels)
-				}
-				if mr.MergeRequest != mre.ObjectAttributes.MergeRequest {
-					t.Errorf("mismatched User: have %p; want %p", mr.MergeRequest, mre.ObjectAttributes.MergeRequest)
+				if c, ok := dc.(MergeRequestEventCommonContainer); ok {
+					mr := c.ToEventCommon()
+					if diff := cmp.Diff(mre.EventCommon, mr.EventCommon); diff != "" {
+						t.Errorf("mismatched EventCommon: %s", diff)
+					}
+					if mr.User != mre.User {
+						t.Errorf("mismatched User: have %p; want %p", mr.User, mre.User)
+					}
+					if mr.Labels != mre.Labels {
+						t.Errorf("mismatched Labels: have %p; want %p", mr.Labels, mre.Labels)
+					}
+					if mr.MergeRequest != mre.ObjectAttributes.MergeRequest {
+						t.Errorf("mismatched User: have %p; want %p", mr.MergeRequest, mre.ObjectAttributes.MergeRequest)
+					}
 				}
 			})
 		}

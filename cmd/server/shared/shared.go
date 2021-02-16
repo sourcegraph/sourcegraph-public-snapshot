@@ -14,7 +14,7 @@ import (
 	"strings"
 
 	"github.com/joho/godotenv"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goreman"
 )
 
@@ -53,8 +53,7 @@ var DefaultEnv = map[string]string{
 	// enables the debug proxy (/-/debug)
 	"SRC_PROF_HTTP": "",
 
-	"LOGO":          "t",
-	"SRC_LOG_LEVEL": "warn",
+	"LOGO": "t",
 
 	// TODO other bits
 	// * DEBUG LOG_REQUESTS https://github.com/sourcegraph/sourcegraph/issues/8458
@@ -127,7 +126,7 @@ func Main() {
 		log.Fatal("Failed to setup nginx:", err)
 	}
 
-	postgresExporterLine := fmt.Sprintf(`postgres_exporter: env DATA_SOURCE_NAME="%s" postgres_exporter --log.level=%s`, dbutil.PostgresDSN("postgres", os.Getenv), convertLogLevel(os.Getenv("SRC_LOG_LEVEL")))
+	postgresExporterLine := fmt.Sprintf(`postgres_exporter: env DATA_SOURCE_NAME="%s" postgres_exporter --log.level=%s`, dbutil.PostgresDSN("", "postgres", os.Getenv), convertLogLevel(os.Getenv("SRC_LOG_LEVEL")))
 
 	procfile := []string{
 		nginx,
@@ -149,6 +148,10 @@ func Main() {
 	}
 	if len(monitoringLines) != 0 {
 		procfile = append(procfile, monitoringLines...)
+	}
+
+	if minioLines := maybeMinio(); len(minioLines) != 0 {
+		procfile = append(procfile, minioLines...)
 	}
 
 	redisStoreLine, err := maybeRedisStoreProcFile()

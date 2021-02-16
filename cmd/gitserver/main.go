@@ -2,6 +2,7 @@
 package main // import "github.com/sourcegraph/sourcegraph/cmd/gitserver"
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
@@ -12,17 +13,26 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/inconshreveable/log15"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
+	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var (
@@ -35,6 +45,11 @@ var (
 func main() {
 	env.Lock()
 	env.HandleHelpFlag()
+
+	if err := profiler.Init(); err != nil {
+		log.Fatalf("failed to start profiler: %v", err)
+	}
+
 	logging.Init()
 	tracer.Init()
 	trace.Init(true)
@@ -50,10 +65,59 @@ func main() {
 	if err != nil {
 		log.Fatalf("parsing $SRC_REPOS_DESIRED_PERCENT_FREE: %v", err)
 	}
+
+	repoStore, externalServiceStore, err := getStores()
+	if err != nil {
+		log.Fatalf("failed to initialize database stores: %v", err)
+	}
+
 	gitserver := server.Server{
 		ReposDir:                reposDir,
 		DeleteStaleRepositories: runRepoCleanup,
 		DesiredPercentFree:      wantPctFree2,
+		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
+			r, err := repoStore.GetByName(ctx, repo)
+			if err != nil {
+				return "", err
+			}
+			for _, info := range r.Sources {
+				return info.CloneURL, nil
+			}
+			return "", fmt.Errorf("no sources for %q", repo)
+		},
+		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
+			r, err := repoStore.GetByName(ctx, repo)
+			if err != nil {
+				return nil, errors.Wrap(err, "get repository")
+			}
+
+			switch r.ExternalRepo.ServiceType {
+			case extsvc.TypePerforce:
+				// Extract options from external service config
+				var c schema.PerforceConnection
+				for _, info := range r.Sources {
+					es, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
+					if err != nil {
+						return nil, errors.Wrap(err, "get external service")
+					}
+
+					normalized, err := jsonc.Parse(es.Config)
+					if err != nil {
+						return nil, errors.Wrap(err, "normalize JSON")
+					}
+
+					if err = jsoniter.Unmarshal(normalized, &c); err != nil {
+						return nil, errors.Wrap(err, "unmarshal JSON")
+					}
+					break
+				}
+
+				return &server.PerforceDepotSyncer{
+					MaxChanges: int(c.MaxChanges),
+				}, nil
+			}
+			return &server.GitRepoSyncer{}, nil
+		},
 	}
 	gitserver.RegisterMetrics()
 
@@ -87,7 +151,10 @@ func main() {
 		host = "127.0.0.1"
 	}
 	addr := net.JoinHostPort(host, port)
-	srv := &http.Server{Addr: addr, Handler: handler}
+	srv := &http.Server{
+		Addr:    addr,
+		Handler: handler,
+	}
 	log15.Info("git-server: listening", "addr", srv.Addr)
 
 	go func() {
@@ -127,4 +194,37 @@ func parsePercent(s string) (int, error) {
 		return 0, fmt.Errorf("excessively high value given for percentage: %d", p)
 	}
 	return p, nil
+}
+
+// getStores initializes a connection to the database and returns RepoStore and
+// ExternalServiceStore.
+func getStores() (*database.RepoStore, *database.ExternalServiceStore, error) {
+	//
+	// START FLAILING
+
+	// Gitserver is an internal actor. We rely on the frontend to do authz
+	// checks for user requests.
+	authz.SetProviders(true, []authz.Provider{})
+
+	// END FLAILING
+	//
+
+	dsn := conf.Get().ServiceConnections.PostgresDSN
+	conf.Watch(func() {
+		newDSN := conf.Get().ServiceConnections.PostgresDSN
+		if dsn != newDSN {
+			// The DSN was changed (e.g. by someone modifying the env vars on
+			// the frontend). We need to respect the new DSN. Easiest way to do
+			// that is to restart our service (kubernetes/docker/goreman will
+			// handle starting us back up).
+			log.Fatalf("Detected repository DSN change, restarting to take effect: %q", newDSN)
+		}
+	})
+
+	h, err := dbconn.New(dsn, "gitserver")
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return database.Repos(h), database.ExternalServices(h), nil
 }

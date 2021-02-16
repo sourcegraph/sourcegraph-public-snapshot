@@ -6,16 +6,20 @@ import (
 	"time"
 
 	"github.com/efritz/glock"
+	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // PeriodicGoroutine represents a goroutine whose main behavior is reinvoked periodically.
 type PeriodicGoroutine struct {
-	interval time.Duration
-	handler  Handler
-	clock    glock.Clock
-	ctx      context.Context // root context passed to the handler
-	cancel   func()          // cancels the root context
-	finished chan struct{}   // signals that Start has finished
+	interval  time.Duration
+	handler   Handler
+	operation *observation.Operation
+	clock     glock.Clock
+	ctx       context.Context // root context passed to the handler
+	cancel    func()          // cancels the root context
+	finished  chan struct{}   // signals that Start has finished
 }
 
 var _ BackgroundRoutine = &PeriodicGoroutine{}
@@ -40,21 +44,53 @@ type Finalizer interface {
 	OnShutdown()
 }
 
-// NewPeriodicGoroutine creates a new PeriodicGoroutine with the given handler.
-func NewPeriodicGoroutine(ctx context.Context, interval time.Duration, handler Handler) *PeriodicGoroutine {
-	return newPeriodicGoroutine(ctx, interval, handler, glock.NewRealClock())
+// HandlerFunc wraps a function so it can be used as a Handler.
+type HandlerFunc func(ctx context.Context) error
+
+func (f HandlerFunc) Handle(ctx context.Context) error {
+	return f(ctx)
 }
 
-func newPeriodicGoroutine(ctx context.Context, interval time.Duration, handler Handler, clock glock.Clock) *PeriodicGoroutine {
+type simpleHandler struct {
+	name    string
+	handler HandlerFunc
+}
+
+// NewHandlerWithErrorMessage wraps the given function to be used as a handler, and
+// prints a canned failure message containing the given name.
+func NewHandlerWithErrorMessage(name string, handler func(ctx context.Context) error) Handler {
+	return &simpleHandler{handler: handler, name: name}
+}
+
+func (h *simpleHandler) Handle(ctx context.Context) error {
+	return h.handler(ctx)
+}
+
+func (h *simpleHandler) HandleError(err error) {
+	log15.Error("An error occurred in a background task", "handler", h.name, "error", err)
+}
+
+// NewPeriodicGoroutine creates a new PeriodicGoroutine with the given handler.
+func NewPeriodicGoroutine(ctx context.Context, interval time.Duration, handler Handler) *PeriodicGoroutine {
+	return NewPeriodicGoroutineWithMetrics(ctx, interval, handler, nil)
+}
+
+// NewPeriodicGoroutine creates a new PeriodicGoroutine with the given handler.
+func NewPeriodicGoroutineWithMetrics(ctx context.Context, interval time.Duration, handler Handler, operation *observation.Operation) *PeriodicGoroutine {
+	return newPeriodicGoroutine(ctx, interval, handler, operation, glock.NewRealClock())
+}
+
+func newPeriodicGoroutine(ctx context.Context, interval time.Duration, handler Handler, operation *observation.Operation, clock glock.Clock) *PeriodicGoroutine {
 	ctx, cancel := context.WithCancel(ctx)
 
 	return &PeriodicGoroutine{
-		handler:  handler,
-		interval: interval,
-		clock:    clock,
-		ctx:      ctx,
-		cancel:   cancel,
-		finished: make(chan struct{}),
+		handler:   handler,
+		interval:  interval,
+		operation: operation,
+		clock:     clock,
+		ctx:       ctx,
+		cancel:    cancel,
+		finished:  make(chan struct{}),
 	}
 }
 
@@ -65,17 +101,10 @@ func (r *PeriodicGoroutine) Start() {
 
 loop:
 	for {
-		if err := r.handler.Handle(r.ctx); err != nil {
-			// If the error is due to the loop being shut down, just break
-			for ex := err; ex != nil; ex = errors.Unwrap(ex) {
-				if err == r.ctx.Err() {
-					break loop
-				}
-			}
-
-			if h, ok := r.handler.(ErrorHandler); ok {
-				h.HandleError(err)
-			}
+		if shutdown, err := runPeriodicHandler(r.ctx, r.handler, r.operation); shutdown {
+			break
+		} else if h, ok := r.handler.(ErrorHandler); ok && err != nil {
+			h.HandleError(err)
 		}
 
 		select {
@@ -96,4 +125,23 @@ loop:
 func (r *PeriodicGoroutine) Stop() {
 	r.cancel()
 	<-r.finished
+}
+
+func runPeriodicHandler(ctx context.Context, handler Handler, operation *observation.Operation) (_ bool, err error) {
+	if operation != nil {
+		tmpCtx, endObservation := operation.With(ctx, &err, observation.Args{})
+		defer endObservation(1, observation.Args{})
+		ctx = tmpCtx
+	}
+
+	err = handler.Handle(ctx)
+
+	// If the error is due to the loop being shut down, just break
+	for ex := err; ex != nil; ex = errors.Unwrap(ex) {
+		if err == ctx.Err() {
+			return true, nil
+		}
+	}
+
+	return false, err
 }

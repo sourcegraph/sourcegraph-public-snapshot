@@ -2,7 +2,8 @@
 
 set -e
 
-export GOBIN="$PWD/.bin"
+# Use .bin outside of schema since schema dir is watched by watchman.
+export GOBIN="$PWD/../.bin"
 export GO111MODULE=on
 
 go install github.com/sourcegraph/go-jsonschema/cmd/go-jsonschema-compiler
@@ -30,6 +31,7 @@ stringdata gitlab.schema.json GitLabSchemaJSON
 stringdata gitolite.schema.json GitoliteSchemaJSON
 stringdata other_external_service.schema.json OtherExternalServiceSchemaJSON
 stringdata phabricator.schema.json PhabricatorSchemaJSON
+stringdata perforce.schema.json PerforceSchemaJSON
 stringdata settings.schema.json SettingsSchemaJSON
 stringdata site.schema.json SiteSchemaJSON
 

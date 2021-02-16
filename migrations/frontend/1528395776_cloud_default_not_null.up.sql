@@ -1,0 +1,5 @@
+BEGIN;
+
+ALTER TABLE IF EXISTS external_services ALTER COLUMN cloud_default SET NOT NULL;
+
+COMMIT;

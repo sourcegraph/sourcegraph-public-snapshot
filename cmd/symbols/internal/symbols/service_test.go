@@ -11,9 +11,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
+	ctags "github.com/sourcegraph/go-ctags"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
 	symbolsclient "github.com/sourcegraph/sourcegraph/internal/symbols"
@@ -67,7 +66,7 @@ func TestService(t *testing.T) {
 
 	files := map[string]string{"a.js": "var x = 1"}
 	service := Service{
-		FetchTar: func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error) {
+		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 			return createTar(files)
 		},
 		NewParser: func() (ctags.Parser, error) {
@@ -169,10 +168,10 @@ func createTar(files map[string]string) (io.ReadCloser, error) {
 
 type mockParser []string
 
-func (m mockParser) Parse(name string, content []byte) ([]ctags.Entry, error) {
-	entries := make([]ctags.Entry, len(m))
+func (m mockParser) Parse(name string, content []byte) ([]*ctags.Entry, error) {
+	entries := make([]*ctags.Entry, len(m))
 	for i, name := range m {
-		entries[i] = ctags.Entry{Name: name, Path: "a.js"}
+		entries[i] = &ctags.Entry{Name: name, Path: "a.js"}
 	}
 	return entries, nil
 }

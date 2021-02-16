@@ -67,7 +67,7 @@
         "type": "object",
         "title": "GitLabProject",
         "additionalProperties": false,
-        "anyOf": [{ "required": ["name"] }, { "required": ["id"] }],
+        "oneOf": [{ "required": ["name"] }, { "required": ["id"] }],
         "properties": {
           "name": {
             "description": "The name of a GitLab project (\"group/name\") to mirror.",
@@ -193,6 +193,19 @@
           }
         }
       }
+    },
+    "cloudGlobal": {
+      "title": "CloudGlobal",
+      "description": "When set to true, this external service will be chosen as our 'Global' GitLab service. Only valid on Sourcegraph.com. Only one service can have this flag set.",
+      "type": "boolean",
+      "default": false,
+      "deprecationMessage": "DEPRECATED: The cloud_default flag should be set in the database instead"
+    },
+    "cloudDefault": {
+      "title": "CloudDefault",
+      "description": "Only to be used in development to override the cloud_default column",
+      "type": "boolean",
+      "default": false
     }
   },
   "definitions": {

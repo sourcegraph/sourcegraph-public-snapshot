@@ -9,30 +9,21 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bloomfilter"
-	bundlemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/client/mocks"
-	bundletypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bundles/types"
-	gitservermocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver/mocks"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store"
-	storemocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/store/mocks"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	uploadstoremocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
-
-func init() {
-	sqliteutil.SetLocalLibpath()
-	sqliteutil.MustRegisterSqlite3WithPcre()
-}
 
 func TestHandle(t *testing.T) {
 	setupRepoMocks(t)
 
-	upload := store.Upload{
+	upload := dbstore.Upload{
 		ID:           42,
 		Root:         "root/",
 		Commit:       "deadbeef",
@@ -40,16 +31,22 @@ func TestHandle(t *testing.T) {
 		Indexer:      "lsif-go",
 	}
 
-	mockStore := storemocks.NewMockStore()
-	bundleManagerClient := bundlemocks.NewMockBundleManagerClient()
-	gitserverClient := gitservermocks.NewMockClient()
+	mockWorkerStore := NewMockWorkerStore()
+	mockDBStore := NewMockDBStore()
+	mockLSIFStore := NewMockLSIFStore()
+	mockUploadStore := uploadstoremocks.NewMockStore()
+	gitserverClient := NewMockGitserverClient()
 
 	// Set default transaction behavior
-	mockStore.TransactFunc.SetDefaultReturn(mockStore, nil)
-	mockStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
+	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
+	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
+
+	// Set default transaction behavior
+	mockLSIFStore.TransactFunc.SetDefaultReturn(mockLSIFStore, nil)
+	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
 
 	// Give correlation package a valid input dump
-	bundleManagerClient.GetUploadFunc.SetDefaultHook(copyTestDump)
+	mockUploadStore.GetFunc.SetDefaultHook(copyTestDump)
 
 	// Allowlist all files in dump
 	gitserverClient.DirectoryChildrenFunc.SetDefaultReturn(map[string][]string{
@@ -57,28 +54,29 @@ func TestHandle(t *testing.T) {
 	}, nil)
 
 	handler := &handler{
-		bundleManagerClient: bundleManagerClient,
-		gitserverClient:     gitserverClient,
-		metrics:             metrics.NewWorkerMetrics(&observation.TestContext),
+		lsifStore:       mockLSIFStore,
+		uploadStore:     mockUploadStore,
+		gitserverClient: gitserverClient,
 	}
 
-	requeued, err := handler.handle(context.Background(), mockStore, upload)
+	requeued, err := handler.handle(context.Background(), mockWorkerStore, mockDBStore, upload)
 	if err != nil {
 		t.Fatalf("unexpected error handling upload: %s", err)
 	} else if requeued {
 		t.Errorf("unexpected requeue")
 	}
 
-	expectedPackages := []bundletypes.Package{
-		{DumpID: 42,
+	expectedPackages := []lsifstore.Package{
+		{
+			DumpID:  42,
 			Scheme:  "scheme B",
 			Name:    "pkg B",
 			Version: "v1.2.3",
 		},
 	}
-	if len(mockStore.UpdatePackagesFunc.History()) != 1 {
-		t.Errorf("unexpected number of UpdatePackages calls. want=%d have=%d", 1, len(mockStore.UpdatePackagesFunc.History()))
-	} else if diff := cmp.Diff(expectedPackages, mockStore.UpdatePackagesFunc.History()[0].Arg1); diff != "" {
+	if len(mockDBStore.UpdatePackagesFunc.History()) != 1 {
+		t.Errorf("unexpected number of UpdatePackages calls. want=%d have=%d", 1, len(mockDBStore.UpdatePackagesFunc.History()))
+	} else if diff := cmp.Diff(expectedPackages, mockDBStore.UpdatePackagesFunc.History()[0].Arg1); diff != "" {
 		t.Errorf("unexpected UpdatePackagesFunc args (-want +got):\n%s", diff)
 	}
 
@@ -86,49 +84,48 @@ func TestHandle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error creating filter: %s", err)
 	}
-	expectedPackageReferences := []bundletypes.PackageReference{
-		{DumpID: 42,
+	expectedPackageReferences := []lsifstore.PackageReference{
+		{
+			DumpID:  42,
 			Scheme:  "scheme A",
 			Name:    "pkg A",
 			Version: "v0.1.0",
 			Filter:  filter,
 		},
 	}
-	if len(mockStore.UpdatePackageReferencesFunc.History()) != 1 {
-		t.Errorf("unexpected number of UpdatePackageReferences calls. want=%d have=%d", 1, len(mockStore.UpdatePackageReferencesFunc.History()))
-	} else if diff := cmp.Diff(expectedPackageReferences, mockStore.UpdatePackageReferencesFunc.History()[0].Arg1); diff != "" {
+	if len(mockDBStore.UpdatePackageReferencesFunc.History()) != 1 {
+		t.Errorf("unexpected number of UpdatePackageReferences calls. want=%d have=%d", 1, len(mockDBStore.UpdatePackageReferencesFunc.History()))
+	} else if diff := cmp.Diff(expectedPackageReferences, mockDBStore.UpdatePackageReferencesFunc.History()[0].Arg1); diff != "" {
 		t.Errorf("unexpected UpdatePackageReferencesFunc args (-want +got):\n%s", diff)
 	}
 
-	if len(mockStore.DeleteOverlappingDumpsFunc.History()) != 1 {
-		t.Errorf("unexpected number of DeleteOverlappingDumps calls. want=%d have=%d", 1, len(mockStore.DeleteOverlappingDumpsFunc.History()))
-	} else if mockStore.DeleteOverlappingDumpsFunc.History()[0].Arg1 != 50 {
-		t.Errorf("unexpected value for repository id. want=%d have=%d", 50, mockStore.DeleteOverlappingDumpsFunc.History()[0].Arg1)
-	} else if mockStore.DeleteOverlappingDumpsFunc.History()[0].Arg2 != "deadbeef" {
-		t.Errorf("unexpected value for commit. want=%s have=%s", "deadbeef", mockStore.DeleteOverlappingDumpsFunc.History()[0].Arg2)
-	} else if mockStore.DeleteOverlappingDumpsFunc.History()[0].Arg3 != "root/" {
-		t.Errorf("unexpected value for root. want=%s have=%s", "root/", mockStore.DeleteOverlappingDumpsFunc.History()[0].Arg3)
-	} else if mockStore.DeleteOverlappingDumpsFunc.History()[0].Arg4 != "lsif-go" {
-		t.Errorf("unexpected value for indexer. want=%s have=%s", "lsif-go", mockStore.DeleteOverlappingDumpsFunc.History()[0].Arg4)
+	if len(mockDBStore.DeleteOverlappingDumpsFunc.History()) != 1 {
+		t.Errorf("unexpected number of DeleteOverlappingDumps calls. want=%d have=%d", 1, len(mockDBStore.DeleteOverlappingDumpsFunc.History()))
+	} else if mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg1 != 50 {
+		t.Errorf("unexpected value for repository id. want=%d have=%d", 50, mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg1)
+	} else if mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg2 != "deadbeef" {
+		t.Errorf("unexpected value for commit. want=%s have=%s", "deadbeef", mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg2)
+	} else if mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg3 != "root/" {
+		t.Errorf("unexpected value for root. want=%s have=%s", "root/", mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg3)
+	} else if mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg4 != "lsif-go" {
+		t.Errorf("unexpected value for indexer. want=%s have=%s", "lsif-go", mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg4)
 	}
 
-	if len(mockStore.MarkRepositoryAsDirtyFunc.History()) != 1 {
-		t.Errorf("unexpected number of MarkRepositoryAsDirtyFunc calls. want=%d have=%d", 1, len(mockStore.MarkRepositoryAsDirtyFunc.History()))
-	} else if mockStore.MarkRepositoryAsDirtyFunc.History()[0].Arg1 != 50 {
-		t.Errorf("unexpected value for repository id. want=%d have=%d", 50, mockStore.MarkRepositoryAsDirtyFunc.History()[0].Arg1)
+	if len(mockDBStore.MarkRepositoryAsDirtyFunc.History()) != 1 {
+		t.Errorf("unexpected number of MarkRepositoryAsDirty calls. want=%d have=%d", 1, len(mockDBStore.MarkRepositoryAsDirtyFunc.History()))
+	} else if mockDBStore.MarkRepositoryAsDirtyFunc.History()[0].Arg1 != 50 {
+		t.Errorf("unexpected value for repository id. want=%d have=%d", 50, mockDBStore.MarkRepositoryAsDirtyFunc.History()[0].Arg1)
 	}
 
-	if len(bundleManagerClient.SendDBFunc.History()) != 1 {
-		t.Errorf("unexpected number of SendDB calls. want=%d have=%d", 1, len(bundleManagerClient.SendDBFunc.History()))
-	} else if bundleManagerClient.SendDBFunc.History()[0].Arg1 != 42 {
-		t.Errorf("unexpected SendDBFunc args. want=%d have=%d", 42, bundleManagerClient.SendDBFunc.History()[0].Arg1)
+	if len(mockUploadStore.DeleteFunc.History()) != 1 {
+		t.Errorf("unexpected number of Delete calls. want=%d have=%d", 1, len(mockUploadStore.DeleteFunc.History()))
 	}
 }
 
 func TestHandleError(t *testing.T) {
 	setupRepoMocks(t)
 
-	upload := store.Upload{
+	upload := dbstore.Upload{
 		ID:           42,
 		Root:         "root/",
 		Commit:       "deadbeef",
@@ -136,27 +133,33 @@ func TestHandleError(t *testing.T) {
 		Indexer:      "lsif-go",
 	}
 
-	mockStore := storemocks.NewMockStore()
-	bundleManagerClient := bundlemocks.NewMockBundleManagerClient()
-	gitserverClient := gitservermocks.NewMockClient()
+	mockWorkerStore := NewMockWorkerStore()
+	mockDBStore := NewMockDBStore()
+	mockLSIFStore := NewMockLSIFStore()
+	mockUploadStore := uploadstoremocks.NewMockStore()
+	gitserverClient := NewMockGitserverClient()
 
 	// Set default transaction behavior
-	mockStore.TransactFunc.SetDefaultReturn(mockStore, nil)
-	mockStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
+	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
+	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
+
+	// Set default transaction behavior
+	mockLSIFStore.TransactFunc.SetDefaultReturn(mockLSIFStore, nil)
+	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
 
 	// Give correlation package a valid input dump
-	bundleManagerClient.GetUploadFunc.SetDefaultHook(copyTestDump)
+	mockUploadStore.GetFunc.SetDefaultHook(copyTestDump)
 
 	// Set a different tip commit
-	mockStore.MarkRepositoryAsDirtyFunc.SetDefaultReturn(fmt.Errorf("uh-oh!"))
+	mockDBStore.MarkRepositoryAsDirtyFunc.SetDefaultReturn(fmt.Errorf("uh-oh!"))
 
 	handler := &handler{
-		bundleManagerClient: bundleManagerClient,
-		gitserverClient:     gitserverClient,
-		metrics:             metrics.NewWorkerMetrics(&observation.TestContext),
+		lsifStore:       mockLSIFStore,
+		uploadStore:     mockUploadStore,
+		gitserverClient: gitserverClient,
 	}
 
-	requeued, err := handler.handle(context.Background(), mockStore, upload)
+	requeued, err := handler.handle(context.Background(), mockWorkerStore, mockDBStore, upload)
 	if err == nil {
 		t.Fatalf("unexpected nil error handling upload")
 	} else if !strings.Contains(err.Error(), "uh-oh!") {
@@ -165,12 +168,12 @@ func TestHandleError(t *testing.T) {
 		t.Errorf("unexpected requeue")
 	}
 
-	if len(mockStore.DoneFunc.History()) != 1 {
-		t.Errorf("unexpected number of Done calls. want=%d have=%d", 1, len(mockStore.DoneFunc.History()))
+	if len(mockDBStore.DoneFunc.History()) != 1 {
+		t.Errorf("unexpected number of Done calls. want=%d have=%d", 1, len(mockDBStore.DoneFunc.History()))
 	}
 
-	if len(bundleManagerClient.DeleteUploadFunc.History()) != 1 {
-		t.Errorf("unexpected number of DeleteUpload calls. want=%d have=%d", 1, len(bundleManagerClient.DeleteUploadFunc.History()))
+	if len(mockUploadStore.DeleteFunc.History()) != 0 {
+		t.Errorf("unexpected number of Delete calls. want=%d have=%d", 0, len(mockUploadStore.DeleteFunc.History()))
 	}
 }
 
@@ -191,7 +194,7 @@ func TestHandleCloneInProgress(t *testing.T) {
 		return api.CommitID(""), &vcs.RepoNotExistError{Repo: repo.Name, CloneInProgress: true}
 	}
 
-	upload := store.Upload{
+	upload := dbstore.Upload{
 		ID:           42,
 		Root:         "root/",
 		Commit:       "deadbeef",
@@ -199,33 +202,33 @@ func TestHandleCloneInProgress(t *testing.T) {
 		Indexer:      "lsif-go",
 	}
 
-	mockStore := storemocks.NewMockStore()
-	bundleManagerClient := bundlemocks.NewMockBundleManagerClient()
-	gitserverClient := gitservermocks.NewMockClient()
+	mockWorkerStore := NewMockWorkerStore()
+	mockDBStore := NewMockDBStore()
+	mockUploadStore := uploadstoremocks.NewMockStore()
+	gitserverClient := NewMockGitserverClient()
 
 	handler := &handler{
-		bundleManagerClient: bundleManagerClient,
-		gitserverClient:     gitserverClient,
-		metrics:             metrics.NewWorkerMetrics(&observation.TestContext),
+		uploadStore:     mockUploadStore,
+		gitserverClient: gitserverClient,
 	}
 
-	requeued, err := handler.handle(context.Background(), mockStore, upload)
+	requeued, err := handler.handle(context.Background(), mockWorkerStore, mockDBStore, upload)
 	if err != nil {
 		t.Fatalf("unexpected error handling upload: %s", err)
 	} else if !requeued {
 		t.Errorf("expected upload to be requeued")
 	}
 
-	if len(mockStore.RequeueFunc.History()) != 1 {
-		t.Errorf("unexpected number of RequeueFunc calls. want=%d have=%d", 1, len(mockStore.RequeueFunc.History()))
+	if len(mockWorkerStore.RequeueFunc.History()) != 1 {
+		t.Errorf("unexpected number of Requeue calls. want=%d have=%d", 1, len(mockWorkerStore.RequeueFunc.History()))
 	}
 }
 
 //
 //
 
-func copyTestDump(ctx context.Context, uploadID int) (io.ReadCloser, error) {
-	return os.Open("../../testdata/dump1.lsif")
+func copyTestDump(ctx context.Context, key string) (io.ReadCloser, error) {
+	return os.Open("../../testdata/dump1.lsif.gz")
 }
 
 func setupRepoMocks(t *testing.T) {

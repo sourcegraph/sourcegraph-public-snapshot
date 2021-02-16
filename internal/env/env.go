@@ -28,8 +28,8 @@ var locked = false
 var (
 	// MyName represents the name of the current process.
 	MyName, envVarName = findName()
-	LogLevel           = Get("SRC_LOG_LEVEL", "dbug", "upper log level to restrict log output to (dbug, info, warn, error, crit)")
-	LogFormat          = Get("SRC_LOG_FORMAT", "logfmt", "log format (logfmt, condensed)")
+	LogLevel           = Get("SRC_LOG_LEVEL", "warn", "upper log level to restrict log output to (dbug, info, warn, error, crit)")
+	LogFormat          = Get("SRC_LOG_FORMAT", "logfmt", "log format (logfmt, condensed, json)")
 	InsecureDev, _     = strconv.ParseBool(Get("INSECURE_DEV", "false", "Running in insecure dev (local laptop) mode"))
 )
 
@@ -59,6 +59,19 @@ func findName() (string, string) {
 		name = "unknown"
 	}
 	return origName, name
+}
+
+// Ensure behaves like Get except that it sets the environment variable if it doesn't exist.
+func Ensure(name, defaultValue, description string) string {
+	value := Get(name, defaultValue, description)
+	if value == defaultValue {
+		err := os.Setenv(name, value)
+		if err != nil {
+			panic(fmt.Sprintf("failed to set %s environment variable: %v", name, err))
+		}
+	}
+
+	return value
 }
 
 func init() {

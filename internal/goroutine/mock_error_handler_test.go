@@ -61,7 +61,7 @@ func (f *ErrorHandlerHandleErrorFunc) SetDefaultHook(hook func(error)) {
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// HandleError method of the parent MockErrorHandler instance inovkes the
+// HandleError method of the parent MockErrorHandler instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
 func (f *ErrorHandlerHandleErrorFunc) PushHook(hook func(error)) {

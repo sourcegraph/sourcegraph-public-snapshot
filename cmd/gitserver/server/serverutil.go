@@ -266,33 +266,6 @@ var repoLastChanged = func(dir GitDir) (time.Time, error) {
 	return fi.ModTime(), nil
 }
 
-// repoRemoteURL returns the "origin" remote fetch URL for the Git repository in dir. If the repository
-// doesn't exist or the remote doesn't exist and have a fetch URL, an error is returned. If there are
-// multiple fetch URLs, only the first is returned.
-var repoRemoteURL = func(ctx context.Context, dir GitDir) (string, error) {
-	// We do not pass in context since this command is quick. We do a lot of
-	// logging around what this function does, so having to handle context
-	// failures in each case is verbose. Rather just prevent that.
-	cmd := exec.Command("git", "remote", "get-url", "origin")
-	dir.Set(cmd)
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	_, err := runCommand(ctx, cmd)
-	if err != nil {
-		stderr := stderr.Bytes()
-		if len(stderr) > 200 {
-			stderr = stderr[:200]
-		}
-		return "", fmt.Errorf("git %s failed: %s (%q)", cmd.Args, err, stderr)
-	}
-	remoteURLs := strings.SplitN(strings.TrimSpace(stdout.String()), "\n", 2)
-	if len(remoteURLs) == 0 || remoteURLs[0] == "" {
-		return "", fmt.Errorf("no remote URL for repo %s", dir)
-	}
-	return remoteURLs[0], nil
-}
-
 // repoRemoteRefs returns a map containing ref + commit pairs from the
 // remote Git repository starting with the specified prefix.
 //

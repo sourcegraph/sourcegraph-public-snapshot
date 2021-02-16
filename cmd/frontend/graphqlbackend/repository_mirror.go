@@ -3,18 +3,20 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
+	"net/url"
+	"strings"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	repoupdaterprotocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func (r *RepositoryResolver) MirrorInfo() *repositoryMirrorInfoResolver {
@@ -37,8 +39,8 @@ type repositoryMirrorInfoResolver struct {
 
 func (r *repositoryMirrorInfoResolver) gitserverRepoInfo(ctx context.Context) (*protocol.RepoInfo, error) {
 	r.repoInfoOnce.Do(func() {
-		resp, err := gitserver.DefaultClient.RepoInfo(ctx, r.repository.repo.Name)
-		r.repoInfoResponse, r.repoInfoErr = resp.Results[r.repository.repo.Name], err
+		resp, err := gitserver.DefaultClient.RepoInfo(ctx, r.repository.innerRepo.Name)
+		r.repoInfoResponse, r.repoInfoErr = resp.Results[r.repository.innerRepo.Name], err
 	})
 	return r.repoInfoResponse, r.repoInfoErr
 }
@@ -46,13 +48,17 @@ func (r *repositoryMirrorInfoResolver) gitserverRepoInfo(ctx context.Context) (*
 func (r *repositoryMirrorInfoResolver) repoUpdateSchedulerInfo(ctx context.Context) (*repoupdaterprotocol.RepoUpdateSchedulerInfoResult, error) {
 	r.repoUpdateSchedulerInfoOnce.Do(func() {
 		args := repoupdaterprotocol.RepoUpdateSchedulerInfoArgs{
-			RepoName: r.repository.repo.Name,
-			ID:       r.repository.repo.ID,
+			RepoName: r.repository.innerRepo.Name,
+			ID:       r.repository.IDInt32(),
 		}
 		r.repoUpdateSchedulerInfoResult, r.repoUpdateSchedulerInfoErr = repoupdater.DefaultClient.RepoUpdateSchedulerInfo(ctx, args)
 	})
 	return r.repoUpdateSchedulerInfoResult, r.repoUpdateSchedulerInfoErr
 }
+
+// TODO(flying-robot): this regex and the majority of the removeUserInfo function can
+// be extracted to a common location in a subsequent change.
+var nonSCPURLRegex = lazyregexp.New(`^(git\+)?(https?|ssh|rsync|file|git|perforce)://`)
 
 func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, error) {
 	// 🚨 SECURITY: The remote URL might contain secret credentials in the URL userinfo, so
@@ -61,16 +67,38 @@ func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, e
 		return "", err
 	}
 
+	// removeUserinfo strips the userinfo component of a remote URL. The provided string s
+	// will be returned if it cannot be parsed as a URL.
+	removeUserinfo := func(s string) string {
+		// Support common syntax (HTTPS, SSH, etc.)
+		if nonSCPURLRegex.MatchString(s) {
+			u, err := url.Parse(s)
+			if err != nil {
+				return s
+			}
+			u.User = nil
+			return u.String()
+		}
+
+		// Support SCP-style syntax.
+		u, err := url.Parse("fake://" + strings.Replace(s, ":", "/", 1))
+		if err != nil {
+			return s
+		}
+		u.User = nil
+		return strings.Replace(strings.Replace(u.String(), "fake://", "", 1), "/", ":", 1)
+	}
+
 	{
 		// Look up the remote URL in repo-updater.
 		result, err := repoupdater.DefaultClient.RepoLookup(ctx, repoupdaterprotocol.RepoLookupArgs{
-			Repo: r.repository.repo.Name,
+			Repo: r.repository.innerRepo.Name,
 		})
 		if err != nil {
 			return "", err
 		}
 		if result.Repo != nil {
-			return result.Repo.VCS.URL, nil
+			return removeUserinfo(result.Repo.VCS.URL), nil
 		}
 	}
 
@@ -79,7 +107,7 @@ func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, e
 	if err != nil {
 		return "", err
 	}
-	return info.URL, nil
+	return removeUserinfo(info.URL), nil
 }
 
 func (r *repositoryMirrorInfoResolver) Cloned(ctx context.Context) (bool, error) {
@@ -202,13 +230,8 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 		repo = &types.Repo{Name: api.RepoName(*args.Name)}
 	}
 
-	gitserverRepo, err := backend.GitRepo(ctx, repo)
-	if err != nil {
-		return nil, err
-	}
-
 	var result checkMirrorRepositoryConnectionResult
-	if err := gitserver.DefaultClient.IsRepoCloneable(ctx, gitserverRepo); err != nil {
+	if err := gitserver.DefaultClient.IsRepoCloneable(ctx, repo.Name); err != nil {
 		result.errorMessage = err.Error()
 	}
 	return &result, nil
@@ -238,39 +261,8 @@ func (r *schemaResolver) UpdateMirrorRepository(ctx context.Context, args *struc
 		return nil, err
 	}
 
-	gitserverRepo, err := backend.GitRepo(ctx, repo.repo)
-	if err != nil {
+	if _, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, repo.innerRepo.Name); err != nil {
 		return nil, err
-	}
-	if _, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo); err != nil {
-		return nil, err
-	}
-	return &EmptyResponse{}, nil
-}
-
-func (r *schemaResolver) UpdateAllMirrorRepositories(ctx context.Context) (*EmptyResponse, error) {
-	// Only usable for self-hosted instances
-	if envvar.SourcegraphDotComMode() {
-		return nil, errors.New("Not available on sourcegraph.com")
-	}
-	// 🚨 SECURITY: There is no reason why non-site-admins would need to run this operation.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-
-	reposList, err := db.Repos.List(ctx, db.ReposListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	for _, repo := range reposList {
-		gitserverRepo, err := backend.GitRepo(ctx, repo)
-		if err != nil {
-			return nil, err
-		}
-		if _, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo); err != nil {
-			return nil, err
-		}
 	}
 	return &EmptyResponse{}, nil
 }

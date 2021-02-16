@@ -6,9 +6,21 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/go-enry/go-enry/v2"
 	"github.com/pkg/errors"
-	"github.com/src-d/enry/v2"
+
+	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 )
+
+// IsBasic returns whether a query is a basic query. A basic query is one which
+// does not have a DNF-expansion. I.e., there is only one disjunct. A basic
+// query implies that it has no subexpressions that we need to evaluate. IsBasic
+// is used in our codebase where legacy code has not been updated to handle
+// queries with multiple expressions (like alerts), and assume only one
+// evaluatable query.
+func IsBasic(nodes []Node) bool {
+	return len(Dnf(nodes)) == 1
+}
 
 // exists traverses every node in nodes and returns early as soon as fn is satisfied.
 func exists(nodes []Node, fn func(node Node) bool) bool {
@@ -54,34 +66,6 @@ func containsPattern(node Node) bool {
 		_, ok := node.(Pattern)
 		return ok
 	})
-}
-
-// returns true if descendent of node contains and/or expressions.
-func containsAndOrExpression(nodes []Node) bool {
-	return exists(nodes, func(node Node) bool {
-		term, ok := node.(Operator)
-		return ok && (term.Kind == And || term.Kind == Or)
-	})
-}
-
-// containsNegatedPattern returns true if any search pattern is negated in nodes.
-func containsNegatedPattern(nodes []Node) bool {
-	return exists(nodes, func(node Node) bool {
-		if p, ok := node.(Pattern); ok {
-			if p.Negated {
-				return true
-			}
-		}
-		return false
-	})
-}
-
-// ContainsAndOrKeyword returns true if this query contains or- or and-
-// keywords. It is a temporary signal to determine whether we can fallback to
-// the older existing search functionality.
-func ContainsAndOrKeyword(input string) bool {
-	lower := strings.ToLower(input)
-	return strings.Contains(lower, " and ") || strings.Contains(lower, " or ")
 }
 
 // ContainsRegexpMetasyntax returns true if a string is a valid regular
@@ -147,34 +131,6 @@ func PartitionSearchPattern(nodes []Node) (parameters []Node, pattern Node, err 
 	}
 
 	return parameters, pattern, nil
-}
-
-// isPureSearchPattern implements a heuristic that returns true if buf, possibly
-// containing whitespace or balanced parentheses, can be treated as a search
-// pattern in the and/or grammar.
-func isPureSearchPattern(buf []byte) bool {
-	// Check if the balanced string we scanned is perhaps an and/or expression by parsing without the parensAsPatterns heuristic.
-	try := &parser{buf: buf}
-	result, err := try.parseOr()
-	if err != nil {
-		// This is not an and/or expression, but it is balanced. It
-		// could be, e.g., (foo or). Reject this sort of pattern for now.
-		return false
-	}
-	if try.balanced != 0 {
-		return false
-	}
-	if containsAndOrExpression(result) {
-		// The balanced string is an and/or expression in our grammar,
-		// so it cannot be interpreted as a search pattern.
-		return false
-	}
-	if !isPatternExpression(newOperator(result, Concat)) {
-		// The balanced string contains other parameters, like
-		// "repo:foo", which are not search patterns.
-		return false
-	}
-	return true
 }
 
 // parseBool is like strconv.ParseBool except that it also accepts y, Y, yes,
@@ -245,8 +201,21 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		return nil
 	}
 
+	isYesNoOnly := func() error {
+		v := ParseYesNoOnly(value)
+		if v == Invalid {
+			return fmt.Errorf("invalid value %q for field %q. Valid values are: yes, only, no", value, field)
+		}
+		return nil
+	}
+
 	isUnrecognizedField := func() error {
 		return fmt.Errorf("unrecognized field %q", field)
+	}
+
+	isValidSelect := func() error {
+		_, err := filter.SelectPathFromString(value)
+		return err
 	}
 
 	satisfies := func(fns ...func() error) error {
@@ -269,7 +238,8 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		FieldRepo:
 		return satisfies(isValidRegexp)
 	case
-		FieldRepoGroup:
+		FieldRepoGroup,
+		FieldContext:
 		return satisfies(isSingular, isNotNegated)
 	case
 		FieldFile:
@@ -306,7 +276,7 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		return satisfies(isValidRegexp)
 	case
 		FieldIndex:
-		return satisfies(isSingular, isNotNegated)
+		return satisfies(isSingular, isNotNegated, isYesNoOnly)
 	case
 		FieldCount:
 		return satisfies(isSingular, isNumber, isNotNegated)
@@ -321,6 +291,9 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 	case
 		FieldRev:
 		return satisfies(isSingular, isNotNegated)
+	case
+		FieldSelect:
+		return satisfies(isSingular, isNotNegated, isValidSelect)
 	default:
 		return isUnrecognizedField()
 	}
@@ -350,7 +323,7 @@ func validateRepoRevPair(nodes []Node) error {
 }
 
 // Queries containing commit parameters without type:diff or type:commit are not
-// valid. cf. https://docs.sourcegraph.com/user/search/language#commit-parameter
+// valid. cf. https://docs.sourcegraph.com/code_search/reference/language#commit-parameter
 func validateCommitParameters(nodes []Node) error {
 	var seenCommitParam string
 	var typeCommitExists bool
@@ -368,7 +341,49 @@ func validateCommitParameters(nodes []Node) error {
 	return nil
 }
 
-func validate(nodes []Node) error {
+// validateRepoHasFile validates that the repohasfile parameter can be executed.
+// A query like `repohasfile:foo type:symbol patter-to-match-symbols` is
+// currently not supported.
+func validateRepoHasFile(nodes []Node) error {
+	var seenRepoHasFile, seenTypeSymbol bool
+	VisitParameter(nodes, func(field, value string, _ bool, _ Annotation) {
+		if field == FieldRepoHasFile {
+			seenRepoHasFile = true
+		}
+		if field == FieldType && strings.EqualFold(value, "symbol") {
+			seenTypeSymbol = true
+		}
+	})
+	if seenRepoHasFile && seenTypeSymbol {
+		return errors.New("repohasfile is not compatible for type:symbol. Subscribe to https://github.com/sourcegraph/sourcegraph/issues/4610 for updates")
+	}
+	return nil
+}
+
+// validatePureLiteralPattern checks that no pattern expression contains and/or
+// operators nested inside concat. It may happen that we interpret a query this
+// way due to ambiguity. If this happens, return an error message.
+func validatePureLiteralPattern(nodes []Node, balanced bool) error {
+	impure := exists(nodes, func(node Node) bool {
+		if operator, ok := node.(Operator); ok && operator.Kind == Concat {
+			for _, node := range operator.Operands {
+				if op, ok := node.(Operator); ok && (op.Kind == Or || op.Kind == And) {
+					return true
+				}
+			}
+		}
+		return false
+	})
+	if impure {
+		if !balanced {
+			return errors.New("this literal search query contains unbalanced parentheses. I tried to guess what you meant, but wasn't able to. Maybe you missed a parenthesis? Otherwise, try using the content: filter if the pattern is unbalanced")
+		}
+		return errors.New("i'm having trouble understanding that query. The combination of parentheses is the problem. Try using the content: filter to quote patterns that contain parentheses")
+	}
+	return nil
+}
+
+func validateParameters(nodes []Node) error {
 	var err error
 	seen := map[string]struct{}{}
 	VisitParameter(nodes, func(field, value string, negated bool, _ Annotation) {
@@ -378,21 +393,71 @@ func validate(nodes []Node) error {
 		err = validateField(field, value, negated, seen)
 		seen[field] = struct{}{}
 	})
-	VisitPattern(nodes, func(value string, _ bool, annotation Annotation) {
+	return err
+}
+
+func validatePattern(nodes []Node) error {
+	var err error
+	VisitPattern(nodes, func(value string, negated bool, annotation Annotation) {
 		if annotation.Labels.isSet(Regexp) {
 			if err != nil {
 				return
 			}
 			_, err = regexp.Compile(value)
 		}
+		if annotation.Labels.isSet(Structural) && negated {
+			if err != nil {
+				return
+			}
+			err = errors.New("the query contains a negated search pattern. Structural search does not support negated search patterns at the moment")
+		}
 	})
-	if err != nil {
-		return err
-	}
-	err = validateRepoRevPair(nodes)
-	if err != nil {
-		return err
-	}
-	err = validateCommitParameters(nodes)
 	return err
+}
+
+func validate(nodes []Node) error {
+	succeeds := func(fns ...func([]Node) error) error {
+		for _, fn := range fns {
+			if err := fn(nodes); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	return succeeds(
+		validateParameters,
+		validatePattern,
+		validateRepoRevPair,
+		validateRepoHasFile,
+		validateCommitParameters,
+	)
+}
+
+type YesNoOnly string
+
+const (
+	Yes     YesNoOnly = "yes"
+	No      YesNoOnly = "no"
+	Only    YesNoOnly = "only"
+	Invalid YesNoOnly = "invalid"
+)
+
+func ParseYesNoOnly(s string) YesNoOnly {
+	switch s {
+	case "y", "Y", "yes", "YES", "Yes":
+		return Yes
+	case "n", "N", "no", "NO", "No":
+		return No
+	case "o", "only", "ONLY", "Only":
+		return Only
+	default:
+		if b, err := strconv.ParseBool(s); err == nil {
+			if b {
+				return Yes
+			}
+			return No
+		}
+		return Invalid
+	}
 }

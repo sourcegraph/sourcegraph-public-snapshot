@@ -6,12 +6,13 @@ import (
 
 	"github.com/RoaringBitmap/roaring"
 	"github.com/graph-gophers/graphql-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 var _ graphqlbackend.RepositoryConnectionResolver = &repositoryConnectionResolver{}
@@ -54,7 +55,9 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			}
 		}
 
-		r.repos, r.err = db.Repos.GetByIDs(ctx, repoIDs...)
+		// TODO(asdine): GetByIDs now returns the complete repo information rather that only a subset.
+		// Ensure this doesn't have an impact on performance and switch to using ListRepoNames if needed.
+		r.repos, r.err = database.GlobalRepos.GetByIDs(ctx, repoIDs...)
 		if r.err != nil {
 			return
 		}

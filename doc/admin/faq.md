@@ -84,6 +84,38 @@ can update the configuration if they have direct `docker exec` or `kubectl exec`
 Sourcegraph instance. Follow the [instructions to update the site config if the web UI is
 inaccessible](config/site_config.md#editing-your-site-configuration-if-you-cannot-access-the-web-ui).
 
+## How do I set up redirect URLs in Sourcegraph?
+
+Sometimes URLs in Sourcegraph may change. For example, if a code host configuration is
+updated to use a different `repositoryPathPattern`, this will change the repository URLs on
+Sourcegraph. Users may wish to preserve links to the old URLs, and this requires adding redirects.
+
+We recommend configuring redirects in a reverse proxy. If you are running Sourcegraph as a single
+Docker image, you can deploy a reverse proxy such as [Caddy](https://caddyserver.com/) or
+[NGINX](https://www.nginx.com) in front of it. Refer to the
+[Caddy](https://github.com/caddyserver/caddy/wiki/v2:-Documentation#rewrite) or
+[NGINX](https://www.nginx.com/blog/creating-nginx-rewrite-rules/) documentation for URL rewrites.
+
+If you are running Sourcegraph as a Kubernetes cluster, you have two additional options:
+
+1. If you are using [NGINX
+   ingress](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/docs/configure.md#ingress-controller-recommended)
+   (`kubectl get ingress | grep sourcegraph-frontend`), modify
+   [`sourcegraph-frontend.Ingress.yaml`](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/frontend/sourcegraph-frontend.Ingress.yaml)
+   by [adding a rewrite rule](https://kubernetes.github.io/ingress-nginx/examples/rewrite/).
+1. If you are using the [NGINX
+   service](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/docs/configure.md#nginx-service),
+   modify
+   [`nginx.ConfigMap.yaml`](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/nginx-svc/nginx.ConfigMap.yaml).
+
+## Can I consume Sourcegraph's metrics in my own monitoring system (Datadog, New Relic, etc.)?
+
+Sourcegraph provides [high-level alerting metrics](./observability/metrics.md#high-level-alerting-metrics) which you can integrate into your own monitoring system - see the [alerting custom consumption guide](./observability/alerting_custom_consumption.md) for more details.
+
+While it is technically possible to consume all of Sourcegraph's metrics in an external system, our recommendation is to utilize the builtin monitoring tools and configure Sourcegraph to [send alerts to your own PagerDuty, Slack, email, etc.](./observability/alerting.md). Metrics and thresholds can change with each release, therefore manually defining the alerts required to monitor Sourcegraph's health is not recommended. Sourcegraph automatically updates the dashboards and alerts on each release to ensure the displayed information is up-to-date.
+
+Other monitoring systems that support Prometheus scraping (for example, Datadog and New Relic) or [Prometheus federation](https://prometheus.io/docs/prometheus/latest/federation/) can be configured to federate Sourcegraph's [high-level alerting metrics](./observability/metrics.md#high-level-alerting-metrics). For information on how to configure those systems, please check your provider's documentation.
+
 ## Troubleshooting
 
 Content moved to a [dedicated troubleshooting page](troubleshooting.md).

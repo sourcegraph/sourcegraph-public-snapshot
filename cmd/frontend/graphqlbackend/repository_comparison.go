@@ -12,10 +12,8 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/go-diff/diff"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -71,7 +69,7 @@ func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *R
 		headRevspec = *args.Head
 	}
 
-	getCommit := func(ctx context.Context, repo gitserver.Repo, revspec string) (*GitCommitResolver, error) {
+	getCommit := func(ctx context.Context, repo api.RepoName, revspec string) (*GitCommitResolver, error) {
 		if revspec == git.DevNullSHA {
 			return nil, nil
 		}
@@ -79,62 +77,35 @@ func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *R
 		opt := git.ResolveRevisionOptions{
 			NoEnsureRevision: !args.FetchMissing,
 		}
-		// Optimistically fetch using revspec
-		commit, err := git.GetCommit(ctx, repo, nil, api.CommitID(revspec), opt)
-		if err == nil {
-			return toGitCommitResolver(r, commit), nil
-		}
 
 		// Call ResolveRevision to trigger fetches from remote (in case base/head commits don't
 		// exist).
-		commitID, err := git.ResolveRevision(ctx, repo, nil, revspec, opt)
+		commitID, err := git.ResolveRevision(ctx, repo, revspec, opt)
 		if err != nil {
 			return nil, err
 		}
 
-		commit, err = git.GetCommit(ctx, repo, nil, commitID, opt)
-		if err != nil {
-			return nil, err
-		}
-		return toGitCommitResolver(r, commit), nil
+		return toGitCommitResolver(r, commitID, nil), nil
 	}
 
-	grepo, err := backend.CachedGitRepo(ctx, r.repo)
+	head, err := getCommit(ctx, r.innerRepo.Name, headRevspec)
 	if err != nil {
 		return nil, err
 	}
 
-	var (
-		wg               sync.WaitGroup
-		base, head       *GitCommitResolver
-		baseErr, headErr error
-	)
-
-	wg.Add(2)
-	go func() {
-		defer wg.Done()
-		// Find the common merge-base for the diff. That's the revision the diff applies to,
-		// not the baseRevspec.
-		mergeBaseCommit, err := git.MergeBase(ctx, *grepo, api.CommitID(baseRevspec), api.CommitID(headRevspec))
-		if err != nil {
-			baseErr = err
-			return
-		}
-		// We use the merge-base as the base commit here, as the diff will only be guaranteed to be
-		// applicable to the file from that revision.
-		commitString := strings.TrimSpace(string(mergeBaseCommit))
-		base, baseErr = getCommit(ctx, *grepo, commitString)
-	}()
-	go func() {
-		defer wg.Done()
-		head, headErr = getCommit(ctx, *grepo, headRevspec)
-	}()
-	wg.Wait()
-	if baseErr != nil {
-		return nil, baseErr
+	// Find the common merge-base for the diff. That's the revision the diff applies to,
+	// not the baseRevspec.
+	mergeBaseCommit, err := git.MergeBase(ctx, r.innerRepo.Name, api.CommitID(baseRevspec), api.CommitID(headRevspec))
+	if err != nil {
+		return nil, err
 	}
-	if headErr != nil {
-		return nil, headErr
+
+	// We use the merge-base as the base commit here, as the diff will only be guaranteed to be
+	// applicable to the file from that revision.
+	commitString := strings.TrimSpace(string(mergeBaseCommit))
+	base, err := getCommit(ctx, r.innerRepo.Name, commitString)
+	if err != nil {
+		return nil, err
 	}
 
 	return &RepositoryComparisonResolver{
@@ -241,15 +212,9 @@ func computeRepositoryComparisonDiff(cmp *RepositoryComparisonResolver) ComputeD
 				base = string(cmp.base.OID())
 			}
 
-			var cachedRepo *gitserver.Repo
-			cachedRepo, err = backend.CachedGitRepo(ctx, cmp.repo.repo)
-			if err != nil {
-				return
-			}
-
 			var iter *git.DiffFileIterator
 			iter, err = git.Diff(ctx, git.DiffOptions{
-				Repo: *cachedRepo,
+				Repo: cmp.repo.innerRepo.Name,
 				Base: base,
 				Head: string(cmp.head.OID()),
 			})

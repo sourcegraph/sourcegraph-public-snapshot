@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
+
 	"github.com/NYTimes/gziphandler"
 	gcontext "github.com/gorilla/context"
 	"github.com/gorilla/mux"
@@ -16,9 +18,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	internalauth "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/middleware"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	internalhttpapi "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -29,7 +31,7 @@ import (
 
 // newExternalHTTPHandler creates and returns the HTTP handler that serves the app and API pages to
 // external clients.
-func newExternalHTTPHandler(schema *graphql.Schema, gitHubWebhook, gitLabWebhook, bitbucketServerWebhook http.Handler, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, newCodeIntelInternalProxyHandler enterprise.NewCodeIntelInternalProxyHandler) (http.Handler, error) {
+func newExternalHTTPHandler(schema *graphql.Schema, gitHubWebhook webhooks.Registerer, gitLabWebhook, bitbucketServerWebhook http.Handler, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, newExecutorProxyHandler enterprise.NewExecutorProxyHandler) (http.Handler, error) {
 	// Each auth middleware determines on a per-request basis whether it should be enabled (if not, it
 	// immediately delegates the request to the next middleware in the chain).
 	authMiddlewares := auth.AuthMiddleware()
@@ -49,7 +51,7 @@ func newExternalHTTPHandler(schema *graphql.Schema, gitHubWebhook, gitLabWebhook
 	apiHandler = gziphandler.GzipHandler(apiHandler)
 
 	// 🚨 SECURITY: This handler implements its own token auth inside enterprise
-	internalCodeIntelHandler := newCodeIntelInternalProxyHandler()
+	executorProxyHandler := newExecutorProxyHandler()
 
 	// App handler (HTML pages), the call order of middleware is LIFO.
 	appHandler := app.NewHandler()
@@ -67,7 +69,7 @@ func newExternalHTTPHandler(schema *graphql.Schema, gitHubWebhook, gitLabWebhook
 	// Mount handlers and assets.
 	sm := http.NewServeMux()
 	sm.Handle("/.api/", apiHandler)
-	sm.Handle("/.internal-code-intel/", internalCodeIntelHandler)
+	sm.Handle("/.executors/", executorProxyHandler)
 	sm.Handle("/", appHandler)
 	assetsutil.Mount(sm)
 
@@ -116,7 +118,10 @@ func newInternalHTTPHandler(schema *graphql.Schema, newCodeIntelUploadHandler en
 			),
 		),
 	))
-	return gcontext.ClearHandler(internalMux)
+	h := http.Handler(internalMux)
+	h = tracepkg.HTTPTraceMiddleware(h)
+	h = gcontext.ClearHandler(h)
+	return h
 }
 
 // withInternalActor wraps an existing HTTP handler by setting an internal actor in the HTTP request

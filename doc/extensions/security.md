@@ -11,3 +11,7 @@ We designed Sourcegraph extensions with security and privacy in mind:
 - Sourcegraph development is open source, so these claims are verifiable.
 
 <a name="note-1"><sup>1</sup></a> To use extensions other than the default set of language extensions, you currently do need an account or self-hosted instance. We plan to remove this limitation soon.
+
+## Additional Admin security features
+
+We offer admins the option to only allow pre-approved extensions, disallow all Sourcegraph.com extensions, or host a private extension registry: [Administration of Sourcegraph extensions and the extension registry](../admin/extensions/index.md).

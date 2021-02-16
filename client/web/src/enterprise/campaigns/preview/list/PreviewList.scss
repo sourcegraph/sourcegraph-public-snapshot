@@ -1,0 +1,12 @@
+.preview-list {
+    &__grid {
+        display: grid;
+        grid-template-columns:
+            [caret] min-content [current_state] min-content [indicator] min-content [action] min-content [info] minmax(
+                auto,
+                1fr
+            )
+            [commit_changes] min-content [diffstat] min-content [end];
+        align-items: center;
+    }
+}

@@ -35,6 +35,7 @@ const ChangesetSpecSchemaJSON = `{
         "baseRef": {
           "type": "string",
           "description": "The full name of the Git ref in the base repository that this changeset is based on (and is proposing to be merged into). This ref must exist on the base repository.",
+          "pattern": "^refs\\/heads\\/\\S+$",
           "examples": ["refs/heads/master"]
         },
         "baseRev": {
@@ -50,6 +51,7 @@ const ChangesetSpecSchemaJSON = `{
         "headRef": {
           "type": "string",
           "description": "The full name of the Git ref that holds the changes proposed by this changeset. This ref will be created or updated with the commits.",
+          "pattern": "^refs\\/heads\\/\\S+$",
           "examples": ["refs/heads/fix-foo"]
         },
         "title": { "type": "string", "description": "The title of the changeset on the code host." },
@@ -64,7 +66,7 @@ const ChangesetSpecSchemaJSON = `{
             "type": "object",
             "description": "The Git commit to create with the changes.",
             "additionalProperties": false,
-            "required": ["message", "diff"],
+            "required": ["message", "diff", "authorName", "authorEmail"],
             "properties": {
               "message": {
                 "type": "string",
@@ -73,12 +75,21 @@ const ChangesetSpecSchemaJSON = `{
               "diff": {
                 "type": "string",
                 "description": "The commit diff (in unified diff format)."
+              },
+              "authorName": {
+                "type": "string",
+                "description": "The Git commit author name."
+              },
+              "authorEmail": {
+                "type": "string",
+                "format": "email",
+                "description": "The Git commit author email."
               }
             }
           }
         },
         "published": {
-          "type": "boolean",
+          "oneOf": [{ "type": "boolean" }, { "type": "string", "pattern": "^draft$" }],
           "description": "Whether to publish the changeset. An unpublished changeset can be previewed on Sourcegraph by any person who can view the campaign, but its commit, branch, and pull request aren't created on the code host. A published changeset results in a commit, branch, and pull request being created on the code host."
         }
       },

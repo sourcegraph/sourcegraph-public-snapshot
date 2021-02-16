@@ -4,22 +4,24 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"net/url"
-	"path"
 	"strconv"
 	"strings"
 
 	"github.com/dghubble/gologin/github"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"golang.org/x/oauth2"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	esauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"golang.org/x/oauth2"
+	"github.com/sourcegraph/sourcegraph/internal/hubspot"
+	"github.com/sourcegraph/sourcegraph/internal/hubspot/hubspotutil"
 )
 
 type sessionIssuerHelper struct {
@@ -29,7 +31,7 @@ type sessionIssuerHelper struct {
 	allowOrgs   []string
 }
 
-func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token) (actr *actor.Actor, safeErrMsg string, err error) {
+func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL string) (actr *actor.Actor, safeErrMsg string, err error) {
 	ghUser, err := github.UserFromContext(ctx)
 	if ghUser == nil {
 		if err != nil {
@@ -67,7 +69,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	)
 	for i, verifiedEmail := range verifiedEmails {
 		userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, auth.GetAndSaveUserOp{
-			UserProps: db.NewUser{
+			UserProps: database.NewUser{
 				Username:        login,
 				Email:           verifiedEmail,
 				EmailIsVerified: true,
@@ -84,6 +86,10 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			CreateIfNotExist:    s.allowSignup,
 		})
 		if err == nil {
+			go hubspotutil.SyncUser(verifiedEmail, hubspotutil.SignupEventID, &hubspot.ContactProperties{
+				AnonymousUserID: anonymousUserID,
+				FirstSourceURL:  firstSourceURL,
+			})
 			return actor.FromUser(userID), "", nil // success
 		}
 		if i == 0 {
@@ -126,14 +132,14 @@ func derefInt64(i *int64) int64 {
 	return *i
 }
 
-func (s *sessionIssuerHelper) newClient(token string) *githubsvc.Client {
+func (s *sessionIssuerHelper) newClient(token string) *githubsvc.V3Client {
 	apiURL, _ := githubsvc.APIRoot(s.BaseURL)
-	return githubsvc.NewClient(apiURL, token, nil)
+	return githubsvc.NewV3Client(apiURL, &esauth.OAuthBearerToken{Token: token}, nil)
 }
 
 // getVerifiedEmails returns the list of user emails that are verified. If the primary email is verified,
 // it will be the first email in the returned list. It only checks the first 100 user emails.
-func getVerifiedEmails(ctx context.Context, ghClient *githubsvc.Client) (verifiedEmails []string) {
+func getVerifiedEmails(ctx context.Context, ghClient *githubsvc.V3Client) (verifiedEmails []string) {
 	emails, err := ghClient.GetAuthenticatedUserEmails(ctx)
 	if err != nil {
 		log15.Warn("Could not get GitHub authenticated user emails", "error", err)
@@ -153,7 +159,7 @@ func getVerifiedEmails(ctx context.Context, ghClient *githubsvc.Client) (verifie
 	return verifiedEmails
 }
 
-func (s *sessionIssuerHelper) verifyUserOrgs(ctx context.Context, ghClient *githubsvc.Client) bool {
+func (s *sessionIssuerHelper) verifyUserOrgs(ctx context.Context, ghClient *githubsvc.V3Client) bool {
 	if len(s.allowOrgs) == 0 {
 		return true
 	}
@@ -176,16 +182,4 @@ func (s *sessionIssuerHelper) verifyUserOrgs(ctx context.Context, ghClient *gith
 	}
 
 	return false
-}
-
-func SignOutURL(githubURL string) (string, error) {
-	if githubURL == "" {
-		githubURL = "https://github.com"
-	}
-	ghURL, err := url.Parse(githubURL)
-	if err != nil {
-		return "", err
-	}
-	ghURL.Path = path.Join(ghURL.Path, "logout")
-	return ghURL.String(), nil
 }

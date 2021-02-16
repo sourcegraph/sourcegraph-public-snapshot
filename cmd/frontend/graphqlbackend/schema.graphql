@@ -10,6 +10,43 @@ schema {
 }
 
 """
+This type is not returned by any resolver, but serves to document what an error
+response will look like.
+"""
+type Error {
+    """
+    A string giving more context about the error that ocurred.
+    """
+    message: String!
+    """
+    The GraphQL path to where the error happened. For an error in the query
+    query {
+        user {
+            externalID # This is a nullable field that failed computing.
+        }
+    }
+    the path would be ["user", "externalID"].
+    """
+    path: [String!]!
+    """
+    Optional additional context on the error.
+    """
+    extensions: ErrorExtensions
+}
+
+"""
+Optional additional context on an error returned from a resolver.
+It may also contain more properties, which aren't strictly typed here.
+"""
+type ErrorExtensions {
+    """
+    An error code, which can be asserted on.
+    Possible error codes are communicated in the doc string of the field.
+    """
+    code: String
+}
+
+"""
 Represents a null return value.
 """
 type EmptyResponse {
@@ -48,7 +85,7 @@ type Mutation {
 
     Only the user and site admins may perform this mutation.
     """
-    updateUser(user: ID!, username: String, displayName: String, avatarURL: String): EmptyResponse!
+    updateUser(user: ID!, username: String, displayName: String, avatarURL: String): User!
     """
     Creates an organization. The caller is added as a member of the newly created organization.
 
@@ -119,17 +156,6 @@ type Mutation {
         repository: ID!
     ): EmptyResponse!
     """
-    DEPRECATED: All repositories are scheduled for updates periodically. This
-    mutation will be removed in 3.6.
-
-    Schedules all repositories to be updated from their original source
-    repositories. Updating occurs automatically, so this should not normally
-    be needed.
-
-    Only site admins may perform this mutation.
-    """
-    updateAllMirrorRepositories: EmptyResponse! @deprecated(reason: "syncer ensures all repositories are up to date.")
-    """
     Creates a new user account.
 
     Only site admins may perform this mutation.
@@ -164,12 +190,24 @@ type Mutation {
     """
     removeUserEmail(user: ID!, email: String!): EmptyResponse!
     """
+    Set an email address as the user's primary.
+
+    Only the user and site admins may perform this mutation.
+    """
+    setUserEmailPrimary(user: ID!, email: String!): EmptyResponse!
+    """
     Manually set the verification status of a user's email, without going through the normal verification process
     (of clicking on a link in the email with a verification code).
 
     Only site admins may perform this mutation.
     """
     setUserEmailVerified(user: ID!, email: String!, verified: Boolean!): EmptyResponse!
+    """
+    Resend a verification email, no op if the email is already verified.
+
+    Only the user and site admins may perform this mutation.
+    """
+    resendVerificationEmail(user: ID!, email: String!): EmptyResponse!
     """
     Deletes a user account. Only site admins may perform this mutation.
 
@@ -190,6 +228,11 @@ type Mutation {
     Updates the current user's password. The oldPassword arg must match the user's current password.
     """
     updatePassword(oldPassword: String!, newPassword: String!): EmptyResponse
+    """
+    Creates a password for the current user. It is only permitted if the user does not have a password and
+    they don't have any login connections.
+    """
+    createPassword(newPassword: String!): EmptyResponse
     """
     Creates an access token that grants the privileges of the specified user (referred to as the access token's
     "subject" user after token creation). The result is the access token value, which the caller is responsible
@@ -448,6 +491,12 @@ type Mutation {
     # restarting the site.
     setUserIsSiteAdmin(userID: ID!, siteAdmin: Boolean!): EmptyResponse
     """
+    Invalidates all sessions belonging to a user.
+
+    Only site admins may perform this mutation.
+    """
+    invalidateSessionsByID(userID: ID!): EmptyResponse
+    """
     Reloads the site by restarting the server. This is not supported for all deployment
     types. This may cause downtime.
 
@@ -517,6 +566,16 @@ type Mutation {
     deleteLSIFIndex(id: ID!): EmptyResponse
 
     """
+    Updates the indexing configuration associated with a repository.
+    """
+    updateRepositoryIndexConfiguration(repository: ID!, configuration: String!): EmptyResponse
+
+    """
+    Queues the index jobs for a repository for execution.
+    """
+    queueAutoIndexJobForRepo(repository: ID!): EmptyResponse
+
+    """
     Set the permissions of a repository (i.e., which users may view it on Sourcegraph). This
     operation overwrites the previous permissions for the repository.
     """
@@ -546,11 +605,10 @@ type Mutation {
     scheduleUserPermissionsSync(user: ID!): EmptyResponse!
 
     """
-    CAMPAIGNS
-
-    Create a campaign from a campaign spec and locally computed changeset specs. If a campaign in
-    the same namespace with the same name already exists, an error is returned. The newly created
+    Create a campaign from a campaign spec and locally computed changeset specs. The newly created
     campaign is returned.
+    If a campaign in the same namespace with the same name already exists, an error with the error code
+    ErrMatchingCampaignExists is returned.
     """
     createCampaign(
         """
@@ -563,6 +621,8 @@ type Mutation {
     Create or update a campaign from a campaign spec and locally computed changeset specs. If no
     campaign exists in the namespace with the name given in the campaign spec, a campaign will be
     created. Otherwise, the existing campaign will be updated. The campaign is returned.
+    Closed campaigns cannot be applied to. In that case, an error with the error code ErrApplyClosedCampaign
+    will be returned.
     """
     applyCampaign(
         """
@@ -575,7 +635,7 @@ type Mutation {
         parameters does not match the campaign with this ID. This lets callers use a stable ID
         that refers to a specific campaign during an edit session (and is not susceptible to
         conflicts if the underlying campaign is moved to a different namespace, renamed, or
-        deleted).
+        deleted). The returned error has the error code ErrEnsureCampaignFailed.
         """
         ensureCampaign: ID
     ): Campaign!
@@ -621,7 +681,9 @@ type Mutation {
     """
     createChangesetSpec(
         """
-        The raw changeset spec (as JSON).
+        The raw changeset spec (as JSON). See
+        https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/schema/changeset_spec.schema.json
+        for the JSON Schema that describes the structure of this input.
         """
         changesetSpec: String!
     ): ChangesetSpec!
@@ -632,6 +694,9 @@ type Mutation {
 
     The returned CampaignSpec is immutable and expires after a certain period of time (if not used
     in a call to applyCampaign), which can be queried on CampaignSpec.expiresAt.
+
+    If campaigns are unlicensed and the number of changesetSpecIDs is higher than what's allowed in
+    the free tier, an error with the error code ErrCampaignsUnlicensed is returned.
     """
     createCampaignSpec(
         """
@@ -641,7 +706,9 @@ type Mutation {
         namespace: ID!
 
         """
-        The campaign spec as YAML (or the equivalent JSON).
+        The campaign spec as YAML (or the equivalent JSON). See
+        https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/schema/campaign_spec.schema.json
+        for the JSON Schema that describes the structure of this input.
         """
         campaignSpec: String!
 
@@ -657,6 +724,43 @@ type Mutation {
     syncChangeset(changeset: ID!): EmptyResponse!
 
     """
+    Re-enqueue the changeset for processing by the reconciler. The changeset must be in FAILED state.
+    """
+    reenqueueChangeset(changeset: ID!): Changeset!
+
+    """
+    Create a new credential for the given user for the given code host.
+    If another token for that code host already exists, an error with the error code
+    ErrDuplicateCredential is returned.
+    """
+    createCampaignsCredential(
+        """
+        The user for which to create the credential.
+        """
+        user: ID!
+
+        """
+        The kind of external service being configured.
+        """
+        externalServiceKind: ExternalServiceKind!
+
+        """
+        The URL of the external service being configured.
+        """
+        externalServiceURL: String!
+
+        """
+        The credential to be stored. This can never be retrieved through the API and will be stored encrypted.
+        """
+        credential: String!
+    ): CampaignsCredential!
+
+    """
+    Hard-deletes a given campaigns credential.
+    """
+    deleteCampaignsCredential(campaignsCredential: ID!): EmptyResponse!
+
+    """
     OBSERVABILITY
 
     Set the status of a test alert of the specified parameters - useful for validating
@@ -668,6 +772,243 @@ type Mutation {
         """
         level: String!
     ): EmptyResponse!
+    """
+    Create a code monitor.
+    """
+    createCodeMonitor(
+        """
+        A monitor.
+        """
+        monitor: MonitorInput!
+        """
+        A trigger.
+        """
+        trigger: MonitorTriggerInput!
+        """
+        A list of actions.
+        """
+        actions: [MonitorActionInput!]!
+    ): Monitor!
+    """
+    Set a code monitor to active/inactive.
+    """
+    toggleCodeMonitor(
+        """
+        The id of a code monitor.
+        """
+        id: ID!
+        """
+        Whether the code monitor should be enabled or not.
+        """
+        enabled: Boolean!
+    ): Monitor!
+    """
+    Delete a code monitor.
+    """
+    deleteCodeMonitor(
+        """
+        The id of a code monitor.
+        """
+        id: ID!
+    ): EmptyResponse!
+    """
+    Update a code monitor. We assume that the request contains a complete code monitor,
+    including its trigger and all actions. Actions which are stored in the database,
+    but are missing from the request will be deleted from the database. Actions with id=null
+    will be created.
+    """
+    updateCodeMonitor(
+        """
+        The input required to edit a monitor.
+        """
+        monitor: MonitorEditInput!
+        """
+        The input required to edit the trigger of a monitor. You can only edit triggers that are
+        associated with the monitor (value of field monitor).
+        """
+        trigger: MonitorEditTriggerInput!
+        """
+        The input required to edit the actions of a monitor. You can only edit actions that are
+        associated with the monitor (value of field monitor).
+        """
+        actions: [MonitorEditActionInput!]!
+    ): Monitor!
+
+    """
+    Set the repos synced by an external service
+    """
+    setExternalServiceRepos(id: ID!, repos: [String!], allRepos: Boolean!): EmptyResponse!
+
+    """
+    Reset the timestamps of a trigger query. The query will be queued immediately and return
+    all results without a limit on the timeframe. Only site admins may perform this mutation.
+    """
+    resetTriggerQueryTimestamps(
+        """
+        The id of the trigger query.
+        """
+        id: ID!
+    ): EmptyResponse!
+
+    """
+    Triggers a test email for a code monitor action.
+    """
+    triggerTestEmailAction(namespace: ID!, description: String!, email: MonitorEmailInput!): EmptyResponse!
+}
+
+"""
+A connection of all code hosts usable with campaigns and accessible by the user
+this is requested on.
+"""
+type CampaignsCodeHostConnection {
+    """
+    A list of code hosts.
+    """
+    nodes: [CampaignsCodeHost!]!
+
+    """
+    The total number of configured external services in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A code host usable with campaigns. This service is accessible by the user it belongs to.
+"""
+type CampaignsCodeHost {
+    """
+    The kind of external service.
+    """
+    externalServiceKind: ExternalServiceKind!
+
+    """
+    The URL of the external service.
+    """
+    externalServiceURL: String!
+
+    """
+    The configured credential, if any.
+    """
+    credential: CampaignsCredential
+}
+
+"""
+A user token configured for campaigns use on the specified code host.
+"""
+type CampaignsCredential implements Node {
+    """
+    A globally unique identifier.
+    """
+    id: ID!
+
+    """
+    The kind of external service.
+    """
+    externalServiceKind: ExternalServiceKind!
+
+    """
+    The URL of the external service.
+    """
+    externalServiceURL: String!
+
+    """
+    The date and time this token has been created at.
+    """
+    createdAt: DateTime!
+}
+
+"""
+This enum declares all operations supported by the reconciler.
+"""
+enum ChangesetSpecOperation {
+    """
+    Push a new commit to the code host.
+    """
+    PUSH
+    """
+    Update the existing changeset on the codehost. This is purely the changeset resource on the code host,
+    not the git commit. For updates to the commit, see 'PUSH'.
+    """
+    UPDATE
+    """
+    Move the existing changeset out of being a draft.
+    """
+    UNDRAFT
+    """
+    Publish a changeset to the codehost.
+    """
+    PUBLISH
+    """
+    Publish a changeset to the codehost as a draft changeset. (Only on supported code hosts).
+    """
+    PUBLISH_DRAFT
+    """
+    Sync the changeset with the current state on the codehost.
+    """
+    SYNC
+    """
+    Import an existing changeset from the code host with the ExternalID from the spec.
+    """
+    IMPORT
+    """
+    Close the changeset on the codehost.
+    """
+    CLOSE
+    """
+    Reopen the changeset on the codehost.
+    """
+    REOPEN
+    """
+    Internal operation to get around slow code host updates.
+    """
+    SLEEP
+    """
+    The changeset is removed from some of the associated campaigns.
+    """
+    DETACH
+}
+
+"""
+Description of the current changeset state vs the changeset spec desired state.
+"""
+type ChangesetSpecDelta {
+    """
+    When run, the title of the changeset will be updated.
+    """
+    titleChanged: Boolean!
+    """
+    When run, the body of the changeset will be updated.
+    """
+    bodyChanged: Boolean!
+    """
+    When run, the changeset will be taken out of draft mode.
+    """
+    undraft: Boolean!
+    """
+    When run, the target branch of the changeset will be updated.
+    """
+    baseRefChanged: Boolean!
+    """
+    When run, a new commit will be created on the branch of the changeset.
+    """
+    diffChanged: Boolean!
+    """
+    When run, a new commit will be created on the branch of the changeset.
+    """
+    commitMessageChanged: Boolean!
+    """
+    When run, a new commit in the name of the specified author will be created on the branch of the changeset.
+    """
+    authorNameChanged: Boolean!
+    """
+    When run, a new commit in the name of the specified author will be created on the branch of the changeset.
+    """
+    authorEmailChanged: Boolean!
 }
 
 """
@@ -689,6 +1030,18 @@ A changeset spec is an immutable description of the desired state of a changeset
 create a changeset spec, use the createChangesetSpec mutation.
 """
 interface ChangesetSpec {
+    """
+    The unique ID for a changeset spec.
+
+    The ID is unguessable (i.e., long and randomly generated, not sequential). This is important
+    even though repository permissions also apply to viewers of changeset specs, because being
+    allowed to view a repository should not entitle a person to view all not-yet-published
+    changesets for that repository. Consider a campaign to fix a security vulnerability: the
+    campaign author may prefer to prepare all of the changesets in private so that the window
+    between revealing the problem and merging the fixes is as short as possible.
+    """
+    id: ID!
+
     """
     The type of changeset spec.
     """
@@ -789,6 +1142,11 @@ type ExistingChangesetReference {
 }
 
 """
+A triple that represents all possible states of the published value: true, false or 'draft'.
+"""
+scalar PublishedValue
+
+"""
 A description of a changeset that represents the proposal to merge one branch into another.
 This is used to describe a pull request (on GitHub and Bitbucket Server).
 """
@@ -870,7 +1228,7 @@ type GitBranchChangesetDescription {
     Another ChangesetSpec with the same description, but "published: true",
     can later be applied publish the changeset.
     """
-    published: Boolean!
+    published: PublishedValue!
 }
 
 """
@@ -878,9 +1236,24 @@ A description of a Git commit.
 """
 type GitCommitDescription {
     """
-    The Git commit message.
+    The full commit message.
     """
     message: String!
+
+    """
+    The first line of the commit message.
+    """
+    subject: String!
+
+    """
+    The contents of the commit message after the first line.
+    """
+    body: String
+
+    """
+    The Git commit author.
+    """
+    author: Person!
 
     """
     The commit diff (in unified diff format).
@@ -907,6 +1280,234 @@ type ChangesetSpecConnection {
     A list of changeset specs.
     """
     nodes: [ChangesetSpec!]!
+}
+
+"""
+A preview for which actions applyCampaign would result in when called at the point of time this preview was created at.
+"""
+union ChangesetApplyPreview = VisibleChangesetApplyPreview | HiddenChangesetApplyPreview
+
+"""
+A preview entry to a repository to which the user has access.
+"""
+union VisibleApplyPreviewTargets =
+      VisibleApplyPreviewTargetsAttach
+    | VisibleApplyPreviewTargetsUpdate
+    | VisibleApplyPreviewTargetsDetach
+
+"""
+A preview entry where no changeset existed before matching the changeset spec.
+"""
+type VisibleApplyPreviewTargetsAttach {
+    """
+    The changeset spec from this entry.
+    """
+    changesetSpec: VisibleChangesetSpec!
+}
+
+"""
+A preview entry where a changeset matches the changeset spec.
+"""
+type VisibleApplyPreviewTargetsUpdate {
+    """
+    The changeset spec from this entry.
+    """
+    changesetSpec: VisibleChangesetSpec!
+    """
+    The changeset from this entry.
+    """
+    changeset: ExternalChangeset!
+}
+
+"""
+A preview entry where no changeset spec exists for the changeset currently in
+the target campaign.
+"""
+type VisibleApplyPreviewTargetsDetach {
+    """
+    The changeset from this entry.
+    """
+    changeset: ExternalChangeset!
+}
+
+"""
+A preview entry to a repository to which the user has no access.
+"""
+union HiddenApplyPreviewTargets =
+      HiddenApplyPreviewTargetsAttach
+    | HiddenApplyPreviewTargetsUpdate
+    | HiddenApplyPreviewTargetsDetach
+
+"""
+A preview entry where no changeset existed before matching the changeset spec.
+"""
+type HiddenApplyPreviewTargetsAttach {
+    """
+    The changeset spec from this entry.
+    """
+    changesetSpec: HiddenChangesetSpec!
+}
+
+"""
+A preview entry where a changeset matches the changeset spec.
+"""
+type HiddenApplyPreviewTargetsUpdate {
+    """
+    The changeset spec from this entry.
+    """
+    changesetSpec: HiddenChangesetSpec!
+    """
+    The changeset from this entry.
+    """
+    changeset: HiddenExternalChangeset!
+}
+
+"""
+A preview entry where no changeset spec exists for the changeset currently in
+the target campaign.
+"""
+type HiddenApplyPreviewTargetsDetach {
+    """
+    The changeset from this entry.
+    """
+    changeset: HiddenExternalChangeset!
+}
+
+"""
+One preview entry in the list of all previews against a campaign spec. Each mapping
+between changeset specs and current changesets yields one of these. It describes
+which operations are taken against which changeset spec and changeset to ensure the
+desired state is met.
+"""
+type HiddenChangesetApplyPreview {
+    """
+    The operations to take to achieve the desired state.
+    """
+    operations: [ChangesetSpecOperation!]!
+
+    """
+    The delta between the current changeset state and what the new changeset spec
+    envisions the changeset to look like.
+    """
+    delta: ChangesetSpecDelta!
+
+    """
+    The target entities in this preview entry.
+    """
+    targets: HiddenApplyPreviewTargets!
+}
+
+"""
+One preview entry in the list of all previews against a campaign spec. Each mapping
+between changeset specs and current changesets yields one of these. It describes
+which operations are taken against which changeset spec and changeset to ensure the
+desired state is met.
+"""
+type VisibleChangesetApplyPreview {
+    """
+    The operations to take to achieve the desired state.
+    """
+    operations: [ChangesetSpecOperation!]!
+
+    """
+    The delta between the current changeset state and what the new changeset spec
+    envisions the changeset to look like.
+    """
+    delta: ChangesetSpecDelta!
+
+    """
+    The target entities in this preview entry.
+    """
+    targets: VisibleApplyPreviewTargets!
+}
+
+"""
+Aggregated stats on nodes in this connection.
+"""
+type ChangesetApplyPreviewConnectionStats {
+    """
+    Push a new commit to the code host.
+    """
+    push: Int!
+    """
+    Update the existing changeset on the codehost. This is purely the changeset resource on the code host,
+    not the git commit. For updates to the commit, see 'PUSH'.
+    """
+    update: Int!
+    """
+    Move the existing changeset out of being a draft.
+    """
+    undraft: Int!
+    """
+    Publish a changeset to the codehost.
+    """
+    publish: Int!
+    """
+    Publish a changeset to the codehost as a draft changeset. (Only on supported code hosts).
+    """
+    publishDraft: Int!
+    """
+    Sync the changeset with the current state on the codehost.
+    """
+    sync: Int!
+    """
+    Import an existing changeset from the code host with the ExternalID from the spec.
+    """
+    import: Int!
+    """
+    Close the changeset on the codehost.
+    """
+    close: Int!
+    """
+    Reopen the changeset on the codehost.
+    """
+    reopen: Int!
+    """
+    Internal operation to get around slow code host updates.
+    """
+    sleep: Int!
+    """
+    The changeset is removed from some of the associated campaigns.
+    """
+    detach: Int!
+
+    """
+    The amount of changesets that are added to the campaign in this operation.
+    """
+    added: Int!
+    """
+    The amount of changesets that are already attached to the campaign and modified in this operation.
+    """
+    modified: Int!
+    """
+    The amount of changesets that are disassociated from the campaign in this operation.
+    """
+    removed: Int!
+}
+
+"""
+A list of preview entries.
+"""
+type ChangesetApplyPreviewConnection {
+    """
+    The total number of entries in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+
+    """
+    A list of preview entries.
+    """
+    nodes: [ChangesetApplyPreview!]!
+
+    """
+    Stats on the elements in this connnection. Does not respect pagination parameters.
+    """
+    stats: ChangesetApplyPreviewConnectionStats!
 }
 
 """
@@ -956,6 +1557,26 @@ type CampaignSpec implements Node {
     description: CampaignDescription!
 
     """
+    Generates a preview what operations would be performed if the campaign spec would be applied.
+    This preview is not a guarantee, since the state of the changesets can change between the time
+    the preview is generated and when the campaign spec is applied.
+    """
+    applyPreview(
+        """
+        Returns the first n entries from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Search for changesets matching this query. Queries may include quoted substrings to match phrases, and words may be preceded by - to negate them.
+        """
+        search: String
+    ): ChangesetApplyPreviewConnection!
+
+    """
     The specs for changesets associated with this campaign.
     """
     changesetSpecs(first: Int = 50, after: String): ChangesetSpecConnection!
@@ -1002,6 +1623,30 @@ type CampaignSpec implements Node {
     campaign doesn't yet exist.
     """
     appliesToCampaign: Campaign
+
+    """
+    The newest version of this campaign spec, as identified by its namespace
+    and name. If this is the newest version, this field will be null.
+    """
+    supersedingCampaignSpec: CampaignSpec
+
+    """
+    The code host connections required for applying this spec. Includes the credentials of the current user.
+    """
+    viewerCampaignsCodeHosts(
+        """
+        Returns the first n code hosts from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Only returns the code hosts for which the viewer doesn't have credentials.
+        """
+        onlyWithoutCredential: Boolean = false
+    ): CampaignsCodeHostConnection!
 }
 
 """
@@ -1092,6 +1737,11 @@ type Campaign implements Node {
     closedAt: DateTime
 
     """
+    Stats on all the changesets that are tracked in this campaign.
+    """
+    changesetsStats: ChangesetsStats!
+
+    """
     The changesets in this campaign that already exist on the code host.
     """
     changesets(
@@ -1101,17 +1751,30 @@ type Campaign implements Node {
         """
         after: String
         """
-        Only include changesets with the given reconciler state.
+        Only include changesets with any of the given reconciler states.
         """
-        reconcilerState: ChangesetReconcilerState
+        reconcilerState: [ChangesetReconcilerState!]
+            @deprecated(
+                reason: "Use state instead. This field is deprecated, has no effect, and will be removed in a future release."
+            )
         """
         Only include changesets with the given publication state.
         """
         publicationState: ChangesetPublicationState
+            @deprecated(
+                reason: "Use state instead. This field is deprecated, has no effect, and will be removed in a future release."
+            )
         """
         Only include changesets with the given external state.
         """
         externalState: ChangesetExternalState
+            @deprecated(
+                reason: "Use state instead. This field is deprecated, has no effect, and will be removed in a future release."
+            )
+        """
+        Only include changesets with the given state.
+        """
+        state: ChangesetState
         """
         Only include changesets with the given review state.
         """
@@ -1124,6 +1787,10 @@ type Campaign implements Node {
         Only return changesets that have been published by this campaign. Imported changesets will be omitted.
         """
         onlyPublishedByThisCampaign: Boolean
+        """
+        Search for changesets matching this query. Queries may include quoted substrings to match phrases, and words may be preceded by - to negate them.
+        """
+        search: String
     ): ChangesetConnection!
 
     """
@@ -1173,6 +1840,10 @@ type ChangesetCounts {
     The number of closed changesets.
     """
     closed: Int!
+    """
+    The number of draft changesets (independent of review state).
+    """
+    draft: Int!
     """
     The number of open changesets (independent of review state).
     """
@@ -1243,9 +1914,14 @@ enum ChangesetReconcilerState {
 
     """
     The changeset reconciler ran into a problem while processing the
-    changeset.
+    changeset and will retry it for a number of retries.
     """
     ERRORED
+    """
+    The changeset reconciler ran into a problem while processing the
+    changeset that can't be fixed by retrying.
+    """
+    FAILED
 
     """
     The changeset is not enqueued for processing.
@@ -1257,6 +1933,7 @@ enum ChangesetReconcilerState {
 The state of a changeset on the code host on which it's hosted.
 """
 enum ChangesetExternalState {
+    DRAFT
     OPEN
     CLOSED
     MERGED
@@ -1302,6 +1979,52 @@ type ChangesetLabel {
 }
 
 """
+The visual state a changeset is currently in.
+"""
+enum ChangesetState {
+    """
+    The changeset has not been marked as to be published.
+    """
+    UNPUBLISHED
+    """
+    The changeset reconciler ran into a problem while processing the
+    changeset that can't be fixed by retrying.
+    """
+    FAILED
+    """
+    The changeset reconciler ran into a problem while processing the
+    changeset and will retry it for a number of retries.
+    """
+    RETRYING
+    """
+    The changeset reconciler is currently computing the delta between the
+    If a delta exists, the reconciler tries to update the state of the
+    changeset on the code host and on Sourcegraph to the desired state.
+    """
+    PROCESSING
+    """
+    The changeset is published, not being reconciled and open on the code host.
+    """
+    OPEN
+    """
+    The changeset is published, not being reconciled and in draft state on the code host.
+    """
+    DRAFT
+    """
+    The changeset is published, not being reconciled and closed on the code host.
+    """
+    CLOSED
+    """
+    The changeset is published, not being reconciled and merged on the code host.
+    """
+    MERGED
+    """
+    The changeset is published, not being reconciled and has been deleted on the code host.
+    """
+    DELETED
+}
+
+"""
 A changeset on a codehost.
 """
 interface Changeset {
@@ -1336,16 +2059,24 @@ interface Changeset {
     The publication state of the changeset.
     """
     publicationState: ChangesetPublicationState!
+        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
 
     """
     The reconciler state of the changeset.
     """
     reconcilerState: ChangesetReconcilerState!
+        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
 
     """
     The external state of the changeset, or null when not yet published to the code host.
     """
     externalState: ChangesetExternalState
+        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
+
+    """
+    The state of the changeset.
+    """
+    state: ChangesetState!
 
     """
     The date and time when the changeset was created.
@@ -1398,16 +2129,24 @@ type HiddenExternalChangeset implements Node & Changeset {
     The publication state of the changeset.
     """
     publicationState: ChangesetPublicationState!
+        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
 
     """
     The reconciler state of the changeset.
     """
     reconcilerState: ChangesetReconcilerState!
+        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
 
     """
-    The external state of the changeset, or null when not yet opened.
+    The external state of the changeset, or null when not yet published to the code host.
     """
     externalState: ChangesetExternalState
+        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
+
+    """
+    The state of the changeset.
+    """
+    state: ChangesetState!
 
     """
     The date and time when the changeset was created.
@@ -1498,19 +2237,33 @@ type ExternalChangeset implements Node & Changeset {
     body: String
 
     """
+    The author of the changeset, or null if the data hasn't been synced from the code host yet,
+    or the changeset has not yet been published.
+    """
+    author: Person
+
+    """
     The publication state of the changeset.
     """
     publicationState: ChangesetPublicationState!
+        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
 
     """
     The reconciler state of the changeset.
     """
     reconcilerState: ChangesetReconcilerState!
+        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
 
     """
-    The external state of the changeset, or null when not yet published to the code host or when the changeset data hasn't been synced from the code host yet.
+    The external state of the changeset, or null when not yet published to the code host.
     """
     externalState: ChangesetExternalState
+        @deprecated(reason: "Use state instead. This field is deprecated and will be removed in a future release.")
+
+    """
+    The state of the changeset.
+    """
+    state: ChangesetState!
 
     """
     The labels attached to the changeset on the code host.
@@ -1552,6 +2305,11 @@ type ExternalChangeset implements Node & Changeset {
     error: String
 
     """
+    An error that has occured during the last sync of the changeset. Null, if was successful.
+    """
+    syncerError: String
+
+    """
     The current changeset spec for this changeset.
 
     Null if the changeset was only imported.
@@ -1562,11 +2320,15 @@ type ExternalChangeset implements Node & Changeset {
 """
 Used in the campaign page for the overview component.
 """
-type ChangesetConnectionStats {
+type ChangesetsStats {
     """
     The count of unpublished changesets.
     """
     unpublished: Int!
+    """
+    The count of externalState: DRAFT changesets.
+    """
+    draft: Int!
     """
     The count of externalState: OPEN changesets.
     """
@@ -1580,7 +2342,23 @@ type ChangesetConnectionStats {
     """
     closed: Int!
     """
-    The count of all changesets. Equal to totalCount of the connection.
+    The count of externalState: DELETED changesets.
+    """
+    deleted: Int!
+    """
+    The count of changesets in retrying state.
+    """
+    retrying: Int!
+    """
+    The count of changesets in failed state.
+    """
+    failed: Int!
+    """
+    The count of changesets that are currently processing or enqueued to be.
+    """
+    processing: Int!
+    """
+    The count of all changesets.
     """
     total: Int!
 }
@@ -1603,11 +2381,6 @@ type ChangesetConnection {
     Pagination information.
     """
     pageInfo: PageInfo!
-
-    """
-    Stats on all the changesets that are in this connection. Pagination has no effect on the stats.
-    """
-    stats: ChangesetConnectionStats!
 }
 
 """
@@ -1648,6 +2421,76 @@ type ChangesetEventConnection {
     Pagination information.
     """
     pageInfo: PageInfo!
+}
+
+"""
+A list of insights.
+"""
+type InsightConnection {
+    """
+    A list of insights.
+    """
+    nodes: [Insight!]!
+
+    """
+    The total number of insights in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+An insight about code.
+"""
+type Insight {
+    """
+    The short title of the insight.
+    """
+    title: String!
+
+    """
+    The description of the insight.
+    """
+    description: String!
+
+    """
+    Data points over a time range (inclusive)
+    """
+    series: [InsightsSeries!]!
+}
+
+"""
+A series of data about a code insight.
+"""
+type InsightsSeries {
+    """
+    The label used to describe this series of data points.
+    """
+    label: String!
+
+    """
+    Data points over a time range (inclusive)
+    """
+    points(from: DateTime, to: DateTime): [InsightDataPoint!]!
+}
+
+"""
+A code insight data point.
+"""
+type InsightDataPoint {
+    """
+    The time of this data point.
+    """
+    dateTime: DateTime!
+
+    """
+    The value of the insight at this point in time.
+    """
+    value: Float!
 }
 
 """
@@ -1965,6 +2808,11 @@ type Query {
     ): Campaign
 
     """
+    EXPERIMENTAL: Queries code insights
+    """
+    insights: InsightConnection
+
+    """
     Looks up a repository by either name or cloneURL.
     """
     repository(
@@ -2032,6 +2880,10 @@ type Query {
         Return repositories whose names match the query.
         """
         query: String
+        """
+        An opaque cursor that is used for pagination.
+        """
+        after: String
         """
         Return repositories whose names are in the list.
         """
@@ -2222,6 +3074,10 @@ type Query {
     """
     versionContexts: [VersionContext!]!
     """
+    (experimental) All search contexts.
+    """
+    searchContexts: [SearchContext!]!
+    """
     (experimental) Return the parse tree of a search query.
     """
     parseSearchQuery(
@@ -2261,11 +3117,25 @@ type Query {
     FOR INTERNAL USE ONLY: Lists all status messages
     """
     statusMessages: [StatusMessage!]!
+    """
+    FOR INTERNAL USE ONLY: Query repository statistics for the site.
+    """
+    repositoryStats: RepositoryStats!
 
     """
     Look up a namespace by ID.
     """
     namespace(id: ID!): Namespace
+
+    """
+    Look up a namespace by name, which is a username or organization name.
+    """
+    namespaceByName(
+        """
+        The name of the namespace.
+        """
+        name: String!
+    ): Namespace
 
     """
     The repositories a user is authorized to access with the given permission.
@@ -2375,6 +3245,18 @@ type Query {
         """
         after: String
     ): LSIFIndexConnection!
+
+    """
+    Repos affiliated with the user & code hosts, these repos are not necessarily synced, but ones that
+    the configured code hosts are able to see.
+    """
+    affiliatedRepositories(user: ID!, codeHost: ID, query: String): CodeHostRepositoryConnection!
+
+    """
+    Checks whether the given feature is enabled on Sourcegraph. Open source
+    installations will always return false for any feature.
+    """
+    enterpriseLicenseHasFeature(feature: String!): Boolean!
 }
 
 """
@@ -2576,6 +3458,8 @@ type SearchResults {
     """
     repositoriesCount: Int!
     """
+    DEPRECATED in v3.24. Will be removed in v3.26.
+
     Repositories that were actually searched. Excludes repositories that would have been searched but were not
     because a timeout or error occurred while performing the search, or because the result limit was already
     reached, or because they were excluded due to being forks or archives.
@@ -2584,10 +3468,14 @@ type SearchResults {
     would be searched if further requests were made.
     """
     repositoriesSearched: [Repository!]!
+        @deprecated(reason: "expensive to calculate and unused by official clients. Will be removed in v3.26.")
     """
+    DEPRECATED in v3.24. Will be removed in v3.26.
+
     Indexed repositories searched. This is a subset of repositoriesSearched.
     """
     indexedRepositoriesSearched: [Repository!]!
+        @deprecated(reason: "expensive to calculate and unused by official clients. Will be removed in v3.26.")
     """
     Repositories that are busy cloning onto gitserver.
     In paginated search requests, some repositories may be cloning. These are reported here
@@ -2749,6 +3637,418 @@ type SavedSearch implements Node {
 }
 
 """
+A list of code monitors
+"""
+type MonitorConnection {
+    """
+    A list of monitors.
+    """
+    nodes: [Monitor!]!
+
+    """
+    The total number of monitors in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A code monitor with one trigger and possibly many actions.
+"""
+type Monitor implements Node {
+    """
+    The code monitor's unique ID.
+    """
+    id: ID!
+    """
+    The user who created the code monitor.
+    """
+    createdBy: User!
+    """
+    The time at which the code monitor was created.
+    """
+    createdAt: DateTime!
+    """
+    A meaningful description of the code monitor.
+    """
+    description: String!
+    """
+    Owners can edit the code monitor.
+    """
+    owner: Namespace!
+    """
+    Whether the code monitor is currently enabled.
+    """
+    enabled: Boolean!
+    """
+    Triggers trigger actions. There can only be one trigger per monitor.
+    """
+    trigger: MonitorTrigger!
+    """
+    One or more actions that are triggered by the trigger.
+    """
+    actions(
+        """
+        Returns the first n actions from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): MonitorActionConnection!
+}
+
+"""
+A query that can serve as a trigger for code monitors.
+"""
+type MonitorQuery implements Node {
+    """
+    The unique id of a trigger query.
+    """
+    id: ID!
+    """
+    A query.
+    """
+    query: String!
+    """
+    A list of events.
+    """
+    events(
+        """
+        Returns the first n events from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): MonitorTriggerEventConnection!
+}
+
+"""
+A list of trigger events.
+"""
+type MonitorTriggerEventConnection {
+    """
+    A list of events.
+    """
+    nodes: [MonitorTriggerEvent!]!
+    """
+    The total number of events in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A trigger event is an event together with a list of associated actions.
+"""
+type MonitorTriggerEvent implements Node {
+    """
+    The unique id of an event.
+    """
+    id: ID!
+    """
+    The status of an event.
+    """
+    status: EventStatus!
+    """
+    A message with details regarding the status of the event.
+    """
+    message: String
+    """
+    The time and date of the event.
+    """
+    timestamp: DateTime!
+    """
+    A list of actions.
+    """
+    actions(
+        """
+        Returns the first n events from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): MonitorActionConnection!
+}
+
+"""
+Supported triggers for code monitors.
+"""
+union MonitorTrigger = MonitorQuery
+
+"""
+A list of actions.
+"""
+type MonitorActionConnection {
+    """
+    A list of actions.
+    """
+    nodes: [MonitorAction!]!
+
+    """
+    The total number of actions in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+Supported actions for code monitors.
+"""
+union MonitorAction = MonitorEmail
+
+"""
+Email is one of the supported actions of code monitors.
+"""
+type MonitorEmail implements Node {
+    """
+    The unique id of an email action.
+    """
+    id: ID!
+    """
+    Whether the email action is enabled or not.
+    """
+    enabled: Boolean!
+    """
+    The priority of the email action.
+    """
+    priority: MonitorEmailPriority!
+    """
+    Use header to automatically approve the message in a read-only or moderated mailing list.
+    """
+    header: String!
+    """
+    A list of recipients of the email.
+    """
+    recipients(
+        """
+        Returns the first n recipients from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): MonitorActionEmailRecipientsConnection!
+    """
+    A list of events.
+    """
+    events(
+        """
+        Returns the first n events from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): MonitorActionEventConnection!
+}
+
+"""
+The priority of an email action.
+"""
+enum MonitorEmailPriority {
+    NORMAL
+    CRITICAL
+}
+
+"""
+A list of events.
+"""
+type MonitorActionEmailRecipientsConnection {
+    """
+    A list of recipients.
+    """
+    nodes: [Namespace!]!
+    """
+    The total number of recipients in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A list of events.
+"""
+type MonitorActionEventConnection {
+    """
+    A list of events.
+    """
+    nodes: [MonitorActionEvent!]!
+    """
+    The total number of events in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+An event documents the result of a trigger or an execution of an action.
+"""
+type MonitorActionEvent implements Node {
+    """
+    The unique id of an event.
+    """
+    id: ID!
+    """
+    The status of an event.
+    """
+    status: EventStatus!
+    """
+    A message with details regarding the status of the event.
+    """
+    message: String
+    """
+    The time and date of the event.
+    """
+    timestamp: DateTime!
+}
+
+"""
+Supported status of monitor events.
+"""
+enum EventStatus {
+    PENDING
+    SUCCESS
+    ERROR
+}
+
+"""
+The input required to create a code monitor.
+"""
+input MonitorInput {
+    """
+    The namespace represents the owner of the code monitor.
+    Owners can either be users or organizations.
+    """
+    namespace: ID!
+    """
+    A meaningful description of the code monitor.
+    """
+    description: String!
+    """
+    Whether the code monitor is enabled or not.
+    """
+    enabled: Boolean!
+}
+
+"""
+The input required to edit a code monitor.
+"""
+input MonitorEditInput {
+    """
+    The id of the monitor.
+    """
+    id: ID!
+    """
+    The desired state after the udpate.
+    """
+    update: MonitorInput!
+}
+
+"""
+The input required to create a trigger.
+"""
+input MonitorTriggerInput {
+    """
+    The query string.
+    """
+    query: String!
+}
+
+"""
+The input required to edit a trigger.
+"""
+input MonitorEditTriggerInput {
+    """
+    The id of the Trigger.
+    """
+    id: ID!
+    """
+    The desired state after the udpate.
+    """
+    update: MonitorTriggerInput!
+}
+
+"""
+The input required to create an action.
+"""
+input MonitorActionInput {
+    """
+    An email action.
+    """
+    email: MonitorEmailInput
+}
+
+"""
+The input required to create an email action.
+"""
+input MonitorEmailInput {
+    """
+    Whether the email action is enabled or not.
+    """
+    enabled: Boolean!
+    """
+    The priority of the email.
+    """
+    priority: MonitorEmailPriority!
+    """
+    A list of users or orgs which will receive the email.
+    """
+    recipients: [ID!]!
+    """
+    Use header to automatically approve the message in a read-only or moderated mailing list.
+    """
+    header: String!
+}
+"""
+The input required to edit an action.
+"""
+input MonitorEditActionInput {
+    """
+    An email action.
+    """
+    email: MonitorEditEmailInput
+}
+
+"""
+The input required to edit an email action.
+"""
+input MonitorEditEmailInput {
+    """
+    The id of an email action.
+    """
+    id: ID
+    """
+    The desired state after the update.
+    """
+    update: MonitorEmailInput!
+}
+
+"""
 A search query description.
 """
 type SearchQueryDescription {
@@ -2837,20 +4137,6 @@ type CommitSearchResult implements GenericSearchResultInterface {
 }
 
 """
-A search result that is a diff between two diffable Git objects.
-"""
-type DiffSearchResult {
-    """
-    The diff that matched the search query.
-    """
-    diff: Diff!
-    """
-    The matching portion of the diff.
-    """
-    preview: HighlightedString!
-}
-
-"""
 A string that has highlights (e.g, query matches).
 """
 type HighlightedString {
@@ -2912,6 +4198,7 @@ enum ExternalServiceKind {
     GITHUB
     GITLAB
     GITOLITE
+    PERFORCE
     PHABRICATOR
     OTHER
 }
@@ -2949,6 +4236,10 @@ type ExternalService implements Node {
     """
     namespace: ID
     """
+    The number of repos synced by the external service.
+    """
+    repoCount: Int!
+    """
     An optional URL that will be populated when webhooks have been configured for the external service.
     """
     webhookURL: String
@@ -2960,6 +4251,19 @@ type ExternalService implements Node {
     not break the API and stay backwards compatible.
     """
     warning: String
+    """
+    External services are synced with code hosts in the background. This optional field
+    will contain any errors that occured during the most recent completed sync.
+    """
+    lastSyncError: String
+    """
+    LastSyncAt is the time the last sync job was run for this code host
+    """
+    lastSyncAt: DateTime!
+    """
+    The timestamp of the next sync job
+    """
+    nextSyncAt: DateTime!
 }
 
 """
@@ -3290,6 +4594,17 @@ type Repository implements Node & GenericSearchResultInterface {
     ): LSIFIndexConnection!
 
     """
+    Gets the indexing configuration associated with the repository.
+    """
+    indexConfiguration: IndexConfiguration
+
+    """
+    Information and status related to the commit graph of this repository calculated
+    for use by code intelligence features.
+    """
+    codeIntelligenceCommitGraph: CodeIntelligenceCommitGraph!
+
+    """
     A list of authorized users to access this repository with the given permission.
     This API currently only returns permissions from the Sourcegraph provider, i.e.
     "permissions.userMapping" in site configuration.
@@ -3314,6 +4629,22 @@ type Repository implements Node & GenericSearchResultInterface {
     It is null when there is no permissions data stored for the repository.
     """
     permissionsInfo: PermissionsInfo
+}
+
+"""
+Information and status related to the commit graph of this repository calculated
+for use by code intelligence features.
+"""
+type CodeIntelligenceCommitGraph {
+    """
+    Whether or not the commit graph needs to be updated.
+    """
+    stale: Boolean!
+
+    """
+    When, if ever, the commit graph was last refreshed.
+    """
+    updatedAt: DateTime
 }
 
 """
@@ -3360,10 +4691,16 @@ type ExternalLink {
     """
     url: String!
     """
+    The kind of external service, such as "GITHUB", or null if unknown/unrecognized. This is used solely for
+    displaying an icon that represents the service.
+    """
+    serviceKind: ExternalServiceKind
+
+    """
     The type of external service, such as "github", or null if unknown/unrecognized. This is used solely for
     displaying an icon that represents the service.
     """
-    serviceType: String
+    serviceType: String @deprecated(reason: "use name serviceKind instead")
 }
 
 """
@@ -3475,12 +4812,7 @@ type ExternalRepository {
 (experimental) A version context. Used to change the set of default repository and revisions searched.
 Note: We do not expose the list of repositories and revisions in the version context. This is intentional. However, if a need arises we can add it in.
 """
-type VersionContext implements Node {
-    """
-    The version context ID is its name.
-    """
-    id: ID!
-
+type VersionContext {
     """
     The name of the version context.
     """
@@ -3490,6 +4822,31 @@ type VersionContext implements Node {
     The description of the version context.
     """
     description: String!
+}
+
+"""
+(experimental) A search context. Specifies a set of repositories to be searched.
+"""
+type SearchContext implements Node {
+    """
+    The unique id of the search context.
+    """
+    id: ID!
+    """
+    The description of the search context.
+    """
+    description: String!
+    """
+    Fully-qualified search context spec for use when querying.
+    Examples: global, @username, @username/ctx, and @org/ctx.
+    """
+    spec: String!
+    """
+    Whether the search context is autodefined by Sourcegraph. Current examples include:
+    global search context ("global"), default user search context ("@user"), and
+    default organization search context ("@org").
+    """
+    autoDefined: Boolean!
 }
 
 """
@@ -3534,6 +4891,21 @@ type RepositoryTextSearchIndexStatus {
     The number of index shards.
     """
     indexShardsCount: Int!
+
+    """
+    EXPERIMENTAL: The number of newlines appearing in the index.
+    """
+    newLinesCount: Int!
+
+    """
+    EXPERIMENTAL: The number of newlines in the default branch.
+    """
+    defaultBranchNewLinesCount: Int!
+
+    """
+    EXPERIMENTAL: The number of newlines in the other branches.
+    """
+    otherBranchesNewLinesCount: Int!
 }
 
 """
@@ -3768,6 +5140,22 @@ type HighlightedDiffHunkBody {
     The highlighted lines.
     """
     lines: [HighlightedDiffHunkLine!]!
+}
+
+"""
+A specific highlighted line range to fetch.
+"""
+input HighlightLineRange {
+    """
+    The first line to fetch (0-indexed, inclusive). Values outside the bounds of the file will
+    automatically be clamped within the valid range.
+    """
+    startLine: Int!
+    """
+    The last line to fetch (0-indexed, inclusive). Values outside the bounds of the file will
+    automatically be clamped within the valid range.
+    """
+    endLine: Int!
 }
 
 """
@@ -4520,9 +5908,9 @@ type Person {
     """
     displayName: String!
     """
-    The avatar URL.
+    The avatar URL, if known.
     """
-    avatarURL: String!
+    avatarURL: String
     """
     The corresponding user account for this person, if one exists.
     """
@@ -4980,7 +6368,17 @@ type GitBlob implements TreeEntry & File2 {
     """
     Highlight the blob contents.
     """
-    highlight(disableTimeout: Boolean!, isLightTheme: Boolean!, highlightLongLines: Boolean = false): HighlightedFile!
+    highlight(
+        disableTimeout: Boolean!
+        isLightTheme: Boolean!
+        """
+        If highlightLongLines is true, lines which are longer than 2000 bytes are highlighted.
+        2000 bytes is enabled. This may produce a significant amount of HTML
+        which some browsers (such as Chrome, but not Firefox) may have trouble
+        rendering efficiently.
+        """
+        highlightLongLines: Boolean = false
+    ): HighlightedFile!
     """
     Submodule metadata if this tree points to a submodule
     """
@@ -5146,9 +6544,15 @@ type HighlightedFile {
     """
     aborted: Boolean!
     """
-    The HTML.
+    The HTML table that can be used to display the highlighted file.
     """
     html: String!
+    """
+    A list of the desired line ranges. Each list is a list of lines, where each element is an HTML
+    table row '<tr>...</tr>' string. This is useful if you only need to display specific subsets of
+    the file.
+    """
+    lineRanges(ranges: [HighlightLineRange!]!): [[String!]!]!
 }
 
 """
@@ -5478,6 +6882,74 @@ type User implements Node & SettingsSubject & Namespace {
         """
         viewerCanAdminister: Boolean
     ): CampaignConnection!
+
+    """
+    Returns a connection of configured external services accessible by this user, for usage with campaigns.
+    These are all code hosts configured on the Sourcegraph instance that are supported by campaigns. They are
+    connected to CampaignCredential resources, if one has been created for the code host connection before.
+    """
+    campaignsCodeHosts(
+        """
+        Returns the first n code hosts from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): CampaignsCodeHostConnection!
+
+    """
+    A list of monitors owned by the user or her organization.
+    """
+    monitors(
+        """
+        Returns the first n monitors from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): MonitorConnection!
+
+    """
+    Repositories from external services owned by this user.
+    """
+    repositories(
+        """
+        Returns the first n repositories from the list.
+        """
+        first: Int
+        """
+        Return repositories whose names match the query.
+        """
+        query: String
+        """
+        An opaque cursor that is used for pagination.
+        """
+        after: String
+        """
+        Include cloned repositories.
+        """
+        cloned: Boolean = true
+        """
+        Include repositories that are not yet cloned and for which cloning is not in progress.
+        """
+        notCloned: Boolean = true
+        """
+        Include repositories that have a text search index.
+        """
+        indexed: Boolean = true
+        """
+        Include repositories that do not have a text search index.
+        """
+        notIndexed: Boolean = true
+        """
+        Only include repositories from this external service.
+        """
+        externalServiceID: ID
+    ): RepositoryConnection!
 }
 
 """
@@ -6071,15 +7543,6 @@ type Site implements SettingsSubject {
     Only applies if the site does not have a valid license.
     """
     freeUsersExceeded: Boolean!
-
-    """
-    DEPRECATED: This field is always false and will be removed in future
-    releases. All repositories are enabled by default starting with
-    Sourcegraph 3.4
-    Whether the site has zero access-enabled repositories.
-    """
-    noRepositoriesEnabled: Boolean!
-        @deprecated(reason: "All repositories are enabled by default now. This field is always false.")
     """
     Alerts to display to the viewer.
     """
@@ -6448,74 +7911,6 @@ type SiteUsagePeriod {
     Excludes anonymous users.
     """
     integrationUserCount: Int!
-    """
-    The user count of Sourcegraph products at each stage of the software development lifecycle.
-    """
-    stages: SiteUsageStages
-}
-
-"""
-Aggregate site usage of features by software development lifecycle stage.
-"""
-type SiteUsageStages {
-    """
-    The number of users using management stage features.
-    """
-    manage: Int!
-    """
-    The number of users using planning stage features.
-    """
-    plan: Int!
-    """
-    The number of users using coding stage features.
-    """
-    code: Int!
-    """
-    The number of users using review stage features.
-    """
-    review: Int!
-    """
-    The number of users using verification stage features.
-    """
-    verify: Int!
-    """
-    The number of users using packaging stage features.
-    """
-    package: Int!
-    """
-    The number of users using deployment stage features.
-    """
-    deploy: Int!
-    """
-    The number of users using configuration stage features.
-    """
-    configure: Int!
-    """
-    The number of users using monitoring stage features.
-    """
-    monitor: Int!
-    """
-    The number of users using security stage features.
-    """
-    secure: Int!
-    """
-    The number of users using automation stage features.
-    """
-    automate: Int!
-}
-
-"""
-A deployment configuration.
-"""
-type DeploymentConfiguration {
-    """
-    The email.
-    """
-    email: String
-    """
-    The site ID.
-    """
-    siteID: String
 }
 
 """
@@ -6529,7 +7924,7 @@ type MonitoringStatistics {
 }
 
 """
-A high-level monitoring alert, for details see https://docs.sourcegraph.com/admin/observability/metrics_guide#high-level-alerting-metrics
+A high-level monitoring alert, for details see https://docs.sourcegraph.com/admin/observability/metrics#high-level-alerting-metrics
 """
 type MonitoringAlert {
     """
@@ -6844,7 +8239,7 @@ type ExtensionRegistryMutation {
         Force publish even if there are warnings (such as invalid JSON warnings).
         """
         force: Boolean = false
-    ): ExtensionRegistryCreateExtensionResult!
+    ): ExtensionRegistryPublishExtensionResult!
 }
 
 """
@@ -7227,6 +8622,16 @@ type LSIFIndex implements Node {
     inputCommit: String!
 
     """
+    The original root supplied at index schedule time.
+    """
+    inputRoot: String!
+
+    """
+    The name of the target indexer Docker image (e.g., sourcegraph/lsif-go@sha256:...).
+    """
+    inputIndexer: String!
+
+    """
     The index's current state.
     """
     state: LSIFIndexState!
@@ -7252,9 +8657,125 @@ type LSIFIndex implements Node {
     failure: String
 
     """
+    The configuration and execution summary (if completed or errored) of this index job.
+    """
+    steps: IndexSteps!
+
+    """
     The rank of this index in the queue. The value of this field is null if the index has been processed.
     """
     placeInQueue: Int
+}
+
+"""
+Configuration and execution summary of an index job.
+"""
+type IndexSteps {
+    """
+    Execution log entries related to setting up the indexing workspace.
+    """
+    setup: [ExecutionLogEntry!]!
+
+    """
+    Configuration and execution summary (if completed or errored) of steps to be performed prior to indexing.
+    """
+    preIndex: [PreIndexStep!]!
+
+    """
+    Configuration and execution summary (if completed or errored) of the indexer.
+    """
+    index: IndexStep!
+
+    """
+    Execution log entry related to uploading the dump produced by the indexing step.
+    This field be missing if the upload step had not been executed.
+    """
+    upload: ExecutionLogEntry
+
+    """
+    Execution log entries related to tearing down the indexing workspace.
+    """
+    teardown: [ExecutionLogEntry!]!
+}
+
+"""
+The configuration and execution summary of a step to be performed prior to indexing.
+"""
+type PreIndexStep {
+    """
+    The working directory relative to the cloned repository root.
+    """
+    root: String!
+
+    """
+    The name of the Docker image to run.
+    """
+    image: String!
+
+    """
+    The arguments to supply to the Docker container's entrypoint.
+    """
+    commands: [String!]!
+
+    """
+    The execution summary (if completed or errored) of the docker command.
+    """
+    logEntry: ExecutionLogEntry
+}
+
+"""
+The configuration and execution summary of the indexer.
+"""
+type IndexStep {
+    """
+    The arguments to supply to the indexer container.
+    """
+    indexerArgs: [String!]!
+
+    """
+    The path to the index file relative to the root directory (dump.lsif by default).
+    """
+    outfile: String
+
+    """
+    The execution summary (if completed or errored) of the index command.
+    """
+    logEntry: ExecutionLogEntry
+}
+
+"""
+A description of a command run inside the executor to during processing of the parent record.
+"""
+type ExecutionLogEntry {
+    """
+    An internal tag used to correlate this log entry with other records.
+    """
+    key: String!
+
+    """
+    The arguments of the command run inside the executor.
+    """
+    command: [String!]!
+
+    """
+    The date when this command started.
+    """
+    startTime: DateTime!
+
+    """
+    The exit code of the command.
+    """
+    exitCode: Int!
+
+    """
+    The combined stdout and stderr logs of the command.
+    """
+    out: String!
+
+    """
+    The duration in milliseconds of the command.
+    """
+    durationMilliseconds: Int!
 }
 
 """
@@ -7275,6 +8796,16 @@ type LSIFIndexConnection {
     Pagination information.
     """
     pageInfo: PageInfo!
+}
+
+"""
+Explicit configuration for indexing a repository.
+"""
+type IndexConfiguration {
+    """
+    The raw JSON-encoded index configuration.
+    """
+    configuration: String
 }
 
 """
@@ -7856,6 +9387,25 @@ FOR INTERNAL USE ONLY: A status message
 union StatusMessage = CloningProgress | ExternalServiceSyncError | SyncError
 
 """
+An arbitrarily large integer encoded as a decimal string.
+"""
+scalar BigInt
+
+"""
+FOR INTERNAL USE ONLY: A repository statistic
+"""
+type RepositoryStats {
+    """
+    The amount of bytes stored in .git directories
+    """
+    gitDirBytes: BigInt!
+    """
+    The number of lines indexed
+    """
+    indexedLinesCount: BigInt!
+}
+
+"""
 An RFC 3339-encoded UTC date string, such as 1973-11-29T21:33:09Z. This value can be parsed into a
 JavaScript Date using Date.parse. To produce this value from a JavaScript Date instance, use
 Date#toISOString.
@@ -7924,4 +9474,32 @@ type EventLogsConnection {
     Pagination information.
     """
     pageInfo: PageInfo!
+}
+
+"""
+A list of code host repositories
+"""
+type CodeHostRepositoryConnection {
+    """
+    A list of repositories affiliated with a code host.
+    """
+    nodes: [CodeHostRepository!]!
+}
+
+"""
+A repository returned directly from a code host
+"""
+type CodeHostRepository {
+    """
+    The Name "owner/reponame" of the repo
+    """
+    name: String!
+    """
+    The code host the repo came from
+    """
+    codeHost: ExternalService
+    """
+    Is the repo private
+    """
+    private: Boolean!
 }

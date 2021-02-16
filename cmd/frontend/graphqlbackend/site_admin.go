@@ -5,9 +5,11 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -36,14 +38,14 @@ func (*schemaResolver) DeleteUser(ctx context.Context, args *struct {
 	// Collect username, verified email addresses, and external accounts to be used
 	// for revoking user permissions later, otherwise they will be removed from database
 	// if it's a hard delete.
-	user, err := db.Users.GetByID(ctx, userID)
+	user, err := database.GlobalUsers.GetByID(ctx, userID)
 	if err != nil {
 		return nil, errors.Wrap(err, "get user by ID")
 	}
 
 	var accounts []*extsvc.Accounts
 
-	extAccounts, err := db.ExternalAccounts.List(ctx, db.ExternalAccountsListOptions{UserID: userID})
+	extAccounts, err := database.GlobalExternalAccounts.List(ctx, database.ExternalAccountsListOptions{UserID: userID})
 	if err != nil {
 		return nil, errors.Wrap(err, "list external accounts")
 	}
@@ -55,7 +57,7 @@ func (*schemaResolver) DeleteUser(ctx context.Context, args *struct {
 		})
 	}
 
-	verifiedEmails, err := db.UserEmails.ListByUser(ctx, db.UserEmailsListOptions{
+	verifiedEmails, err := database.GlobalUserEmails.ListByUser(ctx, database.UserEmailsListOptions{
 		UserID:       user.ID,
 		OnlyVerified: true,
 	})
@@ -73,11 +75,11 @@ func (*schemaResolver) DeleteUser(ctx context.Context, args *struct {
 	})
 
 	if args.Hard != nil && *args.Hard {
-		if err := db.Users.HardDelete(ctx, user.ID); err != nil {
+		if err := database.GlobalUsers.HardDelete(ctx, user.ID); err != nil {
 			return nil, err
 		}
 	} else {
-		if err := db.Users.Delete(ctx, user.ID); err != nil {
+		if err := database.GlobalUsers.Delete(ctx, user.ID); err != nil {
 			return nil, err
 		}
 	}
@@ -85,7 +87,7 @@ func (*schemaResolver) DeleteUser(ctx context.Context, args *struct {
 	// NOTE: Practically, we don't reuse the ID for any new users, and the situation of left-over pending permissions
 	// is possible but highly unlikely. Therefore, there is no need to roll back user deletion even if this step failed.
 	// This call is purely for the purpose of cleanup.
-	if err := db.Authz.RevokeUserPermissions(ctx, &db.RevokeUserPermissionsArgs{
+	if err := database.GlobalAuthz.RevokeUserPermissions(ctx, &database.RevokeUserPermissionsArgs{
 		UserID:   user.ID,
 		Accounts: accounts,
 	}); err != nil {
@@ -108,7 +110,7 @@ func (*schemaResolver) DeleteOrganization(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if err := db.Orgs.Delete(ctx, orgID); err != nil {
+	if err := database.GlobalOrgs.Delete(ctx, orgID); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
@@ -137,8 +139,26 @@ func (*schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if err := db.Users.SetIsSiteAdmin(ctx, userID, args.SiteAdmin); err != nil {
+	if err := database.GlobalUsers.SetIsSiteAdmin(ctx, userID, args.SiteAdmin); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
+}
+
+func (r *schemaResolver) InvalidateSessionsByID(ctx context.Context, args *struct {
+	UserID graphql.ID
+}) (*EmptyResponse, error) {
+	// 🚨 SECURITY: Only the site admin can invalidate the sessions of a user
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+	userID, err := UnmarshalUserID(args.UserID)
+	if err != nil {
+		return nil, err
+	}
+	if err := session.InvalidateSessionsByID(ctx, userID); err != nil {
+		return nil, err
+	}
+	return &EmptyResponse{}, nil
+
 }

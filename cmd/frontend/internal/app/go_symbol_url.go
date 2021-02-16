@@ -75,7 +75,7 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 		return fmt.Errorf("invalid def %s (must have 1 or 2 path components)", def)
 	}
 
-	dir, err := gosrc.ResolveImportPath(httpcli.ExternalHTTPClient(), importPath)
+	dir, err := gosrc.ResolveImportPath(httpcli.ExternalDoer(), importPath)
 	if err != nil {
 		return err
 	}

@@ -25,11 +25,12 @@ func TestSearch(t *testing.T) {
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "gqltest-github-search",
 		Config: mustMarshalJSONString(struct {
-			URL   string   `json:"url"`
-			Token string   `json:"token"`
-			Repos []string `json:"repos"`
+			URL                   string   `json:"url"`
+			Token                 string   `json:"token"`
+			Repos                 []string `json:"repos"`
+			RepositoryPathPattern string   `json:"repositoryPathPattern"`
 		}{
-			URL:   "http://github.com",
+			URL:   "https://ghe.sgdev.org/",
 			Token: *githubToken,
 			Repos: []string{
 				"sgtest/java-langserver",
@@ -41,6 +42,7 @@ func TestSearch(t *testing.T) {
 				"sgtest/mux",      // Fork
 				"sgtest/archived", // Archived
 			},
+			RepositoryPathPattern: "github.com/{nameWithOwner}",
 		}),
 	})
 	if err != nil {
@@ -116,6 +118,37 @@ func TestSearch(t *testing.T) {
 		for _, r := range results.Results {
 			if !strings.HasSuffix(r.File.Name, ".go") {
 				t.Fatalf("Found file name does not end with .go: %s", r.File.Name)
+			}
+		}
+	})
+
+	t.Run("lang: filter", func(t *testing.T) {
+		// On our test repositories, `function` has results for go, ts, python, html
+		results, err := client.SearchFiles("function lang:go")
+		if err != nil {
+			t.Fatal(err)
+		}
+		// Make sure we only got .go files
+		for _, r := range results.Results {
+			if !strings.Contains(r.File.Name, ".go") {
+				t.Fatalf("Found file name does not end with .go: %s", r.File.Name)
+			}
+		}
+	})
+
+	t.Run("excluding repositories", func(t *testing.T) {
+		results, err := client.SearchFiles("fmt.Sprintf -repo:jsonrpc2")
+		if err != nil {
+			t.Fatal(err)
+		}
+		// Make sure we got some results
+		if len(results.Results) == 0 {
+			t.Fatal("Want non-zero results but got 0")
+		}
+		// Make sure we got no results from the excluded repository
+		for _, r := range results.Results {
+			if strings.Contains(r.Repository.Name, "jsonrpc2") {
+				t.Fatal("Got results for excluded repository")
 			}
 		}
 	})
@@ -255,6 +288,10 @@ func TestSearch(t *testing.T) {
 					"github.com/sgtest/mux",
 				},
 			},
+			{
+				name:  `Structural search returns repo results if patterntype set but pattern is empty`,
+				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ patterntype:structural`,
+			},
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
@@ -290,6 +327,7 @@ func TestSearch(t *testing.T) {
 			query         string
 			zeroResult    bool
 			minMatchCount int64
+			wantAlert     *gqltestutil.SearchAlert
 		}{
 			// Global search
 			{
@@ -304,6 +342,10 @@ func TestSearch(t *testing.T) {
 				name:          "something with more than 1000 results and use count:1000",
 				query:         ". count:1000",
 				minMatchCount: 1001,
+			},
+			{
+				name:  "repohasfile returns results for global search",
+				query: "repohasfile:README",
 			},
 			{
 				name:  "regular expression without indexed search",
@@ -386,6 +428,24 @@ func TestSearch(t *testing.T) {
 				name:  "commit search, nonzero result",
 				query: `repo:^github\.com/sgtest/go-diff$ type:commit count:1`,
 			},
+			{
+				name:       "commit search, non-existent ref",
+				query:      `repo:^github\.com/sgtest/go-diff$@ref/noexist type:commit count:1`,
+				zeroResult: true,
+				wantAlert: &gqltestutil.SearchAlert{
+					Title:           "Some repositories could not be searched",
+					Description:     `The repository github.com/sgtest/go-diff matched by your repo: filter could not be searched because it does not contain the revision "ref/noexist".`,
+					ProposedQueries: nil,
+				},
+			},
+			{
+				name:  "commit search, non-zero result message",
+				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ type:commit message:test`,
+			},
+			{
+				name:  "commit search, non-zero result pattern",
+				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ type:commit test`,
+			},
 			// Diff search
 			{
 				name:  "diff search, nonzero result",
@@ -394,7 +454,7 @@ func TestSearch(t *testing.T) {
 			// Repohascommitafter
 			{
 				name:  `Repohascommitafter, nonzero result`,
-				query: `repo:^github\.com/sgtest/go-diff$ repohascommitafter:"8 months ago" test patterntype:literal count:1`,
+				query: `repo:^github\.com/sgtest/go-diff$ repohascommitafter:"2019-01-01" test patterntype:literal count:1`,
 			},
 			// Regex text search
 			{
@@ -426,8 +486,8 @@ func TestSearch(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				if results.Alert != nil {
-					t.Fatalf("Unexpected alert: %v", results.Alert)
+				if diff := cmp.Diff(test.wantAlert, results.Alert); diff != "" {
+					t.Fatalf("Alert mismatch (-want +got):\n%s", diff)
 				}
 
 				if test.zeroResult {
@@ -455,6 +515,475 @@ func TestSearch(t *testing.T) {
 
 		if results.Alert == nil {
 			t.Fatal("Want search alert but got nil")
+		}
+	})
+
+	t.Run("structural search", func(t *testing.T) {
+		tests := []struct {
+			name       string
+			query      string
+			zeroResult bool
+			wantAlert  *gqltestutil.SearchAlert
+		}{
+			{
+				name:  "Structural, index only, nonzero result",
+				query: `repo:^github\.com/sgtest/go-diff$ make(:[1]) index:only patterntype:structural count:3`,
+			},
+			{
+				name:  "Structural, index only, backcompat, nonzero result",
+				query: `repo:^github\.com/sgtest/go-diff$ make(:[1]) lang:go rule:'where "backcompat" == "backcompat"' patterntype:structural`,
+			},
+			{
+				name:  "Structural, unindexed, nonzero result",
+				query: `repo:^github\.com/sgtest/go-diff$@adde71 make(:[1]) index:no patterntype:structural count:3`,
+			},
+			{
+				name:  `Structural search quotes are interpreted literally`,
+				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ file:^README\.md "basic :[_] access :[_]" patterntype:structural`,
+			},
+			{
+				name:       `Alert to activate structural search mode for :[...] syntax`,
+				query:      `repo:^github\.com/sgtest/go-diff$ patterntype:literal i can't :[believe] it's not butter`,
+				zeroResult: true,
+				wantAlert: &gqltestutil.SearchAlert{
+					Title:       "No results",
+					Description: "It looks like you may have meant to run a structural search, but it is not toggled.",
+					ProposedQueries: []gqltestutil.ProposedQuery{
+						{
+							Description: "Activate structural search",
+							Query:       `repo:^github\.com/sgtest/go-diff$ patterntype:literal i can't :[believe] it's not butter patternType:structural`,
+						},
+					},
+				},
+			},
+			{
+				name:       `Alert to activate structural search mode for ... syntax`,
+				query:      `no results for { ... } raises alert repo:^github\.com/sgtest/go-diff$`,
+				zeroResult: true,
+				wantAlert: &gqltestutil.SearchAlert{
+					Title:       "No results",
+					Description: "It looks like you may have meant to run a structural search, but it is not toggled.",
+					ProposedQueries: []gqltestutil.ProposedQuery{
+						{
+							Description: "Activate structural search",
+							Query:       `no results for { ... } raises alert repo:^github\.com/sgtest/go-diff$ patternType:structural`,
+						},
+					},
+				},
+			},
+		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				results, err := client.SearchFiles(test.query)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if diff := cmp.Diff(test.wantAlert, results.Alert); diff != "" {
+					t.Fatalf("Alert mismatch (-want +got):\n%s", diff)
+				}
+
+				if test.zeroResult {
+					if len(results.Results) > 0 {
+						t.Fatalf("Want zero result but got %d", len(results.Results))
+					}
+				} else {
+					if len(results.Results) == 0 {
+						t.Fatal("Want non-zero results but got 0")
+					}
+				}
+			})
+		}
+	})
+
+	t.Run("And/Or queries", func(t *testing.T) {
+		tests := []struct {
+			name       string
+			query      string
+			zeroResult bool
+			wantAlert  *gqltestutil.SearchAlert
+		}{
+			{
+				name:  `And operator, basic`,
+				query: `repo:^github\.com/sgtest/go-diff$ func and main count:1 stable:yes type:file`,
+			},
+			{
+				name:  `Or operator, single and double quoted`,
+				query: `repo:^github\.com/sgtest/go-diff$ "func PrintMultiFileDiff" or 'func readLine(' stable:yes type:file count:1 patterntype:regexp`,
+			},
+			{
+				name:  `Literals, grouped parens with parens-as-patterns heuristic`,
+				query: `repo:^github\.com/sgtest/go-diff$ (() or ()) stable:yes type:file count:1 patterntype:regexp`,
+			},
+			{
+				name:  `Literals, no grouped parens`,
+				query: `repo:^github\.com/sgtest/go-diff$ () or () stable:yes type:file count:1 patterntype:regexp`,
+			},
+			{
+				name:  `Literals, escaped parens`,
+				query: `repo:^github\.com/sgtest/go-diff$ \(\) or \(\) stable:yes type:file count:1 patterntype:regexp`,
+			},
+			{
+				name:  `Literals, escaped and unescaped parens, no group`,
+				query: `repo:^github\.com/sgtest/go-diff$ () or \(\) stable:yes type:file count:1 patterntype:regexp`,
+			},
+			{
+				name:  `Literals, escaped and unescaped parens, grouped`,
+				query: `repo:^github\.com/sgtest/go-diff$ (() or \(\)) stable:yes type:file count:1 patterntype:regexp`,
+			},
+			{
+				name:       `Literals, double paren`,
+				query:      `repo:^github\.com/sgtest/go-diff$ ()() or ()()`,
+				zeroResult: true,
+			},
+			{
+				name:       `Literals, double paren, dangling paren right side`,
+				query:      `repo:^github\.com/sgtest/go-diff$ ()() or main()(`,
+				zeroResult: true,
+			},
+			{
+				name:       `Literals, double paren, dangling paren left side`,
+				query:      `repo:^github\.com/sgtest/go-diff$ ()( or ()()`,
+				zeroResult: true,
+			},
+			{
+				name:  `Mixed regexp and literal`,
+				query: `repo:^github\.com/sgtest/go-diff$ func(.*) or does_not_exist_3744 count:1 stable:yes type:file`,
+			},
+			{
+				name:  `Mixed regexp and literal heuristic`,
+				query: `repo:^github\.com/sgtest/go-diff$ func( or func(.*) count:1 stable:yes type:file`,
+			},
+			{
+				name:       `Mixed regexp and quoted literal`,
+				query:      `repo:^github\.com/sgtest/go-diff$ "*" and cert.*Load count:1 stable:yes type:file`,
+				zeroResult: true,
+			},
+			{
+				name:  `Escape sequences`,
+				query: `repo:^github\.com/sgtest/go-diff$ \' and \" and \\ and /`,
+			},
+			{
+				name:  `Escaped whitespace sequences with 'and'`,
+				query: `repo:^github\.com/sgtest/go-diff$ \ and /`,
+			},
+			{
+				name:  `Concat converted to spaces for literal search`,
+				query: `repo:^github\.com/sgtest/go-diff$ file:^diff/print\.go t := or ts Time patterntype:literal`,
+			},
+			{
+				name:  `Literal parentheses match pattern`,
+				query: `repo:^github\.com/sgtest/go-diff file:^diff/print\.go Bytes() and Time() patterntype:literal`,
+			},
+			{
+				name:  `Literals, simple not keyword inside group`,
+				query: `repo:^github\.com/sgtest/go-diff$ (not .svg) patterntype:literal`,
+			},
+			{
+				name:  `Literals, not keyword and implicit and inside group`,
+				query: `repo:^github\.com/sgtest/go-diff$ (a/foo not .svg) patterntype:literal`,
+			},
+			{
+				name:  `Literals, not and and keyword inside group`,
+				query: `repo:^github\.com/sgtest/go-diff$ (a/foo and not .svg) patterntype:literal`,
+			},
+			{
+				name:  `Dangling right parens, supported via content: filter`,
+				query: `repo:^github\.com/sgtest/go-diff$ content:"diffPath)" and main patterntype:literal`,
+			},
+			{
+				name:       `Dangling right parens, unsupported in literal search`,
+				query:      `repo:^github\.com/sgtest/go-diff$ diffPath) and main patterntype:literal`,
+				zeroResult: true,
+				wantAlert: &gqltestutil.SearchAlert{
+					Title:       "Unable To Process Query",
+					Description: "Unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses",
+				},
+			},
+			{
+				name:       `Dangling right parens, unsupported in literal search, double parens`,
+				query:      `repo:^github\.com/sgtest/go-diff$ MarshalTo and OrigName)) patterntype:literal`,
+				zeroResult: true,
+				wantAlert: &gqltestutil.SearchAlert{
+					Title:       "Unable To Process Query",
+					Description: "Unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses",
+				},
+			},
+			{
+				name:       `Dangling right parens, unsupported in literal search, simple group before right paren`,
+				query:      `repo:^github\.com/sgtest/go-diff$ MarshalTo and (m.OrigName)) patterntype:literal`,
+				zeroResult: true,
+				wantAlert: &gqltestutil.SearchAlert{
+					Title:       "Unable To Process Query",
+					Description: "Unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses",
+				},
+			},
+			{
+				name:       `Dangling right parens, heuristic for literal search, cannot succeed, too confusing`,
+				query:      `repo:^github\.com/sgtest/go-diff$ (respObj.Size and (data))) patterntype:literal`,
+				zeroResult: true,
+				wantAlert: &gqltestutil.SearchAlert{
+					Title:       "Unable To Process Query",
+					Description: "Unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses",
+				},
+			},
+			{
+				name:       `No result for confusing grouping`,
+				query:      `repo:^github\.com/sgtest/go-diff file:^README\.md (bar and (foo or x\) ()) patterntype:literal`,
+				zeroResult: true,
+			},
+			{
+				name:       `Successful grouping removes alert`,
+				query:      `repo:^github\.com/sgtest/go-diff file:^README\.md (bar and (foo or (x\) ())) patterntype:literal`,
+				zeroResult: true,
+			},
+			{
+				name:  `No dangling right paren with complex group for literal search`,
+				query: `repo:^github\.com/sgtest/go-diff$ (m *FileDiff and (data)) patterntype:literal`,
+			},
+			{
+				name:  `Concat converted to .* for regexp search`,
+				query: `repo:^github\.com/sgtest/go-diff$ file:^diff/print\.go t := or ts Time patterntype:regexp stable:yes type:file`,
+			},
+			{
+				name:  `Structural search uses literal search parser`,
+				query: `repo:^github\.com/sgtest/go-diff$ file:^diff/print\.go :[[v]] := ts and printFileHeader(:[_]) patterntype:structural`,
+			},
+			{
+				name:  `Union file matches per file and accurate counts`,
+				query: `repo:^github\.com/sgtest/go-diff file:^diff/print\.go func or package`,
+			},
+			{
+				name:  `Intersect file matches per file and accurate counts`,
+				query: `repo:^github\.com/sgtest/go-diff file:^diff/print\.go func and package`,
+			},
+			{
+				name:  `Simple combined union and intersect file matches per file and accurate counts`,
+				query: `repo:^github\.com/sgtest/go-diff file:^diff/print\.go ((func timePtr and package diff) or return buf.Bytes())`,
+			},
+			{
+				name:  `Complex union of intersect file matches per file and accurate counts`,
+				query: `repo:^github\.com/sgtest/go-diff file:^diff/print\.go ((func timePtr and package diff) or (ts == nil and ts.Time()))`,
+			},
+			{
+				name:  `Complex intersect of union file matches per file and accurate counts`,
+				query: `repo:^github\.com/sgtest/go-diff file:^diff/print\.go ((func timePtr or package diff) and (ts == nil or ts.Time()))`,
+			},
+			{
+				name:       `Intersect file matches per file against an empty result set`,
+				query:      `repo:^github\.com/sgtest/go-diff file:^diff/print\.go func and doesnotexist838338`,
+				zeroResult: true,
+			},
+			{
+				name:  `Dedupe union operation`,
+				query: `file:diff.go|print.go|parse.go repo:^github\.com/sgtest/go-diff _, :[[x]] := range :[src.] { :[_] } or if :[s1] == :[s2] patterntype:structural`,
+			},
+		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				results, err := client.SearchFiles(test.query)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if diff := cmp.Diff(test.wantAlert, results.Alert); diff != "" {
+					t.Fatalf("Alert mismatch (-want +got):\n%s", diff)
+				}
+
+				if test.zeroResult {
+					if len(results.Results) > 0 {
+						t.Fatalf("Want zero result but got %d", len(results.Results))
+					}
+				} else {
+					if len(results.Results) == 0 {
+						t.Fatal("Want non-zero results but got 0")
+					}
+				}
+			})
+		}
+	})
+
+	t.Run("And/Or search expression queries", func(t *testing.T) {
+		tests := []struct {
+			name            string
+			query           string
+			zeroResult      bool
+			exactMatchCount int64
+			wantAlert       *gqltestutil.SearchAlert
+		}{
+			{
+				name:  `Or distributive property on content and file`,
+				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ (Fetches OR file:language-server.ts)`,
+			},
+			{
+				name:  `Or distributive property on nested file on content`,
+				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ ((file:^renovate\.json extends) or file:progress.ts createProgressProvider)`,
+			},
+			{
+				name:  `Or distributive property on commit`,
+				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ (type:diff or type:commit) author:felix yarn`,
+			},
+			{
+				name:            `Or match on both diff and commit returns both`,
+				query:           `repo:^github\.com/sgtest/sourcegraph-typescript$ (type:diff or type:commit) subscription after:"june 11 2019" before:"june 13 2019"`,
+				exactMatchCount: 2,
+			},
+			{
+				name:            `Or distributive property on rev`,
+				query:           `repo:^github\.com/sgtest/mux$ (rev:v1.7.3 or revision:v1.7.2)`,
+				exactMatchCount: 2,
+			},
+			{
+				name:            `Or distributive property on rev with file`,
+				query:           `repo:^github\.com/sgtest/mux$ (rev:v1.7.3 or revision:v1.7.2) file:README.md`,
+				exactMatchCount: 2,
+			},
+			{
+				name:  `Or distributive property on repo`,
+				query: `(repo:^github\.com/sgtest/go-diff$@garo/lsif-indexing-campaign:test-already-exist-pr or repo:^github\.com/sgtest/sourcegraph-typescript$) file:README.md #`,
+			},
+			{
+				name:  `Or distributive property on repo where only one repo contains match (tests repo cache is invalidated)`,
+				query: `(repo:^github\.com/sgtest/sourcegraph-typescript$ or repo:^github\.com/sgtest/go-diff$) package diff provides`,
+			},
+			{
+				name:            `Or distributive property on commits deduplicates and merges`,
+				query:           `repo:^github\.com/sgtest/go-diff$ type:commit (message:add or message:file)`,
+				exactMatchCount: 21,
+			},
+		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				results, err := client.SearchFiles(test.query)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if diff := cmp.Diff(test.wantAlert, results.Alert); diff != "" {
+					t.Fatalf("Alert mismatch (-want +got):\n%s", diff)
+				}
+
+				if test.zeroResult {
+					if len(results.Results) > 0 {
+						t.Fatalf("Want zero result but got %d", len(results.Results))
+					}
+				} else {
+					if len(results.Results) == 0 {
+						t.Fatal("Want non-zero results but got 0")
+					}
+				}
+				if test.exactMatchCount != 0 && results.MatchCount != test.exactMatchCount {
+					t.Fatalf("Want exactly %d results but got %d", test.exactMatchCount, results.MatchCount)
+				}
+			})
+		}
+	})
+
+	t.Run("Select Queries", func(t *testing.T) {
+		type counts struct {
+			Repo    int
+			Commit  int
+			Content int
+			Symbol  int
+			File    int
+		}
+
+		countResults := func(results []*gqltestutil.AnyResult) counts {
+			var count counts
+			for _, res := range results {
+				switch v := res.Inner.(type) {
+				case gqltestutil.CommitResult:
+					count.Commit += 1
+				case gqltestutil.RepositoryResult:
+					count.Repo += 1
+				case gqltestutil.FileResult:
+					count.Symbol += len(v.Symbols)
+					for _, lm := range v.LineMatches {
+						count.Content += len(lm.OffsetAndLengths)
+					}
+					if len(v.Symbols) == 0 && len(v.LineMatches) == 0 {
+						count.File += 1
+					}
+				}
+			}
+			return count
+		}
+
+		tests := []struct {
+			name   string
+			query  string
+			counts counts
+		}{
+			{
+				`select repo`,
+				`repo:go-diff patterntype:literal HunkNoChunksize select:repo`,
+				counts{Repo: 1},
+			},
+			{
+				`select repo, only repo`,
+				`repo:go-diff select:repo`,
+				counts{Repo: 1},
+			},
+			{
+				`select repo, only file`,
+				`file:go-diff.go select:repo`,
+				counts{Repo: 1},
+			},
+			{
+				`select file`,
+				`repo:go-diff patterntype:literal HunkNoChunksize select:file`,
+				counts{File: 1},
+			},
+			{
+				`or statement merges file`,
+				`repo:go-diff HunkNoChunksize or ParseHunksAndPrintHunks select:file`,
+				counts{File: 1},
+			},
+			{
+				`select content`,
+				`repo:go-diff patterntype:literal HunkNoChunksize select:content`,
+				counts{Content: 1},
+			},
+			{
+				`no select`,
+				`repo:go-diff patterntype:literal HunkNoChunksize`,
+				counts{Content: 1},
+			},
+			{
+				`select commit, no results`,
+				`repo:go-diff patterntype:literal HunkNoChunksize select:commit`,
+				counts{},
+			},
+			{
+				`select symbol, no results`,
+				`repo:go-diff patterntype:literal HunkNoChunksize select:symbol`,
+				counts{},
+			},
+			{
+				`select symbol`,
+				`repo:go-diff patterntype:literal type:symbol HunkNoChunksize select:symbol`,
+				counts{Symbol: 1},
+			},
+			// TODO (@camdencheek): Enable this test once #17483 is fixed
+			// {
+			// 	`select commit`,
+			// 	`repo:^github\.com/sgtest/sourcegraph-typescript$ type:commit author:felix pure-lockfile`,
+			// 	counts{Symbol: 1},
+			// },
+		}
+
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				results, err := client.SearchAll(test.query)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				count := countResults(results)
+				if !cmp.Equal(count, test.counts) {
+					t.Fatalf(cmp.Diff(test.counts, count))
+				}
+			})
 		}
 	})
 }

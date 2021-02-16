@@ -13,6 +13,7 @@ const (
 	HeuristicParensAsPatterns
 	HeuristicDanglingParens
 	HeuristicHoisted
+	Structural
 )
 
 var allLabels = map[labels]string{
@@ -23,6 +24,7 @@ var allLabels = map[labels]string{
 	HeuristicParensAsPatterns: "HeuristicParensAsPatterns",
 	HeuristicDanglingParens:   "HeuristicDanglingParens",
 	HeuristicHoisted:          "HeuristicHoisted",
+	Structural:                "Structural",
 }
 
 func (l *labels) isSet(label labels) bool {

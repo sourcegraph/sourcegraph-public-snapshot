@@ -18,6 +18,9 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
+	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
@@ -25,10 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-
-	"github.com/opentracing/opentracing-go/ext"
-	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
 )
 
 // maxFileSize is the limit on file size in bytes. Only files smaller
@@ -55,7 +54,10 @@ type Store struct {
 	// FetchTar returns an io.ReadCloser to a tar archive of a repository at the specified Git
 	// remote URL and commit ID. If the error implements "BadRequest() bool", it will be used to
 	// determine if the error is a bad request (eg invalid repo).
-	FetchTar func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error)
+	FetchTar func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error)
+
+	// FilterTar returns a FilterFunc that filters out files we don't want to write to disk
+	FilterTar func(ctx context.Context, repo api.RepoName, commit api.CommitID) (FilterFunc, error)
 
 	// Path is the directory to store the cache
 	Path string
@@ -79,6 +81,11 @@ type Store struct {
 	ZipCache ZipCache
 }
 
+// FilterFunc filters tar files based on their header.
+// Tar files for which FilterFunc evaluates to true
+// are not stored in the target zip.
+type FilterFunc func(hdr *tar.Header) bool
+
 // Start initializes state and starts background goroutines. It can be called
 // more than once. It is optional to call, but starting it earlier avoids a
 // search request paying the cost of initializing.
@@ -100,7 +107,7 @@ func (s *Store) Start() {
 
 // PrepareZip returns the path to a local zip archive of repo at commit.
 // It will first consult the local cache, otherwise will fetch from the network.
-func (s *Store) PrepareZip(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (path string, err error) {
+func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.CommitID) (path string, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Store.prepareZip")
 	ext.Component.Set(span, "store")
 	defer func() {
@@ -117,13 +124,13 @@ func (s *Store) PrepareZip(ctx context.Context, repo gitserver.Repo, commit api.
 	// We already validate commit is absolute in ServeHTTP, but since we
 	// rely on it for caching we check again.
 	if len(commit) != 40 {
-		return "", errors.Errorf("commit must be resolved (repo=%q, commit=%q)", repo.Name, commit)
+		return "", errors.Errorf("commit must be resolved (repo=%q, commit=%q)", repo, commit)
 	}
 
 	largeFilePatterns := conf.Get().SearchLargeFiles
 
 	// key is a sha256 hash since we want to use it for the disk name
-	h := sha256.Sum256([]byte(fmt.Sprintf("%q %q %q", repo.Name, commit, largeFilePatterns)))
+	h := sha256.Sum256([]byte(fmt.Sprintf("%q %q %q", repo, commit, largeFilePatterns)))
 	key := hex.EncodeToString(h[:])
 	span.LogKV("key", key)
 
@@ -150,7 +157,7 @@ func (s *Store) PrepareZip(ctx context.Context, repo gitserver.Repo, commit api.
 			}
 		}
 		if err != nil {
-			log15.Error("failed to fetch archive", "repo", repo.Name, "commit", commit, "duration", time.Since(start), "error", err)
+			log15.Error("failed to fetch archive", "repo", repo, "commit", commit, "duration", time.Since(start), "error", err)
 		}
 		resC <- result{path, err}
 	}()
@@ -170,7 +177,7 @@ func (s *Store) PrepareZip(ctx context.Context, repo gitserver.Repo, commit api.
 // fetch fetches an archive from the network and stores it on disk. It does
 // not populate the in-memory cache. You should probably be calling
 // prepareZip.
-func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.CommitID, largeFilePatterns []string) (rc io.ReadCloser, err error) {
+func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitID, largeFilePatterns []string) (rc io.ReadCloser, err error) {
 	fetchQueueSize.Inc()
 	ctx, releaseFetchLimiter, err := s.fetchLimiter.Acquire(ctx) // Acquire concurrent fetches semaphore
 	if err != nil {
@@ -185,8 +192,7 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 	fetching.Inc()
 	span, ctx := ot.StartSpanFromContext(ctx, "Store.fetch")
 	ext.Component.Set(span, "store")
-	span.SetTag("repo", repo.Name)
-	span.SetTag("repoURL", repo.URL)
+	span.SetTag("repo", repo)
 	span.SetTag("commit", commit)
 
 	// Done is called when the returned reader is closed, or if this function
@@ -219,6 +225,14 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 		return nil, err
 	}
 
+	filter := func(hdr *tar.Header) bool { return false } // default: don't filter
+	if s.FilterTar != nil {
+		filter, err = s.FilterTar(ctx, repo, commit)
+		if err != nil {
+			return nil, fmt.Errorf("error while calling FilterTar: %w", err)
+		}
+	}
+
 	pr, pw := io.Pipe()
 
 	// After this point we are not allowed to return an error. Instead we can
@@ -231,7 +245,7 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 		defer r.Close()
 		tr := tar.NewReader(r)
 		zw := zip.NewWriter(pw)
-		err := copySearchable(tr, zw, largeFilePatterns)
+		err := copySearchable(tr, zw, largeFilePatterns, filter)
 		if err1 := zw.Close(); err == nil {
 			err = err1
 		}
@@ -244,9 +258,8 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 }
 
 // copySearchable copies searchable files from tr to zw. A searchable file is
-// any file that is a candidate for being searched (under size limit and
-// non-binary).
-func copySearchable(tr *tar.Reader, zw *zip.Writer, largeFilePatterns []string) error {
+// any file that is under size limit, non-binary, and not matching the filter.
+func copySearchable(tr *tar.Reader, zw *zip.Writer, largeFilePatterns []string, filter FilterFunc) error {
 	// 32*1024 is the same size used by io.Copy
 	buf := make([]byte, 32*1024)
 	for {
@@ -267,6 +280,11 @@ func copySearchable(tr *tar.Reader, zw *zip.Writer, largeFilePatterns []string) 
 
 		// We only care about files
 		if hdr.Typeflag != tar.TypeReg && hdr.Typeflag != tar.TypeRegA {
+			continue
+		}
+
+		// ignore files if they match the filter
+		if filter(hdr) {
 			continue
 		}
 

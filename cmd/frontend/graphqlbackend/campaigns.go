@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/graph-gophers/graphql-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -47,6 +48,10 @@ type SyncChangesetArgs struct {
 	Changeset graphql.ID
 }
 
+type ReenqueueChangesetArgs struct {
+	Changeset graphql.ID
+}
+
 type CreateChangesetSpecArgs struct {
 	ChangesetSpec string
 }
@@ -63,6 +68,12 @@ type ChangesetSpecsConnectionArgs struct {
 	After *string
 }
 
+type ChangesetApplyPreviewConnectionArgs struct {
+	First  int32
+	After  *string
+	Search *string
+}
+
 type CampaignArgs struct {
 	Namespace string
 	Name      string
@@ -71,6 +82,29 @@ type CampaignArgs struct {
 type ChangesetEventsConnectionArgs struct {
 	First int32
 	After *string
+}
+
+type CreateCampaignsCredentialArgs struct {
+	ExternalServiceKind string
+	ExternalServiceURL  string
+	User                graphql.ID
+	Credential          string
+}
+
+type DeleteCampaignsCredentialArgs struct {
+	CampaignsCredential graphql.ID
+}
+
+type ListCampaignsCodeHostsArgs struct {
+	First  int32
+	After  *string
+	UserID int32
+}
+
+type ListViewerCampaignsCodeHostsArgs struct {
+	First                 int32
+	After                 *string
+	OnlyWithoutCredential bool
 }
 
 type CampaignsResolver interface {
@@ -83,6 +117,9 @@ type CampaignsResolver interface {
 	CreateChangesetSpec(ctx context.Context, args *CreateChangesetSpecArgs) (ChangesetSpecResolver, error)
 	CreateCampaignSpec(ctx context.Context, args *CreateCampaignSpecArgs) (CampaignSpecResolver, error)
 	SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error)
+	ReenqueueChangeset(ctx context.Context, args *ReenqueueChangesetArgs) (ChangesetResolver, error)
+	CreateCampaignsCredential(ctx context.Context, args *CreateCampaignsCredentialArgs) (CampaignsCredentialResolver, error)
+	DeleteCampaignsCredential(ctx context.Context, args *DeleteCampaignsCredentialArgs) (*EmptyResponse, error)
 
 	// Queries
 	Campaigns(ctx context.Context, args *ListCampaignsArgs) (CampaignsConnectionResolver, error)
@@ -92,6 +129,9 @@ type CampaignsResolver interface {
 
 	CampaignSpecByID(ctx context.Context, id graphql.ID) (CampaignSpecResolver, error)
 	ChangesetSpecByID(ctx context.Context, id graphql.ID) (ChangesetSpecResolver, error)
+
+	CampaignsCredentialByID(ctx context.Context, id graphql.ID) (CampaignsCredentialResolver, error)
+	CampaignsCodeHosts(ctx context.Context, args *ListCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error)
 }
 
 type CampaignSpecResolver interface {
@@ -100,6 +140,7 @@ type CampaignSpecResolver interface {
 	OriginalInput() (string, error)
 	ParsedInput() (JSONValue, error)
 	ChangesetSpecs(ctx context.Context, args *ChangesetSpecsConnectionArgs) (ChangesetSpecConnectionResolver, error)
+	ApplyPreview(ctx context.Context, args *ChangesetApplyPreviewConnectionArgs) (ChangesetApplyPreviewConnectionResolver, error)
 
 	Description() CampaignDescriptionResolver
 
@@ -116,11 +157,91 @@ type CampaignSpecResolver interface {
 	DiffStat(ctx context.Context) (*DiffStat, error)
 
 	AppliesToCampaign(ctx context.Context) (CampaignResolver, error)
+
+	SupersedingCampaignSpec(context.Context) (CampaignSpecResolver, error)
+
+	ViewerCampaignsCodeHosts(ctx context.Context, args *ListViewerCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error)
 }
 
 type CampaignDescriptionResolver interface {
 	Name() string
 	Description() string
+}
+
+type ChangesetApplyPreviewResolver interface {
+	ToVisibleChangesetApplyPreview() (VisibleChangesetApplyPreviewResolver, bool)
+	ToHiddenChangesetApplyPreview() (HiddenChangesetApplyPreviewResolver, bool)
+}
+
+type VisibleChangesetApplyPreviewResolver interface {
+	Operations(ctx context.Context) ([]campaigns.ReconcilerOperation, error)
+	Delta(ctx context.Context) (ChangesetSpecDeltaResolver, error)
+	Targets() VisibleApplyPreviewTargetsResolver
+}
+
+type HiddenChangesetApplyPreviewResolver interface {
+	Operations(ctx context.Context) ([]campaigns.ReconcilerOperation, error)
+	Delta(ctx context.Context) (ChangesetSpecDeltaResolver, error)
+	Targets() HiddenApplyPreviewTargetsResolver
+}
+
+type VisibleApplyPreviewTargetsResolver interface {
+	ToVisibleApplyPreviewTargetsAttach() (VisibleApplyPreviewTargetsAttachResolver, bool)
+	ToVisibleApplyPreviewTargetsUpdate() (VisibleApplyPreviewTargetsUpdateResolver, bool)
+	ToVisibleApplyPreviewTargetsDetach() (VisibleApplyPreviewTargetsDetachResolver, bool)
+}
+
+type VisibleApplyPreviewTargetsAttachResolver interface {
+	ChangesetSpec(ctx context.Context) (VisibleChangesetSpecResolver, error)
+}
+type VisibleApplyPreviewTargetsUpdateResolver interface {
+	ChangesetSpec(ctx context.Context) (VisibleChangesetSpecResolver, error)
+	Changeset(ctx context.Context) (ExternalChangesetResolver, error)
+}
+type VisibleApplyPreviewTargetsDetachResolver interface {
+	Changeset(ctx context.Context) (ExternalChangesetResolver, error)
+}
+
+type HiddenApplyPreviewTargetsResolver interface {
+	ToHiddenApplyPreviewTargetsAttach() (HiddenApplyPreviewTargetsAttachResolver, bool)
+	ToHiddenApplyPreviewTargetsUpdate() (HiddenApplyPreviewTargetsUpdateResolver, bool)
+	ToHiddenApplyPreviewTargetsDetach() (HiddenApplyPreviewTargetsDetachResolver, bool)
+}
+
+type HiddenApplyPreviewTargetsAttachResolver interface {
+	ChangesetSpec(ctx context.Context) (HiddenChangesetSpecResolver, error)
+}
+type HiddenApplyPreviewTargetsUpdateResolver interface {
+	ChangesetSpec(ctx context.Context) (HiddenChangesetSpecResolver, error)
+	Changeset(ctx context.Context) (HiddenExternalChangesetResolver, error)
+}
+type HiddenApplyPreviewTargetsDetachResolver interface {
+	Changeset(ctx context.Context) (HiddenExternalChangesetResolver, error)
+}
+
+type ChangesetApplyPreviewConnectionStatsResolver interface {
+	Push() int32
+	Update() int32
+	Undraft() int32
+	Publish() int32
+	PublishDraft() int32
+	Sync() int32
+	Import() int32
+	Close() int32
+	Reopen() int32
+	Sleep() int32
+	Detach() int32
+
+	Added() int32
+	Modified() int32
+	Removed() int32
+}
+
+type ChangesetApplyPreviewConnectionResolver interface {
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	Nodes(ctx context.Context) ([]ChangesetApplyPreviewResolver, error)
+	Stats(ctx context.Context) (ChangesetApplyPreviewConnectionStatsResolver, error)
 }
 
 type ChangesetSpecConnectionResolver interface {
@@ -131,9 +252,7 @@ type ChangesetSpecConnectionResolver interface {
 
 type ChangesetSpecResolver interface {
 	ID() graphql.ID
-
 	Type() campaigns.ChangesetSpecDescriptionType
-
 	ExpiresAt() *DateTime
 
 	ToHiddenChangesetSpec() (HiddenChangesetSpecResolver, bool)
@@ -148,6 +267,17 @@ type VisibleChangesetSpecResolver interface {
 	ChangesetSpecResolver
 
 	Description(ctx context.Context) (ChangesetDescription, error)
+}
+
+type ChangesetSpecDeltaResolver interface {
+	TitleChanged() bool
+	BodyChanged() bool
+	Undraft() bool
+	BaseRefChanged() bool
+	DiffChanged() bool
+	CommitMessageChanged() bool
+	AuthorNameChanged() bool
+	AuthorEmailChanged() bool
 }
 
 type ChangesetDescription interface {
@@ -176,12 +306,34 @@ type GitBranchChangesetDescriptionResolver interface {
 
 	Commits() []GitCommitDescriptionResolver
 
-	Published() bool
+	Published() campaigns.PublishedValue
 }
 
 type GitCommitDescriptionResolver interface {
 	Message() string
+	Subject() string
+	Body() *string
+	Author() *PersonResolver
 	Diff() string
+}
+
+type CampaignsCodeHostConnectionResolver interface {
+	Nodes(ctx context.Context) ([]CampaignsCodeHostResolver, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type CampaignsCodeHostResolver interface {
+	ExternalServiceKind() string
+	ExternalServiceURL() string
+	Credential() CampaignsCredentialResolver
+}
+
+type CampaignsCredentialResolver interface {
+	ID() graphql.ID
+	ExternalServiceKind() string
+	ExternalServiceURL() string
+	CreatedAt() DateTime
 }
 
 type ChangesetCountsArgs struct {
@@ -193,11 +345,13 @@ type ListChangesetsArgs struct {
 	First                       int32
 	After                       *string
 	PublicationState            *campaigns.ChangesetPublicationState
-	ReconcilerState             *campaigns.ReconcilerState
+	ReconcilerState             *[]campaigns.ReconcilerState
 	ExternalState               *campaigns.ChangesetExternalState
+	State                       *campaigns.ChangesetState
 	ReviewState                 *campaigns.ChangesetReviewState
 	CheckState                  *campaigns.ChangesetCheckState
 	OnlyPublishedByThisCampaign *bool
+	Search                      *string
 }
 
 type CampaignResolver interface {
@@ -213,6 +367,7 @@ type CampaignResolver interface {
 	Namespace(ctx context.Context) (n NamespaceResolver, err error)
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
+	ChangesetsStats(ctx context.Context) (ChangesetsStatsResolver, error)
 	Changesets(ctx context.Context, args *ListChangesetsArgs) (ChangesetsConnectionResolver, error)
 	ChangesetCountsOverTime(ctx context.Context, args *ChangesetCountsArgs) ([]ChangesetCountsResolver, error)
 	ClosedAt() *DateTime
@@ -226,11 +381,16 @@ type CampaignsConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
-type ChangesetsConnectionStatsResolver interface {
+type ChangesetsStatsResolver interface {
+	Retrying() int32
+	Failed() int32
+	Processing() int32
 	Unpublished() int32
+	Draft() int32
 	Open() int32
 	Merged() int32
 	Closed() int32
+	Deleted() int32
 	Total() int32
 }
 
@@ -238,7 +398,6 @@ type ChangesetsConnectionResolver interface {
 	Nodes(ctx context.Context) ([]ChangesetResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
-	Stats(ctx context.Context) (ChangesetsConnectionStatsResolver, error)
 }
 
 type ChangesetLabelResolver interface {
@@ -258,6 +417,7 @@ type ChangesetResolver interface {
 	PublicationState() campaigns.ChangesetPublicationState
 	ReconcilerState() campaigns.ReconcilerState
 	ExternalState() *campaigns.ChangesetExternalState
+	State() (campaigns.ChangesetState, error)
 	Campaigns(ctx context.Context, args *ListCampaignsArgs) (CampaignsConnectionResolver, error)
 
 	ToExternalChangeset() (ExternalChangesetResolver, bool)
@@ -282,6 +442,7 @@ type ExternalChangesetResolver interface {
 	ExternalID() *string
 	Title(context.Context) (*string, error)
 	Body(context.Context) (*string, error)
+	Author() (*PersonResolver, error)
 	ExternalURL() (*externallink.Resolver, error)
 	ReviewState(context.Context) *campaigns.ChangesetReviewState
 	CheckState() *campaigns.ChangesetCheckState
@@ -293,6 +454,7 @@ type ExternalChangesetResolver interface {
 	Labels(ctx context.Context) ([]ChangesetLabelResolver, error)
 
 	Error() *string
+	SyncerError() *string
 
 	CurrentSpec(ctx context.Context) (VisibleChangesetSpecResolver, error)
 }
@@ -314,6 +476,7 @@ type ChangesetCountsResolver interface {
 	Total() int32
 	Merged() int32
 	Closed() int32
+	Draft() int32
 	Open() int32
 	OpenApproved() int32
 	OpenChangesRequested() int32
@@ -355,7 +518,19 @@ func (defaultCampaignsResolver) SyncChangeset(ctx context.Context, args *SyncCha
 	return nil, campaignsOnlyInEnterprise
 }
 
+func (defaultCampaignsResolver) ReenqueueChangeset(ctx context.Context, args *ReenqueueChangesetArgs) (ChangesetResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
 func (defaultCampaignsResolver) DeleteCampaign(ctx context.Context, args *DeleteCampaignArgs) (*EmptyResponse, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) CreateCampaignsCredential(ctx context.Context, args *CreateCampaignsCredentialArgs) (CampaignsCredentialResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) DeleteCampaignsCredential(ctx context.Context, args *DeleteCampaignsCredentialArgs) (*EmptyResponse, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
@@ -381,5 +556,13 @@ func (defaultCampaignsResolver) CampaignSpecByID(ctx context.Context, id graphql
 }
 
 func (defaultCampaignsResolver) ChangesetSpecByID(ctx context.Context, id graphql.ID) (ChangesetSpecResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) CampaignsCredentialByID(ctx context.Context, id graphql.ID) (CampaignsCredentialResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) CampaignsCodeHosts(ctx context.Context, args *ListCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }

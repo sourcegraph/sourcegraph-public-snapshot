@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -41,39 +42,43 @@ func TestGetIndexOptions(t *testing.T) {
 		conf: schema.SiteConfiguration{},
 		repo: "repo",
 		want: zoektIndexOptions{
+			RepoID:  1,
 			Symbols: true,
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
 			},
 		},
 	}, {
-		name: "compat default",
-		conf: schema.SiteConfiguration{},
-		repo: "",
-		want: zoektIndexOptions{
-			Symbols: true,
-		},
-	}, {
 		name: "nosymbols",
 		conf: schema.SiteConfiguration{
 			SearchIndexSymbolsEnabled: boolPtr(false)},
-		repo: "",
-		want: zoektIndexOptions{},
+		repo: "repo",
+		want: zoektIndexOptions{
+			RepoID: 1,
+			Branches: []zoekt.RepositoryBranch{
+				{Name: "HEAD", Version: "!HEAD"},
+			},
+		},
 	}, {
 		name: "largefiles",
 		conf: schema.SiteConfiguration{
 			SearchLargeFiles: []string{"**/*.jar", "*.bin"},
 		},
-		repo: "",
+		repo: "repo",
 		want: zoektIndexOptions{
+			RepoID:     1,
 			Symbols:    true,
 			LargeFiles: []string{"**/*.jar", "*.bin"},
+			Branches: []zoekt.RepositoryBranch{
+				{Name: "HEAD", Version: "!HEAD"},
+			},
 		},
 	}, {
 		name: "implicit HEAD",
 		conf: vcConf(vc("foo", "repo@b", "repo@a"), vc("bar", "repo@c", "repo@a", "other@d")),
 		repo: "repo",
 		want: zoektIndexOptions{
+			RepoID:  1,
 			Symbols: true,
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
@@ -87,6 +92,7 @@ func TestGetIndexOptions(t *testing.T) {
 		conf: vcConf(vc("foo", "repo@a")),
 		repo: "not_in_version_context",
 		want: zoektIndexOptions{
+			RepoID:  3,
 			Symbols: true,
 			Branches: []zoekt.RepositoryBranch{{
 				Name:    "HEAD",
@@ -98,6 +104,7 @@ func TestGetIndexOptions(t *testing.T) {
 		conf: vcConf(vc("foo", "repo@HEAD", "repo@a")),
 		repo: "repo",
 		want: zoektIndexOptions{
+			RepoID:  1,
 			Symbols: true,
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
@@ -110,6 +117,7 @@ func TestGetIndexOptions(t *testing.T) {
 		conf: vcConf(vc("foo", "repo", "repo@a")),
 		repo: "repo",
 		want: zoektIndexOptions{
+			RepoID:  1,
 			Symbols: true,
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
@@ -121,6 +129,7 @@ func TestGetIndexOptions(t *testing.T) {
 		conf: withBranches(schema.SiteConfiguration{}, map[string][]string{"repo": {"a"}}),
 		repo: "repo",
 		want: zoektIndexOptions{
+			RepoID:  1,
 			Symbols: true,
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
@@ -134,6 +143,7 @@ func TestGetIndexOptions(t *testing.T) {
 			map[string][]string{"repo": {"b", "c"}}),
 		repo: "repo",
 		want: zoektIndexOptions{
+			RepoID:  1,
 			Symbols: true,
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
@@ -162,20 +172,31 @@ func TestGetIndexOptions(t *testing.T) {
 			conf: withBranches(schema.SiteConfiguration{}, map[string][]string{"repo": branches}),
 			repo: "repo",
 			want: zoektIndexOptions{
+				RepoID:   1,
 				Symbols:  true,
 				Branches: want,
 			},
 		})
 	}
 
+	getRepoIndexOptions := func(repo string) (*RepoIndexOptions, error) {
+		repoID := int32(1)
+		for _, r := range []string{"repo", "foo", "not_in_version_context"} {
+			if r == repo {
+				break
+			}
+			repoID++
+		}
+		return &RepoIndexOptions{
+			RepoID: repoID,
+			GetVersion: func(branch string) (string, error) {
+				return "!" + branch, nil
+			},
+		}, nil
+	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			b, err := GetIndexOptions(&tc.conf, tc.repo, func(branch string) (string, error) {
-				return "!" + branch, nil
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
+			b := GetIndexOptions(&tc.conf, getRepoIndexOptions, tc.repo)
 
 			var got zoektIndexOptions
 			if err := json.Unmarshal(b, &got); err != nil {
@@ -203,13 +224,13 @@ func TestGetIndexOptions_getVersion(t *testing.T) {
 		name    string
 		f       func(string) (string, error)
 		want    []zoekt.RepositoryBranch
-		wantErr error
+		wantErr string
 	}{{
 		name: "error",
 		f: func(_ string) (string, error) {
 			return "", boom
 		},
-		wantErr: boom,
+		wantErr: "boom",
 	}, {
 		// no HEAD means we don't index anything. This leads to zoekt having
 		// an empty index.
@@ -247,23 +268,74 @@ func TestGetIndexOptions_getVersion(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			b, err := GetIndexOptions(&conf, "repo", tc.f)
-			if err != tc.wantErr {
-				t.Fatalf("expected error %v, got body %s and error %v", tc.wantErr, b, err)
+			getRepoIndexOptions := func(repo string) (*RepoIndexOptions, error) {
+				return &RepoIndexOptions{
+					GetVersion: tc.f,
+				}, nil
 			}
-			if tc.wantErr != nil {
-				return
-			}
+
+			b := GetIndexOptions(&conf, getRepoIndexOptions, "repo")
 
 			var got zoektIndexOptions
 			if err := json.Unmarshal(b, &got); err != nil {
 				t.Fatal(err)
 			}
 
+			if got.Error != tc.wantErr {
+				t.Fatalf("expected error %v, got body %s and error %v", tc.wantErr, b, got.Error)
+			}
+			if tc.wantErr != "" {
+				return
+			}
+
 			if diff := cmp.Diff(tc.want, got.Branches); diff != "" {
 				t.Fatal("mismatch (-want, +got):\n", diff)
 			}
 		})
+	}
+}
+
+func TestGetIndexOptions_batch(t *testing.T) {
+	var (
+		repos []string
+		want  []zoektIndexOptions
+	)
+	for i := 0; i < 100; i++ {
+		if i%20 == 0 {
+			repos = append(repos, fmt.Sprintf("error-%02d", i))
+			want = append(want, zoektIndexOptions{Error: "error"})
+		} else {
+			repo := fmt.Sprintf("repo-%02d", i)
+			repos = append(repos, repo)
+			want = append(want, zoektIndexOptions{
+				Symbols: true,
+				Branches: []zoekt.RepositoryBranch{
+					{Name: "HEAD", Version: "!HEAD-" + repo},
+				},
+			})
+		}
+	}
+	getRepoIndexOptions := func(repo string) (*RepoIndexOptions, error) {
+		return &RepoIndexOptions{
+			GetVersion: func(branch string) (string, error) {
+				if strings.HasPrefix(repo, "error") {
+					return "", errors.New("error")
+				}
+				return fmt.Sprintf("!%s-%s", branch, repo), nil
+			},
+		}, nil
+	}
+
+	b := GetIndexOptions(&schema.SiteConfiguration{}, getRepoIndexOptions, repos...)
+	dec := json.NewDecoder(bytes.NewReader(b))
+	got := make([]zoektIndexOptions, len(repos))
+	for i := range repos {
+		if err := dec.Decode(&got[i]); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Fatal("mismatch (-want, +got):\n", diff)
 	}
 }
 

@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -16,10 +15,10 @@ type TypeParameters interface {
 	typeParametersValue()
 }
 
-func (c CommitParameters) typeParametersValue()  {}
-func (d DiffParameters) typeParametersValue()    {}
-func (s SymbolsParameters) typeParametersValue() {}
-func (t TextParameters) typeParametersValue()    {}
+func (CommitParameters) typeParametersValue()  {}
+func (DiffParameters) typeParametersValue()    {}
+func (SymbolsParameters) typeParametersValue() {}
+func (TextParameters) typeParametersValue()    {}
 
 type CommitParameters struct {
 	RepoRevs           *RepositoryRevisions
@@ -30,8 +29,23 @@ type CommitParameters struct {
 }
 
 type DiffParameters struct {
-	Repo    gitserver.Repo
+	Repo    api.RepoName
 	Options git.RawLogDiffSearchOptions
+}
+
+// CommitPatternInfo is the data type that describes the properties of
+// a pattern used for commit search.
+type CommitPatternInfo struct {
+	Pattern         string
+	IsRegExp        bool
+	IsCaseSensitive bool
+	FileMatchLimit  int32
+
+	IncludePatterns []string
+	ExcludePattern  string
+
+	PathPatternsAreRegExps       bool
+	PathPatternsAreCaseSensitive bool
 }
 
 type SymbolsParameters struct {
@@ -68,17 +82,34 @@ type SymbolsParameters struct {
 	First int
 }
 
+type GlobalSearchMode int
+
+// Keep the order in sync with func (m GlobalSearchMode) String() string.
+const (
+	ZoektGlobalSearch GlobalSearchMode = iota + 1
+	SearcherOnly
+	NoFilePath
+)
+
+func (m GlobalSearchMode) String() string {
+	return []string{"None", "ZoektGlobalSearch", "SearcherOnly", "NoFilePath"}[m]
+}
+
 // TextParameters are the parameters passed to a search backend. It contains the Pattern
 // to search for, as well as the hydrated list of repository revisions to
 // search. It defines behavior for text search on repository names, file names, and file content.
 type TextParameters struct {
 	PatternInfo *TextPatternInfo
-	Repos       []*RepositoryRevisions
+
+	// Performance optimization: For global queries, resolving repositories and
+	// querying zoekt happens concurrently.
+	RepoPromise *Promise
+	Mode        GlobalSearchMode
 
 	// Query is the parsed query from the user. You should be using Pattern
 	// instead, but Query is useful for checking extra fields that are set and
 	// ignored by Pattern, such as index:no
-	Query query.QueryInfo
+	Query query.Q
 
 	// UseFullDeadline indicates that the search should try do as much work as
 	// it can within context.Deadline. If false the search should try and be
@@ -114,6 +145,7 @@ type TextPatternInfo struct {
 	IsWordMatch     bool
 	IsCaseSensitive bool
 	FileMatchLimit  int32
+	Index           query.YesNoOnly
 
 	// We do not support IsMultiline
 	// IsMultiline     bool
@@ -181,19 +213,4 @@ func (p *TextPatternInfo) String() string {
 	}
 
 	return fmt.Sprintf("TextPatternInfo{%s}", strings.Join(args, ","))
-}
-
-// CommitPatternInfo is the data type that describes the properties of
-// a pattern used for commit search.
-type CommitPatternInfo struct {
-	Pattern         string
-	IsRegExp        bool
-	IsCaseSensitive bool
-	FileMatchLimit  int32
-
-	IncludePatterns []string
-	ExcludePattern  string
-
-	PathPatternsAreRegExps       bool
-	PathPatternsAreCaseSensitive bool
 }

@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"bytes"
 	"encoding/json"
 	"sort"
 
@@ -14,6 +15,9 @@ import (
 //
 // We only specify a subset of the fields.
 type zoektIndexOptions struct {
+	// RepoID is the Sourcegraph Repository ID.
+	RepoID int32
+
 	// LargeFiles is a slice of glob patterns where matching file paths should
 	// be indexed regardless of their size. The pattern syntax can be found
 	// here: https://golang.org/pkg/path/filepath/#Match.
@@ -24,23 +28,58 @@ type zoektIndexOptions struct {
 
 	// Branches is a slice of branches to index.
 	Branches []zoekt.RepositoryBranch `json:",omitempty"`
+
+	// Error if non-empty indicates the request failed for the repo.
+	Error string `json:",omitempty"`
+}
+
+// RepoIndexOptions are the options used by GetIndexOptions for a specific
+// repository.
+type RepoIndexOptions struct {
+	// RepoID is the Sourcegraph Repository ID.
+	RepoID int32
+
+	// GetVersion is used to resolve revisions for a repo. If it fails, the
+	// error is encoded in the body. If the revision is missing, an empty
+	// string should be returned rather than an error.
+	GetVersion func(branch string) (string, error)
 }
 
 // GetIndexOptions returns a json blob for consumption by
-// sourcegraph-zoekt-indexserver. It is for repoName based on site settings c.
-//
-// getVersion is used to resolve revisions for repoName. If it fails, the
-// error is returned. If the revision is missing, an empty string should be
-// returned rather than an error.
-func GetIndexOptions(c *schema.SiteConfiguration, repoName string, getVersion func(branch string) (string, error)) ([]byte, error) {
-	o := &zoektIndexOptions{
-		LargeFiles: c.SearchLargeFiles,
-		Symbols:    getBoolPtr(c.SearchIndexSymbolsEnabled, true),
+// sourcegraph-zoekt-indexserver. It is for repos based on site settings c.
+func GetIndexOptions(c *schema.SiteConfiguration, getRepoIndexOptions func(repo string) (*RepoIndexOptions, error), repos ...string) []byte {
+	// Limit concurrency to 32 to avoid too many active network requests and
+	// strain on gitserver (as ported from zoekt-sourcegraph-indexserver). In
+	// future we want a more intelligent global limit based on scale.
+	sema := make(chan struct{}, 32)
+
+	results := make([][]byte, len(repos))
+	for i := range repos {
+		sema <- struct{}{}
+		go func(i int) {
+			defer func() { <-sema }()
+			results[i] = getIndexOptions(c, repos[i], getRepoIndexOptions)
+		}(i)
 	}
 
-	// Backwards compatibility for older Zoekt
-	if repoName == "" {
-		return json.Marshal(o)
+	// Wait for jobs to finish (acquire full semaphore)
+	for i := 0; i < cap(sema); i++ {
+		sema <- struct{}{}
+	}
+
+	return bytes.Join(results, []byte{'\n'})
+}
+
+func getIndexOptions(c *schema.SiteConfiguration, repoName string, getRepoIndexOptions func(repo string) (*RepoIndexOptions, error)) []byte {
+	opts, err := getRepoIndexOptions(repoName)
+	if err != nil {
+		return marshal(&zoektIndexOptions{Error: err.Error()})
+	}
+
+	o := &zoektIndexOptions{
+		RepoID:     opts.RepoID,
+		LargeFiles: c.SearchLargeFiles,
+		Symbols:    getBoolPtr(c.SearchIndexSymbolsEnabled, true),
 	}
 
 	// Set of branch names. Always index HEAD
@@ -61,9 +100,9 @@ func GetIndexOptions(c *schema.SiteConfiguration, repoName string, getVersion fu
 	}
 
 	for branch := range branches {
-		v, err := getVersion(branch)
+		v, err := opts.GetVersion(branch)
 		if err != nil {
-			return nil, err
+			return marshal(&zoektIndexOptions{Error: err.Error()})
 		}
 
 		// If we failed to resolve a branch, skip it
@@ -97,7 +136,7 @@ func GetIndexOptions(c *schema.SiteConfiguration, repoName string, getVersion fu
 		o.Branches = o.Branches[:64]
 	}
 
-	return json.Marshal(o)
+	return marshal(o)
 }
 
 func getBoolPtr(b *bool, default_ bool) bool {
@@ -105,4 +144,9 @@ func getBoolPtr(b *bool, default_ bool) bool {
 		return default_
 	}
 	return *b
+}
+
+func marshal(o *zoektIndexOptions) []byte {
+	b, _ := json.Marshal(o)
+	return b
 }

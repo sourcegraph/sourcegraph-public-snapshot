@@ -1,0 +1,5 @@
+BEGIN;
+
+ALTER TABLE changesets DROP COLUMN IF EXISTS syncer_error;
+
+COMMIT;

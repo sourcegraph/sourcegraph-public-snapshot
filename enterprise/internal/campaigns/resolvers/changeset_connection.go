@@ -8,19 +8,17 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/syncer"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type changesetsConnectionResolver struct {
-	store       *ee.Store
-	httpFactory *httpcli.Factory
+	store *store.Store
 
-	opts ee.ListChangesetsOpts
+	opts store.ListChangesetsOpts
 	// 🚨 SECURITY: If the given opts do not reveal hidden information about a
 	// changeset by including the changeset in the result set, this should be
 	// set to true.
@@ -44,24 +42,21 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 		return nil, err
 	}
 
-	syncData, err := r.store.ListChangesetSyncData(ctx, ee.ListChangesetSyncDataOpts{ChangesetIDs: changesetsPage.IDs()})
-	if err != nil {
-		return nil, err
-	}
 	scheduledSyncs := make(map[int64]time.Time)
-	for _, d := range syncData {
-		scheduledSyncs[d.ChangesetID] = ee.NextSync(time.Now, d)
+	changesetIDs := changesetsPage.IDs()
+	if len(changesetIDs) > 0 {
+		syncData, err := r.store.ListChangesetSyncData(ctx, store.ListChangesetSyncDataOpts{ChangesetIDs: changesetIDs})
+		if err != nil {
+			return nil, err
+		}
+		for _, d := range syncData {
+			scheduledSyncs[d.ChangesetID] = syncer.NextSync(time.Now, d)
+		}
 	}
 
 	resolvers := make([]graphqlbackend.ChangesetResolver, 0, len(changesetsPage))
 	for _, c := range changesetsPage {
-		nextSyncAt, isPreloaded := scheduledSyncs[c.ID]
-		var preloadedNextSyncAt *time.Time
-		if isPreloaded {
-			preloadedNextSyncAt = &nextSyncAt
-		}
-
-		resolvers = append(resolvers, NewChangesetResolverWithNextSync(r.store, r.httpFactory, c, reposByID[c.RepoID], preloadedNextSyncAt))
+		resolvers = append(resolvers, NewChangesetResolverWithNextSync(r.store, c, reposByID[c.RepoID], scheduledSyncs[c.ID]))
 	}
 
 	return resolvers, nil
@@ -73,14 +68,6 @@ func (r *changesetsConnectionResolver) TotalCount(ctx context.Context) (int32, e
 		return 0, err
 	}
 	return int32(len(cs)), nil
-}
-
-func (r *changesetsConnectionResolver) Stats(ctx context.Context) (graphqlbackend.ChangesetsConnectionStatsResolver, error) {
-	cs, _, _, err := r.compute(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return newChangesetConnectionStats(cs), nil
 }
 
 // compute loads all changesets matched by r.opts, but without a
@@ -111,9 +98,9 @@ func (r *changesetsConnectionResolver) compute(ctx context.Context) (allChangese
 			return
 		}
 
-		// 🚨 SECURITY: db.Repos.GetRepoIDsSet uses the authzFilter under the hood and
+		// 🚨 SECURITY: database.Repos.GetRepoIDsSet uses the authzFilter under the hood and
 		// filters out repositories that the user doesn't have access to.
-		r.reposByID, err = db.Repos.GetReposSetByIDs(ctx, cs.RepoIDs()...)
+		r.reposByID, err = r.store.Repos().GetReposSetByIDs(ctx, cs.RepoIDs()...)
 		if err != nil {
 			r.err = err
 			return
@@ -154,48 +141,4 @@ func (r *changesetsConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 	}
 
 	return graphqlutil.HasNextPage(false), nil
-}
-
-func newChangesetConnectionStats(cs []*campaigns.Changeset) *changesetsConnectionStatsResolver {
-	stats := &changesetsConnectionStatsResolver{
-		total: int32(len(cs)),
-	}
-
-	for _, c := range cs {
-		if c.PublicationState.Unpublished() {
-			stats.unpublished++
-			continue
-		}
-
-		switch c.ExternalState {
-		case campaigns.ChangesetExternalStateClosed:
-			stats.closed++
-		case campaigns.ChangesetExternalStateMerged:
-			stats.merged++
-		case campaigns.ChangesetExternalStateOpen:
-			stats.open++
-		}
-	}
-
-	return stats
-}
-
-type changesetsConnectionStatsResolver struct {
-	unpublished, open, merged, closed, total int32
-}
-
-func (r *changesetsConnectionStatsResolver) Unpublished() int32 {
-	return r.unpublished
-}
-func (r *changesetsConnectionStatsResolver) Open() int32 {
-	return r.open
-}
-func (r *changesetsConnectionStatsResolver) Merged() int32 {
-	return r.merged
-}
-func (r *changesetsConnectionStatsResolver) Closed() int32 {
-	return r.closed
-}
-func (r *changesetsConnectionStatsResolver) Total() int32 {
-	return r.total
 }

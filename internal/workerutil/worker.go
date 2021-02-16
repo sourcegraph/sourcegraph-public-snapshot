@@ -8,13 +8,15 @@ import (
 	"github.com/efritz/glock"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 // Worker is a generic consumer of records from the workerutil store.
 type Worker struct {
 	store            Store
+	handler          Handler
 	options          WorkerOptions
 	clock            glock.Clock
 	handlerSemaphore chan struct{}   // tracks available handler slots
@@ -25,22 +27,32 @@ type Worker struct {
 }
 
 type WorkerOptions struct {
-	Name        string
-	Handler     Handler
+	// Name denotes the name of the worker used to distinguish log messages and
+	// emitted metrics. The worker constructor will fail if this field is not
+	// supplied.
+	Name string
+
+	// NumHandlers is the maximum number of handlers that can be invoked
+	// concurrently. The underlying store will not be queried while the current
+	// number of handlers exceeds this value.
 	NumHandlers int
-	Interval    time.Duration
-	Metrics     WorkerMetrics
+
+	// Interval is the frequency to poll the underlying store for new work.
+	Interval time.Duration
+
+	// Metrics configures logging, tracing, and metrics for the work loop.
+	Metrics WorkerMetrics
 }
 
-type WorkerMetrics struct {
-	HandleOperation *observation.Operation
+func NewWorker(ctx context.Context, store Store, handler Handler, options WorkerOptions) *Worker {
+	return newWorker(ctx, store, handler, options, glock.NewRealClock())
 }
 
-func NewWorker(ctx context.Context, store Store, options WorkerOptions) *Worker {
-	return newWorker(ctx, store, options, glock.NewRealClock())
-}
+func newWorker(ctx context.Context, store Store, handler Handler, options WorkerOptions, clock glock.Clock) *Worker {
+	if options.Name == "" {
+		panic("no name supplied to github.com/sourcegraph/sourcegraph/internal/workerutil:newWorker")
+	}
 
-func newWorker(ctx context.Context, store Store, options WorkerOptions, clock glock.Clock) *Worker {
 	ctx, cancel := context.WithCancel(ctx)
 
 	handlerSemaphore := make(chan struct{}, options.NumHandlers)
@@ -50,6 +62,7 @@ func newWorker(ctx context.Context, store Store, options WorkerOptions, clock gl
 
 	return &Worker{
 		store:            store,
+		handler:          handler,
 		options:          options,
 		clock:            clock,
 		handlerSemaphore: handlerSemaphore,
@@ -143,9 +156,10 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 		return false, nil
 	}
 
-	log15.Info("Dequeued record for processing", "name", w.options.Name, "id", record.RecordID())
+	w.options.Metrics.numJobs.Inc()
+	log15.Debug("Dequeued record for processing", "name", w.options.Name, "id", record.RecordID())
 
-	if hook, ok := w.options.Handler.(WithHooks); ok {
+	if hook, ok := w.handler.(WithHooks); ok {
 		hook.PreHandle(w.ctx, record)
 	}
 
@@ -153,10 +167,11 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 
 	go func() {
 		defer func() {
-			if hook, ok := w.options.Handler.(WithHooks); ok {
+			if hook, ok := w.handler.(WithHooks); ok {
 				hook.PostHandle(w.ctx, record)
 			}
 
+			w.options.Metrics.numJobs.Dec()
 			w.handlerSemaphore <- struct{}{}
 			w.wg.Done()
 		}()
@@ -173,12 +188,8 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 // error only if there is an issue committing the transaction - no handler errors will bubble
 // up.
 func (w *Worker) handle(tx Store, record Record) (err error) {
-	// Enable tracing on the context and trace the remainder of the operation including the
-	// transaction commit call in the following deferred function.
-	ctx, endOperation := w.options.Metrics.HandleOperation.With(ot.WithShouldTrace(w.ctx, true), &err, observation.Args{})
-	defer func() {
-		endOperation(1, observation.Args{})
-	}()
+	ctx, endOperation := w.options.Metrics.operations.handle.With(w.ctx, &err, observation.Args{})
+	defer endOperation(1, observation.Args{})
 
 	defer func() {
 		// Notice that we will commit the transaction even on error from the handler
@@ -187,7 +198,14 @@ func (w *Worker) handle(tx Store, record Record) (err error) {
 		err = tx.Done(err)
 	}()
 
-	if handleErr := w.options.Handler.Handle(ctx, tx, record); handleErr != nil {
+	handleErr := w.handler.Handle(ctx, tx, record)
+	if errcode.IsNonRetryable(handleErr) {
+		if marked, markErr := tx.MarkFailed(ctx, record.RecordID(), handleErr.Error()); markErr != nil {
+			return errors.Wrap(markErr, "store.MarkFailed")
+		} else if marked {
+			log15.Warn("Marked record as failed", "name", w.options.Name, "id", record.RecordID(), "err", handleErr)
+		}
+	} else if handleErr != nil {
 		if marked, markErr := tx.MarkErrored(ctx, record.RecordID(), handleErr.Error()); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkErrored")
 		} else if marked {
@@ -197,17 +215,17 @@ func (w *Worker) handle(tx Store, record Record) (err error) {
 		if marked, markErr := tx.MarkComplete(ctx, record.RecordID()); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkComplete")
 		} else if marked {
-			log15.Info("Marked record as complete", "name", w.options.Name, "id", record.RecordID())
+			log15.Debug("Marked record as complete", "name", w.options.Name, "id", record.RecordID())
 		}
 	}
 
-	log15.Info("Handled record", "name", w.options.Name, "id", record.RecordID())
+	log15.Debug("Handled record", "name", w.options.Name, "id", record.RecordID())
 	return nil
 }
 
 // preDequeueHook invokes the handler's pre-dequeue hook if it exists.
 func (w *Worker) preDequeueHook() (dequeueable bool, extraDequeueArguments interface{}, err error) {
-	if o, ok := w.options.Handler.(WithPreDequeue); ok {
+	if o, ok := w.handler.(WithPreDequeue); ok {
 		return o.PreDequeue(w.ctx)
 	}
 

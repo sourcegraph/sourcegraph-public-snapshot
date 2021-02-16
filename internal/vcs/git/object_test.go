@@ -1,9 +1,10 @@
 package git
 
 import (
+	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 func TestGetObject(t *testing.T) {
@@ -15,7 +16,7 @@ func TestGetObject(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 	tests := map[string]struct {
-		repo           gitserver.Repo
+		repo           api.RepoName
 		objectName     string
 		wantOID        string
 		wantObjectType ObjectType
@@ -30,7 +31,7 @@ func TestGetObject(t *testing.T) {
 
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
-			oid, objectType, err := GetObject(ctx, test.repo, test.objectName)
+			oid, objectType, err := GetObject(context.Background(), test.repo, test.objectName)
 			if err != nil {
 				t.Fatal(err)
 			}

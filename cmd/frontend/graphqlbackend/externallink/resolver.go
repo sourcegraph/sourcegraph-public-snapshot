@@ -1,6 +1,10 @@
 package externallink
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+)
 
 // A Resolver resolves the GraphQL ExternalLink type (which describes a resource on some external
 // service).
@@ -10,13 +14,22 @@ import "fmt"
 type Resolver struct {
 	url         string // the URL to the resource
 	serviceType string // the type of service that the URL points to, used for showing a nice icon
+	serviceKind string // the kind of service that the URL points to, used for showing a nice icon
 }
 
 func NewResolver(url, serviceType string) *Resolver {
-	return &Resolver{url: url, serviceType: serviceType}
+	return &Resolver{url: url, serviceKind: typeToMaybeEmptyKind(serviceType), serviceType: serviceType}
 }
 
 func (r *Resolver) URL() string { return r.url }
+
+func (r *Resolver) ServiceKind() *string {
+	if r.serviceKind == "" {
+		return nil
+	}
+	return &r.serviceKind
+}
+
 func (r *Resolver) ServiceType() *string {
 	if r.serviceType == "" {
 		return nil
@@ -24,4 +37,12 @@ func (r *Resolver) ServiceType() *string {
 	return &r.serviceType
 }
 
-func (r *Resolver) String() string { return fmt.Sprintf("%s@%s", r.serviceType, r.url) }
+func (r *Resolver) String() string { return fmt.Sprintf("%s@%s", r.serviceKind, r.url) }
+
+func typeToMaybeEmptyKind(st string) string {
+	if st != "" {
+		return extsvc.TypeToKind(st)
+	}
+
+	return st
+}

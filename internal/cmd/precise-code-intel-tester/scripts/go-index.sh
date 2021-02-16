@@ -7,10 +7,11 @@ REPODIR="${DATADIR}/repos"
 INDEXDIR="${DATADIR}/indexes"
 
 NAME="$1"
-REV="$2"
+INDEX="$2"
+REV="$3"
 
 REVDIR="${REPODIR}/${NAME}-${REV}"
-INDEXFILE="${INDEXDIR}/${NAME}.${REV}.dump"
+INDEXFILE="${INDEXDIR}/${NAME}.${INDEX}.${REV}.dump"
 
 # Early-out if there's already a dump file
 if [ -f "${INDEXFILE}" ]; then

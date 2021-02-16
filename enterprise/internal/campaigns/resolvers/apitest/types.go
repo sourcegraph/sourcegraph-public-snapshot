@@ -2,7 +2,9 @@ package apitest
 
 import (
 	"github.com/sourcegraph/go-diff/diff"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
 type GitTarget struct {
@@ -50,7 +52,8 @@ type User struct {
 	DatabaseID int32
 	SiteAdmin  bool
 
-	Campaigns CampaignConnection
+	Campaigns          CampaignConnection
+	CampaignsCodeHosts CampaignsCodeHostsConnection
 }
 
 type Org struct {
@@ -81,6 +84,7 @@ type Campaign struct {
 	UpdatedAt               string
 	ClosedAt                string
 	URL                     string
+	ChangesetsStats         ChangesetsStats
 	Changesets              ChangesetConnection
 	ChangesetCountsOverTime []ChangesetCounts
 	DiffStat                DiffStat
@@ -111,28 +115,27 @@ type Repository struct {
 
 type ExternalURL struct {
 	URL         string
+	ServiceKind string
 	ServiceType string
 }
 
 type Changeset struct {
-	Typename         string `json:"__typename"`
-	ID               string
-	Repository       Repository
-	Campaigns        CampaignConnection
-	CreatedAt        string
-	UpdatedAt        string
-	NextSyncAt       string
-	Title            string
-	Body             string
-	PublicationState string
-	ReconcilerState  string
-	Error            string
-	ExternalState    string
-	ExternalID       string
-	ExternalURL      ExternalURL
-	ReviewState      string
-	CheckState       string
-	Events           ChangesetEventConnection
+	Typename    string `json:"__typename"`
+	ID          string
+	Repository  Repository
+	Campaigns   CampaignConnection
+	CreatedAt   string
+	UpdatedAt   string
+	NextSyncAt  string
+	Title       string
+	Body        string
+	Error       string
+	State       string
+	ExternalID  string
+	ExternalURL ExternalURL
+	ReviewState string
+	CheckState  string
+	Events      ChangesetEventConnection
 
 	Diff Comparison
 
@@ -156,14 +159,15 @@ type ChangesetConnection struct {
 	Nodes      []Changeset
 	TotalCount int
 	PageInfo   PageInfo
-	Stats      ChangesetConnectionStats
 }
 
-type ChangesetConnectionStats struct {
+type ChangesetsStats struct {
 	Unpublished int
+	Draft       int
 	Open        int
 	Merged      int
 	Closed      int
+	Deleted     int
 	Total       int
 }
 
@@ -173,6 +177,7 @@ type ChangesetCounts struct {
 	Merged               int32
 	Closed               int32
 	Open                 int32
+	Draft                int32
 	OpenApproved         int32
 	OpenChangesRequested int32
 	OpenPending          int32
@@ -191,6 +196,7 @@ type CampaignSpec struct {
 	Creator   *User
 
 	ChangesetSpecs ChangesetSpecConnection
+	ApplyPreview   ChangesetApplyPreviewConnection
 
 	ViewerCanAdminister bool
 
@@ -198,8 +204,28 @@ type CampaignSpec struct {
 
 	AppliesToCampaign Campaign
 
+	ViewerCampaignsCodeHosts CampaignsCodeHostsConnection
+	// Alias for the above.
+	AllCodeHosts CampaignsCodeHostsConnection
+	// Alias for the above.
+	OnlyWithoutCredential CampaignsCodeHostsConnection
+
 	CreatedAt graphqlbackend.DateTime
 	ExpiresAt *graphqlbackend.DateTime
+
+	SupersedingCampaignSpec *CampaignSpec
+}
+
+// ChangesetSpecDelta is the delta between two ChangesetSpecs describing the same Changeset.
+type ChangesetSpecDelta struct {
+	TitleChanged         bool
+	BodyChanged          bool
+	Undraft              bool
+	BaseRefChanged       bool
+	DiffChanged          bool
+	CommitMessageChanged bool
+	AuthorNameChanged    bool
+	AuthorEmailChanged   bool
 }
 
 type ChangesetSpec struct {
@@ -217,6 +243,42 @@ type ChangesetSpecConnection struct {
 	PageInfo   PageInfo
 }
 
+type ChangesetApplyPreviewConnection struct {
+	Nodes      []ChangesetApplyPreview
+	TotalCount int
+	PageInfo   PageInfo
+	Stats      ChangesetApplyPreviewConnectionStats
+}
+
+type ChangesetApplyPreviewConnectionStats struct {
+	Push         int32
+	Update       int32
+	Undraft      int32
+	Publish      int32
+	PublishDraft int32
+	Sync         int32
+	Import       int32
+	Close        int32
+	Reopen       int32
+	Sleep        int32
+	Detach       int32
+}
+
+type ChangesetApplyPreview struct {
+	Typename string `json:"__typename"`
+
+	Operations []campaigns.ReconcilerOperation
+	Delta      ChangesetSpecDelta
+	Targets    ChangesetApplyPreviewTargets
+}
+
+type ChangesetApplyPreviewTargets struct {
+	Typename string `json:"__typename"`
+
+	ChangesetSpec ChangesetSpec
+	Changeset     Changeset
+}
+
 type ChangesetSpecDescription struct {
 	Typename string `json:"__typename"`
 
@@ -232,7 +294,7 @@ type ChangesetSpecDescription struct {
 
 	Commits []GitCommitDescription
 
-	Published bool
+	Published campaigns.PublishedValue
 
 	Diff struct {
 		FileDiffs FileDiffs
@@ -241,11 +303,43 @@ type ChangesetSpecDescription struct {
 }
 
 type GitCommitDescription struct {
+	Author  Person
 	Message string
+	Subject string
+	Body    string
 	Diff    string
 }
 
 type PageInfo struct {
 	HasNextPage bool
 	EndCursor   *string
+}
+
+type Person struct {
+	Name  string
+	Email string
+	User  *User
+}
+
+type CampaignsCredential struct {
+	ID                  string
+	ExternalServiceKind string
+	ExternalServiceURL  string
+	CreatedAt           string
+}
+
+type EmptyResponse struct {
+	AlwaysNil string
+}
+
+type CampaignsCodeHostsConnection struct {
+	PageInfo   PageInfo
+	Nodes      []CampaignsCodeHost
+	TotalCount int
+}
+
+type CampaignsCodeHost struct {
+	ExternalServiceKind string
+	ExternalServiceURL  string
+	Credential          CampaignsCredential
 }

@@ -4,6 +4,10 @@ Sourcegraph can be configured to enforce repository permissions from code hosts.
 
 Currently, GitHub, GitHub Enterprise, GitLab and Bitbucket Server permissions are supported. Check our [product direction](https://about.sourcegraph.com/direction) for plans to support other code hosts. If your desired code host is not yet on the roadmap, please [open a feature request](https://github.com/sourcegraph/sourcegraph/issues/new?template=feature_request.md).
 
+If the Sourcegraph instance is configured to sync repositories from multiple code hosts (regardless of whether they are the same code host, e.g. `GitHub + GitHub` or `GitHub + GitLab`), setting up permissions for each code host will make repository permissions apply holistically on Sourcegraph. 
+
+Setting up a unified SSO for code hosts and Sourcegraph is also possible: how to [Set up Sourcegraph with two GitLab and Keycloak using SAML](https://unknwon.io/posts/200915_setup-sourcegraph-gitlab-keycloak/).
+
 > NOTE: Site admin users bypass all permission checks and have access to every repository on Sourcegraph.
 
 ## GitHub
@@ -29,7 +33,7 @@ Then, [add or edit a GitHub connection](../external_service/github.md#repository
 GitLab permissions can be configured in three ways:
 
 1. Set up GitLab as an OAuth sign-on provider for Sourcegraph (recommended)
-2. Use a GitLab sudo-level personal access token in conjunction with another SSO provider
+2. Use a GitLab administrator (sudo-level) personal access token in conjunction with another SSO provider
    (recommended only if the first option is not possible)
 3. Assume username equivalency between Sourcegraph and GitLab (warning: this is generally unsafe and
    should only be used if you are using strictly `http-header` authentication).
@@ -52,12 +56,14 @@ Then, [add or edit a GitLab connection](../external_service/gitlab.md#repository
 }
 ```
 
-### Sudo access token
+### Administrator (sudo-level) access token
+
+This method requires administrator access to GitLab so that Sourcegraph can access the [admin GitLab Users API endpoint](https://docs.gitlab.com/ee/api/users.html#for-admins). For each GitLab user, this endpoint provides the user ID that comes from the authentication provider, so Sourcegraph can associate a user in its system to a user in GitLab.
 
 Prerequisite: Add the [SAML](../auth/index.md#saml) or [OpenID Connect](../auth/index.md#openid-connect)
 authentication provider you use to sign into GitLab.
 
-Then, [add or edit a GitLab connection](../external_service/gitlab.md#repository-syncing) and include the `authorization` field:
+Then, [add or edit a GitLab connection](../external_service/gitlab.md#repository-syncing) using an administrator (sudo-level) personal access token, and include the `authorization` field:
 
 ```json
 {
@@ -76,7 +82,9 @@ Then, [add or edit a GitLab connection](../external_service/gitlab.md#repository
 
 `$AUTH_PROVIDER_ID` and `$AUTH_PROVIDER_TYPE` identify the authentication provider to use and should
 match the fields specified in the authentication provider config
-(`auth.providers`). `$AUTH_PROVIDER_GITLAB_ID` should match the `identities.provider` returned by
+(`auth.providers`). 
+
+`$AUTH_PROVIDER_GITLAB_ID` should match the `identities.provider` returned by
 [the admin GitLab Users API endpoint](https://docs.gitlab.com/ee/api/users.html#for-admins).
 
 ### Username
@@ -202,6 +210,20 @@ Please contact [support@sourcegraph.com](mailto:support@sourcegraph.com) if you 
 A complete sync means a repository or user has done a repository-centric or user-centric syncing respectively, which presists the most accurate permissions from code hosts to Sourcegraph.
 
 An incremental sync is in fact a side effect of a complete sync because a user may grant or lose access to repositories and we react to such changes as soon as we know to improve permissions accuracy.
+
+## Faster permissions syncing via GitHub webhooks
+
+Sourcegraph 3.22+ can speed up permissions syncing by receiving webhooks from GitHub for events related to user and repo permissions. To set up webhooks, follow the guide in the [GitHub Code Host Docs](../external_service/github.md#webhooks). These events will enqueue permissions syncs for the repositories or users mentioned, meaning things like publicising / privatising repos, or adding collaborators will be reflected in your Sourcegraph searches more quickly. For this to work the user must have logged in via the [GitHub OAuth provider](../auth.md#github) 
+
+The events we consume are:
+
+* [public](https://developer.github.com/webhooks/event-payloads/#public)
+* [repository](https://developer.github.com/webhooks/event-payloads/#repository)
+* [member](https://developer.github.com/webhooks/event-payloads/#member)
+* [membership](https://developer.github.com/webhooks/event-payloads/#membership)
+* [team_add](https://developer.github.com/webhooks/event-payloads/#team_add)
+* [organization](https://developer.github.com/webhooks/event-payloads/#organization)
+
 
 ## Explicit permissions API
 
