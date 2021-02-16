@@ -126,7 +126,7 @@ func NewSearchImplementer(ctx context.Context, args *SearchArgs) (_ SearchImplem
 		defaultLimit = defaultMaxSearchResultsStreaming
 	}
 
-	if sp, _ := q.StringValue(query.FieldSelect); sp != "" {
+	if sp, _ := q.StringValue(query.FieldSelect); sp != "" && args.Stream != nil {
 		// Invariant: error already checked
 		selectPath, _ := filter.SelectPathFromString(sp)
 		args.Stream = WithSelect(args.Stream, selectPath)
