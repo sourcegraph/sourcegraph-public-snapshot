@@ -8,6 +8,8 @@ import (
 	"sync/atomic"
 	"testing"
 
+	zoektstream "github.com/google/zoekt/stream"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/zoekt"
@@ -338,7 +340,7 @@ func (s *mockSearcher) Search(context.Context, query.Q, *zoekt.SearchOptions) (*
 	return res, s.searchError
 }
 
-func (s *mockSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, streamer ZoektStreamer) error {
+func (s *mockSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, streamer zoektstream.Streamer) error {
 	return (&StreamSearchAdapter{s}).StreamSearch(ctx, q, opts, streamer)
 }
 
