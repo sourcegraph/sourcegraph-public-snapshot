@@ -57,7 +57,7 @@ type RepositoryResolver struct {
 func NewRepositoryResolver(repo *types.Repo) *RepositoryResolver {
 	// Protect against a nil repo
 	var name api.RepoName
-	var id  api.RepoID
+	var id api.RepoID
 	if repo != nil {
 		name = repo.Name
 		id = repo.ID
