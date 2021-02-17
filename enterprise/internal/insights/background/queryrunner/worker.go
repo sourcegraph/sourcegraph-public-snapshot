@@ -210,5 +210,6 @@ func doScanJobs(rows *sql.Rows, err error) ([]*Job, error) {
 }
 
 var jobsColumns = append([]*sqlf.Query{
+	sqlf.Sprintf("insights_query_runner_jobs.series_id"),
 	sqlf.Sprintf("insights_query_runner_jobs.search_query"),
 }, dbworkerstore.DefaultColumnExpressions()...)
