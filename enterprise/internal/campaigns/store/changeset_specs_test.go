@@ -795,7 +795,16 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 
 	// Now we'll add three old and new pairs of changeset specs. Two will have
 	// matching statuses, and a different two will have matching names.
-	oldOpenFoo := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
+	createChangesetSpecPair := func(t *testing.T, ctx context.Context, s *Store, oldCampaignSpec, newCampaignSpec *campaigns.CampaignSpec, opts ct.TestSpecOpts) (old, new *campaigns.ChangesetSpec) {
+		opts.CampaignSpec = oldCampaignSpec.ID
+		old = ct.CreateChangesetSpec(t, ctx, s, opts)
+
+		opts.CampaignSpec = newCampaignSpec.ID
+		new = ct.CreateChangesetSpec(t, ctx, s, opts)
+
+		return old, new
+	}
+	oldOpenFoo, _ := createChangesetSpecPair(t, ctx, s, oldCampaignSpec, newCampaignSpec, ct.TestSpecOpts{
 		User:         user.ID,
 		Repo:         repo.ID,
 		CampaignSpec: oldCampaignSpec.ID,
@@ -803,7 +812,7 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 		Published:    true,
 		HeadRef:      "open-foo",
 	})
-	oldOpenBar := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
+	oldOpenBar, _ := createChangesetSpecPair(t, ctx, s, oldCampaignSpec, newCampaignSpec, ct.TestSpecOpts{
 		User:         user.ID,
 		Repo:         repo.ID,
 		CampaignSpec: oldCampaignSpec.ID,
@@ -811,34 +820,10 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 		Published:    true,
 		HeadRef:      "open-bar",
 	})
-	oldClosedFoo := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
+	oldClosedFoo, _ := createChangesetSpecPair(t, ctx, s, oldCampaignSpec, newCampaignSpec, ct.TestSpecOpts{
 		User:         user.ID,
 		Repo:         repo.ID,
 		CampaignSpec: oldCampaignSpec.ID,
-		Title:        "foo",
-		Published:    true,
-		HeadRef:      "closed-foo",
-	})
-	_ = ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
-		User:         user.ID,
-		Repo:         repo.ID,
-		CampaignSpec: newCampaignSpec.ID,
-		Title:        "foo",
-		Published:    true,
-		HeadRef:      "open-foo",
-	})
-	_ = ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
-		User:         user.ID,
-		Repo:         repo.ID,
-		CampaignSpec: newCampaignSpec.ID,
-		Title:        "bar",
-		Published:    true,
-		HeadRef:      "open-bar",
-	})
-	_ = ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
-		User:         user.ID,
-		Repo:         repo.ID,
-		CampaignSpec: newCampaignSpec.ID,
 		Title:        "foo",
 		Published:    true,
 		HeadRef:      "closed-foo",
@@ -862,7 +847,7 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 		Campaign:            campaign.ID,
 		CurrentSpec:         oldOpenBar.ID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
-		ExternalID:          "5678",
+		ExternalID:          "5679",
 		ExternalState:       campaigns.ChangesetExternalStateOpen,
 		OwnedByCampaign:     campaign.ID,
 		Metadata: map[string]interface{}{
@@ -874,7 +859,7 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 		Campaign:            campaign.ID,
 		CurrentSpec:         oldClosedFoo.ID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
-		ExternalID:          "5678",
+		ExternalID:          "5680",
 		ExternalState:       campaigns.ChangesetExternalStateClosed,
 		OwnedByCampaign:     campaign.ID,
 		Metadata: map[string]interface{}{
@@ -909,17 +894,19 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 				TextSearch:   []search.TextSearchTerm{{Term: "bar"}},
 				CurrentState: statePtr(campaigns.ChangesetStateClosed),
 			},
-			want: []*campaigns.Changeset{openFoo},
+			want: []*campaigns.Changeset{},
 		},
 		"text match only": {
 			opts: GetRewirerMappingsOpts{
 				TextSearch:   []search.TextSearchTerm{{Term: "foo"}},
 				CurrentState: statePtr(campaigns.ChangesetStateMerged),
 			},
-			want: []*campaigns.Changeset{openFoo},
+			want: []*campaigns.Changeset{},
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
+			tc.opts.CampaignSpecID = newCampaignSpec.ID
+			tc.opts.CampaignID = campaign.ID
 			mappings, err := s.GetRewirerMappings(ctx, tc.opts)
 			if err != nil {
 				t.Errorf("unexpected error: %+v", err)
