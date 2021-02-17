@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"log"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -145,6 +146,10 @@ func (r *schemaResolver) SubmitHappinessFeedback(ctx context.Context, args *stru
 }) (*EmptyResponse, error) {
 	var email *string
 
+	if args.Input.Score < 1 || args.Input.Score > 4 {
+		log15.Error("Score must be a value between 1 and 4")
+	}
+
 	// If we are on Sourcegraph.com, we want to capture the email of the user
 	if envvar.SourcegraphDotComMode() {
 		actor := actor.FromContext(ctx)
@@ -161,17 +166,22 @@ func (r *schemaResolver) SubmitHappinessFeedback(ctx context.Context, args *stru
 		}
 	}
 
-	// // Submit form to HubSpot
-	if err := hubspotutil.Client().SubmitForm(hubspotutil.HappinessFeedbackFormID, &happinessFeedbackSubmissionForHubSpot{
-		Email:      email,
-		Score:      args.Input.Score,
-		Feedback:   args.Input.Feedback,
-		CurrentURL: args.Input.CurrentURL,
-		SiteID:     siteid.Get(),
-	}); err != nil {
-		// Log an error, but don't return one if the only failure was in submitting feedback results to HubSpot.
-		log15.Error("Unable to submit happiness feedback results to Sourcegraph remote", "error", err)
+	// TODO: Renable Hubspot submission when test messages are filtered out of Slack
+	if email != nil {
+		log.Printf(*email)
 	}
+
+	// Submit form to HubSpot
+	// if err := hubspotutil.Client().SubmitForm(hubspotutil.HappinessFeedbackFormID, &happinessFeedbackSubmissionForHubSpot{
+	// 	Email:      email,
+	// 	Score:      args.Input.Score,
+	// 	Feedback:   args.Input.Feedback,
+	// 	CurrentURL: args.Input.CurrentURL,
+	// 	SiteID:     siteid.Get(),
+	// }); err != nil {
+	// 	// Log an error, but don't return one if the only failure was in submitting feedback results to HubSpot.
+	// 	log15.Error("Unable to submit happiness feedback results to Sourcegraph remote", "error", err)
+	// }
 
 	return &EmptyResponse{}, nil
 }
