@@ -156,7 +156,7 @@ func (r *schemaResolver) SubmitHappinessFeedback(ctx context.Context, args *stru
 
 		// If user is authenticated, use their uid and set the email field.
 		if actor.IsAuthenticated() {
-			e, _, err := database.GlobalUserEmails.GetPrimaryEmail(ctx, actor.UID)
+			e, _, err := database.UserEmails(r.db).GetPrimaryEmail(ctx, actor.UID)
 			if err != nil && !errcode.IsNotFound(err) {
 				return nil, err
 			}

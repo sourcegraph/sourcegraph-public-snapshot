@@ -26,7 +26,6 @@ export function useMutation<TData = unknown, TVariables = unknown>(
     }
 ): [(variables: TVariables) => void, MutationResult<TData>] {
     const subscriptions = useMemo(() => new Subscription(), [])
-    useEffect(() => () => subscriptions.unsubscribe(), [subscriptions])
 
     const [result, setResult] = useState<MutationResult<TData>>({ loading: false })
     const handleResponse = useCallback(
