@@ -60,7 +60,7 @@ When you hover your mouse over code in files, diffs, pull requests, etc., the So
 
 The Sourcegraph extension adds a search engine shortcut to your web browser that performs a search on your Sourcegraph instance. After you've installed it (see above), use the search shortcut it provides to perform a search:
 
-1. Place cursor in the URL location bar, then type <kbd>src</kbd> <kbd>Space</kbd>.
+1. Place cursor in the URL location bar, then type <kbd>src</kbd> <kbd>Tab</kbd>.
 1. Start typing your search query.
 1. Select an instant search suggestion or press <kbd>Enter</kbd> to see all results.
 
