@@ -14,7 +14,6 @@ CREATE TABLE out_of_band_migrations (
     apply_reverse    boolean default false not null
 );
 
-
 COMMENT ON TABLE out_of_band_migrations IS 'Stores metadata and progress about an out-of-band migration routine.';
 COMMENT ON COLUMN out_of_band_migrations.id IS 'A globally unique primary key for this migration. The same key is used consistently across all Sourcegraph instances for the same migration.';
 COMMENT ON COLUMN out_of_band_migrations.team IS 'The name of the engineeringteam responsible for the migration.';
