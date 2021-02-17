@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// NewRing  creates a encryption.Ring containing all the keys configured in site config
+// NewRing creates a keyring.Ring containing all the keys configured in site config
 func NewRing(ctx context.Context, keyConfig *schema.EncryptionKeys) (*Ring, error) {
 	extsvc, err := NewKey(ctx, keyConfig.ExternalServiceKey)
 	if err != nil {
