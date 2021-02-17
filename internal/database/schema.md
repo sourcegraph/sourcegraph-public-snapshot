@@ -1025,7 +1025,7 @@ Stores metadata and progress about an out-of-band migration routine.
 
 **deprecated**: The lowest Sourcegraph version that assumes the migration has completed.
 
-**description**: A breif description about the migration.
+**description**: A brief description about the migration.
 
 **id**: A globally unique primary key for this migration. The same key is used consistently across all Sourcegraph instances for the same migration.
 
@@ -1037,7 +1037,7 @@ Stores metadata and progress about an out-of-band migration routine.
 
 **progress**: The percentage progress in the up direction (0=0%, 1=100%).
 
-**team**: The name of the engineeringteam responsible for the migration.
+**team**: The name of the engineering team responsible for the migration.
 
 # Table "public.out_of_band_migrations_errors"
 ```
