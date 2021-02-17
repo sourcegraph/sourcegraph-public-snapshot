@@ -24,6 +24,10 @@ type queryCost struct {
 // executed. It is a worst cast estimate of the number of fields expected to be
 // returned by the query and handles nested queries a well as fragments.
 func estimateQueryCost(query string, variables map[string]interface{}) (totalCost *queryCost, err error) {
+	// NOTE: When we encounter errors in our visit funcs we return
+	// visitor.ActionBreak to stop walking the tree and set the top level err
+	// variable so that it is returned
+
 	// TODO: Remove this. It's here as a safeguard until we've run over a large
 	// number of real world queries.
 	defer func() {
@@ -93,7 +97,11 @@ func estimateQueryCost(query string, variables map[string]interface{}) (totalCos
 }
 
 func calcOperationCost(def ast.Node, fragmentCosts map[string]int, variables map[string]interface{}) (*queryCost, error) {
+	// NOTE: When we encounter errors in our visit funcs we return
+	// visitor.ActionBreak to stop walking the tree and set the top level err
+	// variable so that it is returned
 	var err error
+
 	if fragmentCosts == nil {
 		fragmentCosts = make(map[string]int)
 	}
