@@ -20,8 +20,9 @@ type queryCost struct {
 	MaxDepth   int
 }
 
-// estimateQueryCost estimates the cost of the query .
-// TODO: Update description
+// estimateQueryCost estimates the cost of the query before it is actually
+// executed. It is a worst cast estimate of the number of fields expected to be
+// returned by the query and handles nested queries a well as fragments.
 func estimateQueryCost(query string, variables map[string]interface{}) (*queryCost, error) {
 	if variables == nil {
 		variables = make(map[string]interface{})
@@ -36,22 +37,35 @@ func estimateQueryCost(query string, variables map[string]interface{}) (*queryCo
 
 	// We need to separate operations from fragments
 	var operations []ast.Node
-	var fragments []ast.Node
+	var fragments []*ast.FragmentDefinition
 
 	for i, def := range doc.Definitions {
 		switch def.GetKind() {
 		case kinds.FragmentDefinition:
-			fragments = append(fragments, doc.Definitions[i])
+			frag, ok := doc.Definitions[i].(*ast.FragmentDefinition)
+			if !ok {
+				return nil, fmt.Errorf("expected FragmentDefinition, got %T", doc.Definitions[i])
+			}
+			fragments = append(fragments, frag)
 		case kinds.OperationDefinition:
 			operations = append(operations, doc.Definitions[i])
 		}
 	}
 
+	fragmentCosts := make(map[string]int)
+	for _, frag := range fragments {
+		name, cost, err := calcFragmentCost(frag)
+		if err != nil {
+			return nil, errors.Wrap(err, "calculating fragment cost")
+		}
+		fragmentCosts[name] = cost
+	}
+
 	var totalCost queryCost
 	for _, def := range operations {
-		cost, err := calcOperationCost(def, variables)
+		cost, err := calcOperationCost(def, fragmentCosts, variables)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "calculating operation cost")
 		}
 		totalCost.FieldCount += cost.FieldCount
 		if totalCost.MaxDepth < cost.MaxDepth {
@@ -69,8 +83,11 @@ func estimateQueryCost(query string, variables map[string]interface{}) (*queryCo
 	return &totalCost, nil
 }
 
-func calcOperationCost(def ast.Node, variables map[string]interface{}) (*queryCost, error) {
+func calcOperationCost(def ast.Node, fragmentCosts map[string]int, variables map[string]interface{}) (*queryCost, error) {
 	var err error
+	if fragmentCosts == nil {
+		fragmentCosts = make(map[string]int)
+	}
 	fieldCount := 0
 	multiplier := 1
 	depth := 0
@@ -119,6 +136,13 @@ func calcOperationCost(def ast.Node, variables map[string]interface{}) (*queryCo
 					return visitor.ActionNoChange, nil
 				}
 				multiplier *= limit
+			case *ast.FragmentSpread:
+				fragmentCost, ok := fragmentCosts[node.Name.Value]
+				if !ok {
+					err = fmt.Errorf("unknown fragment %q", node.Name.Value)
+					return visitor.ActionBreak, nil
+				}
+				fieldCount += fragmentCost * multiplier
 			}
 			return visitor.ActionNoChange, nil
 		},
@@ -130,6 +154,48 @@ func calcOperationCost(def ast.Node, variables map[string]interface{}) (*queryCo
 		FieldCount: fieldCount,
 		MaxDepth:   depth,
 	}, err
+}
+
+func calcFragmentCost(frag *ast.FragmentDefinition) (string, int, error) {
+	var cost int
+	var currentFragment string
+
+	fragmentCosts := make(map[string]int)
+
+	v := &visitor.VisitorOptions{
+		Enter: func(p visitor.VisitFuncParams) (string, interface{}) {
+			switch node := p.Node.(type) {
+			case *ast.Field:
+				cost++
+			case *ast.Named:
+				currentFragment = node.Name.Value
+			case *ast.InlineFragment:
+				cost = 0
+			}
+			return visitor.ActionNoChange, nil
+		},
+		Leave: func(p visitor.VisitFuncParams) (string, interface{}) {
+			switch p.Node.(type) {
+			case *ast.SelectionSet:
+				if currentFragment != "" {
+					fragmentCosts[currentFragment] = cost
+				}
+			}
+			return visitor.ActionNoChange, nil
+		},
+	}
+
+	_ = visitor.Visit(frag, v, nil)
+
+	// Find worst case cost
+	cost = 0
+	for _, v := range fragmentCosts {
+		if v > cost {
+			cost = v
+		}
+	}
+
+	return frag.Name.Value, cost, nil
 }
 
 var quantityParams = map[string]struct{}{

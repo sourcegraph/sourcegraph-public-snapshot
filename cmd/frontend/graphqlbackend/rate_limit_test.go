@@ -133,8 +133,8 @@ query StatusMessages {
  }
 `,
 			want: queryCost{
-				FieldCount: 0,
-				MaxDepth:   0,
+				FieldCount: 5,
+				MaxDepth:   2,
 			},
 		},
 	} {
