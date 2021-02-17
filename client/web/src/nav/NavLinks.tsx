@@ -135,7 +135,7 @@ export class NavLinks extends React.PureComponent<Props> {
 
                 {/* show status messages if authenticated user is admin or opted-in with a user tag  */}
                 {(this.props.authenticatedUser?.siteAdmin ||
-                    this.props.authenticatedUser?.tags.includes('AllowUserExternalServicePublic')) && (
+                    this.props.authenticatedUser?.tags?.includes('AllowUserExternalServicePublic')) && (
                     <li className="nav-item">
                         <StatusMessagesNavItem
                             isSiteAdmin={this.props.authenticatedUser.siteAdmin}
