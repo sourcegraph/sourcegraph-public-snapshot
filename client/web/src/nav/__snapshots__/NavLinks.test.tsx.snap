@@ -231,9 +231,9 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
               >
                 <svg
                   fill="none"
-                  height="28"
+                  height="24"
                   viewBox="0 0 20 20"
-                  width="28"
+                  width="24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -270,9 +270,9 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
               >
                 <svg
                   fill="none"
-                  height="28"
+                  height="24"
                   viewBox="0 0 20 20"
-                  width="28"
+                  width="24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -317,9 +317,9 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
               >
                 <svg
                   fill="none"
-                  height="28"
+                  height="24"
                   viewBox="0 0 20 20"
-                  width="28"
+                  width="24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -364,9 +364,9 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
               >
                 <svg
                   fill="none"
-                  height="28"
+                  height="24"
                   viewBox="0 0 20 20"
-                  width="28"
+                  width="24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -946,9 +946,9 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
               >
                 <svg
                   fill="none"
-                  height="28"
+                  height="24"
                   viewBox="0 0 20 20"
-                  width="28"
+                  width="24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -985,9 +985,9 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
               >
                 <svg
                   fill="none"
-                  height="28"
+                  height="24"
                   viewBox="0 0 20 20"
-                  width="28"
+                  width="24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -1032,9 +1032,9 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
               >
                 <svg
                   fill="none"
-                  height="28"
+                  height="24"
                   viewBox="0 0 20 20"
-                  width="28"
+                  width="24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -1079,9 +1079,9 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
               >
                 <svg
                   fill="none"
-                  height="28"
+                  height="24"
                   viewBox="0 0 20 20"
-                  width="28"
+                  width="24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -1671,9 +1671,9 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
               >
                 <svg
                   fill="none"
-                  height="28"
+                  height="24"
                   viewBox="0 0 20 20"
-                  width="28"
+                  width="24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -1710,9 +1710,9 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
               >
                 <svg
                   fill="none"
-                  height="28"
+                  height="24"
                   viewBox="0 0 20 20"
-                  width="28"
+                  width="24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -1757,9 +1757,9 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
               >
                 <svg
                   fill="none"
-                  height="28"
+                  height="24"
                   viewBox="0 0 20 20"
-                  width="28"
+                  width="24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -1804,9 +1804,9 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
               >
                 <svg
                   fill="none"
-                  height="28"
+                  height="24"
                   viewBox="0 0 20 20"
-                  width="28"
+                  width="24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -2367,9 +2367,9 @@ exports[`NavLinks authed self-hosted /search 1`] = `
               >
                 <svg
                   fill="none"
-                  height="28"
+                  height="24"
                   viewBox="0 0 20 20"
-                  width="28"
+                  width="24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -2406,9 +2406,9 @@ exports[`NavLinks authed self-hosted /search 1`] = `
               >
                 <svg
                   fill="none"
-                  height="28"
+                  height="24"
                   viewBox="0 0 20 20"
-                  width="28"
+                  width="24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -2453,9 +2453,9 @@ exports[`NavLinks authed self-hosted /search 1`] = `
               >
                 <svg
                   fill="none"
-                  height="28"
+                  height="24"
                   viewBox="0 0 20 20"
-                  width="28"
+                  width="24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -2500,9 +2500,9 @@ exports[`NavLinks authed self-hosted /search 1`] = `
               >
                 <svg
                   fill="none"
-                  height="28"
+                  height="24"
                   viewBox="0 0 20 20"
-                  width="28"
+                  width="24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -3073,9 +3073,9 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
               >
                 <svg
                   fill="none"
-                  height="28"
+                  height="24"
                   viewBox="0 0 20 20"
-                  width="28"
+                  width="24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -3112,9 +3112,9 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
               >
                 <svg
                   fill="none"
-                  height="28"
+                  height="24"
                   viewBox="0 0 20 20"
-                  width="28"
+                  width="24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -3159,9 +3159,9 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
               >
                 <svg
                   fill="none"
-                  height="28"
+                  height="24"
                   viewBox="0 0 20 20"
-                  width="28"
+                  width="24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -3206,9 +3206,9 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
               >
                 <svg
                   fill="none"
-                  height="28"
+                  height="24"
                   viewBox="0 0 20 20"
-                  width="28"
+                  width="24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -3530,9 +3530,9 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
               >
                 <svg
                   fill="none"
-                  height="28"
+                  height="24"
                   viewBox="0 0 20 20"
-                  width="28"
+                  width="24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -3569,9 +3569,9 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
               >
                 <svg
                   fill="none"
-                  height="28"
+                  height="24"
                   viewBox="0 0 20 20"
-                  width="28"
+                  width="24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -3616,9 +3616,9 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
               >
                 <svg
                   fill="none"
-                  height="28"
+                  height="24"
                   viewBox="0 0 20 20"
-                  width="28"
+                  width="24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -3663,9 +3663,9 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
               >
                 <svg
                   fill="none"
-                  height="28"
+                  height="24"
                   viewBox="0 0 20 20"
-                  width="28"
+                  width="24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -3997,9 +3997,9 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
               >
                 <svg
                   fill="none"
-                  height="28"
+                  height="24"
                   viewBox="0 0 20 20"
-                  width="28"
+                  width="24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -4036,9 +4036,9 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
               >
                 <svg
                   fill="none"
-                  height="28"
+                  height="24"
                   viewBox="0 0 20 20"
-                  width="28"
+                  width="24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -4083,9 +4083,9 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
               >
                 <svg
                   fill="none"
-                  height="28"
+                  height="24"
                   viewBox="0 0 20 20"
-                  width="28"
+                  width="24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -4130,9 +4130,9 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
               >
                 <svg
                   fill="none"
-                  height="28"
+                  height="24"
                   viewBox="0 0 20 20"
-                  width="28"
+                  width="24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -4442,9 +4442,9 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
               >
                 <svg
                   fill="none"
-                  height="28"
+                  height="24"
                   viewBox="0 0 20 20"
-                  width="28"
+                  width="24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -4481,9 +4481,9 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
               >
                 <svg
                   fill="none"
-                  height="28"
+                  height="24"
                   viewBox="0 0 20 20"
-                  width="28"
+                  width="24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -4528,9 +4528,9 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
               >
                 <svg
                   fill="none"
-                  height="28"
+                  height="24"
                   viewBox="0 0 20 20"
-                  width="28"
+                  width="24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -4575,9 +4575,9 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
               >
                 <svg
                   fill="none"
-                  height="28"
+                  height="24"
                   viewBox="0 0 20 20"
-                  width="28"
+                  width="24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
