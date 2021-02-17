@@ -8,7 +8,7 @@ import {
     CaseSensitivityProps,
     CopyQueryButtonProps,
     SearchContextProps,
-    isContextFilterInQuery,
+    appendContextFilterToQuery,
 } from '../..'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
 import { submitSearch } from '../../helpers'
@@ -39,15 +39,12 @@ export const getFullQuery = (
     searchContextSpec: string,
     caseSensitive: boolean,
     patternType: SearchPatternType
-): string =>
-    [
-        searchContextSpec && !isContextFilterInQuery(query) ? `context:${searchContextSpec}` : '',
-        query,
-        `patternType:${patternType}`,
-        caseSensitive ? 'case:yes' : '',
-    ]
+): string => {
+    const finalQuery = [query, `patternType:${patternType}`, caseSensitive ? 'case:yes' : '']
         .filter(queryPart => !!queryPart)
         .join(' ')
+    return appendContextFilterToQuery(finalQuery, searchContextSpec)
+}
 
 /**
  * The toggles displayed in the query input.
@@ -65,7 +62,6 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
         settingsCascade,
         className,
         copyQueryButton,
-        showSearchContext,
         selectedSearchContextSpec,
     } = props
 
@@ -91,10 +87,19 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                     caseSensitive: newCaseSensitive,
                     versionContext,
                     activation,
+                    selectedSearchContextSpec,
                 })
             }
         },
-        [caseSensitive, hasGlobalQueryBehavior, history, navbarSearchQuery, patternType, versionContext]
+        [
+            caseSensitive,
+            hasGlobalQueryBehavior,
+            history,
+            navbarSearchQuery,
+            patternType,
+            versionContext,
+            selectedSearchContextSpec,
+        ]
     )
 
     const toggleCaseSensitivity = useCallback((): void => {
@@ -126,12 +131,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
         submitOnToggle({ newPatternType })
     }, [patternType, setPatternType, settingsCascade.final, submitOnToggle])
 
-    const fullQuery = getFullQuery(
-        navbarSearchQuery,
-        showSearchContext ? selectedSearchContextSpec : '',
-        caseSensitive,
-        patternType
-    )
+    const fullQuery = getFullQuery(navbarSearchQuery, selectedSearchContextSpec || '', caseSensitive, patternType)
 
     return (
         <div className={classNames('toggle-container', className)}>

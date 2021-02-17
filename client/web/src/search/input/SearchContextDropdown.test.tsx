@@ -1,7 +1,11 @@
 import { mount } from 'enzyme'
+import sinon from 'sinon'
 import React from 'react'
-import { Dropdown, DropdownToggle } from 'reactstrap'
+import * as H from 'history'
+import { SearchPatternType } from '../../graphql-operations'
+import { Dropdown, DropdownItem, DropdownToggle } from 'reactstrap'
 import { SearchContextDropdown, SearchContextDropdownProps } from './SearchContextDropdown'
+import { ISearchContext } from '../../../../shared/src/graphql/schema'
 
 describe('SearchContextDropdown', () => {
     const defaultProps: SearchContextDropdownProps = {
@@ -10,6 +14,11 @@ describe('SearchContextDropdown', () => {
         defaultSearchContextSpec: '',
         selectedSearchContextSpec: '',
         setSelectedSearchContextSpec: () => {},
+        history: H.createMemoryHistory(),
+        caseSensitive: true,
+        patternType: SearchPatternType.literal,
+        versionContext: undefined,
+        submitSearch: () => {},
     }
 
     it('should start closed', () => {
@@ -60,5 +69,55 @@ describe('SearchContextDropdown', () => {
         const dropdown = element.find(DropdownToggle)
         expect(dropdown.prop('disabled')).toBe(true)
         expect(dropdown.prop('data-tooltip')).toBe('Overridden by query')
+    })
+
+    it('should submit search on item click', () => {
+        const availableSearchContexts: ISearchContext[] = [
+            {
+                __typename: 'SearchContext',
+                id: '1',
+                spec: 'global',
+                autoDefined: true,
+                description: 'All repositories on Sourcegraph',
+            },
+        ]
+        const submitSearch = sinon.spy()
+        const element = mount(
+            <SearchContextDropdown
+                {...defaultProps}
+                submitSearch={submitSearch}
+                availableSearchContexts={availableSearchContexts}
+                query="test"
+            />
+        )
+        const item = element.find(DropdownItem).at(0)
+        item.simulate('click')
+
+        sinon.assert.calledOnce(submitSearch)
+    })
+
+    it('should not submit search if query is empty', () => {
+        const availableSearchContexts: ISearchContext[] = [
+            {
+                __typename: 'SearchContext',
+                id: '1',
+                spec: 'global',
+                autoDefined: true,
+                description: 'All repositories on Sourcegraph',
+            },
+        ]
+        const submitSearch = sinon.spy()
+        const element = mount(
+            <SearchContextDropdown
+                {...defaultProps}
+                submitSearch={submitSearch}
+                availableSearchContexts={availableSearchContexts}
+                query=""
+            />
+        )
+        const item = element.find(DropdownItem).at(0)
+        item.simulate('click')
+
+        sinon.assert.notCalled(submitSearch)
     })
 })

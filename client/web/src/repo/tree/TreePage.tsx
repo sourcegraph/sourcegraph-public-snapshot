@@ -26,7 +26,7 @@ import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
-import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps } from '../../search'
+import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps, SearchContextProps } from '../../search'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
 import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
@@ -109,6 +109,7 @@ interface Props
         CaseSensitivityProps,
         CopyQueryButtonProps,
         VersionContextProps,
+        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         BreadcrumbSetters {
     repo: TreePageRepositoryFields
     /** The tree's path in TreePage. We call it filePath for consistency elsewhere. */

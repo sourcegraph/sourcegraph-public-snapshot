@@ -15,7 +15,7 @@ import FlagVariantIcon from 'mdi-react/FlagVariantIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import { VersionContext } from '../schema/site.schema'
-import { PatternTypeProps, CaseSensitivityProps } from '../search'
+import { PatternTypeProps, CaseSensitivityProps, SearchContextProps } from '../search'
 import { submitSearch } from '../search/helpers'
 import { useLocalStorage } from '../util/useLocalStorage'
 
@@ -24,7 +24,8 @@ const HAS_DISMISSED_INFO_KEY = 'sg-has-dismissed-version-context-info'
 export interface VersionContextDropdownProps
     extends Pick<PatternTypeProps, 'patternType'>,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
-        VersionContextProps {
+        VersionContextProps,
+        Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
     history: H.History
@@ -45,6 +46,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
     setVersionContext,
     availableVersionContexts,
     versionContext: currentVersionContext,
+    selectedSearchContextSpec,
     alwaysExpanded,
     portal,
 }: VersionContextDropdownProps) => {
@@ -67,10 +69,11 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
                     versionContext,
                     activation,
                     searchParameters,
+                    selectedSearchContextSpec,
                 })
             }
         },
-        [caseSensitive, history, navbarSearchQuery, patternType]
+        [caseSensitive, history, navbarSearchQuery, patternType, selectedSearchContextSpec]
     )
 
     const updateValue = useCallback(

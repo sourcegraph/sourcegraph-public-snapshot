@@ -56,6 +56,7 @@ const defaultProps: SearchResultsListProps = {
     setCaseSensitivity: sinon.spy(),
 
     versionContext: undefined,
+    selectedSearchContextSpec: 'global',
 
     navbarSearchQueryState: { query: '' },
 
