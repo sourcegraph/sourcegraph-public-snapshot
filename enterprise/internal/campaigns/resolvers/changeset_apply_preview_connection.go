@@ -244,7 +244,7 @@ type rewirerMappingsFacade struct {
 	campaignSpecID int64
 	store          *store.Store
 
-	// Calculated within the type with the dry run.
+	// This field is set when ReconcileCampaign is called.
 	campaign *campaigns.Campaign
 
 	// Cache of filtered pages.
