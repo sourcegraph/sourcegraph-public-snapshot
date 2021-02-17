@@ -2474,6 +2474,10 @@ type InsightsSeries {
 
     """
     Data points over a time range (inclusive)
+
+    If no 'from' time range is specified, the last 30d of data is assumed.
+
+    If no 'to' time range is specified, the current point in time is assumed.
     """
     points(from: DateTime, to: DateTime): [InsightDataPoint!]!
 }

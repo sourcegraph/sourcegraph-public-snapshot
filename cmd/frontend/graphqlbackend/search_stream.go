@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"go.uber.org/atomic"
 )
@@ -65,6 +66,53 @@ func WithLimit(ctx context.Context, parent Streamer, limit int) (context.Context
 	stream := &limitStream{cancel: cancel, s: parent}
 	stream.remaining.Store(int64(limit))
 	return ctx, stream, cancel
+}
+
+// WithSelect returns a child Stream of parent that runs the select operation
+// on each event, deduplicating where possible.
+func WithSelect(parent Streamer, s filter.SelectPath) Streamer {
+	var mux sync.Mutex
+	dedup := NewDeduper()
+
+	return StreamFunc(func(e SearchEvent) {
+		mux.Lock()
+
+		selected := e.Results[:0]
+		for _, result := range e.Results {
+			var current SearchResultResolver
+			switch v := result.(type) {
+			case *FileMatchResolver:
+				current = v.Select(s)
+			case *RepositoryResolver:
+				current = v.Select(s)
+			case *CommitSearchResultResolver:
+				current = v.Select(s)
+			default:
+				current = result
+			}
+
+			if current == nil {
+				continue
+			}
+
+			// If the selected file is a file match, send it unconditionally
+			// to ensure we get all line matches for a file.
+			_, isFileMatch := current.(*FileMatchResolver)
+			seen := dedup.Seen(current)
+			if seen && !isFileMatch {
+				continue
+			}
+
+			dedup.Add(current)
+			selected = append(selected, current)
+		}
+		e.Results = selected
+
+		mux.Unlock()
+		if parent != nil {
+			parent.Send(e)
+		}
+	})
 }
 
 // StreamFunc is a convenience function to create a stream receiver from a

@@ -37,7 +37,6 @@ import { subYears, formatISO } from 'date-fns'
 import { pluralize } from '../../../../shared/src/util/strings'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { encodeURIPathComponent, toPrettyBlobURL, toURIWithPath } from '../../../../shared/src/util/url'
-import { getViewsForContainer } from '../../../../shared/src/api/client/services/viewService'
 import { Settings } from '../../schema/settings.schema'
 import { ViewGrid } from './ViewGrid'
 import { VersionContextProps } from '../../../../shared/src/search/util'
@@ -49,6 +48,7 @@ import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphq
 import { getFileDecorations } from '../../backend/features'
 import { FileDecorationsByPath } from '../../../../shared/src/api/extension/flatExtensionApi'
 import SettingsIcon from 'mdi-react/SettingsIcon'
+import { getCombinedViews } from '../../insights/backend'
 
 const fetchTreeCommits = memoizeObservable(
     (args: {
@@ -235,7 +235,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
         useMemo(
             () =>
                 codeInsightsEnabled && workspaceUri
-                    ? getViewsForContainer(
+                    ? getCombinedViews(
                           ContributableViewContainer.Directory,
                           {
                               viewer: {

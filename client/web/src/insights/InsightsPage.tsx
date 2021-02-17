@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo } from 'react'
 import { useObservable } from '../../../shared/src/util/useObservable'
-import { getViewsForContainer } from '../../../shared/src/api/client/services/viewService'
 import { ContributableViewContainer } from '../../../shared/src/api/protocol'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { ViewGrid, ViewGridProps } from '../repo/tree/ViewGrid'
@@ -14,6 +13,7 @@ import { BreadcrumbsProps, BreadcrumbSetters } from '../components/Breadcrumbs'
 import { StatusBadge } from '../components/StatusBadge'
 import { Page } from '../components/Page'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { getCombinedViews } from './backend'
 
 interface InsightsPageProps
     extends ExtensionsControllerProps,
@@ -21,6 +21,7 @@ interface InsightsPageProps
         BreadcrumbsProps,
         BreadcrumbSetters,
         TelemetryProps {}
+
 export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props => {
     props.useBreadcrumb(
         useMemo(
@@ -35,11 +36,7 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
     const views = useObservable(
         useMemo(
             () =>
-                getViewsForContainer(
-                    ContributableViewContainer.InsightsPage,
-                    {},
-                    props.extensionsController.services.view
-                ),
+                getCombinedViews(ContributableViewContainer.InsightsPage, {}, props.extensionsController.services.view),
             [props.extensionsController.services.view]
         )
     )
