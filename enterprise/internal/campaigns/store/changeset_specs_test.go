@@ -677,6 +677,258 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 	})
 }
 
+func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+	repoStore := database.ReposWith(s)
+	esStore := database.ExternalServicesWith(s)
+
+	// Let's set up a campaign with one of every changeset state.
+
+	// First up, let's create a repo.
+	repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
+	if err := repoStore.Create(ctx, repo); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create a user.
+	user := ct.CreateTestUser(t, false)
+
+	// Next, we need old and new campaign specs.
+	oldCampaignSpec := ct.CreateCampaignSpec(t, ctx, s, "old", user.ID)
+	newCampaignSpec := ct.CreateCampaignSpec(t, ctx, s, "new", user.ID)
+
+	// That's enough to create a campaign, so let's do that.
+	campaign := ct.CreateCampaign(t, ctx, s, "text", user.ID, oldCampaignSpec.ID)
+
+	// Now for some changeset specs.
+	var (
+		changesets = map[campaigns.ChangesetState]*campaigns.Changeset{}
+		oldSpecs   = map[campaigns.ChangesetState]*campaigns.ChangesetSpec{}
+		newSpecs   = map[campaigns.ChangesetState]*campaigns.ChangesetSpec{}
+
+		// The keys are the desired current state that we'll search for; the
+		// values the changeset options we need to set on the changeset.
+		states = map[campaigns.ChangesetState]*ct.TestChangesetOpts{
+			campaigns.ChangesetStateRetrying:    {ReconcilerState: campaigns.ReconcilerStateErrored},
+			campaigns.ChangesetStateFailed:      {ReconcilerState: campaigns.ReconcilerStateFailed},
+			campaigns.ChangesetStateProcessing:  {ReconcilerState: campaigns.ReconcilerStateCompleted},
+			campaigns.ChangesetStateUnpublished: {PublicationState: campaigns.ChangesetPublicationStateUnpublished},
+			campaigns.ChangesetStateDraft:       {ExternalState: campaigns.ChangesetExternalStateDraft},
+			campaigns.ChangesetStateOpen:        {ExternalState: campaigns.ChangesetExternalStateOpen},
+			campaigns.ChangesetStateClosed:      {ExternalState: campaigns.ChangesetExternalStateClosed},
+			campaigns.ChangesetStateMerged:      {ExternalState: campaigns.ChangesetExternalStateMerged},
+			campaigns.ChangesetStateDeleted:     {ExternalState: campaigns.ChangesetExternalStateDeleted},
+		}
+	)
+	for state, opts := range states {
+		specOpts := ct.TestSpecOpts{
+			User:         user.ID,
+			Repo:         repo.ID,
+			CampaignSpec: oldCampaignSpec.ID,
+			Title:        string(state),
+			Published:    true,
+			HeadRef:      string(state),
+		}
+		oldSpecs[state] = ct.CreateChangesetSpec(t, ctx, s, specOpts)
+
+		specOpts.CampaignSpec = newCampaignSpec.ID
+		newSpecs[state] = ct.CreateChangesetSpec(t, ctx, s, specOpts)
+
+		if opts.ExternalState != "" {
+			opts.ExternalID = string(state)
+		}
+		opts.ExternalServiceType = repo.ExternalRepo.ServiceType
+		opts.Repo = repo.ID
+		opts.Campaign = campaign.ID
+		opts.CurrentSpec = oldSpecs[state].ID
+		opts.OwnedByCampaign = campaign.ID
+		opts.Metadata = map[string]interface{}{"Title": string(state)}
+		changesets[state] = ct.CreateChangeset(t, ctx, s, *opts)
+	}
+
+	// OK, there's lots of good stuff here. Let's work our way through the
+	// rewirer options and see what we get.
+	for state := range states {
+		t.Run(string(state), func(t *testing.T) {
+			mappings, err := s.GetRewirerMappings(ctx, GetRewirerMappingsOpts{
+				CampaignSpecID: newCampaignSpec.ID,
+				CampaignID:     campaign.ID,
+				CurrentState:   &state,
+			})
+			if err != nil {
+				t.Errorf("unexpected error: %+v", err)
+			}
+
+			have := []int64{}
+			for _, mapping := range mappings {
+				have = append(have, mapping.ChangesetID)
+			}
+
+			want := []int64{changesets[state].ID}
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Errorf("unexpected changesets (-have +want):\n%s", diff)
+			}
+		})
+	}
+}
+
+func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+	repoStore := database.ReposWith(s)
+	esStore := database.ExternalServicesWith(s)
+
+	// Let's set up a campaign with one of every changeset state.
+
+	// First up, let's create a repo.
+	repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
+	if err := repoStore.Create(ctx, repo); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create a user.
+	user := ct.CreateTestUser(t, false)
+
+	// Next, we need old and new campaign specs.
+	oldCampaignSpec := ct.CreateCampaignSpec(t, ctx, s, "old", user.ID)
+	newCampaignSpec := ct.CreateCampaignSpec(t, ctx, s, "new", user.ID)
+
+	// That's enough to create a campaign, so let's do that.
+	campaign := ct.CreateCampaign(t, ctx, s, "text", user.ID, oldCampaignSpec.ID)
+
+	// Now we'll add three old and new pairs of changeset specs. Two will have
+	// matching statuses, and a different two will have matching names.
+	createChangesetSpecPair := func(t *testing.T, ctx context.Context, s *Store, oldCampaignSpec, newCampaignSpec *campaigns.CampaignSpec, opts ct.TestSpecOpts) (old, new *campaigns.ChangesetSpec) {
+		opts.CampaignSpec = oldCampaignSpec.ID
+		old = ct.CreateChangesetSpec(t, ctx, s, opts)
+
+		opts.CampaignSpec = newCampaignSpec.ID
+		new = ct.CreateChangesetSpec(t, ctx, s, opts)
+
+		return old, new
+	}
+	oldOpenFoo, _ := createChangesetSpecPair(t, ctx, s, oldCampaignSpec, newCampaignSpec, ct.TestSpecOpts{
+		User:         user.ID,
+		Repo:         repo.ID,
+		CampaignSpec: oldCampaignSpec.ID,
+		Title:        "foo",
+		Published:    true,
+		HeadRef:      "open-foo",
+	})
+	oldOpenBar, _ := createChangesetSpecPair(t, ctx, s, oldCampaignSpec, newCampaignSpec, ct.TestSpecOpts{
+		User:         user.ID,
+		Repo:         repo.ID,
+		CampaignSpec: oldCampaignSpec.ID,
+		Title:        "bar",
+		Published:    true,
+		HeadRef:      "open-bar",
+	})
+	oldClosedFoo, _ := createChangesetSpecPair(t, ctx, s, oldCampaignSpec, newCampaignSpec, ct.TestSpecOpts{
+		User:         user.ID,
+		Repo:         repo.ID,
+		CampaignSpec: oldCampaignSpec.ID,
+		Title:        "foo",
+		Published:    true,
+		HeadRef:      "closed-foo",
+	})
+
+	// Finally, the changesets.
+	openFoo := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+		Repo:                repo.ID,
+		Campaign:            campaign.ID,
+		CurrentSpec:         oldOpenFoo.ID,
+		ExternalServiceType: repo.ExternalRepo.ServiceType,
+		ExternalID:          "5678",
+		ExternalState:       campaigns.ChangesetExternalStateOpen,
+		OwnedByCampaign:     campaign.ID,
+		Metadata: map[string]interface{}{
+			"Title": "foo",
+		},
+	})
+	openBar := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+		Repo:                repo.ID,
+		Campaign:            campaign.ID,
+		CurrentSpec:         oldOpenBar.ID,
+		ExternalServiceType: repo.ExternalRepo.ServiceType,
+		ExternalID:          "5679",
+		ExternalState:       campaigns.ChangesetExternalStateOpen,
+		OwnedByCampaign:     campaign.ID,
+		Metadata: map[string]interface{}{
+			"Title": "bar",
+		},
+	})
+	_ = ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+		Repo:                repo.ID,
+		Campaign:            campaign.ID,
+		CurrentSpec:         oldClosedFoo.ID,
+		ExternalServiceType: repo.ExternalRepo.ServiceType,
+		ExternalID:          "5680",
+		ExternalState:       campaigns.ChangesetExternalStateClosed,
+		OwnedByCampaign:     campaign.ID,
+		Metadata: map[string]interface{}{
+			"Title": "foo",
+		},
+	})
+
+	statePtr := func(state campaigns.ChangesetState) *campaigns.ChangesetState {
+		return &state
+	}
+
+	for name, tc := range map[string]struct {
+		opts GetRewirerMappingsOpts
+		want []*campaigns.Changeset
+	}{
+		"state and text": {
+			opts: GetRewirerMappingsOpts{
+				TextSearch:   []search.TextSearchTerm{{Term: "foo"}},
+				CurrentState: statePtr(campaigns.ChangesetStateOpen),
+			},
+			want: []*campaigns.Changeset{openFoo},
+		},
+		"state and not text": {
+			opts: GetRewirerMappingsOpts{
+				TextSearch:   []search.TextSearchTerm{{Term: "foo", Not: true}},
+				CurrentState: statePtr(campaigns.ChangesetStateOpen),
+			},
+			want: []*campaigns.Changeset{openBar},
+		},
+		"state match only": {
+			opts: GetRewirerMappingsOpts{
+				TextSearch:   []search.TextSearchTerm{{Term: "bar"}},
+				CurrentState: statePtr(campaigns.ChangesetStateClosed),
+			},
+			want: []*campaigns.Changeset{},
+		},
+		"text match only": {
+			opts: GetRewirerMappingsOpts{
+				TextSearch:   []search.TextSearchTerm{{Term: "foo"}},
+				CurrentState: statePtr(campaigns.ChangesetStateMerged),
+			},
+			want: []*campaigns.Changeset{},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			tc.opts.CampaignSpecID = newCampaignSpec.ID
+			tc.opts.CampaignID = campaign.ID
+			mappings, err := s.GetRewirerMappings(ctx, tc.opts)
+			if err != nil {
+				t.Errorf("unexpected error: %+v", err)
+			}
+
+			have := []int64{}
+			for _, mapping := range mappings {
+				have = append(have, mapping.ChangesetID)
+			}
+
+			want := []int64{}
+			for _, changeset := range tc.want {
+				want = append(want, changeset.ID)
+			}
+
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Errorf("unexpected changesets (-have +want):\n%s", diff)
+			}
+		})
+	}
+}
+
 func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
 	repoStore := database.ReposWith(s)
 	esStore := database.ExternalServicesWith(s)

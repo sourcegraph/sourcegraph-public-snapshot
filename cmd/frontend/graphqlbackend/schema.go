@@ -1581,6 +1581,14 @@ type CampaignSpec implements Node {
         Search for changesets matching this query. Queries may include quoted substrings to match phrases, and words may be preceded by - to negate them.
         """
         search: String
+        """
+        Search for changesets that are currently in this state.
+        """
+        currentState: ChangesetState
+        """
+        Search for changesets that will have the given action performed.
+        """
+        action: ChangesetSpecOperation
     ): ChangesetApplyPreviewConnection!
 
     """
