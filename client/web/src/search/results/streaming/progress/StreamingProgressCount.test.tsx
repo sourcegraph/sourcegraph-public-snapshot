@@ -57,4 +57,22 @@ describe('StreamingProgressCount', () => {
 
         expect(mount(<StreamingProgressCount state="complete" progress={progress} />)).toMatchSnapshot()
     })
+
+    it('should render correctly for limithit', () => {
+        const progress: Progress = {
+            durationMs: 1250,
+            matchCount: 123,
+            repositoriesCount: 500,
+            skipped: [
+                {
+                    reason: 'document-match-limit',
+                    title: 'match limit',
+                    message: 'match limit',
+                    severity: 'warn',
+                },
+            ],
+        }
+
+        expect(mount(<StreamingProgressCount state="complete" progress={progress} />)).toMatchSnapshot()
+    })
 })
