@@ -1287,10 +1287,7 @@ const SiteSchemaJSON = `{
           "enum": ["cloudkms", "noop"]
         }
       },
-      "oneOf": [
-        { "$ref":  "#/definitions/CloudKMSEncryptionKey" },
-        { "$ref":  "#/definitions/NoOpEncryptionKey" }
-      ],
+      "oneOf": [{ "$ref": "#/definitions/CloudKMSEncryptionKey" }, { "$ref": "#/definitions/NoOpEncryptionKey" }],
       "!go": {
         "taggedUnionType": true
       }
