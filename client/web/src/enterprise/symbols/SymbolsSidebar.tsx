@@ -1,6 +1,6 @@
 import React from 'react'
 import { Symbol } from './SymbolPage'
-import { RepositoryFields } from '../../graphql-operations'
+import { RepositoryFields, SymbolKind, SymbolTag } from '../../graphql-operations'
 import { NavLink } from 'react-router-dom'
 import { SymbolIcon } from '../../../../shared/src/symbols/SymbolIcon'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -24,15 +24,24 @@ export const SymbolsSidebar: React.FunctionComponent<Props> = ({ containerSymbol
         <ItemList level={0} symbols={[containerSymbol]} repo={repo} />
     )
 
-function urlForSymbol(symbol: Symbol, repo: RepositoryFields): string {
+export function urlForSymbol(symbol: SymbolItem, repo: RepositoryFields): string {
     // TODO(beyang): this is a hack
     return `/${repo.name}/-/docs/${symbol.id}`
 }
 
 interface ItemListProps {
     level: number
-    symbols: Symbol[]
+    symbols: SymbolItem[]
     repo: RepositoryFields
+}
+
+interface SymbolItem {
+    id: string
+    text: string
+    detail: string
+    kind: SymbolKind
+    tags: Array<SymbolTag>
+    children?: SymbolItem[]
 }
 
 export const ItemList: React.FunctionComponent<ItemListProps> = ({ level, symbols, repo }) => {
