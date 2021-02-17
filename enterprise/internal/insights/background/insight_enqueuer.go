@@ -49,6 +49,8 @@ func newInsightEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, s
 	), operation)
 }
 
+const queryJobOffsetTime = 30 * time.Second
+
 // discoverAndEnqueueInsights discovers insights defined in the given setting store from user/org/global
 // settings and enqueues them to be executed and have insights recorded.
 func discoverAndEnqueueInsights(
@@ -88,7 +90,7 @@ func discoverAndEnqueueInsights(
 				continue // TODO(slimsag): future: add support for webhook insights
 			}
 			processAfter := now().Add(offset)
-			offset += 30 * time.Second
+			offset += queryJobOffsetTime
 			err = enqueueQueryRunnerJob(ctx, &queryrunner.Job{
 				SeriesID:     seriesID,
 				SearchQuery:  series.Search,
