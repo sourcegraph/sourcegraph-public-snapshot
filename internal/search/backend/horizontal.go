@@ -53,9 +53,8 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 			}
 
 			mu.Lock()
-			defer mu.Unlock()
-
 			sr.Files = dedupper.Dedup(sr.Files)
+			mu.Unlock()
 			streamer.Send(sr)
 
 			return nil
