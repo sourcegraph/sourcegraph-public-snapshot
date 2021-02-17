@@ -121,8 +121,8 @@ export function parseSearchURL(
         finalQuery = caseSensitive ? `${finalQuery} case:yes` : finalQuery
     }
 
-    if (appendContextFilter && searchContextSpec && !isContextFilterInQuery(finalQuery)) {
-        finalQuery = `context:${searchContextSpec} ${finalQuery}`
+    if (appendContextFilter) {
+        finalQuery = appendContextFilterToQuery(finalQuery, searchContextSpec)
     }
 
     return {
@@ -132,6 +132,10 @@ export function parseSearchURL(
         versionContext: parseSearchURLVersionContext(urlSearchQuery),
         searchContextSpec,
     }
+}
+
+export function appendContextFilterToQuery(query: string, searchContextSpec: string | undefined): string {
+    return !isContextFilterInQuery(query) && searchContextSpec ? `context:${searchContextSpec} ${query}` : query
 }
 
 export function repoFilterForRepoRevision(repoName: string, globbing: boolean, revision?: string): string {
@@ -246,16 +250,16 @@ export function resolveVersionContext(
     return versionContext
 }
 
+export function isSearchContextSpecAvailable(spec: string, availableSearchContexts: ISearchContext[]): boolean {
+    return availableSearchContexts.map(item => item.spec).includes(spec)
+}
+
 export function resolveSearchContextSpec(
     spec: string,
     availableSearchContexts: ISearchContext[],
     defaultSpec: string
 ): string {
-    if (availableSearchContexts.map(item => item.spec).includes(spec)) {
-        return spec
-    }
-
-    return defaultSpec
+    return isSearchContextSpecAvailable(spec, availableSearchContexts) ? spec : defaultSpec
 }
 
 export function isContextFilterInQuery(query: string): boolean {

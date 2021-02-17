@@ -42,6 +42,8 @@ import {
     MutableVersionContextProps,
     parseSearchURL,
     SearchContextProps,
+    isSearchContextSpecAvailable,
+    appendContextFilterToQuery,
 } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -54,7 +56,7 @@ import { SurveyToast } from './marketing/SurveyToast'
 import { ThemeProps } from '../../shared/src/theme'
 import { ThemePreferenceProps } from './theme'
 import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_SHOW_HELP } from './keyboardShortcuts/keyboardShortcuts'
-import { QueryState } from './search/helpers'
+import { QueryState, submitSearch } from './search/helpers'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { Settings } from './schema/settings.schema'
@@ -148,11 +150,13 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
 
     // Update parsedSearchQuery, patternType, caseSensitivity, versionContext, and selectedSearchContextSpec based on current URL
     const {
+        history,
         parsedSearchQuery: currentQuery,
         patternType: currentPatternType,
         caseSensitive: currentCaseSensitive,
         versionContext: currentVersionContext,
         selectedSearchContextSpec,
+        availableSearchContexts,
         location,
         setParsedSearchQuery,
         setPatternType,
@@ -183,11 +187,31 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 setVersionContext(versionContext)
             }
 
+            // If a user navigates to a search url with a context parameter containing an unavailable
+            // search context, we add it to the query and resubmit the search
+            const shouldAppendSearchContextSpecToQuery =
+                typeof searchContextSpec !== 'undefined' &&
+                availableSearchContexts.length > 0 &&
+                !isSearchContextSpecAvailable(searchContextSpec, availableSearchContexts)
+
+            if (shouldAppendSearchContextSpecToQuery) {
+                submitSearch({
+                    history,
+                    query: appendContextFilterToQuery(query, searchContextSpec),
+                    patternType: currentPatternType,
+                    caseSensitive: currentCaseSensitive,
+                    selectedSearchContextSpec: searchContextSpec,
+                    source: 'nav',
+                    versionContext: currentVersionContext,
+                })
+            }
+
             if (searchContextSpec !== selectedSearchContextSpec) {
                 setSelectedSearchContextSpec(searchContextSpec || '')
             }
         }
     }, [
+        history,
         caseSensitive,
         currentCaseSensitive,
         currentPatternType,
@@ -203,6 +227,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         versionContext,
         searchContextSpec,
         setSelectedSearchContextSpec,
+        availableSearchContexts,
     ])
 
     // Hack! Hardcode these routes into cmd/frontend/internal/app/ui/router.go

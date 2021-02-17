@@ -332,10 +332,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
 
         this.subscriptions.add(
             fetchSearchContexts.subscribe(contexts => {
-                const parsedSearchURL = parseSearchURL(window.location.search)
-                this.setState({ availableSearchContexts: contexts }, () => {
-                    this.setSelectedSearchContextSpec(parsedSearchURL.searchContextSpec || '')
-                })
+                this.setState({ availableSearchContexts: contexts })
             })
         )
 

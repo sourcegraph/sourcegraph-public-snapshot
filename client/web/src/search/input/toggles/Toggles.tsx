@@ -8,7 +8,7 @@ import {
     CaseSensitivityProps,
     CopyQueryButtonProps,
     SearchContextProps,
-    isContextFilterInQuery,
+    appendContextFilterToQuery,
 } from '../..'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
 import { submitSearch } from '../../helpers'
@@ -39,15 +39,12 @@ export const getFullQuery = (
     searchContextSpec: string,
     caseSensitive: boolean,
     patternType: SearchPatternType
-): string =>
-    [
-        searchContextSpec && !isContextFilterInQuery(query) ? `context:${searchContextSpec}` : '',
-        query,
-        `patternType:${patternType}`,
-        caseSensitive ? 'case:yes' : '',
-    ]
+): string => {
+    const finalQuery = [query, `patternType:${patternType}`, caseSensitive ? 'case:yes' : '']
         .filter(queryPart => !!queryPart)
         .join(' ')
+    return appendContextFilterToQuery(finalQuery, searchContextSpec)
+}
 
 /**
  * The toggles displayed in the query input.

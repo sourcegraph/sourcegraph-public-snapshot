@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { CaseSensitivityProps, isContextFilterInQuery, PatternTypeProps, SearchContextProps } from '..'
 import { Dropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { SearchContextMenu } from './SearchContextMenu'
-import { submitSearch } from '../helpers'
+import { SubmitSearchParameters } from '../helpers'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 
 export interface SearchContextDropdownProps
@@ -12,6 +12,7 @@ export interface SearchContextDropdownProps
         Pick<PatternTypeProps, 'patternType'>,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
         VersionContextProps {
+    submitSearch: (args: SubmitSearchParameters) => void
     query: string
     history: H.History
 }
@@ -25,6 +26,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         query,
         selectedSearchContextSpec,
         setSelectedSearchContextSpec,
+        submitSearch,
     } = props
 
     const [isOpen, setIsOpen] = useState(false)
@@ -47,11 +49,9 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                 caseSensitive,
                 selectedSearchContextSpec,
                 versionContext,
-                activation: undefined,
-                searchParameters: [],
             })
         },
-        [caseSensitive, history, query, patternType, versionContext]
+        [submitSearch, caseSensitive, history, query, patternType, versionContext]
     )
 
     const selectSearchContextSpec = useCallback(
@@ -70,9 +70,14 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                 a11y={false} /* Override default keyboard events in reactstrap */
             >
                 <DropdownToggle
-                    className={classNames('search-context-dropdown__button', 'dropdown-toggle', {
-                        'search-context-dropdown__button--open': isOpen,
-                    })}
+                    className={classNames(
+                        'search-context-dropdown__button',
+                        'dropdown-toggle',
+                        'test-search-context-dropdown',
+                        {
+                            'search-context-dropdown__button--open': isOpen,
+                        }
+                    )}
                     color="link"
                     disabled={isDisabled}
                     data-tooltip={isDisabled ? 'Overridden by query' : ''}
