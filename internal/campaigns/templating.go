@@ -250,7 +250,7 @@ func parseGitStatus(out []byte) (StepChanges, error) {
 	result := StepChanges{}
 
 	stripped := strings.TrimSpace(string(out))
-	if len(stripped) == 0 {
+	if stripped == "" {
 		return result, nil
 	}
 

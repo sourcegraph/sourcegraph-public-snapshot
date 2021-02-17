@@ -50,7 +50,7 @@ func demo(out *output.Output, duration time.Duration) {
 		defer wg.Done()
 
 		i := 0
-		for _ = range ticker.C {
+		for range ticker.C {
 			i += 1
 			if i > 20 {
 				return
@@ -68,7 +68,7 @@ func demo(out *output.Output, duration time.Duration) {
 
 		start := time.Now()
 		until := start.Add(duration)
-		for _ = range ticker.C {
+		for range ticker.C {
 			now := time.Now()
 			if now.After(until) {
 				return
@@ -91,13 +91,13 @@ func demo(out *output.Output, duration time.Duration) {
 		defer pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Ticker done!"))
 
 		until := time.Now().Add(duration)
-		for _ = range ticker.C {
+		for range ticker.C {
 			now := time.Now()
 			if now.After(until) {
 				return
 			}
 
-			pending.Updatef("Waiting for another %s", until.Sub(time.Now()))
+			pending.Updatef("Waiting for another %s", time.Until(until))
 		}
 	}()
 
@@ -123,7 +123,7 @@ func demoProgressWithBars(out *output.Output, duration time.Duration) {
 		defer wg.Done()
 
 		i := 0
-		for _ = range ticker.C {
+		for range ticker.C {
 			i += 1
 			if i > 10 {
 				return
@@ -141,7 +141,7 @@ func demoProgressWithBars(out *output.Output, duration time.Duration) {
 
 		start := time.Now()
 		until := start.Add(duration)
-		for _ = range ticker.C {
+		for range ticker.C {
 			now := time.Now()
 			if now.After(until) {
 				return

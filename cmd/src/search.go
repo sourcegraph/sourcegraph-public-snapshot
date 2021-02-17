@@ -511,9 +511,7 @@ var searchTemplateFuncs = map[string]interface{}{
 	"searchHighlightPreview": func(preview interface{}) string {
 		return searchHighlightPreview(preview, "", "")
 	},
-	"searchHighlightDiffPreview": func(diffPreview interface{}) string {
-		return searchHighlightDiffPreview(diffPreview)
-	},
+	"searchHighlightDiffPreview": searchHighlightDiffPreview,
 	"searchMaxRepoNameLength": func(results []map[string]interface{}) int {
 		max := 0
 		for _, r := range results {
@@ -526,12 +524,8 @@ var searchTemplateFuncs = map[string]interface{}{
 		}
 		return max
 	},
-	"htmlToPlainText": func(input string) string {
-		return htmlToPlainText(input)
-	},
-	"buildVersionHasNewSearchInterface": func(input string) bool {
-		return buildVersionHasNewSearchInterface(input)
-	},
+	"htmlToPlainText":                   htmlToPlainText,
+	"buildVersionHasNewSearchInterface": buildVersionHasNewSearchInterface,
 	"renderResult": func(searchResult map[string]interface{}) string {
 		searchResultBody := searchResult["body"].(map[string]interface{})
 		html := searchResultBody["html"].(string)

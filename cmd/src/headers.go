@@ -29,7 +29,7 @@ func parseAdditionalHeadersFromMap(environ []string) map[string]string {
 		}
 
 		// Ensure we have a non-empty value
-		if len(parts[1]) == 0 {
+		if parts[1] == "" {
 			continue
 		}
 

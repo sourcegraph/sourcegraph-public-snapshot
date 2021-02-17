@@ -308,7 +308,7 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 			// add it to the list of specs that are displayed to the user and
 			// send to the server. Instead, we can just report that the task is
 			// complete and move on.
-			if len(result.Diff) == 0 {
+			if result.Diff == "" {
 				x.updateTaskStatus(task, func(status *TaskStatus) {
 					status.Cached = true
 					status.FinishedAt = time.Now()
@@ -398,7 +398,7 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 
 	// If the steps didn't result in any diff, we don't need to add it to the
 	// list of specs that are displayed to the user and send to the server.
-	if len(result.Diff) == 0 {
+	if result.Diff == "" {
 		return
 	}
 
