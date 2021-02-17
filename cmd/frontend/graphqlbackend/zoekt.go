@@ -355,7 +355,9 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 					fileLimitHit = true
 					limitHit = true
 				}
+				mu.Lock()
 				repo, inputRevs, ok := getRepoInputRev(&file)
+				mu.Unlock()
 				if !ok {
 					continue
 				}
