@@ -26,8 +26,7 @@ type HorizontalSearcher struct {
 	clients map[string]StreamSearcher // addr -> client
 }
 
-// StreamSearch does a search which merges the stream from every endpoint in
-// Map. The channel needs to be read until closed.
+// StreamSearch does a search which merges the stream from every endpoint in Map.
 func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, streamer ZoektStreamer) error {
 	clients, err := s.searchers()
 	if err != nil {
@@ -76,10 +75,7 @@ func AggregateStreamSearch(ctx context.Context, streamSearch func(context.Contex
 	start := time.Now()
 
 	var mu sync.Mutex
-	aggregate := &zoekt.SearchResult{
-		RepoURLs:      map[string]string{},
-		LineFragments: map[string]string{},
-	}
+	aggregate := &zoekt.SearchResult{}
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -87,18 +83,8 @@ func AggregateStreamSearch(ctx context.Context, streamSearch func(context.Contex
 	err := streamSearch(ctx, q, opts, ZoektStreamFunc(func(event *zoekt.SearchResult) {
 		mu.Lock()
 		defer mu.Unlock()
-
 		aggregate.Files = append(aggregate.Files, event.Files...)
 		aggregate.Stats.Add(event.Stats)
-
-		if len(event.Files) > 0 {
-			for k, v := range event.RepoURLs {
-				aggregate.RepoURLs[k] = v
-			}
-			for k, v := range event.LineFragments {
-				aggregate.LineFragments[k] = v
-			}
-		}
 	}))
 	if err != nil {
 		return nil, err
