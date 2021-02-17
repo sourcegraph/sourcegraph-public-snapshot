@@ -119,7 +119,7 @@ func repoRevsToSearchResultResolver(ctx context.Context, repos []*search.Reposit
 			rr := NewRepositoryResolver(r.Repo.ToRepo())
 			rr.icon = repoIcon
 			rr.rev = rev
-			results = append(results, &RepositoryResolver{innerRepo: r.Repo.ToRepo(), icon: repoIcon, rev: rev})
+			results = append(results, rr)
 		}
 	}
 	return results
