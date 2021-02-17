@@ -28,6 +28,7 @@ import { UnpublishedNotice } from './UnpublishedNotice'
 import { SupersedingCampaignSpecAlert } from './SupersedingCampaignSpecAlert'
 import { CampaignsIcon } from '../icons'
 import { PageHeader } from '../../../components/PageHeader'
+import { ClosedNotice } from './ClosedNotice'
 
 export interface CampaignDetailsPageProps
     extends ThemeProps,
@@ -135,6 +136,7 @@ export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPagePro
                 className="test-campaign-details-page mb-3"
             />
             <SupersedingCampaignSpecAlert spec={campaign.currentSpec.supersedingCampaignSpec} />
+            <ClosedNotice closedAt={campaign.closedAt} className="mb-3" />
             <UnpublishedNotice
                 unpublished={campaign.changesetsStats.unpublished}
                 total={campaign.changesetsStats.total}
