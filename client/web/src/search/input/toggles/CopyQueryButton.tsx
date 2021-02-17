@@ -12,6 +12,7 @@ import { KeyboardShortcut } from '../../../../../shared/src/keyboardShortcuts'
 interface Props {
     fullQuery: string
     className?: string
+    isMacPlatform: boolean
     keyboardShortcutForFullCopy: KeyboardShortcut
 }
 
@@ -41,7 +42,7 @@ export const CopyQueryButton: React.FunctionComponent<Props> = (props: Props) =>
         )
     )
 
-    const copyFullQueryTooltip = `Copy full query\n${window.navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+⇧+C`
+    const copyFullQueryTooltip = `Copy full query\n${props.isMacPlatform ? '⌘' : 'Ctrl'}+⇧+C`
     return (
         <>
             <button

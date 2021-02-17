@@ -1,4 +1,5 @@
 import { KeyboardShortcut } from '../../../shared/src/keyboardShortcuts'
+import { isMacPlatform } from '../util'
 
 export const KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE: KeyboardShortcut = {
     id: 'commandPalette',
@@ -28,10 +29,7 @@ export const KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR: KeyboardShortcut = {
 export const KEYBOARD_SHORTCUT_COPY_FULL_QUERY: KeyboardShortcut = {
     id: 'copyFullQuery',
     title: 'Copy full query',
-    keybindings: [
-        { held: ['Control', 'Shift'], ordered: ['c'] },
-        { held: ['Meta', 'Shift'], ordered: ['c'] },
-    ],
+    keybindings: [{ held: [isMacPlatform ? 'Meta' : 'Control', 'Shift'], ordered: ['c'] }],
 }
 
 /**
