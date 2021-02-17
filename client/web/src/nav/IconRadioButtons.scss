@@ -11,11 +11,10 @@
         width: 2.25rem;
         margin-bottom: 0;
         border-radius: 50%;
-
         transition: box-shadow 50ms ease-in;
 
         &:focus-within {
-            box-shadow: inset 0 0 0 3px rgba($primary, .75);
+            box-shadow: inset 0 0 0 3px rgba($primary, 0.75);
             transition-delay: 0;
         }
     }
