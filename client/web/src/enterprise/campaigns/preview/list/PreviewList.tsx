@@ -41,6 +41,8 @@ export const PreviewList: React.FunctionComponent<Props> = ({
 }) => {
     const [filters, setFilters] = useState<PreviewFilters>({
         search: null,
+        currentState: null,
+        action: null,
     })
 
     const queryChangesetApplyPreviewConnection = useCallback(
@@ -50,8 +52,10 @@ export const PreviewList: React.FunctionComponent<Props> = ({
                 after: args.after ?? null,
                 campaignSpec: campaignSpecID,
                 search: filters.search,
+                currentState: filters.currentState,
+                action: filters.action,
             }),
-        [campaignSpecID, filters.search, queryChangesetApplyPreview]
+        [campaignSpecID, filters.search, filters.currentState, filters.action, queryChangesetApplyPreview]
     )
 
     return (
@@ -83,7 +87,13 @@ export const PreviewList: React.FunctionComponent<Props> = ({
                 headComponent={PreviewListHeader}
                 cursorPaging={true}
                 noSummaryIfAllNodesVisible={true}
-                emptyElement={filters.search ? <EmptyPreviewSearchElement /> : <EmptyPreviewListElement />}
+                emptyElement={
+                    filters.search || filters.currentState || filters.action ? (
+                        <EmptyPreviewSearchElement />
+                    ) : (
+                        <EmptyPreviewListElement />
+                    )
+                }
             />
         </>
     )

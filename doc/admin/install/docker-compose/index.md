@@ -4,11 +4,32 @@ If you need scalability and high-availability beyond what a single-node [Docker 
 
 If you want to migrate from the single-container server (`sourcegraph/server`) to the Docker Compose deployment, refer to this [migration guide](./migrate.md).
 
----
+## Requirements
+
+- [Sourcegraph Enterprise license](configure.md#add-license-key). _You can run through these instructions without one, but you must obtain a license for instances of more than 10 users._
+- [Docker Compose](https://docs.docker.com/compose/).
+- A dedicated host with for your deployment.
+  - Use the resource estimator to ensure you provision [enough capacity](../resource_estimator.md)
+  - Sourcegraph requires SSD backed storage.
+
+> WARNING: You need to create a [fork of our deployment reference.](configure.md#fork-this-repository)
+### Storage
+
+The [Sourcegraph Docker Compose definition](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) uses [Docker volumes](https://docs.docker.com/storage/volumes/) to store its data. These volumes are stored at `/var/lib/docker/volumes` by [default on Linux](https://docs.docker.com/storage/#choose-the-right-type-of-mount).
+
+### Note About Windows Installation
+
+> WARNING: Running Sourcegraph on Windows is not supported for production deployments.
+
+The Docker Compose installation requires a minimum of 8 CPU cores (logical) on the host machine in order to complete successfully. If using the Docker for Windows app, the default CPU count is limited to 2 which will result in errors during installation. You can go into the Docker app Settings->Resources window to increase the CPU count to > 8 to resolve this issue.
+
+## Steps
 
 It takes less than 5 minutes to run and install Sourcegraph using Docker Compose:
 
 ```bash
+# 🚨 The master branch tracks development. Use the branch of this repository corresponding to the version of Sourcegraph you wish to deploy, e.g. git checkout v3.24.1
+
 git clone https://github.com/sourcegraph/deploy-sourcegraph-docker
 cd deploy-sourcegraph-docker/docker-compose
 SOURCEGRAPH_VERSION="v3.24.1"
@@ -22,33 +43,6 @@ For next steps and further configuration options, visit the [site administration
 
 > NOTE: If you get stuck or need help, [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide), [tweet (@srcgraph)](https://twitter.com/srcgraph) or [email](mailto:support@sourcegraph.com?subject=Sourcegraph%20quickstart%20guide).
 
-### Note About Windows Installation
-The docker compose installation requires a minimum of 8 CPU cores (logical) on the host machine in order to complete successfully. If using the Docker for Windows app, the default CPU count is only 2 which will result in errors during installation. You can go into the docker app settings->resources window to increase the CPU count to > 8 to resolve this issue.
-
-## (optional, recommended) Store customizations in a fork
-
-We **strongly** recommend that you create your own fork of [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/) to track customizations to the [Sourcegraph Docker Compose yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml). This will make upgrades far easier.
-
-* Fork [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/)
-  * The fork can be public **unless** you plan to store secrets (SSL certificates, external Postgres credentials, etc.) in the repository itself.
-
-* Create a `release` branch (to track all of your customizations to Sourcegraph. When you upgrade Sourcegraph's Docker Compose definition, you will merge upstream into this branch.
-
-```bash
-SOURCEGRAPH_VERSION="v3.24.1"
-git checkout $SOURCEGRAPH_VERSION -b release
-```
-
-* Commit customizations to the [Sourcegraph Docker Compose yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) to your `release` branch
-
-## Storage
-
-The [Sourcegraph Docker Compose definition](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) uses [Docker volumes](https://docs.docker.com/storage/volumes/) to store its data. These volumes are stored at `/var/lib/docker/volumes` by [default on Linux](https://docs.docker.com/storage/#choose-the-right-type-of-mount).
-
-## Resource estimator
-
-Use the [resource estimator](../resource_estimator.md) to find a good starting point for your deployment.
-
 ## Cloud installation guides
 
 Cloud specific Sourcegraph installation guides for AWS, Google Cloud and Digital Ocean.
@@ -56,17 +50,3 @@ Cloud specific Sourcegraph installation guides for AWS, Google Cloud and Digital
 - [Install Sourcegraph with Docker Compose on AWS](../../install/docker-compose/aws.md)
 - [Install Sourcegraph with Docker Compose on Google Cloud](../../install/docker-compose/google_cloud.md)
 - [Install Sourcegraph with Docker Compose on DigitalOcean](../../install/docker-compose/digitalocean.md)
-
-## Insiders build
-
-To test new development builds of Sourcegraph (triggered by commits to `main`), change all `index.docker.io/sourcegraph/*` Docker image semver tags in [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) to `insiders` (e.g., `index.docker.io/sourcegraph/frontend:1.2.3` to `index.docker.io/sourcegraph/frontend:insiders`).
-
-> WARNING: `insiders` builds may be unstable, so back up Sourcegraph's data and config beforehand.
-
-To keep this up to date, run `docker-compose pull` to pull in the latest images, and run `docker-compose restart` to restart all container to access new changes.
-
-## Next steps
-
-- [Configuring Sourcegraph](../../config/index.md)
-- [Upgrading Sourcegraph](../../updates.md)
-- [Site administration documentation](../../index.md)

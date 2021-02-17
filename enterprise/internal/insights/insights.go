@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
@@ -17,6 +18,13 @@ import (
 
 // IsEnabled tells if code insights are enabled or not.
 func IsEnabled() bool {
+	if envvar.SourcegraphDotComMode() {
+		// Explicitly enabled for Sourcegraph.com currently, but not customer/user deployments.
+		if v, _ := strconv.ParseBool(os.Getenv("DISABLE_CODE_INSIGHTS")); v {
+			// Unless it's disabled / we need an escape hatch.
+			return false
+		}
+	}
 	if !conf.IsDev(conf.DeployType()) {
 		// Code Insights is not yet deployed to non-dev/testing instances. We don't yet have
 		// TimescaleDB in those deployments. https://github.com/sourcegraph/sourcegraph/issues/17218

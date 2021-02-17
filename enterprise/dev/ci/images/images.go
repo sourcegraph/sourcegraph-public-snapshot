@@ -55,6 +55,7 @@ var SourcegraphDockerImages = []string{
 	"jaeger-agent",
 	"jaeger-all-in-one",
 	"codeintel-db",
+	"codeinsights-db",
 	"minio",
 	"postgres_exporter",
 }
