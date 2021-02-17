@@ -1,4 +1,4 @@
-package keyring
+package encryption
 
 import "context"
 

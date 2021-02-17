@@ -12,10 +12,10 @@ import (
 	kmspb "google.golang.org/genproto/googleapis/cloud/kms/v1"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
-	"github.com/sourcegraph/sourcegraph/internal/keyring"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 )
 
-func NewKey(ctx context.Context, keyName string) (keyring.Key, error) {
+func NewKey(ctx context.Context, keyName string) (encryption.Key, error) {
 	client, err := kms.NewKeyManagementClient(ctx)
 	if err != nil {
 		return nil, err
@@ -33,7 +33,7 @@ type Key struct {
 
 // Decrypt a secret, it must have been encrypted with the same Key
 // encrypted secrets are a base64 encoded string containing the key name and a checksum
-func (k *Key) Decrypt(ctx context.Context, cipherText []byte) (*keyring.Secret, error) {
+func (k *Key) Decrypt(ctx context.Context, cipherText []byte) (*encryption.Secret, error) {
 	buf, err := base64.StdEncoding.DecodeString(string(cipherText))
 	if err != nil {
 		return nil, err
@@ -60,7 +60,7 @@ func (k *Key) Decrypt(ctx context.Context, cipherText []byte) (*keyring.Secret, 
 	if int64(crc32Sum(res.Plaintext)) != res.PlaintextCrc32C.GetValue() {
 		return nil, errors.New("invalid checksum, either the wrong key was used, or the request was corrupted in transit")
 	}
-	s := keyring.NewSecret(string(res.Plaintext))
+	s := encryption.NewSecret(string(res.Plaintext))
 	return &s, nil
 }
 
