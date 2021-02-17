@@ -2,8 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react'
 import * as H from 'history'
 import { ChangesetReviewState, ChangesetCheckState, ChangesetState } from '../../../../graphql-operations'
 import { isValidChangesetState, isValidChangesetReviewState, isValidChangesetCheckState } from '../../utils'
-import classNames from 'classnames'
-import { upperFirst, lowerCase } from 'lodash'
+import { ChangesetFilter } from '../../ChangesetFilter'
 import { Form } from 'reactstrap'
 
 export interface ChangesetFilters {
@@ -135,34 +134,3 @@ export const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps
         </>
     )
 }
-
-export interface ChangesetFilterProps<T extends string> {
-    label: string
-    values: T[]
-    selected: T | undefined
-    onChange: (value: T | undefined) => void
-    className?: string
-}
-
-export const ChangesetFilter = <T extends string>({
-    label,
-    values,
-    selected,
-    onChange,
-    className,
-}: ChangesetFilterProps<T>): React.ReactElement<ChangesetFilterProps<T>> => (
-    <>
-        <select
-            className={classNames('form-control changeset-filter__dropdown', className)}
-            value={selected}
-            onChange={event => onChange((event.target.value ?? undefined) as T | undefined)}
-        >
-            <option value="">{label}</option>
-            {values.map(state => (
-                <option value={state} key={state}>
-                    {upperFirst(lowerCase(state))}
-                </option>
-            ))}
-        </select>
-    </>
-)

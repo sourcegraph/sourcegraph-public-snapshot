@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -20,6 +21,10 @@ func (r *insightSeriesResolver) Label() string { return r.series.Label }
 func (r *insightSeriesResolver) Points(ctx context.Context, args *graphqlbackend.InsightsPointsArgs) ([]graphqlbackend.InsightsDataPointResolver, error) {
 	var opts store.SeriesPointsOpts
 	opts.SeriesID = nil // TODO(slimsag): future: set opts.SeriesID to effective hash of r.series
+	if args.From == nil {
+		// Default to last 30d of data.
+		args.From = &graphqlbackend.DateTime{Time: time.Now().Add(-30 * 24 * time.Hour)}
+	}
 	if args.From != nil {
 		opts.From = &args.From.Time
 	}
