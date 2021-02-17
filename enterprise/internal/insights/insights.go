@@ -24,6 +24,7 @@ func IsEnabled() bool {
 			// Unless it's disabled / we need an escape hatch.
 			return false
 		}
+		return true
 	}
 	if !conf.IsDev(conf.DeployType()) {
 		// Code Insights is not yet deployed to non-dev/testing instances. We don't yet have
