@@ -6,11 +6,15 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
+
+// CurrentDocumentSchemaVersion is the schema version used for new lsif_data_documents rows.
+const CurrentDocumentSchemaVersion = 2
 
 func (s *Store) WriteMeta(ctx context.Context, bundleID int, meta MetaData) (err error) {
 	ctx, endObservation := s.operations.writeMeta.With(ctx, &err, observation.Args{LogFields: []log.Field{
@@ -42,7 +46,7 @@ func (s *Store) WriteDocuments(ctx context.Context, bundleID int, documents chan
 				return err
 			}
 
-			if err := inserter.Insert(ctx, bundleID, v.Path, data); err != nil {
+			if err := inserter.Insert(ctx, bundleID, v.Path, data, CurrentDocumentSchemaVersion, len(v.Document.Diagnostics)); err != nil {
 				return err
 			}
 		}
@@ -50,7 +54,7 @@ func (s *Store) WriteDocuments(ctx context.Context, bundleID int, documents chan
 		return nil
 	}
 
-	return withBatchInserter(ctx, s.Handle().DB(), "lsif_data_documents", []string{"dump_id", "path", "data"}, inserter)
+	return withBatchInserter(ctx, s.Handle().DB(), "lsif_data_documents", []string{"dump_id", "path", "data", "schema_version", "num_diagnostics"}, inserter)
 }
 
 func (s *Store) WriteResultChunks(ctx context.Context, bundleID int, resultChunks chan IndexedResultChunkData) (err error) {
