@@ -181,6 +181,9 @@ Referenced by:
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
+    "changesets_external_state_idx" btree (external_state)
+    "changesets_publication_state_idx" btree (publication_state)
+    "changesets_reconciler_state_idx" btree (reconciler_state)
 Check constraints:
     "changesets_campaign_ids_check" CHECK (jsonb_typeof(campaign_ids) = 'object'::text)
     "changesets_external_id_check" CHECK (external_id <> ''::text)
@@ -1454,6 +1457,9 @@ Indexes:
  owner_campaign_id | bigint  | 
  repo_name         | citext  | 
  changeset_name    | text    | 
+ external_state    | text    | 
+ publication_state | text    | 
+ reconciler_state  | text    | 
 
 ```
 
@@ -1466,7 +1472,10 @@ Indexes:
     changeset_specs.campaign_spec_id,
     changesets.owned_by_campaign_id AS owner_campaign_id,
     repo.name AS repo_name,
-    changeset_specs.title AS changeset_name
+    changeset_specs.title AS changeset_name,
+    changesets.external_state,
+    changesets.publication_state,
+    changesets.reconciler_state
    FROM ((changeset_specs
      LEFT JOIN changesets ON (((changesets.repo_id = changeset_specs.repo_id) AND (changesets.current_spec_id IS NOT NULL) AND (EXISTS ( SELECT 1
            FROM changeset_specs changeset_specs_1
@@ -1747,6 +1756,9 @@ Indexes:
  campaign_spec_id  | bigint  | 
  repo_name         | citext  | 
  changeset_name    | text    | 
+ external_state    | text    | 
+ publication_state | text    | 
+ reconciler_state  | text    | 
 
 ```
 
@@ -1758,7 +1770,10 @@ Indexes:
     changeset_specs.repo_id,
     changeset_specs.campaign_spec_id,
     repo.name AS repo_name,
-    COALESCE((changesets.metadata ->> 'Title'::text), (changesets.metadata ->> 'title'::text)) AS changeset_name
+    COALESCE((changesets.metadata ->> 'Title'::text), (changesets.metadata ->> 'title'::text)) AS changeset_name,
+    changesets.external_state,
+    changesets.publication_state,
+    changesets.reconciler_state
    FROM ((changeset_specs
      LEFT JOIN changesets ON (((changesets.repo_id = changeset_specs.repo_id) AND (changesets.external_id = changeset_specs.external_id))))
      JOIN repo ON ((changeset_specs.repo_id = repo.id)))

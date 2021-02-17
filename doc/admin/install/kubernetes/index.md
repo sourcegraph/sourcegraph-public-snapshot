@@ -8,20 +8,16 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
 
 ## Requirements
 
-- [Kubernetes](https://kubernetes.io/) v1.15 or later with an SSD storage class
+- [Sourcegraph Enterprise license](configure.md#add-license-key). _You can run through these instructions without one, but you must obtain a license for instances of more than 10 users._
+- [Kubernetes](https://kubernetes.io/) v1.15
+  - Verify that you have enough capacity by following our [resource allocation guidelines](scale.md)
+  - Sourcegraph requires an SSD backed storage class
   - [Cluster role administrator access](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) v1.15 or later
-- Access to server infrastructure on which you can create a Kubernetes cluster (see
-  [resource allocation guidelines](scale.md)).
-- [Sourcegraph Enterprise license](configure.md#add-license-key). You can run through these instructions without one, but you must obtain a license for instances of more than 10 users.
-- A valid domain name for your Sourcegraph instance ([to enable SSL/TLS](configure.md#configure-tlsssl))
-- A valid TLS certificate (whether from a trusted certificate authority such as Comodo, RapidSSL, or others, a self-signed certificate that can be distributed and installed across all users' machines, or the ability to use an existing reverse proxy that provides SSL termination for the connection)
-- Access tokens or other credentials to [connect to your code hosts of choice](../../external_service/index.md)
-- [Administrative access to your single sign-on (SSO) provider of choice](../../index.md)
 
+> WARNING: You need to create a [fork of our deployment reference.](configure.md#fork-this-repository)
 ## Steps
 
-- [Provision a Kubernetes cluster](k8s.md) on the infrastructure of your choice.
 - Make sure you have configured `kubectl` to [access your cluster](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/).
 
    - If you are using GCP, you'll need to give your user the ability to create roles in Kubernetes [(see GCP's documentation)](https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#prerequisites_for_using_role-based_access_control):
@@ -33,8 +29,12 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
 - Clone the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository and check out the version tag you wish to deploy.
 
    ```bash
-   # Go to https://github.com/sourcegraph/deploy-sourcegraph/tags and select the latest version tag
-   git clone https://github.com/sourcegraph/deploy-sourcegraph && cd deploy-sourcegraph && git checkout ${VERSION}
+   # 🚨 The master branch tracks development. Use the branch of this repository corresponding to the version of Sourcegraph you wish to deploy, e.g. git checkout 3.24
+
+   git clone https://github.com/sourcegraph/deploy-sourcegraph
+   cd deploy-sourcegraph
+   SOURCEGRAPH_VERSION="v3.24.1"
+   git checkout $SOURCEGRAPH_VERSION
    ```
 
 - Configure the `sourcegraph` storage class for the cluster by reading through ["Configure a storage class"](./configure.md#configure-a-storage-class).
@@ -108,3 +108,32 @@ manifests that cannot be installed otherwise.
 
 We also provide an [overlay](configure.md#non-privileged-overlay) that generates a version of the manifests that does not
 require cluster-admin privileges.
+
+## Cloud installation guides
+
+<div class="alert alert-info">
+
+**Security note:** If you intend to set this up as a production instance, we recommend you create the cluster in a VPC
+or other secure network that restricts unauthenticated access from the public Internet. You can later expose the
+necessary ports via an
+[Internet Gateway](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Internet_Gateway.html) or equivalent
+mechanism. Take care to secure your cluster in a manner that meets your organization's security requirements.
+
+</div>
+
+Follow the instructions linked in the table below to provision a Kubernetes cluster for the
+infrastructure provider of your choice, using the recommended node and list types in the
+table.
+
+> Note: Sourcegraph can run on any Kubernetes cluster, so if your infrastructure provider is not
+> listed, see the "Other" row. Pull requests to add rows for more infrastructure providers are
+> welcome!
+
+|Provider|Node type|Boot/ephemeral disk size|
+|--- |--- |--- |
+|Compute nodes| | |
+|[Amazon EKS (better than plain EC2)](eks.md)|m5.4xlarge|N/A|
+|[AWS EC2](https://kubernetes.io/docs/getting-started-guides/aws/)|m5.4xlarge|N/A|
+|[Google Kubernetes Engine (GKE)](https://cloud.google.com/kubernetes-engine/docs/quickstart)|n1-standard-16|100 GB (default)|
+|[Azure](azure.md)|D16 v3|100 GB (SSD preferred)|
+|[Other](https://kubernetes.io/docs/setup/pick-right-solution/)|16 vCPU, 60 GiB memory per node|100 GB (SSD preferred)|

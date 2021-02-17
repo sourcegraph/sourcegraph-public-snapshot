@@ -25,6 +25,9 @@ func Discover(ctx context.Context, settingStore SettingStore) ([]*schema.Insight
 		return nil, err
 	}
 	globalSettings, err := parseUserSettings(globalSettingsRaw)
+	if err != nil {
+		return nil, err
+	}
 	return globalSettings.Insights, nil
 }
 

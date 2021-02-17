@@ -1581,6 +1581,14 @@ type CampaignSpec implements Node {
         Search for changesets matching this query. Queries may include quoted substrings to match phrases, and words may be preceded by - to negate them.
         """
         search: String
+        """
+        Search for changesets that are currently in this state.
+        """
+        currentState: ChangesetState
+        """
+        Search for changesets that will have the given action performed.
+        """
+        action: ChangesetSpecOperation
     ): ChangesetApplyPreviewConnection!
 
     """
@@ -2481,6 +2489,10 @@ type InsightsSeries {
 
     """
     Data points over a time range (inclusive)
+
+    If no 'from' time range is specified, the last 30d of data is assumed.
+
+    If no 'to' time range is specified, the current point in time is assumed.
     """
     points(from: DateTime, to: DateTime): [InsightDataPoint!]!
 }
