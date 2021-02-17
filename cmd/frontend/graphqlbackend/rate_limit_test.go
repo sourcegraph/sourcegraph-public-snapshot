@@ -53,10 +53,11 @@ query{
       webhookURL
     }
   }
+  somethingElse
 }
 `,
 			want: queryCost{
-				FieldCount: 21,
+				FieldCount: 22,
 				MaxDepth:   3,
 			},
 		},
@@ -137,6 +138,171 @@ query StatusMessages {
 				MaxDepth:   2,
 			},
 		},
+		{
+			name: "Simple inline fragments",
+			query: `
+query{
+    __typename
+	... on Foo {
+         one
+         two
+     }
+     ... on Bar {
+         one
+     }
+}
+`,
+			want: queryCost{
+				FieldCount: 3,
+				MaxDepth:   2,
+			},
+		},
+		{
+			name: "Search query",
+			query: `
+query Search($query: String!, $version: SearchVersion!, $patternType: SearchPatternType!, $versionContext: String) {
+  search(
+    query: $query
+    version: $version
+    patternType: $patternType
+    versionContext: $versionContext
+  ) {
+    results {
+      __typename
+      limitHit
+      matchCount
+      approximateResultCount
+      missing {
+        name
+      }
+      cloning {
+        name
+      }
+      repositoriesCount
+      timedout {
+        name
+      }
+      indexUnavailable
+      dynamicFilters {
+        value
+        label
+        count
+        limitHit
+        kind
+      }
+      results {
+        __typename
+        ... on Repository {
+          id
+          name
+          label {
+            html
+          }
+          url
+          icon
+          detail {
+            html
+          }
+          matches {
+            url
+            body {
+              text
+              html
+            }
+            highlights {
+              line
+              character
+              length
+            }
+          }
+        }
+        ... on FileMatch {
+          file {
+            path
+            url
+            commit {
+              oid
+            }
+          }
+          repository {
+            name
+            url
+          }
+          revSpec {
+            __typename
+            ... on GitRef {
+              displayName
+              url
+            }
+            ... on GitRevSpecExpr {
+              expr
+              object {
+                commit {
+                  url
+                }
+              }
+            }
+            ... on GitObject {
+              abbreviatedOID
+              commit {
+                url
+              }
+            }
+          }
+          limitHit
+          symbols {
+            name
+            containerName
+            url
+            kind
+          }
+          lineMatches {
+            preview
+            lineNumber
+            offsetAndLengths
+          }
+        }
+        ... on CommitSearchResult {
+          label {
+            html
+          }
+          url
+          icon
+          detail {
+            html
+          }
+          matches {
+            url
+            body {
+              text
+              html
+            }
+            highlights {
+              line
+              character
+              length
+            }
+          }
+        }
+      }
+      alert {
+        title
+        description
+        proposedQueries {
+          description
+          query
+        }
+      }
+      elapsedMilliseconds
+    }
+  }
+}
+`,
+			want: queryCost{
+				FieldCount: 53,
+				MaxDepth:   9,
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			have, err := estimateQueryCost(tc.query, tc.variables)
@@ -144,7 +310,7 @@ query StatusMessages {
 				t.Fatal(err)
 			}
 			if diff := cmp.Diff(tc.want, *have); diff != "" {
-				t.Fatal(diff)
+				t.Errorf(diff)
 			}
 		})
 	}

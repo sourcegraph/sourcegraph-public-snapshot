@@ -52,6 +52,7 @@ func estimateQueryCost(query string, variables map[string]interface{}) (*queryCo
 		}
 	}
 
+	// Costs of fragment definitions
 	fragmentCosts := make(map[string]int)
 	for _, frag := range fragments {
 		name, cost, err := calcFragmentCost(frag)
@@ -88,18 +89,51 @@ func calcOperationCost(def ast.Node, fragmentCosts map[string]int, variables map
 	if fragmentCosts == nil {
 		fragmentCosts = make(map[string]int)
 	}
+	inlineFragmentCosts := make(map[string]int)
+	inlineFragmentDepth := 0
+
+	// limitStack keeps track of the limit as we increase and decrease our depth in
+	// the tree and encounter limit values
+	limitStack := make([]int, 0)
+	currentLimit := 1
+
 	fieldCount := 0
-	multiplier := 1
 	depth := 0
+	maxDepth := 0
+	multiplier := 1
+
+	pushLimit := func() {
+		multiplier = multiplier * currentLimit
+		limitStack = append(limitStack, currentLimit)
+		// Set limit back to 1 as we've already used it to increase our multiplier
+		currentLimit = 1
+	}
+	popLimit := func() {
+		if len(limitStack) == 0 {
+			return
+		}
+		currentLimit = limitStack[len(limitStack)-1]
+		limitStack = limitStack[:len(limitStack)-1]
+		multiplier = multiplier / currentLimit
+	}
 
 	v := &visitor.VisitorOptions{
 		Enter: func(p visitor.VisitFuncParams) (string, interface{}) {
 			switch node := p.Node.(type) {
 			case *ast.SelectionSet:
 				depth++
+				if depth > maxDepth {
+					maxDepth = depth
+				}
+				pushLimit()
 			case *ast.Field:
 				// Ignore the "nodes" field as it does not appear in the result
 				if node.Name.Value == "nodes" {
+					return visitor.ActionNoChange, nil
+				}
+				if inlineFragmentDepth > 0 {
+					// We don't count fields inside of inline fragments as we need to count all fragments
+					// first to pick the largest one
 					return visitor.ActionNoChange, nil
 				}
 				fieldCount += multiplier
@@ -121,7 +155,7 @@ func calcOperationCost(def ast.Node, fragmentCosts map[string]int, variables map
 				if limit <= 0 {
 					return visitor.ActionNoChange, nil
 				}
-				multiplier *= limit
+				currentLimit = limit
 			case *ast.IntValue:
 				// We may have a limit
 				if !shouldCheckParam(p) {
@@ -135,7 +169,7 @@ func calcOperationCost(def ast.Node, fragmentCosts map[string]int, variables map
 				if limit <= 0 {
 					return visitor.ActionNoChange, nil
 				}
-				multiplier *= limit
+				currentLimit = limit
 			case *ast.FragmentSpread:
 				fragmentCost, ok := fragmentCosts[node.Name.Value]
 				if !ok {
@@ -143,6 +177,26 @@ func calcOperationCost(def ast.Node, fragmentCosts map[string]int, variables map
 					return visitor.ActionBreak, nil
 				}
 				fieldCount += fragmentCost * multiplier
+			case *ast.InlineFragment:
+				inlineFragmentDepth++
+				// We calculate inline fragment costs and store them
+				var fragCost *queryCost
+				fragCost, err = calcOperationCost(node.SelectionSet, fragmentCosts, variables)
+				if err != nil {
+					err = errors.Wrap(err, "calculating inline fragment cost")
+					return visitor.ActionBreak, nil
+				}
+				inlineFragmentCosts[node.TypeCondition.Name.Value] = fragCost.FieldCount * multiplier
+			}
+			return visitor.ActionNoChange, nil
+		},
+		Leave: func(p visitor.VisitFuncParams) (string, interface{}) {
+			switch p.Node.(type) {
+			case *ast.SelectionSet:
+				depth--
+				popLimit()
+			case *ast.InlineFragment:
+				inlineFragmentDepth--
 			}
 			return visitor.ActionNoChange, nil
 		},
@@ -150,9 +204,17 @@ func calcOperationCost(def ast.Node, fragmentCosts map[string]int, variables map
 
 	_ = visitor.Visit(def, v, nil)
 
+	// We also need to pick the largest inline fragment in our tree
+	var maxInlineFragmentCost int
+	for _, v := range inlineFragmentCosts {
+		if v > maxInlineFragmentCost {
+			maxInlineFragmentCost = v
+		}
+	}
+
 	return &queryCost{
-		FieldCount: fieldCount,
-		MaxDepth:   depth,
+		FieldCount: fieldCount + maxInlineFragmentCost,
+		MaxDepth:   maxDepth,
 	}, err
 }
 
@@ -226,13 +288,4 @@ func shouldCheckParam(p visitor.VisitFuncParams) bool {
 		return false
 	}
 	return true
-}
-
-func getLimit(x interface{}) (int, bool) {
-	switch v := x.(type) {
-	case int:
-		return v, true
-	default:
-		return 0, false
-	}
 }
