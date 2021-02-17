@@ -62,7 +62,7 @@ const FeedbackPromptContent: React.FunctionComponent<Props> = ({ closePrompt }) 
 
     const handleSubmit = useCallback((): void => {
         if (rating) {
-            return submitFeedback({
+            submitFeedback({
                 input: { score: rating, feedback: text, currentURL: window.location.href },
             })
         }
