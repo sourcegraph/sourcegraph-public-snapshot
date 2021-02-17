@@ -135,8 +135,8 @@ func calcOperationCost(def ast.Node, fragmentCosts map[string]int, variables map
 				}
 				pushLimit()
 			case *ast.Field:
-				// Ignore the "nodes" field as it does not appear in the result
 				if node.Name.Value == "nodes" {
+					// Ignore the "nodes" field as it does not appear in the result
 					return visitor.ActionNoChange, nil
 				}
 				if inlineFragmentDepth > 0 {

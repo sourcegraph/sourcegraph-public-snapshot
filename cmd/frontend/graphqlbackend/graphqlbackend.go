@@ -100,7 +100,8 @@ func (h honeycombTracer) TraceQuery(ctx context.Context, queryString string, ope
 			ev.AddField("costError", err.Error())
 		} else {
 			ev.AddField("hasCostError", false)
-			ev.AddField("cost", cost)
+			ev.AddField("cost", cost.FieldCount)
+			ev.AddField("depth", cost.MaxDepth)
 			ev.AddField("costVersion", costEstimateVersion)
 		}
 
