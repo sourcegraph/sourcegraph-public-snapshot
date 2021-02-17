@@ -1760,3 +1760,51 @@ func TestSearchResultDeduper(t *testing.T) {
 		})
 	}
 }
+
+func TestIsGlobalSearch(t *testing.T) {
+	orig := envvar.SourcegraphDotComMode()
+	envvar.MockSourcegraphDotComMode(true)
+	defer envvar.MockSourcegraphDotComMode(orig)
+
+	versionContext := "versionCtx"
+	tts := []struct {
+		name           string
+		searchQuery    string
+		versionContext *string
+		patternType    query.SearchType
+		wantIsGlobal   bool
+	}{
+		{name: "user search context", searchQuery: "foo context:@userA", wantIsGlobal: false},
+		{name: "structural search", searchQuery: "foo", patternType: query.SearchTypeStructural, wantIsGlobal: false},
+		{name: "version context", searchQuery: "foo", versionContext: &versionContext, wantIsGlobal: false},
+		{name: "repo", searchQuery: "foo repo:sourcegraph/sourcegraph", versionContext: &versionContext, wantIsGlobal: false},
+		{name: "repogroup", searchQuery: "foo repogroup:grp", versionContext: &versionContext, wantIsGlobal: false},
+		{name: "repohasfile", searchQuery: "foo repohasfile:bar", versionContext: &versionContext, wantIsGlobal: false},
+		{name: "global search context", searchQuery: "foo context:global", wantIsGlobal: true},
+		{name: "global search", searchQuery: "foo", wantIsGlobal: true},
+	}
+
+	for _, tt := range tts {
+		t.Run(tt.name, func(t *testing.T) {
+			qinfo, err := query.ParseLiteral(tt.searchQuery)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			resolver := searchResolver{
+				SearchInputs: &SearchInputs{
+					Query:          qinfo,
+					UserSettings:   &schema.Settings{},
+					PatternType:    tt.patternType,
+					VersionContext: tt.versionContext,
+				},
+			}
+
+			gotIsGlobal := resolver.isGlobalSearch()
+			if gotIsGlobal != tt.wantIsGlobal {
+				t.Fatalf("got %+v, want %+v", gotIsGlobal, tt.wantIsGlobal)
+			}
+		})
+	}
+
+}
