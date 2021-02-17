@@ -5,6 +5,11 @@
 set -euf -o pipefail
 pushd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
 
+if [ -n "${DISABLE_CODE_INSIGHTS:-}" ]; then
+  echo Not starting Code Insights TimescaleDB since DISABLE_CODE_INSIGHTS is set.
+  exit 0
+fi
+
 DISK="${HOME}/.sourcegraph-dev/data/codeinsights-db"
 if [ ! -e "${DISK}" ]; then
   mkdir -p "${DISK}"
