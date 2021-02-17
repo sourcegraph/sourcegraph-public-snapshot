@@ -659,7 +659,8 @@ func getRewirerMappingCurrentState(state *campaigns.ChangesetState) (*sqlf.Query
 		return sqlf.Sprintf(""), nil
 	}
 
-	// This is essentially the reverse mapping of changesetResolver.State.
+	// This is essentially the reverse mapping of changesetResolver.State. Note
+	// that if one changes, so should the other.
 	var q *sqlf.Query
 	switch *state {
 	case campaigns.ChangesetStateRetrying:
