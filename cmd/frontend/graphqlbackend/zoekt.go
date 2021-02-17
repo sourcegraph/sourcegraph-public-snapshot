@@ -417,6 +417,9 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		}))
 	}()
 	<-done
+	if err != nil {
+		return err
+	}
 
 	mkStatusMap := func(mask search.RepoStatus) search.RepoStatusMap {
 		var statusMap search.RepoStatusMap
