@@ -87,7 +87,7 @@ const (
 // sourcegraph.com/$KEY should redirect to about.sourcegraph.com/$VALUE.
 var aboutRedirects = map[string]string{
 	"about":      "about",
-	"blog":		  "blog",
+	"blog":       "blog",
 	"customers":  "customers",
 	"docs":       "docs",
 	"handbook":   "handbook",
