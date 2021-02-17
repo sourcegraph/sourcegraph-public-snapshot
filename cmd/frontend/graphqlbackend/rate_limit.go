@@ -23,7 +23,15 @@ type queryCost struct {
 // estimateQueryCost estimates the cost of the query before it is actually
 // executed. It is a worst cast estimate of the number of fields expected to be
 // returned by the query and handles nested queries a well as fragments.
-func estimateQueryCost(query string, variables map[string]interface{}) (*queryCost, error) {
+func estimateQueryCost(query string, variables map[string]interface{}) (totalCost *queryCost, err error) {
+	// TODO: Remove this. It's here as a safeguard until we've run over a large
+	// number of real world queries.
+	defer func() {
+		if r := recover(); r != nil {
+			totalCost = nil
+			err = r.(error)
+		}
+	}()
 	if variables == nil {
 		variables = make(map[string]interface{})
 	}
@@ -62,7 +70,7 @@ func estimateQueryCost(query string, variables map[string]interface{}) (*queryCo
 		fragmentCosts[name] = cost
 	}
 
-	var totalCost queryCost
+	totalCost = &queryCost{}
 	for _, def := range operations {
 		cost, err := calcOperationCost(def, fragmentCosts, variables)
 		if err != nil {
@@ -81,7 +89,7 @@ func estimateQueryCost(query string, variables map[string]interface{}) (*queryCo
 		totalCost.MaxDepth = 1
 	}
 
-	return &totalCost, nil
+	return totalCost, nil
 }
 
 func calcOperationCost(def ast.Node, fragmentCosts map[string]int, variables map[string]interface{}) (*queryCost, error) {
