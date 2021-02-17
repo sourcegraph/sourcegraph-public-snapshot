@@ -154,7 +154,6 @@ func preferLanguage(lang, ext string) {
 			for ; i > 0; i-- {
 				langs[i-1], langs[i] = langs[i], langs[i-1]
 			}
-			data.LanguagesByExtension[ext] = langs
 			return
 		}
 	}
