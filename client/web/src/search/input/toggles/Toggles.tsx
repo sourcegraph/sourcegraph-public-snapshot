@@ -19,6 +19,8 @@ import { CopyQueryButton } from './CopyQueryButton'
 import { VersionContextProps } from '../../../../../shared/src/search/util'
 import { SearchPatternType } from '../../../graphql-operations'
 import { findFilter, FilterKind } from '../../../../../shared/src/search/query/validate'
+import { KEYBOARD_SHORTCUT_COPY_FULL_QUERY } from '../../../keyboardShortcuts/keyboardShortcuts'
+import { isMacPlatform } from '../../../util'
 
 export interface TogglesProps
     extends PatternTypeProps,
@@ -197,6 +199,8 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                     <div className="toggle-container__separator" />
                     <CopyQueryButton
                         fullQuery={fullQuery}
+                        keyboardShortcutForFullCopy={KEYBOARD_SHORTCUT_COPY_FULL_QUERY}
+                        isMacPlatform={isMacPlatform}
                         className="toggle-container__toggle toggle-container__copy-query-button"
                     />
                 </>
