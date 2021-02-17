@@ -550,7 +550,7 @@ func mkFileMatch(repo *types.RepoName, path string, lineNumbers ...int32) *FileM
 	}
 	var lines []*lineMatch
 	for _, n := range lineNumbers {
-		lines = append(lines, &lineMatch{JLineNumber: n})
+		lines = append(lines, &lineMatch{LineNumber: n})
 	}
 	return mkFileMatchResolver(FileMatch{
 		uri:          fileMatchURI(repo.Name, "", path),

@@ -451,9 +451,9 @@ func zoektFileMatchToLineMatches(maxLineFragmentMatches int, file *zoekt.FileMat
 			offsets[k] = [2]int32{int32(offset), int32(length)}
 		}
 		lines = append(lines, &lineMatch{
-			JPreview:          string(l.Line),
-			JLineNumber:       int32(l.LineNumber - 1),
-			JOffsetAndLengths: offsets,
+			Preview:          string(l.Line),
+			LineNumber:       int32(l.LineNumber - 1),
+			OffsetAndLengths: offsets,
 		})
 	}
 

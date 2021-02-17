@@ -137,7 +137,7 @@ func (fm *FileMatchResolver) appendMatches(src *FileMatchResolver) {
 func (fm *FileMatchResolver) ResultCount() int32 {
 	rc := len(fm.symbols)
 	for _, m := range fm.JLineMatches {
-		rc += len(m.JOffsetAndLengths)
+		rc += len(m.OffsetAndLengths)
 	}
 	if rc == 0 {
 		return 1 // 1 to count "empty" results like type:path results
@@ -175,10 +175,10 @@ func (fm *FileMatchResolver) Select(t filter.SelectPath) SearchResultResolver {
 
 // lineMatch is the struct used by vscode to receive search results for a line
 type lineMatch struct {
-	JPreview          string     `json:"Preview"`
-	JOffsetAndLengths [][2]int32 `json:"OffsetAndLengths"`
-	JLineNumber       int32      `json:"LineNumber"`
-	JLimitHit         bool       `json:"LimitHit"`
+	Preview          string
+	OffsetAndLengths [][2]int32
+	LineNumber       int32
+	LimitHit         bool
 }
 
 type lineMatchResolver struct {
@@ -186,23 +186,23 @@ type lineMatchResolver struct {
 }
 
 func (lm lineMatchResolver) Preview() string {
-	return lm.JPreview
+	return lm.lineMatch.Preview
 }
 
 func (lm lineMatchResolver) LineNumber() int32 {
-	return lm.JLineNumber
+	return lm.lineMatch.LineNumber
 }
 
 func (lm lineMatchResolver) OffsetAndLengths() [][]int32 {
-	r := make([][]int32, len(lm.JOffsetAndLengths))
-	for i := range lm.JOffsetAndLengths {
-		r[i] = lm.JOffsetAndLengths[i][:]
+	r := make([][]int32, len(lm.lineMatch.OffsetAndLengths))
+	for i := range lm.lineMatch.OffsetAndLengths {
+		r[i] = lm.lineMatch.OffsetAndLengths[i][:]
 	}
 	return r
 }
 
 func (lm lineMatchResolver) LimitHit() bool {
-	return lm.JLimitHit
+	return lm.lineMatch.LimitHit
 }
 
 var mockSearchFilesInRepo func(ctx context.Context, repo *types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error)
@@ -255,10 +255,10 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *ty
 				ranges = append(ranges, [2]int32{int32(ol[0]), int32(ol[1])})
 			}
 			lineMatches = append(lineMatches, &lineMatch{
-				JPreview:          lm.Preview,
-				JOffsetAndLengths: ranges,
-				JLineNumber:       int32(lm.LineNumber),
-				JLimitHit:         lm.LimitHit,
+				Preview:          lm.Preview,
+				OffsetAndLengths: ranges,
+				LineNumber:       int32(lm.LineNumber),
+				LimitHit:         lm.LimitHit,
 			})
 		}
 
