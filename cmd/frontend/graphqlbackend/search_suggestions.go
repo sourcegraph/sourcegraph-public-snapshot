@@ -102,7 +102,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			resolvers := make([]*searchSuggestionResolver, 0, len(resolved.RepoRevs))
 			for _, rev := range resolved.RepoRevs {
 				resolvers = append(resolvers, newSearchSuggestionResolver(
-					&RepositoryResolver{innerRepo: rev.Repo.ToRepo()},
+					NewRepositoryResolver(rev.Repo.ToRepo()),
 					math.MaxInt32,
 				))
 			}

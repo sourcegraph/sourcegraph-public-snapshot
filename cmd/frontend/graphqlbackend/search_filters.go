@@ -98,7 +98,7 @@ func (s *SearchFilters) Update(event SearchEvent) {
 	}
 
 	addRepoFilter := func(repo *RepositoryResolver, rev string, lineMatchCount int32) {
-		uri := repo.Name()
+		uri := string(repo.Name())
 		var filter string
 		if s.Globbing {
 			filter = fmt.Sprintf(`repo:%s`, uri)

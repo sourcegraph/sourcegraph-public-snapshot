@@ -155,7 +155,7 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, args *search.TextParameters, 
 		}
 		repoRev := repos.repoRevs[file.Repository]
 		if repoResolvers[repoRev.Repo.Name] == nil {
-			repoResolvers[repoRev.Repo.Name] = &RepositoryResolver{innerRepo: repoRev.Repo.ToRepo()}
+			repoResolvers[repoRev.Repo.Name] = NewRepositoryResolver(repoRev.Repo.ToRepo())
 		}
 		matches[i] = &FileMatchResolver{
 			FileMatch: FileMatch{

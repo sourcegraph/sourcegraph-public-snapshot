@@ -1031,7 +1031,7 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 		}},
 	}
 
-	repo := &RepositoryResolver{innerRepo: &types.Repo{Name: "foo"}}
+	repo := NewRepositoryResolver(&types.Repo{Name: "foo"})
 
 	results := zoektFileMatchToSymbolResults(repo, "master", file)
 	var symbols []protocol.Symbol

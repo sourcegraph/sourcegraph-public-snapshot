@@ -287,7 +287,7 @@ func doSearchCommitsInRepoStream(ctx context.Context, op search.CommitParameters
 		}
 	}()
 
-	repoResolver := &RepositoryResolver{innerRepo: op.RepoRevs.Repo.ToRepo()}
+	repoResolver := NewRepositoryResolver(op.RepoRevs.Repo.ToRepo())
 	for event := range events {
 		// if the result is incomplete, git log timed out and the client
 		// should be notified of that.
@@ -452,7 +452,7 @@ func cleanDiffPreview(highlights []*highlightedRange, rawDiffResult string) (str
 func createLabel(rawResult *git.LogCommitSearchResult, commitResolver *GitCommitResolver) (string, error) {
 	message := commitSubject(rawResult.Commit.Message)
 	author := rawResult.Commit.Author.Name
-	repoName := displayRepoName(commitResolver.Repository().Name())
+	repoName := displayRepoName(string(commitResolver.Repository().Name()))
 	repoURL := commitResolver.Repository().URL()
 	url, err := commitResolver.URL()
 	if err != nil {

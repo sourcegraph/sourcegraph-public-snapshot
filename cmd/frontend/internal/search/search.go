@@ -349,7 +349,7 @@ func fromRepository(repo *graphqlbackend.RepositoryResolver) eventRepoMatch {
 
 	return eventRepoMatch{
 		Type:       repoMatch,
-		Repository: repo.Name(),
+		Repository: string(repo.Name()),
 		Branches:   branches,
 	}
 }

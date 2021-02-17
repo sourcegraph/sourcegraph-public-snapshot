@@ -39,8 +39,8 @@ type repositoryMirrorInfoResolver struct {
 
 func (r *repositoryMirrorInfoResolver) gitserverRepoInfo(ctx context.Context) (*protocol.RepoInfo, error) {
 	r.repoInfoOnce.Do(func() {
-		resp, err := gitserver.DefaultClient.RepoInfo(ctx, r.repository.innerRepo.Name)
-		r.repoInfoResponse, r.repoInfoErr = resp.Results[r.repository.innerRepo.Name], err
+		resp, err := gitserver.DefaultClient.RepoInfo(ctx, r.repository.Name())
+		r.repoInfoResponse, r.repoInfoErr = resp.Results[r.repository.Name()], err
 	})
 	return r.repoInfoResponse, r.repoInfoErr
 }

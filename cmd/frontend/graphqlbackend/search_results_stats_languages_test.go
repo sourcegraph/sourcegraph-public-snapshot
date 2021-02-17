@@ -98,9 +98,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 		},
 		"1 entire repo": {
 			results: []SearchResultResolver{
-				&RepositoryResolver{
-					innerRepo: &types.Repo{Name: "r", CreatedAt: time.Now()},
-				},
+				NewRepositoryResolver(&types.Repo{Name: "r", CreatedAt: time.Now()}),
 			},
 			getFiles: []os.FileInfo{
 				fileInfo{path: "two.go"},
