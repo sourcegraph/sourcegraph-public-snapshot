@@ -11,6 +11,12 @@ Enterprise, GitLab, Phabricator, and Bitbucket Server.
 </p>
 
 <p>
+  <a target="_blank" href="https://apps.apple.com/us/app/sourcegraph-for-safari/id1543262193" style="display:flex;align-items:center">
+  <img src="img/safari.svg" width="24" height="24" style="margin-right:5px" /> <strong>Install Sourcegraph for Safari</strong>
+  </a>
+</p>
+
+<p>
   <a target="_blank" href="https://storage.googleapis.com/sourcegraph-for-firefox/latest.xpi" style="display:flex;align-items:center">
   <img src="img/firefox.svg" width="24" height="24" style="margin-right:5px" /> <strong>Install Sourcegraph for Firefox</strong>
   </a>
