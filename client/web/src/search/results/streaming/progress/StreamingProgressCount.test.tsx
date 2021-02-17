@@ -63,12 +63,14 @@ describe('StreamingProgressCount', () => {
             durationMs: 1250,
             matchCount: 123,
             repositoriesCount: 500,
-            skipped: [{
-                reason: 'document-match-limit',
-                title: 'match limit',
-                message: 'match limit',
-                severity: 'warn',
-            }],
+            skipped: [
+                {
+                    reason: 'document-match-limit',
+                    title: 'match limit',
+                    message: 'match limit',
+                    severity: 'warn',
+                },
+            ],
         }
 
         expect(mount(<StreamingProgressCount state="complete" progress={progress} />)).toMatchSnapshot()
