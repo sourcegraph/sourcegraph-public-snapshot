@@ -591,3 +591,23 @@ describe('getHoverResult()', () => {
         `)
     })
 })
+
+test('returns hover contents for select', () => {
+    const scannedQuery = toSuccess(scanSearchQuery('select:repo repo:foo', false, SearchPatternType.literal))
+
+    expect(getHoverResult(scannedQuery, { column: 8 }, true)).toMatchInlineSnapshot(`
+        {
+          "contents": [
+            {
+              "value": "Select and display distinct repository paths from search results."
+            }
+          ],
+          "range": {
+            "startLineNumber": 1,
+            "endLineNumber": 1,
+            "startColumn": 8,
+            "endColumn": 12
+          }
+        }
+    `)
+})
