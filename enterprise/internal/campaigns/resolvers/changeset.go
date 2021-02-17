@@ -315,6 +315,9 @@ func (r *changesetResolver) ExternalState() *campaigns.ChangesetExternalState {
 }
 
 func (r *changesetResolver) State() (campaigns.ChangesetState, error) {
+	// Note that there's an inverse version of this function in
+	// getRewirerMappingCurrentState(): if one changes, so should the other.
+
 	if r.changeset.ReconcilerState == campaigns.ReconcilerStateErrored {
 		return campaigns.ChangesetStateRetrying, nil
 	}
