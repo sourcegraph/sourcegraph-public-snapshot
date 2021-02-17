@@ -7,11 +7,13 @@ import (
 
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
+	zoektstream "github.com/google/zoekt/stream"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/rpc"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
@@ -39,7 +41,7 @@ func NewMeteredSearcher(hostname string, z StreamSearcher) StreamSearcher {
 	}
 }
 
-func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, c ZoektStreamer) error {
+func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, c zoektstream.Streamer) error {
 	start := time.Now()
 
 	// isLeaf is true if this is a zoekt.Searcher which does a network
