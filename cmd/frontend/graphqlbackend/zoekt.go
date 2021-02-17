@@ -367,7 +367,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 			}
 			repoResolver := repoResolvers[repo.Name]
 			if repoResolver == nil {
-				repoResolver = &RepositoryResolver{innerRepo: repo.ToRepo()}
+				repoResolver = NewRepositoryResolver(repo.ToRepo())
 				repoResolvers[repo.Name] = repoResolver
 			}
 

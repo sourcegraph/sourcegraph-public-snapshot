@@ -287,7 +287,7 @@ func doSearchCommitsInRepoStream(ctx context.Context, op search.CommitParameters
 		}
 	}()
 
-	repoResolver := &RepositoryResolver{innerRepo: op.RepoRevs.Repo.ToRepo()}
+	repoResolver := NewRepositoryResolver(op.RepoRevs.Repo.ToRepo())
 	for event := range events {
 		// if the result is incomplete, git log timed out and the client
 		// should be notified of that.

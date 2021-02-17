@@ -57,7 +57,7 @@ func TestSearchResults(t *testing.T) {
 			// just remove that assumption in the following line of code.
 			switch m := result.(type) {
 			case *RepositoryResolver:
-				resultDescriptions[i] = fmt.Sprintf("repo:%s", m.innerRepo.Name)
+				resultDescriptions[i] = fmt.Sprintf("repo:%s", m.Name())
 			case *FileMatchResolver:
 				resultDescriptions[i] = fmt.Sprintf("%s:%d", m.JPath, m.JLineMatches[0].LineNumber)
 			default:
@@ -557,9 +557,7 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 
 func TestSearchResolver_DynamicFilters(t *testing.T) {
 	repo := &types.RepoName{Name: "testRepo"}
-	repoMatch := &RepositoryResolver{
-		innerRepo: repo.ToRepo(),
-	}
+	repoMatch := NewRepositoryResolver(repo.ToRepo())
 	fileMatch := func(path string) *FileMatchResolver {
 		return mkFileMatch(repo, path)
 	}
@@ -1442,11 +1440,9 @@ func diffResult(url string) *CommitSearchResultResolver {
 }
 
 func repoResult(url string) *RepositoryResolver {
-	return &RepositoryResolver{
-		innerRepo: &types.Repo{
-			Name: api.RepoName(url),
-		},
-	}
+	return NewRepositoryResolver(&types.Repo{
+		Name: api.RepoName(url),
+	})
 }
 
 func fileResult(uri string, lineMatches []*lineMatch, symbolMatches []*searchSymbolResult) *FileMatchResolver {
@@ -1515,7 +1511,7 @@ func TestUnionMerge(t *testing.T) {
 						url:         "a",
 					},
 					&FileMatchResolver{FileMatch: FileMatch{uri: "a"}},
-					&RepositoryResolver{innerRepo: &types.Repo{Name: api.RepoName("a")}},
+					NewRepositoryResolver(&types.Repo{Name: api.RepoName("a")}),
 				},
 			}},
 		{
@@ -1535,7 +1531,7 @@ func TestUnionMerge(t *testing.T) {
 					url:         "a",
 				},
 				&FileMatchResolver{FileMatch: FileMatch{uri: "a"}},
-				&RepositoryResolver{innerRepo: &types.Repo{Name: api.RepoName("a")}},
+				NewRepositoryResolver(&types.Repo{Name: api.RepoName("a")}),
 			},
 			}},
 		{
@@ -1568,8 +1564,8 @@ func TestUnionMerge(t *testing.T) {
 				},
 				&FileMatchResolver{FileMatch: FileMatch{uri: "a"}},
 				&FileMatchResolver{FileMatch: FileMatch{uri: "b"}},
-				&RepositoryResolver{innerRepo: &types.Repo{Name: api.RepoName("a")}},
-				&RepositoryResolver{innerRepo: &types.Repo{Name: api.RepoName("b")}},
+				NewRepositoryResolver(&types.Repo{Name: api.RepoName("a")}),
+				NewRepositoryResolver(&types.Repo{Name: api.RepoName("b")}),
 			}},
 		},
 		{

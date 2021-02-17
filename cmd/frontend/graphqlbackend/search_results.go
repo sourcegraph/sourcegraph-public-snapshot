@@ -54,10 +54,10 @@ func (c *SearchResultsResolver) Repositories() []*RepositoryResolver {
 	repos := c.Repos
 	resolvers := make([]*RepositoryResolver, 0, len(repos))
 	for _, r := range repos {
-		resolvers = append(resolvers, &RepositoryResolver{innerRepo: r.ToRepo()})
+		resolvers = append(resolvers, NewRepositoryResolver(r.ToRepo()))
 	}
 	sort.Slice(resolvers, func(a, b int) bool {
-		return resolvers[a].innerRepo.ID < resolvers[b].innerRepo.ID
+		return resolvers[a].ID() < resolvers[b].ID()
 	})
 	return resolvers
 }
@@ -71,11 +71,11 @@ func (c *SearchResultsResolver) repositoryResolvers(mask search.RepoStatus) []*R
 	c.Status.Filter(mask, func(id api.RepoID) {
 		r := c.Repos[id]
 		if r != nil {
-			resolvers = append(resolvers, &RepositoryResolver{innerRepo: c.Repos[id].ToRepo()})
+			resolvers = append(resolvers, NewRepositoryResolver(c.Repos[id].ToRepo()))
 		}
 	})
 	sort.Slice(resolvers, func(a, b int) bool {
-		return resolvers[a].innerRepo.ID < resolvers[b].innerRepo.ID
+		return resolvers[a].ID() < resolvers[b].ID()
 	})
 	return resolvers
 }
@@ -1893,7 +1893,7 @@ func compareSearchResults(left, right SearchResultResolver, exactFilePatterns ma
 	sortKeys := func(result SearchResultResolver) (string, string, *time.Time) {
 		switch r := result.(type) {
 		case *RepositoryResolver:
-			return string(r.Name()), "", nil
+			return r.Name(), "", nil
 		case *FileMatchResolver:
 			return string(r.Repo.Name), r.JPath, nil
 		case *CommitSearchResultResolver:

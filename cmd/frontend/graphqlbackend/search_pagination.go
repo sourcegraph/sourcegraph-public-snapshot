@@ -314,7 +314,7 @@ type executor func(batch []*search.RepositoryRevisions) ([]SearchResultResolver,
 func repoOfResult(result SearchResultResolver) string {
 	switch r := result.(type) {
 	case *RepositoryResolver:
-		return string(r.Name())
+		return r.Name()
 	case *FileMatchResolver:
 		return string(r.Repo.Name)
 	case *CommitSearchResultResolver:

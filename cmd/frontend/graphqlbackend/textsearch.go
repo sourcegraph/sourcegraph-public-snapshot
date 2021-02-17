@@ -245,7 +245,7 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *ty
 	}
 
 	workspace := fileMatchURI(repo.Name, rev, "")
-	repoResolver := &RepositoryResolver{innerRepo: repo.ToRepo()}
+	repoResolver := NewRepositoryResolver(repo.ToRepo())
 	resolvers := make([]*FileMatchResolver, 0, len(matches))
 	for _, fm := range matches {
 		lineMatches := make([]*lineMatch, 0, len(fm.LineMatches))

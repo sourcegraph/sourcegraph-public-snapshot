@@ -582,7 +582,7 @@ func (r *searchSuggestionResolver) ToLanguage() (*languageResolver, bool) {
 func newSearchSuggestionResolver(result interface{}, score int) *searchSuggestionResolver {
 	switch r := result.(type) {
 	case *RepositoryResolver:
-		return &searchSuggestionResolver{result: r, score: score, length: len(r.innerRepo.Name), label: r.Name()}
+		return &searchSuggestionResolver{result: r, score: score, length: len(r.Name()), label: r.Name()}
 
 	case *GitTreeEntryResolver:
 		return &searchSuggestionResolver{result: r, score: score, length: len(r.Path()), label: r.Path()}

@@ -304,7 +304,7 @@ func BenchmarkSearchRepositories(b *testing.B) {
 func mkFileMatchResolver(fm FileMatch) *FileMatchResolver {
 	var repo *RepositoryResolver
 	if fm.Repo != nil {
-		repo = &RepositoryResolver{innerRepo: fm.Repo.ToRepo()}
+		repo = NewRepositoryResolver(fm.Repo.ToRepo())
 	}
 	return &FileMatchResolver{
 		FileMatch:    fm,
