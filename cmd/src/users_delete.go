@@ -1,9 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"flag"
 	"fmt"
+	"os"
+	"strconv"
+	"strings"
 
 	"github.com/sourcegraph/src-cli/internal/api"
 )
@@ -43,6 +47,37 @@ Examples:
 		}
 
 		client := cfg.apiClient(apiFlags, flagSet.Output())
+
+		if *userIDFlag == "" {
+			query := `query UsersTotalCountCountUsers { users { totalCount } }`
+
+			var result struct {
+				Users struct {
+					TotalCount int
+				}
+			}
+			ok, err := client.NewQuery(query).Do(context.Background(), &result)
+			if err != nil || !ok {
+				return err
+			}
+
+			fmt.Printf("No user ID specified. This would delete %d users.\nType in this number to confirm and hit return: ", result.Users.TotalCount)
+			reader := bufio.NewReader(os.Stdin)
+			text, err := reader.ReadString('\n')
+			if err != nil {
+				return err
+			}
+
+			count, err := strconv.Atoi(strings.TrimSpace(text))
+			if err != nil {
+				return err
+			}
+
+			if count != result.Users.TotalCount {
+				fmt.Println("Number does not match. Aborting.")
+				return nil
+			}
+		}
 
 		query := `mutation DeleteUser(
   $user: ID!

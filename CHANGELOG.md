@@ -13,6 +13,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
+- `src users delete` now asks for confirmation to delete all users when no user ID is provided. [#470](https://github.com/sourcegraph/src-cli/pull/470)
+
 ### Changed
 
 ### Fixed
