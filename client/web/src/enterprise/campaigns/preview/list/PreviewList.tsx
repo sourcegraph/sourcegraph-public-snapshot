@@ -87,7 +87,13 @@ export const PreviewList: React.FunctionComponent<Props> = ({
                 headComponent={PreviewListHeader}
                 cursorPaging={true}
                 noSummaryIfAllNodesVisible={true}
-                emptyElement={filters.search ? <EmptyPreviewSearchElement /> : <EmptyPreviewListElement />}
+                emptyElement={
+                    filters.search || filters.currentState || filters.action ? (
+                        <EmptyPreviewSearchElement />
+                    ) : (
+                        <EmptyPreviewListElement />
+                    )
+                }
             />
         </>
     )
