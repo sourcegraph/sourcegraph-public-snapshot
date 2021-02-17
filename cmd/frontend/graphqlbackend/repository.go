@@ -113,8 +113,8 @@ func (r *RepositoryResolver) repo(ctx context.Context) (*types.Repo, error) {
 	return r.innerRepo, err
 }
 
-func (r *RepositoryResolver) Name() api.RepoName {
-	return r.name
+func (r *RepositoryResolver) Name() string {
+	return string(r.name)
 }
 
 func (r *RepositoryResolver) ExternalRepo(ctx context.Context) (*api.ExternalRepoSpec, error) {
@@ -195,12 +195,12 @@ func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryC
 
 func (r *RepositoryResolver) DefaultBranch(ctx context.Context) (*GitRefResolver, error) {
 	do := func() (*GitRefResolver, error) {
-		refBytes, _, exitCode, err := git.ExecSafe(ctx, r.Name(), []string{"symbolic-ref", "HEAD"})
+		refBytes, _, exitCode, err := git.ExecSafe(ctx, r.name, []string{"symbolic-ref", "HEAD"})
 		refName := string(bytes.TrimSpace(refBytes))
 
 		if err == nil && exitCode == 0 {
 			// Check that our repo is not empty
-			_, err = git.ResolveRevision(ctx, r.Name(), "HEAD", git.ResolveRevisionOptions{NoEnsureRevision: true})
+			_, err = git.ResolveRevision(ctx, r.name, "HEAD", git.ResolveRevisionOptions{NoEnsureRevision: true})
 		}
 
 		// If we fail to get the default branch due to cloning or being empty, we return nothing.
@@ -260,7 +260,7 @@ func (r *RepositoryResolver) UpdatedAt() *DateTime {
 }
 
 func (r *RepositoryResolver) URL() string {
-	url := "/" + escapePathForURL(string(r.Name()))
+	url := "/" + escapePathForURL(r.Name())
 	if r.rev != "" {
 		url += "@" + escapePathForURL(r.rev)
 	}
@@ -286,9 +286,9 @@ func (r *RepositoryResolver) Rev() string {
 func (r *RepositoryResolver) Label() (Markdown, error) {
 	var label string
 	if r.rev != "" {
-		label = string(r.Name()) + "@" + r.rev
+		label = r.Name() + "@" + r.rev
 	} else {
-		label = string(r.Name())
+		label = r.Name()
 	}
 	text := "[" + label + "](/" + label + ")"
 	return Markdown(text), nil

@@ -452,7 +452,7 @@ func cleanDiffPreview(highlights []*highlightedRange, rawDiffResult string) (str
 func createLabel(rawResult *git.LogCommitSearchResult, commitResolver *GitCommitResolver) (string, error) {
 	message := commitSubject(rawResult.Commit.Message)
 	author := rawResult.Commit.Author.Name
-	repoName := displayRepoName(string(commitResolver.Repository().Name()))
+	repoName := displayRepoName(commitResolver.Repository().Name())
 	repoURL := commitResolver.Repository().URL()
 	url, err := commitResolver.URL()
 	if err != nil {
