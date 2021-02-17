@@ -8,7 +8,7 @@ In return, your feedback helps us make sure that our new features are reliable a
 
 ## **Both** beta and prototype features
 
-For both features labeled `Beta` and those labelled `Prototype`, Sourcegraph wants to be transparent that:  
+For both features labeled `Beta` and those labeled `Prototype`, Sourcegraph wants to be transparent that:  
 
 - The feature is undergoing active development and your [feedback](mailto:feedback@sourcegraph.com) is especially appreciated
 - The feature may have bugs
