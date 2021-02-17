@@ -8,6 +8,8 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"golang.org/x/sync/errgroup"
+
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/inconshreveable/log15"
@@ -17,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
@@ -277,7 +280,20 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 
 	// Start event stream before resolving repositories.
 	t0 := time.Now()
-	events := args.Zoekt.Client.StreamSearch(ctx, finalQuery, &searchOpts)
+	events := make(chan *zoekt.SearchResult)
+	// Ensure we always drain events.
+	defer func() {
+		cancel()
+		for range events {
+		}
+	}()
+	g := errgroup.Group{}
+	g.Go(func() error {
+		defer close(events)
+		return args.Zoekt.Client.StreamSearch(ctx, finalQuery, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
+			events <- event
+		}))
+	})
 
 	var getRepoInputRev zoektutil.RepoRevFunc
 	if args.Mode == search.ZoektGlobalSearch {
@@ -302,29 +318,17 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 		}
 	}
 
-	// Ensure we always drain events
-	defer func() {
-		cancel()
-		for range events {
-		}
-	}()
-
-	var (
-		foundResults bool
-		matchLimiter = zoektutil.MatchLimiter{
-			Limit: int(args.PatternInfo.FileMatchLimit),
-		}
-	)
+	matchLimiter := zoektutil.MatchLimiter{
+		Limit: int(args.PatternInfo.FileMatchLimit),
+	}
+	foundResults := false
 
 	for event := range events {
-		if event.Error != nil {
-			return event.Error
-		}
 
-		foundResults = foundResults || event.SearchResult.FileCount != 0 || event.SearchResult.MatchCount != 0
+		foundResults = foundResults || event.FileCount != 0 || event.MatchCount != 0
 
-		files := event.SearchResult.Files
-		limitHit := event.SearchResult.FilesSkipped+event.SearchResult.ShardsSkipped > 0
+		files := event.Files
+		limitHit := event.FilesSkipped+event.ShardsSkipped > 0
 
 		if len(files) == 0 {
 			c.Send(SearchEvent{
@@ -408,6 +412,11 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 			},
 		})
 	}
+
+	if g.Wait() != nil {
+		return err
+	}
+
 	mkStatusMap := func(mask search.RepoStatus) search.RepoStatusMap {
 		var statusMap search.RepoStatusMap
 		for _, r := range repos.repoRevs {
