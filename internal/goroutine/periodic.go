@@ -17,9 +17,9 @@ type PeriodicGoroutine struct {
 	handler   Handler
 	operation *observation.Operation
 	clock     glock.Clock
-	ctx       context.Context // root context passed to the handler
-	cancel    func()          // cancels the root context
-	finished  chan struct{}   // signals that Start has finished
+	ctx       context.Context    // root context passed to the handler
+	cancel    context.CancelFunc // cancels the root context
+	finished  chan struct{}      // signals that Start has finished
 }
 
 var _ BackgroundRoutine = &PeriodicGoroutine{}
