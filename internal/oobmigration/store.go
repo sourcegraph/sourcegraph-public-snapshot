@@ -12,6 +12,8 @@ import (
 )
 
 // Migration stores metadata and tracks progress of an out-of-band migration routine.
+// These fields mirror the out_of_band_migrations table in the database. For docs see
+// the [schema](https://github.com/sourcegraph/sourcegraph/blob/main/internal/database/schema.md#table-publicout_of_band_migrations).
 type Migration struct {
 	ID             int
 	Team           string
@@ -33,6 +35,7 @@ type MigrationError struct {
 	Created time.Time
 }
 
+// scanMigrations scans a slice of migrations from the return value of `*Store.query`.
 func scanMigrations(rows *sql.Rows, queryErr error) (_ []Migration, err error) {
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
@@ -82,27 +85,30 @@ type Store struct {
 	*basestore.Store
 }
 
+// NewStoreWithDB creates a new Store with the given database connection.
 func NewStoreWithDB(db dbutil.DB) *Store {
-	return &Store{
-		Store: basestore.NewWithDB(db, sql.TxOptions{}),
-	}
+	return &Store{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
+var _ basestore.ShareableStore = &Store{}
+
+// With creates a new store with the underlying database handle from the given store.
+// This method should be used when two distinct store instances need to perform an
+// operation within the same shared transaction.
+//
+// This method wraps the basestore.With method.
 func (s *Store) With(other basestore.ShareableStore) *Store {
-	return &Store{
-		Store: s.Store.With(other),
-	}
+	return &Store{Store: s.Store.With(other)}
 }
 
+// Transact returns a new store whose methods operate within the context of a new transaction
+// or a new savepoint. This method will return an error if the underlying connection cannot be
+// interface upgraded to a TxBeginner.
+//
+// This method wraps the basestore.Transact method.
 func (s *Store) Transact(ctx context.Context) (*Store, error) {
 	txBase, err := s.Store.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Store{
-		Store: txBase,
-	}, nil
+	return &Store{Store: txBase}, err
 }
 
 // GetByID retrieves a migration by its identifier. If the migration does not exist, a false
