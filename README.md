@@ -33,7 +33,6 @@
 - Node.js (version 8 or 10)
 - Redis
 - Yarn
-- Nginx
 
 For a detailed guide to installing prerequisites, see [these
 instructions](doc/dev/getting-started/quickstart_1_install_dependencies.md).

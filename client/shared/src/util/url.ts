@@ -584,6 +584,7 @@ export function buildSearchURLQuery(
     patternType: SearchPatternType,
     caseSensitive: boolean,
     versionContext?: string,
+    searchContextSpec?: string,
     searchParametersList?: { key: string; value: string }[]
 ): string {
     const searchParameters = new URLSearchParams()
@@ -619,6 +620,10 @@ export function buildSearchURLQuery(
 
     if (versionContext) {
         searchParameters.set('c', versionContext)
+    }
+
+    if (searchContextSpec) {
+        searchParameters.set('context', searchContextSpec)
     }
 
     if (searchParametersList) {

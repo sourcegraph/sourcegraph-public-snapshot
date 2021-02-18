@@ -45,6 +45,7 @@ describe('StreamingSearchResults', () => {
         caseSensitive: false,
         patternType: SearchPatternType.literal,
         versionContext: undefined,
+        selectedSearchContextSpec: 'global',
         availableVersionContexts: [],
         previousVersionContext: null,
 
@@ -94,6 +95,7 @@ describe('StreamingSearchResults', () => {
             patternType: SearchPatternType.regexp,
             caseSensitive: true,
             versionContext: 'test',
+            searchContextSpec: 'global',
             trace: undefined,
         })
 
@@ -127,6 +129,7 @@ describe('StreamingSearchResults', () => {
             patternType: SearchPatternType.regexp,
             caseSensitive: false,
             versionContext: undefined,
+            searchContextSpec: 'global',
             trace: undefined,
         })
 

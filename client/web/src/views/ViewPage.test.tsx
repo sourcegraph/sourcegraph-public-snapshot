@@ -23,6 +23,7 @@ const commonProps: Omit<React.ComponentProps<typeof ViewPage>, 'viewID' | 'extra
     telemetryService: { log: noop, logViewEvent: noop },
     copyQueryButton: false,
     versionContext: undefined,
+    selectedSearchContextSpec: 'global',
     globbing: false,
 }
 

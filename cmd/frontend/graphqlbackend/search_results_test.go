@@ -57,9 +57,9 @@ func TestSearchResults(t *testing.T) {
 			// just remove that assumption in the following line of code.
 			switch m := result.(type) {
 			case *RepositoryResolver:
-				resultDescriptions[i] = fmt.Sprintf("repo:%s", m.innerRepo.Name)
+				resultDescriptions[i] = fmt.Sprintf("repo:%s", m.Name())
 			case *FileMatchResolver:
-				resultDescriptions[i] = fmt.Sprintf("%s:%d", m.JPath, m.JLineMatches[0].JLineNumber)
+				resultDescriptions[i] = fmt.Sprintf("%s:%d", m.JPath, m.JLineMatches[0].LineNumber)
 			default:
 				t.Fatal("unexpected result type", result)
 			}
@@ -557,9 +557,7 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 
 func TestSearchResolver_DynamicFilters(t *testing.T) {
 	repo := &types.RepoName{Name: "testRepo"}
-	repoMatch := &RepositoryResolver{
-		innerRepo: repo.ToRepo(),
-	}
+	repoMatch := NewRepositoryResolver(repo.ToRepo())
 	fileMatch := func(path string) *FileMatchResolver {
 		return mkFileMatch(repo, path)
 	}
@@ -680,6 +678,21 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 				`repo:testRepo`:    2,
 				`-file:**_test.go`: 1,
 				`lang:go`:          2,
+			},
+		},
+
+		{
+			descr: "prefer rust to renderscript",
+			searchResults: []SearchResultResolver{
+				fileMatch("/channel.rs"),
+			},
+			expectedDynamicFilterStrsRegexp: map[string]int{
+				`repo:^testRepo$`: 1,
+				`lang:rust`:       1,
+			},
+			expectedDynamicFilterStrsGlobbing: map[string]int{
+				`repo:testRepo`: 1,
+				`lang:rust`:     1,
 			},
 		},
 
@@ -1427,11 +1440,9 @@ func diffResult(url string) *CommitSearchResultResolver {
 }
 
 func repoResult(url string) *RepositoryResolver {
-	return &RepositoryResolver{
-		innerRepo: &types.Repo{
-			Name: api.RepoName(url),
-		},
-	}
+	return NewRepositoryResolver(&types.Repo{
+		Name: api.RepoName(url),
+	})
 }
 
 func fileResult(uri string, lineMatches []*lineMatch, symbolMatches []*searchSymbolResult) *FileMatchResolver {
@@ -1467,7 +1478,7 @@ func sortResultResolvers(rs []SearchResultResolver) {
 	for _, res := range rs {
 		if fm, ok := res.(*FileMatchResolver); ok {
 			sort.Slice(fm.JLineMatches, func(i, j int) bool {
-				return fm.JLineMatches[i].JPreview < fm.JLineMatches[j].JPreview
+				return fm.JLineMatches[i].Preview < fm.JLineMatches[j].Preview
 			})
 			sort.Slice(fm.symbols, func(i, j int) bool {
 				return fm.symbols[i].symbol.Name < fm.symbols[j].symbol.Name
@@ -1500,7 +1511,7 @@ func TestUnionMerge(t *testing.T) {
 						url:         "a",
 					},
 					&FileMatchResolver{FileMatch: FileMatch{uri: "a"}},
-					&RepositoryResolver{innerRepo: &types.Repo{Name: api.RepoName("a")}},
+					NewRepositoryResolver(&types.Repo{Name: api.RepoName("a")}),
 				},
 			}},
 		{
@@ -1520,7 +1531,7 @@ func TestUnionMerge(t *testing.T) {
 					url:         "a",
 				},
 				&FileMatchResolver{FileMatch: FileMatch{uri: "a"}},
-				&RepositoryResolver{innerRepo: &types.Repo{Name: api.RepoName("a")}},
+				NewRepositoryResolver(&types.Repo{Name: api.RepoName("a")}),
 			},
 			}},
 		{
@@ -1553,34 +1564,34 @@ func TestUnionMerge(t *testing.T) {
 				},
 				&FileMatchResolver{FileMatch: FileMatch{uri: "a"}},
 				&FileMatchResolver{FileMatch: FileMatch{uri: "b"}},
-				&RepositoryResolver{innerRepo: &types.Repo{Name: api.RepoName("a")}},
-				&RepositoryResolver{innerRepo: &types.Repo{Name: api.RepoName("b")}},
+				NewRepositoryResolver(&types.Repo{Name: api.RepoName("a")}),
+				NewRepositoryResolver(&types.Repo{Name: api.RepoName("b")}),
 			}},
 		},
 		{
 			left: SearchResultsResolver{
 				SearchResults: []SearchResultResolver{
 					fileResult("b", []*lineMatch{
-						{JPreview: "a"},
-						{JPreview: "b"},
+						{Preview: "a"},
+						{Preview: "b"},
 					}, nil),
 				},
 			},
 			right: SearchResultsResolver{
 				SearchResults: []SearchResultResolver{
 					fileResult("b", []*lineMatch{
-						{JPreview: "c"},
-						{JPreview: "d"},
+						{Preview: "c"},
+						{Preview: "d"},
 					}, nil),
 				},
 			},
 			want: SearchResultsResolver{SearchResults: []SearchResultResolver{
 				&FileMatchResolver{FileMatch: FileMatch{
 					JLineMatches: []*lineMatch{
-						{JPreview: "a"},
-						{JPreview: "b"},
-						{JPreview: "c"},
-						{JPreview: "d"},
+						{Preview: "a"},
+						{Preview: "b"},
+						{Preview: "c"},
+						{Preview: "d"},
 					},
 					uri: "b",
 				}},
@@ -1590,31 +1601,31 @@ func TestUnionMerge(t *testing.T) {
 			left: SearchResultsResolver{
 				SearchResults: []SearchResultResolver{
 					fileResult("a", []*lineMatch{
-						{JPreview: "a"},
-						{JPreview: "b"},
+						{Preview: "a"},
+						{Preview: "b"},
 					}, nil),
 				},
 			},
 			right: SearchResultsResolver{
 				SearchResults: []SearchResultResolver{
 					fileResult("b", []*lineMatch{
-						{JPreview: "c"},
-						{JPreview: "d"},
+						{Preview: "c"},
+						{Preview: "d"},
 					}, nil),
 				},
 			},
 			want: SearchResultsResolver{SearchResults: []SearchResultResolver{
 				&FileMatchResolver{FileMatch: FileMatch{
 					JLineMatches: []*lineMatch{
-						{JPreview: "a"},
-						{JPreview: "b"},
+						{Preview: "a"},
+						{Preview: "b"},
 					},
 					uri: "a",
 				}},
 				&FileMatchResolver{FileMatch: FileMatch{
 					JLineMatches: []*lineMatch{
-						{JPreview: "c"},
-						{JPreview: "d"},
+						{Preview: "c"},
+						{Preview: "d"},
 					},
 					uri: "b",
 				}},
@@ -1744,4 +1755,52 @@ func TestSearchResultDeduper(t *testing.T) {
 			tc.want.Equal(t, toString(deduped))
 		})
 	}
+}
+
+func TestIsGlobalSearch(t *testing.T) {
+	orig := envvar.SourcegraphDotComMode()
+	envvar.MockSourcegraphDotComMode(true)
+	defer envvar.MockSourcegraphDotComMode(orig)
+
+	versionContext := "versionCtx"
+	tts := []struct {
+		name           string
+		searchQuery    string
+		versionContext *string
+		patternType    query.SearchType
+		wantIsGlobal   bool
+	}{
+		{name: "user search context", searchQuery: "foo context:@userA", wantIsGlobal: false},
+		{name: "structural search", searchQuery: "foo", patternType: query.SearchTypeStructural, wantIsGlobal: false},
+		{name: "version context", searchQuery: "foo", versionContext: &versionContext, wantIsGlobal: false},
+		{name: "repo", searchQuery: "foo repo:sourcegraph/sourcegraph", versionContext: &versionContext, wantIsGlobal: false},
+		{name: "repogroup", searchQuery: "foo repogroup:grp", versionContext: &versionContext, wantIsGlobal: false},
+		{name: "repohasfile", searchQuery: "foo repohasfile:bar", versionContext: &versionContext, wantIsGlobal: false},
+		{name: "global search context", searchQuery: "foo context:global", wantIsGlobal: true},
+		{name: "global search", searchQuery: "foo", wantIsGlobal: true},
+	}
+
+	for _, tt := range tts {
+		t.Run(tt.name, func(t *testing.T) {
+			qinfo, err := query.ParseLiteral(tt.searchQuery)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			resolver := searchResolver{
+				SearchInputs: &SearchInputs{
+					Query:          qinfo,
+					UserSettings:   &schema.Settings{},
+					PatternType:    tt.patternType,
+					VersionContext: tt.versionContext,
+				},
+			}
+
+			gotIsGlobal := resolver.isGlobalSearch()
+			if gotIsGlobal != tt.wantIsGlobal {
+				t.Fatalf("got %+v, want %+v", gotIsGlobal, tt.wantIsGlobal)
+			}
+		})
+	}
+
 }

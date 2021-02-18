@@ -169,7 +169,7 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
 
     showSearchContext: boolean
     availableSearchContexts: ISearchContext[]
-    selectedSearchContextSpec: string
+    selectedSearchContextSpec?: string
     defaultSearchContextSpec: string
 
     /**
@@ -446,7 +446,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     showRepogroupHomepage={this.state.showRepogroupHomepage}
                                     showOnboardingTour={this.state.showOnboardingTour}
                                     showSearchContext={this.state.showSearchContext}
-                                    selectedSearchContextSpec={this.state.selectedSearchContextSpec}
+                                    selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
                                     setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
                                     availableSearchContexts={this.state.availableSearchContexts}
                                     defaultSearchContextSpec={this.state.defaultSearchContextSpec}
@@ -518,6 +518,9 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
 
         this.extensionsController.services.workspace.versionContext.next(resolvedVersionContext)
     }
+
+    private getSelectedSearchContextSpec = (): string | undefined =>
+        this.state.showSearchContext ? this.state.selectedSearchContextSpec : undefined
 
     private setSelectedSearchContextSpec = (spec: string): void => {
         this.setState(state => ({

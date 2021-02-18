@@ -39,12 +39,12 @@ const SearchContextMenuItem: React.FunctionComponent<{
     description: string
     selected: boolean
     isDefault: boolean
-    setSelectedSearchContextSpec: (spec: string) => void
+    selectSearchContextSpec: (spec: string) => void
     searchFilter: string
-}> = ({ spec, description, selected, isDefault, setSelectedSearchContextSpec, searchFilter }) => {
+}> = ({ spec, description, selected, isDefault, selectSearchContextSpec, searchFilter }) => {
     const setContext = useCallback(() => {
-        setSelectedSearchContextSpec(spec)
-    }, [setSelectedSearchContextSpec, spec])
+        selectSearchContextSpec(spec)
+    }, [selectSearchContextSpec, spec])
     return (
         <DropdownItem
             className={classNames('search-context-menu__item', { 'search-context-menu__item--selected': selected })}
@@ -61,8 +61,10 @@ const SearchContextMenuItem: React.FunctionComponent<{
     )
 }
 
-export interface SearchContextMenuProps extends Omit<SearchContextProps, 'showSearchContext'> {
+export interface SearchContextMenuProps
+    extends Omit<SearchContextProps, 'showSearchContext' | 'setSelectedSearchContextSpec'> {
     closeMenu: () => void
+    selectSearchContextSpec: (spec: string) => void
 }
 
 const getFirstMenuItem = (): HTMLButtonElement | null =>
@@ -72,15 +74,15 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
     availableSearchContexts,
     selectedSearchContextSpec,
     defaultSearchContextSpec,
-    setSelectedSearchContextSpec,
+    selectSearchContextSpec,
     closeMenu,
 }) => {
     const inputElement = useRef<HTMLInputElement | null>(null)
 
     const reset = useCallback(() => {
-        setSelectedSearchContextSpec(defaultSearchContextSpec)
+        selectSearchContextSpec(defaultSearchContextSpec)
         closeMenu()
-    }, [closeMenu, defaultSearchContextSpec, setSelectedSearchContextSpec])
+    }, [closeMenu, defaultSearchContextSpec, selectSearchContextSpec])
 
     const focusInputElement = (): void => {
         // Focus the input in the next run-loop to override the browser focusing the first dropdown item
@@ -166,7 +168,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                         description={context.description}
                         isDefault={context.spec === defaultSearchContextSpec}
                         selected={context.spec === selectedSearchContextSpec}
-                        setSelectedSearchContextSpec={setSelectedSearchContextSpec}
+                        selectSearchContextSpec={selectSearchContextSpec}
                         searchFilter={searchFilter}
                     />
                 ))}

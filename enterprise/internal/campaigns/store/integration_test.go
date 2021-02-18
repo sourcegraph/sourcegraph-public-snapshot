@@ -24,6 +24,8 @@ func TestIntegration(t *testing.T) {
 		t.Run("ListChangesetsTextSearch", storeTest(dbconn.Global, testStoreListChangesetsTextSearch))
 		t.Run("CampaignSpecs", storeTest(dbconn.Global, testStoreCampaignSpecs))
 		t.Run("ChangesetSpecs", storeTest(dbconn.Global, testStoreChangesetSpecs))
+		t.Run("ChangesetSpecsCurrentState", storeTest(dbconn.Global, testStoreChangesetSpecsCurrentState))
+		t.Run("ChangesetSpecsCurrentStateAndTextSearch", storeTest(dbconn.Global, testStoreChangesetSpecsCurrentStateAndTextSearch))
 		t.Run("ChangesetSpecsTextSearch", storeTest(dbconn.Global, testStoreChangesetSpecsTextSearch))
 		t.Run("CodeHosts", storeTest(dbconn.Global, testStoreCodeHost))
 		t.Run("UserDeleteCascades", storeTest(dbconn.Global, testUserDeleteCascades))

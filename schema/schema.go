@@ -351,6 +351,12 @@ type CloneURLToRepositoryName struct {
 	To string `json:"to"`
 }
 
+// CloudKMSEncryptionKey description: Google Cloud KMS Encryption Key, used to encrypt data in Google Cloud environments
+type CloudKMSEncryptionKey struct {
+	Keyname string `json:"keyname"`
+	Type    string `json:"type"`
+}
+
 // CustomGitFetchMapping description: Mapping from Git clone URl domain/path to git fetch command. The `domainPath` field contains the Git clone URL domain/path part. The `fetch` field contains the custom git fetch command.
 type CustomGitFetchMapping struct {
 	// DomainPath description: Git clone URL domain/path
@@ -369,6 +375,42 @@ type DebugLog struct {
 type Dotcom struct {
 	// SlackLicenseExpirationWebhook description: Slack webhook for upcoming license expiration notifications.
 	SlackLicenseExpirationWebhook string `json:"slackLicenseExpirationWebhook,omitempty"`
+}
+
+// EncryptionKey description: Config for a key
+type EncryptionKey struct {
+	Cloudkms *CloudKMSEncryptionKey
+	Noop     *NoOpEncryptionKey
+}
+
+func (v EncryptionKey) MarshalJSON() ([]byte, error) {
+	if v.Cloudkms != nil {
+		return json.Marshal(v.Cloudkms)
+	}
+	if v.Noop != nil {
+		return json.Marshal(v.Noop)
+	}
+	return nil, errors.New("tagged union type must have exactly 1 non-nil field value")
+}
+func (v *EncryptionKey) UnmarshalJSON(data []byte) error {
+	var d struct {
+		DiscriminantProperty string `json:"type"`
+	}
+	if err := json.Unmarshal(data, &d); err != nil {
+		return err
+	}
+	switch d.DiscriminantProperty {
+	case "cloudkms":
+		return json.Unmarshal(data, &v.Cloudkms)
+	case "noop":
+		return json.Unmarshal(data, &v.Noop)
+	}
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"cloudkms", "noop"})
+}
+
+// EncryptionKeys description: Configuration for encryption keys used to encrypt data at rest in the database.
+type EncryptionKeys struct {
+	ExternalServiceKey *EncryptionKey `json:"externalServiceKey,omitempty"`
 }
 type ExcludedAWSCodeCommitRepo struct {
 	// Id description: The ID of an AWS Code Commit repository (as returned by the AWS API) to exclude from mirroring. Use this to exclude the repository, even if renamed, or to differentiate between repositories with the same name in multiple regions.
@@ -768,6 +810,11 @@ type InsightSeries struct {
 type Log struct {
 	// Sentry description: Configuration for Sentry
 	Sentry *Sentry `json:"sentry,omitempty"`
+}
+
+// NoOpEncryptionKey description: This encryption key is a no op, leaving your data in plaintext (not recommended).
+type NoOpEncryptionKey struct {
+	Type string `json:"type"`
 }
 type Notice struct {
 	// Dismissible description: Whether this notice can be dismissed (closed) by the user.
@@ -1263,6 +1310,8 @@ type SiteConfiguration struct {
 	EmailAddress string `json:"email.address,omitempty"`
 	// EmailSmtp description: The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).
 	EmailSmtp *SMTPServerConfig `json:"email.smtp,omitempty"`
+	// EncryptionKeys description: Configuration for encryption keys used to encrypt data at rest in the database.
+	EncryptionKeys *EncryptionKeys `json:"encryption.keys,omitempty"`
 	// ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 	ExperimentalFeatures *ExperimentalFeatures `json:"experimentalFeatures,omitempty"`
 	// Extensions description: Configures Sourcegraph extensions.

@@ -8,6 +8,8 @@ import (
 	"sync/atomic"
 	"testing"
 
+	zoektstream "github.com/google/zoekt/stream"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/zoekt"
@@ -28,7 +30,6 @@ func TestHorizontalSearcher(t *testing.T) {
 					Files: []zoekt.FileMatch{{
 						Repository: endpoint,
 					}},
-					RepoURLs: map[string]string{endpoint: endpoint},
 				},
 				listResult: &zoekt.RepoList{Repos: []*zoekt.RepoListEntry{&rle}},
 			}
@@ -86,16 +87,6 @@ func TestHorizontalSearcher(t *testing.T) {
 			t.Errorf("search mismatch (-want +got):\n%s", cmp.Diff(want, got))
 		}
 
-		// repohasfile depends on RepoURLs aggregating
-		got = got[:0]
-		for repo := range sr.RepoURLs {
-			got = append(got, repo)
-		}
-		sort.Strings(got)
-		if !cmp.Equal(want, got, cmpopts.EquateEmpty()) {
-			t.Errorf("search mismatch (-want +got):\n%s", cmp.Diff(want, got))
-		}
-
 		// Our list results should be one per server
 		rle, err := searcher.List(context.Background(), nil)
 		if err != nil {
@@ -131,11 +122,16 @@ func TestDoStreamSearch(t *testing.T) {
 	}
 	defer searcher.Close()
 
-	c := searcher.StreamSearch(context.Background(), nil, nil)
-	for event := range c {
-		if event.Error == nil {
-			t.Fatalf("received non-nil error, but expected an error")
-		}
+	c := make(chan *zoekt.SearchResult)
+	defer close(c)
+	err := searcher.StreamSearch(
+		context.Background(),
+		nil,
+		nil,
+		ZoektStreamFunc(func(event *zoekt.SearchResult) { c <- event }),
+	)
+	if err == nil {
+		t.Fatalf("received non-nil error, but expected an error")
 	}
 }
 
@@ -344,8 +340,8 @@ func (s *mockSearcher) Search(context.Context, query.Q, *zoekt.SearchOptions) (*
 	return res, s.searchError
 }
 
-func (s *mockSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) <-chan StreamSearchEvent {
-	return (&StreamSearchAdapter{s}).StreamSearch(ctx, q, opts)
+func (s *mockSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, streamer zoektstream.Streamer) error {
+	return (&StreamSearchAdapter{s}).StreamSearch(ctx, q, opts, streamer)
 }
 
 func (s *mockSearcher) List(context.Context, query.Q) (*zoekt.RepoList, error) {

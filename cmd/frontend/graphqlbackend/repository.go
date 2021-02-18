@@ -33,6 +33,14 @@ type RepositoryResolver struct {
 	hydration sync.Once
 	err       error
 
+	// Invariant: name and id are always set and safe to use.
+	// They are used to hydrate the inner repo, and should always
+	// be the same as the name and id of the inner repo, but referring
+	// to the inner repo directly is unsafe because it may cause a race
+	// during hydration.
+	name api.RepoName
+	id   api.RepoID
+
 	// innerRepo may only contain ID and Name information.
 	// To access any other repo information, use repo() instead.
 	innerRepo *types.Repo
@@ -47,7 +55,19 @@ type RepositoryResolver struct {
 }
 
 func NewRepositoryResolver(repo *types.Repo) *RepositoryResolver {
-	return &RepositoryResolver{innerRepo: repo}
+	// Protect against a nil repo
+	var name api.RepoName
+	var id api.RepoID
+	if repo != nil {
+		name = repo.Name
+		id = repo.ID
+	}
+
+	return &RepositoryResolver{
+		innerRepo: repo,
+		name:      name,
+		id:        id,
+	}
 }
 
 var RepositoryByID = repositoryByID
@@ -61,7 +81,7 @@ func repositoryByID(ctx context.Context, id graphql.ID) (*RepositoryResolver, er
 	if err != nil {
 		return nil, err
 	}
-	return &RepositoryResolver{innerRepo: repo}, nil
+	return NewRepositoryResolver(repo), nil
 }
 
 func RepositoryByIDInt32(ctx context.Context, repoID api.RepoID) (*RepositoryResolver, error) {
@@ -69,7 +89,7 @@ func RepositoryByIDInt32(ctx context.Context, repoID api.RepoID) (*RepositoryRes
 	if err != nil {
 		return nil, err
 	}
-	return &RepositoryResolver{innerRepo: repo}, nil
+	return NewRepositoryResolver(repo), nil
 }
 
 func (r *RepositoryResolver) ID() graphql.ID {
@@ -77,7 +97,7 @@ func (r *RepositoryResolver) ID() graphql.ID {
 }
 
 func (r *RepositoryResolver) IDInt32() api.RepoID {
-	return r.innerRepo.ID
+	return r.id
 }
 
 func MarshalRepositoryID(repo api.RepoID) graphql.ID { return relay.MarshalID("Repository", repo) }
@@ -102,7 +122,7 @@ func (r *RepositoryResolver) repo(ctx context.Context) (*types.Repo, error) {
 }
 
 func (r *RepositoryResolver) Name() string {
-	return string(r.innerRepo.Name)
+	return string(r.name)
 }
 
 func (r *RepositoryResolver) ExternalRepo(ctx context.Context) (*api.ExternalRepoSpec, error) {
@@ -183,12 +203,12 @@ func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryC
 
 func (r *RepositoryResolver) DefaultBranch(ctx context.Context) (*GitRefResolver, error) {
 	do := func() (*GitRefResolver, error) {
-		refBytes, _, exitCode, err := git.ExecSafe(ctx, r.innerRepo.Name, []string{"symbolic-ref", "HEAD"})
+		refBytes, _, exitCode, err := git.ExecSafe(ctx, r.name, []string{"symbolic-ref", "HEAD"})
 		refName := string(bytes.TrimSpace(refBytes))
 
 		if err == nil && exitCode == 0 {
 			// Check that our repo is not empty
-			_, err = git.ResolveRevision(ctx, r.innerRepo.Name, "HEAD", git.ResolveRevisionOptions{NoEnsureRevision: true})
+			_, err = git.ResolveRevision(ctx, r.name, "HEAD", git.ResolveRevisionOptions{NoEnsureRevision: true})
 		}
 
 		// If we fail to get the default branch due to cloning or being empty, we return nothing.
@@ -413,7 +433,7 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 		if err != nil {
 			return nil, err
 		}
-		r := &RepositoryResolver{innerRepo: repo}
+		r := NewRepositoryResolver(repo)
 		return r.Commit(ctx, &RepositoryCommitArgs{Rev: targetRef})
 	}
 

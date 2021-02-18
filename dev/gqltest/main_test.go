@@ -1,9 +1,8 @@
-// +build gqltest
-
 package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -18,6 +17,8 @@ import (
 var client *gqltestutil.Client
 
 var (
+	long = flag.Bool("long", false, "Enable the integration tests to run. Required flag, otherwise tests are skipped.")
+
 	baseURL  = flag.String("base-url", "http://127.0.0.1:7080", "The base URL of the Sourcegraph instance")
 	email    = flag.String("email", "gqltest@sourcegraph.com", "The email of the admin user")
 	username = flag.String("username", "gqltest-admin", "The username of the admin user")
@@ -37,6 +38,11 @@ var (
 
 func TestMain(m *testing.M) {
 	flag.Parse()
+
+	if !*long {
+		fmt.Println("SKIP: skipping gqltest since -long is not specified.")
+		return
+	}
 
 	*baseURL = strings.TrimSuffix(*baseURL, "/")
 

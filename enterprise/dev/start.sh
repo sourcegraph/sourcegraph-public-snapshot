@@ -50,5 +50,4 @@ export WATCH_ADDITIONAL_GO_DIRS="enterprise/cmd enterprise/dev enterprise/intern
 export ENTERPRISE_ONLY_COMMANDS=" precise-code-intel-worker executor-queue executor "
 export ENTERPRISE_COMMANDS="frontend repo-updater ${ENTERPRISE_ONLY_COMMANDS}"
 export ENTERPRISE=1
-export PROCFILE=enterprise/dev/Procfile
 ./dev/start.sh "$@"

@@ -38,3 +38,5 @@ export function scrollIntoView(listElement?: HTMLElement, selectedElement?: HTML
         listElement.scrollTop += selectedRectangle.bottom - listRectangle.bottom
     }
 }
+
+export const isMacPlatform = window.navigator.platform.includes('Mac')

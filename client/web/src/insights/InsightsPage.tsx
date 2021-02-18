@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo } from 'react'
 import { useObservable } from '../../../shared/src/util/useObservable'
-import { getViewsForContainer } from '../../../shared/src/api/client/services/viewService'
 import { ContributableViewContainer } from '../../../shared/src/api/protocol'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { ViewGrid, ViewGridProps } from '../repo/tree/ViewGrid'
@@ -10,36 +9,18 @@ import { Link } from '../../../shared/src/components/Link'
 import GearIcon from 'mdi-react/GearIcon'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { PageHeader } from '../components/PageHeader'
-import { BreadcrumbsProps, BreadcrumbSetters } from '../components/Breadcrumbs'
 import { StatusBadge } from '../components/StatusBadge'
 import { Page } from '../components/Page'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { getCombinedViews } from './backend'
 
-interface InsightsPageProps
-    extends ExtensionsControllerProps,
-        Omit<ViewGridProps, 'views'>,
-        BreadcrumbsProps,
-        BreadcrumbSetters,
-        TelemetryProps {}
+interface InsightsPageProps extends ExtensionsControllerProps, Omit<ViewGridProps, 'views'>, TelemetryProps {}
+
 export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props => {
-    props.useBreadcrumb(
-        useMemo(
-            () => ({
-                key: 'Insights',
-                element: <>Insights</>,
-            }),
-            []
-        )
-    )
-
     const views = useObservable(
         useMemo(
             () =>
-                getViewsForContainer(
-                    ContributableViewContainer.InsightsPage,
-                    {},
-                    props.extensionsController.services.view
-                ),
+                getCombinedViews(ContributableViewContainer.InsightsPage, {}, props.extensionsController.services.view),
             [props.extensionsController.services.view]
         )
     )

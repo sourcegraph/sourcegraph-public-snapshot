@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -43,6 +44,7 @@ func StartBackgroundJobs(ctx context.Context, mainAppDB *sql.DB) {
 	// Create a base store to be used for storing worker state. We store this in the main app Postgres
 	// DB, not the TimescaleDB (which we use only for storing insights data.)
 	workerBaseStore := basestore.NewWithDB(mainAppDB, sql.TxOptions{})
+	settingStore := database.Settings(mainAppDB)
 
 	// Create basic metrics for recording information about background jobs.
 	observationContext := &observation.Context{
@@ -55,7 +57,7 @@ func StartBackgroundJobs(ctx context.Context, mainAppDB *sql.DB) {
 	// Start background goroutines for all of our workers.
 	go goroutine.MonitorBackgroundRoutines(ctx, []goroutine.BackgroundRoutine{
 		// Register the background goroutine which discovers and enqueues insights work.
-		newInsightEnqueuer(ctx, workerBaseStore, observationContext),
+		newInsightEnqueuer(ctx, workerBaseStore, settingStore, observationContext),
 
 		// Register the query-runner worker and resetter, which executes search queries and records
 		// results to TimescaleDB.

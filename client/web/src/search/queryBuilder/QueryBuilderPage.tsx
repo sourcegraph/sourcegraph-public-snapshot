@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { PatternTypeProps } from '..'
+import { PatternTypeProps, SearchContextProps } from '..'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { QueryBuilder } from './QueryBuilder'
 import { PageTitle } from '../../components/PageTitle'
@@ -8,12 +8,19 @@ import { VersionContextProps } from '../../../../shared/src/search/util'
 import { PageHeader } from '../../components/PageHeader'
 import { Page } from '../../components/Page'
 
-interface Props extends Pick<PatternTypeProps, 'patternType'>, VersionContextProps {}
+interface Props
+    extends Pick<PatternTypeProps, 'patternType'>,
+        VersionContextProps,
+        Pick<SearchContextProps, 'selectedSearchContextSpec'> {}
 
 /**
  * A page with a search query builder form to make it easy to construct search queries.
  */
-export const QueryBuilderPage: React.FunctionComponent<Props> = ({ versionContext, patternType }) => {
+export const QueryBuilderPage: React.FunctionComponent<Props> = ({
+    versionContext,
+    patternType,
+    selectedSearchContextSpec,
+}) => {
     const [query, setQuery] = useState('')
 
     const helpText = 'Use the fields below to build your query'
@@ -33,7 +40,13 @@ export const QueryBuilderPage: React.FunctionComponent<Props> = ({ versionContex
                 />
                 <Link
                     className={`btn btn-primary ${query === '' ? 'disabled' : ''}`}
-                    to={`/search?${buildSearchURLQuery(query, patternType, false, versionContext)}`}
+                    to={`/search?${buildSearchURLQuery(
+                        query,
+                        patternType,
+                        false,
+                        versionContext,
+                        selectedSearchContextSpec
+                    )}`}
                 >
                     Search
                 </Link>
