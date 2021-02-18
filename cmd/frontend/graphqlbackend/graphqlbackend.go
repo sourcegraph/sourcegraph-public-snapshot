@@ -78,6 +78,7 @@ func (h honeycombTracer) TraceQuery(ctx context.Context, queryString string, ope
 		ev := honey.Event("graphql-cost")
 		ev.SampleRate = uint(traceGraphQLQueriesSample)
 		ev.AddField("query", queryString)
+		ev.AddField("variables", variables)
 		ev.AddField("anonymous", anonymous)
 		ev.AddField("uid", uid)
 		ev.AddField("operationName", operationName)
