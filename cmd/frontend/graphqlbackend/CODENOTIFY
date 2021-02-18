@@ -16,3 +16,9 @@ campaigns.go @eseliger
 # Insights
 insights.go @slimsag
 insights.go @felixfbecker
+
+# Code intelligence
+codeintel.go @efritz
+
+# Migrations
+oobmigrations.go @efritz
