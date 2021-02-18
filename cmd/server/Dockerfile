@@ -3,7 +3,7 @@ FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd2
 COPY libsqlite3-pcre-install-alpine.sh /libsqlite3-pcre-install-alpine.sh
 RUN /libsqlite3-pcre-install-alpine.sh
 
-# Install p4 CLI (keep this up to date with cmd/server/Dockerfile)
+# Install p4 CLI (keep this up to date with cmd/gitserver/Dockerfile)
 FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd212d78d7be145adde636d AS p4cli
 
 # hadolint ignore=DL3003
