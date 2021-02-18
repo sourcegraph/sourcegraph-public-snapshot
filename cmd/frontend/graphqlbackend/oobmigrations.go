@@ -96,7 +96,7 @@ func (r *outOfBandMigrationResolver) Team() string           { return r.m.Team }
 func (r *outOfBandMigrationResolver) Component() string      { return r.m.Component }
 func (r *outOfBandMigrationResolver) Description() string    { return r.m.Description }
 func (r *outOfBandMigrationResolver) Introduced() string     { return r.m.Introduced }
-func (r *outOfBandMigrationResolver) Deprecated() string     { return r.m.Deprecated }
+func (r *outOfBandMigrationResolver) Deprecated() *string    { return r.m.Deprecated }
 func (r *outOfBandMigrationResolver) Progress() float64      { return r.m.Progress }
 func (r *outOfBandMigrationResolver) Created() DateTime      { return DateTime{r.m.Created} }
 func (r *outOfBandMigrationResolver) LastUpdated() *DateTime { return DateTimeOrNil(r.m.LastUpdated) }
