@@ -930,6 +930,7 @@ declare namespace browser.runtime {
         id?: string
         strict_min_version?: string
         strict_max_version?: string
+        update_url?: string
     }
 
     type IconPath = { [urlName: string]: string } | string
@@ -1157,6 +1158,7 @@ declare namespace browser.runtime {
                 event_types: ('start' | 'word' | 'sentence' | 'marker' | 'end' | 'error')[]
             }[]
         }
+        update_url?: string
         version_name?: string
     }
 
