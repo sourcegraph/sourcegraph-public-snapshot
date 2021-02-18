@@ -131,7 +131,7 @@ The following are two recommendations for installing these dependencies:
 3. Install dependencies:
 
     ```
-    sudo apt install -y make git-all postgresql postgresql-contrib redis-server libpcre3-dev libsqlite3-dev pkg-config golang-go musl-tools docker-ce docker-ce-cli containerd.io yarn jq
+    sudo apt install -y make git-all postgresql postgresql-contrib redis-server libpcre3-dev libsqlite3-dev pkg-config golang-go musl-tools docker-ce docker-ce-cli containerd.io yarn jq libnss3-tools
 
     # install golang-migrate (you must rename the extracted binary to `golang-migrate` and move the binary into your $PATH)
     curl -L https://github.com/golang-migrate/migrate/releases/download/v4.7.0/migrate.linux-amd64.tar.gz | tar xvz
