@@ -299,6 +299,10 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request) (matche
 		return nil, false, false, err
 	}
 
+	if len(zoektMatches) == 0 {
+		return nil, false, false, nil
+	}
+
 	zipFile, err := ioutil.TempFile("", "*.zip")
 	if err != nil {
 		return nil, false, false, err
