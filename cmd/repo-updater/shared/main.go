@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -99,7 +100,12 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	repos.MustRegisterMetrics(db)
 
-	store := repos.NewStore(db, sql.TxOptions{Isolation: sql.LevelDefault})
+	ring, err := keyring.NewRing(ctx, conf.Get().EncryptionKeys)
+	if err != nil {
+		log.Fatalf("failed to initialize encryption.Keyring: %v",err)
+	}
+
+	store := repos.NewStore(db, sql.TxOptions{Isolation: sql.LevelDefault}, ring.ExternalServiceKey)
 	{
 		m := repos.NewStoreMetrics()
 		m.MustRegister(prometheus.DefaultRegisterer)

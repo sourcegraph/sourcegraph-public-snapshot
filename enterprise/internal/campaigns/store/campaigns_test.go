@@ -457,7 +457,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 		userID := ct.CreateTestUser(t, false).ID
 		userCtx := actor.WithActor(ctx, actor.FromUser(userID))
 		repoStore := database.ReposWith(s)
-		esStore := database.ExternalServicesWith(s)
+		esStore := database.ExternalServicesWith(s, nil)
 		repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
 		repo.Private = true
 		if err := repoStore.Create(ctx, repo); err != nil {

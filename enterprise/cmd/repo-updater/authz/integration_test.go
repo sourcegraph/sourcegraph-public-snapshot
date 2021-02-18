@@ -71,7 +71,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 	testDB := dbtest.NewDB(t, *dsn)
 	ctx := actor.WithInternalActor(context.Background())
 
-	reposStore := repos.NewStore(testDB, sql.TxOptions{})
+	reposStore := repos.NewStore(testDB, sql.TxOptions{}, nil)
 
 	svc := types.ExternalService{
 		Kind:      extsvc.KindGitHub,

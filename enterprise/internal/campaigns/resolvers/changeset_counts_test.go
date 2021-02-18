@@ -80,7 +80,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	userID := ct.CreateTestUser(t, false).ID
 
 	repoStore := database.Repos(dbconn.Global)
-	esStore := database.ExternalServices(dbconn.Global)
+	esStore := database.ExternalServices(dbconn.Global, nil)
 
 	githubExtSvc := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,

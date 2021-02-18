@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -45,12 +46,12 @@ type Store struct {
 }
 
 // NewStore instantiates and returns a new DBStore with prepared statements.
-func NewStore(db dbutil.DB, txOpts sql.TxOptions) *Store {
+func NewStore(db dbutil.DB, txOpts sql.TxOptions, extsvcKey encryption.Key) *Store {
 	s := basestore.NewWithDB(db, txOpts)
 	return &Store{
 		Store:                s,
 		RepoStore:            database.ReposWith(s),
-		ExternalServiceStore: database.ExternalServicesWith(s),
+		ExternalServiceStore: database.ExternalServicesWith(s, extsvcKey),
 		Log:                  log15.Root(),
 		Tracer:               trace.Tracer{Tracer: opentracing.GlobalTracer()},
 	}

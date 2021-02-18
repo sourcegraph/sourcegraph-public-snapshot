@@ -137,7 +137,7 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	}()
 
 	permsStore := edb.Perms(nil, timeutil.Now)
-	s := NewPermsSyncer(repos.NewStore(dbconn.Global, sql.TxOptions{}), permsStore, timeutil.Now, nil)
+	s := NewPermsSyncer(repos.NewStore(dbconn.Global, sql.TxOptions{}, nil), permsStore, timeutil.Now, nil)
 
 	tests := []struct {
 		name     string
@@ -206,7 +206,7 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 	}()
 
 	permsStore := edb.Perms(nil, timeutil.Now)
-	s := NewPermsSyncer(repos.NewStore(dbconn.Global, sql.TxOptions{}), permsStore, timeutil.Now, nil)
+	s := NewPermsSyncer(repos.NewStore(dbconn.Global, sql.TxOptions{}, nil), permsStore, timeutil.Now, nil)
 
 	t.Run("invalid token", func(t *testing.T) {
 		calledTouchExpired := false
@@ -285,7 +285,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 			database.Mocks.Repos = database.MockRepos{}
 		}()
 
-		s := newPermsSyncer(repos.NewStore(dbconn.Global, sql.TxOptions{}))
+		s := newPermsSyncer(repos.NewStore(dbconn.Global, sql.TxOptions{}, nil))
 
 		err := s.syncRepoPerms(context.Background(), 1, false)
 		if err != nil {
@@ -359,7 +359,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 			database.Mocks.Repos = database.MockRepos{}
 		}()
 
-		s := newPermsSyncer(repos.NewStore(dbconn.Global, sql.TxOptions{}))
+		s := newPermsSyncer(repos.NewStore(dbconn.Global, sql.TxOptions{}, nil))
 
 		err := s.syncRepoPerms(context.Background(), 1, false)
 		if err != nil {
@@ -421,7 +421,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		database.Mocks.Repos = database.MockRepos{}
 	}()
 
-	s := newPermsSyncer(repos.NewStore(dbconn.Global, sql.TxOptions{}))
+	s := newPermsSyncer(repos.NewStore(dbconn.Global, sql.TxOptions{}, nil))
 
 	tests := []struct {
 		name     string

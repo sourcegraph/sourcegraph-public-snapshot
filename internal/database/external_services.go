@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -36,6 +37,8 @@ import (
 type ExternalServiceStore struct {
 	*basestore.Store
 
+	key encryption.Key
+
 	GitHubValidators          []func(*schema.GitHubConnection) error
 	GitLabValidators          []func(*schema.GitLabConnection, []schema.AuthProviders) error
 	BitbucketServerValidators []func(*schema.BitbucketServerConnection) error
@@ -48,22 +51,22 @@ type ExternalServiceStore struct {
 }
 
 // ExternalServices instantiates and returns a new ExternalServicesStore with prepared statements.
-func ExternalServices(db dbutil.DB) *ExternalServiceStore {
-	return &ExternalServiceStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+func ExternalServices(db dbutil.DB, key encryption.Key) *ExternalServiceStore {
+	return &ExternalServiceStore{Store: basestore.NewWithDB(db, sql.TxOptions{}), key: key}
 }
 
 // NewExternalServicesStoreWithDB instantiates and returns a new ExternalServicesStore with prepared statements.
-func ExternalServicesWith(other basestore.ShareableStore) *ExternalServiceStore {
-	return &ExternalServiceStore{Store: basestore.NewWithHandle(other.Handle())}
+func ExternalServicesWith(other basestore.ShareableStore, key encryption.Key) *ExternalServiceStore {
+	return &ExternalServiceStore{Store: basestore.NewWithHandle(other.Handle()), key: key}
 }
 
 func (e *ExternalServiceStore) With(other basestore.ShareableStore) *ExternalServiceStore {
-	return &ExternalServiceStore{Store: e.Store.With(other)}
+	return &ExternalServiceStore{Store: e.Store.With(other), key: e.key}
 }
 
 func (e *ExternalServiceStore) Transact(ctx context.Context) (*ExternalServiceStore, error) {
 	txBase, err := e.Store.Transact(ctx)
-	return &ExternalServiceStore{Store: txBase}, err
+	return &ExternalServiceStore{Store: txBase, key: e.key}, err
 }
 
 // ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
@@ -905,7 +908,7 @@ func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesLis
 	}
 
 	q := sqlf.Sprintf(`
-		SELECT id, kind, display_name, config, created_at, updated_at, deleted_at, last_sync_at, next_sync_at, namespace_user_id, unrestricted, cloud_default
+		SELECT id, kind, display_name, config, COALESCE(config_encrypted, false), created_at, updated_at, deleted_at, last_sync_at, next_sync_at, namespace_user_id, unrestricted, cloud_default
 		FROM external_services
 		WHERE (%s)
 		ORDER BY id `+opt.OrderByDirection+`
@@ -928,8 +931,9 @@ func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesLis
 			lastSyncAt      sql.NullTime
 			nextSyncAt      sql.NullTime
 			namespaceUserID sql.NullInt32
+			configEncrypted bool
 		)
-		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &h.Config, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namespaceUserID, &h.Unrestricted, &h.CloudDefault); err != nil {
+		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &h.Config, &configEncrypted, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namespaceUserID, &h.Unrestricted, &h.CloudDefault); err != nil {
 			return nil, err
 		}
 
@@ -944,6 +948,18 @@ func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesLis
 		}
 		if namespaceUserID.Valid {
 			h.NamespaceUserID = namespaceUserID.Int32
+		}
+
+		if e.key != nil && configEncrypted {
+			decrypted, err := e.key.Decrypt(ctx, []byte(h.Config))
+			if err != nil {
+				return nil, err
+			}
+
+			// SECURITY 🚨: this is not what we really want to be doing, as it means that more often than
+			// not we're handling the plaintext config, this is a short term solution as longer term we'd
+			// like to only encrypt secret fields in the config.
+			h.Config = decrypted.Secret()
 		}
 		results = append(results, &h)
 	}

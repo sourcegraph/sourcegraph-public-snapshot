@@ -22,7 +22,7 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 
 	// Create stub repo.
 	repoStore := database.Repos(dbconn.Global)
-	esStore := database.ExternalServices(dbconn.Global)
+	esStore := database.ExternalServices(dbconn.Global, nil)
 
 	now := time.Now()
 	svc := types.ExternalService{

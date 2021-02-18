@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -226,5 +227,10 @@ func getStores() (*database.RepoStore, *database.ExternalServiceStore, error) {
 		return nil, nil, err
 	}
 
-	return database.Repos(h), database.ExternalServices(h), nil
+	ring, err := keyring.NewRing(context.Background(), conf.Get().EncryptionKeys)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return database.Repos(h), database.ExternalServices(h, ring.ExternalServiceKey), nil
 }

@@ -20,7 +20,7 @@ import (
 
 func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
 	repoStore := database.ReposWith(s)
-	esStore := database.ExternalServicesWith(s)
+	esStore := database.ExternalServicesWith(s, nil)
 
 	repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
 	deletedRepo := ct.TestRepo(t, esStore, extsvc.KindGitHub).With(types.Opt.RepoDeletedAt(clock.Now()))
@@ -679,7 +679,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 
 func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
 	repoStore := database.ReposWith(s)
-	esStore := database.ExternalServicesWith(s)
+	esStore := database.ExternalServicesWith(s, nil)
 
 	// Let's set up a campaign with one of every changeset state.
 
@@ -773,7 +773,7 @@ func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *S
 
 func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
 	repoStore := database.ReposWith(s)
-	esStore := database.ExternalServicesWith(s)
+	esStore := database.ExternalServicesWith(s, nil)
 
 	// Let's set up a campaign with one of every changeset state.
 
@@ -931,7 +931,7 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 
 func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
 	repoStore := database.ReposWith(s)
-	esStore := database.ExternalServicesWith(s)
+	esStore := database.ExternalServicesWith(s, nil)
 
 	// OK, let's set up an interesting scenario. We're going to set up a
 	// campaign that tracks two changesets in different repositories, and

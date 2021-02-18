@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -95,9 +96,9 @@ func TestCreateCampaignSpec(t *testing.T) {
 	user := ct.CreateTestUser(t, true)
 	userID := user.ID
 
-	cstore := store.New(dbconn.Global)
+	cstore := store.New(dbconn.Global, keyring.Ring{})
 	repoStore := database.ReposWith(cstore)
-	esStore := database.ExternalServicesWith(cstore)
+	esStore := cstore.ExternalServices()
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/create-campaign-spec-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
@@ -343,9 +344,9 @@ func TestApplyCampaign(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	cstore := store.NewWithClock(dbconn.Global, clock)
+	cstore := store.NewWithClock(dbconn.Global, keyring.Ring{}, clock)
 	repoStore := database.ReposWith(cstore)
-	esStore := database.ExternalServicesWith(cstore)
+	esStore := cstore.ExternalServices()
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/apply-campaign-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {

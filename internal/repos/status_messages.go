@@ -45,7 +45,8 @@ func FetchStatusMessages(ctx context.Context, db dbutil.DB, u *types.User) ([]St
 		})
 	}
 
-	syncErrors, err := database.ExternalServices(db).GetAffiliatedSyncErrors(ctx, u)
+	// we can pass a nil encryption.Key here as we don't need to decrypt anything in order to access sync errors
+	syncErrors, err := database.ExternalServices(db, nil).GetAffiliatedSyncErrors(ctx, u)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching sync errors")
 	}

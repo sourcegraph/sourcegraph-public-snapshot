@@ -33,7 +33,7 @@ func TestIntegration(t *testing.T) {
 
 	store := repos.NewStore(db, sql.TxOptions{
 		Isolation: sql.LevelReadCommitted,
-	})
+	}, nil)
 
 	lg := log15.New()
 	lg.SetHandler(log15.DiscardHandler())

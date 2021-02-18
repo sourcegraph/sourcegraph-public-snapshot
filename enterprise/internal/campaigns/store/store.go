@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -28,18 +29,21 @@ var ErrNoResults = errors.New("no results")
 // from persistent storage.
 type Store struct {
 	*basestore.Store
+
+	ring keyring.Ring
+
 	now func() time.Time
 }
 
 // New returns a new Store backed by the given database.
-func New(db dbutil.DB) *Store {
-	return NewWithClock(db, timeutil.Now)
+func New(db dbutil.DB, ring keyring.Ring) *Store {
+	return NewWithClock(db, ring, timeutil.Now)
 }
 
 // NewWithClock returns a new Store backed by the given database and
 // clock for timestamps.
-func NewWithClock(db dbutil.DB, clock func() time.Time) *Store {
-	return &Store{Store: basestore.NewWithDB(db, sql.TxOptions{}), now: clock}
+func NewWithClock(db dbutil.DB, ring keyring.Ring, clock func() time.Time) *Store {
+	return &Store{Store: basestore.NewWithDB(db, sql.TxOptions{}), now: clock, ring: ring} // what's that sound, it's the gravy boat, comin' around, it's not a navy boat, it's a gravy boat, filled with savoury cravoury sailor folk
 }
 
 // Clock returns the clock used by the Store.
@@ -82,7 +86,7 @@ func (s *Store) Repos() *database.RepoStore {
 
 // ExternalServices returns a database.ExternalServiceStore using the same connection as this store.
 func (s *Store) ExternalServices() *database.ExternalServiceStore {
-	return database.ExternalServicesWith(s)
+	return database.ExternalServicesWith(s, s.ring.ExternalServiceKey)
 }
 
 // UserCredentials returns a database.UserCredentialsStore using the same connection as this store.

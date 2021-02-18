@@ -45,7 +45,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 	}
 
 	rs := database.ReposWith(s)
-	es := database.ExternalServicesWith(s)
+	es := database.ExternalServicesWith(s, nil)
 
 	repo := ct.TestRepo(t, es, extsvc.KindGitHub)
 	otherRepo := ct.TestRepo(t, es, extsvc.KindGitHub)
@@ -1238,7 +1238,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 	}
 
 	rs := database.ReposWith(s)
-	es := database.ExternalServicesWith(s)
+	es := database.ExternalServicesWith(s, nil)
 
 	githubRepo := ct.TestRepo(t, es, extsvc.KindGitHub)
 	gitlabRepo := ct.TestRepo(t, es, extsvc.KindGitLab)
@@ -1506,7 +1506,7 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 	}
 
 	rs := database.ReposWith(s)
-	es := database.ExternalServicesWith(s)
+	es := database.ExternalServicesWith(s, nil)
 
 	// Set up repositories for each code host type we want to test.
 	var (

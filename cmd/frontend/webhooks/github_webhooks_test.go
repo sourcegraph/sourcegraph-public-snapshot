@@ -116,7 +116,7 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 	ctx := context.Background()
 
 	secret := "secret"
-	esStore := database.ExternalServices(db)
+	esStore := database.ExternalServices(db, nil)
 	extSvc := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",

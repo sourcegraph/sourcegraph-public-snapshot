@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
@@ -33,8 +34,8 @@ func TestChangesetResolver(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	cstore := store.NewWithClock(dbconn.Global, clock)
-	esStore := database.ExternalServicesWith(cstore)
+	cstore := store.NewWithClock(dbconn.Global, keyring.Ring{}, clock)
+	esStore := database.ExternalServicesWith(cstore, nil)
 	repoStore := database.ReposWith(cstore)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/changeset-resolver-test", newGitHubExternalService(t, esStore))

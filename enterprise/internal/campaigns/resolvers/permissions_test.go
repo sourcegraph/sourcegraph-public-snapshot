@@ -56,7 +56,7 @@ func TestPermissionLevels(t *testing.T) {
 	userID := ct.CreateTestUser(t, false).ID
 
 	repoStore := database.ReposWith(cstore)
-	esStore := database.ExternalServicesWith(cstore)
+	esStore := database.ExternalServicesWith(cstore, nil)
 
 	repo := newGitHubTestRepo("github.com/sourcegraph/permission-levels-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {

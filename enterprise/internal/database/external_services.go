@@ -6,13 +6,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // NewExternalServicesStore returns an OSS database.ExternalServicesStore set with
 // enterprise validators.
-func NewExternalServicesStore(d dbutil.DB) *database.ExternalServiceStore {
-	es := database.ExternalServices(d)
+func NewExternalServicesStore(d dbutil.DB, key encryption.Key) *database.ExternalServiceStore {
+	es := database.ExternalServices(d, key)
 	es.GitHubValidators = []func(*schema.GitHubConnection) error{
 		github.ValidateAuthz,
 	}

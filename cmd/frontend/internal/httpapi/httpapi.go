@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -37,7 +38,7 @@ import (
 //
 // 🚨 SECURITY: The caller MUST wrap the returned handler in middleware that checks authentication
 // and sets the actor in the request context.
-func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook webhooks.Registerer, gitlabWebhook, bitbucketServerWebhook http.Handler, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler) http.Handler {
+func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook webhooks.Registerer, gitlabWebhook, bitbucketServerWebhook http.Handler, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, ring keyring.Ring) http.Handler {
 	if m == nil {
 		m = apirouter.New(nil)
 	}
@@ -56,7 +57,7 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook webhooks.Re
 	m.Get(apirouter.RepoRefresh).Handler(trace.TraceRoute(handler(serveRepoRefresh)))
 
 	gh := webhooks.GitHubWebhook{
-		ExternalServices: database.ExternalServices(dbconn.Global),
+		ExternalServices: database.ExternalServices(dbconn.Global, ring.ExternalServiceKey),
 	}
 
 	webhookhandlers.Init(&gh)

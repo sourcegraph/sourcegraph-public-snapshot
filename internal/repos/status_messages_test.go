@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -25,7 +26,7 @@ func TestStatusMessages(t *testing.T) {
 	}
 	ctx := context.Background()
 	db := dbtest.NewDB(t, "")
-	store := NewStore(db, sql.TxOptions{})
+	store := NewStore(db, sql.TxOptions{}, keyring.Ring{})
 
 	admin, err := database.Users(db).Create(ctx, database.NewUser{
 		Email:                 "a1@example.com",
@@ -52,7 +53,7 @@ func TestStatusMessages(t *testing.T) {
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "github.com - site",
 	}
-	err = database.ExternalServices(db).Upsert(ctx, siteLevelService)
+	err = database.ExternalServices(db, nil).Upsert(ctx, siteLevelService)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -63,7 +64,7 @@ func TestStatusMessages(t *testing.T) {
 		DisplayName:     "github.com - user",
 		NamespaceUserID: nonAdmin.ID,
 	}
-	err = database.ExternalServices(db).Upsert(ctx, userService)
+	err = database.ExternalServices(db, nil).Upsert(ctx, userService)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -57,7 +57,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 
 		secret := "secret"
 		repoStore := database.Repos(db)
-		esStore := database.ExternalServices(db)
+		esStore := database.ExternalServices(db, nil)
 		extSvc := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "GitHub",
@@ -230,7 +230,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 
 		secret := "secret"
 		repoStore := database.Repos(db)
-		esStore := database.ExternalServices(db)
+		esStore := database.ExternalServices(db, nil)
 		extSvc := &types.ExternalService{
 			Kind:        extsvc.KindBitbucketServer,
 			DisplayName: "Bitbucket",
