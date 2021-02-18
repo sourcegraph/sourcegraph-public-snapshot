@@ -67,15 +67,11 @@ export function requestGraphQLCommon<T, V = object>({
     variables?: V
 }): Observable<GraphQLResult<T>> {
     const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
-    // We trim the request body, because with all the white-spaces and newlines
-    // it's hard to copy into other commands. It can still be pasted in the
-    // API explorer to get a pretty printed version of it.
-    const trimmedRequest = request.replace(/\\n/g, ' ').replace(/\s+/g, ' ').trim()
     const apiURL = `/.api/graphql${nameMatch ? '?' + nameMatch[1] : ''}`
     return fromFetch(baseUrl ? new URL(apiURL, baseUrl).href : apiURL, {
         ...options,
         method: 'POST',
-        body: JSON.stringify({ query: trimmedRequest, variables }),
+        body: JSON.stringify({ query: request, variables }),
         selector: response => checkOk(response).json(),
     })
 }
