@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -20,7 +21,14 @@ func (r *insightSeriesResolver) Label() string { return r.series.Label }
 
 func (r *insightSeriesResolver) Points(ctx context.Context, args *graphqlbackend.InsightsPointsArgs) ([]graphqlbackend.InsightsDataPointResolver, error) {
 	var opts store.SeriesPointsOpts
-	opts.SeriesID = nil // TODO(slimsag): future: set opts.SeriesID to effective hash of r.series
+
+	// Query data points only for the series we are representing.
+	seriesID, err := discovery.EncodeSeriesID(r.series)
+	if err != nil {
+		return nil, err
+	}
+	opts.SeriesID = &seriesID
+
 	if args.From == nil {
 		// Default to last 30d of data.
 		args.From = &graphqlbackend.DateTime{Time: time.Now().Add(-30 * 24 * time.Hour)}
