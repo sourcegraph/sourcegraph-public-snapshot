@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 type createAccessTokenInput struct {
@@ -160,7 +161,7 @@ func (r *siteResolver) AccessTokens(ctx context.Context, args *struct {
 
 	var opt database.AccessTokensListOptions
 	args.ConnectionArgs.Set(&opt.LimitOffset)
-	return &accessTokenConnectionResolver{opt: opt}, nil
+	return &accessTokenConnectionResolver{db: r.db, opt: opt}, nil
 }
 
 func (r *UserResolver) AccessTokens(ctx context.Context, args *struct {
@@ -173,7 +174,7 @@ func (r *UserResolver) AccessTokens(ctx context.Context, args *struct {
 
 	opt := database.AccessTokensListOptions{SubjectUserID: r.user.ID}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
-	return &accessTokenConnectionResolver{opt: opt}, nil
+	return &accessTokenConnectionResolver{db: r.db, opt: opt}, nil
 }
 
 // accessTokenConnectionResolver resolves a list of access tokens.
@@ -187,6 +188,7 @@ type accessTokenConnectionResolver struct {
 	once         sync.Once
 	accessTokens []*database.AccessToken
 	err          error
+	db           dbutil.DB
 }
 
 func (r *accessTokenConnectionResolver) compute(ctx context.Context) ([]*database.AccessToken, error) {
@@ -214,7 +216,7 @@ func (r *accessTokenConnectionResolver) Nodes(ctx context.Context) ([]*accessTok
 
 	var l []*accessTokenResolver
 	for _, accessToken := range accessTokens {
-		l = append(l, &accessTokenResolver{accessToken: *accessToken})
+		l = append(l, &accessTokenResolver{db: r.db, accessToken: *accessToken})
 	}
 	return l, nil
 }

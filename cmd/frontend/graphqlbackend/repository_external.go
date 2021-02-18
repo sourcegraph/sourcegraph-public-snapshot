@@ -57,6 +57,7 @@ func (r *RepositoryResolver) ExternalServices(ctx context.Context, args *struct 
 	}
 
 	return &computedExternalServiceConnectionResolver{
+		db:               r.db,
 		args:             args.ConnectionArgs,
 		externalServices: newExternalServices(svcs...),
 	}, nil

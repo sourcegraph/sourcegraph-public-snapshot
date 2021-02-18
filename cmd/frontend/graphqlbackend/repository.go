@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -33,6 +34,7 @@ type RepositoryResolver struct {
 	hydration sync.Once
 	err       error
 
+	db dbutil.DB
 	// innerRepo may only contain ID and Name information.
 	// To access any other repo information, use repo() instead.
 	innerRepo *types.Repo
@@ -46,13 +48,11 @@ type RepositoryResolver struct {
 	rev string
 }
 
-func NewRepositoryResolver(repo *types.Repo) *RepositoryResolver {
-	return &RepositoryResolver{innerRepo: repo}
+func NewRepositoryResolver(db dbutil.DB, repo *types.Repo) *RepositoryResolver {
+	return &RepositoryResolver{db: db, innerRepo: repo}
 }
 
-var RepositoryByID = repositoryByID
-
-func repositoryByID(ctx context.Context, id graphql.ID) (*RepositoryResolver, error) {
+func (r *schemaResolver) repositoryByID(ctx context.Context, id graphql.ID) (*RepositoryResolver, error) {
 	var repoID api.RepoID
 	if err := relay.UnmarshalSpec(id, &repoID); err != nil {
 		return nil, err
@@ -61,15 +61,15 @@ func repositoryByID(ctx context.Context, id graphql.ID) (*RepositoryResolver, er
 	if err != nil {
 		return nil, err
 	}
-	return &RepositoryResolver{innerRepo: repo}, nil
+	return &RepositoryResolver{db: r.db, innerRepo: repo}, nil
 }
 
-func RepositoryByIDInt32(ctx context.Context, repoID api.RepoID) (*RepositoryResolver, error) {
+func RepositoryByIDInt32(ctx context.Context, db dbutil.DB, repoID api.RepoID) (*RepositoryResolver, error) {
 	repo, err := database.GlobalRepos.Get(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
-	return &RepositoryResolver{innerRepo: repo}, nil
+	return &RepositoryResolver{db: db, innerRepo: repo}, nil
 }
 
 func (r *RepositoryResolver) ID() graphql.ID {
@@ -172,7 +172,7 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 }
 
 func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryCommitArgs, commitID api.CommitID) (*GitCommitResolver, error) {
-	resolver := toGitCommitResolver(r, commitID, nil)
+	resolver := toGitCommitResolver(r, r.db, commitID, nil)
 	if args.InputRevspec != nil {
 		resolver.inputRev = args.InputRevspec
 	} else {
@@ -387,7 +387,7 @@ func (*schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
 	return nil, err
 }
 
-func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct {
+func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct {
 	RepoName    string
 	DiffID      int32
 	BaseRev     string
@@ -413,7 +413,7 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 		if err != nil {
 			return nil, err
 		}
-		r := &RepositoryResolver{innerRepo: repo}
+		r := &RepositoryResolver{db: r.db, innerRepo: repo}
 		return r.Commit(ctx, &RepositoryCommitArgs{Rev: targetRef})
 	}
 

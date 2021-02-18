@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -28,6 +29,7 @@ import (
 
 // searchSymbolResult is a result from symbol search.
 type searchSymbolResult struct {
+	db      dbutil.DB
 	symbol  protocol.Symbol
 	baseURI *gituri.URI
 	lang    string
@@ -44,7 +46,7 @@ var mockSearchSymbols func(ctx context.Context, args *search.TextParameters, lim
 // it can be used for both search suggestions and search results
 //
 // May return partial results and an error
-func searchSymbols(ctx context.Context, args *search.TextParameters, limit int, stream Streamer) (err error) {
+func searchSymbols(ctx context.Context, db dbutil.DB, args *search.TextParameters, limit int, stream Streamer) (err error) {
 	if mockSearchSymbols != nil {
 		results, stats, err := mockSearchSymbols(ctx, args, limit)
 		stream.Send(SearchEvent{
@@ -72,7 +74,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int, 
 	ctx, stream, cancel := WithLimit(ctx, stream, limit)
 	defer cancel()
 
-	indexed, err := newIndexedSearchRequest(ctx, args, symbolRequest, stream)
+	indexed, err := newIndexedSearchRequest(ctx, db, args, symbolRequest, stream)
 	if err != nil {
 		return err
 	}
@@ -106,7 +108,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int, 
 		goroutine.Go(func() {
 			defer run.Release()
 
-			matches, err := searchSymbolsInRepo(ctx, repoRevs, args.PatternInfo, limit)
+			matches, err := searchSymbolsInRepo(ctx, db, repoRevs, args.PatternInfo, limit)
 			stats, err := handleRepoSearchResult(repoRevs, len(matches) > limit, false, err)
 			stream.Send(SearchEvent{
 				Results: fileMatchResultsToSearchResults(matches),
@@ -155,7 +157,7 @@ func symbolCount(fmrs []*FileMatchResolver) int {
 	return nsym
 }
 
-func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []*FileMatchResolver, err error) {
+func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []*FileMatchResolver, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Search symbols in repo")
 	defer func() {
 		if err != nil {
@@ -182,8 +184,9 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 		return nil, err
 	}
 
-	repoResolver := NewRepositoryResolver(repoRevs.Repo.ToRepo())
+	repoResolver := NewRepositoryResolver(db, repoRevs.Repo.ToRepo())
 	commitResolver := &GitCommitResolver{
+		db:           db,
 		repoResolver: repoResolver,
 		oid:          GitObjectID(commitID),
 		inputRev:     &inputRev,
@@ -206,6 +209,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 
 	for _, symbol := range symbols {
 		symbolRes := &searchSymbolResult{
+			db:      db,
 			symbol:  symbol,
 			baseURI: baseURI,
 			lang:    strings.ToLower(symbol.Language),
@@ -216,7 +220,9 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 			fileMatch.symbols = append(fileMatch.symbols, symbolRes)
 		} else {
 			fileMatch := &FileMatchResolver{
+				db: db,
 				FileMatch: FileMatch{
+					db:       db,
 					JPath:    symbolRes.symbol.Path,
 					symbols:  []*searchSymbolResult{symbolRes},
 					uri:      uri,

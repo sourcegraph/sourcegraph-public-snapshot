@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -15,7 +16,7 @@ func (r *UserResolver) OrganizationMemberships(ctx context.Context) (*organizati
 	}
 	c := organizationMembershipConnectionResolver{nodes: make([]*organizationMembershipResolver, len(memberships))}
 	for i, member := range memberships {
-		c.nodes[i] = &organizationMembershipResolver{member}
+		c.nodes[i] = &organizationMembershipResolver{r.db, member}
 	}
 	return &c, nil
 }
@@ -33,15 +34,16 @@ func (r *organizationMembershipConnectionResolver) PageInfo() *graphqlutil.PageI
 }
 
 type organizationMembershipResolver struct {
+	db         dbutil.DB
 	membership *types.OrgMembership
 }
 
 func (r *organizationMembershipResolver) Organization(ctx context.Context) (*OrgResolver, error) {
-	return OrgByIDInt32(ctx, r.membership.OrgID)
+	return OrgByIDInt32(ctx, r.db, r.membership.OrgID)
 }
 
 func (r *organizationMembershipResolver) User(ctx context.Context) (*UserResolver, error) {
-	return UserByIDInt32(ctx, r.membership.UserID)
+	return UserByIDInt32(ctx, r.db, r.membership.UserID)
 }
 
 func (r *organizationMembershipResolver) CreatedAt() DateTime {

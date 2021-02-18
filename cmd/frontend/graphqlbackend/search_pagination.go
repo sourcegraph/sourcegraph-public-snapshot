@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -177,7 +178,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	})
 
 	common := streaming.Stats{}
-	cursor, results, fileCommon, err := paginatedSearchFilesInRepos(ctx, &args, r.Pagination)
+	cursor, results, fileCommon, err := paginatedSearchFilesInRepos(ctx, r.db, &args, r.Pagination)
 	if err != nil {
 		return nil, err
 	}
@@ -189,7 +190,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	var alert *searchAlert
 
 	if len(resolved.MissingRepoRevs) > 0 {
-		alert = alertForMissingRepoRevs(r.PatternType, resolved.MissingRepoRevs)
+		alert = alertForMissingRepoRevs(r.db, r.PatternType, resolved.MissingRepoRevs)
 	}
 
 	log15.Info("next cursor for paginated search request",
@@ -200,6 +201,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	)
 
 	return &SearchResultsResolver{
+		db:            r.db,
 		start:         start,
 		Stats:         common,
 		SearchResults: results,
@@ -240,7 +242,7 @@ func repoIsLess(i, j *types.RepoName) bool {
 //    top of the penalty we incur from the larger `count:` mentioned in point
 //    2 above (in the worst case scenario).
 //
-func paginatedSearchFilesInRepos(ctx context.Context, args *search.TextParameters, pagination *searchPaginationInfo) (*searchCursor, []SearchResultResolver, *streaming.Stats, error) {
+func paginatedSearchFilesInRepos(ctx context.Context, db dbutil.DB, args *search.TextParameters, pagination *searchPaginationInfo) (*searchCursor, []SearchResultResolver, *streaming.Stats, error) {
 	repos, err := getRepos(ctx, args.RepoPromise)
 	if err != nil {
 		return nil, nil, nil, err
@@ -256,7 +258,7 @@ func paginatedSearchFilesInRepos(ctx context.Context, args *search.TextParameter
 	return plan.execute(ctx, func(batch []*search.RepositoryRevisions) ([]SearchResultResolver, *streaming.Stats, error) {
 		batchArgs := *args
 		batchArgs.RepoPromise = (&search.Promise{}).Resolve(batch)
-		fileResults, fileCommon, err := searchFilesInReposBatch(ctx, &batchArgs)
+		fileResults, fileCommon, err := searchFilesInReposBatch(ctx, db, &batchArgs)
 		// Timeouts are reported through Stats so don't report an error for them
 		if err != nil && !(err == context.DeadlineExceeded || err == context.Canceled) {
 			return nil, nil, err

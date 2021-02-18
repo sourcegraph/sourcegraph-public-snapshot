@@ -13,12 +13,15 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestSearchResultsStatsLanguages(t *testing.T) {
+	db := new(dbtesting.MockDB)
+
 	wantCommitID := api.CommitID(strings.Repeat("a", 40))
 	rcache.SetupForTest(t)
 
@@ -60,7 +63,8 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 		for _, n := range lineNumbers {
 			lines = append(lines, &lineMatch{JLineNumber: n})
 		}
-		return mkFileMatchResolver(FileMatch{
+		return mkFileMatchResolver(db, FileMatch{
+			db:           db,
 			JPath:        path,
 			JLineMatches: lines,
 			Repo:         &types.RepoName{Name: "r"},
@@ -99,6 +103,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 		"1 entire repo": {
 			results: []SearchResultResolver{
 				&RepositoryResolver{
+					db:        db,
 					innerRepo: &types.Repo{Name: "r", CreatedAt: time.Now()},
 				},
 			},

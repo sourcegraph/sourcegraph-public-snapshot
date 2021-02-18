@@ -15,6 +15,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 
 	"github.com/graph-gophers/graphql-go/gqltesting"
 	"github.com/inconshreveable/log15"
@@ -70,21 +71,22 @@ func TestRepository(t *testing.T) {
 }
 
 func TestResolverTo(t *testing.T) {
+	db := new(dbtesting.MockDB)
 	// This test exists purely to remove some non determinism in our tests
 	// run. The To* resolvers are stored in a map in our graphql
 	// implementation => the order we call them is non deterministic =>
 	// codecov coverage reports are noisy.
 	resolvers := []interface{}{
-		&FileMatchResolver{},
-		&GitTreeEntryResolver{},
+		&FileMatchResolver{db: db},
+		&GitTreeEntryResolver{db: db},
 		&NamespaceResolver{},
 		&NodeResolver{},
-		&RepositoryResolver{},
+		&RepositoryResolver{db: db},
 		&CommitSearchResultResolver{},
 		&gitRevSpec{},
-		&searchSuggestionResolver{},
+		&searchSuggestionResolver{db: db},
 		&settingsSubject{},
-		&statusMessageResolver{},
+		&statusMessageResolver{db: db},
 		&versionContextResolver{},
 	}
 	for _, r := range resolvers {

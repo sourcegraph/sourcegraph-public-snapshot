@@ -13,12 +13,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestAddExternalService(t *testing.T) {
+	db := new(dbtesting.MockDB)
+
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 			return &types.User{ID: 1}, nil
@@ -39,7 +42,7 @@ func TestAddExternalService(t *testing.T) {
 			}()
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := (&schemaResolver{}).AddExternalService(ctx, &addExternalServiceArgs{})
+			result, err := (&schemaResolver{db: db}).AddExternalService(ctx, &addExternalServiceArgs{})
 			if want := backend.ErrMustBeSiteAdmin; err != want {
 				t.Errorf("err: want %q but got %q", want, err)
 			}
@@ -57,7 +60,7 @@ func TestAddExternalService(t *testing.T) {
 			}()
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			userID := MarshalUserID(1)
-			result, err := (&schemaResolver{}).AddExternalService(ctx, &addExternalServiceArgs{
+			result, err := (&schemaResolver{db: db}).AddExternalService(ctx, &addExternalServiceArgs{
 				Input: addExternalServiceInput{
 					Namespace: &userID,
 				},
@@ -90,7 +93,7 @@ func TestAddExternalService(t *testing.T) {
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			userID := MarshalUserID(2)
-			result, err := (&schemaResolver{}).AddExternalService(ctx, &addExternalServiceArgs{
+			result, err := (&schemaResolver{db: db}).AddExternalService(ctx, &addExternalServiceArgs{
 				Input: addExternalServiceInput{
 					Namespace: &userID,
 				},
@@ -130,7 +133,7 @@ func TestAddExternalService(t *testing.T) {
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			userID := int32(1)
 			gqlID := MarshalUserID(userID)
-			result, err := (&schemaResolver{}).AddExternalService(ctx, &addExternalServiceArgs{
+			result, err := (&schemaResolver{db: db}).AddExternalService(ctx, &addExternalServiceArgs{
 				Input: addExternalServiceInput{
 					Namespace: &gqlID,
 				},
@@ -184,7 +187,7 @@ func TestAddExternalService(t *testing.T) {
 			userID := int32(1)
 			gqlID := MarshalUserID(userID)
 
-			result, err := (&schemaResolver{}).AddExternalService(ctx, &addExternalServiceArgs{
+			result, err := (&schemaResolver{db: db}).AddExternalService(ctx, &addExternalServiceArgs{
 				Input: addExternalServiceInput{
 					Namespace: &gqlID,
 				},
@@ -246,6 +249,8 @@ func TestAddExternalService(t *testing.T) {
 }
 
 func TestUpdateExternalService(t *testing.T) {
+	db := new(dbtesting.MockDB)
+
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 			return &types.User{ID: 1}, nil
@@ -265,7 +270,7 @@ func TestUpdateExternalService(t *testing.T) {
 			}()
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := (&schemaResolver{}).UpdateExternalService(ctx, &updateExternalServiceArgs{
+			result, err := (&schemaResolver{db: db}).UpdateExternalService(ctx, &updateExternalServiceArgs{
 				Input: updateExternalServiceInput{
 					ID: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 				},
@@ -291,7 +296,7 @@ func TestUpdateExternalService(t *testing.T) {
 			}()
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := (&schemaResolver{}).UpdateExternalService(ctx, &updateExternalServiceArgs{
+			result, err := (&schemaResolver{db: db}).UpdateExternalService(ctx, &updateExternalServiceArgs{
 				Input: updateExternalServiceInput{
 					ID: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 				},
@@ -325,7 +330,7 @@ func TestUpdateExternalService(t *testing.T) {
 			}()
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			_, err := (&schemaResolver{}).UpdateExternalService(ctx, &updateExternalServiceArgs{
+			_, err := (&schemaResolver{db: db}).UpdateExternalService(ctx, &updateExternalServiceArgs{
 				Input: updateExternalServiceInput{
 					ID: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 				},
@@ -354,7 +359,7 @@ func TestUpdateExternalService(t *testing.T) {
 		}()
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&schemaResolver{}).UpdateExternalService(ctx, &updateExternalServiceArgs{
+		result, err := (&schemaResolver{db: db}).UpdateExternalService(ctx, &updateExternalServiceArgs{
 			Input: updateExternalServiceInput{
 				ID:     "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 				Config: strptr(""),
@@ -429,6 +434,8 @@ func TestUpdateExternalService(t *testing.T) {
 }
 
 func TestDeleteExternalService(t *testing.T) {
+	db := new(dbtesting.MockDB)
+
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 			return &types.User{ID: 1}, nil
@@ -448,7 +455,7 @@ func TestDeleteExternalService(t *testing.T) {
 			}()
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := (&schemaResolver{}).DeleteExternalService(ctx, &deleteExternalServiceArgs{
+			result, err := (&schemaResolver{db: db}).DeleteExternalService(ctx, &deleteExternalServiceArgs{
 				ExternalService: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 			})
 			if want := backend.ErrMustBeSiteAdmin; err != want {
@@ -472,7 +479,7 @@ func TestDeleteExternalService(t *testing.T) {
 			}()
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := (&schemaResolver{}).DeleteExternalService(ctx, &deleteExternalServiceArgs{
+			result, err := (&schemaResolver{db: db}).DeleteExternalService(ctx, &deleteExternalServiceArgs{
 				ExternalService: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 			})
 
@@ -504,7 +511,7 @@ func TestDeleteExternalService(t *testing.T) {
 			}()
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			_, err := (&schemaResolver{}).DeleteExternalService(ctx, &deleteExternalServiceArgs{
+			_, err := (&schemaResolver{db: db}).DeleteExternalService(ctx, &deleteExternalServiceArgs{
 				ExternalService: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 			})
 			if err != nil {
@@ -556,6 +563,8 @@ func TestDeleteExternalService(t *testing.T) {
 }
 
 func TestExternalServices(t *testing.T) {
+	db := new(dbtesting.MockDB)
+
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		t.Run("read someone else's external services", func(t *testing.T) {
 			database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
@@ -569,7 +578,7 @@ func TestExternalServices(t *testing.T) {
 			}()
 
 			id := MarshalUserID(2)
-			result, err := (&schemaResolver{}).ExternalServices(context.Background(), &ExternalServicesArgs{
+			result, err := (&schemaResolver{db: db}).ExternalServices(context.Background(), &ExternalServicesArgs{
 				Namespace: &id,
 			})
 			if want := errMustBeSiteAdminOrSameUser; err != want {
@@ -736,6 +745,7 @@ func TestExternalServices(t *testing.T) {
 }
 
 func TestExternalServices_PageInfo(t *testing.T) {
+	db := new(dbtesting.MockDB)
 	cmpOpts := cmp.AllowUnexported(graphqlutil.PageInfo{})
 	tests := []struct {
 		name         string
@@ -803,6 +813,7 @@ func TestExternalServices_PageInfo(t *testing.T) {
 			}()
 
 			r := &externalServiceConnectionResolver{
+				db:  db,
 				opt: test.opt,
 			}
 			pageInfo, err := r.PageInfo(context.Background())

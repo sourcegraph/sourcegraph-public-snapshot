@@ -114,10 +114,11 @@ func (h honeycombTracer) TraceField(ctx context.Context, label, typeName, fieldN
 }
 
 type prometheusTracer struct {
+	db dbutil.DB
 	trace.OpenTracingTracer
 }
 
-func (prometheusTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]interface{}, varTypes map[string]*introspection.Type) (context.Context, trace.TraceQueryFinishFunc) {
+func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]interface{}, varTypes map[string]*introspection.Type) (context.Context, trace.TraceQueryFinishFunc) {
 	start := time.Now()
 	var finish trace.TraceQueryFinishFunc
 	if ot.ShouldTrace(ctx) {
@@ -130,7 +131,7 @@ func (prometheusTracer) TraceQuery(ctx context.Context, queryString string, oper
 
 	// Note: We don't care about the error here, we just extract the username if
 	// we get a non-nil user object.
-	currentUser, _ := CurrentUser(ctx)
+	currentUser, _ := CurrentUser(ctx, t.db)
 	var currentUserName string
 	if currentUser != nil {
 		currentUserName = currentUser.Username()
@@ -399,7 +400,8 @@ func prometheusGraphQLRequestName(requestName string) string {
 
 func NewSchema(db dbutil.DB, campaigns CampaignsResolver, codeIntel CodeIntelResolver, insights InsightsResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver, license LicenseResolver) (*graphql.Schema, error) {
 	resolver := &schemaResolver{
-		db:                db,
+		db: db,
+
 		CampaignsResolver: defaultCampaignsResolver{},
 		AuthzResolver:     defaultAuthzResolver{},
 		CodeIntelResolver: defaultCodeIntelResolver{},
@@ -433,7 +435,7 @@ func NewSchema(db dbutil.DB, campaigns CampaignsResolver, codeIntel CodeIntelRes
 	return graphql.ParseSchema(
 		Schema,
 		resolver,
-		graphql.Tracer(prometheusTracer{}),
+		graphql.Tracer(&prometheusTracer{db: db}),
 		graphql.Tracer(honeycombTracer{}),
 		graphql.UseStringDescriptions(),
 	)
@@ -654,7 +656,7 @@ var EnterpriseResolvers = struct {
 
 // DEPRECATED
 func (r *schemaResolver) Root() *schemaResolver {
-	return &schemaResolver{}
+	return &schemaResolver{db: r.db}
 }
 
 func (r *schemaResolver) Node(ctx context.Context, args *struct{ ID graphql.ID }) (*NodeResolver, error) {
@@ -671,7 +673,7 @@ func (r *schemaResolver) Node(ctx context.Context, args *struct{ ID graphql.ID }
 func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, error) {
 	switch relay.UnmarshalKind(id) {
 	case "AccessToken":
-		return accessTokenByID(ctx, id)
+		return accessTokenByID(ctx, r.db, id)
 	case "Campaign":
 		return r.CampaignByID(ctx, id)
 	case "CampaignSpec":
@@ -684,36 +686,36 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return r.CampaignsCredentialByID(ctx, id)
 	case "ProductLicense":
 		if f := ProductLicenseByID; f != nil {
-			return f(ctx, id)
+			return f(ctx, r.db, id)
 		}
 		return nil, errors.New("not implemented")
 	case "ProductSubscription":
 		if f := ProductSubscriptionByID; f != nil {
-			return f(ctx, id)
+			return f(ctx, r.db, id)
 		}
 		return nil, errors.New("not implemented")
 	case "ExternalAccount":
-		return externalAccountByID(ctx, id)
+		return externalAccountByID(ctx, r.db, id)
 	case externalServiceIDKind:
-		return externalServiceByID(ctx, id)
+		return externalServiceByID(ctx, r.db, id)
 	case "GitRef":
-		return gitRefByID(ctx, id)
+		return r.gitRefByID(ctx, id)
 	case "Repository":
-		return repositoryByID(ctx, id)
+		return r.repositoryByID(ctx, id)
 	case "User":
-		return UserByID(ctx, id)
+		return UserByID(ctx, r.db, id)
 	case "Org":
-		return OrgByID(ctx, id)
+		return OrgByID(ctx, r.db, id)
 	case "OrganizationInvitation":
-		return orgInvitationByID(ctx, id)
+		return orgInvitationByID(ctx, r.db, id)
 	case "GitCommit":
-		return gitCommitByID(ctx, id)
+		return r.gitCommitByID(ctx, id)
 	case "RegistryExtension":
-		return RegistryExtensionByID(ctx, id)
+		return RegistryExtensionByID(ctx, r.db, id)
 	case "SavedSearch":
-		return savedSearchByID(ctx, id)
+		return r.savedSearchByID(ctx, id)
 	case "Site":
-		return siteByGQLID(ctx, id)
+		return r.siteByGQLID(ctx, id)
 	case "LSIFUpload":
 		return r.LSIFUploadByID(ctx, id)
 	case "LSIFIndex":
@@ -802,7 +804,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *struct {
 		}
 		return nil, err
 	}
-	return &repositoryRedirect{repo: &RepositoryResolver{innerRepo: repo}}, nil
+	return &repositoryRedirect{repo: &RepositoryResolver{db: r.db, innerRepo: repo}}, nil
 }
 
 func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {
@@ -822,7 +824,7 @@ func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {
 }
 
 func (r *schemaResolver) CurrentUser(ctx context.Context) (*UserResolver, error) {
-	return CurrentUser(ctx)
+	return CurrentUser(ctx, r.db)
 }
 
 func (r *schemaResolver) AffiliatedRepositories(ctx context.Context, args *struct {
@@ -851,6 +853,7 @@ func (r *schemaResolver) AffiliatedRepositories(ctx context.Context, args *struc
 	}
 
 	return &codeHostRepositoryConnectionResolver{
+		db:       r.db,
 		userID:   userID,
 		codeHost: codeHost,
 		query:    query,
@@ -865,6 +868,7 @@ type codeHostRepositoryConnectionResolver struct {
 	once  sync.Once
 	nodes []*codeHostRepositoryResolver
 	err   error
+	db    dbutil.DB
 }
 
 func (r *codeHostRepositoryConnectionResolver) Nodes(ctx context.Context) ([]*codeHostRepositoryResolver, error) {
@@ -947,6 +951,7 @@ func (r *codeHostRepositoryConnectionResolver) Nodes(ctx context.Context) ([]*co
 					continue
 				}
 				r.nodes = append(r.nodes, &codeHostRepositoryResolver{
+					db:       r.db,
 					codeHost: svcsByID[repo.CodeHostID],
 					repo:     &repo,
 				})
@@ -962,6 +967,7 @@ func (r *codeHostRepositoryConnectionResolver) Nodes(ctx context.Context) ([]*co
 type codeHostRepositoryResolver struct {
 	repo     *types.CodeHostRepository
 	codeHost *types.ExternalService
+	db       dbutil.DB
 }
 
 func (r *codeHostRepositoryResolver) Name() string {
@@ -974,6 +980,7 @@ func (r *codeHostRepositoryResolver) Private() bool {
 
 func (r *codeHostRepositoryResolver) CodeHost(ctx context.Context) *externalServiceResolver {
 	return &externalServiceResolver{
+		db:              r.db,
 		externalService: r.codeHost,
 	}
 }

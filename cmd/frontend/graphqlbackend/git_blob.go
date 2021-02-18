@@ -24,6 +24,7 @@ func (r *GitTreeEntryResolver) Blame(ctx context.Context,
 	var hunksResolver []*hunkResolver
 	for _, hunk := range hunks {
 		hunksResolver = append(hunksResolver, &hunkResolver{
+			db:   r.db,
 			repo: r.commit.repoResolver,
 			hunk: hunk,
 		})

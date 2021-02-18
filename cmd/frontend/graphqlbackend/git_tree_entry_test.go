@@ -9,14 +9,18 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestGitTreeEntry_RawZipArchiveURL(t *testing.T) {
+	db := new(dbtesting.MockDB)
 	got := (&GitTreeEntryResolver{
+		db: db,
 		commit: &GitCommitResolver{
 			repoResolver: &RepositoryResolver{
+				db:        db,
 				innerRepo: &types.Repo{Name: "my/repo"},
 			},
 		},
@@ -31,6 +35,7 @@ func TestGitTreeEntry_RawZipArchiveURL(t *testing.T) {
 func TestGitTreeEntry_Content(t *testing.T) {
 	wantPath := "foobar.md"
 	wantContent := "foobar"
+	db := new(dbtesting.MockDB)
 
 	git.Mocks.ReadFile = func(commit api.CommitID, name string) ([]byte, error) {
 		if name != wantPath {
@@ -50,8 +55,10 @@ func TestGitTreeEntry_Content(t *testing.T) {
 	defer func() { database.Mocks.Repos = database.MockRepos{} }()
 
 	gitTree := &GitTreeEntryResolver{
+		db: db,
 		commit: &GitCommitResolver{
 			repoResolver: &RepositoryResolver{
+				db:        db,
 				innerRepo: &types.Repo{Name: "my/repo"},
 			},
 		},
