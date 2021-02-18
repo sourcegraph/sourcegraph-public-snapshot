@@ -322,24 +322,9 @@ func TestSyncRegistry(t *testing.T) {
 
 	now := time.Now()
 
-	extSvc := &types.ExternalService{
-		ID:          1,
-		Kind:        extsvc.KindGitHub,
-		DisplayName: "",
-		Config:      `{"url": "https://example.com/"}`,
-		CreatedAt:   time.Time{},
-		UpdatedAt:   time.Time{},
-	}
+	externalServiceID := "https://example.com/"
 
-	var repoStore MockRepoStore
-
-	esStore := MockExternalServiceStore{
-		list: func(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-			return []*types.ExternalService{
-				extSvc,
-			}, nil
-		},
-	}
+	codeHosts := []*campaigns.CodeHost{{ExternalServiceID: externalServiceID, ExternalServiceType: extsvc.TypeGitHub}}
 
 	syncStore := MockSyncStore{
 		listChangesetSyncData: func(ctx context.Context, opts store.ListChangesetSyncDataOpts) (data []*campaigns.ChangesetSyncData, err error) {
@@ -347,13 +332,16 @@ func TestSyncRegistry(t *testing.T) {
 				{
 					ChangesetID:           1,
 					UpdatedAt:             now,
-					RepoExternalServiceID: "https://example.com/",
+					RepoExternalServiceID: externalServiceID,
 				},
 			}, nil
 		},
+		listCodeHosts: func(c context.Context, lcho store.ListCodeHostsOpts) ([]*campaigns.CodeHost, error) {
+			return codeHosts, nil
+		},
 	}
 
-	r := NewSyncRegistry(ctx, syncStore, repoStore, esStore, nil)
+	r := NewSyncRegistry(ctx, syncStore, nil, nil, nil)
 
 	assertSyncerCount := func(want int) {
 		r.mu.Lock()
@@ -366,10 +354,12 @@ func TestSyncRegistry(t *testing.T) {
 	assertSyncerCount(1)
 
 	// Adding it again should have no effect
-	r.Add(extSvc)
+	r.Add(&campaigns.CodeHost{ExternalServiceID: "https://example.com/", ExternalServiceType: extsvc.TypeGitHub})
 	assertSyncerCount(1)
 
 	// Simulate a service being removed
+	oldCodeHosts := codeHosts
+	codeHosts = []*campaigns.CodeHost{}
 	r.HandleExternalServiceSync(api.ExternalService{
 		ID:        1,
 		Kind:      extsvc.KindGitHub,
@@ -377,6 +367,7 @@ func TestSyncRegistry(t *testing.T) {
 		DeletedAt: now,
 	})
 	assertSyncerCount(0)
+	codeHosts = oldCodeHosts
 
 	// And added again
 	r.HandleExternalServiceSync(api.ExternalService{
@@ -391,7 +382,7 @@ func TestSyncRegistry(t *testing.T) {
 	// with a custom sync func
 	syncer := &changesetSyncer{
 		syncStore:   syncStore,
-		reposStore:  repoStore,
+		reposStore:  nil,
 		codeHostURL: "https://example.com/",
 		syncFunc: func(ctx context.Context, id int64) error {
 			syncChan <- id
@@ -423,6 +414,7 @@ func TestSyncRegistry(t *testing.T) {
 }
 
 type MockSyncStore struct {
+	listCodeHosts         func(context.Context, store.ListCodeHostsOpts) ([]*campaigns.CodeHost, error)
 	listChangesetSyncData func(context.Context, store.ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error)
 	getChangeset          func(context.Context, store.GetChangesetOpts) (*campaigns.Changeset, error)
 	updateChangeset       func(context.Context, *campaigns.Changeset) error
@@ -452,6 +444,10 @@ func (m MockSyncStore) Transact(ctx context.Context) (*store.Store, error) {
 
 func (m MockSyncStore) Repos() *database.RepoStore {
 	return database.GlobalRepos
+}
+
+func (m MockSyncStore) ListCodeHosts(ctx context.Context, opts store.ListCodeHostsOpts) ([]*campaigns.CodeHost, error) {
+	return m.listCodeHosts(ctx, opts)
 }
 
 type MockRepoStore struct {
