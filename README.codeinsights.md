@@ -202,3 +202,17 @@ GROUP BY value, bucket;
 Note: This is not optimized, we can use materialized views to do continuous aggregation.
 
 See https://docs.timescale.com/latest/using-timescaledb/continuous-aggregates
+
+## Why aren't insights being recorded?
+
+Find insights background worker logs:
+
+```
+kubectl --namespace=prod logs repo-updater-76df6f4646-q92nx repo-updater | grep insights
+```
+
+## Get a psql prompt (Kubernetes)
+
+```
+kubectl -n prod exec -it codeinsights-db-5f5977f74d-8q9nl -- psql -U postgres
+```
