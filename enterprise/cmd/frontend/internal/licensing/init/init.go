@@ -19,11 +19,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
 // TODO(efritz) - de-globalize assignments in this function
 // TODO(efritz) - refactor licensing packages - this is a huge mess!
-func Init(ctx context.Context, db dbutil.DB, enterpriseServices *enterprise.Services) error {
+func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services) error {
 	// Enforce the license's max user count by preventing the creation of new users when the max is
 	// reached.
 	database.GlobalUsers.BeforeCreateUser = enforcement.NewBeforeCreateUserHook(&usersStore{})
