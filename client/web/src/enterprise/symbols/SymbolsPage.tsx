@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { Observable } from 'rxjs'
@@ -64,8 +65,11 @@ export interface SymbolsRouteProps extends Pick<RepoRevisionContainerContext, 'r
 export const SymbolsPage: React.FunctionComponent<SymbolsRouteProps> = ({ repo, revision }) => {
     const docSymbols = useObservable(queryRepositorySymbols({ repo: repo.id, commitID: revision, path: '' }))
 
-    // return docSymbols ? <ItemList symbols={docSymbols} level={0} repo={repo} /> : <div>Symbols not found</div>
-    return docSymbols ? (
+    return docSymbols === undefined ? (
+        <LoadingSpinner className="m-3" />
+    ) : docSymbols === null ? (
+        <div>Symbols not found</div>
+    ) : (
         <div className="w-100">
             <h2 className="m-2">Packages</h2>
             <ul className="list-unstyled list-group list-group-flush w-100 border-top">
@@ -84,19 +88,7 @@ export const SymbolsPage: React.FunctionComponent<SymbolsRouteProps> = ({ repo, 
                 ))}
             </ul>
         </div>
-    ) : (
-        <div>Symbols not found</div>
     )
-    // return (
-    //     <>
-    //         {docSymbols?.map(symbol => (
-    //             <div key={symbol.text}>
-    //                 <NavLink to={urlForSymbol(symbol)}>{symbol.text}</NavLink>
-    //                 <div>{symbol.detail}</div>
-    //             </div>
-    //         ))}
-    //     </>
-    // )
 }
 
 const isUpper = (string: string): boolean => /^\p{Lu}$/u.test(string)
