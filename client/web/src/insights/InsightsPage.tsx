@@ -9,30 +9,14 @@ import { Link } from '../../../shared/src/components/Link'
 import GearIcon from 'mdi-react/GearIcon'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { PageHeader } from '../components/PageHeader'
-import { BreadcrumbsProps, BreadcrumbSetters } from '../components/Breadcrumbs'
 import { StatusBadge } from '../components/StatusBadge'
 import { Page } from '../components/Page'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { getCombinedViews } from './backend'
 
-interface InsightsPageProps
-    extends ExtensionsControllerProps,
-        Omit<ViewGridProps, 'views'>,
-        BreadcrumbsProps,
-        BreadcrumbSetters,
-        TelemetryProps {}
+interface InsightsPageProps extends ExtensionsControllerProps, Omit<ViewGridProps, 'views'>, TelemetryProps {}
 
 export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props => {
-    props.useBreadcrumb(
-        useMemo(
-            () => ({
-                key: 'Insights',
-                element: <>Insights</>,
-            }),
-            []
-        )
-    )
-
     const views = useObservable(
         useMemo(
             () =>
