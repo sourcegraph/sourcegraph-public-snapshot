@@ -60,6 +60,7 @@ var schemes = map[string]struct{}{
 	"ftp":      struct{}{},
 	"ftps":     struct{}{},
 	"rsync":    struct{}{},
+	"file":     struct{}{},
 	"perforce": struct{}{},
 }
 
