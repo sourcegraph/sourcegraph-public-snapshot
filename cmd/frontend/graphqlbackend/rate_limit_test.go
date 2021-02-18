@@ -109,6 +109,24 @@ query fetchExternalServices($first: Int = 10){
 			},
 		},
 		{
+			name: "Query with default variables, non supplied",
+			query: `
+query fetchExternalServices($first: Int = 10){
+  externalServices(first: $first){
+    nodes{
+      displayName
+      webhookURL
+    }
+  }
+}
+`,
+			variables: map[string]interface{}{},
+			want: queryCost{
+				FieldCount: 21,
+				MaxDepth:   3,
+			},
+		},
+		{
 			name: "Query with fragments",
 			query: `
 query StatusMessages {

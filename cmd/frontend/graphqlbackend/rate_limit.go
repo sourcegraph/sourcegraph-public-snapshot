@@ -134,6 +134,7 @@ func calcOperationCost(def ast.Node, fragmentCosts map[string]int, variables map
 	}
 
 	nonNullVariables := make(map[string]interface{})
+	defaultValues := make(map[string]interface{})
 
 	v := &visitor.VisitorOptions{
 		Enter: func(p visitor.VisitFuncParams) (string, interface{}) {
@@ -160,6 +161,15 @@ func calcOperationCost(def ast.Node, fragmentCosts map[string]int, variables map
 				if _, nonNull := node.Type.(*ast.NonNull); nonNull {
 					nonNullVariables[node.Variable.Name.Value] = struct{}{}
 				}
+				if node.DefaultValue == nil {
+					return visitor.ActionNoChange, nil
+				}
+				// Record default values
+				switch v := node.DefaultValue.(type) {
+				case *ast.IntValue:
+					// Yes, IntValue's value is a string...
+					defaultValues[node.Variable.Name.Value] = v.Value
+				}
 			case *ast.Variable:
 				// We may have a limit variable
 				if !shouldCheckParam(p) {
@@ -171,9 +181,14 @@ func calcOperationCost(def ast.Node, fragmentCosts map[string]int, variables map
 						visitErr = fmt.Errorf("missing nonnull variable: %q", node.Name.Value)
 						return visitor.ActionBreak, nil
 					}
-					// Fall back to a default of 1
-					currentLimit = 1
-					return visitor.ActionNoChange, nil
+					if v, ok := defaultValues[node.Name.Value]; ok {
+						// Pick default value if it was defined
+						limitVar = v
+					} else {
+						// Fall back to a default of 1
+						currentLimit = 1
+						return visitor.ActionNoChange, nil
+					}
 				}
 				limit, err := extractInt(limitVar)
 				if err != nil {
@@ -299,6 +314,8 @@ func extractInt(i interface{}) (int, error) {
 		return v, nil
 	case float64:
 		return int(v), nil
+	case string:
+		return strconv.Atoi(v)
 	default:
 		return 0, fmt.Errorf("unkown limit type: %T", i)
 	}
