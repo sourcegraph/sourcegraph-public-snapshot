@@ -19,6 +19,7 @@ const DefinitionDumpsLimit = 10
 // DefinitionDumps returns the set of dumps that define at least one of the given monikers.
 func (s *Store) DefinitionDumps(ctx context.Context, monikers []lsifstore.QualifiedMonikerData) (_ []Dump, err error) {
 	ctx, traceLog, endObservation := s.operations.definitionDumps.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numMonikers", len(monikers)),
 		log.String("monikers", monikersToString(monikers)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -76,6 +77,7 @@ func (s *Store) ReferenceIDsAndFilters(ctx context.Context, repositoryID int, co
 	ctx, traceLog, endObservation := s.operations.referenceIDsAndFilters.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
+		log.Int("numMonikers", len(monikers)),
 		log.String("monikers", monikersToString(monikers)),
 		log.Int("limit", limit),
 		log.Int("offset", offset),

@@ -86,11 +86,10 @@ const visibleAtTipFragment = `EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip 
 
 // GetDumpsByIDs returns a set of dumps by identifiers.
 func (s *Store) GetDumpsByIDs(ctx context.Context, ids []int) (_ []Dump, err error) {
-	ctx, traceLog, endObservation := s.operations.getDumpsByIDs.WithAndLogger(ctx, &err, observation.Args{
-		LogFields: []log.Field{
-			log.String("ids", intsToString(ids)),
-		},
-	})
+	ctx, traceLog, endObservation := s.operations.getDumpsByIDs.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numIDs", len(ids)),
+		log.String("ids", intsToString(ids)),
+	}})
 	defer endObservation(1, observation.Args{})
 
 	if len(ids) == 0 {

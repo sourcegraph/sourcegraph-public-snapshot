@@ -524,6 +524,7 @@ SELECT d.repository_id, COUNT(*) FROM deleted_uploads d GROUP BY d.repository_id
 // HardDeleteUploadByID deletes the upload record with the given identifier.
 func (s *Store) HardDeleteUploadByID(ctx context.Context, ids ...int) (err error) {
 	ctx, endObservation := s.operations.hardDeleteUploadByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numIDs", len(ids)),
 		log.String("ids", intsToString(ids)),
 	}})
 	defer endObservation(1, observation.Args{})

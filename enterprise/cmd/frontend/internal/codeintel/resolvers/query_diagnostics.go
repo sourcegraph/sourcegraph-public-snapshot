@@ -21,7 +21,8 @@ func (r *queryResolver) Diagnostics(ctx context.Context, limit int) (adjustedDia
 			log.Int("repositoryID", r.repositoryID),
 			log.String("commit", r.commit),
 			log.String("path", r.path),
-			log.String("uploadIDs", uploadIDsToString(r.uploads)),
+			log.Int("numUploads", len(r.uploads)),
+			log.String("uploads", uploadIDsToString(r.uploads)),
 			log.Int("limit", limit),
 		},
 	})
