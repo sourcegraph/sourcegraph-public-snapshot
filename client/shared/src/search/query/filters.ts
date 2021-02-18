@@ -182,6 +182,11 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         negatable: true,
         singular: true,
     },
+    [FilterType.context]: {
+        description: 'Search only repositories within a specified context',
+        singular: true,
+        suggestions: 'SearchContext',
+    },
     [FilterType.count]: {
         description: 'Number of results to fetch (integer)',
         singular: true,
@@ -229,11 +234,6 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         description: 'group-name (include results from the named group)',
         singular: true,
         suggestions: 'RepoGroup',
-    },
-    [FilterType.context]: {
-        description: 'Search only repositories within a specified context',
-        singular: true,
-        suggestions: 'SearchContext',
     },
     [FilterType.repohascommitafter]: {
         description: '"string specifying time frame" (filter out stale repositories without recent commits)',

@@ -7,7 +7,7 @@ import { hot } from 'react-hot-loader/root'
 import { Route } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
 import { combineLatest, from, Subscription, fromEvent, of } from 'rxjs'
-import { startWith, switchMap } from 'rxjs/operators'
+import { bufferCount, startWith, switchMap } from 'rxjs/operators'
 import { setLinkComponent } from '../../shared/src/components/Link'
 import {
     Controller as ExtensionsController,
@@ -78,6 +78,7 @@ import {
 } from './enterprise/code-monitoring/backend'
 import { aggregateStreamingSearch } from './search/stream'
 import { ISearchContext } from '../../shared/src/graphql/schema'
+import { logCodeInsightsChanges } from './insights/analytics'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
@@ -168,7 +169,7 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
 
     showSearchContext: boolean
     availableSearchContexts: ISearchContext[]
-    selectedSearchContextSpec: string
+    selectedSearchContextSpec?: string
     defaultSearchContextSpec: string
 
     /**
@@ -313,6 +314,15 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             )
         )
 
+        // Observe settings mutations for analytics
+        this.subscriptions.add(
+            from(this.platformContext.settings)
+                .pipe(bufferCount(2, 1))
+                .subscribe(([oldSettings, newSettings]) => {
+                    logCodeInsightsChanges(oldSettings, newSettings, eventLogger)
+                })
+        )
+
         // React to OS theme change
         this.subscriptions.add(
             fromEvent<MediaQueryListEvent>(this.darkThemeMediaList, 'change').subscribe(event => {
@@ -436,7 +446,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     showRepogroupHomepage={this.state.showRepogroupHomepage}
                                     showOnboardingTour={this.state.showOnboardingTour}
                                     showSearchContext={this.state.showSearchContext}
-                                    selectedSearchContextSpec={this.state.selectedSearchContextSpec}
+                                    selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
                                     setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
                                     availableSearchContexts={this.state.availableSearchContexts}
                                     defaultSearchContextSpec={this.state.defaultSearchContextSpec}
@@ -508,6 +518,9 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
 
         this.extensionsController.services.workspace.versionContext.next(resolvedVersionContext)
     }
+
+    private getSelectedSearchContextSpec = (): string | undefined =>
+        this.state.showSearchContext ? this.state.selectedSearchContextSpec : undefined
 
     private setSelectedSearchContextSpec = (spec: string): void => {
         this.setState(state => ({

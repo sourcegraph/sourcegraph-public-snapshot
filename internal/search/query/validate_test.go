@@ -2,7 +2,6 @@ package query
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -260,11 +259,7 @@ func TestPartitionSearchPattern(t *testing.T) {
 			if pattern != nil {
 				result = append(scopeParameters, pattern)
 			}
-			var resultStr []string
-			for _, node := range result {
-				resultStr = append(resultStr, node.String())
-			}
-			got := strings.Join(resultStr, " ")
+			got := toString(result)
 			if diff := cmp.Diff(tt.want, got); diff != "" {
 				t.Error(diff)
 			}

@@ -3,7 +3,7 @@ import * as H from 'history'
 import * as Monaco from 'monaco-editor'
 import { isPlainObject } from 'lodash'
 import { MonacoEditor } from '../../components/MonacoEditor'
-import { QueryState } from '../helpers'
+import { QueryState, submitSearch } from '../helpers'
 import { getProviders } from '../../../../shared/src/search/query/providers'
 import { Subscription, Observable, Unsubscribable, ReplaySubject } from 'rxjs'
 import { fetchSuggestions } from '../backend'
@@ -273,6 +273,13 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         editor.focus()
     }, [editor, autoFocus])
 
+    // Always focus the editor on selectedSearchContextSpec change
+    useEffect(() => {
+        if (props.selectedSearchContextSpec) {
+            editor?.focus()
+        }
+    }, [editor, props.selectedSearchContextSpec])
+
     // If an edit wasn't triggered by the user,
     // place the cursor at the end of the query.
     useEffect(() => {
@@ -350,7 +357,9 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     return (
         <>
             <div ref={setContainer} className="monaco-query-input-container">
-                {props.showSearchContext && <SearchContextDropdown query={queryState.query} {...props} />}
+                {props.showSearchContext && (
+                    <SearchContextDropdown query={queryState.query} submitSearch={submitSearch} {...props} />
+                )}
                 <div className="monaco-query-input-container__focus-container flex-shrink-past-contents">
                     <div className="flex-grow-1 flex-shrink-past-contents" onFocus={onFocus}>
                         <MonacoEditor

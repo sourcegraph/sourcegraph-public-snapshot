@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 import { Form } from '../../../branded/src/components/Form'
-import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps } from '../search'
+import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps, SearchContextProps } from '../search'
 import { SearchButton } from '../search/input/SearchButton'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { submitSearch } from '../search/helpers'
@@ -12,7 +12,8 @@ interface Props
         PatternTypeProps,
         CaseSensitivityProps,
         CopyQueryButtonProps,
-        VersionContextProps {
+        VersionContextProps,
+        Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     implicitQueryPrefix: string
 
     location: H.Location

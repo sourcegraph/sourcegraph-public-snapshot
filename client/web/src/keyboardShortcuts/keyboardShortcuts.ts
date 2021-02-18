@@ -1,4 +1,5 @@
 import { KeyboardShortcut } from '../../../shared/src/keyboardShortcuts'
+import { isMacPlatform } from '../util'
 
 export const KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE: KeyboardShortcut = {
     id: 'commandPalette',
@@ -25,6 +26,12 @@ export const KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR: KeyboardShortcut = {
     keybindings: [{ ordered: ['/'] }],
 }
 
+export const KEYBOARD_SHORTCUT_COPY_FULL_QUERY: KeyboardShortcut = {
+    id: 'copyFullQuery',
+    title: 'Copy full query',
+    keybindings: [{ held: [isMacPlatform ? 'Meta' : 'Control', 'Shift'], ordered: ['c'] }],
+}
+
 /**
  * Global keyboard shortcuts. React components should access these via {@link KeybindingsProps}, not
  * globally.
@@ -34,6 +41,7 @@ export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
     KEYBOARD_SHORTCUT_SWITCH_THEME,
     KEYBOARD_SHORTCUT_SHOW_HELP,
     KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR,
+    KEYBOARD_SHORTCUT_COPY_FULL_QUERY,
 ]
 
 /** A partial React props type for components that use or propagate keyboard shortcuts. */

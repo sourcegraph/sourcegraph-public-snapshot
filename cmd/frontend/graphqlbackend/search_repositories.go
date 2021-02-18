@@ -50,6 +50,7 @@ func searchRepositories(ctx context.Context, args *search.TextParameters, limit 
 		query.FieldRepoHasFile:        {},
 		query.FieldRepoHasCommitAfter: {},
 		query.FieldPatternType:        {},
+		query.FieldSelect:             {},
 	}
 	// Don't return repo results if the search contains fields that aren't on the allowlist.
 	// Matching repositories based whether they contain files at a certain path (etc.) is not yet implemented.
@@ -115,7 +116,10 @@ func repoRevsToSearchResultResolver(ctx context.Context, repos []*search.Reposit
 			revs = r.RevSpecs()
 		}
 		for _, rev := range revs {
-			results = append(results, &RepositoryResolver{innerRepo: r.Repo.ToRepo(), icon: repoIcon, rev: rev})
+			rr := NewRepositoryResolver(r.Repo.ToRepo())
+			rr.icon = repoIcon
+			rr.rev = rev
+			results = append(results, rr)
 		}
 	}
 	return results

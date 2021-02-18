@@ -8,7 +8,13 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged, filter, first, map, skip, skipUntil } from 'rxjs/operators'
-import { parseSearchURLQuery, PatternTypeProps, CaseSensitivityProps, ParsedSearchQueryProps } from '..'
+import {
+    parseSearchURLQuery,
+    PatternTypeProps,
+    CaseSensitivityProps,
+    ParsedSearchQueryProps,
+    SearchContextProps,
+} from '..'
 import { FetchFileParameters } from '../../../../shared/src/components/CodeExcerpt'
 import { FileMatch } from '../../../../shared/src/components/FileMatch'
 import { displayRepoName } from '../../../../shared/src/components/RepoFileLink'
@@ -52,7 +58,8 @@ export interface SearchResultsListProps
         PatternTypeProps,
         CaseSensitivityProps,
         VersionContextProps,
-        Pick<CodeMonitoringProps, 'enableCodeMonitoring'> {
+        Pick<CodeMonitoringProps, 'enableCodeMonitoring'>,
+        Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     location: H.Location
     history: H.History
     authenticatedUser: AuthenticatedUser | null

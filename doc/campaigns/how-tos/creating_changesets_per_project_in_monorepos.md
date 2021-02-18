@@ -123,6 +123,10 @@ The `workspace` property leverages Sourcegraph search to find the location of th
 
 That has the advantage that it's _dynamic_: whenever `src campaign [apply|preview]` is re-executed, Sourcegraph search is used again to find workspaces, automatically picking up new ones and removing workspaces that no longer exist.
 
+## Only downloading workspace data in large repositories
+
+If the repository containing the workspaces is really large and it's not feasible to download to make it available for the `steps` execution, the [`workspaces.onlyFetchWorkspaces`][onlyFetchWorkspaces] field can be set to `true` to only download the workspaces, without the rest of the repository.
+
 ## Learn more
 
 To learn more about `workspaces`, take a look at its entry in the "[Campaign Spec YAML reference][workspaces]".
@@ -132,6 +136,7 @@ To learn more about `workspaces`, take a look at its entry in the "[Campaign Spe
 [cli]: ../cli/index.md
 [steps]: ../references/campaign_spec_yaml_reference.md#steps
 [workspaces]: ../references/campaign_spec_yaml_reference.md#workspaces
+[onlyfetchworkspace]: ../references/campaign_spec_yaml_reference.md#workspaces-onlyfetchworkspace
 [on]: ../references/campaign_spec_yaml_reference.md#on
 [branch]: ../references/campaign_spec_yaml_reference.md#changesettemplate-branch
 [templating]: ../references/campaign_spec_templating.md

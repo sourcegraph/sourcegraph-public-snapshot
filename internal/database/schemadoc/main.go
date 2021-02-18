@@ -178,7 +178,7 @@ func generateInternal(database *dbconn.Database, dataSource string, run runFunc)
 		return "", err
 	}
 
-	ch := make(chan string, len(tables))
+	ch := make(chan table, len(tables))
 	for _, table := range tables {
 		ch <- table
 	}
@@ -195,7 +195,7 @@ func generateInternal(database *dbconn.Database, dataSource string, run runFunc)
 			defer wg.Done()
 
 			for table := range ch {
-				logger.Println("describe", table)
+				logger.Println("describe", table.name)
 
 				doc, err := describeTable(db, database.Name, table, run)
 				if err != nil {
@@ -239,12 +239,17 @@ func generateInternal(database *dbconn.Database, dataSource string, run runFunc)
 	return combined, nil
 }
 
-func getTables(db *sql.DB) (tables []string, _ error) {
+type table struct {
+	name   string
+	isView bool
+}
+
+func getTables(db *sql.DB) (tables []table, _ error) {
 	// Query names of all public tables and views.
 	rows, err := db.Query(`
-		SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+		SELECT table_name, FALSE AS is_view FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
 		UNION
-		SELECT table_name FROM information_schema.views WHERE table_schema = 'public' AND table_name != 'pg_stat_statements';
+		SELECT table_name, TRUE AS is_view FROM information_schema.views WHERE table_schema = 'public' AND table_name != 'pg_stat_statements';
 	`)
 	if err != nil {
 		return nil, errors.Wrap(err, "database.Query")
@@ -252,11 +257,11 @@ func getTables(db *sql.DB) (tables []string, _ error) {
 	defer rows.Close()
 
 	for rows.Next() {
-		var name string
-		if err := rows.Scan(&name); err != nil {
+		var t table
+		if err := rows.Scan(&t.name, &t.isView); err != nil {
 			return nil, errors.Wrap(err, "rows.Scan")
 		}
-		tables = append(tables, name)
+		tables = append(tables, t)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, errors.Wrap(err, "rows.Err")
@@ -265,19 +270,19 @@ func getTables(db *sql.DB) (tables []string, _ error) {
 	return tables, nil
 }
 
-func describeTable(db *sql.DB, databaseName, table string, run runFunc) (string, error) {
-	comment, err := getTableComment(db, table)
+func describeTable(db *sql.DB, databaseName string, table table, run runFunc) (string, error) {
+	comment, err := getTableComment(db, table.name)
 	if err != nil {
 		return "", err
 	}
 
-	columnComments, err := getColumnComments(db, table)
+	columnComments, err := getColumnComments(db, table.name)
 	if err != nil {
 		return "", err
 	}
 
 	// Get postgres "describe table" output.
-	out, err := run(false, "psql", "-X", "--quiet", "--dbname", databaseNamePrefix+databaseName, "-c", fmt.Sprintf("\\d %s", table))
+	out, err := run(false, "psql", "-X", "--quiet", "--dbname", databaseNamePrefix+databaseName, "-c", fmt.Sprintf("\\d %s", table.name))
 	if err != nil {
 		return "", errors.Wrap(err, fmt.Sprintf("run: %s", out))
 	}
@@ -312,6 +317,16 @@ func describeTable(db *sql.DB, databaseName, table string, run runFunc) (string,
 		buf.WriteString("\n")
 	}
 
+	if table.isView {
+		buf.WriteString("\n## View query:\n\n```sql\n")
+		q, err := getViewQuery(db, table.name)
+		if err != nil {
+			return "", err
+		}
+		buf.WriteString(q)
+		buf.WriteString("\n```\n")
+	}
+
 	return buf.String(), nil
 }
 
@@ -332,6 +347,25 @@ func getTableComment(db *sql.DB, table string) (comment string, _ error) {
 	}
 
 	return comment, nil
+}
+
+func getViewQuery(db *sql.DB, view string) (query string, _ error) {
+	rows, err := db.Query("SELECT definition FROM pg_views WHERE viewname = $1", view)
+	if err != nil {
+		return "", errors.Wrap(err, "database.Query")
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		if err := rows.Scan(&query); err != nil {
+			return "", errors.Wrap(err, "rows.Scan")
+		}
+	}
+	if err = rows.Err(); err != nil {
+		return "", errors.Wrap(err, "rows.Err")
+	}
+
+	return query, nil
 }
 
 func getColumnComments(db *sql.DB, table string) (map[string]string, error) {

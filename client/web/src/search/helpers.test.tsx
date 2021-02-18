@@ -30,11 +30,12 @@ describe('search/helpers', () => {
                 patternType: SearchPatternType.literal,
                 caseSensitive: false,
                 versionContext: undefined,
+                selectedSearchContextSpec: 'global',
                 activation: undefined,
                 source: 'home',
                 searchParameters: undefined,
             })
-            expect(history.location.search).toEqual('?q=querystring&patternType=literal')
+            expect(history.location.search).toEqual('?q=querystring&patternType=literal&context=global')
         })
         test('should keep trace param when updating history', () => {
             const history = H.createMemoryHistory({ initialEntries: ['/?trace=1'] })
@@ -44,11 +45,12 @@ describe('search/helpers', () => {
                 patternType: SearchPatternType.literal,
                 caseSensitive: false,
                 versionContext: undefined,
+                selectedSearchContextSpec: 'global',
                 activation: undefined,
                 source: 'home',
                 searchParameters: undefined,
             })
-            expect(history.location.search).toEqual('?q=querystring&patternType=literal&trace=1')
+            expect(history.location.search).toEqual('?q=querystring&patternType=literal&context=global&trace=1')
         })
     })
 

@@ -86,7 +86,7 @@ func TestRepositoryHydration(t *testing.T) {
 		}
 		defer func() { database.Mocks = database.MockStores{} }()
 
-		repoResolver := &RepositoryResolver{innerRepo: minimalRepo}
+		repoResolver := NewRepositoryResolver(minimalRepo)
 		assertRepoResolverHydrated(ctx, t, repoResolver, hydratedRepo)
 	})
 
@@ -100,7 +100,7 @@ func TestRepositoryHydration(t *testing.T) {
 		}
 		defer func() { database.Mocks = database.MockStores{} }()
 
-		repoResolver := &RepositoryResolver{innerRepo: minimalRepo}
+		repoResolver := NewRepositoryResolver(minimalRepo)
 		_, err := repoResolver.Description(ctx)
 		if err == nil {
 			t.Fatal("err is unexpected nil")

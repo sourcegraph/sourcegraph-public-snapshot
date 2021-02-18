@@ -33,6 +33,7 @@ export type MetaToken =
     | MetaRepoRevisionSeparator
     | MetaRevision
     | MetaContextPrefix
+    | MetaSelector
 
 /**
  * Defines common properties for meta tokens.
@@ -139,6 +140,19 @@ export interface MetaRepoRevisionSeparator extends BaseMetaToken {
  */
 export interface MetaContextPrefix extends BaseMetaToken {
     type: 'metaContextPrefix'
+}
+
+export interface MetaSelector extends BaseMetaToken {
+    type: 'metaSelector'
+    kind: MetaSelectorKind
+}
+
+export enum MetaSelectorKind {
+    Repo = 'repo',
+    File = 'file',
+    Content = 'content',
+    Symbol = 'symbol',
+    Commit = 'commit',
 }
 
 /**
@@ -687,6 +701,14 @@ const decorateContext = (token: Literal): DecoratedToken[] => {
     ]
 }
 
+const decorateSelector = (token: Literal): DecoratedToken[] => {
+    const kind = token.value as MetaSelectorKind
+    if (!kind) {
+        return [token]
+    }
+    return [{ type: 'metaSelector', range: token.range, value: token.value, kind }]
+}
+
 export const decorate = (token: Token): DecoratedToken[] => {
     const decorated: DecoratedToken[] = []
     switch (token.type) {
@@ -740,6 +762,8 @@ export const decorate = (token: Token): DecoratedToken[] => {
                 )
             } else if (token.field.value === 'context' && token.value?.type === 'literal') {
                 decorated.push(...decorateContext(token.value))
+            } else if (token.field.value === 'select' && token.value?.type === 'literal') {
+                decorated.push(...decorateSelector(token.value))
             } else if (token.value) {
                 decorated.push(token.value)
             }

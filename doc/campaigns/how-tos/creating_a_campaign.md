@@ -46,6 +46,7 @@ After writing a campaign spec you use the [Sourcegraph CLI (`src`)](https://gith
     <pre><code>src campaign preview -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em></code></pre>
 
     > **Don't worry!** Before any branches are pushed or changesets (e.g., GitHub pull requests) are created, you will see a preview of all changes and can confirm each one before proceeding.
+    > NOTE: Campaigns's default behavior is to stop if computing changes in a repository errors. You can choose to ignore errors instead by adding the [`skip-errors`](../../cli/references/campaigns/preview.md) flag : `src campaign preview -f spec.campaign.yml -skip-errors`
 
 1. Wait for it to run and compute the changes for each repository (using the repositories and commands in the campaign spec).
     <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/src_campaign_preview_waiting.png" class="screenshot">
