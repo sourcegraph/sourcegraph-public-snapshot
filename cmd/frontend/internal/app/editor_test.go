@@ -77,7 +77,15 @@ func TestEditorRedirect(t *testing.T) {
 				ID:          3,
 				Kind:        extsvc.KindOther,
 				DisplayName: "OtherDefault",
-				Config:      `{"url": "https://default.generic"}`,
+				Config:      `{"url": "https://default.com"}`,
+			},
+			// This service won't be used, but is included to prevent regression where ReposourceCloneURLToRepoName returned an error when
+			// Phabricator was iterated over before the actual code host (e.g. The clone URL is handled by reposource.GitLab).
+			{
+				ID:          4,
+				Kind:        extsvc.KindPhabricator,
+				DisplayName: "PHABRICATOR #1",
+				Config:      `{"repos": [{"path": "default.com/foo/bar", "callsign": "BAR"}], "token": "abc", "url": "https://phabricator.example.com"}`,
 			},
 		}, nil
 	}
@@ -119,6 +127,22 @@ func TestEditorRedirect(t *testing.T) {
 			wantRedirectURL: "/github.com/a/b@0ad12f/-/blob/mux.go?utm_source=Atom-v1.2.1#L1:1", // L1:1 is expected (but could be nicer by omitting it)
 		},
 		{
+			name: "open file in repository (Phabricator mirrored)",
+			q: url.Values{
+				"editor":     []string{"Atom"},
+				"version":    []string{"v1.2.1"},
+				"remote_url": []string{"https://default.com/foo/bar"},
+				"branch":     []string{"dev"},
+				"revision":   []string{"0ad12f"},
+				"file":       []string{"mux.go"},
+				"start_row":  []string{"123"},
+				"start_col":  []string{"1"},
+				"end_row":    []string{"123"},
+				"end_col":    []string{"10"},
+			},
+			wantRedirectURL: "/default.com/foo/bar@0ad12f/-/blob/mux.go?utm_source=Atom-v1.2.1#L124:2-124:11",
+		},
+		{
 			name: "open file in repository with generic code host (with repositoryPathPattern)",
 			q: url.Values{
 				"editor":     []string{"Atom"},
@@ -139,7 +163,7 @@ func TestEditorRedirect(t *testing.T) {
 			q: url.Values{
 				"editor":     []string{"Atom"},
 				"version":    []string{"v1.2.1"},
-				"remote_url": []string{"https://default.generic/a/b"},
+				"remote_url": []string{"https://default.com/a/b"},
 				"branch":     []string{"dev"},
 				"revision":   []string{"0ad12f"},
 				"file":       []string{"mux.go"},
@@ -148,7 +172,7 @@ func TestEditorRedirect(t *testing.T) {
 				"end_row":    []string{"123"},
 				"end_col":    []string{"10"},
 			},
-			wantRedirectURL: "/default.generic/a/b@0ad12f/-/blob/mux.go?utm_source=Atom-v1.2.1#L124:2-124:11",
+			wantRedirectURL: "/default.com/a/b@0ad12f/-/blob/mux.go?utm_source=Atom-v1.2.1#L124:2-124:11",
 		},
 		{
 			name: "search",
