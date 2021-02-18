@@ -1,6 +1,6 @@
 # Testing
 
-_This documentation is specifically for the tests in the [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph) repository. For our general testing principles, please refer to our [testing guide in the handbook](https://about.sourcegraph.com/handbook/engineering/testing)._
+_This documentation is specifically for the tests in the [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph) repository. For our general testing principles, please see "[Testing Principles](testing_principles.md)".
 
 ## Backend tests
 

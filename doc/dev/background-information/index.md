@@ -3,8 +3,12 @@
 ## Overview
 
 - [Tech stack](tech_stack.md)
-- [Architecture](architecture/index.md)
-- [Testing](testing.md)
+- [Security Patterns](security_patterns.md)
+
+## [Architecture](architecture/index.md)
+
+- [Overview](architecture/index.md)
+- [Introducing a new service](architecture/introducing_a_new_service.md)
 
 ## Development
 
@@ -18,12 +22,22 @@
 - [Developing observability](observability/index.md)
 - [Developing Sourcegraph extensions](sourcegraph_extensions.md)
 - [Dependencies and generated code](dependencies_and_codegen.md)
+- [Code reviews](code_reviews.md)
+- [Commit messages](commit_messages.md)
+
+## Testing
+
+- [Continuous Integration](continuous_integration.md)
+- [How to run tests](testing.md)
+- [Testing Principles](testing_principles.md)
 
 ## Tools
 
 - [Renovate dependency updates](renovate.md)
+- [Honeycomb](honeycomb.md)
 - [Using PostgreSQL](postgresql.md)
 
 ## Other
 
 - [Telemetry](telemetry.md)
+- [Adding, changing and debugging pings](adding_ping_data.md)
