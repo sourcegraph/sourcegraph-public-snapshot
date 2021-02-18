@@ -28,6 +28,12 @@ type Actor struct {
 	URL       string
 }
 
+// An Author represents a PR author, where we ask for both the Actor and User types.
+type Author struct {
+	Actor
+	Email string
+}
+
 // A Team represents a team on Github.
 type Team struct {
 	Name string
@@ -145,7 +151,7 @@ type PullRequest struct {
 	HeadRefName   string
 	BaseRefName   string
 	Number        int64
-	Author        Actor
+	Author        Author
 	Participants  []Actor
 	Labels        struct{ Nodes []Label }
 	TimelineItems []TimelineItem
@@ -1279,6 +1285,9 @@ fragment pr on PullRequest {
   %s
   author {
     ...actor
+    ... on User {
+      email
+    }
   }
   participants(first: 100) {
     nodes {
