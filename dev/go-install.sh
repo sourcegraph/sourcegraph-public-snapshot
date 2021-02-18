@@ -100,13 +100,13 @@ esac
 
 # Cross-platform md5sum. Fallback to BSD md5 if md5sum doesn't exist.
 do_md5() {
-  pushd "${GOBIN}" > /dev/null || exit 1
+  pushd "${GOBIN}" >/dev/null || exit 1
   if command -v md5sum >/dev/null 2>&1; then
-    md5sum "$@" 2> /dev/null
+    md5sum "$@" 2>/dev/null
   else
-    md5 -r "$@" 2> /dev/null
+    md5 -r "$@" 2>/dev/null
   fi
-  popd > /dev/null || exit 1
+  popd >/dev/null || exit 1
 }
 
 # Shared logic for the go install part
@@ -131,12 +131,12 @@ do_install() {
   # Store hashes of binaries so we know what changes. We let go install
   # directly write to the binaries since go will skip compiling a binary if it
   # believes it hasn't changed.
-  do_md5 "${cmdlist[@]}" > "${tmpdir}/digest.txt"
+  do_md5 "${cmdlist[@]}" >"${tmpdir}/digest.txt"
 
   if (go install -v -gcflags="$GCFLAGS" -tags "$TAGS" -race="$race" "${cmds[@]}"); then
     if $verbose; then
       # Add the digests after compilation
-      do_md5 "${cmdlist[@]}" >> "${tmpdir}/digest.txt"
+      do_md5 "${cmdlist[@]}" >>"${tmpdir}/digest.txt"
       # Now any digest that is unique ($1 == 1) will mean the binary for it
       # changed or came into existance.
       sort "${tmpdir}/digest.txt" | uniq -c | awk '$1 == 1 { print $3 }' | sort | uniq
