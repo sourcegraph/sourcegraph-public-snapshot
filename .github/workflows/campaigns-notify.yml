@@ -1,4 +1,4 @@
-name: Notify the campaigns team if campaigns are mentioned in the issue
+name: notify-campaigns-team
 on:
   issues:
     types: [opened]
@@ -9,7 +9,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions-ecosystem/action-create-comment@v1
-        if: contains(github.event.comment.body, 'campaigns')
+        if: contains(github.event.comment.body, 'campaigns') && !contains(github.event.pull_request.labels.*.name, 'team/campaigns')
         with:
           github_token: ${{ secrets.github_token }}
           body: |
