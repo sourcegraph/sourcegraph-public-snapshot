@@ -68,28 +68,6 @@ interface PanelActionsProps extends Props {
     className?: string
 }
 
-const PanelActions: React.FunctionComponent<PanelActionsProps> = ({ activePanel, className, ...props }) => (
-    <ActionsNavItems
-        {...props}
-        // TODO remove references to Bootstrap from shared, get class name from prop
-        // This is okay for now because the Panel is currently only used in the webapp
-        listClass={classNames('nav', className)}
-        actionItemClass="nav-link panel__tabs__action"
-        actionItemIconClass="icon-inline"
-        menu={ContributableMenu.PanelToolbar}
-        scope={
-            activePanel !== undefined
-                ? {
-                      type: 'panelView',
-                      id: activePanel.id,
-                      hasLocations: Boolean(activePanel.hasLocations),
-                  }
-                : undefined
-        }
-        wrapInList={true}
-    />
-)
-
 /**
  * The panel, which is a tabbed component with contextual information. Components rendering the panel should
  * generally use ResizablePanel, not Panel.
@@ -141,25 +119,37 @@ class Panel extends React.PureComponent<Props, State> {
                         tabBarEndFragment={
                             <>
                                 <Spacer />
-                                <PanelActions
+                                <ActionsNavItems
                                     {...this.props}
-                                    activePanel={activePanelView}
-                                    className="d-none d-md-flex"
+                                    // TODO remove references to Bootstrap from shared, get class name from prop
+                                    // This is okay for now because the Panel is currently only used in the webapp
+                                    listClass="nav panel__tabs__actions"
+                                    actionItemClass="nav-link mw-100 panel__tabs__action"
+                                    actionItemIconClass="icon-inline"
+                                    menu={ContributableMenu.PanelToolbar}
+                                    scope={
+                                        activePanelView !== undefined
+                                            ? {
+                                                  type: 'panelView',
+                                                  id: activePanelView.id,
+                                                  hasLocations: Boolean(activePanelView.hasLocations),
+                                              }
+                                            : undefined
+                                    }
+                                    wrapInList={true}
                                 />
                                 <button
                                     type="button"
                                     onClick={this.onDismiss}
-                                    className="btn btn-icon tab-bar__end-fragment-other-element pr-2 pl-1"
+                                    className="btn btn-icon tab-bar__end-fragment-other-element panel__tabs__dismiss"
                                     data-tooltip="Close"
                                 >
                                     <CloseIcon className="icon-inline" />
                                 </button>
                             </>
                         }
-                        toolbarFragment={
-                            <PanelActions {...this.props} activePanel={activePanelView} className="d-md-none" />
-                        }
                         className="panel__tabs"
+                        tabBarClassName="flex-wrap"
                         tabClassName="tab-bar__tab--h5like"
                         location={this.props.location}
                     >

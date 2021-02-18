@@ -39,6 +39,7 @@ interface TabBarProps<ID extends string, T extends Tab<ID>> {
     tabComponent: React.ComponentType<{ tab: T; className: string; role: string }>
 
     tabClassName?: string
+    tabBarClassName?: string
 }
 
 /**
@@ -50,7 +51,14 @@ interface TabBarProps<ID extends string, T extends Tab<ID>> {
 class TabBar<ID extends string, T extends Tab<ID>> extends React.PureComponent<TabBarProps<ID, T>> {
     public render(): JSX.Element | null {
         return (
-            <div className={`tab-bar ${this.props.tabs.length === 0 ? 'tab-bar--empty' : ''}`} role="tablist">
+            <div
+                className={classNames(
+                    'tab-bar',
+                    this.props.tabs.length === 0 && 'tab-bar--empty',
+                    this.props.tabBarClassName
+                )}
+                role="tablist"
+            >
                 {this.props.tabs
                     .filter(({ hidden }) => !hidden)
                     .map(tab => (
@@ -109,6 +117,7 @@ interface TabsProps<ID extends string, T extends Tab<ID>> {
 
     id?: string
     className?: string
+    tabBarClassName?: string
     tabClassName?: string
 
     /** Optional handler when a tab is selected */
@@ -149,6 +158,7 @@ class Tabs<ID extends string, T extends Tab<ID>> extends React.PureComponent<
                     tabs={this.props.tabs}
                     activeTab={this.props.activeTab}
                     endFragment={this.props.tabBarEndFragment}
+                    tabBarClassName={this.props.tabBarClassName}
                     tabClassName={this.props.tabClassName}
                     tabComponent={this.props.tabComponent}
                 />
