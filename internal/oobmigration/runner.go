@@ -75,35 +75,37 @@ func (r *Runner) Register(id int, migrator Migrator) error {
 func (r *Runner) Start() {
 	defer close(r.finished)
 
+	// Launch a producer goroutine that feeds a channel periodically with the migration
+	// state from the database. While a new value is not available, we'll use the data
+	// we saw most recently (and will use its progress field as a write-through cache).
 	migrationsCh := r.listMigrations(r.ctx)
+
+	// Block until we list our migrations for the first time. Note that this channel will be
+	// closed once the context is closed, so we don't have to do a more complex select here.
 	migrations := <-migrationsCh
+
+	// Before calling Up or Down, we want to call Progress to determine if the migration can
+	// be removed immediately. Each time we re-assign the migrations variable above we'll set
+	// this flag to ensure we call Progress before any other action.
+	shouldCheckProgress := true
 
 	for {
 		select {
 		case migrations = <-migrationsCh:
+			shouldCheckProgress = true
 		case <-r.tickClock.After(r.tickInterval):
 		case <-r.ctx.Done():
 			return
 		}
 
-		filtered := migrations[:0]
-
-		for i := range migrations {
-			progress, err := r.runMigratorForMigration(r.ctx, migrations[i])
-			if err != nil {
-				log15.Error("Failed to perform migration", "id", migrations[i].ID, "error", err)
-			}
-
-			completedForward := progress == 1 && !migrations[i].ApplyReverse
-			completedReverse := progress == 0 && migrations[i].ApplyReverse
-
-			if !(completedForward || completedReverse) {
-				// Only check migrations that are incomplete
-				filtered = append(filtered, migrations[i])
-			}
+		if shouldCheckProgress {
+			// We just fetched these migrations - see which ones are live
+			migrations = r.mapFilterMigrations(r.ctx, migrations, r.progressForMigration)
+			shouldCheckProgress = false
 		}
 
-		migrations = filtered
+		// Run the migration for this tick
+		migrations = r.mapFilterMigrations(r.ctx, migrations, r.runMigratorForMigration)
 	}
 }
 
@@ -139,10 +141,47 @@ func (r *Runner) listMigrations(ctx context.Context) <-chan []Migration {
 	return ch
 }
 
+type progressFunc func(ctx context.Context, migration Migration) (float64, error)
+
+// mapFilterMigrations runs the given progress function on each migration in the given slice.
+// The progress of each migration is updated based on the progress function's return value.
+// Any migration that is now marked complete is filtered from the list. The list is filtered
+// in-place and a reference to the new slice (with adjusted length) is returned.
+func (r *Runner) mapFilterMigrations(ctx context.Context, migrations []Migration, fn progressFunc) []Migration {
+	filtered := migrations[:0]
+
+	for i := range migrations {
+		progress, err := fn(ctx, migrations[i])
+		if err != nil {
+			log15.Error("Failed migration action", "id", migrations[i].ID, "error", err)
+			continue
+		}
+		migrations[i].Progress = progress
+
+		if !migrations[i].Complete() {
+			filtered = append(filtered, migrations[i])
+		}
+	}
+
+	return filtered
+}
+
+// progressForMigration returns the progress of the current migration. If a migrator is registered
+// to the given migration, the progress is queried and the record is updated. Otherwise, the last
+// known progress (from the database record) is returned.
+func (r *Runner) progressForMigration(ctx context.Context, migration Migration) (float64, error) {
+	migrator, ok := r.migrators[migration.ID]
+	if !ok {
+		return migration.Progress, nil
+	}
+
+	return r.queryAndUpdateProgress(ctx, migration, migrator)
+}
+
 // runMigratorForMigration runs a migrator, if any, registered to the given migration. If an error
 // occurs in the migration function, the error will be attached to the migration so that it can be
 // surfaced to an admin. If a migration function is run, regardless of it success, the migration's
-// progress will be updated.
+// progress will be queried and the record will be updated.
 func (r *Runner) runMigratorForMigration(ctx context.Context, migration Migration) (float64, error) {
 	migrator, ok := r.migrators[migration.ID]
 	if !ok {
@@ -155,21 +194,25 @@ func (r *Runner) runMigratorForMigration(ctx context.Context, migration Migratio
 	}
 
 	if migrationErr := migrationFunc(ctx); migrationErr != nil {
-		// Migration resulted in an error. All we'll do here is add this error to the
-		// migration's error message list. Unless _that_ write to the database fails,
-		// we'll continue along the happy path in order to update the migration, which
-		// could have made additional progress before failing.
+		// Migration resulted in an error. All we'll do here is add this error to the migration's error
+		// message list. Unless _that_ write to the database fails, we'll continue along the happy path
+		// in order to update the migration, which could have made additional progress before failing.
 
 		if err := r.store.AddError(ctx, migration.ID, migrationErr.Error()); err != nil {
 			return 0, err
 		}
 	}
 
+	return r.queryAndUpdateProgress(ctx, migration, migrator)
+}
+
+// queryAndUpdateProgress queries the progress of the given migration and updates the database record
+// to reflect the updated value.
+func (r *Runner) queryAndUpdateProgress(ctx context.Context, migration Migration, migrator Migrator) (float64, error) {
 	progress, err := migrator.Progress(ctx)
 	if err != nil {
 		return 0, err
 	}
-	migration.Progress = progress
 
 	if err := r.store.UpdateProgress(ctx, migration.ID, progress); err != nil {
 		return 0, err
