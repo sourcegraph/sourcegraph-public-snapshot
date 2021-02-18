@@ -11,8 +11,9 @@ import (
 // StartableRoutine represents a component of a binary that consists of a long
 // running process.
 type StartableRoutine interface {
-	// Start begins the long-running process. The Stop method should signal to
-	// this process that that application is beginnign to shut down.
+	// Start begins the long-running process. This routine may also implement
+	// a Stop method that should signal this process the application is going
+	// to shut down.
 	Start()
 }
 
