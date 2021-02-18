@@ -121,8 +121,8 @@ type diagnosticCount struct {
 	NumDiagnostics int
 }
 
-// scanDiagnosticCounts returns a document key (dump_id and path) paired with the number of
-// diagnostics present in that document's data field.
+// scanDiagnosticCounts scans a slice of diagnosticCount values from the return value
+// of `*Store.query`.
 func (m *diagnosticsCountMigrator) scanDiagnosticCounts(rows *sql.Rows, queryErr error) (_ []diagnosticCount, err error) {
 	if queryErr != nil {
 		return nil, queryErr
