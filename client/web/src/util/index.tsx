@@ -40,3 +40,9 @@ export function scrollIntoView(listElement?: HTMLElement, selectedElement?: HTML
 }
 
 export const isMacPlatform = window.navigator.platform.includes('Mac')
+
+export interface UserRepositoriesUpdateProps {
+    // Callback triggered when a user successfuly updates their
+    // synced repositories
+    onUserRepositoriesUpdate: () => void
+}

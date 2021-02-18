@@ -6,7 +6,7 @@ import * as React from 'react'
 import { hot } from 'react-hot-loader/root'
 import { Route } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
-import { combineLatest, from, Subscription, fromEvent, of } from 'rxjs'
+import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
 import { bufferCount, startWith, switchMap } from 'rxjs/operators'
 import { setLinkComponent } from '../../shared/src/components/Link'
 import {
@@ -79,6 +79,7 @@ import {
 import { aggregateStreamingSearch } from './search/stream'
 import { ISearchContext } from '../../shared/src/graphql/schema'
 import { logCodeInsightsChanges } from './insights/analytics'
+import { listUserRepositories } from './site-admin/backend'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
@@ -171,6 +172,7 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     availableSearchContexts: ISearchContext[]
     selectedSearchContextSpec?: string
     defaultSearchContextSpec: string
+    hasUserAddedRepositories: boolean
 
     /**
      * Whether globbing is enabled for filters.
@@ -237,6 +239,7 @@ const LayoutWithActivation = window.context.sourcegraphDotComMode ? Layout : wit
  */
 class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, SourcegraphWebAppState> {
     private readonly subscriptions = new Subscription()
+    private readonly userRepositoriesUpdates = new Subject<void>()
     private readonly darkThemeMediaList = window.matchMedia('(prefers-color-scheme: dark)')
     private readonly platformContext: PlatformContext = createPlatformContext()
     private readonly extensionsController: ExtensionsController = createExtensionsController(this.platformContext)
@@ -277,6 +280,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             availableSearchContexts: [],
             selectedSearchContextSpec: 'global',
             defaultSearchContextSpec: 'global', // global is default for now, user will be able to change this at some point
+            hasUserAddedRepositories: false,
             showEnterpriseHomePanels: false,
             globbing: false,
             showMultilineSearchConsole: false,
@@ -336,6 +340,19 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             })
         )
 
+        this.subscriptions.add(
+            combineLatest([this.userRepositoriesUpdates, authenticatedUser])
+                .pipe(
+                    switchMap(([, authenticatedUser]) =>
+                        authenticatedUser ? listUserRepositories({ id: authenticatedUser.id, first: 1 }) : of(null)
+                    )
+                )
+                .subscribe(userRepositories => {
+                    const hasUserAddedRepositories = userRepositories !== null && userRepositories.nodes.length > 0
+                    this.setState({ hasUserAddedRepositories })
+                })
+        )
+
         /**
          * Listens for uncaught 401 errors when a user when a user was previously authenticated.
          *
@@ -358,6 +375,8 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
 
         // Send initial versionContext to extensions
         this.extensionsController.services.workspace.versionContext.next(this.state.versionContext)
+
+        this.userRepositoriesUpdates.next()
     }
 
     public componentWillUnmount(): void {
@@ -445,7 +464,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                                     showRepogroupHomepage={this.state.showRepogroupHomepage}
                                     showOnboardingTour={this.state.showOnboardingTour}
-                                    showSearchContext={this.state.showSearchContext}
+                                    showSearchContext={this.canShowSearchContext()}
                                     selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
                                     setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
                                     availableSearchContexts={this.state.availableSearchContexts}
@@ -466,6 +485,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     deleteCodeMonitor={deleteCodeMonitor}
                                     toggleCodeMonitorEnabled={toggleCodeMonitorEnabled}
                                     streamSearch={aggregateStreamingSearch}
+                                    onUserRepositoriesUpdate={this.onUserRepositoriesUpdate}
                                 />
                             )}
                         />
@@ -519,8 +539,14 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         this.extensionsController.services.workspace.versionContext.next(resolvedVersionContext)
     }
 
+    private onUserRepositoriesUpdate = (): void => {
+        this.userRepositoriesUpdates.next()
+    }
+
+    private canShowSearchContext = (): boolean => this.state.showSearchContext && this.state.hasUserAddedRepositories
+
     private getSelectedSearchContextSpec = (): string | undefined =>
-        this.state.showSearchContext ? this.state.selectedSearchContextSpec : undefined
+        this.canShowSearchContext() ? this.state.selectedSearchContextSpec : undefined
 
     private setSelectedSearchContextSpec = (spec: string): void => {
         this.setState(state => ({

@@ -13,6 +13,7 @@ import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryServic
 import { OnboardingTourProps } from '../../search'
 import { AuthenticatedUser } from '../../auth'
 import { CreateAccessTokenResult, UserAreaUserFields } from '../../graphql-operations'
+import { UserRepositoriesUpdateProps } from '../../util'
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
@@ -23,7 +24,8 @@ export interface UserSettingsAreaProps
         RouteComponentProps<{}>,
         ThemeProps,
         TelemetryProps,
-        OnboardingTourProps {
+        OnboardingTourProps,
+        UserRepositoriesUpdateProps {
     authenticatedUser: AuthenticatedUser
     sideBarItems: UserSettingsSidebarItems
     routes: readonly UserSettingsAreaRoute[]
