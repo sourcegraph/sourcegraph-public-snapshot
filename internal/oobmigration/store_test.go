@@ -189,7 +189,7 @@ var testMigrations = []Migration{
 		Component:      "zoekt-index",
 		Description:    "rot13 all the indexes for security",
 		Introduced:     "3.25.0",
-		Deprecated:     "",
+		Deprecated:     nil,
 		Progress:       0,
 		Created:        testTime,
 		LastUpdated:    nil,
@@ -203,7 +203,7 @@ var testMigrations = []Migration{
 		Component:      "lsif_data_documents",
 		Description:    "denormalize counts",
 		Introduced:     "3.26.0",
-		Deprecated:     "3.28.0",
+		Deprecated:     strPtr("3.28.0"),
 		Progress:       0.5,
 		Created:        testTime.Add(time.Hour * 1),
 		LastUpdated:    timePtr(testTime.Add(time.Hour * 2)),
@@ -220,7 +220,7 @@ var testMigrations = []Migration{
 		Component:      "lsif_data_documents",
 		Description:    "gzip payloads",
 		Introduced:     "3.24.0",
-		Deprecated:     "",
+		Deprecated:     nil,
 		Progress:       0.4,
 		Created:        testTime.Add(time.Hour * 3),
 		LastUpdated:    timePtr(testTime.Add(time.Hour * 4)),
@@ -233,6 +233,7 @@ var testMigrations = []Migration{
 	},
 }
 
+func strPtr(s string) *string        { return &s }
 func timePtr(t time.Time) *time.Time { return &t }
 
 func testStore(t *testing.T) *Store {
@@ -248,11 +249,6 @@ func testStore(t *testing.T) *Store {
 }
 
 func insertMigration(store *Store, migration Migration) error {
-	var dep *string
-	if migration.Deprecated != "" {
-		dep = &migration.Deprecated
-	}
-
 	query := sqlf.Sprintf(`
 		INSERT INTO out_of_band_migrations (
 			id,
@@ -273,7 +269,7 @@ func insertMigration(store *Store, migration Migration) error {
 		migration.Component,
 		migration.Description,
 		migration.Introduced,
-		dbutil.NullString{S: dep},
+		dbutil.NullString{S: migration.Deprecated},
 		migration.Progress,
 		migration.Created,
 		migration.LastUpdated,

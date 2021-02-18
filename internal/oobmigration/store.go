@@ -20,7 +20,7 @@ type Migration struct {
 	Component      string
 	Description    string
 	Introduced     string
-	Deprecated     string
+	Deprecated     *string
 	Progress       float64
 	Created        time.Time
 	LastUpdated    *time.Time
@@ -51,7 +51,7 @@ func scanMigrations(rows *sql.Rows, queryErr error) (_ []Migration, err error) {
 			&value.Component,
 			&value.Description,
 			&value.Introduced,
-			&dbutil.NullString{S: &value.Deprecated},
+			&value.Deprecated,
 			&value.Progress,
 			&value.Created,
 			&value.LastUpdated,
