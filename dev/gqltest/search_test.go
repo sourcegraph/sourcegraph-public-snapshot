@@ -1,5 +1,3 @@
-// +build gqltest
-
 package main
 
 import (
@@ -526,11 +524,15 @@ func TestSearch(t *testing.T) {
 			wantAlert  *gqltestutil.SearchAlert
 		}{
 			{
-				name:  "Global search, structural, index only, nonzero result",
+				name:  "Structural, index only, nonzero result",
 				query: `repo:^github\.com/sgtest/go-diff$ make(:[1]) index:only patterntype:structural count:3`,
 			},
 			{
-				name:  "Global search, structural, unindexed, nonzero result",
+				name:  "Structural, index only, backcompat, nonzero result",
+				query: `repo:^github\.com/sgtest/go-diff$ make(:[1]) lang:go rule:'where "backcompat" == "backcompat"' patterntype:structural`,
+			},
+			{
+				name:  "Structural, unindexed, nonzero result",
 				query: `repo:^github\.com/sgtest/go-diff$@adde71 make(:[1]) index:no patterntype:structural count:3`,
 			},
 			{
@@ -870,6 +872,114 @@ func TestSearch(t *testing.T) {
 				}
 				if test.exactMatchCount != 0 && results.MatchCount != test.exactMatchCount {
 					t.Fatalf("Want exactly %d results but got %d", test.exactMatchCount, results.MatchCount)
+				}
+			})
+		}
+	})
+
+	t.Run("Select Queries", func(t *testing.T) {
+		type counts struct {
+			Repo    int
+			Commit  int
+			Content int
+			Symbol  int
+			File    int
+		}
+
+		countResults := func(results []*gqltestutil.AnyResult) counts {
+			var count counts
+			for _, res := range results {
+				switch v := res.Inner.(type) {
+				case gqltestutil.CommitResult:
+					count.Commit += 1
+				case gqltestutil.RepositoryResult:
+					count.Repo += 1
+				case gqltestutil.FileResult:
+					count.Symbol += len(v.Symbols)
+					for _, lm := range v.LineMatches {
+						count.Content += len(lm.OffsetAndLengths)
+					}
+					if len(v.Symbols) == 0 && len(v.LineMatches) == 0 {
+						count.File += 1
+					}
+				}
+			}
+			return count
+		}
+
+		tests := []struct {
+			name   string
+			query  string
+			counts counts
+		}{
+			{
+				`select repo`,
+				`repo:go-diff patterntype:literal HunkNoChunksize select:repo`,
+				counts{Repo: 1},
+			},
+			{
+				`select repo, only repo`,
+				`repo:go-diff select:repo`,
+				counts{Repo: 1},
+			},
+			{
+				`select repo, only file`,
+				`file:go-diff.go select:repo`,
+				counts{Repo: 1},
+			},
+			{
+				`select file`,
+				`repo:go-diff patterntype:literal HunkNoChunksize select:file`,
+				counts{File: 1},
+			},
+			{
+				`or statement merges file`,
+				`repo:go-diff HunkNoChunksize or ParseHunksAndPrintHunks select:file`,
+				counts{File: 1},
+			},
+			{
+				`select content`,
+				`repo:go-diff patterntype:literal HunkNoChunksize select:content`,
+				counts{Content: 1},
+			},
+			{
+				`no select`,
+				`repo:go-diff patterntype:literal HunkNoChunksize`,
+				counts{Content: 1},
+			},
+			{
+				`select commit, no results`,
+				`repo:go-diff patterntype:literal HunkNoChunksize select:commit`,
+				counts{},
+			},
+			{
+				`select symbol, no results`,
+				`repo:go-diff patterntype:literal HunkNoChunksize select:symbol`,
+				counts{},
+			},
+			{
+				`select symbol`,
+				`repo:go-diff patterntype:literal type:symbol HunkNoChunksize select:symbol`,
+				counts{Symbol: 1},
+			},
+			// TODO (@camdencheek): Enable this test once #17483 is fixed
+			// {
+			// 	`select commit`,
+			// 	`repo:^github\.com/sgtest/sourcegraph-typescript$ type:commit author:felix pure-lockfile`,
+			// 	counts{Symbol: 1},
+			// },
+		}
+
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				results, err := client.SearchAll(test.query)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				count := countResults(results)
+				if !cmp.Equal(count, test.counts) {
+					t.Fatalf(cmp.Diff(test.counts, count))
 				}
 			})
 		}

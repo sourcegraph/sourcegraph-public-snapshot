@@ -43,7 +43,7 @@ const defaultProps: SearchContextMenuProps = {
     ],
     defaultSearchContextSpec: 'global',
     selectedSearchContextSpec: 'global',
-    setSelectedSearchContextSpec: () => {},
+    selectSearchContextSpec: () => {},
     closeMenu: () => {},
 }
 

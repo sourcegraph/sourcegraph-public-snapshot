@@ -2,15 +2,18 @@ package backend
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
+	zoektstream "github.com/google/zoekt/stream"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/rpc"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
@@ -38,18 +41,7 @@ func NewMeteredSearcher(hostname string, z StreamSearcher) StreamSearcher {
 	}
 }
 
-func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) <-chan StreamSearchEvent {
-	c := make(chan StreamSearchEvent)
-
-	go func() {
-		defer close(c)
-		m.doStreamSearch(ctx, q, opts, c)
-	}()
-
-	return c
-}
-
-func (m *meteredSearcher) doStreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, c chan<- StreamSearchEvent) {
+func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, c zoektstream.Streamer) error {
 	start := time.Now()
 
 	// isLeaf is true if this is a zoekt.Searcher which does a network
@@ -119,23 +111,18 @@ func (m *meteredSearcher) doStreamSearch(ctx context.Context, q query.Q, opts *z
 
 	var (
 		code  = "200" // final code to record
-		first = true
+		first sync.Once
 	)
-	for event := range m.StreamSearcher.StreamSearch(ctx, q, opts) {
-		zsr, err := event.SearchResult, event.Error
 
-		if err != nil {
-			code = "error"
-			tr.SetError(err)
-		}
-
-		if first && isLeaf {
-			first = false
-			tr.LogFields(
-				log.Int64("rpc.queue_latency_ms", writeRequestStart.Sub(start).Milliseconds()),
-				log.Int64("rpc.write_duration_ms", writeRequestDone.Sub(writeRequestStart).Milliseconds()),
-			)
-		}
+	err := m.StreamSearcher.StreamSearch(ctx, q, opts, ZoektStreamFunc(func(zsr *zoekt.SearchResult) {
+		first.Do(func() {
+			if isLeaf {
+				tr.LogFields(
+					log.Int64("rpc.queue_latency_ms", writeRequestStart.Sub(start).Milliseconds()),
+					log.Int64("rpc.write_duration_ms", writeRequestDone.Sub(writeRequestStart).Milliseconds()),
+				)
+			}
+		})
 
 		if zsr != nil {
 			tr.LogFields(
@@ -155,13 +142,16 @@ func (m *meteredSearcher) doStreamSearch(ctx context.Context, q query.Q, opts *z
 				log.Int("stats.ngram_matches", zsr.Stats.NgramMatches),
 				log.Int64("stats.wait_ms", zsr.Stats.Wait.Milliseconds()),
 			)
+
+			c.Send(zsr)
 		}
-
-		c <- event
+	}))
+	if err != nil {
+		return err
 	}
-
 	// Record total duration of stream
 	requestDuration.WithLabelValues(m.hostname, cat, code).Observe(time.Since(start).Seconds())
+	return nil
 }
 
 func (m *meteredSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {

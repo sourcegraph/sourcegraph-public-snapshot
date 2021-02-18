@@ -12,6 +12,9 @@ import (
 // github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store)
 // used for unit testing.
 type MockInterface struct {
+	// RecordSeriesPointFunc is an instance of a mock function object
+	// controlling the behavior of the method RecordSeriesPoint.
+	RecordSeriesPointFunc *InterfaceRecordSeriesPointFunc
 	// SeriesPointsFunc is an instance of a mock function object controlling
 	// the behavior of the method SeriesPoints.
 	SeriesPointsFunc *InterfaceSeriesPointsFunc
@@ -21,6 +24,11 @@ type MockInterface struct {
 // methods return zero values for all results, unless overwritten.
 func NewMockInterface() *MockInterface {
 	return &MockInterface{
+		RecordSeriesPointFunc: &InterfaceRecordSeriesPointFunc{
+			defaultHook: func(context.Context, RecordSeriesPointArgs) error {
+				return nil
+			},
+		},
 		SeriesPointsFunc: &InterfaceSeriesPointsFunc{
 			defaultHook: func(context.Context, SeriesPointsOpts) ([]SeriesPoint, error) {
 				return nil, nil
@@ -33,10 +41,119 @@ func NewMockInterface() *MockInterface {
 // All methods delegate to the given implementation, unless overwritten.
 func NewMockInterfaceFrom(i Interface) *MockInterface {
 	return &MockInterface{
+		RecordSeriesPointFunc: &InterfaceRecordSeriesPointFunc{
+			defaultHook: i.RecordSeriesPoint,
+		},
 		SeriesPointsFunc: &InterfaceSeriesPointsFunc{
 			defaultHook: i.SeriesPoints,
 		},
 	}
+}
+
+// InterfaceRecordSeriesPointFunc describes the behavior when the
+// RecordSeriesPoint method of the parent MockInterface instance is invoked.
+type InterfaceRecordSeriesPointFunc struct {
+	defaultHook func(context.Context, RecordSeriesPointArgs) error
+	hooks       []func(context.Context, RecordSeriesPointArgs) error
+	history     []InterfaceRecordSeriesPointFuncCall
+	mutex       sync.Mutex
+}
+
+// RecordSeriesPoint delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockInterface) RecordSeriesPoint(v0 context.Context, v1 RecordSeriesPointArgs) error {
+	r0 := m.RecordSeriesPointFunc.nextHook()(v0, v1)
+	m.RecordSeriesPointFunc.appendCall(InterfaceRecordSeriesPointFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RecordSeriesPoint
+// method of the parent MockInterface instance is invoked and the hook queue
+// is empty.
+func (f *InterfaceRecordSeriesPointFunc) SetDefaultHook(hook func(context.Context, RecordSeriesPointArgs) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RecordSeriesPoint method of the parent MockInterface instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *InterfaceRecordSeriesPointFunc) PushHook(hook func(context.Context, RecordSeriesPointArgs) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *InterfaceRecordSeriesPointFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, RecordSeriesPointArgs) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *InterfaceRecordSeriesPointFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, RecordSeriesPointArgs) error {
+		return r0
+	})
+}
+
+func (f *InterfaceRecordSeriesPointFunc) nextHook() func(context.Context, RecordSeriesPointArgs) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceRecordSeriesPointFunc) appendCall(r0 InterfaceRecordSeriesPointFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceRecordSeriesPointFuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceRecordSeriesPointFunc) History() []InterfaceRecordSeriesPointFuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceRecordSeriesPointFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceRecordSeriesPointFuncCall is an object that describes an
+// invocation of method RecordSeriesPoint on an instance of MockInterface.
+type InterfaceRecordSeriesPointFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 RecordSeriesPointArgs
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceRecordSeriesPointFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceRecordSeriesPointFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // InterfaceSeriesPointsFunc describes the behavior when the SeriesPoints

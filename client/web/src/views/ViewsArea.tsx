@@ -2,9 +2,10 @@ import React from 'react'
 import { Switch, Route, RouteComponentProps } from 'react-router'
 import { ViewPage } from './ViewPage'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps } from '../search'
+import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps, SearchContextProps } from '../search'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { VersionContextProps } from '../../../shared/src/search/util'
+import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 
 interface Props
     extends RouteComponentProps<{}>,
@@ -13,7 +14,9 @@ interface Props
         PatternTypeProps,
         CaseSensitivityProps,
         CopyQueryButtonProps,
-        VersionContextProps {
+        VersionContextProps,
+        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
+        TelemetryProps {
     globbing: boolean
 }
 

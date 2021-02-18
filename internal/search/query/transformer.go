@@ -706,9 +706,9 @@ func OverrideField(nodes []Node, field, value string) []Node {
 	return newOperator(append(nodes, Parameter{Field: field, Value: value}), And)
 }
 
-// OmitQueryField removes all fields `field` from a query. The `field` string
+// OmitField removes all fields `field` from a query. The `field` string
 // should be the canonical name and not an alias ("repo", not "r").
-func OmitQueryField(q Q, field string) string {
+func OmitField(q Q, field string) string {
 	return StringHuman(MapField(q, field, func(_ string, _ bool) Node {
 		return nil
 	}))

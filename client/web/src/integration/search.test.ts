@@ -365,4 +365,101 @@ describe('Search', () => {
             expect(results).toEqual(['github.com/sourcegraph/sourcegraph'])
         })
     })
+
+    describe('Search contexts', () => {
+        const viewerSettingsWithSearchContexts: Partial<WebGraphQlOperations> = {
+            ViewerSettings: () => ({
+                viewerSettings: {
+                    subjects: [
+                        {
+                            __typename: 'DefaultSettings',
+                            settingsURL: null,
+                            viewerCanAdminister: false,
+                            latestSettings: {
+                                id: 0,
+                                contents: JSON.stringify({ experimentalFeatures: { showSearchContext: true } }),
+                            },
+                        },
+                        {
+                            __typename: 'Site',
+                            id: siteGQLID,
+                            siteID,
+                            latestSettings: {
+                                id: 470,
+                                contents: JSON.stringify({ experimentalFeatures: { showSearchContext: true } }),
+                            },
+                            settingsURL: '/site-admin/global-settings',
+                            viewerCanAdminister: true,
+                        },
+                    ],
+                    final: JSON.stringify({}),
+                },
+            }),
+        }
+
+        beforeEach(() => {
+            testContext.overrideGraphQL({
+                ...commonSearchGraphQLResults,
+                ...viewerSettingsWithSearchContexts,
+                SearchContexts: () => ({
+                    searchContexts: [
+                        {
+                            __typename: 'SearchContext',
+                            id: '1',
+                            spec: 'global',
+                            description: '',
+                            autoDefined: true,
+                        },
+                        {
+                            __typename: 'SearchContext',
+                            id: '2',
+                            spec: '@user',
+                            description: '',
+                            autoDefined: true,
+                        },
+                    ],
+                }),
+            })
+        })
+
+        const getSelectedSearchContextSpec = () =>
+            driver.page.evaluate(() => document.querySelector('.test-selected-search-context-spec')?.textContent)
+
+        const isSearchContextDropdownDisabled = () =>
+            driver.page.evaluate(
+                () => document.querySelector<HTMLButtonElement>('.test-search-context-dropdown')?.disabled
+            )
+        test('Search context selected based on URL', async () => {
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp&context=%40user')
+            await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
+            expect(await getSelectedSearchContextSpec()).toStrictEqual('context:@user')
+        })
+
+        test('Missing context param should default to global context', async () => {
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+            await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
+            expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
+        })
+
+        test('Unavailable search context should get appended to navbar query and disable the search context dropdown', async () => {
+            await driver.page.goto(
+                driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp&context=%40unavailableCtx'
+            )
+            await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
+            await driver.page.waitForSelector('#monaco-query-input')
+            expect(await getSearchFieldValue(driver)).toStrictEqual('context:@unavailableCtx test')
+            expect(await isSearchContextDropdownDisabled()).toBeTruthy()
+        })
+
+        test('Unavailable search context should not get appended to navbar query if context is already present', async () => {
+            await driver.page.goto(
+                driver.sourcegraphBaseUrl +
+                    '/search?q=context:%40anotherUnavailableCtx+test&patternType=regexp&context=%40unavailableCtx'
+            )
+            await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
+            await driver.page.waitForSelector('#monaco-query-input')
+            expect(await getSearchFieldValue(driver)).toStrictEqual('context:@anotherUnavailableCtx test')
+            expect(await isSearchContextDropdownDisabled()).toBeTruthy()
+        })
+    })
 })

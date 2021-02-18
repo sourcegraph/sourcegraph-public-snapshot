@@ -64,13 +64,7 @@ type honeycombTracer struct{}
 func (h honeycombTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]interface{}, varTypes map[string]*introspection.Type) (context.Context, trace.TraceQueryFinishFunc) {
 	start := time.Now()
 	return ctx, func(queryErrors []*gqlerrors.QueryError) {
-		if !honey.Enabled() || traceGraphQLQueriesSample <= 0 || len(queryErrors) > 0 {
-			return
-		}
-
-		cost, err := estimateQueryCost(queryString)
-		if err != nil {
-			log15.Warn("estimating GraphQL cost", "error", err)
+		if !honey.Enabled() || traceGraphQLQueriesSample <= 0 {
 			return
 		}
 
@@ -80,18 +74,44 @@ func (h honeycombTracer) TraceQuery(ctx context.Context, queryString string, ope
 		if anonymous {
 			uid = sgtrace.AnonymousUID(ctx)
 		}
+		if uid == "unknown" {
+			// The user is anonymous with no cookie, use IP
+			ip := sgtrace.IPAddress(ctx)
+			if ip != "" {
+				uid = ip
+			}
+		}
 
 		ev := honey.Event("graphql-cost")
 		ev.SampleRate = uint(traceGraphQLQueriesSample)
-
 		ev.AddField("query", queryString)
-		ev.AddField("cost", cost)
-		ev.AddField("costVersion", costEstimateVersion)
+		ev.AddField("variables", variables)
 		ev.AddField("anonymous", anonymous)
 		ev.AddField("uid", uid)
 		ev.AddField("operationName", operationName)
 		ev.AddField("isInternal", sgtrace.IsInternalRequest(ctx))
-		ev.AddField("durationMicroseconds", time.Since(start).Microseconds())
+		d := time.Since(start)
+		ev.AddField("durationMicroseconds", d.Microseconds()) // Deprecated
+		ev.AddField("durationSeconds", d.Seconds())           // Deprecated
+		// Honeycomb has built in support for latency if you use milliseconds. We
+		// multiply seconds by 1000 here instead of using d.Milliseconds() so that we
+		// don't truncate durations of less than 1 millisecond.
+		ev.AddField("durationMilliseconds", d.Seconds()*1000)
+		ev.AddField("hasQueryErrors", len(queryErrors) > 0)
+		ev.AddField("requestName", sgtrace.GraphQLRequestName(ctx))
+		ev.AddField("requestSource", sgtrace.RequestSource(ctx))
+
+		cost, err := estimateQueryCost(queryString, variables)
+		if err != nil {
+			log15.Warn("estimating GraphQL cost", "error", err)
+			ev.AddField("hasCostError", true)
+			ev.AddField("costError", err.Error())
+		} else {
+			ev.AddField("hasCostError", false)
+			ev.AddField("cost", cost.FieldCount)
+			ev.AddField("depth", cost.MaxDepth)
+			ev.AddField("costVersion", costEstimateVersion)
+		}
 
 		_ = ev.Send()
 	}
@@ -610,6 +630,11 @@ func (r *NodeResolver) ToLSIFIndex() (LSIFIndexResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToOutOfBandMigration() (*outOfBandMigrationResolver, bool) {
+	n, ok := r.Node.(*outOfBandMigrationResolver)
+	return n, ok
+}
+
 // schemaResolver handles all GraphQL queries for Sourcegraph. To do this, it
 // uses subresolvers which are globals. Enterprise-only resolvers are assigned
 // to a field of EnterpriseResolvers.
@@ -709,6 +734,8 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return r.LSIFIndexByID(ctx, id)
 	case "CodeMonitor":
 		return r.MonitorByID(ctx, id)
+	case "OutOfBandMigration":
+		return r.OutOfBandMigrationByID(ctx, id)
 	default:
 		return nil, errors.New("invalid id")
 	}
@@ -791,7 +818,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *struct {
 		}
 		return nil, err
 	}
-	return &repositoryRedirect{repo: &RepositoryResolver{innerRepo: repo}}, nil
+	return &repositoryRedirect{repo: NewRepositoryResolver(repo)}, nil
 }
 
 func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {

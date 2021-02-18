@@ -1,6 +1,6 @@
 import * as H from 'history'
 import React, { useCallback, useMemo } from 'react'
-import { CaseSensitivityProps, PatternTypeProps } from '../..'
+import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../..'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { VersionContextProps } from '../../../../../shared/src/search/util'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
@@ -21,7 +21,8 @@ interface Props
         TelemetryProps,
         Pick<PatternTypeProps, 'patternType'>,
         Pick<VersionContextProps, 'versionContext'>,
-        Pick<CaseSensitivityProps, 'caseSensitive'> {
+        Pick<CaseSensitivityProps, 'caseSensitive'>,
+        Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     location: H.Location
     history: H.History
 

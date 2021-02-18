@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -170,3 +172,301 @@ query($campaignSpec: ID!, $first: Int!, $after: String) {
   }
 }
 `
+
+func TestRewirerMappings(t *testing.T) {
+	addResolverFixture := func(rw *rewirerMappingsFacade, mapping *store.RewirerMapping, resolver graphqlbackend.ChangesetApplyPreviewResolver) {
+		rw.resolversMu.Lock()
+		defer rw.resolversMu.Unlock()
+
+		rw.resolvers[mapping] = resolver
+	}
+	opPtr := func(op campaigns.ReconcilerOperation) *campaigns.ReconcilerOperation {
+		return &op
+	}
+	ctx := context.Background()
+
+	t.Run("Page", func(t *testing.T) {
+		// Set up a scenario that allows for some filtering.
+		var (
+			detach   = &store.RewirerMapping{ChangesetSpecID: 1}
+			hidden   = &store.RewirerMapping{ChangesetSpecID: 2}
+			noAction = &store.RewirerMapping{ChangesetSpecID: 3}
+			publishA = &store.RewirerMapping{ChangesetSpecID: 4}
+			publishB = &store.RewirerMapping{ChangesetSpecID: 5}
+		)
+		rmf := newRewirerMappingsFacade(nil, 0)
+		rmf.All = store.RewirerMappings{detach, hidden, noAction, publishA, publishB}
+		addResolverFixture(rmf, detach, &mockChangesetApplyPreviewResolver{
+			visible: &mockVisibleChangesetApplyPreviewResolver{
+				operations: []campaigns.ReconcilerOperation{campaigns.ReconcilerOperationDetach},
+			},
+		})
+		addResolverFixture(rmf, hidden, &mockChangesetApplyPreviewResolver{
+			hidden: &mockHiddenChangesetApplyPreviewResolver{},
+		})
+		addResolverFixture(rmf, noAction, &mockChangesetApplyPreviewResolver{
+			visible: &mockVisibleChangesetApplyPreviewResolver{
+				operations: []campaigns.ReconcilerOperation{},
+			},
+		})
+		addResolverFixture(rmf, publishA, &mockChangesetApplyPreviewResolver{
+			visible: &mockVisibleChangesetApplyPreviewResolver{
+				operations: []campaigns.ReconcilerOperation{campaigns.ReconcilerOperationPublish},
+			},
+		})
+		addResolverFixture(rmf, publishB, &mockChangesetApplyPreviewResolver{
+			visible: &mockVisibleChangesetApplyPreviewResolver{
+				operations: []campaigns.ReconcilerOperation{campaigns.ReconcilerOperationPublish},
+			},
+		})
+
+		// Scenario done! Let's run some tests where we expect success. Note
+		// that the existence of hidden is important: any time we're filtering
+		// by operation, it should never appear in the result.
+		for name, tc := range map[string]struct {
+			opts rewirerMappingPageOpts
+			want rewirerMappingPage
+		}{
+			"no ops or limit": {
+				opts: rewirerMappingPageOpts{},
+				want: rewirerMappingPage{
+					Mappings:   rmf.All,
+					TotalCount: len(rmf.All),
+				},
+			},
+			"no ops, first 3": {
+				opts: rewirerMappingPageOpts{
+					LimitOffset: &database.LimitOffset{Limit: 3},
+				},
+				want: rewirerMappingPage{
+					Mappings:   rmf.All[0:3],
+					TotalCount: len(rmf.All),
+				},
+			},
+			"no ops, last 2": {
+				opts: rewirerMappingPageOpts{
+					LimitOffset: &database.LimitOffset{Limit: 3, Offset: 3},
+				},
+				want: rewirerMappingPage{
+					Mappings:   rmf.All[3:],
+					TotalCount: len(rmf.All),
+				},
+			},
+			"no ops, last 2 without limit": {
+				opts: rewirerMappingPageOpts{
+					LimitOffset: &database.LimitOffset{Offset: 3},
+				},
+				want: rewirerMappingPage{
+					Mappings:   rmf.All[3:],
+					TotalCount: len(rmf.All),
+				},
+			},
+			"no ops, negative limit": {
+				opts: rewirerMappingPageOpts{
+					LimitOffset: &database.LimitOffset{Limit: -1},
+				},
+				want: rewirerMappingPage{
+					Mappings:   store.RewirerMappings{},
+					TotalCount: len(rmf.All),
+				},
+			},
+			"no ops, negative offset": {
+				opts: rewirerMappingPageOpts{
+					LimitOffset: &database.LimitOffset{Offset: -1},
+				},
+				want: rewirerMappingPage{
+					Mappings:   store.RewirerMappings{},
+					TotalCount: len(rmf.All),
+				},
+			},
+			"no ops, out of bounds offset": {
+				opts: rewirerMappingPageOpts{
+					LimitOffset: &database.LimitOffset{Offset: 5},
+				},
+				want: rewirerMappingPage{
+					Mappings:   store.RewirerMappings{},
+					TotalCount: len(rmf.All),
+				},
+			},
+			"non-existent op": {
+				opts: rewirerMappingPageOpts{
+					Op: opPtr(campaigns.ReconcilerOperationClose),
+				},
+				want: rewirerMappingPage{
+					Mappings:   store.RewirerMappings{},
+					TotalCount: 0,
+				},
+			},
+			"extant op, no limit": {
+				opts: rewirerMappingPageOpts{
+					Op: opPtr(campaigns.ReconcilerOperationPublish),
+				},
+				want: rewirerMappingPage{
+					Mappings:   store.RewirerMappings{publishA, publishB},
+					TotalCount: 2,
+				},
+			},
+			"extant op, high limit": {
+				opts: rewirerMappingPageOpts{
+					LimitOffset: &database.LimitOffset{Limit: 5},
+					Op:          opPtr(campaigns.ReconcilerOperationPublish),
+				},
+				want: rewirerMappingPage{
+					Mappings:   store.RewirerMappings{publishA, publishB},
+					TotalCount: 2,
+				},
+			},
+			"extant op, low limit": {
+				opts: rewirerMappingPageOpts{
+					LimitOffset: &database.LimitOffset{Limit: 1},
+					Op:          opPtr(campaigns.ReconcilerOperationPublish),
+				},
+				want: rewirerMappingPage{
+					Mappings:   store.RewirerMappings{publishA},
+					TotalCount: 2,
+				},
+			},
+			"extant op, low limit and offset": {
+				opts: rewirerMappingPageOpts{
+					LimitOffset: &database.LimitOffset{Limit: 1, Offset: 1},
+					Op:          opPtr(campaigns.ReconcilerOperationPublish),
+				},
+				want: rewirerMappingPage{
+					Mappings:   store.RewirerMappings{publishB},
+					TotalCount: 2,
+				},
+			},
+		} {
+			t.Run(name, func(t *testing.T) {
+				// We'll run the test twice to ensure we hit the memoisation.
+				test := func(t *testing.T) {
+					have, err := rmf.Page(ctx, tc.opts)
+					if err != nil {
+						t.Errorf("unexpected error: %+v", err)
+					}
+					if diff := cmp.Diff(have, &tc.want); diff != "" {
+						t.Errorf("unexpected page (-have +want):\n%s", diff)
+					}
+				}
+
+				t.Run("cold cache", test)
+				t.Run("cache check", func(t *testing.T) {
+					if _, ok := rmf.pages[tc.opts]; !ok {
+						t.Error("unexpected cache miss")
+					}
+				})
+				t.Run("warm cache", test)
+			})
+		}
+
+		// And now, let's make sure we handle our one failure case gracefully by
+		// replacing the detach resolver with one that errors.
+		addResolverFixture(rmf, detach, &mockChangesetApplyPreviewResolver{
+			visible: &mockVisibleChangesetApplyPreviewResolver{
+				operationsErr: errors.New("just as reliable as the Canucks"),
+			},
+		})
+
+		if _, err := rmf.Page(ctx, rewirerMappingPageOpts{
+			Op: opPtr(campaigns.ReconcilerOperationClose),
+		}); err == nil {
+			t.Error("unexpected nil error")
+		}
+	})
+
+	t.Run("Resolver", func(t *testing.T) {
+		compareResolvers := func(t *testing.T, have, want *changesetApplyPreviewResolver) {
+			t.Helper()
+
+			if have.store != want.store {
+				t.Errorf("unexpected store: have=%p want=%p", have.store, want.store)
+			}
+			if have.mapping != want.mapping {
+				t.Errorf("unexpected mapping: have=%p want=%p", have.mapping, want.mapping)
+			}
+			if have.preloadedCampaign != want.preloadedCampaign {
+				t.Errorf("unexpected campaign: have=%p want=%p", have.preloadedCampaign, want.preloadedCampaign)
+			}
+			if !have.preloadedNextSync.Equal(want.preloadedNextSync) {
+				t.Errorf("unexpected next sync: have=%s want=%s", have.preloadedNextSync, want.preloadedNextSync)
+			}
+			if have.campaignSpecID != want.campaignSpecID {
+				t.Errorf("unexpected spec ID: have=%d want=%d", have.campaignSpecID, want.campaignSpecID)
+			}
+		}
+
+		s := &store.Store{}
+		rmf := newRewirerMappingsFacade(s, 1)
+		rmf.campaign = &campaigns.Campaign{}
+
+		mapping := &store.RewirerMapping{}
+
+		have := rmf.Resolver(mapping).(*changesetApplyPreviewResolver)
+		want := &changesetApplyPreviewResolver{
+			store:             s,
+			mapping:           mapping,
+			preloadedCampaign: rmf.campaign,
+			campaignSpecID:    1,
+		}
+		compareResolvers(t, have, want)
+
+		// Ensure we get the same resolver the second time.
+		if cached := rmf.Resolver(mapping).(*changesetApplyPreviewResolver); cached != have {
+			t.Errorf("unexpected resolver from warm cache: have=%v want=%v", cached, have)
+		}
+
+		// Ensure we get a resolver with the correct next sync time if given.
+		nextSync := time.Now()
+		have = rmf.ResolverWithNextSync(mapping, nextSync).(*changesetApplyPreviewResolver)
+		want.preloadedNextSync = nextSync
+		compareResolvers(t, have, want)
+	})
+}
+
+type mockChangesetApplyPreviewResolver struct {
+	hidden  graphqlbackend.HiddenChangesetApplyPreviewResolver
+	visible graphqlbackend.VisibleChangesetApplyPreviewResolver
+}
+
+func (r *mockChangesetApplyPreviewResolver) ToHiddenChangesetApplyPreview() (graphqlbackend.HiddenChangesetApplyPreviewResolver, bool) {
+	return r.hidden, r.hidden != nil
+}
+func (r *mockChangesetApplyPreviewResolver) ToVisibleChangesetApplyPreview() (graphqlbackend.VisibleChangesetApplyPreviewResolver, bool) {
+	return r.visible, r.visible != nil
+}
+
+var _ graphqlbackend.ChangesetApplyPreviewResolver = &mockChangesetApplyPreviewResolver{}
+
+type mockHiddenChangesetApplyPreviewResolver struct{}
+
+func (*mockHiddenChangesetApplyPreviewResolver) Operations(context.Context) ([]campaigns.ReconcilerOperation, error) {
+	return nil, errors.New("hidden changeset")
+}
+func (*mockHiddenChangesetApplyPreviewResolver) Delta(context.Context) (graphqlbackend.ChangesetSpecDeltaResolver, error) {
+	return nil, errors.New("hidden changeset")
+}
+func (*mockHiddenChangesetApplyPreviewResolver) Targets() graphqlbackend.HiddenApplyPreviewTargetsResolver {
+	return nil
+}
+
+var _ graphqlbackend.HiddenChangesetApplyPreviewResolver = &mockHiddenChangesetApplyPreviewResolver{}
+
+type mockVisibleChangesetApplyPreviewResolver struct {
+	operations    []campaigns.ReconcilerOperation
+	operationsErr error
+	delta         graphqlbackend.ChangesetSpecDeltaResolver
+	deltaErr      error
+	targets       graphqlbackend.VisibleApplyPreviewTargetsResolver
+}
+
+func (r *mockVisibleChangesetApplyPreviewResolver) Operations(context.Context) ([]campaigns.ReconcilerOperation, error) {
+	return r.operations, r.operationsErr
+}
+func (r *mockVisibleChangesetApplyPreviewResolver) Delta(context.Context) (graphqlbackend.ChangesetSpecDeltaResolver, error) {
+	return r.delta, r.deltaErr
+}
+func (r *mockVisibleChangesetApplyPreviewResolver) Targets() graphqlbackend.VisibleApplyPreviewTargetsResolver {
+	return r.targets
+}
+
+var _ graphqlbackend.VisibleChangesetApplyPreviewResolver = &mockVisibleChangesetApplyPreviewResolver{}

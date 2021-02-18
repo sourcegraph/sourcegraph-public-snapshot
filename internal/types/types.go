@@ -1318,6 +1318,49 @@ type SearchOnboarding struct {
 	CloseOnboardingTourClicked *int32
 }
 
+// Weekly usage statistics for the extensions platform
+type ExtensionsUsageStatistics struct {
+	WeekStart                  time.Time
+	UsageStatisticsByExtension []*ExtensionUsageStatistics
+	// Average number of non-default extensions used by users
+	// that have used at least one non-default extension
+	AverageNonDefaultExtensions *float64
+	// The count of users that have activated a non-default extension this week
+	NonDefaultExtensionUsers *int32
+}
+
+// Weekly statistics for an individual extension
+type ExtensionUsageStatistics struct {
+	// The count of users that have activated this extension
+	UserCount *int32
+	// The average number of activations for users that have
+	// used this extension at least once
+	AverageActivations *float64
+	ExtensionID        *string
+}
+
+type CodeInsightsUsageStatistics struct {
+	UsageStatisticsByInsight       []*InsightUsageStatistics
+	InsightsPageViews              *int32
+	InsightsUniquePageViews        *int32
+	InsightConfigureClick          *int32
+	InsightAddMoreClick            *int32
+	WeekStart                      time.Time
+	WeeklyInsightCreators          *int32
+	WeeklyFirstTimeInsightCreators *int32
+}
+
+// Usage statistics for a type of code insight
+type InsightUsageStatistics struct {
+	InsightType      *string
+	Additions        *int32
+	Edits            *int32
+	Removals         *int32
+	Hovers           *int32
+	UICustomizations *int32
+	DataPointClicks  *int32
+}
+
 // Secret represents the secrets table
 type Secret struct {
 	ID int32

@@ -116,7 +116,7 @@ var ErrConcurrentModification = errors.New("result set changed while paginating"
 // adjustedUploadsFromCursor adjusts the current target path and the given position for each upload
 // visible from the current target commit. If an upload cannot be adjusted, it will be omitted from
 // the returned slice. The returned slice will be cached on the given cursor. If this data is already
-// stashed o the given cursor, the result is recalculated from the cursor data/resolver context, and
+// stashed on the given cursor, the result is recalculated from the cursor data/resolver context, and
 // we don't need to hit the database.
 //
 // An error is returned if the set of visible uploads has changed since the previous request of this

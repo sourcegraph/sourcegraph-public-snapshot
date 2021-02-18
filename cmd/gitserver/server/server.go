@@ -693,6 +693,9 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 		ensureRevisionStatus = "noop"
 	}
 
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+
 	w.Header().Set("Trailer", "X-Exec-Error")
 	w.Header().Add("Trailer", "X-Exec-Exit-Status")
 	w.Header().Add("Trailer", "X-Exec-Stderr")
