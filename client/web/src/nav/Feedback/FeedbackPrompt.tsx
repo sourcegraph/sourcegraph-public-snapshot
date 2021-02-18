@@ -157,7 +157,7 @@ export const FeedbackPrompt: React.FunctionComponent<{ open?: boolean }> = ({ op
             <DropdownToggle
                 tag="button"
                 caret={false}
-                className="btn btn-link text-decoration-none feedback-prompt__toggle"
+                className="btn btn-link btn-sm text-decoration-none feedback-prompt__toggle"
                 nav={true}
                 aria-label="Feedback"
             >
