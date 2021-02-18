@@ -8,6 +8,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 var builtinExtensions = map[string]bool{
@@ -52,10 +53,9 @@ var builtinExtensions = map[string]bool{
 const singletonDefaultSettingsGQLID = "DefaultSettings"
 
 type defaultSettingsResolver struct {
+	db    dbutil.DB
 	gqlID string
 }
-
-var singletonDefaultSettingsResolver = &defaultSettingsResolver{gqlID: singletonDefaultSettingsGQLID}
 
 func marshalDefaultSettingsGQLID(defaultSettingsID string) graphql.ID {
 	return relay.MarshalID("DefaultSettings", defaultSettingsID)
@@ -68,7 +68,7 @@ func (r *defaultSettingsResolver) LatestSettings(ctx context.Context) (*settings
 	for id := range builtinExtensions {
 		extensionIDs = append(extensionIDs, id)
 	}
-	extensionIDs = ExtensionRegistry().FilterRemoteExtensions(extensionIDs)
+	extensionIDs = ExtensionRegistry(r.db).FilterRemoteExtensions(extensionIDs)
 	extensions := map[string]bool{}
 	for _, id := range extensionIDs {
 		extensions[id] = true
@@ -78,7 +78,7 @@ func (r *defaultSettingsResolver) LatestSettings(ctx context.Context) (*settings
 		return nil, err
 	}
 	settings := &api.Settings{Subject: api.SettingsSubject{Default: true}, Contents: string(contents)}
-	return &settingsResolver{&settingsSubject{defaultSettings: r}, settings, nil}, nil
+	return &settingsResolver{r.db, &settingsSubject{defaultSettings: r}, settings, nil}, nil
 }
 
 func (r *defaultSettingsResolver) SettingsURL() *string { return nil }
@@ -88,7 +88,7 @@ func (r *defaultSettingsResolver) ViewerCanAdminister(ctx context.Context) (bool
 }
 
 func (r *defaultSettingsResolver) SettingsCascade() *settingsCascade {
-	return &settingsCascade{subject: &settingsSubject{defaultSettings: r}}
+	return &settingsCascade{db: r.db, subject: &settingsSubject{defaultSettings: r}}
 }
 
 func (r *defaultSettingsResolver) ConfigurationCascade() *settingsCascade { return r.SettingsCascade() }

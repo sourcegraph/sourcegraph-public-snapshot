@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
@@ -23,6 +24,8 @@ import (
 
 // Tests that indexed repos are filtered in structural search
 func TestStructuralSearchRepoFilter(t *testing.T) {
+	db := new(dbtesting.MockDB)
+
 	repoName := "indexed/one"
 	indexedFileName := "indexed.go"
 
@@ -50,9 +53,9 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 		repoName := repo.Name
 		switch repoName {
 		case "indexed/one":
-			return []*FileMatchResolver{mkFileMatch(nil, indexedFileName)}, false, nil
+			return []*FileMatchResolver{mkFileMatch(db, nil, indexedFileName)}, false, nil
 		case "unindexed/one":
-			return []*FileMatchResolver{mkFileMatch(nil, "unindexed.go")}, false, nil
+			return []*FileMatchResolver{mkFileMatch(db, nil, "unindexed.go")}, false, nil
 		default:
 			return nil, false, errors.New("Unexpected repo")
 		}
@@ -92,6 +95,7 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 		t.Fatal(err)
 	}
 	resolver := &searchResolver{
+		db: db,
 		SearchInputs: &SearchInputs{
 			Query:        q,
 			PatternType:  query.SearchTypeStructural,

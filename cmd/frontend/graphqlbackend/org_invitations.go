@@ -100,11 +100,11 @@ func (*schemaResolver) InviteUserToOrganization(ctx context.Context, args *struc
 	return result, nil
 }
 
-func (*schemaResolver) RespondToOrganizationInvitation(ctx context.Context, args *struct {
+func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, args *struct {
 	OrganizationInvitation graphql.ID
 	ResponseType           string
 }) (*EmptyResponse, error) {
-	currentUser, err := CurrentUser(ctx)
+	currentUser, err := CurrentUser(ctx, r.db)
 	if err != nil {
 		return nil, err
 	}
@@ -144,10 +144,10 @@ func (*schemaResolver) RespondToOrganizationInvitation(ctx context.Context, args
 	return &EmptyResponse{}, nil
 }
 
-func (*schemaResolver) ResendOrganizationInvitationNotification(ctx context.Context, args *struct {
+func (r *schemaResolver) ResendOrganizationInvitationNotification(ctx context.Context, args *struct {
 	OrganizationInvitation graphql.ID
 }) (*EmptyResponse, error) {
-	orgInvitation, err := orgInvitationByID(ctx, args.OrganizationInvitation)
+	orgInvitation, err := orgInvitationByID(ctx, r.db, args.OrganizationInvitation)
 	if err != nil {
 		return nil, err
 	}
@@ -191,10 +191,10 @@ func (*schemaResolver) ResendOrganizationInvitationNotification(ctx context.Cont
 	return &EmptyResponse{}, nil
 }
 
-func (*schemaResolver) RevokeOrganizationInvitation(ctx context.Context, args *struct {
+func (r *schemaResolver) RevokeOrganizationInvitation(ctx context.Context, args *struct {
 	OrganizationInvitation graphql.ID
 }) (*EmptyResponse, error) {
-	orgInvitation, err := orgInvitationByID(ctx, args.OrganizationInvitation)
+	orgInvitation, err := orgInvitationByID(ctx, r.db, args.OrganizationInvitation)
 	if err != nil {
 		return nil, err
 	}

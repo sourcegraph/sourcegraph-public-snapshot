@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 
@@ -24,7 +25,7 @@ import (
 
 const singletonSiteGQLID = "site"
 
-func siteByGQLID(ctx context.Context, id graphql.ID) (Node, error) {
+func (r *schemaResolver) siteByGQLID(ctx context.Context, id graphql.ID) (Node, error) {
 	siteGQLID, err := unmarshalSiteGQLID(id)
 	if err != nil {
 		return nil, err
@@ -32,29 +33,29 @@ func siteByGQLID(ctx context.Context, id graphql.ID) (Node, error) {
 	if siteGQLID != singletonSiteGQLID {
 		return nil, fmt.Errorf("site not found: %q", siteGQLID)
 	}
-	return &siteResolver{gqlID: siteGQLID}, nil
+	return &siteResolver{db: r.db, gqlID: siteGQLID}, nil
 }
 
 func marshalSiteGQLID(siteID string) graphql.ID { return relay.MarshalID("Site", siteID) }
 
 // SiteGQLID is the GraphQL ID of the Sourcegraph site. It is a constant across all Sourcegraph
 // instances.
-func SiteGQLID() graphql.ID { return singletonSiteResolver.ID() }
+func SiteGQLID() graphql.ID { return (&siteResolver{gqlID: singletonSiteGQLID}).ID() }
 
 func unmarshalSiteGQLID(id graphql.ID) (siteID string, err error) {
 	err = relay.UnmarshalSpec(id, &siteID)
 	return
 }
 
-func (*schemaResolver) Site() *siteResolver {
-	return &siteResolver{gqlID: singletonSiteGQLID}
+func (r *schemaResolver) Site() *siteResolver {
+	return &siteResolver{db: r.db, gqlID: singletonSiteGQLID}
 }
 
 type siteResolver struct {
-	gqlID string // == singletonSiteGQLID, not the site ID
+	db     dbutil.DB
+	parent *schemaResolver
+	gqlID  string // == singletonSiteGQLID, not the site ID
 }
-
-var singletonSiteResolver = &siteResolver{gqlID: singletonSiteGQLID}
 
 func (r *siteResolver) ID() graphql.ID { return marshalSiteGQLID(r.gqlID) }
 
@@ -90,11 +91,11 @@ func (r *siteResolver) LatestSettings(ctx context.Context) (*settingsResolver, e
 	if settings == nil {
 		return nil, nil
 	}
-	return &settingsResolver{&settingsSubject{site: r}, settings, nil}, nil
+	return &settingsResolver{r.db, &settingsSubject{site: r}, settings, nil}, nil
 }
 
 func (r *siteResolver) SettingsCascade() *settingsCascade {
-	return &settingsCascade{subject: &settingsSubject{site: r}}
+	return &settingsCascade{db: r.db, subject: &settingsSubject{site: r}}
 }
 
 func (r *siteResolver) ConfigurationCascade() *settingsCascade { return r.SettingsCascade() }

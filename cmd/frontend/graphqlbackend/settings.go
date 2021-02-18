@@ -8,11 +8,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type settingsResolver struct {
+	db       dbutil.DB
 	subject  *settingsSubject
 	settings *api.Settings
 	user     *types.User
@@ -50,7 +52,7 @@ func (o *settingsResolver) Author(ctx context.Context) (*UserResolver, error) {
 			return nil, err
 		}
 	}
-	return &UserResolver{o.user}, nil
+	return NewUserResolver(o.db, o.user), nil
 }
 
 var globalSettingsAllowEdits, _ = strconv.ParseBool(env.Get("GLOBAL_SETTINGS_ALLOW_EDITS", "false", "When GLOBAL_SETTINGS_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))

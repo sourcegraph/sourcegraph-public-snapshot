@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // GetOrAssignUserCustomerID returns the billing customer ID associated with the user. If no billing
@@ -45,7 +46,7 @@ func GetOrAssignUserCustomerID(ctx context.Context, userID int32) (_ string, err
 		// w.r.t. the DB because we are still in a DB transaction. It is still possible for a race
 		// condition to result in 2 billing customers being created, but only one of them would ever
 		// be stored in our DB.
-		newCustID, err := createCustomerID(ctx, userID)
+		newCustID, err := createCustomerID(ctx, tx, userID)
 		if err != nil {
 			return "", errors.WithMessage(err, fmt.Sprintf("auto-creating customer ID for user ID %d", userID))
 		}
@@ -120,12 +121,12 @@ var mockCreateCustomerID func(userID int32) (string, error)
 
 // createCustomerID creates a customer record on the billing system and returns the customer ID of
 // the new record.
-func createCustomerID(ctx context.Context, userID int32) (string, error) {
+func createCustomerID(ctx context.Context, db dbutil.DB, userID int32) (string, error) {
 	if mockCreateCustomerID != nil {
 		return mockCreateCustomerID(userID)
 	}
 
-	user, err := graphqlbackend.UserByIDInt32(ctx, userID)
+	user, err := graphqlbackend.UserByIDInt32(ctx, db, userID)
 	if err != nil {
 		return "", err
 	}

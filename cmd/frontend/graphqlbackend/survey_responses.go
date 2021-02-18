@@ -6,9 +6,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 type surveyResponseConnectionResolver struct {
+	db  dbutil.DB
 	opt database.SurveyResponseListOptions
 }
 
@@ -17,7 +19,7 @@ func (r *schemaResolver) SurveyResponses(args *struct {
 }) *surveyResponseConnectionResolver {
 	var opt database.SurveyResponseListOptions
 	args.ConnectionArgs.Set(&opt.LimitOffset)
-	return &surveyResponseConnectionResolver{opt: opt}
+	return &surveyResponseConnectionResolver{db: r.db, opt: opt}
 }
 
 func (r *surveyResponseConnectionResolver) Nodes(ctx context.Context) ([]*surveyResponseResolver, error) {
@@ -33,7 +35,7 @@ func (r *surveyResponseConnectionResolver) Nodes(ctx context.Context) ([]*survey
 
 	var surveyResponses []*surveyResponseResolver
 	for _, resp := range responses {
-		surveyResponses = append(surveyResponses, &surveyResponseResolver{surveyResponse: resp})
+		surveyResponses = append(surveyResponses, &surveyResponseResolver{db: r.db, surveyResponse: resp})
 	}
 
 	return surveyResponses, nil

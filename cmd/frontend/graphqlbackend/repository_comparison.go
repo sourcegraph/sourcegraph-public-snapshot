@@ -12,8 +12,10 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/go-diff/diff"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -56,7 +58,7 @@ type FileDiff interface {
 	InternalID() string
 }
 
-func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *RepositoryComparisonInput) (*RepositoryComparisonResolver, error) {
+func NewRepositoryComparison(ctx context.Context, db dbutil.DB, r *RepositoryResolver, args *RepositoryComparisonInput) (*RepositoryComparisonResolver, error) {
 	var baseRevspec, headRevspec string
 	if args.Base == nil {
 		baseRevspec = "HEAD"
@@ -85,7 +87,7 @@ func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *R
 			return nil, err
 		}
 
-		return toGitCommitResolver(r, commitID, nil), nil
+		return toGitCommitResolver(r, db, commitID, nil), nil
 	}
 
 	head, err := getCommit(ctx, r.name, headRevspec)
@@ -109,6 +111,7 @@ func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *R
 	}
 
 	return &RepositoryComparisonResolver{
+		db:          db,
 		baseRevspec: baseRevspec,
 		headRevspec: headRevspec,
 		base:        base,
@@ -118,10 +121,11 @@ func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *R
 }
 
 func (r *RepositoryResolver) Comparison(ctx context.Context, args *RepositoryComparisonInput) (*RepositoryComparisonResolver, error) {
-	return NewRepositoryComparison(ctx, r, args)
+	return NewRepositoryComparison(ctx, r.db, r, args)
 }
 
 type RepositoryComparisonResolver struct {
+	db                       dbutil.DB
 	baseRevspec, headRevspec string
 	base, head               *GitCommitResolver
 	repo                     *RepositoryResolver
@@ -155,6 +159,7 @@ func (r *RepositoryComparisonResolver) Commits(
 	args *graphqlutil.ConnectionArgs,
 ) *gitCommitConnectionResolver {
 	return &gitCommitConnectionResolver{
+		db:            r.db,
 		revisionRange: string(r.baseRevspec) + ".." + string(r.headRevspec),
 		first:         args.First,
 		repo:          r.repo,
@@ -163,6 +168,7 @@ func (r *RepositoryComparisonResolver) Commits(
 
 func (r *RepositoryComparisonResolver) FileDiffs(ctx context.Context, args *FileDiffsConnectionArgs) (FileDiffConnection, error) {
 	return NewFileDiffConnectionResolver(
+		r.db,
 		r.base,
 		r.head,
 		args,
@@ -173,8 +179,9 @@ func (r *RepositoryComparisonResolver) FileDiffs(ctx context.Context, args *File
 
 // repositoryComparisonNewFile is the default NewFileFunc used by
 // RepositoryComparisonResolver to produce the new file in a FileDiffResolver.
-func repositoryComparisonNewFile(r *FileDiffResolver) FileResolver {
+func repositoryComparisonNewFile(db dbutil.DB, r *FileDiffResolver) FileResolver {
 	return &GitTreeEntryResolver{
+		db:     db,
 		commit: r.Head,
 		stat:   CreateFileInfo(r.FileDiff.NewName, false),
 	}
@@ -263,15 +270,17 @@ type ComputeDiffFunc func(ctx context.Context, args *FileDiffsConnectionArgs) ([
 
 // NewFileFunc is a function that returns the "new" file in a FileDiff as a
 // FileResolver.
-type NewFileFunc func(r *FileDiffResolver) FileResolver
+type NewFileFunc func(db dbutil.DB, r *FileDiffResolver) FileResolver
 
 func NewFileDiffConnectionResolver(
+	db dbutil.DB,
 	base, head *GitCommitResolver,
 	args *FileDiffsConnectionArgs,
 	compute ComputeDiffFunc,
 	newFileFunc NewFileFunc,
 ) *fileDiffConnectionResolver {
 	return &fileDiffConnectionResolver{
+		db:      db,
 		base:    base,
 		head:    head,
 		first:   args.First,
@@ -282,6 +291,7 @@ func NewFileDiffConnectionResolver(
 }
 
 type fileDiffConnectionResolver struct {
+	db      dbutil.DB
 	base    *GitCommitResolver
 	head    *GitCommitResolver
 	first   *int32
@@ -306,6 +316,7 @@ func (r *fileDiffConnectionResolver) Nodes(ctx context.Context) ([]FileDiff, err
 	resolvers := make([]FileDiff, len(fileDiffs))
 	for i, fileDiff := range fileDiffs {
 		resolvers[i] = &FileDiffResolver{
+			db:       r.db,
 			newFile:  r.newFile,
 			FileDiff: fileDiff,
 			Base:     r.base,
@@ -370,6 +381,7 @@ type FileDiffResolver struct {
 	Base     *GitCommitResolver
 	Head     *GitCommitResolver
 
+	db      dbutil.DB
 	newFile NewFileFunc
 }
 
@@ -398,6 +410,7 @@ func (r *FileDiffResolver) OldFile() FileResolver {
 		return nil
 	}
 	return &GitTreeEntryResolver{
+		db:     r.db,
 		commit: r.Base,
 		stat:   CreateFileInfo(r.FileDiff.OrigName, false),
 	}
@@ -407,7 +420,7 @@ func (r *FileDiffResolver) NewFile() FileResolver {
 	if diffPathOrNull(r.FileDiff.NewName) == nil {
 		return nil
 	}
-	return r.newFile(r)
+	return r.newFile(r.db, r)
 }
 
 func (r *FileDiffResolver) MostRelevantFile() FileResolver {
