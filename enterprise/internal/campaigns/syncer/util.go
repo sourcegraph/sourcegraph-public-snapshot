@@ -10,11 +10,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+// loadExternalService looks up all external services that are connected to the given repo.
+// The first external service to have a token configured will be returned then.
+// If no external service matching the above criteria is found, an error is returned.
 func loadExternalService(ctx context.Context, esStore ExternalServiceStore, repo *types.Repo) (*types.ExternalService, error) {
-	var externalService *types.ExternalService
-	args := database.ExternalServicesListOptions{IDs: repo.ExternalServiceIDs()}
-
-	es, err := esStore.List(ctx, args)
+	es, err := esStore.List(ctx, database.ExternalServicesListOptions{IDs: repo.ExternalServiceIDs()})
 	if err != nil {
 		return nil, err
 	}
@@ -28,25 +28,18 @@ func loadExternalService(ctx context.Context, esStore ExternalServiceStore, repo
 		switch cfg := cfg.(type) {
 		case *schema.GitHubConnection:
 			if cfg.Token != "" {
-				externalService = e
+				return e, nil
 			}
 		case *schema.BitbucketServerConnection:
 			if cfg.Token != "" {
-				externalService = e
+				return e, nil
 			}
 		case *schema.GitLabConnection:
 			if cfg.Token != "" {
-				externalService = e
+				return e, nil
 			}
 		}
-		if externalService != nil {
-			break
-		}
 	}
 
-	if externalService == nil {
-		return nil, errors.Errorf("no external services found for repo %q", repo.Name)
-	}
-
-	return externalService, nil
+	return nil, errors.Errorf("no external services found for repo %q", repo.Name)
 }

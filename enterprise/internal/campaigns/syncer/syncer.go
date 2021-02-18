@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -25,17 +24,17 @@ import (
 
 // SyncRegistry manages a changesetSyncer per code host
 type SyncRegistry struct {
-	Ctx                  context.Context
-	SyncStore            SyncStore
-	RepoStore            RepoStore
-	ExternalServiceStore ExternalServiceStore
-	HTTPFactory          *httpcli.Factory
+	ctx                  context.Context
+	syncStore            SyncStore
+	repoStore            RepoStore
+	externalServiceStore ExternalServiceStore
+	httpFactory          *httpcli.Factory
 
 	// Used to receive high priority sync requests
 	priorityNotify chan []int64
 
 	mu sync.Mutex
-	// key is normalised code host url, also called external_service_id on the repo table
+	// key is normalized code host url, also called external_service_id on the repo table
 	syncers map[string]*changesetSyncer
 }
 
@@ -49,25 +48,19 @@ type ExternalServiceStore interface {
 
 // NewSyncRegistry creates a new sync registry which starts a syncer for each code host and will update them
 // when external services are changed, added or removed.
-func NewSyncRegistry(ctx context.Context, store SyncStore, repoStore RepoStore, esStore ExternalServiceStore, cf *httpcli.Factory) *SyncRegistry {
+func NewSyncRegistry(ctx context.Context, cstore SyncStore, repoStore RepoStore, esStore ExternalServiceStore, cf *httpcli.Factory) *SyncRegistry {
 	r := &SyncRegistry{
-		Ctx:                  ctx,
-		SyncStore:            store,
-		RepoStore:            repoStore,
-		ExternalServiceStore: esStore,
-		HTTPFactory:          cf,
+		ctx:                  ctx,
+		syncStore:            cstore,
+		repoStore:            repoStore,
+		externalServiceStore: esStore,
+		httpFactory:          cf,
 		priorityNotify:       make(chan []int64, 500),
 		syncers:              make(map[string]*changesetSyncer),
 	}
 
-	services, err := esStore.List(ctx, database.ExternalServicesListOptions{})
-	if err != nil {
-		log15.Error("Fetching initial external services", "err", err)
-	}
-
-	// Add and start syncers
-	for _, service := range services {
-		r.Add(service)
+	if err := r.syncCodeHosts(ctx); err != nil {
+		log15.Error("Fetching initial list of code hosts", "err", err)
 	}
 
 	go r.handlePriorityItems()
@@ -75,57 +68,76 @@ func NewSyncRegistry(ctx context.Context, store SyncStore, repoStore RepoStore, 
 	return r
 }
 
-// Add adds a syncer for the code host associated with the supplied external service if the syncer hasn't
+// Add adds a syncer for the code host associated with the supplied code host if the syncer hasn't
 // already been added and starts it.
-func (s *SyncRegistry) Add(extSvc *types.ExternalService) {
-	if !campaigns.IsKindSupported(extSvc.Kind) {
-		log15.Info("External service not support by campaigns", "kind", extSvc.Kind)
+func (s *SyncRegistry) Add(codeHost *campaigns.CodeHost) {
+	// This should never happen since the store does the filtering for us, but let's be super duper extra cautious.
+	if !codeHost.IsSupported() {
+		log15.Info("Code host not support by campaigns", "type", codeHost.ExternalServiceType, "url", codeHost.ExternalServiceID)
 		return
 	}
 
-	normalised, err := externalServiceSyncerKey(extSvc.Kind, extSvc.Config)
-	if err != nil {
-		log15.Error(err.Error())
-		return
-	}
+	syncerKey := codeHost.ExternalServiceID
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, ok := s.syncers[normalised]; ok {
+	if _, ok := s.syncers[syncerKey]; ok {
 		// Already added
 		return
 	}
 
-	// We need to be able to cancel the syncer if the service is removed
-	ctx, cancel := context.WithCancel(s.Ctx)
+	// We need to be able to cancel the syncer if the code host is removed
+	ctx, cancel := context.WithCancel(s.ctx)
 
 	syncer := &changesetSyncer{
-		syncStore:            s.SyncStore,
-		httpFactory:          s.HTTPFactory,
-		reposStore:           s.RepoStore,
-		externalServiceStore: s.ExternalServiceStore,
-		codeHostURL:          normalised,
+		syncStore:            s.syncStore,
+		httpFactory:          s.httpFactory,
+		reposStore:           s.repoStore,
+		externalServiceStore: s.externalServiceStore,
+		codeHostURL:          syncerKey,
 		cancel:               cancel,
 		priorityNotify:       make(chan []int64, 500),
 	}
 
-	s.syncers[normalised] = syncer
+	s.syncers[syncerKey] = syncer
 
 	go syncer.Run(ctx)
+}
+
+// EnqueueChangesetSyncs will enqueue the changesets with the supplied ids for high priority syncing.
+// An error indicates that no changesets have been enqueued.
+func (s *SyncRegistry) EnqueueChangesetSyncs(ctx context.Context, ids []int64) error {
+	// The channel below is buffered so we'll usually send without blocking.
+	// It is important not to block here as this method is called from the UI
+	select {
+	case s.priorityNotify <- ids:
+	default:
+		return errors.New("high priority sync capacity reached")
+	}
+	return nil
+}
+
+// HandleExternalServiceSync handles changes to external services.
+func (s *SyncRegistry) HandleExternalServiceSync(es api.ExternalService) {
+	if campaigns.IsKindSupported(es.Kind) {
+		if err := s.syncCodeHosts(s.ctx); err != nil {
+			log15.Error("Syncing on change of code hosts", "err", err)
+		}
+	}
 }
 
 // handlePriorityItems fetches changesets in the priority queue from the database and passes them
 // to the appropriate syncer.
 func (s *SyncRegistry) handlePriorityItems() {
 	fetchSyncData := func(ids []int64) ([]*campaigns.ChangesetSyncData, error) {
-		ctx, cancel := context.WithTimeout(s.Ctx, 10*time.Second)
+		ctx, cancel := context.WithTimeout(s.ctx, 10*time.Second)
 		defer cancel()
-		return s.SyncStore.ListChangesetSyncData(ctx, store.ListChangesetSyncDataOpts{ChangesetIDs: ids})
+		return s.syncStore.ListChangesetSyncData(ctx, store.ListChangesetSyncDataOpts{ChangesetIDs: ids})
 	}
 	for {
 		select {
-		case <-s.Ctx.Done():
+		case <-s.ctx.Done():
 			return
 		case ids := <-s.priorityNotify:
 			syncData, err := fetchSyncData(ids)
@@ -160,50 +172,37 @@ func (s *SyncRegistry) handlePriorityItems() {
 	}
 }
 
-// EnqueueChangesetSyncs will enqueue the changesets with the supplied ids for high priority syncing.
-// An error indicates that no changesets have been enqueued.
-func (s *SyncRegistry) EnqueueChangesetSyncs(ctx context.Context, ids []int64) error {
-	// The channel below is buffered so we'll usually send without blocking.
-	// It is important not to block here as this method is called from the UI
-	select {
-	case s.priorityNotify <- ids:
-	default:
-		return errors.New("high priority sync capacity reached")
-	}
-	return nil
-}
-
-// HandleExternalServiceSync handles changes to external services.
-func (s *SyncRegistry) HandleExternalServiceSync(es api.ExternalService) {
-	normalised, err := externalServiceSyncerKey(es.Kind, es.Config)
+// syncCodeHosts fetches the list of currently active code hosts on the Sourcegraph instance.
+// The running syncers will then be matched against those and missing ones are spawned and
+// excess ones are stopped.
+func (s *SyncRegistry) syncCodeHosts(ctx context.Context) error {
+	codeHosts, err := s.syncStore.ListCodeHosts(ctx, store.ListCodeHostsOpts{})
 	if err != nil {
-		log15.Error(err.Error())
-		return
+		return err
 	}
 
-	s.mu.Lock()
-	syncer, exists := s.syncers[normalised]
-	s.mu.Unlock()
+	codeHostsByExternalServiceID := make(map[string]*campaigns.CodeHost)
 
-	if es.DeletedAt.IsZero() && !exists {
-		res := (types.ExternalService)(es)
-		s.Add(&res)
+	// Add and start syncers
+	for _, host := range codeHosts {
+		codeHostsByExternalServiceID[host.ExternalServiceID] = host
+		s.Add(host)
 	}
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if !es.DeletedAt.IsZero() && exists {
-		delete(s.syncers, normalised)
-		syncer.cancel()
+	// Clean up old syncers.
+	for syncerKey := range s.syncers {
+		// If there is no code host for the syncer anymore, we want to stop it.
+		if _, ok := codeHostsByExternalServiceID[syncerKey]; !ok {
+			syncer, exists := s.syncers[syncerKey]
+			if exists {
+				delete(s.syncers, syncerKey)
+				syncer.cancel()
+			}
+		}
 	}
-}
-
-func externalServiceSyncerKey(kind, config string) (string, error) {
-	baseURL, err := extsvc.ExtractBaseURL(kind, config)
-	if err != nil {
-		return "", errors.Wrap(err, "getting normalized URL from service")
-	}
-	return baseURL.String(), nil
+	return nil
 }
 
 // A changesetSyncer periodically syncs metadata of changesets
@@ -270,6 +269,7 @@ func init() {
 }
 
 type SyncStore interface {
+	ListCodeHosts(ctx context.Context, opts store.ListCodeHostsOpts) ([]*campaigns.CodeHost, error)
 	ListChangesetSyncData(context.Context, store.ListChangesetSyncDataOpts) ([]*campaigns.ChangesetSyncData, error)
 	GetChangeset(context.Context, store.GetChangesetOpts) (*campaigns.Changeset, error)
 	UpdateChangeset(ctx context.Context, cs *campaigns.Changeset) error
@@ -281,6 +281,7 @@ type SyncStore interface {
 // Run will start the process of changeset syncing. It is long running
 // and is expected to be launched once at startup.
 func (s *changesetSyncer) Run(ctx context.Context) {
+	log15.Debug("Starting changeset syncer", "codeHostURL", s.codeHostURL)
 	scheduleInterval := s.scheduleInterval
 	if scheduleInterval == 0 {
 		scheduleInterval = 2 * time.Minute
@@ -410,7 +411,7 @@ func (s *changesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync,
 
 // SyncChangeset will sync a single changeset given its id.
 func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
-	log15.Debug("SyncChangeset", "id", id)
+	log15.Debug("SyncChangeset", "syncer", s.codeHostURL, "id", id)
 
 	cs, err := s.syncStore.GetChangeset(ctx, store.GetChangesetOpts{
 		ID: id,

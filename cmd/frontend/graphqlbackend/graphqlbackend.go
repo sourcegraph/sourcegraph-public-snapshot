@@ -74,10 +74,18 @@ func (h honeycombTracer) TraceQuery(ctx context.Context, queryString string, ope
 		if anonymous {
 			uid = sgtrace.AnonymousUID(ctx)
 		}
+		if uid == "unknown" {
+			// The user is anonymous with no cookie, use IP
+			ip := sgtrace.IPAddress(ctx)
+			if ip != "" {
+				uid = ip
+			}
+		}
 
 		ev := honey.Event("graphql-cost")
 		ev.SampleRate = uint(traceGraphQLQueriesSample)
 		ev.AddField("query", queryString)
+		ev.AddField("variables", variables)
 		ev.AddField("anonymous", anonymous)
 		ev.AddField("uid", uid)
 		ev.AddField("operationName", operationName)
@@ -93,14 +101,15 @@ func (h honeycombTracer) TraceQuery(ctx context.Context, queryString string, ope
 		ev.AddField("requestName", sgtrace.GraphQLRequestName(ctx))
 		ev.AddField("requestSource", sgtrace.RequestSource(ctx))
 
-		cost, err := estimateQueryCost(queryString)
+		cost, err := estimateQueryCost(queryString, variables)
 		if err != nil {
 			log15.Warn("estimating GraphQL cost", "error", err)
 			ev.AddField("hasCostError", true)
 			ev.AddField("costError", err.Error())
 		} else {
 			ev.AddField("hasCostError", false)
-			ev.AddField("cost", cost)
+			ev.AddField("cost", cost.FieldCount)
+			ev.AddField("depth", cost.MaxDepth)
 			ev.AddField("costVersion", costEstimateVersion)
 		}
 

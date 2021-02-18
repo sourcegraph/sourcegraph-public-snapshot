@@ -104,6 +104,8 @@ export class ContributionRegistry {
         logWarning = (...args: any[]) => console.log(...args)
     ): Observable<Evaluated<Contributions>> {
         return combineLatest([
+            // TODO: Don't unsubscribe from existing entries when new entries are registered.
+            // This could retrigger side effects (e.g. GQL query) unnecessarily
             entries.pipe(
                 switchMap(entries =>
                     combineLatestOrDefault(
