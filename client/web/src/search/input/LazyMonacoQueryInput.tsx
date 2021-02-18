@@ -3,6 +3,7 @@ import { MonacoQueryInputProps } from './MonacoQueryInput'
 import { SearchContextDropdown } from './SearchContextDropdown'
 import { lazyComponent } from '../../util/lazyComponent'
 import { Toggles } from './toggles/Toggles'
+import { submitSearch } from '../helpers'
 
 const MonacoQueryInput = lazyComponent(() => import('./MonacoQueryInput'), 'MonacoQueryInput')
 
@@ -26,7 +27,7 @@ export const PlainQueryInput: React.FunctionComponent<MonacoQueryInputProps> = (
         <div className="query-input2 d-flex">
             {props.showSearchContext && (
                 <div className="query-input2__search-context-dropdown-container">
-                    <SearchContextDropdown {...props} query={queryState.query} />
+                    <SearchContextDropdown {...props} submitSearch={submitSearch} query={queryState.query} />
                 </div>
             )}
             <input

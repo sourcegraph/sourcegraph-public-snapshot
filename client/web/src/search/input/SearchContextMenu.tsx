@@ -12,24 +12,47 @@ import React, {
 import { DropdownItem } from 'reactstrap'
 import { SearchContextProps } from '..'
 
+const HighlightedSearchTerm: React.FunctionComponent<{ text: string; searchFilter: string }> = ({
+    text,
+    searchFilter,
+}) => {
+    if (searchFilter.length > 0) {
+        const index = text.toLowerCase().indexOf(searchFilter.toLowerCase())
+        if (index > -1) {
+            const before = text.slice(0, index)
+            const highlighted = text.slice(index, index + searchFilter.length)
+            const after = text.slice(index + searchFilter.length)
+            return (
+                <>
+                    {before}
+                    <strong>{highlighted}</strong>
+                    {after}
+                </>
+            )
+        }
+    }
+    return <>{text}</>
+}
+
 const SearchContextMenuItem: React.FunctionComponent<{
     spec: string
     description: string
     selected: boolean
     isDefault: boolean
-    setSelectedSearchContextSpec: (spec: string) => void
-}> = ({ spec, description, selected, isDefault, setSelectedSearchContextSpec }) => {
+    selectSearchContextSpec: (spec: string) => void
+    searchFilter: string
+}> = ({ spec, description, selected, isDefault, selectSearchContextSpec, searchFilter }) => {
     const setContext = useCallback(() => {
-        setSelectedSearchContextSpec(spec)
-    }, [setSelectedSearchContextSpec, spec])
+        selectSearchContextSpec(spec)
+    }, [selectSearchContextSpec, spec])
     return (
         <DropdownItem
             className={classNames('search-context-menu__item', { 'search-context-menu__item--selected': selected })}
             onClick={setContext}
         >
             <span className="search-context-menu__item-name" title={spec}>
-                {spec}
-            </span>
+                <HighlightedSearchTerm text={spec} searchFilter={searchFilter} />
+            </span>{' '}
             <span className="search-context-menu__item-description" title={description}>
                 {description}
             </span>
@@ -38,8 +61,10 @@ const SearchContextMenuItem: React.FunctionComponent<{
     )
 }
 
-export interface SearchContextMenuProps extends Omit<SearchContextProps, 'showSearchContext'> {
+export interface SearchContextMenuProps
+    extends Omit<SearchContextProps, 'showSearchContext' | 'setSelectedSearchContextSpec'> {
     closeMenu: () => void
+    selectSearchContextSpec: (spec: string) => void
 }
 
 const getFirstMenuItem = (): HTMLButtonElement | null =>
@@ -49,15 +74,15 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
     availableSearchContexts,
     selectedSearchContextSpec,
     defaultSearchContextSpec,
-    setSelectedSearchContextSpec,
+    selectSearchContextSpec,
     closeMenu,
 }) => {
     const inputElement = useRef<HTMLInputElement | null>(null)
 
     const reset = useCallback(() => {
-        setSelectedSearchContextSpec(defaultSearchContextSpec)
+        selectSearchContextSpec(defaultSearchContextSpec)
         closeMenu()
-    }, [closeMenu, defaultSearchContextSpec, setSelectedSearchContextSpec])
+    }, [closeMenu, defaultSearchContextSpec, selectSearchContextSpec])
 
     const focusInputElement = (): void => {
         // Focus the input in the next run-loop to override the browser focusing the first dropdown item
@@ -143,7 +168,8 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                         description={context.description}
                         isDefault={context.spec === defaultSearchContextSpec}
                         selected={context.spec === selectedSearchContextSpec}
-                        setSelectedSearchContextSpec={setSelectedSearchContextSpec}
+                        selectSearchContextSpec={selectSearchContextSpec}
+                        searchFilter={searchFilter}
                     />
                 ))}
                 {filteredList.length === 0 && (

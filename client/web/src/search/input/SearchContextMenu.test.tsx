@@ -31,29 +31,29 @@ describe('SearchContextMenu', () => {
         ],
         defaultSearchContextSpec: 'global',
         selectedSearchContextSpec: 'global',
-        setSelectedSearchContextSpec: () => {},
+        selectSearchContextSpec: () => {},
         closeMenu: () => {},
     }
 
     it('should select item when clicking on it', () => {
-        const setSelectedSearchContextSpec = sinon.spy()
+        const selectSearchContextSpec = sinon.spy()
 
         const root = mount(
             <UncontrolledDropdown>
                 <DropdownMenu>
-                    <SearchContextMenu {...defaultProps} setSelectedSearchContextSpec={setSelectedSearchContextSpec} />
+                    <SearchContextMenu {...defaultProps} selectSearchContextSpec={selectSearchContextSpec} />
                 </DropdownMenu>
             </UncontrolledDropdown>
         )
         const item = root.find(DropdownItem).at(1)
         item.simulate('click')
 
-        sinon.assert.calledOnce(setSelectedSearchContextSpec)
-        sinon.assert.calledWithExactly(setSelectedSearchContextSpec, '@username')
+        sinon.assert.calledOnce(selectSearchContextSpec)
+        sinon.assert.calledWithExactly(selectSearchContextSpec, '@username')
     })
 
     it('should close menu when pressing Escape button', () => {
-        const setSelectedSearchContextSpec = sinon.spy()
+        const selectSearchContextSpec = sinon.spy()
         const closeMenu = sinon.spy()
 
         const root = mount(
@@ -61,7 +61,7 @@ describe('SearchContextMenu', () => {
                 <DropdownMenu>
                     <SearchContextMenu
                         {...defaultProps}
-                        setSelectedSearchContextSpec={setSelectedSearchContextSpec}
+                        selectSearchContextSpec={selectSearchContextSpec}
                         selectedSearchContextSpec="@username"
                         closeMenu={closeMenu}
                     />
@@ -86,13 +86,15 @@ describe('SearchContextMenu', () => {
 
         // Search by spec
         searchInput.invoke('onInput')?.({
-            currentTarget: { value: '@user' },
+            currentTarget: { value: 'ser' },
         } as ChangeEvent<HTMLInputElement>)
 
         const items = root.find(DropdownItem)
         expect(items.length).toBe(2)
-        expect(items.at(0).text()).toBe('@usernameYour repositories on Sourcegraph')
-        expect(items.at(1).text()).toBe('@username/test-version-1.5Only code in version 1.5')
+        expect(items.at(0).text()).toBe('@username Your repositories on Sourcegraph')
+        expect(items.at(1).text()).toBe('@username/test-version-1.5 Only code in version 1.5')
+
+        expect(items).toMatchSnapshot()
     })
 
     it('should show message if search does not find anything', () => {

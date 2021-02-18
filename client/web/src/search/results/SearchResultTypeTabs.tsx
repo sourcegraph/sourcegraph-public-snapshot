@@ -1,7 +1,7 @@
 import * as H from 'history'
 import * as React from 'react'
 import classNames from 'classnames'
-import { CaseSensitivityProps, ParsedSearchQueryProps, PatternTypeProps } from '..'
+import { CaseSensitivityProps, ParsedSearchQueryProps, PatternTypeProps, SearchContextProps } from '..'
 import { SearchResultTabHeader } from './SearchResultTab'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 
@@ -9,7 +9,8 @@ interface Props
     extends Omit<PatternTypeProps, 'setPatternType'>,
         Omit<CaseSensitivityProps, 'setCaseSensitivity'>,
         Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
-        VersionContextProps {
+        VersionContextProps,
+        Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     location: H.Location
     history: H.History
     query: string

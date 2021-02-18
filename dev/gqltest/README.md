@@ -39,7 +39,7 @@ docker run --publish 7080:7080 --rm sourcegraph/server:insiders
 Once the the instance is live (look for the log line `✱ Sourcegraph is ready at: http://127.0.0.1:7080`), you can open another terminal tab to run these tests under this directory (`dev/gqltest`):
 
 ```sh
-→ go test -tags "gqltest"
+→ go test -long
 2020/07/17 14:17:32 Site admin has been created: gqltest-admin
 PASS
 ok  	github.com/sourcegraph/sourcegraph/dev/gqltest	31.521s
@@ -50,7 +50,7 @@ ok  	github.com/sourcegraph/sourcegraph/dev/gqltest	31.521s
 It is not required to boot up a single Docker container to run these tests, which means it's also possible to run these tests against any Sourcegraph instance, for example, your local dev instance:
 
 ```sh
-go test -tags "gqltest" -base-url "http://localhost:3080" -email "joe@sourcegraph.com" -username "joe" -password "<REDACTED>"
+go test -long -base-url "http://localhost:3080" -email "joe@sourcegraph.com" -username "joe" -password "<REDACTED>"
 ```
 
 Generally, you're able to repeatedly run these tests regardless of any failures because tests are written in the way that cleans up and restores to the previous state. It is aware of if the instance has been initialized, so you can focus on debugging tests.
@@ -58,7 +58,7 @@ Generally, you're able to repeatedly run these tests regardless of any failures 
 Because we're using the standard Go test framework, you are able to just run a single or subset of these tests:
 
 ```sh
-→ go test -tags "gqltest" -run TestSearch
+→ go test -long -run TestSearch
 2020/07/17 14:20:59 Site admin authenticated: gqltest-admin
 PASS
 ok  	github.com/sourcegraph/sourcegraph/dev/gqltest	3.073s
@@ -68,7 +68,6 @@ ok  	github.com/sourcegraph/sourcegraph/dev/gqltest	3.073s
 
 Adding new tests to this test suite is as easy as adding a Go test, here are some general rules to follow:
 
-- Add `// +build gqltest` on every new file as the very first line.
 - Use `gqltest-` prefix for entity name, and be as specific as possible for easier debugging, e.g. `gqltest-org-user-1`.
 - Restore the previous state regardless of failures, including:
   - Delete new users created during the test.

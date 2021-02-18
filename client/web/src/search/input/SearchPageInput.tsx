@@ -129,6 +129,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                             versionContext={props.versionContext}
                             setVersionContext={props.setVersionContext}
                             availableVersionContexts={props.availableVersionContexts}
+                            selectedSearchContextSpec={props.selectedSearchContextSpec}
                         />
                     )}
                     <LazyMonacoQueryInput

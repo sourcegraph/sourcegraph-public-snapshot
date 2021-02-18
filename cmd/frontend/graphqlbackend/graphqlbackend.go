@@ -74,10 +74,18 @@ func (h honeycombTracer) TraceQuery(ctx context.Context, queryString string, ope
 		if anonymous {
 			uid = sgtrace.AnonymousUID(ctx)
 		}
+		if uid == "unknown" {
+			// The user is anonymous with no cookie, use IP
+			ip := sgtrace.IPAddress(ctx)
+			if ip != "" {
+				uid = ip
+			}
+		}
 
 		ev := honey.Event("graphql-cost")
 		ev.SampleRate = uint(traceGraphQLQueriesSample)
 		ev.AddField("query", queryString)
+		ev.AddField("variables", variables)
 		ev.AddField("anonymous", anonymous)
 		ev.AddField("uid", uid)
 		ev.AddField("operationName", operationName)
@@ -93,14 +101,15 @@ func (h honeycombTracer) TraceQuery(ctx context.Context, queryString string, ope
 		ev.AddField("requestName", sgtrace.GraphQLRequestName(ctx))
 		ev.AddField("requestSource", sgtrace.RequestSource(ctx))
 
-		cost, err := estimateQueryCost(queryString)
+		cost, err := estimateQueryCost(queryString, variables)
 		if err != nil {
 			log15.Warn("estimating GraphQL cost", "error", err)
 			ev.AddField("hasCostError", true)
 			ev.AddField("costError", err.Error())
 		} else {
 			ev.AddField("hasCostError", false)
-			ev.AddField("cost", cost)
+			ev.AddField("cost", cost.FieldCount)
+			ev.AddField("depth", cost.MaxDepth)
 			ev.AddField("costVersion", costEstimateVersion)
 		}
 
@@ -621,6 +630,11 @@ func (r *NodeResolver) ToLSIFIndex() (LSIFIndexResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToOutOfBandMigration() (*outOfBandMigrationResolver, bool) {
+	n, ok := r.Node.(*outOfBandMigrationResolver)
+	return n, ok
+}
+
 // schemaResolver handles all GraphQL queries for Sourcegraph. To do this, it
 // uses subresolvers which are globals. Enterprise-only resolvers are assigned
 // to a field of EnterpriseResolvers.
@@ -720,6 +734,8 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return r.LSIFIndexByID(ctx, id)
 	case "CodeMonitor":
 		return r.MonitorByID(ctx, id)
+	case "OutOfBandMigration":
+		return r.OutOfBandMigrationByID(ctx, id)
 	default:
 		return nil, errors.New("invalid id")
 	}
@@ -802,7 +818,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *struct {
 		}
 		return nil, err
 	}
-	return &repositoryRedirect{repo: &RepositoryResolver{innerRepo: repo}}, nil
+	return &repositoryRedirect{repo: NewRepositoryResolver(repo)}, nil
 }
 
 func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {

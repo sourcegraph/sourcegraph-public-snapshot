@@ -32,6 +32,7 @@ exports[`VersionContextDropdown renders the expanded version context dropdown, w
   navbarSearchQuery="test"
   patternType="literal"
   portal={false}
+  selectedSearchContextSpec="global"
   setVersionContext={[Function]}
   versionContext="3.15"
 >
@@ -401,6 +402,7 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
   history="[History]"
   navbarSearchQuery="test"
   patternType="literal"
+  selectedSearchContextSpec="global"
   setVersionContext={[Function]}
 >
   <div

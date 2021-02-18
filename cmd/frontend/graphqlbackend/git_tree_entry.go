@@ -75,7 +75,7 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 
 		r.content, r.contentErr = git.ReadFile(
 			ctx,
-			r.commit.repoResolver.innerRepo.Name,
+			r.commit.repoResolver.name,
 			api.CommitID(r.commit.OID()),
 			r.Path(),
 			0,
@@ -107,7 +107,7 @@ func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArg
 		return nil, err
 	}
 	return highlightContent(ctx, args, content, r.Path(), highlight.Metadata{
-		RepoName: string(r.commit.repoResolver.Name()),
+		RepoName: r.commit.repoResolver.Name(),
 		Revision: string(r.commit.oid),
 	})
 }
@@ -209,7 +209,7 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	}
 	entries, err := git.ReadDir(
 		ctx,
-		r.commit.repoResolver.innerRepo.Name,
+		r.commit.repoResolver.name,
 		api.CommitID(r.commit.OID()),
 		path.Dir(r.Path()),
 		false,

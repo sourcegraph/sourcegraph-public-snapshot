@@ -8,7 +8,7 @@ import {
     CaseSensitivityProps,
     CopyQueryButtonProps,
     SearchContextProps,
-    isContextFilterInQuery,
+    appendContextFilterToQuery,
 } from '../..'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
 import { submitSearch } from '../../helpers'
@@ -19,6 +19,8 @@ import { CopyQueryButton } from './CopyQueryButton'
 import { VersionContextProps } from '../../../../../shared/src/search/util'
 import { SearchPatternType } from '../../../graphql-operations'
 import { findFilter, FilterKind } from '../../../../../shared/src/search/query/validate'
+import { KEYBOARD_SHORTCUT_COPY_FULL_QUERY } from '../../../keyboardShortcuts/keyboardShortcuts'
+import { isMacPlatform } from '../../../util'
 
 export interface TogglesProps
     extends PatternTypeProps,
@@ -39,15 +41,12 @@ export const getFullQuery = (
     searchContextSpec: string,
     caseSensitive: boolean,
     patternType: SearchPatternType
-): string =>
-    [
-        searchContextSpec && !isContextFilterInQuery(query) ? `context:${searchContextSpec}` : '',
-        query,
-        `patternType:${patternType}`,
-        caseSensitive ? 'case:yes' : '',
-    ]
+): string => {
+    const finalQuery = [query, `patternType:${patternType}`, caseSensitive ? 'case:yes' : '']
         .filter(queryPart => !!queryPart)
         .join(' ')
+    return appendContextFilterToQuery(finalQuery, searchContextSpec)
+}
 
 /**
  * The toggles displayed in the query input.
@@ -65,7 +64,6 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
         settingsCascade,
         className,
         copyQueryButton,
-        showSearchContext,
         selectedSearchContextSpec,
     } = props
 
@@ -91,10 +89,19 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                     caseSensitive: newCaseSensitive,
                     versionContext,
                     activation,
+                    selectedSearchContextSpec,
                 })
             }
         },
-        [caseSensitive, hasGlobalQueryBehavior, history, navbarSearchQuery, patternType, versionContext]
+        [
+            caseSensitive,
+            hasGlobalQueryBehavior,
+            history,
+            navbarSearchQuery,
+            patternType,
+            versionContext,
+            selectedSearchContextSpec,
+        ]
     )
 
     const toggleCaseSensitivity = useCallback((): void => {
@@ -126,12 +133,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
         submitOnToggle({ newPatternType })
     }, [patternType, setPatternType, settingsCascade.final, submitOnToggle])
 
-    const fullQuery = getFullQuery(
-        navbarSearchQuery,
-        showSearchContext ? selectedSearchContextSpec : '',
-        caseSensitive,
-        patternType
-    )
+    const fullQuery = getFullQuery(navbarSearchQuery, selectedSearchContextSpec || '', caseSensitive, patternType)
 
     return (
         <div className={classNames('toggle-container', className)}>
@@ -197,6 +199,8 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                     <div className="toggle-container__separator" />
                     <CopyQueryButton
                         fullQuery={fullQuery}
+                        keyboardShortcutForFullCopy={KEYBOARD_SHORTCUT_COPY_FULL_QUERY}
+                        isMacPlatform={isMacPlatform}
                         className="toggle-container__toggle toggle-container__copy-query-button"
                     />
                 </>

@@ -12,6 +12,7 @@ import {
     resolveVersionContext,
     MutableVersionContextProps,
     ParsedSearchQueryProps,
+    SearchContextProps,
 } from '..'
 import { Contributions, Evaluated } from '../../../../shared/src/api/protocol'
 import { FetchFileParameters } from '../../../../shared/src/components/CodeExcerpt'
@@ -49,7 +50,8 @@ export interface SearchResultsProps
         PatternTypeProps,
         CaseSensitivityProps,
         MutableVersionContextProps,
-        Pick<CodeMonitoringProps, 'enableCodeMonitoring'> {
+        Pick<CodeMonitoringProps, 'enableCodeMonitoring'>,
+        Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -121,7 +123,8 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     query,
                     SearchPatternType.regexp,
                     this.props.caseSensitive,
-                    this.props.versionContext
+                    this.props.versionContext,
+                    this.props.selectedSearchContextSpec
                 )
             this.props.history.replace(newLocation)
         }
@@ -132,7 +135,9 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             this.componentUpdates
                 .pipe(
                     startWith(this.props),
-                    map(props => parseSearchURL(props.location.search, { appendCaseFilter: true })),
+                    map(props =>
+                        parseSearchURL(props.location.search, { appendCaseFilter: true, appendContextFilter: true })
+                    ),
                     // Search when a new search query was specified in the URL
                     distinctUntilChanged((a, b) => isEqual(a, b)),
                     filter(
@@ -143,6 +148,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             patternType: SearchPatternType
                             caseSensitive: boolean
                             versionContext: string | undefined
+                            searchContextSpec: string | undefined
                         } => !!queryAndPatternTypeAndCase.query && !!queryAndPatternTypeAndCase.patternType
                     ),
                     tap(({ query, caseSensitive }) => {

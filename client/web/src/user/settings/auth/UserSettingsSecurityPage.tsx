@@ -14,8 +14,7 @@ import {
     UserAreaUserFields,
     ExternalServiceKind,
     ExternalAccountFields,
-    ExternalAccountsVariables,
-    Scalars,
+    MinExternalAccountsVariables,
 } from '../../../graphql-operations'
 import { ExternalAccountsSignIn } from './ExternalAccountsSignIn'
 import { Link } from '../../../../../shared/src/components/Link'
@@ -26,7 +25,7 @@ import { ErrorLike, asError } from '../../../../../shared/src/util/errors'
 
 // pick only the fields we need
 type MinExternalAccount = Pick<ExternalAccountFields, 'id' | 'serviceID' | 'serviceType' | 'accountData'>
-type UserExternalAccount = UserExternalAccountsResult['site']['externalAccounts']['nodes'][0]
+type UserExternalAccount = UserExternalAccountsResult['user']['externalAccounts']['nodes'][0]
 type ServiceType = AuthProvider['serviceType']
 
 export type AuthProvider = SourcegraphContext['authProviders'][0]
@@ -34,7 +33,7 @@ export type ExternalAccountsByType = Partial<Record<ServiceType, UserExternalAcc
 export type AuthProvidersByType = Partial<Record<ServiceType, AuthProvider>>
 
 interface UserExternalAccountsResult {
-    site: {
+    user: {
         externalAccounts: {
             nodes: MinExternalAccount[]
         }
@@ -57,13 +56,13 @@ interface State {
     newPasswordConfirmation: string
 }
 
-const fetchUserExternalAccountsByType = async (userID: Scalars['ID']): Promise<MinExternalAccount[]> => {
+const fetchUserExternalAccountsByType = async (username: string): Promise<MinExternalAccount[]> => {
     const result = dataOrThrowErrors(
-        await requestGraphQL<UserExternalAccountsResult, ExternalAccountsVariables>(
+        await requestGraphQL<UserExternalAccountsResult, MinExternalAccountsVariables>(
             gql`
-                query MinExternalAccounts($user: ID) {
-                    site {
-                        externalAccounts(user: $user) {
+                query MinExternalAccounts($username: String!) {
+                    user(username: $username) {
+                        externalAccounts {
                             nodes {
                                 id
                                 serviceID
@@ -74,12 +73,11 @@ const fetchUserExternalAccountsByType = async (userID: Scalars['ID']): Promise<M
                     }
                 }
             `,
-            { user: userID, first: null, serviceType: null, serviceID: null, clientID: null }
+            { username }
         ).toPromise()
     )
-
     // if user doesn't have external accounts API will return an empty array
-    return result.site.externalAccounts.nodes
+    return result.user.externalAccounts.nodes
 }
 
 const accountsByType = (accounts: MinExternalAccount[]): ExternalAccountsByType =>
@@ -122,7 +120,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
         this.props.user.builtinAuth && this.state.accounts.fetched?.length === 0
 
     private fetchAccounts = (): void => {
-        fetchUserExternalAccountsByType(this.props.user.id)
+        fetchUserExternalAccountsByType(this.props.user.username)
             .then(accounts => {
                 this.setState({ accounts: { fetched: accounts } })
 
@@ -218,7 +216,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                 </span>
 
                 {/* external accounts not fetched yet */}
-                {!this.state.accounts.fetched && (
+                {!this.state.accounts.fetched && this.state.error && (
                     <div className="d-flex justify-content-center mt-4">
                         <LoadingSpinner className="icon-inline" />
                     </div>
@@ -350,7 +348,6 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
     }
 
     private handleError = (error: Error): [] => {
-        console.error(error)
         this.setState({ loading: false, saved: false, error })
         return []
     }

@@ -10,6 +10,7 @@ interface SearchAlertProps {
     patternType: SearchPatternType | undefined
     caseSensitive: boolean
     versionContext?: string
+    searchContextSpec?: string
     children?: ReactNode[]
 }
 
@@ -18,6 +19,7 @@ export const SearchAlert: React.FunctionComponent<SearchAlertProps> = ({
     patternType,
     caseSensitive,
     versionContext,
+    searchContextSpec,
     children,
 }) => (
     <div className="alert alert-info m-2" data-testid="alert-container">
@@ -41,7 +43,8 @@ export const SearchAlert: React.FunctionComponent<SearchAlertProps> = ({
                                         proposedQuery.query,
                                         patternType || SearchPatternType.literal,
                                         caseSensitive,
-                                        versionContext
+                                        versionContext,
+                                        searchContextSpec
                                     )
                                 }
                             >
