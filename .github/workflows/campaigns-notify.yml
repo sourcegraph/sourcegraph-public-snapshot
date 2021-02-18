@@ -9,7 +9,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions-ecosystem/action-create-comment@v1
-        if: contains(github.event.comment.body, 'campaigns') && !contains(github.event.pull_request.labels.*.name, 'team/campaigns')
+        if: contains(github.event.issue.body, 'campaigns') && !contains(github.event.issue.labels.*.name, 'team/campaigns')
         with:
           github_token: ${{ secrets.github_token }}
           body: |
