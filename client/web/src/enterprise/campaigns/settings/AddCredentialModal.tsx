@@ -41,7 +41,8 @@ const helpTexts: Record<ExternalServiceKind, JSX.Element> = {
             >
                 Create a new access token
             </a>{' '}
-            with <code>repo</code>, <code>read:org</code>, and <code>read:discussion</code> scopes.
+            with <code>repo</code>, <code>read:org</code>, <code>user:email</code>, and <code>read:discussion</code>{' '}
+            scopes.
         </>
     ),
     [ExternalServiceKind.GITLAB]: (
