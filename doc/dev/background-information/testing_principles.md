@@ -33,7 +33,7 @@ We do not tolerate flaky tests of any kind. Any engineer that sees a flaky test 
 1. Open a PR to disable the flaky test.
 1. Open an issue to re-enable the flaky test, assign it to the most likely owner, and add it to the current release milestone.
 
-If the build or test infrastructure itself is flaky, then [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/distribution) and notify the [distribution team](distribution/index.md#contact).
+If the build or test infrastructure itself is flaky, then [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/distribution) and notify the [distribution team](https://about.sourcegraph.com/handbook/engineering/distribution#contact).
 
 Why are flaky tests undesirable? Because these tests stop being an informative signal that the engineering team can rely on, and if we keep them around then we eventually train ourselves to ignore them and become blind to their results. This can hide real problems under the cover of flakiness.
 
@@ -109,8 +109,8 @@ Once you've been invited to the Sourcegraph organization and created a Percy acc
 
 ## Ownership
 
-- [Distribution team](distribution/index.md) owns build and test infrastructure.
-- [Web team](web/index.md) owns any tests that are driven through the browser.
+- [Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution) owns build and test infrastructure.
+- [Web team](https://about.sourcegraph.com/handbook/engineering/web) owns any tests that are driven through the browser.
 
 ## Conventions
 
@@ -118,6 +118,6 @@ Once you've been invited to the Sourcegraph organization and created a Percy acc
 
 ## See also
 
-- [Documentation for running tests in sourcegraph/sourcegraph](https://docs.sourcegraph.com/dev/background-information/testing)
-- [Go-specific testing guide](./languages/testing_go_code.md)
-- [Web-specific testing guide](./web/testing.md)
+- [Documentation for running tests in sourcegraph/sourcegraph](testing.md)
+- [Go-specific testing guide](https://about.sourcegraph.com/handbook/engineering/languages/testing_go_code)
+- [Web-specific testing guide](https://about.sourcegraph.com/handbook/engineering/web/testing)

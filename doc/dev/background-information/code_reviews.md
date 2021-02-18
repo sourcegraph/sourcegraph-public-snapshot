@@ -113,7 +113,7 @@ Don't:
 
 ## GitHub notifications
 
-Ensure that you have you [GitHub notification settings](github-notifications/index.md) configured correctly so that you are responsive to comments on PRs that you have authored and to review requests from teammates.
+Ensure that you have you [GitHub notification settings](https://about.sourcegraph.com/handbook/engineering/github-notifications) configured correctly so that you are responsive to comments on PRs that you have authored and to review requests from teammates.
 
 ## Who should I get a code review from?
 

@@ -16,7 +16,7 @@ All ping data must be:
 
 Treat adding new data to pings as having a very high bar. Would you be willing to send an email to all Sourcegraph users explaining and justifying why we need to collect this additional data from them? If not, don’t propose it.
 
-1. Write an RFC describing the problem, data that will be added, and how Sourcegraph will use the data to make decisions. The BizOps team must be a required reviewer (both @Dan and @EricBM). Please use [these guidelines](../ops/bizops/index.md#submitting-a-data-request) and the following questions to inform the contents of the RFC:
+1. Write an RFC describing the problem, data that will be added, and how Sourcegraph will use the data to make decisions. The BizOps team must be a required reviewer (both @Dan and @EricBM). Please use [these guidelines](https://about.sourcegraph.com/handbook/ops/bizops/index.md#submitting-a-data-request) and the following questions to inform the contents of the RFC:
     - Why was this particular metric/data chosen?
     - What business problem does collecting this address?
     - What specific product or engineering decisions will be made by having this data?
