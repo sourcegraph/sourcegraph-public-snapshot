@@ -46,7 +46,13 @@ interface SymbolItem {
 
 export const ItemList: React.FunctionComponent<ItemListProps> = ({ level, symbols, repo }) => {
     return (
-        <ul className="list-unstyled">
+        <ul
+            className="list-unstyled"
+            style={{
+                overflowY: 'auto',
+                flex: '1 1',
+            }}
+        >
             {symbols.map(symbol => (
                 <React.Fragment key={symbol.kind + ':' + symbol.id}>
                     <li>
@@ -56,7 +62,7 @@ export const ItemList: React.FunctionComponent<ItemListProps> = ({ level, symbol
                             style={
                                 level === 0
                                     ? {
-                                          fontSize: '2rem',
+                                          fontSize: '1.2rem',
                                       }
                                     : {
                                           fontSize: '0.825rem',
@@ -73,7 +79,16 @@ export const ItemList: React.FunctionComponent<ItemListProps> = ({ level, symbol
                             }}
                             exact={true}
                         >
-                            <SymbolIcon kind={symbol.kind} /> <span className="text-truncate">{symbol.text}</span>
+                            <SymbolIcon kind={symbol.kind} />{' '}
+                            <span
+                                className="text-truncate"
+                                style={{
+                                    textOverflow: 'ellipsis',
+                                    direction: level === 0 ? 'rtl' : 'ltr',
+                                }}
+                            >
+                                {symbol.text}
+                            </span>
                         </NavLink>
                     </li>
                     {symbol.children && symbol.children?.length > 0 && (
