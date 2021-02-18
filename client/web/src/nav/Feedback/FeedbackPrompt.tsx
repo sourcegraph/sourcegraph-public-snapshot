@@ -1,13 +1,13 @@
 import MessageDrawIcon from 'mdi-react/MessageDrawIcon'
 import TickIcon from 'mdi-react/TickIcon'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState, useMemo } from 'react'
 import TextAreaAutosize from 'react-textarea-autosize'
-import { Alert, Button, ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
+import { Alert, Button, ButtonDropdown, DropdownMenu, DropdownToggle, Form } from 'reactstrap'
 import { Link } from '../../../../shared/src/components/Link'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import { LoaderButton } from '../../components/LoaderButton'
 import { SubmitHappinessFeedbackResult, SubmitHappinessFeedbackVariables } from '../../graphql-operations'
-import { useLocalStorage } from '../../hooks/useLocalStorage'
+import { useLocalStorage } from '../../util/useLocalStorage'
 import { useMutation } from '../../hooks/useMutation'
 import { IconRadioButtons } from '../IconRadioButtons'
 import { Happy, Sad, VeryHappy, VerySad } from './FeedbackIcons'
@@ -60,13 +60,17 @@ const FeedbackPromptContent: React.FunctionComponent<Props> = ({ closePrompt }) 
         SubmitHappinessFeedbackVariables
     >(SUBMIT_HAPPINESS_FEEDBACK_QUERY)
 
-    const handleSubmit = useCallback((): void => {
-        if (rating) {
-            submitFeedback({
-                input: { score: rating, feedback: text, currentURL: window.location.href },
-            })
-        }
-    }, [rating, submitFeedback, text])
+    const handleSubmit = useCallback(
+        (event: React.FormEvent<HTMLFormElement>): void => {
+            event.preventDefault()
+            if (rating) {
+                return submitFeedback({
+                    input: { score: rating, feedback: text, currentURL: window.location.href },
+                })
+            }
+        },
+        [rating, submitFeedback, text]
+    )
 
     useEffect(
         () => () => {
@@ -81,7 +85,7 @@ const FeedbackPromptContent: React.FunctionComponent<Props> = ({ closePrompt }) 
 
     return (
         <>
-            {data && (
+            {data ? (
                 <div className="feedback-prompt__success">
                     <TickIcon className="feedback-prompt__success--tick" />
                     <h3>We‘ve received your feedback!</h3>
@@ -99,16 +103,13 @@ const FeedbackPromptContent: React.FunctionComponent<Props> = ({ closePrompt }) 
                         )}
                     </p>
                 </div>
-            )}
-            {!data && (
-                <>
+            ) : (
+                <Form onSubmit={handleSubmit} className="feedback-prompt__menu">
                     <header className="feedback-prompt__header">
                         <h3>What‘s on your mind?</h3>
                         <Button onClick={closePrompt} className="feedback-prompt__header--close" close={true} />
                     </header>
                     <TextAreaAutosize
-                        role="menuitem"
-                        tabIndex={0}
                         onChange={handleTextChange}
                         value={text}
                         minRows={3}
@@ -117,15 +118,14 @@ const FeedbackPromptContent: React.FunctionComponent<Props> = ({ closePrompt }) 
                         className="form-control feedback-prompt__textarea"
                         autoFocus={true}
                     />
+
                     <IconRadioButtons
-                        role="menuitem"
                         name="emoji-selector"
                         icons={HAPPINESS_FEEDBACK_OPTIONS}
                         selected={rating}
                         onChange={handleRateChange}
                         disabled={loading}
                     />
-
                     {error && (
                         <Alert className="feedback-prompt__alert" color="danger">
                             Something went wrong while sending your feedback. Please try again.
@@ -133,14 +133,13 @@ const FeedbackPromptContent: React.FunctionComponent<Props> = ({ closePrompt }) 
                     )}
                     <LoaderButton
                         role="menuitem"
-                        tabIndex={0}
+                        type="submit"
                         className="btn btn-block btn-secondary feedback-prompt__button"
                         loading={loading}
                         label="Send"
-                        onClick={handleSubmit}
                         disabled={!rating || loading}
                     />
-                </>
+                </Form>
             )}
         </>
     )
@@ -153,7 +152,7 @@ export const FeedbackPrompt: React.FunctionComponent<{ open?: boolean }> = ({ op
     const forceClose = useCallback(() => setIsOpen(false), [])
 
     return (
-        <ButtonDropdown isOpen={isOpen} toggle={handleToggle} group={false} className="feedback-prompt">
+        <ButtonDropdown a11y={false} isOpen={isOpen} toggle={handleToggle} className="feedback-prompt">
             <DropdownToggle
                 tag="button"
                 caret={false}
@@ -164,7 +163,7 @@ export const FeedbackPrompt: React.FunctionComponent<{ open?: boolean }> = ({ op
                 <MessageDrawIcon className="d-lg-none icon-inline" />
                 <span className="d-none d-lg-block">Feedback</span>
             </DropdownToggle>
-            <DropdownMenu right={true} className="web-content feedback-prompt__menu">
+            <DropdownMenu right={true}>
                 <FeedbackPromptContent closePrompt={forceClose} />
             </DropdownMenu>
         </ButtonDropdown>
