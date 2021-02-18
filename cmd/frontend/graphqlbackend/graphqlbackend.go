@@ -621,6 +621,11 @@ func (r *NodeResolver) ToLSIFIndex() (LSIFIndexResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToOutOfBandMigration() (*outOfBandMigrationResolver, bool) {
+	n, ok := r.Node.(*outOfBandMigrationResolver)
+	return n, ok
+}
+
 // schemaResolver handles all GraphQL queries for Sourcegraph. To do this, it
 // uses subresolvers which are globals. Enterprise-only resolvers are assigned
 // to a field of EnterpriseResolvers.
@@ -720,6 +725,8 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return r.LSIFIndexByID(ctx, id)
 	case "CodeMonitor":
 		return r.MonitorByID(ctx, id)
+	case "OutOfBandMigration":
+		return r.OutOfBandMigrationByID(ctx, id)
 	default:
 		return nil, errors.New("invalid id")
 	}

@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -99,7 +100,11 @@ func TestResolver_InsightSeries(t *testing.T) {
 		args.From.Time, _ = time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
 		args.To.Time, _ = time.Parse(time.RFC3339, "2006-01-03T15:04:05Z")
 		mock.SeriesPointsFunc.SetDefaultHook(func(ctx context.Context, opts store.SeriesPointsOpts) ([]store.SeriesPoint, error) {
-			autogold.Want("insights[0][0].Points store opts", "{SeriesID:<nil> From:2006-01-02 15:04:05 +0000 UTC To:2006-01-03 15:04:05 +0000 UTC Limit:0}").Equal(t, fmt.Sprintf("%+v", opts))
+			json, err := json.Marshal(opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+			autogold.Want("insights[0][0].Points store opts", `{"SeriesID":"s:087855E6A24440837303FD8A252E9893E8ABDFECA55B61AC83DA1B521906626E","From":"2006-01-02T15:04:05Z","To":"2006-01-03T15:04:05Z","Limit":0}`).Equal(t, string(json))
 			return []store.SeriesPoint{
 				{Time: args.From.Time, Value: 1},
 				{Time: args.From.Time, Value: 2},

@@ -986,6 +986,86 @@ Referenced by:
 
 ```
 
+# Table "public.out_of_band_migrations"
+```
+     Column      |           Type           |                              Modifiers                              
+-----------------+--------------------------+---------------------------------------------------------------------
+ id              | integer                  | not null default nextval('out_of_band_migrations_id_seq'::regclass)
+ team            | text                     | not null
+ component       | text                     | not null
+ description     | text                     | not null
+ introduced      | text                     | not null
+ deprecated      | text                     | 
+ progress        | double precision         | not null default 0
+ created         | timestamp with time zone | not null default now()
+ last_updated    | timestamp with time zone | 
+ non_destructive | boolean                  | not null
+ apply_reverse   | boolean                  | not null default false
+Indexes:
+    "out_of_band_migrations_pkey" PRIMARY KEY, btree (id)
+Check constraints:
+    "out_of_band_migrations_component_nonempty" CHECK (component <> ''::text)
+    "out_of_band_migrations_deprecated_valid_version" CHECK (deprecated ~ '^(\d+)\.(\d+)\.(\d+)$'::text)
+    "out_of_band_migrations_description_nonempty" CHECK (description <> ''::text)
+    "out_of_band_migrations_introduced_valid_version" CHECK (introduced ~ '^(\d+)\.(\d+)\.(\d+)$'::text)
+    "out_of_band_migrations_progress_range" CHECK (progress >= 0::double precision AND progress <= 1::double precision)
+    "out_of_band_migrations_team_nonempty" CHECK (team <> ''::text)
+Referenced by:
+    TABLE "out_of_band_migrations_errors" CONSTRAINT "out_of_band_migrations_errors_migration_id_fkey" FOREIGN KEY (migration_id) REFERENCES out_of_band_migrations(id) ON DELETE CASCADE
+
+```
+
+Stores metadata and progress about an out-of-band migration routine.
+
+**apply_reverse**: Whether this migration should run in the opposite direction (to support an upcoming downgrade).
+
+**component**: The name of the component undergoing a migration.
+
+**created**: The date and time the migration was inserted into the database (via an upgrade).
+
+**deprecated**: The lowest Sourcegraph version that assumes the migration has completed.
+
+**description**: A brief description about the migration.
+
+**id**: A globally unique primary key for this migration. The same key is used consistently across all Sourcegraph instances for the same migration.
+
+**introduced**: The Sourcegraph version in which this migration was first introduced.
+
+**last_updated**: The date and time the migration was last updated.
+
+**non_destructive**: Whether or not this migration alters data so it can no longer be read by the previous Sourcegraph instance.
+
+**progress**: The percentage progress in the up direction (0=0%, 1=100%).
+
+**team**: The name of the engineering team responsible for the migration.
+
+# Table "public.out_of_band_migrations_errors"
+```
+    Column    |           Type           |                                 Modifiers                                  
+--------------+--------------------------+----------------------------------------------------------------------------
+ id           | integer                  | not null default nextval('out_of_band_migrations_errors_id_seq'::regclass)
+ migration_id | integer                  | not null
+ message      | text                     | not null
+ created      | timestamp with time zone | not null default now()
+Indexes:
+    "out_of_band_migrations_errors_pkey" PRIMARY KEY, btree (id)
+Check constraints:
+    "out_of_band_migrations_errors_message_nonempty" CHECK (message <> ''::text)
+Foreign-key constraints:
+    "out_of_band_migrations_errors_migration_id_fkey" FOREIGN KEY (migration_id) REFERENCES out_of_band_migrations(id) ON DELETE CASCADE
+
+```
+
+Stores errors that occurred while performing an out-of-band migration.
+
+**created**: The date and time the error occurred.
+
+**id**: A unique identifer.
+
+**message**: The error message.
+
+**migration_id**: The identifier of the migration.
+
 # Table "public.phabricator_repos"
 ```
    Column   |           Type           |                           Modifiers                            
