@@ -19,3 +19,4 @@
 ## Advanced tasks
 
 - [Loading configuration via the file system](advanced_config_file.md)
+- [Restore postgres database from backup](restore/restore_postgres_k8s.md)
