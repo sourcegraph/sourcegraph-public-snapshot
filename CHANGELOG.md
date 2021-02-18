@@ -37,6 +37,7 @@ All notable changes to Sourcegraph are documented in this file.
   - Go `1.15` introduced changes to SSL/TLS connection validation which requires certificates to include a `SAN`. This field was not included in older certificates and clients relied on the `CN` field. You might see an error like `x509: certificate relies on legacy Common Name field`. We recommend that customers using Sourcegraph with an external database and connecting to it using SSL/TLS check whether the certificate is up to date.
   - RDS Customers please reference [AWS' documentation on updating the SSL/TLS certificate](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL-certificate-rotation.html).
 - Search results on `.rs` files now recommend `lang:rust` instead of `lang:renderscript` as a filter. [#18316](https://github.com/sourcegraph/sourcegraph/pull/18316)
+- Campaigns users creating Personal Access Tokens on GitHub are now asked to request the `user:email` scope in addition to the [previous scopes](https://docs.sourcegraph.com/@3.24/admin/external_service/github#github-api-token-and-access). This will be used in a future Sourcegraph release to display more fine-grained information on the progress of pull requests. [#17555](https://github.com/sourcegraph/sourcegraph/issues/17555)
 
 ### Fixed
 
