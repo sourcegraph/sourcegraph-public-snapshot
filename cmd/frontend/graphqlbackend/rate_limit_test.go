@@ -303,6 +303,39 @@ query Search($query: String!, $version: SearchVersion!, $patternType: SearchPatt
 				MaxDepth:   9,
 			},
 		},
+		{
+			name: "Allow null variables",
+			// NOTE: $first is nullable
+			query: `
+query RepositoryComparisonDiff($repo: String!, $base: String, $head: String, $first: Int) {
+  repository(name: $repo) {
+    comparison(base: $base, head: $head) {
+      fileDiffs(first: $first) {
+        nodes {
+          ...FileDiffFields
+        }
+        totalCount
+      }
+    }
+  }
+}
+
+fragment FileDiffFields on FileDiff {
+  oldPath
+  newPath
+  internalID
+}
+`,
+			want: queryCost{
+				FieldCount: 7,
+				MaxDepth:   5,
+			},
+			variables: map[string]interface{}{
+				"base": "a46cf4a8b6dc42ea7b7b716e53c49dd3508a8678",
+				"head": "0fd3fb1f4e41ae1f95970beeec1c1f7b2d8a7d06",
+				"repo": "github.com/presslabs/mysql-operator",
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			have, err := estimateQueryCost(tc.query, tc.variables)
