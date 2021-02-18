@@ -94,7 +94,11 @@ func (r *Runner) Start() {
 				log15.Error("Failed to perform migration", "id", migrations[i].ID, "error", err)
 			}
 
-			if !(progress == 0 && migrations[i].ApplyReverse) && !(progress == 1 && !migrations[i].ApplyReverse) {
+			completedForward := progress == 1 && !migrations[i].ApplyReverse
+			completedReverse := progress == 0 && migrations[i].ApplyReverse
+
+			if !(completedForward || completedReverse) {
+				// Only check migrations that are incomplete
 				filtered = append(filtered, migrations[i])
 			}
 		}
