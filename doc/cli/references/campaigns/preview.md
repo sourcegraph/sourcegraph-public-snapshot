@@ -13,7 +13,7 @@
 | `-dump-requests` | Log GraphQL requests and responses to stdout | `false` |
 | `-f` | The campaign spec file to read. |  |
 | `-get-curl` | Print the curl command for executing this query and exit (WARNING: includes printing your access token!) | `false` |
-| `-j` | The maximum number of parallel jobs. (Default: GOMAXPROCS.) | `0` |
+| `-j` | The maximum number of parallel jobs. Default is GOMAXPROCS. | `8` |
 | `-keep-logs` | Retain logs after executing steps. | `false` |
 | `-n` | Alias for -namespace. |  |
 | `-namespace` | The user or organization namespace to place the campaign within. Default is the currently authenticated user. |  |
@@ -46,7 +46,7 @@ Usage of 'src campaigns preview':
   -get-curl
     	Print the curl command for executing this query and exit (WARNING: includes printing your access token!)
   -j int
-    	The maximum number of parallel jobs. (Default: GOMAXPROCS.)
+    	The maximum number of parallel jobs. Default is GOMAXPROCS. (default 8)
   -keep-logs
     	Retain logs after executing steps.
   -n string
