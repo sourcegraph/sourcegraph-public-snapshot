@@ -3,6 +3,18 @@ FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd2
 COPY libsqlite3-pcre-install-alpine.sh /libsqlite3-pcre-install-alpine.sh
 RUN /libsqlite3-pcre-install-alpine.sh
 
+# Install p4 CLI, the tgz does not include a directory prefix so we make one up to clean up later
+# (keep this up to date with cmd/server/Dockerfile)
+FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd212d78d7be145adde636d AS p4cli
+
+# hadolint ignore=DL3003
+RUN mkdir helix-core-server/ && \
+    cd helix-core-server/ && \
+    wget https://cdist2.perforce.com/perforce/r20.2/bin.linux26x86_64/helix-core-server.tgz && \
+    tar -xzf helix-core-server.tgz && \
+    chmod +x p4 && \
+    mv p4 /usr/local/bin/p4
+
 FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd212d78d7be145adde636d
 # TODO(security): This container should not be running as root!
 #
@@ -50,18 +62,6 @@ RUN wget https://storage.googleapis.com/apktmp/postgres-11-5-for-alpine-3-12-4cc
     cd ../../../ && \
     rm -rf target/
 
-# Install p4 CLI, the tgz does not include a directory prefix so we make one up to clean up later
-# (keep this up to date with cmd/gitserver/Dockerfile)
-# hadolint ignore=DL3003
-RUN mkdir helix-core-server/ && \
-    cd helix-core-server/ && \
-    wget https://cdist2.perforce.com/perforce/r20.2/bin.linux26x86_64/helix-core-server.tgz && \
-    tar -xzf helix-core-server.tgz && \
-    chmod +x p4 && \
-    mv p4 /usr/local/bin/p4 && \
-    cd ../ && \
-    rm -rf helix-core-server/
-
 # install minio (keep this up to date with docker-images/minio/Dockerfile)
 ENV MINIO_VERSION=RELEASE.2020-10-18T21-54-12Z
 RUN wget "https://dl.min.io/server/minio/release/linux-amd64/archive/minio.$MINIO_VERSION" && \
@@ -97,6 +97,9 @@ COPY --from=sourcegraph/grafana:server /usr/share/grafana /usr/share/grafana
 COPY --from=libsqlite3-pcre /sqlite3-pcre/pcre.so /libsqlite3-pcre.so
 ENV LIBSQLITE3_PCRE /libsqlite3-pcre.so
 COPY . /
+
+# hadolint ignore=DL3022
+COPY --from=p4cli /usr/local/bin/p4 /usr/local/bin/p4
 
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/grafana:server /sg_config_grafana/provisioning/dashboards /sg_config_grafana/provisioning/dashboards
