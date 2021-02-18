@@ -2,6 +2,8 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -201,8 +203,8 @@ func (r *queryResolver) adjustRange(ctx context.Context, repositoryID int, commi
 func filterUploadsWithCommits(ctx context.Context, cachedCommitChecker *cachedCommitChecker, uploads []dbstore.Dump) ([]dbstore.Dump, error) {
 	filtered := uploads[:0]
 
-	for _, upload := range uploads {
-		commitExists, err := cachedCommitChecker.exists(ctx, upload.RepositoryID, upload.Commit)
+	for i := range uploads {
+		commitExists, err := cachedCommitChecker.exists(ctx, uploads[i].RepositoryID, uploads[i].Commit)
 		if err != nil {
 			return nil, err
 		}
@@ -210,8 +212,35 @@ func filterUploadsWithCommits(ctx context.Context, cachedCommitChecker *cachedCo
 			continue
 		}
 
-		filtered = append(filtered, upload)
+		filtered = append(filtered, uploads[i])
 	}
 
 	return filtered, nil
+}
+
+func intsToString(ints []int) string {
+	segments := make([]string, 0, len(ints))
+	for _, id := range ints {
+		segments = append(segments, strconv.Itoa(id))
+	}
+
+	return strings.Join(segments, ", ")
+}
+
+func uploadIDsToString(vs []dbstore.Dump) string {
+	ids := make([]string, 0, len(vs))
+	for _, v := range vs {
+		ids = append(ids, strconv.Itoa(v.ID))
+	}
+
+	return strings.Join(ids, ", ")
+}
+
+func monikersToString(vs []lsifstore.QualifiedMonikerData) string {
+	strs := make([]string, 0, len(vs))
+	for _, v := range vs {
+		strs = append(strs, fmt.Sprintf("%s:%s:%s", v.Scheme, v.Identifier, v.Version))
+	}
+
+	return strings.Join(strs, ", ")
 }

@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"strconv"
 
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
@@ -99,14 +98,4 @@ func newQueryResolver(
 		path:                path,
 		uploads:             uploads,
 	}
-}
-
-// uploadIDs returns a slice of this query's matched upload identifiers.
-func (r *queryResolver) uploadIDs() []string {
-	uploadIDs := make([]string, 0, len(r.uploads))
-	for i := range r.uploads {
-		uploadIDs = append(uploadIDs, strconv.Itoa(r.uploads[i].ID))
-	}
-
-	return uploadIDs
 }
