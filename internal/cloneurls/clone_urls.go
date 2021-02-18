@@ -32,6 +32,7 @@ func ReposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 			extsvc.KindBitbucketServer,
 			extsvc.KindAWSCodeCommit,
 			extsvc.KindGitolite,
+			extsvc.KindOther,
 		},
 		LimitOffset: &database.LimitOffset{
 			Limit: 500, // The number is randomly chosen
@@ -71,6 +72,9 @@ func ReposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 			case *schema.GitoliteConnection:
 				rs = reposource.Gitolite{GitoliteConnection: c}
 				// Gitolite type does not have URL
+			case *schema.OtherExternalServiceConnection:
+				rs = reposource.Other{OtherExternalServiceConnection: c}
+				host = c.Url
 			default:
 				return "", errors.Errorf("unexpected connection type: %T", cfg)
 			}
