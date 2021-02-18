@@ -149,13 +149,13 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
     class="nav-item"
   >
     <div
-      class="feedback-prompt btn-group"
+      class="feedback-prompt dropdown"
     >
       <button
         aria-expanded="false"
         aria-haspopup="true"
         aria-label="Feedback"
-        class="btn btn-link text-decoration-none feedback-prompt__toggle nav-link"
+        class="btn btn-link btn-sm text-decoration-none feedback-prompt__toggle nav-link"
       >
         <svg
           class="mdi-icon d-lg-none icon-inline"
@@ -864,13 +864,13 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
     class="nav-item"
   >
     <div
-      class="feedback-prompt btn-group"
+      class="feedback-prompt dropdown"
     >
       <button
         aria-expanded="false"
         aria-haspopup="true"
         aria-label="Feedback"
-        class="btn btn-link text-decoration-none feedback-prompt__toggle nav-link"
+        class="btn btn-link btn-sm text-decoration-none feedback-prompt__toggle nav-link"
       >
         <svg
           class="mdi-icon d-lg-none icon-inline"
@@ -1589,13 +1589,13 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
     class="nav-item"
   >
     <div
-      class="feedback-prompt btn-group"
+      class="feedback-prompt dropdown"
     >
       <button
         aria-expanded="false"
         aria-haspopup="true"
         aria-label="Feedback"
-        class="btn btn-link text-decoration-none feedback-prompt__toggle nav-link"
+        class="btn btn-link btn-sm text-decoration-none feedback-prompt__toggle nav-link"
       >
         <svg
           class="mdi-icon d-lg-none icon-inline"
@@ -2285,13 +2285,13 @@ exports[`NavLinks authed self-hosted /search 1`] = `
     class="nav-item"
   >
     <div
-      class="feedback-prompt btn-group"
+      class="feedback-prompt dropdown"
     >
       <button
         aria-expanded="false"
         aria-haspopup="true"
         aria-label="Feedback"
-        class="btn btn-link text-decoration-none feedback-prompt__toggle nav-link"
+        class="btn btn-link btn-sm text-decoration-none feedback-prompt__toggle nav-link"
       >
         <svg
           class="mdi-icon d-lg-none icon-inline"
@@ -2991,13 +2991,13 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
     class="nav-item"
   >
     <div
-      class="feedback-prompt btn-group"
+      class="feedback-prompt dropdown"
     >
       <button
         aria-expanded="false"
         aria-haspopup="true"
         aria-label="Feedback"
-        class="btn btn-link text-decoration-none feedback-prompt__toggle nav-link"
+        class="btn btn-link btn-sm text-decoration-none feedback-prompt__toggle nav-link"
       >
         <svg
           class="mdi-icon d-lg-none icon-inline"
@@ -3448,13 +3448,13 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
     class="nav-item"
   >
     <div
-      class="feedback-prompt btn-group"
+      class="feedback-prompt dropdown"
     >
       <button
         aria-expanded="false"
         aria-haspopup="true"
         aria-label="Feedback"
-        class="btn btn-link text-decoration-none feedback-prompt__toggle nav-link"
+        class="btn btn-link btn-sm text-decoration-none feedback-prompt__toggle nav-link"
       >
         <svg
           class="mdi-icon d-lg-none icon-inline"
@@ -3915,13 +3915,13 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
     class="nav-item"
   >
     <div
-      class="feedback-prompt btn-group"
+      class="feedback-prompt dropdown"
     >
       <button
         aria-expanded="false"
         aria-haspopup="true"
         aria-label="Feedback"
-        class="btn btn-link text-decoration-none feedback-prompt__toggle nav-link"
+        class="btn btn-link btn-sm text-decoration-none feedback-prompt__toggle nav-link"
       >
         <svg
           class="mdi-icon d-lg-none icon-inline"
@@ -4360,13 +4360,13 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
     class="nav-item"
   >
     <div
-      class="feedback-prompt btn-group"
+      class="feedback-prompt dropdown"
     >
       <button
         aria-expanded="false"
         aria-haspopup="true"
         aria-label="Feedback"
-        class="btn btn-link text-decoration-none feedback-prompt__toggle nav-link"
+        class="btn btn-link btn-sm text-decoration-none feedback-prompt__toggle nav-link"
       >
         <svg
           class="mdi-icon d-lg-none icon-inline"
