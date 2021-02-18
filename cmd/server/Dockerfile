@@ -3,14 +3,11 @@ FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd2
 COPY libsqlite3-pcre-install-alpine.sh /libsqlite3-pcre-install-alpine.sh
 RUN /libsqlite3-pcre-install-alpine.sh
 
-# Install p4 CLI, the tgz does not include a directory prefix so we make one up to clean up later
-# (keep this up to date with cmd/server/Dockerfile)
+# Install p4 CLI (keep this up to date with cmd/server/Dockerfile)
 FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd212d78d7be145adde636d AS p4cli
 
 # hadolint ignore=DL3003
-RUN mkdir helix-core-server/ && \
-    cd helix-core-server/ && \
-    wget https://cdist2.perforce.com/perforce/r20.2/bin.linux26x86_64/helix-core-server.tgz && \
+RUN wget https://cdist2.perforce.com/perforce/r20.2/bin.linux26x86_64/helix-core-server.tgz && \
     tar -xzf helix-core-server.tgz && \
     chmod +x p4 && \
     mv p4 /usr/local/bin/p4
