@@ -3,8 +3,9 @@
 
     &__toggle {
         border: 1px solid var(--border-color);
+
         &:hover {
-            border: 1px solid var(--link-hover-color);
+            border-color: var(--header-icon-color);
         }
     }
     &__menu {

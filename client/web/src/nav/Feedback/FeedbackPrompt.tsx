@@ -153,11 +153,11 @@ export const FeedbackPrompt: React.FunctionComponent<{ open?: boolean }> = ({ op
     const forceClose = useCallback(() => setIsOpen(false), [])
 
     return (
-        <ButtonDropdown isOpen={isOpen} toggle={handleToggle} className="feedback-prompt">
+        <ButtonDropdown isOpen={isOpen} toggle={handleToggle} group={false} className="feedback-prompt">
             <DropdownToggle
                 tag="button"
                 caret={false}
-                className="btn btn-link text-decoration-none feedback-prompt__toggle"
+                className="btn btn-link btn-sm text-decoration-none feedback-prompt__toggle"
                 nav={true}
                 aria-label="Feedback"
             >
