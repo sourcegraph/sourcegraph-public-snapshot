@@ -1,12 +1,34 @@
-# Upgrading PostgreSQL
+# PostgreSQL
 
-Sourcegraph uses PostgreSQL as its main internal database and this documentation describes how to upgrade PostgreSQL between major versions.
+Sourcegraph uses several PostgreSQL databases to support various functionality. These databases are:
 
-> NOTE: ⚠️ Upgrading the PostgreSQL database requires stopping your Sourcegraph deployment which will result in **downtime**.
+- pgsql or primary: responsible for user data and account information
+- codeintel-db: provides support for lsif data and part of the code-intelligence
+- codeinsights-db: provides support for codeinsights
 
 ## Version requirements
 
 We support any version **starting from 9.6**.
+
+## Role requirements
+
+The user provided to Sourcegraph must have full access to the `sg` database and be able to create the following
+extensions:
+
+```
+citext
+hstore
+intarray
+pg_stat_statements
+pg_trgm
+```
+
+# Upgrading PostgreSQL
+
+Sourcegraph uses PostgreSQL as its main internal database and this documentation describes how to upgrade PostgreSQL
+between major versions.
+
+> NOTE: ⚠️ Upgrading the PostgreSQL database requires stopping your Sourcegraph deployment which will result in **downtime**.
 
 ## Upgrading single node Docker deployments
 

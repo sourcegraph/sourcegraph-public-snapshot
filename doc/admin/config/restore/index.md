@@ -79,8 +79,8 @@ To restore persistent volumes you need to
    all deployments to their set number of replicas.
 1. Otherwise, `kubectl scale deployment pgsql codeinsights-db codeintel-db --replicas=1`
 
-1. After ensuring Sourcegraph is functional, you may delete the previous PVs. If the **Reclaim Policy** is not set to **
-   Delete** you will need to manually delete the disk from your provider as well. 
+1. After ensuring Sourcegraph is functional, you may delete the previous PVs. If the **Reclaim Policy** is not set to 
+   **Delete** you will need to manually delete the disk from your provider as well. 
 
   
    
