@@ -6,11 +6,15 @@
 # Install p4 CLI (keep this up to date with cmd/server/Dockerfile)
 FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd212d78d7be145adde636d AS p4cli
 
+# hadolint ignore=DL3018
+RUN apk add --no-cache \
+    bash \
+	curl
+
 # hadolint ignore=DL3003
-RUN wget https://cdist2.perforce.com/perforce/r20.2/bin.linux26x86_64/helix-core-server.tgz && \
-    tar -xzf helix-core-server.tgz && \
-    chmod +x p4 && \
-    mv p4 /usr/local/bin/p4
+RUN curl -sSL -O http://cdist2.perforce.com/perforce/r20.2/bin.linux26x86_64/p4 && \
+    mv p4 /usr/local/bin/p4 && \
+    chmod +x /usr/local/bin/p4
 
 FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd212d78d7be145adde636d
 
@@ -31,6 +35,9 @@ RUN apk add --no-cache \
 
 # hadolint ignore=DL3022
 COPY --from=p4cli /usr/local/bin/p4 /usr/local/bin/p4
+
+# Add libraries required by p4
+ADD lib/lib-x64.tgz /
 
 RUN mkdir -p /data/repos && chown -R sourcegraph:sourcegraph /data/repos
 USER sourcegraph
