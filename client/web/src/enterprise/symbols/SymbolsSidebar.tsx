@@ -51,17 +51,24 @@ export const ItemList: React.FunctionComponent<ItemListProps> = ({ level, symbol
             style={{
                 overflowY: 'auto',
                 flex: '1 1',
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: 0,
             }}
         >
             {symbols.map(symbol => (
                 <React.Fragment key={symbol.kind + ':' + symbol.id}>
                     <li>
                         <NavLink
-                            className="d-flex align-items-center w-100 pl-1"
                             to={urlForSymbol(symbol, repo)}
-                            style={
-                                level === 0
+                            className="d-flex align-items-center px-1"
+                            style={{
+                                ...(level === 0
                                     ? {
+                                          backgroundColor: 'var(--secondary)',
+                                          paddingTop: '0.25rem',
+                                          paddingBottom: '0.25rem',
+                                          fontWeight: 'bold',
                                           fontSize: '1.2rem',
                                       }
                                     : {
@@ -70,8 +77,8 @@ export const ItemList: React.FunctionComponent<ItemListProps> = ({ level, symbol
                                           borderLeftColor: level > 1 ? 'var(--secondary)' : 'transparent',
                                           borderLeftWidth: 3,
                                           borderLeftStyle: 'solid',
-                                      }
-                            }
+                                      }),
+                            }}
                             activeStyle={{
                                 borderLeftColor: 'var(--primary)',
                                 borderLeftWidth: 3,
@@ -79,14 +86,10 @@ export const ItemList: React.FunctionComponent<ItemListProps> = ({ level, symbol
                             }}
                             exact={true}
                         >
-                            <SymbolIcon kind={symbol.kind} />{' '}
-                            <span
-                                className="text-truncate"
-                                style={{
-                                    textOverflow: 'ellipsis',
-                                    direction: level === 0 ? 'rtl' : 'ltr',
-                                }}
-                            >
+                            <span>
+                                <SymbolIcon kind={symbol.kind} className={'icon-inline mr-1'} />{' '}
+                            </span>
+                            <span className="text-truncate" dir={level === 0 ? 'rtl' : 'ltr'}>
                                 {symbol.text}
                             </span>
                         </NavLink>

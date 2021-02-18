@@ -47,15 +47,17 @@ export const SymbolsArea: React.FunctionComponent<Props> = ({
                     element={<SymbolsSidebar repo={props.repo} {...sidebarOptions} className="w-100 overflow-auto" />}
                 />
             )}
-            <Switch>
-                <Route
-                    path={`${match.url}/:symbolID+`}
-                    render={(routeProps: RouteComponentProps<SymbolRouteProps>) => (
-                        <SymbolPage {...props} {...routeProps} setSidebarOptions={setSidebarOptions} />
-                    )}
-                />
-                <Route path={match.url} exact={true} render={(routeProps: any) => <SymbolsPage {...props} />} />
-            </Switch>
+            <div>
+                <Switch>
+                    <Route
+                        path={`${match.url}/:symbolID+`}
+                        render={(routeProps: RouteComponentProps<SymbolRouteProps>) => (
+                            <SymbolPage {...props} {...routeProps} setSidebarOptions={setSidebarOptions} />
+                        )}
+                    />
+                    <Route path={match.url} exact={true} render={(routeProps: any) => <SymbolsPage {...props} />} />
+                </Switch>
+            </div>
         </>
     )
 }
