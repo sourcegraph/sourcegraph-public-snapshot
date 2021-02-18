@@ -147,7 +147,7 @@ func (r *schemaResolver) SubmitHappinessFeedback(ctx context.Context, args *stru
 	var email *string
 
 	if args.Input.Score < 1 || args.Input.Score > 4 {
-		log15.Error("Score must be a value between 1 and 4")
+		return nil, errors.New("Score must be a value between 1 and 4")
 	}
 
 	// If we are on Sourcegraph.com, we want to capture the email of the user
