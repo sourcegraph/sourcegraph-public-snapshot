@@ -123,10 +123,6 @@ func (r *editorRequest) searchRedirect(ctx context.Context) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		// Probably a generic git host, or a host without a `CloneURLToRepoName` implementation.
-		if repoName == "" {
-			repoName = guessRepoNameFromRemoteURL(s.remoteURL, s.hostnameToPattern)
-		}
 		if repoName == "" {
 			// Any error here is a problem with the user's configured git remote
 			// URL. We want them to actually read this error message.
@@ -178,10 +174,6 @@ func (r *editorRequest) openFileRedirect(ctx context.Context) (string, error) {
 	repoName, err := cloneurls.ReposourceCloneURLToRepoName(ctx, of.remoteURL)
 	if err != nil {
 		return "", err
-	}
-	// Probably a generic git host, or a host without a `CloneURLToRepoName` implementation.
-	if repoName == "" {
-		repoName = guessRepoNameFromRemoteURL(of.remoteURL, of.hostnameToPattern)
 	}
 	if repoName == "" {
 		// Any error here is a problem with the user's configured git remote
@@ -293,37 +285,3 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 
 // gitProtocolRegExp is a regular expression that matches any URL that looks like it has a git protocol
 var gitProtocolRegExp = lazyregexp.New("^(git|(git+)?(https?|ssh))://")
-
-// guessRepoNameFromRemoteURL return a guess at the repo name for the given remote URL.
-//
-// It first normalizes the remote URL (ensuring a scheme exists, stripping any "git@" username in
-// the host, stripping any trailing ".git" from the path, etc.). It then returns the repo name as
-// templatized by the pattern specified, which references the hostname and path of the normalized
-// URL. Patterns are keyed by hostname in the hostnameToPattern parameter. The default pattern is
-// "{hostname}/{path}".
-//
-// For example, given "https://github.com/foo/bar.git" and an empty hostnameToPattern, it returns
-// "github.com/foo/bar". Given the same remote URL and hostnametoPattern
-// `map[string]string{"github.com": "{path}"}`, it returns "foo/bar".
-func guessRepoNameFromRemoteURL(urlStr string, hostnameToPattern map[string]string) api.RepoName {
-	if !gitProtocolRegExp.MatchString(urlStr) {
-		urlStr = "ssh://" + strings.Replace(strings.TrimPrefix(urlStr, "git@"), ":", "/", 1)
-	}
-	urlStr = strings.TrimSuffix(urlStr, ".git")
-	u, _ := url.Parse(urlStr)
-	if u == nil {
-		return ""
-	}
-
-	pattern := "{hostname}/{path}"
-	if hostnameToPattern != nil {
-		if p, ok := hostnameToPattern[u.Hostname()]; ok {
-			pattern = p
-		}
-	}
-
-	return api.RepoName(strings.NewReplacer(
-		"{hostname}", u.Hostname(),
-		"{path}", strings.TrimPrefix(u.Path, "/"),
-	).Replace(pattern))
-}
