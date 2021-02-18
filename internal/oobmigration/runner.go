@@ -13,10 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-//
-// TODO - add observability layer
-//
-
 // Runner correlates out-of-band migration records in the database with a migrator instance,
 // and will run each migration that has no yet completed: either reached 100% in the forward
 // direction or 0% in the reverse direction.
