@@ -861,6 +861,19 @@ type Mutation {
     Triggers a test email for a code monitor action.
     """
     triggerTestEmailAction(namespace: ID!, description: String!, email: MonitorEmailInput!): EmptyResponse!
+
+    """
+    Updates an out-of-band migration to run in a particular direction.
+
+    Applied in the forward direction, an out-of-band migration migrates data into a format that
+    is readable by newer Sourcegraph instances. This may be destructive or non-destructive process,
+    depending on the nature and implementation of the migration.
+
+    Applied in the reverse direction, an out-of-band migration ensures that data is moved back into
+    a format that is readable by the previous Sourcegraph instance. Recently introduced migrations
+    should be applied in reverse prior to downgrading the instance.
+    """
+    SetMigrationDirection(id: ID!, applyReverse: Boolean!): EmptyResponse!
 }
 
 """
@@ -3276,6 +3289,103 @@ type Query {
     installations will always return false for any feature.
     """
     enterpriseLicenseHasFeature(feature: String!): Boolean!
+
+    """
+    Retrieve all registered out-of-band migrations.
+    """
+    outOfBandMigrations: [OutOfBandMigration!]!
+}
+
+"""
+An out-of-band migration is a process that runs in the background of the instance that moves
+data from one format into another format. Out-of-band migrations
+"""
+type OutOfBandMigration implements Node {
+    """
+    The unique identifier of this migration.
+    """
+    id: ID!
+
+    """
+    The team that owns this migration (e.g., code-intelligence).
+    """
+    team: String!
+
+    """
+    The component this migration affects (e.g., codeintel-db.lsif_data_documents).
+    """
+    component: String!
+
+    """
+    A human-readable summary of the migration.
+    """
+    description: String!
+
+    """
+    The Sourcegraph version in which this migration was introduced.
+
+    It is necessary to completely this migration in reverse (if destructive) before downgrading
+    to or past this version. Otherwise, the previous instance version will not be aware of the
+    new data format.
+    """
+    introduced: String!
+
+    """
+    The Sourcegraph version in which this migration is assumed to have completed.
+
+    It is necessary to have completed this migration before upgrading to or past this version.
+    Otherwsie, the next instance version will no longer be aware of the old data format.
+    """
+    deprecated: String
+
+    """
+    The progress of the migration (in the forward direction). In the range [0, 1].
+    """
+    progress: Float!
+
+    """
+    The time the migration record was inserted.
+    """
+    created: DateTime!
+
+    """
+    The last time the migration progress or error list was updated.
+    """
+    lastUpdated: DateTime
+
+    """
+    If false, the migration moves data destructively, and a previous version of Sourcegraph
+    will encounter errors when interfacing with the target data unless the migration is first
+    run in reverse prior to a downgrade.
+    """
+    nonDestructive: Boolean!
+
+    """
+    If true, the migration will run in reverse.
+    """
+    applyReverse: Boolean!
+
+    """
+    A list of errors that have occurred while performing this migration (in either direction).
+    This list is bounded by a maximum size, and older errors will replaced by newer errors as
+    the list capacity is reached.
+    """
+    errors: [OutOfBandMigrationError!]!
+}
+
+"""
+An error that occurred while performing an out-of-band migration.
+"""
+type OutOfBandMigrationError {
+    """
+    The error message.
+    """
+    message: String!
+
+    """
+    The time the error occurred.
+    """
+    created: DateTime!
 }
 
 """
