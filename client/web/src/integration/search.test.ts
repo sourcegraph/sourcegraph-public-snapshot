@@ -435,10 +435,10 @@ describe('Search', () => {
             expect(await getSelectedSearchContextSpec()).toStrictEqual('context:@user')
         })
 
-        test('Missing context param should default to global context', async () => {
+        test('Missing context param should default to users context', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
             await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
-            expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
+            expect(await getSelectedSearchContextSpec()).toStrictEqual('context:@test')
         })
 
         test('Unavailable search context should get appended to navbar query and disable the search context dropdown', async () => {
