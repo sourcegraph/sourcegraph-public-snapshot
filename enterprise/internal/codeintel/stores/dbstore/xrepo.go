@@ -145,11 +145,11 @@ const referenceIDsAndFiltersCountQuery = referenceIDsAndFiltersCTEDefinitions + 
 SELECT COUNT(distinct r.dump_id)
 ` + referenceIDsAndFiltersBaseQuery
 
-func monikersToString(monikers []lsifstore.QualifiedMonikerData) string {
-	strMonikers := make([]string, 0, len(monikers))
-	for _, moniker := range monikers {
-		strMonikers = append(strMonikers, fmt.Sprintf("%s:%s:%s", moniker.Scheme, moniker.Name, moniker.Version))
+func monikersToString(vs []lsifstore.QualifiedMonikerData) string {
+	strs := make([]string, 0, len(vs))
+	for _, v := range vs {
+		strs = append(strs, fmt.Sprintf("%s:%s:%s", v.Scheme, v.Identifier, v.Version))
 	}
 
-	return strings.Join(strMonikers, ", ")
+	return strings.Join(strs, ", ")
 }

@@ -284,14 +284,6 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 	return uploads, totalCount, nil
 }
 
-func nilTimeToString(t *time.Time) string {
-	if t == nil {
-		return ""
-	}
-
-	return t.String()
-}
-
 const getUploadsCountQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:GetUploads
 SELECT COUNT(*) FROM lsif_uploads_with_repository_name u WHERE %s
@@ -607,11 +599,19 @@ WITH u AS (
 SELECT u.repository_id, count(*) FROM u GROUP BY u.repository_id
 `
 
-func intsToString(v []int) string {
-	s := make([]string, 0, len(v))
-	for _, id := range v {
-		s = append(s, strconv.Itoa(id))
+func intsToString(vs []int) string {
+	strs := make([]string, 0, len(vs))
+	for _, v := range vs {
+		strs = append(strs, strconv.Itoa(v))
 	}
 
-	return strings.Join(s, ", ")
+	return strings.Join(strs, ", ")
+}
+
+func nilTimeToString(t *time.Time) string {
+	if t == nil {
+		return ""
+	}
+
+	return t.String()
 }
