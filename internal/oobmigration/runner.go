@@ -100,7 +100,7 @@ func (r *Runner) Start() {
 
 		if shouldCheckProgress {
 			// We just fetched these migrations - see which ones are live
-			migrations = r.mapFilterMigrations(r.ctx, migrations, r.progressForMigration)
+			migrations = r.mapFilterMigrations(r.ctx, migrations, r.updateProgressForMigration)
 			shouldCheckProgress = false
 		}
 
@@ -141,7 +141,7 @@ func (r *Runner) listMigrations(ctx context.Context) <-chan []Migration {
 	return ch
 }
 
-type progressFunc func(ctx context.Context, migration Migration) (float64, error)
+type progressFunc func(ctx context.Context, migration *Migration) error
 
 // mapFilterMigrations runs the given progress function on each migration in the given slice.
 // The progress of each migration is updated based on the progress function's return value.
@@ -151,12 +151,10 @@ func (r *Runner) mapFilterMigrations(ctx context.Context, migrations []Migration
 	filtered := migrations[:0]
 
 	for i := range migrations {
-		progress, err := fn(ctx, migrations[i])
-		if err != nil {
+		if err := fn(ctx, &migrations[i]); err != nil {
 			log15.Error("Failed migration action", "id", migrations[i].ID, "error", err)
 			continue
 		}
-		migrations[i].Progress = progress
 
 		if !migrations[i].Complete() {
 			filtered = append(filtered, migrations[i])
@@ -166,28 +164,27 @@ func (r *Runner) mapFilterMigrations(ctx context.Context, migrations []Migration
 	return filtered
 }
 
-// progressForMigration returns the progress of the current migration. If a migrator is registered
-// to the given migration, the progress is queried and the record is updated. Otherwise, the last
-// known progress (from the database record) is returned.
-func (r *Runner) progressForMigration(ctx context.Context, migration Migration) (float64, error) {
-	migrator, ok := r.migrators[migration.ID]
-	if !ok {
-		return migration.Progress, nil
+func (r *Runner) runMigratorForMigration(ctx context.Context, migration *Migration) error {
+	if migrator, ok := r.migrators[migration.ID]; ok {
+		return r.runMigrator(ctx, migration, migrator)
 	}
 
-	return r.queryAndUpdateProgress(ctx, migration, migrator)
+	return nil
 }
 
-// runMigratorForMigration runs a migrator, if any, registered to the given migration. If an error
-// occurs in the migration function, the error will be attached to the migration so that it can be
-// surfaced to an admin. If a migration function is run, regardless of it success, the migration's
-// progress will be queried and the record will be updated.
-func (r *Runner) runMigratorForMigration(ctx context.Context, migration Migration) (float64, error) {
-	migrator, ok := r.migrators[migration.ID]
-	if !ok {
-		return migration.Progress, nil
+func (r *Runner) updateProgressForMigration(ctx context.Context, migration *Migration) error {
+	if migrator, ok := r.migrators[migration.ID]; ok {
+		return r.updateProgress(ctx, migration, migrator)
 	}
 
+	return nil
+}
+
+// runMigrator invokes the Up or Down method on the given migrator depending on the migration
+// direction. If an error occurs, it will be associated in the database with the migration record.
+// Regardless of the success of the migration function, the progress function on the migrator will be
+// invoked and the progress written to the database.
+func (r *Runner) runMigrator(ctx context.Context, migration *Migration, migrator Migrator) error {
 	migrationFunc := migrator.Up
 	if migration.ApplyReverse {
 		migrationFunc = migrator.Down
@@ -199,26 +196,27 @@ func (r *Runner) runMigratorForMigration(ctx context.Context, migration Migratio
 		// in order to update the migration, which could have made additional progress before failing.
 
 		if err := r.store.AddError(ctx, migration.ID, migrationErr.Error()); err != nil {
-			return 0, err
+			return err
 		}
 	}
 
-	return r.queryAndUpdateProgress(ctx, migration, migrator)
+	return r.updateProgress(ctx, migration, migrator)
 }
 
-// queryAndUpdateProgress queries the progress of the given migration and updates the database record
-// to reflect the updated value.
-func (r *Runner) queryAndUpdateProgress(ctx context.Context, migration Migration, migrator Migrator) (float64, error) {
+// updateProgress invokes the Progress method on the given migrator, updates the Progress field of the
+// given migration record, and updates the record in the database.
+func (r *Runner) updateProgress(ctx context.Context, migration *Migration, migrator Migrator) error {
 	progress, err := migrator.Progress(ctx)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
 	if err := r.store.UpdateProgress(ctx, migration.ID, progress); err != nil {
-		return 0, err
+		return err
 	}
 
-	return progress, nil
+	migration.Progress = progress
+	return nil
 }
 
 // Stop will cancel the context used in Start, then blocks until Start has returned.
