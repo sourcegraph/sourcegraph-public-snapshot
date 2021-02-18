@@ -570,7 +570,13 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         </p>
                         <div className="alert alert-primary">
                             Coming soon: search your private repositories with Sourcegraph Cloud.{' '}
-                            <a href="">Get updated when this feature launches</a>
+                            <Link
+                                to="https://share.hsforms.com/1copeCYh-R8uVYGCpq3s4nw1n7ku"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Get updated when this feature launches
+                            </Link>
                         </div>
                         {
                             // display radio button for 'all' or 'selected' repos
