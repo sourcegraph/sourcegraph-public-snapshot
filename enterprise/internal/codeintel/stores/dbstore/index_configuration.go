@@ -54,10 +54,16 @@ func scanFirstIndexConfiguration(rows *sql.Rows, err error) (IndexConfiguration,
 
 // GetRepositoriesWithIndexConfiguration returns the ids of repositories explicit index configuration.
 func (s *Store) GetRepositoriesWithIndexConfiguration(ctx context.Context) (_ []int, err error) {
-	ctx, endObservation := s.operations.getRepositoriesWithIndexConfiguration.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	ctx, traceLog, endObservation := s.operations.getRepositoriesWithIndexConfiguration.WithAndLogger(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return basestore.ScanInts(s.Store.Query(ctx, sqlf.Sprintf(getRepositoriesWithIndexConfigurationQuery)))
+	repositories, err := basestore.ScanInts(s.Store.Query(ctx, sqlf.Sprintf(getRepositoriesWithIndexConfigurationQuery)))
+	if err != nil {
+		return nil, err
+	}
+	traceLog(log.Int("numRepositories", len(repositories)))
+
+	return repositories, nil
 }
 
 const getRepositoriesWithIndexConfigurationQuery = `

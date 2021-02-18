@@ -70,7 +70,8 @@ func (s *Store) HasCommit(ctx context.Context, repositoryID int, commit string) 
 		sqlf.Sprintf(
 			hasCommitQuery,
 			repositoryID, dbutil.CommitBytea(commit),
-			repositoryID, dbutil.CommitBytea(commit)),
+			repositoryID, dbutil.CommitBytea(commit),
+		),
 	))
 
 	return count > 0, err
@@ -123,10 +124,16 @@ func scanIntPairs(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
 // DirtyRepositories returns a map from repository identifiers to a dirty token for each repository whose commit
 // graph is out of date. This token should be passed to CalculateVisibleUploads in order to unmark the repository.
 func (s *Store) DirtyRepositories(ctx context.Context) (_ map[int]int, err error) {
-	ctx, endObservation := s.operations.dirtyRepositories.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	ctx, traceLog, endObservation := s.operations.dirtyRepositories.WithAndLogger(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return scanIntPairs(s.Store.Query(ctx, sqlf.Sprintf(dirtyRepositoriesQuery)))
+	repositories, err := scanIntPairs(s.Store.Query(ctx, sqlf.Sprintf(dirtyRepositoriesQuery)))
+	if err != nil {
+		return nil, err
+	}
+	traceLog(log.Int("numRepositories", len(repositories)))
+
+	return repositories, nil
 }
 
 const dirtyRepositoriesQuery = `
@@ -137,7 +144,9 @@ SELECT repository_id, dirty_token FROM lsif_dirty_repositories WHERE dirty_token
 // CommitGraphMetadata returns whether or not the commit graph for the given repository is stale, along with the date of
 // the most recent commit graph refresh for the given repository.
 func (s *Store) CommitGraphMetadata(ctx context.Context, repositoryID int) (stale bool, updatedAt *time.Time, err error) {
-	ctx, endObservation := s.operations.commitGraphMetadata.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	ctx, endObservation := s.operations.commitGraphMetadata.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+	}})
 	defer endObservation(1, observation.Args{})
 
 	updateToken, dirtyToken, updatedAt, exists, err := scanCommitGraphMetadata(s.Store.Query(ctx, sqlf.Sprintf(commitGraphQuery, repositoryID)))

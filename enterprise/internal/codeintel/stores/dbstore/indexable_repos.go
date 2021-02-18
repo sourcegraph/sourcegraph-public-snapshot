@@ -3,7 +3,6 @@ package dbstore
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"strconv"
 	"time"
 
@@ -71,12 +70,12 @@ func scanIndexableRepositories(rows *sql.Rows, queryErr error) (_ []IndexableRep
 
 // IndexableRepositories returns the metadata of all indexable repositories.
 func (s *Store) IndexableRepositories(ctx context.Context, opts IndexableRepositoryQueryOptions) (_ []IndexableRepository, err error) {
-	ctx, endObservation := s.operations.indexableRepositories.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, traceLog, endObservation := s.operations.indexableRepositories.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("limit", opts.Limit),
 		log.Int("minimumSearchCount", opts.MinimumSearchCount),
 		log.Float64("minimumSearchRatio", opts.MinimumSearchRatio),
 		log.Int("minimumPreciseCount", opts.MinimumPreciseCount),
-		log.String("minimumTimeSinceLastEnqueue", fmt.Sprintf("%s", opts.MinimumTimeSinceLastEnqueue)),
+		log.String("minimumTimeSinceLastEnqueue", opts.MinimumTimeSinceLastEnqueue.String()),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -118,7 +117,13 @@ func (s *Store) IndexableRepositories(ctx context.Context, opts IndexableReposit
 		conds = append(conds, sqlf.Sprintf("true"))
 	}
 
-	return scanIndexableRepositories(s.Store.Query(ctx, sqlf.Sprintf(indexableRepositoriesQuery, sqlf.Join(conds, " AND "), opts.Limit)))
+	repositories, err := scanIndexableRepositories(s.Store.Query(ctx, sqlf.Sprintf(indexableRepositoriesQuery, sqlf.Join(conds, " AND "), opts.Limit)))
+	if err != nil {
+		return nil, err
+	}
+	traceLog(log.Int("numRepositories", len(repositories)))
+
+	return repositories, nil
 }
 
 const indexableRepositoriesQuery = `
@@ -182,8 +187,9 @@ UPDATE lsif_indexable_repositories SET %s, last_updated_at = %s WHERE repository
 // ResetIndexableRepositories zeroes the event counts for indexable repositories that have not been updated
 // since lastUpdatedBefore.
 func (s *Store) ResetIndexableRepositories(ctx context.Context, lastUpdatedBefore time.Time) (err error) {
-	// TODO - should be a duration ago instead
-	ctx, endObservation := s.operations.resetIndexableRepositories.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	ctx, endObservation := s.operations.resetIndexableRepositories.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("lastUpdatedBefore", lastUpdatedBefore.Format(time.RFC3339)), // TODO - should be a duration
+	}})
 	defer endObservation(1, observation.Args{})
 
 	return s.Store.Exec(ctx, sqlf.Sprintf(resetIndexableRepositoriesQuery, lastUpdatedBefore))
