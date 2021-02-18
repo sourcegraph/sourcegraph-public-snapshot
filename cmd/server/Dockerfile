@@ -8,11 +8,10 @@ FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd2
 
 # hadolint ignore=DL3018
 RUN apk add --no-cache \
-	bash \
-	curl
+	bash
 
 # hadolint ignore=DL3003
-RUN curl -sSL -O http://cdist2.perforce.com/perforce/r20.2/bin.linux26x86_64/p4 && \
+RUN wget http://cdist2.perforce.com/perforce/r20.2/bin.linux26x86_64/p4 && \
     mv p4 /usr/local/bin/p4 && \
     chmod +x /usr/local/bin/p4
 
@@ -102,7 +101,8 @@ COPY . /
 # hadolint ignore=DL3022
 COPY --from=p4cli /usr/local/bin/p4 /usr/local/bin/p4
 
-# Add libraries required by p4
+# This is a trick to include libraries required by p4,
+# please refer to https://blog.tilander.org/docker-perforce/
 ADD lib/lib-x64.tgz /
 
 # hadolint ignore=DL3022
