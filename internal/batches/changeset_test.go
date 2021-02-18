@@ -504,13 +504,16 @@ func TestChangesetMetadata(t *testing.T) {
 	}
 
 	githubPR := &github.PullRequest{
-		ID:           "FOOBARID",
-		Title:        "Fix a bunch of bugs",
-		Body:         "This fixes a bunch of bugs",
-		URL:          "https://github.com/sourcegraph/sourcegraph/pull/12345",
-		Number:       12345,
-		State:        "MERGED",
-		Author:       githubActor,
+		ID:     "FOOBARID",
+		Title:  "Fix a bunch of bugs",
+		Body:   "This fixes a bunch of bugs",
+		URL:    "https://github.com/sourcegraph/sourcegraph/pull/12345",
+		Number: 12345,
+		State:  "MERGED",
+		Author: github.Author{
+			Actor: githubActor,
+			Email: "alice@example.com",
+		},
 		Participants: []github.Actor{githubActor},
 		CreatedAt:    now,
 		UpdatedAt:    now,
@@ -551,5 +554,13 @@ func TestChangesetMetadata(t *testing.T) {
 
 	if want, have := githubPR.URL, url; want != have {
 		t.Errorf("changeset url wrong. want=%q, have=%q", want, have)
+	}
+
+	email, err := changeset.AuthorEmail()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want, have := githubPR.Author.Email, email; want != have {
+		t.Errorf("author e-mail wrong. want=%q, have=%q", want, have)
 	}
 }

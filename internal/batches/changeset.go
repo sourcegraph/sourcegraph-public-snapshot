@@ -369,13 +369,12 @@ func (c *Changeset) AuthorName() (string, error) {
 func (c *Changeset) AuthorEmail() (string, error) {
 	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
-		// For GitHub we can't get the email of the actor without
-		// expanding the token scope by `user:email`. Since the email
-		// is only a nice-to-have for mapping the GitHub user against
-		// a Sourcegraph user, we wait until there is a bigger reason
-		// to have users reconfigure token scopes. Once we ask users for
-		// that scope as well, we should return it here.
-		return "", nil
+		// GitHub users who did not grant the user:email scope (which we didn't
+		// ask for before Sourcegraph 3.25) will be unable to get the author
+		// e-mail, and it will therefore be an empty string. Since the email is
+		// only a nice-to-have for mapping the GitHub user against a Sourcegraph
+		// user, this is OK.
+		return m.Author.Email, nil
 	case *bitbucketserver.PullRequest:
 		if m.Author.User == nil {
 			return "", nil
