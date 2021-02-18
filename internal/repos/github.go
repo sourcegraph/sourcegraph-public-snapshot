@@ -303,6 +303,21 @@ func (s GithubSource) UndraftChangeset(ctx context.Context, c *Changeset) error 
 	return c.Changeset.SetMetadata(pr)
 }
 
+// RedraftChangeset will update the Changeset on the source to be in draft mode again.
+func (s GithubSource) RedraftChangeset(ctx context.Context, c *Changeset) error {
+	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
+	if !ok {
+		return errors.New("Changeset is not a GitHub pull request")
+	}
+
+	err := s.v4Client.ConvertPullRequestToDraft(ctx, pr)
+	if err != nil {
+		return err
+	}
+
+	return c.Changeset.SetMetadata(pr)
+}
+
 // LoadChangeset loads the latest state of the given Changeset from the codehost.
 func (s GithubSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 	repo := cs.Repo.Metadata.(*github.Repository)

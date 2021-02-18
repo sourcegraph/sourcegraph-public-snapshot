@@ -671,6 +671,12 @@ func (s *GitLabSource) UndraftChangeset(ctx context.Context, c *Changeset) error
 	return s.UpdateChangeset(ctx, c)
 }
 
+// RedraftChangeset marks the changeset as work in progress again.
+func (s *GitLabSource) RedraftChangeset(ctx context.Context, c *Changeset) error {
+	c.Title = gitlab.SetWIP(c.Title)
+	return s.UpdateChangeset(ctx, c)
+}
+
 func (s *GitLabSource) AffiliatedRepositories(ctx context.Context) ([]types.CodeHostRepository, error) {
 	queryURL, err := projectQueryToURL("projects?membership=true&archived=no", 40) // first page URL
 	if err != nil {

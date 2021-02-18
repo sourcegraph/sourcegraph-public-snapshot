@@ -946,6 +946,7 @@ enum ChangesetSpecOperation {
     Move the existing changeset out of being a draft.
     """
     UNDRAFT
+    REDRAFT
     """
     Publish a changeset to the codehost.
     """

@@ -130,6 +130,9 @@ func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[st
 	// Enable Checks API
 	// https://developer.github.com/v4/previews/#checks
 	req.Header.Add("Accept", "application/vnd.github.antiope-preview+json")
+
+	req.Header.Add("GraphQL-Features", "convert_to_draft_api")
+
 	var respBody struct {
 		Data   json.RawMessage `json:"data"`
 		Errors graphqlErrors   `json:"errors"`

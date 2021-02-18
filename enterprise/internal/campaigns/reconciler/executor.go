@@ -113,6 +113,9 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 		case campaigns.ReconcilerOperationUndraft:
 			err = e.undraftChangeset(ctx)
 
+		case campaigns.ReconcilerOperationRedraft:
+			err = e.redraftChangeset(ctx)
+
 		case campaigns.ReconcilerOperationClose:
 			err = e.closeChangeset(ctx)
 
@@ -409,6 +412,28 @@ func (e *executor) undraftChangeset(ctx context.Context) (err error) {
 
 	if err := draftCcs.UndraftChangeset(ctx, cs); err != nil {
 		return errors.Wrap(err, "undrafting changeset")
+	}
+	return nil
+}
+
+// redraftChangeset marks the given changeset on its code host as not ready for review.
+func (e *executor) redraftChangeset(ctx context.Context) (err error) {
+	draftCcs, ok := e.ccs.(repos.DraftChangesetSource)
+	if !ok {
+		return errors.New("changeset operation is redraft, but changeset source doesn't implement DraftChangesetSource")
+	}
+
+	cs := &repos.Changeset{
+		Title:     e.spec.Spec.Title,
+		Body:      e.spec.Spec.Body,
+		BaseRef:   e.spec.Spec.BaseRef,
+		HeadRef:   e.spec.Spec.HeadRef,
+		Repo:      e.repo,
+		Changeset: e.ch,
+	}
+
+	if err := draftCcs.RedraftChangeset(ctx, cs); err != nil {
+		return errors.Wrap(err, "redrafting changeset")
 	}
 	return nil
 }

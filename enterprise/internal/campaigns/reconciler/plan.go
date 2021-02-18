@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
 var operationPrecedence = map[campaigns.ReconcilerOperation]int{
@@ -17,6 +18,7 @@ var operationPrecedence = map[campaigns.ReconcilerOperation]int{
 	campaigns.ReconcilerOperationClose:        1,
 	campaigns.ReconcilerOperationReopen:       2,
 	campaigns.ReconcilerOperationUndraft:      3,
+	campaigns.ReconcilerOperationRedraft:      3,
 	campaigns.ReconcilerOperationUpdate:       4,
 	campaigns.ReconcilerOperationSleep:        5,
 	campaigns.ReconcilerOperationSync:         6,
@@ -183,6 +185,27 @@ func DeterminePlan(previousSpec, currentSpec *campaigns.ChangesetSpec, ch *campa
 		if delta.Undraft && campaigns.ExternalServiceSupports(ch.ExternalServiceType, campaigns.CodehostCapabilityDraftChangesets) {
 			pl.AddOp(campaigns.ReconcilerOperationUndraft)
 		}
+		if delta.Redraft && campaigns.ExternalServiceSupports(ch.ExternalServiceType, campaigns.CodehostCapabilityDraftChangesets) {
+			pl.AddOp(campaigns.ReconcilerOperationRedraft)
+		}
+		if delta.Close {
+			pl.AddOp(campaigns.ReconcilerOperationClose)
+		}
+		if delta.Reopen {
+			pl.AddOp(campaigns.ReconcilerOperationReopen)
+			// Todo: this might not always be needed, depending on the status BEFORE the most recent close.
+			if pr, ok := ch.Metadata.(*github.PullRequest); ok {
+				if currentSpec.Spec.Published.Draft() {
+					if !pr.IsDraft {
+						pl.AddOp(campaigns.ReconcilerOperationRedraft)
+					}
+				} else {
+					if pr.IsDraft {
+						pl.AddOp(campaigns.ReconcilerOperationUndraft)
+					}
+				}
+			}
+		}
 
 		if delta.AttributesChanged() {
 			if delta.NeedCommitUpdate() {
@@ -260,6 +283,12 @@ func compareChangesetSpecs(previous, current *campaigns.ChangesetSpec) (*Changes
 	// We currently ignore going from "true" to "draft".
 	if previous.Spec.Published.Draft() && current.Spec.Published.True() {
 		delta.Undraft = true
+	} else if previous.Spec.Published.True() && current.Spec.Published.Draft() {
+		delta.Redraft = true
+	} else if (previous.Spec.Published.True() || previous.Spec.Published.Draft()) && current.Spec.Published.False() {
+		delta.Close = true
+	} else if previous.Spec.Published.False() && !current.Spec.Published.False() {
+		delta.Reopen = true
 	}
 
 	// Diff
@@ -321,6 +350,9 @@ type ChangesetSpecDelta struct {
 	TitleChanged         bool
 	BodyChanged          bool
 	Undraft              bool
+	Redraft              bool
+	Close                bool
+	Reopen               bool
 	BaseRefChanged       bool
 	DiffChanged          bool
 	CommitMessageChanged bool

@@ -7,6 +7,7 @@ const (
 	ReconcilerOperationPush         ReconcilerOperation = "PUSH"
 	ReconcilerOperationUpdate       ReconcilerOperation = "UPDATE"
 	ReconcilerOperationUndraft      ReconcilerOperation = "UNDRAFT"
+	ReconcilerOperationRedraft      ReconcilerOperation = "REDRAFT"
 	ReconcilerOperationPublish      ReconcilerOperation = "PUBLISH"
 	ReconcilerOperationPublishDraft ReconcilerOperation = "PUBLISH_DRAFT"
 	ReconcilerOperationSync         ReconcilerOperation = "SYNC"

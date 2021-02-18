@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -112,6 +113,22 @@ func (s *FakeChangesetSource) UndraftChangeset(ctx context.Context, c *repos.Cha
 	}
 
 	s.UndraftedChangesets = append(s.UndraftedChangesets, c)
+
+	return c.SetMetadata(s.FakeMetadata)
+}
+
+func (s *FakeChangesetSource) RedraftChangeset(ctx context.Context, c *repos.Changeset) error {
+	// s.UndraftedChangesetsCalled = true
+
+	// if s.Err != nil {
+	// 	return s.Err
+	// }
+
+	// if c.Repo == nil {
+	// 	return NoReposErr
+	// }
+
+	// s.UndraftedChangesets = append(s.UndraftedChangesets, c)
 
 	return c.SetMetadata(s.FakeMetadata)
 }
