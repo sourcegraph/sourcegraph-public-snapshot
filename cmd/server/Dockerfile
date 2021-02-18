@@ -99,7 +99,7 @@ COPY --from=p4cli /usr/local/bin/p4 /usr/local/bin/p4
 
 # This is a trick to include libraries required by p4,
 # please refer to https://blog.tilander.org/docker-perforce/
-ADD ../../lib/lib-x64.tgz /
+ADD https://github.com/jtilander/p4d/raw/master/lib/lib-x64.tgz /
 
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/grafana:server /sg_config_grafana/provisioning/dashboards /sg_config_grafana/provisioning/dashboards

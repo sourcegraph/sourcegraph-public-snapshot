@@ -33,7 +33,7 @@ COPY --from=p4cli /usr/local/bin/p4 /usr/local/bin/p4
 
 # This is a trick to include libraries required by p4,
 # please refer to https://blog.tilander.org/docker-perforce/
-ADD ../../lib/lib-x64.tgz /
+ADD https://github.com/jtilander/p4d/raw/master/lib/lib-x64.tgz /
 
 RUN mkdir -p /data/repos && chown -R sourcegraph:sourcegraph /data/repos
 USER sourcegraph
