@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
@@ -37,7 +36,7 @@ SELECT path FROM lsif_data_documents WHERE dump_id = %s AND path = %s LIMIT 1
 
 // Ranges returns definition, reference, and hover data for each range within the given span of lines.
 func (s *Store) Ranges(ctx context.Context, bundleID int, path string, startLine, endLine int) (_ []CodeIntelligenceRange, err error) {
-	ctx, endObservation := s.operations.ranges.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, traceLog, endObservation := s.operations.ranges.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("path", path),
 		log.Int("startLine", startLine),
@@ -49,6 +48,7 @@ func (s *Store) Ranges(ctx context.Context, bundleID int, path string, startLine
 	if err != nil || !exists {
 		return nil, err
 	}
+	traceLog(log.Int("numRanges", len(documentData.Document.Ranges)))
 
 	ranges := map[ID]RangeData{}
 	for id, r := range documentData.Document.Ranges {
@@ -56,6 +56,7 @@ func (s *Store) Ranges(ctx context.Context, bundleID int, path string, startLine
 			ranges[id] = r
 		}
 	}
+	traceLog(log.Int("numIntersectingRanges", len(ranges)))
 
 	resultIDMap := make(map[ID]struct{}, 2*len(ranges))
 	for _, r := range ranges {
@@ -77,7 +78,7 @@ func (s *Store) Ranges(ctx context.Context, bundleID int, path string, startLine
 		return nil, err
 	}
 
-	var codeintelRanges []CodeIntelligenceRange
+	codeintelRanges := make([]CodeIntelligenceRange, 0, len(ranges))
 	for _, r := range ranges {
 		var hoverText string
 		if r.HoverResultID != "" {
@@ -119,7 +120,7 @@ SELECT dump_id, path, data FROM lsif_data_documents WHERE dump_id = %s AND path 
 
 // Definitions returns the set of locations defining the symbol at the given position.
 func (s *Store) Definitions(ctx context.Context, bundleID int, path string, line, character int) (_ []Location, err error) {
-	ctx, endObservation := s.operations.definitions.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, traceLog, endObservation := s.operations.definitions.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("path", path),
 		log.Int("line", line),
@@ -132,12 +133,21 @@ func (s *Store) Definitions(ctx context.Context, bundleID int, path string, line
 		return nil, err
 	}
 
+	traceLog(log.Int("numRanges", len(documentData.Document.Ranges)))
 	ranges := FindRanges(documentData.Document.Ranges, line, character)
+	traceLog(log.Int("numIntersectingRanges", len(ranges)))
+
 	orderedResultIDs := extractResultIDs(ranges, func(r RangeData) ID { return r.DefinitionResultID })
 	locationsMap, err := s.locations(ctx, bundleID, orderedResultIDs)
 	if err != nil {
 		return nil, err
 	}
+
+	totalCount := 0
+	for _, locations := range locationsMap {
+		totalCount += len(locations)
+	}
+	traceLog(log.Int("totalCount", totalCount))
 
 	for _, resultID := range orderedResultIDs {
 		if locations := locationsMap[resultID]; len(locations) > 0 {
@@ -150,7 +160,7 @@ func (s *Store) Definitions(ctx context.Context, bundleID int, path string, line
 
 // PagedReferences returns the set of locations referencing the symbol at the given position.
 func (s *Store) PagedReferences(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []Location, _ int, err error) {
-	ctx, endObservation := s.operations.pagedReferences.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, traceLog, endObservation := s.operations.pagedReferences.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("path", path),
 		log.Int("line", line),
@@ -163,7 +173,10 @@ func (s *Store) PagedReferences(ctx context.Context, bundleID int, path string, 
 		return nil, 0, err
 	}
 
+	traceLog(log.Int("numRanges", len(documentData.Document.Ranges)))
 	ranges := FindRanges(documentData.Document.Ranges, line, character)
+	traceLog(log.Int("numIntersectingRanges", len(ranges)))
+
 	orderedResultIDs := extractResultIDs(ranges, func(r RangeData) ID { return r.ReferenceResultID })
 	locationsMap, err := s.locations(ctx, bundleID, orderedResultIDs)
 	if err != nil {
@@ -174,6 +187,7 @@ func (s *Store) PagedReferences(ctx context.Context, bundleID int, path string, 
 	for _, locations := range locationsMap {
 		totalCount += len(locations)
 	}
+	traceLog(log.Int("totalCount", totalCount))
 
 	max := totalCount
 	if totalCount > limit {
@@ -201,7 +215,7 @@ outer:
 
 // Hover returns the hover text of the symbol at the given position.
 func (s *Store) Hover(ctx context.Context, bundleID int, path string, line, character int) (_ string, _ Range, _ bool, err error) {
-	ctx, endObservation := s.operations.hover.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, traceLog, endObservation := s.operations.hover.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("path", path),
 		log.Int("line", line),
@@ -214,7 +228,11 @@ func (s *Store) Hover(ctx context.Context, bundleID int, path string, line, char
 		return "", Range{}, false, err
 	}
 
-	for _, r := range FindRanges(documentData.Document.Ranges, line, character) {
+	traceLog(log.Int("numRanges", len(documentData.Document.Ranges)))
+	ranges := FindRanges(documentData.Document.Ranges, line, character)
+	traceLog(log.Int("numIntersectingRanges", len(ranges)))
+
+	for _, r := range ranges {
 		if text, ok := documentData.Document.HoverResults[r.HoverResultID]; ok {
 			return text, newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter), true, nil
 		}
@@ -226,7 +244,7 @@ func (s *Store) Hover(ctx context.Context, bundleID int, path string, line, char
 // Diagnostics returns the diagnostics for the documents that have the given path prefix. This method
 // also returns the size of the complete result set to aid in pagination.
 func (s *Store) Diagnostics(ctx context.Context, bundleID int, prefix string, limit, offset int) (_ []Diagnostic, _ int, err error) {
-	ctx, endObservation := s.operations.diagnostics.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, traceLog, endObservation := s.operations.diagnostics.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("prefix", prefix),
 		log.Int("limit", limit),
@@ -238,11 +256,13 @@ func (s *Store) Diagnostics(ctx context.Context, bundleID int, prefix string, li
 	if err != nil {
 		return nil, 0, err
 	}
+	traceLog(log.Int("numDocuments", len(documentData)))
 
 	totalCount := 0
 	for _, documentData := range documentData {
 		totalCount += len(documentData.Document.Diagnostics)
 	}
+	traceLog(log.Int("totalCount", totalCount))
 
 	diagnostics := make([]Diagnostic, 0, limit)
 	for _, documentData := range documentData {
@@ -272,7 +292,7 @@ SELECT dump_id, path, data FROM lsif_data_documents WHERE dump_id = %s AND path 
 // of monikers are attached to a single range. The order of the output slice is "outside-in", so that
 // the range attached to earlier monikers enclose the range attached to later monikers.
 func (s *Store) MonikersByPosition(ctx context.Context, bundleID int, path string, line, character int) (_ [][]MonikerData, err error) {
-	ctx, endObservation := s.operations.monikersByPosition.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, traceLog, endObservation := s.operations.monikersByPosition.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("path", path),
 		log.Int("line", line),
@@ -285,17 +305,23 @@ func (s *Store) MonikersByPosition(ctx context.Context, bundleID int, path strin
 		return nil, err
 	}
 
+	traceLog(log.Int("numRanges", len(documentData.Document.Ranges)))
+	ranges := FindRanges(documentData.Document.Ranges, line, character)
+	traceLog(log.Int("numIntersectingRanges", len(ranges)))
+
 	var monikerData [][]MonikerData
-	for _, r := range FindRanges(documentData.Document.Ranges, line, character) {
+	for _, r := range ranges {
 		var batch []MonikerData
 		for _, monikerID := range r.MonikerIDs {
 			if moniker, exists := documentData.Document.Monikers[monikerID]; exists {
 				batch = append(batch, moniker)
 			}
 		}
+		traceLog(log.Int("numMonikersForRange", len(batch)))
 
 		monikerData = append(monikerData, batch)
 	}
+	traceLog(log.Int("numMonikers", len(monikerData)))
 
 	return monikerData, nil
 }
@@ -304,19 +330,12 @@ func (s *Store) MonikersByPosition(ctx context.Context, bundleID int, path strin
 // one of the given monikers. This method also returns the size of the complete result set to aid in
 // pagination.
 func (s *Store) BulkMonikerResults(ctx context.Context, tableName string, uploadIDs []int, monikers []MonikerData, limit, offset int) (_ []Location, _ int, err error) {
-	strUploadIDs := make([]string, 0, len(uploadIDs))
-	for _, id := range uploadIDs {
-		strUploadIDs = append(strUploadIDs, strconv.Itoa(id))
-	}
-	strMonikers := make([]string, 0, len(monikers))
-	for _, arg := range monikers {
-		strMonikers = append(strMonikers, fmt.Sprintf("%s:%s", arg.Scheme, arg.Identifier))
-	}
-
-	ctx, endObservation := s.operations.bulkMonikerResults.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, traceLog, endObservation := s.operations.bulkMonikerResults.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("tableName", tableName),
-		log.String("uploadIDs", strings.Join(strUploadIDs, ", ")),
-		log.String("monikers", strings.Join(strMonikers, ", ")),
+		log.Int("numUploadIDs", len(uploadIDs)),
+		log.String("uploadIDs", intsToString(uploadIDs)),
+		log.Int("numMonikers", len(monikers)),
+		log.String("monikers", monikersToString(monikers)),
 		log.Int("limit", limit),
 		log.Int("offset", offset),
 	}})
@@ -350,6 +369,10 @@ func (s *Store) BulkMonikerResults(ctx context.Context, tableName string, upload
 	for _, monikerLocations := range locationData {
 		totalCount += len(monikerLocations.Locations)
 	}
+	traceLog(
+		log.Int("numDumps", len(locationData)),
+		log.Int("totalCount", totalCount),
+	)
 
 	max := totalCount
 	if totalCount > limit {
@@ -376,6 +399,7 @@ outer:
 			}
 		}
 	}
+	traceLog(log.Int("numLocations", len(locations)))
 
 	return locations, totalCount, nil
 }
@@ -411,7 +435,14 @@ SELECT dump_id, path, data FROM lsif_data_documents WHERE dump_id = %s AND path 
 var ErrNoMetadata = errors.New("no rows in meta table")
 
 // locations returns the locations for the given definition or reference identifiers.
-func (s *Store) locations(ctx context.Context, bundleID int, ids []ID) (map[ID][]Location, error) {
+func (s *Store) locations(ctx context.Context, bundleID int, ids []ID) (_ map[ID][]Location, err error) {
+	ctx, traceLog, endObservation := s.operations.locations.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("bundleID", bundleID),
+		log.Int("numIDs", len(ids)),
+		log.String("ids", idsToString(ids)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	if len(ids) == 0 {
 		return nil, nil
 	}
@@ -428,13 +459,21 @@ func (s *Store) locations(ctx context.Context, bundleID int, ids []ID) (map[ID][
 	for _, id := range ids {
 		resultChunkIndexMap[HashKey(id, numResultChunks)] = struct{}{}
 	}
-
-	indexes := make([]*sqlf.Query, 0, len(resultChunkIndexMap))
+	indexes := make([]int, 0, len(resultChunkIndexMap))
 	for index := range resultChunkIndexMap {
-		indexes = append(indexes, sqlf.Sprintf("%s", index))
+		indexes = append(indexes, index)
+	}
+	traceLog(
+		log.Int("numIndexes", len(indexes)),
+		log.String("indexes", intsToString(indexes)),
+	)
+
+	indexQueries := make([]*sqlf.Query, 0, len(indexes))
+	for _, index := range indexes {
+		indexQueries = append(indexQueries, sqlf.Sprintf("%s", index))
 	}
 
-	resultChunkData, err := s.scanQualifiedResultChunkData(s.Store.Query(ctx, sqlf.Sprintf(locationsResultChunkQuery, bundleID, sqlf.Join(indexes, ","))))
+	resultChunkData, err := s.scanQualifiedResultChunkData(s.Store.Query(ctx, sqlf.Sprintf(locationsResultChunkQuery, bundleID, sqlf.Join(indexQueries, ","))))
 	if err != nil {
 		return nil, err
 	}
@@ -466,18 +505,26 @@ func (s *Store) locations(ctx context.Context, bundleID int, ids []ID) (map[ID][
 		locationsByResultID[id] = resultData
 	}
 
-	var paths []*sqlf.Query
+	var paths []string
 	for _, locations := range locationsByResultID {
 		for path := range locations {
-			paths = append(paths, sqlf.Sprintf("%s", path))
+			paths = append(paths, path)
 		}
 	}
+	traceLog(
+		log.Int("numPaths", len(paths)),
+		log.String("paths", strings.Join(paths, ", ")),
+	)
 
-	if len(paths) == 0 {
+	pathQueries := make([]*sqlf.Query, 0, len(paths))
+	for _, path := range paths {
+		pathQueries = append(pathQueries, sqlf.Sprintf("%s", path))
+	}
+	if len(pathQueries) == 0 {
 		return nil, nil
 	}
 
-	documentData, err := s.scanDocumentData(s.Store.Query(ctx, sqlf.Sprintf(locationsDocumentQuery, bundleID, sqlf.Join(paths, ","))))
+	documentData, err := s.scanDocumentData(s.Store.Query(ctx, sqlf.Sprintf(locationsDocumentQuery, bundleID, sqlf.Join(pathQueries, ","))))
 	if err != nil {
 		return nil, err
 	}
@@ -487,6 +534,7 @@ func (s *Store) locations(ctx context.Context, bundleID int, ids []ID) (map[ID][
 		documentsByPath[documentData.Path] = documentData.Document
 	}
 
+	totalCount := 0
 	locationsByID := map[ID][]Location{}
 	for _, id := range ids {
 		var locations []Location
@@ -514,7 +562,10 @@ func (s *Store) locations(ctx context.Context, bundleID int, ids []ID) (map[ID][
 		})
 
 		locationsByID[id] = locations
+		totalCount += len(locations)
+		traceLog(log.Int("numLocationsForID", len(locations)))
 	}
+	traceLog(log.Int("numLocations", totalCount))
 
 	return locationsByID, nil
 }
@@ -573,4 +624,22 @@ func extractResultIDs(ranges []RangeData, fn func(r RangeData) ID) []ID {
 	}
 
 	return resultIDs
+}
+
+func monikersToString(vs []MonikerData) string {
+	strs := make([]string, 0, len(vs))
+	for _, v := range vs {
+		strs = append(strs, fmt.Sprintf("%s:%s", v.Scheme, v.Identifier))
+	}
+
+	return strings.Join(strs, ", ")
+}
+
+func idsToString(vs []ID) string {
+	strs := make([]string, 0, len(vs))
+	for _, v := range vs {
+		strs = append(strs, string(v))
+	}
+
+	return strings.Join(strs, ", ")
 }
