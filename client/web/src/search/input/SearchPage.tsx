@@ -24,7 +24,6 @@ import { VersionContextProps } from '../../../../shared/src/search/util'
 import { VersionContext } from '../../schema/site.schema'
 import { ViewGrid } from '../../repo/tree/ViewGrid'
 import { useObservable } from '../../../../shared/src/util/useObservable'
-import { getViewsForContainer } from '../../../../shared/src/api/client/services/viewService'
 import { isErrorLike } from '../../../../shared/src/util/errors'
 import { ContributableViewContainer } from '../../../../shared/src/api/protocol'
 import { EMPTY } from 'rxjs'
@@ -38,6 +37,7 @@ import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryServic
 import { HomePanels } from '../panels/HomePanels'
 import { SearchPageFooter } from './SearchPageFooter'
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
+import { getCombinedViews } from '../../insights/backend'
 
 export interface SearchPageProps
     extends SettingsCascadeProps<Settings>,
@@ -95,7 +95,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
         useMemo(
             () =>
                 codeInsightsEnabled
-                    ? getViewsForContainer(
+                    ? getCombinedViews(
                           ContributableViewContainer.Homepage,
                           {},
                           props.extensionsController.services.view

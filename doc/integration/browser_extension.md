@@ -11,6 +11,12 @@ Enterprise, GitLab, Phabricator, and Bitbucket Server.
 </p>
 
 <p>
+  <a target="_blank" href="https://apps.apple.com/us/app/sourcegraph-for-safari/id1543262193" style="display:flex;align-items:center">
+  <img src="img/safari.svg" width="24" height="24" style="margin-right:5px" /> <strong>Install Sourcegraph for Safari</strong>
+  </a>
+</p>
+
+<p>
   <a target="_blank" href="https://storage.googleapis.com/sourcegraph-for-firefox/latest.xpi" style="display:flex;align-items:center">
   <img src="img/firefox.svg" width="24" height="24" style="margin-right:5px" /> <strong>Install Sourcegraph for Firefox</strong>
   </a>
@@ -54,7 +60,7 @@ When you hover your mouse over code in files, diffs, pull requests, etc., the So
 
 The Sourcegraph extension adds a search engine shortcut to your web browser that performs a search on your Sourcegraph instance. After you've installed it (see above), use the search shortcut it provides to perform a search:
 
-1. Place cursor in the URL location bar, then type <kbd>src</kbd> <kbd>Space</kbd>.
+1. Place cursor in the URL location bar, then type <kbd>src</kbd> <kbd>Tab</kbd>.
 1. Start typing your search query.
 1. Select an instant search suggestion or press <kbd>Enter</kbd> to see all results.
 

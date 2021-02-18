@@ -16,9 +16,7 @@ import (
 func TestGitTreeEntry_RawZipArchiveURL(t *testing.T) {
 	got := (&GitTreeEntryResolver{
 		commit: &GitCommitResolver{
-			repoResolver: &RepositoryResolver{
-				innerRepo: &types.Repo{Name: "my/repo"},
-			},
+			repoResolver: NewRepositoryResolver(&types.Repo{Name: "my/repo"}),
 		},
 		stat: CreateFileInfo("a/b", true),
 	}).RawZipArchiveURL()
@@ -51,9 +49,7 @@ func TestGitTreeEntry_Content(t *testing.T) {
 
 	gitTree := &GitTreeEntryResolver{
 		commit: &GitCommitResolver{
-			repoResolver: &RepositoryResolver{
-				innerRepo: &types.Repo{Name: "my/repo"},
-			},
+			repoResolver: NewRepositoryResolver(&types.Repo{Name: "my/repo"}),
 		},
 		stat: CreateFileInfo(wantPath, true),
 	}

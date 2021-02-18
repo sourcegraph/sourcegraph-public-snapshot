@@ -49,7 +49,7 @@ func (r *repositoryContributorConnectionResolver) compute(ctx context.Context) (
 		if r.args.After != nil {
 			opt.After = *r.args.After
 		}
-		r.results, r.err = git.ShortLog(ctx, r.repo.innerRepo.Name, opt)
+		r.results, r.err = git.ShortLog(ctx, r.repo.name, opt)
 	})
 	return r.results, r.err
 }

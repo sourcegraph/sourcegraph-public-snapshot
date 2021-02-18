@@ -1,5 +1,5 @@
 import { Observable, BehaviorSubject, of, combineLatest, concat, Subscription } from 'rxjs'
-import { View as ExtensionView, DirectoryViewContext } from 'sourcegraph'
+import type { View as ExtensionView, DirectoryViewContext } from 'sourcegraph'
 import { switchMap, map, distinctUntilChanged, startWith, delay, catchError } from 'rxjs/operators'
 import { Evaluated, Contributions, ContributableViewContainer } from '../../protocol'
 import { isEqual } from 'lodash'

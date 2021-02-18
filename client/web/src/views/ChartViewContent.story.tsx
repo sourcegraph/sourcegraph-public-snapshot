@@ -11,6 +11,7 @@ const commonProps = {
     history,
     animate: !isChromatic(),
     location: history.location,
+    viewID: '1',
 }
 
 const { add } = storiesOf('web/ChartViewContent', module).addDecorator(story => (

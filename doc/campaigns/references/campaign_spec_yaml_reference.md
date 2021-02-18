@@ -710,6 +710,7 @@ workspaces:
     in: github.com/sourcegraph/go-*
   - rootAtLocationOf: package.json
     in: github.com/sourcegraph/*-js
+    onlyFetchWorkspace: true
   - rootAtLocationOf: Cargo.toml
     in: github.com/rusty-org/*
 
@@ -796,4 +797,57 @@ Match all repository names that begin with `gitlab.com/my-javascript-org/` and e
 workspaces:
   - rootAtLocationOf: package.json
     in: gitlab.com/my-javascript-org/*-plugin
+```
+
+## [`workspaces.onlyFetchWorkspace`](#workspaces-onlyfetchworkspace)
+
+When set to `true`, only the folder containing the workspace is downloaded to execute the `steps`.
+
+This field is not required and when not set the default is `false`.
+
+Additional files — `.gitignore` and `.gitattributes` as of now — are downloaded from the location of the workspace up to the root of the repository.
+
+For example, with the following file layout in a repository
+
+```
+.
+├── a
+│   ├── b
+│   │   ├── [... other files in b ...]
+│   │   ├── package.json
+│   │   └── .gitignore
+│   │
+│   ├── [... other files in a ...]
+│   ├── .gitattributes
+│   └── .gitignore
+│
+├── [... other files in root ... ]
+└── .gitignore
+```
+
+and this workspace configuration
+
+```yaml
+workspaces:
+  - rootAtLocationOf: package.json
+    in: github.com/our-our/our-large-monorepo
+    fetchOnlyWorkspace: true
+```
+
+then
+
+- the `steps` will be executed in `b`
+- the complete contents of `b` will be downloaded and are available to the steps
+- the `.gitattributes` and `.gitignore` files in `a` will be downloaded and put in `a`, **but only those**
+- the `.gitignore` files in the root will be downloaded and put in the root folder, **but only that file**
+
+### Examples
+
+Only download the workspaces of specific JavaScript projects in a large monorepo:
+
+```yaml
+workspaces:
+  - rootAtLocationOf: package.json
+    in: github.com/our-our/our-large-monorepo
+    fetchOnlyWorkspace: true
 ```

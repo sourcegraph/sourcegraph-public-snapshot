@@ -37,13 +37,13 @@ type repoLister interface {
 
 func (r *repositoryTextSearchIndexResolver) resolve(ctx context.Context) (*zoekt.RepoListEntry, error) {
 	r.once.Do(func() {
-		repoList, err := r.client.List(ctx, zoektquery.NewRepoSet(string(r.repo.innerRepo.Name)))
+		repoList, err := r.client.List(ctx, zoektquery.NewRepoSet(r.repo.Name()))
 		if err != nil {
 			r.err = err
 			return
 		}
 		if len(repoList.Repos) > 1 {
-			r.err = fmt.Errorf("more than 1 indexed repo found for %q", r.repo.innerRepo.Name)
+			r.err = fmt.Errorf("more than 1 indexed repo found for %q", r.repo.Name())
 			return
 		}
 		if len(repoList.Repos) == 1 {
@@ -122,7 +122,7 @@ func (r *repositoryTextSearchIndexResolver) Refs(ctx context.Context) ([]*reposi
 	refByName := func(name string) *repositoryTextSearchIndexedRef {
 		possibleRefNames := []string{"refs/heads/" + name, "refs/tags/" + name}
 		for _, ref := range possibleRefNames {
-			if _, err := git.ResolveRevision(ctx, r.repo.innerRepo.Name, ref, git.ResolveRevisionOptions{NoEnsureRevision: true}); err == nil {
+			if _, err := git.ResolveRevision(ctx, r.repo.name, ref, git.ResolveRevisionOptions{NoEnsureRevision: true}); err == nil {
 				name = ref
 				break
 			}

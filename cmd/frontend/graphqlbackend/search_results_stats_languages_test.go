@@ -58,7 +58,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 	fileMatch := func(path string, lineNumbers ...int32) *FileMatchResolver {
 		var lines []*lineMatch
 		for _, n := range lineNumbers {
-			lines = append(lines, &lineMatch{JLineNumber: n})
+			lines = append(lines, &lineMatch{LineNumber: n})
 		}
 		return mkFileMatchResolver(FileMatch{
 			JPath:        path,
@@ -98,9 +98,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 		},
 		"1 entire repo": {
 			results: []SearchResultResolver{
-				&RepositoryResolver{
-					innerRepo: &types.Repo{Name: "r", CreatedAt: time.Now()},
-				},
+				NewRepositoryResolver(&types.Repo{Name: "r", CreatedAt: time.Now()}),
 			},
 			getFiles: []os.FileInfo{
 				fileInfo{path: "two.go"},

@@ -35,6 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -53,10 +54,10 @@ func (c *SearchResultsResolver) Repositories() []*RepositoryResolver {
 	repos := c.Repos
 	resolvers := make([]*RepositoryResolver, 0, len(repos))
 	for _, r := range repos {
-		resolvers = append(resolvers, &RepositoryResolver{innerRepo: r.ToRepo()})
+		resolvers = append(resolvers, NewRepositoryResolver(r.ToRepo()))
 	}
 	sort.Slice(resolvers, func(a, b int) bool {
-		return resolvers[a].innerRepo.ID < resolvers[b].innerRepo.ID
+		return resolvers[a].ID() < resolvers[b].ID()
 	})
 	return resolvers
 }
@@ -70,11 +71,11 @@ func (c *SearchResultsResolver) repositoryResolvers(mask search.RepoStatus) []*R
 	c.Status.Filter(mask, func(id api.RepoID) {
 		r := c.Repos[id]
 		if r != nil {
-			resolvers = append(resolvers, &RepositoryResolver{innerRepo: c.Repos[id].ToRepo()})
+			resolvers = append(resolvers, NewRepositoryResolver(c.Repos[id].ToRepo()))
 		}
 	})
 	sort.Slice(resolvers, func(a, b int) bool {
-		return resolvers[a].innerRepo.ID < resolvers[b].innerRepo.ID
+		return resolvers[a].ID() < resolvers[b].ID()
 	})
 	return resolvers
 }
@@ -843,12 +844,7 @@ func (r *searchResolver) evaluate(ctx context.Context, q query.Q) (*SearchResult
 		r.setQuery(scopeParameters)
 		return r.evaluateLeaf(ctx)
 	}
-	result, err := r.evaluatePatternExpression(ctx, scopeParameters, pattern)
-	if err != nil {
-		return nil, err
-	}
-	r.sortResults(ctx, result.SearchResults)
-	return result, nil
+	return r.evaluatePatternExpression(ctx, scopeParameters, pattern)
 }
 
 // invalidateRepoCache returns whether resolved repos should be invalidated when
@@ -899,6 +895,7 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 			return nil, err
 		}
 		if newResult != nil {
+			newResult.SearchResults = r.selectResults(newResult.SearchResults)
 			srr = union(srr, newResult)
 			if len(srr.SearchResults) > wantCount {
 				srr.SearchResults = srr.SearchResults[:wantCount]
@@ -1578,7 +1575,7 @@ func (r *searchResolver) isGlobalSearch() bool {
 		return false
 	}
 	querySearchContextSpec, _ := r.Query.StringValue(query.FieldContext)
-	if envvar.SourcegraphDotComMode() && searchcontexts.IsGlobalSearchContextSpec(querySearchContextSpec) {
+	if envvar.SourcegraphDotComMode() && !searchcontexts.IsGlobalSearchContextSpec(querySearchContextSpec) {
 		return false
 	}
 	return len(r.Query.Values(query.FieldRepo)) == 0 && len(r.Query.Values(query.FieldRepoGroup)) == 0 && len(r.Query.Values(query.FieldRepoHasFile)) == 0
@@ -1707,7 +1704,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		wg.Add(1)
 		goroutine.Go(func() {
 			defer wg.Done()
-			agg.doFilePathSearch(ctx, &argsIndexed)
+			_ = agg.doFilePathSearch(ctx, &argsIndexed)
 		})
 		// On sourcegraph.com and for unscoped queries, determineRepos returns the subset
 		// of indexed default searchrepos. No need to call searcher, because
@@ -1764,14 +1761,14 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				agg.doRepoSearch(ctx, &args, int32(limit))
+				_ = agg.doRepoSearch(ctx, &args, int32(limit))
 			})
 		case "symbol":
 			wg := waitGroup(len(resultTypes) == 1)
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				agg.doSymbolSearch(ctx, &args, limit)
+				_ = agg.doSymbolSearch(ctx, &args, limit)
 			})
 		case "file", "path":
 			if searchedFileContentsOrPaths || args.Mode == search.NoFilePath {
@@ -1783,21 +1780,21 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				agg.doFilePathSearch(ctx, &args)
+				_ = agg.doFilePathSearch(ctx, &args)
 			})
 		case "diff":
 			wg := waitGroup(len(resultTypes) == 1)
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				agg.doDiffSearch(ctx, &args)
+				_ = agg.doDiffSearch(ctx, &args)
 			})
 		case "commit":
 			wg := waitGroup(len(resultTypes) == 1)
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				agg.doCommitSearch(ctx, &args)
+				_ = agg.doCommitSearch(ctx, &args)
 			})
 		}
 	}
@@ -1896,7 +1893,7 @@ func compareSearchResults(left, right SearchResultResolver, exactFilePatterns ma
 	sortKeys := func(result SearchResultResolver) (string, string, *time.Time) {
 		switch r := result.(type) {
 		case *RepositoryResolver:
-			return string(r.Name()), "", nil
+			return r.Name(), "", nil
 		case *FileMatchResolver:
 			return string(r.Repo.Name), r.JPath, nil
 		case *CommitSearchResultResolver:
@@ -1922,6 +1919,35 @@ func compareSearchResults(left, right SearchResultResolver, exactFilePatterns ma
 		return compareFileLengths(afile, bfile, exactFilePatterns)
 	}
 	return arepo < brepo
+}
+
+func (r *searchResolver) selectResults(results []SearchResultResolver) []SearchResultResolver {
+	value, _ := r.Query.StringValue(query.FieldSelect)
+	if value == "" {
+		return results
+	}
+	sm, _ := filter.SelectPathFromString(value) // Invariant: select is validated.
+
+	dedup := NewDeduper()
+	for _, result := range results {
+		var current SearchResultResolver
+		switch v := result.(type) {
+		case *FileMatchResolver:
+			current = v.Select(sm)
+		case *RepositoryResolver:
+			current = v.Select(sm)
+		case *CommitSearchResultResolver:
+			current = v.Select(sm)
+		default:
+			current = result
+		}
+
+		if current == nil {
+			continue
+		}
+		dedup.Add(current)
+	}
+	return dedup.Results()
 }
 
 func (r *searchResolver) sortResults(ctx context.Context, results []SearchResultResolver) {

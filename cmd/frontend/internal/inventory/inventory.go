@@ -6,8 +6,8 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"log"
 	"os"
-	"path/filepath"
 
 	"github.com/go-enry/go-enry/v2"
 	"github.com/go-enry/go-enry/v2/data"
@@ -125,14 +125,10 @@ func countLines(r io.Reader, buf []byte) (lineCount int, byteCount int, err erro
 	return lineCount, byteCount, nil
 }
 
-// GetLanguageByFilename returns the guessed language for the named file (and safe == true if this
-// is very likely to be correct).
+// GetLanguageByFilename returns the guessed language for the named file (and
+// safe == true if this is very likely to be correct).
 func GetLanguageByFilename(name string) (language string, safe bool) {
-	language, safe = enry.GetLanguageByExtension(name)
-	if language == "GCC Machine Description" && filepath.Ext(name) == ".md" {
-		language = "Markdown" // override detection for .md
-	}
-	return language, safe
+	return enry.GetLanguageByExtension(name)
 }
 
 func init() {
@@ -142,4 +138,24 @@ func init() {
 	data.LanguagesByExtension[".tsx"] = []string{"TypeScript"}
 	data.ExtensionsByLanguage["JavaScript"] = append(data.ExtensionsByLanguage["JavaScript"], ".jsx")
 	data.LanguagesByExtension[".jsx"] = []string{"JavaScript"}
+
+	// Prefer more popular languages which share extensions
+	preferLanguage("Markdown", ".md") // instead of GCC Machine Description
+	preferLanguage("Rust", ".rs")     // instead of RenderScript
+}
+
+// preferLanguage updates LanguagesByExtension to have lang listed first for
+// ext.
+func preferLanguage(lang, ext string) {
+	langs := data.LanguagesByExtension[ext]
+	for i := range langs {
+		if langs[i] == lang {
+			// swap to front
+			for ; i > 0; i-- {
+				langs[i-1], langs[i] = langs[i], langs[i-1]
+			}
+			return
+		}
+	}
+	log.Fatalf("%q not in %q: %q", lang, ext, langs)
 }

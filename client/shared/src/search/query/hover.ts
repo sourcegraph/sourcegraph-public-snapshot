@@ -11,6 +11,8 @@ import {
     MetaSourcegraphRevision,
     MetaStructural,
     MetaStructuralKind,
+    MetaSelector,
+    MetaSelectorKind,
 } from './decoratedToken'
 import { resolveFilter } from './filters'
 
@@ -136,6 +138,21 @@ const toRevisionHover = (token: MetaRevision): string => {
     }
 }
 
+const toSelectorHover = (token: MetaSelector): string => {
+    switch (token.kind) {
+        case MetaSelectorKind.Repo:
+            return 'Select and display distinct repository paths from search results.'
+        case MetaSelectorKind.File:
+            return 'Select and display distinct file paths from search results.'
+        case MetaSelectorKind.Content:
+            return 'Select and display only results matching content inside files.'
+        case MetaSelectorKind.Commit:
+            return 'Select and display only commit data of the result. Must be used in conjunction with commit search, i.e., `type:commit`.'
+        case MetaSelectorKind.Symbol:
+            return 'Select and display only symbol data of the result. Must be used in conjunction with a symbol search, i.e., `type:symbol`.'
+    }
+}
+
 const toHover = (token: DecoratedToken): string => {
     switch (token.type) {
         case 'pattern': {
@@ -148,6 +165,8 @@ const toHover = (token: DecoratedToken): string => {
             return toRevisionHover(token)
         case 'metaRepoRevisionSeparator':
             return '**Search at revision**. Separates a repository pattern and the revisions to search, like commits or branches. The part before the `@` specifies the repositories to search, the part after the `@` specifies which revisions to search.'
+        case 'metaSelector':
+            return toSelectorHover(token)
         case 'metaStructural':
             return toStructuralHover(token)
     }
@@ -204,6 +223,7 @@ export const getHoverResult = (
             case 'pattern':
             case 'metaRevision':
             case 'metaRepoRevisionSeparator':
+            case 'metaSelector':
                 values.push(toHover(token))
                 range = toMonacoRange(token.range)
                 break

@@ -165,17 +165,17 @@ func TestAlertForDiffCommitSearchLimits(t *testing.T) {
 		{
 			name:                 "diff_search_warns_on_repos_greater_than_search_limit",
 			multiErr:             multierror.Append(&multierror.Error{}, &RepoLimitError{ResultType: "diff", Max: 50}),
-			wantAlertDescription: `Diff search can currently only handle searching over 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
+			wantAlertDescription: `Diff search can currently only handle searching across 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'.`,
 		},
 		{
 			name:                 "commit_search_warns_on_repos_greater_than_search_limit",
 			multiErr:             multierror.Append(&multierror.Error{}, &RepoLimitError{ResultType: "commit", Max: 50}),
-			wantAlertDescription: `Commit search can currently only handle searching over 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
+			wantAlertDescription: `Commit search can currently only handle searching across 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'.`,
 		},
 		{
 			name:                 "commit_search_warns_on_repos_greater_than_search_limit_with_time_filter",
 			multiErr:             multierror.Append(&multierror.Error{}, &TimeLimitError{ResultType: "commit", Max: 10000}),
-			wantAlertDescription: `Commit search can currently only handle searching over 10000 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
+			wantAlertDescription: `Commit search can currently only handle searching across 10000 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search.`,
 		},
 	}
 
@@ -310,6 +310,18 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 			},
 		},
 		{
+			name:          "this query is not basic, so return a default alert without suggestions",
+			cancelContext: false,
+			repoRevs:      1,
+			query:         "a or (b and c)",
+			wantAlert: &searchAlert{
+				prometheusType:  "over_repo_limit",
+				title:           "Too many matching repositories",
+				proposedQueries: nil,
+				description:     "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results.",
+			},
+		},
+		{
 			name:          "should return smart alert",
 			cancelContext: false,
 			repoRevs:      1,
@@ -337,7 +349,8 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 			}
 			sr := searchResolver{
 				SearchInputs: &SearchInputs{
-					Query: q,
+					OriginalQuery: test.query,
+					Query:         q,
 					UserSettings: &schema.Settings{
 						SearchGlobbing: &test.globbing,
 					}},

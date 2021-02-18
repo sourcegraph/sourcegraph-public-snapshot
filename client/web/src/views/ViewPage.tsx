@@ -8,7 +8,9 @@ import { getView } from '../../../shared/src/api/client/services/viewService'
 import { useObservable } from '../../../shared/src/util/useObservable'
 import { ViewContentProps, ViewContent } from './ViewContent'
 
-interface Props extends ExtensionsControllerProps<'services'>, Omit<ViewContentProps, 'viewContent'> {
+interface Props
+    extends ExtensionsControllerProps<'services'>,
+        Omit<ViewContentProps, 'viewContent' | 'containerClassName'> {
     viewID: string
     extraPath: string
 
@@ -68,7 +70,7 @@ export const ViewPage: React.FunctionComponent<Props> = ({
         <div>
             <PageTitle title={view.title || 'View'} />
             {view.title && <h1>{view.title}</h1>}
-            <ViewContent viewContent={view.content} location={location} {...props} />
+            <ViewContent viewID={viewID} viewContent={view.content} location={location} {...props} />
         </div>
     )
 }

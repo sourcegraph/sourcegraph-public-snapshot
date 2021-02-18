@@ -212,103 +212,25 @@ func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, c
 	// Determine which uploads are visible to which commits for this repository
 	graph := commitgraph.NewGraph(commitGraph, commitGraphView)
 
-	// Clear all old visibility data for this repository
-	for _, tableName := range []string{"lsif_nearest_uploads", "lsif_nearest_uploads_links", "lsif_uploads_visible_at_tip"} {
-		if err := tx.Store.Exec(ctx, sqlf.Sprintf(calculateVisibleUploadsDeleteQuery, sqlf.Sprintf(tableName), repositoryID)); err != nil {
-			return err
-		}
-	}
-
-	// Update the set of uploads that are visible from each commit for a given repository.
-	nearestUploadsInserter := batch.NewBatchInserter(
-		ctx,
-		tx.Handle().DB(),
-		"lsif_nearest_uploads",
-		"repository_id",
-		"commit_bytea",
-		"uploads",
-	)
-
-	// Update the commits not inserted into the table above by adding links to a unique
-	// ancestor and their relative distance in the graph. We use this as a cheap way to
-	// reconstruct the full data set, which is multiplicative in the size of the commit
-	// graph AND the number of unique roots.
-	nearestUploadsLinksInserter := batch.NewBatchInserter(
-		ctx,
-		tx.Handle().DB(),
-		"lsif_nearest_uploads_links",
-		"repository_id",
-		"commit_bytea",
-		"ancestor_commit_bytea",
-		"distance",
-	)
-
-	listSerializer := NewUploadMetaListSerializer()
-
-	var numNearestUploadsRecords int
-	var numNearestUploadsLinksRecords int
-
-	for v := range graph.Stream() {
-		if v.Uploads != nil {
-			numNearestUploadsRecords++
-
-			if err := nearestUploadsInserter.Insert(
-				ctx,
-				repositoryID,
-				dbutil.CommitBytea(v.Uploads.Commit),
-				listSerializer.Serialize(v.Uploads.Uploads),
-			); err != nil {
-				return err
-			}
-		}
-		if v.Links != nil {
-			numNearestUploadsLinksRecords++
-
-			if err := nearestUploadsLinksInserter.Insert(
-				ctx,
-				repositoryID,
-				dbutil.CommitBytea(v.Links.Commit),
-				dbutil.CommitBytea(v.Links.AncestorCommit),
-				v.Links.Distance,
-			); err != nil {
-				return err
-			}
-		}
-	}
-	if err := nearestUploadsInserter.Flush(ctx); err != nil {
+	// Write the graph into temporary tables in Postgres
+	if err := tx.writeVisibleUploads(ctx, graph, tipCommit); err != nil {
 		return err
 	}
-	if err := nearestUploadsLinksInserter.Flush(ctx); err != nil {
+
+	// Persist data to permenant table: t_lsif_nearest_uploads -> lsif_nearest_uploads
+	if err := tx.persistNearestUploads(ctx, repositoryID); err != nil {
 		return err
 	}
-	traceLog(
-		log.Int("numNearestUploadsRecords", numNearestUploadsRecords),
-		log.Int("numNearestUploadsLinksRecords", numNearestUploadsLinksRecords),
-	)
 
-	// Update which repositories are visible from the tip of the default branch. This
-	// flag is used to determine which bundles for a repository we open during a global
-	// find references query.
-	uploadsVisibleAtTipInserter := batch.NewBatchInserter(
-		ctx,
-		tx.Handle().DB(),
-		"lsif_uploads_visible_at_tip",
-		"repository_id",
-		"upload_id",
-	)
-
-	var numUploadsVisibleAtTipRecords int
-	for _, uploadMeta := range graph.UploadsVisibleAtCommit(tipCommit) {
-		numUploadsVisibleAtTipRecords++
-
-		if err := uploadsVisibleAtTipInserter.Insert(ctx, repositoryID, uploadMeta.UploadID); err != nil {
-			return err
-		}
-	}
-	if err := uploadsVisibleAtTipInserter.Flush(ctx); err != nil {
+	// Persist data to permenant table: t_lsif_nearest_uploads_links -> lsif_nearest_uploads_links
+	if err := tx.persistNearestUploadsLinks(ctx, repositoryID); err != nil {
 		return err
 	}
-	traceLog(log.Int("numUploadsVisibleAtTipRecords", numUploadsVisibleAtTipRecords))
+
+	// Persist data to permenant table: t_lsif_uploads_visible_at_tip -> lsif_uploads_visible_at_tip
+	if err := tx.persistUploadsVisibleAtTip(ctx, repositoryID); err != nil {
+		return err
+	}
 
 	if dirtyToken != 0 {
 		// If the user requests us to clear a dirty token, set the updated_token value to
@@ -328,14 +250,331 @@ const calculateVisibleUploadsCommitGraphQuery = `
 SELECT id, commit, md5(root || ':' || indexer) as token, 0 as distance FROM lsif_uploads WHERE state = 'completed' AND repository_id = %s
 `
 
-const calculateVisibleUploadsDeleteQuery = `
--- source: enterprise/internal/codeintel/stores/dbstore/commits.go:CalculateVisibleUploads
-DELETE FROM %s WHERE repository_id = %s
-`
-
 const calculateVisibleUploadsDirtyRepositoryQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/commits.go:CalculateVisibleUploads
 UPDATE lsif_dirty_repositories SET update_token = GREATEST(update_token, %s), updated_at = %s WHERE repository_id = %s
+`
+
+// writeVisibleUploads serializes the given commit graph into a the following set of temporary tables in the database.
+//
+//   - t_lsif_nearest_uploads        (mirroring lsif_nearest_uploads)
+//   - t_lsif_nearest_uploads_links  (mirroring lsif_nearest_uploads_links)
+//   - t_lsif_uploads_visible_at_tip (mirroring lsif_uploads_visible_at_tip)
+//
+// The data in these temporary tables can then be moved into a persisted/permanent table. We previously would perform a
+// bulk delete of the records associated with a repository, then reinsert all of the data needed to be persisted. This
+// caused massive table bloat on some instances. Storing into a temporary table and then inserting/updating/deleting
+// records into the persisted table minimizes the number of tuples we need to touch and drastically reduces table bloat.
+func (s *Store) writeVisibleUploads(ctx context.Context, graph *commitgraph.Graph, tipCommit string) (err error) {
+	ctx, traceLog, endObservation := s.operations.writeVisibleUploads.WithAndLogger(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	temporaryTableQueries := []string{
+		writeVisibleUploadsTemporaryNearestUploadsTableQuery,
+		writeVisibleUploadsTemporaryNearestUploadsLinksTableQuery,
+		writeVisibleUploadsTemporaryUploadsVisibleAtTipTableQuery,
+	}
+
+	for _, temporaryTableQuery := range temporaryTableQueries {
+		if err := s.Store.Exec(ctx, sqlf.Sprintf(temporaryTableQuery)); err != nil {
+			return err
+		}
+	}
+
+	// Insert the set of uploads that are visible from each commit for a given repository into
+	// a temporary table.
+	nearestUploadsInserter := batch.NewBatchInserter(
+		ctx,
+		s.Handle().DB(),
+		"t_lsif_nearest_uploads",
+		"commit_bytea",
+		"uploads",
+	)
+
+	// Insert the commits not inserted into the table above by adding links to a unique
+	// ancestor and their relative distance in the graph into another temporary table.
+	// We use this as a cheap way to reconstruct the full data set, which is multiplicative
+	// in the size of the commit graph AND the number of unique roots.
+	nearestUploadsLinksInserter := batch.NewBatchInserter(
+		ctx,
+		s.Handle().DB(),
+		"t_lsif_nearest_uploads_links",
+		"commit_bytea",
+		"ancestor_commit_bytea",
+		"distance",
+	)
+
+	// Insert the set of uploads visible from the tip of the default branch into a temporary
+	// table. These values are used to determine which bundles for a repository we open during
+	// a global find references query.
+	uploadsVisibleAtTipInserter := batch.NewBatchInserter(
+		ctx,
+		s.Handle().DB(),
+		"t_lsif_uploads_visible_at_tip",
+		"upload_id",
+	)
+
+	listSerializer := NewUploadMetaListSerializer()
+
+	var numNearestUploadsRecords int
+	var numNearestUploadsLinksRecords int
+
+	for v := range graph.Stream() {
+		if v.Uploads != nil {
+			numNearestUploadsRecords++
+
+			if err := nearestUploadsInserter.Insert(
+				ctx,
+				dbutil.CommitBytea(v.Uploads.Commit),
+				listSerializer.Serialize(v.Uploads.Uploads),
+			); err != nil {
+				return err
+			}
+		}
+		if v.Links != nil {
+			numNearestUploadsLinksRecords++
+
+			if err := nearestUploadsLinksInserter.Insert(
+				ctx,
+				dbutil.CommitBytea(v.Links.Commit),
+				dbutil.CommitBytea(v.Links.AncestorCommit),
+				v.Links.Distance,
+			); err != nil {
+				return err
+			}
+		}
+	}
+
+	uploadsVisibleAtCommit := graph.UploadsVisibleAtCommit(tipCommit)
+	for _, uploadMeta := range uploadsVisibleAtCommit {
+		if err := uploadsVisibleAtTipInserter.Insert(ctx, uploadMeta.UploadID); err != nil {
+			return err
+		}
+	}
+
+	if err := nearestUploadsInserter.Flush(ctx); err != nil {
+		return err
+	}
+	if err := nearestUploadsLinksInserter.Flush(ctx); err != nil {
+		return err
+	}
+	if err := uploadsVisibleAtTipInserter.Flush(ctx); err != nil {
+		return err
+	}
+	traceLog(
+		log.Int("numNearestUploadsRecords", numNearestUploadsRecords),
+		log.Int("numNearestUploadsLinksRecords", numNearestUploadsLinksRecords),
+		log.Int("numUploadsVisibleAtTipRecords", len(uploadsVisibleAtCommit)),
+	)
+
+	return nil
+}
+
+const writeVisibleUploadsTemporaryNearestUploadsTableQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/commits.go:writeVisibleUploads
+CREATE TEMPORARY TABLE t_lsif_nearest_uploads (
+	commit_bytea bytea NOT NULL,
+	uploads      jsonb NOT NULL
+) ON COMMIT DROP
+`
+
+const writeVisibleUploadsTemporaryNearestUploadsLinksTableQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/commits.go:writeVisibleUploads
+CREATE TEMPORARY TABLE t_lsif_nearest_uploads_links (
+commit_bytea          bytea NOT NULL,
+ancestor_commit_bytea bytea NOT NULL,
+distance              integer NOT NULL
+) ON COMMIT DROP
+`
+
+const writeVisibleUploadsTemporaryUploadsVisibleAtTipTableQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/commits.go:writeVisibleUploads
+CREATE TEMPORARY TABLE t_lsif_uploads_visible_at_tip (
+upload_id integer NOT NULL
+) ON COMMIT DROP
+`
+
+// persistNearestUploads modifies the lsif_nearest_uploads table so that it has same data
+// as t_lsif_nearest_uploads for the given repository.
+func (s *Store) persistNearestUploads(ctx context.Context, repositoryID int) (err error) {
+	ctx, traceLog, endObservation := s.operations.persistNearestUploads.WithAndLogger(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	rowsInserted, rowsUpdated, rowsDeleted, err := s.bulkTransfer(
+		ctx,
+		sqlf.Sprintf(nearestUploadsInsertQuery, repositoryID, repositoryID),
+		sqlf.Sprintf(nearestUploadsUpdateQuery, repositoryID),
+		sqlf.Sprintf(nearestUploadsDeleteQuery, repositoryID),
+	)
+	if err != nil {
+		return err
+	}
+	traceLog(
+		log.Int("lsif_nearest_uploads.ins", rowsInserted),
+		log.Int("lsif_nearest_uploads.upd", rowsUpdated),
+		log.Int("lsif_nearest_uploads.del", rowsDeleted),
+	)
+
+	return nil
+}
+
+const nearestUploadsInsertQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/commits.go:persistNearestUploads
+INSERT INTO lsif_nearest_uploads
+SELECT %s, source.commit_bytea, source.uploads
+FROM t_lsif_nearest_uploads source
+WHERE source.commit_bytea NOT IN (SELECT nu.commit_bytea FROM lsif_nearest_uploads nu WHERE nu.repository_id = %s)
+`
+
+const nearestUploadsUpdateQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/commits.go:persistNearestUploads
+UPDATE lsif_nearest_uploads nu
+SET uploads = source.uploads
+FROM t_lsif_nearest_uploads source
+WHERE
+	nu.repository_id = %s AND
+	nu.commit_bytea = source.commit_bytea AND
+	nu.uploads != source.uploads
+`
+
+const nearestUploadsDeleteQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/commits.go:persistNearestUploads
+DELETE FROM lsif_nearest_uploads nu
+WHERE
+	nu.repository_id = %s AND
+	nu.commit_bytea NOT IN (SELECT source.commit_bytea FROM t_lsif_nearest_uploads source)
+`
+
+// persistNearestUploadsLinks modifies the lsif_nearest_uploads_links table so that it has same
+// data as t_lsif_nearest_uploads_links for the given repository.
+func (s *Store) persistNearestUploadsLinks(ctx context.Context, repositoryID int) (err error) {
+	ctx, traceLog, endObservation := s.operations.persistNearestUploadsLinks.WithAndLogger(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	rowsInserted, rowsUpdated, rowsDeleted, err := s.bulkTransfer(
+		ctx,
+		sqlf.Sprintf(nearestUploadsLinksInsertQuery, repositoryID, repositoryID),
+		sqlf.Sprintf(nearestUploadsLinksUpdateQuery, repositoryID),
+		sqlf.Sprintf(nearestUploadsLinksDeleteQuery, repositoryID),
+	)
+	if err != nil {
+		return err
+	}
+	traceLog(
+		log.Int("lsif_nearest_uploads_links.ins", rowsInserted),
+		log.Int("lsif_nearest_uploads_links.upd", rowsUpdated),
+		log.Int("lsif_nearest_uploads_links.del", rowsDeleted),
+	)
+
+	return nil
+}
+
+const nearestUploadsLinksInsertQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/commits.go:persistNearestUploadsLinks
+INSERT INTO lsif_nearest_uploads_links
+SELECT %s, source.commit_bytea, source.ancestor_commit_bytea, source.distance
+FROM t_lsif_nearest_uploads_links source
+WHERE source.commit_bytea NOT IN (SELECT nul.commit_bytea FROM lsif_nearest_uploads_links nul WHERE nul.repository_id = %s)
+`
+
+const nearestUploadsLinksUpdateQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/commits.go:persistNearestUploadsLinks
+UPDATE lsif_nearest_uploads_links nul
+SET ancestor_commit_bytea = source.ancestor_commit_bytea, distance = source.distance
+FROM t_lsif_nearest_uploads_links source
+WHERE
+	nul.repository_id = %s AND
+	nul.commit_bytea = source.commit_bytea AND
+	nul.ancestor_commit_bytea != source.ancestor_commit_bytea AND
+	nul.distance != source.distance
+`
+
+const nearestUploadsLinksDeleteQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/commits.go:persistNearestUploadsLinks
+DELETE FROM lsif_nearest_uploads_links nul
+WHERE
+	nul.repository_id = %s AND
+	nul.commit_bytea NOT IN (SELECT source.commit_bytea FROM t_lsif_nearest_uploads_links source)
+`
+
+// persistUploadsVisibleAtTip modifies the lsif_uploads_visible_at_tip table so that it has same
+// data as t_lsif_uploads_visible_at_tip for the given repository.
+func (s *Store) persistUploadsVisibleAtTip(ctx context.Context, repositoryID int) (err error) {
+	ctx, traceLog, endObservation := s.operations.persistUploadsVisibleAtTip.WithAndLogger(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	rowsInserted, rowsUpdated, rowsDeleted, err := s.bulkTransfer(
+		ctx,
+		sqlf.Sprintf(uploadsVisibleAtTipInsertQuery, repositoryID),
+		nil,
+		sqlf.Sprintf(uploadsVisibleAtTipDeleteQuery, repositoryID),
+	)
+	if err != nil {
+		return err
+	}
+	traceLog(
+		log.Int("lsif_uploads_visible_at_tip.ins", rowsInserted),
+		log.Int("lsif_uploads_visible_at_tip.upd", rowsUpdated),
+		log.Int("lsif_uploads_visible_at_tip.del", rowsDeleted),
+	)
+
+	return nil
+}
+
+const uploadsVisibleAtTipInsertQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/commits.go:persistUploadsVisibleAtTip
+INSERT INTO lsif_uploads_visible_at_tip
+SELECT %s, source.upload_id
+FROM t_lsif_uploads_visible_at_tip source
+WHERE source.upload_id NOT IN (SELECT vat.upload_id FROM lsif_uploads_visible_at_tip vat)
+`
+
+const uploadsVisibleAtTipDeleteQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/commits.go:persistUploadsVisibleAtTip
+DELETE FROM lsif_uploads_visible_at_tip vat
+WHERE
+	vat.repository_id = %s AND
+	vat.upload_id NOT IN (SELECT source.upload_id FROM t_lsif_uploads_visible_at_tip source)
+`
+
+// bulkTransfer performs the given insert, update, and delete queries and returns the number of records
+// touched by each. If any query is nil, the returned count will be zero.
+func (s *Store) bulkTransfer(ctx context.Context, insertQuery, updateQuery, deleteQuery *sqlf.Query) (rowsInserted int, rowsUpdated int, rowsDeleted int, err error) {
+	prepareQuery := func(query *sqlf.Query) *sqlf.Query {
+		if query == nil {
+			return sqlf.Sprintf("SELECT 0")
+		}
+
+		return sqlf.Sprintf("%s RETURNING 1", query)
+	}
+
+	rows, err := s.Store.Query(ctx, sqlf.Sprintf(bulkTransferQuery, prepareQuery(insertQuery), prepareQuery(updateQuery), prepareQuery(deleteQuery)))
+	if err != nil {
+		return 0, 0, 0, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	if rows.Next() {
+		if err := rows.Scan(&rowsInserted, &rowsUpdated, &rowsDeleted); err != nil {
+			return 0, 0, 0, err
+		}
+
+		return rowsInserted, rowsUpdated, rowsDeleted, nil
+	}
+
+	return 0, 0, 0, nil
+}
+
+const bulkTransferQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/commits.go:bulkTransfer
+WITH
+	ins AS (%s),
+	upd AS (%s),
+	del AS (%s)
+SELECT
+	(SELECT COUNT(*) FROM ins) AS num_ins,
+	(SELECT COUNT(*) FROM upd) AS num_upd,
+	(SELECT COUNT(*) FROM del) AS num_del
 `
 
 type uploadMetaListSerializer struct {

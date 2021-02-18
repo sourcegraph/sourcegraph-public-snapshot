@@ -4,7 +4,7 @@ import { NavLink } from 'react-router-dom'
 import { toggleSearchType } from '../helpers'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { constant } from 'lodash'
-import { PatternTypeProps, CaseSensitivityProps, ParsedSearchQueryProps } from '..'
+import { PatternTypeProps, CaseSensitivityProps, ParsedSearchQueryProps, SearchContextProps } from '..'
 import { scanSearchQuery } from '../../../../shared/src/search/query/scanner'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 
@@ -12,7 +12,8 @@ interface Props
     extends Omit<PatternTypeProps, 'setPatternType'>,
         Omit<CaseSensitivityProps, 'setCaseSensitivity'>,
         Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
-        VersionContextProps {
+        VersionContextProps,
+        Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     type: SearchType
     query: string
 }
@@ -32,9 +33,16 @@ export const SearchResultTabHeader: React.FunctionComponent<Props> = ({
     patternType,
     caseSensitive,
     versionContext,
+    selectedSearchContextSpec,
 }) => {
     const caseToggledQuery = toggleSearchType(query, type)
-    const builtURLQuery = buildSearchURLQuery(caseToggledQuery, patternType, caseSensitive, versionContext)
+    const builtURLQuery = buildSearchURLQuery(
+        caseToggledQuery,
+        patternType,
+        caseSensitive,
+        versionContext,
+        selectedSearchContextSpec
+    )
 
     const currentQuery = parsedSearchQuery
     const scannedQuery = scanSearchQuery(currentQuery)

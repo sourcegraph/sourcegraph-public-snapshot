@@ -378,6 +378,8 @@ func newFlushingResponseWriter(w http.ResponseWriter) *flushingResponseWriter {
 		return nil
 	}
 
+	w.Header().Set("Transfer-Encoding", "chunked")
+
 	f := &flushingResponseWriter{w: w, flusher: flusher}
 	go f.periodicFlush()
 	return f

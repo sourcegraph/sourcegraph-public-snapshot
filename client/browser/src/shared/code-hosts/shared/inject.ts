@@ -1,10 +1,9 @@
 import { Observable, Subscription } from 'rxjs'
 import { startWith } from 'rxjs/operators'
-import { MutationRecordLike } from '../../util/dom'
+import { MutationRecordLike, observeMutations as defaultObserveMutations } from '../../util/dom'
 
 import { determineCodeHost, injectCodeIntelligenceToCodeHost, ObserveMutations } from './codeHost'
 import { SourcegraphIntegrationURLs } from '../../platform/context'
-import { observeMutations as defaultObserveMutations } from '../gerrit/codeHost'
 
 /**
  * Checks if the current page is a known code host. If it is,

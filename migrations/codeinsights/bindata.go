@@ -6,6 +6,8 @@
 // 1000000001_initial_schema.up.sql (4.599kB)
 // 1000000002_comments.down.sql (411B)
 // 1000000002_comments.up.sql (2.942kB)
+// 1000000003_insights_series_id.down.sql (16B)
+// 1000000003_insights_series_id.up.sql (404B)
 
 package migrations
 
@@ -194,6 +196,46 @@ func _1000000002_commentsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1000000003_insights_series_idDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x80\xfb\x5a\xa5\x10\x00\x00\x00")
+
+func _1000000003_insights_series_idDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1000000003_insights_series_idDownSql,
+		"1000000003_insights_series_id.down.sql",
+	)
+}
+
+func _1000000003_insights_series_idDownSql() (*asset, error) {
+	bytes, err := _1000000003_insights_series_idDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1000000003_insights_series_id.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xec, 0x6c, 0xe7, 0xaa, 0xc6, 0xdb, 0x9b, 0x52, 0x49, 0xad, 0xde, 0x34, 0x6a, 0xa9, 0x90, 0x21, 0x97, 0xcc, 0xcd, 0x35, 0xee, 0xc6, 0xd1, 0x36, 0xf1, 0xa0, 0x6c, 0xe8, 0x73, 0x42, 0x77, 0x41}}
+	return a, nil
+}
+
+var __1000000003_insights_series_idUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\xce\xcd\x4e\xc3\x30\x10\x04\xe0\xbb\x9f\x62\x6e\x80\x44\xfa\x02\x39\xf5\xc7\x54\x91\x12\x07\xb5\xae\x04\xa7\xca\x6d\x36\x74\x25\xb3\x01\x7b\x09\xed\xdb\x73\x28\x54\x94\x1b\xe7\x99\xd1\x37\x33\xbb\xac\x5c\x69\xcc\xc2\xd6\xd6\x5b\x3c\xac\xda\x06\x99\x12\x53\xde\xbe\x0d\x2c\x9a\x4b\x14\x05\x42\xdf\xd3\x5e\x33\x3a\x1a\x41\x32\x72\x1a\xe4\x95\x44\x33\x06\x89\xa7\x7b\x0c\x7a\xa0\x94\x21\x34\x52\xc2\x21\x74\xe8\x82\x06\xb0\x40\x0f\x9c\xa1\x61\x17\x69\x62\xa6\xb5\xb7\x2b\xf8\xe9\xac\xb6\xd7\x02\xce\xc9\xbc\xad\x37\x8d\xfb\x89\xb8\x83\x7f\x7e\xb4\x50\x3a\x6a\xf9\xff\xed\xda\x7a\xb8\xd6\xc3\x6d\xea\xba\x34\xa6\x28\xb0\xe4\x91\x7e\x15\x02\x76\x9a\x88\xc0\xd2\xd1\x11\x99\x65\x4f\xf8\xa4\x9b\x18\xb1\x23\xf4\x1c\x95\x12\xcb\x0b\x06\x01\x2b\x46\x4a\x27\xf4\x89\xde\x3f\x48\x34\x9e\x26\x66\xbe\xb2\x53\x6f\x51\xb9\x85\x7d\xba\x3e\xb4\xbd\x10\xdb\x33\xd0\xba\x3f\x8f\x37\xeb\xca\x2d\xbf\xf5\xdb\x4b\xfb\xae\x34\x66\xde\x36\x4d\xe5\x4b\xf3\x15\x00\x00\xff\xff\x68\x5d\xfa\xc9\x94\x01\x00\x00")
+
+func _1000000003_insights_series_idUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1000000003_insights_series_idUpSql,
+		"1000000003_insights_series_id.up.sql",
+	)
+}
+
+func _1000000003_insights_series_idUpSql() (*asset, error) {
+	bytes, err := _1000000003_insights_series_idUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1000000003_insights_series_id.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xbe, 0x47, 0x12, 0xa0, 0x8c, 0x21, 0xad, 0x6b, 0x31, 0x8b, 0x9f, 0xbe, 0x7a, 0xde, 0xf9, 0xf, 0x1e, 0xcf, 0xf, 0x27, 0xa0, 0x75, 0x29, 0x98, 0x41, 0x30, 0xb9, 0x57, 0xb6, 0x42, 0x8a, 0xe3}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -285,12 +327,14 @@ func AssetNames() []string {
 
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
-	"1000000000_init.down.sql":           _1000000000_initDownSql,
-	"1000000000_init.up.sql":             _1000000000_initUpSql,
-	"1000000001_initial_schema.down.sql": _1000000001_initial_schemaDownSql,
-	"1000000001_initial_schema.up.sql":   _1000000001_initial_schemaUpSql,
-	"1000000002_comments.down.sql":       _1000000002_commentsDownSql,
-	"1000000002_comments.up.sql":         _1000000002_commentsUpSql,
+	"1000000000_init.down.sql":               _1000000000_initDownSql,
+	"1000000000_init.up.sql":                 _1000000000_initUpSql,
+	"1000000001_initial_schema.down.sql":     _1000000001_initial_schemaDownSql,
+	"1000000001_initial_schema.up.sql":       _1000000001_initial_schemaUpSql,
+	"1000000002_comments.down.sql":           _1000000002_commentsDownSql,
+	"1000000002_comments.up.sql":             _1000000002_commentsUpSql,
+	"1000000003_insights_series_id.down.sql": _1000000003_insights_series_idDownSql,
+	"1000000003_insights_series_id.up.sql":   _1000000003_insights_series_idUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -337,12 +381,14 @@ type bintree struct {
 }
 
 var _bintree = &bintree{nil, map[string]*bintree{
-	"1000000000_init.down.sql":           {_1000000000_initDownSql, map[string]*bintree{}},
-	"1000000000_init.up.sql":             {_1000000000_initUpSql, map[string]*bintree{}},
-	"1000000001_initial_schema.down.sql": {_1000000001_initial_schemaDownSql, map[string]*bintree{}},
-	"1000000001_initial_schema.up.sql":   {_1000000001_initial_schemaUpSql, map[string]*bintree{}},
-	"1000000002_comments.down.sql":       {_1000000002_commentsDownSql, map[string]*bintree{}},
-	"1000000002_comments.up.sql":         {_1000000002_commentsUpSql, map[string]*bintree{}},
+	"1000000000_init.down.sql":               {_1000000000_initDownSql, map[string]*bintree{}},
+	"1000000000_init.up.sql":                 {_1000000000_initUpSql, map[string]*bintree{}},
+	"1000000001_initial_schema.down.sql":     {_1000000001_initial_schemaDownSql, map[string]*bintree{}},
+	"1000000001_initial_schema.up.sql":       {_1000000001_initial_schemaUpSql, map[string]*bintree{}},
+	"1000000002_comments.down.sql":           {_1000000002_commentsDownSql, map[string]*bintree{}},
+	"1000000002_comments.up.sql":             {_1000000002_commentsUpSql, map[string]*bintree{}},
+	"1000000003_insights_series_id.down.sql": {_1000000003_insights_series_idDownSql, map[string]*bintree{}},
+	"1000000003_insights_series_id.up.sql":   {_1000000003_insights_series_idUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
