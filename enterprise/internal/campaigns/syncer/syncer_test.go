@@ -381,9 +381,9 @@ func TestSyncRegistry(t *testing.T) {
 	// In order to test that priority items are delivered we'll inject our own syncer
 	// with a custom sync func
 	syncer := &changesetSyncer{
-		syncStore:         syncStore,
-		reposStore:        nil,
-		externalServiceID: "https://example.com/",
+		syncStore:   syncStore,
+		reposStore:  nil,
+		codeHostURL: "https://example.com/",
 		syncFunc: func(ctx context.Context, id int64) error {
 			syncChan <- id
 			return nil

@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -72,10 +71,9 @@ func NewSyncRegistry(ctx context.Context, cstore SyncStore, repoStore RepoStore,
 // Add adds a syncer for the code host associated with the supplied code host if the syncer hasn't
 // already been added and starts it.
 func (s *SyncRegistry) Add(codeHost *campaigns.CodeHost) {
-	kind := extsvc.TypeToKind(codeHost.ExternalServiceType)
 	// This should never happen since the store does the filtering for us, but let's be super duper extra cautious.
-	if !campaigns.IsKindSupported(kind) {
-		log15.Info("Code host not support by campaigns", "kind", kind)
+	if !codeHost.IsSupported() {
+		log15.Info("Code host not support by campaigns", "type", codeHost.ExternalServiceType, "url", codeHost.ExternalServiceID)
 		return
 	}
 
@@ -97,7 +95,7 @@ func (s *SyncRegistry) Add(codeHost *campaigns.CodeHost) {
 		httpFactory:          s.httpFactory,
 		reposStore:           s.repoStore,
 		externalServiceStore: s.externalServiceStore,
-		externalServiceID:    syncerKey,
+		codeHostURL:          syncerKey,
 		cancel:               cancel,
 		priorityNotify:       make(chan []int64, 500),
 	}
@@ -191,12 +189,12 @@ func (s *SyncRegistry) syncCodeHosts(ctx context.Context) error {
 		s.Add(host)
 	}
 
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	// Clean up old syncers.
 	for syncerKey := range s.syncers {
 		// If there is no code host for the syncer anymore, we want to stop it.
 		if _, ok := codeHostsByExternalServiceID[syncerKey]; !ok {
-			s.mu.Lock()
-			defer s.mu.Unlock()
 			syncer, exists := s.syncers[syncerKey]
 			if exists {
 				delete(s.syncers, syncerKey)
@@ -215,7 +213,7 @@ type changesetSyncer struct {
 	reposStore           RepoStore
 	externalServiceStore ExternalServiceStore
 
-	externalServiceID string
+	codeHostURL string
 
 	// scheduleInterval determines how often a new schedule will be computed.
 	// NOTE: It involves a DB query but no communication with code hosts.
@@ -283,7 +281,7 @@ type SyncStore interface {
 // Run will start the process of changeset syncing. It is long running
 // and is expected to be launched once at startup.
 func (s *changesetSyncer) Run(ctx context.Context) {
-	log15.Debug("Starting changeset syncer", "codeHostURL", s.externalServiceID)
+	log15.Debug("Starting changeset syncer", "codeHostURL", s.codeHostURL)
 	scheduleInterval := s.scheduleInterval
 	if scheduleInterval == 0 {
 		scheduleInterval = 2 * time.Minute
@@ -337,13 +335,13 @@ func (s *changesetSyncer) Run(ctx context.Context) {
 			}
 			start := s.clock()
 			schedule, err := s.computeSchedule(ctx)
-			labelValues := []string{s.externalServiceID, strconv.FormatBool(err == nil)}
+			labelValues := []string{s.codeHostURL, strconv.FormatBool(err == nil)}
 			syncerMetrics.computeScheduleDuration.WithLabelValues(labelValues...).Observe(s.clock().Sub(start).Seconds())
 			if err != nil {
 				log15.Error("Computing queue", "err", err)
 				continue
 			}
-			syncerMetrics.scheduleSize.WithLabelValues(s.externalServiceID).Set(float64(len(schedule)))
+			syncerMetrics.scheduleSize.WithLabelValues(s.codeHostURL).Set(float64(len(schedule)))
 			s.queue.Upsert(schedule...)
 			var behindSchedule int
 			now := s.clock()
@@ -352,11 +350,11 @@ func (s *changesetSyncer) Run(ctx context.Context) {
 					behindSchedule++
 				}
 			}
-			syncerMetrics.behindSchedule.WithLabelValues(s.externalServiceID).Set(float64(behindSchedule))
+			syncerMetrics.behindSchedule.WithLabelValues(s.codeHostURL).Set(float64(behindSchedule))
 		case <-timerChan:
 			start := s.clock()
 			err := s.syncFunc(ctx, next.changesetID)
-			labelValues := []string{s.externalServiceID, strconv.FormatBool(err == nil)}
+			labelValues := []string{s.codeHostURL, strconv.FormatBool(err == nil)}
 			syncerMetrics.syncDuration.WithLabelValues(labelValues...).Observe(s.clock().Sub(start).Seconds())
 			syncerMetrics.syncs.WithLabelValues(labelValues...).Add(1)
 
@@ -367,7 +365,7 @@ func (s *changesetSyncer) Run(ctx context.Context) {
 
 			// Remove item now that it has been processed
 			s.queue.Remove(next.changesetID)
-			syncerMetrics.scheduleSize.WithLabelValues(s.externalServiceID).Dec()
+			syncerMetrics.scheduleSize.WithLabelValues(s.codeHostURL).Dec()
 		case ids := <-s.priorityNotify:
 			if timer != nil {
 				timer.Stop()
@@ -385,15 +383,15 @@ func (s *changesetSyncer) Run(ctx context.Context) {
 				}
 				item.priority = priorityHigh
 				s.queue.Upsert(item)
-				syncerMetrics.scheduleSize.WithLabelValues(s.externalServiceID).Inc()
+				syncerMetrics.scheduleSize.WithLabelValues(s.codeHostURL).Inc()
 			}
-			syncerMetrics.priorityQueued.WithLabelValues(s.externalServiceID).Add(float64(len(ids)))
+			syncerMetrics.priorityQueued.WithLabelValues(s.codeHostURL).Add(float64(len(ids)))
 		}
 	}
 }
 
 func (s *changesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync, error) {
-	syncData, err := s.syncStore.ListChangesetSyncData(ctx, store.ListChangesetSyncDataOpts{ExternalServiceID: s.externalServiceID})
+	syncData, err := s.syncStore.ListChangesetSyncData(ctx, store.ListChangesetSyncDataOpts{ExternalServiceID: s.codeHostURL})
 	if err != nil {
 		return nil, errors.Wrap(err, "listing changeset sync data")
 	}
@@ -413,7 +411,7 @@ func (s *changesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync,
 
 // SyncChangeset will sync a single changeset given its id.
 func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
-	log15.Debug("SyncChangeset", "syncer", s.externalServiceID, "id", id)
+	log15.Debug("SyncChangeset", "syncer", s.codeHostURL, "id", id)
 
 	cs, err := s.syncStore.GetChangeset(ctx, store.GetChangesetOpts{
 		ID: id,
