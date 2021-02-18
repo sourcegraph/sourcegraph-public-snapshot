@@ -1,7 +1,7 @@
 {
   "ID": "MDExOlB1bGxSZXF1ZXN0NTA0NDU4Njg1",
-  "Title": "This is a test PR",
-  "Body": "This is the description of the test PR",
+  "Title": "This is a new title",
+  "Body": "This is a new body",
   "State": "OPEN",
   "URL": "https://github.com/sourcegraph/automation-testing/pull/358",
   "HeadRefOid": "05e562cc5d8ab50b5fcab8dfd5dfa5db13a48e80",
@@ -10,18 +10,19 @@
   "BaseRefName": "master",
   "Number": 358,
   "Author": {
-   "AvatarURL": "https://avatars0.githubusercontent.com/u/19534377?v=4",
+   "AvatarURL": "https://avatars.githubusercontent.com/u/19534377?v=4",
    "Login": "eseliger",
-   "URL": "https://github.com/eseliger"
+   "URL": "https://github.com/eseliger",
+   "Email": "erikseliger@me.com"
   },
   "Participants": [
    {
-    "AvatarURL": "https://avatars0.githubusercontent.com/u/19534377?v=4",
+    "AvatarURL": "https://avatars.githubusercontent.com/u/19534377?v=4",
     "Login": "eseliger",
     "URL": "https://github.com/eseliger"
    },
    {
-    "AvatarURL": "https://avatars1.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
+    "AvatarURL": "https://avatars.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
     "Login": "mrnugget",
     "URL": "https://github.com/mrnugget"
    }
@@ -39,11 +40,11 @@
       "MessageHeadline": "Add foobar.md file",
       "URL": "https://github.com/sourcegraph/automation-testing/commit/05e562cc5d8ab50b5fcab8dfd5dfa5db13a48e80",
       "Committer": {
-       "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+       "AvatarURL": "https://avatars.githubusercontent.com/u/1185253?v=4",
        "Email": "mrnugget@gmail.com",
        "Name": "Thorsten Ball",
        "User": {
-        "AvatarURL": "https://avatars1.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
+        "AvatarURL": "https://avatars.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
         "Login": "mrnugget",
         "URL": "https://github.com/mrnugget"
        }
@@ -51,6 +52,19 @@
       "CommittedDate": "2019-11-12T12:57:33Z",
       "PushedDate": "2019-11-12T13:00:07Z"
      }
+    }
+   },
+   {
+    "Type": "RenamedTitleEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/19534377?v=4",
+      "Login": "eseliger",
+      "URL": "https://github.com/eseliger"
+     },
+     "PreviousTitle": "This is a test PR",
+     "CurrentTitle": "This is a new title",
+     "CreatedAt": "2020-10-15T23:57:12Z"
     }
    }
   ],
@@ -92,5 +106,5 @@
   },
   "IsDraft": false,
   "CreatedAt": "2020-10-15T23:47:12Z",
-  "UpdatedAt": "2020-10-15T23:47:12Z"
+  "UpdatedAt": "2021-02-18T02:14:37Z"
  }
