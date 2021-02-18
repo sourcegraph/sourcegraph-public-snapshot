@@ -46,12 +46,14 @@ func addLint(pipeline *bk.Pipeline) {
 func addWebApp(pipeline *bk.Pipeline) {
 	// Webapp build
 	pipeline.AddStep(":webpack::globe_with_meridians: Build",
+		bk.FailedAgentAutomaticRetry(2),
 		bk.Cmd("dev/ci/yarn-build.sh client/web"),
 		bk.Env("NODE_ENV", "production"),
 		bk.Env("ENTERPRISE", "0"))
 
 	// Webapp enterprise build
 	pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build",
+		bk.FailedAgentAutomaticRetry(2),
 		bk.Cmd("dev/ci/yarn-build.sh client/web"),
 		bk.Env("NODE_ENV", "production"),
 		bk.Env("ENTERPRISE", "1"))
@@ -94,7 +96,7 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 			chromaticCommand += " --auto-accept-changes"
 		}
 		pipeline.AddStep(":chromatic: Upload storybook to Chromatic",
-			bk.AutomaticRetry(5),
+			bk.AutomaticRetry(5, "*"),
 			bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("yarn gulp generate"),
 			bk.Env("MINIFY", "1"),

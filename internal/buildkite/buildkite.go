@@ -41,11 +41,12 @@ type Step struct {
 }
 
 type RetryOptions struct {
-	Automatic *AutomaticRetryOptions `json:"automatic,omitempty"`
+	Automatic []*AutomaticRetryOptions `json:"automatic,omitempty"`
 }
 
 type AutomaticRetryOptions struct {
-	Limit int `json:"limit,omitempty"`
+	Limit      int    `json:"limit,omitempty"`
+	ExitStatus string `json:"exit_status,omitempty"`
 }
 
 var Plugins = make(map[string]interface{})
@@ -147,11 +148,31 @@ func SoftFail(softFail bool) StepOpt {
 	}
 }
 
-func AutomaticRetry(limit int) StepOpt {
+func AutomaticRetry(limit int, exitStatus string) StepOpt {
 	return func(step *Step) {
 		step.Retry = &RetryOptions{
-			Automatic: &AutomaticRetryOptions{
-				Limit: limit,
+			Automatic: []*AutomaticRetryOptions{
+				{
+					Limit:      limit,
+					ExitStatus: exitStatus,
+				},
+			},
+		}
+	}
+}
+
+func FailedAgentAutomaticRetry(limit int) StepOpt {
+	return func(step *Step) {
+		step.Retry = &RetryOptions{
+			Automatic: []*AutomaticRetryOptions{
+				{
+					Limit:      2,
+					ExitStatus: "-1",
+				},
+				{
+					Limit:      2,
+					ExitStatus: "255",
+				},
 			},
 		}
 	}
