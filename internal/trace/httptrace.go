@@ -35,6 +35,7 @@ const (
 	sourceKey
 	isInternalKey
 	anonymousUIDKey
+	ipAddressKey
 )
 
 // trackOrigin specifies a URL value. When an incoming request has the request header "Origin" set
@@ -95,6 +96,17 @@ func IsInternalRequest(ctx context.Context) bool {
 // external API handler.
 func WithIsInternal(ctx context.Context, isInternal bool) context.Context {
 	return context.WithValue(ctx, isInternalKey, isInternal)
+}
+
+// IPAddress attempts to fetch an IP address stored in the context.
+func IPAddress(ctx context.Context) string {
+	v, _ := ctx.Value(ipAddressKey).(string)
+	return v
+}
+
+// WithIPAddress sets the IP address associated with request.
+func WithIPAddress(ctx context.Context, ip string) context.Context {
+	return context.WithValue(ctx, ipAddressKey, ip)
 }
 
 // AnonymousUID sets the anonymous UID associated with the request.
