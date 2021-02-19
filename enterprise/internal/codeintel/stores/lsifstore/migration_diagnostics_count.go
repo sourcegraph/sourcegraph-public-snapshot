@@ -15,10 +15,10 @@ type diagnosticsCountMigrator struct {
 	serializer *serializer
 }
 
-// DiagnosticsCountMigratorID is the primary key of the migration record an instance of
+// DiagnosticsCountMigrationID is the primary key of the migration record an instance of
 // diagnosticsCountMigrator handles. This is associated with the out-of-band migration
 // record inserted in migrations/frontend/1528395786_diagnostic_counts_migration.up.sql.
-const DiagnosticsCountMigratorID = 1
+const DiagnosticsCountMigrationID = 1
 
 // NewDiagnosticsCountMigrator creates a new Migrator instance that reads the documents
 // table and populates their num_diagnostics value based on their decoded payload. This
@@ -53,7 +53,9 @@ SELECT cast(c1.count as float) / cast(c2.count as float) FROM
 // update in a single invocation of Up.
 const DiagnosticCountMigrationBatchSize = 1000
 
-// Up reads records with a schema version of 1 and
+// Up reads records with a schema version of 1, decodes their data payload, then writes
+// the number of diagnostic in the payload back to the record. The schema version of the
+// modified row will be bumped to 2.
 func (m *diagnosticsCountMigrator) Up(ctx context.Context) error {
 	tx, err := m.store.Transact(ctx)
 	if err != nil {
