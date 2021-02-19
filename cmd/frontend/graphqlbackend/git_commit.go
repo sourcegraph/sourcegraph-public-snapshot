@@ -185,7 +185,7 @@ func (r *GitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.R
 		return nil, err
 	}
 
-	return externallink.Commit(ctx, repo, api.CommitID(r.oid))
+	return externallink.Commit(ctx, r.db, repo, api.CommitID(r.oid))
 }
 
 func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {

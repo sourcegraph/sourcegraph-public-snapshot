@@ -6,7 +6,6 @@ var (
 	GlobalExternalServices            = &ExternalServiceStore{}
 	GlobalDefaultRepos                = &DefaultRepoStore{}
 	GlobalRepos                       = &RepoStore{}
-	GlobalPhabricator                 = &PhabricatorStore{}
 	GlobalOrgs                        = &OrgStore{}
 	GlobalOrgMembers                  = &OrgMemberStore{}
 	GlobalSettings                    = &SettingStore{}

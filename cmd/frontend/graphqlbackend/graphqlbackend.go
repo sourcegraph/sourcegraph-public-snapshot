@@ -832,7 +832,7 @@ func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {
 		args.URI = args.Name
 	}
 
-	repo, err := database.GlobalPhabricator.GetByName(ctx, api.RepoName(*args.URI))
+	repo, err := database.Phabricator(r.db).GetByName(ctx, api.RepoName(*args.URI))
 	if err != nil {
 		return nil, err
 	}
