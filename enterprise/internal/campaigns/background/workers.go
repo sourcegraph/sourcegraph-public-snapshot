@@ -73,6 +73,7 @@ func createDBWorkerStore(s *store.Store) dbworkerstore.Store {
 	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
 		Name:                 "campaigns_reconciler_worker_store",
 		TableName:            "changesets",
+		ViewName:             "reconciler_changesets",
 		AlternateColumnNames: map[string]string{"state": "reconciler_state"},
 		ColumnExpressions:    store.ChangesetColumns,
 		Scan:                 scanFirstChangesetRecord,
