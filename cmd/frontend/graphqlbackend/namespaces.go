@@ -59,7 +59,7 @@ func UnmarshalNamespaceID(id graphql.ID, userID *int32, orgID *int32) (err error
 }
 
 func (r *schemaResolver) NamespaceByName(ctx context.Context, args *struct{ Name string }) (*NamespaceResolver, error) {
-	namespace, err := database.GlobalNamespaces.GetByName(ctx, args.Name)
+	namespace, err := database.Namespaces(r.db).GetByName(ctx, args.Name)
 	if err == database.ErrNamespaceNotFound {
 		return nil, nil
 	}
