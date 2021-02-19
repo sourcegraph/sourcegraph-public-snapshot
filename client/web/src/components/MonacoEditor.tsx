@@ -67,6 +67,8 @@ monaco.editor.defineTheme(SOURCEGRAPH_DARK, {
         { token: 'metaRevisionLabel', foreground: '#f2f4f8' },
         { token: 'metaRevisionReferencePath', foreground: '#f2f4f8' },
         { token: 'metaRevisionWildcard', foreground: '#3bc9db' },
+        // Path-like highlighting
+        { token: 'metaPathSeparator', foreground: '#868e96' },
     ],
 })
 
@@ -125,6 +127,8 @@ monaco.editor.defineTheme(SOURCEGRAPH_LIGHT, {
         { token: 'metaRevisionLabel', foreground: '#2b3750' },
         { token: 'metaRevisionReferencePath', foreground: '#2b3750' },
         { token: 'metaRevisionWildcard', foreground: '#1098ad' },
+        // Path-like highlighting
+        { token: 'metaPathSeparator', foreground: '#868e96' },
     ],
 })
 
