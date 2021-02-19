@@ -101,7 +101,7 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 		}
 	}
 
-	_, err := database.GlobalSurveyResponses.Create(ctx, uid, email, int(input.Score), input.Reason, input.Better)
+	_, err := database.SurveyResponses(r.db).Create(ctx, uid, email, int(input.Score), input.Reason, input.Better)
 	if err != nil {
 		return nil, err
 	}

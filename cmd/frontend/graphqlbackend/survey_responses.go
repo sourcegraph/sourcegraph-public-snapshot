@@ -28,7 +28,7 @@ func (r *surveyResponseConnectionResolver) Nodes(ctx context.Context) ([]*survey
 		return nil, err
 	}
 
-	responses, err := database.GlobalSurveyResponses.GetAll(ctx)
+	responses, err := database.SurveyResponses(r.db).GetAll(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func (r *surveyResponseConnectionResolver) TotalCount(ctx context.Context) (int3
 		return 0, err
 	}
 
-	count, err := database.GlobalSurveyResponses.Count(ctx)
+	count, err := database.SurveyResponses(r.db).Count(ctx)
 	return int32(count), err
 }
 
@@ -56,7 +56,7 @@ func (r *surveyResponseConnectionResolver) AverageScore(ctx context.Context) (fl
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return 0, err
 	}
-	return database.GlobalSurveyResponses.Last30DaysAverageScore(ctx)
+	return database.SurveyResponses(r.db).Last30DaysAverageScore(ctx)
 }
 
 func (r *surveyResponseConnectionResolver) NetPromoterScore(ctx context.Context) (int32, error) {
@@ -64,7 +64,7 @@ func (r *surveyResponseConnectionResolver) NetPromoterScore(ctx context.Context)
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return 0, err
 	}
-	nps, err := database.GlobalSurveyResponses.Last30DaysNetPromoterScore(ctx)
+	nps, err := database.SurveyResponses(r.db).Last30DaysNetPromoterScore(ctx)
 	return int32(nps), err
 }
 
@@ -73,6 +73,6 @@ func (r *surveyResponseConnectionResolver) Last30DaysCount(ctx context.Context) 
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return 0, err
 	}
-	count, err := database.GlobalSurveyResponses.Last30DaysCount(ctx)
+	count, err := database.SurveyResponses(r.db).Last30DaysCount(ctx)
 	return int32(count), err
 }
