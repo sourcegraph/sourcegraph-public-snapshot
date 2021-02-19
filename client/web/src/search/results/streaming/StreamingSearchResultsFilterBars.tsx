@@ -40,6 +40,9 @@ export const StreamingSearchResultsFilterBars: React.FunctionComponent<Props> = 
     const filters = props.results?.filters
     const quickLinks = (isSettingsValid<Settings>(settingsCascade) && settingsCascade.final.quicklinks) || []
 
+    const genericFilters = useMemo(() => getFilters(filters, settingsCascade), [filters, settingsCascade])
+    const repoFilters = useMemo(() => getRepoFilters(filters), [filters])
+
     const onDynamicFilterClicked = useCallback(
         (value: string) => {
             props.telemetryService.log('DynamicFilterClicked', {
@@ -60,9 +63,9 @@ export const StreamingSearchResultsFilterBars: React.FunctionComponent<Props> = 
             navbarSearchQuery={props.navbarSearchQueryState.query}
             searchSucceeded={!!results}
             resultsLimitHit={!!results && results.progress.skipped.some(skipped => skipped.reason.includes('-limit'))}
-            genericFilters={getFilters(filters, settingsCascade)}
+            genericFilters={genericFilters}
             extensionFilters={contributions?.searchFilters}
-            repoFilters={getRepoFilters(filters)}
+            repoFilters={repoFilters}
             quickLinks={quickLinks}
             onFilterClick={onDynamicFilterClicked}
             onShowMoreResultsClick={showMoreResults}
