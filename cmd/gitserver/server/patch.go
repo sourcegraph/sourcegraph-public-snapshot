@@ -60,6 +60,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 
 	var (
 		remoteURL *url.URL
+		creds     *GitCredentials
 		err       error
 	)
 
@@ -85,6 +86,8 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 			}
 		}
 	}()
+
+	creds, remoteURL = ParseGitCredentials(remoteURL)
 
 	// Ensure tmp directory exists
 	tmpRepoDir, err := s.tempDir("patch-repo-")
@@ -113,7 +116,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}
 
 	if req.UniqueRef {
-		refs, err := repoRemoteRefs(ctx, remoteURL, ref)
+		refs, err := repoRemoteRefs(ctx, creds, remoteURL, ref)
 		if err != nil {
 			log15.Error("Failed to get remote refs", "ref", ref, "err", err)
 			resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteRefs"))
@@ -253,6 +256,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	if req.Push != nil {
 		cmd = exec.CommandContext(ctx, "git", "push", "--force", remoteURL.String(), fmt.Sprintf("%s:%s", cmtHash, ref))
 		cmd.Dir = repoGitDir
+		creds.Authenticate(cmd)
 
 		if out, err = run(cmd, "pushing ref"); err != nil {
 			log15.Error("Failed to push", "ref", ref, "commit", cmtHash, "output", string(out))
