@@ -189,7 +189,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
             <h3
               class="mb-0"
             >
-              What‘s on your mind?
+              What’s on your mind?
             </h3>
             <button
               class="feedback-prompt__header--close"
@@ -211,7 +211,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
           <textarea
             autofocus=""
             class="form-control feedback-prompt__textarea"
-            placeholder="What‘s going well? What could be better?"
+            placeholder="What’s going well? What could be better?"
           />
           <ul
             class="icon-radio-buttons"
@@ -911,7 +911,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
             <h3
               class="mb-0"
             >
-              What‘s on your mind?
+              What’s on your mind?
             </h3>
             <button
               class="feedback-prompt__header--close"
@@ -933,7 +933,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
           <textarea
             autofocus=""
             class="form-control feedback-prompt__textarea"
-            placeholder="What‘s going well? What could be better?"
+            placeholder="What’s going well? What could be better?"
           />
           <ul
             class="icon-radio-buttons"
@@ -1643,7 +1643,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
             <h3
               class="mb-0"
             >
-              What‘s on your mind?
+              What’s on your mind?
             </h3>
             <button
               class="feedback-prompt__header--close"
@@ -1665,7 +1665,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
           <textarea
             autofocus=""
             class="form-control feedback-prompt__textarea"
-            placeholder="What‘s going well? What could be better?"
+            placeholder="What’s going well? What could be better?"
           />
           <ul
             class="icon-radio-buttons"
@@ -2346,7 +2346,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
             <h3
               class="mb-0"
             >
-              What‘s on your mind?
+              What’s on your mind?
             </h3>
             <button
               class="feedback-prompt__header--close"
@@ -2368,7 +2368,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
           <textarea
             autofocus=""
             class="form-control feedback-prompt__textarea"
-            placeholder="What‘s going well? What could be better?"
+            placeholder="What’s going well? What could be better?"
           />
           <ul
             class="icon-radio-buttons"
@@ -3059,7 +3059,7 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
             <h3
               class="mb-0"
             >
-              What‘s on your mind?
+              What’s on your mind?
             </h3>
             <button
               class="feedback-prompt__header--close"
@@ -3081,7 +3081,7 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
           <textarea
             autofocus=""
             class="form-control feedback-prompt__textarea"
-            placeholder="What‘s going well? What could be better?"
+            placeholder="What’s going well? What could be better?"
           />
           <ul
             class="icon-radio-buttons"
@@ -3523,7 +3523,7 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
             <h3
               class="mb-0"
             >
-              What‘s on your mind?
+              What’s on your mind?
             </h3>
             <button
               class="feedback-prompt__header--close"
@@ -3545,7 +3545,7 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
           <textarea
             autofocus=""
             class="form-control feedback-prompt__textarea"
-            placeholder="What‘s going well? What could be better?"
+            placeholder="What’s going well? What could be better?"
           />
           <ul
             class="icon-radio-buttons"
@@ -3997,7 +3997,7 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
             <h3
               class="mb-0"
             >
-              What‘s on your mind?
+              What’s on your mind?
             </h3>
             <button
               class="feedback-prompt__header--close"
@@ -4019,7 +4019,7 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
           <textarea
             autofocus=""
             class="form-control feedback-prompt__textarea"
-            placeholder="What‘s going well? What could be better?"
+            placeholder="What’s going well? What could be better?"
           />
           <ul
             class="icon-radio-buttons"
@@ -4449,7 +4449,7 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
             <h3
               class="mb-0"
             >
-              What‘s on your mind?
+              What’s on your mind?
             </h3>
             <button
               class="feedback-prompt__header--close"
@@ -4471,7 +4471,7 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
           <textarea
             autofocus=""
             class="form-control feedback-prompt__textarea"
-            placeholder="What‘s going well? What could be better?"
+            placeholder="What’s going well? What could be better?"
           />
           <ul
             class="icon-radio-buttons"
