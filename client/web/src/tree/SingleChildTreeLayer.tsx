@@ -122,7 +122,7 @@ export class SingleChildTreeLayer extends React.Component<SingleChildTreeLayerPr
         )
 
         return (
-            <div>
+            <div role="option">
                 <table
                     className="tree-layer"
                     onMouseOver={this.props.entryInfo.isDirectory ? this.invokeOnHover : undefined}

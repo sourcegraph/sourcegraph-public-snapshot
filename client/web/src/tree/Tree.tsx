@@ -294,7 +294,7 @@ export class Tree extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="tree" tabIndex={1} onKeyDown={this.onKeyDown} ref={this.setTreeElement}>
+            <div tabIndex={0} onKeyDown={this.onKeyDown} ref={this.setTreeElement}>
                 <TreeRoot
                     ref={reference => {
                         if (reference) {
@@ -343,7 +343,7 @@ export class Tree extends React.PureComponent<Props, State> {
                 : document.querySelector('.tree-container')) as HTMLElement
             const element = getDomElement(node.path)
             if (element) {
-                // scrollIntoView(element, root)
+                scrollIntoView(element, root)
             }
             this.setState({ selectedNode: node })
         }

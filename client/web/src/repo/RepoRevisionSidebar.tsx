@@ -112,9 +112,12 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                         <Tab>Files</Tab>
                         <Tab>Symbols</Tab>
                     </TabList>
-                    <div className="d-flex overflow-auto" style={{ height: '88vh' }}>
+                    <div
+                        aria-hidden={true}
+                        className="d-flex overflow-auto repo-revision-container__tabpanels explorer"
+                    >
                         <TabPanels className="w-100">
-                            <TabPanel>
+                            <TabPanel tabIndex={-1}>
                                 <Tree
                                     key="files"
                                     repoName={props.repoName}
@@ -122,7 +125,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                                     commitID={props.commitID}
                                     history={props.history}
                                     location={props.location}
-                                    scrollRootSelector="#explorer"
+                                    scrollRootSelector=".explorer"
                                     activePath={props.filePath}
                                     activePathIsDir={props.isDir}
                                     sizeKey={`Resizable:${STORAGE_KEY}`}
