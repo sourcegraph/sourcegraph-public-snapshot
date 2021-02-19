@@ -43,6 +43,7 @@ import {
     MutableVersionContextProps,
     SearchContextProps,
 } from '../..'
+import { displayRepoName } from '../../../../../shared/src/components/RepoFileLink'
 
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
@@ -223,6 +224,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                         isLightTheme={props.isLightTheme}
                         allExpanded={allExpanded}
                         fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
+                        repoDisplayName={displayRepoName(result.repository.name)}
                         settingsCascade={props.settingsCascade}
                     />
                 )
