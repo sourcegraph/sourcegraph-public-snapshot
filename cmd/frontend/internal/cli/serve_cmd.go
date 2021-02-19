@@ -150,7 +150,7 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	// Create an out-of-band migration runner onto which each enterprise init function
 	// can register migration routines to run in the background while they have work
 	// remaining.
-	outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(dbconn.Global)
+	outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(db)
 
 	// Run enterprise setup hook
 	enterprise := enterpriseSetupHook(db, outOfBandMigrationRunner)
