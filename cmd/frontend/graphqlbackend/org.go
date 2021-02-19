@@ -137,7 +137,7 @@ func (o *OrgResolver) ConfigurationCascade() *settingsCascade { return o.Setting
 
 func (o *OrgResolver) ViewerPendingInvitation(ctx context.Context) (*organizationInvitationResolver, error) {
 	if actor := actor.FromContext(ctx); actor.IsAuthenticated() {
-		orgInvitation, err := database.GlobalOrgInvitations.GetPending(ctx, o.org.ID, actor.UID)
+		orgInvitation, err := database.OrgInvitations(o.db).GetPending(ctx, o.org.ID, actor.UID)
 		if errcode.IsNotFound(err) {
 			return nil, nil
 		}

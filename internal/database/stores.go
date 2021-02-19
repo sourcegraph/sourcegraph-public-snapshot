@@ -20,6 +20,5 @@ var (
 	GlobalEventLogs                   = &EventLogStore{}
 	GlobalSurveyResponses             = &SurveyResponseStore{}
 	GlobalExternalAccounts            = &UserExternalAccountsStore{}
-	GlobalOrgInvitations              = &OrgInvitationStore{}
 	GlobalAuthz            AuthzStore = &authzStore{}
 )

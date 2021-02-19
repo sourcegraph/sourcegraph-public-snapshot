@@ -54,7 +54,7 @@ type inviteUserToOrganizationResult struct {
 func (r *inviteUserToOrganizationResult) SentInvitationEmail() bool { return r.sentInvitationEmail }
 func (r *inviteUserToOrganizationResult) InvitationURL() string     { return r.invitationURL }
 
-func (*schemaResolver) InviteUserToOrganization(ctx context.Context, args *struct {
+func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *struct {
 	Organization graphql.ID
 	Username     string
 }) (*inviteUserToOrganizationResult, error) {
@@ -81,7 +81,7 @@ func (*schemaResolver) InviteUserToOrganization(ctx context.Context, args *struc
 	if err != nil {
 		return nil, err
 	}
-	if _, err := database.GlobalOrgInvitations.Create(ctx, orgID, sender.ID, recipient.ID); err != nil {
+	if _, err := database.OrgInvitations(r.db).Create(ctx, orgID, sender.ID, recipient.ID); err != nil {
 		return nil, err
 	}
 	result := &inviteUserToOrganizationResult{
@@ -130,7 +130,7 @@ func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, ar
 
 	// 🚨 SECURITY: This fails if the org invitation's recipient is not the one given (or if the
 	// invitation is otherwise invalid), so we do not need to separately perform that check.
-	orgID, err := database.GlobalOrgInvitations.Respond(ctx, id, currentUser.user.ID, accept)
+	orgID, err := database.OrgInvitations(r.db).Respond(ctx, id, currentUser.user.ID, accept)
 	if err != nil {
 		return nil, err
 	}
@@ -204,7 +204,7 @@ func (r *schemaResolver) RevokeOrganizationInvitation(ctx context.Context, args 
 		return nil, err
 	}
 
-	if err := database.GlobalOrgInvitations.Revoke(ctx, orgInvitation.v.ID); err != nil {
+	if err := database.OrgInvitations(r.db).Revoke(ctx, orgInvitation.v.ID); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
