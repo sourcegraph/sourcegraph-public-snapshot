@@ -422,10 +422,7 @@ func logCommitSearchResultsToResolvers(ctx context.Context, db dbutil.DB, op *se
 		if err != nil {
 			return nil, err
 		}
-		commitHash := string(rawResult.Commit.ID)
-		if len(rawResult.Commit.ID) > 7 {
-			commitHash = string(rawResult.Commit.ID)[:7]
-		}
+		commitHash := rawResult.Commit.ID.Short()
 		timeagoConfig := timeago.NoMax(timeago.English)
 
 		url, err := commitResolver.URL()
