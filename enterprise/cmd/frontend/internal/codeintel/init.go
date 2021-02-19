@@ -40,7 +40,7 @@ func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigrat
 		return err
 	}
 
-	resolver, err := newResolver(ctx, observationContext)
+	resolver, err := newResolver(ctx, db, observationContext)
 	if err != nil {
 		return err
 	}
