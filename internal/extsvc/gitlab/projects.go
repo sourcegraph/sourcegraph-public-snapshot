@@ -98,7 +98,7 @@ func (c *Client) cachedGetProject(ctx context.Context, key string, forceFetch bo
 		if cached := c.getProjectFromCache(ctx, key); cached != nil {
 			projectsGitLabCacheCounter.WithLabelValues("hit").Inc()
 			if cached.NotFound {
-				return nil, ErrNotFound
+				return nil, ErrProjectNotFound
 			}
 			return &cached.Project, nil
 		}
