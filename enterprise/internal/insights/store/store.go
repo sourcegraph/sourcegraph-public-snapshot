@@ -113,7 +113,7 @@ SELECT time,
 	value,
 	m.metadata
 FROM series_points p
-INNER JOIN metadata m ON p.metadata_id = m.id
+LEFT JOIN metadata m ON p.metadata_id = m.id
 WHERE %s
 ORDER BY time DESC
 `

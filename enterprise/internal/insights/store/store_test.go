@@ -143,6 +143,11 @@ func TestRecordSeriesPoints(t *testing.T) {
 			Point:    SeriesPoint{Time: time("2020-03-02T00:00:00Z"), Value: 2.2},
 			Metadata: []interface{}{"some", "data", "two"},
 		},
+		{
+			SeriesID: "no metadata",
+			Point:    SeriesPoint{Time: time("2020-03-03T00:00:00Z"), Value: 3.3},
+			Metadata: nil,
+		},
 	} {
 		if err := store.RecordSeriesPoint(ctx, record); err != nil {
 			t.Fatal(err)
@@ -154,9 +159,10 @@ func TestRecordSeriesPoints(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Want("len(points)", int(2)).Equal(t, len(points))
-	autogold.Want("points[0].String()", `SeriesPoint{Time: "2020-03-02 00:00:00 +0000 UTC", Value: 2.2, Metadata: ["some", "data", "two"]}`).Equal(t, points[0].String())
-	autogold.Want("points[1].String()", `SeriesPoint{Time: "2020-03-01 00:00:00 +0000 UTC", Value: 1.1, Metadata: {"some": "data"}}`).Equal(t, points[1].String())
+	autogold.Want("len(points)", int(3)).Equal(t, len(points))
+	autogold.Want("points[0].String()", `SeriesPoint{Time: "2020-03-03 00:00:00 +0000 UTC", Value: 3.3, Metadata: }`).Equal(t, points[0].String())
+	autogold.Want("points[1].String()", `SeriesPoint{Time: "2020-03-02 00:00:00 +0000 UTC", Value: 2.2, Metadata: ["some", "data", "two"]}`).Equal(t, points[1].String())
+	autogold.Want("points[2].String()", `SeriesPoint{Time: "2020-03-01 00:00:00 +0000 UTC", Value: 1.1, Metadata: {"some": "data"}}`).Equal(t, points[2].String())
 
 	// Confirm the data point with repository name got recorded correctly.
 	// TODO(slimsag): future: once we support querying by repo ID/names, add tests to ensure that information is inserted properly here.
