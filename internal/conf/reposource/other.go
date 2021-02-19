@@ -41,7 +41,7 @@ func cloneURLToRepoName(cloneURL, baseURL, repositoryPathPattern string) (string
 		return "", err
 	}
 	if !match {
-		return "", urlMismatchErr{cloneURL: cloneURL, hostURL: baseURL}
+		return "", nil
 	}
 
 	basePrefix := parsedBaseURL.Path
@@ -52,7 +52,6 @@ func cloneURLToRepoName(cloneURL, baseURL, repositoryPathPattern string) (string
 		return "", urlMismatchErr{cloneURL: cloneURL, hostURL: baseURL}
 	}
 	relativeRepoPath := strings.TrimPrefix(parsedCloneURL.Path, basePrefix)
-
 	base := url.URL{
 		Host: parsedBaseURL.Host,
 		Path: parsedBaseURL.Path,

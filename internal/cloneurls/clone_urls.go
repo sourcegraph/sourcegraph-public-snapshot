@@ -32,6 +32,8 @@ func ReposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 			extsvc.KindBitbucketServer,
 			extsvc.KindAWSCodeCommit,
 			extsvc.KindGitolite,
+			extsvc.KindPhabricator,
+			extsvc.KindOther,
 		},
 		LimitOffset: &database.LimitOffset{
 			Limit: 500, // The number is randomly chosen
@@ -71,6 +73,15 @@ func ReposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 			case *schema.GitoliteConnection:
 				rs = reposource.Gitolite{GitoliteConnection: c}
 				// Gitolite type does not have URL
+			case *schema.PhabricatorConnection:
+				// If this repository is mirrored by Phabricator, its clone URL should be
+				// handled by a supported code host or an OtherExternalServiceConnection.
+				// If this repository is hosted by Phabricator, it should be handled by
+				// an OtherExternalServiceConnection.
+				continue
+			case *schema.OtherExternalServiceConnection:
+				rs = reposource.Other{OtherExternalServiceConnection: c}
+				host = c.Url
 			default:
 				return "", errors.Errorf("unexpected connection type: %T", cfg)
 			}
