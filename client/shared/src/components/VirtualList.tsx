@@ -1,16 +1,16 @@
 import * as React from 'react'
 import VisibilitySensor from 'react-visibility-sensor'
 
-interface Props<T, U> {
+interface Props<TItem, TExtraItemProps> {
     itemsToShow: number
-    items: T[]
+    items: TItem[]
 
-    // Additional props passed to the render function.
-    itemProps: U
-    // Function to render an item once it becomes visible.
-    renderItem: (item: T, additionalProps: U) => JSX.Element
-    // Determines the list key of an item. Needed for stable react array rendering.
-    itemKey: (item: T) => string
+    /* Additional props passed to the render function. */
+    itemProps: TExtraItemProps
+    /* Function to render an item once it becomes visible. */
+    renderItem: (item: TItem, additionalProps: TExtraItemProps) => JSX.Element
+    /* Determines the list key of an item. Needed for stable react array rendering. */
+    itemKey: (item: TItem) => string
 
     /**
      * Called when the user scrolled close to the bottom of the list.
@@ -36,7 +36,10 @@ interface Props<T, U> {
 
 interface State {}
 
-export class VirtualList<TItem, TExtraItemProps = undefined> extends React.PureComponent<Props<TItem, TExtraItemProps>, State> {
+export class VirtualList<TItem, TExtraItemProps = undefined> extends React.PureComponent<
+    Props<TItem, TExtraItemProps>,
+    State
+> {
     public onChangeVisibility = (isVisible: boolean, index: number): void => {
         if (isVisible && index >= this.props.itemsToShow - 2) {
             this.props.onShowMoreItems()

@@ -161,7 +161,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
         }
     }
 
-    private itemKey = (item: OrderedURI): string => `${item.uri}:${item.repo}`
+    private itemKey = (item: OrderedURI): string => item.uri
 
     private renderFileMatch = (
         { uri }: OrderedURI,
