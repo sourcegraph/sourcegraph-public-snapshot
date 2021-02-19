@@ -49,7 +49,7 @@ func newExternalHTTPHandler(db dbutil.DB, schema *graphql.Schema, gitHubWebhook 
 	// 🚨 SECURITY: The HTTP API should not accept cookies as authentication (except those with the
 	// X-Requested-With header). Doing so would open it up to CSRF attacks.
 	apiHandler = session.CookieMiddlewareWithCSRFSafety(apiHandler, corsAllowHeader, isTrustedOrigin) // API accepts cookies with special header
-	apiHandler = internalhttpapi.AccessTokenAuthMiddleware(apiHandler)                                // API accepts access tokens
+	apiHandler = internalhttpapi.AccessTokenAuthMiddleware(db, apiHandler)                            // API accepts access tokens
 	apiHandler = gziphandler.GzipHandler(apiHandler)
 
 	// 🚨 SECURITY: This handler implements its own token auth inside enterprise
@@ -64,9 +64,9 @@ func newExternalHTTPHandler(db dbutil.DB, schema *graphql.Schema, gitHubWebhook 
 	appHandler = handlerutil.CSRFMiddleware(appHandler, func() bool {
 		return globals.ExternalURL().Scheme == "https"
 	}) // after appAuthMiddleware because SAML IdP posts data to us w/o a CSRF token
-	appHandler = authMiddlewares.App(appHandler)                       // 🚨 SECURITY: auth middleware
-	appHandler = session.CookieMiddleware(appHandler)                  // app accepts cookies
-	appHandler = internalhttpapi.AccessTokenAuthMiddleware(appHandler) // app accepts access tokens
+	appHandler = authMiddlewares.App(appHandler)                           // 🚨 SECURITY: auth middleware
+	appHandler = session.CookieMiddleware(appHandler)                      // app accepts cookies
+	appHandler = internalhttpapi.AccessTokenAuthMiddleware(db, appHandler) // app accepts access tokens
 
 	// Mount handlers and assets.
 	sm := http.NewServeMux()
