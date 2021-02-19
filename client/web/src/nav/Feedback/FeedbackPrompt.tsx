@@ -177,7 +177,7 @@ export const FeedbackPrompt: React.FunctionComponent<Props> = ({ open, history }
     const forceClose = useCallback(() => setIsOpen(false), [])
 
     return (
-        <ButtonDropdown a11y={false} isOpen={isOpen} toggle={handleToggle} className="feedback-prompt">
+        <ButtonDropdown a11y={false} isOpen={isOpen} toggle={handleToggle} className="feedback-prompt" group={false}>
             <DropdownToggle
                 tag="button"
                 caret={false}
