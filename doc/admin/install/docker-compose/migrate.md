@@ -30,6 +30,10 @@ If you are on a monthly-based usage pricing model, please check first with your 
 
 ## Migration guide
 
+If you wish to automate the migration process, a script has been provided in the [deploy-sourcegraph-docker repository](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/tools/migrate.sh) which will backup and migrate your single server database to a docker-compose deployment. 
+
+To manually migrate use the steps outlined below. 
+
 ### Backup single Docker image database
 
 #### Find single Docker image's `CONTAINER_ID`
@@ -49,13 +53,15 @@ CONTAINER ID        IMAGE
 
 ```bash
 # Use the CONTAINER_ID found in the previous step
-docker exec -it "$CONTAINER_ID" sh -c 'pg_dumpall --verbose --username=postgres' > /tmp/db.out
+docker exec -it "$CONTAINER_ID" sh -c 'pg_dump -C --username=postgres sourcegraph' > /tmp/sourcegaph_db.out
+
+docker exec -it "$CONTAINER_ID" sh -c 'pg_dump -C --username=postgres sourcegraph-codeintel' > /tmp/codeintel_db.out
 ```
 
 * Copy Postgres dump from the `sourcegraph/server` container to the host machine
 
 ```bash
-docker cp "$CONTAINER_ID":/tmp/db.out /tmp/db.out
+docker cp "$CONTAINER_ID":/tmp/*_db.out /tmp/
 ```
 
 #### Copy database dump to your local machine
@@ -66,10 +72,10 @@ docker cp "$CONTAINER_ID":/tmp/db.out /tmp/db.out
 
 ```bash
 # Modify this command with your authentication information
-scp example_user@example_docker_host.com:/tmp/db.out db.out
+scp example_user@example_docker_host.com:/tmp/*.out <local_dir>
 ```
 
-* Run `less "/tmp/db.out"` and verify that the database dump has contents that you expect (e.g. that some of your repository names appear)
+* Run `less "/tmp/sorucegraph_db.out"` and `less "/tmp/codeintel_db.out"` and verify that the database dump has contents that you expect (e.g. that some of your repository names appear)
 
 ### Create the new Docker Compose instance
 
@@ -105,7 +111,7 @@ cd "$DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT"/docker-compose
 * Start the Postgres instance on its own
 
 ```bash
-docker-compose -f pgsql-only-migrate.docker-compose.yaml up -d
+docker-compose -f db-only-migrate.docker-compose.yaml up -d
 ```
 
 * End your `ssh` session with the new Docker Compose deployment host
@@ -116,7 +122,7 @@ docker-compose -f pgsql-only-migrate.docker-compose.yaml up -d
 
 ```bash
 # Modify this command with your authentication information
-scp db.out example_user@example_docker_compose_host.com:/tmp/db.out
+scp *db.out example_user@example_docker_compose_host.com:/tmp/
 ```
 
 * `ssh` from your local machine into the Docker Compose deployment host
@@ -124,10 +130,11 @@ scp db.out example_user@example_docker_compose_host.com:/tmp/db.out
 * Copy database dump from the Docker Compose host to the Postgres container
 
 ```bash
-docker cp /tmp/db.out pgsql:/tmp/db.out
+docker cp /tmp/sourcegraph_db.out pgsql:/tmp/
+docker cp /tmp/codeintel_db.out codeintel-db:/tmp/
 ```
 
-* Create a shell session inside the Postgres container
+* Create a shell session inside the pgsql container
 
 ```bash
 docker exec -it pgsql /bin/sh
@@ -136,7 +143,7 @@ docker exec -it pgsql /bin/sh
 * Restore the database dump
 
 ```bash
-psql --username=sg -f /tmp/db.out postgres
+psql --username=sg -f /tmp/sourcegraph_db.out postgres
 ```
 
 * Open up a psql session inside the Postgres container
@@ -150,6 +157,44 @@ psql --username=sg postgres
 ```postgres
 DROP DATABASE sg;
 ALTER DATABASE sourcegraph RENAME TO sg;
+ALTER DATABASE sg OWNER TO sg;
+```
+
+* End your `psql` session
+
+```bash
+\q
+```
+
+* End your Postgres container shell session
+
+```bash
+exit
+```
+
+* Create a shell session inside the codeintel-db container
+
+```bash
+docker exec -it codeintel-db /bin/sh
+```
+
+* Restore the database dump
+
+```bash
+psql --username=sg -f /tmp/codeintel_db.out postgres
+```
+
+* Open up a psql session inside the Postgres container
+
+```bash
+psql --username=sg postgres
+```
+
+* Apply the following tweaks to transform the single Docker image's database schema into Docker Compose's
+
+```postgres
+DROP DATABASE sg;
+ALTER DATABASE "sourcegraph-codeintel" RENAME TO sg;
 ALTER DATABASE sg OWNER TO sg;
 ```
 

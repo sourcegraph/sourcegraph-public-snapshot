@@ -100,7 +100,7 @@ func calcOperationCost(def ast.Node, fragmentCosts map[string]int, variables map
 	// NOTE: When we encounter errors in our visit funcs we return
 	// visitor.ActionBreak to stop walking the tree and set the top level err
 	// variable so that it is returned
-	var err error
+	var visitErr error
 
 	if fragmentCosts == nil {
 		fragmentCosts = make(map[string]int)
@@ -133,6 +133,9 @@ func calcOperationCost(def ast.Node, fragmentCosts map[string]int, variables map
 		multiplier = multiplier / currentLimit
 	}
 
+	nonNullVariables := make(map[string]interface{})
+	defaultValues := make(map[string]interface{})
+
 	v := &visitor.VisitorOptions{
 		Enter: func(p visitor.VisitFuncParams) (string, interface{}) {
 			switch node := p.Node.(type) {
@@ -153,6 +156,20 @@ func calcOperationCost(def ast.Node, fragmentCosts map[string]int, variables map
 					return visitor.ActionNoChange, nil
 				}
 				fieldCount += multiplier
+			case *ast.VariableDefinition:
+				// Track which variables are nonNull.
+				if _, nonNull := node.Type.(*ast.NonNull); nonNull {
+					nonNullVariables[node.Variable.Name.Value] = struct{}{}
+				}
+				if node.DefaultValue == nil {
+					return visitor.ActionNoChange, nil
+				}
+				// Record default values
+				switch v := node.DefaultValue.(type) {
+				case *ast.IntValue:
+					// Yes, IntValue's value is a string...
+					defaultValues[node.Variable.Name.Value] = v.Value
+				}
 			case *ast.Variable:
 				// We may have a limit variable
 				if !shouldCheckParam(p) {
@@ -160,12 +177,22 @@ func calcOperationCost(def ast.Node, fragmentCosts map[string]int, variables map
 				}
 				limitVar, ok := variables[node.Name.Value]
 				if !ok {
-					err = fmt.Errorf("missing variable: %q", node.Name.Value)
-					return visitor.ActionBreak, nil
+					if _, nonNull := nonNullVariables[node.Name.Value]; nonNull {
+						visitErr = fmt.Errorf("missing nonnull variable: %q", node.Name.Value)
+						return visitor.ActionBreak, nil
+					}
+					if v, ok := defaultValues[node.Name.Value]; ok {
+						// Pick default value if it was defined
+						limitVar = v
+					} else {
+						// Fall back to a default of 1
+						currentLimit = 1
+						return visitor.ActionNoChange, nil
+					}
 				}
 				limit, err := extractInt(limitVar)
 				if err != nil {
-					err = errors.Wrap(err, "extracting limit")
+					visitErr = errors.Wrap(err, "extracting limit")
 					return visitor.ActionBreak, nil
 				}
 				if limit <= 0 {
@@ -179,7 +206,7 @@ func calcOperationCost(def ast.Node, fragmentCosts map[string]int, variables map
 				}
 				limit, err := strconv.Atoi(node.Value)
 				if err != nil {
-					err = errors.Wrap(err, "parsing limit")
+					visitErr = errors.Wrap(err, "parsing limit")
 					return visitor.ActionBreak, nil
 				}
 				if limit <= 0 {
@@ -189,7 +216,7 @@ func calcOperationCost(def ast.Node, fragmentCosts map[string]int, variables map
 			case *ast.FragmentSpread:
 				fragmentCost, ok := fragmentCosts[node.Name.Value]
 				if !ok {
-					err = fmt.Errorf("unknown fragment %q", node.Name.Value)
+					visitErr = fmt.Errorf("unknown fragment %q", node.Name.Value)
 					return visitor.ActionBreak, nil
 				}
 				fieldCount += fragmentCost * multiplier
@@ -197,9 +224,9 @@ func calcOperationCost(def ast.Node, fragmentCosts map[string]int, variables map
 				inlineFragmentDepth++
 				// We calculate inline fragment costs and store them
 				var fragCost *queryCost
-				fragCost, err = calcOperationCost(node.SelectionSet, fragmentCosts, variables)
+				fragCost, err := calcOperationCost(node.SelectionSet, fragmentCosts, variables)
 				if err != nil {
-					err = errors.Wrap(err, "calculating inline fragment cost")
+					visitErr = errors.Wrap(err, "calculating inline fragment cost")
 					return visitor.ActionBreak, nil
 				}
 				inlineFragmentCosts[node.TypeCondition.Name.Value] = fragCost.FieldCount * multiplier
@@ -231,7 +258,7 @@ func calcOperationCost(def ast.Node, fragmentCosts map[string]int, variables map
 	return &queryCost{
 		FieldCount: fieldCount + maxInlineFragmentCost,
 		MaxDepth:   maxDepth,
-	}, err
+	}, visitErr
 }
 
 func calcFragmentCost(frag *ast.FragmentDefinition) (string, int, error) {
@@ -287,6 +314,8 @@ func extractInt(i interface{}) (int, error) {
 		return v, nil
 	case float64:
 		return int(v), nil
+	case string:
+		return strconv.Atoi(v)
 	default:
 		return 0, fmt.Errorf("unkown limit type: %T", i)
 	}

@@ -74,10 +74,18 @@ func (h honeycombTracer) TraceQuery(ctx context.Context, queryString string, ope
 		if anonymous {
 			uid = sgtrace.AnonymousUID(ctx)
 		}
+		if uid == "unknown" {
+			// The user is anonymous with no cookie, use IP
+			ip := sgtrace.IPAddress(ctx)
+			if ip != "" {
+				uid = ip
+			}
+		}
 
 		ev := honey.Event("graphql-cost")
 		ev.SampleRate = uint(traceGraphQLQueriesSample)
 		ev.AddField("query", queryString)
+		ev.AddField("variables", variables)
 		ev.AddField("anonymous", anonymous)
 		ev.AddField("uid", uid)
 		ev.AddField("operationName", operationName)

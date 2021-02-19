@@ -5,6 +5,7 @@ import SearchIcon from 'mdi-react/SearchIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
+import { debounceTime } from 'rxjs/operators'
 import { FetchFileParameters } from '../../../../../shared/src/components/CodeExcerpt'
 import { FileMatch } from '../../../../../shared/src/components/FileMatch'
 import { VirtualList } from '../../../../../shared/src/components/VirtualList'
@@ -16,7 +17,6 @@ import { SettingsCascadeProps } from '../../../../../shared/src/settings/setting
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { asError } from '../../../../../shared/src/util/errors'
-import { isDefined } from '../../../../../shared/src/util/types'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { AuthenticatedUser } from '../../../auth'
 import { ErrorAlert } from '../../../components/alerts'
@@ -117,7 +117,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     versionContext: resolveVersionContext(versionContext, availableVersionContexts),
                     searchContextSpec: selectedSearchContextSpec,
                     trace,
-                }),
+                }).pipe(debounceTime(500)),
             [
                 streamSearch,
                 query,
@@ -200,9 +200,10 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         [results?.results.length]
     )
     const logSearchResultClicked = useCallback(() => telemetryService.log('SearchResultClicked'), [telemetryService])
-    const renderResult = (result: GQL.GenericSearchResultInterface | GQL.IFileMatch): JSX.Element | undefined => {
-        switch (result.__typename) {
-            case 'FileMatch':
+
+    const renderedResults = useMemo(() => {
+        const renderResult = (result: GQL.GenericSearchResultInterface | GQL.IFileMatch): JSX.Element => {
+            if (result.__typename === 'FileMatch') {
                 return (
                     <FileMatch
                         key={'file:' + result.file.url}
@@ -219,11 +220,28 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                         settingsCascade={props.settingsCascade}
                     />
                 )
+            }
+            return (
+                <SearchResult
+                    key={result.url}
+                    result={result}
+                    isLightTheme={props.isLightTheme}
+                    history={props.history}
+                />
+            )
         }
-        return (
-            <SearchResult key={result.url} result={result} isLightTheme={props.isLightTheme} history={props.history} />
-        )
-    }
+
+        return results?.results.map(result => renderResult(result)) || []
+    }, [
+        allExpanded,
+        location,
+        logSearchResultClicked,
+        props.fetchHighlightedFileLineRanges,
+        props.history,
+        props.isLightTheme,
+        props.settingsCascade,
+        results?.results,
+    ])
 
     const onSearchAgain = useCallback(
         (additionalFilters: string[]) => {
@@ -295,7 +313,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     className="mt-2"
                     itemsToShow={itemsToShow}
                     onShowMoreItems={onBottomHit}
-                    items={results?.results.map(result => renderResult(result)).filter(isDefined) || []}
+                    items={renderedResults}
                 />
 
                 {(!results || results?.state === 'loading') && (
