@@ -82,4 +82,5 @@ Follow the instructions in our [Docker to Docker Compose migration guide](../ins
 
 ### Option 3: All data
 
-Backing up all persistent volumes is the most complete option. Instructions for doing this depend on the deployment method and the cloud host. [Contact us](https://about.sourcegraph.com/contact/sales) to discuss more.
+Backing up all persistent volumes is the most complete option. Instructions for doing this depends on the deployment
+method and the cloud host. [Contact us](https://about.sourcegraph.com/contact/sales) to discuss more.

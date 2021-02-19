@@ -61,6 +61,11 @@ interface State {
     itemsToShow: number
 }
 
+interface OrderedURI {
+    uri: string
+    repo: string
+}
+
 /**
  * Displays a flat list of file excerpts. For a tree view, use FileLocationsTree.
  */
@@ -134,23 +139,13 @@ export class FileLocations extends React.PureComponent<Props, State> {
 
         return (
             <div className={`file-locations ${this.props.className || ''}`}>
-                <VirtualList
+                <VirtualList<OrderedURI, { locationsByURI: Map<string, Location[]> }>
                     itemsToShow={this.state.itemsToShow}
                     onShowMoreItems={this.onShowMoreItems}
-                    items={orderedURIs.map(({ uri, repo }, index) => (
-                        <FileMatch
-                            key={index}
-                            location={this.props.location}
-                            expanded={true}
-                            result={referencesToFileLineMatch(uri, locationsByURI.get(uri)!)}
-                            icon={this.props.icon}
-                            onSelect={this.onSelect}
-                            showAllMatches={true}
-                            isLightTheme={this.props.isLightTheme}
-                            fetchHighlightedFileLineRanges={this.props.fetchHighlightedFileLineRanges}
-                            settingsCascade={this.props.settingsCascade}
-                        />
-                    ))}
+                    items={orderedURIs}
+                    renderItem={this.renderFileMatch}
+                    itemProps={{ locationsByURI }}
+                    itemKey={this.itemKey}
                 />
             </div>
         )
@@ -165,6 +160,25 @@ export class FileLocations extends React.PureComponent<Props, State> {
             this.props.onSelect()
         }
     }
+
+    private itemKey = (item: OrderedURI): string => item.uri
+
+    private renderFileMatch = (
+        { uri }: OrderedURI,
+        { locationsByURI }: { locationsByURI: Map<string, Location[]> }
+    ): JSX.Element => (
+        <FileMatch
+            location={this.props.location}
+            expanded={true}
+            result={referencesToFileLineMatch(uri, locationsByURI.get(uri)!)}
+            icon={this.props.icon}
+            onSelect={this.onSelect}
+            showAllMatches={true}
+            isLightTheme={this.props.isLightTheme}
+            fetchHighlightedFileLineRanges={this.props.fetchHighlightedFileLineRanges}
+            settingsCascade={this.props.settingsCascade}
+        />
+    )
 }
 
 function referencesToFileLineMatch(uri: string, references: Badged<Location>[]): FileLineMatch {

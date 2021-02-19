@@ -1243,7 +1243,7 @@ func getPatternInfo(q query.Q, opts *getPatternInfoOptions) (*search.TextPattern
 
 // indexValue converts the query index field to one of yes (default), only, or no
 // enum values.
-func indexValue(q query.QueryInfo) query.YesNoOnly {
+func indexValue(q query.Q) query.YesNoOnly {
 	indexParam := query.Yes
 	if index := q.Values(query.FieldIndex); len(index) > 0 {
 		indexParam = query.ParseYesNoOnly(index[0].ToString())

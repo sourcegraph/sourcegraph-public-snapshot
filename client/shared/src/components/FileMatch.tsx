@@ -43,9 +43,6 @@ interface Props extends SettingsCascadeProps {
      */
     result: FileLineMatch
 
-    /* Called when the first result has fully loaded. */
-    onFirstResultLoad?: () => void
-
     /**
      * Formatted repository name to be displayed in repository link. If not
      * provided, the default format will be displayed.

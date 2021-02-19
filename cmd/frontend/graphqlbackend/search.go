@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -187,7 +186,7 @@ func queryForStableResults(args *SearchArgs, q query.Q) (*SearchArgs, query.Q, e
 	return args, q, nil
 }
 
-func processPaginationRequest(args *SearchArgs, queryInfo query.QueryInfo) (*searchPaginationInfo, error) {
+func processPaginationRequest(args *SearchArgs, q query.Q) (*searchPaginationInfo, error) {
 	var pagination *searchPaginationInfo
 	if args.First != nil {
 		cursor, err := unmarshalSearchCursor(args.After)
@@ -237,8 +236,6 @@ func detectSearchType(version string, patternType *string) (query.SearchType, er
 	}
 	return searchType, nil
 }
-
-var patternTypeRegex = lazyregexp.New(`(?i)patterntype:([a-zA-Z"']+)`)
 
 func overrideSearchType(input string, searchType query.SearchType) query.SearchType {
 	q, err := query.ParseAndOr(input, query.SearchTypeLiteral)
