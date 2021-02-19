@@ -1,5 +1,5 @@
-import { combineLatest, Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { combineLatest, Observable, of } from 'rxjs'
+import { catchError, map } from 'rxjs/operators'
 import { requestGraphQL } from '../backend/graphql'
 import { InsightsResult, InsightFields } from '../graphql-operations'
 import { LineChartContent } from 'sourcegraph'
@@ -11,6 +11,7 @@ import {
 } from '../../../shared/src/api/client/services/viewService'
 import { ContributableViewContainer } from '../../../shared/src/api/protocol'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
+import { asError } from '../../../shared/src/util/errors'
 
 const insightFieldsFragment = gql`
     fragment InsightFields on Insight {
@@ -50,15 +51,18 @@ export function getCombinedViews<W extends ContributableViewContainer>(
         getViewsForContainer(where, parameters, viewService),
         fetchBackendInsights().pipe(
             map(backendInsights =>
-                backendInsights.map((insight, index) => ({
-                    id: `insight.backend${index}`,
-                    view: {
-                        title: insight.title,
-                        subtitle: insight.description,
-                        content: [backendInsightToViewContent(insight)],
-                    },
-                }))
-            )
+                backendInsights.map(
+                    (insight, index): ViewProviderResult => ({
+                        id: `insight.backend${index}`,
+                        view: {
+                            title: insight.title,
+                            subtitle: insight.description,
+                            content: [backendInsightToViewContent(insight)],
+                        },
+                    })
+                )
+            ),
+            catchError(error => of<ViewProviderResult[]>([{ id: 'insight.backend', view: asError(error) }]))
         ),
     ]).pipe(map(([extensionViews, backendInsights]) => [...backendInsights, ...extensionViews]))
 }
