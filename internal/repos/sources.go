@@ -152,7 +152,10 @@ func newUnsupportedAuthenticatorError(source string, a auth.Authenticator) Unsup
 }
 
 // ChangesetNotFoundError is returned by LoadChangeset if the changeset
-// could not be found on the codehost.
+// could not be found on the codehost. This is only returned, if the
+// changeset is actually not found. Other not found errors, such as
+// repo not found should NOT raise this error, since it will cause
+// the changeset to be marked as deleted.
 type ChangesetNotFoundError struct {
 	Changeset *Changeset
 }
