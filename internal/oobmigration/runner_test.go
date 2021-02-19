@@ -143,13 +143,13 @@ func TestRunMigrator(t *testing.T) {
 	tickClock := glock.NewMockClock()
 	refreshClock := glock.NewMockClock()
 
-	runner := newRunner(store, time.Second, time.Second*30, tickClock, refreshClock)
+	runner := newRunner(store, time.Second*30, refreshClock)
 	migrator := NewMockMigrator()
 	migrator.ProgressFunc.SetDefaultReturn(0.5, nil)
 
-	runMigratorWrapped(runner, migrator, func(migrations chan<- Migration, ticker chan<- time.Time) {
+	runMigratorWrapped(runner, migrator, tickClock, func(migrations chan<- Migration) {
 		migrations <- Migration{ID: 1, Progress: 0.5}
-		tickN(ticker, 3)
+		tickN(tickClock, 3)
 	})
 
 	if callCount := len(migrator.UpFunc.History()); callCount != 3 {
@@ -165,14 +165,14 @@ func TestRunMigratorMigrationErrors(t *testing.T) {
 	tickClock := glock.NewMockClock()
 	refreshClock := glock.NewMockClock()
 
-	runner := newRunner(store, time.Second, time.Second*30, tickClock, refreshClock)
+	runner := newRunner(store, time.Second*30, refreshClock)
 	migrator := NewMockMigrator()
 	migrator.ProgressFunc.SetDefaultReturn(0.5, nil)
 	migrator.UpFunc.SetDefaultReturn(errors.New("uh-oh"))
 
-	runMigratorWrapped(runner, migrator, func(migrations chan<- Migration, ticker chan<- time.Time) {
+	runMigratorWrapped(runner, migrator, tickClock, func(migrations chan<- Migration) {
 		migrations <- Migration{ID: 1, Progress: 0.5}
-		tickN(ticker, 1)
+		tickN(tickClock, 1)
 	})
 
 	if calls := store.AddErrorFunc.history; len(calls) != 1 {
@@ -192,15 +192,15 @@ func TestRunMigratorMigrationFinishesUp(t *testing.T) {
 	tickClock := glock.NewMockClock()
 	refreshClock := glock.NewMockClock()
 
-	runner := newRunner(store, time.Second, time.Second*30, tickClock, refreshClock)
+	runner := newRunner(store, time.Second*30, refreshClock)
 	migrator := NewMockMigrator()
 	migrator.ProgressFunc.PushReturn(0.8, nil)       // check
 	migrator.ProgressFunc.PushReturn(0.9, nil)       // after up
 	migrator.ProgressFunc.SetDefaultReturn(1.0, nil) // after up
 
-	runMigratorWrapped(runner, migrator, func(migrations chan<- Migration, ticker chan<- time.Time) {
+	runMigratorWrapped(runner, migrator, tickClock, func(migrations chan<- Migration) {
 		migrations <- Migration{ID: 1, Progress: 0.8}
-		tickN(ticker, 5)
+		tickN(tickClock, 5)
 	})
 
 	if callCount := len(migrator.UpFunc.History()); callCount != 2 {
@@ -216,15 +216,15 @@ func TestRunMigratorMigrationFinishesDown(t *testing.T) {
 	tickClock := glock.NewMockClock()
 	refreshClock := glock.NewMockClock()
 
-	runner := newRunner(store, time.Second, time.Second*30, tickClock, refreshClock)
+	runner := newRunner(store, time.Second*30, refreshClock)
 	migrator := NewMockMigrator()
 	migrator.ProgressFunc.PushReturn(0.2, nil)       // check
 	migrator.ProgressFunc.PushReturn(0.1, nil)       // after down
 	migrator.ProgressFunc.SetDefaultReturn(0.0, nil) // after down
 
-	runMigratorWrapped(runner, migrator, func(migrations chan<- Migration, ticker chan<- time.Time) {
+	runMigratorWrapped(runner, migrator, tickClock, func(migrations chan<- Migration) {
 		migrations <- Migration{ID: 1, Progress: 0.2, ApplyReverse: true}
-		tickN(ticker, 5)
+		tickN(tickClock, 5)
 	})
 
 	if callCount := len(migrator.UpFunc.History()); callCount != 0 {
@@ -240,7 +240,7 @@ func TestRunMigratorMigrationChangesDirection(t *testing.T) {
 	tickClock := glock.NewMockClock()
 	refreshClock := glock.NewMockClock()
 
-	runner := newRunner(store, time.Second, time.Second*30, tickClock, refreshClock)
+	runner := newRunner(store, time.Second*30, refreshClock)
 	migrator := NewMockMigrator()
 	migrator.ProgressFunc.PushReturn(0.2, nil) // check
 	migrator.ProgressFunc.PushReturn(0.1, nil) // after down
@@ -249,11 +249,11 @@ func TestRunMigratorMigrationChangesDirection(t *testing.T) {
 	migrator.ProgressFunc.PushReturn(0.1, nil) // after up
 	migrator.ProgressFunc.PushReturn(0.2, nil) // after up
 
-	runMigratorWrapped(runner, migrator, func(migrations chan<- Migration, ticker chan<- time.Time) {
+	runMigratorWrapped(runner, migrator, tickClock, func(migrations chan<- Migration) {
 		migrations <- Migration{ID: 1, Progress: 0.2, ApplyReverse: true}
-		tickN(ticker, 5)
+		tickN(tickClock, 5)
 		migrations <- Migration{ID: 1, Progress: 0.0, ApplyReverse: false}
-		tickN(ticker, 5)
+		tickN(tickClock, 5)
 	})
 
 	if callCount := len(migrator.UpFunc.History()); callCount != 5 {
@@ -264,36 +264,33 @@ func TestRunMigratorMigrationChangesDirection(t *testing.T) {
 	}
 }
 
-// runMigratorWrapped creates a migrations and a ticker channel, then invokes the
-// runMigrator function and the given interact function concurrently. The interact
-// function is passed the migrations and ticker channels, which can control the
-// behavior of the migration controller.
+// runMigratorWrapped creates a migrations channel, then passes it to both the runMigrator
+// function and the given interact function, which execute concurrently. This channel can
+// control the behavior of the migration controller from within the interact function.
 //
-// This method blocks until both the interact and runMigrator functions return. The
-// return of the interact function cancels a context controlling the runMigrator
-// main loop.
-func runMigratorWrapped(r *Runner, migrator Migrator, interact func(migrations chan<- Migration, ticker chan<- time.Time)) {
+// This method blocks until both functions return. The return of the interact function
+// cancels a context controlling the runMigrator main loop.
+func runMigratorWrapped(r *Runner, migrator Migrator, clock glock.Clock, interact func(migrations chan<- Migration)) {
 	ctx, cancel := context.WithCancel(context.Background())
 	migrations := make(chan Migration)
-	ticker := make(chan time.Time)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
 
 	go func() {
 		defer wg.Done()
-		runMigrator(ctx, r, migrator, migrations, ticker)
+		runMigrator(ctx, r, migrator, migrations, time.Second, clock)
 	}()
 
-	interact(migrations, ticker)
+	interact(migrations)
 
 	cancel()
 	wg.Wait()
 }
 
-// tickN sends n values down the given channel.
-func tickN(ticker chan<- time.Time, n int) {
+// tickN advances the given clock by a second n time with a guaranteed reader.
+func tickN(clock *glock.MockClock, n int) {
 	for i := 0; i < n; i++ {
-		ticker <- time.Now()
+		clock.BlockingAdvance(time.Second)
 	}
 }

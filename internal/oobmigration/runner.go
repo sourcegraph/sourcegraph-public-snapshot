@@ -228,7 +228,7 @@ func (r *Runner) Stop() {
 // runMigrator runs the given migrator function periodically (on each read from ticker)
 // while the migration is not complete. We will periodically (on each read from migrations)
 // update our current view of the migration progress and (more importantly) its direction.
-func runMigrator(ctx context.Context, r *Runner, migrator Migrator, migrations <-chan Migration, ticker <-chan time.Time) {
+func runMigrator(ctx context.Context, r *Runner, migrator Migrator, migrations <-chan Migration, tickInterval time.Duration, clock glock.Clock) {
 	// Get initial migration. This channel will close when the context
 	// is canceled, so we don't need to do any more complex select here.
 	migration, ok := <-migrations
@@ -246,7 +246,7 @@ func runMigrator(ctx context.Context, r *Runner, migrator Migrator, migrations <
 		case migration = <-migrations:
 			// Refreshed our migration state
 
-		case <-ticker:
+		case <-clock.After(tickInterval):
 			if !migration.Complete() {
 				// Run the migration only if there's something left to do
 				if err := r.runMigrator(ctx, &migration, migrator); err != nil {
