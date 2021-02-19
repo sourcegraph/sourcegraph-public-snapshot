@@ -56,7 +56,7 @@ func newExternalHTTPHandler(db dbutil.DB, schema *graphql.Schema, gitHubWebhook 
 	executorProxyHandler := newExecutorProxyHandler()
 
 	// App handler (HTML pages), the call order of middleware is LIFO.
-	appHandler := app.NewHandler()
+	appHandler := app.NewHandler(db)
 	if hooks.PostAuthMiddleware != nil {
 		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
 		appHandler = hooks.PostAuthMiddleware(appHandler)

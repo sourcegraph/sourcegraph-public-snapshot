@@ -900,7 +900,7 @@ func TestDecorateChangesetBody(t *testing.T) {
 
 	body := "body"
 	rcs := &repos.Changeset{Body: body, Changeset: cs}
-	if err := decorateChangesetBody(context.Background(), fs, database.GlobalNamespaces, rcs); err != nil {
+	if err := decorateChangesetBody(context.Background(), fs, database.Namespaces(new(dbtesting.MockDB)), rcs); err != nil {
 		t.Errorf("unexpected non-nil error: %v", err)
 	}
 	if want := body + "\n\n[_Created by Sourcegraph campaign `my-user/reconciler-test-campaign`._](https://sourcegraph.test/users/my-user/campaigns/reconciler-test-campaign)"; rcs.Body != want {
