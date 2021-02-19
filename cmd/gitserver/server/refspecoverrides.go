@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"net/url"
 	"os"
 	"os/exec"
 	"strings"
@@ -25,13 +26,13 @@ func useRefspecOverrides() bool {
 //
 // To not clone everything we instead init a bare repo and only add the
 // refspecs we care about. Then we finally do a fetch.
-func refspecOverridesCloneCmd(ctx context.Context, url, tmpPath string) (*exec.Cmd, error) {
+func refspecOverridesCloneCmd(ctx context.Context, remoteURL *url.URL, tmpPath string) (*exec.Cmd, error) {
 	if err := os.MkdirAll(tmpPath, os.ModePerm); err != nil {
 		return nil, errors.Wrapf(err, "clone failed to create tmp dir")
 	}
 	cmds := [][]string{
 		{"init", "--bare", "."},
-		{"config", "--add", "remote.origin.url", url},
+		{"config", "--add", "remote.origin.url", remoteURL.String()},
 		{"config", "--add", "remote.origin.mirror", "true"},
 	}
 	for _, refspec := range refspecOverrides {
@@ -51,6 +52,6 @@ func refspecOverridesCloneCmd(ctx context.Context, url, tmpPath string) (*exec.C
 
 // HACK(keegancsmith) workaround to experiment with cloning less in a large
 // monorepo. https://github.com/sourcegraph/customer/issues/19
-func refspecOverridesFetchCmd(ctx context.Context, url string) *exec.Cmd {
-	return exec.CommandContext(ctx, "git", append([]string{"fetch", "--prune", url}, refspecOverrides...)...)
+func refspecOverridesFetchCmd(ctx context.Context, remoteURL *url.URL) *exec.Cmd {
+	return exec.CommandContext(ctx, "git", append([]string{"fetch", "--prune", remoteURL.String()}, refspecOverrides...)...)
 }

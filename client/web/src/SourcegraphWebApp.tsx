@@ -208,6 +208,7 @@ const notificationClassNames = {
 
 const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
 const LAST_VERSION_CONTEXT_KEY = 'sg-last-version-context'
+const LAST_SEARCH_CONTEXT_KEY = 'sg-last-search-context'
 
 /** Reads the stored theme preference from localStorage */
 const readStoredThemePreference = (): ThemePreference => {
@@ -333,6 +334,20 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         this.subscriptions.add(
             fetchSearchContexts.subscribe(contexts => {
                 this.setState({ availableSearchContexts: contexts })
+            })
+        )
+
+        this.subscriptions.add(
+            authenticatedUser.subscribe(authenticatedUser => {
+                if (authenticatedUser === null) {
+                    return
+                }
+                const previousSearchContextSpec = localStorage.getItem(LAST_SEARCH_CONTEXT_KEY)
+                const context = `@${authenticatedUser.username}`
+                this.setState({
+                    defaultSearchContextSpec: context,
+                    selectedSearchContextSpec: previousSearchContextSpec || context,
+                })
             })
         )
 
@@ -523,13 +538,14 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         this.state.showSearchContext ? this.state.selectedSearchContextSpec : undefined
 
     private setSelectedSearchContextSpec = (spec: string): void => {
-        this.setState(state => ({
-            selectedSearchContextSpec: resolveSearchContextSpec(
-                spec,
-                state.availableSearchContexts,
-                state.defaultSearchContextSpec
-            ),
-        }))
+        const { availableSearchContexts, defaultSearchContextSpec } = this.state
+        const resolvedSearchContextSpec = resolveSearchContextSpec(
+            spec,
+            availableSearchContexts,
+            defaultSearchContextSpec
+        )
+        this.setState({ selectedSearchContextSpec: resolvedSearchContextSpec })
+        localStorage.setItem(LAST_SEARCH_CONTEXT_KEY, resolvedSearchContextSpec)
     }
 }
 

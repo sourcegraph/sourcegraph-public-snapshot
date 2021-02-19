@@ -55,7 +55,7 @@ func FromContext(ctx context.Context) *Actor {
 
 func WithActor(ctx context.Context, a *Actor) context.Context {
 	if a != nil && a.UID != 0 {
-		trace.TraceUser(ctx, a.UID)
+		trace.User(ctx, a.UID)
 	}
 	return context.WithValue(ctx, actorKey, a)
 }

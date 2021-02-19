@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/registry"
 )
@@ -75,7 +76,7 @@ func ParseExtensionID(extensionID string) (prefix, extensionIDWithoutPrefix stri
 
 // GetLocalExtensionByExtensionID looks up and returns the registry extension in the local registry
 // with the given extension ID. If there is no local extension registry, it is not implemented.
-var GetLocalExtensionByExtensionID func(ctx context.Context, extensionIDWithoutPrefix string) (local graphqlbackend.RegistryExtension, err error)
+var GetLocalExtensionByExtensionID func(ctx context.Context, db dbutil.DB, extensionIDWithoutPrefix string) (local graphqlbackend.RegistryExtension, err error)
 
 // GetExtensionByExtensionID gets the extension with the given extension ID.
 //
@@ -85,7 +86,7 @@ var GetLocalExtensionByExtensionID func(ctx context.Context, extensionIDWithoutP
 // to the remote registry specified in site configuration (usually sourcegraph.com). The host must
 // be specified to refer to a local extension on the current Sourcegraph site (e.g.,
 // sourcegraph.example.com/publisher/name).
-func GetExtensionByExtensionID(ctx context.Context, extensionID string) (local graphqlbackend.RegistryExtension, remote *registry.Extension, err error) {
+func GetExtensionByExtensionID(ctx context.Context, db dbutil.DB, extensionID string) (local graphqlbackend.RegistryExtension, remote *registry.Extension, err error) {
 	_, extensionIDWithoutPrefix, isLocal, err := ParseExtensionID(extensionID)
 	if err != nil {
 		return nil, nil, err
@@ -93,7 +94,7 @@ func GetExtensionByExtensionID(ctx context.Context, extensionID string) (local g
 
 	if isLocal {
 		if GetLocalExtensionByExtensionID != nil {
-			x, err := GetLocalExtensionByExtensionID(ctx, extensionIDWithoutPrefix)
+			x, err := GetLocalExtensionByExtensionID(ctx, db, extensionIDWithoutPrefix)
 			return x, nil, err
 		}
 	}

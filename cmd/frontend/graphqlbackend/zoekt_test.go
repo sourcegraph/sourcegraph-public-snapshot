@@ -36,6 +36,8 @@ import (
 )
 
 func TestIndexedSearch(t *testing.T) {
+	db := new(dbtesting.MockDB)
+
 	zeroTimeoutCtx, cancel := context.WithTimeout(context.Background(), 0)
 	defer cancel()
 	type args struct {
@@ -298,7 +300,7 @@ func TestIndexedSearch(t *testing.T) {
 				},
 			}
 
-			indexed, err := newIndexedSearchRequest(context.Background(), args, textRequest, StreamFunc(func(SearchEvent) {}))
+			indexed, err := newIndexedSearchRequest(context.Background(), db, args, textRequest, StreamFunc(func(SearchEvent) {}))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -702,6 +704,8 @@ func queryEqual(a, b zoektquery.Q) bool {
 }
 
 func BenchmarkSearchResults(b *testing.B) {
+	db := new(dbtesting.MockDB)
+
 	minimalRepos, _, zoektRepos := generateRepos(5000)
 	zoektFileMatches := generateZoektMatches(50)
 
@@ -732,6 +736,7 @@ func BenchmarkSearchResults(b *testing.B) {
 			b.Fatal(err)
 		}
 		resolver := &searchResolver{
+			db: db,
 			SearchInputs: &SearchInputs{
 				Query:        q,
 				UserSettings: &schema.Settings{},
@@ -751,7 +756,7 @@ func BenchmarkSearchResults(b *testing.B) {
 }
 
 func BenchmarkIntegrationSearchResults(b *testing.B) {
-	dbtesting.SetupGlobalTestDB(b)
+	db := dbtesting.GetDB(b)
 
 	ctx := context.Background()
 
@@ -810,6 +815,7 @@ func BenchmarkIntegrationSearchResults(b *testing.B) {
 			b.Fatal(err)
 		}
 		resolver := &searchResolver{
+			db: db,
 			SearchInputs: &SearchInputs{
 				Query: q,
 			},
@@ -989,6 +995,7 @@ func TestZoektIndexedRepos_single(t *testing.T) {
 }
 
 func TestZoektFileMatchToSymbolResults(t *testing.T) {
+	db := new(dbtesting.MockDB)
 	symbolInfo := func(sym string) *zoekt.Symbol {
 		return &zoekt.Symbol{
 			Sym:        sym,
@@ -1031,9 +1038,9 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 		}},
 	}
 
-	repo := NewRepositoryResolver(&types.Repo{Name: "foo"})
+	repo := NewRepositoryResolver(db, &types.Repo{Name: "foo"})
 
-	results := zoektFileMatchToSymbolResults(repo, "master", file)
+	results := zoektFileMatchToSymbolResults(repo, new(dbtesting.MockDB), "master", file)
 	var symbols []protocol.Symbol
 	for _, res := range results {
 		// Check the fields which are not specific to the symbol

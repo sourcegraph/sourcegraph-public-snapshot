@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -19,12 +20,13 @@ func (r signatureResolver) Date() string {
 	return r.date.Format(time.RFC3339)
 }
 
-func toSignatureResolver(sig *git.Signature, includeUserInfo bool) *signatureResolver {
+func toSignatureResolver(db dbutil.DB, sig *git.Signature, includeUserInfo bool) *signatureResolver {
 	if sig == nil {
 		return nil
 	}
 	return &signatureResolver{
 		person: &PersonResolver{
+			db:              db,
 			name:            sig.Name,
 			email:           sig.Email,
 			includeUserInfo: includeUserInfo,

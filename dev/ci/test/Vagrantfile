@@ -71,6 +71,7 @@ export PGUSER=#{ENV['PGUSER']}
 export PGDATABASE=#{ENV['PGDATABASE']}
 export PGSSLMODE=#{ENV['PGSSLMODE']}
 export PERCY_TOKEN=#{ENV['PERCY_TOKEN']}
+export CODECOV_TOKEN=#{ENV['CODECOV_TOKEN']}
 export CI=#{ENV['CI']}
 
 # Env vars shared by e2e and QA tests - see:

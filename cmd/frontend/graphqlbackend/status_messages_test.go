@@ -8,11 +8,14 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestStatusMessages(t *testing.T) {
+	db := new(dbtesting.MockDB)
+
 	graphqlQuery := `
 		query StatusMessages {
 			statusMessages {
@@ -39,7 +42,7 @@ func TestStatusMessages(t *testing.T) {
 
 	resetMocks()
 	t.Run("unauthenticated", func(t *testing.T) {
-		result, err := (&schemaResolver{}).StatusMessages(context.Background())
+		result, err := (&schemaResolver{db: db}).StatusMessages(context.Background())
 		if want := backend.ErrNotAuthenticated; err != want {
 			t.Errorf("got err %v, want %v", err, want)
 		}

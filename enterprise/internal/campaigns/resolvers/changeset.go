@@ -62,7 +62,7 @@ func NewChangesetResolver(store *store.Store, changeset *campaigns.Changeset, re
 	return &changesetResolver{
 		store:        store,
 		repo:         repo,
-		repoResolver: graphqlbackend.NewRepositoryResolver(repo),
+		repoResolver: graphqlbackend.NewRepositoryResolver(store.DB(), repo),
 		changeset:    changeset,
 	}
 }
@@ -258,6 +258,7 @@ func (r *changesetResolver) Author() (*graphqlbackend.PersonResolver, error) {
 	}
 
 	return graphqlbackend.NewPersonResolver(
+		r.store.DB(),
 		name,
 		email,
 		// Try to find the corresponding Sourcegraph user.
@@ -468,6 +469,7 @@ func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.Repository
 
 		return graphqlbackend.NewPreviewRepositoryComparisonResolver(
 			ctx,
+			r.store.DB(),
 			r.repoResolver,
 			desc.BaseRev,
 			diff,
@@ -502,7 +504,7 @@ func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.Repository
 		}
 	}
 
-	return graphqlbackend.NewRepositoryComparison(ctx, r.repoResolver, &graphqlbackend.RepositoryComparisonInput{
+	return graphqlbackend.NewRepositoryComparison(ctx, r.store.DB(), r.repoResolver, &graphqlbackend.RepositoryComparisonInput{
 		Base:         &base,
 		Head:         &head,
 		FetchMissing: true,

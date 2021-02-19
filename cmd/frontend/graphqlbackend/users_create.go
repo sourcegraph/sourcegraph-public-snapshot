@@ -11,10 +11,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func (*schemaResolver) CreateUser(ctx context.Context, args *struct {
+func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 	Username string
 	Email    *string
 }) (*createUserResult, error) {
@@ -47,17 +48,18 @@ func (*schemaResolver) CreateUser(ctx context.Context, args *struct {
 		log15.Error("Failed to grant user pending permissions", "userID", user.ID, "error", err)
 	}
 
-	return &createUserResult{user: user}, nil
+	return &createUserResult{db: r.db, user: user}, nil
 }
 
 // createUserResult is the result of Mutation.createUser.
 //
 // 🚨 SECURITY: Only site admins should be able to instantiate this value.
 type createUserResult struct {
+	db   dbutil.DB
 	user *types.User
 }
 
-func (r *createUserResult) User() *UserResolver { return &UserResolver{user: r.user} }
+func (r *createUserResult) User() *UserResolver { return NewUserResolver(r.db, r.user) }
 
 func (r *createUserResult) ResetPasswordURL(ctx context.Context) (*string, error) {
 	if !userpasswd.ResetPasswordEnabled() {

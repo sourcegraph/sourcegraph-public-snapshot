@@ -509,7 +509,7 @@ func (m *monitor) ID() graphql.ID {
 }
 
 func (m *monitor) CreatedBy(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	return graphqlbackend.UserByIDInt32(ctx, m.Monitor.CreatedBy)
+	return graphqlbackend.UserByIDInt32(ctx, m.store.Handle().DB(), m.Monitor.CreatedBy)
 }
 
 func (m *monitor) CreatedAt() graphqlbackend.DateTime {
@@ -526,9 +526,9 @@ func (m *monitor) Enabled() bool {
 
 func (m *monitor) Owner(ctx context.Context) (n graphqlbackend.NamespaceResolver, err error) {
 	if m.NamespaceOrgID == nil {
-		n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, *m.NamespaceUserID)
+		n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, m.store.Handle().DB(), *m.NamespaceUserID)
 	} else {
-		n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, *m.NamespaceOrgID)
+		n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, m.store.Handle().DB(), *m.NamespaceOrgID)
 	}
 	return n, err
 }
@@ -754,9 +754,9 @@ func (m *monitorEmail) Recipients(ctx context.Context, args *graphqlbackend.List
 	for _, r := range ms {
 		n := graphqlbackend.NamespaceResolver{}
 		if r.NamespaceOrgID == nil {
-			n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, *r.NamespaceUserID)
+			n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, m.store.Handle().DB(), *r.NamespaceUserID)
 		} else {
-			n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, *r.NamespaceOrgID)
+			n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, m.store.Handle().DB(), *r.NamespaceOrgID)
 		}
 		if err != nil {
 			return nil, err

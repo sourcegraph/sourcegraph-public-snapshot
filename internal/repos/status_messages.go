@@ -17,7 +17,7 @@ var MockStatusMessages func(context.Context, *types.User) ([]StatusMessage, erro
 // external service sync errors we'll fetch any external services owned by the
 // user. In addition, if the user is a site admin we'll also fetch site level
 // external services.
-func FetchStatusMessages(ctx context.Context, db dbutil.DB, u *types.User) ([]StatusMessage, error) {
+func FetchStatusMessages(ctx context.Context, db dbutil.DB, u *types.User, cloud bool) ([]StatusMessage, error) {
 	if MockStatusMessages != nil {
 		return MockStatusMessages(ctx, u)
 	}
@@ -32,17 +32,22 @@ func FetchStatusMessages(ctx context.Context, db dbutil.DB, u *types.User) ([]St
 	if !u.SiteAdmin {
 		opts.UserID = u.ID
 	}
-	notCloned, err := database.Repos(db).Count(ctx, opts)
-	if err != nil {
-		return nil, errors.Wrap(err, "counting uncloned repos")
-	}
 
-	if notCloned != 0 {
-		messages = append(messages, StatusMessage{
-			Cloning: &CloningProgress{
-				Message: fmt.Sprintf("%d repositories enqueued for cloning...", notCloned),
-			},
-		})
+	if !cloud {
+		// The number of uncloned repos on cloud is misleading due to the fact that we do
+		// on demand syncing and also remove stale repos.
+		notCloned, err := database.Repos(db).Count(ctx, opts)
+		if err != nil {
+			return nil, errors.Wrap(err, "counting uncloned repos")
+		}
+
+		if notCloned != 0 {
+			messages = append(messages, StatusMessage{
+				Cloning: &CloningProgress{
+					Message: fmt.Sprintf("%d repositories enqueued for cloning...", notCloned),
+				},
+			})
+		}
 	}
 
 	syncErrors, err := database.ExternalServices(db).GetAffiliatedSyncErrors(ctx, u)

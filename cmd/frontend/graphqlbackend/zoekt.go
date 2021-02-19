@@ -17,6 +17,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
@@ -66,6 +67,8 @@ type indexedSearchRequest struct {
 
 	// since if non-nil will be used instead of time.Since. For tests
 	since func(time.Time) time.Duration
+
+	db dbutil.DB
 }
 
 // TODO (stefan) move this out of zoekt.go to the new parser once it is guaranteed that the old parser is turned off for all customers
@@ -87,7 +90,7 @@ func containsRefGlobs(q query.QueryInfo) bool {
 	return containsRefGlobs
 }
 
-func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ indexedRequestType, stream Streamer) (_ *indexedSearchRequest, err error) {
+func newIndexedSearchRequest(ctx context.Context, db dbutil.DB, args *search.TextParameters, typ indexedRequestType, stream Streamer) (_ *indexedSearchRequest, err error) {
 	tr, ctx := trace.New(ctx, "newIndexedSearchRequest", string(typ))
 	tr.LogFields(trace.Stringer("global_search_mode", args.Mode))
 	defer func() {
@@ -106,6 +109,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		}
 
 		return &indexedSearchRequest{
+			db:               db,
 			Unindexed:        limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
 			IndexUnavailable: true,
 		}, nil
@@ -117,6 +121,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 			return nil, fmt.Errorf("invalid index:%q (revsions with glob pattern cannot be resolved for indexed searches)", args.PatternInfo.Index)
 		}
 		return &indexedSearchRequest{
+			db:        db,
 			Unindexed: limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
 		}, nil
 	}
@@ -124,6 +129,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 	// Fallback to Unindexed if index:no
 	if args.PatternInfo.Index == query.No {
 		return &indexedSearchRequest{
+			db:        db,
 			Unindexed: limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
 		}, nil
 	}
@@ -151,6 +157,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		}
 
 		return &indexedSearchRequest{
+			db:               db,
 			Unindexed:        limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
 			IndexUnavailable: true,
 		}, ctx.Err()
@@ -179,6 +186,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 	}
 
 	return &indexedSearchRequest{
+		db:   db,
 		args: args,
 		typ:  typ,
 
@@ -212,7 +220,7 @@ func (s *indexedSearchRequest) Search(ctx context.Context, c Streamer) error {
 		since = s.since
 	}
 
-	var zoektStream func(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c Streamer) error
+	var zoektStream func(ctx context.Context, db dbutil.DB, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c Streamer) error
 	switch s.typ {
 	case textRequest, symbolRequest:
 		zoektStream = zoektSearch
@@ -222,7 +230,7 @@ func (s *indexedSearchRequest) Search(ctx context.Context, c Streamer) error {
 		return fmt.Errorf("unexpected indexedSearchRequest type: %q", s.typ)
 	}
 
-	return zoektStream(ctx, s.args, s.repos, s.typ, since, c)
+	return zoektStream(ctx, s.db, s.args, s.repos, s.typ, since, c)
 }
 
 // zoektSearch searches repositories using zoekt.
@@ -230,7 +238,7 @@ func (s *indexedSearchRequest) Search(ctx context.Context, c Streamer) error {
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c Streamer) error {
+func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c Streamer) error {
 	if args == nil {
 		return nil
 	}
@@ -367,7 +375,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 			}
 			repoResolver := repoResolvers[repo.Name]
 			if repoResolver == nil {
-				repoResolver = NewRepositoryResolver(repo.ToRepo())
+				repoResolver = NewRepositoryResolver(db, repo.ToRepo())
 				repoResolvers[repo.Name] = repoResolver
 			}
 
@@ -381,10 +389,12 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 
 				var symbols []*searchSymbolResult
 				if typ == symbolRequest {
-					symbols = zoektFileMatchToSymbolResults(repoResolver, inputRev, &file)
+					symbols = zoektFileMatchToSymbolResults(repoResolver, db, inputRev, &file)
 				}
 				fm := &FileMatchResolver{
+					db: db,
 					FileMatch: FileMatch{
+						db:           db,
 						JPath:        file.FileName,
 						JLineMatches: lines,
 						JLimitHit:    fileLimitHit,
@@ -492,12 +502,13 @@ func escape(s string) string {
 	return string(escaped)
 }
 
-func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, file *zoekt.FileMatch) []*searchSymbolResult {
+func zoektFileMatchToSymbolResults(repo *RepositoryResolver, db dbutil.DB, inputRev string, file *zoekt.FileMatch) []*searchSymbolResult {
 	// Symbol search returns a resolver so we need to pass in some
 	// extra stuff. This is a sign that we can probably restructure
 	// resolvers to avoid this.
 	baseURI := &gituri.URI{URL: url.URL{Scheme: "git", Host: repo.Name(), RawQuery: url.QueryEscape(inputRev)}}
 	commit := &GitCommitResolver{
+		db:           db,
 		repoResolver: repo,
 		oid:          GitObjectID(file.Version),
 		inputRev:     &inputRev,
@@ -516,6 +527,7 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, fi
 			}
 
 			symbols = append(symbols, &searchSymbolResult{
+				db: db,
 				symbol: protocol.Symbol{
 					Name:       m.SymbolInfo.Sym,
 					Kind:       m.SymbolInfo.Kind,
