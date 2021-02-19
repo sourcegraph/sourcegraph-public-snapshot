@@ -64,6 +64,7 @@ var _ Interface = &Store{}
 // only useful for filtering the data you get back, and would inflate the data size considerably
 // otherwise.
 type SeriesPoint struct {
+	// Time (always UTC).
 	Time     time.Time
 	Value    float64
 	Metadata []byte
@@ -81,7 +82,7 @@ type SeriesPointsOpts struct {
 	// TODO(slimsag): Add ability to filter based on repo ID, name, original name.
 	// TODO(slimsag): Add ability to do limited filtering based on metadata.
 
-	// Time ranges to query from/to, if non-nil.
+	// Time ranges to query from/to, if non-nil, in UTC.
 	From, To *time.Time
 
 	// Limit is the number of data points to query, if non-zero.
@@ -216,13 +217,13 @@ func (s *Store) RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) 
 	// Insert the actual data point.
 	return txStore.Exec(ctx, sqlf.Sprintf(
 		recordSeriesPointFmtstr,
-		v.SeriesID,    // series_id
-		v.Point.Time,  // time
-		v.Point.Value, // value
-		metadataID,    // metadata_id
-		v.RepoID,      // repo_id
-		repoNameID,    // repo_name_id
-		repoNameID,    // original_repo_name_id
+		v.SeriesID,         // series_id
+		v.Point.Time.UTC(), // time
+		v.Point.Value,      // value
+		metadataID,         // metadata_id
+		v.RepoID,           // repo_id
+		repoNameID,         // repo_name_id
+		repoNameID,         // original_repo_name_id
 	))
 }
 
