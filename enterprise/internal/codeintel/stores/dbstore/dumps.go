@@ -3,8 +3,6 @@ package dbstore
 import (
 	"context"
 	"database/sql"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -87,22 +85,12 @@ func scanFirstDump(rows *sql.Rows, err error) (Dump, bool, error) {
 const visibleAtTipFragment = `EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip WHERE repository_id = d.repository_id AND upload_id = d.id)`
 
 // GetDumpsByIDs returns a set of dumps by identifiers.
-func (s *Store) GetDumpsByIDs(ctx context.Context, ids []int) (dumps []Dump, err error) {
-	strIDs := make([]string, 0, len(ids))
-	for _, id := range ids {
-		strIDs = append(strIDs, strconv.Itoa(id))
-	}
-
-	ctx, endObservation := s.operations.getDumpsByIDs.With(ctx, &err, observation.Args{
-		LogFields: []log.Field{
-			log.String("ids", strings.Join(strIDs, ", ")),
-		},
-	})
-	defer func() {
-		endObservation(1, observation.Args{LogFields: []log.Field{
-			log.Int("numDumps", len(dumps)),
-		}})
-	}()
+func (s *Store) GetDumpsByIDs(ctx context.Context, ids []int) (_ []Dump, err error) {
+	ctx, traceLog, endObservation := s.operations.getDumpsByIDs.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numIDs", len(ids)),
+		log.String("ids", intsToString(ids)),
+	}})
+	defer endObservation(1, observation.Args{})
 
 	if len(ids) == 0 {
 		return nil, nil
@@ -113,7 +101,13 @@ func (s *Store) GetDumpsByIDs(ctx context.Context, ids []int) (dumps []Dump, err
 		idx = append(idx, sqlf.Sprintf("%s", id))
 	}
 
-	return scanDumps(s.Store.Query(ctx, sqlf.Sprintf(getDumpsByIDsQuery, sqlf.Join(idx, ", "))))
+	dumps, err := scanDumps(s.Store.Query(ctx, sqlf.Sprintf(getDumpsByIDsQuery, sqlf.Join(idx, ", "))))
+	if err != nil {
+		return nil, err
+	}
+	traceLog(log.Int("numDumps", len(dumps)))
+
+	return dumps, nil
 }
 
 const getDumpsByIDsQuery = `
@@ -155,8 +149,8 @@ FROM lsif_dumps_with_repository_name d WHERE d.id IN (%s)
 // of visible uploads (ideally, we'd like to return the complete set of visible uploads, or fail). If the graph fragment is complete
 // by depth (e.g. if the graph contains an ancestor at depth d, then the graph also contains all other ancestors up to depth d), then
 // we get the ideal behavior. Only if we contain a partial row of ancestors will we return partial results.
-func (s *Store) FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (dumps []Dump, err error) {
-	ctx, endObservation := s.operations.findClosestDumps.With(ctx, &err, observation.Args{
+func (s *Store) FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []Dump, err error) {
+	ctx, traceLog, endObservation := s.operations.findClosestDumps.WithAndLogger(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", repositoryID),
 			log.String("commit", commit),
@@ -165,14 +159,18 @@ func (s *Store) FindClosestDumps(ctx context.Context, repositoryID int, commit, 
 			log.String("indexer", indexer),
 		},
 	})
-	defer func() {
-		endObservation(1, observation.Args{LogFields: []log.Field{
-			log.Int("numDumps", len(dumps)),
-		}})
-	}()
+	defer endObservation(1, observation.Args{})
 
 	conds := makeFindClosestDumpConditions(path, rootMustEnclosePath, indexer)
-	return scanDumps(s.Store.Query(ctx, sqlf.Sprintf(findClosestDumpsQuery, makeVisibleUploadsQuery(repositoryID, commit), sqlf.Join(conds, " AND "))))
+	query := sqlf.Sprintf(findClosestDumpsQuery, makeVisibleUploadsQuery(repositoryID, commit), sqlf.Join(conds, " AND "))
+
+	dumps, err := scanDumps(s.Store.Query(ctx, query))
+	if err != nil {
+		return nil, err
+	}
+	traceLog(log.Int("numDumps", len(dumps)))
+
+	return dumps, nil
 }
 
 const findClosestDumpsQuery = `
@@ -202,7 +200,7 @@ WHERE %s
 
 // FindClosestDumpsFromGraphFragment returns the set of dumps that can most accurately answer queries for the given repository, commit,
 // path, and optional indexer by only considering the given fragment of the full git graph. See FindClosestDumps for additional details.
-func (s *Store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, commitGraph *gitserver.CommitGraph) (dumps []Dump, err error) {
+func (s *Store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, commitGraph *gitserver.CommitGraph) (_ []Dump, err error) {
 	ctx, traceLog, endObservation := s.operations.findClosestDumpsFromGraphFragment.WithAndLogger(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", repositoryID),
@@ -213,11 +211,7 @@ func (s *Store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositor
 			log.Int("numCommitGraphKeys", len(commitGraph.Order())),
 		},
 	})
-	defer func() {
-		endObservation(1, observation.Args{LogFields: []log.Field{
-			log.Int("numDumps", len(dumps)),
-		}})
-	}()
+	defer endObservation(1, observation.Args{})
 
 	if len(commitGraph.Order()) == 0 {
 		return nil, nil
@@ -249,8 +243,15 @@ func (s *Store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositor
 	}
 
 	conds := makeFindClosestDumpConditions(path, rootMustEnclosePath, indexer)
+	query := sqlf.Sprintf(findClosestDumpsFromGraphFragmentQuery, sqlf.Join(ids, ","), sqlf.Join(conds, " AND "))
 
-	return scanDumps(s.Store.Query(ctx, sqlf.Sprintf(findClosestDumpsFromGraphFragmentQuery, sqlf.Join(ids, ","), sqlf.Join(conds, " AND "))))
+	dumps, err := scanDumps(s.Store.Query(ctx, query))
+	if err != nil {
+		return nil, err
+	}
+	traceLog(log.Int("numDumps", len(dumps)))
+
+	return dumps, nil
 }
 
 const findClosestDumpsFromGraphFragmentCommitGraphQuery = `
@@ -370,7 +371,7 @@ func makeFindClosestDumpConditions(path string, rootMustEnclosePath bool, indexe
 // commit, root, and indexer. This is necessary to perform during conversions before changing
 // the state of a processing upload to completed as there is a unique index on these four columns.
 func (s *Store) DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) (err error) {
-	ctx, endObservation := s.operations.deleteOverlappingDumps.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, traceLog, endObservation := s.operations.deleteOverlappingDumps.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 		log.String("root", root),
@@ -378,12 +379,22 @@ func (s *Store) DeleteOverlappingDumps(ctx context.Context, repositoryID int, co
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return s.Store.Exec(ctx, sqlf.Sprintf(deleteOverlappingDumpsQuery, repositoryID, commit, root, indexer))
+	count, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(deleteOverlappingDumpsQuery, repositoryID, commit, root, indexer)))
+	if err != nil {
+		return err
+	}
+	traceLog(log.Int("count", count))
+
+	return nil
 }
 
 const deleteOverlappingDumpsQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/dumps.go:DeleteOverlappingDumps
-UPDATE lsif_uploads
-SET state = 'deleted'
-WHERE repository_id = %s AND commit = %s AND root = %s AND indexer = %s AND state = 'completed'
+WITH updated AS (
+	UPDATE lsif_uploads
+	SET state = 'deleted'
+	WHERE repository_id = %s AND commit = %s AND root = %s AND indexer = %s AND state = 'completed'
+	RETURNING 1
+)
+SELECT COUNT(*) FROM updated
 `

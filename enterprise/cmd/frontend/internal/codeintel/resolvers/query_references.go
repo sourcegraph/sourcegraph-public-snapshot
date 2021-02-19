@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -22,12 +21,13 @@ const slowReferencesRequestThreshold = time.Second
 
 // References returns the list of source locations that reference the symbol at the given position.
 func (r *queryResolver) References(ctx context.Context, line, character, limit int, rawCursor string) (_ []AdjustedLocation, _ string, err error) {
-	ctx, endObservation := observeResolver(ctx, &err, "References", r.operations.references, slowReferencesRequestThreshold, observation.Args{
+	ctx, traceLog, endObservation := observeResolver(ctx, &err, "References", r.operations.references, slowReferencesRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", r.repositoryID),
 			log.String("commit", r.commit),
 			log.String("path", r.path),
-			log.String("uploadIDs", strings.Join(r.uploadIDs(), ", ")),
+			log.Int("numUploads", len(r.uploads)),
+			log.String("uploads", uploadIDsToString(r.uploads)),
 			log.Int("line", line),
 			log.Int("character", character),
 		},
@@ -69,6 +69,10 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 	if err != nil {
 		return nil, "", err
 	}
+	traceLog(
+		log.Int("numMonikers", len(orderedMonikers)),
+		log.String("monikers", monikersToString(orderedMonikers)),
+	)
 
 	// Determine the set of uploads that define one of the ordered monikers. This may include
 	// one of the adjusted indexes. This data may already be stashed in the cursor decoded above,
@@ -78,6 +82,10 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 	if err != nil {
 		return nil, "", err
 	}
+	traceLog(
+		log.Int("numDefinitionUploads", len(definitionUploadIDs)),
+		log.String("definitionUploads", intsToString(definitionUploadIDs)),
+	)
 
 	// If we pulled additional records back from the database, add them to the upload map. This
 	// slice will be empty if the definition ids were cached on the cursor.
@@ -91,6 +99,7 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 	if err != nil {
 		return nil, "", err
 	}
+	traceLog(log.Int("numLocations", len(locations)))
 
 	// Adjust the locations back to the appropriate range in the target commits. This adjusts
 	// locations within the repository the user is browsing so that it appears all references
@@ -100,6 +109,7 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 	if err != nil {
 		return nil, "", err
 	}
+	traceLog(log.Int("numAdjustedLocations", len(adjustedLocations)))
 
 	nextCursor := ""
 	if hasMore {

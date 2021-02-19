@@ -42,10 +42,16 @@ func scanRepoUsageStatisticsSlice(rows *sql.Rows, queryErr error) (_ []RepoUsage
 // code intelligence activity within the last week grouped by repository. The resulting slice is ordered
 // by search then precise event counts.
 func (s *Store) RepoUsageStatistics(ctx context.Context) (_ []RepoUsageStatistics, err error) {
-	ctx, endObservation := s.operations.repoUsageStatistics.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	ctx, traceLog, endObservation := s.operations.repoUsageStatistics.WithAndLogger(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return scanRepoUsageStatisticsSlice(s.Store.Query(ctx, sqlf.Sprintf(repoUsageStatisticsQuery)))
+	statistics, err := scanRepoUsageStatisticsSlice(s.Store.Query(ctx, sqlf.Sprintf(repoUsageStatisticsQuery)))
+	if err != nil {
+		return nil, err
+	}
+	traceLog(log.Int("numStatistics", len(statistics)))
+
+	return statistics, nil
 }
 
 const repoUsageStatisticsQuery = `

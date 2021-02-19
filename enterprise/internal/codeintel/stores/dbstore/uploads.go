@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -188,13 +189,18 @@ type GetUploadsOptions struct {
 
 // DeleteUploadsStuckUploading soft deletes any upload record that has been uploading since the given time.
 func (s *Store) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error) {
-	ctx, endObservation := s.operations.deleteUploadsStuckUploading.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		// TODO(efritz) - uploadedBefore should be a duration
+	ctx, traceLog, endObservation := s.operations.deleteUploadsStuckUploading.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("uploadedBefore", uploadedBefore.Format(time.RFC3339)), // TODO - should be a duration
 	}})
 	defer endObservation(1, observation.Args{})
 
 	count, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(deleteUploadsStuckUploadingQuery, uploadedBefore)))
-	return count, err
+	if err != nil {
+		return 0, err
+	}
+	traceLog(log.Int("count", count))
+
+	return count, nil
 }
 
 const deleteUploadsStuckUploadingQuery = `
@@ -210,12 +216,14 @@ SELECT count(*) FROM deleted
 
 // GetUploads returns a list of uploads and the total count of records matching the given conditions.
 func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upload, _ int, err error) {
-	ctx, endObservation := s.operations.getUploads.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, traceLog, endObservation := s.operations.getUploads.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", opts.RepositoryID),
 		log.String("state", opts.State),
 		log.String("term", opts.Term),
 		log.Bool("visibleAtTip", opts.VisibleAtTip),
-		// TODO(efritz) - opts.UploadedBefore should be a duration
+		log.String("uploadedBefore", nilTimeToString(opts.UploadedBefore)),
+		log.String("uploadedAfter", nilTimeToString(opts.UploadedAfter)),
+		log.Bool("oldestFirst", opts.OldestFirst),
 		log.Int("limit", opts.Limit),
 		log.Int("offset", opts.Offset),
 	}})
@@ -249,7 +257,7 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 		conds = append(conds, sqlf.Sprintf("u.uploaded_at > %s", *opts.UploadedAfter))
 	}
 
-	count, _, err := basestore.ScanFirstInt(tx.Store.Query(
+	totalCount, _, err := basestore.ScanFirstInt(tx.Store.Query(
 		ctx,
 		sqlf.Sprintf(getUploadsCountQuery, sqlf.Join(conds, " AND ")),
 	))
@@ -268,8 +276,12 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 	if err != nil {
 		return nil, 0, err
 	}
+	traceLog(
+		log.Int("totalCount", totalCount),
+		log.Int("numUploads", len(uploads)),
+	)
 
-	return uploads, count, nil
+	return uploads, totalCount, nil
 }
 
 const getUploadsCountQuery = `
@@ -328,7 +340,7 @@ func makeSearchCondition(term string) *sqlf.Query {
 // InsertUpload inserts a new upload and returns its identifier.
 func (s *Store) InsertUpload(ctx context.Context, upload Upload) (_ int, err error) {
 	ctx, endObservation := s.operations.insertUpload.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("upload.ID", upload.ID),
+		log.Int("id", upload.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -469,16 +481,31 @@ const DeletedRepositoryGracePeriod = time.Minute * 30
 // DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of uploads
 // that were removed for that repository.
 func (s *Store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {
-	ctx, endObservation := s.operations.deleteUploadsWithoutRepository.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	ctx, traceLog, endObservation := s.operations.deleteUploadsWithoutRepository.WithAndLogger(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return scanCounts(s.Store.Query(ctx, sqlf.Sprintf(deleteUploadsWithoutRepositoryQuery, now.UTC(), DeletedRepositoryGracePeriod/time.Second)))
+	// TODO(efritz) - this would benefit from an index on repository_id. We currently have
+	// a similar one on this index, but only for uploads that are completed or visible at tip.
+
+	repositories, err := scanCounts(s.Store.Query(ctx, sqlf.Sprintf(deleteUploadsWithoutRepositoryQuery, now.UTC(), DeletedRepositoryGracePeriod/time.Second)))
+	if err != nil {
+		return nil, err
+	}
+
+	count := 0
+	for _, numDeleted := range repositories {
+		count += numDeleted
+	}
+	traceLog(
+		log.Int("count", count),
+		log.Int("numRepositories", len(repositories)),
+	)
+
+	return repositories, nil
 }
 
 const deleteUploadsWithoutRepositoryQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:DeleteUploadsWithoutRepository
--- TODO(efritz) - this would benefit from an index on repository_id. We currently have
--- a similar one on this index, but only for uploads that are completed or visible at tip.
 WITH deleted_repos AS (
 	SELECT r.id AS id FROM repo r
 	WHERE
@@ -496,7 +523,10 @@ SELECT d.repository_id, COUNT(*) FROM deleted_uploads d GROUP BY d.repository_id
 
 // HardDeleteUploadByID deletes the upload record with the given identifier.
 func (s *Store) HardDeleteUploadByID(ctx context.Context, ids ...int) (err error) {
-	ctx, endObservation := s.operations.hardDeleteUploadByID.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	ctx, endObservation := s.operations.hardDeleteUploadByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numIDs", len(ids)),
+		log.String("ids", intsToString(ids)),
+	}})
 	defer endObservation(1, observation.Args{})
 
 	if len(ids) == 0 {
@@ -520,7 +550,7 @@ DELETE FROM lsif_uploads WHERE id IN (%s)
 // as deleted. The associated repositories will be marked as dirty so that their commit graphs are updated in the
 // background.
 func (s *Store) SoftDeleteOldUploads(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error) {
-	ctx, endObservation := s.operations.softDeleteOldUploads.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, traceLog, endObservation := s.operations.softDeleteOldUploads.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("maxAge", maxAge.String()),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -532,17 +562,23 @@ func (s *Store) SoftDeleteOldUploads(ctx context.Context, maxAge time.Duration, 
 	defer func() { err = tx.Done(err) }()
 
 	seconds := strconv.Itoa(int(maxAge / time.Second))
-	repositoryIDs, err := scanCounts(tx.Store.Query(ctx, sqlf.Sprintf(softDeleteOldUploadsQuery, now, seconds, now, seconds)))
+	repositories, err := scanCounts(tx.Store.Query(ctx, sqlf.Sprintf(softDeleteOldUploadsQuery, now, seconds, now, seconds)))
 	if err != nil {
 		return 0, err
 	}
 
-	for repositoryID, numUpdated := range repositoryIDs {
+	for _, numUpdated := range repositories {
+		count += numUpdated
+	}
+	traceLog(
+		log.Int("count", count),
+		log.Int("numRepositories", len(repositories)),
+	)
+
+	for repositoryID := range repositories {
 		if err := tx.MarkRepositoryAsDirty(ctx, repositoryID); err != nil {
 			return 0, err
 		}
-
-		count += numUpdated
 	}
 
 	return count, nil
@@ -563,3 +599,20 @@ WITH u AS (
 )
 SELECT u.repository_id, count(*) FROM u GROUP BY u.repository_id
 `
+
+func intsToString(vs []int) string {
+	strs := make([]string, 0, len(vs))
+	for _, v := range vs {
+		strs = append(strs, strconv.Itoa(v))
+	}
+
+	return strings.Join(strs, ", ")
+}
+
+func nilTimeToString(t *time.Time) string {
+	if t == nil {
+		return ""
+	}
+
+	return t.String()
+}

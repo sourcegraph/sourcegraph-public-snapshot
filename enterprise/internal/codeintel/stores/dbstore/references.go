@@ -12,7 +12,9 @@ import (
 
 // UpdatePackageReferences inserts reference data tied to the given upload.
 func (s *Store) UpdatePackageReferences(ctx context.Context, references []lsifstore.PackageReference) (err error) {
-	ctx, endObservation := s.operations.updatePackageReferences.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	ctx, endObservation := s.operations.updatePackageReferences.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numReferences", len(references)),
+	}})
 	defer endObservation(1, observation.Args{})
 
 	if len(references) == 0 {

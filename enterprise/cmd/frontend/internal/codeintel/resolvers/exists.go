@@ -4,10 +4,12 @@ import (
 	"context"
 	"strings"
 
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // numAncestors is the number of ancestors to query from gitserver when trying to find the closest
@@ -24,22 +26,39 @@ const numAncestors = 100
 // path is a prefix are returned. These dump IDs should be subsequently passed to invocations of
 // Definitions, References, and Hover.
 func (r *resolver) findClosestDumps(ctx context.Context, cachedCommitChecker *cachedCommitChecker, repositoryID int, commit, path string, exactPath bool, indexer string) (_ []store.Dump, err error) {
+	ctx, traceLog, endObservation := r.operations.findClosestDumps.WithAndLogger(ctx, &err, observation.Args{
+		LogFields: []log.Field{
+			log.Int("repositoryID", repositoryID),
+			log.String("commit", commit),
+			log.String("path", path),
+			log.Bool("exactPath", exactPath),
+			log.String("indexer", indexer),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
 	candidates, err := r.inferClosestUploads(ctx, repositoryID, commit, path, exactPath, indexer)
 	if err != nil {
 		return nil, err
 	}
+	traceLog(
+		log.Int("numCandidates", len(candidates)),
+		log.String("candidates", uploadIDsToString(candidates)),
+	)
 
-	filtered := candidates[:0]
+	candidatesWithCommits, err := filterUploadsWithCommits(ctx, cachedCommitChecker, candidates)
+	if err != nil {
+		return nil, err
+	}
+	traceLog(
+		log.Int("numCandidatesWithCommits", len(candidatesWithCommits)),
+		log.String("candidatesWithCommits", uploadIDsToString(candidatesWithCommits)),
+	)
 
-	for i := range candidates {
-		exists, err := cachedCommitChecker.exists(ctx, candidates[i].RepositoryID, candidates[i].Commit)
-		if err != nil {
-			return nil, err
-		}
-		if !exists {
-			continue
-		}
+	// Filter in-place
+	filtered := candidatesWithCommits[:0]
 
+	for i := range candidatesWithCommits {
 		if exactPath {
 			// TODO - this breaks if the file was renamed in git diff
 			pathExists, err := r.lsifStore.Exists(ctx, candidates[i].ID, strings.TrimPrefix(path, candidates[i].Root))
@@ -55,6 +74,10 @@ func (r *resolver) findClosestDumps(ctx context.Context, cachedCommitChecker *ca
 
 		filtered = append(filtered, candidates[i])
 	}
+	traceLog(
+		log.Int("numFiltered", len(filtered)),
+		log.String("filtered", uploadIDsToString(filtered)),
+	)
 
 	return filtered, nil
 }

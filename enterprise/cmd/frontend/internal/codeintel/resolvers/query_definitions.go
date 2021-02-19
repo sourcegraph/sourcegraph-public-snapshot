@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
@@ -20,12 +19,13 @@ const defintionMonikersLimit = 100
 
 // Definitions returns the list of source locations that define the symbol at the given position.
 func (r *queryResolver) Definitions(ctx context.Context, line, character int) (_ []AdjustedLocation, err error) {
-	ctx, endObservation := observeResolver(ctx, &err, "Definitions", r.operations.definitions, slowDefinitionsRequestThreshold, observation.Args{
+	ctx, traceLog, endObservation := observeResolver(ctx, &err, "Definitions", r.operations.definitions, slowDefinitionsRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", r.repositoryID),
 			log.String("commit", r.commit),
 			log.String("path", r.path),
-			log.String("uploadIDs", strings.Join(r.uploadIDs(), ", ")),
+			log.Int("numUploads", len(r.uploads)),
+			log.String("uploads", uploadIDsToString(r.uploads)),
 			log.Int("line", line),
 			log.Int("character", character),
 		},
@@ -45,6 +45,8 @@ func (r *queryResolver) Definitions(ctx context.Context, line, character int) (_
 	// traversal and should not require an additional moniker search in the same index.
 
 	for i := range adjustedUploads {
+		traceLog(log.Int("uploadID", adjustedUploads[i].Upload.ID))
+
 		locations, err := r.lsifStore.Definitions(
 			ctx,
 			adjustedUploads[i].Upload.ID,
@@ -70,6 +72,10 @@ func (r *queryResolver) Definitions(ctx context.Context, line, character int) (_
 	if err != nil {
 		return nil, err
 	}
+	traceLog(
+		log.Int("numMonikers", len(orderedMonikers)),
+		log.String("monikers", monikersToString(orderedMonikers)),
+	)
 
 	// Determine the set of uploads over which we need to perform a moniker search. This will
 	// include all all indexes which define one of the ordered monikers. This should not include
@@ -78,12 +84,17 @@ func (r *queryResolver) Definitions(ctx context.Context, line, character int) (_
 	if err != nil {
 		return nil, err
 	}
+	traceLog(
+		log.Int("numDefinitionUploads", len(uploads)),
+		log.String("definitionUploads", uploadIDsToString(uploads)),
+	)
 
 	// Perform the moniker search
 	locations, _, err := r.monikerLocations(ctx, uploads, orderedMonikers, "definitions", defintionMonikersLimit, 0)
 	if err != nil {
 		return nil, err
 	}
+	traceLog(log.Int("numLocations", len(locations)))
 
 	// Adjust the locations back to the appropriate range in the target commits. This adjusts
 	// locations within the repository the user is browsing so that it appears all definitions
@@ -98,6 +109,7 @@ func (r *queryResolver) Definitions(ctx context.Context, line, character int) (_
 	if err != nil {
 		return nil, err
 	}
+	traceLog(log.Int("numAdjustedLocations", len(adjustedLocations)))
 
 	return adjustedLocations, nil
 }
