@@ -162,6 +162,6 @@ export class FileMatch extends React.PureComponent<Props> {
             }
         }
 
-        return <ResultContainer {...containerProps} />
+        return <ResultContainer {...containerProps} titleClassName="test-search-result-label" />
     }
 }
