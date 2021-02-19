@@ -1,5 +1,7 @@
 .feedback-prompt {
     margin: 0 0.375rem;
+    // Required as parent .nav-links applies nowrap
+    white-space: normal;
 
     &__toggle {
         border: 1px solid var(--border-color);
@@ -29,10 +31,6 @@
     &__textarea {
         resize: none;
         margin: 1rem 0;
-    }
-    &__alert {
-        white-space: initial;
-        margin-top: 1rem;
     }
     &__success {
         white-space: normal;

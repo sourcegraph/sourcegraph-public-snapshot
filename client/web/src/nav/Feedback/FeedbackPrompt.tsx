@@ -51,9 +51,12 @@ interface ContentProps {
     history: H.History
 }
 
+const LOCAL_STORAGE_KEY_RATING = 'feedbackPromptRating'
+const LOCAL_STORAGE_KEY_TEXT = 'feedbackPromptText'
+
 const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({ closePrompt, history }) => {
-    const [rating, setRating] = useLocalStorage<number | undefined>('feedbackPromptRating', undefined)
-    const [text, setText] = useLocalStorage<string>('feedbackPromptText', '')
+    const [rating, setRating] = useLocalStorage<number | undefined>(LOCAL_STORAGE_KEY_RATING, undefined)
+    const [text, setText] = useLocalStorage<string>(LOCAL_STORAGE_KEY_TEXT, '')
     const handleRateChange = useCallback((value: number) => setRating(value), [setRating])
     const handleTextChange = useCallback(
         (event: React.ChangeEvent<HTMLTextAreaElement>) => setText(event.target.value),
@@ -76,15 +79,23 @@ const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({ closePro
         [rating, submitFeedback, text]
     )
 
+    useEffect(() => {
+        if (data?.submitHappinessFeedback) {
+            // Reset local storage when successfully submitted
+            localStorage.removeItem(LOCAL_STORAGE_KEY_TEXT)
+            localStorage.removeItem(LOCAL_STORAGE_KEY_RATING)
+        }
+    }, [data?.submitHappinessFeedback])
+
     useEffect(
         () => () => {
-            if (data) {
+            if (data?.submitHappinessFeedback) {
                 // Reset local storage for future submissions
                 setText('')
                 setRating(undefined)
             }
         },
-        [data, setRating, setText]
+        [data?.submitHappinessFeedback, setRating, setText]
     )
 
     return (
@@ -113,6 +124,7 @@ const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({ closePro
                         <h3>What‘s on your mind?</h3>
                         <Button onClick={closePrompt} className="feedback-prompt__header--close" close={true} />
                     </header>
+
                     <TextAreaAutosize
                         onChange={handleTextChange}
                         value={text}
@@ -135,8 +147,8 @@ const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({ closePro
                             error={error}
                             history={history}
                             icon={false}
-                            className="feedback-prompt__alert"
-                            prefix="Something went wrong while sending your feedback. Please try again"
+                            className="mt-3"
+                            prefix="Error submitting feedback"
                         />
                     )}
                     <LoaderButton
