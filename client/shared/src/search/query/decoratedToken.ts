@@ -474,19 +474,14 @@ const mapPathMeta = (token: Literal): DecoratedToken[] => {
  * Tries to parse a pattern into decorated regexp tokens.
  * It always succeeds, even if regexp fails to parse.
  */
-const mapRegexpMetaSucceed = (token: Pattern): DecoratedToken[] => {
-    const parsedRegexp = mapRegexpMeta(token)
-    return parsedRegexp ? parsedRegexp : [token]
-}
+const mapRegexpMetaSucceed = (token: Pattern): DecoratedToken[] => mapRegexpMeta(token) || [token]
 
-const toPattern = (token: Literal): Pattern => {
-    return {
-        type: 'pattern',
-        kind: PatternKind.Regexp,
-        value: token.value,
-        range: token.range,
-    }
-}
+const toPattern = (token: Literal): Pattern => ({
+    type: 'pattern',
+    kind: PatternKind.Regexp,
+    value: token.value,
+    range: token.range,
+})
 
 /**
  * Tries to convert all literal tokens in a list of tokens to regular expression tokens.
