@@ -23,28 +23,28 @@ import (
 type VCSSyncer interface {
 	// IsCloneable checks to see if the VCS remote URL is cloneable. Any non-nil
 	// error indicates there is a problem.
-	IsCloneable(ctx context.Context, url string) error
+	IsCloneable(ctx context.Context, remoteURL *url.URL) error
 	// CloneCommand returns the command to be executed for cloning from remote.
-	CloneCommand(ctx context.Context, url, tmpPath string) (cmd *exec.Cmd, err error)
+	CloneCommand(ctx context.Context, remoteURL *url.URL, tmpPath string) (cmd *exec.Cmd, err error)
 	// FetchCommand returns the command to be executed for fetching updates from remote.
-	FetchCommand(ctx context.Context, url string) (cmd *exec.Cmd, configRemoteOpts bool, err error)
+	FetchCommand(ctx context.Context, remoteURL *url.URL) (cmd *exec.Cmd, configRemoteOpts bool, err error)
 	// RemoteShowCommand returns the command to be executed for showing remote.
-	RemoteShowCommand(ctx context.Context, url string) (cmd *exec.Cmd, err error)
+	RemoteShowCommand(ctx context.Context, remoteURL *url.URL) (cmd *exec.Cmd, err error)
 }
 
 // GitRepoSyncer is a syncer for Git repositories.
 type GitRepoSyncer struct{}
 
 // IsCloneable checks to see if the Git remote URL is cloneable.
-func (s *GitRepoSyncer) IsCloneable(ctx context.Context, url string) error {
-	if strings.ToLower(string(protocol.NormalizeRepo(api.RepoName(url)))) == "github.com/sourcegraphtest/alwayscloningtest" {
+func (s *GitRepoSyncer) IsCloneable(ctx context.Context, remoteURL *url.URL) error {
+	if strings.ToLower(string(protocol.NormalizeRepo(api.RepoName(remoteURL.String())))) == "github.com/sourcegraphtest/alwayscloningtest" {
 		return nil
 	}
 	if testGitRepoExists != nil {
-		return testGitRepoExists(ctx, url)
+		return testGitRepoExists(ctx, remoteURL)
 	}
 
-	args := []string{"ls-remote", url, "HEAD"}
+	args := []string{"ls-remote", remoteURL.String(), "HEAD"}
 	ctx, cancel := context.WithTimeout(ctx, shortGitCommandTimeout(args))
 	defer cancel()
 
@@ -63,23 +63,23 @@ func (s *GitRepoSyncer) IsCloneable(ctx context.Context, url string) error {
 }
 
 // CloneCommand returns the command to be executed for cloning a Git repository.
-func (s *GitRepoSyncer) CloneCommand(ctx context.Context, url, tmpPath string) (cmd *exec.Cmd, err error) {
+func (s *GitRepoSyncer) CloneCommand(ctx context.Context, remoteURL *url.URL, tmpPath string) (cmd *exec.Cmd, err error) {
 	if useRefspecOverrides() {
-		return refspecOverridesCloneCmd(ctx, url, tmpPath)
+		return refspecOverridesCloneCmd(ctx, remoteURL, tmpPath)
 	}
-	return exec.CommandContext(ctx, "git", "clone", "--mirror", "--progress", url, tmpPath), nil
+	return exec.CommandContext(ctx, "git", "clone", "--mirror", "--progress", remoteURL.String(), tmpPath), nil
 }
 
 // FetchCommand returns the command to be executed for fetching updates of a Git repository.
-func (s *GitRepoSyncer) FetchCommand(ctx context.Context, url string) (cmd *exec.Cmd, configRemoteOpts bool, err error) {
+func (s *GitRepoSyncer) FetchCommand(ctx context.Context, remoteURL *url.URL) (cmd *exec.Cmd, configRemoteOpts bool, err error) {
 	configRemoteOpts = true
-	if customCmd := customFetchCmd(ctx, url); customCmd != nil {
+	if customCmd := customFetchCmd(ctx, remoteURL); customCmd != nil {
 		cmd = customCmd
 		configRemoteOpts = false
 	} else if useRefspecOverrides() {
-		cmd = refspecOverridesFetchCmd(ctx, url)
+		cmd = refspecOverridesFetchCmd(ctx, remoteURL)
 	} else {
-		cmd = exec.CommandContext(ctx, "git", "fetch", "--prune", url,
+		cmd = exec.CommandContext(ctx, "git", "fetch", "--prune", remoteURL.String(),
 			// Normal git refs
 			"+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*",
 			// GitHub pull requests
@@ -97,8 +97,8 @@ func (s *GitRepoSyncer) FetchCommand(ctx context.Context, url string) (cmd *exec
 }
 
 // RemoteShowCommand returns the command to be executed for showing remote of a Git repository.
-func (s *GitRepoSyncer) RemoteShowCommand(ctx context.Context, url string) (cmd *exec.Cmd, err error) {
-	return exec.CommandContext(ctx, "git", "remote", "show", url), nil
+func (s *GitRepoSyncer) RemoteShowCommand(ctx context.Context, remoteURL *url.URL) (cmd *exec.Cmd, err error) {
+	return exec.CommandContext(ctx, "git", "remote", "show", remoteURL.String()), nil
 }
 
 // PerforceDepotSyncer is a syncer for Perforce depots.
@@ -107,20 +107,14 @@ type PerforceDepotSyncer struct {
 	MaxChanges int
 }
 
-// decomposePerforceCloneURL decomposes information back from a clone URL for a
+// decomposePerforceRemoteURL decomposes information back from a clone URL for a
 // Perforce depot.
-func decomposePerforceCloneURL(cloneURL string) (username, password, host, depot string, err error) {
-	url, err := url.Parse(cloneURL)
-	if err != nil {
-		return "", "", "", "", err
-	}
-
-	if url.Scheme != "perforce" {
+func decomposePerforceRemoteURL(remoteURL *url.URL) (username, password, host, depot string, err error) {
+	if remoteURL.Scheme != "perforce" {
 		return "", "", "", "", errors.New(`scheme is not "perforce"`)
 	}
-
-	password, _ = url.User.Password()
-	return url.User.Username(), password, url.Host, url.Path, nil
+	password, _ = remoteURL.User.Password()
+	return remoteURL.User.Username(), password, remoteURL.Host, remoteURL.Path, nil
 }
 
 // p4ping sends one message to the Perforce Server to check connectivity.
@@ -211,8 +205,8 @@ func p4pingWithLogin(ctx context.Context, host, username, password string) error
 }
 
 // IsCloneable checks to see if the Perforce remote URL is cloneable.
-func (s *PerforceDepotSyncer) IsCloneable(ctx context.Context, url string) error {
-	username, password, host, _, err := decomposePerforceCloneURL(url)
+func (s *PerforceDepotSyncer) IsCloneable(ctx context.Context, remoteURL *url.URL) error {
+	username, password, host, _, err := decomposePerforceRemoteURL(remoteURL)
 	if err != nil {
 		return errors.Wrap(err, "decompose")
 	}
@@ -222,8 +216,8 @@ func (s *PerforceDepotSyncer) IsCloneable(ctx context.Context, url string) error
 }
 
 // CloneCommand returns the command to be executed for cloning a Perforce depot as a Git repository.
-func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, url, tmpPath string) (*exec.Cmd, error) {
-	username, password, host, depot, err := decomposePerforceCloneURL(url)
+func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *url.URL, tmpPath string) (*exec.Cmd, error) {
+	username, password, host, depot, err := decomposePerforceRemoteURL(remoteURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "decompose")
 	}
@@ -250,8 +244,8 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, url, tmpPath str
 }
 
 // FetchCommand returns the command to be executed for fetching updates of a Perforce depot as a Git repository.
-func (s *PerforceDepotSyncer) FetchCommand(ctx context.Context, url string) (cmd *exec.Cmd, configRemoteOpts bool, err error) {
-	username, password, host, _, err := decomposePerforceCloneURL(url)
+func (s *PerforceDepotSyncer) FetchCommand(ctx context.Context, remoteURL *url.URL) (cmd *exec.Cmd, configRemoteOpts bool, err error) {
+	username, password, host, _, err := decomposePerforceRemoteURL(remoteURL)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "decompose")
 	}
@@ -277,7 +271,7 @@ func (s *PerforceDepotSyncer) FetchCommand(ctx context.Context, url string) (cmd
 }
 
 // RemoteShowCommand returns the command to be executed for showing Git remote of a Perforce depot.
-func (s *PerforceDepotSyncer) RemoteShowCommand(ctx context.Context, url string) (cmd *exec.Cmd, err error) {
+func (s *PerforceDepotSyncer) RemoteShowCommand(ctx context.Context, remoteURL *url.URL) (cmd *exec.Cmd, err error) {
 	// Remote info is encoded as in the current repository
 	return exec.CommandContext(ctx, "git", "remote", "show", "./"), nil
 }
