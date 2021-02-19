@@ -38,7 +38,6 @@ func TestDiagnostics(t *testing.T) {
 	resolver := newQueryResolver(
 		mockDBStore,
 		mockLSIFStore,
-		nil,
 		newCachedCommitChecker(mockGitserverClient),
 		mockPositionAdjuster,
 		42,

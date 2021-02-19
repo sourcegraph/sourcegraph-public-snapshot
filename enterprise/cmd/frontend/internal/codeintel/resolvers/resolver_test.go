@@ -19,7 +19,7 @@ func TestQueryResolver(t *testing.T) {
 	mockLSIFStore := NewMockLSIFStore()
 	mockGitserverClient := NewMockGitserverClient()
 
-	resolver := NewResolver(mockDBStore, mockLSIFStore, mockGitserverClient, nil, nil, nil, &observation.TestContext)
+	resolver := NewResolver(mockDBStore, mockLSIFStore, mockGitserverClient, nil, nil, &observation.TestContext)
 	queryResolver, err := resolver.QueryResolver(context.Background(), &gql.GitBlobLSIFDataArgs{
 		Repo:      &types.Repo{ID: 50},
 		Commit:    api.CommitID("deadbeef"),
@@ -73,7 +73,7 @@ func TestFallbackIndexConfiguration(t *testing.T) {
 	gitServerClient.HeadFunc.SetDefaultReturn("deadbeef", nil)
 	gitServerClient.ListFilesFunc.SetDefaultReturn([]string{"go.mod"}, nil)
 
-	resolver := NewResolver(mockDBStore, mockLSIFStore, mockGitserverClient, nil, indexEnqueuer, nil, &observation.TestContext)
+	resolver := NewResolver(mockDBStore, mockLSIFStore, mockGitserverClient, indexEnqueuer, nil, &observation.TestContext)
 	json, err := resolver.IndexConfiguration(context.Background(), 0)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)

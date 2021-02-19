@@ -37,7 +37,6 @@ type resolver struct {
 	dbStore         DBStore
 	lsifStore       LSIFStore
 	gitserverClient GitserverClient
-	codeIntelAPI    CodeIntelAPI
 	indexEnqueuer   IndexEnqueuer
 	hunkCache       HunkCache
 	operations      *operations
@@ -48,19 +47,17 @@ func NewResolver(
 	dbStore DBStore,
 	lsifStore LSIFStore,
 	gitserverClient GitserverClient,
-	codeIntelAPI CodeIntelAPI,
 	indexEnqueuer IndexEnqueuer,
 	hunkCache HunkCache,
 	observationContext *observation.Context,
 ) Resolver {
-	return newResolver(dbStore, lsifStore, gitserverClient, codeIntelAPI, indexEnqueuer, hunkCache, observationContext)
+	return newResolver(dbStore, lsifStore, gitserverClient, indexEnqueuer, hunkCache, observationContext)
 }
 
 func newResolver(
 	dbStore DBStore,
 	lsifStore LSIFStore,
 	gitserverClient GitserverClient,
-	codeIntelAPI CodeIntelAPI,
 	indexEnqueuer IndexEnqueuer,
 	hunkCache HunkCache,
 	observationContext *observation.Context,
@@ -69,7 +66,6 @@ func newResolver(
 		dbStore:         dbStore,
 		lsifStore:       lsifStore,
 		gitserverClient: gitserverClient,
-		codeIntelAPI:    codeIntelAPI,
 		indexEnqueuer:   indexEnqueuer,
 		hunkCache:       hunkCache,
 		operations:      newOperations(observationContext),
@@ -185,7 +181,6 @@ func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataA
 	return NewQueryResolver(
 		r.dbStore,
 		r.lsifStore,
-		r.codeIntelAPI,
 		cachedCommitChecker,
 		NewPositionAdjuster(args.Repo, string(args.Commit), r.hunkCache),
 		int(args.Repo.ID),

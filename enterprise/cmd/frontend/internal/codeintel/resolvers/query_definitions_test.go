@@ -36,7 +36,6 @@ func TestDefinitions(t *testing.T) {
 	resolver := newQueryResolver(
 		mockDBStore,
 		mockLSIFStore,
-		nil,
 		newCachedCommitChecker(mockGitserverClient),
 		mockPositionAdjuster,
 		42,
@@ -115,7 +114,6 @@ func TestDefinitionsRemote(t *testing.T) {
 	resolver := newQueryResolver(
 		mockDBStore,
 		mockLSIFStore,
-		nil,
 		newCachedCommitChecker(mockGitserverClient),
 		mockPositionAdjuster,
 		42,

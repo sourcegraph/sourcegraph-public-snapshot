@@ -148,36 +148,6 @@ func (s *Store) Definitions(ctx context.Context, bundleID int, path string, line
 	return nil, nil
 }
 
-// References returns the set of locations referencing the symbol at the given position.
-func (s *Store) References(ctx context.Context, bundleID int, path string, line, character int) (_ []Location, err error) {
-	ctx, endObservation := s.operations.references.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("bundleID", bundleID),
-		log.String("path", path),
-		log.Int("line", line),
-		log.Int("character", character),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	documentData, exists, err := s.scanFirstDocumentData(s.Store.Query(ctx, sqlf.Sprintf(documentQuery, bundleID, path)))
-	if err != nil || !exists {
-		return nil, err
-	}
-
-	ranges := FindRanges(documentData.Document.Ranges, line, character)
-	orderedResultIDs := extractResultIDs(ranges, func(r RangeData) ID { return r.ReferenceResultID })
-	locationsMap, err := s.locations(ctx, bundleID, orderedResultIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	var allLocations []Location
-	for _, resultID := range orderedResultIDs {
-		allLocations = append(allLocations, locationsMap[resultID]...)
-	}
-
-	return allLocations, nil
-}
-
 // PagedReferences returns the set of locations referencing the symbol at the given position.
 func (s *Store) PagedReferences(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []Location, _ int, err error) {
 	ctx, endObservation := s.operations.pagedReferences.With(ctx, &err, observation.Args{LogFields: []log.Field{
@@ -329,64 +299,6 @@ func (s *Store) MonikersByPosition(ctx context.Context, bundleID int, path strin
 
 	return monikerData, nil
 }
-
-// MonikerResults returns the locations that define or reference the given moniker. This method
-// also returns the size of the complete result set to aid in pagination (along with skip and take).
-func (s *Store) MonikerResults(ctx context.Context, bundleID int, tableName, scheme, identifier string, skip, take int) (_ []Location, _ int, err error) {
-	ctx, endObservation := s.operations.monikerResults.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("bundleID", bundleID),
-		log.String("tableName", tableName),
-		log.String("scheme", scheme),
-		log.String("identifier", identifier),
-		log.Int("skip", skip),
-		log.Int("take", take),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	locationData, exists, err := s.scanFirstLocations(s.Store.Query(ctx, sqlf.Sprintf(
-		monikerResultsQuery,
-		sqlf.Sprintf(fmt.Sprintf("lsif_data_%s", tableName)),
-		bundleID,
-		scheme,
-		identifier,
-	)))
-	if err != nil || !exists {
-		return nil, 0, err
-	}
-
-	rows := locationData.Locations
-	totalCount := len(locationData.Locations)
-
-	if skip != 0 || take != 0 {
-		if lo := skip; lo >= len(rows) {
-			// Skip lands past result set, return nothing
-			rows = nil
-		} else {
-			hi := skip + take
-			if hi >= len(rows) {
-				hi = len(rows)
-			}
-
-			rows = rows[lo:hi]
-		}
-	}
-
-	locations := make([]Location, 0, len(rows))
-	for _, row := range rows {
-		locations = append(locations, Location{
-			DumpID: bundleID,
-			Path:   row.URI,
-			Range:  newRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
-		})
-	}
-
-	return locations, totalCount, nil
-}
-
-const monikerResultsQuery = `
--- source: enterprise/internal/codeintel/stores/lsifstore/bundles.go:MonikerResults
-SELECT scheme, identifier, data FROM %s WHERE dump_id = %s AND scheme = %s AND identifier = %s
-`
 
 // BulkMonikerResults returns the locations within one of the given bundles that define or reference
 // one of the given monikers. This method also returns the size of the complete result set to aid in
