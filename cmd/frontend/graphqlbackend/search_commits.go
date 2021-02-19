@@ -404,7 +404,7 @@ func logCommitSearchResultsToResolvers(ctx context.Context, db dbutil.DB, op *se
 					matchHighlights = results[i].messagePreview.highlights
 				}
 			} else {
-				results[i].messagePreview = &highlightedString{value: string(commit.Message)}
+				results[i].messagePreview = &highlightedString{value: commit.Message}
 			}
 			matchBody = "```COMMIT_EDITMSG\n" + rawResult.Commit.Message + "\n```"
 		}
