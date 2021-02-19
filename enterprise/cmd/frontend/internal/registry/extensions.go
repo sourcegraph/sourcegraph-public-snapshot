@@ -6,11 +6,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 func init() {
 	conf.DefaultRemoteRegistry = "https://sourcegraph.com/.api/registry"
-	registry.GetLocalExtensionByExtensionID = func(ctx context.Context, extensionIDWithoutPrefix string) (graphqlbackend.RegistryExtension, error) {
+	registry.GetLocalExtensionByExtensionID = func(ctx context.Context, db dbutil.DB, extensionIDWithoutPrefix string) (graphqlbackend.RegistryExtension, error) {
 		x, err := dbExtensions{}.GetByExtensionID(ctx, extensionIDWithoutPrefix)
 		if err != nil {
 			return nil, err
@@ -18,7 +19,7 @@ func init() {
 		if err := prefixLocalExtensionID(x); err != nil {
 			return nil, err
 		}
-		return &extensionDBResolver{v: x}, nil
+		return &extensionDBResolver{db: db, v: x}, nil
 	}
 }
 

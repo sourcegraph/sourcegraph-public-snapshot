@@ -8,6 +8,7 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -25,6 +26,7 @@ import (
 type CachedLocationResolver struct {
 	sync.RWMutex
 	children map[api.RepoID]*cachedRepositoryResolver
+	db       dbutil.DB
 }
 
 type cachedRepositoryResolver struct {
@@ -40,8 +42,9 @@ type cachedCommitResolver struct {
 }
 
 // NewCachedLocationResolver creates a location resolver with an empty cache.
-func NewCachedLocationResolver() *CachedLocationResolver {
+func NewCachedLocationResolver(db dbutil.DB) *CachedLocationResolver {
 	return &CachedLocationResolver{
+		db:       db,
 		children: map[api.RepoID]*cachedRepositoryResolver{},
 	}
 }
@@ -208,7 +211,7 @@ func (r *CachedLocationResolver) resolveRepository(ctx context.Context, id api.R
 		return nil, err
 	}
 
-	return gql.NewRepositoryResolver(repo), nil
+	return gql.NewRepositoryResolver(r.db, repo), nil
 }
 
 // Commit resolves the git commit with the given repository resolver and commit hash. This method may
@@ -234,7 +237,7 @@ func (r *CachedLocationResolver) resolveCommit(ctx context.Context, repositoryRe
 // Path resolves the git tree entry with the given commit resolver and relative path. This method must be
 // called only when constructing a resolver to populate the cache.
 func (r *CachedLocationResolver) resolvePath(ctx context.Context, commitResolver *gql.GitCommitResolver, path string) (*gql.GitTreeEntryResolver, error) {
-	return gql.NewGitTreeEntryResolver(commitResolver, gql.CreateFileInfo(path, true)), nil
+	return gql.NewGitTreeEntryResolver(commitResolver, r.db, gql.CreateFileInfo(path, true)), nil
 }
 
 // resolveLocations creates a slide of LocationResolvers for the given list of adjusted locations. The

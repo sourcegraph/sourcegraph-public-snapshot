@@ -13,11 +13,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestDeleteUser(t *testing.T) {
+	db := new(dbtesting.MockDB)
+
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		resetMocks()
 		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
@@ -25,7 +28,7 @@ func TestDeleteUser(t *testing.T) {
 		}
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&schemaResolver{}).DeleteUser(ctx, &struct {
+		result, err := (&schemaResolver{db: db}).DeleteUser(ctx, &struct {
 			User graphql.ID
 			Hard *bool
 		}{
@@ -46,7 +49,7 @@ func TestDeleteUser(t *testing.T) {
 		}
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		_, err := (&schemaResolver{}).DeleteUser(ctx, &struct {
+		_, err := (&schemaResolver{db: db}).DeleteUser(ctx, &struct {
 			User graphql.ID
 			Hard *bool
 		}{

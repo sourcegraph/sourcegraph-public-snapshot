@@ -75,8 +75,6 @@ func (r *workHandler) Handle(ctx context.Context, workerStore dbworkerstore.Stor
 		matchCount = results.Data.Search.Results.MatchCount
 	}
 
-	log15.Info("insights query runner", "found matches", matchCount, "query", job.SearchQuery)
-
 	// 🚨 SECURITY: The request is performed without authentication, we get back results from every
 	// repository on Sourcegraph - so we must be careful to only record insightful information that
 	// is OK to expose to every user on Sourcegraph (e.g. total result counts are fine, exposing

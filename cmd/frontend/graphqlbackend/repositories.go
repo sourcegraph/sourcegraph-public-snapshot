@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -62,6 +63,7 @@ func (r *schemaResolver) Repositories(args *struct {
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &repositoryConnectionResolver{
+		db:         r.db,
 		opt:        opt,
 		cloned:     args.Cloned,
 		notCloned:  args.NotCloned,
@@ -83,6 +85,7 @@ type RepositoryConnectionResolver interface {
 var _ RepositoryConnectionResolver = &repositoryConnectionResolver{}
 
 type repositoryConnectionResolver struct {
+	db         dbutil.DB
 	opt        database.ReposListOptions
 	cloned     bool
 	notCloned  bool
@@ -199,7 +202,7 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*Repository
 			break
 		}
 
-		resolvers = append(resolvers, NewRepositoryResolver(repo))
+		resolvers = append(resolvers, NewRepositoryResolver(r.db, repo))
 	}
 	return resolvers, nil
 }
@@ -283,7 +286,7 @@ func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct 
 		return nil, err
 	}
 
-	repo, err := repositoryByID(ctx, args.Repository)
+	repo, err := r.repositoryByID(ctx, args.Repository)
 	if err != nil {
 		return nil, err
 	}
@@ -313,14 +316,14 @@ func repoNamesToStrings(repoNames []api.RepoName) []string {
 	return strings
 }
 
-func toRepositoryResolvers(repos []*types.RepoName) []*RepositoryResolver {
+func toRepositoryResolvers(db dbutil.DB, repos []*types.RepoName) []*RepositoryResolver {
 	if len(repos) == 0 {
 		return []*RepositoryResolver{}
 	}
 
 	resolvers := make([]*RepositoryResolver, len(repos))
 	for i := range repos {
-		resolvers[i] = NewRepositoryResolver(repos[i].ToRepo())
+		resolvers[i] = NewRepositoryResolver(db, repos[i].ToRepo())
 	}
 
 	return resolvers

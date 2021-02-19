@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/productsubscription"
-	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/graphqlbackend"
+	enterpriseGraphQL "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/enforcement"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
@@ -19,11 +19,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
 // TODO(efritz) - de-globalize assignments in this function
 // TODO(efritz) - refactor licensing packages - this is a huge mess!
-func Init(ctx context.Context, db dbutil.DB, enterpriseServices *enterprise.Services) error {
+func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services) error {
 	// Enforce the license's max user count by preventing the creation of new users when the max is
 	// reached.
 	database.GlobalUsers.BeforeCreateUser = enforcement.NewBeforeCreateUserHook(&usersStore{})
@@ -43,6 +44,8 @@ func Init(ctx context.Context, db dbutil.DB, enterpriseServices *enterprise.Serv
 	// Make the Site.productSubscription.productNameWithBrand GraphQL field (and other places) use the
 	// proper product name.
 	graphqlbackend.GetProductNameWithBrand = licensing.ProductNameWithBrand
+
+	enterpriseGraphQL.InitDotcom(db)
 
 	globals.WatchBranding(func() error {
 		if !licensing.EnforceTiers {

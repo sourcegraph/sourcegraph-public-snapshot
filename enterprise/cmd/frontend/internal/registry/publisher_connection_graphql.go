@@ -7,16 +7,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 func init() {
 	frontendregistry.ExtensionRegistry.PublishersFunc = extensionRegistryPublishers
 }
 
-func extensionRegistryPublishers(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.RegistryPublisherConnection, error) {
+func extensionRegistryPublishers(ctx context.Context, db dbutil.DB, args *graphqlutil.ConnectionArgs) (graphqlbackend.RegistryPublisherConnection, error) {
 	var opt dbPublishersListOptions
 	args.Set(&opt.LimitOffset)
-	return &registryPublisherConnection{opt: opt}, nil
+	return &registryPublisherConnection{opt: opt, db: db}, nil
 }
 
 // registryPublisherConnection resolves a list of registry publishers.
@@ -27,6 +28,7 @@ type registryPublisherConnection struct {
 	once               sync.Once
 	registryPublishers []*dbPublisher
 	err                error
+	db                 dbutil.DB
 }
 
 func (r *registryPublisherConnection) compute(ctx context.Context) ([]*dbPublisher, error) {
@@ -51,7 +53,7 @@ func (r *registryPublisherConnection) Nodes(ctx context.Context) ([]graphqlbacke
 
 	var l []graphqlbackend.RegistryPublisher
 	for _, publisher := range publishers {
-		p, err := getRegistryPublisher(ctx, *publisher)
+		p, err := getRegistryPublisher(ctx, r.db, *publisher)
 		if err != nil {
 			return nil, err
 		}

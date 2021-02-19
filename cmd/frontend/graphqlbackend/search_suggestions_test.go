@@ -14,6 +14,7 @@ import (
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -22,11 +23,13 @@ import (
 )
 
 func TestSearchSuggestions(t *testing.T) {
+	db := new(dbtesting.MockDB)
+
 	limitOffset := &database.LimitOffset{Limit: searchrepos.SearchLimits().MaxRepos + 1}
 
 	getSuggestions := func(t *testing.T, query, version string) []string {
 		t.Helper()
-		r, err := (&schemaResolver{}).Search(context.Background(), &SearchArgs{Query: query, Version: version})
+		r, err := (&schemaResolver{db: db}).Search(context.Background(), &SearchArgs{Query: query, Version: version})
 		if err != nil {
 			t.Fatal("Search:", err)
 		}
@@ -109,7 +112,7 @@ func TestSearchSuggestions(t *testing.T) {
 			if want := "foo"; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
-			fm := mkFileMatch(&types.RepoName{Name: "repo"}, "dir/file")
+			fm := mkFileMatch(db, &types.RepoName{Name: "repo"}, "dir/file")
 			fm.uri = "git://repo?rev#dir/file"
 			fm.CommitID = "rev"
 			return []*FileMatchResolver{fm}, &streaming.Stats{}, nil
@@ -169,7 +172,7 @@ func TestSearchSuggestions(t *testing.T) {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, `"foo" or "."`)
 			}
 			mk := func(name api.RepoName, path string) *FileMatchResolver {
-				fm := mkFileMatch(&types.RepoName{Name: name}, path)
+				fm := mkFileMatch(db, &types.RepoName{Name: name}, path)
 				fm.uri = fileMatchURI(name, "rev", path)
 				fm.CommitID = "rev"
 				return fm
@@ -253,7 +256,7 @@ func TestSearchSuggestions(t *testing.T) {
 				t.Errorf("got %q, want %q", repos, want)
 			}
 			return []*FileMatchResolver{
-				mkFileMatch(&types.RepoName{Name: "foo-repo"}, "dir/file"),
+				mkFileMatch(db, &types.RepoName{Name: "foo-repo"}, "dir/file"),
 			}, &streaming.Stats{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
@@ -374,7 +377,7 @@ func TestSearchSuggestions(t *testing.T) {
 				t.Errorf("got %q, want %q", repos, want)
 			}
 			return []*FileMatchResolver{
-				mkFileMatch(&types.RepoName{Name: "foo-repo"}, "dir/bar-file"),
+				mkFileMatch(db, &types.RepoName{Name: "foo-repo"}, "dir/bar-file"),
 			}, &streaming.Stats{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()

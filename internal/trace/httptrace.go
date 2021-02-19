@@ -273,7 +273,7 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 	}))
 }
 
-func TraceRoute(next http.Handler) http.Handler {
+func Route(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		if p, ok := r.Context().Value(routeNameKey).(*string); ok {
 			if routeName := mux.CurrentRoute(r).GetName(); routeName != "" {
@@ -284,7 +284,7 @@ func TraceRoute(next http.Handler) http.Handler {
 	})
 }
 
-func TraceUser(ctx context.Context, userID int32) {
+func User(ctx context.Context, userID int32) {
 	if p, ok := ctx.Value(userKey).(*int32); ok {
 		*p = userID
 	}

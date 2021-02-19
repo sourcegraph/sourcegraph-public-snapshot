@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"sync"
 	"sync/atomic"
@@ -22,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -41,11 +41,11 @@ var (
 	parsedSchema    *graphql.Schema
 )
 
-func mustParseGraphQLSchema(t *testing.T, db *sql.DB) *graphql.Schema {
+func mustParseGraphQLSchema(t *testing.T, db dbutil.DB) *graphql.Schema {
 	t.Helper()
 
 	parseSchemaOnce.Do(func() {
-		parsedSchema, parseSchemaErr = graphqlbackend.NewSchema(nil, nil, nil, nil, NewResolver(db, clock), nil, nil)
+		parsedSchema, parseSchemaErr = graphqlbackend.NewSchema(db, nil, nil, nil, NewResolver(db, clock), nil, nil)
 	})
 	if parseSchemaErr != nil {
 		t.Fatal(parseSchemaErr)

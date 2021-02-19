@@ -5,7 +5,9 @@ import (
 	"errors"
 
 	"github.com/graph-gophers/graphql-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // Dotcom is the implementation of the GraphQL type DotcomMutation. If it is not set at runtime, a
@@ -43,7 +45,7 @@ type DotcomResolver interface {
 // ProductSubscriptionByID is called to look up a ProductSubscription given its GraphQL ID.
 //
 // This is contributed by enterprise.
-var ProductSubscriptionByID func(context.Context, graphql.ID) (ProductSubscription, error)
+var ProductSubscriptionByID func(context.Context, dbutil.DB, graphql.ID) (ProductSubscription, error)
 
 // ProductSubscription is the interface for the GraphQL type ProductSubscription.
 type ProductSubscription interface {
@@ -155,7 +157,7 @@ type PreviewProductSubscriptionInvoiceArgs struct {
 // ProductLicenseByID is called to look up a ProductLicense given its GraphQL ID.
 //
 // This is contributed by enterprise.
-var ProductLicenseByID func(context.Context, graphql.ID) (ProductLicense, error)
+var ProductLicenseByID func(context.Context, dbutil.DB, graphql.ID) (ProductLicense, error)
 
 // ProductLicense is the interface for the GraphQL type ProductLicense.
 type ProductLicense interface {
