@@ -68,22 +68,29 @@ func TestSearchCommitsInRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if want := []*CommitSearchResultResolver{
-		{
-			db: db,
-			CommitSearchResult: CommitSearchResult{
-				commit:      git.Commit{ID: "c1", Author: gitSignatureWithDate},
-				repoName:    types.RepoName{ID: 1, Name: "repo"},
-				diffPreview: &highlightedString{value: "x", highlights: []*highlightedRange{}},
-				label:       "[repo](/repo) › [](/repo/-/commit/c1): [](/repo/-/commit/c1)",
-				url:         "/repo/-/commit/c1",
-				detail:      "[`c1` one day ago](/repo/-/commit/c1)",
-				matches:     []*searchResultMatchResolver{{url: "/repo/-/commit/c1", body: "```diff\nx```", highlights: []*highlightedRange{}}},
-			},
+	want := []*CommitSearchResultResolver{{
+		db: db,
+		CommitSearchResult: CommitSearchResult{
+			commit:      git.Commit{ID: "c1", Author: gitSignatureWithDate},
+			repoName:    types.RepoName{ID: 1, Name: "repo"},
+			diffPreview: &highlightedString{value: "x", highlights: []*highlightedRange{}},
+			label:       "[repo](/repo) › [](/repo/-/commit/c1): [](/repo/-/commit/c1)",
+			url:         "/repo/-/commit/c1",
+			// TODO add test for detail
+			// detail:      "[`c1` one day ago](/repo/-/commit/c1)",
+			matches: []*searchResultMatchResolver{{url: "/repo/-/commit/c1", body: "```diff\nx```", highlights: []*highlightedRange{}}},
 		},
-	}; !reflect.DeepEqual(results, want) {
+	}}
+
+	if !reflect.DeepEqual(results, want) {
 		t.Errorf("results\ngot  %v\nwant %v", results, want)
 	}
+
+	wantDetail := Markdown("[`c1` one day ago](/repo/-/commit/c1)")
+	if gotDetail := want[0].Detail(); gotDetail != wantDetail {
+		t.Errorf("detail\ngot  %v\nwant %v", gotDetail, wantDetail)
+	}
+
 	if limitHit {
 		t.Error("limitHit")
 	}
