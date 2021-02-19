@@ -120,9 +120,12 @@ func (r *Runner) Start() {
 		}
 	}
 
+	// Unblock all processor routines
 	for _, ch := range migrationProcesses {
 		close(ch)
 	}
+
+	// Wait for processor routines to finish
 	wg.Wait()
 }
 
@@ -182,45 +185,6 @@ func (r *Runner) listMigrations(ctx context.Context) <-chan []Migration {
 	return ch
 }
 
-// runMigrator invokes the Up or Down method on the given migrator depending on the migration
-// direction. If an error occurs, it will be associated in the database with the migration record.
-// Regardless of the success of the migration function, the progress function on the migrator will be
-// invoked and the progress written to the database.
-func (r *Runner) runMigratorX(ctx context.Context, migration *Migration, migrator Migrator) error {
-	migrationFunc := migrator.Up
-	if migration.ApplyReverse {
-		migrationFunc = migrator.Down
-	}
-
-	if migrationErr := migrationFunc(ctx); migrationErr != nil {
-		// Migration resulted in an error. All we'll do here is add this error to the migration's error
-		// message list. Unless _that_ write to the database fails, we'll continue along the happy path
-		// in order to update the migration, which could have made additional progress before failing.
-
-		if err := r.store.AddError(ctx, migration.ID, migrationErr.Error()); err != nil {
-			return err
-		}
-	}
-
-	return r.updateProgressX(ctx, migration, migrator)
-}
-
-// updateProgress invokes the Progress method on the given migrator, updates the Progress field of the
-// given migration record, and updates the record in the database.
-func (r *Runner) updateProgressX(ctx context.Context, migration *Migration, migrator Migrator) error {
-	progress, err := migrator.Progress(ctx)
-	if err != nil {
-		return err
-	}
-
-	if err := r.store.UpdateProgress(ctx, migration.ID, progress); err != nil {
-		return err
-	}
-
-	migration.Progress = progress
-	return nil
-}
-
 // Stop will cancel the context used in Start, then blocks until Start has returned.
 func (r *Runner) Stop() {
 	r.cancel()
@@ -239,7 +203,7 @@ func runMigrator(ctx context.Context, r *Runner, migrator Migrator, migrations <
 	}
 
 	// We're just starting up - refresh our progress before migrating
-	if err := r.updateProgressX(ctx, &migration, migrator); err != nil {
+	if err := updateProgress(ctx, r.store, &migration, migrator); err != nil {
 		log15.Error("Failed migration action", "id", migration.ID, "error", err)
 	}
 
@@ -251,7 +215,7 @@ func runMigrator(ctx context.Context, r *Runner, migrator Migrator, migrations <
 		case <-clock.After(tickInterval):
 			if !migration.Complete() {
 				// Run the migration only if there's something left to do
-				if err := r.runMigratorX(ctx, &migration, migrator); err != nil {
+				if err := runMigrationFunction(ctx, r.store, &migration, migrator); err != nil {
 					log15.Error("Failed migration action", "id", migration.ID, "error", err)
 				}
 			}
@@ -260,4 +224,43 @@ func runMigrator(ctx context.Context, r *Runner, migrator Migrator, migrations <
 			return
 		}
 	}
+}
+
+// runMigrationFunction invokes the Up or Down method on the given migrator depending on the migration
+// direction. If an error occurs, it will be associated in the database with the migration record.
+// Regardless of the success of the migration function, the progress function on the migrator will be
+// invoked and the progress written to the database.
+func runMigrationFunction(ctx context.Context, store storeIface, migration *Migration, migrator Migrator) error {
+	migrationFunc := migrator.Up
+	if migration.ApplyReverse {
+		migrationFunc = migrator.Down
+	}
+
+	if migrationErr := migrationFunc(ctx); migrationErr != nil {
+		// Migration resulted in an error. All we'll do here is add this error to the migration's error
+		// message list. Unless _that_ write to the database fails, we'll continue along the happy path
+		// in order to update the migration, which could have made additional progress before failing.
+
+		if err := store.AddError(ctx, migration.ID, migrationErr.Error()); err != nil {
+			return err
+		}
+	}
+
+	return updateProgress(ctx, store, migration, migrator)
+}
+
+// updateProgress invokes the Progress method on the given migrator, updates the Progress field of the
+// given migration record, and updates the record in the database.
+func updateProgress(ctx context.Context, store storeIface, migration *Migration, migrator Migrator) error {
+	progress, err := migrator.Progress(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := store.UpdateProgress(ctx, migration.ID, progress); err != nil {
+		return err
+	}
+
+	migration.Progress = progress
+	return nil
 }
