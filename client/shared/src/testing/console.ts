@@ -76,9 +76,8 @@ export async function formatPuppeteerConsoleMessage(
         color(
             ...[
                 message.type() !== 'log' ? chalk.bold(icon, message.type()) : '',
-                message.args().length === 0 ? message.text() : '',
-                ...(message.args().length > 0 && argumentObjects.every(result => result.status === 'rejected')
-                    ? // If all arguments failed, fall back to the text.
+                ...(argumentObjects.every(result => result.status === 'rejected')
+                    ? // If all arguments failed or there are no arguments, fall back to the text.
                       [message.text()]
                     : argumentObjects.map(result => {
                           if (result.status === 'rejected') {
