@@ -138,7 +138,7 @@ func (m *mockGitLab) GetProject(c *gitlab.Client, ctx context.Context, op gitlab
 
 	proj, ok := m.projs[op.ID]
 	if !ok {
-		return nil, gitlab.ErrNotFound
+		return nil, gitlab.ErrProjectNotFound
 	}
 	if proj.Visibility == gitlab.Public {
 		return proj, nil
@@ -154,7 +154,7 @@ func (m *mockGitLab) GetProject(c *gitlab.Client, ctx context.Context, op gitlab
 		}
 	}
 
-	return nil, gitlab.ErrNotFound
+	return nil, gitlab.ErrProjectNotFound
 }
 
 func (m *mockGitLab) ListProjects(c *gitlab.Client, ctx context.Context, urlStr string) (projs []*gitlab.Project, nextPageURL *string, err error) {
@@ -228,7 +228,7 @@ func (m *mockGitLab) ListTree(c *gitlab.Client, ctx context.Context, op gitlab.L
 
 	proj, ok := m.projs[op.ProjID]
 	if !ok {
-		return nil, gitlab.ErrNotFound
+		return nil, gitlab.ErrProjectNotFound
 	}
 	if proj.Visibility == gitlab.Public {
 		return ret, nil
@@ -244,7 +244,7 @@ func (m *mockGitLab) ListTree(c *gitlab.Client, ctx context.Context, op gitlab.L
 		}
 	}
 
-	return nil, gitlab.ErrNotFound
+	return nil, gitlab.ErrProjectNotFound
 }
 
 // isClientAuthenticated returns true if the client is authenticated. User is authenticated if OAuth

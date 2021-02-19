@@ -126,12 +126,12 @@ func TestRunnerRemovesCompleted(t *testing.T) {
 	}
 
 	// finished after 2 updates
-	if callCount := len(migrator2.DownFunc.History()); callCount != 2 {
-		t.Errorf("unexpected number of calls to Down. want=%d have=%d", 2, callCount)
+	if callCount := len(migrator2.DownFunc.History()); callCount != 1 {
+		t.Errorf("unexpected number of calls to Down. want=%d have=%d", 1, callCount)
 	}
 
 	// finished after 2 updates
-	if callCount := len(migrator3.UpFunc.History()); callCount != 2 {
-		t.Errorf("unexpected number of calls to Up. want=%d have=%d", 2, callCount)
+	if callCount := len(migrator3.UpFunc.History()); callCount != 1 {
+		t.Errorf("unexpected number of calls to Up. want=%d have=%d", 1, callCount)
 	}
 }

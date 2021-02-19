@@ -42,6 +42,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 // tempDirName is the name used for the temporary directory under ReposDir.
@@ -309,11 +310,17 @@ func (s *Server) serverContext() (context.Context, context.CancelFunc) {
 	}
 }
 
-func (s *Server) getRemoteURL(ctx context.Context, name api.RepoName) (string, error) {
+func (s *Server) getRemoteURL(ctx context.Context, name api.RepoName) (*url.URL, error) {
 	if s.GetRemoteURLFunc == nil {
-		return "", errors.New("gitserver GetRemoteURLFunc is unset")
+		return nil, errors.New("gitserver GetRemoteURLFunc is unset")
 	}
-	return s.GetRemoteURLFunc(ctx, name)
+
+	remoteURL, err := s.GetRemoteURLFunc(ctx, name)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetRemoteURLFunc")
+	}
+
+	return vcs.ParseURL(remoteURL)
 }
 
 // acquireCloneLimiter() acquires a cancellable context associated with the
@@ -377,7 +384,7 @@ func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
 		// We use this endpoint to verify if a repo exists without consuming
 		// API rate limit, since many users visit private or bogus repos,
 		// so we deduce the unauthenticated clone URL from the repo name.
-		remoteURL = "https://" + string(req.Repo) + ".git"
+		remoteURL, _ = vcs.ParseURL("https://" + string(req.Repo) + ".git")
 
 		// At this point we are assuming it's a git repo
 		syncer = &GitRepoSyncer{}
@@ -970,12 +977,12 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		return "", errors.Wrap(err, "get VCS syncer")
 	}
 
-	url, err := s.getRemoteURL(ctx, repo)
+	remoteURL, err := s.getRemoteURL(ctx, repo)
 	if err != nil {
 		return "", err
 	}
 
-	redactor := newURLRedactor(url)
+	redactor := newURLRedactor(remoteURL)
 
 	// isCloneable causes a network request, so we limit the number that can
 	// run at one time. We use a separate semaphore to cloning since these
@@ -987,7 +994,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		return "", err // err will be a context error
 	}
 	defer cancel()
-	if err := syncer.IsCloneable(ctx, url); err != nil {
+	if err := syncer.IsCloneable(ctx, remoteURL); err != nil {
 		return "", fmt.Errorf("error cloning repo: repo %s not cloneable: %s", repo, redactor.redact(err.Error()))
 	}
 
@@ -1042,7 +1049,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		tmpPath = filepath.Join(tmpPath, ".git")
 		tmp := GitDir(tmpPath)
 
-		cmd, err := syncer.CloneCommand(ctx, url, tmpPath)
+		cmd, err := syncer.CloneCommand(ctx, remoteURL, tmpPath)
 		if err != nil {
 			return errors.Wrap(err, "get clone command")
 		}
@@ -1153,26 +1160,23 @@ type urlRedactor struct {
 
 // newURLRedactor returns a new urlRedactor that redacts
 // credentials found in rawurl, and the rawurl itself.
-func newURLRedactor(rawurl string) *urlRedactor {
+func newURLRedactor(parsedURL *url.URL) *urlRedactor {
 	var sensitive []string
-	parsedURL, _ := url.Parse(rawurl)
-	if parsedURL != nil {
-		pw, _ := parsedURL.User.Password()
-		u := parsedURL.User.Username()
-		if pw != "" && u != "" {
-			// Only block password if we have both as we can
-			// assume that the username isn't sensitive in this case
+	pw, _ := parsedURL.User.Password()
+	u := parsedURL.User.Username()
+	if pw != "" && u != "" {
+		// Only block password if we have both as we can
+		// assume that the username isn't sensitive in this case
+		sensitive = append(sensitive, pw)
+	} else {
+		if pw != "" {
 			sensitive = append(sensitive, pw)
-		} else {
-			if pw != "" {
-				sensitive = append(sensitive, pw)
-			}
-			if u != "" {
-				sensitive = append(sensitive, u)
-			}
+		}
+		if u != "" {
+			sensitive = append(sensitive, u)
 		}
 	}
-	sensitive = append(sensitive, rawurl)
+	sensitive = append(sensitive, parsedURL.String())
 	return &urlRedactor{sensitive: sensitive}
 }
 
@@ -1213,7 +1217,7 @@ func scanCRLF(data []byte, atEOF bool) (advance int, token []byte, err error) {
 
 // testGitRepoExists is a test fixture that overrides the return value for
 // GitRepoSyncer.IsCloneable when it is set.
-var testGitRepoExists func(ctx context.Context, url string) error
+var testGitRepoExists func(ctx context.Context, remoteURL *url.URL) error
 
 var (
 	execRunning = prometheus.NewGaugeVec(prometheus.GaugeOpts{

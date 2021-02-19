@@ -9,11 +9,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestSavedSearches(t *testing.T) {
 	ctx := context.Background()
+	db := new(dbtesting.MockDB)
 	defer resetMocks()
 
 	key := int32(1)
@@ -26,11 +28,11 @@ func TestSavedSearches(t *testing.T) {
 		return []*types.SavedSearch{{ID: key, Description: "test query", Query: "test type:diff patternType:regexp", Notify: true, NotifySlack: false, UserID: &userID, OrgID: nil}}, nil
 	}
 
-	savedSearches, err := (&schemaResolver{}).SavedSearches(ctx)
+	savedSearches, err := (&schemaResolver{db: db}).SavedSearches(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []*savedSearchResolver{{types.SavedSearch{
+	want := []*savedSearchResolver{{db, types.SavedSearch{
 		ID:          key,
 		Description: "test query",
 		Query:       "test type:diff patternType:regexp",
@@ -47,6 +49,7 @@ func TestSavedSearches(t *testing.T) {
 func TestCreateSavedSearch(t *testing.T) {
 	ctx := context.Background()
 	defer resetMocks()
+	db := new(dbtesting.MockDB)
 
 	key := int32(1)
 	createSavedSearchCalled := false
@@ -61,7 +64,7 @@ func TestCreateSavedSearch(t *testing.T) {
 		return &types.User{SiteAdmin: true, ID: key}, nil
 	}
 	userID := MarshalUserID(key)
-	savedSearches, err := (&schemaResolver{}).CreateSavedSearch(ctx, &struct {
+	savedSearches, err := (&schemaResolver{db: db}).CreateSavedSearch(ctx, &struct {
 		Description string
 		Query       string
 		NotifyOwner bool
@@ -72,7 +75,7 @@ func TestCreateSavedSearch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := &savedSearchResolver{types.SavedSearch{
+	want := &savedSearchResolver{db, types.SavedSearch{
 		ID:          key,
 		Description: "test query",
 		Query:       "test type:diff patternType:regexp",
@@ -91,7 +94,7 @@ func TestCreateSavedSearch(t *testing.T) {
 	}
 
 	// Ensure create saved search errors when patternType is not provided in the query.
-	_, err = (&schemaResolver{}).CreateSavedSearch(ctx, &struct {
+	_, err = (&schemaResolver{db: db}).CreateSavedSearch(ctx, &struct {
 		Description string
 		Query       string
 		NotifyOwner bool
@@ -107,6 +110,7 @@ func TestCreateSavedSearch(t *testing.T) {
 func TestUpdateSavedSearch(t *testing.T) {
 	ctx := context.Background()
 	defer resetMocks()
+	db := new(dbtesting.MockDB)
 
 	key := int32(1)
 	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
@@ -119,7 +123,7 @@ func TestUpdateSavedSearch(t *testing.T) {
 		return &types.SavedSearch{ID: key, Description: savedSearch.Description, Query: savedSearch.Query, Notify: savedSearch.Notify, NotifySlack: savedSearch.NotifySlack, UserID: savedSearch.UserID, OrgID: savedSearch.OrgID}, nil
 	}
 	userID := MarshalUserID(key)
-	savedSearches, err := (&schemaResolver{}).UpdateSavedSearch(ctx, &struct {
+	savedSearches, err := (&schemaResolver{db: db}).UpdateSavedSearch(ctx, &struct {
 		ID          graphql.ID
 		Description string
 		Query       string
@@ -132,7 +136,7 @@ func TestUpdateSavedSearch(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := &savedSearchResolver{types.SavedSearch{
+	want := &savedSearchResolver{db, types.SavedSearch{
 		ID:          key,
 		Description: "updated query description",
 		Query:       "test type:diff patternType:regexp",
@@ -151,7 +155,7 @@ func TestUpdateSavedSearch(t *testing.T) {
 	}
 
 	// Ensure update saved search errors when patternType is not provided in the query.
-	_, err = (&schemaResolver{}).UpdateSavedSearch(ctx, &struct {
+	_, err = (&schemaResolver{db: db}).UpdateSavedSearch(ctx, &struct {
 		ID          graphql.ID
 		Description string
 		Query       string
@@ -167,6 +171,7 @@ func TestUpdateSavedSearch(t *testing.T) {
 
 func TestDeleteSavedSearch(t *testing.T) {
 	ctx := context.Background()
+	db := new(dbtesting.MockDB)
 	defer resetMocks()
 
 	key := int32(1)
@@ -185,7 +190,7 @@ func TestDeleteSavedSearch(t *testing.T) {
 	}
 
 	firstSavedSearchGraphqlID := graphql.ID("U2F2ZWRTZWFyY2g6NTI=")
-	_, err := (&schemaResolver{}).DeleteSavedSearch(ctx, &struct {
+	_, err := (&schemaResolver{db: db}).DeleteSavedSearch(ctx, &struct {
 		ID graphql.ID
 	}{ID: firstSavedSearchGraphqlID})
 	if err != nil {

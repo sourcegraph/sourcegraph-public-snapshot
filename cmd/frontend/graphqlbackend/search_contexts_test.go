@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -17,6 +18,7 @@ func TestSearchContexts(t *testing.T) {
 	username := "alice"
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: key})
+	db := new(dbtesting.MockDB)
 
 	orig := envvar.SourcegraphDotComMode()
 	envvar.MockSourcegraphDotComMode(true)
@@ -27,7 +29,7 @@ func TestSearchContexts(t *testing.T) {
 	}
 	defer resetMocks()
 
-	searchContexts, err := (&schemaResolver{}).SearchContexts(ctx)
+	searchContexts, err := (&schemaResolver{db: db}).SearchContexts(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}

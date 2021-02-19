@@ -12,10 +12,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
-func Init(ctx context.Context, db dbutil.DB, enterpriseServices *enterprise.Services) error {
+func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services) error {
 	eauthz.Init(db, timeutil.Now)
 
 	go func() {

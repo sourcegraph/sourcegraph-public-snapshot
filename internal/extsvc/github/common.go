@@ -115,13 +115,13 @@ func urlIsGitHubDotCom(apiURL *url.URL) bool {
 	return hostname == "api.github.com" || hostname == "github.com" || hostname == "www.github.com" || apiURL.String() == githubProxyURL.String()
 }
 
-// ErrNotFound is when the requested GitHub repository is not found.
-var ErrNotFound = errors.New("GitHub repository not found")
+// ErrRepoNotFound is when the requested GitHub repository is not found.
+var ErrRepoNotFound = errors.New("GitHub repository not found")
 
 // IsNotFound reports whether err is a GitHub API error of type NOT_FOUND, the equivalent cached
 // response error, or HTTP 404.
 func IsNotFound(err error) bool {
-	if err == ErrNotFound || errors.Cause(err) == ErrNotFound {
+	if err == ErrRepoNotFound || errors.Cause(err) == ErrRepoNotFound {
 		return true
 	}
 	if _, ok := err.(ErrPullRequestNotFound); ok {

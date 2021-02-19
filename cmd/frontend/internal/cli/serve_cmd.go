@@ -36,6 +36,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -118,7 +119,7 @@ func InitDB() (*sql.DB, error) {
 }
 
 // Main is the main entrypoint for the frontend server program.
-func Main(enterpriseSetupHook func(db dbutil.DB) enterprise.Services) error {
+func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner) enterprise.Services) error {
 	log.SetFlags(0)
 	log.SetPrefix("")
 
@@ -131,7 +132,7 @@ func Main(enterpriseSetupHook func(db dbutil.DB) enterprise.Services) error {
 		log.Fatalf("ERROR: %v", err)
 	}
 
-	ui.InitRouter()
+	ui.InitRouter(db)
 
 	if err := handleConfigOverrides(); err != nil {
 		log.Fatal("applying config overrides:", err)
@@ -146,8 +147,13 @@ func Main(enterpriseSetupHook func(db dbutil.DB) enterprise.Services) error {
 	tracer.Init()
 	trace.Init(true)
 
+	// Create an out-of-band migration runner onto which each enterprise init function
+	// can register migration routines to run in the background while they have work
+	// remaining.
+	outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(db)
+
 	// Run enterprise setup hook
-	enterprise := enterpriseSetupHook(db)
+	enterprise := enterpriseSetupHook(db, outOfBandMigrationRunner)
 
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
@@ -219,17 +225,20 @@ func Main(enterpriseSetupHook func(db dbutil.DB) enterprise.Services) error {
 		return err
 	}
 
-	server, err := makeExternalAPI(schema, enterprise)
+	server, err := makeExternalAPI(db, schema, enterprise)
 	if err != nil {
 		return err
 	}
 
-	internalAPI, err := makeInternalAPI(schema, enterprise)
+	internalAPI, err := makeInternalAPI(schema, db, enterprise)
 	if err != nil {
 		return err
 	}
 
-	routines := []goroutine.BackgroundRoutine{server}
+	routines := []goroutine.BackgroundRoutine{
+		server,
+		outOfBandMigrationRunner,
+	}
 	if internalAPI != nil {
 		routines = append(routines, internalAPI)
 	}
@@ -245,9 +254,9 @@ func Main(enterpriseSetupHook func(db dbutil.DB) enterprise.Services) error {
 	return nil
 }
 
-func makeExternalAPI(schema *graphql.Schema, enterprise enterprise.Services) (goroutine.BackgroundRoutine, error) {
+func makeExternalAPI(db dbutil.DB, schema *graphql.Schema, enterprise enterprise.Services) (goroutine.BackgroundRoutine, error) {
 	// Create the external HTTP handler.
-	externalHandler, err := newExternalHTTPHandler(schema, enterprise.GitHubWebhook, enterprise.GitLabWebhook, enterprise.BitbucketServerWebhook, enterprise.NewCodeIntelUploadHandler, enterprise.NewExecutorProxyHandler)
+	externalHandler, err := newExternalHTTPHandler(db, schema, enterprise.GitHubWebhook, enterprise.GitLabWebhook, enterprise.BitbucketServerWebhook, enterprise.NewCodeIntelUploadHandler, enterprise.NewExecutorProxyHandler)
 	if err != nil {
 		return nil, err
 	}
@@ -267,7 +276,7 @@ func makeExternalAPI(schema *graphql.Schema, enterprise enterprise.Services) (go
 	return server, nil
 }
 
-func makeInternalAPI(schema *graphql.Schema, enterprise enterprise.Services) (goroutine.BackgroundRoutine, error) {
+func makeInternalAPI(schema *graphql.Schema, db dbutil.DB, enterprise enterprise.Services) (goroutine.BackgroundRoutine, error) {
 	if httpAddrInternal == "" {
 		return nil, nil
 	}
@@ -278,7 +287,7 @@ func makeInternalAPI(schema *graphql.Schema, enterprise enterprise.Services) (go
 	}
 
 	// The internal HTTP handler does not include the auth handlers.
-	internalHandler := newInternalHTTPHandler(schema, enterprise.NewCodeIntelUploadHandler)
+	internalHandler := newInternalHTTPHandler(schema, db, enterprise.NewCodeIntelUploadHandler)
 
 	server := httpserver.New(listener, &http.Server{
 		Handler:     internalHandler,

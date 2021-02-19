@@ -148,6 +148,46 @@ func ScanFirstInt(rows *sql.Rows, queryErr error) (_ int, _ bool, err error) {
 	return 0, false, nil
 }
 
+// ScanFloats reads float values from the given row object.
+func ScanFloats(rows *sql.Rows, queryErr error) (_ []float64, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = CloseRows(rows, err) }()
+
+	var values []float64
+	for rows.Next() {
+		var value float64
+		if err := rows.Scan(&value); err != nil {
+			return nil, err
+		}
+
+		values = append(values, value)
+	}
+
+	return values, nil
+}
+
+// ScanFirstFloat reads float values from the given row object and returns the first one.
+// If no rows match the query, a false-valued flag is returned.
+func ScanFirstFloat(rows *sql.Rows, queryErr error) (_ float64, _ bool, err error) {
+	if queryErr != nil {
+		return 0, false, queryErr
+	}
+	defer func() { err = CloseRows(rows, err) }()
+
+	if rows.Next() {
+		var value float64
+		if err := rows.Scan(&value); err != nil {
+			return 0, false, err
+		}
+
+		return value, true, nil
+	}
+
+	return 0, false, nil
+}
+
 // ScanBools reads bool values from the given row object.
 func ScanBools(rows *sql.Rows, queryErr error) (_ []bool, err error) {
 	if queryErr != nil {

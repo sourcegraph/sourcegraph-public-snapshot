@@ -29,6 +29,20 @@ type Migration struct {
 	Errors         []MigrationError
 }
 
+// Complete returns true if the migration has 0 un-migrated record in whichever
+// direction is indicated by the ApplyReverse flag.
+func (m Migration) Complete() bool {
+	if m.Progress == 1 && !m.ApplyReverse {
+		return true
+	}
+
+	if m.Progress == 0 && m.ApplyReverse {
+		return true
+	}
+
+	return false
+}
+
 // MigrationError pairs an error message and the time the error occurred.
 type MigrationError struct {
 	Message string

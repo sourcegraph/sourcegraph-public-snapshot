@@ -81,7 +81,6 @@ type DiffRefs struct {
 
 var (
 	ErrMergeRequestAlreadyExists = errors.New("merge request already exists")
-	ErrMergeRequestNotFound      = errors.New("merge request not found")
 	ErrTooManyMergeRequests      = errors.New("retrieved too many merge requests")
 )
 
@@ -137,6 +136,13 @@ func (c *Client) GetMergeRequest(ctx context.Context, project *Project, iid ID) 
 
 	resp := &MergeRequest{}
 	if _, _, err := c.do(ctx, req, resp); err != nil {
+		if e, ok := errors.Cause(err).(HTTPError); ok && e.Code() == http.StatusNotFound {
+			if strings.Contains(e.Message(), "Project Not Found") {
+				err = ErrProjectNotFound
+			} else {
+				err = ErrMergeRequestNotFound
+			}
+		}
 		return nil, errors.Wrap(err, "sending request to get a merge request")
 	}
 

@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
@@ -26,7 +27,7 @@ func (r *schemaResolver) Users(args *struct {
 		opt.Tag = *args.Tag
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
-	return &userConnectionResolver{opt: opt, activePeriod: args.ActivePeriod}
+	return &userConnectionResolver{db: r.db, opt: opt, activePeriod: args.ActivePeriod}
 }
 
 type UserConnectionResolver interface {
@@ -38,6 +39,7 @@ type UserConnectionResolver interface {
 var _ UserConnectionResolver = &userConnectionResolver{}
 
 type userConnectionResolver struct {
+	db           dbutil.DB
 	opt          database.UsersListOptions
 	activePeriod *string
 
@@ -99,6 +101,7 @@ func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*UserResolver, er
 	var l []*UserResolver
 	for _, user := range users {
 		l = append(l, &UserResolver{
+			db:   r.db,
 			user: user,
 		})
 	}
@@ -131,13 +134,14 @@ func (r *userConnectionResolver) useCache() bool {
 // staticUserConnectionResolver implements the GraphQL type UserConnection based on an underlying
 // list of users that is computed statically.
 type staticUserConnectionResolver struct {
+	db    dbutil.DB
 	users []*types.User
 }
 
 func (r *staticUserConnectionResolver) Nodes() []*UserResolver {
 	resolvers := make([]*UserResolver, len(r.users))
 	for i, user := range r.users {
-		resolvers[i] = &UserResolver{user: user}
+		resolvers[i] = NewUserResolver(r.db, user)
 	}
 	return resolvers
 }

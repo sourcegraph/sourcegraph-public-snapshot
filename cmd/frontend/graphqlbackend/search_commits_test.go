@@ -11,7 +11,10 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -20,6 +23,7 @@ import (
 
 func TestSearchCommitsInRepo(t *testing.T) {
 	ctx := context.Background()
+	db := new(dbtesting.MockDB)
 
 	var calledVCSRawLogDiffSearch bool
 	gitSignatureWithDate := git.Signature{Date: time.Now().UTC().AddDate(0, 0, -1)}
@@ -54,7 +58,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 		Repo: &types.RepoName{ID: 1, Name: "repo"},
 		Revs: []search.RevisionSpecifier{{RevSpec: "rev"}},
 	}
-	results, limitHit, timedOut, err := searchCommitsInRepo(ctx, search.CommitParameters{
+	results, limitHit, timedOut, err := searchCommitsInRepo(ctx, db, search.CommitParameters{
 		RepoRevs:    repoRevs,
 		PatternInfo: &search.CommitPatternInfo{Pattern: "p", FileMatchLimit: int32(defaultMaxSearchResults)},
 		Query:       q,
@@ -65,7 +69,8 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	}
 
 	wantCommit := toGitCommitResolver(
-		NewRepositoryResolver(&types.Repo{ID: 1, Name: "repo"}),
+		NewRepositoryResolver(db, &types.Repo{ID: 1, Name: "repo"}),
+		db,
 		"c1",
 		&git.Commit{ID: "c1", Author: gitSignatureWithDate},
 	)
@@ -282,8 +287,8 @@ func Benchmark_highlightMatches(b *testing.B) {
 }
 
 // searchCommitsInRepo is a blocking version of searchCommitsInRepoStream.
-func searchCommitsInRepo(ctx context.Context, op search.CommitParameters) (results []*CommitSearchResultResolver, limitHit, timedOut bool, err error) {
-	for event := range searchCommitsInRepoStream(ctx, op) {
+func searchCommitsInRepo(ctx context.Context, db dbutil.DB, op search.CommitParameters) (results []*CommitSearchResultResolver, limitHit, timedOut bool, err error) {
+	for event := range searchCommitsInRepoStream(ctx, db, op) {
 		results = append(results, event.Results...)
 		limitHit = event.LimitHit
 		timedOut = event.TimedOut

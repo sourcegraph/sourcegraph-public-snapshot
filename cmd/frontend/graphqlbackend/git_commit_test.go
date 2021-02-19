@@ -9,12 +9,14 @@ import (
 	"github.com/davecgh/go-spew/spew"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestGitCommitResolver(t *testing.T) {
 	ctx := context.Background()
+	db := new(dbtesting.MockDB)
 
 	commit := &git.Commit{
 		ID:      "c1",
@@ -46,13 +48,13 @@ func TestGitCommitResolver(t *testing.T) {
 			have func(*GitCommitResolver) (interface{}, error)
 		}{{
 			name: "author",
-			want: toSignatureResolver(&commit.Author, true),
+			want: toSignatureResolver(db, &commit.Author, true),
 			have: func(r *GitCommitResolver) (interface{}, error) {
 				return r.Author(ctx)
 			},
 		}, {
 			name: "committer",
-			want: toSignatureResolver(commit.Committer, true),
+			want: toSignatureResolver(db, commit.Committer, true),
 			have: func(r *GitCommitResolver) (interface{}, error) {
 				return r.Committer(ctx)
 			},
@@ -89,10 +91,10 @@ func TestGitCommitResolver(t *testing.T) {
 			},
 		}} {
 			t.Run(tc.name, func(t *testing.T) {
-				repo := NewRepositoryResolver(&types.Repo{Name: "bob-repo"})
+				repo := NewRepositoryResolver(db, &types.Repo{Name: "bob-repo"})
 				// We pass no commit here to test that it gets lazy loaded via
 				// the git.GetCommit mock above.
-				r := toGitCommitResolver(repo, "c1", nil)
+				r := toGitCommitResolver(repo, db, "c1", nil)
 
 				have, err := tc.have(r)
 				if err != nil {

@@ -464,6 +464,12 @@ func (c *Client) CreateProject(ctx context.Context, p *Project) error {
 	return err
 }
 
+// ErrPullRequestNotFound is returned by LoadPullRequest when the pull request has
+// been deleted on upstream, or never existed. It will NOT be thrown, if it can't
+// be determined whether the pull request exists, because the credential used
+// cannot view the repository.
+var ErrPullRequestNotFound = errors.New("pull request not found")
+
 // LoadPullRequest loads the given PullRequest returning an error in case of failure.
 func (c *Client) LoadPullRequest(ctx context.Context, pr *PullRequest) error {
 	if pr.ToRef.Repository.Slug == "" {
@@ -480,7 +486,14 @@ func (c *Client) LoadPullRequest(ctx context.Context, pr *PullRequest) error {
 		pr.ID,
 	)
 	_, err := c.send(ctx, "GET", path, nil, nil, pr)
-	return err
+	if err != nil {
+		wrappedErr := errors.Unwrap(err)
+		if e, ok := wrappedErr.(*httpError); ok && e.NoSuchPullRequestException() {
+			return ErrPullRequestNotFound
+		}
+		return err
+	}
+	return nil
 }
 
 type UpdatePullRequestInput struct {
@@ -1329,13 +1342,18 @@ func (e *httpError) DuplicatePullRequest() bool {
 	return strings.Contains(string(e.Body), bitbucketDuplicatePRException)
 }
 
+func (e *httpError) NoSuchPullRequestException() bool {
+	return strings.Contains(string(e.Body), bitbucketNoSuchPullRequestException)
+}
+
 func (e *httpError) NoSuchLabelException() bool {
 	return strings.Contains(string(e.Body), bitbucketNoSuchLabelException)
 }
 
 const (
-	bitbucketDuplicatePRException = "com.atlassian.bitbucket.pull.DuplicatePullRequestException"
-	bitbucketNoSuchLabelException = "com.atlassian.bitbucket.label.NoSuchLabelException"
+	bitbucketDuplicatePRException       = "com.atlassian.bitbucket.pull.DuplicatePullRequestException"
+	bitbucketNoSuchLabelException       = "com.atlassian.bitbucket.label.NoSuchLabelException"
+	bitbucketNoSuchPullRequestException = "com.atlassian.bitbucket.pull.NoSuchPullRequestException"
 )
 
 func (e *httpError) ExtractExistingPullRequest() (*PullRequest, error) {

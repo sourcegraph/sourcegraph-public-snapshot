@@ -60,12 +60,12 @@ func gitRefDisplayName(ref string) string {
 	return strings.TrimPrefix(ref, prefix)
 }
 
-func gitRefByID(ctx context.Context, id graphql.ID) (*GitRefResolver, error) {
+func (r *schemaResolver) gitRefByID(ctx context.Context, id graphql.ID) (*GitRefResolver, error) {
 	repoID, rev, err := unmarshalGitRefID(id)
 	if err != nil {
 		return nil, err
 	}
-	repo, err := repositoryByID(ctx, repoID)
+	repo, err := r.repositoryByID(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}

@@ -13,12 +13,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type externalServiceResolver struct {
+	db              dbutil.DB
 	externalService *types.ExternalService
 	warning         string
 
@@ -29,7 +31,7 @@ type externalServiceResolver struct {
 
 const externalServiceIDKind = "ExternalService"
 
-func externalServiceByID(ctx context.Context, gqlID graphql.ID) (*externalServiceResolver, error) {
+func externalServiceByID(ctx context.Context, db dbutil.DB, gqlID graphql.ID) (*externalServiceResolver, error) {
 	id, err := unmarshalExternalServiceID(gqlID)
 	if err != nil {
 		return nil, err
@@ -50,7 +52,7 @@ func externalServiceByID(ctx context.Context, gqlID graphql.ID) (*externalServic
 		}
 	}
 
-	return &externalServiceResolver{externalService: es}, nil
+	return &externalServiceResolver{db: db, externalService: es}, nil
 }
 
 func marshalExternalServiceID(id int64) graphql.ID {

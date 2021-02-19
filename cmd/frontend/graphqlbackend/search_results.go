@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -54,7 +55,7 @@ func (c *SearchResultsResolver) Repositories() []*RepositoryResolver {
 	repos := c.Repos
 	resolvers := make([]*RepositoryResolver, 0, len(repos))
 	for _, r := range repos {
-		resolvers = append(resolvers, NewRepositoryResolver(r.ToRepo()))
+		resolvers = append(resolvers, NewRepositoryResolver(c.db, r.ToRepo()))
 	}
 	sort.Slice(resolvers, func(a, b int) bool {
 		return resolvers[a].ID() < resolvers[b].ID()
@@ -71,7 +72,7 @@ func (c *SearchResultsResolver) repositoryResolvers(mask search.RepoStatus) []*R
 	c.Status.Filter(mask, func(id api.RepoID) {
 		r := c.Repos[id]
 		if r != nil {
-			resolvers = append(resolvers, NewRepositoryResolver(c.Repos[id].ToRepo()))
+			resolvers = append(resolvers, NewRepositoryResolver(c.db, c.Repos[id].ToRepo()))
 		}
 	})
 	sort.Slice(resolvers, func(a, b int) bool {
@@ -110,6 +111,7 @@ func (c *SearchResultsResolver) allReposTimedout() bool {
 
 // SearchResultsResolver is a resolver for the GraphQL type `SearchResults`
 type SearchResultsResolver struct {
+	db dbutil.DB
 	// SearchResults is the full list of results found. The method Results()
 	// will return the list respecting limits.
 	SearchResults []SearchResultResolver
@@ -178,7 +180,7 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 	if sr.UserSettings != nil {
 		globbing = getBoolPtr(sr.UserSettings.SearchGlobbing, false)
 	} else {
-		settings, err := decodedViewerFinalSettings(ctx)
+		settings, err := decodedViewerFinalSettings(ctx, sr.db)
 		if err != nil {
 			log15.Warn("DynamicFilters: could not get user settings from database")
 		} else {
@@ -702,7 +704,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 			case <-ctx.Done():
 				usedTime := time.Since(start)
 				suggestTime := longer(2, usedTime)
-				return alertForTimeout(usedTime, suggestTime, r).wrap(), nil
+				return alertForTimeout(r.db, usedTime, suggestTime, r).wrap(), nil
 			default:
 			}
 
@@ -727,7 +729,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 		tryCount *= 2
 		if tryCount > maxTryCount {
 			// We've capped out what we're willing to do, throw alert.
-			return alertForCappedAndExpression().wrap(), nil
+			return alertForCappedAndExpression(r.db).wrap(), nil
 		}
 	}
 	result.IsLimitHit = !exhausted
@@ -838,7 +840,7 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopePar
 func (r *searchResolver) evaluate(ctx context.Context, q query.Q) (*SearchResultsResolver, error) {
 	scopeParameters, pattern, err := query.PartitionSearchPattern(q)
 	if err != nil {
-		return alertForQuery("", err).wrap(), nil
+		return alertForQuery(r.db, "", err).wrap(), nil
 	}
 	if pattern == nil {
 		r.setQuery(scopeParameters)
@@ -912,7 +914,7 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 		srr.UserSettings = r.UserSettings
 	}
 	if srr == nil {
-		srr = &SearchResultsResolver{}
+		srr = &SearchResultsResolver{db: r.db}
 	}
 	return srr, err
 }
@@ -937,7 +939,7 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 	if shouldShowAlert {
 		usedTime := time.Since(start)
 		suggestTime := longer(2, usedTime)
-		return alertForTimeout(usedTime, suggestTime, r).wrap(), nil
+		return alertForTimeout(r.db, usedTime, suggestTime, r).wrap(), nil
 	}
 	return rr, err
 }
@@ -1335,13 +1337,13 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 	if err != nil {
 		if errors.Is(err, authz.ErrStalePermissions{}) {
 			log15.Debug("searchResolver.determineRepos", "err", err)
-			alert := alertForStalePermissions()
-			return searchrepos.Resolved{}, &SearchResultsResolver{alert: alert, start: start}, nil
+			alert := alertForStalePermissions(r.db)
+			return searchrepos.Resolved{}, &SearchResultsResolver{db: r.db, alert: alert, start: start}, nil
 		}
 		e := git.BadCommitError{}
 		if errors.As(err, &e) {
 			alert := r.alertForInvalidRevision(e.Spec)
-			return searchrepos.Resolved{}, &SearchResultsResolver{alert: alert, start: start}, nil
+			return searchrepos.Resolved{}, &SearchResultsResolver{db: r.db, alert: alert, start: start}, nil
 		}
 		return searchrepos.Resolved{}, nil, err
 	}
@@ -1349,11 +1351,11 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 	tr.LazyPrintf("searching %d repos, %d missing", len(resolved.RepoRevs), len(resolved.MissingRepoRevs))
 	if len(resolved.RepoRevs) == 0 {
 		alert := r.alertForNoResolvedRepos(ctx)
-		return searchrepos.Resolved{}, &SearchResultsResolver{alert: alert, start: start}, nil
+		return searchrepos.Resolved{}, &SearchResultsResolver{db: r.db, alert: alert, start: start}, nil
 	}
 	if resolved.OverLimit {
 		alert := r.alertForOverRepoLimit(ctx)
-		return searchrepos.Resolved{}, &SearchResultsResolver{alert: alert, start: start}, nil
+		return searchrepos.Resolved{}, &SearchResultsResolver{db: r.db, alert: alert, start: start}, nil
 	}
 	return resolved, nil, nil
 }
@@ -1398,10 +1400,12 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 	return nil
 }
 
-func newAggregator(stream Streamer, inputs *SearchInputs) *aggregator {
+func newAggregator(db dbutil.DB, stream Streamer, inputs *SearchInputs) *aggregator {
 	return &aggregator{
+		db:           db,
 		parentStream: stream,
 		alert: alertObserver{
+			db:     db,
 			Inputs: inputs,
 		},
 	}
@@ -1409,6 +1413,7 @@ func newAggregator(stream Streamer, inputs *SearchInputs) *aggregator {
 
 type aggregator struct {
 	parentStream Streamer
+	db           dbutil.DB
 
 	mu      sync.Mutex
 	results []SearchResultResolver
@@ -1455,7 +1460,7 @@ func (a *aggregator) doRepoSearch(ctx context.Context, args *search.TextParamete
 		tr.Finish()
 	}()
 
-	err = searchRepositories(ctx, args, limit, a)
+	err = searchRepositories(ctx, a.db, args, limit, a)
 	return errors.Wrap(err, "repository search failed")
 }
 
@@ -1467,7 +1472,7 @@ func (a *aggregator) doSymbolSearch(ctx context.Context, args *search.TextParame
 		tr.Finish()
 	}()
 
-	err = searchSymbols(ctx, args, limit, a)
+	err = searchSymbols(ctx, a.db, args, limit, a)
 	return errors.Wrap(err, "symbol search failed")
 }
 
@@ -1483,12 +1488,12 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 	isDefaultStructuralSearch := args.PatternInfo.IsStructuralPat && args.PatternInfo.FileMatchLimit == defaultMaxSearchResults
 
 	if !isDefaultStructuralSearch {
-		return searchFilesInRepos(ctx, args, a)
+		return searchFilesInRepos(ctx, a.db, args, a)
 	}
 
 	// For structural search with default limits we retry if we get no results.
 
-	fileResults, stats, err := searchFilesInReposBatch(ctx, args)
+	fileResults, stats, err := searchFilesInReposBatch(ctx, a.db, args)
 
 	if len(fileResults) == 0 && err == nil {
 		// No results for structural search? Automatically search again and force Zoekt
@@ -1499,7 +1504,7 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 		argsCopy.PatternInfo = &patternCopy
 		args = &argsCopy
 
-		fileResults, stats, err = searchFilesInReposBatch(ctx, args)
+		fileResults, stats, err = searchFilesInReposBatch(ctx, a.db, args)
 
 		if len(fileResults) == 0 {
 			// Still no results? Give up.
@@ -1533,7 +1538,7 @@ func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters
 		return nil
 	}
 
-	return searchCommitDiffsInRepos(ctx, args, a)
+	return searchCommitDiffsInRepos(ctx, a.db, args, a)
 }
 
 func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParameters) (err error) {
@@ -1554,7 +1559,7 @@ func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParamete
 		return nil
 	}
 
-	return searchCommitLogInRepos(ctx, args, a)
+	return searchCommitLogInRepos(ctx, a.db, args, a)
 }
 
 func statsDeref(s *streaming.Stats) streaming.Stats {
@@ -1669,7 +1674,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		defer cancelOnLimit()
 	}
 
-	agg := newAggregator(stream, r.SearchInputs)
+	agg := newAggregator(r.db, stream, r.SearchInputs)
 
 	// This ensures we properly cleanup in the case of an early return. In
 	// particular we want to cancel global searches before returning early.
@@ -1824,6 +1829,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	r.sortResults(ctx, results)
 
 	resultsResolver := SearchResultsResolver{
+		db:            r.db,
 		start:         start,
 		Stats:         common,
 		SearchResults: results,
