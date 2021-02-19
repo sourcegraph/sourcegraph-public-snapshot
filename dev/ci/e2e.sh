@@ -18,7 +18,15 @@ fi
 
 echo "--- Running a daemonized $IMAGE as the test subject..."
 CONTAINER="$(docker container run -d "$IMAGE")"
-trap 'kill $(jobs -p -r)'" ; docker logs --timestamps $CONTAINER ; docker container rm -f $CONTAINER ; docker image rm -f $IMAGE" EXIT
+function cleanup() {
+  jobs -p -r | xargs kill
+  echo "--- server logs"
+  docker logs --timestamps "$CONTAINER"
+  echo "--- docker cleanup"
+  docker container rm -f "$CONTAINER"
+  docker image rm -f "$IMAGE"
+}
+trap cleanup EXIT
 
 docker exec "$CONTAINER" apk add --no-cache socat
 # Connect the server container's port 7080 to localhost:7080 so that e2e tests
@@ -45,6 +53,7 @@ echo "Waiting for $URL... done"
 echo "--- yarn run test-e2e"
 env SOURCEGRAPH_BASE_URL="$URL" PERCY_ON=true ./node_modules/.bin/percy exec -- yarn run cover-e2e
 
+echo "--- coverage"
 yarn nyc report -r json
 # Upload the coverage under the "e2e" flag (toggleable in the CodeCov UI)
 bash <(curl -s https://codecov.io/bash) -F e2e
