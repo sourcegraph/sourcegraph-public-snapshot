@@ -1,6 +1,5 @@
-import { useMemo, useEffect, useCallback, useState } from 'react'
+import { useMemo, useCallback, useState } from 'react'
 import { Subscription } from 'rxjs'
-import { map } from 'rxjs/operators'
 import { isErrorGraphQLResult } from '../../../shared/src/graphql/graphql'
 import { createAggregateError } from '../../../shared/src/util/errors'
 import { requestGraphQL } from '../backend/graphql'
@@ -42,25 +41,18 @@ export function useMutation<TData = unknown, TVariables = unknown>(
             handleResponse({ loading: true })
 
             subscriptions.add(
-                requestGraphQL<TData, TVariables>(mutation, variables)
-                    .pipe(
-                        map(response => {
-                            const error = isErrorGraphQLResult(response)
-                                ? createAggregateError(response.errors)
-                                : undefined
-
-                            if (error && options?.throwGraphQLErrors) {
-                                throw error
-                            }
-
-                            return handleResponse({ data: response.data, error, loading: false })
-                        })
-                    )
-                    .subscribe()
+                requestGraphQL<TData, TVariables>(mutation, variables).subscribe(response => {
+                    const error = isErrorGraphQLResult(response) ? createAggregateError(response.errors) : undefined
+                    handleResponse({ data: response.data, error, loading: false })
+                })
             )
         },
-        [subscriptions, mutation, options, handleResponse]
+        [subscriptions, mutation, handleResponse]
     )
+
+    if (result.error && options?.throwGraphQLErrors) {
+        throw result.error
+    }
 
     return [submit, result]
 }

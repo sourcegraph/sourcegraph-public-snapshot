@@ -2,7 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
-	"log"
+	"errors"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -166,22 +166,17 @@ func (r *schemaResolver) SubmitHappinessFeedback(ctx context.Context, args *stru
 		}
 	}
 
-	// TODO: Renable Hubspot submission when test messages are filtered out of Slack
-	if email != nil {
-		log.Printf(*email)
-	}
-
 	// Submit form to HubSpot
-	// if err := hubspotutil.Client().SubmitForm(hubspotutil.HappinessFeedbackFormID, &happinessFeedbackSubmissionForHubSpot{
-	// 	Email:      email,
-	// 	Score:      args.Input.Score,
-	// 	Feedback:   args.Input.Feedback,
-	// 	CurrentURL: args.Input.CurrentURL,
-	// 	SiteID:     siteid.Get(),
-	// }); err != nil {
-	// 	// Log an error, but don't return one if the only failure was in submitting feedback results to HubSpot.
-	// 	log15.Error("Unable to submit happiness feedback results to Sourcegraph remote", "error", err)
-	// }
+	if err := hubspotutil.Client().SubmitForm(hubspotutil.HappinessFeedbackFormID, &happinessFeedbackSubmissionForHubSpot{
+		Email:      email,
+		Score:      args.Input.Score,
+		Feedback:   args.Input.Feedback,
+		CurrentURL: args.Input.CurrentURL,
+		SiteID:     siteid.Get(),
+	}); err != nil {
+		// Log an error, but don't return one if the only failure was in submitting feedback results to HubSpot.
+		log15.Error("Unable to submit happiness feedback results to Sourcegraph remote", "error", err)
+	}
 
 	return &EmptyResponse{}, nil
 }

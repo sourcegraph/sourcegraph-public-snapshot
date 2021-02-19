@@ -1,8 +1,9 @@
 import MessageDrawIcon from 'mdi-react/MessageDrawIcon'
 import TickIcon from 'mdi-react/TickIcon'
-import React, { useCallback, useEffect, useState, useMemo } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import TextAreaAutosize from 'react-textarea-autosize'
-import { Alert, Button, ButtonDropdown, DropdownMenu, DropdownToggle, Form } from 'reactstrap'
+import { Button, ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
+import * as H from 'history'
 import { Link } from '../../../../shared/src/components/Link'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import { LoaderButton } from '../../components/LoaderButton'
@@ -11,6 +12,8 @@ import { useLocalStorage } from '../../util/useLocalStorage'
 import { useMutation } from '../../hooks/useMutation'
 import { IconRadioButtons } from '../IconRadioButtons'
 import { Happy, Sad, VeryHappy, VerySad } from './FeedbackIcons'
+import { Form } from '../../../../branded/src/components/Form'
+import { ErrorAlert } from '../../components/alerts'
 
 export const HAPPINESS_FEEDBACK_OPTIONS = [
     {
@@ -43,11 +46,12 @@ const SUBMIT_HAPPINESS_FEEDBACK_QUERY = gql`
     }
 `
 
-interface Props {
+interface ContentProps {
     closePrompt: () => void
+    history: H.History
 }
 
-const FeedbackPromptContent: React.FunctionComponent<Props> = ({ closePrompt }) => {
+const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({ closePrompt, history }) => {
     const [rating, setRating] = useLocalStorage<number | undefined>('feedbackPromptRating', undefined)
     const [text, setText] = useLocalStorage<string>('feedbackPromptText', '')
     const handleRateChange = useCallback((value: number) => setRating(value), [setRating])
@@ -85,7 +89,7 @@ const FeedbackPromptContent: React.FunctionComponent<Props> = ({ closePrompt }) 
 
     return (
         <>
-            {data ? (
+            {data?.submitHappinessFeedback ? (
                 <div className="feedback-prompt__success">
                     <TickIcon className="feedback-prompt__success--tick" />
                     <h3>We‘ve received your feedback!</h3>
@@ -104,7 +108,7 @@ const FeedbackPromptContent: React.FunctionComponent<Props> = ({ closePrompt }) 
                     </p>
                 </div>
             ) : (
-                <Form onSubmit={handleSubmit} className="feedback-prompt__menu">
+                <Form onSubmit={handleSubmit}>
                     <header className="feedback-prompt__header">
                         <h3>What‘s on your mind?</h3>
                         <Button onClick={closePrompt} className="feedback-prompt__header--close" close={true} />
@@ -127,9 +131,13 @@ const FeedbackPromptContent: React.FunctionComponent<Props> = ({ closePrompt }) 
                         disabled={loading}
                     />
                     {error && (
-                        <Alert className="feedback-prompt__alert" color="danger">
-                            Something went wrong while sending your feedback. Please try again.
-                        </Alert>
+                        <ErrorAlert
+                            error={error}
+                            history={history}
+                            icon={false}
+                            className="feedback-prompt__alert"
+                            prefix="Something went wrong while sending your feedback. Please try again"
+                        />
                     )}
                     <LoaderButton
                         role="menuitem"
@@ -145,7 +153,12 @@ const FeedbackPromptContent: React.FunctionComponent<Props> = ({ closePrompt }) 
     )
 }
 
-export const FeedbackPrompt: React.FunctionComponent<{ open?: boolean }> = ({ open }) => {
+interface Props {
+    open?: boolean
+    history: H.History
+}
+
+export const FeedbackPrompt: React.FunctionComponent<Props> = ({ open, history }) => {
     const [isOpen, setIsOpen] = useState(() => !!open)
     const handleToggle = useCallback(() => setIsOpen(open => !open), [])
 
@@ -163,8 +176,8 @@ export const FeedbackPrompt: React.FunctionComponent<{ open?: boolean }> = ({ op
                 <MessageDrawIcon className="d-lg-none icon-inline" />
                 <span className="d-none d-lg-block">Feedback</span>
             </DropdownToggle>
-            <DropdownMenu right={true}>
-                <FeedbackPromptContent closePrompt={forceClose} />
+            <DropdownMenu right={true} className="web-content feedback-prompt__menu">
+                <FeedbackPromptContent closePrompt={forceClose} history={history} />
             </DropdownMenu>
         </ButtonDropdown>
     )

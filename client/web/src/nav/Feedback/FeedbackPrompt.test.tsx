@@ -1,12 +1,15 @@
 import React from 'react'
 import { render, RenderResult, fireEvent } from '@testing-library/react'
 import * as sinon from 'sinon'
+import { createMemoryHistory } from 'history'
+
 import { FeedbackPrompt, HAPPINESS_FEEDBACK_OPTIONS } from './FeedbackPrompt'
 import { SubmitHappinessFeedbackResult, SubmitHappinessFeedbackVariables } from '../../graphql-operations'
 import { MutationResult } from '../../hooks/useMutation'
 
 let mockResponse: MutationResult<SubmitHappinessFeedbackResult> = { loading: false }
 const mockSubmitFn = sinon.spy((parameters: SubmitHappinessFeedbackVariables) => undefined)
+const history = createMemoryHistory()
 
 jest.mock('../../hooks/useMutation', () => ({
     useMutation: () => [mockSubmitFn, mockResponse],
@@ -20,7 +23,7 @@ describe('FeedbackPrompt', () => {
     })
 
     beforeEach(() => {
-        queries = render(<FeedbackPrompt />)
+        queries = render(<FeedbackPrompt history={history} />)
     })
 
     test('Renders heading correctly', () => {
