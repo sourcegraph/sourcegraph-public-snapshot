@@ -30,7 +30,7 @@ func accessTokenByID(ctx context.Context, db dbutil.DB, id graphql.ID) (*accessT
 	if err != nil {
 		return nil, err
 	}
-	accessToken, err := database.GlobalAccessTokens.GetByID(ctx, accessTokenID)
+	accessToken, err := database.AccessTokens(db).GetByID(ctx, accessTokenID)
 	if err != nil {
 		return nil, err
 	}
