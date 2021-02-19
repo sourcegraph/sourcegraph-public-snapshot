@@ -2,7 +2,8 @@ import MessageDrawIcon from 'mdi-react/MessageDrawIcon'
 import TickIcon from 'mdi-react/TickIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 import TextAreaAutosize from 'react-textarea-autosize'
-import { Button, ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
+import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
+import CloseIcon from 'mdi-react/CloseIcon'
 import * as H from 'history'
 import { Link } from '../../../../shared/src/components/Link'
 import { gql } from '../../../../shared/src/graphql/graphql'
@@ -121,8 +122,10 @@ const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({ closePro
             ) : (
                 <Form onSubmit={handleSubmit}>
                     <header className="feedback-prompt__header">
-                        <h3>What‘s on your mind?</h3>
-                        <Button onClick={closePrompt} className="feedback-prompt__header--close" close={true} />
+                        <h3 className="mb-0">What‘s on your mind?</h3>
+                        <button type="button" className="feedback-prompt__header--close" onClick={closePrompt}>
+                            <CloseIcon className="feedback-prompt__header--close__icon" />
+                        </button>
                     </header>
 
                     <TextAreaAutosize

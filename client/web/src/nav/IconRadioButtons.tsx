@@ -15,6 +15,9 @@ interface Props {
     onChange: (value: number) => void
 }
 
+/**
+ * Used to render a list of icons with <input type="radio" />
+ */
 export const IconRadioButtons: React.FunctionComponent<Props> = ({ name, icons, selected, onChange, disabled }) => {
     const handleChange = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => onChange(Number(event.target.value)),
