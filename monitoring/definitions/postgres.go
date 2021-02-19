@@ -189,13 +189,16 @@ func makePostgresTableBloatPanel(name, description string, owner monitoring.Obse
 		Owner:       owner,
 		Query:       query,
 		Panel:       monitoring.Panel().LegendFormat("{{relname}}"),
-		Critical:    monitoring.Alert().GreaterOrEqual(bloatThreshold).For(5 * time.Minute),
-		PossibleSolutions: `
-			- Run ANALYZE on the table to correct its statistics
-			- Run VACUUM on the table manually to remove dead tuples
-			- Run VACUUM FULL on the table manually to remove all dead tuples (requires an exclusive table lock)
-			- Reconfigure the Postgres autovacuum daemon with additional resources
-		`,
+		// TODO(efritz) - re-enable this after we correctly tune autovacuum daemon or have
+		// docs specifying our recommended settings.
+		// Critical:    monitoring.Alert().GreaterOrEqual(bloatThreshold).For(5 * time.Minute),
+		// PossibleSolutions: `
+		// 	- Run ANALYZE on the table to correct its statistics
+		// 	- Run VACUUM on the table manually to remove dead tuples
+		// 	- Run VACUUM FULL on the table manually to remove all dead tuples (requires an exclusive table lock)
+		// 	- Reconfigure the Postgres autovacuum daemon with additional resources
+		// `,
+		NoAlert:        true,
 		Interpretation: "This value indicates the factor by which a table's overhead outweighs its minimum overhead.",
 	}
 }
