@@ -201,12 +201,18 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
     )
     const logSearchResultClicked = useCallback(() => telemetryService.log('SearchResultClicked'), [telemetryService])
 
-    const renderedResults = useMemo(() => {
-        const renderResult = (result: GQL.GenericSearchResultInterface | GQL.IFileMatch): JSX.Element => {
+    const itemKey = useCallback((item: GQL.GenericSearchResultInterface | GQL.IFileMatch): string => {
+        if (item.__typename === 'FileMatch') {
+            return `file:${item.file.url}`
+        }
+        return item.url
+    }, [])
+
+    const renderResult = useCallback(
+        (result: GQL.GenericSearchResultInterface | GQL.IFileMatch): JSX.Element => {
             if (result.__typename === 'FileMatch') {
                 return (
                     <FileMatch
-                        key={'file:' + result.file.url}
                         location={location}
                         eventLogger={eventLogger}
                         icon={result.lineMatches && result.lineMatches.length > 0 ? SourceRepositoryIcon : FileIcon}
@@ -221,27 +227,18 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     />
                 )
             }
-            return (
-                <SearchResult
-                    key={result.url}
-                    result={result}
-                    isLightTheme={props.isLightTheme}
-                    history={props.history}
-                />
-            )
-        }
-
-        return results?.results.map(result => renderResult(result)) || []
-    }, [
-        allExpanded,
-        location,
-        logSearchResultClicked,
-        props.fetchHighlightedFileLineRanges,
-        props.history,
-        props.isLightTheme,
-        props.settingsCascade,
-        results?.results,
-    ])
+            return <SearchResult result={result} isLightTheme={props.isLightTheme} history={props.history} />
+        },
+        [
+            allExpanded,
+            location,
+            logSearchResultClicked,
+            props.fetchHighlightedFileLineRanges,
+            props.history,
+            props.isLightTheme,
+            props.settingsCascade,
+        ]
+    )
 
     const onSearchAgain = useCallback(
         (additionalFilters: string[]) => {
@@ -309,11 +306,14 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 )}
 
                 {/* Results */}
-                <VirtualList
+                <VirtualList<GQL.SearchResult>
                     className="mt-2"
                     itemsToShow={itemsToShow}
                     onShowMoreItems={onBottomHit}
-                    items={renderedResults}
+                    items={results?.results || []}
+                    itemProps={undefined}
+                    itemKey={itemKey}
+                    renderItem={renderResult}
                 />
 
                 {(!results || results?.state === 'loading') && (
