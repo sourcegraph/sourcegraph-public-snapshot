@@ -107,6 +107,85 @@ SELECT time,
 
 }
 
+func TestDistinctSeriesWithData(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+
+	ctx := context.Background()
+	clock := timeutil.Now
+	timescale, cleanup := dbtesting.TimescaleDB(t)
+	defer cleanup()
+	store := NewWithClock(timescale, clock)
+
+	time := func(s string) time.Time {
+		v, err := time.Parse(time.RFC3339, s)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return v
+	}
+	optionalString := func(v string) *string { return &v }
+	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
+
+	// Record some duplicate data points.
+	for _, record := range []RecordSeriesPointArgs{
+		{
+			SeriesID: "one",
+			Point:    SeriesPoint{Time: time("2020-03-01T00:00:00Z"), Value: 1.1},
+			RepoName: optionalString("repo1"),
+			RepoID:   optionalRepoID(3),
+			Metadata: map[string]interface{}{"some": "data"},
+		},
+		{
+			SeriesID: "two",
+			Point:    SeriesPoint{Time: time("2020-03-02T00:00:00Z"), Value: 2.2},
+			Metadata: []interface{}{"some", "data", "two"},
+		},
+		{
+			SeriesID: "two",
+			Point:    SeriesPoint{Time: time("2020-03-02T00:01:00Z"), Value: 2.2},
+			Metadata: []interface{}{"some", "data", "two"},
+		},
+		{
+			SeriesID: "three",
+			Point:    SeriesPoint{Time: time("2020-03-03T00:00:00Z"), Value: 3.3},
+			Metadata: nil,
+		},
+		{
+			SeriesID: "three",
+			Point:    SeriesPoint{Time: time("2020-03-03T00:01:00Z"), Value: 3.3},
+			Metadata: nil,
+		},
+	} {
+		if err := store.RecordSeriesPoint(ctx, record); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// Which series on 02-29 have data?
+	withData, err := store.DistinctSeriesWithData(ctx, time("2020-02-29T00:00:00Z"), time("2020-02-29T23:59:59Z"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	autogold.Want("first", []string{}).Equal(t, withData)
+
+	// Which series on 03-01 have data?
+	withData, err = store.DistinctSeriesWithData(ctx, time("2020-03-01T00:00:00Z"), time("2020-03-01T23:59:59Z"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	autogold.Want("second", []string{"one"}).Equal(t, withData)
+
+	// Which series from 03-01 to 03-04 have data?
+	withData, err = store.DistinctSeriesWithData(ctx, time("2020-03-01T00:00:00Z"), time("2020-03-04T23:59:59Z"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	autogold.Want("third", []string{"one", "three", "two"}).Equal(t, withData)
+}
+
 func TestRecordSeriesPoints(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
