@@ -322,55 +322,61 @@ func serveSavedQueriesListAll(db dbutil.DB) func(w http.ResponseWriter, r *http.
 	}
 }
 
-func serveSavedQueriesGetInfo(w http.ResponseWriter, r *http.Request) error {
-	var query string
-	err := json.NewDecoder(r.Body).Decode(&query)
-	if err != nil {
-		return errors.Wrap(err, "Decode")
+func serveSavedQueriesGetInfo(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		var query string
+		err := json.NewDecoder(r.Body).Decode(&query)
+		if err != nil {
+			return errors.Wrap(err, "Decode")
+		}
+		info, err := database.QueryRunnerState(db).Get(r.Context(), query)
+		if err != nil {
+			return errors.Wrap(err, "SavedQueries.Get")
+		}
+		if err := json.NewEncoder(w).Encode(info); err != nil {
+			return errors.Wrap(err, "Encode")
+		}
+		return nil
 	}
-	info, err := database.GlobalQueryRunnerState.Get(r.Context(), query)
-	if err != nil {
-		return errors.Wrap(err, "SavedQueries.Get")
-	}
-	if err := json.NewEncoder(w).Encode(info); err != nil {
-		return errors.Wrap(err, "Encode")
-	}
-	return nil
 }
 
-func serveSavedQueriesSetInfo(w http.ResponseWriter, r *http.Request) error {
-	var info *api.SavedQueryInfo
-	err := json.NewDecoder(r.Body).Decode(&info)
-	if err != nil {
-		return errors.Wrap(err, "Decode")
+func serveSavedQueriesSetInfo(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		var info *api.SavedQueryInfo
+		err := json.NewDecoder(r.Body).Decode(&info)
+		if err != nil {
+			return errors.Wrap(err, "Decode")
+		}
+		err = database.QueryRunnerState(db).Set(r.Context(), &database.SavedQueryInfo{
+			Query:        info.Query,
+			LastExecuted: info.LastExecuted,
+			LatestResult: info.LatestResult,
+			ExecDuration: info.ExecDuration,
+		})
+		if err != nil {
+			return errors.Wrap(err, "SavedQueries.Set")
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("OK"))
+		return nil
 	}
-	err = database.GlobalQueryRunnerState.Set(r.Context(), &database.SavedQueryInfo{
-		Query:        info.Query,
-		LastExecuted: info.LastExecuted,
-		LatestResult: info.LatestResult,
-		ExecDuration: info.ExecDuration,
-	})
-	if err != nil {
-		return errors.Wrap(err, "SavedQueries.Set")
-	}
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("OK"))
-	return nil
 }
 
-func serveSavedQueriesDeleteInfo(w http.ResponseWriter, r *http.Request) error {
-	var query string
-	err := json.NewDecoder(r.Body).Decode(&query)
-	if err != nil {
-		return errors.Wrap(err, "Decode")
+func serveSavedQueriesDeleteInfo(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		var query string
+		err := json.NewDecoder(r.Body).Decode(&query)
+		if err != nil {
+			return errors.Wrap(err, "Decode")
+		}
+		err = database.QueryRunnerState(db).Delete(r.Context(), query)
+		if err != nil {
+			return errors.Wrap(err, "SavedQueries.Delete")
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("OK"))
+		return nil
 	}
-	err = database.GlobalQueryRunnerState.Delete(r.Context(), query)
-	if err != nil {
-		return errors.Wrap(err, "SavedQueries.Delete")
-	}
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("OK"))
-	return nil
 }
 
 func serveSettingsGetForSubject(w http.ResponseWriter, r *http.Request) error {
