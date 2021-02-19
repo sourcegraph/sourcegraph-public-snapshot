@@ -13,11 +13,11 @@
       "series": [
         {
           "label": "fmt.Errorf",
-          "search": "errorf"
+          "search": "errorf count:9999999"
         },
         {
           "label": "printf",
-          "search": "fmt.Printf"
+          "search": "fmt.Printf count:9999999"
         }
       ]
     }
