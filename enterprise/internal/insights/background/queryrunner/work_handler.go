@@ -54,7 +54,22 @@ func (r *workHandler) Handle(ctx context.Context, workerStore dbworkerstore.Stor
 		return fmt.Errorf("GraphQL errors: %v", results.Errors)
 	}
 	if alert := results.Data.Search.Results.Alert; alert != nil {
-		return fmt.Errorf("insights query issue: alert: %v query=%q", alert, job.SearchQuery)
+		if alert.Title == "No repositories satisfied your repo: filter" {
+			// We got zero results and no repositories matched. This could be for a few reasons:
+			//
+			// 1. The repo hasn't been cloned by Sourcegraph yet.
+			// 2. The repo has been cloned by Sourcegraph, but the user hasn't actually pushed it
+			//    to the code host yet so it's empty.
+			// 3. This is a search query for backfilling data, and the repository is a fork/archive
+			//    which are excluded from search results by default (and the user didn't put `fork:yes`
+			//    etc. in their search query.)
+			//
+			// In any case, this is not a problem - we want to record that we got zero results in
+			// general.
+		} else {
+			// Maybe the user's search query is actually wrong.
+			return fmt.Errorf("insights query issue: alert: %v query=%q", alert, job.SearchQuery)
+		}
 	}
 	if results.Data.Search.Results.LimitHit {
 		log15.Error("insights query issue", "problem", "limit hit", "query", job.SearchQuery)
