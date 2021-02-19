@@ -27,8 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-// CommitSearchResultResolver is a resolver for the GraphQL type `CommitSearchResult`
-type CommitSearchResultResolver struct {
+type CommitSearchResult struct {
 	commit         *GitCommitResolver
 	refs           []*GitRefResolver
 	sourceRefs     []*GitRefResolver
@@ -39,6 +38,11 @@ type CommitSearchResultResolver struct {
 	url            string
 	detail         string
 	matches        []*searchResultMatchResolver
+}
+
+// CommitSearchResult is a resolver for the GraphQL type `CommitSearchResult`
+type CommitSearchResultResolver struct {
+	CommitSearchResult
 }
 
 func (r *CommitSearchResultResolver) Select(path filter.SelectPath) SearchResultResolver {
@@ -333,7 +337,7 @@ func logCommitSearchResultsToResolvers(ctx context.Context, db dbutil.DB, op *se
 	for i, rawResult := range rawResults {
 		commit := rawResult.Commit
 		commitResolver := toGitCommitResolver(repoResolver, db, commit.ID, &commit)
-		results[i] = &CommitSearchResultResolver{commit: commitResolver}
+		results[i] = &CommitSearchResultResolver{CommitSearchResult{commit: commitResolver}}
 
 		addRefs := func(dst *[]*GitRefResolver, src []string) {
 			for _, ref := range src {
