@@ -11,7 +11,7 @@ import (
 
 // SearchFilterSuggestions provides search filter and default value suggestions.
 func (r *schemaResolver) SearchFilterSuggestions(ctx context.Context) (*searchFilterSuggestions, error) {
-	settings, err := decodedViewerFinalSettings(ctx)
+	settings, err := decodedViewerFinalSettings(ctx, r.db)
 	if err != nil {
 		return nil, err
 	}

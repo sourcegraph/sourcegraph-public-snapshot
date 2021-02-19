@@ -1,4 +1,5 @@
 import classNames from 'classnames'
+import { debounce } from 'lodash'
 import MenuLeftIcon from 'mdi-react/MenuLeftIcon'
 import MenuRightIcon from 'mdi-react/MenuRightIcon'
 import React, { useCallback, useLayoutEffect, useRef, useState } from 'react'
@@ -71,10 +72,10 @@ const FilterCarousel: React.FunctionComponent<{ children: JSX.Element | JSX.Elem
     }, [canScrollForward])
 
     useLayoutEffect(() => {
-        const updateCanScroll = (): void => {
+        const updateCanScroll = debounce((): void => {
             setCanScrollBack(computeCanScrollBack)
             setCanScrollForward(computeCanScrollForward)
-        }
+        }, 50)
 
         updateCanScroll()
         const current = filtersReference.current

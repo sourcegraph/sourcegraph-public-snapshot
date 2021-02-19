@@ -439,7 +439,7 @@ describe('Blob viewer', () => {
                         response.type('application/javascript; charset=utf-8').send(extensionBundleString)
                     })
             }
-            const timeout = 3000
+            const timeout = 5000
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
 
             // Wait for some line decoration attachment portal

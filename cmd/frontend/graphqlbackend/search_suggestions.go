@@ -13,9 +13,11 @@ import (
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-lsp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -102,7 +104,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			resolvers := make([]*searchSuggestionResolver, 0, len(resolved.RepoRevs))
 			for _, rev := range resolved.RepoRevs {
 				resolvers = append(resolvers, newSearchSuggestionResolver(
-					NewRepositoryResolver(rev.Repo.ToRepo()),
+					NewRepositoryResolver(r.db, rev.Repo.ToRepo()),
 					math.MaxInt32,
 				))
 			}
@@ -189,7 +191,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		resolvers := make([]*searchSuggestionResolver, 0, len(inventory.Languages))
 		for _, l := range inventory.Languages {
 			resolvers = append(resolvers, newSearchSuggestionResolver(
-				&languageResolver{name: strings.ToLower(l.Name)},
+				&languageResolver{db: r.db, name: strings.ToLower(l.Name)},
 				math.MaxInt32,
 			))
 		}
@@ -217,7 +219,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		defer cancel()
 
 		fileMatches, _, err := collectStream(func(stream Streamer) error {
-			return searchSymbols(ctx, &search.TextParameters{
+			return searchSymbols(ctx, r.db, &search.TextParameters{
 				PatternInfo:  p,
 				RepoPromise:  (&search.Promise{}).Resolve(resolved.RepoRevs),
 				Query:        r.Query,
@@ -406,6 +408,7 @@ func allEmptyStrings(ss1, ss2 []string) bool {
 }
 
 type languageResolver struct {
+	db   dbutil.DB
 	name string
 }
 

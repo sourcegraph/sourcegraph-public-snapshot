@@ -41,13 +41,21 @@ func (e *ExternalService) RedactConfigSecrets() error {
 	if err != nil {
 		return err
 	}
-	switch cfg.(type) {
+	switch cfg := cfg.(type) {
 	case *schema.GitHubConnection:
 		newCfg, err = redactField(e.Config, "token")
 	case *schema.GitLabConnection:
 		newCfg, err = redactField(e.Config, "token")
 	case *schema.BitbucketServerConnection:
-		newCfg, err = redactField(e.Config, "token", "password")
+		// BitbucketServer can have a token OR password
+		var fields []string
+		if cfg.Password != "" {
+			fields = append(fields, "password")
+		}
+		if cfg.Token != "" {
+			fields = append(fields, "token")
+		}
+		newCfg, err = redactField(e.Config, fields...)
 	case *schema.BitbucketCloudConnection:
 		newCfg, err = redactField(e.Config, "appPassword")
 	case *schema.AWSCodeCommitConnection:
@@ -115,9 +123,15 @@ func (e *ExternalService) UnredactConfig(old *ExternalService) error {
 	case *schema.GitLabConnection:
 		unredacted, err = unredactField(old.Config, e.Config, &cfg, jsonStringField{"token", &cfg.Token})
 	case *schema.BitbucketServerConnection:
-		unredacted, err = unredactField(old.Config, e.Config, &cfg,
-			jsonStringField{"token", &cfg.Token},
-			jsonStringField{"password", &cfg.Password})
+		// BitbucketServer can have a token OR password
+		var fields []jsonStringField
+		if cfg.Password != "" {
+			fields = append(fields, jsonStringField{"password", &cfg.Password})
+		}
+		if cfg.Token != "" {
+			fields = append(fields, jsonStringField{"token", &cfg.Token})
+		}
+		unredacted, err = unredactField(old.Config, e.Config, &cfg, fields...)
 	case *schema.BitbucketCloudConnection:
 		unredacted, err = unredactField(old.Config, e.Config, &cfg, jsonStringField{"appPassword", &cfg.AppPassword})
 	case *schema.AWSCodeCommitConnection:

@@ -11,6 +11,7 @@ import (
 	zoektquery "github.com/google/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -32,6 +33,7 @@ func (r repoListerMock) List(ctx context.Context, q zoektquery.Q) (*zoekt.RepoLi
 }
 
 func TestRetrievingAndDeduplicatingIndexedRefs(t *testing.T) {
+	db := new(dbtesting.MockDB)
 	defaultBranchRef := "refs/heads/main"
 	git.Mocks.ResolveRevision = func(rev string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
 		if rev != defaultBranchRef && strings.HasSuffix(rev, defaultBranchRef) {
@@ -46,7 +48,7 @@ func TestRetrievingAndDeduplicatingIndexedRefs(t *testing.T) {
 	defer git.ResetMocks()
 
 	repoIndexResolver := &repositoryTextSearchIndexResolver{
-		repo:   NewRepositoryResolver(&types.Repo{Name: "alice/repo"}),
+		repo:   NewRepositoryResolver(db, &types.Repo{Name: "alice/repo"}),
 		client: &repoListerMock{},
 	}
 	refs, err := repoIndexResolver.Refs(context.Background())

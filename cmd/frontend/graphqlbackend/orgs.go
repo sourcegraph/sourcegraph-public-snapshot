@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 func (r *schemaResolver) Organizations(args *struct {
@@ -17,10 +18,11 @@ func (r *schemaResolver) Organizations(args *struct {
 		opt.Query = *args.Query
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
-	return &orgConnectionResolver{opt: opt}
+	return &orgConnectionResolver{db: r.db, opt: opt}
 }
 
 type orgConnectionResolver struct {
+	db  dbutil.DB
 	opt database.OrgsListOptions
 }
 
@@ -38,6 +40,7 @@ func (r *orgConnectionResolver) Nodes(ctx context.Context) ([]*OrgResolver, erro
 	var l []*OrgResolver
 	for _, org := range orgs {
 		l = append(l, &OrgResolver{
+			db:  r.db,
 			org: org,
 		})
 	}

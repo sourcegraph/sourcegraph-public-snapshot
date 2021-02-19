@@ -64,6 +64,7 @@ var _ Interface = &Store{}
 // only useful for filtering the data you get back, and would inflate the data size considerably
 // otherwise.
 type SeriesPoint struct {
+	// Time (always UTC).
 	Time     time.Time
 	Value    float64
 	Metadata []byte
@@ -81,7 +82,7 @@ type SeriesPointsOpts struct {
 	// TODO(slimsag): Add ability to filter based on repo ID, name, original name.
 	// TODO(slimsag): Add ability to do limited filtering based on metadata.
 
-	// Time ranges to query from/to, if non-nil.
+	// Time ranges to query from/to, if non-nil, in UTC.
 	From, To *time.Time
 
 	// Limit is the number of data points to query, if non-zero.
@@ -109,13 +110,14 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 
 var seriesPointsQueryFmtstr = `
 -- source: enterprise/internal/insights/store/store.go:SeriesPoints
-SELECT time,
-	value,
+SELECT time_bucket(INTERVAL '12 hours', time) AS time_bucket,
+	SUM(value),
 	m.metadata
 FROM series_points p
-INNER JOIN metadata m ON p.metadata_id = m.id
+LEFT JOIN metadata m ON p.metadata_id = m.id
 WHERE %s
-ORDER BY time DESC
+GROUP BY metadata, time_bucket
+ORDER BY time_bucket DESC
 `
 
 func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
@@ -125,10 +127,10 @@ func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("series_id = %s", *opts.SeriesID))
 	}
 	if opts.From != nil {
-		preds = append(preds, sqlf.Sprintf("time > %s", *opts.From))
+		preds = append(preds, sqlf.Sprintf("time >= %s", *opts.From))
 	}
 	if opts.To != nil {
-		preds = append(preds, sqlf.Sprintf("time < %s", *opts.To))
+		preds = append(preds, sqlf.Sprintf("time <= %s", *opts.To))
 	}
 
 	if len(preds) == 0 {
@@ -143,6 +145,27 @@ func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
 		sqlf.Join(preds, "\n AND "),
 	)
 }
+
+// DistinctSeriesWithData returns the distinct Series IDs that have at least one data point recorded
+// in the given time range.
+func (s *Store) DistinctSeriesWithData(ctx context.Context, from, to time.Time) ([]string, error) {
+	query := sqlf.Sprintf(distinctSeriesWithDataFmtstr, from, to)
+	var seriesIDs []string
+	err := s.query(ctx, query, func(sc scanner) error {
+		var seriesID string
+		err := sc.Scan(&seriesID)
+		if err != nil {
+			return err
+		}
+		seriesIDs = append(seriesIDs, seriesID)
+		return nil
+	})
+	return seriesIDs, err
+}
+
+const distinctSeriesWithDataFmtstr = `
+SELECT DISTINCT series_id FROM series_points WHERE time >= %s AND time <= %s;
+`
 
 // RecordSeriesPointArgs describes arguments for the RecordSeriesPoint method.
 type RecordSeriesPointArgs struct {
@@ -216,13 +239,13 @@ func (s *Store) RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) 
 	// Insert the actual data point.
 	return txStore.Exec(ctx, sqlf.Sprintf(
 		recordSeriesPointFmtstr,
-		v.SeriesID,    // series_id
-		v.Point.Time,  // time
-		v.Point.Value, // value
-		metadataID,    // metadata_id
-		v.RepoID,      // repo_id
-		repoNameID,    // repo_name_id
-		repoNameID,    // original_repo_name_id
+		v.SeriesID,         // series_id
+		v.Point.Time.UTC(), // time
+		v.Point.Value,      // value
+		metadataID,         // metadata_id
+		v.RepoID,           // repo_id
+		repoNameID,         // repo_name_id
+		repoNameID,         // original_repo_name_id
 	))
 }
 

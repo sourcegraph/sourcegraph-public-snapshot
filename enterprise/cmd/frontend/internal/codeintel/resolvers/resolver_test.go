@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
@@ -14,11 +15,11 @@ import (
 )
 
 func TestQueryResolver(t *testing.T) {
-	mockDBStore := NewMockDBStore()
+	mockDBStore := NewMockDBStore() // returns no dumps
 	mockLSIFStore := NewMockLSIFStore()
-	mockCodeIntelAPI := NewMockCodeIntelAPI() // returns no dumps
+	mockGitserverClient := NewMockGitserverClient()
 
-	resolver := NewResolver(mockDBStore, mockLSIFStore, mockCodeIntelAPI, nil, nil, &observation.TestContext)
+	resolver := NewResolver(mockDBStore, mockLSIFStore, mockGitserverClient, nil, nil, &observation.TestContext)
 	queryResolver, err := resolver.QueryResolver(context.Background(), &gql.GitBlobLSIFDataArgs{
 		Repo:      &types.Repo{ID: 50},
 		Commit:    api.CommitID("deadbeef"),
@@ -35,27 +36,7 @@ func TestQueryResolver(t *testing.T) {
 	}
 }
 
-func TestFallbackIndexConfiguration(t *testing.T) {
-	mockDBStore := NewMockDBStore()
-	mockEnqueuerDBStore := enqueuer.NewMockDBStore()
-	mockLSIFStore := NewMockLSIFStore()
-	mockCodeIntelAPI := NewMockCodeIntelAPI() // returns no dumps
-	gitServerClient := enqueuer.NewMockGitserverClient()
-	indexEnqueuer := enqueuer.NewIndexEnqueuer(mockEnqueuerDBStore, gitServerClient, &observation.TestContext)
-
-	resolver := NewResolver(mockDBStore, mockLSIFStore, mockCodeIntelAPI, indexEnqueuer, nil, &observation.TestContext)
-
-	mockDBStore.GetIndexConfigurationByRepositoryIDFunc.SetDefaultReturn(dbstore.IndexConfiguration{}, false, nil)
-	gitServerClient.HeadFunc.SetDefaultReturn("deadbeef", nil)
-	gitServerClient.ListFilesFunc.SetDefaultReturn([]string{"go.mod"}, nil)
-
-	json, err := resolver.IndexConfiguration(context.Background(), 0)
-
-	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
-	}
-
-	diff := cmp.Diff(string(json), `{
+const expectedFallbackIndexConfiguration = `{
 	"shared_steps": [],
 	"index_jobs": [
 		{
@@ -78,9 +59,27 @@ func TestFallbackIndexConfiguration(t *testing.T) {
 			"outfile": ""
 		}
 	]
-}`)
+}`
 
-	if diff != "" {
+func TestFallbackIndexConfiguration(t *testing.T) {
+	mockDBStore := NewMockDBStore() // returns no dumps
+	mockEnqueuerDBStore := enqueuer.NewMockDBStore()
+	mockLSIFStore := NewMockLSIFStore()
+	mockGitserverClient := NewMockGitserverClient()
+	gitServerClient := enqueuer.NewMockGitserverClient()
+	indexEnqueuer := enqueuer.NewIndexEnqueuer(mockEnqueuerDBStore, gitServerClient, &observation.TestContext)
+
+	mockDBStore.GetIndexConfigurationByRepositoryIDFunc.SetDefaultReturn(dbstore.IndexConfiguration{}, false, nil)
+	gitServerClient.HeadFunc.SetDefaultReturn("deadbeef", nil)
+	gitServerClient.ListFilesFunc.SetDefaultReturn([]string{"go.mod"}, nil)
+
+	resolver := NewResolver(mockDBStore, mockLSIFStore, mockGitserverClient, indexEnqueuer, nil, &observation.TestContext)
+	json, err := resolver.IndexConfiguration(context.Background(), 0)
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	if diff := cmp.Diff(string(json), expectedFallbackIndexConfiguration); diff != "" {
 		t.Fatalf("Unexpected fallback index configuration:\n%s\n", diff)
 	}
 }

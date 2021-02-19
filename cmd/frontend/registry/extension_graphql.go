@@ -6,7 +6,9 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 func init() {
@@ -43,16 +45,16 @@ func UnmarshalRegistryExtensionID(id graphql.ID) (registryExtensionID RegistryEx
 // RegistryExtensionByIDInt32 looks up and returns the registry extension in the database with the
 // given ID. If no such extension exists, an error is returned. The func is nil when there is no
 // local registry.
-var RegistryExtensionByIDInt32 func(context.Context, int32) (graphqlbackend.RegistryExtension, error)
+var RegistryExtensionByIDInt32 func(context.Context, dbutil.DB, int32) (graphqlbackend.RegistryExtension, error)
 
-func registryExtensionByID(ctx context.Context, id graphql.ID) (graphqlbackend.RegistryExtension, error) {
+func registryExtensionByID(ctx context.Context, db dbutil.DB, id graphql.ID) (graphqlbackend.RegistryExtension, error) {
 	registryExtensionID, err := UnmarshalRegistryExtensionID(id)
 	if err != nil {
 		return nil, err
 	}
 	switch {
 	case registryExtensionID.LocalID != 0 && RegistryExtensionByIDInt32 != nil:
-		return RegistryExtensionByIDInt32(ctx, registryExtensionID.LocalID)
+		return RegistryExtensionByIDInt32(ctx, db, registryExtensionID.LocalID)
 	case registryExtensionID.RemoteID != nil:
 		x, err := getRemoteRegistryExtension(ctx, "uuid", registryExtensionID.RemoteID.UUID)
 		if err != nil {

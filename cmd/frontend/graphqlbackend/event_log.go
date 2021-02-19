@@ -3,17 +3,19 @@ package graphqlbackend
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type userEventLogResolver struct {
+	db    dbutil.DB
 	event *types.Event
 }
 
 func (s *userEventLogResolver) User(ctx context.Context) (*UserResolver, error) {
 	if s.event.UserID != nil {
-		user, err := UserByIDInt32(ctx, *s.event.UserID)
+		user, err := UserByIDInt32(ctx, s.db, *s.event.UserID)
 		if err != nil && errcode.IsNotFound(err) {
 			// Don't throw an error if a user has been deleted.
 			return nil, nil

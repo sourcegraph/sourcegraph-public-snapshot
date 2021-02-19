@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -42,7 +43,7 @@ func (r *siteResolver) ExternalAccounts(ctx context.Context, args *struct {
 		}
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
-	return &externalAccountConnectionResolver{opt: opt}, nil
+	return &externalAccountConnectionResolver{db: r.db, opt: opt}, nil
 }
 
 func (r *UserResolver) ExternalAccounts(ctx context.Context, args *struct {
@@ -57,7 +58,7 @@ func (r *UserResolver) ExternalAccounts(ctx context.Context, args *struct {
 		UserID: r.user.ID,
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
-	return &externalAccountConnectionResolver{opt: opt}, nil
+	return &externalAccountConnectionResolver{db: r.db, opt: opt}, nil
 }
 
 // externalAccountConnectionResolver resolves a list of external accounts.
@@ -65,6 +66,7 @@ func (r *UserResolver) ExternalAccounts(ctx context.Context, args *struct {
 // 🚨 SECURITY: When instantiating an externalAccountConnectionResolver value, the caller MUST check
 // permissions.
 type externalAccountConnectionResolver struct {
+	db  dbutil.DB
 	opt database.ExternalAccountsListOptions
 
 	// cache results because they are used by multiple fields
@@ -95,7 +97,7 @@ func (r *externalAccountConnectionResolver) Nodes(ctx context.Context) ([]*exter
 
 	var l []*externalAccountResolver
 	for _, externalAccount := range externalAccounts {
-		l = append(l, &externalAccountResolver{account: *externalAccount})
+		l = append(l, &externalAccountResolver{db: r.db, account: *externalAccount})
 	}
 	return l, nil
 }

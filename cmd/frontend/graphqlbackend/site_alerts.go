@@ -61,7 +61,7 @@ type AlertFuncArgs struct {
 }
 
 func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
-	settings, err := decodedViewerFinalSettings(ctx)
+	settings, err := decodedViewerFinalSettings(ctx, r.db)
 	if err != nil {
 		return nil, err
 	}

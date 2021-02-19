@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/api"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
@@ -12,13 +11,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 )
 
-type CodeIntelAPI interface {
-	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) ([]store.Dump, error)
-	Ranges(ctx context.Context, file string, startLine, endLine, uploadID int) ([]api.ResolvedCodeIntelligenceRange, error)
-	Definitions(ctx context.Context, file string, line, character, uploadID int) ([]api.ResolvedLocation, error)
-	References(ctx context.Context, repositoryID int, commit string, limit int, cursor api.Cursor) ([]api.ResolvedLocation, api.Cursor, bool, error)
-	Hover(ctx context.Context, file string, line, character, uploadID int) (string, lsifstore.Range, bool, error)
-	Diagnostics(ctx context.Context, prefix string, uploadID, limit, offset int) ([]api.ResolvedDiagnostic, int, error)
+type GitserverClient interface {
+	CommitExists(ctx context.Context, repositoryID int, commit string) (bool, error)
+	CommitGraph(ctx context.Context, repositoryID int, options gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error)
 }
 
 type DBStore interface {
@@ -27,12 +22,11 @@ type DBStore interface {
 	GetUploadByID(ctx context.Context, id int) (dbstore.Upload, bool, error)
 	GetUploads(ctx context.Context, opts dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error)
 	DeleteUploadByID(ctx context.Context, id int) (bool, error)
-	GetDumpByID(ctx context.Context, id int) (dbstore.Dump, bool, error)
+	GetDumpsByIDs(ctx context.Context, ids []int) ([]dbstore.Dump, error)
 	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) ([]dbstore.Dump, error)
 	FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, graph *gitserver.CommitGraph) ([]dbstore.Dump, error)
-	GetPackage(ctx context.Context, scheme, name, version string) (dbstore.Dump, bool, error)
-	SameRepoPager(ctx context.Context, repositoryID int, commit, scheme, name, version string, limit int) (int, api.ReferencePager, error)
-	PackageReferencePager(ctx context.Context, scheme, name, version string, repositoryID, limit int) (int, api.ReferencePager, error)
+	DefinitionDumps(ctx context.Context, monikers []lsifstore.QualifiedMonikerData) (_ []dbstore.Dump, err error)
+	ReferenceIDsAndFilters(ctx context.Context, repositoryID int, commit string, monikers []lsifstore.QualifiedMonikerData, limit, offset int) (_ dbstore.PackageReferenceScanner, _ int, err error)
 	HasRepository(ctx context.Context, repositoryID int) (bool, error)
 	HasCommit(ctx context.Context, repositoryID int, commit string) (bool, error)
 	MarkRepositoryAsDirty(ctx context.Context, repositoryID int) error
@@ -44,30 +38,16 @@ type DBStore interface {
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) error
 }
 
-type DBStoreShim struct {
-	*dbstore.Store
-}
-
-func (s *DBStoreShim) SameRepoPager(ctx context.Context, repositoryID int, commit, scheme, name, version string, limit int) (int, api.ReferencePager, error) {
-	count, pager, err := s.Store.SameRepoPager(ctx, repositoryID, commit, scheme, name, version, limit)
-	if err != nil {
-		return 0, nil, err
-	}
-
-	return count, pager, nil
-}
-
-func (s *DBStoreShim) PackageReferencePager(ctx context.Context, scheme, name, version string, repositoryID, limit int) (int, api.ReferencePager, error) {
-	count, pager, err := s.Store.PackageReferencePager(ctx, scheme, name, version, repositoryID, limit)
-	if err != nil {
-		return 0, nil, err
-	}
-
-	return count, pager, nil
-}
-
 type LSIFStore interface {
-	api.LSIFStore
+	Exists(ctx context.Context, bundleID int, path string) (bool, error)
+	Ranges(ctx context.Context, bundleID int, path string, startLine, endLine int) ([]lsifstore.CodeIntelligenceRange, error)
+	Definitions(ctx context.Context, bundleID int, path string, line, character, limit, offset int) ([]lsifstore.Location, int, error)
+	References(ctx context.Context, bundleID int, path string, line, character, limit, offset int) ([]lsifstore.Location, int, error)
+	Hover(ctx context.Context, bundleID int, path string, line, character int) (string, lsifstore.Range, bool, error)
+	Diagnostics(ctx context.Context, bundleID int, prefix string, limit, offset int) ([]lsifstore.Diagnostic, int, error)
+	MonikersByPosition(ctx context.Context, bundleID int, path string, line, character int) ([][]lsifstore.MonikerData, error)
+	BulkMonikerResults(ctx context.Context, tableName string, ids []int, args []lsifstore.MonikerData, limit, offset int) (_ []lsifstore.Location, _ int, err error)
+	PackageInformation(ctx context.Context, bundleID int, path string, packageInformationID string) (lsifstore.PackageInformationData, bool, error)
 }
 
 type IndexEnqueuer interface {
