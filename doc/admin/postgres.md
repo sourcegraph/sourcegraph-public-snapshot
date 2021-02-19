@@ -4,7 +4,6 @@ Sourcegraph uses several PostgreSQL databases to support various functionality. 
 
 - pgsql or primary: responsible for user data and account information
 - codeintel-db: provides support for lsif data and part of the code-intelligence
-- codeinsights-db: provides support for codeinsights
 
 ## Version requirements
 
