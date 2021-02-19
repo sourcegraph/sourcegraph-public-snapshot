@@ -283,7 +283,7 @@ func FirstEverCommit(ctx context.Context, repo api.RepoName) (*Commit, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: FirstEverCommit")
 	defer span.Finish()
 
-	args := []string{"rev-list", "--max-parents=0", "HEAD"}
+	args := []string{"rev-list", "--max-count=1", "--max-parents=0", "HEAD"}
 	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = repo
 	out, err := cmd.CombinedOutput(ctx)
