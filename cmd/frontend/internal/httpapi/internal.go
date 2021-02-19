@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -290,33 +291,35 @@ func serveReposListEnabled(w http.ResponseWriter, r *http.Request) error {
 	return json.NewEncoder(w).Encode(names)
 }
 
-func serveSavedQueriesListAll(w http.ResponseWriter, r *http.Request) error {
-	// List settings for all users, orgs, etc.
-	settings, err := database.GlobalSavedSearches.ListAll(r.Context())
-	if err != nil {
-		return errors.Wrap(err, "database.SavedSearches.ListAll")
-	}
-
-	queries := make([]api.SavedQuerySpecAndConfig, 0, len(settings))
-	for _, s := range settings {
-		var spec api.SavedQueryIDSpec
-		if s.Config.UserID != nil {
-			spec = api.SavedQueryIDSpec{Subject: api.SettingsSubject{User: s.Config.UserID}, Key: s.Config.Key}
-		} else if s.Config.OrgID != nil {
-			spec = api.SavedQueryIDSpec{Subject: api.SettingsSubject{Org: s.Config.OrgID}, Key: s.Config.Key}
+func serveSavedQueriesListAll(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		// List settings for all users, orgs, etc.
+		settings, err := database.SavedSearches(db).ListAll(r.Context())
+		if err != nil {
+			return errors.Wrap(err, "database.SavedSearches.ListAll")
 		}
 
-		queries = append(queries, api.SavedQuerySpecAndConfig{
-			Spec:   spec,
-			Config: s.Config,
-		})
-	}
+		queries := make([]api.SavedQuerySpecAndConfig, 0, len(settings))
+		for _, s := range settings {
+			var spec api.SavedQueryIDSpec
+			if s.Config.UserID != nil {
+				spec = api.SavedQueryIDSpec{Subject: api.SettingsSubject{User: s.Config.UserID}, Key: s.Config.Key}
+			} else if s.Config.OrgID != nil {
+				spec = api.SavedQueryIDSpec{Subject: api.SettingsSubject{Org: s.Config.OrgID}, Key: s.Config.Key}
+			}
 
-	if err := json.NewEncoder(w).Encode(queries); err != nil {
-		return errors.Wrap(err, "Encode")
-	}
+			queries = append(queries, api.SavedQuerySpecAndConfig{
+				Spec:   spec,
+				Config: s.Config,
+			})
+		}
 
-	return nil
+		if err := json.NewEncoder(w).Encode(queries); err != nil {
+			return errors.Wrap(err, "Encode")
+		}
+
+		return nil
+	}
 }
 
 func serveSavedQueriesGetInfo(w http.ResponseWriter, r *http.Request) error {

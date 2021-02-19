@@ -11,7 +11,6 @@ var (
 	GlobalNamespaces                  = &NamespaceStore{}
 	GlobalOrgs                        = &OrgStore{}
 	GlobalOrgMembers                  = &OrgMemberStore{}
-	GlobalSavedSearches               = &SavedSearchStore{}
 	GlobalSettings                    = &SettingStore{}
 	GlobalUsers                       = &UserStore{}
 	GlobalUserCredentials             = &UserCredentialsStore{}
