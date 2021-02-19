@@ -79,10 +79,6 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                                 let pending: Status
                                 const now = new Date().getTime()
 
-                                if (result.nodes.length === 0) {
-                                    return true
-                                }
-
                                 for (const node of result.nodes) {
                                     // if the next sync time is not blank, or in the future we must not be syncing
                                     if (node.nextSyncAt !== '' && now - new Date(node.nextSyncAt).getTime() > 0) {
