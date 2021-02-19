@@ -2,8 +2,7 @@
 
 _Expected use case:_ Restoring a previous snapshot for disaster recovery
 
-For restoring Postgres databases in our Kubernetes deployments you should have backups of both the primary db, the
-codeintel-db and the codeinsights-db. The primary db contains all user information.
+For restoring Postgres databases in our Kubernetes deployments you should have backups of both the primary db and the codeintel-db. The primary db contains all user information.
 
 To restore persistent volumes you need to
 
