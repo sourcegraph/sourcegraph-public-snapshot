@@ -12,6 +12,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 )
 
+type GitserverClient interface {
+	CommitExists(ctx context.Context, repositoryID int, commit string) (bool, error)
+	CommitGraph(ctx context.Context, repositoryID int, options gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error)
+}
+
 type CodeIntelAPI interface {
 	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) ([]store.Dump, error)
 	Ranges(ctx context.Context, file string, startLine, endLine, uploadID int) ([]api.ResolvedCodeIntelligenceRange, error)
@@ -28,11 +33,14 @@ type DBStore interface {
 	GetUploads(ctx context.Context, opts dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error)
 	DeleteUploadByID(ctx context.Context, id int) (bool, error)
 	GetDumpByID(ctx context.Context, id int) (dbstore.Dump, bool, error)
+	GetDumpsByIDs(ctx context.Context, ids []int) ([]dbstore.Dump, error)
 	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) ([]dbstore.Dump, error)
 	FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, graph *gitserver.CommitGraph) ([]dbstore.Dump, error)
 	GetPackage(ctx context.Context, scheme, name, version string) (dbstore.Dump, bool, error)
 	SameRepoPager(ctx context.Context, repositoryID int, commit, scheme, name, version string, limit int) (int, api.ReferencePager, error)
 	PackageReferencePager(ctx context.Context, scheme, name, version string, repositoryID, limit int) (int, api.ReferencePager, error)
+	DefinitionDumps(ctx context.Context, monikers []lsifstore.QualifiedMonikerData) (_ []dbstore.Dump, err error)
+	ReferenceIDsAndFilters(ctx context.Context, repositoryID int, commit string, monikers []lsifstore.QualifiedMonikerData, limit, offset int) (_ dbstore.PackageReferenceScanner, _ int, err error)
 	HasRepository(ctx context.Context, repositoryID int) (bool, error)
 	HasCommit(ctx context.Context, repositoryID int, commit string) (bool, error)
 	MarkRepositoryAsDirty(ctx context.Context, repositoryID int) error

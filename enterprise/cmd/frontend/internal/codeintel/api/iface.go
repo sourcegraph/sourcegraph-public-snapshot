@@ -56,10 +56,12 @@ type LSIFStore interface {
 	Ranges(ctx context.Context, bundleID int, path string, startLine, endLine int) ([]lsifstore.CodeIntelligenceRange, error)
 	Definitions(ctx context.Context, bundleID int, path string, line, character int) ([]lsifstore.Location, error)
 	References(ctx context.Context, bundleID int, path string, line, character int) ([]lsifstore.Location, error)
+	PagedReferences(ctx context.Context, bundleID int, path string, line, character, limit, offset int) ([]lsifstore.Location, int, error)
 	Hover(ctx context.Context, bundleID int, path string, line, character int) (string, lsifstore.Range, bool, error)
 	Diagnostics(ctx context.Context, bundleID int, prefix string, limit, offset int) ([]lsifstore.Diagnostic, int, error)
 	MonikersByPosition(ctx context.Context, bundleID int, path string, line, character int) ([][]lsifstore.MonikerData, error)
 	MonikerResults(ctx context.Context, bundleID int, tableName, scheme, identifier string, skip, take int) ([]lsifstore.Location, int, error)
+	BulkMonikerResults(ctx context.Context, tableName string, ids []int, args []lsifstore.MonikerData, limit, offset int) (_ []lsifstore.Location, _ int, err error)
 	PackageInformation(ctx context.Context, bundleID int, path string, packageInformationID string) (lsifstore.PackageInformationData, bool, error)
 }
 

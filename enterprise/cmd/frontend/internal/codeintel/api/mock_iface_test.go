@@ -1826,6 +1826,9 @@ func (c GitserverClientCommitGraphFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/api)
 // used for unit testing.
 type MockLSIFStore struct {
+	// BulkMonikerResultsFunc is an instance of a mock function object
+	// controlling the behavior of the method BulkMonikerResults.
+	BulkMonikerResultsFunc *LSIFStoreBulkMonikerResultsFunc
 	// DefinitionsFunc is an instance of a mock function object controlling
 	// the behavior of the method Definitions.
 	DefinitionsFunc *LSIFStoreDefinitionsFunc
@@ -1847,6 +1850,9 @@ type MockLSIFStore struct {
 	// PackageInformationFunc is an instance of a mock function object
 	// controlling the behavior of the method PackageInformation.
 	PackageInformationFunc *LSIFStorePackageInformationFunc
+	// PagedReferencesFunc is an instance of a mock function object
+	// controlling the behavior of the method PagedReferences.
+	PagedReferencesFunc *LSIFStorePagedReferencesFunc
 	// RangesFunc is an instance of a mock function object controlling the
 	// behavior of the method Ranges.
 	RangesFunc *LSIFStoreRangesFunc
@@ -1859,6 +1865,11 @@ type MockLSIFStore struct {
 // methods return zero values for all results, unless overwritten.
 func NewMockLSIFStore() *MockLSIFStore {
 	return &MockLSIFStore{
+		BulkMonikerResultsFunc: &LSIFStoreBulkMonikerResultsFunc{
+			defaultHook: func(context.Context, string, []int, []lsifstore.MonikerData, int, int) ([]lsifstore.Location, int, error) {
+				return nil, 0, nil
+			},
+		},
 		DefinitionsFunc: &LSIFStoreDefinitionsFunc{
 			defaultHook: func(context.Context, int, string, int, int) ([]lsifstore.Location, error) {
 				return nil, nil
@@ -1894,6 +1905,11 @@ func NewMockLSIFStore() *MockLSIFStore {
 				return lsifstore.PackageInformationData{}, false, nil
 			},
 		},
+		PagedReferencesFunc: &LSIFStorePagedReferencesFunc{
+			defaultHook: func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error) {
+				return nil, 0, nil
+			},
+		},
 		RangesFunc: &LSIFStoreRangesFunc{
 			defaultHook: func(context.Context, int, string, int, int) ([]lsifstore.CodeIntelligenceRange, error) {
 				return nil, nil
@@ -1911,6 +1927,9 @@ func NewMockLSIFStore() *MockLSIFStore {
 // All methods delegate to the given implementation, unless overwritten.
 func NewMockLSIFStoreFrom(i LSIFStore) *MockLSIFStore {
 	return &MockLSIFStore{
+		BulkMonikerResultsFunc: &LSIFStoreBulkMonikerResultsFunc{
+			defaultHook: i.BulkMonikerResults,
+		},
 		DefinitionsFunc: &LSIFStoreDefinitionsFunc{
 			defaultHook: i.Definitions,
 		},
@@ -1932,6 +1951,9 @@ func NewMockLSIFStoreFrom(i LSIFStore) *MockLSIFStore {
 		PackageInformationFunc: &LSIFStorePackageInformationFunc{
 			defaultHook: i.PackageInformation,
 		},
+		PagedReferencesFunc: &LSIFStorePagedReferencesFunc{
+			defaultHook: i.PagedReferences,
+		},
 		RangesFunc: &LSIFStoreRangesFunc{
 			defaultHook: i.Ranges,
 		},
@@ -1939,6 +1961,131 @@ func NewMockLSIFStoreFrom(i LSIFStore) *MockLSIFStore {
 			defaultHook: i.References,
 		},
 	}
+}
+
+// LSIFStoreBulkMonikerResultsFunc describes the behavior when the
+// BulkMonikerResults method of the parent MockLSIFStore instance is
+// invoked.
+type LSIFStoreBulkMonikerResultsFunc struct {
+	defaultHook func(context.Context, string, []int, []lsifstore.MonikerData, int, int) ([]lsifstore.Location, int, error)
+	hooks       []func(context.Context, string, []int, []lsifstore.MonikerData, int, int) ([]lsifstore.Location, int, error)
+	history     []LSIFStoreBulkMonikerResultsFuncCall
+	mutex       sync.Mutex
+}
+
+// BulkMonikerResults delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockLSIFStore) BulkMonikerResults(v0 context.Context, v1 string, v2 []int, v3 []lsifstore.MonikerData, v4 int, v5 int) ([]lsifstore.Location, int, error) {
+	r0, r1, r2 := m.BulkMonikerResultsFunc.nextHook()(v0, v1, v2, v3, v4, v5)
+	m.BulkMonikerResultsFunc.appendCall(LSIFStoreBulkMonikerResultsFuncCall{v0, v1, v2, v3, v4, v5, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the BulkMonikerResults
+// method of the parent MockLSIFStore instance is invoked and the hook queue
+// is empty.
+func (f *LSIFStoreBulkMonikerResultsFunc) SetDefaultHook(hook func(context.Context, string, []int, []lsifstore.MonikerData, int, int) ([]lsifstore.Location, int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// BulkMonikerResults method of the parent MockLSIFStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *LSIFStoreBulkMonikerResultsFunc) PushHook(hook func(context.Context, string, []int, []lsifstore.MonikerData, int, int) ([]lsifstore.Location, int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *LSIFStoreBulkMonikerResultsFunc) SetDefaultReturn(r0 []lsifstore.Location, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, string, []int, []lsifstore.MonikerData, int, int) ([]lsifstore.Location, int, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *LSIFStoreBulkMonikerResultsFunc) PushReturn(r0 []lsifstore.Location, r1 int, r2 error) {
+	f.PushHook(func(context.Context, string, []int, []lsifstore.MonikerData, int, int) ([]lsifstore.Location, int, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *LSIFStoreBulkMonikerResultsFunc) nextHook() func(context.Context, string, []int, []lsifstore.MonikerData, int, int) ([]lsifstore.Location, int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LSIFStoreBulkMonikerResultsFunc) appendCall(r0 LSIFStoreBulkMonikerResultsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LSIFStoreBulkMonikerResultsFuncCall objects
+// describing the invocations of this function.
+func (f *LSIFStoreBulkMonikerResultsFunc) History() []LSIFStoreBulkMonikerResultsFuncCall {
+	f.mutex.Lock()
+	history := make([]LSIFStoreBulkMonikerResultsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LSIFStoreBulkMonikerResultsFuncCall is an object that describes an
+// invocation of method BulkMonikerResults on an instance of MockLSIFStore.
+type LSIFStoreBulkMonikerResultsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 []int
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 []lsifstore.MonikerData
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 int
+	// Arg5 is the value of the 6th argument passed to this method
+	// invocation.
+	Arg5 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []lsifstore.Location
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LSIFStoreBulkMonikerResultsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LSIFStoreBulkMonikerResultsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // LSIFStoreDefinitionsFunc describes the behavior when the Definitions
@@ -2776,6 +2923,133 @@ func (c LSIFStorePackageInformationFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c LSIFStorePackageInformationFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// LSIFStorePagedReferencesFunc describes the behavior when the
+// PagedReferences method of the parent MockLSIFStore instance is invoked.
+type LSIFStorePagedReferencesFunc struct {
+	defaultHook func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error)
+	hooks       []func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error)
+	history     []LSIFStorePagedReferencesFuncCall
+	mutex       sync.Mutex
+}
+
+// PagedReferences delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockLSIFStore) PagedReferences(v0 context.Context, v1 int, v2 string, v3 int, v4 int, v5 int, v6 int) ([]lsifstore.Location, int, error) {
+	r0, r1, r2 := m.PagedReferencesFunc.nextHook()(v0, v1, v2, v3, v4, v5, v6)
+	m.PagedReferencesFunc.appendCall(LSIFStorePagedReferencesFuncCall{v0, v1, v2, v3, v4, v5, v6, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the PagedReferences
+// method of the parent MockLSIFStore instance is invoked and the hook queue
+// is empty.
+func (f *LSIFStorePagedReferencesFunc) SetDefaultHook(hook func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// PagedReferences method of the parent MockLSIFStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *LSIFStorePagedReferencesFunc) PushHook(hook func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *LSIFStorePagedReferencesFunc) SetDefaultReturn(r0 []lsifstore.Location, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *LSIFStorePagedReferencesFunc) PushReturn(r0 []lsifstore.Location, r1 int, r2 error) {
+	f.PushHook(func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *LSIFStorePagedReferencesFunc) nextHook() func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LSIFStorePagedReferencesFunc) appendCall(r0 LSIFStorePagedReferencesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LSIFStorePagedReferencesFuncCall objects
+// describing the invocations of this function.
+func (f *LSIFStorePagedReferencesFunc) History() []LSIFStorePagedReferencesFuncCall {
+	f.mutex.Lock()
+	history := make([]LSIFStorePagedReferencesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LSIFStorePagedReferencesFuncCall is an object that describes an
+// invocation of method PagedReferences on an instance of MockLSIFStore.
+type LSIFStorePagedReferencesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 int
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 int
+	// Arg5 is the value of the 6th argument passed to this method
+	// invocation.
+	Arg5 int
+	// Arg6 is the value of the 7th argument passed to this method
+	// invocation.
+	Arg6 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []lsifstore.Location
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LSIFStorePagedReferencesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5, c.Arg6}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LSIFStorePagedReferencesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
