@@ -27,8 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-// CommitSearchResultResolver is a resolver for the GraphQL type `CommitSearchResult`
-type CommitSearchResultResolver struct {
+type CommitSearchResult struct {
 	commit         *GitCommitResolver
 	refs           []*GitRefResolver
 	sourceRefs     []*GitRefResolver
@@ -40,6 +39,9 @@ type CommitSearchResultResolver struct {
 	detail         string
 	matches        []*searchResultMatchResolver
 }
+
+// CommitSearchResultResolver is a resolver for the GraphQL type `CommitSearchResult`
+type CommitSearchResultResolver CommitSearchResult
 
 func (r *CommitSearchResultResolver) Select(path filter.SelectPath) SearchResultResolver {
 	switch path.Type {
