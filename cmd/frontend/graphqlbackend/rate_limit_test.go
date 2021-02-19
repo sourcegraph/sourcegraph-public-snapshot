@@ -171,7 +171,7 @@ query{
 }
 `,
 			want: queryCost{
-				FieldCount: 3,
+				FieldCount: 2,
 				MaxDepth:   2,
 			},
 		},
@@ -317,7 +317,7 @@ query Search($query: String!, $version: SearchVersion!, $patternType: SearchPatt
 }
 `,
 			want: queryCost{
-				FieldCount: 53,
+				FieldCount: 50,
 				MaxDepth:   9,
 			},
 		},
