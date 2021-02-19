@@ -406,9 +406,9 @@ func logCommitSearchResultsToResolvers(ctx context.Context, db dbutil.DB, op *se
 					matchHighlights = results[i].messagePreview.highlights
 				}
 			} else {
-				results[i].messagePreview = &highlightedString{value: commit.Message}
+				results[i].messagePreview = &highlightedString{value: string(commit.Message)}
 			}
-			matchBody = "```COMMIT_EDITMSG\n" + rawResult.Commit.Message + "\n```"
+			matchBody = "```COMMIT_EDITMSG\n" + string(rawResult.Commit.Message) + "\n```"
 		}
 
 		if rawResult.Diff != nil && op.Diff {
@@ -481,21 +481,13 @@ func cleanDiffPreview(highlights []*highlightedRange, rawDiffResult string) (str
 }
 
 func createLabel(rawResult *git.LogCommitSearchResult, commitResolver *GitCommitResolver) string {
-	message := commitSubject(rawResult.Commit.Message)
+	message := rawResult.Commit.Message.Subject()
 	author := rawResult.Commit.Author.Name
 	repoName := displayRepoName(commitResolver.Repository().Name())
 	repoURL := commitResolver.Repository().URL()
 	url := commitResolver.URL()
 
 	return fmt.Sprintf("[%s](%s) › [%s](%s): [%s](%s)", repoName, repoURL, author, url, message, url)
-}
-
-func commitSubject(message string) string {
-	idx := strings.Index(message, "\n")
-	if idx != -1 {
-		return message[:idx]
-	}
-	return message
 }
 
 func displayRepoName(repoPath string) string {
