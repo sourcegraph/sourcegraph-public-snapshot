@@ -27,11 +27,6 @@ type Runner struct {
 	finished        chan struct{}      // signals that Start has finished
 }
 
-type migratorOptions struct {
-	tickInterval time.Duration
-	tickClock    glock.Clock
-}
-
 type migratorAndOption struct {
 	Migrator
 	migratorOptions
@@ -39,12 +34,8 @@ type migratorAndOption struct {
 
 var _ goroutine.BackgroundRoutine = &Runner{}
 
-const (
-	defaultRefreshInterval = time.Second * 30
-)
-
-func NewRunnerWithDB(db dbutil.DB) *Runner {
-	return newRunner(NewStoreWithDB(dbconn.Global), defaultRefreshInterval, glock.NewRealClock())
+func NewRunnerWithDB(db dbutil.DB, refreshInterval time.Duration) *Runner {
+	return newRunner(NewStoreWithDB(dbconn.Global), refreshInterval, glock.NewRealClock())
 }
 
 func newRunner(store storeIface, refreshInterval time.Duration, refreshClock glock.Clock) *Runner {
@@ -65,14 +56,33 @@ func newRunner(store storeIface, refreshInterval time.Duration, refreshClock glo
 // out-of-band migration identifier.
 var ErrMigratorConflict = errors.New("migrator already registered")
 
+// MigratorOptions configures the behavior of a registered migrator.
+type MigratorOptions struct {
+	// Interval specifies the time between invocations of an active migration.
+	Interval time.Duration
+
+	// clock mocks periodic behavior for tests.
+	clock glock.Clock
+}
+
 // Register correlates the given migrator with the given migration identifier. An error is
 // returned if a migrator is already associated with this migration.
-func (r *Runner) Register(id int, migrator Migrator, options migratorOptions) error {
+func (r *Runner) Register(id int, migrator Migrator, options MigratorOptions) error {
 	if _, ok := r.migrators[id]; ok {
 		return ErrMigratorConflict
 	}
 
-	r.migrators[id] = migratorAndOption{migrator, options}
+	if options.Interval == 0 {
+		options.Interval = time.Second
+	}
+	if options.clock == nil {
+		options.clock = glock.NewRealClock()
+	}
+
+	r.migrators[id] = migratorAndOption{migrator, migratorOptions{
+		interval: options.Interval,
+		clock:    options.clock,
+	}}
 	return nil
 }
 
@@ -96,7 +106,7 @@ func (r *Runner) Start() {
 
 			// Ensure we have a migration routine running for this migration
 			r.ensureProcessorIsRunning(&wg, migrationProcesses, id, func(ch <-chan Migration) {
-				r.runMigrator(ctx, ch, migrator.Migrator, migrator.migratorOptions)
+				runMigrator(ctx, r.store, migrator.Migrator, ch, migrator.migratorOptions)
 			})
 
 			// Send the new migration to the processor routine. This loop guarantees
@@ -181,20 +191,21 @@ func (r *Runner) ensureProcessorIsRunning(wg *sync.WaitGroup, m map[int]chan Mig
 	}()
 }
 
-func (r *Runner) runMigrator(ctx context.Context, ch <-chan Migration, migrator Migrator, options migratorOptions) {
-	runMigrator(ctx, r.store, migrator, ch, options.tickInterval, options.tickClock)
-}
-
 // Stop will cancel the context used in Start, then blocks until Start has returned.
 func (r *Runner) Stop() {
 	r.cancel()
 	<-r.finished
 }
 
+type migratorOptions struct {
+	interval time.Duration
+	clock    glock.Clock
+}
+
 // runMigrator runs the given migrator function periodically (on each read from ticker)
 // while the migration is not complete. We will periodically (on each read from migrations)
 // update our current view of the migration progress and (more importantly) its direction.
-func runMigrator(ctx context.Context, store storeIface, migrator Migrator, migrations <-chan Migration, tickInterval time.Duration, clock glock.Clock) {
+func runMigrator(ctx context.Context, store storeIface, migrator Migrator, migrations <-chan Migration, options migratorOptions) {
 	// Get initial migration. This channel will close when the context
 	// is canceled, so we don't need to do any more complex select here.
 	migration, ok := <-migrations
@@ -212,7 +223,7 @@ func runMigrator(ctx context.Context, store storeIface, migrator Migrator, migra
 		case migration = <-migrations:
 			// Refreshed our migration state
 
-		case <-clock.After(tickInterval):
+		case <-options.clock.After(options.interval):
 			if !migration.Complete() {
 				// Run the migration only if there's something left to do
 				if err := runMigrationFunction(ctx, store, &migration, migrator); err != nil {
