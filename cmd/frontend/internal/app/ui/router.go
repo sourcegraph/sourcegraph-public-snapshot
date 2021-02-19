@@ -391,7 +391,7 @@ func handler(f func(w http.ResponseWriter, r *http.Request) error) http.Handler 
 			serveError(w, r, err, http.StatusInternalServerError)
 		}
 	})
-	return trace.TraceRoute(gziphandler.GzipHandler(h))
+	return trace.Route(gziphandler.GzipHandler(h))
 }
 
 type recoverError struct {

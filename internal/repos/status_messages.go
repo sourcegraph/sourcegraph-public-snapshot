@@ -35,7 +35,7 @@ func FetchStatusMessages(ctx context.Context, db dbutil.DB, u *types.User, cloud
 
 	if !cloud {
 		// The number of uncloned repos on cloud is misleading due to the fact that we do
-		// on demand sycing and also remove stale repos.
+		// on demand syncing and also remove stale repos.
 		notCloned, err := database.Repos(db).Count(ctx, opts)
 		if err != nil {
 			return nil, errors.Wrap(err, "counting uncloned repos")
