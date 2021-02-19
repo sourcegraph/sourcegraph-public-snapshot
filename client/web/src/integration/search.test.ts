@@ -345,9 +345,34 @@ describe('Search', () => {
             }),
         }
 
-        test('Streaming search with single repo result', async () => {
+        test('Streaming search', async () => {
             const searchStreamEvents: SearchEvent[] = [
-                { type: 'matches', data: [{ type: 'repo', repository: 'github.com/sourcegraph/sourcegraph' }] },
+                {
+                    type: 'matches',
+                    data: [
+                        { type: 'repo', repository: 'github.com/sourcegraph/sourcegraph' },
+                        {
+                            type: 'file',
+                            lineMatches: [],
+                            name: 'stream.ts',
+                            repository: 'github.com/sourcegraph/sourcegraph',
+                        },
+                        {
+                            type: 'file',
+                            lineMatches: [],
+                            name: 'stream.ts',
+                            repository: 'github.com/sourcegraph/sourcegraph',
+                            version: 'abcd',
+                        },
+                        {
+                            type: 'file',
+                            lineMatches: [],
+                            name: 'stream.ts',
+                            repository: 'github.com/sourcegraph/sourcegraph',
+                            branches: ['test/branch'],
+                        },
+                    ],
+                },
                 { type: 'done', data: {} },
             ]
 
@@ -362,7 +387,12 @@ describe('Search', () => {
                     (label.textContent || '').trim()
                 )
             )
-            expect(results).toEqual(['github.com/sourcegraph/sourcegraph'])
+            expect(results).toEqual([
+                'github.com/sourcegraph/sourcegraph',
+                'sourcegraph/sourcegraph › stream.ts',
+                'sourcegraph/sourcegraph@abcd › stream.ts',
+                'sourcegraph/sourcegraph@test/branch › stream.ts',
+            ])
         })
     })
 
