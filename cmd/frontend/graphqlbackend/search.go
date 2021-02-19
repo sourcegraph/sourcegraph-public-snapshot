@@ -187,7 +187,7 @@ func queryForStableResults(args *SearchArgs, q query.Q) (*SearchArgs, query.Q, e
 	return args, q, nil
 }
 
-func processPaginationRequest(args *SearchArgs, queryInfo query.QueryInfo) (*searchPaginationInfo, error) {
+func processPaginationRequest(args *SearchArgs, q query.Q) (*searchPaginationInfo, error) {
 	var pagination *searchPaginationInfo
 	if args.First != nil {
 		cursor, err := unmarshalSearchCursor(args.After)

@@ -72,7 +72,7 @@ type indexedSearchRequest struct {
 }
 
 // TODO (stefan) move this out of zoekt.go to the new parser once it is guaranteed that the old parser is turned off for all customers
-func containsRefGlobs(q query.QueryInfo) bool {
+func containsRefGlobs(q query.Q) bool {
 	containsRefGlobs := false
 	if repoFilterValues, _ := q.RegexpPatterns(query.FieldRepo); len(repoFilterValues) > 0 {
 		for _, v := range repoFilterValues {
