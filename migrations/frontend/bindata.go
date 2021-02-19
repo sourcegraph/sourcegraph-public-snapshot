@@ -106,6 +106,8 @@
 // 1528395784_preview_filter_fields.up.sql (2.461kB)
 // 1528395785_out_of_band_migration_table.down.sql (114B)
 // 1528395785_out_of_band_migration_table.up.sql (3.838kB)
+// 1528395786_diagnostic_counts_migration.down.sql (16B)
+// 1528395786_diagnostic_counts_migration.up.sql (277B)
 
 package migrations
 
@@ -2294,6 +2296,46 @@ func _1528395785_out_of_band_migration_tableUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395786_diagnostic_counts_migrationDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x80\xfb\x5a\xa5\x10\x00\x00\x00")
+
+func _1528395786_diagnostic_counts_migrationDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395786_diagnostic_counts_migrationDownSql,
+		"1528395786_diagnostic_counts_migration.down.sql",
+	)
+}
+
+func _1528395786_diagnostic_counts_migrationDownSql() (*asset, error) {
+	bytes, err := _1528395786_diagnostic_counts_migrationDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395786_diagnostic_counts_migration.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xec, 0x6c, 0xe7, 0xaa, 0xc6, 0xdb, 0x9b, 0x52, 0x49, 0xad, 0xde, 0x34, 0x6a, 0xa9, 0x90, 0x21, 0x97, 0xcc, 0xcd, 0x35, 0xee, 0xc6, 0xd1, 0x36, 0xf1, 0xa0, 0x6c, 0xe8, 0x73, 0x42, 0x77, 0x41}}
+	return a, nil
+}
+
+var __1528395786_diagnostic_counts_migrationUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x2c\xcc\x41\x4b\x33\x31\x10\xc6\xf1\x7b\x3e\xc5\xdc\xda\x42\x5a\xde\x57\xf1\xd4\x93\xd6\x5a\x17\xda\xac\xd8\xd5\x6b\x48\x33\xb3\x4b\x60\x77\x66\x49\x26\x82\xdf\x5e\x56\xbc\xfe\xf9\x3d\xcf\xd3\xf1\xd4\xb8\xbd\x31\x8d\xbb\x1e\xdf\x3b\x68\x5c\xd7\x82\x54\xf5\xd2\xfb\x5b\x60\xf4\x53\x1a\x72\xd0\x24\x5c\x60\x9d\xd0\x82\x52\x98\x2c\x44\x99\x66\x61\x62\xb5\x80\x54\x62\x4e\xf3\x42\x2c\x24\xd6\x2c\x58\x23\xa1\x05\x16\xf6\x48\x45\x73\x8d\x9a\xbe\x68\x63\x3e\x1f\xcf\x1f\xc7\x2b\xac\xff\x5b\x58\x45\x41\xda\x26\x56\x1a\xc7\x34\x10\x47\x5a\xfd\xc5\xdf\xb6\xc5\xdb\x6e\x2c\xa9\xf7\x18\x34\x78\x94\x58\x27\x62\x2d\x8b\x79\x93\xb9\x8e\x41\x09\xb8\x4e\x1e\x53\x18\x58\x8a\xa6\x58\xa0\xcf\x32\xc1\x20\xb7\x2d\xf1\xf2\x83\x30\x87\xef\x51\x02\x2e\xa3\xfb\xdd\xdd\xc3\xee\xdf\xca\x82\xe6\x4a\x1b\xd3\x3a\x38\xb4\xee\xe5\xdc\x1c\x3a\x78\x6e\xc1\xb5\xdd\x6b\xe3\x4e\x7b\x63\x0e\xed\xe5\xd2\x74\x7b\xf3\x13\x00\x00\xff\xff\x84\x5f\xa6\x3c\x15\x01\x00\x00")
+
+func _1528395786_diagnostic_counts_migrationUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395786_diagnostic_counts_migrationUpSql,
+		"1528395786_diagnostic_counts_migration.up.sql",
+	)
+}
+
+func _1528395786_diagnostic_counts_migrationUpSql() (*asset, error) {
+	bytes, err := _1528395786_diagnostic_counts_migrationUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395786_diagnostic_counts_migration.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xdb, 0x1e, 0xa6, 0x99, 0x90, 0x99, 0x7a, 0x7a, 0x8d, 0x74, 0x35, 0xd, 0xdc, 0xa4, 0xdb, 0x43, 0xe3, 0x4f, 0x5c, 0x77, 0x3e, 0x14, 0x7f, 0x53, 0x7a, 0x4a, 0x99, 0xf6, 0x8d, 0x34, 0x7, 0xbc}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2491,6 +2533,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395784_preview_filter_fields.up.sql":                                                _1528395784_preview_filter_fieldsUpSql,
 	"1528395785_out_of_band_migration_table.down.sql":                                        _1528395785_out_of_band_migration_tableDownSql,
 	"1528395785_out_of_band_migration_table.up.sql":                                          _1528395785_out_of_band_migration_tableUpSql,
+	"1528395786_diagnostic_counts_migration.down.sql":                                        _1528395786_diagnostic_counts_migrationDownSql,
+	"1528395786_diagnostic_counts_migration.up.sql":                                          _1528395786_diagnostic_counts_migrationUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2643,6 +2687,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395784_preview_filter_fields.up.sql":                                                {_1528395784_preview_filter_fieldsUpSql, map[string]*bintree{}},
 	"1528395785_out_of_band_migration_table.down.sql":                                        {_1528395785_out_of_band_migration_tableDownSql, map[string]*bintree{}},
 	"1528395785_out_of_band_migration_table.up.sql":                                          {_1528395785_out_of_band_migration_tableUpSql, map[string]*bintree{}},
+	"1528395786_diagnostic_counts_migration.down.sql":                                        {_1528395786_diagnostic_counts_migrationDownSql, map[string]*bintree{}},
+	"1528395786_diagnostic_counts_migration.up.sql":                                          {_1528395786_diagnostic_counts_migrationUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

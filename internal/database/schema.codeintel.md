@@ -40,11 +40,13 @@ Associates (document, range) pairs with the import monikers attached to the rang
 
 # Table "public.lsif_data_documents"
 ```
- Column  |  Type   | Modifiers 
----------+---------+-----------
- dump_id | integer | not null
- path    | text    | not null
- data    | bytea   | 
+     Column      |  Type   | Modifiers 
+-----------------+---------+-----------
+ dump_id         | integer | not null
+ path            | text    | not null
+ data            | bytea   | 
+ schema_version  | integer | not null
+ num_diagnostics | integer | not null
 Indexes:
     "lsif_data_documents_pkey" PRIMARY KEY, btree (dump_id, path)
 
@@ -56,7 +58,11 @@ Stores reference, hover text, moniker, and diagnostic data about a particular te
 
 **dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
 
+**num_diagnostics**: The number of diagnostics stored in the data field.
+
 **path**: The path of the text document relative to the associated dump root.
+
+**schema_version**: The schema version of this row - used to determine presence and encoding of data.
 
 # Table "public.lsif_data_metadata"
 ```
