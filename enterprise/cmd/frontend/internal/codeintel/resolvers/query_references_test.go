@@ -28,9 +28,9 @@ func TestReferences(t *testing.T) {
 		{DumpID: 51, Path: "b.go", Range: testRange4},
 		{DumpID: 51, Path: "c.go", Range: testRange5},
 	}
-	mockLSIFStore.PagedReferencesFunc.PushReturn(locations[:1], 1, nil)
-	mockLSIFStore.PagedReferencesFunc.PushReturn(locations[1:4], 3, nil)
-	mockLSIFStore.PagedReferencesFunc.PushReturn(locations[4:], 1, nil)
+	mockLSIFStore.ReferencesFunc.PushReturn(locations[:1], 1, nil)
+	mockLSIFStore.ReferencesFunc.PushReturn(locations[1:4], 3, nil)
+	mockLSIFStore.ReferencesFunc.PushReturn(locations[4:], 1, nil)
 
 	uploads := []dbstore.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
@@ -132,9 +132,9 @@ func TestReferencesRemote(t *testing.T) {
 		{DumpID: 51, Path: "b.go", Range: testRange4},
 		{DumpID: 51, Path: "c.go", Range: testRange5},
 	}
-	mockLSIFStore.PagedReferencesFunc.PushReturn(locations[:1], 1, nil)
-	mockLSIFStore.PagedReferencesFunc.PushReturn(locations[1:4], 3, nil)
-	mockLSIFStore.PagedReferencesFunc.PushReturn(locations[4:5], 1, nil)
+	mockLSIFStore.ReferencesFunc.PushReturn(locations[:1], 1, nil)
+	mockLSIFStore.ReferencesFunc.PushReturn(locations[1:4], 3, nil)
+	mockLSIFStore.ReferencesFunc.PushReturn(locations[4:5], 1, nil)
 
 	monikerLocations := []lsifstore.Location{
 		{DumpID: 53, Path: "a.go", Range: testRange1},

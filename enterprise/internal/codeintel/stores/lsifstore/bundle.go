@@ -119,48 +119,21 @@ SELECT dump_id, path, data FROM lsif_data_documents WHERE dump_id = %s AND path 
 `
 
 // Definitions returns the set of locations defining the symbol at the given position.
-func (s *Store) Definitions(ctx context.Context, bundleID int, path string, line, character int) (_ []Location, err error) {
-	ctx, traceLog, endObservation := s.operations.definitions.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("bundleID", bundleID),
-		log.String("path", path),
-		log.Int("line", line),
-		log.Int("character", character),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	documentData, exists, err := s.scanFirstDocumentData(s.Store.Query(ctx, sqlf.Sprintf(documentQuery, bundleID, path)))
-	if err != nil || !exists {
-		return nil, err
-	}
-
-	traceLog(log.Int("numRanges", len(documentData.Document.Ranges)))
-	ranges := FindRanges(documentData.Document.Ranges, line, character)
-	traceLog(log.Int("numIntersectingRanges", len(ranges)))
-
-	orderedResultIDs := extractResultIDs(ranges, func(r RangeData) ID { return r.DefinitionResultID })
-	locationsMap, err := s.locations(ctx, bundleID, orderedResultIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	totalCount := 0
-	for _, locations := range locationsMap {
-		totalCount += len(locations)
-	}
-	traceLog(log.Int("totalCount", totalCount))
-
-	for _, resultID := range orderedResultIDs {
-		if locations := locationsMap[resultID]; len(locations) > 0 {
-			return locations, nil
-		}
-	}
-
-	return nil, nil
+func (s *Store) Definitions(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []Location, _ int, err error) {
+	extractor := func(r RangeData) ID { return r.DefinitionResultID }
+	operation := s.operations.definitions
+	return s.definitionsReferences(ctx, extractor, operation, bundleID, path, line, character, limit, offset)
 }
 
-// PagedReferences returns the set of locations referencing the symbol at the given position.
-func (s *Store) PagedReferences(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []Location, _ int, err error) {
-	ctx, traceLog, endObservation := s.operations.pagedReferences.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+// References returns the set of locations referencing the symbol at the given position.
+func (s *Store) References(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []Location, _ int, err error) {
+	extractor := func(r RangeData) ID { return r.ReferenceResultID }
+	operation := s.operations.references
+	return s.definitionsReferences(ctx, extractor, operation, bundleID, path, line, character, limit, offset)
+}
+
+func (s *Store) definitionsReferences(ctx context.Context, extractor func(r RangeData) ID, operation *observation.Operation, bundleID int, path string, line, character, limit, offset int) (_ []Location, _ int, err error) {
+	ctx, traceLog, endObservation := operation.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("path", path),
 		log.Int("line", line),
@@ -177,7 +150,7 @@ func (s *Store) PagedReferences(ctx context.Context, bundleID int, path string, 
 	ranges := FindRanges(documentData.Document.Ranges, line, character)
 	traceLog(log.Int("numIntersectingRanges", len(ranges)))
 
-	orderedResultIDs := extractResultIDs(ranges, func(r RangeData) ID { return r.ReferenceResultID })
+	orderedResultIDs := extractResultIDs(ranges, extractor)
 	locationsMap, err := s.locations(ctx, bundleID, orderedResultIDs)
 	if err != nil {
 		return nil, 0, err
