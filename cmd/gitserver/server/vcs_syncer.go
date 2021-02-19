@@ -64,14 +64,20 @@ func (s *GitRepoSyncer) IsCloneable(ctx context.Context, remoteURL *url.URL) err
 
 // CloneCommand returns the command to be executed for cloning a Git repository.
 func (s *GitRepoSyncer) CloneCommand(ctx context.Context, remoteURL *url.URL, tmpPath string) (cmd *exec.Cmd, err error) {
+	creds, remoteURL := ParseGitCredentials(remoteURL)
 	if useRefspecOverrides() {
-		return refspecOverridesCloneCmd(ctx, remoteURL, tmpPath)
+		return refspecOverridesCloneCmd(ctx, creds, remoteURL, tmpPath)
 	}
-	return exec.CommandContext(ctx, "git", "clone", "--mirror", "--progress", remoteURL.String(), tmpPath), nil
+
+	cmd = exec.CommandContext(ctx, "git", "clone", "--mirror", "--progress", remoteURL.String(), tmpPath)
+	creds.Authenticate(cmd)
+	return cmd, nil
 }
 
 // FetchCommand returns the command to be executed for fetching updates of a Git repository.
 func (s *GitRepoSyncer) FetchCommand(ctx context.Context, remoteURL *url.URL) (cmd *exec.Cmd, configRemoteOpts bool, err error) {
+	creds, remoteURL := ParseGitCredentials(remoteURL)
+
 	configRemoteOpts = true
 	if customCmd := customFetchCmd(ctx, remoteURL); customCmd != nil {
 		cmd = customCmd
@@ -93,12 +99,18 @@ func (s *GitRepoSyncer) FetchCommand(ctx context.Context, remoteURL *url.URL) (c
 			// Possibly deprecated refs for sourcegraph zap experiment?
 			"+refs/sourcegraph/*:refs/sourcegraph/*")
 	}
+
+	creds.Authenticate(cmd)
+
 	return cmd, configRemoteOpts, nil
 }
 
 // RemoteShowCommand returns the command to be executed for showing remote of a Git repository.
 func (s *GitRepoSyncer) RemoteShowCommand(ctx context.Context, remoteURL *url.URL) (cmd *exec.Cmd, err error) {
-	return exec.CommandContext(ctx, "git", "remote", "show", remoteURL.String()), nil
+	creds, remoteURL := ParseGitCredentials(remoteURL)
+	cmd = exec.CommandContext(ctx, "git", "remote", "show", remoteURL.String())
+	creds.Authenticate(cmd)
+	return cmd, nil
 }
 
 // PerforceDepotSyncer is a syncer for Perforce depots.

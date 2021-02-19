@@ -26,7 +26,7 @@ func useRefspecOverrides() bool {
 //
 // To not clone everything we instead init a bare repo and only add the
 // refspecs we care about. Then we finally do a fetch.
-func refspecOverridesCloneCmd(ctx context.Context, remoteURL *url.URL, tmpPath string) (*exec.Cmd, error) {
+func refspecOverridesCloneCmd(ctx context.Context, creds *GitCredentials, remoteURL *url.URL, tmpPath string) (*exec.Cmd, error) {
 	if err := os.MkdirAll(tmpPath, os.ModePerm); err != nil {
 		return nil, errors.Wrapf(err, "clone failed to create tmp dir")
 	}
@@ -41,12 +41,14 @@ func refspecOverridesCloneCmd(ctx context.Context, remoteURL *url.URL, tmpPath s
 	for _, args := range cmds {
 		cmd := exec.CommandContext(ctx, "git", args...)
 		cmd.Dir = tmpPath
+		creds.Authenticate(cmd)
 		if err := cmd.Run(); err != nil {
 			return nil, errors.Wrapf(err, "clone setup failed")
 		}
 	}
 	cmd := exec.CommandContext(ctx, "git", "fetch", "--progress")
 	cmd.Dir = tmpPath
+	creds.Authenticate(cmd)
 	return cmd, nil
 }
 
