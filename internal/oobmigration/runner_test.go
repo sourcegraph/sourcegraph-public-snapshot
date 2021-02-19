@@ -139,13 +139,11 @@ func TestRunnerRemovesCompleted(t *testing.T) {
 func TestRunMigrator(t *testing.T) {
 	store := NewMockStoreIface()
 	tickClock := glock.NewMockClock()
-	refreshClock := glock.NewMockClock()
 
-	runner := newRunner(store, time.Second*30, refreshClock)
 	migrator := NewMockMigrator()
 	migrator.ProgressFunc.SetDefaultReturn(0.5, nil)
 
-	runMigratorWrapped(runner, migrator, tickClock, func(migrations chan<- Migration) {
+	runMigratorWrapped(store, migrator, tickClock, func(migrations chan<- Migration) {
 		migrations <- Migration{ID: 1, Progress: 0.5}
 		tickN(tickClock, 3)
 	})
@@ -161,14 +159,12 @@ func TestRunMigrator(t *testing.T) {
 func TestRunMigratorMigrationErrors(t *testing.T) {
 	store := NewMockStoreIface()
 	tickClock := glock.NewMockClock()
-	refreshClock := glock.NewMockClock()
 
-	runner := newRunner(store, time.Second*30, refreshClock)
 	migrator := NewMockMigrator()
 	migrator.ProgressFunc.SetDefaultReturn(0.5, nil)
 	migrator.UpFunc.SetDefaultReturn(errors.New("uh-oh"))
 
-	runMigratorWrapped(runner, migrator, tickClock, func(migrations chan<- Migration) {
+	runMigratorWrapped(store, migrator, tickClock, func(migrations chan<- Migration) {
 		migrations <- Migration{ID: 1, Progress: 0.5}
 		tickN(tickClock, 1)
 	})
@@ -188,15 +184,13 @@ func TestRunMigratorMigrationErrors(t *testing.T) {
 func TestRunMigratorMigrationFinishesUp(t *testing.T) {
 	store := NewMockStoreIface()
 	tickClock := glock.NewMockClock()
-	refreshClock := glock.NewMockClock()
 
-	runner := newRunner(store, time.Second*30, refreshClock)
 	migrator := NewMockMigrator()
 	migrator.ProgressFunc.PushReturn(0.8, nil)       // check
 	migrator.ProgressFunc.PushReturn(0.9, nil)       // after up
 	migrator.ProgressFunc.SetDefaultReturn(1.0, nil) // after up
 
-	runMigratorWrapped(runner, migrator, tickClock, func(migrations chan<- Migration) {
+	runMigratorWrapped(store, migrator, tickClock, func(migrations chan<- Migration) {
 		migrations <- Migration{ID: 1, Progress: 0.8}
 		tickN(tickClock, 5)
 	})
@@ -212,15 +206,13 @@ func TestRunMigratorMigrationFinishesUp(t *testing.T) {
 func TestRunMigratorMigrationFinishesDown(t *testing.T) {
 	store := NewMockStoreIface()
 	tickClock := glock.NewMockClock()
-	refreshClock := glock.NewMockClock()
 
-	runner := newRunner(store, time.Second*30, refreshClock)
 	migrator := NewMockMigrator()
 	migrator.ProgressFunc.PushReturn(0.2, nil)       // check
 	migrator.ProgressFunc.PushReturn(0.1, nil)       // after down
 	migrator.ProgressFunc.SetDefaultReturn(0.0, nil) // after down
 
-	runMigratorWrapped(runner, migrator, tickClock, func(migrations chan<- Migration) {
+	runMigratorWrapped(store, migrator, tickClock, func(migrations chan<- Migration) {
 		migrations <- Migration{ID: 1, Progress: 0.2, ApplyReverse: true}
 		tickN(tickClock, 5)
 	})
@@ -236,9 +228,7 @@ func TestRunMigratorMigrationFinishesDown(t *testing.T) {
 func TestRunMigratorMigrationChangesDirection(t *testing.T) {
 	store := NewMockStoreIface()
 	tickClock := glock.NewMockClock()
-	refreshClock := glock.NewMockClock()
 
-	runner := newRunner(store, time.Second*30, refreshClock)
 	migrator := NewMockMigrator()
 	migrator.ProgressFunc.PushReturn(0.2, nil) // check
 	migrator.ProgressFunc.PushReturn(0.1, nil) // after down
@@ -247,7 +237,7 @@ func TestRunMigratorMigrationChangesDirection(t *testing.T) {
 	migrator.ProgressFunc.PushReturn(0.1, nil) // after up
 	migrator.ProgressFunc.PushReturn(0.2, nil) // after up
 
-	runMigratorWrapped(runner, migrator, tickClock, func(migrations chan<- Migration) {
+	runMigratorWrapped(store, migrator, tickClock, func(migrations chan<- Migration) {
 		migrations <- Migration{ID: 1, Progress: 0.2, ApplyReverse: true}
 		tickN(tickClock, 5)
 		migrations <- Migration{ID: 1, Progress: 0.0, ApplyReverse: false}
@@ -268,7 +258,7 @@ func TestRunMigratorMigrationChangesDirection(t *testing.T) {
 //
 // This method blocks until both functions return. The return of the interact function
 // cancels a context controlling the runMigrator main loop.
-func runMigratorWrapped(r *Runner, migrator Migrator, clock glock.Clock, interact func(migrations chan<- Migration)) {
+func runMigratorWrapped(store storeIface, migrator Migrator, clock glock.Clock, interact func(migrations chan<- Migration)) {
 	ctx, cancel := context.WithCancel(context.Background())
 	migrations := make(chan Migration)
 
@@ -277,7 +267,7 @@ func runMigratorWrapped(r *Runner, migrator Migrator, clock glock.Clock, interac
 
 	go func() {
 		defer wg.Done()
-		runMigrator(ctx, r, migrator, migrations, time.Second, clock)
+		runMigrator(ctx, store, migrator, migrations, time.Second, clock)
 	}()
 
 	interact(migrations)

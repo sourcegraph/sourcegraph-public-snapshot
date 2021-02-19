@@ -129,30 +129,6 @@ func (r *Runner) Start() {
 	wg.Wait()
 }
 
-// ensureProcessorIsRunning ensures that there is a non-nil channel at migrationProcesses[id].
-// If this key is not set, a new channel is created and stored in this key. The channel is then
-// passed to runMigrator in a goroutine.
-//
-// This method logs the execution of the migration processor in the given wait group.
-func (r *Runner) ensureProcessorIsRunning(wg *sync.WaitGroup, migrationProcesses map[int]chan Migration, id int, runMigrator func(<-chan Migration)) {
-	if _, ok := migrationProcesses[id]; ok {
-		return
-	}
-
-	wg.Add(1)
-	ch := make(chan Migration, 1)
-	migrationProcesses[id] = ch
-
-	go func() {
-		runMigrator(ch)
-		wg.Done()
-	}()
-}
-
-func (r *Runner) runMigrator(ctx context.Context, ch <-chan Migration, migrator Migrator, options migratorOptions) {
-	runMigrator(ctx, r, migrator, ch, options.tickInterval, options.tickClock)
-}
-
 // listMigrations returns a channel that will asynchronously receive the full list of out-of-band
 // migrations that exist in the database. This channel will receive a value periodically as long
 // as the given context is active.
@@ -185,6 +161,30 @@ func (r *Runner) listMigrations(ctx context.Context) <-chan []Migration {
 	return ch
 }
 
+// ensureProcessorIsRunning ensures that there is a non-nil channel at m[id]. If this key
+// is not set, a new channel is created and stored in this key. The channel is then passed
+// to runMigrator in a goroutine.
+//
+// This method logs the execution of the migration processor in the given wait group.
+func (r *Runner) ensureProcessorIsRunning(wg *sync.WaitGroup, m map[int]chan Migration, id int, runMigrator func(<-chan Migration)) {
+	if _, ok := m[id]; ok {
+		return
+	}
+
+	wg.Add(1)
+	ch := make(chan Migration, 1)
+	m[id] = ch
+
+	go func() {
+		runMigrator(ch)
+		wg.Done()
+	}()
+}
+
+func (r *Runner) runMigrator(ctx context.Context, ch <-chan Migration, migrator Migrator, options migratorOptions) {
+	runMigrator(ctx, r.store, migrator, ch, options.tickInterval, options.tickClock)
+}
+
 // Stop will cancel the context used in Start, then blocks until Start has returned.
 func (r *Runner) Stop() {
 	r.cancel()
@@ -194,7 +194,7 @@ func (r *Runner) Stop() {
 // runMigrator runs the given migrator function periodically (on each read from ticker)
 // while the migration is not complete. We will periodically (on each read from migrations)
 // update our current view of the migration progress and (more importantly) its direction.
-func runMigrator(ctx context.Context, r *Runner, migrator Migrator, migrations <-chan Migration, tickInterval time.Duration, clock glock.Clock) {
+func runMigrator(ctx context.Context, store storeIface, migrator Migrator, migrations <-chan Migration, tickInterval time.Duration, clock glock.Clock) {
 	// Get initial migration. This channel will close when the context
 	// is canceled, so we don't need to do any more complex select here.
 	migration, ok := <-migrations
@@ -203,7 +203,7 @@ func runMigrator(ctx context.Context, r *Runner, migrator Migrator, migrations <
 	}
 
 	// We're just starting up - refresh our progress before migrating
-	if err := updateProgress(ctx, r.store, &migration, migrator); err != nil {
+	if err := updateProgress(ctx, store, &migration, migrator); err != nil {
 		log15.Error("Failed migration action", "id", migration.ID, "error", err)
 	}
 
@@ -215,7 +215,7 @@ func runMigrator(ctx context.Context, r *Runner, migrator Migrator, migrations <
 		case <-clock.After(tickInterval):
 			if !migration.Complete() {
 				// Run the migration only if there's something left to do
-				if err := runMigrationFunction(ctx, r.store, &migration, migrator); err != nil {
+				if err := runMigrationFunction(ctx, store, &migration, migrator); err != nil {
 					log15.Error("Failed migration action", "id", migration.ID, "error", err)
 				}
 			}
