@@ -3,6 +3,7 @@ package oobmigration
 import (
 	"context"
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/efritz/glock"
@@ -18,37 +19,42 @@ import (
 // direction or 0% in the reverse direction.
 type Runner struct {
 	store           storeIface
-	tickInterval    time.Duration
 	refreshInterval time.Duration
-	tickClock       glock.Clock
 	refreshClock    glock.Clock
-	migrators       map[int]Migrator
+	migrators       map[int]migratorAndOption
 	ctx             context.Context    // root context passed to the handler
 	cancel          context.CancelFunc // cancels the root context
 	finished        chan struct{}      // signals that Start has finished
 }
 
+type migratorOptions struct {
+	tickInterval time.Duration
+	tickClock    glock.Clock
+}
+
+type migratorAndOption struct {
+	Migrator
+	migratorOptions
+}
+
 var _ goroutine.BackgroundRoutine = &Runner{}
 
 const (
-	defaultTickInterval    = time.Second
 	defaultRefreshInterval = time.Second * 30
 )
 
 func NewRunnerWithDB(db dbutil.DB) *Runner {
-	return newRunner(NewStoreWithDB(dbconn.Global), defaultTickInterval, defaultRefreshInterval, glock.NewRealClock(), glock.NewRealClock())
+	return newRunner(NewStoreWithDB(dbconn.Global), defaultRefreshInterval, glock.NewRealClock())
 }
 
-func newRunner(store storeIface, tickInterval, refreshInterval time.Duration, tickClock, refreshClock glock.Clock) *Runner {
+func newRunner(store storeIface, refreshInterval time.Duration, refreshClock glock.Clock) *Runner {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &Runner{
 		store:           store,
-		tickInterval:    tickInterval,
 		refreshInterval: refreshInterval,
-		tickClock:       tickClock,
 		refreshClock:    refreshClock,
-		migrators:       map[int]Migrator{},
+		migrators:       map[int]migratorAndOption{},
 		ctx:             ctx,
 		cancel:          cancel,
 		finished:        make(chan struct{}),
@@ -61,12 +67,12 @@ var ErrMigratorConflict = errors.New("migrator already registered")
 
 // Register correlates the given migrator with the given migration identifier. An error is
 // returned if a migrator is already associated with this migration.
-func (r *Runner) Register(id int, migrator Migrator) error {
+func (r *Runner) Register(id int, migrator Migrator, options migratorOptions) error {
 	if _, ok := r.migrators[id]; ok {
 		return ErrMigratorConflict
 	}
 
-	r.migrators[id] = migrator
+	r.migrators[id] = migratorAndOption{migrator, options}
 	return nil
 }
 
@@ -75,38 +81,73 @@ func (r *Runner) Register(id int, migrator Migrator) error {
 func (r *Runner) Start() {
 	defer close(r.finished)
 
-	// Launch a producer goroutine that feeds a channel periodically with the migration
-	// state from the database. While a new value is not available, we'll use the data
-	// we saw most recently (and will use its progress field as a write-through cache).
-	migrationsCh := r.listMigrations(r.ctx)
+	ctx := r.ctx
+	var wg sync.WaitGroup
+	migrationProcesses := map[int]chan Migration{}
 
-	// Block until we list our migrations for the first time. Note that this channel will be
-	// closed once the context is closed, so we don't have to do a more complex select here.
-	migrations := <-migrationsCh
+	// Periodically read the complete set of out-of-band migrations from the database
+	for migrations := range r.listMigrations(ctx) {
+		for i := range migrations {
+			id := migrations[i].ID
+			migrator, ok := r.migrators[id]
+			if !ok {
+				continue
+			}
 
-	// Before calling Up or Down, we want to call Progress to determine if the migration can
-	// be removed immediately. Each time we re-assign the migrations variable above we'll set
-	// this flag to ensure we call Progress before any other action.
-	shouldCheckProgress := true
+			// Ensure we have a migration routine running for this migration
+			r.ensureProcessorIsRunning(&wg, migrationProcesses, id, func(ch <-chan Migration) {
+				r.runMigrator(ctx, ch, migrator.Migrator, migrator.migratorOptions)
+			})
 
-	for {
-		select {
-		case migrations = <-migrationsCh:
-			shouldCheckProgress = true
-		case <-r.tickClock.After(r.tickInterval):
-		case <-r.ctx.Done():
-			return
+			// Send the new migration to the processor routine. This loop guarantees
+			// that either (1) the routine can immediately write the new value into the
+			// free buffer slot, in which case we immediately break; (2) the routine
+			// cannot immediately write because the buffer slot is full with a migration
+			// value that is comparatively out of date.
+			//
+			// In this second case we'll read from the channel to free the buffer slot
+			// of the old value, then write our new value there.
+			//
+			// Note: This loop breaks after two iterations (at most).
+		loop:
+			for {
+				select {
+				case migrationProcesses[id] <- migrations[i]:
+					break loop
+				case <-migrationProcesses[id]:
+				}
+			}
 		}
-
-		if shouldCheckProgress {
-			// We just fetched these migrations - see which ones are live
-			migrations = r.mapFilterMigrations(r.ctx, migrations, r.updateProgressForMigration)
-			shouldCheckProgress = false
-		}
-
-		// Run the migration for this tick
-		migrations = r.mapFilterMigrations(r.ctx, migrations, r.runMigratorForMigration)
 	}
+
+	for _, ch := range migrationProcesses {
+		close(ch)
+	}
+	wg.Wait()
+}
+
+// ensureProcessorIsRunning ensures that there is a non-nil channel at migrationProcesses[id].
+// If this key is not set, a new channel is created and stored in this key. The channel is then
+// passed to runMigrator in a goroutine.
+//
+// This method logs the execution of the migration processor in the given wait group.
+func (r *Runner) ensureProcessorIsRunning(wg *sync.WaitGroup, migrationProcesses map[int]chan Migration, id int, runMigrator func(<-chan Migration)) {
+	if _, ok := migrationProcesses[id]; ok {
+		return
+	}
+
+	wg.Add(1)
+	ch := make(chan Migration, 1)
+	migrationProcesses[id] = ch
+
+	go func() {
+		runMigrator(ch)
+		wg.Done()
+	}()
+}
+
+func (r *Runner) runMigrator(ctx context.Context, ch <-chan Migration, migrator Migrator, options migratorOptions) {
+	runMigrator(ctx, r, migrator, ch, options.tickInterval, options.tickClock)
 }
 
 // listMigrations returns a channel that will asynchronously receive the full list of out-of-band
@@ -141,50 +182,11 @@ func (r *Runner) listMigrations(ctx context.Context) <-chan []Migration {
 	return ch
 }
 
-type progressFunc func(ctx context.Context, migration *Migration) error
-
-// mapFilterMigrations runs the given progress function on each migration in the given slice.
-// The progress of each migration is updated based on the progress function's return value.
-// Any migration that is now marked complete is filtered from the list. The list is filtered
-// in-place and a reference to the new slice (with adjusted length) is returned.
-func (r *Runner) mapFilterMigrations(ctx context.Context, migrations []Migration, fn progressFunc) []Migration {
-	filtered := migrations[:0]
-
-	for i := range migrations {
-		if err := fn(ctx, &migrations[i]); err != nil {
-			log15.Error("Failed migration action", "id", migrations[i].ID, "error", err)
-			continue
-		}
-
-		if !migrations[i].Complete() {
-			filtered = append(filtered, migrations[i])
-		}
-	}
-
-	return filtered
-}
-
-func (r *Runner) runMigratorForMigration(ctx context.Context, migration *Migration) error {
-	if migrator, ok := r.migrators[migration.ID]; ok {
-		return r.runMigrator(ctx, migration, migrator)
-	}
-
-	return nil
-}
-
-func (r *Runner) updateProgressForMigration(ctx context.Context, migration *Migration) error {
-	if migrator, ok := r.migrators[migration.ID]; ok {
-		return r.updateProgress(ctx, migration, migrator)
-	}
-
-	return nil
-}
-
 // runMigrator invokes the Up or Down method on the given migrator depending on the migration
 // direction. If an error occurs, it will be associated in the database with the migration record.
 // Regardless of the success of the migration function, the progress function on the migrator will be
 // invoked and the progress written to the database.
-func (r *Runner) runMigrator(ctx context.Context, migration *Migration, migrator Migrator) error {
+func (r *Runner) runMigratorX(ctx context.Context, migration *Migration, migrator Migrator) error {
 	migrationFunc := migrator.Up
 	if migration.ApplyReverse {
 		migrationFunc = migrator.Down
@@ -200,12 +202,12 @@ func (r *Runner) runMigrator(ctx context.Context, migration *Migration, migrator
 		}
 	}
 
-	return r.updateProgress(ctx, migration, migrator)
+	return r.updateProgressX(ctx, migration, migrator)
 }
 
 // updateProgress invokes the Progress method on the given migrator, updates the Progress field of the
 // given migration record, and updates the record in the database.
-func (r *Runner) updateProgress(ctx context.Context, migration *Migration, migrator Migrator) error {
+func (r *Runner) updateProgressX(ctx context.Context, migration *Migration, migrator Migrator) error {
 	progress, err := migrator.Progress(ctx)
 	if err != nil {
 		return err
@@ -237,7 +239,7 @@ func runMigrator(ctx context.Context, r *Runner, migrator Migrator, migrations <
 	}
 
 	// We're just starting up - refresh our progress before migrating
-	if err := r.updateProgress(ctx, &migration, migrator); err != nil {
+	if err := r.updateProgressX(ctx, &migration, migrator); err != nil {
 		log15.Error("Failed migration action", "id", migration.ID, "error", err)
 	}
 
@@ -249,7 +251,7 @@ func runMigrator(ctx context.Context, r *Runner, migrator Migrator, migrations <
 		case <-clock.After(tickInterval):
 			if !migration.Complete() {
 				// Run the migration only if there's something left to do
-				if err := r.runMigrator(ctx, &migration, migrator); err != nil {
+				if err := r.runMigratorX(ctx, &migration, migrator); err != nil {
 					log15.Error("Failed migration action", "id", migration.ID, "error", err)
 				}
 			}

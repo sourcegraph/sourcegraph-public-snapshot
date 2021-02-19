@@ -19,19 +19,17 @@ func TestRunner(t *testing.T) {
 		{ID: 1, Progress: 0.5},
 	}, nil)
 
-	runner := newRunner(store, time.Second, time.Second*30, tickClock, refreshClock)
+	runner := newRunner(store, time.Second*30, refreshClock)
 
 	migrator := NewMockMigrator()
 	migrator.ProgressFunc.SetDefaultReturn(0.5, nil)
 
-	if err := runner.Register(1, migrator); err != nil {
+	if err := runner.Register(1, migrator, migratorOptions{tickInterval: time.Second, tickClock: tickClock}); err != nil {
 		t.Fatalf("unexpected error registering migrator: %s", err)
 	}
 
 	go runner.Start()
-	tickClock.BlockingAdvance(time.Second)
-	tickClock.BlockingAdvance(time.Second)
-	tickClock.BlockingAdvance(time.Second)
+	tickN(tickClock, 3)
 	runner.Stop()
 
 	if callCount := len(migrator.UpFunc.History()); callCount != 3 {
@@ -51,18 +49,18 @@ func TestRunnerError(t *testing.T) {
 		{ID: 1, Progress: 0.5},
 	}, nil)
 
-	runner := newRunner(store, time.Second, time.Second*30, tickClock, refreshClock)
+	runner := newRunner(store, time.Second*30, refreshClock)
 
 	migrator := NewMockMigrator()
 	migrator.ProgressFunc.SetDefaultReturn(0.5, nil)
 	migrator.UpFunc.SetDefaultReturn(errors.New("uh-oh"))
 
-	if err := runner.Register(1, migrator); err != nil {
+	if err := runner.Register(1, migrator, migratorOptions{tickInterval: time.Second, tickClock: tickClock}); err != nil {
 		t.Fatalf("unexpected error registering migrator: %s", err)
 	}
 
 	go runner.Start()
-	tickClock.BlockingAdvance(time.Second)
+	tickN(tickClock, 1)
 	runner.Stop()
 
 	if calls := store.AddErrorFunc.history; len(calls) != 1 {
@@ -79,7 +77,9 @@ func TestRunnerError(t *testing.T) {
 
 func TestRunnerRemovesCompleted(t *testing.T) {
 	store := NewMockStoreIface()
-	tickClock := glock.NewMockClock()
+	tickClock1 := glock.NewMockClock()
+	tickClock2 := glock.NewMockClock()
+	tickClock3 := glock.NewMockClock()
 	refreshClock := glock.NewMockClock()
 
 	store.ListFunc.SetDefaultReturn([]Migration{
@@ -88,7 +88,7 @@ func TestRunnerRemovesCompleted(t *testing.T) {
 		{ID: 3, Progress: 0.9},
 	}, nil)
 
-	runner := newRunner(store, time.Second, time.Second*30, tickClock, refreshClock)
+	runner := newRunner(store, time.Second*30, refreshClock)
 
 	// Makes no progress
 	migrator1 := NewMockMigrator()
@@ -104,22 +104,20 @@ func TestRunnerRemovesCompleted(t *testing.T) {
 	migrator3.ProgressFunc.PushReturn(0.95, nil)
 	migrator3.ProgressFunc.SetDefaultReturn(1, nil)
 
-	if err := runner.Register(1, migrator1); err != nil {
+	if err := runner.Register(1, migrator1, migratorOptions{tickInterval: time.Second, tickClock: tickClock1}); err != nil {
 		t.Fatalf("unexpected error registering migrator: %s", err)
 	}
-	if err := runner.Register(2, migrator2); err != nil {
+	if err := runner.Register(2, migrator2, migratorOptions{tickInterval: time.Second, tickClock: tickClock2}); err != nil {
 		t.Fatalf("unexpected error registering migrator: %s", err)
 	}
-	if err := runner.Register(3, migrator3); err != nil {
+	if err := runner.Register(3, migrator3, migratorOptions{tickInterval: time.Second, tickClock: tickClock3}); err != nil {
 		t.Fatalf("unexpected error registering migrator: %s", err)
 	}
 
 	go runner.Start()
-	tickClock.BlockingAdvance(time.Second)
-	tickClock.BlockingAdvance(time.Second)
-	tickClock.BlockingAdvance(time.Second)
-	tickClock.BlockingAdvance(time.Second)
-	tickClock.BlockingAdvance(time.Second)
+	tickN(tickClock1, 5)
+	tickN(tickClock2, 5)
+	tickN(tickClock3, 5)
 	runner.Stop()
 
 	// not finished
