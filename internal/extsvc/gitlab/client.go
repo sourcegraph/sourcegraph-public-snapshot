@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"path"
@@ -240,14 +241,10 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 
 	c.rateLimitMonitor.Update(resp.Header)
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		err := HTTPError{code: resp.StatusCode}
-		type errBody struct {
-			Message string `json:"message"`
-		}
-		var eBody errBody
-		// Swallow error
-		_ = json.NewDecoder(resp.Body).Decode(&eBody)
-		err.message = eBody.Message
+		// We swallow the error here, because we don't want to fail. Parsing the body
+		// is just optional to provide some more context.
+		body, _ := ioutil.ReadAll(resp.Body)
+		err := NewHTTPError(resp.StatusCode, body)
 		return nil, resp.StatusCode, errors.Wrap(err, fmt.Sprintf("unexpected response from GitLab API (%s)", req.URL))
 	}
 
@@ -271,14 +268,14 @@ func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
 }
 
 type HTTPError struct {
-	code    int
-	message string
+	code int
+	body []byte
 }
 
-func NewHTTPError(code int, message string) *HTTPError {
-	return &HTTPError{
-		code:    code,
-		message: message,
+func NewHTTPError(code int, body []byte) HTTPError {
+	return HTTPError{
+		code: code,
+		body: body,
 	}
 }
 
@@ -287,7 +284,12 @@ func (err HTTPError) Code() int {
 }
 
 func (err HTTPError) Message() string {
-	return err.message
+	var errBody struct {
+		Message string `json:"message"`
+	}
+	// Swallow error, decoding the body as
+	_ = json.Unmarshal(err.body, &errBody)
+	return errBody.Message
 }
 
 func (err HTTPError) Error() string {
