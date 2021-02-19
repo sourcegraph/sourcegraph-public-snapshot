@@ -24,7 +24,7 @@ func TestRunner(t *testing.T) {
 	migrator := NewMockMigrator()
 	migrator.ProgressFunc.SetDefaultReturn(0.5, nil)
 
-	if err := runner.Register(1, migrator, MigratorOptions{Interval: time.Second, clock: tickClock}); err != nil {
+	if err := runner.Register(1, migrator, MigratorOptions{clock: tickClock}); err != nil {
 		t.Fatalf("unexpected error registering migrator: %s", err)
 	}
 
@@ -55,7 +55,7 @@ func TestRunnerError(t *testing.T) {
 	migrator.ProgressFunc.SetDefaultReturn(0.5, nil)
 	migrator.UpFunc.SetDefaultReturn(errors.New("uh-oh"))
 
-	if err := runner.Register(1, migrator, MigratorOptions{Interval: time.Second, clock: tickClock}); err != nil {
+	if err := runner.Register(1, migrator, MigratorOptions{clock: tickClock}); err != nil {
 		t.Fatalf("unexpected error registering migrator: %s", err)
 	}
 
@@ -104,13 +104,13 @@ func TestRunnerRemovesCompleted(t *testing.T) {
 	migrator3.ProgressFunc.PushReturn(0.95, nil)
 	migrator3.ProgressFunc.SetDefaultReturn(1, nil)
 
-	if err := runner.Register(1, migrator1, MigratorOptions{Interval: time.Second, clock: tickClock1}); err != nil {
+	if err := runner.Register(1, migrator1, MigratorOptions{clock: tickClock1}); err != nil {
 		t.Fatalf("unexpected error registering migrator: %s", err)
 	}
-	if err := runner.Register(2, migrator2, MigratorOptions{Interval: time.Second, clock: tickClock2}); err != nil {
+	if err := runner.Register(2, migrator2, MigratorOptions{clock: tickClock2}); err != nil {
 		t.Fatalf("unexpected error registering migrator: %s", err)
 	}
-	if err := runner.Register(3, migrator3, MigratorOptions{Interval: time.Second, clock: tickClock3}); err != nil {
+	if err := runner.Register(3, migrator3, MigratorOptions{clock: tickClock3}); err != nil {
 		t.Fatalf("unexpected error registering migrator: %s", err)
 	}
 
