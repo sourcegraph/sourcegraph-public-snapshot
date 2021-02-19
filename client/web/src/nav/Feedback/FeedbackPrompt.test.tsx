@@ -84,14 +84,14 @@ describe('FeedbackPrompt', () => {
     })
 
     describe('Error', () => {
+        const mockError = new Error('Something went really wrong')
         beforeAll(() => {
-            mockResponse = { loading: false, error: new Error('Broken') }
+            mockResponse = { loading: false, error: mockError }
         })
 
         test('Renders error alert correctly', () => {
-            expect(
-                queries.getByText('Something went wrong while sending your feedback. Please try again.')
-            ).toBeVisible()
+            expect(queries.getByText('Error submitting feedback:')).toBeVisible()
+            expect(queries.getByText(mockError.message)).toBeVisible()
         })
     })
 })
