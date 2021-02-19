@@ -24,7 +24,6 @@ interface GerritChangeAndPatchset {
 function buildGerritChangeString(changeId: string, patchsetId: string): string {
     // The "change directory prefix" is a prefix composed of the first two characters of the change ID, zero-padded.
     const changeDirectoryPrefix = changeId.slice(0, 2).padStart(2, '0')
-    patchsetId = patchsetId || '1' // Default patch set if it's not provided.
     return `refs/changes/${changeDirectoryPrefix}/${changeId}/${patchsetId}`
 }
 
@@ -87,8 +86,9 @@ const resolveFileListCodeView: ViewResolver<CodeView> = {
             return [target]
         }
 
-        const fileListElement = querySelectorAcrossShadowRoots(document,
-            '#app >> #app-element >> gr-change-view >> #fileList',
+        const fileListElement = querySelectorAcrossShadowRoots(
+            document,
+            '#app >> #app-element >> gr-change-view >> #fileList'
         )
         // Usually each `.file-row` which is `.expanded` will have a
         // corresponding `diffTable` under a sibling, with the common parent
@@ -168,8 +168,6 @@ const getLineElementFromLineNumber: DOMFunctions['getCodeElementFromLineNumber']
     }
     const contentCell = nextMatchingSibling(lineNumberCell, 'td.content')
     const codeElement = contentCell?.querySelector('.contentText')
-    // const lineRow = lineNumberCell?.closest('tr')
-    // const codeElement = lineRow?.querySelector(`.contentText[data-side="${side}]"`)
     return codeElement as HTMLElement
 }
 
@@ -341,12 +339,10 @@ export const gerritCodeHost: CodeHost = {
     // This overrides the default observeMutations because we need to handle shadow DOMS.
     observeMutations,
     getContext() {
-        const gerritChange = parseGerritChange()
-        // const gerritChangeString = buildGerritChangeString(gerritChange.changeId, gerritChange.patchsetId)
+        const { repoName } = parseGerritChange()
         return {
             privateRepository: true, // Gerrit is always private. Despite the fact that permissions can be set to be publicly viewable.
-            rawRepoName: gerritChange.repoName,
-            // revision: gerritChangeString,
+            rawRepoName: repoName,
         }
     },
     check: checkIsGerrit,
@@ -442,7 +438,7 @@ function nextMatchingSibling(element: Element, selector: string): HTMLElement | 
 
 function querySelectorAcrossShadowRoots(element: ParentNode, selectors: string | string[]): Element | null {
     if (typeof selectors === 'string') {
-        // The `>>` operator is a non-standard separator for shadow roots, used here to split the selector into an array.
+        // The `>>` operator is a custom separator for shadow roots, used here to split the selector into an array.
         selectors = selectors.split('>>')
     }
     let currentElement: ParentNode | null = element
