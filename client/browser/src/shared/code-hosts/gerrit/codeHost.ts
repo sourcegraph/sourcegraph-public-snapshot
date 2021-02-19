@@ -6,35 +6,73 @@ import { CodeHost } from '../shared/codeHost'
 import { CodeView, DOMFunctions } from '../shared/codeViews'
 import { queryWithSelector, ViewResolver, CustomSelectorFunction } from '../shared/views'
 
+const patchsetLabelPattern = /patchset (\d+)/i
+
 function checkIsGerrit(): boolean {
     const isGerrit = !!document.querySelector('gr-app#app')
     return isGerrit
 }
 
-interface GerritChangeAndPatchSet {
+interface GerritChangeAndPatchset {
     repoName: string
     changeId: string
-    patchSetId: string
+    patchsetId?: string
+    basePatchsetId?: string
     filePath?: string
 }
 
-function buildGerritChangeString({ changeId, patchSetId }: GerritChangeAndPatchSet): string {
+function buildGerritChangeString(changeId: string, patchsetId: string): string {
+    // The "change directory prefix" is a prefix composed of the first two characters of the change ID, zero-padded.
     const changeDirectoryPrefix = changeId.slice(0, 2).padStart(2, '0')
-    patchSetId = patchSetId || '1' // Default patch set if it's not provided.
-    return `refs/changes/${changeDirectoryPrefix}/${changeId}/${patchSetId}`
+    patchsetId = patchsetId || '1' // Default patch set if it's not provided.
+    return `refs/changes/${changeDirectoryPrefix}/${changeId}/${patchsetId}`
 }
 
-function parseGerritChange(): GerritChangeAndPatchSet {
+function getTextFromSelector(selector: string): string | undefined {
+    return querySelectorAcrossShadowRoots(document.body, selector)?.textContent ?? undefined
+}
+
+function getBaseAndPatchsetId(): { basePatchsetId: string | undefined; patchsetId: string | undefined } {
+    // On the diff overview page
+    const basePatchDropdownLabel =
+        getTextFromSelector(
+            '#app >> #app-element >> gr-change-view >> #fileListHeader >> #rangeSelect >> #basePatchDropdown >> #triggerText'
+        ) ??
+        getTextFromSelector(
+            '#app >> #app-element >> gr-diff-view >> #rangeSelect >> #basePatchDropdown >> #triggerText'
+        )
+    const patchNumberDropdownLabel =
+        getTextFromSelector(
+            '#app >> #app-element >> gr-change-view >> #fileListHeader >> #rangeSelect >> #patchNumDropdown >> #triggerText'
+        ) ??
+        getTextFromSelector('#app >> #app-element >> gr-diff-view >> #rangeSelect >> #patchNumDropdown >> #triggerText')
+
+    const basePatchsetId = basePatchDropdownLabel && getPatchsetIdFromLabel(basePatchDropdownLabel)
+    const patchsetId = patchNumberDropdownLabel && getPatchsetIdFromLabel(patchNumberDropdownLabel)
+
+    return { basePatchsetId, patchsetId }
+}
+
+function getPatchsetIdFromLabel(label: string): string | undefined {
+    const patternMatch = patchsetLabelPattern.exec(label)
+    if (patternMatch?.[1]) {
+        return patternMatch[1]
+    }
+    return undefined
+}
+
+function parseGerritChange(): GerritChangeAndPatchset {
     const path = new URL(window.location.href).pathname
     const pathParts = path.split('/')
     const cPart = pathParts.indexOf('c')
-    const repoName = pathParts[cPart + 1]
     const plusSign = pathParts.indexOf('+')
+    const repoName = pathParts.slice(cPart + 1, plusSign).join('/')
     const changeId = pathParts[plusSign + 1]
-    const patchSetId = pathParts[plusSign + 2]
     const filePath = pathParts.slice(plusSign + 3).join('/')
     const repoNameWithServer = window.location.hostname + '/' + repoName
-    return { repoName: repoNameWithServer, changeId, patchSetId, filePath }
+    const { basePatchsetId, patchsetId } = getBaseAndPatchsetId()
+    const parsedData = { repoName: repoNameWithServer, changeId, patchsetId, filePath, basePatchsetId }
+    return parsedData
 }
 
 const resolveFileListCodeView: ViewResolver<CodeView> = {
@@ -49,12 +87,9 @@ const resolveFileListCodeView: ViewResolver<CodeView> = {
             return [target]
         }
 
-        const fileListElement = querySelectorAcrossShadowRoots(document, [
-            '#app',
-            '#app-element',
-            'gr-change-view',
-            '#fileList',
-        ])
+        const fileListElement = querySelectorAcrossShadowRoots(document,
+            '#app >> #app-element >> gr-change-view >> #fileList',
+        )
         // Usually each `.file-row` which is `.expanded` will have a
         // corresponding `diffTable` under a sibling, with the common parent
         // being `.stickArea`.
@@ -65,7 +100,7 @@ const resolveFileListCodeView: ViewResolver<CodeView> = {
             if (!stickyArea) {
                 return
             }
-            return querySelectorAcrossShadowRoots(stickyArea, ['gr-diff-host', 'gr-diff', '#diffTable']) as HTMLElement
+            return querySelectorAcrossShadowRoots(stickyArea, 'gr-diff-host >> gr-diff >> #diffTable') as HTMLElement
         })
         return compact(diffTables)
     },
@@ -86,8 +121,18 @@ const resolveFileListCodeView: ViewResolver<CodeView> = {
         }
 
         const gerritChange = parseGerritChange()
-        const gerritChangeString = buildGerritChangeString(gerritChange)
-        const parentCommit = getParentCommit() || ''
+        if (!gerritChange.patchsetId) {
+            console.error('Sourcegraph: Cannot get Gerrit patchset ID')
+            return null
+        }
+        const gerritChangeStringForHead = buildGerritChangeString(gerritChange.changeId, gerritChange.patchsetId)
+
+        let parentCommit: string
+        if (!gerritChange.basePatchsetId) {
+            parentCommit = getParentCommit() || gerritChangeStringForHead + '^'
+        } else {
+            parentCommit = buildGerritChangeString(gerritChange.changeId, gerritChange.basePatchsetId)
+        }
 
         injectCodeViewStyle(diffTableElement)
 
@@ -95,7 +140,7 @@ const resolveFileListCodeView: ViewResolver<CodeView> = {
             element: diffTableElement,
             dom: diffTableDomFunctions,
             resolveFileInfo() {
-                return {
+                const fileInfo = {
                     base: {
                         filePath: filePath || '',
                         rawRepoName: gerritChange.repoName,
@@ -104,9 +149,11 @@ const resolveFileListCodeView: ViewResolver<CodeView> = {
                     head: {
                         filePath: filePath || '',
                         rawRepoName: gerritChange.repoName,
-                        commitID: gerritChangeString,
+                        commitID: gerritChangeStringForHead,
                     },
                 }
+                console.log('resolveFileListCodeView: fileInfo', fileInfo)
+                return fileInfo
             },
         }
     },
@@ -173,14 +220,10 @@ const resolveFilePageCodeView: ViewResolver<CodeView> = {
         // Because we expect only one code view to be present on an individual file
         // page, we don't have to consider the existing element (`target`) here in
         // the same way as in resolveFileListCodeView.
-        const diffTableElement = querySelectorAcrossShadowRoots(document.body, [
-            '#app',
-            '#app-element',
-            'main > gr-diff-view',
-            '#diffHost',
-            '#diff',
-            '#diffTable',
-        ])
+        const diffTableElement = querySelectorAcrossShadowRoots(
+            document.body,
+            '#app >> #app-element >> gr-diff-view >> #diffHost >> #diff >> #diffTable'
+        )
 
         if (diffTableElement) {
             return [diffTableElement as HTMLElement]
@@ -189,11 +232,14 @@ const resolveFilePageCodeView: ViewResolver<CodeView> = {
     },
     resolveView(element: HTMLElement): CodeView | null {
         const gerritChange = parseGerritChange()
-        const gerritChangeString = buildGerritChangeString(gerritChange)
-        let parent = getParentCommit() || gerritChangeString + '^'
-        // Possible situation: we cannot get the parent commit on the page
-        if (!parent) {
-            parent = gerritChangeString + '^'
+        if (!gerritChange.patchsetId) {
+            console.error('Sourcegraph: cannot find patchset ID')
+            return null
+        }
+        const gerritChangeString = buildGerritChangeString(gerritChange.changeId, gerritChange.patchsetId)
+        let baseCommit = gerritChangeString + '^' // Default fallback parent commit.
+        if (gerritChange.basePatchsetId) {
+            baseCommit = buildGerritChangeString(gerritChange.changeId, gerritChange.basePatchsetId)
         }
 
         injectCodeViewStyle(element)
@@ -217,11 +263,11 @@ const resolveFilePageCodeView: ViewResolver<CodeView> = {
                 return mountElement
             },
             resolveFileInfo() {
-                return {
+                const fileInfo = {
                     base: {
                         filePath: gerritChange.filePath || '',
                         rawRepoName: gerritChange.repoName,
-                        commitID: parent,
+                        commitID: baseCommit,
                     },
                     head: {
                         filePath: gerritChange.filePath || '',
@@ -229,6 +275,8 @@ const resolveFilePageCodeView: ViewResolver<CodeView> = {
                         commitID: gerritChangeString,
                     },
                 }
+                console.log('resolveFilePageCodeView: fileInfo', fileInfo)
+                return fileInfo
             },
         }
     },
@@ -294,11 +342,11 @@ export const gerritCodeHost: CodeHost = {
     observeMutations,
     getContext() {
         const gerritChange = parseGerritChange()
-        const gerritChangeString = buildGerritChangeString(gerritChange)
+        // const gerritChangeString = buildGerritChangeString(gerritChange.changeId, gerritChange.patchsetId)
         return {
             privateRepository: true, // Gerrit is always private. Despite the fact that permissions can be set to be publicly viewable.
             rawRepoName: gerritChange.repoName,
-            revision: gerritChangeString,
+            // revision: gerritChangeString,
         }
     },
     check: checkIsGerrit,
@@ -333,24 +381,18 @@ export const gerritCodeHost: CodeHost = {
 }
 
 const toolbarSelector: CustomSelectorFunction = () => {
-    const toolbar = querySelectorAcrossShadowRoots(document.body, [
-        '#app',
-        '#app-element',
-        'main > gr-change-view',
-        '#actions',
-        '#secondaryActions',
-    ])
+    const toolbar = querySelectorAcrossShadowRoots(
+        document.body,
+        '#app >> #app-element >> gr-change-view >> #actions >> #secondaryActions'
+    )
     return toolbar ? [toolbar as HTMLElement] : null
 }
 
 function getParentCommit(): string | null | undefined {
-    const metadataPanel = querySelectorAcrossShadowRoots(document.body, [
-        '#app',
-        '#app-element',
-        'gr-change-view',
-        '#metadata',
-        'gr-commit-info',
-    ])
+    const metadataPanel = querySelectorAcrossShadowRoots(
+        document.body,
+        '#app >> #app-element >> gr-change-view >> #metadata >> gr-commit-info'
+    )
     if (!metadataPanel) {
         return null
     }
@@ -398,7 +440,11 @@ function nextMatchingSibling(element: Element, selector: string): HTMLElement | 
     return null
 }
 
-function querySelectorAcrossShadowRoots(element: ParentNode, selectors: string[]): Element | null {
+function querySelectorAcrossShadowRoots(element: ParentNode, selectors: string | string[]): Element | null {
+    if (typeof selectors === 'string') {
+        // The `>>` operator is a non-standard separator for shadow roots, used here to split the selector into an array.
+        selectors = selectors.split('>>')
+    }
     let currentElement: ParentNode | null = element
     const selectorsExceptLast = selectors.slice(0, -1)
     const lastSelector = selectors[selectors.length - 1]
