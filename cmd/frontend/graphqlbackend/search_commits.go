@@ -419,16 +419,9 @@ func logCommitSearchResultsToResolvers(ctx context.Context, db dbutil.DB, op *se
 			matchBody, matchHighlights = cleanDiffPreview(fromVCSHighlights(rawResult.DiffHighlights), rawResult.Diff.Raw)
 		}
 
-		var err error
-		results[i].label, err = createLabel(rawResult, commitResolver)
-		if err != nil {
-			return nil, err
-		}
+		results[i].label = createLabel(rawResult, commitResolver)
 
-		url, err := commitResolver.URL()
-		if err != nil {
-			return nil, err
-		}
+		url := commitResolver.URL()
 
 		results[i].url = url
 		match := &searchResultMatchResolver{body: matchBody, highlights: matchHighlights, url: url}
@@ -487,17 +480,14 @@ func cleanDiffPreview(highlights []*highlightedRange, rawDiffResult string) (str
 	return body, highlights
 }
 
-func createLabel(rawResult *git.LogCommitSearchResult, commitResolver *GitCommitResolver) (string, error) {
+func createLabel(rawResult *git.LogCommitSearchResult, commitResolver *GitCommitResolver) string {
 	message := commitSubject(rawResult.Commit.Message)
 	author := rawResult.Commit.Author.Name
 	repoName := displayRepoName(commitResolver.Repository().Name())
 	repoURL := commitResolver.Repository().URL()
-	url, err := commitResolver.URL()
-	if err != nil {
-		return "", err
-	}
+	url := commitResolver.URL()
 
-	return fmt.Sprintf("[%s](%s) › [%s](%s): [%s](%s)", repoName, repoURL, author, url, message, url), nil
+	return fmt.Sprintf("[%s](%s) › [%s](%s): [%s](%s)", repoName, repoURL, author, url, message, url)
 }
 
 func commitSubject(message string) string {

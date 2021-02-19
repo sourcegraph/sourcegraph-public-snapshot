@@ -173,8 +173,8 @@ func (r *GitCommitResolver) Parents(ctx context.Context) ([]*GitCommitResolver, 
 	return resolvers, nil
 }
 
-func (r *GitCommitResolver) URL() (string, error) {
-	return r.repoResolver.URL() + "/-/commit/" + r.inputRevOrImmutableRev(), nil
+func (r *GitCommitResolver) URL() string {
+	return r.repoResolver.URL() + "/-/commit/" + r.inputRevOrImmutableRev()
 }
 
 func (r *GitCommitResolver) CanonicalURL() (string, error) {
