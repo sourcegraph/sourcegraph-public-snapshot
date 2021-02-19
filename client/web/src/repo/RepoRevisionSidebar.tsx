@@ -1,6 +1,7 @@
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
 import * as H from 'history'
 import React, { useCallback, useEffect, useState } from 'react'
+import { Button } from 'reactstrap'
 import { FormatListBulletedIcon } from '../../../shared/src/components/icons'
 import { Resizable } from '../../../shared/src/components/Resizable'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
@@ -10,29 +11,6 @@ import { AbsoluteRepoFile } from '../../../shared/src/util/url'
 import { Tree } from '../tree/Tree'
 import { useLocalStorage } from '../util/useLocalStorage'
 import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
-
-function useMultiKeyPress(): any {
-    const [keysPressed, setKeyPressed] = useState(new Set([]))
-
-    useEffect(() => {
-        function downHandler({ key }: { key: string[] }): void {
-            setKeyPressed(keysPressed.add(key))
-        }
-
-        function upHandler({ key }: { key: string[] }): void {
-            keysPressed.delete(key)
-            setKeyPressed(keysPressed)
-        }
-        window.addEventListener('keydown', downHandler)
-        window.addEventListener('keyup', upHandler)
-        return () => {
-            window.removeEventListener('keydown', downHandler)
-            window.removeEventListener('keyup', upHandler)
-        }
-    }, [keysPressed]) // Empty array ensures that effect is only run on mount and unmount
-
-    return keysPressed
-}
 
 interface Props extends AbsoluteRepoFile, ExtensionsControllerProps, ThemeProps {
     repoID: Scalars['ID']
@@ -74,11 +52,6 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
     //     )
     // }
 
-    const keysPressed = useMultiKeyPress()
-    const hsrfPressed = areKeysPressed(['s'], keysPressed)
-
-    console.log(hsrfPressed)
-
     const [tabIndex, setTabIndex] = useLocalStorage('repo-revision-sidebar-last-tab', 0)
     const [showSidebar, setShowSidebar] = useLocalStorage('repo-revision-sidebar-hidden', false)
 
@@ -111,6 +84,12 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                     <TabList>
                         <Tab>Files</Tab>
                         <Tab>Symbols</Tab>
+                        <Button
+                            onClick={sidebarToggle}
+                            close={true}
+                            className="bg-transparent border-0 close ml-auto"
+                            title="Close sidebar (Alt+S/Opt+S)"
+                        />
                     </TabList>
                     <div
                         aria-hidden={true}

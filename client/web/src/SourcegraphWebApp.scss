@@ -15,9 +15,9 @@ body,
     height: 100%;
 }
 
-:focus {
-    outline: 3px solid var(--primary) !important;
-}
+// :focus {
+//     outline: 3px solid var(--primary) !important;
+// }
 
 // Document highlight is the background color for tokens which are matched with
 // a result from a document highlight provider. e.g. for references of the token
