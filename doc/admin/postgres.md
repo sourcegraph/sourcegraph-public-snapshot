@@ -1,12 +1,33 @@
-# Upgrading PostgreSQL
+# PostgreSQL
 
-Sourcegraph uses PostgreSQL as its main internal database and this documentation describes how to upgrade PostgreSQL between major versions.
+Sourcegraph uses several PostgreSQL databases to support various functionality. These databases are:
 
-> NOTE: ⚠️ Upgrading the PostgreSQL database requires stopping your Sourcegraph deployment which will result in **downtime**.
+- pgsql or primary: responsible for user data and account information
+- codeintel-db: provides support for lsif data and part of the code-intelligence
 
 ## Version requirements
 
 We support any version **starting from 9.6**.
+
+## Role requirements
+
+The user provided to Sourcegraph must have full access to the `sg` database and be able to create the following
+extensions:
+
+```
+citext
+hstore
+intarray
+pg_stat_statements
+pg_trgm
+```
+
+# Upgrading PostgreSQL
+
+Sourcegraph uses PostgreSQL as its main internal database and this documentation describes how to upgrade PostgreSQL
+between major versions.
+
+> NOTE: ⚠️ Upgrading the PostgreSQL database requires stopping your Sourcegraph deployment which will result in **downtime**.
 
 ## Upgrading single node Docker deployments
 
@@ -112,14 +133,20 @@ Additionally the upgrade process assumes it can write to the parent directory of
 
 ## Upgrading external PostgreSQL instances
 
-When running an external PostgreSQL instance, please refer to your provider documentation for upgrade procedures.
+When running an external PostgreSQL instance, please do the following:
 
-- [AWS RDS](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_UpgradeDBInstance.PostgreSQL.html)
-- [AWS Aurora](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/USER_UpgradeDBInstance.Upgrading.html)
-- [GCP CloudSQL](https://cloud.google.com/sql/docs/postgres/db-versions)
-- [Azure DB](https://docs.microsoft.com/en-us/azure/postgresql/concepts-supported-versions#managing-updates-and-upgrades)
-- [Heroku](https://devcenter.heroku.com/articles/upgrading-heroku-postgres-databases)
-- [EnterpriseDB](https://www.enterprisedb.com/docs/en/9.6/pg/upgrading.html)
-- [Citus](http://docs.citusdata.com/en/v8.1/admin_guide/upgrading_citus.html)
-- [Aiven PostgreSQL](https://help.aiven.io/postgresql/operations/how-to-perform-a-postgresql-in-place-major-version-upgrade)
-- [Your own PostgreSQL](https://www.postgresql.org/docs/11/pgupgrade.html)
+1. Back up the Postgres DB so that you can restore to the old version should anything go wrong.
+2. Turn off Sourcegraph entirely (bring down all containers and pods so they cannot talk to Postgres.)
+3. Upgrade Postgres to the latest version following your provider's instruction or your preferred method:
+  - [AWS RDS](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_UpgradeDBInstance.PostgreSQL.html)
+  - [AWS Aurora](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/USER_UpgradeDBInstance.Upgrading.html)
+  - [GCP CloudSQL](https://cloud.google.com/sql/docs/postgres/db-versions)
+  - [Azure DB](https://docs.microsoft.com/en-us/azure/postgresql/concepts-supported-versions#managing-updates-and-upgrades)
+  - [Heroku](https://devcenter.heroku.com/articles/upgrading-heroku-postgres-databases)
+  - [EnterpriseDB](https://www.enterprisedb.com/docs/en/9.6/pg/upgrading.html)
+  - [Citus](http://docs.citusdata.com/en/v8.1/admin_guide/upgrading_citus.html)
+  - [Aiven PostgreSQL](https://help.aiven.io/postgresql/operations/how-to-perform-a-postgresql-in-place-major-version-upgrade)
+  - [Your own PostgreSQL](https://www.postgresql.org/docs/11/pgupgrade.html)
+4. Turn Sourcegraph back on connecting to the now-upgraded database.
+
+> IMPORTANT: Do not allow Sourcegraph to run/connect to the new Postgres database until it has been fully populated with your data. Doing so could result in Sourcegraph trying to create e.g. a new DB schema and partially migrating. If this happens to you, restore from the backup you previously took or contact us (support@sourcegraph.com)
