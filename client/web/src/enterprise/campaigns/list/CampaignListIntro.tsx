@@ -30,33 +30,26 @@ export const CampaignListIntro: React.FunctionComponent<CampaignListIntroProps> 
 )
 
 const CampaignChangelogAlert: React.FunctionComponent = () => (
-    <DismissibleAlert className="campaign-list-intro__alert" partialStorageKey="campaign-list-intro-changelog-3.24">
+    <DismissibleAlert className="campaign-list-intro__alert" partialStorageKey="campaign-list-intro-changelog-3.25">
         <div className="campaign-list-intro__card card h-100 p-2">
             <div className="card-body">
-                <h4>New campaigns features in version 3.24</h4>
+                <h4>New campaigns features in version 3.25</h4>
                 <ul className="text-muted mb-0 pl-3">
                     <li>
-                        <code>src</code> now executes campaigns{' '}
-                        <a href="https://github.com/sourcegraph/src-cli/pull/412">significantly faster</a> on Intel
-                        macOS
-                    </li>
-                    <li>
-                        Campaign specs now allow{' '}
-                        <a href="https://docs.sourcegraph.com/campaigns/references/campaign_spec_yaml_reference#steps-outputs">
-                            step outputs
-                        </a>{' '}
-                        to be captured for later use in templated fields
-                    </li>
-                    <li>
-                        Campaign spec <code>changesetTemplate</code> fields now support{' '}
-                        <a href="https://docs.sourcegraph.com/campaigns/references/campaign_spec_templating">
-                            templating
+                        Better monorepo support by{' '}
+                        <a href="https://docs.sourcegraph.com/campaigns/how-tos/creating_changesets_per_project_in_monorepos#1-define-project-locations-with-workspaces">
+                            allowing multiple workspaces to be defined within a single repository
+                        </a>
+                        , and{' '}
+                        <a href="https://docs.sourcegraph.com/campaigns/how-tos/creating_changesets_per_project_in_monorepos#only-downloading-workspace-data-in-large-repositories">
+                            only downloading workspaces that are being updated
                         </a>
                     </li>
                     <li>
-                        When creating or updating a campaign, the preview now provides more information about the
-                        operations to be performed on each changeset
+                        When previewing campaigns, changesets can now be filtered by their current state or pending
+                        actions
                     </li>
+                    <li>Failed changesets can now be retried without re-applying the campaign spec</li>
                 </ul>
             </div>
         </div>
