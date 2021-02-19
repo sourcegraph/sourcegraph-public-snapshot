@@ -247,6 +247,9 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 		return nil
 	}
 
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	queryExceptRepos, err := queryToZoektQuery(args.PatternInfo, typ)
 	if err != nil {
 		return err
@@ -265,31 +268,6 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 	k := zoektutil.ResultCountFactor(len(repos.repoBranches), args.PatternInfo.FileMatchLimit, args.Mode == search.ZoektGlobalSearch)
 	searchOpts := zoektutil.SearchOpts(ctx, k, args.PatternInfo)
 
-	// Make a copy of the original context so that we can respect deadlines during repo resolution.
-	originalCtx := ctx
-	if deadline, ok := ctx.Deadline(); ok {
-		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
-		searchOpts.MaxWallTime = time.Until(deadline)
-		if searchOpts.MaxWallTime < 0 {
-			return ctx.Err()
-		}
-		// We don't want our context's deadline to cut off zoekt so that we can get the results
-		// found before the deadline.
-		//
-		// We'll create a new context that gets cancelled if the other context is cancelled for any
-		// reason other than the deadline being exceeded. This essentially means the deadline for the new context
-		// will be `deadline + time for zoekt to cancel + network latency`.
-		var cancel context.CancelFunc
-		ctx, cancel = contextWithoutDeadline(ctx)
-		defer cancel()
-	}
-
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	// We use repoRevFuncChan to synchronize repo resolution and event processing.
-	repoRevFuncChan := make(chan zoektutil.RepoRevFunc, 1)
-
 	// Start event stream.
 	t0 := time.Now()
 
@@ -300,11 +278,57 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 	}
 	foundResults := false
 
-	first := sync.Once{}
+	// We use reposResolved to synchronize repo resolution and event processing.
+	reposResolved := make(chan struct{})
 	var getRepoInputRev zoektutil.RepoRevFunc
 
-	g := errgroup.Group{}
+	g, ctx := errgroup.WithContext(ctx)
+
+	// Resolve repositories.
 	g.Go(func() error {
+		defer close(reposResolved)
+		if args.Mode == search.ZoektGlobalSearch {
+			repos, err := getRepos(ctx, args.RepoPromise)
+			if err != nil {
+				return err
+			}
+			repoRevMap := make(map[string]*search.RepositoryRevisions, len(repos))
+			for _, r := range repos {
+				repoRevMap[string(r.Repo.Name)] = r
+			}
+			getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
+				if repoRev, ok := repoRevMap[file.Repository]; ok {
+					return repoRev.Repo, repoRev.RevSpecs(), true
+				}
+				return nil, nil, false
+			}
+		} else {
+			getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
+				repo, inputRevs := repos.GetRepoInputRev(file)
+				return repo, inputRevs, true
+			}
+		}
+		return nil
+	})
+
+	g.Go(func() error {
+		ctx := ctx
+		if deadline, ok := ctx.Deadline(); ok {
+			// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
+			searchOpts.MaxWallTime = time.Until(deadline)
+			if searchOpts.MaxWallTime < 0 {
+				return ctx.Err()
+			}
+			// We don't want our context's deadline to cut off zoekt so that we can get the results
+			// found before the deadline.
+			//
+			// We'll create a new context that gets cancelled if the other context is cancelled for any
+			// reason other than the deadline being exceeded. This essentially means the deadline for the new context
+			// will be `deadline + time for zoekt to cancel + network latency`.
+			var cancel context.CancelFunc
+			ctx, cancel = contextWithoutDeadline(ctx)
+			defer cancel()
+		}
 		return args.Zoekt.Client.StreamSearch(ctx, finalQuery, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
 
 			mu.Lock()
@@ -324,9 +348,7 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 			maxLineMatches := 25 + k
 			maxLineFragmentMatches := 3 + k
 
-			first.Do(func() {
-				getRepoInputRev = <-repoRevFuncChan
-			})
+			<-reposResolved
 			// getRepoInputRev is nil only if we encountered an error during repo resolution.
 			if getRepoInputRev == nil {
 				return
@@ -412,36 +434,7 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 		}))
 	})
 
-	// Resolve repositories.
-	g.Go(func() error {
-		defer close(repoRevFuncChan)
-		var f zoektutil.RepoRevFunc
-		if args.Mode == search.ZoektGlobalSearch {
-			repos, err := getRepos(originalCtx, args.RepoPromise)
-			if err != nil {
-				return err
-			}
-			repoRevMap := make(map[string]*search.RepositoryRevisions, len(repos))
-			for _, r := range repos {
-				repoRevMap[string(r.Repo.Name)] = r
-			}
-			f = func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
-				if repoRev, ok := repoRevMap[file.Repository]; ok {
-					return repoRev.Repo, repoRev.RevSpecs(), true
-				}
-				return nil, nil, false
-			}
-		} else {
-			f = func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
-				repo, inputRevs := repos.GetRepoInputRev(file)
-				return repo, inputRevs, true
-			}
-		}
-		repoRevFuncChan <- f
-		return nil
-	})
-
-	if g.Wait() != nil {
+	if err := g.Wait(); err != nil {
 		return err
 	}
 
