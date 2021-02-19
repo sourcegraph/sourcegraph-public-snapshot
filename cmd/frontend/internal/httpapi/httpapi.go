@@ -112,7 +112,7 @@ func NewInternalHandler(m *mux.Router, db dbutil.DB, schema *graphql.Schema, new
 
 	m.Get(apirouter.ExternalServiceConfigs).Handler(trace.Route(handler(serveExternalServiceConfigs)))
 	m.Get(apirouter.ExternalServicesList).Handler(trace.Route(handler(serveExternalServicesList)))
-	m.Get(apirouter.PhabricatorRepoCreate).Handler(trace.Route(handler(servePhabricatorRepoCreate)))
+	m.Get(apirouter.PhabricatorRepoCreate).Handler(trace.Route(handler(servePhabricatorRepoCreate(db))))
 	reposList := &reposListServer{
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 		Repos:                 backend.Repos,

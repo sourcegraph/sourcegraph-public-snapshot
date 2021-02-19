@@ -281,7 +281,7 @@ func (r *RepositoryResolver) ExternalURLs(ctx context.Context) ([]*externallink.
 	if err != nil {
 		return nil, err
 	}
-	return externallink.Repository(ctx, repo)
+	return externallink.Repository(ctx, r.db, repo)
 }
 
 func (r *RepositoryResolver) Icon() string {
@@ -390,7 +390,7 @@ func (r *RepositoryResolver) PermissionsInfo(ctx context.Context) (PermissionsIn
 	return EnterpriseResolvers.authzResolver.RepositoryPermissionsInfo(ctx, r.ID())
 }
 
-func (*schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
+func (r *schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
 	Callsign string
 	Name     *string
 	// TODO(chris): Remove URI in favor of Name.
@@ -401,7 +401,7 @@ func (*schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
 		args.URI = args.Name
 	}
 
-	_, err := database.GlobalPhabricator.CreateIfNotExists(ctx, args.Callsign, api.RepoName(*args.URI), args.URL)
+	_, err := database.Phabricator(r.db).CreateIfNotExists(ctx, args.Callsign, api.RepoName(*args.URI), args.URL)
 	if err != nil {
 		log15.Error("adding phabricator repo", "callsign", args.Callsign, "name", args.URI, "url", args.URL)
 	}
@@ -444,7 +444,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 	}
 
 	origin := ""
-	if phabRepo, err := database.GlobalPhabricator.GetByName(ctx, api.RepoName(args.RepoName)); err == nil {
+	if phabRepo, err := database.Phabricator(r.db).GetByName(ctx, api.RepoName(args.RepoName)); err == nil {
 		origin = phabRepo.URL
 	}
 

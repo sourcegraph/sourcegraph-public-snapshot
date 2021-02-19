@@ -45,23 +45,25 @@ func serveReposGetByName(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func servePhabricatorRepoCreate(w http.ResponseWriter, r *http.Request) error {
-	var repo api.PhabricatorRepoCreateRequest
-	err := json.NewDecoder(r.Body).Decode(&repo)
-	if err != nil {
-		return err
+func servePhabricatorRepoCreate(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		var repo api.PhabricatorRepoCreateRequest
+		err := json.NewDecoder(r.Body).Decode(&repo)
+		if err != nil {
+			return err
+		}
+		phabRepo, err := database.Phabricator(db).CreateOrUpdate(r.Context(), repo.Callsign, repo.RepoName, repo.URL)
+		if err != nil {
+			return err
+		}
+		data, err := json.Marshal(phabRepo)
+		if err != nil {
+			return err
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(data)
+		return nil
 	}
-	phabRepo, err := database.GlobalPhabricator.CreateOrUpdate(r.Context(), repo.Callsign, repo.RepoName, repo.URL)
-	if err != nil {
-		return err
-	}
-	data, err := json.Marshal(phabRepo)
-	if err != nil {
-		return err
-	}
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(data)
-	return nil
 }
 
 // serveExternalServiceConfigs serves a JSON response that is an array of all
