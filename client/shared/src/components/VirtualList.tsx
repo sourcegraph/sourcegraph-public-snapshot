@@ -36,7 +36,7 @@ interface Props<T, U> {
 
 interface State {}
 
-export class VirtualList<T, U = undefined> extends React.PureComponent<Props<T, U>, State> {
+export class VirtualList<TItem, TExtraItemProps = undefined> extends React.PureComponent<Props<TItem, TExtraItemProps>, State> {
     public onChangeVisibility = (isVisible: boolean, index: number): void => {
         if (isVisible && index >= this.props.itemsToShow - 2) {
             this.props.onShowMoreItems()
