@@ -12,7 +12,7 @@ import (
 // the current version of Sourcegraph.
 func registerMigrations(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
 	migrators := map[int]oobmigration.Migrator{
-		lsifstore.DiagnosticsCountMigratorID: lsifstore.NewDiagnosticsCountMigrator(services.lsifStore),
+		lsifstore.DiagnosticsCountMigrationID: lsifstore.NewDiagnosticsCountMigrator(services.lsifStore),
 	}
 
 	for id, migrator := range migrators {
