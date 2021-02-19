@@ -19,12 +19,25 @@ fi
 echo "--- Running a daemonized $IMAGE as the test subject..."
 CONTAINER="$(docker container run -d "$IMAGE")"
 function cleanup() {
+  exit_status=$?
+  if [ $exit_status -ne 0 ]; then
+    # Expand the output if our run failed.
+    echo "^^^ +++"
+  fi
+
   jobs -p -r | xargs kill
   echo "--- server logs"
   docker logs --timestamps "$CONTAINER"
   echo "--- docker cleanup"
   docker container rm -f "$CONTAINER"
   docker image rm -f "$IMAGE"
+
+  if [ $exit_status -ne 0 ]; then
+    # This command will fail, so our last step will be expanded. We don't want
+    # to expand "docker cleanup" so we add in a dummy section.
+    echo "--- e2e test failed"
+    echo "See yarn run test-e2e section for test runner logs."
+  fi
 }
 trap cleanup EXIT
 
