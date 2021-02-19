@@ -13,9 +13,8 @@ import (
 
 const slowDefinitionsRequestThreshold = time.Second
 
-// defintionMonikersLimit is the number of moniker results that can be returned to fulfill a
-// single definitions request.
-const defintionMonikersLimit = 100
+// DefinitionsLimit is maximum the number of locations returned from Definitions.
+const DefinitionsLimit = 100
 
 // Definitions returns the list of source locations that define the symbol at the given position.
 func (r *queryResolver) Definitions(ctx context.Context, line, character int) (_ []AdjustedLocation, err error) {
@@ -47,12 +46,14 @@ func (r *queryResolver) Definitions(ctx context.Context, line, character int) (_
 	for i := range adjustedUploads {
 		traceLog(log.Int("uploadID", adjustedUploads[i].Upload.ID))
 
-		locations, err := r.lsifStore.Definitions(
+		locations, _, err := r.lsifStore.Definitions(
 			ctx,
 			adjustedUploads[i].Upload.ID,
 			adjustedUploads[i].AdjustedPathInBundle,
 			adjustedUploads[i].AdjustedPosition.Line,
 			adjustedUploads[i].AdjustedPosition.Character,
+			DefinitionsLimit,
+			0,
 		)
 		if err != nil {
 			return nil, errors.Wrap(err, "lsifStore.Definitions")
@@ -90,7 +91,7 @@ func (r *queryResolver) Definitions(ctx context.Context, line, character int) (_
 	)
 
 	// Perform the moniker search
-	locations, _, err := r.monikerLocations(ctx, uploads, orderedMonikers, "definitions", defintionMonikersLimit, 0)
+	locations, _, err := r.monikerLocations(ctx, uploads, orderedMonikers, "definitions", DefinitionsLimit, 0)
 	if err != nil {
 		return nil, err
 	}

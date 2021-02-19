@@ -17,7 +17,6 @@ type operations struct {
 	monikerResults     *observation.Operation
 	monikersByPosition *observation.Operation
 	packageInformation *observation.Operation
-	pagedReferences    *observation.Operation
 	ranges             *observation.Operation
 	references         *observation.Operation
 	writeDefinitions   *observation.Operation
@@ -64,7 +63,6 @@ func newOperations(observationContext *observation.Context) *operations {
 		monikerResults:     op("MonikerResults"),
 		monikersByPosition: op("MonikersByPosition"),
 		packageInformation: op("PackageInformation"),
-		pagedReferences:    op("PagedReferences"),
 		ranges:             op("Ranges"),
 		references:         op("References"),
 		writeDefinitions:   op("WriteDefinitions"),

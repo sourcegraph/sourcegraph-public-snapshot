@@ -296,7 +296,7 @@ func (r *queryResolver) pageLocalReferences(ctx context.Context, adjustedUploads
 			continue
 		}
 
-		locations, totalCount, err := r.lsifStore.PagedReferences(
+		locations, totalCount, err := r.lsifStore.References(
 			ctx,
 			adjustedUploads[i].Upload.ID,
 			adjustedUploads[i].AdjustedPathInBundle,
@@ -306,7 +306,7 @@ func (r *queryResolver) pageLocalReferences(ctx context.Context, adjustedUploads
 			cursor.LocalOffset,
 		)
 		if err != nil {
-			return nil, false, errors.Wrap(err, "lsifstore.PagedReferences")
+			return nil, false, errors.Wrap(err, "lsifstore.References")
 		}
 
 		cursor.LocalOffset += len(locations)

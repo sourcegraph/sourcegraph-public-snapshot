@@ -168,7 +168,7 @@ func TestDatabaseDefinitions(t *testing.T) {
 	// `\ts, err := indexer.Index()` -> `\t Index() (*Stats, error)`
 	//                      ^^^^^           ^^^^^
 
-	if actual, err := store.Definitions(context.Background(), testBundleID, "cmd/lsif-go/main.go", 110, 22); err != nil {
+	if actual, _, err := store.Definitions(context.Background(), testBundleID, "cmd/lsif-go/main.go", 110, 22, 5, 0); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	} else {
 		expected := []Location{
@@ -181,7 +181,7 @@ func TestDatabaseDefinitions(t *testing.T) {
 	}
 }
 
-func TestDatabasePagedReferences(t *testing.T) {
+func TestDatabaseReferences(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -217,7 +217,7 @@ func TestDatabasePagedReferences(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("i=%d", i), func(t *testing.T) {
-			if actual, totalCount, err := store.PagedReferences(context.Background(), testBundleID, "protocol/writer.go", 85, 20, testCase.limit, testCase.offset); err != nil {
+			if actual, totalCount, err := store.References(context.Background(), testBundleID, "protocol/writer.go", 85, 20, testCase.limit, testCase.offset); err != nil {
 				t.Fatalf("unexpected error %s", err)
 			} else {
 				if totalCount != 3 {

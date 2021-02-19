@@ -24,8 +24,8 @@ func TestDefinitions(t *testing.T) {
 		{DumpID: 51, Path: "b.go", Range: testRange4},
 		{DumpID: 51, Path: "c.go", Range: testRange5},
 	}
-	mockLSIFStore.DefinitionsFunc.PushReturn(nil, nil)
-	mockLSIFStore.DefinitionsFunc.PushReturn(locations, nil)
+	mockLSIFStore.DefinitionsFunc.PushReturn(nil, 0, nil)
+	mockLSIFStore.DefinitionsFunc.PushReturn(locations, len(locations), nil)
 
 	uploads := []dbstore.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
