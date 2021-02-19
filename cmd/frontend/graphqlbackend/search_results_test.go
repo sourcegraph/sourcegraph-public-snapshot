@@ -1450,16 +1450,16 @@ func TestSearchContext(t *testing.T) {
 }
 
 func commitResult(url string) *CommitSearchResultResolver {
-	return &CommitSearchResultResolver{CommitSearchResult{
+	return &CommitSearchResultResolver{
 		url: url,
-	}}
+	}
 }
 
 func diffResult(url string) *CommitSearchResultResolver {
-	return &CommitSearchResultResolver{CommitSearchResult{
+	return &CommitSearchResultResolver{
 		url:         url,
 		diffPreview: &highlightedString{},
-	}}
+	}
 }
 
 func repoResult(db dbutil.DB, url string) *RepositoryResolver {
@@ -1534,11 +1534,11 @@ func TestUnionMerge(t *testing.T) {
 			want: SearchResultsResolver{
 				db: db,
 				SearchResults: []SearchResultResolver{
-					&CommitSearchResultResolver{CommitSearchResult{url: "a"}},
-					&CommitSearchResultResolver{CommitSearchResult{
+					&CommitSearchResultResolver{url: "a"},
+					&CommitSearchResultResolver{
 						diffPreview: &highlightedString{},
 						url:         "a",
-					}},
+					},
 					&FileMatchResolver{db: db, FileMatch: FileMatch{db: db, uri: "a"}},
 					NewRepositoryResolver(db, &types.Repo{Name: api.RepoName("a")}),
 				},
@@ -1555,11 +1555,11 @@ func TestUnionMerge(t *testing.T) {
 				},
 			},
 			want: SearchResultsResolver{db: db, SearchResults: []SearchResultResolver{
-				&CommitSearchResultResolver{CommitSearchResult{url: "a"}},
-				&CommitSearchResultResolver{CommitSearchResult{
+				&CommitSearchResultResolver{url: "a"},
+				&CommitSearchResultResolver{
 					diffPreview: &highlightedString{},
 					url:         "a",
-				}},
+				},
 				&FileMatchResolver{db: db, FileMatch: FileMatch{db: db, uri: "a"}},
 				NewRepositoryResolver(db, &types.Repo{Name: api.RepoName("a")}),
 			},
@@ -1582,16 +1582,16 @@ func TestUnionMerge(t *testing.T) {
 				},
 			},
 			want: SearchResultsResolver{db: db, SearchResults: []SearchResultResolver{
-				&CommitSearchResultResolver{CommitSearchResult{url: "a"}},
-				&CommitSearchResultResolver{CommitSearchResult{url: "b"}},
-				&CommitSearchResultResolver{CommitSearchResult{
+				&CommitSearchResultResolver{url: "a"},
+				&CommitSearchResultResolver{url: "b"},
+				&CommitSearchResultResolver{
 					diffPreview: &highlightedString{},
 					url:         "a",
-				}},
-				&CommitSearchResultResolver{CommitSearchResult{
+				},
+				&CommitSearchResultResolver{
 					diffPreview: &highlightedString{},
 					url:         "b",
-				}},
+				},
 				&FileMatchResolver{db: db, FileMatch: FileMatch{db: db, uri: "a"}},
 				&FileMatchResolver{db: db, FileMatch: FileMatch{db: db, uri: "b"}},
 				NewRepositoryResolver(db, &types.Repo{Name: api.RepoName("a")}),
