@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -22,7 +23,7 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 	if err != nil {
 		return nil, err
 	}
-	return &OrgResolver{org: org}, nil
+	return &OrgResolver{db: r.db, org: org}, nil
 }
 
 // Deprecated: Org is only in use by sourcegraph/src. Use Node to look up an
@@ -30,30 +31,31 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 func (r *schemaResolver) Org(ctx context.Context, args *struct {
 	ID graphql.ID
 }) (*OrgResolver, error) {
-	return OrgByID(ctx, args.ID)
+	return OrgByID(ctx, r.db, args.ID)
 }
 
-func OrgByID(ctx context.Context, id graphql.ID) (*OrgResolver, error) {
+func OrgByID(ctx context.Context, db dbutil.DB, id graphql.ID) (*OrgResolver, error) {
 	orgID, err := UnmarshalOrgID(id)
 	if err != nil {
 		return nil, err
 	}
-	return OrgByIDInt32(ctx, orgID)
+	return OrgByIDInt32(ctx, db, orgID)
 }
 
-func OrgByIDInt32(ctx context.Context, orgID int32) (*OrgResolver, error) {
+func OrgByIDInt32(ctx context.Context, db dbutil.DB, orgID int32) (*OrgResolver, error) {
 	org, err := database.GlobalOrgs.GetByID(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}
-	return &OrgResolver{org}, nil
+	return &OrgResolver{db, org}, nil
 }
 
 type OrgResolver struct {
+	db  dbutil.DB
 	org *types.Org
 }
 
-func NewOrg(org *types.Org) *OrgResolver { return &OrgResolver{org: org} }
+func NewOrg(db dbutil.DB, org *types.Org) *OrgResolver { return &OrgResolver{db: db, org: org} }
 
 func (o *OrgResolver) ID() graphql.ID { return MarshalOrgID(o.org.ID) }
 
@@ -103,7 +105,7 @@ func (o *OrgResolver) Members(ctx context.Context) (*staticUserConnectionResolve
 		}
 		users[i] = user
 	}
-	return &staticUserConnectionResolver{users: users}, nil
+	return &staticUserConnectionResolver{db: o.db, users: users}, nil
 }
 
 func (o *OrgResolver) settingsSubject() api.SettingsSubject {
@@ -124,11 +126,11 @@ func (o *OrgResolver) LatestSettings(ctx context.Context) (*settingsResolver, er
 	if settings == nil {
 		return nil, nil
 	}
-	return &settingsResolver{&settingsSubject{org: o}, settings, nil}, nil
+	return &settingsResolver{o.db, &settingsSubject{org: o}, settings, nil}, nil
 }
 
 func (o *OrgResolver) SettingsCascade() *settingsCascade {
-	return &settingsCascade{subject: &settingsSubject{org: o}}
+	return &settingsCascade{db: o.db, subject: &settingsSubject{org: o}}
 }
 
 func (o *OrgResolver) ConfigurationCascade() *settingsCascade { return o.SettingsCascade() }
@@ -142,7 +144,7 @@ func (o *OrgResolver) ViewerPendingInvitation(ctx context.Context) (*organizatio
 		if err != nil {
 			return nil, err
 		}
-		return &organizationInvitationResolver{orgInvitation}, nil
+		return &organizationInvitationResolver{o.db, orgInvitation}, nil
 	}
 	return nil, nil
 }
@@ -178,11 +180,11 @@ func (o *OrgResolver) Campaigns(ctx context.Context, args *ListCampaignsArgs) (C
 	return EnterpriseResolvers.campaignsResolver.Campaigns(ctx, args)
 }
 
-func (*schemaResolver) CreateOrganization(ctx context.Context, args *struct {
+func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	Name        string
 	DisplayName *string
 }) (*OrgResolver, error) {
-	currentUser, err := CurrentUser(ctx)
+	currentUser, err := CurrentUser(ctx, r.db)
 	if err != nil {
 		return nil, err
 	}
@@ -204,10 +206,10 @@ func (*schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	return &OrgResolver{org: newOrg}, nil
+	return &OrgResolver{db: r.db, org: newOrg}, nil
 }
 
-func (*schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
+func (r *schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 	ID          graphql.ID
 	DisplayName *string
 }) (*OrgResolver, error) {
@@ -227,7 +229,7 @@ func (*schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	return &OrgResolver{org: updatedOrg}, nil
+	return &OrgResolver{db: r.db, org: updatedOrg}, nil
 }
 
 func (*schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *struct {

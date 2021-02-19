@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
-func (*schemaResolver) DeleteUser(ctx context.Context, args *struct {
+func (r *schemaResolver) DeleteUser(ctx context.Context, args *struct {
 	User graphql.ID
 	Hard *bool
 }) (*EmptyResponse, error) {
@@ -27,7 +27,7 @@ func (*schemaResolver) DeleteUser(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	currentUser, err := CurrentUser(ctx)
+	currentUser, err := CurrentUser(ctx, r.db)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +116,7 @@ func (*schemaResolver) DeleteOrganization(ctx context.Context, args *struct {
 	return &EmptyResponse{}, nil
 }
 
-func (*schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
+func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 	UserID    graphql.ID
 	SiteAdmin bool
 }) (*EmptyResponse, error) {
@@ -126,7 +126,7 @@ func (*schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	user, err := CurrentUser(ctx)
+	user, err := CurrentUser(ctx, r.db)
 	if err != nil {
 		return nil, err
 	}

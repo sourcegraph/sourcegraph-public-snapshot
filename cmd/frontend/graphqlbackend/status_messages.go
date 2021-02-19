@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
@@ -29,7 +30,7 @@ func (r *schemaResolver) StatusMessages(ctx context.Context) ([]*statusMessageRe
 
 	var messageResolvers []*statusMessageResolver
 	for _, m := range messages {
-		messageResolvers = append(messageResolvers, &statusMessageResolver{message: m})
+		messageResolvers = append(messageResolvers, &statusMessageResolver{db: r.db, message: m})
 	}
 
 	return messageResolvers, nil
@@ -37,6 +38,7 @@ func (r *schemaResolver) StatusMessages(ctx context.Context) ([]*statusMessageRe
 
 type statusMessageResolver struct {
 	message repos.StatusMessage
+	db      dbutil.DB
 }
 
 func (r *statusMessageResolver) ToCloningProgress() (*statusMessageResolver, bool) {
@@ -71,5 +73,5 @@ func (r *statusMessageResolver) ExternalService(ctx context.Context) (*externalS
 		return nil, err
 	}
 
-	return &externalServiceResolver{externalService: externalService}, nil
+	return &externalServiceResolver{db: r.db, externalService: externalService}, nil
 }

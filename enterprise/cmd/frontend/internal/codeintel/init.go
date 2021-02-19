@@ -35,7 +35,7 @@ func Init(ctx context.Context, db dbutil.DB, enterpriseServices *enterprise.Serv
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	resolver, err := newResolver(ctx, observationContext)
+	resolver, err := newResolver(ctx, db, observationContext)
 	if err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ func Init(ctx context.Context, db dbutil.DB, enterpriseServices *enterprise.Serv
 	return nil
 }
 
-func newResolver(ctx context.Context, observationContext *observation.Context) (gql.CodeIntelResolver, error) {
+func newResolver(ctx context.Context, db dbutil.DB, observationContext *observation.Context) (gql.CodeIntelResolver, error) {
 	hunkCache, err := codeintelresolvers.NewHunkCache(config.HunkCacheSize)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize hunk cache: %s", err)
@@ -77,7 +77,7 @@ func newResolver(ctx context.Context, observationContext *observation.Context) (
 		hunkCache,
 		observationContext,
 	)
-	resolver := codeintelgqlresolvers.NewResolver(innerResolver)
+	resolver := codeintelgqlresolvers.NewResolver(db, innerResolver)
 
 	return resolver, err
 }

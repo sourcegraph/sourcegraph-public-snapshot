@@ -131,7 +131,7 @@ func Main(enterpriseSetupHook func(db dbutil.DB) enterprise.Services) error {
 		log.Fatalf("ERROR: %v", err)
 	}
 
-	ui.InitRouter()
+	ui.InitRouter(db)
 
 	if err := handleConfigOverrides(); err != nil {
 		log.Fatal("applying config overrides:", err)
@@ -219,7 +219,7 @@ func Main(enterpriseSetupHook func(db dbutil.DB) enterprise.Services) error {
 		return err
 	}
 
-	server, err := makeExternalAPI(schema, enterprise)
+	server, err := makeExternalAPI(db, schema, enterprise)
 	if err != nil {
 		return err
 	}
@@ -245,9 +245,9 @@ func Main(enterpriseSetupHook func(db dbutil.DB) enterprise.Services) error {
 	return nil
 }
 
-func makeExternalAPI(schema *graphql.Schema, enterprise enterprise.Services) (goroutine.BackgroundRoutine, error) {
+func makeExternalAPI(db dbutil.DB, schema *graphql.Schema, enterprise enterprise.Services) (goroutine.BackgroundRoutine, error) {
 	// Create the external HTTP handler.
-	externalHandler, err := newExternalHTTPHandler(schema, enterprise.GitHubWebhook, enterprise.GitLabWebhook, enterprise.BitbucketServerWebhook, enterprise.NewCodeIntelUploadHandler, enterprise.NewExecutorProxyHandler)
+	externalHandler, err := newExternalHTTPHandler(db, schema, enterprise.GitHubWebhook, enterprise.GitLabWebhook, enterprise.BitbucketServerWebhook, enterprise.NewCodeIntelUploadHandler, enterprise.NewExecutorProxyHandler)
 	if err != nil {
 		return nil, err
 	}

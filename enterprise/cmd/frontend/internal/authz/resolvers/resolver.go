@@ -255,6 +255,7 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 	}
 
 	return &repositoryConnectionResolver{
+		db:    r.store.Handle().DB(),
 		ids:   ids,
 		first: args.First,
 		after: args.After,
@@ -299,6 +300,7 @@ func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.Rep
 	}
 
 	return &userConnectionResolver{
+		db:    r.store.Handle().DB(),
 		ids:   p.UserIDs,
 		first: args.First,
 		after: args.After,
