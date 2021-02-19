@@ -71,25 +71,6 @@ type indexedSearchRequest struct {
 	db dbutil.DB
 }
 
-// TODO (stefan) move this out of zoekt.go to the new parser once it is guaranteed that the old parser is turned off for all customers
-func containsRefGlobs(q query.Q) bool {
-	containsRefGlobs := false
-	if repoFilterValues, _ := q.RegexpPatterns(query.FieldRepo); len(repoFilterValues) > 0 {
-		for _, v := range repoFilterValues {
-			repoRev := strings.SplitN(v, "@", 2)
-			if len(repoRev) == 1 { // no revision
-				continue
-			}
-			if query.ContainsNoGlobSyntax(repoRev[1]) {
-				continue
-			}
-			containsRefGlobs = true
-			break
-		}
-	}
-	return containsRefGlobs
-}
-
 func newIndexedSearchRequest(ctx context.Context, db dbutil.DB, args *search.TextParameters, typ indexedRequestType, stream Streamer) (_ *indexedSearchRequest, err error) {
 	tr, ctx := trace.New(ctx, "newIndexedSearchRequest", string(typ))
 	tr.LogFields(trace.Stringer("global_search_mode", args.Mode))
@@ -116,7 +97,7 @@ func newIndexedSearchRequest(ctx context.Context, db dbutil.DB, args *search.Tex
 	}
 
 	// Fallback to Unindexed if the query contains ref-globs
-	if containsRefGlobs(args.Query) {
+	if query.ContainsRefGlobs(args.Query) {
 		if args.PatternInfo.Index == query.Only {
 			return nil, fmt.Errorf("invalid index:%q (revsions with glob pattern cannot be resolved for indexed searches)", args.PatternInfo.Index)
 		}
