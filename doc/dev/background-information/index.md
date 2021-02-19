@@ -24,6 +24,19 @@
 - [Dependencies and generated code](dependencies_and_codegen.md)
 - [Code reviews](code_reviews.md)
 - [Commit messages](commit_messages.md)
+- [Exposing services](exposing-services.md)
+
+## [Languages](languages/index.md)
+
+- [Go](languages/go.md)
+  - [Testing Go code](languages/testing_go_code.md).
+- [TypeScript](languages/typescript.md)
+- [Bash](languages/bash.md)
+- [Terraform](languages/terraform.md)
+
+### [Extended guides](languages/extended_guide/index.md)
+
+- [Terraform Extended Guide](languages/extended_guide/terraform.md)
 
 ## Testing
 
