@@ -7,7 +7,6 @@ var (
 	GlobalDefaultRepos                = &DefaultRepoStore{}
 	GlobalRepos                       = &RepoStore{}
 	GlobalPhabricator                 = &PhabricatorStore{}
-	GlobalNamespaces                  = &NamespaceStore{}
 	GlobalOrgs                        = &OrgStore{}
 	GlobalOrgMembers                  = &OrgMemberStore{}
 	GlobalSettings                    = &SettingStore{}

@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -21,7 +22,7 @@ import (
 //
 // 🚨 SECURITY: The caller MUST wrap the returned handler in middleware that checks authentication
 // and sets the actor in the request context.
-func NewHandler() http.Handler {
+func NewHandler(db dbutil.DB) http.Handler {
 	session.SetSessionStore(session.NewRedisStore(func() bool {
 		return globals.ExternalURL().Scheme == "https"
 	}))
@@ -61,7 +62,7 @@ func NewHandler() http.Handler {
 	r.Get(router.ResetPasswordInit).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleResetPasswordInit)))
 	r.Get(router.ResetPasswordCode).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleResetPasswordCode)))
 
-	r.Get(router.CheckUsernameTaken).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleCheckUsernameTaken)))
+	r.Get(router.CheckUsernameTaken).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleCheckUsernameTaken(db))))
 
 	r.Get(router.RegistryExtensionBundle).Handler(trace.Route(gziphandler.GzipHandler(http.HandlerFunc(registry.HandleRegistryExtensionBundle))))
 
