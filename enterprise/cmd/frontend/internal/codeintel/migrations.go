@@ -2,6 +2,7 @@ package codeintel
 
 import (
 	"context"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -16,7 +17,7 @@ func registerMigrations(ctx context.Context, db dbutil.DB, outOfBandMigrationRun
 	}
 
 	for id, migrator := range migrators {
-		if err := outOfBandMigrationRunner.Register(id, migrator); err != nil {
+		if err := outOfBandMigrationRunner.Register(id, migrator, oobmigration.MigratorOptions{Interval: time.Second}); err != nil {
 			return err
 		}
 	}
