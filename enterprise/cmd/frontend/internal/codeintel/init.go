@@ -21,18 +21,23 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-func Init(ctx context.Context, db dbutil.DB, enterpriseServices *enterprise.Services) error {
-	if err := initServices(ctx, db); err != nil {
-		return err
-	}
-
+func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services) error {
 	observationContext := &observation.Context{
 		Logger:     log15.Root(),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
+	}
+
+	if err := initServices(ctx, db); err != nil {
+		return err
+	}
+
+	if err := registerMigrations(ctx, db, outOfBandMigrationRunner); err != nil {
+		return err
 	}
 
 	resolver, err := newResolver(ctx, db, observationContext)

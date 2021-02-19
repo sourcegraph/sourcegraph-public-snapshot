@@ -36,6 +36,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -118,7 +119,7 @@ func InitDB() (*sql.DB, error) {
 }
 
 // Main is the main entrypoint for the frontend server program.
-func Main(enterpriseSetupHook func(db dbutil.DB) enterprise.Services) error {
+func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner) enterprise.Services) error {
 	log.SetFlags(0)
 	log.SetPrefix("")
 
@@ -146,8 +147,13 @@ func Main(enterpriseSetupHook func(db dbutil.DB) enterprise.Services) error {
 	tracer.Init()
 	trace.Init(true)
 
+	// Create an out-of-band migration runner onto which each enterprise init function
+	// can register migration routines to run in the background while they have work
+	// remaining.
+	outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(db)
+
 	// Run enterprise setup hook
-	enterprise := enterpriseSetupHook(db)
+	enterprise := enterpriseSetupHook(db, outOfBandMigrationRunner)
 
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
@@ -229,7 +235,10 @@ func Main(enterpriseSetupHook func(db dbutil.DB) enterprise.Services) error {
 		return err
 	}
 
-	routines := []goroutine.BackgroundRoutine{server}
+	routines := []goroutine.BackgroundRoutine{
+		server,
+		outOfBandMigrationRunner,
+	}
 	if internalAPI != nil {
 		routines = append(routines, internalAPI)
 	}
