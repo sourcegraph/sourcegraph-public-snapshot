@@ -44,7 +44,7 @@ func (m *diagnosticsCountMigrator) Progress(ctx context.Context) (float64, error
 
 const diagnosticsCountMigratorProgressQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/migration_diagnostics_count.go:Progress
-SELECT cast(c1.count as float) / cast(c2.count as float) FROM
+SELECT CASE c2.count WHEN 0 THEN 1 ELSE cast(c1.count as float) / cast(c2.count as float) END FROM
 	(SELECT COUNT(*) as count FROM lsif_data_documents WHERE schema_version >= 2) c1,
 	(SELECT COUNT(*) as count FROM lsif_data_documents) c2
 `
