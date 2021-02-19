@@ -224,7 +224,7 @@ func Main(enterpriseSetupHook func(db dbutil.DB) enterprise.Services) error {
 		return err
 	}
 
-	internalAPI, err := makeInternalAPI(schema, enterprise)
+	internalAPI, err := makeInternalAPI(schema, db, enterprise)
 	if err != nil {
 		return err
 	}
@@ -267,7 +267,7 @@ func makeExternalAPI(db dbutil.DB, schema *graphql.Schema, enterprise enterprise
 	return server, nil
 }
 
-func makeInternalAPI(schema *graphql.Schema, enterprise enterprise.Services) (goroutine.BackgroundRoutine, error) {
+func makeInternalAPI(schema *graphql.Schema, db dbutil.DB, enterprise enterprise.Services) (goroutine.BackgroundRoutine, error) {
 	if httpAddrInternal == "" {
 		return nil, nil
 	}
@@ -278,7 +278,7 @@ func makeInternalAPI(schema *graphql.Schema, enterprise enterprise.Services) (go
 	}
 
 	// The internal HTTP handler does not include the auth handlers.
-	internalHandler := newInternalHTTPHandler(schema, enterprise.NewCodeIntelUploadHandler)
+	internalHandler := newInternalHTTPHandler(schema, db, enterprise.NewCodeIntelUploadHandler)
 
 	server := httpserver.New(listener, &http.Server{
 		Handler:     internalHandler,
