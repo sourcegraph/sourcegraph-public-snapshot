@@ -260,7 +260,7 @@ func (r *UserResolver) SurveyResponses(ctx context.Context) ([]*surveyResponseRe
 		return nil, err
 	}
 
-	responses, err := database.GlobalSurveyResponses.GetByUserID(ctx, r.user.ID)
+	responses, err := database.SurveyResponses(r.db).GetByUserID(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
 	}
