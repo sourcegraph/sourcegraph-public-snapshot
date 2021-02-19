@@ -256,7 +256,7 @@ func (r *schemaResolver) UpdateMirrorRepository(ctx context.Context, args *struc
 		return nil, err
 	}
 
-	repo, err := repositoryByID(ctx, args.Repository)
+	repo, err := r.repositoryByID(ctx, args.Repository)
 	if err != nil {
 		return nil, err
 	}

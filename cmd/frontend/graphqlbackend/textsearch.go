@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 
@@ -35,6 +36,7 @@ const maxUnindexedRepoRevSearchesPerQuery = 200
 var textSearchLimiter = mutablelimiter.New(32)
 
 type FileMatch struct {
+	db           dbutil.DB
 	JPath        string       `json:"Path"`
 	JLineMatches []*lineMatch `json:"LineMatches"`
 	JLimitHit    bool         `json:"LimitHit"`
@@ -53,6 +55,7 @@ type FileMatchResolver struct {
 	FileMatch
 
 	RepoResolver *RepositoryResolver
+	db           dbutil.DB
 }
 
 func (fm *FileMatchResolver) Equal(other *FileMatchResolver) bool {
@@ -68,7 +71,9 @@ func (fm *FileMatchResolver) File() *GitTreeEntryResolver {
 	// (which would make it slow). This GitCommitResolver will return empty
 	// values for all other fields.
 	return &GitTreeEntryResolver{
+		db: fm.db,
 		commit: &GitCommitResolver{
+			db:           fm.db,
 			repoResolver: fm.RepoResolver,
 			oid:          GitObjectID(fm.CommitID),
 			inputRev:     fm.InputRev,
@@ -97,7 +102,7 @@ func (fm *FileMatchResolver) Resource() string {
 func (fm *FileMatchResolver) Symbols() []*symbolResolver {
 	symbols := make([]*symbolResolver, len(fm.symbols))
 	for i, s := range fm.symbols {
-		symbols[i] = toSymbolResolver(s.symbol, s.baseURI, s.lang, s.commit)
+		symbols[i] = toSymbolResolver(fm.db, s.symbol, s.baseURI, s.lang, s.commit)
 	}
 	return symbols
 }
@@ -207,7 +212,7 @@ func (lm lineMatchResolver) LimitHit() bool {
 
 var mockSearchFilesInRepo func(ctx context.Context, repo *types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error)
 
-func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *types.RepoName, gitserverRepo api.RepoName, rev string, index bool, info *search.TextPatternInfo, fetchTimeout time.Duration) ([]*FileMatchResolver, bool, error) {
+func searchFilesInRepo(ctx context.Context, db dbutil.DB, searcherURLs *endpoint.Map, repo *types.RepoName, gitserverRepo api.RepoName, rev string, index bool, info *search.TextPatternInfo, fetchTimeout time.Duration) ([]*FileMatchResolver, bool, error) {
 	if mockSearchFilesInRepo != nil {
 		return mockSearchFilesInRepo(ctx, repo, gitserverRepo, rev, info, fetchTimeout)
 	}
@@ -245,7 +250,7 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *ty
 	}
 
 	workspace := fileMatchURI(repo.Name, rev, "")
-	repoResolver := NewRepositoryResolver(repo.ToRepo())
+	repoResolver := NewRepositoryResolver(db, repo.ToRepo())
 	resolvers := make([]*FileMatchResolver, 0, len(matches))
 	for _, fm := range matches {
 		lineMatches := make([]*lineMatch, 0, len(fm.LineMatches))
@@ -263,7 +268,9 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *ty
 		}
 
 		resolvers = append(resolvers, &FileMatchResolver{
+			db: db,
 			FileMatch: FileMatch{
+				db:           db,
 				JPath:        fm.Path,
 				JLineMatches: lineMatches,
 				JLimitHit:    fm.LimitHit,
@@ -358,9 +365,9 @@ func searchResultsToFileMatchResults(results []SearchResultResolver) ([]*FileMat
 
 // searchFilesInRepoBatch is a convenience function around searchFilesInRepos
 // which collects the results from the stream.
-func searchFilesInReposBatch(ctx context.Context, args *search.TextParameters) ([]*FileMatchResolver, streaming.Stats, error) {
+func searchFilesInReposBatch(ctx context.Context, db dbutil.DB, args *search.TextParameters) ([]*FileMatchResolver, streaming.Stats, error) {
 	results, stats, err := collectStream(func(stream Streamer) error {
-		return searchFilesInRepos(ctx, args, stream)
+		return searchFilesInRepos(ctx, db, args, stream)
 	})
 	fms, fmErr := searchResultsToFileMatchResults(results)
 	if fmErr != nil && err == nil {
@@ -370,7 +377,7 @@ func searchFilesInReposBatch(ctx context.Context, args *search.TextParameters) (
 }
 
 // searchFilesInRepos searches a set of repos for a pattern.
-func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream Streamer) (err error) {
+func searchFilesInRepos(ctx context.Context, db dbutil.DB, args *search.TextParameters, stream Streamer) (err error) {
 	if mockSearchFilesInRepos != nil {
 		results, mockStats, err := mockSearchFilesInRepos(args)
 		stream.Send(SearchEvent{
@@ -411,7 +418,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 			repos: &indexedRepoRevs{},
 		}
 	} else {
-		indexed, err = newIndexedSearchRequest(ctx, args, indexedTyp, stream)
+		indexed, err = newIndexedSearchRequest(ctx, db, args, indexedTyp, stream)
 		if err != nil {
 			return err
 		}
@@ -442,15 +449,15 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 				repos = append(repos, repo)
 			}
 
-			return callSearcherOverRepos(ctx, args, stream, repos, nil, true)
+			return callSearcherOverRepos(ctx, db, args, stream, repos, nil, true)
 		})
 
 		g.Go(func() error {
-			return callSearcherOverRepos(ctx, args, stream, indexed.Unindexed, nil, false)
+			return callSearcherOverRepos(ctx, db, args, stream, indexed.Unindexed, nil, false)
 		})
 	} else if isStructuralSearch {
 		g.Go(func() error {
-			return structuralSearchBackcompat(ctx, args, stream, indexed)
+			return structuralSearchBackcompat(ctx, db, args, stream, indexed)
 		})
 	}
 
@@ -459,7 +466,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 	// - unindexed search of negated content
 	if !args.PatternInfo.IsStructuralPat {
 		g.Go(func() error {
-			return callSearcherOverRepos(ctx, args, stream, indexed.Unindexed, nil, false)
+			return callSearcherOverRepos(ctx, db, args, stream, indexed.Unindexed, nil, false)
 		})
 	}
 
@@ -474,6 +481,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 // search.
 func callSearcherOverRepos(
 	ctx context.Context,
+	db dbutil.DB,
 	args *search.TextParameters,
 	stream Streamer,
 	searcherRepos []*search.RepositoryRevisions,
@@ -557,7 +565,7 @@ func callSearcherOverRepos(
 					ctx, done := limitCtx, limitDone
 					defer done()
 
-					matches, repoLimitHit, err := searchFilesInRepo(ctx, args.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], index, args.PatternInfo, fetchTimeout)
+					matches, repoLimitHit, err := searchFilesInRepo(ctx, db, args.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], index, args.PatternInfo, fetchTimeout)
 					if err != nil {
 						tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.Error(err), otlog.Bool("timeout", errcode.IsTimeout(err)), otlog.Bool("temporary", errcode.IsTemporary(err)))
 						log15.Warn("searchFilesInRepo failed", "error", err, "repo", repoRev.Repo.Name)
@@ -582,7 +590,7 @@ func callSearcherOverRepos(
 // structuralSearchBackcompat is the old way we did structural search. It runs
 // a query through zoekt first to get back a list of filepaths to search. Then
 // calls searcher limiting it to just those files.
-func structuralSearchBackcompat(ctx context.Context, args *search.TextParameters, stream Streamer, indexed *indexedSearchRequest) (err error) {
+func structuralSearchBackcompat(ctx context.Context, db dbutil.DB, args *search.TextParameters, stream Streamer, indexed *indexedSearchRequest) (err error) {
 	tr, ctx := trace.New(ctx, "structuralSearchBackcompt", "")
 	defer func() {
 		tr.SetError(err)
@@ -626,7 +634,7 @@ func structuralSearchBackcompat(ctx context.Context, args *search.TextParameters
 				}
 			}
 
-			return callSearcherOverRepos(ctx, args, stream, repos, partition, true)
+			return callSearcherOverRepos(ctx, db, args, stream, repos, partition, true)
 		})
 	}))
 

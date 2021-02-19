@@ -4,6 +4,7 @@
 
 - [How to debug live code](debug_live_code.md)
 - [Set up local development with Zoekt and Sourcegraph](zoekt_local_dev.md)
+- [Ignoring editor config files in Git](ignoring_editor_config_files.md)
 
 ## New features
 
@@ -29,11 +30,14 @@
   - [How to add monitoring](add_monitoring.md)
   - [Set up local Sourcegraph monitoring development](monitoring_local_dev.md)
 
-## Testing Sourcegraph
+## Testing Sourcegraph & CI
 
 - [How to run tests](../background-information/testing.md)
+- [Testing Principles](../background-information/testing_principles.md)
+- [Continuous Integration](../background-information/continuous_integration.md)
 - [Configure a test instance of Phabricator and Gitolite](configure_phabricator_gitolite.md)
 - [Test a Phabricator and Gitolite instance](test_phabricator.md)
+- [Adding or changing Buildkite secrets](adding_buildkite_secrets.md)
 
 ## Windows support
 

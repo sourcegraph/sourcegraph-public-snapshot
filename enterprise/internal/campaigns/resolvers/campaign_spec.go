@@ -119,7 +119,7 @@ func (r *campaignSpecResolver) Description() graphqlbackend.CampaignDescriptionR
 }
 
 func (r *campaignSpecResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	user, err := graphqlbackend.UserByIDInt32(ctx, r.campaignSpec.UserID)
+	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DB(), r.campaignSpec.UserID)
 	if errcode.IsNotFound(err) {
 		return nil, nil
 	}
@@ -142,9 +142,9 @@ func (r *campaignSpecResolver) computeNamespace(ctx context.Context) (*graphqlba
 		)
 
 		if r.campaignSpec.NamespaceUserID != 0 {
-			n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, r.campaignSpec.NamespaceUserID)
+			n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, r.store.DB(), r.campaignSpec.NamespaceUserID)
 		} else {
-			n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, r.campaignSpec.NamespaceOrgID)
+			n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, r.store.DB(), r.campaignSpec.NamespaceOrgID)
 		}
 
 		if errcode.IsNotFound(err) {

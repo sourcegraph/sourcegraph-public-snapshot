@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/registry"
 )
 
@@ -99,20 +101,21 @@ type mockRegistryExtension struct {
 
 func TestGetExtensionByExtensionID(t *testing.T) {
 	ctx := context.Background()
+	db := new(dbtesting.MockDB)
 
 	t.Run("root", func(t *testing.T) {
 		mockLocalRegistryExtensionIDPrefix = &strnilptr
 		defer func() { mockLocalRegistryExtensionIDPrefix = nil }()
 
 		t.Run("2-part", func(t *testing.T) {
-			GetLocalExtensionByExtensionID = func(ctx context.Context, extensionID string) (graphqlbackend.RegistryExtension, error) {
+			GetLocalExtensionByExtensionID = func(ctx context.Context, db dbutil.DB, extensionID string) (graphqlbackend.RegistryExtension, error) {
 				if want := "a/b"; extensionID != want {
 					t.Errorf("got %q, want %q", extensionID, want)
 				}
 				return &mockRegistryExtension{id: 1, name: "b"}, nil
 			}
 			defer func() { GetLocalExtensionByExtensionID = nil }()
-			local, remote, err := GetExtensionByExtensionID(ctx, "a/b")
+			local, remote, err := GetExtensionByExtensionID(ctx, db, "a/b")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -125,7 +128,7 @@ func TestGetExtensionByExtensionID(t *testing.T) {
 		})
 
 		t.Run("3-part", func(t *testing.T) {
-			if _, _, err := GetExtensionByExtensionID(ctx, "a/b/c"); err == nil {
+			if _, _, err := GetExtensionByExtensionID(ctx, db, "a/b/c"); err == nil {
 				t.Fatal()
 			}
 		})
@@ -146,7 +149,7 @@ func TestGetExtensionByExtensionID(t *testing.T) {
 				return &registry.Extension{UUID: "u", ExtensionID: "a/b"}, nil
 			}
 			defer func() { mockGetRemoteRegistryExtension = nil }()
-			local, remote, err := GetExtensionByExtensionID(ctx, "a/b")
+			local, remote, err := GetExtensionByExtensionID(ctx, db, "a/b")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -159,14 +162,14 @@ func TestGetExtensionByExtensionID(t *testing.T) {
 		})
 
 		t.Run("3-part", func(t *testing.T) {
-			GetLocalExtensionByExtensionID = func(ctx context.Context, extensionID string) (graphqlbackend.RegistryExtension, error) {
+			GetLocalExtensionByExtensionID = func(ctx context.Context, db dbutil.DB, extensionID string) (graphqlbackend.RegistryExtension, error) {
 				if want := "b/c"; extensionID != want {
 					t.Errorf("got %q, want %q", extensionID, want)
 				}
 				return &mockRegistryExtension{id: 1, name: "b"}, nil
 			}
 			defer func() { GetLocalExtensionByExtensionID = nil }()
-			local, remote, err := GetExtensionByExtensionID(ctx, "x/b/c")
+			local, remote, err := GetExtensionByExtensionID(ctx, db, "x/b/c")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -180,7 +183,7 @@ func TestGetExtensionByExtensionID(t *testing.T) {
 	})
 
 	t.Run("invalid extension ID", func(t *testing.T) {
-		if _, _, err := GetExtensionByExtensionID(ctx, "a/b/c/d"); err == nil {
+		if _, _, err := GetExtensionByExtensionID(ctx, db, "a/b/c/d"); err == nil {
 			t.Fatal()
 		}
 	})

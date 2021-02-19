@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -164,6 +165,8 @@ func TestNode_User(t *testing.T) {
 }
 
 func TestUpdateUser(t *testing.T) {
+	db := new(dbtesting.MockDB)
+
 	t.Run("not site admin nor the same user", func(t *testing.T) {
 		database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
 			return &types.User{ID: id, Username: strconv.Itoa(int(id))}, nil
@@ -175,7 +178,7 @@ func TestUpdateUser(t *testing.T) {
 			database.Mocks.Users = database.MockUsers{}
 		})
 
-		result, err := (&schemaResolver{}).UpdateUser(context.Background(), &updateUserArgs{User: "VXNlcjox"})
+		result, err := (&schemaResolver{db: db}).UpdateUser(context.Background(), &updateUserArgs{User: "VXNlcjox"})
 		wantErr := "must be authenticated as 1 or as an admin (must be site admin)"
 		gotErr := fmt.Sprintf("%v", err)
 		if wantErr != gotErr {
@@ -197,7 +200,7 @@ func TestUpdateUser(t *testing.T) {
 			database.Mocks.Users = database.MockUsers{}
 		})
 
-		result, err := (&schemaResolver{}).UpdateUser(context.Background(), &updateUserArgs{
+		result, err := (&schemaResolver{db: db}).UpdateUser(context.Background(), &updateUserArgs{
 			User:     "VXNlcjox",
 			Username: strptr("about"),
 		})
@@ -229,7 +232,7 @@ func TestUpdateUser(t *testing.T) {
 		})
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&schemaResolver{}).UpdateUser(ctx, &updateUserArgs{
+		result, err := (&schemaResolver{db: db}).UpdateUser(ctx, &updateUserArgs{
 			User:     "VXNlcjox",
 			Username: strptr("alice"),
 		})

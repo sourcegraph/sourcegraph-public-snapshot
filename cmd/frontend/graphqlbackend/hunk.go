@@ -3,10 +3,12 @@ package graphqlbackend
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type hunkResolver struct {
+	db   dbutil.DB
 	repo *RepositoryResolver
 	hunk *git.Hunk
 }
@@ -14,6 +16,7 @@ type hunkResolver struct {
 func (r *hunkResolver) Author() signatureResolver {
 	return signatureResolver{
 		person: &PersonResolver{
+			db:    r.db,
 			name:  r.hunk.Author.Name,
 			email: r.hunk.Author.Email,
 		},
@@ -46,5 +49,5 @@ func (r *hunkResolver) Message() string {
 }
 
 func (r *hunkResolver) Commit(ctx context.Context) (*GitCommitResolver, error) {
-	return toGitCommitResolver(r.repo, r.hunk.CommitID, nil), nil
+	return toGitCommitResolver(r.repo, r.db, r.hunk.CommitID, nil), nil
 }

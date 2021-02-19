@@ -132,7 +132,7 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 		log.Fatalf("ERROR: %v", err)
 	}
 
-	ui.InitRouter()
+	ui.InitRouter(db)
 
 	if err := handleConfigOverrides(); err != nil {
 		log.Fatal("applying config overrides:", err)
@@ -225,12 +225,12 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 		return err
 	}
 
-	server, err := makeExternalAPI(schema, enterprise)
+	server, err := makeExternalAPI(db, schema, enterprise)
 	if err != nil {
 		return err
 	}
 
-	internalAPI, err := makeInternalAPI(schema, enterprise)
+	internalAPI, err := makeInternalAPI(schema, db, enterprise)
 	if err != nil {
 		return err
 	}
@@ -254,9 +254,9 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	return nil
 }
 
-func makeExternalAPI(schema *graphql.Schema, enterprise enterprise.Services) (goroutine.BackgroundRoutine, error) {
+func makeExternalAPI(db dbutil.DB, schema *graphql.Schema, enterprise enterprise.Services) (goroutine.BackgroundRoutine, error) {
 	// Create the external HTTP handler.
-	externalHandler, err := newExternalHTTPHandler(schema, enterprise.GitHubWebhook, enterprise.GitLabWebhook, enterprise.BitbucketServerWebhook, enterprise.NewCodeIntelUploadHandler, enterprise.NewExecutorProxyHandler)
+	externalHandler, err := newExternalHTTPHandler(db, schema, enterprise.GitHubWebhook, enterprise.GitLabWebhook, enterprise.BitbucketServerWebhook, enterprise.NewCodeIntelUploadHandler, enterprise.NewExecutorProxyHandler)
 	if err != nil {
 		return nil, err
 	}
@@ -276,7 +276,7 @@ func makeExternalAPI(schema *graphql.Schema, enterprise enterprise.Services) (go
 	return server, nil
 }
 
-func makeInternalAPI(schema *graphql.Schema, enterprise enterprise.Services) (goroutine.BackgroundRoutine, error) {
+func makeInternalAPI(schema *graphql.Schema, db dbutil.DB, enterprise enterprise.Services) (goroutine.BackgroundRoutine, error) {
 	if httpAddrInternal == "" {
 		return nil, nil
 	}
@@ -287,7 +287,7 @@ func makeInternalAPI(schema *graphql.Schema, enterprise enterprise.Services) (go
 	}
 
 	// The internal HTTP handler does not include the auth handlers.
-	internalHandler := newInternalHTTPHandler(schema, enterprise.NewCodeIntelUploadHandler)
+	internalHandler := newInternalHTTPHandler(schema, db, enterprise.NewCodeIntelUploadHandler)
 
 	server := httpserver.New(listener, &http.Server{
 		Handler:     internalHandler,

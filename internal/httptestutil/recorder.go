@@ -8,6 +8,7 @@ import (
 
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/dnaeon/go-vcr/recorder"
+
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
@@ -25,6 +26,8 @@ func NewRecorder(file string, record bool, filters ...cassette.Filter) (*recorde
 
 	filters = append(filters, func(i *cassette.Interaction) error {
 		delete(i.Request.Headers, "Authorization")
+		// This is used for GitLab.
+		delete(i.Request.Headers, "Private-Token")
 		delete(i.Response.Headers, "Set-Cookie")
 		return nil
 	})

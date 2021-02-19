@@ -12,11 +12,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // 🚨 SECURITY: This tests that users can't create tokens for users they aren't allowed to do so for.
 func TestMutation_CreateAccessToken(t *testing.T) {
+	db := new(dbtesting.MockDB)
+
 	mockAccessTokensCreate := func(t *testing.T, wantCreatorUserID int32, wantScopes []string) {
 		database.Mocks.AccessTokens.Create = func(subjectUserID int32, scopes []string, note string, creatorUserID int32) (int64, string, error) {
 			if want := int32(1); subjectUserID != want {
@@ -71,7 +74,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		resetMocks()
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&schemaResolver{}).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID /* no scopes */, Note: "n"})
+		result, err := (&schemaResolver{db: db}).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID /* no scopes */, Note: "n"})
 		if err == nil {
 			t.Error("err == nil")
 		}
@@ -87,7 +90,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		}
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&schemaResolver{}).CreateAccessToken(ctx, &createAccessTokenInput{
+		result, err := (&schemaResolver{db: db}).CreateAccessToken(ctx, &createAccessTokenInput{
 			User:   uid1GQLID,
 			Scopes: []string{authz.ScopeUserAll, authz.ScopeSiteAdminSudo},
 			Note:   "n",
@@ -175,7 +178,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		defer func() { database.Mocks.Users.GetByID = nil }()
 
 		ctx := actor.WithActor(context.Background(), nil)
-		result, err := (&schemaResolver{}).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID, Note: "n"})
+		result, err := (&schemaResolver{db: db}).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID, Note: "n"})
 		if err == nil {
 			t.Error("Expected error, but there was none")
 		}
@@ -195,7 +198,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		defer func() { database.Mocks.Users.GetByID = nil }()
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: differentNonSiteAdminUID})
-		result, err := (&schemaResolver{}).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID, Note: "n"})
+		result, err := (&schemaResolver{db: db}).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID, Note: "n"})
 		if err == nil {
 			t.Error("Expected error, but there was none")
 		}
@@ -207,6 +210,8 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 
 // 🚨 SECURITY: This tests that users can't delete tokens they shouldn't be allowed to delete.
 func TestMutation_DeleteAccessToken(t *testing.T) {
+	db := new(dbtesting.MockDB)
+
 	mockAccessTokens := func(t *testing.T) {
 		database.Mocks.AccessTokens.DeleteByID = func(id int64, subjectUserID int32) error {
 			if want := int64(1); id != want {
@@ -297,7 +302,7 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 		defer func() { database.Mocks.Users.GetByID = nil }()
 
 		ctx := actor.WithActor(context.Background(), nil)
-		result, err := (&schemaResolver{}).DeleteAccessToken(ctx, &deleteAccessTokenInput{ByID: &token1GQLID})
+		result, err := (&schemaResolver{db: db}).DeleteAccessToken(ctx, &deleteAccessTokenInput{ByID: &token1GQLID})
 		if err == nil {
 			t.Error("Expected error, but there was none")
 		}
@@ -318,7 +323,7 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 		defer func() { database.Mocks.Users.GetByID = nil }()
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: differentNonSiteAdminUID})
-		result, err := (&schemaResolver{}).DeleteAccessToken(ctx, &deleteAccessTokenInput{ByID: &token1GQLID})
+		result, err := (&schemaResolver{db: db}).DeleteAccessToken(ctx, &deleteAccessTokenInput{ByID: &token1GQLID})
 		if err == nil {
 			t.Error("Expected error, but there was none")
 		}

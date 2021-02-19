@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/randstring"
 	"github.com/sourcegraph/sourcegraph/internal/routevar"
@@ -110,9 +111,9 @@ func Router() *mux.Router {
 // InitRouter create the router that serves pages for our web app
 // and assigns it to uirouter.Router.
 // The router can be accessed by calling Router().
-func InitRouter() {
+func InitRouter(db dbutil.DB) {
 	router := newRouter()
-	initRouter(router)
+	initRouter(db, router)
 }
 
 var mockServeRepo func(w http.ResponseWriter, r *http.Request)
@@ -204,7 +205,7 @@ func brandNameSubtitle(titles ...string) string {
 	return strings.Join(append(titles, globals.Branding().BrandName), " - ")
 }
 
-func initRouter(router *mux.Router) {
+func initRouter(db dbutil.DB, router *mux.Router) {
 	uirouter.Router = router // make accessible to other packages
 
 	// basic pages with static titles
@@ -267,7 +268,7 @@ func initRouter(router *mux.Router) {
 	}, nil)))
 
 	// streaming search
-	router.Get(routeSearchStream).Handler(search.StreamHandler())
+	router.Get(routeSearchStream).Handler(search.StreamHandler(db))
 
 	// search badge
 	router.Get(routeSearchBadge).Handler(searchBadgeHandler())
@@ -390,7 +391,7 @@ func handler(f func(w http.ResponseWriter, r *http.Request) error) http.Handler 
 			serveError(w, r, err, http.StatusInternalServerError)
 		}
 	})
-	return trace.TraceRoute(gziphandler.GzipHandler(h))
+	return trace.Route(gziphandler.GzipHandler(h))
 }
 
 type recoverError struct {

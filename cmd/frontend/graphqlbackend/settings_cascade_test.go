@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"reflect"
 	"testing"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
 func TestMergeSettings(t *testing.T) {
@@ -130,8 +132,9 @@ func TestMergeSettings(t *testing.T) {
 }
 
 func TestSubjects(t *testing.T) {
+	db := new(dbtesting.MockDB)
 	t.Run("Default settings are included", func(t *testing.T) {
-		cascade := &settingsCascade{unauthenticatedActor: true}
+		cascade := &settingsCascade{db: db, unauthenticatedActor: true}
 		subjects, err := cascade.Subjects(context.Background())
 		if err != nil {
 			t.Fatal(err)

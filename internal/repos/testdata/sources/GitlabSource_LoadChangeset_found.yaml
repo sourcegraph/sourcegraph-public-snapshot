@@ -1,0 +1,268 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://gitlab.com/api/v4/projects/16606088/merge_requests/2
+    method: GET
+  response:
+    body: '{"id":48629396,"iid":2,"project_id":16606088,"title":"a8n: Allow filtering
+      campaigns based on their state","description":"","state":"opened","created_at":"2020-01-30T13:04:48.674Z","updated_at":"2020-01-30T13:04:48.674Z","merged_by":null,"merged_at":null,"closed_by":null,"closed_at":null,"target_branch":"master","source_branch":"a8n/campaign-list-filter","user_notes_count":0,"upvotes":0,"downvotes":0,"author":{"id":3294801,"name":"Ryan
+      Blunden","username":"ryan-blunden","state":"active","avatar_url":"https://assets.gitlab-static.net/uploads/-/system/user/avatar/3294801/avatar.png","web_url":"https://gitlab.com/ryan-blunden"},"assignees":[],"assignee":null,"reviewers":[],"source_project_id":16606088,"target_project_id":16606088,"labels":[],"work_in_progress":false,"milestone":null,"merge_when_pipeline_succeeds":false,"merge_status":"cannot_be_merged","sha":"02cf15ec43a2e8818a1e0cac2da5ca9766ce1cdc","merge_commit_sha":null,"squash_commit_sha":null,"discussion_locked":null,"should_remove_source_branch":null,"force_remove_source_branch":false,"reference":"!2","references":{"short":"!2","relative":"!2","full":"sourcegraph/sourcegraph!2"},"web_url":"https://gitlab.com/sourcegraph/sourcegraph/-/merge_requests/2","time_stats":{"time_estimate":0,"total_time_spent":0,"human_time_estimate":null,"human_total_time_spent":null},"squash":false,"task_completion_status":{"count":0,"completed_count":0},"has_conflicts":true,"blocking_discussions_resolved":true,"approvals_before_merge":null,"subscribed":false,"changes_count":"9","head_pipeline":null,"diff_refs":{"base_sha":"743138714c8d9ec92ee96d9f200729814de7d2fb","head_sha":"02cf15ec43a2e8818a1e0cac2da5ca9766ce1cdc","start_sha":"c4f4bea6111b65a362e7ec529e4b1879e774e522"},"merge_error":null,"first_contribution":true,"user":{"can_merge":false}}'
+    headers:
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 620a4c179f3bacdc-OTP
+      Cf-Request-Id:
+      - 083a4de2bf0000acdcffbcb000000001
+      Content-Type:
+      - application/json
+      Date:
+      - Sat, 13 Feb 2021 00:05:21 GMT
+      Etag:
+      - W/"c62181a60a1e024fa9e3cb5a5df10f40"
+      Expect-Ct:
+      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      Gitlab-Lb:
+      - fe-06-lb-gprd
+      Gitlab-Sv:
+      - api-12-sv-gprd
+      Referrer-Policy:
+      - strict-origin-when-cross-origin
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000
+      Vary:
+      - Accept-Encoding
+      - Origin
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Gitlab-Feature-Category:
+      - code_review
+      X-Request-Id:
+      - 01EYCB9JS7ZVSNQWDA70NTC01S
+      X-Runtime:
+      - "0.160821"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://gitlab.com/api/v4/projects/16606088/merge_requests/2/notes?page=1
+    method: GET
+  response:
+    body: '[]'
+    headers:
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 620a4c1a4847acdc-OTP
+      Cf-Request-Id:
+      - 083a4de46d0000acdc293aa000000001
+      Content-Length:
+      - "2"
+      Content-Type:
+      - application/json
+      Date:
+      - Sat, 13 Feb 2021 00:05:21 GMT
+      Etag:
+      - W/"4f53cda18c2baa0c0354bb5f9a3ecbe5"
+      Expect-Ct:
+      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      Gitlab-Lb:
+      - fe-06-lb-gprd
+      Gitlab-Sv:
+      - api-06-sv-gprd
+      Link:
+      - <https://gitlab.com/api/v4/projects/16606088/merge_requests/2/notes?activity_filter=all_notes&id=16606088&noteable_id=2&order_by=created_at&page=1&per_page=20&sort=desc>;
+        rel="first", <https://gitlab.com/api/v4/projects/16606088/merge_requests/2/notes?activity_filter=all_notes&id=16606088&noteable_id=2&order_by=created_at&page=1&per_page=20&sort=desc>;
+        rel="last"
+      Referrer-Policy:
+      - strict-origin-when-cross-origin
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000
+      Vary:
+      - Origin
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Gitlab-Feature-Category:
+      - code_review
+      X-Next-Page:
+      - ""
+      X-Page:
+      - "1"
+      X-Per-Page:
+      - "20"
+      X-Prev-Page:
+      - ""
+      X-Request-Id:
+      - 01EYCB9K6MYXMFWAZBT3WSQ8WA
+      X-Runtime:
+      - "0.072246"
+      X-Total:
+      - "0"
+      X-Total-Pages:
+      - "1"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://gitlab.com/api/v4/projects/16606088/merge_requests/2/resource_state_events?page=1
+    method: GET
+  response:
+    body: '[]'
+    headers:
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 620a4c1c08f7acdc-OTP
+      Cf-Request-Id:
+      - 083a4de5870000acdc31198000000001
+      Content-Length:
+      - "2"
+      Content-Type:
+      - application/json
+      Date:
+      - Sat, 13 Feb 2021 00:05:22 GMT
+      Etag:
+      - W/"4f53cda18c2baa0c0354bb5f9a3ecbe5"
+      Expect-Ct:
+      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      Gitlab-Lb:
+      - fe-07-lb-gprd
+      Gitlab-Sv:
+      - api-13-sv-gprd
+      Link:
+      - <https://gitlab.com/api/v4/projects/16606088/merge_requests/2/resource_state_events?eventable_iid=2&id=16606088&page=1&per_page=20>;
+        rel="first", <https://gitlab.com/api/v4/projects/16606088/merge_requests/2/resource_state_events?eventable_iid=2&id=16606088&page=1&per_page=20>;
+        rel="last"
+      Referrer-Policy:
+      - strict-origin-when-cross-origin
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000
+      Vary:
+      - Origin
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Gitlab-Feature-Category:
+      - code_review
+      X-Next-Page:
+      - ""
+      X-Page:
+      - "1"
+      X-Per-Page:
+      - "20"
+      X-Prev-Page:
+      - ""
+      X-Request-Id:
+      - 01EYCB9KF9Y5GV5N0RFMKZ8AQ0
+      X-Runtime:
+      - "0.051033"
+      X-Total:
+      - "0"
+      X-Total-Pages:
+      - "1"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://gitlab.com/api/v4/projects/16606088/merge_requests/2/pipelines?page=1
+    method: GET
+  response:
+    body: '[]'
+    headers:
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 620a4c1e19ebacdc-OTP
+      Cf-Request-Id:
+      - 083a4de6cb0000acdc1d138000000001
+      Content-Length:
+      - "2"
+      Content-Type:
+      - application/json
+      Date:
+      - Sat, 13 Feb 2021 00:05:22 GMT
+      Etag:
+      - W/"4f53cda18c2baa0c0354bb5f9a3ecbe5"
+      Expect-Ct:
+      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      Gitlab-Lb:
+      - fe-03-lb-gprd
+      Gitlab-Sv:
+      - api-06-sv-gprd
+      Link:
+      - <https://gitlab.com/api/v4/projects/16606088/merge_requests/2/pipelines?id=16606088&merge_request_iid=2&page=1&per_page=>;
+        rel="first", <https://gitlab.com/api/v4/projects/16606088/merge_requests/2/pipelines?id=16606088&merge_request_iid=2&page=1&per_page=>;
+        rel="last"
+      Referrer-Policy:
+      - strict-origin-when-cross-origin
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000
+      Vary:
+      - Origin
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Gitlab-Feature-Category:
+      - code_review
+      X-Next-Page:
+      - ""
+      X-Page:
+      - "1"
+      X-Per-Page:
+      - "20"
+      X-Prev-Page:
+      - ""
+      X-Request-Id:
+      - 01EYCB9KSD795P224W7N6ZZCT6
+      X-Runtime:
+      - "0.063704"
+      X-Total:
+      - "0"
+      X-Total-Pages:
+      - "1"
+    status: 200 OK
+    code: 200
+    duration: ""

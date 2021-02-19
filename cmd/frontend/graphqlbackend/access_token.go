@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // accessTokenResolver resolves an access token.
@@ -20,15 +21,16 @@ import (
 // other services likely allow user accounts to do more than what access tokens
 // alone can via the API.
 type accessTokenResolver struct {
+	db          dbutil.DB
 	accessToken database.AccessToken
 }
 
-func accessTokenByID(ctx context.Context, id graphql.ID) (*accessTokenResolver, error) {
+func accessTokenByID(ctx context.Context, db dbutil.DB, id graphql.ID) (*accessTokenResolver, error) {
 	accessTokenID, err := unmarshalAccessTokenID(id)
 	if err != nil {
 		return nil, err
 	}
-	accessToken, err := database.GlobalAccessTokens.GetByID(ctx, accessTokenID)
+	accessToken, err := database.AccessTokens(db).GetByID(ctx, accessTokenID)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +38,7 @@ func accessTokenByID(ctx context.Context, id graphql.ID) (*accessTokenResolver, 
 	if err := backend.CheckSiteAdminOrSameUser(ctx, accessToken.SubjectUserID); err != nil {
 		return nil, err
 	}
-	return &accessTokenResolver{accessToken: *accessToken}, nil
+	return &accessTokenResolver{db: db, accessToken: *accessToken}, nil
 }
 
 func marshalAccessTokenID(id int64) graphql.ID { return relay.MarshalID("AccessToken", id) }
@@ -49,7 +51,7 @@ func unmarshalAccessTokenID(id graphql.ID) (accessTokenID int64, err error) {
 func (r *accessTokenResolver) ID() graphql.ID { return marshalAccessTokenID(r.accessToken.ID) }
 
 func (r *accessTokenResolver) Subject(ctx context.Context) (*UserResolver, error) {
-	return UserByIDInt32(ctx, r.accessToken.SubjectUserID)
+	return UserByIDInt32(ctx, r.db, r.accessToken.SubjectUserID)
 }
 
 func (r *accessTokenResolver) Scopes() []string { return r.accessToken.Scopes }
@@ -57,7 +59,7 @@ func (r *accessTokenResolver) Scopes() []string { return r.accessToken.Scopes }
 func (r *accessTokenResolver) Note() string { return r.accessToken.Note }
 
 func (r *accessTokenResolver) Creator(ctx context.Context) (*UserResolver, error) {
-	return UserByIDInt32(ctx, r.accessToken.CreatorUserID)
+	return UserByIDInt32(ctx, r.db, r.accessToken.CreatorUserID)
 }
 
 func (r *accessTokenResolver) CreatedAt() DateTime { return DateTime{Time: r.accessToken.CreatedAt} }

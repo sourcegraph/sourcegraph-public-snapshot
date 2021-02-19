@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -86,7 +87,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 		return nil, err
 	}
 
-	res := &externalServiceResolver{externalService: externalService}
+	res := &externalServiceResolver{db: r.db, externalService: externalService}
 	if err := syncExternalService(ctx, externalService); err != nil {
 		res.warning = fmt.Sprintf("External service created, but we encountered a problem while validating the external service: %s", err)
 	}
@@ -104,7 +105,7 @@ type updateExternalServiceInput struct {
 	Config      *string
 }
 
-func (*schemaResolver) UpdateExternalService(ctx context.Context, args *updateExternalServiceArgs) (*externalServiceResolver, error) {
+func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *updateExternalServiceArgs) (*externalServiceResolver, error) {
 	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
 		return nil, errors.New("updating external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
@@ -148,7 +149,7 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *updateEx
 		return nil, err
 	}
 
-	res := &externalServiceResolver{externalService: es}
+	res := &externalServiceResolver{db: r.db, externalService: es}
 	if err = syncExternalService(ctx, es); err != nil {
 		res.warning = fmt.Sprintf("External service updated, but we encountered a problem while validating the external service: %s", err)
 	}
@@ -275,7 +276,7 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 		AfterID:         afterID,
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
-	return &externalServiceConnectionResolver{opt: opt}, nil
+	return &externalServiceConnectionResolver{db: r.db, opt: opt}, nil
 }
 
 type externalServiceConnectionResolver struct {
@@ -285,6 +286,7 @@ type externalServiceConnectionResolver struct {
 	once             sync.Once
 	externalServices []*types.ExternalService
 	err              error
+	db               dbutil.DB
 }
 
 func (r *externalServiceConnectionResolver) compute(ctx context.Context) ([]*types.ExternalService, error) {
@@ -301,7 +303,7 @@ func (r *externalServiceConnectionResolver) Nodes(ctx context.Context) ([]*exter
 	}
 	resolvers := make([]*externalServiceResolver, 0, len(externalServices))
 	for _, externalService := range externalServices {
-		resolvers = append(resolvers, &externalServiceResolver{externalService: externalService})
+		resolvers = append(resolvers, &externalServiceResolver{db: r.db, externalService: externalService})
 	}
 	return resolvers, nil
 }
@@ -348,6 +350,7 @@ func (r *externalServiceConnectionResolver) PageInfo(ctx context.Context) (*grap
 type computedExternalServiceConnectionResolver struct {
 	args             graphqlutil.ConnectionArgs
 	externalServices []*types.ExternalService
+	db               dbutil.DB
 }
 
 func (r *computedExternalServiceConnectionResolver) Nodes(ctx context.Context) []*externalServiceResolver {
@@ -357,7 +360,7 @@ func (r *computedExternalServiceConnectionResolver) Nodes(ctx context.Context) [
 	}
 	resolvers := make([]*externalServiceResolver, 0, len(svcs))
 	for _, svc := range svcs {
-		resolvers = append(resolvers, &externalServiceResolver{externalService: svc})
+		resolvers = append(resolvers, &externalServiceResolver{db: r.db, externalService: svc})
 	}
 	return resolvers
 }

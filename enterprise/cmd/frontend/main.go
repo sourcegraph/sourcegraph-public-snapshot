@@ -25,7 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth"
-	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/graphqlbackend"
+	enterpriseGraphQL "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/graphqlbackend"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 )
 
@@ -48,6 +48,8 @@ func enterpriseSetupHook(db dbutil.DB, outOfBandMigrationRunner *oobmigration.Ru
 	if debug {
 		log.Println("enterprise edition")
 	}
+
+	enterpriseGraphQL.InitDotcom(db)
 
 	ctx := context.Background()
 	enterpriseServices := enterprise.DefaultServices()
