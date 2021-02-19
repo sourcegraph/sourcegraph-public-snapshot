@@ -43,7 +43,7 @@ hash psql 2>/dev/null || {
     fi
   }
 }
-if ! psql -wc '\x' >/dev/null; then
+if psql -wc '\x' >/dev/null; then
   echo "FAIL: postgreSQL config invalid or missing OR postgreSQL is still starting up."
   echo "You probably need, at least, PGUSER and PGPASSWORD set in the environment."
   exit 1
@@ -147,12 +147,15 @@ INSTALL_GO_TOOLS=(
 
 # Need to go to a temp directory for tools or we update our go.mod. We use
 # GOPROXY=direct to avoid always consulting a proxy for dlv.
-pushd "${TMPDIR:-/tmp}" >/dev/null || exit 1
+RANDOMT_TEMP=$(mktemp -d)
+cp .tool-versions "${RANDOMT_TEMP}"
+pushd "${RANDOMT_TEMP}" >/dev/null || exit 1
 if ! GOPROXY=direct go get -v "${INSTALL_GO_TOOLS[@]}" 2>go-install.log; then
   cat go-install.log
   echo >&2 "failed to install prerequisite tools, aborting."
   exit 1
 fi
+rm -rf "${RANDOMT_TEMP}"
 popd >/dev/null || exit 1
 
 # Put .bin:node_modules/.bin onto the $PATH
