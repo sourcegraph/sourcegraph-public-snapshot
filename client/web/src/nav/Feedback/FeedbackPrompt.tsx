@@ -122,7 +122,7 @@ const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({ closePro
             ) : (
                 <Form onSubmit={handleSubmit}>
                     <header className="feedback-prompt__header">
-                        <h3 className="mb-0">What‘s on your mind?</h3>
+                        <h3 className="mb-0">What’s on your mind?</h3>
                         <button type="button" className="feedback-prompt__header--close" onClick={closePrompt}>
                             <CloseIcon className="feedback-prompt__header--close__icon" />
                         </button>
@@ -133,7 +133,7 @@ const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({ closePro
                         value={text}
                         minRows={3}
                         maxRows={6}
-                        placeholder="What‘s going well? What could be better?"
+                        placeholder="What’s going well? What could be better?"
                         className="form-control feedback-prompt__textarea"
                         autoFocus={true}
                     />
