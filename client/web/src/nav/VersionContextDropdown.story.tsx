@@ -25,6 +25,7 @@ const commonProps = subtypeOf<Partial<VersionContextDropdownProps>>()({
         { name: 'test 3', description: 'test 3', revisions: [{ rev: 'test', repo: 'github.com/test/test' }] },
     ],
     navbarSearchQuery: 'test',
+    selectedSearchContextSpec: 'global',
     setVersionContext,
 })
 

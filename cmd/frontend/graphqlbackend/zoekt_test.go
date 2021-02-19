@@ -1031,7 +1031,7 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 		}},
 	}
 
-	repo := &RepositoryResolver{innerRepo: &types.Repo{Name: "foo"}}
+	repo := NewRepositoryResolver(&types.Repo{Name: "foo"})
 
 	results := zoektFileMatchToSymbolResults(repo, "master", file)
 	var symbols []protocol.Symbol
@@ -1043,7 +1043,7 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 		if got, want := res.baseURI.URL.String(), "git://foo?master"; got != want {
 			t.Fatalf("baseURI: got %q want %q", got, want)
 		}
-		if got, want := string(res.commit.Repository().Name()), "foo"; got != want {
+		if got, want := res.commit.Repository().Name(), "foo"; got != want {
 			t.Fatalf("reporesolver: got %q want %q", got, want)
 		}
 		if got, want := string(res.commit.OID()), "deadbeef"; got != want {

@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -11,8 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
@@ -43,12 +44,12 @@ func TestResolver_InsightSeries(t *testing.T) {
 			cleanup()
 			t.Fatal(err)
 		}
-		conn.(*insightConnectionResolver).mocksSettingsGetLatest = func(ctx context.Context, subject api.SettingsSubject) (*api.Settings, error) {
-			if !subject.Site { // TODO: future: site is an extremely poor name for "global settings", we should change this.
-				t.Fatal("expected only to request settings from global user settings")
-			}
-			return testRealGlobalSettings, nil
-		}
+
+		// Mock the setting store to return the desired settings.
+		settingStore := discovery.NewMockSettingStore()
+		conn.(*insightConnectionResolver).settingStore = settingStore
+		settingStore.GetLatestFunc.SetDefaultReturn(testRealGlobalSettings, nil)
+
 		nodes, err := conn.Nodes(ctx)
 		if err != nil {
 			cleanup()
@@ -99,7 +100,11 @@ func TestResolver_InsightSeries(t *testing.T) {
 		args.From.Time, _ = time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
 		args.To.Time, _ = time.Parse(time.RFC3339, "2006-01-03T15:04:05Z")
 		mock.SeriesPointsFunc.SetDefaultHook(func(ctx context.Context, opts store.SeriesPointsOpts) ([]store.SeriesPoint, error) {
-			autogold.Want("insights[0][0].Points store opts", "{SeriesID:<nil> From:2006-01-02 15:04:05 +0000 UTC To:2006-01-03 15:04:05 +0000 UTC Limit:0}").Equal(t, fmt.Sprintf("%+v", opts))
+			json, err := json.Marshal(opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+			autogold.Want("insights[0][0].Points store opts", `{"SeriesID":"s:087855E6A24440837303FD8A252E9893E8ABDFECA55B61AC83DA1B521906626E","From":"2006-01-02T15:04:05Z","To":"2006-01-03T15:04:05Z","Limit":0}`).Equal(t, string(json))
 			return []store.SeriesPoint{
 				{Time: args.From.Time, Value: 1},
 				{Time: args.From.Time, Value: 2},
@@ -110,6 +115,6 @@ func TestResolver_InsightSeries(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("insights[0][0].Points mocked", "[{p:{Time:{wall:0 ext:63271811045 loc:<nil>} Value:1}} {p:{Time:{wall:0 ext:63271811045 loc:<nil>} Value:2}} {p:{Time:{wall:0 ext:63271811045 loc:<nil>} Value:3}}]").Equal(t, fmt.Sprintf("%+v", points))
+		autogold.Want("insights[0][0].Points mocked", "[{p:{Time:{wall:0 ext:63271811045 loc:<nil>} Value:1 Metadata:[]}} {p:{Time:{wall:0 ext:63271811045 loc:<nil>} Value:2 Metadata:[]}} {p:{Time:{wall:0 ext:63271811045 loc:<nil>} Value:3 Metadata:[]}}]").Equal(t, fmt.Sprintf("%+v", points))
 	})
 }

@@ -1,4 +1,4 @@
-import { filterTypeKeysWithAliases } from './util'
+import { filterTypeKeysWithAliases } from './filters'
 import { SearchPatternType } from '../../graphql-operations'
 import {
     Token,

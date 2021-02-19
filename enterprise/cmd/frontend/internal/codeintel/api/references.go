@@ -468,8 +468,11 @@ func hashLocation(location lsifstore.Location) string {
 func applyBloomFilter(packageReferences []lsifstore.PackageReference, identifier string, limit int) ([]lsifstore.PackageReference, int) {
 	var filteredReferences []lsifstore.PackageReference
 	for i, ref := range packageReferences {
-		test, err := bloomfilter.DecodeAndTestFilter([]byte(ref.Filter), identifier)
-		if err != nil || !test {
+		filter, err := bloomfilter.Decode([]byte(ref.Filter))
+		if err != nil {
+			continue
+		}
+		if !filter(identifier) {
 			continue
 		}
 

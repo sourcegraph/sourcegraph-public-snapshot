@@ -1,7 +1,9 @@
 import React, { Suspense } from 'react'
 import { MonacoQueryInputProps } from './MonacoQueryInput'
+import { SearchContextDropdown } from './SearchContextDropdown'
 import { lazyComponent } from '../../util/lazyComponent'
 import { Toggles } from './toggles/Toggles'
+import { submitSearch } from '../helpers'
 
 const MonacoQueryInput = lazyComponent(() => import('./MonacoQueryInput'), 'MonacoQueryInput')
 
@@ -23,6 +25,11 @@ export const PlainQueryInput: React.FunctionComponent<MonacoQueryInputProps> = (
     )
     return (
         <div className="query-input2 d-flex">
+            {props.showSearchContext && (
+                <div className="query-input2__search-context-dropdown-container">
+                    <SearchContextDropdown {...props} submitSearch={submitSearch} query={queryState.query} />
+                </div>
+            )}
             <input
                 type="text"
                 autoFocus={autoFocus}

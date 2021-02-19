@@ -3,6 +3,8 @@ package dbstore
 import (
 	"context"
 	"database/sql"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -115,6 +117,58 @@ FROM lsif_dumps_with_repository_name d WHERE d.id = %s
 `
 
 const visibleAtTipFragment = `EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip WHERE repository_id = d.repository_id AND upload_id = d.id)`
+
+// GetDumpsByIDs returns a set of dumps by identifiers.
+func (s *Store) GetDumpsByIDs(ctx context.Context, ids []int) (dumps []Dump, err error) {
+	strIDs := make([]string, 0, len(ids))
+	for _, id := range ids {
+		strIDs = append(strIDs, strconv.Itoa(id))
+	}
+
+	ctx, endObservation := s.operations.getDumpsByIDs.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{
+			log.String("ids", strings.Join(strIDs, ", ")),
+		},
+	})
+	defer func() {
+		endObservation(1, observation.Args{LogFields: []log.Field{
+			log.Int("numDumps", len(dumps)),
+		}})
+	}()
+
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	var idx []*sqlf.Query
+	for _, id := range ids {
+		idx = append(idx, sqlf.Sprintf("%s", id))
+	}
+
+	return scanDumps(s.Store.Query(ctx, sqlf.Sprintf(getDumpsByIDsQuery, sqlf.Join(idx, ", "))))
+}
+
+const getDumpsByIDsQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/dumps.go:GetDumpsByIDs
+SELECT
+	d.id,
+	d.commit,
+	d.root,
+	` + visibleAtTipFragment + ` AS visible_at_tip,
+	d.uploaded_at,
+	d.state,
+	d.failure_message,
+	d.started_at,
+	d.finished_at,
+	d.process_after,
+	d.num_resets,
+	d.num_failures,
+	d.repository_id,
+	d.repository_name,
+	d.indexer,
+	d.associated_index_id
+FROM lsif_dumps_with_repository_name d WHERE d.id IN (%s)
+`
 
 // FindClosestDumps returns the set of dumps that can most accurately answer queries for the given repository, commit, path, and
 // optional indexer. If rootMustEnclosePath is true, then only dumps with a root which is a prefix of path are returned. Otherwise,

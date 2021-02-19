@@ -730,7 +730,7 @@ func (cs Changesets) RepoIDs() []api.RepoID {
 	for _, c := range cs {
 		repoIDMap[c.RepoID] = struct{}{}
 	}
-	repoIDs := make([]api.RepoID, len(repoIDMap))
+	repoIDs := make([]api.RepoID, 0, len(repoIDMap))
 	for id := range repoIDMap {
 		repoIDs = append(repoIDs, id)
 	}

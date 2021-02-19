@@ -199,7 +199,7 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*Repository
 			break
 		}
 
-		resolvers = append(resolvers, &RepositoryResolver{innerRepo: repo})
+		resolvers = append(resolvers, NewRepositoryResolver(repo))
 	}
 	return resolvers, nil
 }
@@ -297,7 +297,7 @@ func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct 
 
 	// Trigger update when enabling.
 	if args.Enabled {
-		if _, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, repo.innerRepo.Name); err != nil {
+		if _, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, repo.name); err != nil {
 			return nil, err
 		}
 	}
@@ -320,7 +320,7 @@ func toRepositoryResolvers(repos []*types.RepoName) []*RepositoryResolver {
 
 	resolvers := make([]*RepositoryResolver, len(repos))
 	for i := range repos {
-		resolvers[i] = &RepositoryResolver{innerRepo: repos[i].ToRepo()}
+		resolvers[i] = NewRepositoryResolver(repos[i].ToRepo())
 	}
 
 	return resolvers

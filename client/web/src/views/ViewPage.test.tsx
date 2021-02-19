@@ -6,6 +6,7 @@ import { Controller } from '../../../shared/src/extensions/controller'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import { of } from 'rxjs'
 import { SearchPatternType } from '../../../shared/src/graphql-operations'
+import { noop } from 'lodash'
 
 jest.mock('@sourcegraph/react-loading-spinner', () => ({ LoadingSpinner: 'LoadingSpinner' }))
 jest.mock('./QueryInputInViewContent', () => ({ QueryInputInViewContent: 'QueryInputInViewContent' }))
@@ -19,8 +20,10 @@ const commonProps: Omit<React.ComponentProps<typeof ViewPage>, 'viewID' | 'extra
     history: H.createMemoryHistory(),
     location: H.createLocation('/'),
     extensionsController: { services: { contribution: { getContributions: () => ({}) } } } as Controller,
+    telemetryService: { log: noop, logViewEvent: noop },
     copyQueryButton: false,
     versionContext: undefined,
+    selectedSearchContextSpec: 'global',
     globbing: false,
 }
 

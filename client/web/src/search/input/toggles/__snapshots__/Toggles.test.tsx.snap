@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Query input toggle state case toggle for case subexpressions 1`] = `
+exports[`Toggles Query input toggle state case toggle for case subexpressions 1`] = `
 Array [
   <QueryInputToggle
     activeClassName="test-case-sensitivity-toggle--active"
@@ -36,6 +36,7 @@ Array [
     navbarSearchQuery="(case:yes foo) or (case:no bar)"
     onToggle={[Function]}
     patternType="literal"
+    selectedSearchContextSpec="global"
     setCaseSensitivity={[Function]}
     setPatternType={[Function]}
     settingsCascade={
@@ -44,6 +45,7 @@ Array [
         "subjects": null,
       }
     }
+    showSearchContext={false}
     title="Case sensitivity"
   >
     <div
@@ -74,7 +76,7 @@ Array [
 ]
 `;
 
-exports[`Query input toggle state case toggle for patterntype subexpressions 1`] = `
+exports[`Toggles Query input toggle state case toggle for patterntype subexpressions 1`] = `
 Array [
   <QueryInputToggle
     activeClassName="test-case-sensitivity-toggle--active"
@@ -110,6 +112,7 @@ Array [
     navbarSearchQuery="(foo patterntype:literal) or (bar patterntype:structural)"
     onToggle={[Function]}
     patternType="literal"
+    selectedSearchContextSpec="global"
     setCaseSensitivity={[Function]}
     setPatternType={[Function]}
     settingsCascade={
@@ -118,6 +121,7 @@ Array [
         "subjects": null,
       }
     }
+    showSearchContext={false}
     title="Case sensitivity"
   >
     <div
@@ -148,7 +152,7 @@ Array [
 ]
 `;
 
-exports[`Query input toggle state regexp toggle for patterntype subexpressions 1`] = `
+exports[`Toggles Query input toggle state regexp toggle for patterntype subexpressions 1`] = `
 Array [
   <QueryInputToggle
     activeClassName="test-regexp-toggle--active"
@@ -176,6 +180,7 @@ Array [
     navbarSearchQuery="(foo patterntype:literal) or (bar patterntype:structural)"
     onToggle={[Function]}
     patternType="literal"
+    selectedSearchContextSpec="global"
     setCaseSensitivity={[Function]}
     setPatternType={[Function]}
     settingsCascade={
@@ -184,6 +189,7 @@ Array [
         "subjects": null,
       }
     }
+    showSearchContext={false}
     title="Regular expression"
   >
     <div

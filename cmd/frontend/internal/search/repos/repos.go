@@ -419,40 +419,6 @@ func resolveVersionContext(versionContext string) (*schema.VersionContext, error
 	return nil, errors.New("version context not found")
 }
 
-const globalSearchContextName = "global"
-
-type getNamespaceByNameFunc func(ctx context.Context, name string) (*database.Namespace, error)
-
-func resolveSearchContextSpec(ctx context.Context, searchContextSpec string, getNamespaceByName getNamespaceByNameFunc) (*types.SearchContext, error) {
-	if !envvar.SourcegraphDotComMode() {
-		return nil, nil
-	}
-
-	if isGlobalSearchContextSpec(searchContextSpec) {
-		return &types.SearchContext{Name: globalSearchContextName}, nil
-	} else if strings.HasPrefix(searchContextSpec, "@") {
-		name := searchContextSpec[1:]
-		namespace, err := getNamespaceByName(ctx, name)
-		if err != nil {
-			return nil, err
-		}
-		if namespace.User == 0 {
-			return nil, errors.Errorf("search context '%s' not found", searchContextSpec)
-		}
-		return &types.SearchContext{Name: name, UserID: namespace.User}, nil
-	}
-	return nil, errors.Errorf("search context '%s' does not have the correct format (global or @username)", searchContextSpec)
-}
-
-func isGlobalSearchContextSpec(searchContextSpec string) bool {
-	// Empty search context spec resolves to global search context
-	return searchContextSpec == "" || searchContextSpec == globalSearchContextName
-}
-
-func isGlobalSearchContext(searchContext *types.SearchContext) bool {
-	return searchContext != nil && searchContext.Name == globalSearchContextName
-}
-
 // Cf. golang/go/src/regexp/syntax/parse.go.
 const regexpFlags = regexpsyntax.ClassNL | regexpsyntax.PerlX | regexpsyntax.UnicodeGroups
 

@@ -5,7 +5,7 @@ Sourcegraph periodically sends a ping to Sourcegraph.com to help our product and
 ## Connection to Sourcegraph
 1. To send pings that:
    - Check for new product updates.
-   - Send anonymous, non-specific, aggregate metrics back to Sourcegraph.com. You can see the full list below. 
+   - Send anonymous, non-specific, aggregate metrics back to Sourcegraph.com. You can see the full list below.
 1. Sourcegraph extensions are fetched from Sourcegraph.com's extension registry (unless you are using a [private extension registry](https://docs.sourcegraph.com/admin/extensions#publish-extensions-to-a-private-extension-registry)).
 
 There are no other automatic external connections to Sourcegraph.com (or any other site on the internet).
@@ -78,3 +78,19 @@ By default, Sourcegraph also aggregates usage and performance metrics for some p
   - Total number of views of the onboarding tour
   - Total number of views of each step in the onboarding tour
   - Total number of tours closed
+- Sourcegraph extension activation statistics
+  - Total number of users that use a given non-default Sourcegraph extension
+  - Average number of activations for users that use a given non-default Sourcegraph extension
+  - Total number of users that use non-default Sourcegraph extensions
+  - Average number of non-default extensions enabled for users that use non-default Sourcegraph extensions
+- Code insights usage data
+  - Total count of page views on the insights page
+  - Count of unique viewers on the insights page
+  - Total counts of hovers, clicks, and drags of insights by type (e.g. search, code stats)
+  - Total counts of edits, additions, and removals of insights by type
+  - Total count of clicks on the "Add more insights" and "Configure insights" buttons on the insights page
+  - Weekly count of users that have created an insight, and count of users that have created their first insight this week                  
+
+## CIDR Range for Sourcegraph
+
+Sourcegraph currently uses Cloudflare to provide web application security. You should allow access to all [Cloudflare IP ranges](https://www.cloudflare.com/ips/)

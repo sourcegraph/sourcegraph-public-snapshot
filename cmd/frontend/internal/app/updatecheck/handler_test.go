@@ -175,6 +175,8 @@ func TestSerializeBasic(t *testing.T) {
 		"code_intel_usage": null,
 		"new_code_intel_usage": null,
 		"dependency_versions": null,
+		"extensions_usage": null,
+		"code_insights_usage": null,
 		"search_usage": null,
 		"growth_statistics": null,
 		"saved_searches": null,
@@ -235,6 +237,8 @@ func TestSerializeFromQuery(t *testing.T) {
 		"code_intel_usage": null,
 		"new_code_intel_usage": null,
 		"dependency_versions": null,
+		"extensions_usage": null,
+		"code_insights_usage": null,
 		"search_usage": null,
 		"growth_statistics": null,
 		"saved_searches": null,
@@ -301,6 +305,8 @@ func TestSerializeAutomationUsage(t *testing.T) {
 		"code_intel_usage": null,
 		"new_code_intel_usage": null,
 		"dependency_versions": null,
+		"extensions_usage": null,
+		"code_insights_usage": null,
 		"search_usage": null,
 		"growth_statistics": null,
 		"saved_searches": null,
@@ -324,10 +330,15 @@ func TestSerializeAutomationUsage(t *testing.T) {
 
 func TestSerializeCodeIntelUsage(t *testing.T) {
 	now := time.Unix(1587396557, 0).UTC()
+	waus1 := int32(25)
+	waus2 := int32(10)
+	waus3 := int32(40)
 
 	testUsage, err := json.Marshal(types.NewCodeIntelUsageStatistics{
-		StartOfWeek: now,
-		WAUs:        25,
+		StartOfWeek:                now,
+		WAUs:                       &waus1,
+		SearchBasedWAUs:            &waus2,
+		PreciseCrossRepositoryWAUs: &waus3,
 		EventSummaries: []types.CodeIntelEventSummary{
 			{
 				Action:          types.HoverAction,
@@ -427,6 +438,11 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 		"new_code_intel_usage": {
 			"start_time": "2020-04-20T15:29:17Z",
 			"waus": 25,
+			"precise_waus": null,
+			"search_waus": 10,
+			"xrepo_waus": null,
+			"precise_xrepo_waus": 40,
+			"search_xrepo_waus": null,
 			"event_summaries": [
 				{
 					"action": "hover",
@@ -479,6 +495,8 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 			]
 		},
 		"dependency_versions": null,
+		"extensions_usage": null,
+		"code_insights_usage": null,
 		"search_usage": null,
 		"growth_statistics": null,
 		"saved_searches": null,
@@ -571,6 +589,11 @@ func TestSerializeOldCodeIntelUsage(t *testing.T) {
 		"new_code_intel_usage": {
 			"start_time": "2020-04-20T15:29:17Z",
 			"waus": null,
+			"precise_waus": null,
+			"search_waus": null,
+			"xrepo_waus": null,
+			"precise_xrepo_waus": null,
+			"search_xrepo_waus": null,
 			"event_summaries": [
 				{
 					"action": "hover",
@@ -623,6 +646,8 @@ func TestSerializeOldCodeIntelUsage(t *testing.T) {
 			]
 		},
 		"dependency_versions": null,
+		"extensions_usage": null,
+		"code_insights_usage": null,
 		"search_usage": null,
 		"growth_statistics": null,
 		"saved_searches": null,

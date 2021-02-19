@@ -16,6 +16,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
@@ -32,6 +33,9 @@ const (
 	graphQLRequestNameKey
 	originKey
 	sourceKey
+	isInternalKey
+	anonymousUIDKey
+	ipAddressKey
 )
 
 // trackOrigin specifies a URL value. When an incoming request has the request header "Origin" set
@@ -41,13 +45,13 @@ const (
 var trackOrigin = "https://gitlab.com"
 
 var metricLabels = []string{"route", "method", "code", "repo", "origin"}
-var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Name:    "src_http_request_duration_seconds",
 	Help:    "The HTTP request latencies in seconds.",
 	Buckets: UserLatencyBuckets,
 }, metricLabels)
 
-var requestHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+var requestHeartbeat = promauto.NewGaugeVec(prometheus.GaugeOpts{
 	Name: "src_http_requests_last_timestamp_unixtime",
 	Help: "Last time a request finished for a http endpoint.",
 }, metricLabels)
@@ -56,9 +60,6 @@ func Init(shouldInitSentry bool) {
 	if origin := os.Getenv("METRICS_TRACK_ORIGIN"); origin != "" {
 		trackOrigin = origin
 	}
-
-	prometheus.MustRegister(requestDuration)
-	prometheus.MustRegister(requestHeartbeat)
 
 	if shouldInitSentry {
 		sentry.Init()
@@ -69,16 +70,57 @@ func Init(shouldInitSentry bool) {
 // a request to /.api/graphql?Foobar would have the name `Foobar`. If the request had no
 // name, or the context is not a GraphQL request, "unknown" is returned.
 func GraphQLRequestName(ctx context.Context) string {
-	v := ctx.Value(graphQLRequestNameKey)
-	if v == nil {
-		return "unknown"
+	v, ok := ctx.Value(graphQLRequestNameKey).(string)
+	if ok {
+		return v
 	}
-	return v.(string)
+	return "unknown"
 }
 
 // WithGraphQLRequestName sets the GraphQL request name in the context.
 func WithGraphQLRequestName(ctx context.Context, name string) context.Context {
 	return context.WithValue(ctx, graphQLRequestNameKey, name)
+}
+
+// IsInternalRequest returns true if the request was handled by our internal API
+// handler.
+func IsInternalRequest(ctx context.Context) bool {
+	v, ok := ctx.Value(isInternalKey).(bool)
+	if ok {
+		return v
+	}
+	return false
+}
+
+// WithIsInternal sets whether or not the request was handled by our internal or
+// external API handler.
+func WithIsInternal(ctx context.Context, isInternal bool) context.Context {
+	return context.WithValue(ctx, isInternalKey, isInternal)
+}
+
+// IPAddress attempts to fetch an IP address stored in the context.
+func IPAddress(ctx context.Context) string {
+	v, _ := ctx.Value(ipAddressKey).(string)
+	return v
+}
+
+// WithIPAddress sets the IP address associated with request.
+func WithIPAddress(ctx context.Context, ip string) context.Context {
+	return context.WithValue(ctx, ipAddressKey, ip)
+}
+
+// AnonymousUID sets the anonymous UID associated with the request.
+func AnonymousUID(ctx context.Context) string {
+	v, ok := ctx.Value(anonymousUIDKey).(string)
+	if ok {
+		return v
+	}
+	return "unknown"
+}
+
+// WithAnonymousUID fetches the anonymous UID associated with the request.
+func WithAnonymousUID(ctx context.Context, uid string) context.Context {
+	return context.WithValue(ctx, anonymousUIDKey, uid)
 }
 
 // RequestOrigin returns the request origin (the value of the request header "Origin") for a request context.

@@ -89,7 +89,7 @@ If you ever need to wipe your local database and Redis, run the following comman
 
 We use Caddy 2 to setup HTTPS for local development. It creates self-signed certificates and uses that to serve the local Sourcegraph instance. If your browser complains about the certificate, check the following:
 
-1. The first time that Caddy 2 reverse-proxies your Sourcegraph instance, it needs to add its certificate authority to your local certificate store. This may require elevated permissions on your machine. If you haven't done so already, try running `caddy reverse-proxy --to localhost:3080` and enter your password if prompted. You may also need to run that command as the `root` user.
+1. The first time that Caddy 2 reverse-proxies your Sourcegraph instance, it needs to add its certificate authority to your local certificate store. This may require elevated permissions on your machine. If you haven't done so already, try running `./dev/caddy.sh reverse-proxy --to localhost:3080` and enter your password if prompted. You may also need to run that command as the `root` user.
 
 1. If you have completed the previous step and your browser still complains about the certificate, try restarting your browser or your local machine.
 

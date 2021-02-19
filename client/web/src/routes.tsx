@@ -14,6 +14,7 @@ import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 import { cncf } from './repogroups/cncf'
 import { ExtensionAlertProps } from './repo/RepoContainer'
 import { StreamingSearchResults } from './search/results/streaming/StreamingSearchResults'
+import { isMacPlatform } from './util'
 
 const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
 const SearchResults = lazyComponent(() => import('./search/results/SearchResults'), 'SearchResults')
@@ -98,6 +99,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
             props.showMultilineSearchConsole ? (
                 <SearchConsolePage
                     {...props}
+                    isMacPlatform={isMacPlatform}
                     allExpanded={false}
                     showSavedQueryModal={false}
                     deployType={window.context.deployType}

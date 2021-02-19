@@ -25,7 +25,7 @@ You should now see a list of the code hosts that are configured on Sourcegraph. 
 
 To add a token for a code host, click on the **Add token** button next to its name. This will display an input modal like the following:
 
-<img class="screenshot" src="https://sourcegraphstatic.com/docs/images/campaigns/how-tos/user-token-input.png" alt="An input dialog, titled &quot;Github campaigns token for https://github.com&quot;, with an input box to type or paste a token and a list of scopes that must be enabled on the token, which are repo, read:org, and read:discussion">
+<img class="screenshot" src="https://sourcegraphstatic.com/docs/images/campaigns/how-tos/user-token-input-3.25.png" alt="An input dialog, titled &quot;Github campaigns token for https://github.com&quot;, with an input box to type or paste a token and a list of scopes that must be enabled on the token, which are repo, read:org, user:email, and read:discussion">
 
 To create a personal access token for a specific code host provider, please refer to the relevant section for "[GitHub](#github)", "[GitLab](#gitlab)", or "[Bitbucket Server](#bitbucket-server)". Once you have a token, you should paste it into the Sourcegraph input shown above, and click **Add token**.
 
@@ -39,7 +39,7 @@ Once this is done, Sourcegraph should indicate that you have a token with a gree
 
 In addition to the below, you should refer to [GitHub's documentation on creating a personal access token](https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/creating-a-personal-access-token).
 
-Sourcegraph requires the `repo`, `read:org`, and `read:discussion` scopes to be enabled on the user token. This is done by selecting the relevant checkboxes when creating the token:
+Sourcegraph requires the `repo`, `read:org`, `user:email`, and `read:discussion` scopes to be enabled on the user token. This is done by selecting the relevant checkboxes when creating the token:
 
 <img class="screenshot" src="https://sourcegraphstatic.com/docs/images/campaigns/how-tos/github-token.png" alt="The GitHub token creation page, with the repo scope selected">
 
