@@ -1809,6 +1809,91 @@ Indexes:
   WHERE (r.deleted_at IS NULL);
 ```
 
+# View "public.reconciler_changesets"
+```
+        Column         |           Type           | Modifiers 
+-----------------------+--------------------------+-----------
+ id                    | bigint                   | 
+ campaign_ids          | jsonb                    | 
+ repo_id               | integer                  | 
+ created_at            | timestamp with time zone | 
+ updated_at            | timestamp with time zone | 
+ metadata              | jsonb                    | 
+ external_id           | text                     | 
+ external_service_type | text                     | 
+ external_deleted_at   | timestamp with time zone | 
+ external_branch       | text                     | 
+ external_updated_at   | timestamp with time zone | 
+ external_state        | text                     | 
+ external_review_state | text                     | 
+ external_check_state  | text                     | 
+ diff_stat_added       | integer                  | 
+ diff_stat_changed     | integer                  | 
+ diff_stat_deleted     | integer                  | 
+ sync_state            | jsonb                    | 
+ current_spec_id       | bigint                   | 
+ previous_spec_id      | bigint                   | 
+ publication_state     | text                     | 
+ owned_by_campaign_id  | bigint                   | 
+ reconciler_state      | text                     | 
+ failure_message       | text                     | 
+ started_at            | timestamp with time zone | 
+ finished_at           | timestamp with time zone | 
+ process_after         | timestamp with time zone | 
+ num_resets            | integer                  | 
+ closing               | boolean                  | 
+ num_failures          | integer                  | 
+ log_contents          | text                     | 
+ execution_logs        | json[]                   | 
+ syncer_error          | text                     | 
+
+```
+
+## View query:
+
+```sql
+ SELECT c.id,
+    c.campaign_ids,
+    c.repo_id,
+    c.created_at,
+    c.updated_at,
+    c.metadata,
+    c.external_id,
+    c.external_service_type,
+    c.external_deleted_at,
+    c.external_branch,
+    c.external_updated_at,
+    c.external_state,
+    c.external_review_state,
+    c.external_check_state,
+    c.diff_stat_added,
+    c.diff_stat_changed,
+    c.diff_stat_deleted,
+    c.sync_state,
+    c.current_spec_id,
+    c.previous_spec_id,
+    c.publication_state,
+    c.owned_by_campaign_id,
+    c.reconciler_state,
+    c.failure_message,
+    c.started_at,
+    c.finished_at,
+    c.process_after,
+    c.num_resets,
+    c.closing,
+    c.num_failures,
+    c.log_contents,
+    c.execution_logs,
+    c.syncer_error
+   FROM (changesets c
+     JOIN repo r ON ((r.id = c.repo_id)))
+  WHERE ((r.deleted_at IS NULL) AND (EXISTS ( SELECT 1
+           FROM ((campaigns
+             LEFT JOIN users namespace_user ON ((campaigns.namespace_user_id = namespace_user.id)))
+             LEFT JOIN orgs namespace_org ON ((campaigns.namespace_org_id = namespace_org.id)))
+          WHERE ((c.campaign_ids ? (campaigns.id)::text) AND (namespace_user.deleted_at IS NULL) AND (namespace_org.deleted_at IS NULL)))));
+```
+
 # View "public.site_config"
 ```
    Column    |  Type   | Modifiers 
