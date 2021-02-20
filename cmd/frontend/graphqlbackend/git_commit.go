@@ -176,8 +176,8 @@ func (r *GitCommitResolver) URL() string {
 	return r.repoResolver.URL() + "/-/commit/" + r.inputRevOrImmutableRev()
 }
 
-func (r *GitCommitResolver) CanonicalURL() (string, error) {
-	return r.repoResolver.URL() + "/-/commit/" + string(r.oid), nil
+func (r *GitCommitResolver) CanonicalURL() string {
+	return r.repoResolver.URL() + "/-/commit/" + string(r.oid)
 }
 
 func (r *GitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {

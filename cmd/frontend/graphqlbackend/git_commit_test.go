@@ -87,7 +87,7 @@ func TestGitCommitResolver(t *testing.T) {
 			name: "canonical-url",
 			want: "/bob-repo/-/commit/c1",
 			have: func(r *GitCommitResolver) (interface{}, error) {
-				return r.CanonicalURL()
+				return r.CanonicalURL(), nil
 			},
 		}} {
 			t.Run(tc.name, func(t *testing.T) {
