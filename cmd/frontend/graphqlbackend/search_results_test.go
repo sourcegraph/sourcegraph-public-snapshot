@@ -1450,16 +1450,16 @@ func TestSearchContext(t *testing.T) {
 }
 
 func commitResult(url string) *CommitSearchResultResolver {
-	return &CommitSearchResultResolver{
+	return &CommitSearchResultResolver{CommitSearchResult: CommitSearchResult{
 		url: url,
-	}
+	}}
 }
 
 func diffResult(url string) *CommitSearchResultResolver {
-	return &CommitSearchResultResolver{
+	return &CommitSearchResultResolver{CommitSearchResult: CommitSearchResult{
 		url:         url,
 		diffPreview: &highlightedString{},
-	}
+	}}
 }
 
 func repoResult(db dbutil.DB, url string) *RepositoryResolver {

@@ -45,8 +45,10 @@ type GitCommitResolver struct {
 
 	gitRepo api.RepoName
 
-	commitOnce sync.Once
+	// commit should not be accessed directly since it might not be initialized.
+	// Use the resolver methods instead.
 	commit     *git.Commit
+	commitOnce sync.Once
 	commitErr  error
 }
 

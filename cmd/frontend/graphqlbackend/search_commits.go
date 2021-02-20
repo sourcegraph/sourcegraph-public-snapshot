@@ -16,6 +16,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -24,11 +25,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type CommitSearchResult struct {
-	commit         *GitCommitResolver
+	commit         git.Commit
+	repoName       types.RepoName
 	refs           []*GitRefResolver
 	sourceRefs     []*GitRefResolver
 	messagePreview *highlightedString
@@ -41,19 +44,38 @@ type CommitSearchResult struct {
 }
 
 // CommitSearchResultResolver is a resolver for the GraphQL type `CommitSearchResult`
-type CommitSearchResultResolver CommitSearchResult
+type CommitSearchResultResolver struct {
+	CommitSearchResult
+
+	db dbutil.DB
+
+	// gitCommitResolver should not be used directly since it may be uninitialized.
+	// Use Commit() instead.
+	gitCommitResolver *GitCommitResolver
+	gitCommitOnce     sync.Once
+}
 
 func (r *CommitSearchResultResolver) Select(path filter.SelectPath) SearchResultResolver {
 	switch path.Type {
 	case filter.Repository:
-		return r.commit.Repository()
+		return r.Commit().Repository()
 	case filter.Commit:
 		return r
 	}
 	return nil
 }
 
-func (r *CommitSearchResultResolver) Commit() *GitCommitResolver         { return r.commit }
+func (r *CommitSearchResultResolver) Commit() *GitCommitResolver {
+	r.gitCommitOnce.Do(func() {
+		if r.gitCommitResolver != nil {
+			return
+		}
+		repoResolver := NewRepositoryResolver(r.db, r.repoName.ToRepo())
+		r.gitCommitResolver = toGitCommitResolver(repoResolver, r.db, r.commit.ID, &r.commit)
+	})
+	return r.gitCommitResolver
+}
+
 func (r *CommitSearchResultResolver) Refs() []*GitRefResolver            { return r.refs }
 func (r *CommitSearchResultResolver) SourceRefs() []*GitRefResolver      { return r.sourceRefs }
 func (r *CommitSearchResultResolver) MessagePreview() *highlightedString { return r.messagePreview }
@@ -335,7 +357,16 @@ func logCommitSearchResultsToResolvers(ctx context.Context, db dbutil.DB, op *se
 	for i, rawResult := range rawResults {
 		commit := rawResult.Commit
 		commitResolver := toGitCommitResolver(repoResolver, db, commit.ID, &commit)
-		results[i] = &CommitSearchResultResolver{commit: commitResolver}
+		results[i] = &CommitSearchResultResolver{
+			db: db,
+			CommitSearchResult: CommitSearchResult{
+				commit: commit,
+				repoName: types.RepoName{
+					Name: api.RepoName(repoResolver.Name()),
+					ID:   api.RepoID(repoResolver.IDInt32()),
+				},
+			},
+		}
 
 		addRefs := func(dst *[]*GitRefResolver, src []string) {
 			for _, ref := range src {
@@ -665,7 +696,7 @@ func commitSearchResultsToSearchResults(results []*CommitSearchResultResolver) [
 
 	// Show most recent commits first.
 	sort.Slice(results, func(i, j int) bool {
-		return results[i].commit.commit.Author.Date.After(results[j].commit.commit.Author.Date)
+		return results[i].Commit().commit.Author.Date.After(results[j].Commit().commit.Author.Date)
 	})
 
 	results2 := make([]SearchResultResolver, len(results))
