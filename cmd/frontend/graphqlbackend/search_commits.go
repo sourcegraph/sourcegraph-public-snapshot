@@ -383,20 +383,13 @@ func logCommitSearchResultsToResolvers(ctx context.Context, db dbutil.DB, op *se
 	results := make([]*CommitSearchResultResolver, len(rawResults))
 	for i, rawResult := range rawResults {
 		commit := rawResult.Commit
-		commitResolver := toGitCommitResolver(repoResolver, db, commit.ID, &commit)
-		results[i] = &CommitSearchResultResolver{
-			db: db,
-			CommitSearchResult: CommitSearchResult{
-				commit: commit,
-				repoName: types.RepoName{
-					Name: api.RepoName(repoResolver.Name()),
-					ID:   api.RepoID(repoResolver.IDInt32()),
-				},
-			},
-		}
 
-		var matchBody string
-		var matchHighlights []*highlightedRange
+		var (
+			diffPreview     *highlightedString
+			messagePreview  *highlightedString
+			matchBody       string
+			matchHighlights []*highlightedRange
+		)
 		// TODO(sqs): properly combine message: and term values for type:commit searches
 		if !op.Diff {
 			if len(op.ExtraMessageValues) > 0 {
@@ -406,28 +399,45 @@ func logCommitSearchResultsToResolvers(ctx context.Context, db dbutil.DB, op *se
 				}
 				pat, err := regexp.Compile(patString)
 				if err == nil {
-					results[i].messagePreview = highlightMatches(pat, []byte(commit.Message))
-					matchHighlights = results[i].messagePreview.highlights
+					messagePreview = highlightMatches(pat, []byte(commit.Message))
+					matchHighlights = messagePreview.highlights
 				}
 			} else {
-				results[i].messagePreview = &highlightedString{value: string(commit.Message)}
+				messagePreview = &highlightedString{value: string(commit.Message)}
 			}
 			matchBody = "```COMMIT_EDITMSG\n" + string(rawResult.Commit.Message) + "\n```"
 		}
 
 		if rawResult.Diff != nil && op.Diff {
-			results[i].diffPreview = &highlightedString{
+			diffPreview = &highlightedString{
 				value:      rawResult.Diff.Raw,
 				highlights: fromVCSHighlights(rawResult.DiffHighlights),
 			}
 			matchBody, matchHighlights = cleanDiffPreview(fromVCSHighlights(rawResult.DiffHighlights), rawResult.Diff.Raw)
 		}
 
-		url := commitResolver.URL()
-
+		commitResolver := toGitCommitResolver(repoResolver, db, commit.ID, &commit)
+		url := commitResolver.URL() // TODO (@camdencheek): avoid constructing a commit resolver just for the url
 		match := &searchResultMatchResolver{body: matchBody, highlights: matchHighlights, url: url}
 		matches := []*searchResultMatchResolver{match}
-		results[i].matches = matches
+
+		results[i] = &CommitSearchResultResolver{
+			db: db,
+			CommitSearchResult: CommitSearchResult{
+				commit:         rawResult.Commit,
+				refs:           rawResult.Refs,
+				sourceRefs:     rawResult.SourceRefs,
+				messagePreview: messagePreview,
+				diffPreview:    diffPreview,
+				matches:        matches,
+
+				// TODO (@camdencheek): remove need for repoResolver
+				repoName: types.RepoName{
+					Name: api.RepoName(repoResolver.Name()),
+					ID:   api.RepoID(repoResolver.IDInt32()),
+				},
+			},
+		}
 	}
 
 	return results, nil
