@@ -399,9 +399,8 @@ func logCommitSearchResultsToResolvers(ctx context.Context, db dbutil.DB, op *se
 		var matchHighlights []*highlightedRange
 		// TODO(sqs): properly combine message: and term values for type:commit searches
 		if !op.Diff {
-			var patString string
 			if len(op.ExtraMessageValues) > 0 {
-				patString = orderedFuzzyRegexp(op.ExtraMessageValues)
+				patString := orderedFuzzyRegexp(op.ExtraMessageValues)
 				if !op.Query.IsCaseSensitive() {
 					patString = "(?i:" + patString + ")"
 				}
