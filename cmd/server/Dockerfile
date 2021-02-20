@@ -3,6 +3,14 @@ FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd2
 COPY libsqlite3-pcre-install-alpine.sh /libsqlite3-pcre-install-alpine.sh
 RUN /libsqlite3-pcre-install-alpine.sh
 
+# Install p4 CLI (keep this up to date with cmd/gitserver/Dockerfile)
+FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd212d78d7be145adde636d AS p4cli
+
+# hadolint ignore=DL3003
+RUN wget http://cdist2.perforce.com/perforce/r20.2/bin.linux26x86_64/p4 && \
+    mv p4 /usr/local/bin/p4 && \
+    chmod +x /usr/local/bin/p4
+
 FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd212d78d7be145adde636d
 # TODO(security): This container should not be running as root!
 #
@@ -31,6 +39,7 @@ RUN apk update && apk add --no-cache \
     'redis=5.0.9-r0' \
     # Gitserver requires Git protocol v2 https://github.com/sourcegraph/sourcegraph/issues/13168
     'git>=2.18' \
+    git-p4 \
     'nginx>=1.18.0' openssh-client pcre sqlite-libs su-exec 'nodejs-current=14.5.0-r0'
 
 # IMPORTANT: If you update the syntect_server version below, you MUST confirm
@@ -85,6 +94,14 @@ COPY --from=sourcegraph/grafana:server /usr/share/grafana /usr/share/grafana
 COPY --from=libsqlite3-pcre /sqlite3-pcre/pcre.so /libsqlite3-pcre.so
 ENV LIBSQLITE3_PCRE /libsqlite3-pcre.so
 COPY . /
+
+# hadolint ignore=DL3022
+COPY --from=p4cli /usr/local/bin/p4 /usr/local/bin/p4
+
+# This is a trick to include libraries required by p4,
+# please refer to https://blog.tilander.org/docker-perforce/
+ADD https://github.com/jtilander/p4d/raw/master/lib/lib-x64.tgz /
+RUN tar zxf /lib-x64.tgz --directory /
 
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/grafana:server /sg_config_grafana/provisioning/dashboards /sg_config_grafana/provisioning/dashboards

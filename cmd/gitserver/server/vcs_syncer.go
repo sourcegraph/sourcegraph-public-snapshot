@@ -141,6 +141,29 @@ func p4ping(ctx context.Context, host, username string) error {
 	return nil
 }
 
+// p4trust blindly accepts fingerprint of the Perforce Server.
+func p4trust(ctx context.Context, host string) error {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "p4", "trust", "-y", "-f")
+	cmd.Env = append(os.Environ(),
+		"P4PORT="+host,
+	)
+
+	out, err := runWith(ctx, cmd, false, nil)
+	if err != nil {
+		if ctxerr := ctx.Err(); ctxerr != nil {
+			err = ctxerr
+		}
+		if len(out) > 0 {
+			err = fmt.Errorf("%s (output follows)\n\n%s", err, out)
+		}
+		return err
+	}
+	return nil
+}
+
 // p4login performs a login operation against the Perforce Server to obtain a session.
 func p4login(ctx context.Context, host, username, password string) error {
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
@@ -192,16 +215,27 @@ func p4pingWithLogin(ctx context.Context, host, username, password string) error
 	err := p4ping(ctx, host, username)
 	if err == nil {
 		return nil // The ping worked, session still validate for the user
-	} else if !strings.Contains(err.Error(), "Your session has expired, please login again.") &&
-		!strings.Contains(err.Error(), "Perforce password (P4PASSWD) invalid or unset.") {
-		return errors.Wrap(err, "ping")
 	}
 
-	err = p4login(ctx, host, username, password)
-	if err != nil {
-		return errors.Wrap(err, "login")
+	if strings.Contains(err.Error(), "To allow connection use the 'p4 trust' command.") {
+		err := p4trust(ctx, host)
+		if err != nil {
+			return errors.Wrap(err, "trust")
+		}
+		return nil
 	}
-	return nil
+
+	if strings.Contains(err.Error(), "Your session has expired, please login again.") ||
+		strings.Contains(err.Error(), "Perforce password (P4PASSWD) invalid or unset.") {
+		err := p4login(ctx, host, username, password)
+		if err != nil {
+			return errors.Wrap(err, "login")
+		}
+		return nil
+	}
+
+	// Something unexpected happened, bubble up the error
+	return err
 }
 
 // IsCloneable checks to see if the Perforce remote URL is cloneable.
