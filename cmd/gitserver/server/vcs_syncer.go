@@ -228,6 +228,7 @@ func p4pingWithLogin(ctx context.Context, host, username, password string) error
 		if err != nil {
 			return errors.Wrap(err, "trust")
 		}
+		return nil
 	}
 
 	if strings.Contains(err.Error(), "Your session has expired, please login again.") ||
