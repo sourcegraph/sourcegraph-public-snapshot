@@ -13,9 +13,7 @@ type CreateCampaigner interface {
 	Clock() func() time.Time
 }
 
-func CreateCampaign(t *testing.T, ctx context.Context, store CreateCampaigner, name string, userID int32, spec int64) *campaigns.Campaign {
-	t.Helper()
-
+func BuildCampaign(store CreateCampaigner, name string, userID int32, spec int64) *campaigns.Campaign {
 	c := &campaigns.Campaign{
 		InitialApplierID: userID,
 		LastApplierID:    userID,
@@ -25,6 +23,13 @@ func CreateCampaign(t *testing.T, ctx context.Context, store CreateCampaigner, n
 		Name:             name,
 		Description:      "campaign description",
 	}
+	return c
+}
+
+func CreateCampaign(t *testing.T, ctx context.Context, store CreateCampaigner, name string, userID int32, spec int64) *campaigns.Campaign {
+	t.Helper()
+
+	c := BuildCampaign(store, name, userID, spec)
 
 	if err := store.CreateCampaign(ctx, c); err != nil {
 		t.Fatal(err)

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
