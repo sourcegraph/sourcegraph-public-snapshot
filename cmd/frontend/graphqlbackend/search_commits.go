@@ -32,8 +32,8 @@ import (
 type CommitSearchResult struct {
 	commit         git.Commit
 	repoName       types.RepoName
-	refs           []*GitRefResolver
-	sourceRefs     []*GitRefResolver
+	refs           []string
+	sourceRefs     []string
 	messagePreview *highlightedString
 	diffPreview    *highlightedString
 	icon           string
@@ -76,8 +76,28 @@ func (r *CommitSearchResultResolver) Commit() *GitCommitResolver {
 	return r.gitCommitResolver
 }
 
-func (r *CommitSearchResultResolver) Refs() []*GitRefResolver            { return r.refs }
-func (r *CommitSearchResultResolver) SourceRefs() []*GitRefResolver      { return r.sourceRefs }
+func (r *CommitSearchResultResolver) Refs() []*GitRefResolver {
+	out := make([]*GitRefResolver, 0, len(r.refs))
+	for _, ref := range r.refs {
+		out = append(out, &GitRefResolver{
+			repo: r.Commit().Repository(),
+			name: ref,
+		})
+	}
+	return out
+}
+
+func (r *CommitSearchResultResolver) SourceRefs() []*GitRefResolver {
+	out := make([]*GitRefResolver, 0, len(r.sourceRefs))
+	for _, ref := range r.refs {
+		out = append(out, &GitRefResolver{
+			repo: r.Commit().Repository(),
+			name: ref,
+		})
+	}
+	return out
+}
+
 func (r *CommitSearchResultResolver) MessagePreview() *highlightedString { return r.messagePreview }
 func (r *CommitSearchResultResolver) DiffPreview() *highlightedString    { return r.diffPreview }
 func (r *CommitSearchResultResolver) Icon() string {
@@ -368,16 +388,6 @@ func logCommitSearchResultsToResolvers(ctx context.Context, db dbutil.DB, op *se
 			},
 		}
 
-		addRefs := func(dst *[]*GitRefResolver, src []string) {
-			for _, ref := range src {
-				*dst = append(*dst, &GitRefResolver{
-					repo: repoResolver,
-					name: ref,
-				})
-			}
-		}
-		addRefs(&results[i].refs, rawResult.Refs)
-		addRefs(&results[i].sourceRefs, rawResult.SourceRefs)
 		var matchBody string
 		var matchHighlights []*highlightedRange
 		// TODO(sqs): properly combine message: and term values for type:commit searches
