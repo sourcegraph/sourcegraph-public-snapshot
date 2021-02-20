@@ -36,7 +36,8 @@ type CommitSearchResult struct {
 	sourceRefs     []string
 	messagePreview *highlightedString
 	diffPreview    *highlightedString
-	matches        []*searchResultMatchResolver
+	body           string
+	highlights     []*highlightedRange
 }
 
 // CommitSearchResultResolver is a resolver for the GraphQL type `CommitSearchResult`
@@ -124,7 +125,9 @@ func (r *CommitSearchResultResolver) Detail() Markdown {
 }
 
 func (r *CommitSearchResultResolver) Matches() []*searchResultMatchResolver {
-	return r.matches
+	match := &searchResultMatchResolver{body: r.body, highlights: r.highlights, url: r.Commit().URL()}
+	matches := []*searchResultMatchResolver{match}
+	return matches
 }
 
 func (r *CommitSearchResultResolver) ToRepository() (*RepositoryResolver, bool) { return nil, false }
@@ -416,11 +419,6 @@ func logCommitSearchResultsToResolvers(ctx context.Context, db dbutil.DB, op *se
 			matchBody, matchHighlights = cleanDiffPreview(fromVCSHighlights(rawResult.DiffHighlights), rawResult.Diff.Raw)
 		}
 
-		commitResolver := toGitCommitResolver(repoResolver, db, commit.ID, &commit)
-		url := commitResolver.URL() // TODO (@camdencheek): avoid constructing a commit resolver just for the url
-		match := &searchResultMatchResolver{body: matchBody, highlights: matchHighlights, url: url}
-		matches := []*searchResultMatchResolver{match}
-
 		results[i] = &CommitSearchResultResolver{
 			db: db,
 			CommitSearchResult: CommitSearchResult{
@@ -429,7 +427,8 @@ func logCommitSearchResultsToResolvers(ctx context.Context, db dbutil.DB, op *se
 				sourceRefs:     rawResult.SourceRefs,
 				messagePreview: messagePreview,
 				diffPreview:    diffPreview,
-				matches:        matches,
+				body:           matchBody,
+				highlights:     matchHighlights,
 
 				// TODO (@camdencheek): remove need for repoResolver
 				repoName: types.RepoName{

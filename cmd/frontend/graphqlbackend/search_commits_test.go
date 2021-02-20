@@ -74,7 +74,8 @@ func TestSearchCommitsInRepo(t *testing.T) {
 			commit:      git.Commit{ID: "c1", Author: gitSignatureWithDate},
 			repoName:    types.RepoName{ID: 1, Name: "repo"},
 			diffPreview: &highlightedString{value: "x", highlights: []*highlightedRange{}},
-			matches:     []*searchResultMatchResolver{{url: "/repo/-/commit/c1", body: "```diff\nx```", highlights: []*highlightedRange{}}},
+			body:        "```diff\nx```",
+			highlights:  []*highlightedRange{},
 		},
 	}}
 
@@ -95,6 +96,11 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	wantURL := "/repo/-/commit/c1"
 	if gotURL := want[0].URL(); gotURL != wantURL {
 		t.Errorf("url\ngot  %v\nwant %v", gotURL, wantURL)
+	}
+
+	wantMatches := []*searchResultMatchResolver{{url: "/repo/-/commit/c1", body: "```diff\nx```", highlights: []*highlightedRange{}}}
+	if gotMatches := want[0].Matches(); !reflect.DeepEqual(gotMatches, wantMatches) {
+		t.Errorf("matches\ngot  %v\nwant %v", gotMatches, wantMatches)
 	}
 
 	if limitHit {
