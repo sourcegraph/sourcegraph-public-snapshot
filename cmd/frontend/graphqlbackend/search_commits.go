@@ -36,7 +36,6 @@ type CommitSearchResult struct {
 	sourceRefs     []string
 	messagePreview *highlightedString
 	diffPreview    *highlightedString
-	url            string
 	matches        []*searchResultMatchResolver
 }
 
@@ -114,13 +113,13 @@ func (r *CommitSearchResultResolver) Label() Markdown {
 }
 
 func (r *CommitSearchResultResolver) URL() string {
-	return r.url
+	return r.Commit().URL()
 }
 
 func (r *CommitSearchResultResolver) Detail() Markdown {
 	commitHash := r.commit.ID.Short()
 	timeagoConfig := timeago.NoMax(timeago.English)
-	detail := fmt.Sprintf("[`%v` %v](%v)", commitHash, timeagoConfig.Format(r.commit.Author.Date), r.url)
+	detail := fmt.Sprintf("[`%v` %v](%v)", commitHash, timeagoConfig.Format(r.commit.Author.Date), r.Commit().URL())
 	return Markdown(detail)
 }
 
@@ -427,7 +426,6 @@ func logCommitSearchResultsToResolvers(ctx context.Context, db dbutil.DB, op *se
 
 		url := commitResolver.URL()
 
-		results[i].url = url
 		match := &searchResultMatchResolver{body: matchBody, highlights: matchHighlights, url: url}
 		matches := []*searchResultMatchResolver{match}
 		results[i].matches = matches
