@@ -62,13 +62,24 @@
         }
 
         &__actions {
-            margin-right: 2rem;
+            position: relative;
+            padding-right: 2rem;
+            border-bottom: 3px solid var(--border-color);
+            opacity: 0.6;
+
+            // Complete border if content is pushed onto new line
+            &:after {
+                position: absolute;
+                content: '';
+                top: 100%;
+                left: 100%;
+                width: 100%;
+                border-bottom: inherit;
+            }
         }
 
         &__action {
-            opacity: 0.6;
             padding: 0.25rem 0.75rem;
-            border-bottom: 3px solid var(--border-color);
         }
     }
 }
