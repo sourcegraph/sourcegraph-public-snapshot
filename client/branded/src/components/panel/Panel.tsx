@@ -3,7 +3,6 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 import { Observable, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
-import classNames from 'classnames'
 import {
     PanelViewWithComponent,
     PanelViewProviderRegistrationOptions,
@@ -61,11 +60,6 @@ interface PanelItem extends Tab<string> {
      * location provider (even if the result set is empty).
      */
     hasLocations?: boolean
-}
-
-interface PanelActionsProps extends Props {
-    activePanel?: PanelItem
-    className?: string
 }
 
 /**
@@ -149,7 +143,7 @@ class Panel extends React.PureComponent<Props, State> {
                             </>
                         }
                         className="panel__tabs"
-                        tabBarClassName="flex-wrap"
+                        tabBarClassName="panel__tab-bar"
                         tabClassName="tab-bar__tab--h5like"
                         location={this.props.location}
                     >

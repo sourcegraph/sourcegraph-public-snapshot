@@ -41,6 +41,11 @@
         }
     }
 
+    &__tab-bar {
+        flex-wrap: wrap;
+        position: relative;
+    }
+
     &__tabs {
         flex: 1;
         min-height: 0; /* needed for Firefox for content scrolling to work properly; See sourcegraph/sourcegraph#12340 and https://codepen.io/slimsag/pen/mjPXyN */
@@ -59,7 +64,6 @@
         }
 
         &__actions {
-            position: relative;
             padding-right: 2rem;
             border-bottom: 3px solid var(--border-color);
             opacity: 0.6;
@@ -68,9 +72,8 @@
             &:after {
                 position: absolute;
                 content: '';
-                top: 100%;
-                left: 100%;
                 width: 100%;
+                top: calc(100% - 3px);
                 border-bottom: inherit;
             }
         }
