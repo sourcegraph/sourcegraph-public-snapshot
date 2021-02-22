@@ -200,6 +200,13 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         () => setItemsToShow(items => Math.min(results?.results.length || 0, items + incrementalItemsToShow)),
         [results?.results.length]
     )
+
+    // Reset scroll visibility state and expanded state when new search is started
+    useEffect(() => {
+        setItemsToShow(initialItemsToShow)
+        setAllExpanded(false)
+    }, [location.search])
+
     const logSearchResultClicked = useCallback(() => telemetryService.log('SearchResultClicked'), [telemetryService])
 
     const itemKey = useCallback((item: GQL.GenericSearchResultInterface | GQL.IFileMatch): string => {
