@@ -110,13 +110,14 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 
 var seriesPointsQueryFmtstr = `
 -- source: enterprise/internal/insights/store/store.go:SeriesPoints
-SELECT time,
-	value,
+SELECT time_bucket(INTERVAL '12 hours', time) AS time_bucket,
+	SUM(value),
 	m.metadata
 FROM series_points p
 LEFT JOIN metadata m ON p.metadata_id = m.id
 WHERE %s
-ORDER BY time DESC
+GROUP BY metadata, time_bucket
+ORDER BY time_bucket DESC
 `
 
 func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {

@@ -10,6 +10,8 @@
 // 1000000003_pg_stat_statement_ext.up.sql (68B)
 // 1000000004_comments.down.sql (16B)
 // 1000000004_comments.up.sql (3.631kB)
+// 1000000005_diagnostic_counts.down.sql (158B)
+// 1000000005_diagnostic_counts.up.sql (690B)
 
 package migrations
 
@@ -278,6 +280,46 @@ func _1000000004_commentsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1000000005_diagnostic_countsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\xcc\x51\x0a\x02\x21\x10\x00\xd0\xff\x39\xc5\xdc\xc3\xaf\xdd\xcd\x42\xd0\x35\x76\x0d\xfa\x13\x51\xab\x81\x1c\xa1\x71\x3b\x7f\x77\xe8\x02\x6f\xd6\x17\xb3\x2a\x80\xc9\x06\xbd\x61\x98\x66\xab\xf1\x2d\xf4\x88\x25\x8d\x14\x4b\xcf\x47\xab\x3c\x04\x4f\x9b\xbf\xe2\xe2\xed\xcd\xad\x68\xce\xa8\xef\x66\x0f\x3b\x4a\x7e\xd5\x96\xe2\xb7\x7e\x84\x3a\xab\x3f\x15\x3e\x5a\x2c\x94\x9e\xdc\x65\x50\x16\x05\xb0\x78\xe7\x4c\x50\xf0\x0b\x00\x00\xff\xff\xb4\xf5\x7c\x5f\x9e\x00\x00\x00")
+
+func _1000000005_diagnostic_countsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1000000005_diagnostic_countsDownSql,
+		"1000000005_diagnostic_counts.down.sql",
+	)
+}
+
+func _1000000005_diagnostic_countsDownSql() (*asset, error) {
+	bytes, err := _1000000005_diagnostic_countsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1000000005_diagnostic_counts.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x24, 0xdf, 0x64, 0x43, 0x3, 0x86, 0x84, 0x95, 0xcd, 0x30, 0x3e, 0x35, 0x9c, 0x94, 0x48, 0x25, 0x22, 0x84, 0xd3, 0x6e, 0x3b, 0x68, 0x81, 0x4c, 0xe2, 0xf0, 0xea, 0x44, 0x23, 0xa, 0xe9, 0x4b}}
+	return a, nil
+}
+
+var __1000000005_diagnostic_countsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x91\xcd\x6e\x82\x40\x14\x46\xf7\x3c\xc5\xb7\x73\xa5\x69\xd7\xac\x50\x68\x63\x82\xd0\x58\x5c\x93\x91\xb9\xc8\x24\xc3\x1d\x32\x3f\xb6\x7d\xfb\x06\x52\x1a\x35\x26\xb5\x5b\x6e\x38\xdf\x39\xb0\xce\x5e\xb7\x45\x1c\x45\xcb\x25\x5a\xe1\x3c\x59\x78\x03\x17\x86\x41\x7f\x41\x52\x2b\x82\xf6\xf0\x9d\x60\xf4\x82\x83\xd0\x08\x83\x14\x9e\xa2\x24\xaf\xb2\x3d\xaa\x64\x9d\x67\xd0\x4e\xb5\xb5\x14\x5e\xd4\xd2\x34\xa1\x27\xf6\x0e\x49\x9a\x62\x53\xe6\x87\x5d\x01\xd7\x74\xd4\x8b\xfa\x4c\xd6\x29\xc3\x50\xec\x91\x66\x2f\xc9\x21\xaf\xf0\x8c\xa2\xac\x50\x1c\xf2\x3c\xfe\x0f\x91\x43\x5f\x4b\x25\x4e\x6c\x9c\x57\x8d\xbb\x42\x3e\x5d\x20\xc7\x28\x69\xcd\xf0\x1b\x22\xda\x31\x50\x68\x0d\xfa\x54\xce\x2b\x3e\xa1\x31\x3a\xf4\xec\xd0\x89\x33\xe1\x48\xc4\x70\xe4\xff\x96\x99\xee\xf7\x03\xd3\x7d\xf9\x36\xeb\x3c\x90\x75\x49\xba\x0d\xbb\x46\x45\x9b\x72\xb7\xcb\x8a\x0a\x65\x31\xbf\x70\x87\xb8\xba\xd1\xd9\xbe\x63\x51\x75\xf4\x63\x89\xf9\xb1\x69\xe1\x3b\xe5\x60\xcd\x07\x96\x08\x8e\xe4\xf8\xe3\x25\x79\xb2\xbd\x62\xc2\x60\xc9\x11\x37\x04\xc1\x12\xc4\x8d\x91\xe3\xd7\x32\x2d\xc6\xb5\xd5\x22\x7e\x50\xe6\xb6\x68\xb6\xe1\xd0\x1f\xc9\x4e\xbc\x8b\xab\xf3\xc6\x92\x84\x62\xf8\x8e\xa6\x25\xb4\x8a\xb4\x1c\xf7\xa6\xc1\x6d\x15\x47\xdf\x01\x00\x00\xff\xff\x3a\x3d\x23\xfe\xb2\x02\x00\x00")
+
+func _1000000005_diagnostic_countsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1000000005_diagnostic_countsUpSql,
+		"1000000005_diagnostic_counts.up.sql",
+	)
+}
+
+func _1000000005_diagnostic_countsUpSql() (*asset, error) {
+	bytes, err := _1000000005_diagnostic_countsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1000000005_diagnostic_counts.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xc0, 0x46, 0x73, 0x88, 0x3b, 0xb3, 0x47, 0x8, 0x81, 0x3f, 0x16, 0xcf, 0xf0, 0x61, 0xc9, 0x62, 0xca, 0x49, 0x26, 0xc4, 0x21, 0xc4, 0x4a, 0x99, 0x21, 0xdf, 0xe0, 0xe0, 0xfc, 0xa3, 0x8d, 0x2f}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -379,6 +421,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1000000003_pg_stat_statement_ext.up.sql":   _1000000003_pg_stat_statement_extUpSql,
 	"1000000004_comments.down.sql":              _1000000004_commentsDownSql,
 	"1000000004_comments.up.sql":                _1000000004_commentsUpSql,
+	"1000000005_diagnostic_counts.down.sql":     _1000000005_diagnostic_countsDownSql,
+	"1000000005_diagnostic_counts.up.sql":       _1000000005_diagnostic_countsUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -435,6 +479,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1000000003_pg_stat_statement_ext.up.sql":   {_1000000003_pg_stat_statement_extUpSql, map[string]*bintree{}},
 	"1000000004_comments.down.sql":              {_1000000004_commentsDownSql, map[string]*bintree{}},
 	"1000000004_comments.up.sql":                {_1000000004_commentsUpSql, map[string]*bintree{}},
+	"1000000005_diagnostic_counts.down.sql":     {_1000000005_diagnostic_countsDownSql, map[string]*bintree{}},
+	"1000000005_diagnostic_counts.up.sql":       {_1000000005_diagnostic_countsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

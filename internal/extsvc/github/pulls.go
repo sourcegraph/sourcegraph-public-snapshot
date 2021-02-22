@@ -830,7 +830,7 @@ query($owner: String!, $name: String!, $number: Int!) {
 						continue
 					}
 					if len(err2.Path) == 1 {
-						return ErrNotFound
+						return ErrRepoNotFound
 					}
 					if prPath, ok := err2.Path[1].(string); !ok || prPath != "pullRequest" {
 						continue

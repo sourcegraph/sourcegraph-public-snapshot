@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -44,23 +45,25 @@ func serveReposGetByName(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func servePhabricatorRepoCreate(w http.ResponseWriter, r *http.Request) error {
-	var repo api.PhabricatorRepoCreateRequest
-	err := json.NewDecoder(r.Body).Decode(&repo)
-	if err != nil {
-		return err
+func servePhabricatorRepoCreate(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		var repo api.PhabricatorRepoCreateRequest
+		err := json.NewDecoder(r.Body).Decode(&repo)
+		if err != nil {
+			return err
+		}
+		phabRepo, err := database.Phabricator(db).CreateOrUpdate(r.Context(), repo.Callsign, repo.RepoName, repo.URL)
+		if err != nil {
+			return err
+		}
+		data, err := json.Marshal(phabRepo)
+		if err != nil {
+			return err
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(data)
+		return nil
 	}
-	phabRepo, err := database.GlobalPhabricator.CreateOrUpdate(r.Context(), repo.Callsign, repo.RepoName, repo.URL)
-	if err != nil {
-		return err
-	}
-	data, err := json.Marshal(phabRepo)
-	if err != nil {
-		return err
-	}
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(data)
-	return nil
 }
 
 // serveExternalServiceConfigs serves a JSON response that is an array of all
@@ -290,84 +293,92 @@ func serveReposListEnabled(w http.ResponseWriter, r *http.Request) error {
 	return json.NewEncoder(w).Encode(names)
 }
 
-func serveSavedQueriesListAll(w http.ResponseWriter, r *http.Request) error {
-	// List settings for all users, orgs, etc.
-	settings, err := database.GlobalSavedSearches.ListAll(r.Context())
-	if err != nil {
-		return errors.Wrap(err, "database.SavedSearches.ListAll")
-	}
-
-	queries := make([]api.SavedQuerySpecAndConfig, 0, len(settings))
-	for _, s := range settings {
-		var spec api.SavedQueryIDSpec
-		if s.Config.UserID != nil {
-			spec = api.SavedQueryIDSpec{Subject: api.SettingsSubject{User: s.Config.UserID}, Key: s.Config.Key}
-		} else if s.Config.OrgID != nil {
-			spec = api.SavedQueryIDSpec{Subject: api.SettingsSubject{Org: s.Config.OrgID}, Key: s.Config.Key}
+func serveSavedQueriesListAll(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		// List settings for all users, orgs, etc.
+		settings, err := database.SavedSearches(db).ListAll(r.Context())
+		if err != nil {
+			return errors.Wrap(err, "database.SavedSearches.ListAll")
 		}
 
-		queries = append(queries, api.SavedQuerySpecAndConfig{
-			Spec:   spec,
-			Config: s.Config,
+		queries := make([]api.SavedQuerySpecAndConfig, 0, len(settings))
+		for _, s := range settings {
+			var spec api.SavedQueryIDSpec
+			if s.Config.UserID != nil {
+				spec = api.SavedQueryIDSpec{Subject: api.SettingsSubject{User: s.Config.UserID}, Key: s.Config.Key}
+			} else if s.Config.OrgID != nil {
+				spec = api.SavedQueryIDSpec{Subject: api.SettingsSubject{Org: s.Config.OrgID}, Key: s.Config.Key}
+			}
+
+			queries = append(queries, api.SavedQuerySpecAndConfig{
+				Spec:   spec,
+				Config: s.Config,
+			})
+		}
+
+		if err := json.NewEncoder(w).Encode(queries); err != nil {
+			return errors.Wrap(err, "Encode")
+		}
+
+		return nil
+	}
+}
+
+func serveSavedQueriesGetInfo(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		var query string
+		err := json.NewDecoder(r.Body).Decode(&query)
+		if err != nil {
+			return errors.Wrap(err, "Decode")
+		}
+		info, err := database.QueryRunnerState(db).Get(r.Context(), query)
+		if err != nil {
+			return errors.Wrap(err, "SavedQueries.Get")
+		}
+		if err := json.NewEncoder(w).Encode(info); err != nil {
+			return errors.Wrap(err, "Encode")
+		}
+		return nil
+	}
+}
+
+func serveSavedQueriesSetInfo(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		var info *api.SavedQueryInfo
+		err := json.NewDecoder(r.Body).Decode(&info)
+		if err != nil {
+			return errors.Wrap(err, "Decode")
+		}
+		err = database.QueryRunnerState(db).Set(r.Context(), &database.SavedQueryInfo{
+			Query:        info.Query,
+			LastExecuted: info.LastExecuted,
+			LatestResult: info.LatestResult,
+			ExecDuration: info.ExecDuration,
 		})
+		if err != nil {
+			return errors.Wrap(err, "SavedQueries.Set")
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("OK"))
+		return nil
 	}
-
-	if err := json.NewEncoder(w).Encode(queries); err != nil {
-		return errors.Wrap(err, "Encode")
-	}
-
-	return nil
 }
 
-func serveSavedQueriesGetInfo(w http.ResponseWriter, r *http.Request) error {
-	var query string
-	err := json.NewDecoder(r.Body).Decode(&query)
-	if err != nil {
-		return errors.Wrap(err, "Decode")
+func serveSavedQueriesDeleteInfo(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		var query string
+		err := json.NewDecoder(r.Body).Decode(&query)
+		if err != nil {
+			return errors.Wrap(err, "Decode")
+		}
+		err = database.QueryRunnerState(db).Delete(r.Context(), query)
+		if err != nil {
+			return errors.Wrap(err, "SavedQueries.Delete")
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("OK"))
+		return nil
 	}
-	info, err := database.GlobalQueryRunnerState.Get(r.Context(), query)
-	if err != nil {
-		return errors.Wrap(err, "SavedQueries.Get")
-	}
-	if err := json.NewEncoder(w).Encode(info); err != nil {
-		return errors.Wrap(err, "Encode")
-	}
-	return nil
-}
-
-func serveSavedQueriesSetInfo(w http.ResponseWriter, r *http.Request) error {
-	var info *api.SavedQueryInfo
-	err := json.NewDecoder(r.Body).Decode(&info)
-	if err != nil {
-		return errors.Wrap(err, "Decode")
-	}
-	err = database.GlobalQueryRunnerState.Set(r.Context(), &database.SavedQueryInfo{
-		Query:        info.Query,
-		LastExecuted: info.LastExecuted,
-		LatestResult: info.LatestResult,
-		ExecDuration: info.ExecDuration,
-	})
-	if err != nil {
-		return errors.Wrap(err, "SavedQueries.Set")
-	}
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("OK"))
-	return nil
-}
-
-func serveSavedQueriesDeleteInfo(w http.ResponseWriter, r *http.Request) error {
-	var query string
-	err := json.NewDecoder(r.Body).Decode(&query)
-	if err != nil {
-		return errors.Wrap(err, "Decode")
-	}
-	err = database.GlobalQueryRunnerState.Delete(r.Context(), query)
-	if err != nil {
-		return errors.Wrap(err, "SavedQueries.Delete")
-	}
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("OK"))
-	return nil
 }
 
 func serveSettingsGetForSubject(w http.ResponseWriter, r *http.Request) error {
@@ -385,24 +396,26 @@ func serveSettingsGetForSubject(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func serveOrgsListUsers(w http.ResponseWriter, r *http.Request) error {
-	var orgID int32
-	err := json.NewDecoder(r.Body).Decode(&orgID)
-	if err != nil {
-		return errors.Wrap(err, "Decode")
+func serveOrgsListUsers(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		var orgID int32
+		err := json.NewDecoder(r.Body).Decode(&orgID)
+		if err != nil {
+			return errors.Wrap(err, "Decode")
+		}
+		orgMembers, err := database.OrgMembers(db).GetByOrgID(r.Context(), orgID)
+		if err != nil {
+			return errors.Wrap(err, "OrgMembers.GetByOrgID")
+		}
+		users := make([]int32, 0, len(orgMembers))
+		for _, member := range orgMembers {
+			users = append(users, member.UserID)
+		}
+		if err := json.NewEncoder(w).Encode(users); err != nil {
+			return errors.Wrap(err, "Encode")
+		}
+		return nil
 	}
-	orgMembers, err := database.GlobalOrgMembers.GetByOrgID(r.Context(), orgID)
-	if err != nil {
-		return errors.Wrap(err, "OrgMembers.GetByOrgID")
-	}
-	users := make([]int32, 0, len(orgMembers))
-	for _, member := range orgMembers {
-		users = append(users, member.UserID)
-	}
-	if err := json.NewEncoder(w).Encode(users); err != nil {
-		return errors.Wrap(err, "Encode")
-	}
-	return nil
 }
 
 func serveOrgsGetByName(w http.ResponseWriter, r *http.Request) error {

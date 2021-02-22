@@ -278,6 +278,22 @@ func CommitCount(ctx context.Context, repo api.RepoName, opt CommitsOptions) (ui
 	return uint(n), err
 }
 
+// FirstEverCommit returns the first commit ever made to the repository.
+func FirstEverCommit(ctx context.Context, repo api.RepoName) (*Commit, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: FirstEverCommit")
+	defer span.Finish()
+
+	args := []string{"rev-list", "--max-count=1", "--max-parents=0", "HEAD"}
+	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd.Repo = repo
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", args, out))
+	}
+	id := api.CommitID(bytes.TrimSpace(out))
+	return GetCommit(ctx, repo, id, ResolveRevisionOptions{NoEnsureRevision: true})
+}
+
 const (
 	partsPerCommit = 10 // number of \x00-separated fields per commit
 

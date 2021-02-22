@@ -14,13 +14,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func getUserToInviteToOrganization(ctx context.Context, username string, orgID int32) (userToInvite *types.User, userEmailAddress string, err error) {
+func getUserToInviteToOrganization(ctx context.Context, db dbutil.DB, username string, orgID int32) (userToInvite *types.User, userEmailAddress string, err error) {
 	userToInvite, err = database.GlobalUsers.GetByUsername(ctx, username)
 	if err != nil {
 		return nil, "", err
@@ -38,7 +39,7 @@ func getUserToInviteToOrganization(ctx context.Context, username string, orgID i
 		}
 	}
 
-	if _, err := database.GlobalOrgMembers.GetByOrgIDAndUserID(ctx, orgID, userToInvite.ID); err == nil {
+	if _, err := database.OrgMembers(db).GetByOrgIDAndUserID(ctx, orgID, userToInvite.ID); err == nil {
 		return nil, "", errors.New("user is already a member of the organization")
 	} else if _, ok := err.(*database.ErrOrgMemberNotFound); !ok {
 		return nil, "", err
@@ -54,7 +55,7 @@ type inviteUserToOrganizationResult struct {
 func (r *inviteUserToOrganizationResult) SentInvitationEmail() bool { return r.sentInvitationEmail }
 func (r *inviteUserToOrganizationResult) InvitationURL() string     { return r.invitationURL }
 
-func (*schemaResolver) InviteUserToOrganization(ctx context.Context, args *struct {
+func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *struct {
 	Organization graphql.ID
 	Username     string
 }) (*inviteUserToOrganizationResult, error) {
@@ -64,7 +65,7 @@ func (*schemaResolver) InviteUserToOrganization(ctx context.Context, args *struc
 	}
 	// 🚨 SECURITY: Check that the current user is a member of the org that the user is being
 	// invited to.
-	if err := backend.CheckOrgAccess(ctx, orgID); err != nil {
+	if err := backend.CheckOrgAccess(ctx, r.db, orgID); err != nil {
 		return nil, err
 	}
 
@@ -77,11 +78,11 @@ func (*schemaResolver) InviteUserToOrganization(ctx context.Context, args *struc
 	if err != nil {
 		return nil, err
 	}
-	recipient, recipientEmail, err := getUserToInviteToOrganization(ctx, args.Username, orgID)
+	recipient, recipientEmail, err := getUserToInviteToOrganization(ctx, r.db, args.Username, orgID)
 	if err != nil {
 		return nil, err
 	}
-	if _, err := database.GlobalOrgInvitations.Create(ctx, orgID, sender.ID, recipient.ID); err != nil {
+	if _, err := database.OrgInvitations(r.db).Create(ctx, orgID, sender.ID, recipient.ID); err != nil {
 		return nil, err
 	}
 	result := &inviteUserToOrganizationResult{
@@ -100,11 +101,11 @@ func (*schemaResolver) InviteUserToOrganization(ctx context.Context, args *struc
 	return result, nil
 }
 
-func (*schemaResolver) RespondToOrganizationInvitation(ctx context.Context, args *struct {
+func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, args *struct {
 	OrganizationInvitation graphql.ID
 	ResponseType           string
 }) (*EmptyResponse, error) {
-	currentUser, err := CurrentUser(ctx)
+	currentUser, err := CurrentUser(ctx, r.db)
 	if err != nil {
 		return nil, err
 	}
@@ -130,30 +131,30 @@ func (*schemaResolver) RespondToOrganizationInvitation(ctx context.Context, args
 
 	// 🚨 SECURITY: This fails if the org invitation's recipient is not the one given (or if the
 	// invitation is otherwise invalid), so we do not need to separately perform that check.
-	orgID, err := database.GlobalOrgInvitations.Respond(ctx, id, currentUser.user.ID, accept)
+	orgID, err := database.OrgInvitations(r.db).Respond(ctx, id, currentUser.user.ID, accept)
 	if err != nil {
 		return nil, err
 	}
 
 	if accept {
 		// The recipient accepted the invitation.
-		if _, err := database.GlobalOrgMembers.Create(ctx, orgID, currentUser.user.ID); err != nil {
+		if _, err := database.OrgMembers(r.db).Create(ctx, orgID, currentUser.user.ID); err != nil {
 			return nil, err
 		}
 	}
 	return &EmptyResponse{}, nil
 }
 
-func (*schemaResolver) ResendOrganizationInvitationNotification(ctx context.Context, args *struct {
+func (r *schemaResolver) ResendOrganizationInvitationNotification(ctx context.Context, args *struct {
 	OrganizationInvitation graphql.ID
 }) (*EmptyResponse, error) {
-	orgInvitation, err := orgInvitationByID(ctx, args.OrganizationInvitation)
+	orgInvitation, err := orgInvitationByID(ctx, r.db, args.OrganizationInvitation)
 	if err != nil {
 		return nil, err
 	}
 
 	// 🚨 SECURITY: Check that the current user is a member of the org that the invite is for.
-	if err := backend.CheckOrgAccess(ctx, orgInvitation.v.OrgID); err != nil {
+	if err := backend.CheckOrgAccess(ctx, r.db, orgInvitation.v.OrgID); err != nil {
 		return nil, err
 	}
 
@@ -191,20 +192,20 @@ func (*schemaResolver) ResendOrganizationInvitationNotification(ctx context.Cont
 	return &EmptyResponse{}, nil
 }
 
-func (*schemaResolver) RevokeOrganizationInvitation(ctx context.Context, args *struct {
+func (r *schemaResolver) RevokeOrganizationInvitation(ctx context.Context, args *struct {
 	OrganizationInvitation graphql.ID
 }) (*EmptyResponse, error) {
-	orgInvitation, err := orgInvitationByID(ctx, args.OrganizationInvitation)
+	orgInvitation, err := orgInvitationByID(ctx, r.db, args.OrganizationInvitation)
 	if err != nil {
 		return nil, err
 	}
 
 	// 🚨 SECURITY: Check that the current user is a member of the org that the invite is for.
-	if err := backend.CheckOrgAccess(ctx, orgInvitation.v.OrgID); err != nil {
+	if err := backend.CheckOrgAccess(ctx, r.db, orgInvitation.v.OrgID); err != nil {
 		return nil, err
 	}
 
-	if err := database.GlobalOrgInvitations.Revoke(ctx, orgInvitation.v.ID); err != nil {
+	if err := database.OrgInvitations(r.db).Revoke(ctx, orgInvitation.v.ID); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil

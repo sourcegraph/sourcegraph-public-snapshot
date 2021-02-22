@@ -27,7 +27,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                 className="icon-inline"
               />
               <div
-                className="result-container__header-title "
+                className="result-container__header-title test-search-result-label"
                 data-testid="result-container-header"
               >
                 <span
@@ -242,7 +242,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                 className="icon-inline"
               />
               <div
-                className="result-container__header-title "
+                className="result-container__header-title test-search-result-label"
                 data-testid="result-container-header"
               >
                 <span
@@ -410,7 +410,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                 className="icon-inline"
               />
               <div
-                className="result-container__header-title "
+                className="result-container__header-title test-search-result-label"
                 data-testid="result-container-header"
               >
                 <span

@@ -17,6 +17,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -93,9 +95,10 @@ func TestSearch(t *testing.T) {
 			mockDecodedViewerFinalSettings = &schema.Settings{}
 			defer func() { mockDecodedViewerFinalSettings = nil }()
 
+			db := new(dbtesting.MockDB)
 			database.Mocks.Repos.List = tc.reposListMock
-			sr := &schemaResolver{}
-			schema, err := graphql.ParseSchema(Schema, sr, graphql.Tracer(prometheusTracer{}))
+			sr := &schemaResolver{db: db}
+			schema, err := graphql.ParseSchema(Schema, sr, graphql.Tracer(&prometheusTracer{db: db}))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -335,13 +338,15 @@ func TestExactlyOneRepo(t *testing.T) {
 }
 
 func TestQuoteSuggestions(t *testing.T) {
+	db := new(dbtesting.MockDB)
+
 	t.Run("regex error", func(t *testing.T) {
 		raw := "*"
 		_, err := query.ParseRegexp(raw)
 		if err == nil {
 			t.Fatalf("error returned from query.ParseRegexp(%q) is nil", raw)
 		}
-		alert := alertForQuery(raw, err)
+		alert := alertForQuery(db, raw, err)
 		if !strings.Contains(alert.description, "regexp") {
 			t.Errorf("description is '%s', want it to contain 'regexp'", alert.description)
 		}
@@ -392,6 +397,8 @@ func TestQueryForStableResults(t *testing.T) {
 }
 
 func TestVersionContext(t *testing.T) {
+	db := new(dbtesting.MockDB)
+
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
 			ExperimentalFeatures: &schema.ExperimentalFeatures{
@@ -505,6 +512,7 @@ func TestVersionContext(t *testing.T) {
 			}
 
 			resolver := searchResolver{
+				db: db,
 				SearchInputs: &SearchInputs{
 					Query:          q,
 					VersionContext: &tc.versionContext,
@@ -541,7 +549,7 @@ func TestVersionContext(t *testing.T) {
 	}
 }
 
-func mkFileMatch(repo *types.RepoName, path string, lineNumbers ...int32) *FileMatchResolver {
+func mkFileMatch(db dbutil.DB, repo *types.RepoName, path string, lineNumbers ...int32) *FileMatchResolver {
 	if repo == nil {
 		repo = &types.RepoName{
 			ID:   1,
@@ -552,7 +560,8 @@ func mkFileMatch(repo *types.RepoName, path string, lineNumbers ...int32) *FileM
 	for _, n := range lineNumbers {
 		lines = append(lines, &lineMatch{LineNumber: n})
 	}
-	return mkFileMatchResolver(FileMatch{
+	return mkFileMatchResolver(db, FileMatch{
+		db:           db,
 		uri:          fileMatchURI(repo.Name, "", path),
 		JPath:        path,
 		JLineMatches: lines,

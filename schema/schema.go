@@ -52,6 +52,18 @@ type AdditionalProperties struct {
 	Value string `json:"value"`
 }
 
+// ApiRatelimit description: Configuration for API rate limiting
+type ApiRatelimit struct {
+	// Enabled description: Whether API rate limiting is enabled
+	Enabled bool `json:"enabled"`
+	// Overrides description: An array of rate limit overrides
+	Overrides []*Overrides `json:"overrides,omitempty"`
+	// PerIP description: Limit granted per IP per hour, only applied to anonymous users
+	PerIP int `json:"perIP"`
+	// PerUser description: Limit granted per user per hour
+	PerUser int `json:"perUser"`
+}
+
 // AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
 type AuthAccessTokens struct {
 	// Allow description: Allow or restrict the use of access tokens. The default is "all-users-create", which enables all users to create access tokens. Use "none" to disable access tokens entirely. Use "site-admin-create" to restrict creation of new tokens to admin users (existing tokens will still work until revoked).
@@ -990,6 +1002,12 @@ type OtherExternalServiceConnection struct {
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
 	Url                   string `json:"url,omitempty"`
 }
+type Overrides struct {
+	// Key description: The key that we want to override for example a username
+	Key string `json:"key,omitempty"`
+	// Limit description: The limit per hour, 'unlimited' or 'blocked'
+	Limit interface{} `json:"limit,omitempty"`
+}
 
 // ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
 type ParentSourcegraph struct {
@@ -1248,6 +1266,8 @@ type SettingsExperimentalFeatures struct {
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.
 type SiteConfiguration struct {
+	// ApiRatelimit description: Configuration for API rate limiting
+	ApiRatelimit *ApiRatelimit `json:"api.ratelimit,omitempty"`
 	// AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
 	AuthAccessTokens *AuthAccessTokens `json:"auth.accessTokens,omitempty"`
 	// AuthEnableUsernameChanges description: Enables users to change their username after account creation. Warning: setting this to be true has security implications if you have enabled (or will at any point in the future enable) repository permissions with an option that relies on username equivalency between Sourcegraph and an external service or authentication provider. Do NOT set this to true if you are using non-built-in authentication OR rely on username equivalency for repository permissions.

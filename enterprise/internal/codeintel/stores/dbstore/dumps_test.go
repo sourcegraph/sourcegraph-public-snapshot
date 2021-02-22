@@ -15,68 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
-func TestGetDumpByID(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
-
-	// Dump does not exist initially
-	if _, exists, err := store.GetDumpByID(context.Background(), 1); err != nil {
-		t.Fatalf("unexpected error getting dump: %s", err)
-	} else if exists {
-		t.Fatal("unexpected record")
-	}
-
-	uploadedAt := time.Unix(1587396557, 0).UTC()
-	startedAt := uploadedAt.Add(time.Minute)
-	finishedAt := uploadedAt.Add(time.Minute * 2)
-	expectedAssociatedIndexID := 42
-	expected := Dump{
-		ID:                1,
-		Commit:            makeCommit(1),
-		Root:              "sub/",
-		VisibleAtTip:      true,
-		UploadedAt:        uploadedAt,
-		State:             "completed",
-		FailureMessage:    nil,
-		StartedAt:         &startedAt,
-		FinishedAt:        &finishedAt,
-		RepositoryID:      50,
-		RepositoryName:    "n-50",
-		Indexer:           "lsif-go",
-		AssociatedIndexID: &expectedAssociatedIndexID,
-	}
-
-	insertUploads(t, dbconn.Global, Upload{
-		ID:                expected.ID,
-		Commit:            expected.Commit,
-		Root:              expected.Root,
-		UploadedAt:        expected.UploadedAt,
-		State:             expected.State,
-		FailureMessage:    expected.FailureMessage,
-		StartedAt:         expected.StartedAt,
-		FinishedAt:        expected.FinishedAt,
-		ProcessAfter:      expected.ProcessAfter,
-		NumResets:         expected.NumResets,
-		NumFailures:       expected.NumFailures,
-		RepositoryID:      expected.RepositoryID,
-		RepositoryName:    expected.RepositoryName,
-		Indexer:           expected.Indexer,
-		AssociatedIndexID: expected.AssociatedIndexID,
-	})
-	insertVisibleAtTip(t, dbconn.Global, 50, 1)
-
-	if dump, exists, err := store.GetDumpByID(context.Background(), 1); err != nil {
-		t.Fatalf("unexpected error getting dump: %s", err)
-	} else if !exists {
-		t.Fatal("expected record to exist")
-	} else if diff := cmp.Diff(expected, dump); diff != "" {
-		t.Errorf("unexpected dump (-want +got):\n%s", diff)
-	}
-}
-
 func TestGetDumpsByIDs(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -821,9 +759,9 @@ func TestDeleteOverlappingDumpsNoMatches(t *testing.T) {
 	}
 
 	// Original dump still exists
-	if _, exists, err := store.GetDumpByID(context.Background(), 1); err != nil {
+	if dumps, err := store.GetDumpsByIDs(context.Background(), []int{1}); err != nil {
 		t.Fatalf("unexpected error getting dump: %s", err)
-	} else if !exists {
+	} else if len(dumps) != 1 {
 		t.Fatal("expected dump record to still exist")
 	}
 }

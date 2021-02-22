@@ -238,26 +238,6 @@ This panel indicates resolver errors every 5m.
 
 <br />
 
-#### frontend: codeintel_api_99th_percentile_duration
-
-This panel indicates 99th percentile successful codeintel API operation duration over 5m.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-codeintel-api-99th-percentile-duration).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### frontend: codeintel_api_errors
-
-This panel indicates code intel API errors every 5m.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-codeintel-api-errors).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
 ### Frontend: Precise code intelligence stores and clients
 
 #### frontend: codeintel_dbstore_99th_percentile_duration
@@ -1231,8 +1211,6 @@ This panel indicates code intelligence commit graph tables.
 
 This value indicates the factor by which a table`s overhead outweighs its minimum overhead.
 
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#postgres-codeintel-commit-graph-db-bloat).
-
 <sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
@@ -1243,8 +1221,6 @@ This panel indicates code intelligence package version tables.
 
 This value indicates the factor by which a table`s overhead outweighs its minimum overhead.
 
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#postgres-codeintel-package-versions-db-bloat).
-
 <sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
@@ -1254,8 +1230,6 @@ This value indicates the factor by which a table`s overhead outweighs its minimu
 This panel indicates code intelligence LSIF data tables (codeintel-db).
 
 This value indicates the factor by which a table`s overhead outweighs its minimum overhead.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#postgres-codeintel-lsif-db-bloat).
 
 <sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 

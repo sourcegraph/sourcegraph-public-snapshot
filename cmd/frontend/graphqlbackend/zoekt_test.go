@@ -36,6 +36,8 @@ import (
 )
 
 func TestIndexedSearch(t *testing.T) {
+	db := new(dbtesting.MockDB)
+
 	zeroTimeoutCtx, cancel := context.WithTimeout(context.Background(), 0)
 	defer cancel()
 	type args struct {
@@ -298,7 +300,7 @@ func TestIndexedSearch(t *testing.T) {
 				},
 			}
 
-			indexed, err := newIndexedSearchRequest(context.Background(), args, textRequest, StreamFunc(func(SearchEvent) {}))
+			indexed, err := newIndexedSearchRequest(context.Background(), db, args, textRequest, StreamFunc(func(SearchEvent) {}))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -312,7 +314,7 @@ func TestIndexedSearch(t *testing.T) {
 			// This is a quick fix which will break once we enable the zoekt client for true streaming.
 			// Once we return more than one event we have to account for the proper order of results
 			// in the tests.
-			gotResults, gotCommon, err := collectStream(func(stream Streamer) error {
+			gotResults, gotCommon, err := collectStream(func(stream Sender) error {
 				return indexed.Search(tt.args.ctx, stream)
 			})
 			if (err != nil) != tt.wantErr {
@@ -702,6 +704,8 @@ func queryEqual(a, b zoektquery.Q) bool {
 }
 
 func BenchmarkSearchResults(b *testing.B) {
+	db := new(dbtesting.MockDB)
+
 	minimalRepos, _, zoektRepos := generateRepos(5000)
 	zoektFileMatches := generateZoektMatches(50)
 
@@ -732,6 +736,7 @@ func BenchmarkSearchResults(b *testing.B) {
 			b.Fatal(err)
 		}
 		resolver := &searchResolver{
+			db: db,
 			SearchInputs: &SearchInputs{
 				Query:        q,
 				UserSettings: &schema.Settings{},
@@ -751,7 +756,7 @@ func BenchmarkSearchResults(b *testing.B) {
 }
 
 func BenchmarkIntegrationSearchResults(b *testing.B) {
-	dbtesting.SetupGlobalTestDB(b)
+	db := dbtesting.GetDB(b)
 
 	ctx := context.Background()
 
@@ -810,6 +815,7 @@ func BenchmarkIntegrationSearchResults(b *testing.B) {
 			b.Fatal(err)
 		}
 		resolver := &searchResolver{
+			db: db,
 			SearchInputs: &SearchInputs{
 				Query: q,
 			},
@@ -989,6 +995,7 @@ func TestZoektIndexedRepos_single(t *testing.T) {
 }
 
 func TestZoektFileMatchToSymbolResults(t *testing.T) {
+	db := new(dbtesting.MockDB)
 	symbolInfo := func(sym string) *zoekt.Symbol {
 		return &zoekt.Symbol{
 			Sym:        sym,
@@ -1031,9 +1038,9 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 		}},
 	}
 
-	repo := NewRepositoryResolver(&types.Repo{Name: "foo"})
+	repo := NewRepositoryResolver(db, &types.Repo{Name: "foo"})
 
-	results := zoektFileMatchToSymbolResults(repo, "master", file)
+	results := zoektFileMatchToSymbolResults(repo, new(dbtesting.MockDB), "master", file)
 	var symbols []protocol.Symbol
 	for _, res := range results {
 		// Check the fields which are not specific to the symbol
@@ -1092,65 +1099,6 @@ func repoRevsSliceToMap(rs []*search.RepositoryRevisions) map[string]*search.Rep
 		m[string(r.Repo.Name)] = r
 	}
 	return m
-}
-
-func TestContainsRefGlobs(t *testing.T) {
-	tests := []struct {
-		query    string
-		want     bool
-		globbing bool
-	}{
-		{
-			query: "repo:foo",
-			want:  false,
-		},
-		{
-			query: "repo:foo@bar",
-			want:  false,
-		},
-		{
-			query: "repo:foo@*ref/tags",
-			want:  true,
-		},
-		{
-			query: "repo:foo@*!refs/tags",
-			want:  true,
-		},
-		{
-			query: "repo:foo@bar:*refs/heads",
-			want:  true,
-		},
-		{
-			query: "repo:foo@refs/tags/v3.14.3",
-			want:  false,
-		},
-		{
-			query: "repo:foo@*refs/tags/v3.14.?",
-			want:  true,
-		},
-		{
-			query:    "repo:*foo*@v3.14.3",
-			globbing: true,
-			want:     false,
-		},
-		{
-			query: "repo:foo@v3.14.3 repo:foo@*refs/tags/v3.14.* bar",
-			want:  true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.query, func(t *testing.T) {
-			qInfo, err := query.ProcessAndOr(tt.query, query.ParserOptions{SearchType: query.SearchTypeLiteral, Globbing: tt.globbing})
-			if err != nil {
-				t.Error(err)
-			}
-			got := containsRefGlobs(qInfo)
-			if got != tt.want {
-				t.Errorf("got %t, expected %t", got, tt.want)
-			}
-		})
-	}
 }
 
 func TestContextWithoutDeadline(t *testing.T) {

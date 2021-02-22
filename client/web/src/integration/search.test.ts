@@ -345,9 +345,34 @@ describe('Search', () => {
             }),
         }
 
-        test('Streaming search with single repo result', async () => {
+        test('Streaming search', async () => {
             const searchStreamEvents: SearchEvent[] = [
-                { type: 'matches', data: [{ type: 'repo', repository: 'github.com/sourcegraph/sourcegraph' }] },
+                {
+                    type: 'matches',
+                    data: [
+                        { type: 'repo', repository: 'github.com/sourcegraph/sourcegraph' },
+                        {
+                            type: 'file',
+                            lineMatches: [],
+                            name: 'stream.ts',
+                            repository: 'github.com/sourcegraph/sourcegraph',
+                        },
+                        {
+                            type: 'file',
+                            lineMatches: [],
+                            name: 'stream.ts',
+                            repository: 'github.com/sourcegraph/sourcegraph',
+                            version: 'abcd',
+                        },
+                        {
+                            type: 'file',
+                            lineMatches: [],
+                            name: 'stream.ts',
+                            repository: 'github.com/sourcegraph/sourcegraph',
+                            branches: ['test/branch'],
+                        },
+                    ],
+                },
                 { type: 'done', data: {} },
             ]
 
@@ -362,7 +387,12 @@ describe('Search', () => {
                     (label.textContent || '').trim()
                 )
             )
-            expect(results).toEqual(['github.com/sourcegraph/sourcegraph'])
+            expect(results).toEqual([
+                'github.com/sourcegraph/sourcegraph',
+                'sourcegraph/sourcegraph › stream.ts',
+                'sourcegraph/sourcegraph@abcd › stream.ts',
+                'sourcegraph/sourcegraph@test/branch › stream.ts',
+            ])
         })
     })
 
@@ -396,34 +426,60 @@ describe('Search', () => {
                 },
             }),
         }
+        const testContextForSearchContexts: Partial<WebGraphQlOperations> = {
+            ...commonSearchGraphQLResults,
+            ...viewerSettingsWithSearchContexts,
+            SearchContexts: () => ({
+                searchContexts: [
+                    {
+                        __typename: 'SearchContext',
+                        id: '1',
+                        spec: 'global',
+                        description: '',
+                        autoDefined: true,
+                    },
+                    {
+                        __typename: 'SearchContext',
+                        id: '2',
+                        spec: '@user',
+                        description: '',
+                        autoDefined: true,
+                    },
+                ],
+            }),
+            UserRepositories: () => ({
+                node: {
+                    repositories: {
+                        totalCount: 1,
+                        nodes: [
+                            {
+                                id: '1',
+                                name: 'repo',
+                                viewerCanAdminister: false,
+                                createdAt: '',
+                                url: '',
+                                isPrivate: false,
+                                mirrorInfo: { cloned: true, cloneInProgress: false, updatedAt: null },
+                                externalRepository: { serviceType: '', serviceID: '' },
+                            },
+                        ],
+                        pageInfo: { hasNextPage: false },
+                    },
+                },
+            }),
+        }
 
         beforeEach(() => {
-            testContext.overrideGraphQL({
-                ...commonSearchGraphQLResults,
-                ...viewerSettingsWithSearchContexts,
-                SearchContexts: () => ({
-                    searchContexts: [
-                        {
-                            __typename: 'SearchContext',
-                            id: '1',
-                            spec: 'global',
-                            description: '',
-                            autoDefined: true,
-                        },
-                        {
-                            __typename: 'SearchContext',
-                            id: '2',
-                            spec: '@user',
-                            description: '',
-                            autoDefined: true,
-                        },
-                    ],
-                }),
-            })
+            testContext.overrideGraphQL(testContextForSearchContexts)
         })
 
         const getSelectedSearchContextSpec = () =>
             driver.page.evaluate(() => document.querySelector('.test-selected-search-context-spec')?.textContent)
+
+        const isSearchContextDropdownVisible = () =>
+            driver.page.evaluate(
+                () => document.querySelector<HTMLButtonElement>('.test-search-context-dropdown') !== null
+            )
 
         const isSearchContextDropdownDisabled = () =>
             driver.page.evaluate(
@@ -435,10 +491,10 @@ describe('Search', () => {
             expect(await getSelectedSearchContextSpec()).toStrictEqual('context:@user')
         })
 
-        test('Missing context param should default to global context', async () => {
+        test('Missing context param should default to users context', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
             await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
-            expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
+            expect(await getSelectedSearchContextSpec()).toStrictEqual('context:@test')
         })
 
         test('Unavailable search context should get appended to navbar query and disable the search context dropdown', async () => {
@@ -460,6 +516,24 @@ describe('Search', () => {
             await driver.page.waitForSelector('#monaco-query-input')
             expect(await getSearchFieldValue(driver)).toStrictEqual('context:@anotherUnavailableCtx test')
             expect(await isSearchContextDropdownDisabled()).toBeTruthy()
+        })
+
+        test('Search context dropdown should not be visible if user has no repositories', async () => {
+            testContext.overrideGraphQL({
+                ...testContextForSearchContexts,
+                UserRepositories: () => ({
+                    node: {
+                        repositories: {
+                            totalCount: 0,
+                            nodes: [],
+                            pageInfo: { hasNextPage: false },
+                        },
+                    },
+                }),
+            })
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+            await driver.page.waitForSelector('#monaco-query-input')
+            expect(await isSearchContextDropdownVisible()).toBeFalsy()
         })
     })
 })

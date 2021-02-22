@@ -2,7 +2,7 @@ package lsifstore
 
 import (
 	"context"
-	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
@@ -20,13 +20,9 @@ var tableNames = []string{
 }
 
 func (s *Store) Clear(ctx context.Context, bundleIDs ...int) (err error) {
-	stringIDs := make([]string, 0, len(bundleIDs))
-	for _, bundleID := range bundleIDs {
-		stringIDs = append(stringIDs, fmt.Sprintf("%d", bundleID))
-	}
-
-	ctx, endObservation := s.operations.clear.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("bundleIDs", strings.Join(stringIDs, ", ")),
+	ctx, traceLog, endObservation := s.operations.clear.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numBundleIDs", len(bundleIDs)),
+		log.String("bundleIDs", intsToString(bundleIDs)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -48,6 +44,8 @@ func (s *Store) Clear(ctx context.Context, bundleIDs ...int) (err error) {
 	}()
 
 	for _, tableName := range tableNames {
+		traceLog(log.String("tableName", tableName))
+
 		if err := tx.Exec(ctx, sqlf.Sprintf(clearQuery, sqlf.Sprintf(tableName), sqlf.Join(ids, ","))); err != nil {
 			return err
 		}
@@ -60,3 +58,12 @@ const clearQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/clear.go:Clear
 DELETE FROM %s WHERE dump_id IN (%s)
 `
+
+func intsToString(vs []int) string {
+	strs := make([]string, 0, len(vs))
+	for _, v := range vs {
+		strs = append(strs, strconv.Itoa(v))
+	}
+
+	return strings.Join(strs, ", ")
+}

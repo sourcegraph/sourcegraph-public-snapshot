@@ -7,11 +7,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/registry"
 )
 
 func init() {
-	graphqlbackend.ExtensionRegistry = func() graphqlbackend.ExtensionRegistryResolver {
+	graphqlbackend.ExtensionRegistry = func(db dbutil.DB) graphqlbackend.ExtensionRegistryResolver {
+		ExtensionRegistry.db = db
 		return &ExtensionRegistry
 	}
 }
@@ -29,12 +31,13 @@ var ExtensionRegistry extensionRegistryResolver
 // Some methods are only implemented if there is a local extension registry. For these methods, the
 // implementation (if one exists) is set on the XyzFunc struct field.
 type extensionRegistryResolver struct {
-	ViewerPublishersFunc func(context.Context) ([]graphqlbackend.RegistryPublisher, error)
-	PublishersFunc       func(context.Context, *graphqlutil.ConnectionArgs) (graphqlbackend.RegistryPublisherConnection, error)
-	CreateExtensionFunc  func(context.Context, *graphqlbackend.ExtensionRegistryCreateExtensionArgs) (graphqlbackend.ExtensionRegistryMutationResult, error)
-	UpdateExtensionFunc  func(context.Context, *graphqlbackend.ExtensionRegistryUpdateExtensionArgs) (graphqlbackend.ExtensionRegistryMutationResult, error)
-	PublishExtensionFunc func(context.Context, *graphqlbackend.ExtensionRegistryPublishExtensionArgs) (graphqlbackend.ExtensionRegistryMutationResult, error)
-	DeleteExtensionFunc  func(context.Context, *graphqlbackend.ExtensionRegistryDeleteExtensionArgs) (*graphqlbackend.EmptyResponse, error)
+	db                   dbutil.DB
+	ViewerPublishersFunc func(context.Context, dbutil.DB) ([]graphqlbackend.RegistryPublisher, error)
+	PublishersFunc       func(context.Context, dbutil.DB, *graphqlutil.ConnectionArgs) (graphqlbackend.RegistryPublisherConnection, error)
+	CreateExtensionFunc  func(context.Context, dbutil.DB, *graphqlbackend.ExtensionRegistryCreateExtensionArgs) (graphqlbackend.ExtensionRegistryMutationResult, error)
+	UpdateExtensionFunc  func(context.Context, dbutil.DB, *graphqlbackend.ExtensionRegistryUpdateExtensionArgs) (graphqlbackend.ExtensionRegistryMutationResult, error)
+	PublishExtensionFunc func(context.Context, dbutil.DB, *graphqlbackend.ExtensionRegistryPublishExtensionArgs) (graphqlbackend.ExtensionRegistryMutationResult, error)
+	DeleteExtensionFunc  func(context.Context, dbutil.DB, *graphqlbackend.ExtensionRegistryDeleteExtensionArgs) (*graphqlbackend.EmptyResponse, error)
 }
 
 var errNoLocalExtensionRegistry = errors.New("no local extension registry exists")
@@ -43,22 +46,22 @@ func (r *extensionRegistryResolver) Publishers(ctx context.Context, args *graphq
 	if r.PublishersFunc == nil {
 		return nil, errNoLocalExtensionRegistry
 	}
-	return r.PublishersFunc(ctx, args)
+	return r.PublishersFunc(ctx, r.db, args)
 }
 
 func (r *extensionRegistryResolver) ViewerPublishers(ctx context.Context) ([]graphqlbackend.RegistryPublisher, error) {
 	if r.ViewerPublishersFunc == nil {
 		return nil, errNoLocalExtensionRegistry
 	}
-	return r.ViewerPublishersFunc(ctx)
+	return r.ViewerPublishersFunc(ctx, r.db)
 }
 
-func (*extensionRegistryResolver) Extension(ctx context.Context, args *graphqlbackend.ExtensionRegistryExtensionArgs) (graphqlbackend.RegistryExtension, error) {
-	return getExtensionByExtensionID(ctx, args.ExtensionID)
+func (r *extensionRegistryResolver) Extension(ctx context.Context, args *graphqlbackend.ExtensionRegistryExtensionArgs) (graphqlbackend.RegistryExtension, error) {
+	return getExtensionByExtensionID(ctx, r.db, args.ExtensionID)
 }
 
-func getExtensionByExtensionID(ctx context.Context, extensionID string) (graphqlbackend.RegistryExtension, error) {
-	local, remote, err := GetExtensionByExtensionID(ctx, extensionID)
+func getExtensionByExtensionID(ctx context.Context, db dbutil.DB, extensionID string) (graphqlbackend.RegistryExtension, error) {
+	local, remote, err := GetExtensionByExtensionID(ctx, db, extensionID)
 	if err != nil {
 		return nil, err
 	}
@@ -75,28 +78,28 @@ func (r *extensionRegistryResolver) CreateExtension(ctx context.Context, args *g
 	if r.CreateExtensionFunc == nil {
 		return nil, errNoLocalExtensionRegistry
 	}
-	return r.CreateExtensionFunc(ctx, args)
+	return r.CreateExtensionFunc(ctx, r.db, args)
 }
 
 func (r *extensionRegistryResolver) UpdateExtension(ctx context.Context, args *graphqlbackend.ExtensionRegistryUpdateExtensionArgs) (graphqlbackend.ExtensionRegistryMutationResult, error) {
 	if r.UpdateExtensionFunc == nil {
 		return nil, errNoLocalExtensionRegistry
 	}
-	return r.UpdateExtensionFunc(ctx, args)
+	return r.UpdateExtensionFunc(ctx, r.db, args)
 }
 
 func (r *extensionRegistryResolver) PublishExtension(ctx context.Context, args *graphqlbackend.ExtensionRegistryPublishExtensionArgs) (graphqlbackend.ExtensionRegistryMutationResult, error) {
 	if r.PublishExtensionFunc == nil {
 		return nil, errNoLocalExtensionRegistry
 	}
-	return r.PublishExtensionFunc(ctx, args)
+	return r.PublishExtensionFunc(ctx, r.db, args)
 }
 
 func (r *extensionRegistryResolver) DeleteExtension(ctx context.Context, args *graphqlbackend.ExtensionRegistryDeleteExtensionArgs) (*graphqlbackend.EmptyResponse, error) {
 	if r.DeleteExtensionFunc == nil {
 		return nil, errNoLocalExtensionRegistry
 	}
-	return r.DeleteExtensionFunc(ctx, args)
+	return r.DeleteExtensionFunc(ctx, r.db, args)
 }
 
 func (*extensionRegistryResolver) LocalExtensionIDPrefix() *string {
@@ -124,8 +127,9 @@ func (r *extensionRegistryResolver) FilterRemoteExtensions(ids []string) []strin
 
 type ExtensionRegistryMutationResult struct {
 	ID int32 // this is only used for local extensions, so it's OK that this only accepts a local extension ID
+	DB dbutil.DB
 }
 
 func (r *ExtensionRegistryMutationResult) Extension(ctx context.Context) (graphqlbackend.RegistryExtension, error) {
-	return RegistryExtensionByIDInt32(ctx, r.ID)
+	return RegistryExtensionByIDInt32(ctx, r.DB, r.ID)
 }

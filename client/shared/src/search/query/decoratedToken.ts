@@ -34,6 +34,7 @@ export type MetaToken =
     | MetaRevision
     | MetaContextPrefix
     | MetaSelector
+    | MetaPath
 
 /**
  * Defines common properties for meta tokens.
@@ -155,6 +156,21 @@ export enum MetaSelectorKind {
     Commit = 'commit',
 }
 
+export enum MetaPathKind {
+    Separator = 'Separator',
+}
+
+/**
+ * Tokens that are meaningful in path patterns, like
+ * path separators / or wildcards *.
+ */
+export interface MetaPath {
+    type: 'metaPath'
+    range: CharacterRange
+    kind: MetaPathKind
+    value: string
+}
+
 /**
  * Coalesces consecutive pattern tokens. Used, for example, when parsing
  * literal characters like 'f', 'o', 'o' in regular expressions, which are
@@ -186,7 +202,7 @@ const coalescePatterns = (tokens: DecoratedToken[]): DecoratedToken[] => {
     return newTokens
 }
 
-const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
+const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] | undefined => {
     const tokens: DecoratedToken[] = []
     try {
         const ast = new RegExpParser().parsePattern(pattern.value)
@@ -386,7 +402,7 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
             },
         })
     } catch {
-        tokens.push(pattern)
+        return undefined
     }
     // The AST is not necessarily traversed in increasing range. We need
     // to sort by increasing range because the ordering is significant to Monaco.
@@ -397,6 +413,107 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] => {
         return 0
     })
     return coalescePatterns(tokens)
+}
+
+/**
+ * Returns true for filter values that have path-like values, i.e., values that typically
+ * contain path separators like `/`.
+ */
+export const hasPathLikeValue = (field: string): boolean => {
+    const fieldName = field.startsWith('-') ? field.slice(1) : field
+    switch (fieldName.toLocaleLowerCase()) {
+        case 'repo':
+        case 'r':
+        case 'file':
+        case 'f':
+        case 'repohasfile':
+            return true
+        default:
+            return false
+    }
+}
+
+// Tokenize a literal value like "^foo/bar/baz$" by a path separator '/'.
+const mapPathMeta = (token: Literal): DecoratedToken[] => {
+    const tokens: DecoratedToken[] = []
+    const offset = token.range.start
+    let start = 0
+    let current = 0
+    while (token.value[current]) {
+        if (token.value[current] === '\\') {
+            current = current + 2 // Continue past escaped value.
+            continue
+        } else if (token.value[current] === '/') {
+            tokens.push({
+                type: 'literal',
+                range: { start: offset + start, end: offset + current - 1 },
+                value: token.value.slice(start, current),
+            })
+            tokens.push({
+                type: 'metaPath',
+                range: { start: offset + current, end: offset + current + 1 },
+                kind: MetaPathKind.Separator,
+                value: '/',
+            })
+            current = current + 1
+            start = current
+            continue
+        }
+        current = current + 1
+    }
+    // Push last token.
+    tokens.push({
+        type: 'literal',
+        range: { start: offset + start, end: offset + current },
+        value: token.value.slice(start, current),
+    })
+    return tokens
+}
+
+/**
+ * Tries to parse a pattern into decorated regexp tokens.
+ * It always succeeds, even if regexp fails to parse.
+ */
+const mapRegexpMetaSucceed = (token: Pattern): DecoratedToken[] => mapRegexpMeta(token) || [token]
+
+const toPattern = (token: Literal): Pattern => ({
+    type: 'pattern',
+    kind: PatternKind.Regexp,
+    value: token.value,
+    range: token.range,
+})
+
+/**
+ * Tries to convert all literal tokens in a list of tokens to regular expression tokens.
+ * If any tokens fail to parse, the result is undefined.
+ */
+const tryMapLiteralsToRegexp = (tokens: DecoratedToken[]): DecoratedToken[] | undefined => {
+    const decorated: DecoratedToken[] = []
+    for (const token of tokens) {
+        if (token.type === 'literal') {
+            const parsedRegexp = mapRegexpMeta(toPattern(token))
+            if (!parsedRegexp) {
+                return undefined
+            }
+            decorated.push(...parsedRegexp)
+            continue
+        }
+        decorated.push(token)
+    }
+    return decorated
+}
+
+/**
+ * A helper function for converting path-like regexp values like ^github.com/foo$ to
+ * tokens that highlight regexp metasyntax and path separator syntax. It always succeeds,
+ * even if regexp fails to parse.
+ */
+const mapPathMetaForRegexp = (token: Literal): DecoratedToken[] => {
+    const patterns = tryMapLiteralsToRegexp(mapPathMeta(token))
+    if (!patterns) {
+        return mapRegexpMetaSucceed(toPattern(token))
+    }
+    return patterns
 }
 
 const mapRevisionMeta = (token: Literal): DecoratedToken[] => {
@@ -524,7 +641,7 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
                         range: { start: variableRange.end, end: variableRange.end + 1 },
                         value: '~',
                     },
-                    ...mapRegexpMeta({
+                    ...mapRegexpMetaSucceed({
                         type: 'pattern',
                         kind: PatternKind.Regexp,
                         range: patternRange,
@@ -663,13 +780,11 @@ const decorateRepoRevision = (token: Literal): DecoratedToken[] => {
     const offset = token.range.start
 
     return [
-        ...decorate({
-            type: 'pattern',
-            kind: PatternKind.Regexp,
+        ...mapPathMetaForRegexp({
+            type: 'literal',
             value: repo,
             range: { start: offset, end: offset + repo.length },
         }),
-
         {
             type: 'metaRepoRevisionSeparator',
             value: '@',
@@ -715,7 +830,7 @@ export const decorate = (token: Token): DecoratedToken[] => {
         case 'pattern':
             switch (token.kind) {
                 case PatternKind.Regexp:
-                    decorated.push(...mapRegexpMeta(token))
+                    decorated.push(...mapRegexpMetaSucceed(token))
                     break
                 case PatternKind.Structural:
                     decorated.push(...mapStructuralMeta(token))
@@ -752,14 +867,11 @@ export const decorate = (token: Token): DecoratedToken[] => {
                 )
             } else if (token.value && token.value.type === 'literal' && hasRegexpValue(token.field.value)) {
                 // Highlight fields with regexp values.
-                decorated.push(
-                    ...decorate({
-                        type: 'pattern',
-                        kind: PatternKind.Regexp,
-                        value: token.value.value,
-                        range: token.value.range,
-                    })
-                )
+                if (hasPathLikeValue(token.field.value) && token.value?.type === 'literal') {
+                    decorated.push(...mapPathMetaForRegexp(token.value))
+                } else {
+                    decorated.push(...mapRegexpMetaSucceed(toPattern(token.value)))
+                }
             } else if (token.field.value === 'context' && token.value?.type === 'literal') {
                 decorated.push(...decorateContext(token.value))
             } else if (token.field.value === 'select' && token.value?.type === 'literal') {
@@ -789,6 +901,7 @@ const decoratedToMonaco = (token: DecoratedToken): Monaco.languages.IToken => {
                 startIndex: token.range.start,
                 scopes: token.type,
             }
+        case 'metaPath':
         case 'metaRevision':
         case 'metaRegexp':
         case 'metaStructural':

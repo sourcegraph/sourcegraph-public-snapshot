@@ -241,10 +241,11 @@ describe('StreamingSearchResults', () => {
             </BrowserRouter>
         )
 
-        const renderedResultsList = element.find(VirtualList).prop('items')
+        const listComponent = element.find<VirtualList<SearchResult>>(VirtualList)
+        const renderedResultsList = listComponent.prop('items')
         expect(renderedResultsList.length).toBe(2)
-        expect(renderedResultsList[0].type).toBe(FileMatch)
-        expect(renderedResultsList[1].type).toBe(SearchResult)
+        expect(listComponent.prop('renderItem')(renderedResultsList[0], undefined).type).toBe(FileMatch)
+        expect(listComponent.prop('renderItem')(renderedResultsList[1], undefined).type).toBe(SearchResult)
 
         element.unmount()
     })

@@ -3,6 +3,7 @@ package background
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -93,7 +94,7 @@ func discoverAndEnqueueInsights(
 			offset += queryJobOffsetTime
 			err = enqueueQueryRunnerJob(ctx, &queryrunner.Job{
 				SeriesID:     seriesID,
-				SearchQuery:  series.Search,
+				SearchQuery:  withCountUnlimited(series.Search),
 				ProcessAfter: &processAfter,
 				State:        "queued",
 			})
@@ -103,4 +104,17 @@ func discoverAndEnqueueInsights(
 		}
 	}
 	return multi
+}
+
+// withCountUnlimited adds `count:9999999` to the given search query string iff `count:` does not
+// exist in the query string. This is extremely important as otherwise the number of results our
+// search query would return would be incomplete and fluctuate.
+//
+// TODO(slimsag): future: we should pull in the search query parser to avoid cases where `count:`
+// is actually e.g. a search query like `content:"count:"`.
+func withCountUnlimited(s string) string {
+	if strings.Contains(s, "count:") {
+		return s
+	}
+	return s + " count:9999999"
 }

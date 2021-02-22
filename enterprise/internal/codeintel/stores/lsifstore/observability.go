@@ -17,7 +17,6 @@ type operations struct {
 	monikerResults     *observation.Operation
 	monikersByPosition *observation.Operation
 	packageInformation *observation.Operation
-	pagedReferences    *observation.Operation
 	ranges             *observation.Operation
 	references         *observation.Operation
 	writeDefinitions   *observation.Operation
@@ -25,6 +24,8 @@ type operations struct {
 	writeMeta          *observation.Operation
 	writeReferences    *observation.Operation
 	writeResultChunks  *observation.Operation
+
+	locations *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -43,6 +44,15 @@ func newOperations(observationContext *observation.Context) *operations {
 		})
 	}
 
+	// suboperations do not have their own metrics but do have their
+	// own opentracing spans. This allows us to more granularly track
+	// the latency for parts of a request without noising up Prometheus.
+	subOp := func(name string) *observation.Operation {
+		return observationContext.Operation(observation.Op{
+			Name: fmt.Sprintf("codeintel.lsifstore.%s", name),
+		})
+	}
+
 	return &operations{
 		bulkMonikerResults: op("BulkMonikerResults"),
 		clear:              op("Clear"),
@@ -53,7 +63,6 @@ func newOperations(observationContext *observation.Context) *operations {
 		monikerResults:     op("MonikerResults"),
 		monikersByPosition: op("MonikersByPosition"),
 		packageInformation: op("PackageInformation"),
-		pagedReferences:    op("PagedReferences"),
 		ranges:             op("Ranges"),
 		references:         op("References"),
 		writeDefinitions:   op("WriteDefinitions"),
@@ -61,5 +70,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		writeMeta:          op("WriteMeta"),
 		writeReferences:    op("WriteReferences"),
 		writeResultChunks:  op("WriteResultChunks"),
+
+		locations: subOp("locations"),
 	}
 }

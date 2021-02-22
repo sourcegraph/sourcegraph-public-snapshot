@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -30,7 +31,7 @@ func (r *schemaResolver) User(ctx context.Context, args struct {
 		if err != nil {
 			return nil, err
 		}
-		return &UserResolver{user: user}, nil
+		return NewUserResolver(r.db, user), nil
 
 	case args.Email != nil:
 		// 🚨 SECURITY: Only site admins are allowed to look up by email address on Sourcegraph.com, for
@@ -44,7 +45,7 @@ func (r *schemaResolver) User(ctx context.Context, args struct {
 		if err != nil {
 			return nil, err
 		}
-		return &UserResolver{user: user}, nil
+		return NewUserResolver(r.db, user), nil
 
 	default:
 		return nil, errors.New("must specify either username or email to look up user")
@@ -53,32 +54,33 @@ func (r *schemaResolver) User(ctx context.Context, args struct {
 
 // UserResolver implements the GraphQL User type.
 type UserResolver struct {
+	db   dbutil.DB
 	user *types.User
 }
 
 // NewUserResolver returns a new UserResolver with given user object.
-func NewUserResolver(user *types.User) *UserResolver {
-	return &UserResolver{user: user}
+func NewUserResolver(db dbutil.DB, user *types.User) *UserResolver {
+	return &UserResolver{db: db, user: user}
 }
 
 // UserByID looks up and returns the user with the given GraphQL ID. If no such user exists, it returns a
 // non-nil error.
-func UserByID(ctx context.Context, id graphql.ID) (*UserResolver, error) {
+func UserByID(ctx context.Context, db dbutil.DB, id graphql.ID) (*UserResolver, error) {
 	userID, err := UnmarshalUserID(id)
 	if err != nil {
 		return nil, err
 	}
-	return UserByIDInt32(ctx, userID)
+	return UserByIDInt32(ctx, db, userID)
 }
 
 // UserByIDInt32 looks up and returns the user with the given database ID. If no such user exists,
 // it returns a non-nil error.
-func UserByIDInt32(ctx context.Context, id int32) (*UserResolver, error) {
+func UserByIDInt32(ctx context.Context, db dbutil.DB, id int32) (*UserResolver, error) {
 	user, err := database.GlobalUsers.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	return &UserResolver{user: user}, nil
+	return NewUserResolver(db, user), nil
 }
 
 func (r *UserResolver) ID() graphql.ID { return MarshalUserID(r.user.ID) }
@@ -161,11 +163,11 @@ func (r *UserResolver) LatestSettings(ctx context.Context) (*settingsResolver, e
 	if settings == nil {
 		return nil, nil
 	}
-	return &settingsResolver{&settingsSubject{user: r}, settings, nil}, nil
+	return &settingsResolver{r.db, &settingsSubject{user: r}, settings, nil}, nil
 }
 
 func (r *UserResolver) SettingsCascade() *settingsCascade {
-	return &settingsCascade{subject: &settingsSubject{user: r}}
+	return &settingsCascade{db: r.db, subject: &settingsSubject{user: r}}
 }
 
 func (r *UserResolver) ConfigurationCascade() *settingsCascade { return r.SettingsCascade() }
@@ -186,7 +188,7 @@ type updateUserArgs struct {
 	AvatarURL   *string
 }
 
-func (*schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (*UserResolver, error) {
+func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (*UserResolver, error) {
 	userID, err := UnmarshalUserID(args.User)
 	if err != nil {
 		return nil, err
@@ -216,12 +218,12 @@ func (*schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (*U
 	if err := database.GlobalUsers.Update(ctx, userID, update); err != nil {
 		return nil, err
 	}
-	return UserByIDInt32(ctx, userID)
+	return UserByIDInt32(ctx, r.db, userID)
 }
 
 // CurrentUser returns the authenticated user if any. If there is no authenticated user, it returns
 // (nil, nil). If some other error occurs, then the error is returned.
-func CurrentUser(ctx context.Context) (*UserResolver, error) {
+func CurrentUser(ctx context.Context, db dbutil.DB) (*UserResolver, error) {
 	user, err := database.GlobalUsers.GetByCurrentAuthUser(ctx)
 	if err != nil {
 		if errcode.IsNotFound(err) || err == database.ErrNoCurrentUser {
@@ -229,7 +231,7 @@ func CurrentUser(ctx context.Context) (*UserResolver, error) {
 		}
 		return nil, err
 	}
-	return &UserResolver{user: user}, nil
+	return NewUserResolver(db, user), nil
 }
 
 func (r *UserResolver) Organizations(ctx context.Context) (*orgConnectionStaticResolver, error) {
@@ -239,7 +241,7 @@ func (r *UserResolver) Organizations(ctx context.Context) (*orgConnectionStaticR
 	}
 	c := orgConnectionStaticResolver{nodes: make([]*OrgResolver, len(orgs))}
 	for i, org := range orgs {
-		c.nodes[i] = &OrgResolver{org}
+		c.nodes[i] = &OrgResolver{r.db, org}
 	}
 	return &c, nil
 }
@@ -258,13 +260,13 @@ func (r *UserResolver) SurveyResponses(ctx context.Context) ([]*surveyResponseRe
 		return nil, err
 	}
 
-	responses, err := database.GlobalSurveyResponses.GetByUserID(ctx, r.user.ID)
+	responses, err := database.SurveyResponses(r.db).GetByUserID(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
 	}
 	surveyResponseResolvers := []*surveyResponseResolver{}
 	for _, response := range responses {
-		surveyResponseResolvers = append(surveyResponseResolvers, &surveyResponseResolver{response})
+		surveyResponseResolvers = append(surveyResponseResolvers, &surveyResponseResolver{r.db, response})
 	}
 	return surveyResponseResolvers, nil
 }
@@ -418,6 +420,7 @@ func (r *UserResolver) Repositories(ctx context.Context, args *ListUserRepositor
 	}
 
 	return &repositoryConnectionResolver{
+		db:         r.db,
 		opt:        opt,
 		cloned:     args.Cloned,
 		notCloned:  args.NotCloned,

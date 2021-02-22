@@ -159,13 +159,8 @@ func (c *Client) Ping(ctx context.Context, jobIDs []int) (err error) {
 }
 
 func (c *Client) Heartbeat(ctx context.Context, jobIDs []int) (err error) {
-	strJobIDs := make([]string, 0, len(jobIDs))
-	for _, jobID := range jobIDs {
-		strJobIDs = append(strJobIDs, strconv.FormatInt(int64(jobID), 10))
-	}
-
 	ctx, endObservation := c.operations.heartbeat.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("jobIDs", strings.Join(strJobIDs, ",")),
+		log.String("jobIDs", intsToString(jobIDs)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -212,4 +207,13 @@ func makeRelativeURL(base string, path ...string) (*url.URL, error) {
 	}
 
 	return baseURL.ResolveReference(&url.URL{Path: filepath.Join(path...)}), nil
+}
+
+func intsToString(ints []int) string {
+	segments := make([]string, 0, len(ints))
+	for _, id := range ints {
+		segments = append(segments, strconv.Itoa(id))
+	}
+
+	return strings.Join(segments, ", ")
 }

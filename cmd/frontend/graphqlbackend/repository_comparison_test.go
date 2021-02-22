@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -24,6 +25,7 @@ import (
 
 func TestRepositoryComparison(t *testing.T) {
 	ctx := context.Background()
+	db := new(dbtesting.MockDB)
 
 	wantBaseRevision := "24f7ca7c1190835519e261d7eefa09df55ceea4f"
 	wantMergeBaseRevision := "a7985dde7f92ad3490ec513be78fa2b365c7534c"
@@ -60,9 +62,9 @@ func TestRepositoryComparison(t *testing.T) {
 	t.Cleanup(func() { git.Mocks.MergeBase = nil })
 
 	input := &RepositoryComparisonInput{Base: &wantBaseRevision, Head: &wantHeadRevision}
-	repoResolver := NewRepositoryResolver(repo)
+	repoResolver := NewRepositoryResolver(db, repo)
 
-	comp, err := NewRepositoryComparison(ctx, repoResolver, input)
+	comp, err := NewRepositoryComparison(ctx, db, repoResolver, input)
 	if err != nil {
 		t.Fatal(err)
 	}
