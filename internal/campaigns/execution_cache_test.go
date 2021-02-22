@@ -139,12 +139,6 @@ func TestExecutionDiskCache(t *testing.T) {
 		Outputs: map[string]interface{}{},
 	}
 
-	onlyDiff := executionResult{
-		Diff:         testDiff,
-		ChangedFiles: &StepChanges{},
-		Outputs:      map[string]interface{}{},
-	}
-
 	t.Run("cache contains v3 cache file", func(t *testing.T) {
 		cache := ExecutionDiskCache{Dir: cacheTmpDir(t)}
 
@@ -168,76 +162,6 @@ func TestExecutionDiskCache(t *testing.T) {
 			t.Fatalf("cache.Get returned unexpected error: %s", err)
 		}
 		assertCacheMiss(t, cache, cacheKey1)
-	})
-
-	t.Run("cache contains v1 cache file", func(t *testing.T) {
-		cache := ExecutionDiskCache{Dir: cacheTmpDir(t)}
-
-		// Empty cache, no hit
-		assertCacheMiss(t, cache, cacheKey1)
-
-		// Simulate old cache file lying around in cache
-		oldFilePath := writeV1CacheFile(t, cache, cacheKey1, testDiff)
-
-		// Cache hit, but only for the diff
-		assertCacheHit(t, cache, cacheKey1, onlyDiff)
-
-		// And the old file should be deleted
-		assertFileDeleted(t, oldFilePath)
-		// .. but we should still get a cache hit, because we rewrote the cache
-		assertCacheHit(t, cache, cacheKey1, onlyDiff)
-	})
-
-	t.Run("cache contains v2 cache file", func(t *testing.T) {
-		cache := ExecutionDiskCache{Dir: cacheTmpDir(t)}
-
-		// Empty cache, no hit
-		assertCacheMiss(t, cache, cacheKey1)
-
-		// Simulate old cache file lying around in cache
-		oldFilePath := writeV2CacheFile(t, cache, cacheKey1, testDiff)
-
-		// Now we get a cache hit, but only for the diff
-		assertCacheHit(t, cache, cacheKey1, onlyDiff)
-
-		// And the old file should be deleted
-		assertFileDeleted(t, oldFilePath)
-		// .. but we should still get a cache hit, because we rewrote the cache
-		assertCacheHit(t, cache, cacheKey1, onlyDiff)
-	})
-
-	t.Run("cache contains one old and one v3 cache file", func(t *testing.T) {
-		cache := ExecutionDiskCache{Dir: cacheTmpDir(t)}
-
-		// Simulate v2 and v3 files in cache
-		oldFilePath := writeV1CacheFile(t, cache, cacheKey1, testDiff)
-
-		if err := cache.Set(ctx, cacheKey1, value); err != nil {
-			t.Fatalf("cache.Set returned unexpected error: %s", err)
-		}
-
-		// Cache hit
-		assertCacheHit(t, cache, cacheKey1, value)
-
-		// And the old file should be deleted
-		assertFileDeleted(t, oldFilePath)
-	})
-
-	t.Run("cache contains multiple old cache files", func(t *testing.T) {
-		cache := ExecutionDiskCache{Dir: cacheTmpDir(t)}
-
-		// Simulate v1 and v2 files in cache
-		oldFilePath1 := writeV1CacheFile(t, cache, cacheKey1, testDiff)
-		oldFilePath2 := writeV1CacheFile(t, cache, cacheKey1, testDiff)
-
-		// Now we get a cache hit, but only for the diff
-		assertCacheHit(t, cache, cacheKey1, onlyDiff)
-
-		// And the old files should be deleted
-		assertFileDeleted(t, oldFilePath1)
-		assertFileDeleted(t, oldFilePath2)
-		// .. but we should still get a cache hit, because we rewrote the cache
-		assertCacheHit(t, cache, cacheKey1, onlyDiff)
 	})
 }
 
