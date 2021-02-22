@@ -122,7 +122,6 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
     const onClickExternalAuthSignup = useCallback(
         (serviceType: string): React.MouseEventHandler => event => {
             event.preventDefault()
-            console.log('TEST')
             eventLogger.log('externalAuthSignupClicked', { type: serviceType })
         },
         []
