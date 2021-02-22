@@ -6,7 +6,7 @@ import { CodeHost } from '../shared/codeHost'
 import { CodeView, DOMFunctions } from '../shared/codeViews'
 import { queryWithSelector, ViewResolver, CustomSelectorFunction } from '../shared/views'
 
-const patchsetLabelPattern = /patchset (\d+)/i
+const PATCHSET_LABEL_PATTERN = /patchset (\d+)/i
 
 function checkIsGerrit(): boolean {
     const isGerrit = !!document.querySelector('gr-app#app')
@@ -27,11 +27,21 @@ function buildGerritChangeString(changeId: string, patchsetId: string): string {
     return `refs/changes/${changeDirectoryPrefix}/${changeId}/${patchsetId}`
 }
 
+/**
+ * Get {@link querySelectorAcrossShadowRoots}
+ */
 function getTextFromSelector(selector: string): string | undefined {
     return querySelectorAcrossShadowRoots(document.body, selector)?.textContent ?? undefined
 }
 
-function getBaseAndPatchsetId(): { basePatchsetId: string | undefined; patchsetId: string | undefined } {
+/**
+ * Get the patchset ID (returned as `headPatchsetId`) and the base patchset ID,
+ * if any. These are the head and base of the diff. The default and most common
+ * case is that there is no base patchset ID selected (so its value is
+ * undefined), in which case the base should be considered to be the parent
+ * commit.
+ */
+function getHeadAndBasePatchsetIds(): { basePatchsetId: string | undefined; headPatchsetId: string | undefined } {
     // On the diff overview page
     const basePatchDropdownLabel =
         getTextFromSelector(
@@ -47,19 +57,24 @@ function getBaseAndPatchsetId(): { basePatchsetId: string | undefined; patchsetI
         getTextFromSelector('#app >> #app-element >> gr-diff-view >> #rangeSelect >> #patchNumDropdown >> #triggerText')
 
     const basePatchsetId = basePatchDropdownLabel && getPatchsetIdFromLabel(basePatchDropdownLabel)
-    const patchsetId = patchNumberDropdownLabel && getPatchsetIdFromLabel(patchNumberDropdownLabel)
+    const headPatchsetId = patchNumberDropdownLabel && getPatchsetIdFromLabel(patchNumberDropdownLabel)
 
-    return { basePatchsetId, patchsetId }
+    return { basePatchsetId, headPatchsetId }
 }
 
+/**
+ * Get the patchset ID, e.g "1", from a dropdown label, e.g. "Patchset 1".
+ */
 function getPatchsetIdFromLabel(label: string): string | undefined {
-    const patternMatch = patchsetLabelPattern.exec(label)
+    const patternMatch = PATCHSET_LABEL_PATTERN.exec(label)
     if (patternMatch?.[1]) {
         return patternMatch[1]
     }
     return undefined
 }
 
+/** Obtain info about the currently viewed Gerrit changed based on the URL path
+ * and the patchset dropdowns. */
 function parseGerritChange(): GerritChangeAndPatchset {
     const path = new URL(window.location.href).pathname
     const pathParts = path.split('/')
@@ -69,7 +84,7 @@ function parseGerritChange(): GerritChangeAndPatchset {
     const changeId = pathParts[plusSign + 1]
     const filePath = pathParts.slice(plusSign + 3).join('/')
     const repoNameWithServer = window.location.hostname + '/' + repoName
-    const { basePatchsetId, patchsetId } = getBaseAndPatchsetId()
+    const { basePatchsetId, headPatchsetId: patchsetId } = getHeadAndBasePatchsetIds()
     const parsedData = { repoName: repoNameWithServer, changeId, patchsetId, filePath, basePatchsetId }
     return parsedData
 }
@@ -423,6 +438,9 @@ function getSideFromCodeElement(codeElement: HTMLElement): 'left' | 'right' {
     return 'left'
 }
 
+/**
+ * Return the next sibling element that matches the selector.
+ */
 function nextMatchingSibling(element: Element, selector: string): HTMLElement | null {
     const allSiblings = [...(element.parentElement?.childNodes || [])]
     const nextSiblings = allSiblings.slice(allSiblings.indexOf(element) + 1)
@@ -436,6 +454,9 @@ function nextMatchingSibling(element: Element, selector: string): HTMLElement | 
     return null
 }
 
+/**
+ * Returns a matching element, like `querySelector`, with support for the `>>` operator which drills into shadow roots.
+ */
 function querySelectorAcrossShadowRoots(element: ParentNode, selectors: string | string[]): Element | null {
     if (typeof selectors === 'string') {
         // The `>>` operator is a custom separator for shadow roots, used here to split the selector into an array.
@@ -453,6 +474,9 @@ function querySelectorAcrossShadowRoots(element: ParentNode, selectors: string |
     return currentElement?.querySelector(lastSelector) as Element
 }
 
+/**
+ * Find the closest matching parent element, like `element.closest`, with traversal up across shadow roots boundaries.
+ */
 function closestParentAcrossShadowRoots(element: Element, selector: string): Element | null {
     while (true) {
         const result = element.closest(selector)
