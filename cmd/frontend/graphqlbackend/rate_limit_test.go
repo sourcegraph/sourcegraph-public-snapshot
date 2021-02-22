@@ -2,8 +2,13 @@ package graphqlbackend
 
 import (
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/throttled/throttled/v2"
+	"github.com/throttled/throttled/v2/store/memstore"
+
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestEstimateQueryCost(t *testing.T) {
@@ -407,6 +412,171 @@ fragment UsableFields on Usable {
 			}
 			if diff := cmp.Diff(want, *have); diff != "" {
 				t.Errorf(diff)
+			}
+		})
+	}
+}
+
+func TestRatelimitFromConfig(t *testing.T) {
+	testCases := []struct {
+		name   string
+		config *schema.ApiRatelimit
+
+		uid  string
+		isIP bool
+		cost int
+
+		enabled bool
+
+		wantLimited bool
+		wantResult  throttled.RateLimitResult
+	}{
+		{
+			name:   "Nil config",
+			config: nil,
+
+			enabled: false,
+		},
+		{
+			name: "Disabled config",
+			config: &schema.ApiRatelimit{
+				Enabled: false,
+			},
+			enabled: false,
+		},
+		{
+			name: "No overrides",
+			config: &schema.ApiRatelimit{
+				Enabled:   true,
+				Overrides: nil,
+				PerIP:     5000,
+				PerUser:   5000,
+			},
+			enabled: true,
+
+			uid:  "test",
+			isIP: false,
+			cost: 1,
+
+			wantLimited: false,
+			wantResult: throttled.RateLimitResult{
+				Limit:      1001,
+				Remaining:  1000,
+				ResetAfter: 720 * time.Millisecond,
+				RetryAfter: -1,
+			},
+		},
+		{
+			name: "With value override",
+			config: &schema.ApiRatelimit{
+				Enabled: true,
+				PerIP:   5000,
+				PerUser: 5000,
+				Overrides: []*schema.Overrides{
+					{
+						Key:   "test",
+						Limit: 2500,
+					},
+				},
+			},
+			enabled: true,
+
+			uid:  "test",
+			isIP: false,
+			cost: 1,
+
+			wantLimited: false,
+			wantResult: throttled.RateLimitResult{
+				Limit:      501,
+				Remaining:  500,
+				ResetAfter: 720 * time.Millisecond * 2,
+				RetryAfter: -1,
+			},
+		},
+		{
+			name: "With blocked override",
+			config: &schema.ApiRatelimit{
+				Enabled: true,
+				PerIP:   5000,
+				PerUser: 5000,
+				Overrides: []*schema.Overrides{
+					{
+						Key:   "test",
+						Limit: "blocked",
+					},
+				},
+			},
+			enabled: true,
+
+			uid:  "test",
+			isIP: false,
+			cost: 1,
+
+			wantLimited: true,
+			wantResult: throttled.RateLimitResult{
+				Limit:      0,
+				Remaining:  0,
+				ResetAfter: 0,
+				RetryAfter: 0,
+			},
+		},
+		{
+			name: "With unlimited override",
+			config: &schema.ApiRatelimit{
+				Enabled: true,
+				PerIP:   5000,
+				PerUser: 5000,
+				Overrides: []*schema.Overrides{
+					{
+						Key:   "test",
+						Limit: "unlimited",
+					},
+				},
+			},
+			enabled: true,
+
+			uid:  "test",
+			isIP: false,
+			cost: 1,
+
+			wantLimited: false,
+			wantResult: throttled.RateLimitResult{
+				Limit:      100000,
+				Remaining:  100000,
+				ResetAfter: 0,
+				RetryAfter: 0,
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			store, err := memstore.New(1024)
+			if err != nil {
+				t.Fatal(err)
+			}
+			rlw := &RateLimitWatcher{
+				store: store,
+			}
+
+			rlw.updateFromConfig(tc.config)
+			rl, enabled := rlw.Get()
+
+			if tc.enabled != enabled {
+				t.Fatalf("Want %v, got %v", tc.enabled, enabled)
+			}
+			if !tc.enabled {
+				return
+			}
+			limited, result, err := rl.RateLimit(tc.uid, tc.isIP, tc.cost)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if limited != tc.wantLimited {
+				t.Fatalf("Limited, want %v got %v", tc.wantLimited, limited)
+			}
+			if diff := cmp.Diff(tc.wantResult, result); diff != "" {
+				t.Fatal(diff)
 			}
 		})
 	}
