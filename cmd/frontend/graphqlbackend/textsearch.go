@@ -366,7 +366,7 @@ func searchResultsToFileMatchResults(results []SearchResultResolver) ([]*FileMat
 // searchFilesInRepoBatch is a convenience function around searchFilesInRepos
 // which collects the results from the stream.
 func searchFilesInReposBatch(ctx context.Context, db dbutil.DB, args *search.TextParameters) ([]*FileMatchResolver, streaming.Stats, error) {
-	results, stats, err := collectStream(func(stream Streamer) error {
+	results, stats, err := collectStream(func(stream Sender) error {
 		return searchFilesInRepos(ctx, db, args, stream)
 	})
 	fms, fmErr := searchResultsToFileMatchResults(results)
@@ -377,7 +377,7 @@ func searchFilesInReposBatch(ctx context.Context, db dbutil.DB, args *search.Tex
 }
 
 // searchFilesInRepos searches a set of repos for a pattern.
-func searchFilesInRepos(ctx context.Context, db dbutil.DB, args *search.TextParameters, stream Streamer) (err error) {
+func searchFilesInRepos(ctx context.Context, db dbutil.DB, args *search.TextParameters, stream Sender) (err error) {
 	if mockSearchFilesInRepos != nil {
 		results, mockStats, err := mockSearchFilesInRepos(args)
 		stream.Send(SearchEvent{
@@ -483,7 +483,7 @@ func callSearcherOverRepos(
 	ctx context.Context,
 	db dbutil.DB,
 	args *search.TextParameters,
-	stream Streamer,
+	stream Sender,
 	searcherRepos []*search.RepositoryRevisions,
 	searcherReposFilteredFiles map[string][]string,
 	index bool,
@@ -590,7 +590,7 @@ func callSearcherOverRepos(
 // structuralSearchBackcompat is the old way we did structural search. It runs
 // a query through zoekt first to get back a list of filepaths to search. Then
 // calls searcher limiting it to just those files.
-func structuralSearchBackcompat(ctx context.Context, db dbutil.DB, args *search.TextParameters, stream Streamer, indexed *indexedSearchRequest) (err error) {
+func structuralSearchBackcompat(ctx context.Context, db dbutil.DB, args *search.TextParameters, stream Sender, indexed *indexedSearchRequest) (err error) {
 	tr, ctx := trace.New(ctx, "structuralSearchBackcompt", "")
 	defer func() {
 		tr.SetError(err)

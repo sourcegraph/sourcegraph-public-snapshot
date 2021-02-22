@@ -72,7 +72,7 @@ type indexedSearchRequest struct {
 	db dbutil.DB
 }
 
-func newIndexedSearchRequest(ctx context.Context, db dbutil.DB, args *search.TextParameters, typ indexedRequestType, stream Streamer) (_ *indexedSearchRequest, err error) {
+func newIndexedSearchRequest(ctx context.Context, db dbutil.DB, args *search.TextParameters, typ indexedRequestType, stream Sender) (_ *indexedSearchRequest, err error) {
 	tr, ctx := trace.New(ctx, "newIndexedSearchRequest", string(typ))
 	tr.LogFields(trace.Stringer("global_search_mode", args.Mode))
 	defer func() {
@@ -189,7 +189,7 @@ func (s *indexedSearchRequest) Repos() map[string]*search.RepositoryRevisions {
 }
 
 // Search streams 0 or more events to c.
-func (s *indexedSearchRequest) Search(ctx context.Context, c Streamer) error {
+func (s *indexedSearchRequest) Search(ctx context.Context, c Sender) error {
 	if s.args == nil {
 		return nil
 	}
@@ -202,7 +202,7 @@ func (s *indexedSearchRequest) Search(ctx context.Context, c Streamer) error {
 		since = s.since
 	}
 
-	var zoektStream func(ctx context.Context, db dbutil.DB, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c Streamer) error
+	var zoektStream func(ctx context.Context, db dbutil.DB, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c Sender) error
 	switch s.typ {
 	case textRequest, symbolRequest:
 		zoektStream = zoektSearch
@@ -220,7 +220,7 @@ func (s *indexedSearchRequest) Search(ctx context.Context, c Streamer) error {
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c Streamer) error {
+func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c Sender) error {
 	if args == nil {
 		return nil
 	}
@@ -808,7 +808,7 @@ func (rb *indexedRepoRevs) GetRepoInputRev(file *zoekt.FileMatch) (repo *types.R
 // excluded.
 //
 // A slice to the input list is returned, it is not copied.
-func limitUnindexedRepos(unindexed []*search.RepositoryRevisions, limit int, stream Streamer) []*search.RepositoryRevisions {
+func limitUnindexedRepos(unindexed []*search.RepositoryRevisions, limit int, stream Sender) []*search.RepositoryRevisions {
 	var missing []*search.RepositoryRevisions
 
 	for i, repoRevs := range unindexed {
