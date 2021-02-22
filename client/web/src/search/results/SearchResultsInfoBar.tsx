@@ -89,7 +89,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         const toURL = `/code-monitoring/new?${searchParameters.toString()}`
         return (
             <li className="nav-item">
-                <Link to={toURL} className="btn btn-link nav-link text-decoration-none">
+                <Link to={toURL} className="btn btn-sm btn-link nav-link text-decoration-none">
                     Create code monitor
                 </Link>
             </li>
@@ -108,7 +108,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                         menu={ContributableMenu.SearchResultsToolbar}
                         wrapInList={false}
                         showLoadingSpinnerDuringExecution={true}
-                        actionItemClass="btn btn-link nav-link text-decoration-none"
+                        actionItemClass="btn btn-sm btn-link nav-link text-decoration-none"
                     />
                     {CreateCodeMonitorButton}
                     {props.showSavedQueryButton !== false && props.authenticatedUser && (
@@ -116,7 +116,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                             <button
                                 type="button"
                                 onClick={props.onSaveQueryClick}
-                                className="btn btn-link nav-link text-decoration-none test-save-search-link"
+                                className="btn btn-sm btn-link nav-link text-decoration-none test-save-search-link"
                             >
                                 Save search
                             </button>
@@ -127,7 +127,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                             <button
                                 type="button"
                                 onClick={props.onExpandAllResultsToggle}
-                                className="btn btn-link nav-link text-decoration-none"
+                                className="btn btn-sm btn-link nav-link text-decoration-none"
                                 data-tooltip={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
                             >
                                 {props.allExpanded ? (

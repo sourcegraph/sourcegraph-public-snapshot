@@ -16,7 +16,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
         className="nav-item"
       >
         <button
-          className="btn btn-link nav-link text-decoration-none test-save-search-link"
+          className="btn btn-sm btn-link nav-link text-decoration-none test-save-search-link"
           onClick={[Function]}
           type="button"
         >
@@ -27,7 +27,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
         className="nav-item"
       >
         <button
-          className="btn btn-link nav-link text-decoration-none"
+          className="btn btn-sm btn-link nav-link text-decoration-none"
           data-tooltip="Hide more matches on all results"
           onClick={[Function]}
           type="button"
@@ -66,7 +66,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         className="nav-item"
       >
         <a
-          className="btn btn-link nav-link text-decoration-none"
+          className="btn btn-sm btn-link nav-link text-decoration-none"
           href="/code-monitoring/new?trigger-query=foo+type%3Adiff+patterntype%3Aliteral"
         >
           Create code monitor
@@ -76,7 +76,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         className="nav-item"
       >
         <button
-          className="btn btn-link nav-link text-decoration-none test-save-search-link"
+          className="btn btn-sm btn-link nav-link text-decoration-none test-save-search-link"
           onClick={[Function]}
           type="button"
         >
@@ -87,7 +87,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         className="nav-item"
       >
         <button
-          className="btn btn-link nav-link text-decoration-none"
+          className="btn btn-sm btn-link nav-link text-decoration-none"
           data-tooltip="Hide more matches on all results"
           onClick={[Function]}
           type="button"
@@ -126,7 +126,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
         className="nav-item"
       >
         <button
-          className="btn btn-link nav-link text-decoration-none test-save-search-link"
+          className="btn btn-sm btn-link nav-link text-decoration-none test-save-search-link"
           onClick={[Function]}
           type="button"
         >
@@ -137,7 +137,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
         className="nav-item"
       >
         <button
-          className="btn btn-link nav-link text-decoration-none"
+          className="btn btn-sm btn-link nav-link text-decoration-none"
           data-tooltip="Hide more matches on all results"
           onClick={[Function]}
           type="button"
