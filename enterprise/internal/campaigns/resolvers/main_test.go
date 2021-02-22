@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -229,9 +230,8 @@ func addChangeset(t *testing.T, ctx context.Context, s *store.Store, c *campaign
 	}
 }
 
-func pruneUserCredentials(t *testing.T) {
+func pruneUserCredentials(t *testing.T, db dbutil.DB) {
 	t.Helper()
-	db := dbtesting.GetDB(t)
 	creds, _, err := database.UserCredentials(db).List(context.Background(), database.UserCredentialsListOpts{})
 	if err != nil {
 		t.Fatal(err)

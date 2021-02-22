@@ -796,9 +796,9 @@ func TestCreateCampaignsCredential(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
-	pruneUserCredentials(t)
+	pruneUserCredentials(t, db)
 
 	userID := ct.CreateTestUser(t, false).ID
 
@@ -850,9 +850,9 @@ func TestDeleteCampaignsCredential(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
-	pruneUserCredentials(t)
+	pruneUserCredentials(t, db)
 
 	userID := ct.CreateTestUser(t, true).ID
 

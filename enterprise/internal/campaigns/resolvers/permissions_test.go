@@ -34,7 +34,7 @@ func TestPermissionLevels(t *testing.T) {
 		t.Skip()
 	}
 
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
 	cstore := store.New(dbconn.Global)
 	sr := New(cstore)
@@ -285,7 +285,7 @@ func TestPermissionLevels(t *testing.T) {
 
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
-					pruneUserCredentials(t)
+					pruneUserCredentials(t, db)
 
 					graphqlID := string(graphqlbackend.MarshalUserID(tc.user))
 
@@ -338,7 +338,7 @@ func TestPermissionLevels(t *testing.T) {
 
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
-					pruneUserCredentials(t)
+					pruneUserCredentials(t, db)
 
 					cred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 						Domain:              database.UserCredentialDomainCampaigns,
@@ -405,7 +405,7 @@ func TestPermissionLevels(t *testing.T) {
 
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
-					pruneUserCredentials(t)
+					pruneUserCredentials(t, db)
 
 					cred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 						Domain:              database.UserCredentialDomainCampaigns,
