@@ -88,17 +88,6 @@ const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({ closePro
         }
     }, [data?.submitHappinessFeedback])
 
-    useEffect(
-        () => () => {
-            if (data?.submitHappinessFeedback) {
-                // Reset local storage for future submissions
-                setText('')
-                setRating(undefined)
-            }
-        },
-        [data?.submitHappinessFeedback, setRating, setText]
-    )
-
     return (
         <>
             {data?.submitHappinessFeedback ? (
