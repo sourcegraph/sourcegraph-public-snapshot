@@ -13,15 +13,21 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Removed
+
+## 3.25.1
+
+### Added
+
 - Added a flag `-insecure-skip-verify` to disable TLS certificate validation.
 
 ### Changed
 
 - Deprecated cache file formats are not read by `src campaign [apply|preview]` anymore.
-
-### Fixed
-
-### Removed
 
 ## 3.25.0
 
