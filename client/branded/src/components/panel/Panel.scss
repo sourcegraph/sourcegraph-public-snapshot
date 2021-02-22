@@ -44,6 +44,7 @@
     &__tab-bar {
         flex-wrap: wrap;
         position: relative;
+        overflow-x: hidden; /* We can rely on the tab bar breaking onto new lines */
     }
 
     &__tabs {
@@ -66,16 +67,15 @@
 
     &__actions {
         padding-right: 2rem;
-        border-bottom: 3px solid var(--border-color);
         opacity: 0.6;
 
-        // Complete border if content is pushed onto new line
+        // Ensures the action border always completes the full line it breaks onto
         &::after {
             position: absolute;
             content: '';
             width: 100%;
             top: calc(100% - 3px);
-            border-bottom: inherit;
+            border-bottom: 3px solid var(--border-color);
         }
     }
 
