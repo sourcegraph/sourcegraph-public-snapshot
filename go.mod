@@ -186,12 +186,10 @@ require (
 	go.uber.org/atomic v1.7.0
 	go.uber.org/automaxprocs v1.3.0
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
-	golang.org/x/mod v0.4.1 // indirect
 	golang.org/x/net v0.0.0-20210119194325-5f4716e94777
 	golang.org/x/oauth2 v0.0.0-20210210192628-66670185b0cd
 	golang.org/x/sync v0.0.0-20201207232520-09787c993a3a
 	golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c
-	golang.org/x/text v0.3.5 // indirect
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
 	golang.org/x/tools v0.1.0
 	google.golang.org/api v0.39.0
@@ -201,7 +199,6 @@ require (
 	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.4.0
-	honnef.co/go/tools v0.0.1-2020.1.5 // indirect
 	k8s.io/api v0.17.0
 	k8s.io/apimachinery v0.17.0
 	k8s.io/client-go v0.17.0
