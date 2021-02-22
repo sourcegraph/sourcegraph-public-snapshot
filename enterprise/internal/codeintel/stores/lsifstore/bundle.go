@@ -405,8 +405,6 @@ const packageInformationQuery = `
 SELECT dump_id, path, data FROM lsif_data_documents WHERE dump_id = %s AND path = %s LIMIT 1
 `
 
-var ErrNoMetadata = errors.New("no rows in meta table")
-
 // locations queries the locations associated with the given definition or reference identifiers This
 // method returns a map from result set identifiers to another map from document paths to locations
 // within that document.
@@ -422,12 +420,48 @@ func (s *Store) locations(ctx context.Context, bundleID int, ids []ID) (_ map[ID
 		return nil, nil
 	}
 
-	// Construct a deduplicated and sorted set of result chunk indexes that we need to
-	// pull from the database. This relies on the number of total result chunks written
-	// during processing so we can hash identifiers to their parent result chunk in the
-	// same deterministic way.
+	// Get the list of indexes we need to read in order to find each result set identifier
+	indexes, err := s.translateIDsToResultChunkIndexes(ctx, bundleID, ids)
+	if err != nil {
+		return nil, err
+	}
+	traceLog(
+		log.Int("numIndexes", len(indexes)),
+		log.String("indexes", intsToString(indexes)),
+	)
 
-	numResultChunks, exists, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(locationsMetaQuery, bundleID)))
+	// Read the result sets and construct the set of documents we need to open to resolve range
+	// identifiers into actual offsets in a document.
+	paths, rangeIDsByResultID, err := s.readLocationsFromResultChunks(ctx, bundleID, ids, indexes)
+	if err != nil {
+		return nil, err
+	}
+	traceLog(
+		log.Int("numPaths", len(paths)),
+		log.String("paths", strings.Join(paths, ", ")),
+	)
+
+	// Hydrate the locations result set by replacing range ids with their actual data from their
+	// containing document. This refines the map constructed in the previous step.
+	locationsByResultID, totalCount, err := s.readRangesFromDocuments(ctx, bundleID, ids, paths, rangeIDsByResultID, traceLog)
+	if err != nil {
+		return nil, err
+	}
+	traceLog(log.Int("numLocations", totalCount))
+
+	return locationsByResultID, nil
+}
+
+// ErrNoMetadata occurs if we can't determine the number of result chunks for an index.
+var ErrNoMetadata = errors.New("no rows in meta table")
+
+// translateIDsToResultChunkIndexes converts a set of result set identifiers within a given bundle into a
+// deduplicated and sorted set of result chunk indexes that compoletely cover those identifiers.
+func (s *Store) translateIDsToResultChunkIndexes(ctx context.Context, bundleID int, ids []ID) ([]int, error) {
+	// Mapping ids to result chunk indexes relies on the number of total result chunks written during
+	// processing so that we can hash identifiers to their parent result chunk in the same deterministic
+	// way.
+	numResultChunks, exists, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(translateIDsToResultChunkIndexesQuery, bundleID)))
 	if err != nil {
 		return nil, err
 	}
@@ -439,137 +473,156 @@ func (s *Store) locations(ctx context.Context, bundleID int, ids []ID) (_ map[ID
 	for _, id := range ids {
 		resultChunkIndexMap[HashKey(id, numResultChunks)] = struct{}{}
 	}
+
 	indexes := make([]int, 0, len(resultChunkIndexMap))
 	for index := range resultChunkIndexMap {
 		indexes = append(indexes, index)
 	}
 	sort.Ints(indexes)
-	traceLog(
-		log.Int("numIndexes", len(indexes)),
-		log.String("indexes", intsToString(indexes)),
-	)
 
-	// Construct a map from result chunk identifiers to another map from document paths
-	// to range identifiers within that document. We'll later refine these to map to the
-	// actual ranges within the document (but we need a subsequent query).
-	//
-	// We do this by scanning and decoding each result chunk sequentially to reduce memory
-	// pressure when there are many references to large encoded/decoded result chunks.
+	return indexes, nil
+}
 
-	indexQueries := make([]*sqlf.Query, 0, len(indexes))
-	for _, index := range indexes {
-		indexQueries = append(indexQueries, sqlf.Sprintf("%s", index))
-	}
-	visitResultChunks := s.makeResultChunkVisitor(s.Store.Query(ctx, sqlf.Sprintf(
-		locationsResultChunkQuery,
-		bundleID,
-		sqlf.Join(indexQueries, ","),
-	)))
+const translateIDsToResultChunkIndexesQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/bundle.go:translateIDsToResultChunkIndexes
+SELECT num_result_chunks FROM lsif_data_metadata WHERE dump_id = %s
+`
 
+// resultChunkBatchSize is the maximum number of result chunks we will query at once to resolve a single
+// locations request.
+const resultChunkBatchSize = 50
+
+// readLocationsFromResultChunks reads the given result chunk indexes for a given bundle. This method returns
+// a map from documents to range identifiers that compose each of the given input result set identifiers. This
+// method also returns a deduplicated and sorted set of document paths that are referenced in the output map.
+func (s *Store) readLocationsFromResultChunks(ctx context.Context, bundleID int, ids []ID, indexes []int) ([]string, map[ID]map[string][]ID, error) {
 	pathMap := map[string]struct{}{}
 	rangeIDsByResultID := make(map[ID]map[string][]ID, len(ids))
 
-	if err := visitResultChunks(func(index int, resultChunkData ResultChunkData) {
-		for _, id := range ids {
-			documentIDRangeIDs, exists := resultChunkData.DocumentIDRangeIDs[id]
-			if !exists {
-				continue
-			}
+	// In order to limit the number of parameters we send to Postgres in the result chunk
+	// fetch query, we process the indexes in chunks of maximum size. This will also ensure
+	// that Postgres will not have to load an unbounded number of compressed result chunk
+	// payloads into memory in order to handle the query.
 
-			rangeIDsByDocument := make(map[string][]ID, len(documentIDRangeIDs))
-			for _, documentIDRangeID := range documentIDRangeIDs {
-				if path, ok := resultChunkData.DocumentPaths[documentIDRangeID.DocumentID]; ok {
-					pathMap[path] = struct{}{}
-					rangeIDsByDocument[path] = append(rangeIDsByDocument[path], documentIDRangeID.RangeID)
-				}
-			}
-			rangeIDsByResultID[id] = rangeIDsByDocument
+	for len(indexes) > 0 {
+		var batch []int
+		if len(indexes) <= resultChunkBatchSize {
+			batch, indexes = indexes, nil
+		} else {
+			batch, indexes = indexes[:resultChunkBatchSize], indexes[resultChunkBatchSize:]
 		}
-	}); err != nil {
-		return nil, err
-	}
 
-	// Construct a sorted set of document paths that we need to pull from the database
+		indexQueries := make([]*sqlf.Query, 0, len(batch))
+		for _, index := range batch {
+			indexQueries = append(indexQueries, sqlf.Sprintf("%s", index))
+		}
+		visitResultChunks := s.makeResultChunkVisitor(s.Store.Query(ctx, sqlf.Sprintf(
+			readLocationsFromResultChunksQuery,
+			bundleID,
+			sqlf.Join(indexQueries, ","),
+		)))
+
+		if err := visitResultChunks(func(index int, resultChunkData ResultChunkData) {
+			for _, id := range ids {
+				documentIDRangeIDs, exists := resultChunkData.DocumentIDRangeIDs[id]
+				if !exists {
+					continue
+				}
+
+				rangeIDsByDocument := make(map[string][]ID, len(documentIDRangeIDs))
+				for _, documentIDRangeID := range documentIDRangeIDs {
+					if path, ok := resultChunkData.DocumentPaths[documentIDRangeID.DocumentID]; ok {
+						pathMap[path] = struct{}{}
+						rangeIDsByDocument[path] = append(rangeIDsByDocument[path], documentIDRangeID.RangeID)
+					}
+				}
+				rangeIDsByResultID[id] = rangeIDsByDocument
+			}
+		}); err != nil {
+			return nil, nil, err
+		}
+	}
 
 	paths := make([]string, 0, len(pathMap))
 	for path := range pathMap {
 		paths = append(paths, path)
 	}
 	sort.Strings(paths)
-	traceLog(
-		log.Int("numPaths", len(paths)),
-		log.String("paths", strings.Join(paths, ", ")),
-	)
 
-	// Construct a map from result chunk identifiers to another map from document paths
-	// to actual ranges within that document. This refines the map constructed in the
-	// previous step.
-	//
-	// We do this by scanning and decoding each document sequentially to reduce memory
-	// pressure when there are many references to large encoded/decoded documents.
-
-	pathQueries := make([]*sqlf.Query, 0, len(paths))
-	for _, path := range paths {
-		pathQueries = append(pathQueries, sqlf.Sprintf("%s", path))
-	}
-	if len(pathQueries) == 0 {
-		return nil, nil
-	}
-	visitDocuments := s.makeDocumentVisitor(s.Store.Query(ctx, sqlf.Sprintf(locationsDocumentQuery, bundleID, sqlf.Join(pathQueries, ","))))
-	if err != nil {
-		return nil, err
-	}
-
-	totalCount := 0
-	locationsByResultID := make(map[ID][]Location, len(ids))
-
-	if err := visitDocuments(func(path string, document DocumentData) {
-		for id, rangeIDsByPath := range rangeIDsByResultID {
-			rangeIDs := rangeIDsByPath[path]
-			if len(rangeIDs) == 0 {
-				continue
-			}
-
-			locations := make([]Location, 0, len(rangeIDs))
-			for _, rangeID := range rangeIDs {
-				if r, exists := document.Ranges[rangeID]; exists {
-					locations = append(locations, Location{
-						DumpID: bundleID,
-						Path:   path,
-						Range:  newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter),
-					})
-				}
-			}
-			traceLog(
-				log.String("id", string(id)),
-				log.String("path", path),
-				log.Int("numLocationsForIDInPath", totalCount),
-			)
-
-			totalCount += len(locations)
-			locationsByResultID[id] = append(locationsByResultID[id], locations...)
-			sortLocations(locationsByResultID[id])
-		}
-	}); err != nil {
-		return nil, err
-	}
-	traceLog(log.Int("numLocations", totalCount))
-
-	return locationsByResultID, nil
+	return paths, rangeIDsByResultID, nil
 }
 
-const locationsMetaQuery = `
--- source: enterprise/internal/codeintel/stores/lsifstore/bundle.go:locations
-SELECT num_result_chunks FROM lsif_data_metadata WHERE dump_id = %s
-`
-
-const locationsResultChunkQuery = `
--- source: enterprise/internal/codeintel/stores/lsifstore/bundle.go:locations
+const readLocationsFromResultChunksQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/bundle.go:readLocationsFromResultChunks
 SELECT idx, data FROM lsif_data_result_chunks WHERE dump_id = %s AND idx IN (%s)
 `
 
-const locationsDocumentQuery = `
--- source: enterprise/internal/codeintel/stores/lsifstore/bundle.go:locations
+// documentBatchSize is the maximum number of documents we will query at once to resolve a single locations request.
+const documentBatchSize = 50
+
+// readRangesFromDocuments reads the given documents for a given bundle. This method returns a map from result set
+// identifiers to the set of locations composing that result set. The output resolves the missing data given via the
+// rangeIDsByResultID parameter. This method also returns a total count of ranges in the result set.
+func (s *Store) readRangesFromDocuments(ctx context.Context, bundleID int, ids []ID, paths []string, rangeIDsByResultID map[ID]map[string][]ID, traceLog observation.TraceLogger) (map[ID][]Location, int, error) {
+	totalCount := 0
+	locationsByResultID := make(map[ID][]Location, len(ids))
+
+	// In order to limit the number of parameters we send to Postgres in the document
+	// fetch query, we process the paths in chunks of maximum size. This will also ensure
+	// that Postgres will not have to load an unbounded number of compressed document data
+	// payloads into memory in order to handle the query.
+
+	for len(paths) > 0 {
+		var batch []string
+		if len(paths) <= documentBatchSize {
+			batch, paths = paths, nil
+		} else {
+			batch, paths = paths[:documentBatchSize], paths[documentBatchSize:]
+		}
+
+		pathQueries := make([]*sqlf.Query, 0, len(batch))
+		for _, path := range batch {
+			pathQueries = append(pathQueries, sqlf.Sprintf("%s", path))
+		}
+		visitDocuments := s.makeDocumentVisitor(s.Store.Query(ctx, sqlf.Sprintf(readRangesFromDocumentsQuery, bundleID, sqlf.Join(pathQueries, ","))))
+
+		if err := visitDocuments(func(path string, document DocumentData) {
+			for id, rangeIDsByPath := range rangeIDsByResultID {
+				rangeIDs := rangeIDsByPath[path]
+				if len(rangeIDs) == 0 {
+					continue
+				}
+
+				locations := make([]Location, 0, len(rangeIDs))
+				for _, rangeID := range rangeIDs {
+					if r, exists := document.Ranges[rangeID]; exists {
+						locations = append(locations, Location{
+							DumpID: bundleID,
+							Path:   path,
+							Range:  newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter),
+						})
+					}
+				}
+				traceLog(
+					log.String("id", string(id)),
+					log.String("path", path),
+					log.Int("numLocationsForIDInPath", totalCount),
+				)
+
+				totalCount += len(locations)
+				locationsByResultID[id] = append(locationsByResultID[id], locations...)
+				sortLocations(locationsByResultID[id])
+			}
+		}); err != nil {
+			return nil, 0, err
+		}
+	}
+
+	return locationsByResultID, totalCount, nil
+}
+
+const readRangesFromDocumentsQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/bundle.go:readRangesFromDocuments
 SELECT path, data FROM lsif_data_documents WHERE dump_id = %s AND path IN (%s)
 `
 
