@@ -21,7 +21,7 @@ func latestPingHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	ping, err := database.GlobalEventLogs.LatestPing(r.Context())
+	ping, err := database.EventLogs(db).LatestPing(r.Context())
 	switch err {
 	case sql.ErrNoRows:
 		_, _ = io.WriteString(w, "{}")

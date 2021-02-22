@@ -175,5 +175,5 @@ func LogEvent(ctx context.Context, name, url string, userID int32, userCookieID,
 		Source:          source,
 		Argument:        argument,
 	}
-	return database.GlobalEventLogs.Insert(ctx, info)
+	return database.EventLogs(db).Insert(ctx, info)
 }
