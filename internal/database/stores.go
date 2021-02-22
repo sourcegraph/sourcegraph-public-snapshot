@@ -7,7 +7,6 @@ var (
 	GlobalDefaultRepos                = &DefaultRepoStore{}
 	GlobalRepos                       = &RepoStore{}
 	GlobalOrgs                        = &OrgStore{}
-	GlobalOrgMembers                  = &OrgMemberStore{}
 	GlobalSettings                    = &SettingStore{}
 	GlobalUsers                       = &UserStore{}
 	GlobalUserCredentials             = &UserCredentialsStore{}

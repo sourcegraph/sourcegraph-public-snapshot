@@ -10,7 +10,7 @@ import (
 )
 
 func (r *UserResolver) OrganizationMemberships(ctx context.Context) (*organizationMembershipConnectionResolver, error) {
-	memberships, err := database.GlobalOrgMembers.GetByUserID(ctx, r.user.ID)
+	memberships, err := database.OrgMembers(r.db).GetByUserID(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
 	}

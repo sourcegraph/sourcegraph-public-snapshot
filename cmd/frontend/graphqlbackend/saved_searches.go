@@ -45,7 +45,7 @@ func (r *schemaResolver) savedSearchByID(ctx context.Context, id graphql.ID) (*s
 			return nil, err
 		}
 	} else if ss.Config.OrgID != nil {
-		if err := backend.CheckOrgAccess(ctx, *ss.Config.OrgID); err != nil {
+		if err := backend.CheckOrgAccess(ctx, r.db, *ss.Config.OrgID); err != nil {
 			return nil, err
 		}
 	} else {
@@ -173,7 +173,7 @@ func (r *schemaResolver) CreateSavedSearch(ctx context.Context, args *struct {
 			return nil, err
 		}
 		orgID = &o
-		if err := backend.CheckOrgAccess(ctx, o); err != nil {
+		if err := backend.CheckOrgAccess(ctx, r.db, o); err != nil {
 			return nil, err
 		}
 	} else {
@@ -225,7 +225,7 @@ func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
 			return nil, err
 		}
 		orgID = &o
-		if err := backend.CheckOrgAccess(ctx, o); err != nil {
+		if err := backend.CheckOrgAccess(ctx, r.db, o); err != nil {
 			return nil, err
 		}
 	} else {
@@ -274,7 +274,7 @@ func (r *schemaResolver) DeleteSavedSearch(ctx context.Context, args *struct {
 			return nil, err
 		}
 	} else if ss.Config.OrgID != nil {
-		if err := backend.CheckOrgAccess(ctx, *ss.Config.OrgID); err != nil {
+		if err := backend.CheckOrgAccess(ctx, r.db, *ss.Config.OrgID); err != nil {
 			return nil, err
 		}
 	} else {

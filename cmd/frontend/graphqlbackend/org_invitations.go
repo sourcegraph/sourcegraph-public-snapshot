@@ -14,13 +14,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func getUserToInviteToOrganization(ctx context.Context, username string, orgID int32) (userToInvite *types.User, userEmailAddress string, err error) {
+func getUserToInviteToOrganization(ctx context.Context, db dbutil.DB, username string, orgID int32) (userToInvite *types.User, userEmailAddress string, err error) {
 	userToInvite, err = database.GlobalUsers.GetByUsername(ctx, username)
 	if err != nil {
 		return nil, "", err
@@ -38,7 +39,7 @@ func getUserToInviteToOrganization(ctx context.Context, username string, orgID i
 		}
 	}
 
-	if _, err := database.GlobalOrgMembers.GetByOrgIDAndUserID(ctx, orgID, userToInvite.ID); err == nil {
+	if _, err := database.OrgMembers(db).GetByOrgIDAndUserID(ctx, orgID, userToInvite.ID); err == nil {
 		return nil, "", errors.New("user is already a member of the organization")
 	} else if _, ok := err.(*database.ErrOrgMemberNotFound); !ok {
 		return nil, "", err
@@ -64,7 +65,7 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 	}
 	// 🚨 SECURITY: Check that the current user is a member of the org that the user is being
 	// invited to.
-	if err := backend.CheckOrgAccess(ctx, orgID); err != nil {
+	if err := backend.CheckOrgAccess(ctx, r.db, orgID); err != nil {
 		return nil, err
 	}
 
@@ -77,7 +78,7 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 	if err != nil {
 		return nil, err
 	}
-	recipient, recipientEmail, err := getUserToInviteToOrganization(ctx, args.Username, orgID)
+	recipient, recipientEmail, err := getUserToInviteToOrganization(ctx, r.db, args.Username, orgID)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +138,7 @@ func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, ar
 
 	if accept {
 		// The recipient accepted the invitation.
-		if _, err := database.GlobalOrgMembers.Create(ctx, orgID, currentUser.user.ID); err != nil {
+		if _, err := database.OrgMembers(r.db).Create(ctx, orgID, currentUser.user.ID); err != nil {
 			return nil, err
 		}
 	}
@@ -153,7 +154,7 @@ func (r *schemaResolver) ResendOrganizationInvitationNotification(ctx context.Co
 	}
 
 	// 🚨 SECURITY: Check that the current user is a member of the org that the invite is for.
-	if err := backend.CheckOrgAccess(ctx, orgInvitation.v.OrgID); err != nil {
+	if err := backend.CheckOrgAccess(ctx, r.db, orgInvitation.v.OrgID); err != nil {
 		return nil, err
 	}
 
@@ -200,7 +201,7 @@ func (r *schemaResolver) RevokeOrganizationInvitation(ctx context.Context, args 
 	}
 
 	// 🚨 SECURITY: Check that the current user is a member of the org that the invite is for.
-	if err := backend.CheckOrgAccess(ctx, orgInvitation.v.OrgID); err != nil {
+	if err := backend.CheckOrgAccess(ctx, r.db, orgInvitation.v.OrgID); err != nil {
 		return nil, err
 	}
 
