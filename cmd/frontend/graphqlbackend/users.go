@@ -63,11 +63,11 @@ func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, in
 		var err error
 		switch *r.activePeriod {
 		case "TODAY":
-			r.opt.UserIDs, err = usagestats.ListRegisteredUsersToday(ctx)
+			r.opt.UserIDs, err = usagestats.ListRegisteredUsersToday(ctx, r.db)
 		case "THIS_WEEK":
-			r.opt.UserIDs, err = usagestats.ListRegisteredUsersThisWeek(ctx)
+			r.opt.UserIDs, err = usagestats.ListRegisteredUsersThisWeek(ctx, r.db)
 		case "THIS_MONTH":
-			r.opt.UserIDs, err = usagestats.ListRegisteredUsersThisMonth(ctx)
+			r.opt.UserIDs, err = usagestats.ListRegisteredUsersThisMonth(ctx, r.db)
 		default:
 			err = fmt.Errorf("unknown user active period %s", *r.activePeriod)
 		}

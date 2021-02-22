@@ -30,7 +30,7 @@ type userEventLogsConnectionResolver struct {
 }
 
 func (r *userEventLogsConnectionResolver) Nodes(ctx context.Context) ([]*userEventLogResolver, error) {
-	events, err := database.GlobalEventLogs.ListAll(ctx, r.opt)
+	events, err := database.EventLogs(r.db).ListAll(ctx, r.opt)
 	if err != nil {
 		return nil, err
 	}
@@ -48,9 +48,9 @@ func (r *userEventLogsConnectionResolver) TotalCount(ctx context.Context) (int32
 	var err error
 
 	if r.opt.EventName != nil {
-		count, err = database.GlobalEventLogs.CountByUserIDAndEventName(ctx, r.opt.UserID, *r.opt.EventName)
+		count, err = database.EventLogs(r.db).CountByUserIDAndEventName(ctx, r.opt.UserID, *r.opt.EventName)
 	} else {
-		count, err = database.GlobalEventLogs.CountByUserID(ctx, r.opt.UserID)
+		count, err = database.EventLogs(r.db).CountByUserID(ctx, r.opt.UserID)
 	}
 
 	return int32(count), err
@@ -61,9 +61,9 @@ func (r *userEventLogsConnectionResolver) PageInfo(ctx context.Context) (*graphq
 	var err error
 
 	if r.opt.EventName != nil {
-		count, err = database.GlobalEventLogs.CountByUserIDAndEventName(ctx, r.opt.UserID, *r.opt.EventName)
+		count, err = database.EventLogs(r.db).CountByUserIDAndEventName(ctx, r.opt.UserID, *r.opt.EventName)
 	} else {
-		count, err = database.GlobalEventLogs.CountByUserID(ctx, r.opt.UserID)
+		count, err = database.EventLogs(r.db).CountByUserID(ctx, r.opt.UserID)
 	}
 
 	if err != nil {
