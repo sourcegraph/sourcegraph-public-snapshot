@@ -34,6 +34,8 @@ To connect Perforce to Sourcegraph:
 
 ### Depot syncing
 
+> NOTE: Only "local" type depots are supported.
+
 There is one field for configuring which depots are mirrored/synchronized as repositories:
 
 - [`depots`](perforce.md#depots)<br>A list of depot paths that can be either depot root or a arbitrary subdirectory.
