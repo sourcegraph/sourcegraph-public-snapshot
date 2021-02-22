@@ -906,6 +906,52 @@ const SiteSchemaJSON = `{
           "$ref": "#/definitions/EncryptionKey"
         }
       }
+    },
+    "api.ratelimit": {
+      "description": "Configuration for API rate limiting",
+      "type": "object",
+      "required": ["enabled", "perUser", "perIP"],
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether API rate limiting is enabled"
+        },
+        "perUser": {
+          "description": "Limit granted per user per hour",
+          "type": "integer",
+          "minimum": 1,
+          "default": 5000
+        },
+        "perIP": {
+          "description": "Limit granted per IP per hour, only applied to anonymous users",
+          "type": "integer",
+          "minimum": 1,
+          "default": 5000
+        },
+        "overrides": {
+          "description": "An array of rate limit overrides",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "description": "The key that we want to override for example a username",
+                "type": "string",
+                "minLength": 1
+              },
+              "limit": {
+                "description": "The limit per hour, 'unlimited' or 'blocked'",
+                "oneOf": [
+                  { "type": "string", "const": "unlimited" },
+                  { "type": "string", "const": "blocked" },
+                  { "type": "integer", "minimum": 1 }
+                ]
+              }
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
