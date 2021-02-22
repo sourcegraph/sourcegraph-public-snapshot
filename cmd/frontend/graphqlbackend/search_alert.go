@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -130,6 +131,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 
 	repoFilters, minusRepoFilters := r.Query.RegexpPatterns(query.FieldRepo)
 	repoGroupFilters, _ := r.Query.StringValues(query.FieldRepoGroup)
+	contextFilters, _ := r.Query.StringValues(query.FieldContext)
 	fork, _ := r.Query.StringValue(query.FieldFork)
 	onlyForks, noForks := fork == "only", fork == "no"
 	forksNotSet := len(fork) == 0
@@ -159,6 +161,21 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			prometheusType: "no_resolved_repos__repogroup_none_in_common",
 			title:          "Repository groups have no repositories in common",
 			description:    "No repository exists in all of the specified repository groups.",
+		}
+	}
+	if len(contextFilters) == 1 && !searchcontexts.IsGlobalSearchContextSpec(contextFilters[0]) && (len(repoFilters) > 0 || len(repoGroupFilters) > 0) {
+		withoutContextFilter := query.OmitField(r.Query, query.FieldContext)
+		proposedQueries := []*searchQueryDescription{{
+			description: "search in the global context",
+			query:       fmt.Sprintf("context:%s %s", searchcontexts.GlobalSearchContextName, withoutContextFilter),
+			patternType: r.PatternType,
+		}}
+
+		return &searchAlert{
+			db:              r.db,
+			prometheusType:  "no_resolved_repos__context_none_in_common",
+			title:           fmt.Sprintf("No repositories found for your query within the context %s", contextFilters[0]),
+			proposedQueries: proposedQueries,
 		}
 	}
 
