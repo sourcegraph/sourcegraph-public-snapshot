@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -69,7 +70,7 @@ func TestBitbucketServerSource_MakeRepo(t *testing.T) {
 			}
 
 			path := filepath.Join("testdata", "bitbucketserver-repos-"+name+".golden")
-			testutil.AssertGolden(t, path, update(name), got)
+			testutil.AssertGolden(t, path, updateTestDataOfTest(name), got)
 		})
 	}
 }
@@ -154,7 +155,7 @@ func TestBitbucketServerSource_Exclude(t *testing.T) {
 			}
 
 			path := filepath.Join("testdata", "bitbucketserver-repos-exclude-"+name+".golden")
-			testutil.AssertGolden(t, path, update(name), got)
+			testutil.AssertGolden(t, path, updateTestDataOfTest(name), got)
 		})
 	}
 }
@@ -238,7 +239,7 @@ func TestBitbucketServerSource_LoadChangeset(t *testing.T) {
 			testutil.AssertGolden(
 				t,
 				"testdata/golden/"+tc.name,
-				update(tc.name),
+				updateTestDataOfTest(tc.name),
 				tc.cs.Changeset.Metadata.(*bitbucketserver.PullRequest),
 			)
 		})
@@ -350,7 +351,7 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 			}
 
 			pr := tc.cs.Changeset.Metadata.(*bitbucketserver.PullRequest)
-			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), pr)
+			testutil.AssertGolden(t, "testdata/golden/"+tc.name, updateTestDataOfTest(tc.name), pr)
 		})
 	}
 }
@@ -419,7 +420,7 @@ func TestBitbucketServerSource_CloseChangeset(t *testing.T) {
 			}
 
 			pr := tc.cs.Changeset.Metadata.(*bitbucketserver.PullRequest)
-			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), pr)
+			testutil.AssertGolden(t, "testdata/golden/"+tc.name, updateTestDataOfTest(tc.name), pr)
 		})
 	}
 }
@@ -488,7 +489,7 @@ func TestBitbucketServerSource_ReopenChangeset(t *testing.T) {
 			}
 
 			pr := tc.cs.Changeset.Metadata.(*bitbucketserver.PullRequest)
-			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), pr)
+			testutil.AssertGolden(t, "testdata/golden/"+tc.name, updateTestDataOfTest(tc.name), pr)
 		})
 	}
 }
@@ -562,7 +563,7 @@ func TestBitbucketServerSource_UpdateChangeset(t *testing.T) {
 			}
 
 			pr := tc.cs.Changeset.Metadata.(*bitbucketserver.PullRequest)
-			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), pr)
+			testutil.AssertGolden(t, "testdata/golden/"+tc.name, updateTestDataOfTest(tc.name), pr)
 		})
 	}
 }

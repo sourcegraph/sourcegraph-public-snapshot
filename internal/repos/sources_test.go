@@ -758,8 +758,9 @@ func TestSources_ListRepos(t *testing.T) {
 }
 
 func newClientFactory(t testing.TB, name string, mws ...httpcli.Middleware) (*httpcli.Factory, func(testing.TB)) {
-	cassete := filepath.Join("testdata", "sources", strings.Replace(name, " ", "-", -1))
-	rec := newRecorder(t, cassete, update(name))
+	cassette := filepath.Join("testdata", "sources", strings.Replace(name, " ", "-", -1))
+	t.Logf("reading from cassette %q", cassette)
+	rec := newRecorder(t, cassette, updateTestDataOfTest(name))
 	mws = append(mws, httpcli.GitHubProxyRedirectMiddleware, gitserverRedirectMiddleware)
 	mw := httpcli.NewMiddleware(mws...)
 	return httpcli.NewFactory(mw, httptestutil.NewRecorderOpt(rec)),
@@ -793,6 +794,7 @@ func newRecorder(t testing.TB, file string, record bool) *recorder.Recorder {
 			"X-RateLimit-Limit",
 			"X-RateLimit-Remaining",
 			"X-RateLimit-Reset",
+			"X-RateLimit-Used",
 		} {
 			i.Response.Headers.Del(name)
 		}
@@ -808,6 +810,12 @@ func newRecorder(t testing.TB, file string, record bool) *recorder.Recorder {
 	})
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	if record {
+		t.Logf("updating bla bla bla")
+	} else {
+		t.Logf("to update test, pass -update %s", file)
 	}
 
 	return rec

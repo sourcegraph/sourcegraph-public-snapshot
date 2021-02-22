@@ -164,7 +164,7 @@ func TestBitbucketCloudSource_makeRepo(t *testing.T) {
 				got = append(got, s.makeRepo(r))
 			}
 
-			testutil.AssertGolden(t, "testdata/golden/"+test.name, update(test.name), got)
+			testutil.AssertGolden(t, "testdata/golden/"+test.name, updateTestDataOfTest(test.name), got)
 		})
 	}
 }
@@ -244,7 +244,7 @@ func TestBitbucketCloudSource_Exclude(t *testing.T) {
 			}
 
 			path := filepath.Join("testdata", "bitbucketcloud-repos-exclude-"+name+".golden")
-			testutil.AssertGolden(t, path, update(name), got)
+			testutil.AssertGolden(t, path, updateTestDataOfTest(name), got)
 		})
 	}
 }

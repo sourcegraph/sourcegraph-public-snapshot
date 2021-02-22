@@ -127,7 +127,7 @@ func TestPerforceSource_makeRepo(t *testing.T) {
 				got = append(got, s.makeRepo(depot))
 			}
 
-			testutil.AssertGolden(t, "testdata/golden/"+test.name, update(test.name), got)
+			testutil.AssertGolden(t, "testdata/golden/"+test.name, updateTestDataOfTest(test.name), got)
 		})
 	}
 }

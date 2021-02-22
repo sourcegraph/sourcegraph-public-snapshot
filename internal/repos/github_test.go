@@ -16,6 +16,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -131,7 +132,7 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 				t.Fatal("Metadata does not contain PR")
 			}
 
-			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), pr)
+			testutil.AssertGolden(t, "testdata/golden/"+tc.name, updateTestDataOfTest(tc.name), pr)
 		})
 	}
 }
@@ -198,7 +199,7 @@ func TestGithubSource_CloseChangeset(t *testing.T) {
 			}
 
 			pr := tc.cs.Changeset.Metadata.(*github.PullRequest)
-			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), pr)
+			testutil.AssertGolden(t, "testdata/golden/"+tc.name, updateTestDataOfTest(tc.name), pr)
 		})
 	}
 }
@@ -266,7 +267,7 @@ func TestGithubSource_ReopenChangeset(t *testing.T) {
 			}
 
 			pr := tc.cs.Changeset.Metadata.(*github.PullRequest)
-			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), pr)
+			testutil.AssertGolden(t, "testdata/golden/"+tc.name, updateTestDataOfTest(tc.name), pr)
 		})
 	}
 }
@@ -336,7 +337,7 @@ func TestGithubSource_UpdateChangeset(t *testing.T) {
 			}
 
 			pr := tc.cs.Changeset.Metadata.(*github.PullRequest)
-			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), pr)
+			testutil.AssertGolden(t, "testdata/golden/"+tc.name, updateTestDataOfTest(tc.name), pr)
 		})
 	}
 }
@@ -408,7 +409,7 @@ func TestGithubSource_LoadChangeset(t *testing.T) {
 			}
 
 			meta := tc.cs.Changeset.Metadata.(*github.PullRequest)
-			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), meta)
+			testutil.AssertGolden(t, "testdata/golden/"+tc.name, updateTestDataOfTest(tc.name), meta)
 		})
 	}
 }
@@ -559,7 +560,7 @@ func TestGithubSource_makeRepo(t *testing.T) {
 				got = append(got, s.makeRepo(r))
 			}
 
-			testutil.AssertGolden(t, "testdata/golden/"+test.name, update(test.name), got)
+			testutil.AssertGolden(t, "testdata/golden/"+test.name, updateTestDataOfTest(test.name), got)
 		})
 	}
 }
