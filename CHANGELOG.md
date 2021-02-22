@@ -15,6 +15,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Changed
 
+- The volume workspace Docker image is now only pulled if the volume workspace mode is in use. [#477](https://github.com/sourcegraph/src-cli/pull/477)
+
 ### Fixed
 
 ### Removed

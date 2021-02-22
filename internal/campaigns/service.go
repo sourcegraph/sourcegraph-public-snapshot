@@ -200,20 +200,20 @@ func (svc *Service) NewRepoFetcher(dir string, cleanArchives bool) RepoFetcher {
 }
 
 func (svc *Service) NewWorkspaceCreator(ctx context.Context, cacheDir, tempDir string, steps []Step) WorkspaceCreator {
-	var workspace workspaceCreatorType
-
-	if svc.workspace == "volume" {
-		workspace = workspaceCreatorVolume
-	} else if svc.workspace == "bind" {
-		workspace = workspaceCreatorBind
-	} else {
-		workspace = bestWorkspaceCreator(ctx, steps)
-	}
-
-	if workspace == workspaceCreatorVolume {
+	if svc.workspaceCreatorType(ctx, steps) == workspaceCreatorVolume {
 		return &dockerVolumeWorkspaceCreator{tempDir: tempDir}
 	}
 	return &dockerBindWorkspaceCreator{dir: cacheDir}
+}
+
+func (svc *Service) workspaceCreatorType(ctx context.Context, steps []Step) workspaceCreatorType {
+	if svc.workspace == "volume" {
+		return workspaceCreatorVolume
+	} else if svc.workspace == "bind" {
+		return workspaceCreatorBind
+	}
+
+	return bestWorkspaceCreator(ctx, steps)
 }
 
 // SetDockerImages updates the steps within the campaign spec to include the
@@ -236,9 +236,12 @@ func (svc *Service) SetDockerImages(ctx context.Context, spec *CampaignSpec, pro
 		progress(float64(i) / float64(total))
 	}
 
-	// We also need to ensure we have our own utility images available.
-	if err := svc.imageCache.Get(dockerVolumeWorkspaceImage).Ensure(ctx); err != nil {
-		return errors.Wrapf(err, "pulling image %q", dockerVolumeWorkspaceImage)
+	// We also need to ensure we have our own utility images available, if
+	// necessary.
+	if svc.workspaceCreatorType(ctx, spec.Steps) == workspaceCreatorVolume {
+		if err := svc.imageCache.Get(dockerVolumeWorkspaceImage).Ensure(ctx); err != nil {
+			return errors.Wrapf(err, "pulling image %q", dockerVolumeWorkspaceImage)
+		}
 	}
 
 	progress(1)
