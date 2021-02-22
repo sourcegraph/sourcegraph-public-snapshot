@@ -7,7 +7,7 @@ const getSingleFileCodeElementFromLineNumber = (
     part?: DiffPart
 ): HTMLElement | null => codeView.querySelector<HTMLElement>(`#LC${line}`)
 export const singleFileDOMFunctions: DOMFunctions = {
-    getCodeElementFromTarget: target => target.closest('span.line') as HTMLElement | null,
+    getCodeElementFromTarget: target => target.closest('span.line'),
     getLineNumberFromCodeElement: codeElement => {
         const line = codeElement.id.replace(/^LC/, '')
         return parseInt(line, 10)
@@ -60,7 +60,9 @@ export const diffDOMFunctions: DOMFunctions = {
         let cell: HTMLElement | null = codeElement.closest('.diff-td,td')
         while (
             cell &&
-            !cell.matches(`.diff-line-num.${part === 'base' ? 'old_line' : 'new_line'}`) &&
+            // It's possible for a line number container to not contain an <a> tag with the line
+            // number, e.g. right side 'old_line' for a deleted file
+            !(cell.matches(`.diff-line-num.${part === 'base' ? 'old_line' : 'new_line'}`) && cell.querySelector('a')) &&
             cell.previousElementSibling
         ) {
             cell = cell.previousElementSibling as HTMLElement | null
