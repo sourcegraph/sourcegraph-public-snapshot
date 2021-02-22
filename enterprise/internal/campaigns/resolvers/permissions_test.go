@@ -301,7 +301,7 @@ func TestPermissionLevels(t *testing.T) {
 					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
 					errors := apitest.Exec(actorCtx, t, s, input, &res, queryCodeHosts)
 					if !tc.wantErr && len(errors) != 0 {
-						t.Fatal("got error but didn't expect one")
+						t.Fatalf("got error but didn't expect one: %+v", errors)
 					} else if tc.wantErr && len(errors) == 0 {
 						t.Fatal("expected error but got none")
 					}
