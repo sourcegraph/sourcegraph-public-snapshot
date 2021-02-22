@@ -1355,9 +1355,7 @@ const SiteSchemaJSON = `{
     "NoOpEncryptionKey": {
       "description": "This encryption key is a no op, leaving your data in plaintext (not recommended).",
       "type": "object",
-      "required": [
-        "type"
-      ],
+      "required": ["type"],
       "properties": {
         "type": {
           "type": "string",
