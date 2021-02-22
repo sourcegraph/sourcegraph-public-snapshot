@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 // UserCredential represents a row in the `user_credentials` table.
@@ -30,6 +31,20 @@ type UserCredential struct {
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
 }
+
+// UserCredentialType defines all possible types of authenticators stored in the database.
+type UserCredentialType string
+
+// Define credential type strings that we'll use when encoding credentials.
+const (
+	UserCredentialTypeOAuthClient                        UserCredentialType = "OAuthClient"
+	UserCredentialTypeBasicAuth                          UserCredentialType = "BasicAuth"
+	UserCredentialTypeBasicAuthWithSSH                   UserCredentialType = "BasicAuthWithSSH"
+	UserCredentialTypeOAuthBearerToken                   UserCredentialType = "OAuthBearerToken"
+	UserCredentialTypeOAuthBearerTokenWithSSH            UserCredentialType = "OAuthBearerTokenWithSSH"
+	UserCredentialTypeBitbucketServerSudoableOAuthClient UserCredentialType = "BitbucketSudoableOAuthClient"
+	UserCredentialTypeGitLabSudoableToken                UserCredentialType = "GitLabSudoableToken"
+)
 
 // This const block contains the valid domain values for user credentials.
 const (
@@ -128,6 +143,41 @@ func (s *UserCredentialsStore) Create(ctx context.Context, scope UserCredentialS
 	return &cred, nil
 }
 
+// Update updates a user credential in the database. If the credential cannot be found,
+// an error ist returned
+func (s *UserCredentialsStore) Update(ctx context.Context, credential *UserCredential) error {
+	if Mocks.UserCredentials.Update != nil {
+		return Mocks.UserCredentials.Update(ctx, credential)
+	}
+	s.ensureStore()
+
+	raw, err := marshalCredential(credential.Credential)
+	if err != nil {
+		return errors.Wrap(err, "marshalling credential")
+	}
+
+	credential.UpdatedAt = timeutil.Now()
+
+	q := sqlf.Sprintf(
+		userCredentialsUpdateQueryFmtstr,
+		credential.Domain,
+		credential.UserID,
+		credential.ExternalServiceType,
+		credential.ExternalServiceID,
+		raw,
+		credential.UpdatedAt,
+		credential.ID,
+		sqlf.Join(userCredentialsColumns, ", "),
+	)
+
+	row := s.QueryRow(ctx, q)
+	if err := scanUserCredential(credential, row); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Delete deletes the given user credential. Note that there is no concept of a
 // soft delete with user credentials: once deleted, the relevant records are
 // _gone_, so that we don't hold any sensitive data unexpectedly. 💀
@@ -209,7 +259,8 @@ func (s *UserCredentialsStore) GetByScope(ctx context.Context, scope UserCredent
 // least one field in Scope must be set.
 type UserCredentialsListOpts struct {
 	*LimitOffset
-	Scope UserCredentialScope
+	Scope             UserCredentialScope
+	AuthenticatorType []UserCredentialType
 }
 
 // sql overrides LimitOffset.SQL() to give a LIMIT clause with one extra value
@@ -241,6 +292,14 @@ func (s *UserCredentialsStore) List(ctx context.Context, opts UserCredentialsLis
 	}
 	if opts.Scope.ExternalServiceID != "" {
 		preds = append(preds, sqlf.Sprintf("external_service_id = %s", opts.Scope.ExternalServiceID))
+	}
+	if len(opts.AuthenticatorType) > 0 {
+		values := make([]*sqlf.Query, 0, len(opts.AuthenticatorType))
+		for _, t := range opts.AuthenticatorType {
+			// The JSON text fields are quoted, so we need to quote the type here too.
+			values = append(values, sqlf.Sprintf(`%s`, fmt.Sprintf(`"%s"`, t)))
+		}
+		preds = append(preds, sqlf.Sprintf("(credential::json->'Type')::text IN (%s)", sqlf.Join(values, ",")))
 	}
 
 	if len(preds) == 0 {
@@ -319,7 +378,7 @@ ORDER BY created_at ASC, domain ASC, user_id ASC, external_service_id ASC
 `
 
 const userCredentialsCreateQueryFmtstr = `
--- source: internal/database/user_credentials.go:Upsert
+-- source: internal/database/user_credentials.go:Create
 INSERT INTO
 	user_credentials (
 		domain,
@@ -340,6 +399,21 @@ INSERT INTO
 		NOW()
 	)
 	RETURNING %s
+`
+
+const userCredentialsUpdateQueryFmtstr = `
+-- source: internal/database/user_credentials.go:Update
+UPDATE user_credentials
+SET
+	domain = %s,
+	user_id = %s,
+	external_service_type = %s,
+	external_service_id = %s,
+	credential = %s,
+	updated_at = %s
+WHERE
+	id = %s
+RETURNING %s
 `
 
 // scanUserCredential scans a credential from the given scanner into the given
@@ -376,41 +450,30 @@ func scanUserCredential(cred *UserCredential, s interface {
 	return nil
 }
 
-// Define credential type strings that we'll use when encoding credentials.
-const (
-	credTypeOAuthClient                        = "OAuthClient"
-	credTypeBasicAuth                          = "BasicAuth"
-	credTypeBasicAuthWithSSH                   = "BasicAuthWithSSH"
-	credTypeOAuthBearerToken                   = "OAuthBearerToken"
-	credTypeOAuthBearerTokenWithSSH            = "OAuthBearerTokenWithSSH"
-	credTypeBitbucketServerSudoableOAuthClient = "BitbucketSudoableOAuthClient"
-	credTypeGitLabSudoableToken                = "GitLabSudoableToken"
-)
-
 // marshalCredential encodes an Authenticator into a JSON string.
 func marshalCredential(a auth.Authenticator) (string, error) {
-	var t string
+	var t UserCredentialType
 	switch a.(type) {
 	case *auth.OAuthClient:
-		t = credTypeOAuthClient
+		t = UserCredentialTypeOAuthClient
 	case *auth.BasicAuth:
-		t = credTypeBasicAuth
+		t = UserCredentialTypeBasicAuth
 	case *auth.BasicAuthWithSSH:
-		t = credTypeBasicAuthWithSSH
+		t = UserCredentialTypeBasicAuthWithSSH
 	case *auth.OAuthBearerToken:
-		t = credTypeOAuthBearerToken
+		t = UserCredentialTypeOAuthBearerToken
 	case *auth.OAuthBearerTokenWithSSH:
-		t = credTypeOAuthBearerTokenWithSSH
+		t = UserCredentialTypeOAuthBearerTokenWithSSH
 	case *bitbucketserver.SudoableOAuthClient:
-		t = credTypeBitbucketServerSudoableOAuthClient
+		t = UserCredentialTypeBitbucketServerSudoableOAuthClient
 	case *gitlab.SudoableToken:
-		t = credTypeGitLabSudoableToken
+		t = UserCredentialTypeGitLabSudoableToken
 	default:
 		return "", errors.Errorf("unknown Authenticator implementation type: %T", a)
 	}
 
 	raw, err := json.Marshal(struct {
-		Type string
+		Type UserCredentialType
 		Auth auth.Authenticator
 	}{
 		Type: t,
@@ -428,7 +491,7 @@ func unmarshalCredential(raw string) (auth.Authenticator, error) {
 	// We do two unmarshals: the first just to get the type, and then the second
 	// to actually unmarshal the authenticator itself.
 	var partial struct {
-		Type string
+		Type UserCredentialType
 		Auth json.RawMessage
 	}
 	if err := json.Unmarshal([]byte(raw), &partial); err != nil {
@@ -437,19 +500,19 @@ func unmarshalCredential(raw string) (auth.Authenticator, error) {
 
 	var a interface{}
 	switch partial.Type {
-	case credTypeOAuthClient:
+	case UserCredentialTypeOAuthClient:
 		a = &auth.OAuthClient{}
-	case credTypeBasicAuth:
+	case UserCredentialTypeBasicAuth:
 		a = &auth.BasicAuth{}
-	case credTypeBasicAuthWithSSH:
+	case UserCredentialTypeBasicAuthWithSSH:
 		a = &auth.BasicAuthWithSSH{}
-	case credTypeOAuthBearerToken:
+	case UserCredentialTypeOAuthBearerToken:
 		a = &auth.OAuthBearerToken{}
-	case credTypeOAuthBearerTokenWithSSH:
+	case UserCredentialTypeOAuthBearerTokenWithSSH:
 		a = &auth.OAuthBearerTokenWithSSH{}
-	case credTypeBitbucketServerSudoableOAuthClient:
+	case UserCredentialTypeBitbucketServerSudoableOAuthClient:
 		a = &bitbucketserver.SudoableOAuthClient{}
-	case credTypeGitLabSudoableToken:
+	case UserCredentialTypeGitLabSudoableToken:
 		a = &gitlab.SudoableToken{}
 	default:
 		return nil, errors.Errorf("unknown credential type: %s", partial.Type)
