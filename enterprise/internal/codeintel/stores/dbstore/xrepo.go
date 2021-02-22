@@ -17,18 +17,12 @@ import (
 const DefinitionDumpsLimit = 10
 
 // DefinitionDumps returns the set of dumps that define at least one of the given monikers.
-func (s *Store) DefinitionDumps(ctx context.Context, monikers []lsifstore.QualifiedMonikerData) (dumps []Dump, err error) {
-	strMonikers := make([]string, 0, len(monikers))
-	for _, moniker := range monikers {
-		strMonikers = append(strMonikers, fmt.Sprintf("%s:%s:%s", moniker.Scheme, moniker.Name, moniker.Version))
-	}
-
-	ctx, endObservation := s.operations.definitionDumps.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("monikers", strings.Join(strMonikers, ", ")),
+func (s *Store) DefinitionDumps(ctx context.Context, monikers []lsifstore.QualifiedMonikerData) (_ []Dump, err error) {
+	ctx, traceLog, endObservation := s.operations.definitionDumps.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numMonikers", len(monikers)),
+		log.String("monikers", monikersToString(monikers)),
 	}})
-	defer endObservation(1, observation.Args{LogFields: []log.Field{
-		log.Int("numDumps", len(dumps)),
-	}})
+	defer endObservation(1, observation.Args{})
 
 	if len(monikers) == 0 {
 		return nil, nil
@@ -39,7 +33,13 @@ func (s *Store) DefinitionDumps(ctx context.Context, monikers []lsifstore.Qualif
 		qs = append(qs, sqlf.Sprintf("(%s, %s, %s)", moniker.Scheme, moniker.Name, moniker.Version))
 	}
 
-	return scanDumps(s.Query(ctx, sqlf.Sprintf(definitionDumpsQuery, sqlf.Join(qs, ", "), DefinitionDumpsLimit)))
+	dumps, err := scanDumps(s.Query(ctx, sqlf.Sprintf(definitionDumpsQuery, sqlf.Join(qs, ", "), DefinitionDumpsLimit)))
+	if err != nil {
+		return nil, err
+	}
+	traceLog(log.Int("numDumps", len(dumps)))
+
+	return dumps, nil
 }
 
 const definitionDumpsQuery = `
@@ -74,15 +74,13 @@ FROM lsif_dumps_with_repository_name d WHERE d.id IN (
 // it can be seen from the given index; otherwise, an index is visible if it can be seen from the tip of
 // the default branch of its own repository.
 func (s *Store) ReferenceIDsAndFilters(ctx context.Context, repositoryID int, commit string, monikers []lsifstore.QualifiedMonikerData, limit, offset int) (_ PackageReferenceScanner, _ int, err error) {
-	strMonikers := make([]string, 0, len(monikers))
-	for _, moniker := range monikers {
-		strMonikers = append(strMonikers, fmt.Sprintf("%s:%s:%s", moniker.Scheme, moniker.Name, moniker.Version))
-	}
-
-	ctx, endObservation := s.operations.referenceIDsAndFilters.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, traceLog, endObservation := s.operations.referenceIDsAndFilters.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
-		log.String("monikers", strings.Join(strMonikers, ", ")),
+		log.Int("numMonikers", len(monikers)),
+		log.String("monikers", monikersToString(monikers)),
+		log.Int("limit", limit),
+		log.Int("offset", offset),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -106,6 +104,7 @@ func (s *Store) ReferenceIDsAndFilters(ctx context.Context, repositoryID int, co
 	if err != nil {
 		return nil, 0, err
 	}
+	traceLog(log.Int("totalCount", totalCount))
 
 	rows, err := s.Query(ctx, sqlf.Sprintf(
 		referenceIDsAndFiltersQuery,
@@ -147,3 +146,12 @@ LIMIT %s OFFSET %s
 const referenceIDsAndFiltersCountQuery = referenceIDsAndFiltersCTEDefinitions + `
 SELECT COUNT(distinct r.dump_id)
 ` + referenceIDsAndFiltersBaseQuery
+
+func monikersToString(vs []lsifstore.QualifiedMonikerData) string {
+	strs := make([]string, 0, len(vs))
+	for _, v := range vs {
+		strs = append(strs, fmt.Sprintf("%s:%s:%s", v.Scheme, v.Identifier, v.Version))
+	}
+
+	return strings.Join(strs, ", ")
+}

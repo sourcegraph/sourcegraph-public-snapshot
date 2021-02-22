@@ -12,12 +12,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestAccessTokenAuthMiddleware(t *testing.T) {
-	handler := AccessTokenAuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := AccessTokenAuthMiddleware(new(dbtesting.MockDB), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		actor := actor.FromContext(r.Context())
 		if actor.IsAuthenticated() {
 			fmt.Fprintf(w, "user %v", actor.UID)

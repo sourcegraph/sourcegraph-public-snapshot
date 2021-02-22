@@ -24,10 +24,13 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 		AppPassword: someSecret,
 		Url:         "https://bitbucket.com",
 	}
-	bitbucketServerConfig := schema.BitbucketServerConnection{
+	bitbucketServerConfigWithPassword := schema.BitbucketServerConnection{
 		Password: someSecret,
-		Token:    someSecret,
 		Url:      "https://bitbucket.com",
+	}
+	bitbucketServerConfigWithToken := schema.BitbucketServerConnection{
+		Token: someSecret,
+		Url:   "https://bitbucket.com",
 	}
 	awsCodeCommitConfig := schema.AWSCodeCommitConnection{
 		SecretAccessKey: someSecret,
@@ -69,17 +72,18 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 			editField:   &bitbucketCloudConfig.Url,
 			secretField: &bitbucketCloudConfig.AppPassword,
 		},
+		// BitbucketServer can have a password OR token, not both
 		{
 			kind:        extsvc.KindBitbucketServer,
-			config:      &bitbucketServerConfig,
-			editField:   &bitbucketServerConfig.Url,
-			secretField: &bitbucketServerConfig.Password,
+			config:      &bitbucketServerConfigWithPassword,
+			editField:   &bitbucketServerConfigWithPassword.Url,
+			secretField: &bitbucketServerConfigWithPassword.Password,
 		},
 		{
 			kind:        extsvc.KindBitbucketServer,
-			config:      &bitbucketServerConfig,
-			editField:   &bitbucketServerConfig.Url,
-			secretField: &bitbucketServerConfig.Token, // call bitbucket twice to check both secrets
+			config:      &bitbucketServerConfigWithToken,
+			editField:   &bitbucketServerConfigWithToken.Url,
+			secretField: &bitbucketServerConfigWithToken.Token,
 		},
 		{
 			kind:        extsvc.KindAWSCodeCommit,
@@ -108,11 +112,6 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 	}
 	for _, c := range tc {
 		t.Run(c.kind, func(t *testing.T) {
-			// reset all fields on the config struct to prevent stale data
-			if err := zeroFields(c.config); err != nil {
-				t.Errorf("unexpected error: %s", err)
-			}
-
 			// this test simulates the round trip of a user editing external service config via our APIs
 			buf, err := json.Marshal(c.config)
 			if err != nil {

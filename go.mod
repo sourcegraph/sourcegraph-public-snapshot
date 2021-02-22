@@ -86,7 +86,7 @@ require (
 	github.com/gosimple/slug v1.9.0 // indirect
 	github.com/goware/urlx v0.3.1
 	github.com/grafana-tools/sdk v0.0.0-20210121201358-e16eca879125
-	github.com/graph-gophers/graphql-go v0.0.0-20200819123640-3b5ddcd884ae
+	github.com/graph-gophers/graphql-go v0.0.0-20201113091052-beb923fada29
 	github.com/graphql-go/graphql v0.7.9
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 	github.com/hashicorp/go-hclog v0.14.1 // indirect
@@ -186,12 +186,10 @@ require (
 	go.uber.org/atomic v1.7.0
 	go.uber.org/automaxprocs v1.3.0
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
-	golang.org/x/mod v0.4.1 // indirect
 	golang.org/x/net v0.0.0-20210119194325-5f4716e94777
 	golang.org/x/oauth2 v0.0.0-20210210192628-66670185b0cd
 	golang.org/x/sync v0.0.0-20201207232520-09787c993a3a
 	golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c
-	golang.org/x/text v0.3.5 // indirect
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
 	golang.org/x/tools v0.1.0
 	google.golang.org/api v0.39.0
@@ -201,7 +199,6 @@ require (
 	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.4.0
-	honnef.co/go/tools v0.0.1-2020.1.5 // indirect
 	k8s.io/api v0.17.0
 	k8s.io/apimachinery v0.17.0
 	k8s.io/client-go v0.17.0
@@ -231,9 +228,6 @@ replace (
 replace (
 	// Pending: https://github.com/ghodss/yaml/pull/65
 	github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
-	// We need our fork until https://github.com/graph-gophers/graphql-go/pull/400 is merged upstream
-	// Our change limits the number of goroutines spawned by resolvers which was causing memory spikes on our frontend
-	github.com/graph-gophers/graphql-go => github.com/sourcegraph/graphql-go v0.0.0-20201007040903-ec61a5417d66
 	github.com/shurcooL/httpgzip => github.com/sourcegraph/httpgzip v0.0.0-20210213125624-48ebf036a6a1
 )
 

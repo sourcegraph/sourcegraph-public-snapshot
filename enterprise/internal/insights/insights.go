@@ -9,42 +9,33 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
 // IsEnabled tells if code insights are enabled or not.
 func IsEnabled() bool {
-	if envvar.SourcegraphDotComMode() {
-		// Explicitly enabled for Sourcegraph.com currently, but not customer/user deployments.
-		if v, _ := strconv.ParseBool(os.Getenv("DISABLE_CODE_INSIGHTS")); v {
-			// Unless it's disabled / we need an escape hatch.
-			return false
-		}
-		return true
-	}
-	if !conf.IsDev(conf.DeployType()) {
-		// Code Insights is not yet deployed to non-dev/testing instances. We don't yet have
-		// TimescaleDB in those deployments. https://github.com/sourcegraph/sourcegraph/issues/17218
+	if v, _ := strconv.ParseBool(os.Getenv("DISABLE_CODE_INSIGHTS")); v {
+		// Code insights can always be disabled. This can be a helpful escape hatch if e.g. there
+		// are issues with (or connecting to) the codeinsights-db deployment and it is preventing
+		// the Sourcegraph frontend or repo-updater from starting.
+		//
+		// It is also useful in dev environments if you do not wish to spend resources running Code
+		// Insights.
 		return false
 	}
 	if conf.IsDeployTypeSingleDockerContainer(conf.DeployType()) {
 		// Code insights is not supported in single-container Docker demo deployments.
 		return false
 	}
-	if v, _ := strconv.ParseBool(os.Getenv("DISABLE_CODE_INSIGHTS")); v {
-		// Dev option for disabling code insights. Helpful if e.g. you have issues running the
-		// codeinsights-db or don't want to spend resources on it.
-		return false
-	}
 	return true
 }
 
 // Init initializes the given enterpriseServices to include the required resolvers for insights.
-func Init(ctx context.Context, postgres dbutil.DB, enterpriseServices *enterprise.Services) error {
+func Init(ctx context.Context, postgres dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services) error {
 	if !IsEnabled() {
 		return nil
 	}

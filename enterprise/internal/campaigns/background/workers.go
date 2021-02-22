@@ -73,6 +73,7 @@ func createDBWorkerStore(s *store.Store) dbworkerstore.Store {
 	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
 		Name:                 "campaigns_reconciler_worker_store",
 		TableName:            "changesets",
+		ViewName:             "reconciler_changesets changesets",
 		AlternateColumnNames: map[string]string{"state": "reconciler_state"},
 		ColumnExpressions:    store.ChangesetColumns,
 		Scan:                 scanFirstChangesetRecord,
@@ -80,7 +81,7 @@ func createDBWorkerStore(s *store.Store) dbworkerstore.Store {
 		// Order changesets by state, so that freshly enqueued changesets have
 		// higher priority.
 		// If state is equal, prefer the newer ones.
-		OrderByExpression: sqlf.Sprintf("reconciler_state = 'errored', changesets.updated_at DESC"),
+		OrderByExpression: sqlf.Sprintf("changesets.reconciler_state = 'errored', changesets.updated_at DESC"),
 
 		StalledMaxAge: 60 * time.Second,
 		MaxNumResets:  reconcilerMaxNumResets,

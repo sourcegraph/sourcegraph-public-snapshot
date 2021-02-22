@@ -1125,4 +1125,115 @@ describe('getMonacoTokens()', () => {
             ]
         `)
     })
+
+    test('returns path separator tokens for regexp values', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('r:^github.com/sourcegraph@HEAD f:a/b/')), true))
+            .toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 2,
+                "scopes": "metaRegexpAssertion"
+              },
+              {
+                "startIndex": 3,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "metaRegexpCharacterSet"
+              },
+              {
+                "startIndex": 10,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 13,
+                "scopes": "metaPathSeparator"
+              },
+              {
+                "startIndex": 14,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 25,
+                "scopes": "metaRepoRevisionSeparator"
+              },
+              {
+                "startIndex": 26,
+                "scopes": "metaRevisionLabel"
+              },
+              {
+                "startIndex": 30,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 31,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 33,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 34,
+                "scopes": "metaPathSeparator"
+              },
+              {
+                "startIndex": 35,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 36,
+                "scopes": "metaPathSeparator"
+              }
+            ]
+        `)
+    })
+
+    test('returns regexp highlighting if path separators cannot be parsed', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('r:^github.com(/)sourcegraph')), true)).toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 2,
+                "scopes": "metaRegexpAssertion"
+              },
+              {
+                "startIndex": 3,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "metaRegexpCharacterSet"
+              },
+              {
+                "startIndex": 10,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 13,
+                "scopes": "metaRegexpDelimited"
+              },
+              {
+                "startIndex": 14,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 15,
+                "scopes": "metaRegexpDelimited"
+              },
+              {
+                "startIndex": 16,
+                "scopes": "identifier"
+              }
+            ]
+        `)
+    })
 })

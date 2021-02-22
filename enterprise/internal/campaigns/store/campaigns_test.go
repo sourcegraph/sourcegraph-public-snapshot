@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/go-diff/diff"
 
@@ -80,18 +79,31 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 			t.Fatalf("have count: %d, want: %d", have, want)
 		}
 
-		changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-			Campaigns: []campaigns.CampaignAssoc{{CampaignID: cs[0].ID}},
+		t.Run("Global", func(t *testing.T) {
+			count, err = s.CountCampaigns(ctx, CountCampaignsOpts{})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := count, len(cs); have != want {
+				t.Fatalf("have count: %d, want: %d", have, want)
+			}
 		})
 
-		count, err = s.CountCampaigns(ctx, CountCampaignsOpts{ChangesetID: changeset.ID})
-		if err != nil {
-			t.Fatal(err)
-		}
+		t.Run("ChangesetID", func(t *testing.T) {
+			changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+				Campaigns: []campaigns.CampaignAssoc{{CampaignID: cs[0].ID}},
+			})
 
-		if have, want := count, 1; have != want {
-			t.Fatalf("have count: %d, want: %d", have, want)
-		}
+			count, err = s.CountCampaigns(ctx, CountCampaignsOpts{ChangesetID: changeset.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := count, 1; have != want {
+				t.Fatalf("have count: %d, want: %d", have, want)
+			}
+		})
 
 		t.Run("OnlyForAuthor set", func(t *testing.T) {
 			for _, c := range cs {
@@ -578,35 +590,58 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 			t.Fatal(err)
 		}
 
-		// Now we'll try actually deleting the user.
-		if err := s.Exec(ctx, sqlf.Sprintf(
-			"DELETE FROM users WHERE id = %s",
-			user.ID,
-		)); err != nil {
+		// Now we soft-delete the user.
+		if err := database.UsersWith(s).Delete(ctx, user.ID); err != nil {
 			t.Fatal(err)
 		}
 
-		// We should now have the unowned campaign still be valid, but the
-		// owned campaign should have gone away.
-		cs, _, err := s.ListCampaigns(ctx, ListCampaignsOpts{})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if len(cs) != 1 {
-			t.Errorf("unexpected number of campaigns: have %d; want %d", len(cs), 1)
-		}
-		if cs[0].ID != unownedCampaign.ID {
-			t.Errorf("unexpected campaign: %+v", cs[0])
+		var testCampaignIsGone = func() {
+			// We should now have the unowned campaign still be valid, but the
+			// owned campaign should have gone away.
+			cs, _, err := s.ListCampaigns(ctx, ListCampaignsOpts{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(cs) != 1 {
+				t.Errorf("unexpected number of campaigns: have %d; want %d", len(cs), 1)
+			}
+			if cs[0].ID != unownedCampaign.ID {
+				t.Errorf("unexpected campaign: %+v", cs[0])
+			}
+
+			// The count of campaigns should also respect it.
+			count, err := s.CountCampaigns(ctx, CountCampaignsOpts{})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := count, len(cs); have != want {
+				t.Fatalf("have count: %d, want: %d", have, want)
+			}
+
+			// And getting the campaign by its ID also shouldn't work.
+			if _, err := s.GetCampaign(ctx, GetCampaignOpts{ID: ownedCampaign.ID}); err == nil || err != ErrNoResults {
+				t.Fatalf("got invalid error, want=%+v have=%+v", ErrNoResults, err)
+			}
+
+			// Both campaign specs should still be in place, at least until we add
+			// a foreign key constraint to campaign_specs.namespace_user_id.
+			specs, _, err := s.ListCampaignSpecs(ctx, ListCampaignSpecsOpts{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(specs) != 2 {
+				t.Errorf("unexpected number of campaign specs: have %d; want %d", len(specs), 2)
+			}
 		}
 
-		// Both campaign specs should still be in place, at least until we add
-		// a foreign key constraint to campaign_specs.namespace_user_id.
-		specs, _, err := s.ListCampaignSpecs(ctx, ListCampaignSpecsOpts{})
-		if err != nil {
+		testCampaignIsGone()
+
+		// Now we hard-delete the user.
+		if err := database.UsersWith(s).HardDelete(ctx, user.ID); err != nil {
 			t.Fatal(err)
 		}
-		if len(specs) != 2 {
-			t.Errorf("unexpected number of campaign specs: have %d; want %d", len(specs), 2)
-		}
+
+		testCampaignIsGone()
 	})
 }

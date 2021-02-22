@@ -24,12 +24,10 @@ type operations struct {
 	dirtyRepositories                      *observation.Operation
 	findClosestDumps                       *observation.Operation
 	findClosestDumpsFromGraphFragment      *observation.Operation
-	getDumpByID                            *observation.Operation
 	getDumpsByIDs                          *observation.Operation
 	getIndexByID                           *observation.Operation
 	getIndexConfigurationByRepositoryID    *observation.Operation
 	getIndexes                             *observation.Operation
-	getPackage                             *observation.Operation
 	getRepositoriesWithIndexConfiguration  *observation.Operation
 	getUploadByID                          *observation.Operation
 	getUploads                             *observation.Operation
@@ -49,7 +47,6 @@ type operations struct {
 	markIndexErrored                       *observation.Operation
 	markQueued                             *observation.Operation
 	markRepositoryAsDirty                  *observation.Operation
-	packageReferencePager                  *observation.Operation
 	queueSize                              *observation.Operation
 	referenceIDsAndFilters                 *observation.Operation
 	repoName                               *observation.Operation
@@ -57,7 +54,6 @@ type operations struct {
 	requeue                                *observation.Operation
 	requeueIndex                           *observation.Operation
 	resetIndexableRepositories             *observation.Operation
-	sameRepoPager                          *observation.Operation
 	softDeleteOldUploads                   *observation.Operation
 	updateIndexableRepository              *observation.Operation
 	updateIndexConfigurationByRepositoryID *observation.Operation
@@ -112,12 +108,10 @@ func newOperations(observationContext *observation.Context) *operations {
 		dirtyRepositories:                      op("DirtyRepositories"),
 		findClosestDumps:                       op("FindClosestDumps"),
 		findClosestDumpsFromGraphFragment:      op("FindClosestDumpsFromGraphFragment"),
-		getDumpByID:                            op("GetDumpByID"),
 		getDumpsByIDs:                          op("GetDumpsByIDs"),
 		getIndexByID:                           op("GetIndexByID"),
 		getIndexConfigurationByRepositoryID:    op("GetIndexConfigurationByRepositoryID"),
 		getIndexes:                             op("GetIndexes"),
-		getPackage:                             op("GetPackage"),
 		getRepositoriesWithIndexConfiguration:  op("GetRepositoriesWithIndexConfiguration"),
 		getUploadByID:                          op("GetUploadByID"),
 		getUploads:                             op("GetUploads"),
@@ -137,7 +131,6 @@ func newOperations(observationContext *observation.Context) *operations {
 		markIndexErrored:                       op("MarkIndexErrored"),
 		markQueued:                             op("MarkQueued"),
 		markRepositoryAsDirty:                  op("MarkRepositoryAsDirty"),
-		packageReferencePager:                  op("PackageReferencePager"),
 		queueSize:                              op("QueueSize"),
 		referenceIDsAndFilters:                 op("ReferenceIDsAndFilters"),
 		repoName:                               op("RepoName"),
@@ -145,7 +138,6 @@ func newOperations(observationContext *observation.Context) *operations {
 		requeue:                                op("Requeue"),
 		requeueIndex:                           op("RequeueIndex"),
 		resetIndexableRepositories:             op("ResetIndexableRepositories"),
-		sameRepoPager:                          op("SameRepoPager"),
 		softDeleteOldUploads:                   op("SoftDeleteOldUploads"),
 		updateIndexableRepository:              op("UpdateIndexableRepository"),
 		updateIndexConfigurationByRepositoryID: op("UpdateIndexConfigurationByRepositoryID"),

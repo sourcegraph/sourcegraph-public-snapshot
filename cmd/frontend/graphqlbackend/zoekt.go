@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
@@ -66,28 +68,11 @@ type indexedSearchRequest struct {
 
 	// since if non-nil will be used instead of time.Since. For tests
 	since func(time.Time) time.Duration
+
+	db dbutil.DB
 }
 
-// TODO (stefan) move this out of zoekt.go to the new parser once it is guaranteed that the old parser is turned off for all customers
-func containsRefGlobs(q query.QueryInfo) bool {
-	containsRefGlobs := false
-	if repoFilterValues, _ := q.RegexpPatterns(query.FieldRepo); len(repoFilterValues) > 0 {
-		for _, v := range repoFilterValues {
-			repoRev := strings.SplitN(v, "@", 2)
-			if len(repoRev) == 1 { // no revision
-				continue
-			}
-			if query.ContainsNoGlobSyntax(repoRev[1]) {
-				continue
-			}
-			containsRefGlobs = true
-			break
-		}
-	}
-	return containsRefGlobs
-}
-
-func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ indexedRequestType, stream Streamer) (_ *indexedSearchRequest, err error) {
+func newIndexedSearchRequest(ctx context.Context, db dbutil.DB, args *search.TextParameters, typ indexedRequestType, stream Streamer) (_ *indexedSearchRequest, err error) {
 	tr, ctx := trace.New(ctx, "newIndexedSearchRequest", string(typ))
 	tr.LogFields(trace.Stringer("global_search_mode", args.Mode))
 	defer func() {
@@ -106,17 +91,19 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		}
 
 		return &indexedSearchRequest{
+			db:               db,
 			Unindexed:        limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
 			IndexUnavailable: true,
 		}, nil
 	}
 
 	// Fallback to Unindexed if the query contains ref-globs
-	if containsRefGlobs(args.Query) {
+	if query.ContainsRefGlobs(args.Query) {
 		if args.PatternInfo.Index == query.Only {
 			return nil, fmt.Errorf("invalid index:%q (revsions with glob pattern cannot be resolved for indexed searches)", args.PatternInfo.Index)
 		}
 		return &indexedSearchRequest{
+			db:        db,
 			Unindexed: limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
 		}, nil
 	}
@@ -124,6 +111,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 	// Fallback to Unindexed if index:no
 	if args.PatternInfo.Index == query.No {
 		return &indexedSearchRequest{
+			db:        db,
 			Unindexed: limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
 		}, nil
 	}
@@ -151,6 +139,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		}
 
 		return &indexedSearchRequest{
+			db:               db,
 			Unindexed:        limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
 			IndexUnavailable: true,
 		}, ctx.Err()
@@ -179,6 +168,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 	}
 
 	return &indexedSearchRequest{
+		db:   db,
 		args: args,
 		typ:  typ,
 
@@ -212,7 +202,7 @@ func (s *indexedSearchRequest) Search(ctx context.Context, c Streamer) error {
 		since = s.since
 	}
 
-	var zoektStream func(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c Streamer) error
+	var zoektStream func(ctx context.Context, db dbutil.DB, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c Streamer) error
 	switch s.typ {
 	case textRequest, symbolRequest:
 		zoektStream = zoektSearch
@@ -222,7 +212,7 @@ func (s *indexedSearchRequest) Search(ctx context.Context, c Streamer) error {
 		return fmt.Errorf("unexpected indexedSearchRequest type: %q", s.typ)
 	}
 
-	return zoektStream(ctx, s.args, s.repos, s.typ, since, c)
+	return zoektStream(ctx, s.db, s.args, s.repos, s.typ, since, c)
 }
 
 // zoektSearch searches repositories using zoekt.
@@ -230,13 +220,16 @@ func (s *indexedSearchRequest) Search(ctx context.Context, c Streamer) error {
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c Streamer) error {
+func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c Streamer) error {
 	if args == nil {
 		return nil
 	}
 	if len(repos.repoRevs) == 0 && args.Mode != search.ZoektGlobalSearch {
 		return nil
 	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	queryExceptRepos, err := queryToZoektQuery(args.PatternInfo, typ)
 	if err != nil {
@@ -256,164 +249,173 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 	k := zoektutil.ResultCountFactor(len(repos.repoBranches), args.PatternInfo.FileMatchLimit, args.Mode == search.ZoektGlobalSearch)
 	searchOpts := zoektutil.SearchOpts(ctx, k, args.PatternInfo)
 
-	// Make a copy of the original context so that we can respect deadlines during repo resolution.
-	originalCtx := ctx
-	if deadline, ok := ctx.Deadline(); ok {
-		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
-		searchOpts.MaxWallTime = time.Until(deadline)
-		if searchOpts.MaxWallTime < 0 {
-			return ctx.Err()
-		}
-		// We don't want our context's deadline to cut off zoekt so that we can get the results
-		// found before the deadline.
-		//
-		// We'll create a new context that gets cancelled if the other context is cancelled for any
-		// reason other than the deadline being exceeded. This essentially means the deadline for the new context
-		// will be `deadline + time for zoekt to cancel + network latency`.
-		var cancel context.CancelFunc
-		ctx, cancel = contextWithoutDeadline(ctx)
-		defer cancel()
-	}
-
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	// Start event stream before resolving repositories.
+	// Start event stream.
 	t0 := time.Now()
-	events := make(chan *zoekt.SearchResult)
-	// Ensure we always drain events.
-	defer func() {
-		cancel()
-		for range events {
-		}
-	}()
-	g := errgroup.Group{}
-	g.Go(func() error {
-		defer close(events)
-		return args.Zoekt.Client.StreamSearch(ctx, finalQuery, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
-			events <- event
-		}))
-	})
 
-	var getRepoInputRev zoektutil.RepoRevFunc
-	if args.Mode == search.ZoektGlobalSearch {
-		repos, err := getRepos(originalCtx, args.RepoPromise)
-		if err != nil {
-			return err
-		}
-		repoRevMap := make(map[string]*search.RepositoryRevisions, len(repos))
-		for _, r := range repos {
-			repoRevMap[string(r.Repo.Name)] = r
-		}
-		getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
-			if repoRev, ok := repoRevMap[file.Repository]; ok {
-				return repoRev.Repo, repoRev.RevSpecs(), true
-			}
-			return nil, nil, false
-		}
-	} else {
-		getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
-			repo, inputRevs := repos.GetRepoInputRev(file)
-			return repo, inputRevs, true
-		}
-	}
-
+	// mu protects matchLimiter and foundResults.
+	mu := sync.Mutex{}
 	matchLimiter := zoektutil.MatchLimiter{
 		Limit: int(args.PatternInfo.FileMatchLimit),
 	}
 	foundResults := false
 
-	for event := range events {
+	// We use reposResolved to synchronize repo resolution and event processing.
+	reposResolved := make(chan struct{})
+	var getRepoInputRev zoektutil.RepoRevFunc
 
-		foundResults = foundResults || event.FileCount != 0 || event.MatchCount != 0
+	g, ctx := errgroup.WithContext(ctx)
 
-		files := event.Files
-		limitHit := event.FilesSkipped+event.ShardsSkipped > 0
+	// Resolve repositories.
+	g.Go(func() error {
+		defer close(reposResolved)
+		if args.Mode == search.ZoektGlobalSearch {
+			repos, err := getRepos(ctx, args.RepoPromise)
+			if err != nil {
+				return err
+			}
+			repoRevMap := make(map[string]*search.RepositoryRevisions, len(repos))
+			for _, r := range repos {
+				repoRevMap[string(r.Repo.Name)] = r
+			}
+			getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
+				if repoRev, ok := repoRevMap[file.Repository]; ok {
+					return repoRev.Repo, repoRev.RevSpecs(), true
+				}
+				return nil, nil, false
+			}
+		} else {
+			getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
+				repo, inputRevs := repos.GetRepoInputRev(file)
+				return repo, inputRevs, true
+			}
+		}
+		return nil
+	})
 
-		if len(files) == 0 {
+	g.Go(func() error {
+		ctx := ctx
+		if deadline, ok := ctx.Deadline(); ok {
+			// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
+			searchOpts.MaxWallTime = time.Until(deadline)
+			if searchOpts.MaxWallTime < 0 {
+				return ctx.Err()
+			}
+			// We don't want our context's deadline to cut off zoekt so that we can get the results
+			// found before the deadline.
+			//
+			// We'll create a new context that gets cancelled if the other context is cancelled for any
+			// reason other than the deadline being exceeded. This essentially means the deadline for the new context
+			// will be `deadline + time for zoekt to cancel + network latency`.
+			var cancel context.CancelFunc
+			ctx, cancel = contextWithoutDeadline(ctx)
+			defer cancel()
+		}
+		return args.Zoekt.Client.StreamSearch(ctx, finalQuery, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
+
+			mu.Lock()
+			foundResults = foundResults || event.FileCount != 0 || event.MatchCount != 0
+			mu.Unlock()
+
+			files := event.Files
+			limitHit := event.FilesSkipped+event.ShardsSkipped > 0
+
+			if len(files) == 0 {
+				c.Send(SearchEvent{
+					Stats: streaming.Stats{IsLimitHit: limitHit},
+				})
+				return
+			}
+
+			maxLineMatches := 25 + k
+			maxLineFragmentMatches := 3 + k
+
+			<-reposResolved
+			// getRepoInputRev is nil only if we encountered an error during repo resolution.
+			if getRepoInputRev == nil {
+				return
+			}
+
+			mu.Lock()
+			// Partial is populated with repositories we may have not fully
+			// searched due to limits.
+			partial, files := matchLimiter.Slice(files, getRepoInputRev)
+			mu.Unlock()
+
+			var statusMap search.RepoStatusMap
+			for r := range partial {
+				statusMap.Update(r, search.RepoStatusLimitHit)
+			}
+
+			limitHit = limitHit || len(partial) > 0
+
+			lastID := api.RepoID(-1) // PERF: avoid Update call if we have the same repository
+			matches := make([]SearchResultResolver, 0, len(files))
+			repoResolvers := make(RepositoryResolverCache)
+			for _, file := range files {
+				fileLimitHit := false
+				if len(file.LineMatches) > maxLineMatches {
+					file.LineMatches = file.LineMatches[:maxLineMatches]
+					fileLimitHit = true
+					limitHit = true
+				}
+				mu.Lock()
+				repo, inputRevs, ok := getRepoInputRev(&file)
+				mu.Unlock()
+				if !ok {
+					continue
+				}
+				repoResolver := repoResolvers[repo.Name]
+				if repoResolver == nil {
+					repoResolver = NewRepositoryResolver(db, repo.ToRepo())
+					repoResolvers[repo.Name] = repoResolver
+				}
+
+				var lines []*lineMatch
+				if typ != symbolRequest {
+					lines = zoektFileMatchToLineMatches(maxLineFragmentMatches, &file)
+				}
+
+				for _, inputRev := range inputRevs {
+					inputRev := inputRev // copy so we can take the pointer
+
+					var symbols []*searchSymbolResult
+					if typ == symbolRequest {
+						symbols = zoektFileMatchToSymbolResults(repoResolver, db, inputRev, &file)
+					}
+					fm := &FileMatchResolver{
+						db: db,
+						FileMatch: FileMatch{
+							db:           db,
+							JPath:        file.FileName,
+							JLineMatches: lines,
+							JLimitHit:    fileLimitHit,
+							uri:          fileMatchURI(repo.Name, inputRev, file.FileName),
+							symbols:      symbols,
+							Repo:         repo,
+							CommitID:     api.CommitID(file.Version),
+							InputRev:     &inputRev,
+						},
+						RepoResolver: repoResolver,
+					}
+					matches = append(matches, fm)
+					if id := repo.ID; lastID != id {
+						statusMap.Update(id, search.RepoStatusSearched|search.RepoStatusIndexed)
+						lastID = id
+					}
+				}
+			}
+
 			c.Send(SearchEvent{
-				Stats: streaming.Stats{IsLimitHit: limitHit},
+				Results: matches,
+				Stats: streaming.Stats{
+					Status:     statusMap,
+					IsLimitHit: limitHit,
+				},
 			})
-			continue
-		}
+		}))
+	})
 
-		maxLineMatches := 25 + k
-		maxLineFragmentMatches := 3 + k
-
-		partial, files := matchLimiter.Slice(files, getRepoInputRev)
-		// Partial is populated with repositories we may have not fully
-		// searched due to limits.
-
-		var statusMap search.RepoStatusMap
-		for r := range partial {
-			statusMap.Update(r, search.RepoStatusLimitHit)
-		}
-
-		limitHit = limitHit || len(partial) > 0
-
-		lastID := api.RepoID(-1) // PERF: avoid Update call if we have the same repository
-		matches := make([]SearchResultResolver, 0, len(files))
-		repoResolvers := make(RepositoryResolverCache)
-		for _, file := range files {
-			fileLimitHit := false
-			if len(file.LineMatches) > maxLineMatches {
-				file.LineMatches = file.LineMatches[:maxLineMatches]
-				fileLimitHit = true
-				limitHit = true
-			}
-			repo, inputRevs, ok := getRepoInputRev(&file)
-			if !ok {
-				continue
-			}
-			repoResolver := repoResolvers[repo.Name]
-			if repoResolver == nil {
-				repoResolver = NewRepositoryResolver(repo.ToRepo())
-				repoResolvers[repo.Name] = repoResolver
-			}
-
-			var lines []*lineMatch
-			if typ != symbolRequest {
-				lines = zoektFileMatchToLineMatches(maxLineFragmentMatches, &file)
-			}
-
-			for _, inputRev := range inputRevs {
-				inputRev := inputRev // copy so we can take the pointer
-
-				var symbols []*searchSymbolResult
-				if typ == symbolRequest {
-					symbols = zoektFileMatchToSymbolResults(repoResolver, inputRev, &file)
-				}
-				fm := &FileMatchResolver{
-					FileMatch: FileMatch{
-						JPath:        file.FileName,
-						JLineMatches: lines,
-						JLimitHit:    fileLimitHit,
-						uri:          fileMatchURI(repo.Name, inputRev, file.FileName),
-						symbols:      symbols,
-						Repo:         repo,
-						CommitID:     api.CommitID(file.Version),
-						InputRev:     &inputRev,
-					},
-					RepoResolver: repoResolver,
-				}
-				matches = append(matches, fm)
-				if id := repo.ID; lastID != id {
-					statusMap.Update(id, search.RepoStatusSearched|search.RepoStatusIndexed)
-					lastID = id
-				}
-			}
-		}
-
-		c.Send(SearchEvent{
-			Results: matches,
-			Stats: streaming.Stats{
-				Status:     statusMap,
-				IsLimitHit: limitHit,
-			},
-		})
-	}
-
-	if g.Wait() != nil {
+	if err := g.Wait(); err != nil {
 		return err
 	}
 
@@ -492,12 +494,13 @@ func escape(s string) string {
 	return string(escaped)
 }
 
-func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, file *zoekt.FileMatch) []*searchSymbolResult {
+func zoektFileMatchToSymbolResults(repo *RepositoryResolver, db dbutil.DB, inputRev string, file *zoekt.FileMatch) []*searchSymbolResult {
 	// Symbol search returns a resolver so we need to pass in some
 	// extra stuff. This is a sign that we can probably restructure
 	// resolvers to avoid this.
 	baseURI := &gituri.URI{URL: url.URL{Scheme: "git", Host: repo.Name(), RawQuery: url.QueryEscape(inputRev)}}
 	commit := &GitCommitResolver{
+		db:           db,
 		repoResolver: repo,
 		oid:          GitObjectID(file.Version),
 		inputRev:     &inputRev,
@@ -516,6 +519,7 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, fi
 			}
 
 			symbols = append(symbols, &searchSymbolResult{
+				db: db,
 				symbol: protocol.Symbol{
 					Name:       m.SymbolInfo.Sym,
 					Kind:       m.SymbolInfo.Kind,

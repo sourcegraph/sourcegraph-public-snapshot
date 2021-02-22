@@ -11,18 +11,21 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 // StreamHandler is an http handler which streams back search results.
-func StreamHandler() http.Handler {
+func StreamHandler(db dbutil.DB) http.Handler {
 	return &streamHandler{
+		db:                db,
 		newSearchResolver: defaultNewSearchResolver,
 	}
 }
 
 type streamHandler struct {
-	newSearchResolver func(context.Context, *graphqlbackend.SearchArgs) (searchResolver, error)
+	db                dbutil.DB
+	newSearchResolver func(context.Context, dbutil.DB, *graphqlbackend.SearchArgs) (searchResolver, error)
 }
 
 func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -211,7 +214,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (h *streamHandler) startSearch(ctx context.Context, a *args) (events <-chan graphqlbackend.SearchEvent, inputs graphqlbackend.SearchInputs, results func() (*graphqlbackend.SearchResultsResolver, error)) {
 	eventsC := make(chan graphqlbackend.SearchEvent)
 
-	search, err := h.newSearchResolver(ctx, &graphqlbackend.SearchArgs{
+	search, err := h.newSearchResolver(ctx, h.db, &graphqlbackend.SearchArgs{
 		Query:          a.Query,
 		Version:        a.Version,
 		PatternType:    strPtr(a.PatternType),
@@ -252,8 +255,8 @@ type searchResolver interface {
 	Inputs() graphqlbackend.SearchInputs
 }
 
-func defaultNewSearchResolver(ctx context.Context, args *graphqlbackend.SearchArgs) (searchResolver, error) {
-	return graphqlbackend.NewSearchImplementer(ctx, args)
+func defaultNewSearchResolver(ctx context.Context, db dbutil.DB, args *graphqlbackend.SearchArgs) (searchResolver, error) {
+	return graphqlbackend.NewSearchImplementer(ctx, db, args)
 }
 
 type args struct {

@@ -122,6 +122,10 @@ type Operation struct {
 	errorFilter  func(err error) bool
 }
 
+// TraceLogger is returned from WithAndLogger and can be used to add timestamped key and
+// value pairs into a related opentracing span.
+type TraceLogger func(fields ...log.Field)
+
 // FinishFunc is the shape of the function returned by With and should be invoked within
 // a defer directly before the observed function returns.
 type FinishFunc func(count float64, args Args)
@@ -145,11 +149,11 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 // WithAndLogger prepares the necessary timers, loggers, and metrics to observe the invocation
 // of an operation. This method returns a modified context, a function that will add a log field
 // to the active trace, and a function to be deferred until the end of the operation.
-func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (context.Context, func(fields ...log.Field), FinishFunc) {
+func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (context.Context, TraceLogger, FinishFunc) {
 	start := time.Now()
 	tr, ctx := op.trace(ctx, args)
 
-	var logFields func(fields ...log.Field)
+	var logFields TraceLogger
 	if tr != nil {
 		logFields = tr.LogFields
 	} else {

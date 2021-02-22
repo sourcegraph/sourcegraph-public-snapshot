@@ -171,10 +171,10 @@ function toGQLFileMatchBase(fileMatch: FileMatch | FileSymbolMatch): GQL.IFileMa
     if (fileMatch.branches) {
         const branch = fileMatch.branches[0]
         if (branch !== '') {
-            revision = '@' + branch
+            revision = branch
         }
     } else if (fileMatch.version) {
-        revision = '@' + fileMatch.version
+        revision = fileMatch.version
     }
 
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
@@ -182,7 +182,7 @@ function toGQLFileMatchBase(fileMatch: FileMatch | FileSymbolMatch): GQL.IFileMa
         path: fileMatch.name,
         // /github.com/gorilla/mux@v1.7.2/-/blob/mux_test.go
         // TODO return in response?
-        url: '/' + fileMatch.repository + revision + '/-/blob/' + fileMatch.name,
+        url: `/${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${fileMatch.name}`,
         commit: {
             oid: fileMatch.version || '',
         },
@@ -192,11 +192,20 @@ function toGQLFileMatchBase(fileMatch: FileMatch | FileSymbolMatch): GQL.IFileMa
         repository: fileMatch.repository,
         branches: fileMatch.branches,
     })
+
+    const revisionSpec = revision
+        ? ({
+              __typename: 'GitRef',
+              displayName: revision,
+              url: '/' + fileMatch.repository + '@' + revision,
+          } as GQL.IGitRef)
+        : null
+
     return {
         __typename: 'FileMatch',
         file,
         repository,
-        revSpec: null,
+        revSpec: revisionSpec,
         resource: fileMatch.name,
         symbols: [],
         lineMatches: [],

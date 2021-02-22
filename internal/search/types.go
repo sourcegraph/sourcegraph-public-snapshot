@@ -23,7 +23,7 @@ func (TextParameters) typeParametersValue()    {}
 type CommitParameters struct {
 	RepoRevs           *RepositoryRevisions
 	PatternInfo        *CommitPatternInfo
-	Query              query.QueryInfo
+	Query              query.Q
 	Diff               bool
 	ExtraMessageValues []string
 }
@@ -131,7 +131,7 @@ type TextParameters struct {
 type TextParametersForCommitParameters struct {
 	PatternInfo *CommitPatternInfo
 	Repos       []*RepositoryRevisions
-	Query       query.QueryInfo
+	Query       query.Q
 }
 
 // TextPatternInfo is the struct used by vscode pass on search queries. Keep it in

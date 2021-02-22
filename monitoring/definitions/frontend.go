@@ -320,26 +320,6 @@ func Frontend() *monitoring.Container {
 							PossibleSolutions: "none",
 						},
 					},
-					{
-						{
-							Name:              "codeintel_api_99th_percentile_duration",
-							Description:       "99th percentile successful codeintel API operation duration over 5m",
-							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_codeintel_api_duration_seconds_bucket{job=~"(sourcegraph-)?frontend"}[5m])))`,
-							Warning:           monitoring.Alert().GreaterOrEqual(20),
-							Panel:             monitoring.Panel().LegendFormat("operations").Unit(monitoring.Seconds),
-							Owner:             monitoring.ObservableOwnerCodeIntel,
-							PossibleSolutions: "none",
-						},
-						{
-							Name:              "codeintel_api_errors",
-							Description:       "code intel API errors every 5m",
-							Query:             `sum(increase(src_codeintel_api_errors_total{job=~"(sourcegraph-)?frontend"}[5m]))`,
-							Warning:           monitoring.Alert().GreaterOrEqual(20),
-							Panel:             monitoring.Panel().LegendFormat("errors"),
-							Owner:             monitoring.ObservableOwnerCodeIntel,
-							PossibleSolutions: "none",
-						},
-					},
 				},
 			},
 			{
