@@ -190,10 +190,10 @@ func getAndMarshalSearchOnboardingJSON(ctx context.Context) (_ json.RawMessage, 
 	return json.Marshal(searchOnboarding)
 }
 
-func getAndMarshalAggregatedCodeIntelUsageJSON(ctx context.Context) (_ json.RawMessage, err error) {
+func getAndMarshalAggregatedCodeIntelUsageJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalAggregatedCodeIntelUsageJSON")(&err)
 
-	codeIntelUsage, err := usagestats.GetAggregatedCodeIntelStats(ctx)
+	codeIntelUsage, err := usagestats.GetAggregatedCodeIntelStats(ctx, db)
 	if err != nil {
 		return nil, err
 	}
@@ -201,10 +201,10 @@ func getAndMarshalAggregatedCodeIntelUsageJSON(ctx context.Context) (_ json.RawM
 	return json.Marshal(codeIntelUsage)
 }
 
-func getAndMarshalAggregatedSearchUsageJSON(ctx context.Context) (_ json.RawMessage, err error) {
+func getAndMarshalAggregatedSearchUsageJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalAggregatedSearchUsageJSON")(&err)
 
-	searchUsage, err := usagestats.GetAggregatedSearchStats(ctx)
+	searchUsage, err := usagestats.GetAggregatedSearchStats(ctx, db)
 	if err != nil {
 		return nil, err
 	}
@@ -430,7 +430,7 @@ func updateBody(ctx context.Context, db dbutil.DB) (io.Reader, error) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			r.NewCodeIntelUsage, err = getAndMarshalAggregatedCodeIntelUsageJSON(ctx)
+			r.NewCodeIntelUsage, err = getAndMarshalAggregatedCodeIntelUsageJSON(ctx, db)
 			if err != nil {
 				logFunc("telemetry: updatecheck.getAndMarshalAggregatedCodeIntelUsageJSON failed", "error", err)
 			}
@@ -439,7 +439,7 @@ func updateBody(ctx context.Context, db dbutil.DB) (io.Reader, error) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			r.SearchUsage, err = getAndMarshalAggregatedSearchUsageJSON(ctx)
+			r.SearchUsage, err = getAndMarshalAggregatedSearchUsageJSON(ctx, db)
 			if err != nil {
 				logFunc("telemetry: updatecheck.getAndMarshalAggregatedSearchUsageJSON failed", "error", err)
 			}

@@ -7,20 +7,19 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestatsdeprecated"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
 
-var telemetryHandler http.Handler
-
-func init() {
-	telemetryHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func telemetryHandler(db dbutil.DB) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var tr eventlogger.TelemetryRequest
 		err := json.NewDecoder(r.Body).Decode(&tr)
 		if err != nil {
 			log15.Error("telemetryHandler: Decode", "error", err)
 		}
-		err = usagestats.LogBackendEvent(tr.UserID, tr.EventName, tr.Argument)
+		err = usagestats.LogBackendEvent(db, tr.UserID, tr.EventName, tr.Argument)
 		if err != nil {
 			log15.Error("telemetryHandler: usagestats.LogBackendEvent", "error", err)
 		}

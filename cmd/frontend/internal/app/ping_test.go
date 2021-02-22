@@ -22,12 +22,12 @@ func TestLatestPingHandler(t *testing.T) {
 		t.Skip()
 	}
 
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
 	t.Run("non-admins can't access the ping data", func(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/site-admin/pings/latest", nil)
 		rec := httptest.NewRecorder()
-		latestPingHandler(rec, req)
+		latestPingHandler(new(dbtesting.MockDB))(rec, req)
 
 		if have, want := rec.Code, http.StatusUnauthorized; have != want {
 			t.Errorf("status code: have %d, want %d", have, want)
@@ -61,7 +61,7 @@ func TestLatestPingHandler(t *testing.T) {
 
 			req, _ := http.NewRequest("GET", "/site-admin/pings/latest", nil)
 			rec := httptest.NewRecorder()
-			latestPingHandler(rec, req.WithContext(backend.WithAuthzBypass(context.Background())))
+			latestPingHandler(db)(rec, req.WithContext(backend.WithAuthzBypass(context.Background())))
 
 			resp := rec.Result()
 			body, err := ioutil.ReadAll(resp.Body)
