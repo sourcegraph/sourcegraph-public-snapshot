@@ -117,8 +117,8 @@ class Panel extends React.PureComponent<Props, State> {
                                     {...this.props}
                                     // TODO remove references to Bootstrap from shared, get class name from prop
                                     // This is okay for now because the Panel is currently only used in the webapp
-                                    listClass="nav panel__tabs__actions"
-                                    actionItemClass="nav-link mw-100 panel__tabs__action"
+                                    listClass="nav panel__actions"
+                                    actionItemClass="nav-link mw-100 panel__action"
                                     actionItemIconClass="icon-inline"
                                     menu={ContributableMenu.PanelToolbar}
                                     scope={
@@ -135,7 +135,7 @@ class Panel extends React.PureComponent<Props, State> {
                                 <button
                                     type="button"
                                     onClick={this.onDismiss}
-                                    className="btn btn-icon tab-bar__end-fragment-other-element panel__tabs__dismiss"
+                                    className="btn btn-icon tab-bar__end-fragment-other-element panel__dismiss"
                                     data-tooltip="Close"
                                 >
                                     <CloseIcon className="icon-inline" />

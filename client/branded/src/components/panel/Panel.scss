@@ -55,31 +55,31 @@
                 overflow: auto;
             }
         }
+    }
 
-        &__dismiss {
+    &__dismiss {
+        position: absolute;
+        right: 0.5rem;
+        top: 4px;
+        border: none;
+    }
+
+    &__actions {
+        padding-right: 2rem;
+        border-bottom: 3px solid var(--border-color);
+        opacity: 0.6;
+
+        // Complete border if content is pushed onto new line
+        &::after {
             position: absolute;
-            right: 0.5rem;
-            top: 4px;
-            border: none;
+            content: '';
+            width: 100%;
+            top: calc(100% - 3px);
+            border-bottom: inherit;
         }
+    }
 
-        &__actions {
-            padding-right: 2rem;
-            border-bottom: 3px solid var(--border-color);
-            opacity: 0.6;
-
-            // Complete border if content is pushed onto new line
-            &:after {
-                position: absolute;
-                content: '';
-                width: 100%;
-                top: calc(100% - 3px);
-                border-bottom: inherit;
-            }
-        }
-
-        &__action {
-            padding: 0.25rem 0.75rem;
-        }
+    &__action {
+        padding: 0.25rem 0.75rem;
     }
 }
