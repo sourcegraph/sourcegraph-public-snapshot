@@ -37,7 +37,7 @@ func TestPermissionLevels(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	cstore := store.New(dbconn.Global)
-	sr := &Resolver{store: cstore}
+	sr := New(cstore)
 	s, err := graphqlbackend.NewSchema(dbconn.Global, sr, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
