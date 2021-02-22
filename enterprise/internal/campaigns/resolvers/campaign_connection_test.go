@@ -183,10 +183,7 @@ func TestCampaignsListing(t *testing.T) {
 	userID := ct.CreateTestUser(t, true).ID
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
-	org, err := database.GlobalOrgs.Create(ctx, "org", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	orgID := ct.InsertTestOrg(t, "org")
 
 	store := store.New(dbconn.Global)
 
@@ -254,14 +251,14 @@ func TestCampaignsListing(t *testing.T) {
 		createCampaignSpec(t, spec)
 
 		campaign := &campaigns.Campaign{
-			NamespaceOrgID: org.ID,
+			NamespaceOrgID: orgID,
 			CampaignSpecID: spec.ID,
 			LastApplierID:  userID,
 			LastAppliedAt:  time.Now(),
 		}
 		createCampaign(t, campaign)
 
-		orgAPIID := string(graphqlbackend.MarshalOrgID(org.ID))
+		orgAPIID := string(graphqlbackend.MarshalOrgID(orgID))
 		input := map[string]interface{}{"node": orgAPIID}
 
 		var response struct{ Node apitest.Org }

@@ -38,7 +38,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	store := store.NewWithClock(dbconn.Global, clock)
+	cstore := store.NewWithClock(dbconn.Global, clock)
 
 	admin := ct.CreateTestUser(t, true)
 
@@ -399,8 +399,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			// Create necessary associations.
-			campaignSpec := ct.CreateCampaignSpec(t, ctx, store, "executor-test-campaign", admin.ID)
-			campaign := ct.CreateCampaign(t, ctx, store, "executor-test-campaign", admin.ID, campaignSpec.ID)
+			campaignSpec := ct.CreateCampaignSpec(t, ctx, cstore, "executor-test-campaign", admin.ID)
+			campaign := ct.CreateCampaign(t, ctx, cstore, "executor-test-campaign", admin.ID, campaignSpec.ID)
 
 			// Create the changesetSpec with associations wired up correctly.
 			var changesetSpec *campaigns.ChangesetSpec
@@ -411,7 +411,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				specOpts.User = admin.ID
 				specOpts.Repo = rs[0].ID
 				specOpts.CampaignSpec = campaignSpec.ID
-				changesetSpec = ct.CreateChangesetSpec(t, ctx, store, specOpts)
+				changesetSpec = ct.CreateChangesetSpec(t, ctx, cstore, specOpts)
 			}
 
 			// Create the changeset with correct associations.
@@ -422,7 +422,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			if changesetSpec != nil {
 				changesetOpts.CurrentSpec = changesetSpec.ID
 			}
-			changeset := ct.CreateChangeset(t, ctx, store, changesetOpts)
+			changeset := ct.CreateChangeset(t, ctx, cstore, changesetOpts)
 
 			// Setup gitserver dependency.
 			gitClient := &ct.FakeGitserverClient{ResponseErr: nil}
@@ -460,7 +460,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				sourcer,
 				// Don't actually sleep for the sake of testing.
 				true,
-				store,
+				cstore,
 				tc.plan,
 			)
 			if err != nil {
@@ -516,7 +516,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			if changesetSpec != nil {
 				assertions.CurrentSpec = changesetSpec.ID
 			}
-			ct.ReloadAndAssertChangeset(t, ctx, store, changeset, assertions)
+			ct.ReloadAndAssertChangeset(t, ctx, cstore, changeset, assertions)
 
 			// Assert that the body included a backlink if needed. We'll do
 			// more detailed unit tests of decorateChangesetBody elsewhere;
@@ -590,7 +590,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	store := store.New(dbconn.Global)
+	cstore := store.New(dbconn.Global)
 
 	admin := ct.CreateTestUser(t, true)
 	user := ct.CreateTestUser(t, false)
@@ -598,9 +598,9 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
 	repo := rs[0]
 
-	campaignSpec := ct.CreateCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
-	adminCampaign := ct.CreateCampaign(t, ctx, store, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
-	userCampaign := ct.CreateCampaign(t, ctx, store, "reconciler-test-campaign", user.ID, campaignSpec.ID)
+	campaignSpec := ct.CreateCampaignSpec(t, ctx, cstore, "reconciler-test-campaign", admin.ID)
+	adminCampaign := ct.CreateCampaign(t, ctx, cstore, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
+	userCampaign := ct.CreateCampaign(t, ctx, cstore, "reconciler-test-campaign", user.ID, campaignSpec.ID)
 
 	t.Run("imported changeset uses global token", func(t *testing.T) {
 		a, err := (&executor{
@@ -621,7 +621,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 			ch: &campaigns.Changeset{
 				OwnedByCampaignID: 1234,
 			},
-			tx: store,
+			tx: cstore,
 		}).loadAuthenticator(ctx)
 		if err == nil {
 			t.Error("unexpected nil error")
@@ -634,7 +634,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 				OwnedByCampaignID: adminCampaign.ID,
 			},
 			repo: repo,
-			tx:   store,
+			tx:   cstore,
 		}).loadAuthenticator(ctx)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
@@ -650,7 +650,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 				OwnedByCampaignID: userCampaign.ID,
 			},
 			repo: repo,
-			tx:   store,
+			tx:   cstore,
 		}).loadAuthenticator(ctx)
 		if err == nil {
 			t.Error("unexpected nil error")
@@ -659,7 +659,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 
 	t.Run("owned by admin user with credential", func(t *testing.T) {
 		token := &auth.OAuthBearerToken{Token: "abcdef"}
-		if _, err := database.GlobalUserCredentials.Create(ctx, database.UserCredentialScope{
+		if _, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 			Domain:              database.UserCredentialDomainCampaigns,
 			UserID:              admin.ID,
 			ExternalServiceType: repo.ExternalRepo.ServiceType,
@@ -673,7 +673,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 				OwnedByCampaignID: adminCampaign.ID,
 			},
 			repo: repo,
-			tx:   store,
+			tx:   cstore,
 		}).loadAuthenticator(ctx)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
@@ -685,7 +685,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 
 	t.Run("owned by normal user with credential", func(t *testing.T) {
 		token := &auth.OAuthBearerToken{Token: "abcdef"}
-		if _, err := database.GlobalUserCredentials.Create(ctx, database.UserCredentialScope{
+		if _, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 			Domain:              database.UserCredentialDomainCampaigns,
 			UserID:              user.ID,
 			ExternalServiceType: repo.ExternalRepo.ServiceType,
@@ -699,7 +699,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 				OwnedByCampaignID: userCampaign.ID,
 			},
 			repo: repo,
-			tx:   store,
+			tx:   cstore,
 		}).loadAuthenticator(ctx)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
@@ -714,7 +714,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	store := store.New(dbconn.Global)
+	cstore := store.New(dbconn.Global)
 
 	admin := ct.CreateTestUser(t, true)
 	user := ct.CreateTestUser(t, false)
@@ -829,7 +829,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	for i, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.credentials != nil {
-				cred, err := database.GlobalUserCredentials.Create(ctx, database.UserCredentialScope{
+				cred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 					Domain:              database.UserCredentialDomainCampaigns,
 					UserID:              tt.user.ID,
 					ExternalServiceType: tt.repo.ExternalRepo.ServiceType,
@@ -838,11 +838,11 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				defer func() { database.GlobalUserCredentials.Delete(ctx, cred.ID) }()
+				defer func() { cstore.UserCredentials().Delete(ctx, cred.ID) }()
 			}
 
-			campaignSpec := ct.CreateCampaignSpec(t, ctx, store, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID)
-			campaign := ct.CreateCampaign(t, ctx, store, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID, campaignSpec.ID)
+			campaignSpec := ct.CreateCampaignSpec(t, ctx, cstore, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID)
+			campaign := ct.CreateCampaign(t, ctx, cstore, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID, campaignSpec.ID)
 
 			plan.Changeset = &campaigns.Changeset{
 				OwnedByCampaignID: campaign.ID,
@@ -859,7 +859,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 				gitClient,
 				sourcer,
 				true,
-				store,
+				cstore,
 				plan,
 			)
 
