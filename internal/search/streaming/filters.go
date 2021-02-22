@@ -54,36 +54,53 @@ func (m Filters) MarkImportant(value string) {
 
 // Compute returns an ordered slice of Filter to present to the user.
 func (m Filters) Compute() []*Filter {
-	filterSlice := make([]*Filter, 0, len(m))
-	repoFilterSlice := make([]*Filter, 0, len(m)/2) // heuristic - half of all filters are repo filters.
+	all := make([]*Filter, 0, len(m))
+	repos := make([]*Filter, 0, len(m)/2) // heuristic - half of all filters are repo filters.
 	for _, f := range m {
 		if f.Kind == "repo" {
-			repoFilterSlice = append(repoFilterSlice, f)
+			repos = append(repos, f)
 		} else {
-			filterSlice = append(filterSlice, f)
+			all = append(all, f)
 		}
 	}
-	sort.Slice(filterSlice, func(i, j int) bool {
-		if filterSlice[i].Important == filterSlice[j].Important {
-			return filterSlice[i].Count > filterSlice[j].Count
-		}
-		return filterSlice[i].Important
-	})
-	// limit amount of non-repo filters to be rendered arbitrarily to 12
-	if len(filterSlice) > 12 {
-		filterSlice = filterSlice[:12]
+	sort.Sort(filterSlice(all))
+	sort.Sort(filterSlice(repos))
+
+	// limit amount of filters to be rendered arbitrarily to 24, half each.
+	if len(all) > 12 {
+		all = all[:12]
+	}
+	if len(repos) > 12 {
+		repos = repos[:12]
 	}
 
-	allFilters := append(filterSlice, repoFilterSlice...)
-	sort.Slice(allFilters, func(i, j int) bool {
-		left := allFilters[i]
-		right := allFilters[j]
-		if left.Important == right.Important {
-			// Order alphabetically for equal scores.
-			return strings.Compare(left.Value, right.Value) < 0
-		}
+	all = append(all, repos...)
+	sort.Sort(filterSlice(all))
+
+	return all
+}
+
+type filterSlice []*Filter
+
+func (fs filterSlice) Len() int {
+	return len(fs)
+}
+
+func (fs filterSlice) Less(i, j int) bool {
+	left := fs[i]
+	right := fs[j]
+	if left.Important != right.Important {
+		// Prefer more important
 		return left.Important
-	})
+	}
+	if left.Count != right.Count {
+		// Prefer higher count
+		return left.Count > right.Count
+	}
+	// Order alphabetically for equal scores.
+	return strings.Compare(left.Value, right.Value) < 0
+}
 
-	return allFilters
+func (fs filterSlice) Swap(i, j int) {
+	fs[i], fs[j] = fs[j], fs[i]
 }
