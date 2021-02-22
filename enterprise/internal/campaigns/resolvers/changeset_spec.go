@@ -200,10 +200,10 @@ func (r *gitCommitDescriptionResolver) Author() *graphqlbackend.PersonResolver {
 }
 func (r *gitCommitDescriptionResolver) Message() string { return r.message }
 func (r *gitCommitDescriptionResolver) Subject() string {
-	return graphqlbackend.GitCommitSubject(r.message)
+	return git.Message(r.message).Subject()
 }
 func (r *gitCommitDescriptionResolver) Body() *string {
-	body := graphqlbackend.GitCommitBody(r.message)
+	body := git.Message(r.message).Body()
 	if body == "" {
 		return nil
 	}

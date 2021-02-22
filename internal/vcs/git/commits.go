@@ -25,9 +25,31 @@ type Commit struct {
 	ID        api.CommitID `json:"ID,omitempty"`
 	Author    Signature    `json:"Author"`
 	Committer *Signature   `json:"Committer,omitempty"`
-	Message   string       `json:"Message,omitempty"`
+	Message   Message      `json:"Message,omitempty"`
 	// Parents are the commit IDs of this commit's parent commits.
 	Parents []api.CommitID `json:"Parents,omitempty"`
+}
+
+type Message string
+
+// Subject returns the first line of the commit message
+func (m Message) Subject() string {
+	message := string(m)
+	i := strings.Index(message, "\n")
+	if i == -1 {
+		return strings.TrimSpace(message)
+	}
+	return strings.TrimSpace(message[:i])
+}
+
+// Body returns the contents of the Git commit message after the subject.
+func (m Message) Body() string {
+	message := string(m)
+	i := strings.Index(message, "\n")
+	if i == -1 {
+		return ""
+	}
+	return strings.TrimSpace(message[i:])
 }
 
 type Signature struct {
@@ -344,7 +366,7 @@ func parseCommitFromLog(data []byte) (commit *Commit, refs []string, rest []byte
 		ID:        commitID,
 		Author:    Signature{Name: string(parts[2]), Email: string(parts[3]), Date: time.Unix(authorTime, 0).UTC()},
 		Committer: &Signature{Name: string(parts[5]), Email: string(parts[6]), Date: time.Unix(committerTime, 0).UTC()},
-		Message:   string(bytes.TrimSuffix(parts[8], []byte{'\n'})),
+		Message:   Message(strings.TrimSuffix(string(parts[8]), "\n")),
 		Parents:   parents,
 	}
 

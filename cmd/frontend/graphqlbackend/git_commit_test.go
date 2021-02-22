@@ -60,7 +60,7 @@ func TestGitCommitResolver(t *testing.T) {
 			},
 		}, {
 			name: "message",
-			want: commit.Message,
+			want: string(commit.Message),
 			have: func(r *GitCommitResolver) (interface{}, error) {
 				return r.Message(ctx)
 			},
@@ -81,13 +81,13 @@ func TestGitCommitResolver(t *testing.T) {
 			name: "url",
 			want: "/bob-repo/-/commit/c1",
 			have: func(r *GitCommitResolver) (interface{}, error) {
-				return r.URL()
+				return r.URL(), nil
 			},
 		}, {
 			name: "canonical-url",
 			want: "/bob-repo/-/commit/c1",
 			have: func(r *GitCommitResolver) (interface{}, error) {
-				return r.CanonicalURL()
+				return r.CanonicalURL(), nil
 			},
 		}} {
 			t.Run(tc.name, func(t *testing.T) {
@@ -107,21 +107,4 @@ func TestGitCommitResolver(t *testing.T) {
 			})
 		}
 	})
-}
-
-func TestGitCommitBody(t *testing.T) {
-	tests := map[string]string{
-		"hello":               "",
-		"hello\n":             "",
-		"hello\n\n":           "",
-		"hello\nworld":        "world",
-		"hello\n\nworld":      "world",
-		"hello\n\nworld\nfoo": "world\nfoo",
-	}
-	for input, want := range tests {
-		got := GitCommitBody(input)
-		if got != want {
-			t.Errorf("got %q, want %q", got, want)
-		}
-	}
 }
