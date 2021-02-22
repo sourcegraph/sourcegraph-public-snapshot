@@ -160,4 +160,13 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
             },
         ],
     }),
+    UserRepositories: () => ({
+        node: {
+            repositories: {
+                totalCount: 0,
+                nodes: [],
+                pageInfo: { hasNextPage: false },
+            },
+        },
+    }),
 }

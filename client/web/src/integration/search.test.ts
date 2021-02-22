@@ -426,34 +426,60 @@ describe('Search', () => {
                 },
             }),
         }
+        const testContextForSearchContexts: Partial<WebGraphQlOperations> = {
+            ...commonSearchGraphQLResults,
+            ...viewerSettingsWithSearchContexts,
+            SearchContexts: () => ({
+                searchContexts: [
+                    {
+                        __typename: 'SearchContext',
+                        id: '1',
+                        spec: 'global',
+                        description: '',
+                        autoDefined: true,
+                    },
+                    {
+                        __typename: 'SearchContext',
+                        id: '2',
+                        spec: '@user',
+                        description: '',
+                        autoDefined: true,
+                    },
+                ],
+            }),
+            UserRepositories: () => ({
+                node: {
+                    repositories: {
+                        totalCount: 1,
+                        nodes: [
+                            {
+                                id: '1',
+                                name: 'repo',
+                                viewerCanAdminister: false,
+                                createdAt: '',
+                                url: '',
+                                isPrivate: false,
+                                mirrorInfo: { cloned: true, cloneInProgress: false, updatedAt: null },
+                                externalRepository: { serviceType: '', serviceID: '' },
+                            },
+                        ],
+                        pageInfo: { hasNextPage: false },
+                    },
+                },
+            }),
+        }
 
         beforeEach(() => {
-            testContext.overrideGraphQL({
-                ...commonSearchGraphQLResults,
-                ...viewerSettingsWithSearchContexts,
-                SearchContexts: () => ({
-                    searchContexts: [
-                        {
-                            __typename: 'SearchContext',
-                            id: '1',
-                            spec: 'global',
-                            description: '',
-                            autoDefined: true,
-                        },
-                        {
-                            __typename: 'SearchContext',
-                            id: '2',
-                            spec: '@user',
-                            description: '',
-                            autoDefined: true,
-                        },
-                    ],
-                }),
-            })
+            testContext.overrideGraphQL(testContextForSearchContexts)
         })
 
         const getSelectedSearchContextSpec = () =>
             driver.page.evaluate(() => document.querySelector('.test-selected-search-context-spec')?.textContent)
+
+        const isSearchContextDropdownVisible = () =>
+            driver.page.evaluate(
+                () => document.querySelector<HTMLButtonElement>('.test-search-context-dropdown') !== null
+            )
 
         const isSearchContextDropdownDisabled = () =>
             driver.page.evaluate(
@@ -490,6 +516,24 @@ describe('Search', () => {
             await driver.page.waitForSelector('#monaco-query-input')
             expect(await getSearchFieldValue(driver)).toStrictEqual('context:@anotherUnavailableCtx test')
             expect(await isSearchContextDropdownDisabled()).toBeTruthy()
+        })
+
+        test('Search context dropdown should not be visible if user has no repositories', async () => {
+            testContext.overrideGraphQL({
+                ...testContextForSearchContexts,
+                UserRepositories: () => ({
+                    node: {
+                        repositories: {
+                            totalCount: 0,
+                            nodes: [],
+                            pageInfo: { hasNextPage: false },
+                        },
+                    },
+                }),
+            })
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+            await driver.page.waitForSelector('#monaco-query-input')
+            expect(await isSearchContextDropdownVisible()).toBeFalsy()
         })
     })
 })

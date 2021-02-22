@@ -17,8 +17,9 @@ import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import { repeatUntil } from '../../../../../shared/src/util/rxjs/repeatUntil'
 import { LoaderButton } from '../../../components/LoaderButton'
+import { UserRepositoriesUpdateProps } from '../../../util'
 
-interface Props extends RouteComponentProps, TelemetryProps {
+interface Props extends RouteComponentProps, TelemetryProps, UserRepositoriesUpdateProps {
     userID: string
     routingPrefix: string
 }
@@ -60,6 +61,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     userID,
     routingPrefix,
     telemetryService,
+    onUserRepositoriesUpdate,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('UserSettingsRepositories')
@@ -319,6 +321,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
                             // if the lastSyncAt has changed for all hosts then we're done
                             if (result.nodes.every(codeHost => codeHost.lastSyncAt !== syncTimes.get(codeHost.id))) {
+                                onUserRepositoriesUpdate()
                                 // push the user back to the repo list page
                                 history.push(routingPrefix + '/repositories')
                                 // cancel the repeatUntil
@@ -340,7 +343,16 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     }
                 )
         },
-        [codeHosts.hosts, history, repoState, routingPrefix, selectionState.radio, selectionState.repos, userID]
+        [
+            codeHosts.hosts,
+            history,
+            repoState,
+            routingPrefix,
+            selectionState.radio,
+            selectionState.repos,
+            userID,
+            onUserRepositoriesUpdate,
+        ]
     )
 
     const handleRadioSelect = (changeEvent: React.ChangeEvent<HTMLInputElement>): void => {

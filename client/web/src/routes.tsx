@@ -14,7 +14,7 @@ import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 import { cncf } from './repogroups/cncf'
 import { ExtensionAlertProps } from './repo/RepoContainer'
 import { StreamingSearchResults } from './search/results/streaming/StreamingSearchResults'
-import { isMacPlatform } from './util'
+import { isMacPlatform, UserRepositoriesUpdateProps } from './util'
 
 const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
 const SearchResults = lazyComponent(() => import('./search/results/SearchResults'), 'SearchResults')
@@ -30,7 +30,8 @@ interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteP
         Omit<LayoutProps, 'match'>,
         BreadcrumbsProps,
         BreadcrumbSetters,
-        ExtensionAlertProps {}
+        ExtensionAlertProps,
+        UserRepositoriesUpdateProps {}
 
 export interface LayoutRouteProps<Parameters_ extends { [K in keyof Parameters_]?: string }> {
     path: string
