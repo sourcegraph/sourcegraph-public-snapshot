@@ -136,14 +136,14 @@ func unmarshalRegistryPublisherID(id graphql.ID) (*registryPublisherID, error) {
 // registry extension with the given publisher.
 //
 // 🚨 SECURITY
-func (p *registryPublisherID) viewerCanAdminister(ctx context.Context) error {
+func (p *registryPublisherID) viewerCanAdminister(ctx context.Context, db dbutil.DB) error {
 	switch {
 	case p.userID != 0:
 		// 🚨 SECURITY: Check that the current user is either the publisher or a site admin.
 		return backend.CheckSiteAdminOrSameUser(ctx, p.userID)
 	case p.orgID != 0:
 		// 🚨 SECURITY: Check that the current user is a member of the publisher org.
-		return backend.CheckOrgAccess(ctx, p.orgID)
+		return backend.CheckOrgAccess(ctx, db, p.orgID)
 	default:
 		return errRegistryUnknownPublisher
 	}

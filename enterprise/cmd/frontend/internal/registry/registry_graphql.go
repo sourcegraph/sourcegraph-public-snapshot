@@ -46,7 +46,7 @@ func extensionRegistryCreateExtension(ctx context.Context, db dbutil.DB, args *g
 		return nil, err
 	}
 	// 🚨 SECURITY: Check that the current user can create an extension for this publisher.
-	if err := publisher.viewerCanAdminister(ctx); err != nil {
+	if err := publisher.viewerCanAdminister(ctx, db); err != nil {
 		return nil, err
 	}
 
@@ -58,7 +58,7 @@ func extensionRegistryCreateExtension(ctx context.Context, db dbutil.DB, args *g
 	return &frontendregistry.ExtensionRegistryMutationResult{DB: db, ID: id}, nil
 }
 
-func viewerCanAdministerExtension(ctx context.Context, id frontendregistry.RegistryExtensionID) error {
+func viewerCanAdministerExtension(ctx context.Context, db dbutil.DB, id frontendregistry.RegistryExtensionID) error {
 	if id.LocalID == 0 {
 		return errors.New("unable to administer extension on remote registry")
 	}
@@ -66,7 +66,7 @@ func viewerCanAdministerExtension(ctx context.Context, id frontendregistry.Regis
 	if err != nil {
 		return err
 	}
-	return toRegistryPublisherID(extension).viewerCanAdminister(ctx)
+	return toRegistryPublisherID(extension).viewerCanAdminister(ctx, db)
 }
 
 func extensionRegistryUpdateExtension(ctx context.Context, db dbutil.DB, args *graphqlbackend.ExtensionRegistryUpdateExtensionArgs) (graphqlbackend.ExtensionRegistryMutationResult, error) {
@@ -76,7 +76,7 @@ func extensionRegistryUpdateExtension(ctx context.Context, db dbutil.DB, args *g
 	}
 
 	// 🚨 SECURITY: Check that the current user is authorized to update the extension.
-	if err := viewerCanAdministerExtension(ctx, id); err != nil {
+	if err := viewerCanAdministerExtension(ctx, db, id); err != nil {
 		return nil, err
 	}
 
@@ -93,7 +93,7 @@ func extensionRegistryDeleteExtension(ctx context.Context, db dbutil.DB, args *g
 	}
 
 	// 🚨 SECURITY: Check that the current user is authorized to delete the extension.
-	if err := viewerCanAdministerExtension(ctx, id); err != nil {
+	if err := viewerCanAdministerExtension(ctx, db, id); err != nil {
 		return nil, err
 	}
 
@@ -145,7 +145,7 @@ func extensionRegistryPublishExtension(ctx context.Context, db dbutil.DB, args *
 		}
 		publisherID := registryPublisherID{userID: publisher.UserID, orgID: publisher.OrgID}
 		// 🚨 SECURITY: Check that the current user can create an extension for this publisher.
-		if err := publisherID.viewerCanAdminister(ctx); err != nil {
+		if err := publisherID.viewerCanAdminister(ctx, db); err != nil {
 			return nil, err
 		}
 
@@ -164,7 +164,7 @@ func extensionRegistryPublishExtension(ctx context.Context, db dbutil.DB, args *
 	}
 
 	// 🚨 SECURITY: Check that the current user is authorized to publish the extension.
-	if err := viewerCanAdministerExtension(ctx, id); err != nil {
+	if err := viewerCanAdministerExtension(ctx, db, id); err != nil {
 		return nil, err
 	}
 

@@ -170,7 +170,7 @@ func TestService(t *testing.T) {
 	}
 
 	ctx := backend.WithAuthzBypass(context.Background())
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
 	admin := ct.CreateTestUser(t, true)
 	user := ct.CreateTestUser(t, false)
@@ -520,7 +520,7 @@ func TestService(t *testing.T) {
 			}
 
 			// Create org membership and try again
-			if _, err := database.GlobalOrgMembers.Create(ctx, org.ID, user.ID); err != nil {
+			if _, err := database.OrgMembers(db).Create(ctx, org.ID, user.ID); err != nil {
 				t.Fatal(err)
 			}
 
