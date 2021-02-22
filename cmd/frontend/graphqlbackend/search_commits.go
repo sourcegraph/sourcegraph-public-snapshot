@@ -16,7 +16,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -342,14 +341,18 @@ func doSearchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.Co
 		}
 	}()
 
-	repoResolver := NewRepositoryResolver(db, op.RepoRevs.Repo.ToRepo())
+	var repoName types.RepoName
+	if op.RepoRevs.Repo != nil {
+		repoName = *op.RepoRevs.Repo
+	}
+
 	for event := range events {
 		// if the result is incomplete, git log timed out and the client
 		// should be notified of that.
 		timedOut = !event.Complete
 
 		// Convert the results into resolvers and send them.
-		results, err := logCommitSearchResultsToResolvers(ctx, db, &op, repoResolver, event.Results)
+		results, err := logCommitSearchResultsToResolvers(ctx, db, &op, repoName, event.Results)
 		if len(results) > 0 {
 			empty = false
 			resultCount += len(event.Results)
@@ -378,7 +381,7 @@ func doSearchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.Co
 	return limitHit, timedOut, nil
 }
 
-func logCommitSearchResultsToResolvers(ctx context.Context, db dbutil.DB, op *search.CommitParameters, repoResolver *RepositoryResolver, rawResults []*git.LogCommitSearchResult) ([]*CommitSearchResultResolver, error) {
+func logCommitSearchResultsToResolvers(ctx context.Context, db dbutil.DB, op *search.CommitParameters, repoName types.RepoName, rawResults []*git.LogCommitSearchResult) ([]*CommitSearchResultResolver, error) {
 	if len(rawResults) == 0 {
 		return nil, nil
 	}
@@ -429,12 +432,7 @@ func logCommitSearchResultsToResolvers(ctx context.Context, db dbutil.DB, op *se
 				diffPreview:    diffPreview,
 				body:           matchBody,
 				highlights:     matchHighlights,
-
-				// TODO (@camdencheek): remove need for repoResolver
-				repoName: types.RepoName{
-					Name: api.RepoName(repoResolver.Name()),
-					ID:   api.RepoID(repoResolver.IDInt32()),
-				},
+				repoName:       repoName,
 			},
 		}
 	}
