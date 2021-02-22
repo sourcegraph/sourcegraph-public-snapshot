@@ -1400,7 +1400,7 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 	return nil
 }
 
-func newAggregator(db dbutil.DB, stream Streamer, inputs *SearchInputs) *aggregator {
+func newAggregator(db dbutil.DB, stream Sender, inputs *SearchInputs) *aggregator {
 	return &aggregator{
 		db:           db,
 		parentStream: stream,
@@ -1412,7 +1412,7 @@ func newAggregator(db dbutil.DB, stream Streamer, inputs *SearchInputs) *aggrega
 }
 
 type aggregator struct {
-	parentStream Streamer
+	parentStream Sender
 	db           dbutil.DB
 
 	mu      sync.Mutex
