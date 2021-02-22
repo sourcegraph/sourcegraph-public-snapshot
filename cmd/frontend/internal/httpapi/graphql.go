@@ -67,7 +67,7 @@ func serveGraphQL(schema *graphql.Schema, isInternal bool) func(w http.ResponseW
 
 		start := time.Now()
 		response := schema.Exec(r.Context(), params.Query, params.OperationName, params.Variables)
-		traceGrqphQL(r, params.Query, params.OperationName, params.Variables, response.Errors, cost, costErr, isInternal, requestName, string(requestSource), start)
+		traceGraphQL(r, params.Query, params.OperationName, params.Variables, response.Errors, cost, costErr, isInternal, requestName, string(requestSource), start)
 		responseJSON, err := json.Marshal(response)
 		if err != nil {
 			return err
@@ -80,7 +80,7 @@ func serveGraphQL(schema *graphql.Schema, isInternal bool) func(w http.ResponseW
 	}
 }
 
-func traceGrqphQL(r *http.Request,
+func traceGraphQL(r *http.Request,
 	queryString string,
 	operationName string,
 	variables map[string]interface{},
