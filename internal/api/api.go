@@ -4,6 +4,7 @@ package api
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -39,6 +40,9 @@ type Client interface {
 	// path is joined against the API route. For example on Sourcegraph.com this
 	// will result the URL: https://sourcegraph.com/.api/path.
 	NewHTTPRequest(ctx context.Context, method, path string, body io.Reader) (*http.Request, error)
+
+	// Do runs an http.Request against the Sourcegraph API.
+	Do(req *http.Request) (*http.Response, error)
 }
 
 // Request instances represent GraphQL requests.
@@ -59,7 +63,8 @@ type Request interface {
 
 // client is the internal concrete type implementing Client.
 type client struct {
-	opts ClientOpts
+	opts       ClientOpts
+	httpClient *http.Client
 }
 
 // request is the internal concrete type implementing Request.
@@ -96,6 +101,13 @@ func NewClient(opts ClientOpts) Client {
 		flags = defaultFlags()
 	}
 
+	httpClient := http.DefaultClient
+	if flags.insecureSkipVerify != nil && *flags.insecureSkipVerify {
+		httpClient = &http.Client{
+			Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
+		}
+	}
+
 	return &client{
 		opts: ClientOpts{
 			Endpoint:          opts.Endpoint,
@@ -104,6 +116,7 @@ func NewClient(opts ClientOpts) Client {
 			Flags:             flags,
 			Out:               opts.Out,
 		},
+		httpClient: httpClient,
 	}
 }
 
@@ -130,6 +143,10 @@ func (c *client) NewGzippedRequest(query string, vars map[string]interface{}) Re
 
 func (c *client) NewGzippedQuery(query string) Request {
 	return c.NewGzippedRequest(query, nil)
+}
+
+func (c *client) Do(req *http.Request) (*http.Response, error) {
+	return c.httpClient.Do(req)
 }
 
 func (c *client) NewHTTPRequest(ctx context.Context, method, p string, body io.Reader) (*http.Request, error) {
@@ -209,7 +226,7 @@ func (r *request) do(ctx context.Context, result interface{}) (bool, error) {
 	}
 
 	// Perform the request.
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := r.client.httpClient.Do(req)
 	if err != nil {
 		return false, err
 	}

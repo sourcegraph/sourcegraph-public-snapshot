@@ -60,7 +60,7 @@ func getRecommendedVersion(ctx context.Context, client api.Client) (string, erro
 		return "", err
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return "", err
 	}

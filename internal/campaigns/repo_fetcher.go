@@ -303,7 +303,7 @@ func fetchRepositoryFile(ctx context.Context, client api.Client, repo *graphql.R
 		req.Header.Set("Accept", "application/zip")
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return false, err
 	}
