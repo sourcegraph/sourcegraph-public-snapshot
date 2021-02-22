@@ -34,10 +34,10 @@ func TestPermissionLevels(t *testing.T) {
 		t.Skip()
 	}
 
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
 	cstore := store.New(dbconn.Global)
-	sr := &Resolver{store: cstore}
+	sr := New(cstore)
 	s, err := graphqlbackend.NewSchema(dbconn.Global, sr, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -285,7 +285,7 @@ func TestPermissionLevels(t *testing.T) {
 
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
-					pruneUserCredentials(t)
+					pruneUserCredentials(t, db)
 
 					graphqlID := string(graphqlbackend.MarshalUserID(tc.user))
 
@@ -301,7 +301,7 @@ func TestPermissionLevels(t *testing.T) {
 					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
 					errors := apitest.Exec(actorCtx, t, s, input, &res, queryCodeHosts)
 					if !tc.wantErr && len(errors) != 0 {
-						t.Fatal("got error but didn't expect one")
+						t.Fatalf("got error but didn't expect one: %+v", errors)
 					} else if tc.wantErr && len(errors) == 0 {
 						t.Fatal("expected error but got none")
 					}
@@ -338,9 +338,9 @@ func TestPermissionLevels(t *testing.T) {
 
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
-					pruneUserCredentials(t)
+					pruneUserCredentials(t, db)
 
-					cred, err := database.GlobalUserCredentials.Create(ctx, database.UserCredentialScope{
+					cred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 						Domain:              database.UserCredentialDomainCampaigns,
 						ExternalServiceID:   "https://github.com/",
 						ExternalServiceType: extsvc.TypeGitHub,
@@ -405,9 +405,9 @@ func TestPermissionLevels(t *testing.T) {
 
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
-					pruneUserCredentials(t)
+					pruneUserCredentials(t, db)
 
-					cred, err := database.GlobalUserCredentials.Create(ctx, database.UserCredentialScope{
+					cred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 						Domain:              database.UserCredentialDomainCampaigns,
 						ExternalServiceID:   "https://github.com/",
 						ExternalServiceType: extsvc.TypeGitHub,

@@ -7,12 +7,10 @@ var (
 	GlobalDefaultRepos                = &DefaultRepoStore{}
 	GlobalRepos                       = &RepoStore{}
 	GlobalOrgs                        = &OrgStore{}
-	GlobalOrgMembers                  = &OrgMemberStore{}
 	GlobalSettings                    = &SettingStore{}
 	GlobalUsers                       = &UserStore{}
 	GlobalUserCredentials             = &UserCredentialsStore{}
 	GlobalUserEmails                  = &UserEmailsStore{}
-	GlobalEventLogs                   = &EventLogStore{}
 	GlobalExternalAccounts            = &UserExternalAccountsStore{}
 	GlobalAuthz            AuthzStore = &authzStore{}
 )

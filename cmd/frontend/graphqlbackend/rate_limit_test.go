@@ -11,7 +11,7 @@ func TestEstimateQueryCost(t *testing.T) {
 		name      string
 		query     string
 		variables map[string]interface{}
-		want      queryCost
+		want      QueryCost
 	}{
 		{
 			name: "Multiple top level queries",
@@ -22,7 +22,7 @@ query{
   thing
 }
 `,
-			want: queryCost{
+			want: QueryCost{
 				FieldCount: 2,
 				MaxDepth:   1,
 			},
@@ -38,7 +38,7 @@ query SiteProductVersion {
                 }
             }
 `,
-			want: queryCost{
+			want: QueryCost{
 				FieldCount: 4,
 				MaxDepth:   2,
 			},
@@ -56,7 +56,7 @@ query{
   somethingElse
 }
 `,
-			want: queryCost{
+			want: QueryCost{
 				FieldCount: 22,
 				MaxDepth:   3,
 			},
@@ -83,7 +83,7 @@ query Extensions($first: Int!, $prioritizeExtensionIDs: [String!]!) {
 			variables: map[string]interface{}{
 				"first": 10,
 			},
-			want: queryCost{
+			want: QueryCost{
 				FieldCount: 62,
 				MaxDepth:   5,
 			},
@@ -103,7 +103,7 @@ query fetchExternalServices($first: Int = 10){
 			variables: map[string]interface{}{
 				"first": 5,
 			},
-			want: queryCost{
+			want: QueryCost{
 				FieldCount: 11,
 				MaxDepth:   3,
 			},
@@ -121,7 +121,7 @@ query fetchExternalServices($first: Int = 10){
 }
 `,
 			variables: map[string]interface{}{},
-			want: queryCost{
+			want: QueryCost{
 				FieldCount: 21,
 				MaxDepth:   3,
 			},
@@ -151,7 +151,7 @@ query StatusMessages {
 	 }
  }
 `,
-			want: queryCost{
+			want: QueryCost{
 				FieldCount: 5,
 				MaxDepth:   2,
 			},
@@ -170,7 +170,7 @@ query{
      }
 }
 `,
-			want: queryCost{
+			want: QueryCost{
 				FieldCount: 2,
 				MaxDepth:   2,
 			},
@@ -316,7 +316,7 @@ query Search($query: String!, $version: SearchVersion!, $patternType: SearchPatt
   }
 }
 `,
-			want: queryCost{
+			want: QueryCost{
 				FieldCount: 50,
 				MaxDepth:   9,
 			},
@@ -344,7 +344,7 @@ fragment FileDiffFields on FileDiff {
   internalID
 }
 `,
-			want: queryCost{
+			want: QueryCost{
 				FieldCount: 7,
 				MaxDepth:   5,
 			},
@@ -356,11 +356,13 @@ fragment FileDiffFields on FileDiff {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			have, err := estimateQueryCost(tc.query, tc.variables)
+			want := tc.want
+			want.Version = costEstimateVersion
+			have, err := EstimateQueryCost(tc.query, tc.variables)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(tc.want, *have); diff != "" {
+			if diff := cmp.Diff(want, *have); diff != "" {
 				t.Errorf(diff)
 			}
 		})

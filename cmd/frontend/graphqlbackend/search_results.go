@@ -416,7 +416,7 @@ func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32)
 			value := fmt.Sprintf(`{"durationMs": %d}`, durationMs)
 			eventName := fmt.Sprintf("search.latencies.%s", types[0])
 			go func() {
-				err := usagestats.LogBackendEvent(actor.UID, eventName, json.RawMessage(value))
+				err := usagestats.LogBackendEvent(r.db, actor.UID, eventName, json.RawMessage(value))
 				if err != nil {
 					log15.Warn("Could not log search latency", "err", err)
 				}
@@ -1400,7 +1400,7 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 	return nil
 }
 
-func newAggregator(db dbutil.DB, stream Streamer, inputs *SearchInputs) *aggregator {
+func newAggregator(db dbutil.DB, stream Sender, inputs *SearchInputs) *aggregator {
 	return &aggregator{
 		db:           db,
 		parentStream: stream,
@@ -1412,7 +1412,7 @@ func newAggregator(db dbutil.DB, stream Streamer, inputs *SearchInputs) *aggrega
 }
 
 type aggregator struct {
-	parentStream Streamer
+	parentStream Sender
 	db           dbutil.DB
 
 	mu      sync.Mutex

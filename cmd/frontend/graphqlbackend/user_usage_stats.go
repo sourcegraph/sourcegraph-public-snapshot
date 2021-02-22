@@ -75,7 +75,7 @@ func (*schemaResolver) LogUserEvent(ctx context.Context, args *struct {
 	return nil, usagestatsdeprecated.LogActivity(actor.IsAuthenticated(), actor.UID, args.UserCookieID, args.Event)
 }
 
-func (*schemaResolver) LogEvent(ctx context.Context, args *struct {
+func (r *schemaResolver) LogEvent(ctx context.Context, args *struct {
 	Event        string
 	UserCookieID string
 	URL          string
@@ -101,7 +101,7 @@ func (*schemaResolver) LogEvent(ctx context.Context, args *struct {
 	}
 
 	actor := actor.FromContext(ctx)
-	return nil, usagestats.LogEvent(ctx, usagestats.Event{
+	return nil, usagestats.LogEvent(ctx, r.db, usagestats.Event{
 		EventName:    args.Event,
 		URL:          args.URL,
 		UserID:       actor.UID,

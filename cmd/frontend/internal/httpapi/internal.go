@@ -396,24 +396,26 @@ func serveSettingsGetForSubject(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func serveOrgsListUsers(w http.ResponseWriter, r *http.Request) error {
-	var orgID int32
-	err := json.NewDecoder(r.Body).Decode(&orgID)
-	if err != nil {
-		return errors.Wrap(err, "Decode")
+func serveOrgsListUsers(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		var orgID int32
+		err := json.NewDecoder(r.Body).Decode(&orgID)
+		if err != nil {
+			return errors.Wrap(err, "Decode")
+		}
+		orgMembers, err := database.OrgMembers(db).GetByOrgID(r.Context(), orgID)
+		if err != nil {
+			return errors.Wrap(err, "OrgMembers.GetByOrgID")
+		}
+		users := make([]int32, 0, len(orgMembers))
+		for _, member := range orgMembers {
+			users = append(users, member.UserID)
+		}
+		if err := json.NewEncoder(w).Encode(users); err != nil {
+			return errors.Wrap(err, "Encode")
+		}
+		return nil
 	}
-	orgMembers, err := database.GlobalOrgMembers.GetByOrgID(r.Context(), orgID)
-	if err != nil {
-		return errors.Wrap(err, "OrgMembers.GetByOrgID")
-	}
-	users := make([]int32, 0, len(orgMembers))
-	for _, member := range orgMembers {
-		users = append(users, member.UserID)
-	}
-	if err := json.NewEncoder(w).Encode(users); err != nil {
-		return errors.Wrap(err, "Encode")
-	}
-	return nil
 }
 
 func serveOrgsGetByName(w http.ResponseWriter, r *http.Request) error {

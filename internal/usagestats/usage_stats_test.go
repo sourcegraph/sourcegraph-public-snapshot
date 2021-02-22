@@ -13,11 +13,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestGetArchive(t *testing.T) {
-	setupForTest(t)
+	db := setupForTest(t)
 
 	now := time.Now().UTC()
 	ctx := context.Background()
@@ -39,7 +40,7 @@ func TestGetArchive(t *testing.T) {
 		Timestamp: now,
 	}
 
-	err = database.GlobalEventLogs.Insert(ctx, event)
+	err = database.EventLogs(db).Insert(ctx, event)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +50,7 @@ func TestGetArchive(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	archive, err := GetArchive(ctx)
+	archive, err := GetArchive(ctx, db)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,12 +103,12 @@ func TestGetArchive(t *testing.T) {
 }
 
 func TestUserUsageStatistics_None(t *testing.T) {
-	setupForTest(t)
+	db := setupForTest(t)
 
 	want := &types.UserUsageStatistics{
 		UserID: 42,
 	}
-	got, err := GetByUserID(context.Background(), 42)
+	got, err := GetByUserID(context.Background(), db, 42)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,17 +118,17 @@ func TestUserUsageStatistics_None(t *testing.T) {
 }
 
 func TestUserUsageStatistics_LogPageView(t *testing.T) {
-	setupForTest(t)
+	db := setupForTest(t)
 
 	user := types.User{
 		ID: 1,
 	}
-	err := logLocalEvent(context.Background(), "ViewRepo", "https://sourcegraph.example.com/", user.ID, "test-cookie-id", "WEB", nil)
+	err := logLocalEvent(context.Background(), db, "ViewRepo", "https://sourcegraph.example.com/", user.ID, "test-cookie-id", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	a, err := GetByUserID(context.Background(), user.ID)
+	a, err := GetByUserID(context.Background(), db, user.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -141,7 +142,7 @@ func TestUserUsageStatistics_LogPageView(t *testing.T) {
 }
 
 func TestUserUsageStatistics_LogSearchQuery(t *testing.T) {
-	setupForTest(t)
+	db := setupForTest(t)
 
 	// Set searchOccurred to true to prevent using redis to log all-time stats during tests.
 	searchOccurred = 1
@@ -152,12 +153,12 @@ func TestUserUsageStatistics_LogSearchQuery(t *testing.T) {
 	user := types.User{
 		ID: 1,
 	}
-	err := logLocalEvent(context.Background(), "SearchResultsQueried", "https://sourcegraph.example.com/", user.ID, "test-cookie-id", "WEB", nil)
+	err := logLocalEvent(context.Background(), db, "SearchResultsQueried", "https://sourcegraph.example.com/", user.ID, "test-cookie-id", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	a, err := GetByUserID(context.Background(), user.ID)
+	a, err := GetByUserID(context.Background(), db, user.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -167,17 +168,17 @@ func TestUserUsageStatistics_LogSearchQuery(t *testing.T) {
 }
 
 func TestUserUsageStatistics_LogCodeIntelAction(t *testing.T) {
-	setupForTest(t)
+	db := setupForTest(t)
 
 	user := types.User{
 		ID: 1,
 	}
-	err := logLocalEvent(context.Background(), "hover", "https://sourcegraph.example.com/", user.ID, "test-cookie-id", "WEB", nil)
+	err := logLocalEvent(context.Background(), db, "hover", "https://sourcegraph.example.com/", user.ID, "test-cookie-id", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	a, err := GetByUserID(context.Background(), user.ID)
+	a, err := GetByUserID(context.Background(), db, user.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -187,17 +188,17 @@ func TestUserUsageStatistics_LogCodeIntelAction(t *testing.T) {
 }
 
 func TestUserUsageStatistics_LogCodeHostIntegrationUsage(t *testing.T) {
-	setupForTest(t)
+	db := setupForTest(t)
 
 	user := types.User{
 		ID: 1,
 	}
-	err := logLocalEvent(context.Background(), "hover", "https://sourcegraph.example.com/", user.ID, "test-cookie-id", "CODEHOSTINTEGRATION", nil)
+	err := logLocalEvent(context.Background(), db, "hover", "https://sourcegraph.example.com/", user.ID, "test-cookie-id", "CODEHOSTINTEGRATION", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	a, err := GetByUserID(context.Background(), user.ID)
+	a, err := GetByUserID(context.Background(), db, user.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -208,7 +209,7 @@ func TestUserUsageStatistics_LogCodeHostIntegrationUsage(t *testing.T) {
 }
 
 func TestUserUsageStatistics_getUsersActiveToday(t *testing.T) {
-	setupForTest(t)
+	db := setupForTest(t)
 
 	ctx := context.Background()
 
@@ -220,12 +221,12 @@ func TestUserUsageStatistics_getUsersActiveToday(t *testing.T) {
 	}
 
 	// Test single user
-	err := logLocalEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil)
+	err := logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	n, err := GetUsersActiveTodayCount(ctx)
+	n, err := GetUsersActiveTodayCount(ctx, db)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -234,25 +235,25 @@ func TestUserUsageStatistics_getUsersActiveToday(t *testing.T) {
 	}
 
 	// Test multiple users, with repeats
-	err = logLocalEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil)
+	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil)
+	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", 0, "test-cookie-id-3", "WEB", nil)
+	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", 0, "test-cookie-id-3", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil)
+	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil)
 
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	n, err = GetUsersActiveTodayCount(ctx)
+	n, err = GetUsersActiveTodayCount(ctx, db)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -268,7 +269,7 @@ func TestUserUsageStatistics_DAUs_WAUs_MAUs(t *testing.T) {
 		timeNow = time.Now
 	}()
 
-	setupForTest(t)
+	db := setupForTest(t)
 
 	user1 := types.User{
 		ID: 1,
@@ -288,74 +289,74 @@ func TestUserUsageStatistics_DAUs_WAUs_MAUs(t *testing.T) {
 
 	// 2018/02/27 (2 users, 1 registered)
 	mockTimeNow(oneMonthFourDaysAgo)
-	err := logLocalEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil)
+	err := logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", 0, "068ccbfa-8529-4fa7-859e-2c3514af2434", "WEB", nil)
+	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", 0, "068ccbfa-8529-4fa7-859e-2c3514af2434", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, "hover", "https://sourcegraph.example.com/", 0, "068ccbfa-8529-4fa7-859e-2c3514af2434", "CODEHOSTINTEGRATION", nil)
+	err = logLocalEvent(ctx, db, "hover", "https://sourcegraph.example.com/", 0, "068ccbfa-8529-4fa7-859e-2c3514af2434", "CODEHOSTINTEGRATION", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// 2018/02/28 (2 users, 1 registered)
 	mockTimeNow(oneMonthThreeDaysAgo)
-	err = logLocalEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil)
+	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", 0, "30dd2661-2e73-4774-bc2b-7a126f360734", "WEB", nil)
+	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", 0, "30dd2661-2e73-4774-bc2b-7a126f360734", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// 2018/03/15 (2 users, 1 registered)
 	mockTimeNow(twoWeeksTwoDaysAgo)
-	err = logLocalEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil)
+	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", 0, "068ccbfa-8529-4fa7-859e-2c3514af2434", "WEB", nil)
+	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", 0, "068ccbfa-8529-4fa7-859e-2c3514af2434", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// 2018/03/17 (2 users, 1 registered)
 	mockTimeNow(twoWeeksAgo)
-	err = logLocalEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil)
+	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", 0, "b309dad0-b6f9-440d-bf0a-4cf38030ca70", "WEB", nil)
+	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", 0, "b309dad0-b6f9-440d-bf0a-4cf38030ca70", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, "hover", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "CODEHOSTINTEGRATION", nil)
+	err = logLocalEvent(ctx, db, "hover", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "CODEHOSTINTEGRATION", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// 2018/03/26 (1 user, 1 registered)
 	mockTimeNow(fiveDaysAgo)
-	err = logLocalEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil)
+	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// 2018/03/28 (2 users, 2 registered)
 	mockTimeNow(threeDaysAgo)
-	err = logLocalEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil)
+	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil)
+	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, "hover", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "CODEHOSTINTEGRATION", nil)
+	err = logLocalEvent(ctx, db, "hover", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "CODEHOSTINTEGRATION", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -443,7 +444,7 @@ func TestUserUsageStatistics_DAUs_WAUs_MAUs(t *testing.T) {
 
 	mockTimeNow(now)
 	days, weeks, months := 7, 4, 3
-	siteActivity, err := GetSiteUsageStatistics(context.Background(), &SiteUsageStatisticsOptions{
+	siteActivity, err := GetSiteUsageStatistics(context.Background(), db, &SiteUsageStatisticsOptions{
 		DayPeriods:   &days,
 		WeekPeriods:  &weeks,
 		MonthPeriods: &months,
@@ -458,12 +459,12 @@ func TestUserUsageStatistics_DAUs_WAUs_MAUs(t *testing.T) {
 	}
 }
 
-func setupForTest(t *testing.T) {
+func setupForTest(t *testing.T) dbutil.DB {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	dbtesting.SetupGlobalTestDB(t)
+	return dbtesting.GetDB(t)
 }
 
 func mockTimeNow(t time.Time) {

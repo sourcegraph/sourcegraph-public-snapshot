@@ -87,7 +87,7 @@ func (r *extensionDBResolver) IsWorkInProgress() bool {
 }
 
 func (r *extensionDBResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	err := toRegistryPublisherID(r.v).viewerCanAdminister(ctx)
+	err := toRegistryPublisherID(r.v).viewerCanAdminister(ctx, r.db)
 	if err == backend.ErrMustBeSiteAdmin || err == backend.ErrNotAnOrgMember || err == backend.ErrNotAuthenticated {
 		return false, nil
 	}

@@ -126,7 +126,7 @@ func NewInternalHandler(m *mux.Router, db dbutil.DB, schema *graphql.Schema, new
 	m.Get(apirouter.SavedQueriesGetInfo).Handler(trace.Route(handler(serveSavedQueriesGetInfo(db))))
 	m.Get(apirouter.SavedQueriesSetInfo).Handler(trace.Route(handler(serveSavedQueriesSetInfo(db))))
 	m.Get(apirouter.SavedQueriesDeleteInfo).Handler(trace.Route(handler(serveSavedQueriesDeleteInfo(db))))
-	m.Get(apirouter.OrgsListUsers).Handler(trace.Route(handler(serveOrgsListUsers)))
+	m.Get(apirouter.OrgsListUsers).Handler(trace.Route(handler(serveOrgsListUsers(db))))
 	m.Get(apirouter.OrgsGetByName).Handler(trace.Route(handler(serveOrgsGetByName)))
 	m.Get(apirouter.UsersGetByUsername).Handler(trace.Route(handler(serveUsersGetByUsername)))
 	m.Get(apirouter.UserEmailsGetEmail).Handler(trace.Route(handler(serveUserEmailsGetEmail)))
@@ -141,7 +141,7 @@ func NewInternalHandler(m *mux.Router, db dbutil.DB, schema *graphql.Schema, new
 	}
 	m.Get(apirouter.GitInfoRefs).Handler(trace.Route(http.HandlerFunc(gitService.serveInfoRefs)))
 	m.Get(apirouter.GitUploadPack).Handler(trace.Route(http.HandlerFunc(gitService.serveGitUploadPack)))
-	m.Get(apirouter.Telemetry).Handler(trace.Route(telemetryHandler))
+	m.Get(apirouter.Telemetry).Handler(trace.Route(telemetryHandler(db)))
 	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(schema, true))))
 	m.Get(apirouter.Configuration).Handler(trace.Route(handler(serveConfiguration)))
 	m.Get(apirouter.SearchConfiguration).Handler(trace.Route(handler(serveSearchConfiguration)))

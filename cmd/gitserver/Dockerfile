@@ -27,7 +27,8 @@ RUN apk add --no-cache \
     # Gitserver requires Git protocol v2 https://github.com/sourcegraph/sourcegraph/issues/13168
     'git>=2.18' \
     openssh-client \
-    git-p4
+    git-p4 \
+    python2
 
 # hadolint ignore=DL3022
 COPY --from=p4cli /usr/local/bin/p4 /usr/local/bin/p4

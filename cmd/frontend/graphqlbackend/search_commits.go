@@ -537,7 +537,7 @@ type searchCommitsInReposParameters struct {
 	// with the RepoRevs field set.
 	CommitParams search.CommitParameters
 
-	ResultChannel Streamer
+	ResultChannel Sender
 }
 
 func searchCommitsInRepos(ctx context.Context, db dbutil.DB, args *search.TextParametersForCommitParameters, params searchCommitsInReposParameters) (err error) {
@@ -625,7 +625,7 @@ func searchCommitsInRepos(ctx context.Context, db dbutil.DB, args *search.TextPa
 }
 
 // searchCommitDiffsInRepos searches a set of repos for matching commit diffs.
-func searchCommitDiffsInRepos(ctx context.Context, db dbutil.DB, args *search.TextParametersForCommitParameters, resultChannel Streamer) error {
+func searchCommitDiffsInRepos(ctx context.Context, db dbutil.DB, args *search.TextParametersForCommitParameters, resultChannel Sender) error {
 	return searchCommitsInRepos(ctx, db, args, searchCommitsInReposParameters{
 		TraceName:     "searchCommitDiffsInRepos",
 		ErrorName:     "diffs",
@@ -639,7 +639,7 @@ func searchCommitDiffsInRepos(ctx context.Context, db dbutil.DB, args *search.Te
 }
 
 // searchCommitLogInRepos searches a set of repos for matching commits.
-func searchCommitLogInRepos(ctx context.Context, db dbutil.DB, args *search.TextParametersForCommitParameters, resultChannel Streamer) error {
+func searchCommitLogInRepos(ctx context.Context, db dbutil.DB, args *search.TextParametersForCommitParameters, resultChannel Sender) error {
 	var terms []string
 	if args.PatternInfo.Pattern != "" {
 		terms = append(terms, args.PatternInfo.Pattern)

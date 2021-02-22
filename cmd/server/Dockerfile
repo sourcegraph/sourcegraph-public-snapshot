@@ -40,6 +40,7 @@ RUN apk update && apk add --no-cache \
     # Gitserver requires Git protocol v2 https://github.com/sourcegraph/sourcegraph/issues/13168
     'git>=2.18' \
     git-p4 \
+    python2 \
     'nginx>=1.18.0' openssh-client pcre sqlite-libs su-exec 'nodejs-current=14.5.0-r0'
 
 # IMPORTANT: If you update the syntect_server version below, you MUST confirm
