@@ -42,7 +42,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 	bbsRepos, _ := ct.CreateBbsTestRepos(t, ctx, dbconn.Global, 1)
 	bbsRepo := bbsRepos[0]
 
-	cred, err := database.GlobalUserCredentials.Create(ctx, database.UserCredentialScope{
+	cred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 		Domain:              database.UserCredentialDomainCampaigns,
 		ExternalServiceID:   ghRepo.ExternalRepo.ServiceID,
 		ExternalServiceType: ghRepo.ExternalRepo.ServiceType,
