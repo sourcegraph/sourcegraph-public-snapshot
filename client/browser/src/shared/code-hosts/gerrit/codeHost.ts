@@ -301,7 +301,7 @@ interface ElementWithFilePath {
     filePath: string
 }
 
-const POLLING_INTERVAL = 4000
+const POLLING_INTERVAL = 1500
 export const observeMutations = (
     target: Node,
     options?: MutationObserverInit,
