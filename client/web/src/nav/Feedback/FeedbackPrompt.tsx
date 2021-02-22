@@ -124,7 +124,7 @@ const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({ closePro
                     <header className="feedback-prompt__header">
                         <h3 className="mb-0">What’s on your mind?</h3>
                         <button type="button" className="feedback-prompt__header--close" onClick={closePrompt}>
-                            <CloseIcon className="feedback-prompt__header--close__icon" />
+                            <CloseIcon className="feedback-prompt__header-icon" />
                         </button>
                     </header>
 

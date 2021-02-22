@@ -27,13 +27,14 @@
             right: 0;
             border: none;
             background: transparent;
-
-            &__icon {
-                height: 1rem;
-                width: 1rem;
-            }
         }
     }
+
+    &__header-icon {
+        height: 1rem;
+        width: 1rem;
+    }
+
     &__textarea {
         resize: none;
         margin: 1rem 0;
