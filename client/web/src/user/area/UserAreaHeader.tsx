@@ -63,22 +63,6 @@ export const UserAreaHeader: React.FunctionComponent<Props> = ({ url, navItems, 
                                     )
                             )}
                         </ul>
-                        <div className="flex-1" />
-                        {props.user.organizations.nodes.length > 0 && (
-                            <div className="d-flex align-items-center pb-1">
-                                <small className="mr-2">Organizations</small>
-                                {props.user.organizations.nodes.map(org => (
-                                    <Link
-                                        className="mr-2"
-                                        key={org.id}
-                                        to={orgURL(org.name)}
-                                        data-tooltip={org.displayName || org.name}
-                                    >
-                                        <OrgAvatar org={org.name} />
-                                    </Link>
-                                ))}
-                            </div>
-                        )}
                     </div>
                 </>
             )}

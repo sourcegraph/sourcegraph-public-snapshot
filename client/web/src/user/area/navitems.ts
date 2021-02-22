@@ -5,11 +5,6 @@ import { UserAreaHeaderNavItem } from './UserAreaHeader'
 
 export const userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[] = [
     {
-        to: '',
-        exact: true,
-        label: 'Profile',
-    },
-    {
         to: '/settings',
         label: 'Settings',
         icon: SettingsIcon,

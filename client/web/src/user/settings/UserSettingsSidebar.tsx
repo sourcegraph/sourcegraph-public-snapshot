@@ -122,18 +122,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                     <MapSearchOutlineIcon className="icon-inline list-group-item-action-icon" /> Show search tour
                 </button>
             )}
-            {!siteAdminViewingOtherUser &&
-                props.authenticatedUser.session &&
-                props.authenticatedUser.session.canSignOut && (
-                    <a href="/-/sign-out" className={SIDEBAR_BUTTON_CLASS} onClick={logTelemetryOnSignOut}>
-                        <LogoutIcon className="icon-inline list-group-item-action-icon" /> Sign out
-                    </a>
-                )}
             <div>Version: {window.context.version}</div>
         </div>
     )
-}
-
-function logTelemetryOnSignOut(): void {
-    eventLogger.log('SignOutClicked')
 }

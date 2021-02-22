@@ -10,6 +10,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { EditUserProfilePage as EditUserProfilePageFragment } from '../../../graphql-operations'
 import { EditUserProfileForm } from './EditUserProfileForm'
 import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
+import { Timestamp } from '../../../components/time/Timestamp'
 
 export const EditUserProfilePageGQLFragment = gql`
     fragment EditUserProfilePage on User {
@@ -18,6 +19,7 @@ export const EditUserProfilePageGQLFragment = gql`
         displayName
         avatarURL
         viewerCanChangeUsername
+        createdAt
     }
 `
 
@@ -58,6 +60,16 @@ export const UserSettingsProfilePage: React.FunctionComponent<Props> = ({
         <div className="user-settings-profile-page">
             <PageTitle title="Profile" />
             <h2>Profile</h2>
+            <p>
+                {user.displayName ? (
+                    <>
+                        {user.displayName} ({user.username})
+                    </>
+                ) : (
+                    user.username
+                )}{' '}
+                started using Sourcegraph <Timestamp date={user.createdAt} />.
+            </p>
 
             {props.activation?.completed && percentageDone(props.activation.completed) < 100 && (
                 <div className="card mb-3">
