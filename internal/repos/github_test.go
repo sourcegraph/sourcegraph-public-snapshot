@@ -56,7 +56,7 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 			cs: &Changeset{
 				Title:     "This is a test PR",
 				Body:      "This is the description of the test PR",
-				HeadRef:   "refs/heads/test-pr-6",
+				HeadRef:   "refs/heads/test-pr-7",
 				BaseRef:   "refs/heads/master",
 				Repo:      repo,
 				Changeset: &campaigns.Changeset{},
