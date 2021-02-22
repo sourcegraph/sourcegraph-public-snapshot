@@ -29,7 +29,6 @@ func (token *OAuthBearerToken) Hash() string {
 type OAuthBearerTokenWithSSH struct {
 	OAuthBearerToken
 
-	Token      string
 	PrivateKey string
 	PublicKey  string
 	Passphrase string
