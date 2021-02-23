@@ -67,10 +67,10 @@
 
     &__actions {
         padding-right: 2rem;
-        opacity: 0.6;
 
         // Ensures the action border always completes the full line it breaks onto
         &::after {
+            opacity: 0.6;
             position: absolute;
             content: '';
             width: 100%;
