@@ -1073,12 +1073,12 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 			testRepoCorrupter(ctx, tmp)
 		}
 
+		removeBadRefs(ctx, tmp)
+		ensureHead(tmp)
+
 		if err := setRepositoryType(tmp, syncer.Type()); err != nil {
 			return errors.Wrap(err, `git config set "sourcegraph.type"`)
 		}
-
-		removeBadRefs(ctx, tmp)
-		ensureHead(tmp)
 
 		// Update the last-changed stamp.
 		if err := setLastChanged(tmp); err != nil {
@@ -1544,12 +1544,12 @@ func (s *Server) doRepoUpdate2(repo api.RepoName) error {
 		return errors.Wrap(err, "failed to update")
 	}
 
+	removeBadRefs(ctx, dir)
+	ensureHead(dir)
+
 	if err := setRepositoryType(dir, syncer.Type()); err != nil {
 		return errors.Wrap(err, `git config set "sourcegraph.type"`)
 	}
-
-	removeBadRefs(ctx, dir)
-	ensureHead(dir)
 
 	// Update the last-changed stamp.
 	if err := setLastChanged(dir); err != nil {
