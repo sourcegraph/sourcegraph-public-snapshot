@@ -17,9 +17,13 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
-- The src login command now also properly respects the `-insecure-skip-verify` flag.
-
 ### Removed
+
+## 3.25.3
+
+### Fixed
+
+- The src login command now also properly respects the `-insecure-skip-verify` flag.
 
 ## 3.25.2
 
