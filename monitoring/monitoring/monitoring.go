@@ -611,10 +611,9 @@ func Alert() *ObservableAlertDefinition {
 
 // ObservableAlertDefinition defines when an alert would be considered firing.
 type ObservableAlertDefinition struct {
-	greaterThan   bool
-	lessThan      bool
-	strictCompare bool
-
+	greaterThan bool
+	lessThan    bool
+	duration    time.Duration
 	// Wrap the query in `max()` or `min()` so that if there are multiple series (e.g. per-container)
 	// they get "flattened" into a single metric. The `aggregator` variable sets the required operator.
 	//
@@ -626,8 +625,6 @@ type ObservableAlertDefinition struct {
 	comparator string
 	// Threshold sets the value to be compared against
 	threshold float64
-
-	duration time.Duration
 }
 
 // GreaterOrEqual indicates the alert should fire when greater or equal the given value.
@@ -640,7 +637,6 @@ func (a *ObservableAlertDefinition) GreaterOrEqual(f float64, aggregator *string
 	}
 	a.comparator = ">="
 	a.threshold = f
-	a.strictCompare = false
 	return a
 }
 
@@ -654,7 +650,6 @@ func (a *ObservableAlertDefinition) LessOrEqual(f float64, aggregator *string) *
 	}
 	a.comparator = "<="
 	a.threshold = f
-	a.strictCompare = false
 	return a
 }
 
@@ -668,7 +663,6 @@ func (a *ObservableAlertDefinition) Greater(f float64, aggregator *string) *Obse
 	}
 	a.comparator = ">"
 	a.threshold = f
-	a.strictCompare = true
 	return a
 }
 
@@ -682,7 +676,6 @@ func (a *ObservableAlertDefinition) Less(f float64, aggregator *string) *Observa
 	}
 	a.comparator = "<"
 	a.threshold = f
-	a.strictCompare = true
 	return a
 }
 
