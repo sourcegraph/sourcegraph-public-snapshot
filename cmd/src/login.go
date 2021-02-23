@@ -9,6 +9,8 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+
+	"github.com/sourcegraph/src-cli/internal/api"
 )
 
 func init() {
@@ -32,21 +34,28 @@ Examples:
 	flagSet := flag.NewFlagSet("login", flag.ExitOnError)
 	usageFunc := func() {
 		fmt.Fprintln(flag.CommandLine.Output(), usage)
+		flagSet.PrintDefaults()
 	}
+
+	var (
+		apiFlags = api.NewFlags(flagSet)
+	)
 
 	handler := func(args []string) error {
 		if err := flagSet.Parse(args); err != nil {
 			return err
 		}
 		endpoint := cfg.Endpoint
-		if len(args) == 1 {
-			endpoint = args[0]
+		if flagSet.NArg() >= 1 {
+			endpoint = flagSet.Arg(0)
 		}
 		if endpoint == "" {
 			return &usageError{errors.New("expected exactly one argument: the Sourcegraph URL, or SRC_ENDPOINT to be set")}
 		}
 
-		return loginCmd(context.Background(), cfg, endpoint, os.Stdout)
+		client := cfg.apiClient(apiFlags, ioutil.Discard)
+
+		return loginCmd(context.Background(), cfg, client, endpoint, os.Stdout)
 	}
 
 	commands = append(commands, &command{
@@ -58,7 +67,7 @@ Examples:
 
 var exitCode1 = &exitCodeError{exitCode: 1}
 
-func loginCmd(ctx context.Context, cfg *config, endpointArg string, out io.Writer) error {
+func loginCmd(ctx context.Context, cfg *config, client api.Client, endpointArg string, out io.Writer) error {
 	endpointArg = cleanEndpoint(endpointArg)
 
 	printProblem := func(problem string) {
@@ -97,7 +106,6 @@ func loginCmd(ctx context.Context, cfg *config, endpointArg string, out io.Write
 	var result struct {
 		CurrentUser *struct{ Username string }
 	}
-	client := cfg.apiClient(nil, ioutil.Discard)
 	if _, err := client.NewRequest(query, nil).Do(ctx, &result); err != nil {
 		if strings.HasPrefix(err.Error(), "error: 401 Unauthorized") || strings.HasPrefix(err.Error(), "error: 403 Forbidden") {
 			printProblem("Invalid access token.")

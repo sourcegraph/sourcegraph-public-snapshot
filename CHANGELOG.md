@@ -15,13 +15,21 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Changed
 
+### Fixed
+
+- The src login command now also properly respects the `-insecure-skip-verify` flag.
+
+### Removed
+
+## 3.25.2
+
+### Changed
+
 - The volume workspace Docker image is now only pulled if the volume workspace mode is in use. [#477](https://github.com/sourcegraph/src-cli/pull/477)
 
 ### Fixed
 
 - Using volume workspace mode could result in Git errors when used with Docker containers that do not run as root. These have been fixed. [#478](https://github.com/sourcegraph/src-cli/issues/478)
-
-### Removed
 
 ## 3.25.1
 
