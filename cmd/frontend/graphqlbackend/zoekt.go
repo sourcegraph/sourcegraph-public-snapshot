@@ -385,7 +385,6 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 					fm := &FileMatchResolver{
 						db: db,
 						FileMatch: FileMatch{
-							db:          db,
 							Path:        file.FileName,
 							LineMatches: lines,
 							LimitHit:    fileLimitHit,

@@ -241,7 +241,6 @@ func mkSymbolFileMatchResolvers(db dbutil.DB, symbols ...[]*searchSymbolResult) 
 	var resolvers []*FileMatchResolver
 	for _, s := range symbols {
 		resolvers = append(resolvers, mkFileMatchResolver(db, FileMatch{
-			db:      db,
 			symbols: s,
 		}))
 	}

@@ -39,12 +39,10 @@ func TestSearchFilesInRepos(t *testing.T) {
 		switch repoName {
 		case "foo/one":
 			return []*FileMatchResolver{mkFileMatchResolver(db, FileMatch{
-				db:  db,
 				uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
 			})}, false, nil
 		case "foo/two":
 			return []*FileMatchResolver{mkFileMatchResolver(db, FileMatch{
-				db:  db,
 				uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
 			})}, false, nil
 		case "foo/empty":
@@ -134,17 +132,14 @@ func TestSearchFilesInReposStream(t *testing.T) {
 		switch repoName {
 		case "foo/one":
 			return []*FileMatchResolver{mkFileMatchResolver(db, FileMatch{
-				db:  db,
 				uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
 			})}, false, nil
 		case "foo/two":
 			return []*FileMatchResolver{mkFileMatchResolver(db, FileMatch{
-				db:  db,
 				uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
 			})}, false, nil
 		case "foo/three":
 			return []*FileMatchResolver{mkFileMatchResolver(db, FileMatch{
-				db:  db,
 				uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
 			})}, false, nil
 		default:
@@ -211,7 +206,6 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 		switch repoName {
 		case "foo":
 			return []*FileMatchResolver{mkFileMatchResolver(db, FileMatch{
-				db:  db,
 				uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
 			})}, false, nil
 		default:
