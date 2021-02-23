@@ -326,15 +326,23 @@ func (c *Container) renderRules() (*promRulesFile, error) {
 
 					// Set values to build a query with
 					if a.greaterThan != nil {
-						aggregator = "max" // alert if the largest value is exceeds upper bound
-						comparator = ">="
+						if a.aggregator != nil {
+							aggregator = *a.aggregator
+						} else {
+							aggregator = "max"
+						}
+						comparator = ">=" // alert if the value is exceeds upper bound
 						if a.strictCompare {
 							comparator = ">"
 						}
 						threshold = *a.greaterThan
 					} else if a.lessThan != nil {
-						aggregator = "min" // alert if the smallest value is exceeds lower bound
-						comparator = "<="
+						if a.aggregator != nil {
+							aggregator = *a.aggregator
+						} else {
+							aggregator = "min"
+						}
+						comparator = "<=" // alert if the value is exceeds lower bound
 						if a.strictCompare {
 							comparator = "<"
 						}
@@ -646,35 +654,40 @@ func Alert() *ObservableAlertDefinition {
 type ObservableAlertDefinition struct {
 	greaterThan   *float64
 	lessThan      *float64
+	aggregator    *string
 	strictCompare bool
 
 	duration time.Duration
 }
 
 // GreaterOrEqual indicates the alert should fire when greater or equal the given value.
-func (a *ObservableAlertDefinition) GreaterOrEqual(f float64) *ObservableAlertDefinition {
+func (a *ObservableAlertDefinition) GreaterOrEqual(f float64, aggregator *string) *ObservableAlertDefinition {
 	a.greaterThan = &f
+	a.aggregator = aggregator
 	a.strictCompare = false
 	return a
 }
 
 // LessOrEqual indicates the alert should fire when less than or equal to the given value.
-func (a *ObservableAlertDefinition) LessOrEqual(f float64) *ObservableAlertDefinition {
+func (a *ObservableAlertDefinition) LessOrEqual(f float64, aggregator *string) *ObservableAlertDefinition {
 	a.lessThan = &f
+	a.aggregator = aggregator
 	a.strictCompare = false
 	return a
 }
 
 // Greater indicates the alert should fire when strictly greater to this value.
-func (a *ObservableAlertDefinition) Greater(f float64) *ObservableAlertDefinition {
+func (a *ObservableAlertDefinition) Greater(f float64, aggregator *string) *ObservableAlertDefinition {
 	a.greaterThan = &f
+	a.aggregator = aggregator
 	a.strictCompare = true
 	return a
 }
 
 // Less indicates the alert should fire when strictly less than this value.
-func (a *ObservableAlertDefinition) Less(f float64) *ObservableAlertDefinition {
+func (a *ObservableAlertDefinition) Less(f float64, aggregator *string) *ObservableAlertDefinition {
 	a.lessThan = &f
+	a.aggregator = aggregator
 	a.strictCompare = true
 	return a
 }

@@ -20,7 +20,7 @@ var (
 			Description: "percentage pods available",
 			// the 'app' label is only available in Kubernetes deloyments - it indicates the pod.
 			Query:             fmt.Sprintf(`sum by(app) (up{app=~".*%[1]s"}) / count by (app) (up{app=~".*%[1]s"}) * 100`, containerName),
-			Critical:          monitoring.Alert().LessOrEqual(90).For(10 * time.Minute),
+			Critical:          monitoring.Alert().LessOrEqual(90, nil).For(10 * time.Minute),
 			Panel:             monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Max(100).Min(0),
 			Owner:             owner,
 			PossibleSolutions: "none",

@@ -45,7 +45,7 @@ var (
 			Name:        "container_memory_usage",
 			Description: "container memory usage by instance",
 			Query:       fmt.Sprintf(`cadvisor_container_memory_usage_percentage_total{%s}`, CadvisorNameMatcher(containerName)),
-			Warning:     monitoring.Alert().GreaterOrEqual(99),
+			Warning:     monitoring.Alert().GreaterOrEqual(99, nil),
 			Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Interval(100).Max(100).Min(0),
 			Owner:       owner,
 			PossibleSolutions: strings.Replace(`
@@ -60,7 +60,7 @@ var (
 			Name:        "container_cpu_usage",
 			Description: "container cpu usage total (1m average) across all cores by instance",
 			Query:       fmt.Sprintf(`cadvisor_container_cpu_usage_percentage_total{%s}`, CadvisorNameMatcher(containerName)),
-			Warning:     monitoring.Alert().GreaterOrEqual(99),
+			Warning:     monitoring.Alert().GreaterOrEqual(99, nil),
 			Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Interval(100).Max(100).Min(0),
 			Owner:       owner,
 			PossibleSolutions: strings.Replace(`

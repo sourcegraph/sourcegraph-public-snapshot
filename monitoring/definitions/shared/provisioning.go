@@ -22,7 +22,7 @@ var (
 			Name:        "provisioning_container_cpu_usage_long_term",
 			Description: "container cpu usage total (90th percentile over 1d) across all cores by instance",
 			Query:       fmt.Sprintf(`quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{%s}[1d])`, CadvisorNameMatcher(containerName)),
-			Warning:     monitoring.Alert().GreaterOrEqual(80).For(14 * 24 * time.Hour),
+			Warning:     monitoring.Alert().GreaterOrEqual(80, nil).For(14 * 24 * time.Hour),
 			Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Max(100).Min(0),
 			Owner:       owner,
 			PossibleSolutions: strings.Replace(`
@@ -37,7 +37,7 @@ var (
 			Name:        "provisioning_container_memory_usage_long_term",
 			Description: "container memory usage (1d maximum) by instance",
 			Query:       fmt.Sprintf(`max_over_time(cadvisor_container_memory_usage_percentage_total{%s}[1d])`, CadvisorNameMatcher(containerName)),
-			Warning:     monitoring.Alert().GreaterOrEqual(80).For(14 * 24 * time.Hour),
+			Warning:     monitoring.Alert().GreaterOrEqual(80, nil).For(14 * 24 * time.Hour),
 			Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Max(100).Min(0),
 			Owner:       owner,
 			PossibleSolutions: strings.Replace(`
@@ -52,7 +52,7 @@ var (
 			Name:        "provisioning_container_cpu_usage_short_term",
 			Description: "container cpu usage total (5m maximum) across all cores by instance",
 			Query:       fmt.Sprintf(`max_over_time(cadvisor_container_cpu_usage_percentage_total{%s}[5m])`, CadvisorNameMatcher(containerName)),
-			Warning:     monitoring.Alert().GreaterOrEqual(90).For(30 * time.Minute),
+			Warning:     monitoring.Alert().GreaterOrEqual(90, nil).For(30 * time.Minute),
 			Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Interval(100).Max(100).Min(0),
 			Owner:       owner,
 			PossibleSolutions: strings.Replace(`
@@ -67,7 +67,7 @@ var (
 			Name:        "provisioning_container_memory_usage_short_term",
 			Description: "container memory usage (5m maximum) by instance",
 			Query:       fmt.Sprintf(`max_over_time(cadvisor_container_memory_usage_percentage_total{%s}[5m])`, CadvisorNameMatcher(containerName)),
-			Warning:     monitoring.Alert().GreaterOrEqual(90),
+			Warning:     monitoring.Alert().GreaterOrEqual(90, nil),
 			Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Interval(100).Max(100).Min(0),
 			Owner:       owner,
 			PossibleSolutions: strings.Replace(`
