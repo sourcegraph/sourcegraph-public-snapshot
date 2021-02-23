@@ -68,6 +68,7 @@ func (m *sshMigrator) Up(ctx context.Context) error {
 			Limit: sshMigrationCountPerRun,
 		},
 		AuthenticatorType: []database.UserCredentialType{database.UserCredentialTypeBasicAuth, database.UserCredentialTypeOAuthBearerToken},
+		ForUpdate:         true,
 	})
 	if err != nil {
 		return err
@@ -123,6 +124,7 @@ func (m *sshMigrator) Down(ctx context.Context) error {
 			Limit: sshMigrationCountPerRun,
 		},
 		AuthenticatorType: []database.UserCredentialType{database.UserCredentialTypeBasicAuthWithSSH, database.UserCredentialTypeOAuthBearerTokenWithSSH},
+		ForUpdate:         true,
 	})
 	for _, cred := range credentials {
 		switch a := cred.Credential.(type) {

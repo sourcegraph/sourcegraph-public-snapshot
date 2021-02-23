@@ -261,6 +261,7 @@ type UserCredentialsListOpts struct {
 	*LimitOffset
 	Scope             UserCredentialScope
 	AuthenticatorType []UserCredentialType
+	ForUpdate         bool
 }
 
 // sql overrides LimitOffset.SQL() to give a LIMIT clause with one extra value
@@ -306,11 +307,17 @@ func (s *UserCredentialsStore) List(ctx context.Context, opts UserCredentialsLis
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
+	var forUpdate *sqlf.Query
+	if opts.ForUpdate {
+		forUpdate = sqlf.Sprintf("FOR UPDATE")
+	}
+
 	q := sqlf.Sprintf(
 		userCredentialsListQueryFmtstr,
 		sqlf.Join(userCredentialsColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 		opts.sql(),
+		forUpdate,
 	)
 
 	rows, err := s.Query(ctx, q)
@@ -375,6 +382,7 @@ FROM user_credentials
 WHERE %s
 ORDER BY created_at ASC, domain ASC, user_id ASC, external_service_id ASC
 %s  -- LIMIT clause
+%s  -- optional FOR UPDATE
 `
 
 const userCredentialsCreateQueryFmtstr = `
