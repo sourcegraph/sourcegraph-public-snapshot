@@ -22,8 +22,9 @@ interface GerritChangeAndPatchset {
 }
 
 function buildGerritChangeString(changeId: string, patchsetId: string): string {
-    // The "change directory prefix" is a prefix composed of the first two characters of the change ID, zero-padded.
-    const changeDirectoryPrefix = changeId.slice(0, 2).padStart(2, '0')
+    // The "change directory prefix" is a prefix composed of the *LAST* two
+    // characters of the change ID, zero-padded.
+    const changeDirectoryPrefix = changeId.slice(-2).padStart(2, '0')
     return `refs/changes/${changeDirectoryPrefix}/${changeId}/${patchsetId}`
 }
 
