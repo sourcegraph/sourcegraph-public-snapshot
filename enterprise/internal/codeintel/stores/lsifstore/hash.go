@@ -8,7 +8,7 @@ package lsifstore
 func HashKey(id ID, maxIndex int) int {
 	hash := int32(0)
 	for _, c := range string(id) {
-		hash = (hash << 5) - hash + int32(c)
+		hash = (hash << 5) - hash + c
 	}
 
 	if hash < 0 {

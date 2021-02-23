@@ -1,89 +1,95 @@
 package lsifstore
 
-import "sort"
+import (
+	"context"
+	"sort"
 
-// FindRanges filters the given ranges and returns those that contain the position constructed
-// from line and character. The order of the output slice is "outside-in", so that earlier
-// ranges properly enclose later ranges.
-func FindRanges(ranges map[ID]RangeData, line, character int) []RangeData {
-	var filtered []RangeData
+	"github.com/keegancsmith/sqlf"
+	"github.com/opentracing/opentracing-go/log"
+
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+)
+
+// Ranges returns definition, reference, and hover data for each range within the given span of lines.
+func (s *Store) Ranges(ctx context.Context, bundleID int, path string, startLine, endLine int) (_ []CodeIntelligenceRange, err error) {
+	ctx, traceLog, endObservation := s.operations.ranges.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("bundleID", bundleID),
+		log.String("path", path),
+		log.Int("startLine", startLine),
+		log.Int("endLine", endLine),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	documentData, exists, err := s.scanFirstDocumentData(s.Store.Query(ctx, sqlf.Sprintf(rangesDocumentQuery, bundleID, path)))
+	if err != nil || !exists {
+		return nil, err
+	}
+	traceLog(log.Int("numRanges", len(documentData.Document.Ranges)))
+
+	ranges := map[ID]RangeData{}
+	for id, r := range documentData.Document.Ranges {
+		if RangeIntersectsSpan(r, startLine, endLine) {
+			ranges[id] = r
+		}
+	}
+	traceLog(log.Int("numIntersectingRanges", len(ranges)))
+
+	resultIDMap := make(map[ID]struct{}, 2*len(ranges))
 	for _, r := range ranges {
-		if ComparePosition(r, line, character) == 0 {
-			filtered = append(filtered, r)
+		if r.DefinitionResultID != "" {
+			resultIDMap[r.DefinitionResultID] = struct{}{}
+		}
+		if r.ReferenceResultID != "" {
+			resultIDMap[r.ReferenceResultID] = struct{}{}
 		}
 	}
 
-	sort.Slice(filtered, func(i, j int) bool {
-		return ComparePosition(filtered[i], filtered[j].StartLine, filtered[j].StartCharacter) != 0
+	resultIDs := make([]ID, 0, len(resultIDMap))
+	for id := range resultIDMap {
+		resultIDs = append(resultIDs, id)
+	}
+
+	locations, err := s.locations(ctx, bundleID, resultIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	codeintelRanges := make([]CodeIntelligenceRange, 0, len(ranges))
+	for _, r := range ranges {
+		var hoverText string
+		if r.HoverResultID != "" {
+			if text, exists := documentData.Document.HoverResults[r.HoverResultID]; exists {
+				hoverText = text
+			}
+		}
+
+		// Return only references that are in the same file. Otherwise this set
+		// gets very big and such results are of limited use to consumers such as
+		// the code intel extensions, which only use references for highlighting
+		// uses of an identifier within the same file.
+		fileLocalReferences := make([]Location, 0, len(locations[r.ReferenceResultID]))
+		for _, r := range locations[r.ReferenceResultID] {
+			if r.Path == path {
+				fileLocalReferences = append(fileLocalReferences, r)
+			}
+		}
+
+		codeintelRanges = append(codeintelRanges, CodeIntelligenceRange{
+			Range:       newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter),
+			Definitions: locations[r.DefinitionResultID],
+			References:  fileLocalReferences,
+			HoverText:   hoverText,
+		})
+	}
+
+	sort.Slice(codeintelRanges, func(i, j int) bool {
+		return compareBundleRanges(codeintelRanges[i].Range, codeintelRanges[j].Range)
 	})
 
-	return filtered
+	return codeintelRanges, nil
 }
 
-// CompareRanges compares two ranges.
-// Returns -1 if the range A starts before range B, or starts at the same place but ends earlier.
-// Returns 0 if they're exactly equal. Returns 1 otherwise.
-func CompareRanges(a RangeData, b RangeData) int {
-	if a.StartLine < b.StartLine {
-		return -1
-	}
-
-	if a.StartLine > b.StartLine {
-		return 1
-	}
-
-	if a.StartCharacter < b.StartCharacter {
-		return -1
-	}
-
-	if a.StartCharacter > b.StartCharacter {
-		return 1
-	}
-
-	if a.EndLine < b.EndLine {
-		return -1
-	}
-
-	if a.EndLine > b.EndLine {
-		return 1
-	}
-
-	if a.EndCharacter < b.EndCharacter {
-		return -1
-	}
-
-	if a.EndCharacter > b.EndCharacter {
-		return 1
-	}
-
-	return 0
-}
-
-// ComparePosition compres the range r with the position constructed from line and character.
-// Returns -1 if the position occurs before the range, +1 if it occurs after, and 0 if the
-// position is inside of the range.
-func ComparePosition(r RangeData, line, character int) int {
-	if line < r.StartLine {
-		return 1
-	}
-
-	if line > r.EndLine {
-		return -1
-	}
-
-	if line == r.StartLine && character < r.StartCharacter {
-		return 1
-	}
-
-	if line == r.EndLine && character > r.EndCharacter {
-		return -1
-	}
-
-	return 0
-}
-
-// RangeIntersectsSpan determines if the given range falls within the window denoted by the
-// given start and end lines.
-func RangeIntersectsSpan(r RangeData, startLine, endLine int) bool {
-	return (startLine <= r.StartLine && r.StartLine < endLine) || (startLine <= r.EndLine && r.EndLine < endLine)
-}
+const rangesDocumentQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/ranges.go:Ranges
+SELECT dump_id, path, data FROM lsif_data_documents WHERE dump_id = %s AND path = %s LIMIT 1
+`
