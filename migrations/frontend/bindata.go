@@ -110,6 +110,8 @@
 // 1528395786_diagnostic_counts_migration.up.sql (277B)
 // 1528395787_reconciler_changesets_view.down.sql (60B)
 // 1528395787_reconciler_changesets_view.up.sql (598B)
+// 1528395788_add_config_encrypted.down.sql (87B)
+// 1528395788_add_config_encrypted.up.sql (98B)
 
 package migrations
 
@@ -2378,6 +2380,46 @@ func _1528395787_reconciler_changesets_viewUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395788_add_config_encryptedDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xad\x28\x49\x2d\xca\x4b\xcc\x89\x2f\x4e\x2d\x2a\xcb\x4c\x4e\x2d\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xce\xcf\x4b\xcb\x4c\x8f\x4f\xcd\x4b\x2e\xaa\x2c\x28\x49\x4d\xb1\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xb8\x04\x97\xac\x57\x00\x00\x00")
+
+func _1528395788_add_config_encryptedDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395788_add_config_encryptedDownSql,
+		"1528395788_add_config_encrypted.down.sql",
+	)
+}
+
+func _1528395788_add_config_encryptedDownSql() (*asset, error) {
+	bytes, err := _1528395788_add_config_encryptedDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395788_add_config_encrypted.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x92, 0xdf, 0x7d, 0x30, 0x6d, 0x25, 0x5, 0xf7, 0x5a, 0x3, 0xd4, 0x44, 0xe6, 0x9c, 0xab, 0xda, 0xbd, 0xa, 0x40, 0x94, 0x7c, 0x88, 0xd6, 0x2a, 0xeb, 0x1b, 0x9f, 0x65, 0xb8, 0xb7, 0x74, 0xa6}}
+	return a, nil
+}
+
+var __1528395788_add_config_encryptedUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x04\xc0\x4b\x0a\xc2\x30\x10\x06\xe0\xfd\x9c\xe2\xbf\x47\x56\x69\x1b\x25\x90\x07\xd8\x11\xdc\x95\x1a\x47\x29\x94\x89\xa4\x41\xf4\xf6\x7e\x83\x3b\xfb\x64\x88\x6c\x60\x77\x01\xdb\x21\x38\xc8\xb7\x4b\xd3\x75\x5f\x0e\x69\x9f\xad\xc8\x01\x3b\x4d\x18\x73\xb8\xc6\x04\x7f\x42\xca\x0c\x77\xf3\x33\xcf\x28\x55\x9f\xdb\x6b\x11\x2d\xed\xf7\xee\xf2\xc0\xbd\xd6\x5d\x56\x35\x44\x63\x8e\xd1\xb3\xa1\x7f\x00\x00\x00\xff\xff\x87\xc3\x2e\x82\x62\x00\x00\x00")
+
+func _1528395788_add_config_encryptedUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395788_add_config_encryptedUpSql,
+		"1528395788_add_config_encrypted.up.sql",
+	)
+}
+
+func _1528395788_add_config_encryptedUpSql() (*asset, error) {
+	bytes, err := _1528395788_add_config_encryptedUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395788_add_config_encrypted.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x41, 0x50, 0x2c, 0xac, 0x2e, 0x8c, 0xc3, 0xa8, 0xd6, 0xa5, 0x5e, 0xf5, 0x92, 0x4d, 0x8b, 0x26, 0x39, 0x22, 0x57, 0x4b, 0x50, 0x52, 0xba, 0x3e, 0x77, 0xfc, 0x40, 0x1c, 0xbd, 0xf2, 0x64, 0x9b}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2579,6 +2621,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395786_diagnostic_counts_migration.up.sql":                                          _1528395786_diagnostic_counts_migrationUpSql,
 	"1528395787_reconciler_changesets_view.down.sql":                                         _1528395787_reconciler_changesets_viewDownSql,
 	"1528395787_reconciler_changesets_view.up.sql":                                           _1528395787_reconciler_changesets_viewUpSql,
+	"1528395788_add_config_encrypted.down.sql":                                               _1528395788_add_config_encryptedDownSql,
+	"1528395788_add_config_encrypted.up.sql":                                                 _1528395788_add_config_encryptedUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2735,6 +2779,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395786_diagnostic_counts_migration.up.sql":                                          {_1528395786_diagnostic_counts_migrationUpSql, map[string]*bintree{}},
 	"1528395787_reconciler_changesets_view.down.sql":                                         {_1528395787_reconciler_changesets_viewDownSql, map[string]*bintree{}},
 	"1528395787_reconciler_changesets_view.up.sql":                                           {_1528395787_reconciler_changesets_viewUpSql, map[string]*bintree{}},
+	"1528395788_add_config_encrypted.down.sql":                                               {_1528395788_add_config_encryptedDownSql, map[string]*bintree{}},
+	"1528395788_add_config_encrypted.up.sql":                                                 {_1528395788_add_config_encryptedUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
