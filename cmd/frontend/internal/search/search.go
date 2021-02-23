@@ -140,7 +140,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					}
 					matchesBuf = append(matchesBuf, fromSymbolMatch(fm, symbols))
 				} else {
-					matchesBuf = append(matchesBuf, fromFileMatch(fm))
+					matchesBuf = append(matchesBuf, fromFileMatch(&fm.FileMatch))
 				}
 			}
 			if repo, ok := result.ToRepository(); ok {
@@ -303,9 +303,9 @@ func fromStrPtr(s *string) string {
 	return *s
 }
 
-func fromFileMatch(fm *graphqlbackend.FileMatchResolver) eventFileMatch {
-	lineMatches := make([]eventLineMatch, 0, len(fm.JLineMatches))
-	for _, lm := range fm.JLineMatches {
+func fromFileMatch(fm *graphqlbackend.FileMatch) eventFileMatch {
+	lineMatches := make([]eventLineMatch, 0, len(fm.LineMatches))
+	for _, lm := range fm.LineMatches {
 		lineMatches = append(lineMatches, eventLineMatch{
 			Line:             lm.Preview,
 			LineNumber:       lm.LineNumber,
@@ -320,7 +320,7 @@ func fromFileMatch(fm *graphqlbackend.FileMatchResolver) eventFileMatch {
 
 	return eventFileMatch{
 		Type:        fileMatch,
-		Path:        fm.JPath,
+		Path:        fm.Path,
 		Repository:  string(fm.Repo.Name),
 		Branches:    branches,
 		Version:     string(fm.CommitID),
@@ -336,7 +336,7 @@ func fromSymbolMatch(fm *graphqlbackend.FileMatchResolver, symbols []symbol) eve
 
 	return eventSymbolMatch{
 		Type:       symbolMatch,
-		Path:       fm.JPath,
+		Path:       fm.Path,
 		Repository: string(fm.Repo.Name),
 		Branches:   branches,
 		Version:    string(fm.CommitID),

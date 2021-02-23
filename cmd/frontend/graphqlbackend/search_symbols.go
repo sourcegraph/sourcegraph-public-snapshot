@@ -223,7 +223,7 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 				db: db,
 				FileMatch: FileMatch{
 					db:       db,
-					JPath:    symbolRes.symbol.Path,
+					Path:     symbolRes.symbol.Path,
 					symbols:  []*searchSymbolResult{symbolRes},
 					uri:      uri,
 					Repo:     repoRevs.Repo,

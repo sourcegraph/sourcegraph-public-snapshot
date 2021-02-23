@@ -161,12 +161,12 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, db dbutil.DB, args *search.Te
 		matches[i] = &FileMatchResolver{
 			db: db,
 			FileMatch: FileMatch{
-				db:        db,
-				JPath:     file.FileName,
-				JLimitHit: fileLimitHit,
-				uri:       fileMatchURI(repoRev.Repo.Name, "", file.FileName),
-				Repo:      repoRev.Repo,
-				CommitID:  api.CommitID(file.Version),
+				db:       db,
+				Path:     file.FileName,
+				LimitHit: fileLimitHit,
+				uri:      fileMatchURI(repoRev.Repo.Name, "", file.FileName),
+				Repo:     repoRev.Repo,
+				CommitID: api.CommitID(file.Version),
 			},
 			RepoResolver: repoResolvers[repoRev.Repo.Name],
 		}

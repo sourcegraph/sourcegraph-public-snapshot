@@ -55,7 +55,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 		fmt.Fprintln(&b, "results:")
 		for i, result := range r.results {
 			fm, _ := result.ToFileMatch()
-			fmt.Fprintf(&b, "	[%d] %s %s\n", i, fm.Repo.Name, fm.JPath)
+			fmt.Fprintf(&b, "	[%d] %s %s\n", i, fm.Repo.Name, fm.Path)
 		}
 		fmt.Fprintln(&b, "common.repos:")
 		var repos []string

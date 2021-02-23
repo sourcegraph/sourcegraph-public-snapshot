@@ -1901,7 +1901,7 @@ func compareSearchResults(left, right SearchResultResolver, exactFilePatterns ma
 		case *RepositoryResolver:
 			return r.Name(), "", nil
 		case *FileMatchResolver:
-			return string(r.Repo.Name), r.JPath, nil
+			return string(r.Repo.Name), r.Path, nil
 		case *CommitSearchResultResolver:
 			// Commits are relatively sorted by date, and after repo
 			// or path names. We use ~ as the key for repo and
