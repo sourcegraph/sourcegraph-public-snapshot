@@ -42,7 +42,39 @@ There is one field for configuring which depots are mirrored/synchronized as rep
 
 ### Repository permissions
 
-> WARNING: Permissions syncing for Perforce depots is not yet supported, so all files that are synced from the Perfoce Server is readable by all Sourcegraph users.
+> WARNING: Permissions syncing for Perforce depots is not yet supported, so all files that are synced from the Perfoce Server is readable by all Sourcegraph users. Following docs are based on prototypes and subject to change significantly.
+
+Sourcegraph only supports repository-level permissions, and does not have perfect one-to-one match to Perforce access control lists (which supports file-level permissions). The mitigation we have is to allow site admin to sync arbitrary subdirectories of depots to appear as repositories in Sourcegraph using `depots` configuration option, and the rule of thumb is to use the most concrete path of your permissions boundary.
+
+For example, if your Perforce depot `//Sourcegraph/` have different permisions for `//Sourcegraph/Backend/` and some subdirectories of  `//Sourcegraph/Frontend/`, we recommend setting the following `depots`:
+
+```json
+{
+  ...
+  "depots": [
+    "//Sourcegraph/Backend/",
+    "//Sourcegraph/Frontend/Web/",
+    "//Sourcegraph/Frontend/Extension/",
+  ]
+}
+```
+
+By configuring diffrerent subdirectories that have different permissions, Sourcegraph is able to recognize and enforce permissions for each defined repository.
+
+#### Known limitations
+
+Sourcegraph uses prefix-matching to determine if a user has access to a repository in Sourcegraph. That means, if a user has access to a directory but also has exclusions to some subdirectories at the same time, _those exclusions will not be effective in Sourcegraph_ because Sourcegraph does not support file-level permissions.
+
+For example, consider the following output of `p4 protects -u alice`:
+
+```
+list user * * -//...
+list user * * -//spec/...
+write user alice * //TestDepot/...
+=write user alice * -//TestDepot/Secret/...
+```
+
+If the site admin configres `"depots": ["//TestDepot/"]`, the exclusion of the last line will not be effective in Sourcegraph. In other words, the user alice _will have access_ to `//TestDepot/Secret/` in Sourcegraph although alice does not have access to this directory on the Perforce Server. The mitigation is to use the most concrete path of your permissions boundary as described in the above section.
 
 ### Configuration
 
