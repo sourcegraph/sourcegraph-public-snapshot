@@ -142,4 +142,31 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
             alwaysNil: null,
         },
     }),
+    SearchContexts: () => ({
+        searchContexts: [
+            {
+                __typename: 'SearchContext',
+                id: '1',
+                spec: 'global',
+                autoDefined: true,
+                description: 'All repositories on Sourcegraph',
+            },
+            {
+                __typename: 'SearchContext',
+                id: '2',
+                spec: '@username',
+                autoDefined: true,
+                description: 'Your repositories on Sourcegraph',
+            },
+        ],
+    }),
+    UserRepositories: () => ({
+        node: {
+            repositories: {
+                totalCount: 0,
+                nodes: [],
+                pageInfo: { hasNextPage: false },
+            },
+        },
+    }),
 }

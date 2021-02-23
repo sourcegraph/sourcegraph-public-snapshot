@@ -200,6 +200,37 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                         <li>Total number of tours closed</li>
                     </ul>
                 </li>
+                <li>
+                    Sourcegraph extension activation statistics
+                    <ul>
+                        <li>Total number of users that use a given non-default Sourcegraph extension</li>
+                        <li>
+                            Average number of activations for users that use a given non-default Sourcegraph extension
+                        </li>
+                        <li>Total number of users that use non-default Sourcegraph extensions</li>
+                        <li>
+                            Average number of non-default extensions enabled for users that use non-default Sourcegraph
+                            extensions
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    Code insights usage data
+                    <ul>
+                        <li>Total count of page views on the insights page</li>
+                        <li>Count of unique viewers on the insights page</li>
+                        <li>Total counts of hovers, clicks, and drags of insights by type (e.g. search, code stats)</li>
+                        <li>Total counts of edits, additions, and removals of insights by type</li>
+                        <li>
+                            Total count of clicks on the "Add more insights" and "Configure insights" buttons on the
+                            insights page
+                        </li>
+                        <li>
+                            Weekly count of users that have created an insight, and count of users that have created
+                            their first insight this week
+                        </li>
+                    </ul>
+                </li>
             </ul>
             {updatesDisabled ? (
                 <p>All telemetry is disabled.</p>

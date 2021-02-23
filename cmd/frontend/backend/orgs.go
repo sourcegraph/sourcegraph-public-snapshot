@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
@@ -15,7 +16,7 @@ var ErrNotAuthenticated = errors.New("not authenticated")
 //
 // It is used when an action on a user can be performed by site admins and the organization's
 // members, but nobody else.
-func CheckOrgAccess(ctx context.Context, orgID int32) error {
+func CheckOrgAccess(ctx context.Context, db dbutil.DB, orgID int32) error {
 	if hasAuthzBypass(ctx) {
 		return nil
 	}
@@ -29,13 +30,13 @@ func CheckOrgAccess(ctx context.Context, orgID int32) error {
 	if currentUser.SiteAdmin {
 		return nil
 	}
-	return checkUserIsOrgMember(ctx, currentUser.ID, orgID)
+	return checkUserIsOrgMember(ctx, db, currentUser.ID, orgID)
 }
 
 var ErrNotAnOrgMember = errors.New("current user is not an org member")
 
-func checkUserIsOrgMember(ctx context.Context, userID, orgID int32) error {
-	resp, err := database.GlobalOrgMembers.GetByOrgIDAndUserID(ctx, orgID, userID)
+func checkUserIsOrgMember(ctx context.Context, db dbutil.DB, userID, orgID int32) error {
+	resp, err := database.OrgMembers(db).GetByOrgIDAndUserID(ctx, orgID, userID)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return ErrNotAnOrgMember

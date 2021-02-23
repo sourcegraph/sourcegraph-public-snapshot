@@ -77,7 +77,7 @@ func (u *IndexabilityUpdater) Handle(ctx context.Context) error {
 
 	stats, err := u.dbStore.RepoUsageStatistics(ctx)
 	if err != nil {
-		return errors.Wrap(err, "store.RepoUsageStatistics")
+		return errors.Wrap(err, "dbstore.RepoUsageStatistics")
 	}
 
 	if u.enableIndexingCNCF {
@@ -106,7 +106,7 @@ func (u *IndexabilityUpdater) Handle(ctx context.Context) error {
 	// from RepoUsageStatitsics. Ensure we don't retain the last usage count
 	// for these repositories indefinitely.
 	if err := u.dbStore.ResetIndexableRepositories(ctx, start); err != nil {
-		return errors.Wrap(err, "store.ResetIndexableRepositories")
+		return errors.Wrap(err, "dbstore.ResetIndexableRepositories")
 	}
 
 	return nil
@@ -181,7 +181,7 @@ func (u *IndexabilityUpdater) queueRepository(ctx context.Context, repoUsageStat
 		PreciseCount: &repoUsageStatistics.PreciseCount,
 	}
 	if err := u.dbStore.UpdateIndexableRepository(ctx, indexableRepository, time.Now().UTC()); err != nil {
-		return errors.Wrap(err, "store.UpdateIndexableRepository")
+		return errors.Wrap(err, "dbstore.UpdateIndexableRepository")
 	}
 
 	log15.Debug("Updated indexable repository metadata", "repository_id", repoUsageStatistics.RepositoryID)

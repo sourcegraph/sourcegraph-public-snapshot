@@ -1,6 +1,9 @@
 package graphqlbackend
 
+import "github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+
 type repositoryContributorResolver struct {
+	db    dbutil.DB
 	name  string
 	email string
 	count int32
@@ -10,7 +13,7 @@ type repositoryContributorResolver struct {
 }
 
 func (r *repositoryContributorResolver) Person() *PersonResolver {
-	return &PersonResolver{name: r.name, email: r.email}
+	return &PersonResolver{db: r.db, name: r.name, email: r.email}
 }
 
 func (r *repositoryContributorResolver) Count() int32 { return r.count }
@@ -25,6 +28,7 @@ func (r *repositoryContributorResolver) Commits(args *struct {
 		revisionRange = *r.args.RevisionRange
 	}
 	return &gitCommitConnectionResolver{
+		db:            r.db,
 		revisionRange: revisionRange,
 		path:          r.args.Path,
 		author:        &r.email, // TODO(sqs): support when contributor resolves to user, and user has multiple emails

@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 const (
@@ -31,10 +32,10 @@ type Resolver struct {
 }
 
 // NewResolver creates a new Resolver with the given resolver that defines all code intel-specific behavior.
-func NewResolver(resolver resolvers.Resolver) gql.CodeIntelResolver {
+func NewResolver(db dbutil.DB, resolver resolvers.Resolver) gql.CodeIntelResolver {
 	return &Resolver{
 		resolver:         resolver,
-		locationResolver: NewCachedLocationResolver(),
+		locationResolver: NewCachedLocationResolver(db),
 	}
 }
 

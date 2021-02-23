@@ -897,6 +897,61 @@ const SiteSchemaJSON = `{
       "!go": { "pointer": true },
       "group": "Misc.",
       "default": true
+    },
+    "encryption.keys": {
+      "description": "Configuration for encryption keys used to encrypt data at rest in the database.",
+      "type": "object",
+      "properties": {
+        "externalServiceKey": {
+          "$ref": "#/definitions/EncryptionKey"
+        }
+      }
+    },
+    "api.ratelimit": {
+      "description": "Configuration for API rate limiting",
+      "type": "object",
+      "required": ["enabled", "perUser", "perIP"],
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether API rate limiting is enabled"
+        },
+        "perUser": {
+          "description": "Limit granted per user per hour",
+          "type": "integer",
+          "minimum": 1,
+          "default": 5000
+        },
+        "perIP": {
+          "description": "Limit granted per IP per hour, only applied to anonymous users",
+          "type": "integer",
+          "minimum": 1,
+          "default": 5000
+        },
+        "overrides": {
+          "description": "An array of rate limit overrides",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "description": "The key that we want to override for example a username",
+                "type": "string",
+                "minLength": 1
+              },
+              "limit": {
+                "description": "The limit per hour, 'unlimited' or 'blocked'",
+                "oneOf": [
+                  { "type": "string", "const": "unlimited" },
+                  { "type": "string", "const": "blocked" },
+                  { "type": "integer", "minimum": 1 }
+                ]
+              }
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -1265,6 +1320,46 @@ const SiteSchemaJSON = `{
               { "required": ["type", "username"] }
             ]
           }
+        }
+      }
+    },
+    "EncryptionKey": {
+      "description": "Config for a key",
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["cloudkms", "noop"]
+        }
+      },
+      "oneOf": [{ "$ref": "#/definitions/CloudKMSEncryptionKey" }, { "$ref": "#/definitions/NoOpEncryptionKey" }],
+      "!go": {
+        "taggedUnionType": true
+      }
+    },
+    "CloudKMSEncryptionKey": {
+      "description": "Google Cloud KMS Encryption Key, used to encrypt data in Google Cloud environments",
+      "type": "object",
+      "required": ["type", "keyname"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "cloudkms"
+        },
+        "keyname": {
+          "type": "string"
+        }
+      }
+    },
+    "NoOpEncryptionKey": {
+      "description": "This encryption key is a no op, leaving your data in plaintext (not recommended).",
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "noop"
         }
       }
     }

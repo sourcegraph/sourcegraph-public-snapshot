@@ -102,9 +102,3 @@ export const WrapDisabledIcon: React.FunctionComponent<IconProps> = props => (
         <path d="M16,7H3V5H16ZM3,19H16V17H3Zm19-7L18,9v2H3v2H18v2Z" />
     </svg>
 )
-
-export const CopyContentIcon: React.FunctionComponent<IconProps> = props => (
-    <svg {...props} {...sizeProps(props)} className={`mdi-icon${props.className ? ' ' + props.className : ''}`}>
-        <path d="M16.666 13.333v-10h-10v10h10zm1.667 0c0 .917-.75 1.667-1.666 1.667h-10C5.75 15 5 14.25 5 13.333v-10c0-.916.75-1.666 1.667-1.666h10c.916 0 1.666.75 1.666 1.666v10zm-5 3.334v1.666h-10c-.917 0-1.667-.75-1.667-1.666V5.833h1.667v10.834h10z" />
-    </svg>
-)

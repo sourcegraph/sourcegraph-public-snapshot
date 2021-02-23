@@ -22,9 +22,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth"
-	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/graphqlbackend"
+	enterpriseGraphQL "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/graphqlbackend"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 )
 
@@ -32,7 +33,7 @@ func main() {
 	shared.Main(enterpriseSetupHook)
 }
 
-var initFunctions = map[string]func(ctx context.Context, db dbutil.DB, enterpriseServices *enterprise.Services) error{
+var initFunctions = map[string]func(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services) error{
 	"authz":        authz.Init,
 	"licensing":    licensing.Init,
 	"executor":     executor.Init,
@@ -42,17 +43,19 @@ var initFunctions = map[string]func(ctx context.Context, db dbutil.DB, enterpris
 	"codemonitors": codemonitors.Init,
 }
 
-func enterpriseSetupHook(db dbutil.DB) enterprise.Services {
+func enterpriseSetupHook(db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner) enterprise.Services {
 	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
 	if debug {
 		log.Println("enterprise edition")
 	}
 
+	enterpriseGraphQL.InitDotcom(db)
+
 	ctx := context.Background()
 	enterpriseServices := enterprise.DefaultServices()
 
 	for name, fn := range initFunctions {
-		if err := fn(ctx, db, &enterpriseServices); err != nil {
+		if err := fn(ctx, db, outOfBandMigrationRunner, &enterpriseServices); err != nil {
 			log.Fatal(fmt.Sprintf("failed to initialize %s: %s", name, err))
 		}
 	}

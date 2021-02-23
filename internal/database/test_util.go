@@ -7,3 +7,11 @@ func MockEmailExistsErr() error {
 func MockUsernameExistsErr() error {
 	return errCannotCreateUser{errorCodeEmailExists}
 }
+
+func strptr(s string) *string {
+	return &s
+}
+
+func boolptr(b bool) *bool {
+	return &b
+}

@@ -416,6 +416,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		name             string
 		update           *ExternalServiceUpdate
 		wantUnrestricted bool
+		wantCloudDefault bool
 	}{
 		{
 			name: "update with authorization",
@@ -424,6 +425,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 				Config:      strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def", "authorization": {}}`),
 			},
 			wantUnrestricted: false,
+			wantCloudDefault: false,
 		},
 		{
 			name: "update without authorization",
@@ -432,6 +434,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 				Config:      strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
 			},
 			wantUnrestricted: true,
+			wantCloudDefault: false,
 		},
 		{
 			name: "update with authorization in comments",
@@ -446,6 +449,23 @@ func TestExternalServicesStore_Update(t *testing.T) {
 }`),
 			},
 			wantUnrestricted: true,
+			wantCloudDefault: false,
+		},
+		{
+			name: "set cloud_default true",
+			update: &ExternalServiceUpdate{
+				DisplayName:  strptr("GITHUB (updated) #3"),
+				CloudDefault: boolptr(true),
+				Config: strptr(`
+{
+	"url": "https://github.com",
+	"repositoryQuery": ["none"],
+	"token": "def",
+	// "authorization": {}
+}`),
+			},
+			wantUnrestricted: true,
+			wantCloudDefault: true,
 		},
 	}
 	for _, test := range tests {
@@ -471,6 +491,10 @@ func TestExternalServicesStore_Update(t *testing.T) {
 
 			if test.wantUnrestricted != got.Unrestricted {
 				t.Fatalf("Want unrestricted = %v, but got %v", test.wantUnrestricted, got.Unrestricted)
+			}
+
+			if test.wantCloudDefault != got.CloudDefault {
+				t.Fatalf("Want cloud_default = %v, but got %v", test.wantCloudDefault, got.CloudDefault)
 			}
 		})
 	}

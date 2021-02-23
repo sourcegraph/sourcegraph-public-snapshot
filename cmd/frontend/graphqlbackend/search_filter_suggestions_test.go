@@ -8,11 +8,14 @@ import (
 
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSearchFilterSuggestions(t *testing.T) {
+	db := new(dbtesting.MockDB)
+
 	searchrepos.MockResolveRepoGroups = func() (map[string][]searchrepos.RepoGroupValue, error) {
 		return map[string][]searchrepos.RepoGroupValue{
 			"repogroup1": {},
@@ -51,7 +54,7 @@ func TestSearchFilterSuggestions(t *testing.T) {
 	for _, tt := range tests {
 		mockDecodedViewerFinalSettings.SearchGlobbing = &tt.globbing
 
-		r, err := (&schemaResolver{}).SearchFilterSuggestions(context.Background())
+		r, err := (&schemaResolver{db: db}).SearchFilterSuggestions(context.Background())
 		if err != nil {
 			t.Fatal("SearchFilterSuggestions:", err)
 		}

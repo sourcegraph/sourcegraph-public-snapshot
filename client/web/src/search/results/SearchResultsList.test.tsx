@@ -118,6 +118,7 @@ describe('SearchResultsList', () => {
         setCaseSensitivity: sinon.spy(),
 
         versionContext: undefined,
+        selectedSearchContextSpec: 'global',
 
         navbarSearchQueryState: { query: '' },
 

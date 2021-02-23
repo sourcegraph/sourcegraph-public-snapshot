@@ -39,6 +39,7 @@ describe('SearchResults', () => {
         setPatternType: sinon.spy(),
         setCaseSensitivity: sinon.spy(),
         versionContext: undefined,
+        selectedSearchContextSpec: 'global',
         setVersionContext: () => undefined,
         availableVersionContexts: undefined,
         previousVersionContext: 'sg-last-version-context',

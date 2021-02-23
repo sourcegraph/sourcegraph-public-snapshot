@@ -1,12 +1,11 @@
 module github.com/sourcegraph/sourcegraph
 
-go 1.14
+go 1.15
 
 require (
-	cloud.google.com/go v0.56.0
-	cloud.google.com/go/bigquery v1.6.0 // indirect
+	cloud.google.com/go v0.76.0
 	cloud.google.com/go/pubsub v1.3.1
-	cloud.google.com/go/storage v1.6.0
+	cloud.google.com/go/storage v1.10.0
 	github.com/Masterminds/semver v1.5.0
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
@@ -21,7 +20,8 @@ require (
 	github.com/beevik/etree v1.1.0
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/certifi/gocertifi v0.0.0-20200211180108-c7c1fbc02894 // indirect
-	github.com/cockroachdb/errors v1.8.1
+	github.com/cockroachdb/errors v1.8.2
+	github.com/cockroachdb/redact v1.0.9 // indirect
 	github.com/cockroachdb/sentry-go v0.6.1-cockroachdb.2
 	github.com/containerd/containerd v1.4.0 // indirect
 	github.com/coreos/go-oidc v2.2.1+incompatible
@@ -39,7 +39,7 @@ require (
 	github.com/efritz/go-genlib v0.0.0-20200616012750-c21aae2e13ac // indirect
 	github.com/efritz/go-mockgen v0.0.0-20200916004441-cfcabc111002
 	github.com/efritz/pentimento v0.0.0-20190429011147-ade47d831101
-	github.com/ericchiang/k8s v1.2.0
+	github.com/evanphx/json-patch v4.9.0+incompatible // indirect
 	github.com/fatih/astrewrite v0.0.0-20191207154002-9094e544fcef
 	github.com/fatih/color v1.9.0
 	github.com/fatih/structs v1.1.0
@@ -60,6 +60,7 @@ require (
 	github.com/go-openapi/validate v0.19.11 // indirect
 	github.com/go-redsync/redsync v1.4.2
 	github.com/gobwas/glob v0.2.3
+	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-migrate/migrate/v4 v4.11.0
 	github.com/golang/gddo v0.0.0-20200831202555-721e228c7686
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e
@@ -70,9 +71,10 @@ require (
 	github.com/google/go-github/v28 v28.1.1
 	github.com/google/go-github/v31 v31.0.0
 	github.com/google/go-querystring v1.0.0
-	github.com/google/pprof v0.0.0-20200905233945-acf8798be1f7 // indirect
+	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/google/uuid v1.1.2
 	github.com/google/zoekt v0.0.0-20200720095054-b48e35d16e83
+	github.com/googleapis/gnostic v0.4.0 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/gorilla/context v1.1.1
 	github.com/gorilla/csrf v1.7.0
@@ -84,7 +86,7 @@ require (
 	github.com/gosimple/slug v1.9.0 // indirect
 	github.com/goware/urlx v0.3.1
 	github.com/grafana-tools/sdk v0.0.0-20210121201358-e16eca879125
-	github.com/graph-gophers/graphql-go v0.0.0-20200819123640-3b5ddcd884ae
+	github.com/graph-gophers/graphql-go v0.0.0-20201113091052-beb923fada29
 	github.com/graphql-go/graphql v0.7.9
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 	github.com/hashicorp/go-hclog v0.14.1 // indirect
@@ -180,27 +182,28 @@ require (
 	github.com/xeonx/timeago v1.0.0-rc4
 	github.com/zenazn/goji v1.0.1 // indirect
 	go.mongodb.org/mongo-driver v1.4.1 // indirect
-	go.opencensus.io v0.22.4 // indirect
+	go.opencensus.io v0.22.6 // indirect
 	go.uber.org/atomic v1.7.0
 	go.uber.org/automaxprocs v1.3.0
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
-	golang.org/x/mod v0.4.1 // indirect
 	golang.org/x/net v0.0.0-20210119194325-5f4716e94777
-	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
-	golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9
+	golang.org/x/oauth2 v0.0.0-20210210192628-66670185b0cd
+	golang.org/x/sync v0.0.0-20201207232520-09787c993a3a
 	golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c
-	golang.org/x/text v0.3.5 // indirect
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
 	golang.org/x/tools v0.1.0
-	google.golang.org/api v0.29.0
-	google.golang.org/appengine v1.6.6 // indirect
-	google.golang.org/genproto v0.0.0-20200413115906-b5235f65be36 // indirect
-	google.golang.org/grpc v1.31.1 // indirect
+	google.golang.org/api v0.39.0
+	google.golang.org/genproto v0.0.0-20210211221406-4ccc9a5e4183
+	google.golang.org/protobuf v1.25.0
 	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect
 	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.4.0
-	honnef.co/go/tools v0.0.1-2020.1.5 // indirect
+	k8s.io/api v0.17.0
+	k8s.io/apimachinery v0.17.0
+	k8s.io/client-go v0.17.0
+	k8s.io/utils v0.0.0-20200729134348-d5654de09c73 // indirect
+	sigs.k8s.io/yaml v1.2.0 // indirect
 )
 
 // Permanent replace directives
@@ -209,7 +212,7 @@ require (
 // or intentional forks.
 replace (
 	// We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20201124084228-b6ed3e04a806
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20210216134814-a58c3d2968a6
 	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
 	// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20200727091526-3e856a90b534
@@ -225,11 +228,7 @@ replace (
 replace (
 	// Pending: https://github.com/ghodss/yaml/pull/65
 	github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
-	// protobuf v1.3.5+ causes issues - https://github.com/sourcegraph/sourcegraph/issues/11804
-	github.com/golang/protobuf => github.com/golang/protobuf v1.3.5
-	// We need our fork until https://github.com/graph-gophers/graphql-go/pull/400 is merged upstream
-	// Our change limits the number of goroutines spawned by resolvers which was causing memory spikes on our frontend
-	github.com/graph-gophers/graphql-go => github.com/sourcegraph/graphql-go v0.0.0-20201007040903-ec61a5417d66
+	github.com/shurcooL/httpgzip => github.com/sourcegraph/httpgzip v0.0.0-20210213125624-48ebf036a6a1
 )
 
 // Status unclear replace directives

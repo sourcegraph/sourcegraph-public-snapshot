@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"go.uber.org/atomic"
 )
@@ -15,14 +16,14 @@ type SearchEvent struct {
 	Stats   streaming.Stats
 }
 
-// Streamer is the interface that wraps the basic Send method. Send must not
+// Sender is the interface that wraps the basic Send method. Send must not
 // mutate the event.
-type Streamer interface {
+type Sender interface {
 	Send(SearchEvent)
 }
 
 type limitStream struct {
-	s         Streamer
+	s         Sender
 	cancel    context.CancelFunc
 	remaining atomic.Int64
 }
@@ -60,11 +61,58 @@ func (s *limitStream) Send(event SearchEvent) {
 // Canceling this context releases resources associated with it, so code
 // should call cancel as soon as the operations running in this Context and
 // Stream are complete.
-func WithLimit(ctx context.Context, parent Streamer, limit int) (context.Context, Streamer, context.CancelFunc) {
+func WithLimit(ctx context.Context, parent Sender, limit int) (context.Context, Sender, context.CancelFunc) {
 	ctx, cancel := context.WithCancel(ctx)
 	stream := &limitStream{cancel: cancel, s: parent}
 	stream.remaining.Store(int64(limit))
 	return ctx, stream, cancel
+}
+
+// WithSelect returns a child Stream of parent that runs the select operation
+// on each event, deduplicating where possible.
+func WithSelect(parent Sender, s filter.SelectPath) Sender {
+	var mux sync.Mutex
+	dedup := NewDeduper()
+
+	return StreamFunc(func(e SearchEvent) {
+		mux.Lock()
+
+		selected := e.Results[:0]
+		for _, result := range e.Results {
+			var current SearchResultResolver
+			switch v := result.(type) {
+			case *FileMatchResolver:
+				current = v.Select(s)
+			case *RepositoryResolver:
+				current = v.Select(s)
+			case *CommitSearchResultResolver:
+				current = v.Select(s)
+			default:
+				current = result
+			}
+
+			if current == nil {
+				continue
+			}
+
+			// If the selected file is a file match, send it unconditionally
+			// to ensure we get all line matches for a file.
+			_, isFileMatch := current.(*FileMatchResolver)
+			seen := dedup.Seen(current)
+			if seen && !isFileMatch {
+				continue
+			}
+
+			dedup.Add(current)
+			selected = append(selected, current)
+		}
+		e.Results = selected
+
+		mux.Unlock()
+		if parent != nil {
+			parent.Send(e)
+		}
+	})
 }
 
 // StreamFunc is a convenience function to create a stream receiver from a
@@ -77,7 +125,7 @@ func (f StreamFunc) Send(event SearchEvent) {
 
 // collectStream will call search and aggregates all events it sends. It then
 // returns the aggregate event and any error it returns.
-func collectStream(search func(Streamer) error) ([]SearchResultResolver, streaming.Stats, error) {
+func collectStream(search func(Sender) error) ([]SearchResultResolver, streaming.Stats, error) {
 	var (
 		mu      sync.Mutex
 		results []SearchResultResolver

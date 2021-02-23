@@ -13,9 +13,11 @@ import (
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-lsp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -102,7 +104,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			resolvers := make([]*searchSuggestionResolver, 0, len(resolved.RepoRevs))
 			for _, rev := range resolved.RepoRevs {
 				resolvers = append(resolvers, newSearchSuggestionResolver(
-					&RepositoryResolver{innerRepo: rev.Repo.ToRepo()},
+					NewRepositoryResolver(r.db, rev.Repo.ToRepo()),
 					math.MaxInt32,
 				))
 			}
@@ -189,7 +191,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		resolvers := make([]*searchSuggestionResolver, 0, len(inventory.Languages))
 		for _, l := range inventory.Languages {
 			resolvers = append(resolvers, newSearchSuggestionResolver(
-				&languageResolver{name: strings.ToLower(l.Name)},
+				&languageResolver{db: r.db, name: strings.ToLower(l.Name)},
 				math.MaxInt32,
 			))
 		}
@@ -216,8 +218,8 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 		defer cancel()
 
-		fileMatches, _, err := collectStream(func(stream Streamer) error {
-			return searchSymbols(ctx, &search.TextParameters{
+		fileMatches, _, err := collectStream(func(stream Sender) error {
+			return searchSymbols(ctx, r.db, &search.TextParameters{
 				PatternInfo:  p,
 				RepoPromise:  (&search.Promise{}).Resolve(resolved.RepoRevs),
 				Query:        r.Query,
@@ -354,9 +356,9 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		var k key
 		switch s := s.result.(type) {
 		case *RepositoryResolver:
-			k.repoName = s.innerRepo.Name
+			k.repoName = s.name
 		case *GitTreeEntryResolver:
-			k.repoName = s.commit.repoResolver.innerRepo.Name
+			k.repoName = s.commit.repoResolver.name
 			// We explicitly do not use GitCommitResolver.OID() to get the OID here
 			// because it could significantly slow down search suggestions from zoekt as
 			// it doesn't specify the commit the default branch is on. This result would in
@@ -406,6 +408,7 @@ func allEmptyStrings(ss1, ss2 []string) bool {
 }
 
 type languageResolver struct {
+	db   dbutil.DB
 	name string
 }
 

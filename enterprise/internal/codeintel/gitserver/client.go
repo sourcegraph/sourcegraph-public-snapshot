@@ -363,7 +363,7 @@ func (c *Client) execResolveRevGitCommand(ctx context.Context, repositoryID int,
 func (c *Client) repositoryIDToRepo(ctx context.Context, repositoryID int) (api.RepoName, error) {
 	repoName, err := c.dbStore.RepoName(ctx, repositoryID)
 	if err != nil {
-		return "", errors.Wrap(err, "store.RepoName")
+		return "", errors.Wrap(err, "dbstore.RepoName")
 	}
 
 	return api.RepoName(repoName), nil

@@ -170,7 +170,7 @@ type GetIndexesOptions struct {
 
 // GetIndexes returns a list of indexes and the total count of records matching the given conditions.
 func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Index, _ int, err error) {
-	ctx, endObservation := s.operations.getIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, traceLog, endObservation := s.operations.getIndexes.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", opts.RepositoryID),
 		log.String("state", opts.State),
 		log.String("term", opts.Term),
@@ -201,7 +201,7 @@ func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 		conds = append(conds, sqlf.Sprintf("TRUE"))
 	}
 
-	count, _, err := basestore.ScanFirstInt(tx.Store.Query(
+	totalCount, _, err := basestore.ScanFirstInt(tx.Store.Query(
 		ctx,
 		sqlf.Sprintf(`SELECT COUNT(*) FROM lsif_indexes_with_repository_name u WHERE %s`, sqlf.Join(conds, " AND ")),
 	))
@@ -213,8 +213,12 @@ func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 	if err != nil {
 		return nil, 0, err
 	}
+	traceLog(
+		log.Int("totalCount", totalCount),
+		log.Int("numIndexes", len(indexes)),
+	)
 
-	return indexes, count, nil
+	return indexes, totalCount, nil
 }
 
 const getIndexesQuery = `
@@ -287,7 +291,7 @@ SELECT COUNT(*) WHERE EXISTS (
 // InsertIndex inserts a new index and returns its identifier.
 func (s *Store) InsertIndex(ctx context.Context, index Index) (_ int, err error) {
 	ctx, endObservation := s.operations.insertIndex.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("indexID", index.ID),
+		log.Int("id", index.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -389,13 +393,27 @@ DELETE FROM lsif_indexes WHERE id = %s RETURNING repository_id
 // DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of indexes
 // that were removed for that repository.
 func (s *Store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {
-	ctx, endObservation := s.operations.deleteIndexesWithoutRepository.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	ctx, traceLog, endObservation := s.operations.deleteIndexesWithoutRepository.WithAndLogger(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	// TODO(efritz) - this would benefit from an index on repository_id. We currently have
 	// a similar one on this index, but only for uploads that are completed or visible at tip.
 
-	return scanCounts(s.Store.Query(ctx, sqlf.Sprintf(deleteIndexesWithoutRepositoryQuery, now.UTC(), DeletedRepositoryGracePeriod/time.Second)))
+	repositories, err := scanCounts(s.Store.Query(ctx, sqlf.Sprintf(deleteIndexesWithoutRepositoryQuery, now.UTC(), DeletedRepositoryGracePeriod/time.Second)))
+	if err != nil {
+		return nil, err
+	}
+
+	count := 0
+	for _, numDeleted := range repositories {
+		count += numDeleted
+	}
+	traceLog(
+		log.Int("count", count),
+		log.Int("numRepositories", len(repositories)),
+	)
+
+	return repositories, nil
 }
 
 const deleteIndexesWithoutRepositoryQuery = `
@@ -415,7 +433,7 @@ SELECT d.repository_id, COUNT(*) FROM deleted_uploads d GROUP BY d.repository_id
 
 // DeleteOldIndexes deletes indexes older than the given age.
 func (s *Store) DeleteOldIndexes(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error) {
-	ctx, endObservation := s.operations.deleteOldIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, traceLog, endObservation := s.operations.deleteOldIndexes.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("maxAge", maxAge.String()),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -431,9 +449,13 @@ func (s *Store) DeleteOldIndexes(ctx context.Context, maxAge time.Duration, now 
 		return 0, err
 	}
 
-	for _, numUpdated := range repositoryIDs {
-		count += numUpdated
+	for _, numDeleted := range repositoryIDs {
+		count += numDeleted
 	}
+	traceLog(
+		log.Int("count", count),
+		log.Int("numRepositories", len(repositoryIDs)),
+	)
 
 	return count, nil
 }

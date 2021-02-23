@@ -9,6 +9,7 @@ import (
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -21,6 +22,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 type Test struct {
@@ -119,8 +121,8 @@ func TestRequest(t *testing.T) {
 		return dir == s.dir("github.com/gorilla/mux") || dir == s.dir("my-mux")
 	}
 
-	testGitRepoExists = func(ctx context.Context, url string) error {
-		if url == "https://github.com/nicksnyder/go-i18n.git" {
+	testGitRepoExists = func(ctx context.Context, remoteURL *url.URL) error {
+		if remoteURL.String() == "https://github.com/nicksnyder/go-i18n.git" {
 			return nil
 		}
 		return errors.New("not cloneable")
@@ -406,20 +408,14 @@ func TestUrlRedactor(t *testing.T) {
 			message:  "fatal: repository 'http://token@github.com/foo/bar/' not found",
 			redacted: "fatal: repository 'http://<redacted>@github.com/foo/bar/' not found",
 		},
-		{
-			url:      "token",
-			message:  "fatal: repository 'http://token' not found",
-			redacted: "fatal: repository 'http://<redacted>' not found",
-		},
-		{
-			url:      "git@github.com:foo/bar",
-			message:  "fatal: repository 'git@github.com:foo/bar' not found",
-			redacted: "fatal: repository '<redacted>' not found",
-		},
 	}
 	for _, testCase := range testCases {
 		t.Run("", func(t *testing.T) {
-			if actual := newURLRedactor(testCase.url).redact(testCase.message); actual != testCase.redacted {
+			remoteURL, err := vcs.ParseURL(testCase.url)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if actual := newURLRedactor(remoteURL).redact(testCase.message); actual != testCase.redacted {
 				t.Fatalf("newUrlRedactor(%q).redact(%q) got %q; want %q", testCase.url, testCase.message, actual, testCase.redacted)
 			}
 		})

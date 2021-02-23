@@ -1,5 +1,3 @@
-// +build gqltest
-
 package main
 
 import (

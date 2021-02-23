@@ -163,8 +163,14 @@ WHERE %s
 `
 
 func countCampaignsQuery(opts *CountCampaignsOpts) *sqlf.Query {
-	joins := []*sqlf.Query{}
-	preds := []*sqlf.Query{}
+	joins := []*sqlf.Query{
+		sqlf.Sprintf("LEFT JOIN users namespace_user ON campaigns.namespace_user_id = namespace_user.id"),
+		sqlf.Sprintf("LEFT JOIN orgs namespace_org ON campaigns.namespace_org_id = namespace_org.id"),
+	}
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("namespace_user.deleted_at IS NULL"),
+		sqlf.Sprintf("namespace_org.deleted_at IS NULL"),
+	}
 
 	if opts.ChangesetID != 0 {
 		joins = append(joins, sqlf.Sprintf("INNER JOIN changesets ON changesets.campaign_ids ? campaigns.id::TEXT"))
@@ -230,12 +236,17 @@ func (s *Store) GetCampaign(ctx context.Context, opts GetCampaignOpts) (*campaig
 var getCampaignsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:GetCampaign
 SELECT %s FROM campaigns
+LEFT JOIN users namespace_user ON campaigns.namespace_user_id = namespace_user.id
+LEFT JOIN orgs  namespace_org  ON campaigns.namespace_org_id = namespace_org.id
 WHERE %s
 LIMIT 1
 `
 
 func getCampaignQuery(opts *GetCampaignOpts) *sqlf.Query {
-	var preds []*sqlf.Query
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("namespace_user.deleted_at IS NULL"),
+		sqlf.Sprintf("namespace_org.deleted_at IS NULL"),
+	}
 	if opts.ID != 0 {
 		preds = append(preds, sqlf.Sprintf("campaigns.id = %s", opts.ID))
 	}
@@ -354,8 +365,14 @@ ORDER BY id DESC
 `
 
 func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
-	joins := []*sqlf.Query{}
-	preds := []*sqlf.Query{}
+	joins := []*sqlf.Query{
+		sqlf.Sprintf("LEFT JOIN users namespace_user ON campaigns.namespace_user_id = namespace_user.id"),
+		sqlf.Sprintf("LEFT JOIN orgs namespace_org ON campaigns.namespace_org_id = namespace_org.id"),
+	}
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("namespace_user.deleted_at IS NULL"),
+		sqlf.Sprintf("namespace_org.deleted_at IS NULL"),
+	}
 
 	if opts.Cursor != 0 {
 		preds = append(preds, sqlf.Sprintf("campaigns.id <= %s", opts.Cursor))

@@ -1,6 +1,6 @@
 import * as H from 'history'
 import React, { useCallback, useMemo } from 'react'
-import { CaseSensitivityProps, PatternTypeProps } from '../..'
+import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../..'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { VersionContextProps } from '../../../../../shared/src/search/util'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
@@ -21,7 +21,8 @@ interface Props
         TelemetryProps,
         Pick<PatternTypeProps, 'patternType'>,
         Pick<VersionContextProps, 'versionContext'>,
-        Pick<CaseSensitivityProps, 'caseSensitive'> {
+        Pick<CaseSensitivityProps, 'caseSensitive'>,
+        Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     location: H.Location
     history: H.History
 
@@ -38,6 +39,9 @@ export const StreamingSearchResultsFilterBars: React.FunctionComponent<Props> = 
     )
     const filters = props.results?.filters
     const quickLinks = (isSettingsValid<Settings>(settingsCascade) && settingsCascade.final.quicklinks) || []
+
+    const genericFilters = useMemo(() => getFilters(filters, settingsCascade), [filters, settingsCascade])
+    const repoFilters = useMemo(() => getRepoFilters(filters), [filters])
 
     const onDynamicFilterClicked = useCallback(
         (value: string) => {
@@ -59,9 +63,9 @@ export const StreamingSearchResultsFilterBars: React.FunctionComponent<Props> = 
             navbarSearchQuery={props.navbarSearchQueryState.query}
             searchSucceeded={!!results}
             resultsLimitHit={!!results && results.progress.skipped.some(skipped => skipped.reason.includes('-limit'))}
-            genericFilters={getFilters(filters, settingsCascade)}
+            genericFilters={genericFilters}
             extensionFilters={contributions?.searchFilters}
-            repoFilters={getRepoFilters(filters)}
+            repoFilters={repoFilters}
             quickLinks={quickLinks}
             onFilterClick={onDynamicFilterClicked}
             onShowMoreResultsClick={showMoreResults}

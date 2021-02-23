@@ -26,7 +26,11 @@ func (s *Store) Lock(ctx context.Context, key int, blocking bool) (locked bool, 
 		log.Int("key", key),
 		log.Bool("blocking", blocking),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer func() {
+		endObservation(1, observation.Args{LogFields: []log.Field{
+			log.Bool("locked", locked),
+		}})
+	}()
 
 	if blocking {
 		locked, err = s.lock(ctx, key)

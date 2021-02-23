@@ -89,7 +89,7 @@ func (s *IndexEnqueuer) queueIndex(ctx context.Context, repositoryID int, force 
 	if !force {
 		isQueued, err := s.dbStore.IsQueued(ctx, repositoryID, commit)
 		if err != nil {
-			return errors.Wrap(err, "store.IsQueued")
+			return errors.Wrap(err, "dbstore.IsQueued")
 		}
 		if isQueued {
 			return nil
@@ -107,7 +107,7 @@ func (s *IndexEnqueuer) queueIndex(ctx context.Context, repositoryID int, force 
 
 	tx, err := s.dbStore.Transact(ctx)
 	if err != nil {
-		return errors.Wrap(err, "store.Transact")
+		return errors.Wrap(err, "dbstore.Transact")
 	}
 	defer func() {
 		err = tx.Done(err)
@@ -116,7 +116,7 @@ func (s *IndexEnqueuer) queueIndex(ctx context.Context, repositoryID int, force 
 	for _, index := range indexes {
 		id, err := tx.InsertIndex(ctx, index)
 		if err != nil {
-			return errors.Wrap(err, "store.QueueIndex")
+			return errors.Wrap(err, "dbstore.QueueIndex")
 		}
 
 		log15.Info(
@@ -136,7 +136,7 @@ func (s *IndexEnqueuer) queueIndex(ctx context.Context, repositoryID int, force 
 	// TODO(efritz) - this may create records once a repository has an explicit
 	// index configuration. This shouldn't affect any indexing behavior at all.
 	if err := tx.UpdateIndexableRepository(ctx, update, now); err != nil {
-		return errors.Wrap(err, "store.UpdateIndexableRepository")
+		return errors.Wrap(err, "dbstore.UpdateIndexableRepository")
 	}
 
 	return nil
@@ -163,7 +163,7 @@ func (s *IndexEnqueuer) getIndexJobs(ctx context.Context, repositoryID int, comm
 func (s *IndexEnqueuer) getIndexJobsFromConfigurationInDatabase(ctx context.Context, repositoryID int, commit string) ([]store.Index, bool, error) {
 	indexConfigurationRecord, ok, err := s.dbStore.GetIndexConfigurationByRepositoryID(ctx, repositoryID)
 	if err != nil {
-		return nil, false, errors.Wrap(err, "store.GetIndexConfigurationByRepositoryID")
+		return nil, false, errors.Wrap(err, "dbstore.GetIndexConfigurationByRepositoryID")
 	}
 	if !ok {
 		return nil, false, nil

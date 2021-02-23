@@ -158,6 +158,49 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 	}
 }
 
+func TestRepository_FirstEverCommit(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	testCases := []struct {
+		commitDates []string
+		want        string
+	}{
+		{
+			commitDates: []string{
+				"2006-01-02T15:04:05Z",
+				"2007-01-02T15:04:05Z",
+				"2008-01-02T15:04:05Z",
+			},
+			want: "2006-01-02T15:04:05Z",
+		},
+		{
+			commitDates: []string{
+				"2007-01-02T15:04:05Z", // Don't think this is possible, but if it is we still want the first commit (not strictly "oldest")
+				"2006-01-02T15:04:05Z",
+				"2007-01-02T15:04:06Z",
+			},
+			want: "2007-01-02T15:04:05Z",
+		},
+	}
+	for _, tc := range testCases {
+		gitCommands := make([]string, len(tc.commitDates))
+		for i, date := range tc.commitDates {
+			gitCommands[i] = fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit --allow-empty -m foo --author='a <a@a.com>'", date)
+		}
+
+		repo := MakeGitRepository(t, gitCommands...)
+		gotCommit, err := FirstEverCommit(ctx, repo)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := gotCommit.Committer.Date.Format(time.RFC3339)
+		if got != tc.want {
+			t.Errorf("got %q, want %q", got, tc.want)
+		}
+	}
+}
+
 func TestRepository_Commits(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -554,4 +597,24 @@ func TestLogOnelineBatchScanner_small(t *testing.T) {
 	if _, err := next(); err != io.EOF {
 		t.Fatal("unexpected error:", err)
 	}
+}
+
+func TestMessage(t *testing.T) {
+	t.Run("Body", func(t *testing.T) {
+		tests := map[Message]string{
+			"hello":                 "",
+			"hello\n":               "",
+			"hello\n\n":             "",
+			"hello\nworld":          "world",
+			"hello\n\nworld":        "world",
+			"hello\n\nworld\nfoo":   "world\nfoo",
+			"hello\n\nworld\nfoo\n": "world\nfoo",
+		}
+		for input, want := range tests {
+			got := input.Body()
+			if got != want {
+				t.Errorf("got %q, want %q", got, want)
+			}
+		}
+	})
 }

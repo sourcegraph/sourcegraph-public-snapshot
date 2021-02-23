@@ -29,10 +29,8 @@ func TestCampaignResolver(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	userID := ct.CreateTestUser(t, true).ID
-	org, err := database.GlobalOrgs.Create(ctx, "test-campaign-resolver-org", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	orgName := "test-campaign-resolver-org"
+	orgID := ct.InsertTestOrg(t, orgName)
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
@@ -41,7 +39,7 @@ func TestCampaignResolver(t *testing.T) {
 	campaignSpec := &campaigns.CampaignSpec{
 		RawSpec:        ct.TestRawCampaignSpec,
 		UserID:         userID,
-		NamespaceOrgID: org.ID,
+		NamespaceOrgID: orgID,
 	}
 	if err := cstore.CreateCampaignSpec(ctx, campaignSpec); err != nil {
 		t.Fatal(err)
@@ -50,7 +48,7 @@ func TestCampaignResolver(t *testing.T) {
 	campaign := &campaigns.Campaign{
 		Name:             "my-unique-name",
 		Description:      "The campaign description",
-		NamespaceOrgID:   org.ID,
+		NamespaceOrgID:   orgID,
 		InitialApplierID: userID,
 		LastApplierID:    userID,
 		LastAppliedAt:    now,
@@ -66,18 +64,18 @@ func TestCampaignResolver(t *testing.T) {
 	}
 
 	campaignAPIID := string(marshalCampaignID(campaign.ID))
-	namespaceAPIID := string(graphqlbackend.MarshalOrgID(org.ID))
+	namespaceAPIID := string(graphqlbackend.MarshalOrgID(orgID))
 	apiUser := &apitest.User{DatabaseID: userID, SiteAdmin: true}
 	wantCampaign := apitest.Campaign{
 		ID:             campaignAPIID,
 		Name:           campaign.Name,
 		Description:    campaign.Description,
-		Namespace:      apitest.UserOrg{ID: namespaceAPIID, Name: org.Name},
+		Namespace:      apitest.UserOrg{ID: namespaceAPIID, Name: orgName},
 		InitialApplier: apiUser,
 		LastApplier:    apiUser,
 		SpecCreator:    apiUser,
 		LastAppliedAt:  marshalDateTime(t, now),
-		URL:            fmt.Sprintf("/organizations/%s/campaigns/%s", org.Name, campaign.Name),
+		URL:            fmt.Sprintf("/organizations/%s/campaigns/%s", orgName, campaign.Name),
 		CreatedAt:      marshalDateTime(t, now),
 		UpdatedAt:      marshalDateTime(t, now),
 		// Not closed.
@@ -105,7 +103,7 @@ func TestCampaignResolver(t *testing.T) {
 	}
 
 	// Now soft-delete the user and check we can still access the campaign in the org namespace.
-	err = database.GlobalUsers.Delete(ctx, userID)
+	err = database.UsersWith(cstore).Delete(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -124,7 +122,7 @@ func TestCampaignResolver(t *testing.T) {
 	}
 
 	// Now hard-delete the user and check we can still access the campaign in the org namespace.
-	err = database.GlobalUsers.HardDelete(ctx, userID)
+	err = database.UsersWith(cstore).HardDelete(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}

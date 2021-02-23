@@ -16,6 +16,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
@@ -41,13 +42,13 @@ const (
 var trackOrigin = "https://gitlab.com"
 
 var metricLabels = []string{"route", "method", "code", "repo", "origin"}
-var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Name:    "src_http_request_duration_seconds",
 	Help:    "The HTTP request latencies in seconds.",
 	Buckets: UserLatencyBuckets,
 }, metricLabels)
 
-var requestHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+var requestHeartbeat = promauto.NewGaugeVec(prometheus.GaugeOpts{
 	Name: "src_http_requests_last_timestamp_unixtime",
 	Help: "Last time a request finished for a http endpoint.",
 }, metricLabels)
@@ -56,9 +57,6 @@ func Init(shouldInitSentry bool) {
 	if origin := os.Getenv("METRICS_TRACK_ORIGIN"); origin != "" {
 		trackOrigin = origin
 	}
-
-	prometheus.MustRegister(requestDuration)
-	prometheus.MustRegister(requestHeartbeat)
 
 	if shouldInitSentry {
 		sentry.Init()
@@ -69,11 +67,11 @@ func Init(shouldInitSentry bool) {
 // a request to /.api/graphql?Foobar would have the name `Foobar`. If the request had no
 // name, or the context is not a GraphQL request, "unknown" is returned.
 func GraphQLRequestName(ctx context.Context) string {
-	v := ctx.Value(graphQLRequestNameKey)
-	if v == nil {
-		return "unknown"
+	v, ok := ctx.Value(graphQLRequestNameKey).(string)
+	if ok {
+		return v
 	}
-	return v.(string)
+	return "unknown"
 }
 
 // WithGraphQLRequestName sets the GraphQL request name in the context.
@@ -231,7 +229,7 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 	}))
 }
 
-func TraceRoute(next http.Handler) http.Handler {
+func Route(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		if p, ok := r.Context().Value(routeNameKey).(*string); ok {
 			if routeName := mux.CurrentRoute(r).GetName(); routeName != "" {
@@ -242,7 +240,7 @@ func TraceRoute(next http.Handler) http.Handler {
 	})
 }
 
-func TraceUser(ctx context.Context, userID int32) {
+func User(ctx context.Context, userID int32) {
 	if p, ok := ctx.Value(userKey).(*int32); ok {
 		*p = userID
 	}

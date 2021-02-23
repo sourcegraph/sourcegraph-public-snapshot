@@ -393,3 +393,23 @@ func scanStates(rows *sql.Rows, queryErr error) (_ map[int]string, err error) {
 
 	return states, nil
 }
+
+func dumpToUpload(expected Dump) Upload {
+	return Upload{
+		ID:                expected.ID,
+		Commit:            expected.Commit,
+		Root:              expected.Root,
+		UploadedAt:        expected.UploadedAt,
+		State:             expected.State,
+		FailureMessage:    expected.FailureMessage,
+		StartedAt:         expected.StartedAt,
+		FinishedAt:        expected.FinishedAt,
+		ProcessAfter:      expected.ProcessAfter,
+		NumResets:         expected.NumResets,
+		NumFailures:       expected.NumFailures,
+		RepositoryID:      expected.RepositoryID,
+		RepositoryName:    expected.RepositoryName,
+		Indexer:           expected.Indexer,
+		AssociatedIndexID: expected.AssociatedIndexID,
+	}
+}

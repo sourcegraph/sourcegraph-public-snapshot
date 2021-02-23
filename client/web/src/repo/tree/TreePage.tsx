@@ -26,7 +26,7 @@ import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
-import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps } from '../../search'
+import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps, SearchContextProps } from '../../search'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
 import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
@@ -37,7 +37,6 @@ import { subYears, formatISO } from 'date-fns'
 import { pluralize } from '../../../../shared/src/util/strings'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { encodeURIPathComponent, toPrettyBlobURL, toURIWithPath } from '../../../../shared/src/util/url'
-import { getViewsForContainer } from '../../../../shared/src/api/client/services/viewService'
 import { Settings } from '../../schema/settings.schema'
 import { ViewGrid } from './ViewGrid'
 import { VersionContextProps } from '../../../../shared/src/search/util'
@@ -49,6 +48,7 @@ import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphq
 import { getFileDecorations } from '../../backend/features'
 import { FileDecorationsByPath } from '../../../../shared/src/api/extension/flatExtensionApi'
 import SettingsIcon from 'mdi-react/SettingsIcon'
+import { getCombinedViews } from '../../insights/backend'
 
 const fetchTreeCommits = memoizeObservable(
     (args: {
@@ -109,6 +109,7 @@ interface Props
         CaseSensitivityProps,
         CopyQueryButtonProps,
         VersionContextProps,
+        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         BreadcrumbSetters {
     repo: TreePageRepositoryFields
     /** The tree's path in TreePage. We call it filePath for consistency elsewhere. */
@@ -235,7 +236,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
         useMemo(
             () =>
                 codeInsightsEnabled && workspaceUri
-                    ? getViewsForContainer(
+                    ? getCombinedViews(
                           ContributableViewContainer.Directory,
                           {
                               viewer: {

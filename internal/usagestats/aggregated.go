@@ -5,11 +5,12 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func GetSiteUsageStats(ctx context.Context, monthsOnly bool) (*types.SiteUsageStatistics, error) {
-	summary, err := database.GlobalEventLogs.SiteUsage(ctx)
+func GetSiteUsageStats(ctx context.Context, db dbutil.DB, monthsOnly bool) (*types.SiteUsageStatistics, error) {
+	summary, err := database.EventLogs(db).SiteUsage(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -58,8 +59,8 @@ func groupSiteUsageStats(summary types.SiteUsageSummary, monthsOnly bool) *types
 }
 
 // GetAggregatedCodeIntelStats returns aggregated statistics for code intelligence usage.
-func GetAggregatedCodeIntelStats(ctx context.Context) (*types.NewCodeIntelUsageStatistics, error) {
-	codeIntelEvents, err := database.GlobalEventLogs.AggregatedCodeIntelEvents(ctx)
+func GetAggregatedCodeIntelStats(ctx context.Context, db dbutil.DB) (*types.NewCodeIntelUsageStatistics, error) {
+	codeIntelEvents, err := database.EventLogs(db).AggregatedCodeIntelEvents(ctx)
 	if err != nil {
 		return nil, err
 	} else if len(codeIntelEvents) == 0 {
@@ -67,11 +68,27 @@ func GetAggregatedCodeIntelStats(ctx context.Context) (*types.NewCodeIntelUsageS
 	}
 	stats := groupAggregatedCodeIntelStats(codeIntelEvents)
 
-	usersCount, err := database.GlobalEventLogs.CodeIntelligenceCombinedWAU(ctx)
-	if err != nil {
-		return nil, err
+	pairs := []struct {
+		fetch  func(ctx context.Context) (int, error)
+		target **int32
+	}{
+		{database.EventLogs(db).CodeIntelligenceWAUs, &stats.WAUs},
+		{database.EventLogs(db).CodeIntelligencePreciseWAUs, &stats.PreciseWAUs},
+		{database.EventLogs(db).CodeIntelligenceSearchBasedWAUs, &stats.SearchBasedWAUs},
+		{database.EventLogs(db).CodeIntelligenceCrossRepositoryWAUs, &stats.CrossRepositoryWAUs},
+		{database.EventLogs(db).CodeIntelligencePreciseCrossRepositoryWAUs, &stats.PreciseCrossRepositoryWAUs},
+		{database.EventLogs(db).CodeIntelligenceSearchBasedCrossRepositoryWAUs, &stats.SearchBasedCrossRepositoryWAUs},
 	}
-	stats.WAUs = int32(usersCount)
+
+	for _, pair := range pairs {
+		count, err := pair.fetch(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		v := int32(count)
+		*pair.target = &v
+	}
 
 	return stats, nil
 }
@@ -127,8 +144,8 @@ func groupAggregatedCodeIntelStats(rawEvents []types.CodeIntelAggregatedEvent) *
 }
 
 // GetAggregatedSearchStats returns aggregates statistics for search usage.
-func GetAggregatedSearchStats(ctx context.Context) (*types.SearchUsageStatistics, error) {
-	events, err := database.GlobalEventLogs.AggregatedSearchEvents(ctx)
+func GetAggregatedSearchStats(ctx context.Context, db dbutil.DB) (*types.SearchUsageStatistics, error) {
+	events, err := database.EventLogs(db).AggregatedSearchEvents(ctx)
 	if err != nil {
 		return nil, err
 	}

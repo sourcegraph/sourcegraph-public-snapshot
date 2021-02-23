@@ -25,6 +25,7 @@ import {
     CaseSensitivityProps,
     CopyQueryButtonProps,
     quoteIfNeeded,
+    SearchContextProps,
 } from '../search'
 import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
@@ -75,6 +76,7 @@ export interface RepoContainerContext
         CaseSensitivityProps,
         CopyQueryButtonProps,
         VersionContextProps,
+        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         BreadcrumbSetters {
     repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
@@ -109,6 +111,7 @@ interface RepoContainerProps
         CaseSensitivityProps,
         CopyQueryButtonProps,
         VersionContextProps,
+        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         BreadcrumbSetters,
         BreadcrumbsProps {
     repoContainerRoutes: readonly RepoContainerRoute[]

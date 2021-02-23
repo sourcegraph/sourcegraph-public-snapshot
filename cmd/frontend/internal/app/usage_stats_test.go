@@ -21,12 +21,12 @@ func TestUsageStatsArchiveHandler(t *testing.T) {
 		t.Skip()
 	}
 
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
 	t.Run("non-admins can't download archive", func(t *testing.T) {
 		req, _ := http.NewRequest("GET", "", nil)
 		rec := httptest.NewRecorder()
-		usageStatsArchiveHandler(rec, req)
+		usageStatsArchiveHandler(db)(rec, req)
 
 		if have, want := rec.Code, http.StatusUnauthorized; have != want {
 			t.Errorf("status code: have %d, want %d", have, want)
@@ -36,7 +36,7 @@ func TestUsageStatsArchiveHandler(t *testing.T) {
 	t.Run("admins can download archive", func(t *testing.T) {
 		req, _ := http.NewRequest("GET", "", nil)
 		rec := httptest.NewRecorder()
-		usageStatsArchiveHandler(rec, req.WithContext(backend.WithAuthzBypass(context.Background())))
+		usageStatsArchiveHandler(db)(rec, req.WithContext(backend.WithAuthzBypass(context.Background())))
 
 		contentType := rec.Header().Get("Content-Type")
 		if have, want := contentType, "application/zip"; have != want {

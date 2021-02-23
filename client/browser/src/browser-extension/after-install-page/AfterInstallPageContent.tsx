@@ -78,7 +78,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                                 <h3>Search shortcut in the URL location bar</h3>
                                 <p>
                                     Type <code>src</code>
-                                    <kbd>space</kbd> in the address bar of your browser to search for queries on
+                                    <kbd>tab</kbd> in the address bar of your browser to search for queries on
                                     Sourcegraph.
                                 </p>
                                 <Video {...props} name="BrowserShortcut" width={1196} height={720} />

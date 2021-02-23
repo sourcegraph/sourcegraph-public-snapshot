@@ -5,6 +5,7 @@ import SearchIcon from 'mdi-react/SearchIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
+import { debounceTime } from 'rxjs/operators'
 import { FetchFileParameters } from '../../../../../shared/src/components/CodeExcerpt'
 import { FileMatch } from '../../../../../shared/src/components/FileMatch'
 import { VirtualList } from '../../../../../shared/src/components/VirtualList'
@@ -16,7 +17,6 @@ import { SettingsCascadeProps } from '../../../../../shared/src/settings/setting
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { asError } from '../../../../../shared/src/util/errors'
-import { isDefined } from '../../../../../shared/src/util/types'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { AuthenticatedUser } from '../../../auth'
 import { ErrorAlert } from '../../../components/alerts'
@@ -41,7 +41,9 @@ import {
     resolveVersionContext,
     ParsedSearchQueryProps,
     MutableVersionContextProps,
+    SearchContextProps,
 } from '../..'
+import { displayRepoName } from '../../../../../shared/src/components/RepoFileLink'
 
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
@@ -54,7 +56,8 @@ export interface StreamingSearchResultsProps
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         TelemetryProps,
         ThemeProps,
-        Pick<CodeMonitoringProps, 'enableCodeMonitoring'> {
+        Pick<CodeMonitoringProps, 'enableCodeMonitoring'>,
+        Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -79,6 +82,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         previousVersionContext,
         authenticatedUser,
         telemetryService,
+        selectedSearchContextSpec,
     } = props
 
     // Log view event on first load
@@ -112,9 +116,19 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     patternType: patternType ?? SearchPatternType.literal,
                     caseSensitive,
                     versionContext: resolveVersionContext(versionContext, availableVersionContexts),
+                    searchContextSpec: selectedSearchContextSpec,
                     trace,
-                }),
-            [streamSearch, query, patternType, caseSensitive, versionContext, availableVersionContexts, trace]
+                }).pipe(debounceTime(500)),
+            [
+                streamSearch,
+                query,
+                patternType,
+                caseSensitive,
+                versionContext,
+                availableVersionContexts,
+                trace,
+                selectedSearchContextSpec,
+            ]
         )
     )
 
@@ -186,13 +200,27 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         () => setItemsToShow(items => Math.min(results?.results.length || 0, items + incrementalItemsToShow)),
         [results?.results.length]
     )
+
+    // Reset scroll visibility state and expanded state when new search is started
+    useEffect(() => {
+        setItemsToShow(initialItemsToShow)
+        setAllExpanded(false)
+    }, [location.search])
+
     const logSearchResultClicked = useCallback(() => telemetryService.log('SearchResultClicked'), [telemetryService])
-    const renderResult = (result: GQL.GenericSearchResultInterface | GQL.IFileMatch): JSX.Element | undefined => {
-        switch (result.__typename) {
-            case 'FileMatch':
+
+    const itemKey = useCallback((item: GQL.GenericSearchResultInterface | GQL.IFileMatch): string => {
+        if (item.__typename === 'FileMatch') {
+            return `file:${item.file.url}`
+        }
+        return item.url
+    }, [])
+
+    const renderResult = useCallback(
+        (result: GQL.GenericSearchResultInterface | GQL.IFileMatch): JSX.Element => {
+            if (result.__typename === 'FileMatch') {
                 return (
                     <FileMatch
-                        key={'file:' + result.file.url}
                         location={location}
                         eventLogger={eventLogger}
                         icon={result.lineMatches && result.lineMatches.length > 0 ? SourceRepositoryIcon : FileIcon}
@@ -203,14 +231,23 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                         isLightTheme={props.isLightTheme}
                         allExpanded={allExpanded}
                         fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
+                        repoDisplayName={displayRepoName(result.repository.name)}
                         settingsCascade={props.settingsCascade}
                     />
                 )
-        }
-        return (
-            <SearchResult key={result.url} result={result} isLightTheme={props.isLightTheme} history={props.history} />
-        )
-    }
+            }
+            return <SearchResult result={result} isLightTheme={props.isLightTheme} history={props.history} />
+        },
+        [
+            allExpanded,
+            location,
+            logSearchResultClicked,
+            props.fetchHighlightedFileLineRanges,
+            props.history,
+            props.isLightTheme,
+            props.settingsCascade,
+        ]
+    )
 
     const onSearchAgain = useCallback(
         (additionalFilters: string[]) => {
@@ -278,34 +315,51 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 )}
 
                 {/* Results */}
-                <VirtualList
+                <VirtualList<GQL.SearchResult>
                     className="mt-2"
                     itemsToShow={itemsToShow}
                     onShowMoreItems={onBottomHit}
-                    items={results?.results.map(result => renderResult(result)).filter(isDefined) || []}
+                    items={results?.results || []}
+                    itemProps={undefined}
+                    itemKey={itemKey}
+                    renderItem={renderResult}
                 />
 
-                {(!results || results?.state === 'loading') && (
-                    <div className="text-center my-4" data-testid="loading-container">
-                        <LoadingSpinner className="icon-inline" />
-                    </div>
-                )}
+                {itemsToShow >= (results?.results.length || 0) && (
+                    <>
+                        {(!results || results?.state === 'loading') && (
+                            <div className="text-center my-4" data-testid="loading-container">
+                                <LoadingSpinner className="icon-inline" />
+                            </div>
+                        )}
 
-                {results?.state === 'error' && (
-                    <ErrorAlert
-                        className="m-2"
-                        data-testid="search-results-list-error"
-                        error={results.error}
-                        history={history}
-                    />
-                )}
+                        {results?.state === 'error' && (
+                            <ErrorAlert
+                                className="m-3"
+                                data-testid="search-results-list-error"
+                                error={results.error}
+                                history={history}
+                            />
+                        )}
 
-                {results?.state === 'complete' && !results?.alert && results?.results.length === 0 && (
-                    <div className="alert alert-info d-flex m-2">
-                        <h3 className="m-0">
-                            <SearchIcon className="icon-inline" /> No results
-                        </h3>
-                    </div>
+                        {results?.state === 'complete' && !results?.alert && results?.results.length === 0 && (
+                            <div className="alert alert-info d-flex m-3">
+                                <h3 className="m-0">
+                                    <SearchIcon className="icon-inline" /> No results
+                                </h3>
+                            </div>
+                        )}
+
+                        {results?.state === 'complete' &&
+                            results.progress.skipped.some(skipped => skipped.reason.includes('-limit')) && (
+                                <div className="alert alert-info d-flex m-3">
+                                    <h3 className="m-0 font-weight-normal">
+                                        <strong>Result limit hit.</strong> Modify your search with <code>count:</code>{' '}
+                                        to return additional items.
+                                    </h3>
+                                </div>
+                            )}
+                    </>
                 )}
             </div>
         </div>

@@ -10,7 +10,7 @@ if [ ! -d "$DEV_PRIVATE_PATH" ]; then
 fi
 
 # Warn if dev-private needs to be updated.
-required_commit="a661975799edd759b3d6e4c4027e69a9727bdffb"
+required_commit="eff6cce71f6b147f61567d19f16cbf03da0d7696"
 if ! git -C "$DEV_PRIVATE_PATH" merge-base --is-ancestor $required_commit HEAD; then
   echo "Error: You need to update dev-private to a commit that incorporates https://github.com/sourcegraph/dev-private/commit/$required_commit."
   echo
@@ -50,5 +50,4 @@ export WATCH_ADDITIONAL_GO_DIRS="enterprise/cmd enterprise/dev enterprise/intern
 export ENTERPRISE_ONLY_COMMANDS=" precise-code-intel-worker executor-queue executor "
 export ENTERPRISE_COMMANDS="frontend repo-updater ${ENTERPRISE_ONLY_COMMANDS}"
 export ENTERPRISE=1
-export PROCFILE=enterprise/dev/Procfile
 ./dev/start.sh "$@"

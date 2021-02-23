@@ -13,13 +13,14 @@ import (
 	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 func init() {
 	frontendregistry.ExtensionRegistry.ViewerPublishersFunc = extensionRegistryViewerPublishers
 }
 
-func extensionRegistryViewerPublishers(ctx context.Context) ([]graphqlbackend.RegistryPublisher, error) {
+func extensionRegistryViewerPublishers(ctx context.Context, db dbutil.DB) ([]graphqlbackend.RegistryPublisher, error) {
 	// The feature check here makes it so the any "New extension" form will show an error, so the
 	// user finds out before trying to submit the form that the feature is disabled.
 	if err := licensing.Check(licensing.FeatureExtensionRegistry); err != nil {
@@ -27,7 +28,7 @@ func extensionRegistryViewerPublishers(ctx context.Context) ([]graphqlbackend.Re
 	}
 
 	var publishers []graphqlbackend.RegistryPublisher
-	user, err := graphqlbackend.CurrentUser(ctx)
+	user, err := graphqlbackend.CurrentUser(ctx, db)
 	if err != nil || user == nil {
 		return nil, err
 	}
@@ -38,7 +39,7 @@ func extensionRegistryViewerPublishers(ctx context.Context) ([]graphqlbackend.Re
 		return nil, err
 	}
 	for _, org := range orgs {
-		publishers = append(publishers, &registryPublisher{org: graphqlbackend.NewOrg(org)})
+		publishers = append(publishers, &registryPublisher{org: graphqlbackend.NewOrg(db, org)})
 	}
 	return publishers, nil
 }
@@ -78,16 +79,16 @@ func (r *registryPublisher) RegistryExtensionConnectionURL() (*string, error) {
 
 var errRegistryUnknownPublisher = errors.New("unknown registry extension publisher")
 
-func getRegistryPublisher(ctx context.Context, publisher dbPublisher) (*registryPublisher, error) {
+func getRegistryPublisher(ctx context.Context, db dbutil.DB, publisher dbPublisher) (*registryPublisher, error) {
 	switch {
 	case publisher.UserID != 0:
-		user, err := graphqlbackend.UserByIDInt32(ctx, publisher.UserID)
+		user, err := graphqlbackend.UserByIDInt32(ctx, db, publisher.UserID)
 		if err != nil {
 			return nil, err
 		}
 		return &registryPublisher{user: user}, nil
 	case publisher.OrgID != 0:
-		org, err := graphqlbackend.OrgByIDInt32(ctx, publisher.OrgID)
+		org, err := graphqlbackend.OrgByIDInt32(ctx, db, publisher.OrgID)
 		if err != nil {
 			return nil, err
 		}
@@ -135,14 +136,14 @@ func unmarshalRegistryPublisherID(id graphql.ID) (*registryPublisherID, error) {
 // registry extension with the given publisher.
 //
 // 🚨 SECURITY
-func (p *registryPublisherID) viewerCanAdminister(ctx context.Context) error {
+func (p *registryPublisherID) viewerCanAdminister(ctx context.Context, db dbutil.DB) error {
 	switch {
 	case p.userID != 0:
 		// 🚨 SECURITY: Check that the current user is either the publisher or a site admin.
 		return backend.CheckSiteAdminOrSameUser(ctx, p.userID)
 	case p.orgID != 0:
 		// 🚨 SECURITY: Check that the current user is a member of the publisher org.
-		return backend.CheckOrgAccess(ctx, p.orgID)
+		return backend.CheckOrgAccess(ctx, db, p.orgID)
 	default:
 		return errRegistryUnknownPublisher
 	}

@@ -11,7 +11,13 @@ Upgrades should happen across consecutive minor versions of Sourcegraph. For exa
 
 ## 3.24 -> 3.25
 
-- Go `1.15` introduced changes to SSL/TLS connection validation which requires certificates to include a `SAN`. This field was not included in older certificates and clients relied on the `CN` field. You might see an error like `x509: certificate relies on legacy Common Name field`. We recommend that customers using Sourcegraph with an external database and and connecting to it using SSL/TLS check whether the certificate is up to date.
+Confirm that `codeinsights-db-disk` has the correct file permissions:
+
+```
+sudo chown -R 999:999 ~/sourcegraph-docker/codeinsights-db-disk/
+```
+
+- **If your are connecting to an external Postgres database using SSL/TLS:** Go `1.15` introduced changes to SSL/TLS connection validation which requires certificates to include a `SAN`. This field was not included in older certificates and clients relied on the `CN` field. You might see an error like `x509: certificate relies on legacy Common Name field`. We recommend that customers using Sourcegraph with an external database and connecting to it using SSL/TLS check whether the certificate is up to date.
   - AWS RDS customers please reference [AWS' documentation on updating the SSL/TLS certificate](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL-certificate-rotation.html) for steps to rotate your certificate.
 
 ## 3.23.0 -> 3.24.0
@@ -32,7 +38,10 @@ To upgrade, please perform the changes in the following diff:
 
 https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/223c11dacffafb985c2d29b6c6a9b84bcc8255be
 
-This upgrade removes the `code intel bundle manager`. This service has been deprecated and all references to it have been removed. 
+This upgrade removes the `code intel bundle manager`. This service has been deprecated and all references to it have been removed.
+
+This upgrade also adds a MinIO container that doesn't require any custom configuration. You can find more detailed documentation in https://docs.sourcegraph.com/admin/external_services/object_storage.
+
 
 ## 3.20.1 -> 3.21.2
 

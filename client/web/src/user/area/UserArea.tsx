@@ -26,6 +26,7 @@ import { useObservable } from '../../../../shared/src/util/useObservable'
 import { requestGraphQL } from '../../backend/graphql'
 import { EditUserProfilePageGQLFragment } from '../settings/profile/UserSettingsProfilePage'
 import { Page } from '../../components/Page'
+import { UserRepositoriesUpdateProps } from '../../util'
 
 /** GraphQL fragment for the User fields needed by UserArea. */
 export const UserAreaGQLFragment = gql`
@@ -97,7 +98,8 @@ interface UserAreaProps
         OnboardingTourProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
-        Omit<PatternTypeProps, 'setPatternType'> {
+        Omit<PatternTypeProps, 'setPatternType'>,
+        UserRepositoriesUpdateProps {
     userAreaRoutes: readonly UserAreaRoute[]
     userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
     userSettingsSideBarItems: UserSettingsSidebarItems
@@ -126,7 +128,8 @@ export interface UserAreaRouteContext
         OnboardingTourProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
-        Omit<PatternTypeProps, 'setPatternType'> {
+        Omit<PatternTypeProps, 'setPatternType'>,
+        UserRepositoriesUpdateProps {
     /** The user area main URL. */
     url: string
 

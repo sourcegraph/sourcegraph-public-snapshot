@@ -12,6 +12,8 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -41,6 +43,7 @@ func TestSearchPagination_unmarshalSearchCursor(t *testing.T) {
 }
 
 func TestSearchPagination_sliceSearchResults(t *testing.T) {
+	db := new(dbtesting.MockDB)
 	repoName := func(name string) *types.RepoName {
 		// Backcompat extract ID from name.
 		id := name[len(name)-1] - '0'
@@ -68,20 +71,20 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 		return b.String()
 	}
 	sharedResult := []SearchResultResolver{
-		result(repoName("org/repo1"), "a.go"),
-		result(repoName("org/repo1"), "b.go"),
-		result(repoName("org/repo1"), "c.go"),
-		result(repoName("org/repo2"), "a.go"),
-		result(repoName("org/repo2"), "b.go"),
-		result(repoName("org/repo3"), "a.go"),
-		result(repoName("org/repo4"), "a.go"),
-		result(repoName("org/repo4"), "b.go"),
-		result(repoName("org/repo4"), "c.go"),
-		result(repoName("org/repo5"), "a.go"),
-		result(repoName("org/repo5"), "b.go"),
-		result(repoName("org/repo5"), "c.go"),
-		result(repoName("org/repo5"), "d.go"),
-		result(repoName("org/repo5"), "e.go"),
+		result(db, repoName("org/repo1"), "a.go"),
+		result(db, repoName("org/repo1"), "b.go"),
+		result(db, repoName("org/repo1"), "c.go"),
+		result(db, repoName("org/repo2"), "a.go"),
+		result(db, repoName("org/repo2"), "b.go"),
+		result(db, repoName("org/repo3"), "a.go"),
+		result(db, repoName("org/repo4"), "a.go"),
+		result(db, repoName("org/repo4"), "b.go"),
+		result(db, repoName("org/repo4"), "c.go"),
+		result(db, repoName("org/repo5"), "a.go"),
+		result(db, repoName("org/repo5"), "b.go"),
+		result(db, repoName("org/repo5"), "c.go"),
+		result(db, repoName("org/repo5"), "d.go"),
+		result(db, repoName("org/repo5"), "e.go"),
 	}
 	sharedCommon := &streaming.Stats{
 		// Note: this is an intentionally unordered list to ensure we do not
@@ -119,9 +122,9 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 			limit:   3,
 			want: slicedSearchResults{
 				results: []SearchResultResolver{
-					result(repoName("org/repo1"), "a.go"),
-					result(repoName("org/repo1"), "b.go"),
-					result(repoName("org/repo1"), "c.go"),
+					result(db, repoName("org/repo1"), "a.go"),
+					result(db, repoName("org/repo1"), "b.go"),
+					result(db, repoName("org/repo1"), "c.go"),
 				},
 				common: &streaming.Stats{
 					Repos: reposMap(repoName("org/repo1")),
@@ -138,8 +141,8 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 			limit:   2,
 			want: slicedSearchResults{
 				results: []SearchResultResolver{
-					result(repoName("org/repo1"), "a.go"),
-					result(repoName("org/repo1"), "b.go"),
+					result(db, repoName("org/repo1"), "a.go"),
+					result(db, repoName("org/repo1"), "b.go"),
 				},
 				common: &streaming.Stats{
 					Repos: reposMap(repoName("org/repo1")),
@@ -156,9 +159,9 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 			limit:   3,
 			want: slicedSearchResults{
 				results: []SearchResultResolver{
-					result(repoName("org/repo2"), "a.go"),
-					result(repoName("org/repo2"), "b.go"),
-					result(repoName("org/repo3"), "a.go"),
+					result(db, repoName("org/repo2"), "a.go"),
+					result(db, repoName("org/repo2"), "b.go"),
+					result(db, repoName("org/repo3"), "a.go"),
 				},
 				common: &streaming.Stats{
 					Repos: reposMap(repoName("org/repo2"), repoName("org/repo3")),
@@ -175,9 +178,9 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 			limit:   3,
 			want: slicedSearchResults{
 				results: []SearchResultResolver{
-					result(repoName("org/repo1"), "c.go"),
-					result(repoName("org/repo2"), "a.go"),
-					result(repoName("org/repo2"), "b.go"),
+					result(db, repoName("org/repo1"), "c.go"),
+					result(db, repoName("org/repo2"), "a.go"),
+					result(db, repoName("org/repo2"), "b.go"),
 				},
 				common: &streaming.Stats{
 					Repos: reposMap(repoName("org/repo1"), repoName("org/repo2")),
@@ -189,12 +192,12 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 		{
 			name: "offset repo boundary fully consumed",
 			results: []SearchResultResolver{
-				result(repoName("org/repo1"), "a.go"),
-				result(repoName("org/repo1"), "b.go"),
-				result(repoName("org/repo1"), "c.go"),
-				result(repoName("org/repo2"), "a.go"),
-				result(repoName("org/repo2"), "b.go"),
-				result(repoName("org/repo2"), "c.go"),
+				result(db, repoName("org/repo1"), "a.go"),
+				result(db, repoName("org/repo1"), "b.go"),
+				result(db, repoName("org/repo1"), "c.go"),
+				result(db, repoName("org/repo2"), "a.go"),
+				result(db, repoName("org/repo2"), "b.go"),
+				result(db, repoName("org/repo2"), "c.go"),
 			},
 			common: &streaming.Stats{
 				Repos: reposMap(repoName("org/repo1"), repoName("org/repo2")),
@@ -203,9 +206,9 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 			limit:  3,
 			want: slicedSearchResults{
 				results: []SearchResultResolver{
-					result(repoName("org/repo2"), "a.go"),
-					result(repoName("org/repo2"), "b.go"),
-					result(repoName("org/repo2"), "c.go"),
+					result(db, repoName("org/repo2"), "a.go"),
+					result(db, repoName("org/repo2"), "b.go"),
+					result(db, repoName("org/repo2"), "c.go"),
 				},
 				common: &streaming.Stats{
 					Repos: reposMap(repoName("org/repo2")),
@@ -222,7 +225,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 			limit:   1,
 			want: slicedSearchResults{
 				results: []SearchResultResolver{
-					result(repoName("org/repo1"), "b.go"),
+					result(db, repoName("org/repo1"), "b.go"),
 				},
 				common: &streaming.Stats{
 					Repos: reposMap(repoName("org/repo1")),
@@ -243,6 +246,8 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 }
 
 func TestSearchPagination_repoPaginationPlan(t *testing.T) {
+	db := new(dbtesting.MockDB)
+
 	revs := func(rev ...string) (revs []search.RevisionSpecifier) {
 		for _, r := range rev {
 			revs = append(revs, search.RevisionSpecifier{RevSpec: r})
@@ -254,8 +259,8 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 		id := name[len(name)-1] - '0'
 		return &types.RepoName{ID: api.RepoID(id), Name: api.RepoName(name)}
 	}
-	result := func(repo *types.RepoName, path, rev string) *FileMatchResolver {
-		fm := mkFileMatch(repo, path)
+	result := func(db dbutil.DB, repo *types.RepoName, path, rev string) *FileMatchResolver {
+		fm := mkFileMatch(db, repo, path)
 		fm.InputRev = &rev
 		return fm
 	}
@@ -280,7 +285,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 			for _, rev := range repoRev.Revs {
 				rev := rev.RevSpec
 				for i := 0; i < 3; i++ {
-					results = append(results, result(repoRev.Repo, fmt.Sprintf("some/file%d.go", i), rev))
+					results = append(results, result(db, repoRev.Repo, fmt.Sprintf("some/file%d.go", i), rev))
 				}
 			}
 			common.Repos[repoRev.Repo.ID] = repoRev.Repo
@@ -318,16 +323,16 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 			},
 			wantCursor: &searchCursor{RepositoryOffset: 2, ResultOffset: 4},
 			wantResults: []SearchResultResolver{
-				result(repoName("1"), "some/file0.go", "master"),
-				result(repoName("1"), "some/file1.go", "master"),
-				result(repoName("1"), "some/file2.go", "master"),
-				result(repoName("2"), "some/file0.go", "master"),
-				result(repoName("2"), "some/file1.go", "master"),
-				result(repoName("2"), "some/file2.go", "master"),
-				result(repoName("3"), "some/file0.go", "master"),
-				result(repoName("3"), "some/file1.go", "master"),
-				result(repoName("3"), "some/file2.go", "master"),
-				result(repoName("3"), "some/file0.go", "feature"),
+				result(db, repoName("1"), "some/file0.go", "master"),
+				result(db, repoName("1"), "some/file1.go", "master"),
+				result(db, repoName("1"), "some/file2.go", "master"),
+				result(db, repoName("2"), "some/file0.go", "master"),
+				result(db, repoName("2"), "some/file1.go", "master"),
+				result(db, repoName("2"), "some/file2.go", "master"),
+				result(db, repoName("3"), "some/file0.go", "master"),
+				result(db, repoName("3"), "some/file1.go", "master"),
+				result(db, repoName("3"), "some/file2.go", "master"),
+				result(db, repoName("3"), "some/file0.go", "feature"),
 			},
 			wantCommon: &streaming.Stats{
 				Repos: reposMap(repoName("1"), repoName("2"), repoName("3")),
@@ -348,14 +353,14 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 			},
 			wantCursor: &searchCursor{RepositoryOffset: 5, ResultOffset: 0, Finished: true},
 			wantResults: []SearchResultResolver{
-				result(repoName("3"), "some/file1.go", "feature"),
-				result(repoName("3"), "some/file2.go", "feature"),
-				result(repoName("4"), "some/file0.go", "master"),
-				result(repoName("4"), "some/file1.go", "master"),
-				result(repoName("4"), "some/file2.go", "master"),
-				result(repoName("5"), "some/file0.go", "master"),
-				result(repoName("5"), "some/file1.go", "master"),
-				result(repoName("5"), "some/file2.go", "master"),
+				result(db, repoName("3"), "some/file1.go", "feature"),
+				result(db, repoName("3"), "some/file2.go", "feature"),
+				result(db, repoName("4"), "some/file0.go", "master"),
+				result(db, repoName("4"), "some/file1.go", "master"),
+				result(db, repoName("4"), "some/file2.go", "master"),
+				result(db, repoName("5"), "some/file0.go", "master"),
+				result(db, repoName("5"), "some/file1.go", "master"),
+				result(db, repoName("5"), "some/file2.go", "master"),
 			},
 			wantCommon: &streaming.Stats{
 				Repos: reposMap(repoName("3"), repoName("4"), repoName("5")),
@@ -377,7 +382,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 			},
 			wantCursor: &searchCursor{RepositoryOffset: 0, ResultOffset: 1},
 			wantResults: []SearchResultResolver{
-				result(repoName("1"), "some/file0.go", "master"),
+				result(db, repoName("1"), "some/file0.go", "master"),
 			},
 			wantCommon: &streaming.Stats{
 				Repos: reposMap(repoName("1")),
@@ -399,7 +404,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 			},
 			wantCursor: &searchCursor{RepositoryOffset: 0, ResultOffset: 2},
 			wantResults: []SearchResultResolver{
-				result(repoName("1"), "some/file1.go", "master"),
+				result(db, repoName("1"), "some/file1.go", "master"),
 			},
 			wantCommon: &streaming.Stats{
 				Repos: reposMap(repoName("1")),
@@ -454,6 +459,8 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 }
 
 func TestSearchPagination_issue_6287(t *testing.T) {
+	db := new(dbtesting.MockDB)
+
 	revs := func(rev ...string) (revs []search.RevisionSpecifier) {
 		for _, r := range rev {
 			revs = append(revs, search.RevisionSpecifier{RevSpec: r})
@@ -474,15 +481,15 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 	}
 	repoResults := map[string][]SearchResultResolver{
 		"1": {
-			result(repoName("1"), "a.go"),
-			result(repoName("1"), "b.go"),
+			result(db, repoName("1"), "a.go"),
+			result(db, repoName("1"), "b.go"),
 		},
 		"2": {
-			result(repoName("2"), "a.go"),
-			result(repoName("2"), "b.go"),
-			result(repoName("2"), "c.go"),
-			result(repoName("2"), "d.go"),
-			result(repoName("2"), "e.go"),
+			result(db, repoName("2"), "a.go"),
+			result(db, repoName("2"), "b.go"),
+			result(db, repoName("2"), "c.go"),
+			result(db, repoName("2"), "d.go"),
+			result(db, repoName("2"), "e.go"),
 		},
 	}
 	searchRepos := []*search.RepositoryRevisions{
@@ -514,9 +521,9 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 			},
 			wantCursor: &searchCursor{RepositoryOffset: 1, ResultOffset: 1},
 			wantResults: []SearchResultResolver{
-				result(repoName("1"), "a.go"),
-				result(repoName("1"), "b.go"),
-				result(repoName("2"), "a.go"),
+				result(db, repoName("1"), "a.go"),
+				result(db, repoName("1"), "b.go"),
+				result(db, repoName("2"), "a.go"),
 			},
 		},
 		{
@@ -527,9 +534,9 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 			},
 			wantCursor: &searchCursor{RepositoryOffset: 1, ResultOffset: 4},
 			wantResults: []SearchResultResolver{
-				result(repoName("2"), "b.go"),
-				result(repoName("2"), "c.go"),
-				result(repoName("2"), "d.go"),
+				result(db, repoName("2"), "b.go"),
+				result(db, repoName("2"), "c.go"),
+				result(db, repoName("2"), "d.go"),
 			},
 		},
 		{
@@ -540,7 +547,7 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 			},
 			wantCursor: &searchCursor{RepositoryOffset: 2, ResultOffset: 0, Finished: true},
 			wantResults: []SearchResultResolver{
-				result(repoName("2"), "e.go"),
+				result(db, repoName("2"), "e.go"),
 			},
 		},
 	}
@@ -572,6 +579,8 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 // repoPaginationPlan and sliceSearchResults's handling of cloning and missing
 // repositories.
 func TestSearchPagination_cloning_missing(t *testing.T) {
+	db := new(dbtesting.MockDB)
+
 	revs := func(rev ...string) (revs []search.RevisionSpecifier) {
 		for _, r := range rev {
 			revs = append(revs, search.RevisionSpecifier{RevSpec: r})
@@ -592,13 +601,13 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 	}
 	repoResults := map[string][]SearchResultResolver{
 		"a": {
-			result(repoName("a"), "a.go"),
+			result(db, repoName("a"), "a.go"),
 		},
 		"c": {
-			result(repoName("c"), "a.go"),
+			result(db, repoName("c"), "a.go"),
 		},
 		"f": {
-			result(repoName("f"), "a.go"),
+			result(db, repoName("f"), "a.go"),
 		},
 	}
 	reposStatus := func(m map[string]search.RepoStatus) search.RepoStatusMap {
@@ -652,7 +661,7 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 			},
 			wantCursor: &searchCursor{RepositoryOffset: 1, ResultOffset: 0},
 			wantResults: []SearchResultResolver{
-				result(repoName("a"), "a.go"),
+				result(db, repoName("a"), "a.go"),
 			},
 			wantCommon: &streaming.Stats{
 				Repos: reposMap(repoName("a")),
@@ -666,7 +675,7 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 			},
 			wantCursor: &searchCursor{RepositoryOffset: 3, ResultOffset: 0},
 			wantResults: []SearchResultResolver{
-				result(repoName("c"), "a.go"),
+				result(db, repoName("c"), "a.go"),
 			},
 			wantCommon: &streaming.Stats{
 
@@ -684,8 +693,8 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 			},
 			wantCursor: &searchCursor{RepositoryOffset: 3, ResultOffset: 0},
 			wantResults: []SearchResultResolver{
-				result(repoName("a"), "a.go"),
-				result(repoName("c"), "a.go"),
+				result(db, repoName("a"), "a.go"),
+				result(db, repoName("c"), "a.go"),
 			},
 			wantCommon: &streaming.Stats{
 				Repos: reposMap(repoName("a"), repoName("b"), repoName("c")),
@@ -702,9 +711,9 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 			},
 			wantCursor: &searchCursor{RepositoryOffset: 6, ResultOffset: 0, Finished: true},
 			wantResults: []SearchResultResolver{
-				result(repoName("a"), "a.go"),
-				result(repoName("c"), "a.go"),
-				result(repoName("f"), "a.go"),
+				result(db, repoName("a"), "a.go"),
+				result(db, repoName("c"), "a.go"),
+				result(db, repoName("f"), "a.go"),
 			},
 			wantCommon: &streaming.Stats{
 				Repos: reposMap(repoName("a"), repoName("b"), repoName("c"), repoName("d"), repoName("e"), repoName("f")),

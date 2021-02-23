@@ -2,15 +2,20 @@ package lsifstore
 
 import (
 	"context"
+	"sync/atomic"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
+
+// CurrentDocumentSchemaVersion is the schema version used for new lsif_data_documents rows.
+const CurrentDocumentSchemaVersion = 2
 
 func (s *Store) WriteMeta(ctx context.Context, bundleID int, meta MetaData) (err error) {
 	ctx, endObservation := s.operations.writeMeta.With(ctx, &err, observation.Args{LogFields: []log.Field{
@@ -30,10 +35,12 @@ func (s *Store) WriteMeta(ctx context.Context, bundleID int, meta MetaData) (err
 }
 
 func (s *Store) WriteDocuments(ctx context.Context, bundleID int, documents chan KeyedDocumentData) (err error) {
-	ctx, endObservation := s.operations.writeDocuments.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, traceLog, endObservation := s.operations.writeDocuments.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
 	defer endObservation(1, observation.Args{})
+
+	var count uint32
 
 	inserter := func(inserter *batch.BatchInserter) error {
 		for v := range documents {
@@ -42,22 +49,30 @@ func (s *Store) WriteDocuments(ctx context.Context, bundleID int, documents chan
 				return err
 			}
 
-			if err := inserter.Insert(ctx, bundleID, v.Path, data); err != nil {
+			if err := inserter.Insert(ctx, bundleID, v.Path, data, CurrentDocumentSchemaVersion, len(v.Document.Diagnostics)); err != nil {
 				return err
 			}
+
+			atomic.AddUint32(&count, 1)
 		}
 
 		return nil
 	}
 
-	return withBatchInserter(ctx, s.Handle().DB(), "lsif_data_documents", []string{"dump_id", "path", "data"}, inserter)
+	if err := withBatchInserter(ctx, s.Handle().DB(), "lsif_data_documents", []string{"dump_id", "path", "data", "schema_version", "num_diagnostics"}, inserter); err != nil {
+		return err
+	}
+	traceLog(log.Int("count", int(count)))
+	return nil
 }
 
 func (s *Store) WriteResultChunks(ctx context.Context, bundleID int, resultChunks chan IndexedResultChunkData) (err error) {
-	ctx, endObservation := s.operations.writeResultChunks.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, traceLog, endObservation := s.operations.writeResultChunks.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
 	defer endObservation(1, observation.Args{})
+
+	var count uint32
 
 	inserter := func(inserter *batch.BatchInserter) error {
 		for v := range resultChunks {
@@ -69,33 +84,51 @@ func (s *Store) WriteResultChunks(ctx context.Context, bundleID int, resultChunk
 			if err := inserter.Insert(ctx, bundleID, v.Index, data); err != nil {
 				return err
 			}
+
+			atomic.AddUint32(&count, 1)
 		}
 
 		return nil
 	}
 
-	return withBatchInserter(ctx, s.Handle().DB(), "lsif_data_result_chunks", []string{"dump_id", "idx", "data"}, inserter)
+	if err := withBatchInserter(ctx, s.Handle().DB(), "lsif_data_result_chunks", []string{"dump_id", "idx", "data"}, inserter); err != nil {
+		return err
+	}
+	traceLog(log.Int("count", int(count)))
+	return nil
 }
 
 func (s *Store) WriteDefinitions(ctx context.Context, bundleID int, monikerLocations chan MonikerLocations) (err error) {
-	ctx, endObservation := s.operations.writeDefinitions.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, traceLog, endObservation := s.operations.writeDefinitions.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return s.writeDefinitionReferences(ctx, bundleID, "lsif_data_definitions", monikerLocations)
+	count, err := s.writeDefinitionReferences(ctx, bundleID, "lsif_data_definitions", monikerLocations)
+	if err != nil {
+		return err
+	}
+	traceLog(log.Int("count", count))
+	return nil
 }
 
 func (s *Store) WriteReferences(ctx context.Context, bundleID int, monikerLocations chan MonikerLocations) (err error) {
-	ctx, endObservation := s.operations.writeReferences.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, traceLog, endObservation := s.operations.writeReferences.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return s.writeDefinitionReferences(ctx, bundleID, "lsif_data_references", monikerLocations)
+	count, err := s.writeDefinitionReferences(ctx, bundleID, "lsif_data_references", monikerLocations)
+	if err != nil {
+		return err
+	}
+	traceLog(log.Int("count", count))
+	return nil
 }
 
-func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tableName string, monikerLocations chan MonikerLocations) error {
+func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tableName string, monikerLocations chan MonikerLocations) (int, error) {
+	var count uint32
+
 	inserter := func(inserter *batch.BatchInserter) error {
 		for v := range monikerLocations {
 			data, err := s.serializer.MarshalLocations(v.Locations)
@@ -106,12 +139,15 @@ func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tab
 			if err := inserter.Insert(ctx, bundleID, v.Scheme, v.Identifier, data); err != nil {
 				return err
 			}
+
+			atomic.AddUint32(&count, 1)
 		}
 
 		return nil
 	}
 
-	return withBatchInserter(ctx, s.Handle().DB(), tableName, []string{"dump_id", "scheme", "identifier", "data"}, inserter)
+	err := withBatchInserter(ctx, s.Handle().DB(), tableName, []string{"dump_id", "scheme", "identifier", "data"}, inserter)
+	return int(count), err
 }
 
 func withBatchInserter(ctx context.Context, db dbutil.DB, tableName string, columns []string, f func(inserter *batch.BatchInserter) error) (err error) {

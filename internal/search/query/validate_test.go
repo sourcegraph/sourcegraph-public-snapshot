@@ -2,7 +2,6 @@ package query
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -260,11 +259,7 @@ func TestPartitionSearchPattern(t *testing.T) {
 			if pattern != nil {
 				result = append(scopeParameters, pattern)
 			}
-			var resultStr []string
-			for _, node := range result {
-				resultStr = append(resultStr, node.String())
-			}
-			got := strings.Join(resultStr, " ")
+			got := toString(result)
 			if diff := cmp.Diff(tt.want, got); diff != "" {
 				t.Error(diff)
 			}
@@ -283,5 +278,64 @@ func TestForAll(t *testing.T) {
 	})
 	if !result {
 		t.Errorf("Expected all nodes to be parameters.")
+	}
+}
+
+func TestContainsRefGlobs(t *testing.T) {
+	tests := []struct {
+		query    string
+		want     bool
+		globbing bool
+	}{
+		{
+			query: "repo:foo",
+			want:  false,
+		},
+		{
+			query: "repo:foo@bar",
+			want:  false,
+		},
+		{
+			query: "repo:foo@*ref/tags",
+			want:  true,
+		},
+		{
+			query: "repo:foo@*!refs/tags",
+			want:  true,
+		},
+		{
+			query: "repo:foo@bar:*refs/heads",
+			want:  true,
+		},
+		{
+			query: "repo:foo@refs/tags/v3.14.3",
+			want:  false,
+		},
+		{
+			query: "repo:foo@*refs/tags/v3.14.?",
+			want:  true,
+		},
+		{
+			query:    "repo:*foo*@v3.14.3",
+			globbing: true,
+			want:     false,
+		},
+		{
+			query: "repo:foo@v3.14.3 repo:foo@*refs/tags/v3.14.* bar",
+			want:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.query, func(t *testing.T) {
+			qInfo, err := ProcessAndOr(tt.query, ParserOptions{SearchType: SearchTypeLiteral, Globbing: tt.globbing})
+			if err != nil {
+				t.Error(err)
+			}
+			got := ContainsRefGlobs(qInfo)
+			if got != tt.want {
+				t.Errorf("got %t, expected %t", got, tt.want)
+			}
+		})
 	}
 }

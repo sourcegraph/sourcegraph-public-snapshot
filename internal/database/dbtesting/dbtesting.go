@@ -2,6 +2,7 @@
 package dbtesting
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"hash/fnv"
@@ -168,4 +169,20 @@ func initTest(nameSuffix string) error {
 	}
 
 	return nil
+}
+
+// MockDB implements the dbutil.DB interface and is intended to be used
+// in tests that require the database handle but never call it.
+type MockDB struct{}
+
+func (db *MockDB) QueryContext(ctx context.Context, q string, args ...interface{}) (*sql.Rows, error) {
+	panic("mock db methods are not supposed to be called")
+}
+
+func (db *MockDB) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+	panic("mock db methods are not supposed to be called")
+}
+
+func (db *MockDB) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
+	panic("mock db methods are not supposed to be called")
 }

@@ -3,25 +3,25 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"strings"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 )
 
-func gitCommitByID(ctx context.Context, id graphql.ID) (*GitCommitResolver, error) {
+func (r *schemaResolver) gitCommitByID(ctx context.Context, id graphql.ID) (*GitCommitResolver, error) {
 	repoID, commitID, err := unmarshalGitCommitID(id)
 	if err != nil {
 		return nil, err
 	}
-	repo, err := repositoryByID(ctx, repoID)
+	repo, err := r.repositoryByID(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
@@ -29,6 +29,7 @@ func gitCommitByID(ctx context.Context, id graphql.ID) (*GitCommitResolver, erro
 }
 
 type GitCommitResolver struct {
+	db           dbutil.DB
 	repoResolver *RepositoryResolver
 
 	// inputRev is the Git revspec that the user originally requested that resolved to this Git commit. It is used
@@ -43,18 +44,21 @@ type GitCommitResolver struct {
 
 	gitRepo api.RepoName
 
-	commitOnce sync.Once
+	// commit should not be accessed directly since it might not be initialized.
+	// Use the resolver methods instead.
 	commit     *git.Commit
+	commitOnce sync.Once
 	commitErr  error
 }
 
 // When set to nil, commit will be loaded lazily as needed by the resolver. Pass in a commit when you have batch loaded
 // a bunch of them and already have them at hand.
-func toGitCommitResolver(repo *RepositoryResolver, id api.CommitID, commit *git.Commit) *GitCommitResolver {
+func toGitCommitResolver(repo *RepositoryResolver, db dbutil.DB, id api.CommitID, commit *git.Commit) *GitCommitResolver {
 	return &GitCommitResolver{
+		db:              db,
 		repoResolver:    repo,
 		includeUserInfo: true,
-		gitRepo:         repo.innerRepo.Name,
+		gitRepo:         repo.name,
 		oid:             GitObjectID(id),
 		commit:          commit,
 	}
@@ -108,7 +112,7 @@ func (r *GitCommitResolver) Author(ctx context.Context) (*signatureResolver, err
 	if err != nil {
 		return nil, err
 	}
-	return toSignatureResolver(&commit.Author, r.includeUserInfo), nil
+	return toSignatureResolver(r.db, &commit.Author, r.includeUserInfo), nil
 }
 
 func (r *GitCommitResolver) Committer(ctx context.Context) (*signatureResolver, error) {
@@ -116,7 +120,7 @@ func (r *GitCommitResolver) Committer(ctx context.Context) (*signatureResolver, 
 	if err != nil {
 		return nil, err
 	}
-	return toSignatureResolver(commit.Committer, r.includeUserInfo), nil
+	return toSignatureResolver(r.db, commit.Committer, r.includeUserInfo), nil
 }
 
 func (r *GitCommitResolver) Message(ctx context.Context) (string, error) {
@@ -124,7 +128,7 @@ func (r *GitCommitResolver) Message(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return commit.Message, err
+	return string(commit.Message), err
 }
 
 func (r *GitCommitResolver) Subject(ctx context.Context) (string, error) {
@@ -132,7 +136,7 @@ func (r *GitCommitResolver) Subject(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return GitCommitSubject(commit.Message), err
+	return commit.Message.Subject(), nil
 }
 
 func (r *GitCommitResolver) Body(ctx context.Context) (*string, error) {
@@ -141,7 +145,7 @@ func (r *GitCommitResolver) Body(ctx context.Context) (*string, error) {
 		return nil, err
 	}
 
-	body := GitCommitBody(commit.Message)
+	body := commit.Message.Body()
 	if body == "" {
 		return nil, nil
 	}
@@ -168,12 +172,12 @@ func (r *GitCommitResolver) Parents(ctx context.Context) ([]*GitCommitResolver, 
 	return resolvers, nil
 }
 
-func (r *GitCommitResolver) URL() (string, error) {
-	return r.repoResolver.URL() + "/-/commit/" + string(r.inputRevOrImmutableRev()), nil
+func (r *GitCommitResolver) URL() string {
+	return r.repoResolver.URL() + "/-/commit/" + r.inputRevOrImmutableRev()
 }
 
-func (r *GitCommitResolver) CanonicalURL() (string, error) {
-	return r.repoResolver.URL() + "/-/commit/" + string(r.oid), nil
+func (r *GitCommitResolver) CanonicalURL() string {
+	return r.repoResolver.URL() + "/-/commit/" + string(r.oid)
 }
 
 func (r *GitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
@@ -182,7 +186,7 @@ func (r *GitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.R
 		return nil, err
 	}
 
-	return externallink.Commit(ctx, repo, api.CommitID(r.oid))
+	return externallink.Commit(ctx, r.db, repo, api.CommitID(r.oid))
 }
 
 func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
@@ -197,6 +201,7 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 		return nil, fmt.Errorf("not a directory: %q", args.Path)
 	}
 	return &GitTreeEntryResolver{
+		db:          r.db,
 		commit:      r,
 		stat:        stat,
 		isRecursive: args.Recursive,
@@ -214,6 +219,7 @@ func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 		return nil, fmt.Errorf("not a blob: %q", args.Path)
 	}
 	return &GitTreeEntryResolver{
+		db:     r.db,
 		commit: r,
 		stat:   stat,
 	}, nil
@@ -269,6 +275,7 @@ func (r *GitCommitResolver) Ancestors(ctx context.Context, args *struct {
 	After *string
 }) (*gitCommitConnectionResolver, error) {
 	return &gitCommitConnectionResolver{
+		db:            r.db,
 		revisionRange: string(r.oid),
 		first:         args.ConnectionArgs.First,
 		query:         args.Query,
@@ -327,22 +334,4 @@ func (r *GitCommitResolver) repoRevURL() (string, error) {
 
 func (r *GitCommitResolver) canonicalRepoRevURL() (string, error) {
 	return r.repoResolver.URL() + "@" + string(r.oid), nil
-}
-
-// GitCommitSubject returns the first line of the Git commit message.
-func GitCommitSubject(message string) string {
-	i := strings.Index(message, "\n")
-	if i == -1 {
-		return message
-	}
-	return message[:i]
-}
-
-// GitCommitBody returns the contents of the Git commit message after the subject.
-func GitCommitBody(message string) string {
-	i := strings.Index(message, "\n")
-	if i == -1 {
-		return ""
-	}
-	return strings.TrimSpace(message[i:])
 }

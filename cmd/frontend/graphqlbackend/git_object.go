@@ -76,7 +76,7 @@ type gitObjectResolver struct {
 
 func (o *gitObjectResolver) resolve(ctx context.Context) (GitObjectID, gitObjectType, error) {
 	o.once.Do(func() {
-		oid, objectType, err := git.GetObject(ctx, o.repo.innerRepo.Name, o.revspec)
+		oid, objectType, err := git.GetObject(ctx, o.repo.name, o.revspec)
 		if err != nil {
 			o.err = err
 			return

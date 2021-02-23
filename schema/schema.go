@@ -52,6 +52,18 @@ type AdditionalProperties struct {
 	Value string `json:"value"`
 }
 
+// ApiRatelimit description: Configuration for API rate limiting
+type ApiRatelimit struct {
+	// Enabled description: Whether API rate limiting is enabled
+	Enabled bool `json:"enabled"`
+	// Overrides description: An array of rate limit overrides
+	Overrides []*Overrides `json:"overrides,omitempty"`
+	// PerIP description: Limit granted per IP per hour, only applied to anonymous users
+	PerIP int `json:"perIP"`
+	// PerUser description: Limit granted per user per hour
+	PerUser int `json:"perUser"`
+}
+
 // AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
 type AuthAccessTokens struct {
 	// Allow description: Allow or restrict the use of access tokens. The default is "all-users-create", which enables all users to create access tokens. Use "none" to disable access tokens entirely. Use "site-admin-create" to restrict creation of new tokens to admin users (existing tokens will still work until revoked).
@@ -351,6 +363,12 @@ type CloneURLToRepositoryName struct {
 	To string `json:"to"`
 }
 
+// CloudKMSEncryptionKey description: Google Cloud KMS Encryption Key, used to encrypt data in Google Cloud environments
+type CloudKMSEncryptionKey struct {
+	Keyname string `json:"keyname"`
+	Type    string `json:"type"`
+}
+
 // CustomGitFetchMapping description: Mapping from Git clone URl domain/path to git fetch command. The `domainPath` field contains the Git clone URL domain/path part. The `fetch` field contains the custom git fetch command.
 type CustomGitFetchMapping struct {
 	// DomainPath description: Git clone URL domain/path
@@ -369,6 +387,42 @@ type DebugLog struct {
 type Dotcom struct {
 	// SlackLicenseExpirationWebhook description: Slack webhook for upcoming license expiration notifications.
 	SlackLicenseExpirationWebhook string `json:"slackLicenseExpirationWebhook,omitempty"`
+}
+
+// EncryptionKey description: Config for a key
+type EncryptionKey struct {
+	Cloudkms *CloudKMSEncryptionKey
+	Noop     *NoOpEncryptionKey
+}
+
+func (v EncryptionKey) MarshalJSON() ([]byte, error) {
+	if v.Cloudkms != nil {
+		return json.Marshal(v.Cloudkms)
+	}
+	if v.Noop != nil {
+		return json.Marshal(v.Noop)
+	}
+	return nil, errors.New("tagged union type must have exactly 1 non-nil field value")
+}
+func (v *EncryptionKey) UnmarshalJSON(data []byte) error {
+	var d struct {
+		DiscriminantProperty string `json:"type"`
+	}
+	if err := json.Unmarshal(data, &d); err != nil {
+		return err
+	}
+	switch d.DiscriminantProperty {
+	case "cloudkms":
+		return json.Unmarshal(data, &v.Cloudkms)
+	case "noop":
+		return json.Unmarshal(data, &v.Noop)
+	}
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"cloudkms", "noop"})
+}
+
+// EncryptionKeys description: Configuration for encryption keys used to encrypt data at rest in the database.
+type EncryptionKeys struct {
+	ExternalServiceKey *EncryptionKey `json:"externalServiceKey,omitempty"`
 }
 type ExcludedAWSCodeCommitRepo struct {
 	// Id description: The ID of an AWS Code Commit repository (as returned by the AWS API) to exclude from mirroring. Use this to exclude the repository, even if renamed, or to differentiate between repositories with the same name in multiple regions.
@@ -522,6 +576,8 @@ type GitHubConnection struct {
 	Authorization *GitHubAuthorization `json:"authorization,omitempty"`
 	// Certificate description: TLS certificate of the GitHub Enterprise instance. This is only necessary if the certificate is self-signed or signed by an internal CA. To get the certificate run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	Certificate string `json:"certificate,omitempty"`
+	// CloudDefault description: Only to be used in development to override the cloud_default column
+	CloudDefault bool `json:"cloudDefault,omitempty"`
 	// CloudGlobal description: When set to true, this external service will be chosen as our 'Global' GitHub service. Only valid on Sourcegraph.com. Only one service can have this flag set.
 	CloudGlobal bool `json:"cloudGlobal,omitempty"`
 	// Exclude description: A list of repositories to never mirror from this GitHub instance. Takes precedence over "orgs", "repos", and "repositoryQuery" configuration.
@@ -613,6 +669,8 @@ type GitLabConnection struct {
 	Authorization *GitLabAuthorization `json:"authorization,omitempty"`
 	// Certificate description: TLS certificate of the GitLab instance. This is only necessary if the certificate is self-signed or signed by an internal CA. To get the certificate run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	Certificate string `json:"certificate,omitempty"`
+	// CloudDefault description: Only to be used in development to override the cloud_default column
+	CloudDefault bool `json:"cloudDefault,omitempty"`
 	// CloudGlobal description: When set to true, this external service will be chosen as our 'Global' GitLab service. Only valid on Sourcegraph.com. Only one service can have this flag set.
 	CloudGlobal bool `json:"cloudGlobal,omitempty"`
 	// Exclude description: A list of projects to never mirror from this GitLab instance. Takes precedence over "projects" and "projectQuery" configuration. Supports excluding by name ({"name": "group/name"}) or by ID ({"id": 42}).
@@ -764,6 +822,11 @@ type InsightSeries struct {
 type Log struct {
 	// Sentry description: Configuration for Sentry
 	Sentry *Sentry `json:"sentry,omitempty"`
+}
+
+// NoOpEncryptionKey description: This encryption key is a no op, leaving your data in plaintext (not recommended).
+type NoOpEncryptionKey struct {
+	Type string `json:"type"`
 }
 type Notice struct {
 	// Dismissible description: Whether this notice can be dismissed (closed) by the user.
@@ -938,6 +1001,12 @@ type OtherExternalServiceConnection struct {
 	// It is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
 	Url                   string `json:"url,omitempty"`
+}
+type Overrides struct {
+	// Key description: The key that we want to override for example a username
+	Key string `json:"key,omitempty"`
+	// Limit description: The limit per hour, 'unlimited' or 'blocked'
+	Limit interface{} `json:"limit,omitempty"`
 }
 
 // ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
@@ -1197,6 +1266,8 @@ type SettingsExperimentalFeatures struct {
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.
 type SiteConfiguration struct {
+	// ApiRatelimit description: Configuration for API rate limiting
+	ApiRatelimit *ApiRatelimit `json:"api.ratelimit,omitempty"`
 	// AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
 	AuthAccessTokens *AuthAccessTokens `json:"auth.accessTokens,omitempty"`
 	// AuthEnableUsernameChanges description: Enables users to change their username after account creation. Warning: setting this to be true has security implications if you have enabled (or will at any point in the future enable) repository permissions with an option that relies on username equivalency between Sourcegraph and an external service or authentication provider. Do NOT set this to true if you are using non-built-in authentication OR rely on username equivalency for repository permissions.
@@ -1259,6 +1330,8 @@ type SiteConfiguration struct {
 	EmailAddress string `json:"email.address,omitempty"`
 	// EmailSmtp description: The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).
 	EmailSmtp *SMTPServerConfig `json:"email.smtp,omitempty"`
+	// EncryptionKeys description: Configuration for encryption keys used to encrypt data at rest in the database.
+	EncryptionKeys *EncryptionKeys `json:"encryption.keys,omitempty"`
 	// ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 	ExperimentalFeatures *ExperimentalFeatures `json:"experimentalFeatures,omitempty"`
 	// Extensions description: Configures Sourcegraph extensions.
@@ -1397,6 +1470,8 @@ type Webhooks struct {
 type WorkspaceConfiguration struct {
 	// In description: The repositories in which to apply the workspace configuration. Supports globbing.
 	In string `json:"in,omitempty"`
+	// OnlyFetchWorkspace description: If this is true only the files in the workspace (and additional .gitignore) are downloaded instead of an archive of the full repository.
+	OnlyFetchWorkspace bool `json:"onlyFetchWorkspace,omitempty"`
 	// RootAtLocationOf description: The name of the file that sits at the root of the desired workspace.
 	RootAtLocationOf string `json:"rootAtLocationOf"`
 }

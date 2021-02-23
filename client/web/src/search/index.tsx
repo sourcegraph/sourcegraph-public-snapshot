@@ -1,14 +1,15 @@
 import { escapeRegExp } from 'lodash'
 import { replaceRange } from '../../../shared/src/util/strings'
-import { discreteValueAliases } from '../../../shared/src/search/query/filters'
+import { discreteValueAliases, FilterType } from '../../../shared/src/search/query/filters'
 import { VersionContext } from '../schema/site.schema'
 import { SearchPatternType } from '../../../shared/src/graphql-operations'
 import { Observable } from 'rxjs'
-import { ISavedSearch } from '../../../shared/src/graphql/schema'
+import { ISavedSearch, ISearchContext } from '../../../shared/src/graphql/schema'
 import { EventLogResult } from './backend'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from './stream'
 import { findFilter, FilterKind } from '../../../shared/src/search/query/validate'
 import { VersionContextProps } from '../../../shared/src/search/util'
+import { scanSearchQuery } from '../../../shared/src/search/query/scanner'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it
@@ -50,6 +51,12 @@ function parseSearchURLVersionContext(query: string): string | undefined {
     return context ?? undefined
 }
 
+function parseSearchURLSearchContextSpec(query: string): string | undefined {
+    const searchParameters = new URLSearchParams(query)
+    const context = searchParameters.get('context')
+    return context ?? undefined
+}
+
 function searchURLIsCaseSensitive(query: string): boolean {
     const globalCase = findFilter(parseSearchURLQuery(query) || '', 'case', FilterKind.Global)
     if (globalCase?.value && globalCase.value.type === 'literal') {
@@ -66,6 +73,7 @@ export interface ParsedSearchURL {
     patternType: SearchPatternType | undefined
     caseSensitive: boolean
     versionContext: string | undefined
+    searchContextSpec: string | undefined
 }
 
 /**
@@ -79,11 +87,15 @@ export interface ParsedSearchURL {
  */
 export function parseSearchURL(
     urlSearchQuery: string,
-    { appendCaseFilter = false }: { appendCaseFilter?: boolean } = {}
+    {
+        appendCaseFilter = false,
+        appendContextFilter = false,
+    }: { appendCaseFilter?: boolean; appendContextFilter?: boolean } = {}
 ): ParsedSearchURL {
     let finalQuery = parseSearchURLQuery(urlSearchQuery) || ''
     let patternType = parseSearchURLPatternType(urlSearchQuery)
     let caseSensitive = searchURLIsCaseSensitive(urlSearchQuery)
+    const searchContextSpec = parseSearchURLSearchContextSpec(urlSearchQuery)
 
     const globalPatternType = findFilter(finalQuery, 'patterntype', FilterKind.Global)
     if (globalPatternType?.value && globalPatternType.value.type === 'literal') {
@@ -109,12 +121,21 @@ export function parseSearchURL(
         finalQuery = caseSensitive ? `${finalQuery} case:yes` : finalQuery
     }
 
+    if (appendContextFilter) {
+        finalQuery = appendContextFilterToQuery(finalQuery, searchContextSpec)
+    }
+
     return {
         query: finalQuery,
         patternType,
         caseSensitive,
         versionContext: parseSearchURLVersionContext(urlSearchQuery),
+        searchContextSpec,
     }
+}
+
+export function appendContextFilterToQuery(query: string, searchContextSpec: string | undefined): string {
+    return !isContextFilterInQuery(query) && searchContextSpec ? `context:${searchContextSpec} ${query}` : query
 }
 
 export function repoFilterForRepoRevision(repoName: string, globbing: boolean, revision?: string): string {
@@ -177,6 +198,10 @@ export interface OnboardingTourProps {
 
 export interface SearchContextProps {
     showSearchContext: boolean
+    availableSearchContexts: ISearchContext[]
+    defaultSearchContextSpec: string
+    selectedSearchContextSpec?: string
+    setSelectedSearchContextSpec: (spec: string) => void
 }
 
 export interface ShowQueryBuilderProps {
@@ -223,4 +248,26 @@ export function resolveVersionContext(
     }
 
     return versionContext
+}
+
+export function isSearchContextSpecAvailable(spec: string, availableSearchContexts: ISearchContext[]): boolean {
+    return availableSearchContexts.map(item => item.spec).includes(spec)
+}
+
+export function resolveSearchContextSpec(
+    spec: string,
+    availableSearchContexts: ISearchContext[],
+    defaultSpec: string
+): string {
+    return isSearchContextSpecAvailable(spec, availableSearchContexts) ? spec : defaultSpec
+}
+
+export function isContextFilterInQuery(query: string): boolean {
+    const scannedQuery = scanSearchQuery(query)
+    return (
+        scannedQuery.type === 'success' &&
+        scannedQuery.term.some(
+            token => token.type === 'filter' && token.field.value.toLowerCase() === FilterType.context
+        )
+    )
 }

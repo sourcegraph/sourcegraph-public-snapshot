@@ -47,7 +47,10 @@ func (c *Client) GetMergeRequestResourceStateEvents(ctx context.Context, project
 
 		header, _, err := c.do(ctx, req, &page)
 		if err != nil {
-			if errors.Is(err, HTTPError(404)) {
+			// If this endpoint is not found, the GitLab instance doesn't support these events yet.
+			// This is okay and we can't do anything about it, but as GitLab <13.2 ages, we should
+			// remove this stopgap.
+			if e, ok := errors.Cause(err).(HTTPError); ok && e.Code() == http.StatusNotFound {
 				return []*ResourceStateEvent{}, nil
 			}
 			return nil, errors.Wrap(err, "requesting rse page")

@@ -51,7 +51,6 @@ export interface ViewResolver<V extends View> {
 export function trackViews<V extends View>(
     viewResolvers: ViewResolver<V>[]
 ): OperatorFunction<MutationRecordLike[], ViewWithSubscriptions<V>> {
-    console.log('Sourcegraph: trackViews:', { viewResolvers })
     return mutations =>
         defer(() => {
             const viewStates = new Map<HTMLElement, ViewWithSubscriptions<V>>()

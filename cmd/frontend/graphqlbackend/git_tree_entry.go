@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -34,6 +35,7 @@ func init() {
 // GitTreeEntryResolver resolves an entry in a Git tree in a repository. The entry can be any Git
 // object type that is valid in a tree.
 type GitTreeEntryResolver struct {
+	db     dbutil.DB
 	commit *GitCommitResolver
 
 	contentOnce sync.Once
@@ -48,8 +50,8 @@ type GitTreeEntryResolver struct {
 	isSingleChild *bool // whether this is the single entry in its parent. Only set by the (&GitTreeEntryResolver) entries.
 }
 
-func NewGitTreeEntryResolver(commit *GitCommitResolver, stat os.FileInfo) *GitTreeEntryResolver {
-	return &GitTreeEntryResolver{commit: commit, stat: stat}
+func NewGitTreeEntryResolver(commit *GitCommitResolver, db dbutil.DB, stat os.FileInfo) *GitTreeEntryResolver {
+	return &GitTreeEntryResolver{db: db, commit: commit, stat: stat}
 }
 
 func (r *GitTreeEntryResolver) Path() string { return r.stat.Name() }
@@ -75,7 +77,7 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 
 		r.content, r.contentErr = git.ReadFile(
 			ctx,
-			r.commit.repoResolver.innerRepo.Name,
+			r.commit.repoResolver.name,
 			api.CommitID(r.commit.OID()),
 			r.Path(),
 			0,
@@ -107,7 +109,7 @@ func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArg
 		return nil, err
 	}
 	return highlightContent(ctx, args, content, r.Path(), highlight.Metadata{
-		RepoName: string(r.commit.repoResolver.Name()),
+		RepoName: r.commit.repoResolver.Name(),
 		Revision: string(r.commit.oid),
 	})
 }
@@ -168,7 +170,7 @@ func (r *GitTreeEntryResolver) ExternalURLs(ctx context.Context) ([]*externallin
 	if err != nil {
 		return nil, err
 	}
-	return externallink.FileOrDir(ctx, repo, r.commit.inputRevOrImmutableRev(), r.Path(), r.stat.Mode().IsDir())
+	return externallink.FileOrDir(ctx, r.db, repo, r.commit.inputRevOrImmutableRev(), r.Path(), r.stat.Mode().IsDir())
 }
 
 func (r *GitTreeEntryResolver) RawZipArchiveURL() string {
@@ -209,7 +211,7 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	}
 	entries, err := git.ReadDir(
 		ctx,
-		r.commit.repoResolver.innerRepo.Name,
+		r.commit.repoResolver.name,
 		api.CommitID(r.commit.OID()),
 		path.Dir(r.Path()),
 		false,

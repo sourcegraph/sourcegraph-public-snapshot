@@ -40,7 +40,7 @@ func (r *GitTreeEntryResolver) Files(ctx context.Context, args *gitTreeEntryConn
 func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryConnectionArgs, filter func(fi os.FileInfo) bool) ([]*GitTreeEntryResolver, error) {
 	entries, err := git.ReadDir(
 		ctx,
-		r.commit.repoResolver.innerRepo.Name,
+		r.commit.repoResolver.name,
 		api.CommitID(r.commit.OID()),
 		r.Path(),
 		r.isRecursive || args.Recursive,
@@ -64,6 +64,7 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 	for _, entry := range entries {
 		if filter == nil || filter(entry) {
 			l = append(l, &GitTreeEntryResolver{
+				db:            r.db,
 				commit:        r.commit,
 				stat:          entry,
 				isSingleChild: &hasSingleChild,

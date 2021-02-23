@@ -64,7 +64,7 @@ export CODEINTEL_PG_ALLOW_SINGLE_DB=true
 # Code Insights uses a separate database, because it's easier to run TimescaleDB in
 # Docker than install as a Postgres extension in dev environments.
 export CODEINSIGHTS_PGDATASOURCE=postgres://postgres:password@127.0.0.1:5435/postgres
-export DB_STARTUP_TIMEOUT=30s # codeinsights-db needs more time to start in some instances.
+export DB_STARTUP_TIMEOUT=120s # codeinsights-db needs more time to start in some instances.
 
 # Default to "info" level debugging, and "condensed" log format (nice for human readers)
 export SRC_LOG_LEVEL=${SRC_LOG_LEVEL:-info}
@@ -106,7 +106,7 @@ export SOURCEGRAPH_HTTPS_PORT="${SOURCEGRAPH_HTTPS_PORT:-"3443"}"
 [ -n "${DISABLE_SEARCH_SHARDING-}" ] || export INDEXED_SEARCH_SERVERS="localhost:3070 localhost:3071"
 
 # webpack-dev-server is a proxy running on port 3080 that (1) serves assets, waiting to respond
-# until they are (re)built and (2) otherwise proxies to nginx running on port 3081 (which proxies to
+# until they are (re)built and (2) otherwise proxies to Caddy running on port 3081 (which proxies to
 # Sourcegraph running on port 3082). That is why Sourcegraph listens on 3082 despite the externalURL
 # having port 3080.
 export SRC_HTTP_ADDR=":3082"
@@ -147,12 +147,15 @@ INSTALL_GO_TOOLS=(
 
 # Need to go to a temp directory for tools or we update our go.mod. We use
 # GOPROXY=direct to avoid always consulting a proxy for dlv.
-pushd "${TMPDIR:-/tmp}" >/dev/null || exit 1
+RANDOMT_TEMP=$(mktemp -d)
+cp .tool-versions "${RANDOMT_TEMP}"
+pushd "${RANDOMT_TEMP}" >/dev/null || exit 1
 if ! GOPROXY=direct go get -v "${INSTALL_GO_TOOLS[@]}" 2>go-install.log; then
   cat go-install.log
   echo >&2 "failed to install prerequisite tools, aborting."
   exit 1
 fi
+rm -rf "${RANDOMT_TEMP}"
 popd >/dev/null || exit 1
 
 # Put .bin:node_modules/.bin onto the $PATH

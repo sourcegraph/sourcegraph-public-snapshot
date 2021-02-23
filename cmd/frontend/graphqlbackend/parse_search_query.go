@@ -69,7 +69,7 @@ func toJSON(node query.Node) interface{} {
 	return struct{}{}
 }
 
-func (*schemaResolver) ParseSearchQuery(ctx context.Context, args *struct {
+func (r *schemaResolver) ParseSearchQuery(ctx context.Context, args *struct {
 	Query       string
 	PatternType string
 }) (*JSONValue, error) {
@@ -85,7 +85,7 @@ func (*schemaResolver) ParseSearchQuery(ctx context.Context, args *struct {
 		searchType = query.SearchTypeLiteral
 	}
 
-	settings, err := decodedViewerFinalSettings(ctx)
+	settings, err := decodedViewerFinalSettings(ctx, r.db)
 	if err != nil {
 		return nil, err
 	}

@@ -12,7 +12,7 @@ func (r *GitTreeEntryResolver) Blame(ctx context.Context,
 		StartLine int32
 		EndLine   int32
 	}) ([]*hunkResolver, error) {
-	hunks, err := git.BlameFile(ctx, r.commit.repoResolver.innerRepo.Name, r.Path(), &git.BlameOptions{
+	hunks, err := git.BlameFile(ctx, r.commit.repoResolver.name, r.Path(), &git.BlameOptions{
 		NewestCommit: api.CommitID(r.commit.OID()),
 		StartLine:    int(args.StartLine),
 		EndLine:      int(args.EndLine),
@@ -24,6 +24,7 @@ func (r *GitTreeEntryResolver) Blame(ctx context.Context,
 	var hunksResolver []*hunkResolver
 	for _, hunk := range hunks {
 		hunksResolver = append(hunksResolver, &hunkResolver{
+			db:   r.db,
 			repo: r.commit.repoResolver,
 			hunk: hunk,
 		})

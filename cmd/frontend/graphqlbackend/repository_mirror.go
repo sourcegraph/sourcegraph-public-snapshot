@@ -39,8 +39,8 @@ type repositoryMirrorInfoResolver struct {
 
 func (r *repositoryMirrorInfoResolver) gitserverRepoInfo(ctx context.Context) (*protocol.RepoInfo, error) {
 	r.repoInfoOnce.Do(func() {
-		resp, err := gitserver.DefaultClient.RepoInfo(ctx, r.repository.innerRepo.Name)
-		r.repoInfoResponse, r.repoInfoErr = resp.Results[r.repository.innerRepo.Name], err
+		resp, err := gitserver.DefaultClient.RepoInfo(ctx, r.repository.name)
+		r.repoInfoResponse, r.repoInfoErr = resp.Results[r.repository.name], err
 	})
 	return r.repoInfoResponse, r.repoInfoErr
 }
@@ -48,7 +48,7 @@ func (r *repositoryMirrorInfoResolver) gitserverRepoInfo(ctx context.Context) (*
 func (r *repositoryMirrorInfoResolver) repoUpdateSchedulerInfo(ctx context.Context) (*repoupdaterprotocol.RepoUpdateSchedulerInfoResult, error) {
 	r.repoUpdateSchedulerInfoOnce.Do(func() {
 		args := repoupdaterprotocol.RepoUpdateSchedulerInfoArgs{
-			RepoName: r.repository.innerRepo.Name,
+			RepoName: r.repository.name,
 			ID:       r.repository.IDInt32(),
 		}
 		r.repoUpdateSchedulerInfoResult, r.repoUpdateSchedulerInfoErr = repoupdater.DefaultClient.RepoUpdateSchedulerInfo(ctx, args)
@@ -92,7 +92,7 @@ func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, e
 	{
 		// Look up the remote URL in repo-updater.
 		result, err := repoupdater.DefaultClient.RepoLookup(ctx, repoupdaterprotocol.RepoLookupArgs{
-			Repo: r.repository.innerRepo.Name,
+			Repo: r.repository.name,
 		})
 		if err != nil {
 			return "", err
@@ -256,12 +256,12 @@ func (r *schemaResolver) UpdateMirrorRepository(ctx context.Context, args *struc
 		return nil, err
 	}
 
-	repo, err := repositoryByID(ctx, args.Repository)
+	repo, err := r.repositoryByID(ctx, args.Repository)
 	if err != nil {
 		return nil, err
 	}
 
-	if _, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, repo.innerRepo.Name); err != nil {
+	if _, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, repo.name); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil

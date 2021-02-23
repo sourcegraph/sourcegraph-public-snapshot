@@ -1,4 +1,6 @@
 .tooltip {
+    // Allows line breaks in tooltips
+    white-space: pre-wrap;
     animation: 0.25s fade-in;
     pointer-events: none;
 }

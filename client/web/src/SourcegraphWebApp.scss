@@ -72,14 +72,6 @@ body,
     min-width: 0;
 }
 
-// Hide the given element from Percy.
-.percy-hide,
-.monaco-editor .cursor {
-    @media only percy {
-        visibility: hidden !important;
-    }
-}
-
 // Pages
 @import './Layout';
 @import './api/ApiConsole';

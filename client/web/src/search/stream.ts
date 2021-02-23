@@ -1,6 +1,7 @@
 /* eslint-disable id-length */
 import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber, Notification } from 'rxjs'
 import { defaultIfEmpty, map, materialize, scan } from 'rxjs/operators'
+import { appendContextFilterToQuery } from '.'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, isErrorLike } from '../../../shared/src/util/errors'
 import { SearchPatternType } from '../graphql-operations'
@@ -170,10 +171,10 @@ function toGQLFileMatchBase(fileMatch: FileMatch | FileSymbolMatch): GQL.IFileMa
     if (fileMatch.branches) {
         const branch = fileMatch.branches[0]
         if (branch !== '') {
-            revision = '@' + branch
+            revision = branch
         }
     } else if (fileMatch.version) {
-        revision = '@' + fileMatch.version
+        revision = fileMatch.version
     }
 
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
@@ -181,7 +182,7 @@ function toGQLFileMatchBase(fileMatch: FileMatch | FileSymbolMatch): GQL.IFileMa
         path: fileMatch.name,
         // /github.com/gorilla/mux@v1.7.2/-/blob/mux_test.go
         // TODO return in response?
-        url: '/' + fileMatch.repository + revision + '/-/blob/' + fileMatch.name,
+        url: `/${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${fileMatch.name}`,
         commit: {
             oid: fileMatch.version || '',
         },
@@ -191,11 +192,20 @@ function toGQLFileMatchBase(fileMatch: FileMatch | FileSymbolMatch): GQL.IFileMa
         repository: fileMatch.repository,
         branches: fileMatch.branches,
     })
+
+    const revisionSpec = revision
+        ? ({
+              __typename: 'GitRef',
+              displayName: revision,
+              url: '/' + fileMatch.repository + '@' + revision,
+          } as GQL.IGitRef)
+        : null
+
     return {
         __typename: 'FileMatch',
         file,
         repository,
-        revSpec: null,
+        revSpec: revisionSpec,
         resource: fileMatch.name,
         symbols: [],
         lineMatches: [],
@@ -459,6 +469,7 @@ export interface StreamSearchOptions {
     patternType: SearchPatternType
     caseSensitive: boolean
     versionContext: string | undefined
+    searchContextSpec: string | undefined
     trace: string | undefined
 }
 
@@ -474,11 +485,14 @@ function search({
     patternType,
     caseSensitive,
     versionContext,
+    searchContextSpec,
     trace,
 }: StreamSearchOptions): Observable<SearchEvent> {
     return new Observable<SearchEvent>(observer => {
+        const finalQuery = appendContextFilterToQuery(`${query} ${caseSensitive ? 'case:yes' : ''}`, searchContextSpec)
+
         const parameters = [
-            ['q', caseSensitive ? `${query} case:yes` : query],
+            ['q', finalQuery],
             ['v', version],
             ['t', patternType as string],
         ]

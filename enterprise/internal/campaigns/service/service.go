@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -73,7 +74,7 @@ func (s *Service) CreateCampaignSpec(ctx context.Context, opts CreateCampaignSpe
 	}
 
 	// Check whether the current user has access to either one of the namespaces.
-	err = checkNamespaceAccess(ctx, opts.NamespaceUserID, opts.NamespaceOrgID)
+	err = checkNamespaceAccess(ctx, s.store.DB(), opts.NamespaceUserID, opts.NamespaceOrgID)
 	if err != nil {
 		return nil, err
 	}
@@ -266,7 +267,7 @@ func (s *Service) MoveCampaign(ctx context.Context, opts MoveCampaignOpts) (camp
 	}
 	// Check if current user has access to target namespace if set.
 	if opts.NewNamespaceOrgID != 0 || opts.NewNamespaceUserID != 0 {
-		err = checkNamespaceAccess(ctx, opts.NewNamespaceUserID, opts.NewNamespaceOrgID)
+		err = checkNamespaceAccess(ctx, s.store.DB(), opts.NewNamespaceUserID, opts.NewNamespaceOrgID)
 		if err != nil {
 			return nil, err
 		}
@@ -487,9 +488,9 @@ func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *
 // Otherwise it checks whether the current user _is_ the namespace user or has
 // access to the namespace org.
 // If both values are zero, an error is returned.
-func checkNamespaceAccess(ctx context.Context, namespaceUserID, namespaceOrgID int32) error {
+func checkNamespaceAccess(ctx context.Context, db dbutil.DB, namespaceUserID, namespaceOrgID int32) error {
 	if namespaceOrgID != 0 {
-		return backend.CheckOrgAccess(ctx, namespaceOrgID)
+		return backend.CheckOrgAccess(ctx, db, namespaceOrgID)
 	} else if namespaceUserID != 0 {
 		return backend.CheckSiteAdminOrSameUser(ctx, namespaceUserID)
 	} else {

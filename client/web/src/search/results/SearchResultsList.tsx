@@ -8,7 +8,13 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged, filter, first, map, skip, skipUntil } from 'rxjs/operators'
-import { parseSearchURLQuery, PatternTypeProps, CaseSensitivityProps, ParsedSearchQueryProps } from '..'
+import {
+    parseSearchURLQuery,
+    PatternTypeProps,
+    CaseSensitivityProps,
+    ParsedSearchQueryProps,
+    SearchContextProps,
+} from '..'
 import { FetchFileParameters } from '../../../../shared/src/components/CodeExcerpt'
 import { FileMatch } from '../../../../shared/src/components/FileMatch'
 import { displayRepoName } from '../../../../shared/src/components/RepoFileLink'
@@ -52,7 +58,8 @@ export interface SearchResultsListProps
         PatternTypeProps,
         CaseSensitivityProps,
         VersionContextProps,
-        Pick<CodeMonitoringProps, 'enableCodeMonitoring'> {
+        Pick<CodeMonitoringProps, 'enableCodeMonitoring'>,
+        Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     location: H.Location
     history: H.History
     authenticatedUser: AuthenticatedUser | null
@@ -415,13 +422,14 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                     )}
 
                                     {/* Results */}
-                                    <VirtualList
+                                    <VirtualList<GQL.SearchResult>
                                         itemsToShow={this.state.resultsShown}
                                         onShowMoreItems={this.onBottomHit(results.results.length)}
                                         onVisibilityChange={this.nextItemVisibilityChange}
-                                        items={results.results
-                                            .map((result, index) => this.renderResult(result, index === 0))
-                                            .filter(isDefined)}
+                                        items={results.results}
+                                        itemKey={this.itemKey}
+                                        itemProps={undefined}
+                                        renderItem={this.renderResult}
                                         containment={this.scrollableElementRef || undefined}
                                         onRef={this.nextVirtualListContainerElement}
                                     />
@@ -494,18 +502,13 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         )
     }
 
-    private renderResult(
-        result: GQL.GenericSearchResultInterface | GQL.IFileMatch,
-        isFirst: boolean
-    ): JSX.Element | undefined {
+    private renderResult = (result: GQL.GenericSearchResultInterface | GQL.IFileMatch): JSX.Element => {
         switch (result.__typename) {
             case 'FileMatch':
                 return (
                     <FileMatch
-                        key={'file:' + result.file.url}
                         location={this.props.location}
                         eventLogger={eventLogger}
-                        onFirstResultLoad={isFirst ? this.props.onFirstResultLoad : undefined}
                         icon={result.lineMatches && result.lineMatches.length > 0 ? SourceRepositoryIcon : FileIcon}
                         result={result}
                         onSelect={this.logEvent}
@@ -519,14 +522,14 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     />
                 )
         }
-        return (
-            <SearchResult
-                key={result.url}
-                result={result}
-                isLightTheme={this.props.isLightTheme}
-                history={this.props.history}
-            />
-        )
+        return <SearchResult result={result} isLightTheme={this.props.isLightTheme} history={this.props.history} />
+    }
+
+    private itemKey = (item: GQL.GenericSearchResultInterface | GQL.IFileMatch): string => {
+        if (item.__typename === 'FileMatch') {
+            return `file:${item.file.url}`
+        }
+        return item.url
     }
 
     /** onBottomHit increments the amount of results to be shown when we have scrolled to the bottom of the list. */

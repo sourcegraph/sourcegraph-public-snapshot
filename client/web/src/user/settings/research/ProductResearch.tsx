@@ -8,13 +8,14 @@ interface Props {
     authenticatedUser: Pick<AuthenticatedUser, 'email'>
 }
 
-const signUpForm = new URL('https://share.hsforms.com/1tkScUc65Tm-Yu98zUZcLGw1n7ku')
+const SIGN_UP_FORM_URL = 'https://share.hsforms.com/1tkScUc65Tm-Yu98zUZcLGw1n7ku'
 
 export const ProductResearchPage: React.FunctionComponent<Props> = ({ telemetryService, authenticatedUser }) => {
     useEffect(() => {
         telemetryService.logViewEvent('UserSettingsProductResearch')
     }, [telemetryService])
 
+    const signUpForm = new URL(SIGN_UP_FORM_URL)
     signUpForm.searchParams.set('email', authenticatedUser.email)
 
     return (

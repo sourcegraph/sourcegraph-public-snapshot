@@ -2,11 +2,13 @@ package lsifstore
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -166,7 +168,7 @@ func TestDatabaseDefinitions(t *testing.T) {
 	// `\ts, err := indexer.Index()` -> `\t Index() (*Stats, error)`
 	//                      ^^^^^           ^^^^^
 
-	if actual, err := store.Definitions(context.Background(), testBundleID, "cmd/lsif-go/main.go", 110, 22); err != nil {
+	if actual, _, err := store.Definitions(context.Background(), testBundleID, "cmd/lsif-go/main.go", 110, 22, 5, 0); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	} else {
 		expected := []Location{
@@ -196,18 +198,37 @@ func TestDatabaseReferences(t *testing.T) {
 	// -> `\t\t\trangeID, err = i.w.EmitRange(lspRange(ipos, ident.Name, false))`
 	//                              ^^^^^^^^^
 
-	if actual, err := store.References(context.Background(), testBundleID, "protocol/writer.go", 85, 20); err != nil {
-		t.Fatalf("unexpected error %s", err)
-	} else {
-		expected := []Location{
-			{DumpID: testBundleID, Path: "internal/index/indexer.go", Range: newRange(380, 22, 380, 31)},
-			{DumpID: testBundleID, Path: "internal/index/indexer.go", Range: newRange(529, 22, 529, 31)},
-			{DumpID: testBundleID, Path: "protocol/writer.go", Range: newRange(85, 17, 85, 26)},
-		}
+	expected := []Location{
+		{DumpID: testBundleID, Path: "internal/index/indexer.go", Range: newRange(380, 22, 380, 31)},
+		{DumpID: testBundleID, Path: "internal/index/indexer.go", Range: newRange(529, 22, 529, 31)},
+		{DumpID: testBundleID, Path: "protocol/writer.go", Range: newRange(85, 17, 85, 26)},
+	}
 
-		if diff := cmp.Diff(expected, actual); diff != "" {
-			t.Errorf("unexpected reference locations (-want +got):\n%s", diff)
-		}
+	testCases := []struct {
+		limit    int
+		offset   int
+		expected []Location
+	}{
+		{5, 0, expected},
+		{2, 0, expected[:2]},
+		{2, 1, expected[1:]},
+		{5, 5, expected[:0]},
+	}
+
+	for i, testCase := range testCases {
+		t.Run(fmt.Sprintf("i=%d", i), func(t *testing.T) {
+			if actual, totalCount, err := store.References(context.Background(), testBundleID, "protocol/writer.go", 85, 20, testCase.limit, testCase.offset); err != nil {
+				t.Fatalf("unexpected error %s", err)
+			} else {
+				if totalCount != 3 {
+					t.Errorf("unexpected count. want=%d have=%d", 3, totalCount)
+				}
+
+				if diff := cmp.Diff(testCase.expected, actual); diff != "" {
+					t.Errorf("unexpected reference locations (-want +got):\n%s", diff)
+				}
+			}
+		})
 	}
 }
 
@@ -273,7 +294,7 @@ func TestDatabaseMonikersByPosition(t *testing.T) {
 	}
 }
 
-func TestDatabaseMonikerResults(t *testing.T) {
+func TestDatabaseBulkMonikerResults(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -299,35 +320,59 @@ func TestDatabaseMonikerResults(t *testing.T) {
 		{DumpID: testBundleID, Path: "internal/index/helper.go", Range: newRange(78, 6, 78, 16)},
 	}
 
+	combinedReferences := append(markdownReferenceLocations, edgeReferenceLocations...)
+	edgeMoniker := MonikerData{Scheme: "gomod", Identifier: "github.com/sourcegraph/lsif-go/protocol:Edge"}
+	markdownMoniker := MonikerData{Scheme: "gomod", Identifier: "github.com/slimsag/godocmd:ToMarkdown"}
+
 	testCases := []struct {
 		tableName          string
-		scheme             string
-		identifier         string
-		skip               int
-		take               int
+		uploadIDs          []int
+		monikers           []MonikerData
+		limit              int
+		offset             int
 		expectedLocations  []Location
 		expectedTotalCount int
 	}{
-		{"definitions", "gomod", "github.com/sourcegraph/lsif-go/protocol:Edge", 0, 5, edgeDefinitionLocations, 2},
-		{"definitions", "gomod", "github.com/sourcegraph/lsif-go/protocol:Edge", 0, 1, edgeDefinitionLocations[:1], 2},
-		{"definitions", "gomod", "github.com/sourcegraph/lsif-go/protocol:Edge", 1, 5, edgeDefinitionLocations[1:], 2},
-		{"references", "gomod", "github.com/sourcegraph/lsif-go/protocol:Edge", 0, 5, edgeReferenceLocations[:5], 29},
-		{"references", "gomod", "github.com/sourcegraph/lsif-go/protocol:Edge", 2, 2, edgeReferenceLocations[2:4], 29},
-		{"references", "gomod", "github.com/slimsag/godocmd:ToMarkdown", 0, 5, markdownReferenceLocations, 1},
+		// empty cases
+		{"definitions", []int{}, []MonikerData{edgeMoniker}, 5, 0, nil, 0},
+		{"definitions", []int{testBundleID}, []MonikerData{}, 5, 0, nil, 0},
+
+		// single definitions
+		{"definitions", []int{testBundleID}, []MonikerData{edgeMoniker}, 5, 0, edgeDefinitionLocations, 2},
+		{"definitions", []int{testBundleID}, []MonikerData{edgeMoniker}, 1, 0, edgeDefinitionLocations[:1], 2},
+		{"definitions", []int{testBundleID}, []MonikerData{edgeMoniker}, 5, 1, edgeDefinitionLocations[1:], 2},
+
+		// single references
+		{"references", []int{testBundleID}, []MonikerData{edgeMoniker}, 5, 0, edgeReferenceLocations[:5], 29},
+		{"references", []int{testBundleID}, []MonikerData{edgeMoniker}, 2, 2, edgeReferenceLocations[2:4], 29},
+		{"references", []int{testBundleID}, []MonikerData{markdownMoniker}, 5, 0, markdownReferenceLocations, 1},
+
+		// multiple monikers
+		{"references", []int{testBundleID}, []MonikerData{edgeMoniker, markdownMoniker}, 5, 0, combinedReferences[:5], 30},
+		{"references", []int{testBundleID}, []MonikerData{edgeMoniker, markdownMoniker}, 5, 1, combinedReferences[1:6], 30},
 	}
 
 	for i, testCase := range testCases {
-		if actual, totalCount, err := store.MonikerResults(context.Background(), testBundleID, testCase.tableName, testCase.scheme, testCase.identifier, testCase.skip, testCase.take); err != nil {
-			t.Fatalf("unexpected error for test case #%d: %s", i, err)
-		} else {
-			if totalCount != testCase.expectedTotalCount {
-				t.Errorf("unexpected moniker result total count for test case #%d. want=%d have=%d", i, testCase.expectedTotalCount, totalCount)
-			}
+		t.Run(fmt.Sprintf("i=%d", i), func(t *testing.T) {
+			if actual, totalCount, err := store.BulkMonikerResults(
+				context.Background(),
+				testCase.tableName,
+				testCase.uploadIDs,
+				testCase.monikers,
+				testCase.limit,
+				testCase.offset,
+			); err != nil {
+				t.Fatalf("unexpected error for test case #%d: %s", i, err)
+			} else {
+				if totalCount != testCase.expectedTotalCount {
+					t.Errorf("unexpected moniker result total count for test case #%d. want=%d have=%d", i, testCase.expectedTotalCount, totalCount)
+				}
 
-			if diff := cmp.Diff(testCase.expectedLocations, actual); diff != "" {
-				t.Errorf("unexpected moniker result locations for test case #%d (-want +got):\n%s", i, diff)
+				if diff := cmp.Diff(testCase.expectedLocations, actual); diff != "" {
+					t.Errorf("unexpected moniker result locations for test case #%d (-want +got):\n%s", i, diff)
+				}
 			}
-		}
+		})
 	}
 }
 

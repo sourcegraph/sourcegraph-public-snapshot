@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -27,6 +28,8 @@ const numCommits = 10 // per repo
 const numPaths = 10   // per commit
 
 func TestCachedLocationResolver(t *testing.T) {
+	db := new(dbtesting.MockDB)
+
 	t.Cleanup(func() {
 		database.Mocks.Repos.Get = nil
 		git.Mocks.ResolveRevision = nil
@@ -49,7 +52,7 @@ func TestCachedLocationResolver(t *testing.T) {
 		return &git.Commit{ID: commitID}, nil
 	}
 
-	cachedResolver := NewCachedLocationResolver()
+	cachedResolver := NewCachedLocationResolver(db)
 
 	var repositoryIDs []api.RepoID
 	for i := 1; i <= numRepositories; i++ {
@@ -164,6 +167,8 @@ func TestCachedLocationResolver(t *testing.T) {
 }
 
 func TestCachedLocationResolverUnknownRepository(t *testing.T) {
+	db := new(dbtesting.MockDB)
+
 	t.Cleanup(func() {
 		database.Mocks.Repos.Get = nil
 		git.Mocks.ResolveRevision = nil
@@ -173,7 +178,7 @@ func TestCachedLocationResolverUnknownRepository(t *testing.T) {
 		return nil, &database.RepoNotFoundErr{ID: id}
 	}
 
-	repositoryResolver, err := NewCachedLocationResolver().Repository(context.Background(), 50)
+	repositoryResolver, err := NewCachedLocationResolver(db).Repository(context.Background(), 50)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -182,7 +187,7 @@ func TestCachedLocationResolverUnknownRepository(t *testing.T) {
 	}
 
 	// Ensure no dereference in child resolvers either
-	pathResolver, err := NewCachedLocationResolver().Path(context.Background(), 50, "deadbeef", "main.go")
+	pathResolver, err := NewCachedLocationResolver(db).Path(context.Background(), 50, "deadbeef", "main.go")
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -192,6 +197,8 @@ func TestCachedLocationResolverUnknownRepository(t *testing.T) {
 }
 
 func TestCachedLocationResolverUnknownCommit(t *testing.T) {
+	db := new(dbtesting.MockDB)
+
 	t.Cleanup(func() {
 		database.Mocks.Repos.Get = nil
 		git.Mocks.ResolveRevision = nil
@@ -205,7 +212,7 @@ func TestCachedLocationResolverUnknownCommit(t *testing.T) {
 		return "", &gitserver.RevisionNotFoundError{}
 	}
 
-	commitResolver, err := NewCachedLocationResolver().Commit(context.Background(), 50, "deadbeef")
+	commitResolver, err := NewCachedLocationResolver(db).Commit(context.Background(), 50, "deadbeef")
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -214,7 +221,7 @@ func TestCachedLocationResolverUnknownCommit(t *testing.T) {
 	}
 
 	// Ensure no dereference in child resolvers either
-	pathResolver, err := NewCachedLocationResolver().Path(context.Background(), 50, "deadbeef", "main.go")
+	pathResolver, err := NewCachedLocationResolver(db).Path(context.Background(), 50, "deadbeef", "main.go")
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -224,6 +231,8 @@ func TestCachedLocationResolverUnknownCommit(t *testing.T) {
 }
 
 func TestResolveLocations(t *testing.T) {
+	db := new(dbtesting.MockDB)
+
 	t.Cleanup(func() {
 		database.Mocks.Repos.Get = nil
 		git.Mocks.ResolveRevision = nil
@@ -250,7 +259,7 @@ func TestResolveLocations(t *testing.T) {
 	r3 := lsifstore.Range{Start: lsifstore.Position{Line: 31, Character: 32}, End: lsifstore.Position{Line: 33, Character: 34}}
 	r4 := lsifstore.Range{Start: lsifstore.Position{Line: 41, Character: 42}, End: lsifstore.Position{Line: 43, Character: 44}}
 
-	locations, err := resolveLocations(context.Background(), NewCachedLocationResolver(), []resolvers.AdjustedLocation{
+	locations, err := resolveLocations(context.Background(), NewCachedLocationResolver(db), []resolvers.AdjustedLocation{
 		{Dump: store.Dump{RepositoryID: 50}, AdjustedCommit: "deadbeef1", AdjustedRange: r1, Path: "p1"},
 		{Dump: store.Dump{RepositoryID: 51}, AdjustedCommit: "deadbeef2", AdjustedRange: r2, Path: "p2"},
 		{Dump: store.Dump{RepositoryID: 52}, AdjustedCommit: "deadbeef3", AdjustedRange: r3, Path: "p3"},

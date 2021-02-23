@@ -181,6 +181,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                 versionContext={versionContext}
                                 setVersionContext={setVersionContext}
                                 availableVersionContexts={availableVersionContexts}
+                                selectedSearchContextSpec={props.selectedSearchContextSpec}
                             />
                             <SearchNavbarItem
                                 {...props}

@@ -35,6 +35,7 @@ const defaultProps: StreamingSearchResultsProps = {
     caseSensitive: false,
     patternType: SearchPatternType.literal,
     versionContext: undefined,
+    selectedSearchContextSpec: 'global',
     availableVersionContexts: [],
     previousVersionContext: null,
 
@@ -247,6 +248,28 @@ add('error with some results', () => {
             skipped: [],
         },
         error: new Error('test error'),
+    }
+
+    return <WebStory>{() => <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />}</WebStory>
+})
+
+add('limit hit with some results', () => {
+    const result: AggregateStreamingSearchResults = {
+        state: 'complete',
+        results: MULTIPLE_SEARCH_RESULT.results,
+        filters: MULTIPLE_SEARCH_RESULT.dynamicFilters,
+        progress: {
+            durationMs: 500,
+            matchCount: MULTIPLE_SEARCH_RESULT.matchCount,
+            skipped: [
+                {
+                    reason: 'document-match-limit',
+                    message: 'result limit hit',
+                    severity: 'info',
+                    title: 'result limit hit',
+                },
+            ],
+        },
     }
 
     return <WebStory>{() => <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />}</WebStory>

@@ -10,8 +10,11 @@ import (
 type operations struct {
 	addUploadPart                          *observation.Operation
 	calculateVisibleUploads                *observation.Operation
+	commitGraphMetadata                    *observation.Operation
+	definitionDumps                        *observation.Operation
 	deleteIndexByID                        *observation.Operation
 	deleteIndexesWithoutRepository         *observation.Operation
+	deleteOldIndexes                       *observation.Operation
 	deleteOverlappingDumps                 *observation.Operation
 	deleteUploadByID                       *observation.Operation
 	deleteUploadsStuckUploading            *observation.Operation
@@ -19,14 +22,12 @@ type operations struct {
 	dequeue                                *observation.Operation
 	dequeueIndex                           *observation.Operation
 	dirtyRepositories                      *observation.Operation
-	commitGraphMetadata                    *observation.Operation
 	findClosestDumps                       *observation.Operation
 	findClosestDumpsFromGraphFragment      *observation.Operation
-	getDumpByID                            *observation.Operation
+	getDumpsByIDs                          *observation.Operation
 	getIndexByID                           *observation.Operation
 	getIndexConfigurationByRepositoryID    *observation.Operation
 	getIndexes                             *observation.Operation
-	getPackage                             *observation.Operation
 	getRepositoriesWithIndexConfiguration  *observation.Operation
 	getUploadByID                          *observation.Operation
 	getUploads                             *observation.Operation
@@ -46,20 +47,23 @@ type operations struct {
 	markIndexErrored                       *observation.Operation
 	markQueued                             *observation.Operation
 	markRepositoryAsDirty                  *observation.Operation
-	packageReferencePager                  *observation.Operation
 	queueSize                              *observation.Operation
+	referenceIDsAndFilters                 *observation.Operation
 	repoName                               *observation.Operation
 	repoUsageStatistics                    *observation.Operation
 	requeue                                *observation.Operation
 	requeueIndex                           *observation.Operation
 	resetIndexableRepositories             *observation.Operation
-	sameRepoPager                          *observation.Operation
 	softDeleteOldUploads                   *observation.Operation
-	deleteOldIndexes                       *observation.Operation
 	updateIndexableRepository              *observation.Operation
 	updateIndexConfigurationByRepositoryID *observation.Operation
 	updatePackageReferences                *observation.Operation
 	updatePackages                         *observation.Operation
+
+	writeVisibleUploads        *observation.Operation
+	persistNearestUploads      *observation.Operation
+	persistNearestUploadsLinks *observation.Operation
+	persistUploadsVisibleAtTip *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -78,11 +82,23 @@ func newOperations(observationContext *observation.Context) *operations {
 		})
 	}
 
+	// suboperations do not have their own metrics but do have their
+	// own opentracing spans. This allows us to more granularly track
+	// the latency for parts of a request without noising up Prometheus.
+	subOp := func(name string) *observation.Operation {
+		return observationContext.Operation(observation.Op{
+			Name: fmt.Sprintf("codeintel.dbstore.%s", name),
+		})
+	}
+
 	return &operations{
 		addUploadPart:                          op("AddUploadPart"),
 		calculateVisibleUploads:                op("CalculateVisibleUploads"),
+		commitGraphMetadata:                    op("CommitGraphMetadata"),
+		definitionDumps:                        op("DefinitionDumps"),
 		deleteIndexByID:                        op("DeleteIndexByID"),
 		deleteIndexesWithoutRepository:         op("DeleteIndexesWithoutRepository"),
+		deleteOldIndexes:                       op("DeleteOldIndexes"),
 		deleteOverlappingDumps:                 op("DeleteOverlappingDumps"),
 		deleteUploadByID:                       op("DeleteUploadByID"),
 		deleteUploadsStuckUploading:            op("DeleteUploadsStuckUploading"),
@@ -90,14 +106,12 @@ func newOperations(observationContext *observation.Context) *operations {
 		dequeue:                                op("Dequeue"),
 		dequeueIndex:                           op("DequeueIndex"),
 		dirtyRepositories:                      op("DirtyRepositories"),
-		commitGraphMetadata:                    op("CommitGraphMetadata"),
 		findClosestDumps:                       op("FindClosestDumps"),
 		findClosestDumpsFromGraphFragment:      op("FindClosestDumpsFromGraphFragment"),
-		getDumpByID:                            op("GetDumpByID"),
+		getDumpsByIDs:                          op("GetDumpsByIDs"),
 		getIndexByID:                           op("GetIndexByID"),
 		getIndexConfigurationByRepositoryID:    op("GetIndexConfigurationByRepositoryID"),
 		getIndexes:                             op("GetIndexes"),
-		getPackage:                             op("GetPackage"),
 		getRepositoriesWithIndexConfiguration:  op("GetRepositoriesWithIndexConfiguration"),
 		getUploadByID:                          op("GetUploadByID"),
 		getUploads:                             op("GetUploads"),
@@ -117,19 +131,22 @@ func newOperations(observationContext *observation.Context) *operations {
 		markIndexErrored:                       op("MarkIndexErrored"),
 		markQueued:                             op("MarkQueued"),
 		markRepositoryAsDirty:                  op("MarkRepositoryAsDirty"),
-		packageReferencePager:                  op("PackageReferencePager"),
 		queueSize:                              op("QueueSize"),
+		referenceIDsAndFilters:                 op("ReferenceIDsAndFilters"),
 		repoName:                               op("RepoName"),
 		repoUsageStatistics:                    op("RepoUsageStatistics"),
 		requeue:                                op("Requeue"),
 		requeueIndex:                           op("RequeueIndex"),
 		resetIndexableRepositories:             op("ResetIndexableRepositories"),
-		sameRepoPager:                          op("SameRepoPager"),
 		softDeleteOldUploads:                   op("SoftDeleteOldUploads"),
-		deleteOldIndexes:                       op("DeleteOldIndexes"),
 		updateIndexableRepository:              op("UpdateIndexableRepository"),
 		updateIndexConfigurationByRepositoryID: op("UpdateIndexConfigurationByRepositoryID"),
 		updatePackageReferences:                op("UpdatePackageReferences"),
 		updatePackages:                         op("UpdatePackages"),
+
+		writeVisibleUploads:        subOp("writeVisibleUploads"),
+		persistNearestUploads:      subOp("persistNearestUploads"),
+		persistNearestUploadsLinks: subOp("persistNearestUploadsLinks"),
+		persistUploadsVisibleAtTip: subOp("persistUploadsVisibleAtTip"),
 	}
 }
