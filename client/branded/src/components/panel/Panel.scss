@@ -77,6 +77,10 @@
             top: calc(100% - 3px);
             border-bottom: 3px solid var(--border-color);
         }
+
+        li:first-child .panel__action {
+            padding-left: 0.5rem;
+        }
     }
 
     &__action {
