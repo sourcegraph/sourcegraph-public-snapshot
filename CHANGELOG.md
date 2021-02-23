@@ -19,6 +19,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+- Using volume workspace mode could result in Git errors when used with Docker containers that do not run as root. These have been fixed. [#478](https://github.com/sourcegraph/src-cli/issues/478)
+
 ### Removed
 
 ## 3.25.1

@@ -70,6 +70,13 @@ set -e
 set -x
 
 git init
+
+# Note that we don't actually use these anywhere, since we're not creating the
+# real commits in this container, but we do need _something_ set to avoid Git
+# erroring out.
+git config user.name 'Sourcegraph Campaigns'
+git config user.email campaigns@sourcegraph.com
+
 # --force because we want previously "gitignored" files in the repository
 git add --force --all
 git commit --quiet --all --allow-empty -m src-action-exec
@@ -281,6 +288,10 @@ func (w *dockerVolumeWorkspace) runScript(ctx context.Context, target, script st
 		return nil, errors.Wrap(err, "writing run script")
 	}
 	f.Close()
+
+	// Sidestep any umask issues on the temporary file by always making it
+	// executable by everyone.
+	os.Chmod(name, 0755)
 
 	common, err := w.DockerRunOpts(ctx, target)
 	if err != nil {

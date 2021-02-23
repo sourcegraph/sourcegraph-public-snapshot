@@ -4,10 +4,4 @@
 
 FROM alpine:3.13.1@sha256:08d6ca16c60fe7490c03d10dc339d9fd8ea67c6466dea8d558526b1330a85930
 
-# Note that we have to configure git's user.email and user.name settings to
-# avoid issues when committing changes. These values are not used when creating
-# changesets, since we only extract the diff from the container and not a full
-# patch, but need to be set to avoid git erroring out.
-RUN apk add --update curl git unzip && \
-    git config --global user.email campaigns@sourcegraph.com && \
-    git config --global user.name 'Sourcegraph Campaigns'
+RUN apk add --update git unzip
