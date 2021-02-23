@@ -27,27 +27,18 @@ export function useMutation<TData = unknown, TVariables = unknown>(
     const subscriptions = useMemo(() => new Subscription(), [])
 
     const [result, setResult] = useState<MutationResult<TData>>({ loading: false })
-    const handleResponse = useCallback(
-        (partialResult: Partial<MutationResult<TData>>): void =>
-            setResult(previous => ({
-                ...previous,
-                ...partialResult,
-            })),
-        []
-    )
-
     const submit = useCallback(
         (variables: TVariables) => {
-            handleResponse({ loading: true })
+            setResult({ loading: true, data: undefined, error: undefined })
 
             subscriptions.add(
                 requestGraphQL<TData, TVariables>(mutation, variables).subscribe(response => {
                     const error = isErrorGraphQLResult(response) ? createAggregateError(response.errors) : undefined
-                    handleResponse({ data: response.data, error, loading: false })
+                    setResult({ loading: false, data: response.data, error })
                 })
             )
         },
-        [subscriptions, mutation, handleResponse]
+        [subscriptions, mutation]
     )
 
     if (result.error && options?.throwGraphQLErrors) {

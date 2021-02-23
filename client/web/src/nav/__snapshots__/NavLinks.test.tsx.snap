@@ -180,34 +180,30 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
         role="menu"
         tabindex="-1"
       >
+        <button
+          class="feedback-prompt__close"
+          type="button"
+        >
+          <svg
+            class="mdi-icon feedback-prompt__icon"
+            fill="currentColor"
+            height="24"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+            />
+          </svg>
+        </button>
         <form
           class=" "
         >
-          <header
-            class="feedback-prompt__header"
+          <h3
+            class="mb-0"
           >
-            <h3
-              class="mb-0"
-            >
-              What’s on your mind?
-            </h3>
-            <button
-              class="feedback-prompt__header--close"
-              type="button"
-            >
-              <svg
-                class="mdi-icon feedback-prompt__header-icon"
-                fill="currentColor"
-                height="24"
-                viewBox="0 0 24 24"
-                width="24"
-              >
-                <path
-                  d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
-                />
-              </svg>
-            </button>
-          </header>
+            What’s on your mind?
+          </h3>
           <textarea
             autofocus=""
             class="form-control feedback-prompt__textarea"
@@ -902,34 +898,30 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
         role="menu"
         tabindex="-1"
       >
+        <button
+          class="feedback-prompt__close"
+          type="button"
+        >
+          <svg
+            class="mdi-icon feedback-prompt__icon"
+            fill="currentColor"
+            height="24"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+            />
+          </svg>
+        </button>
         <form
           class=" "
         >
-          <header
-            class="feedback-prompt__header"
+          <h3
+            class="mb-0"
           >
-            <h3
-              class="mb-0"
-            >
-              What’s on your mind?
-            </h3>
-            <button
-              class="feedback-prompt__header--close"
-              type="button"
-            >
-              <svg
-                class="mdi-icon feedback-prompt__header-icon"
-                fill="currentColor"
-                height="24"
-                viewBox="0 0 24 24"
-                width="24"
-              >
-                <path
-                  d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
-                />
-              </svg>
-            </button>
-          </header>
+            What’s on your mind?
+          </h3>
           <textarea
             autofocus=""
             class="form-control feedback-prompt__textarea"
@@ -1634,34 +1626,30 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
         role="menu"
         tabindex="-1"
       >
+        <button
+          class="feedback-prompt__close"
+          type="button"
+        >
+          <svg
+            class="mdi-icon feedback-prompt__icon"
+            fill="currentColor"
+            height="24"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+            />
+          </svg>
+        </button>
         <form
           class=" "
         >
-          <header
-            class="feedback-prompt__header"
+          <h3
+            class="mb-0"
           >
-            <h3
-              class="mb-0"
-            >
-              What’s on your mind?
-            </h3>
-            <button
-              class="feedback-prompt__header--close"
-              type="button"
-            >
-              <svg
-                class="mdi-icon feedback-prompt__header-icon"
-                fill="currentColor"
-                height="24"
-                viewBox="0 0 24 24"
-                width="24"
-              >
-                <path
-                  d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
-                />
-              </svg>
-            </button>
-          </header>
+            What’s on your mind?
+          </h3>
           <textarea
             autofocus=""
             class="form-control feedback-prompt__textarea"
@@ -2337,34 +2325,30 @@ exports[`NavLinks authed self-hosted /search 1`] = `
         role="menu"
         tabindex="-1"
       >
+        <button
+          class="feedback-prompt__close"
+          type="button"
+        >
+          <svg
+            class="mdi-icon feedback-prompt__icon"
+            fill="currentColor"
+            height="24"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+            />
+          </svg>
+        </button>
         <form
           class=" "
         >
-          <header
-            class="feedback-prompt__header"
+          <h3
+            class="mb-0"
           >
-            <h3
-              class="mb-0"
-            >
-              What’s on your mind?
-            </h3>
-            <button
-              class="feedback-prompt__header--close"
-              type="button"
-            >
-              <svg
-                class="mdi-icon feedback-prompt__header-icon"
-                fill="currentColor"
-                height="24"
-                viewBox="0 0 24 24"
-                width="24"
-              >
-                <path
-                  d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
-                />
-              </svg>
-            </button>
-          </header>
+            What’s on your mind?
+          </h3>
           <textarea
             autofocus=""
             class="form-control feedback-prompt__textarea"
@@ -3050,34 +3034,30 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
         role="menu"
         tabindex="-1"
       >
+        <button
+          class="feedback-prompt__close"
+          type="button"
+        >
+          <svg
+            class="mdi-icon feedback-prompt__icon"
+            fill="currentColor"
+            height="24"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+            />
+          </svg>
+        </button>
         <form
           class=" "
         >
-          <header
-            class="feedback-prompt__header"
+          <h3
+            class="mb-0"
           >
-            <h3
-              class="mb-0"
-            >
-              What’s on your mind?
-            </h3>
-            <button
-              class="feedback-prompt__header--close"
-              type="button"
-            >
-              <svg
-                class="mdi-icon feedback-prompt__header-icon"
-                fill="currentColor"
-                height="24"
-                viewBox="0 0 24 24"
-                width="24"
-              >
-                <path
-                  d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
-                />
-              </svg>
-            </button>
-          </header>
+            What’s on your mind?
+          </h3>
           <textarea
             autofocus=""
             class="form-control feedback-prompt__textarea"
@@ -3514,34 +3494,30 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
         role="menu"
         tabindex="-1"
       >
+        <button
+          class="feedback-prompt__close"
+          type="button"
+        >
+          <svg
+            class="mdi-icon feedback-prompt__icon"
+            fill="currentColor"
+            height="24"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+            />
+          </svg>
+        </button>
         <form
           class=" "
         >
-          <header
-            class="feedback-prompt__header"
+          <h3
+            class="mb-0"
           >
-            <h3
-              class="mb-0"
-            >
-              What’s on your mind?
-            </h3>
-            <button
-              class="feedback-prompt__header--close"
-              type="button"
-            >
-              <svg
-                class="mdi-icon feedback-prompt__header-icon"
-                fill="currentColor"
-                height="24"
-                viewBox="0 0 24 24"
-                width="24"
-              >
-                <path
-                  d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
-                />
-              </svg>
-            </button>
-          </header>
+            What’s on your mind?
+          </h3>
           <textarea
             autofocus=""
             class="form-control feedback-prompt__textarea"
@@ -3988,34 +3964,30 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
         role="menu"
         tabindex="-1"
       >
+        <button
+          class="feedback-prompt__close"
+          type="button"
+        >
+          <svg
+            class="mdi-icon feedback-prompt__icon"
+            fill="currentColor"
+            height="24"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+            />
+          </svg>
+        </button>
         <form
           class=" "
         >
-          <header
-            class="feedback-prompt__header"
+          <h3
+            class="mb-0"
           >
-            <h3
-              class="mb-0"
-            >
-              What’s on your mind?
-            </h3>
-            <button
-              class="feedback-prompt__header--close"
-              type="button"
-            >
-              <svg
-                class="mdi-icon feedback-prompt__header-icon"
-                fill="currentColor"
-                height="24"
-                viewBox="0 0 24 24"
-                width="24"
-              >
-                <path
-                  d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
-                />
-              </svg>
-            </button>
-          </header>
+            What’s on your mind?
+          </h3>
           <textarea
             autofocus=""
             class="form-control feedback-prompt__textarea"
@@ -4440,34 +4412,30 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
         role="menu"
         tabindex="-1"
       >
+        <button
+          class="feedback-prompt__close"
+          type="button"
+        >
+          <svg
+            class="mdi-icon feedback-prompt__icon"
+            fill="currentColor"
+            height="24"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+            />
+          </svg>
+        </button>
         <form
           class=" "
         >
-          <header
-            class="feedback-prompt__header"
+          <h3
+            class="mb-0"
           >
-            <h3
-              class="mb-0"
-            >
-              What’s on your mind?
-            </h3>
-            <button
-              class="feedback-prompt__header--close"
-              type="button"
-            >
-              <svg
-                class="mdi-icon feedback-prompt__header-icon"
-                fill="currentColor"
-                height="24"
-                viewBox="0 0 24 24"
-                width="24"
-              >
-                <path
-                  d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
-                />
-              </svg>
-            </button>
-          </header>
+            What’s on your mind?
+          </h3>
           <textarea
             autofocus=""
             class="form-control feedback-prompt__textarea"
