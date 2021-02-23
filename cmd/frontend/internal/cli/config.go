@@ -91,17 +91,18 @@ func overrideSiteConfig(ctx context.Context) error {
 	return nil
 }
 
-func overrideGlobalSettings(ctx context.Context) error {
+func overrideGlobalSettings(ctx context.Context, db dbutil.DB) error {
 	path := os.Getenv("GLOBAL_SETTINGS_FILE")
 	if path == "" {
 		return nil
 	}
+	settings := database.Settings(db)
 	var update = func(ctx context.Context) error {
 		globalSettingsBytes, err := ioutil.ReadFile(path)
 		if err != nil {
 			return errors.Wrap(err, "reading GLOBAL_SETTINGS_FILE")
 		}
-		currentSettings, err := database.GlobalSettings.GetLatest(ctx, api.SettingsSubject{Site: true})
+		currentSettings, err := settings.GetLatest(ctx, api.SettingsSubject{Site: true})
 		if err != nil {
 			return errors.Wrap(err, "could not fetch current settings")
 		}
@@ -113,7 +114,7 @@ func overrideGlobalSettings(ctx context.Context) error {
 			if currentSettings != nil {
 				lastID = &currentSettings.ID
 			}
-			_, err = database.GlobalSettings.CreateIfUpToDate(ctx, api.SettingsSubject{Site: true}, lastID, nil, globalSettings)
+			_, err = settings.CreateIfUpToDate(ctx, api.SettingsSubject{Site: true}, lastID, nil, globalSettings)
 			if err != nil {
 				return errors.Wrap(err, "writing global setting override to database")
 			}
@@ -128,12 +129,13 @@ func overrideGlobalSettings(ctx context.Context) error {
 	return nil
 }
 
-func overrideExtSvcConfig(ctx context.Context) error {
+func overrideExtSvcConfig(ctx context.Context, db dbutil.DB) error {
 	log := log15.Root().New("svc", "config.file")
 	path := os.Getenv("EXTSVC_CONFIG_FILE")
 	if path == "" {
 		return nil
 	}
+	extsvcs := database.ExternalServices(db)
 
 	raw, err := (&configurationSource{}).Read(ctx)
 	if err != nil {
@@ -158,7 +160,7 @@ func overrideExtSvcConfig(ctx context.Context) error {
 			log.Warn("EXTSVC_CONFIG_FILE contains zero external service configurations")
 		}
 
-		existing, err := database.GlobalExternalServices.List(ctx, database.ExternalServicesListOptions{
+		existing, err := extsvcs.List(ctx, database.ExternalServicesListOptions{
 			// NOTE: External services loaded from config file do not have namespace specified.
 			// Therefore, we only need to load those from database.
 			NoNamespace: true,
@@ -241,14 +243,14 @@ func overrideExtSvcConfig(ctx context.Context) error {
 		// Apply the delta update.
 		for extSvc := range toRemove {
 			log.Debug("Deleting external service", "id", extSvc.ID, "displayName", extSvc.DisplayName)
-			err := database.GlobalExternalServices.Delete(ctx, extSvc.ID)
+			err := extsvcs.Delete(ctx, extSvc.ID)
 			if err != nil {
 				return errors.Wrap(err, "ExternalServices.Delete")
 			}
 		}
 		for extSvc := range toAdd {
 			log.Debug("Adding external service", "displayName", extSvc.DisplayName)
-			if err := database.GlobalExternalServices.Create(ctx, confGet, extSvc); err != nil {
+			if err := extsvcs.Create(ctx, confGet, extSvc); err != nil {
 				return errors.Wrap(err, "ExternalServices.Create")
 			}
 		}
@@ -258,7 +260,7 @@ func overrideExtSvcConfig(ctx context.Context) error {
 			log.Debug("Updating external service", "id", id, "displayName", extSvc.DisplayName)
 
 			update := &database.ExternalServiceUpdate{DisplayName: &extSvc.DisplayName, Config: &extSvc.Config, CloudDefault: &extSvc.CloudDefault}
-			if err := database.GlobalExternalServices.Update(ctx, ps, id, update); err != nil {
+			if err := extsvcs.Update(ctx, ps, id, update); err != nil {
 				return errors.Wrap(err, "ExternalServices.Update")
 			}
 		}

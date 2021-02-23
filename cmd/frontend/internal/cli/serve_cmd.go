@@ -149,13 +149,13 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 		log.Fatalf("failed to initialize encryption keyring: %v", err)
 	}
 
-	if err := overrideGlobalSettings(ctx); err != nil {
+	if err := overrideGlobalSettings(ctx, db); err != nil {
 		log.Fatalf("failed to override global settings: %v", err)
 	}
 
 	// now the keyring is configured it's safe to override the rest of the config
 	// and that config can access the keyring
-	if err := overrideExtSvcConfig(ctx); err != nil {
+	if err := overrideExtSvcConfig(ctx, db); err != nil {
 		log.Fatalf("failed to override external service config: %v", err)
 	}
 
