@@ -2,6 +2,7 @@ package background
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -30,11 +31,15 @@ var _ oobmigration.Migrator = &sshMigrator{}
 // Progress returns the ratio of migrated records to total records. Any record with a
 // credential type that ends on WithSSH is considered migrated.
 func (m *sshMigrator) Progress(ctx context.Context) (float64, error) {
+	unmigratedMigratorTypes := []*sqlf.Query{
+		sqlf.Sprintf("%s", strconv.Quote(string(database.UserCredentialTypeBasicAuth))),
+		sqlf.Sprintf("%s", strconv.Quote(string(database.UserCredentialTypeOAuthBearerToken))),
+	}
 	progress, _, err := basestore.ScanFirstFloat(
 		m.store.Query(ctx, sqlf.Sprintf(
 			sshMigratorProgressQuery,
 			database.UserCredentialDomainCampaigns,
-			`%WithSSH"`,
+			sqlf.Join(unmigratedMigratorTypes, ","),
 			database.UserCredentialDomainCampaigns,
 		)))
 	if err != nil {
@@ -46,8 +51,8 @@ func (m *sshMigrator) Progress(ctx context.Context) (float64, error) {
 
 const sshMigratorProgressQuery = `
 -- source: enterprise/internal/campaigns/ssh_migrator.go:Progress
-SELECT CASE c2.count WHEN 0 THEN 1 ELSE CAST(c1.count AS float) / CAST(c2.count AS float) END FROM
-	(SELECT COUNT(*) as count FROM user_credentials WHERE domain = %s AND (credential::json->'Type')::text LIKE %s) c1,
+SELECT CASE c2.count WHEN 0 THEN 1 ELSE CAST((c2.count - c1.count) AS float) / CAST(c2.count AS float) END FROM
+	(SELECT COUNT(*) as count FROM user_credentials WHERE domain = %s AND (credential::json->'Type')::text IN (%s)) c1,
 	(SELECT COUNT(*) as count FROM user_credentials WHERE domain = %s) c2
 `
 
