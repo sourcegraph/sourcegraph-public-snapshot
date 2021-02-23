@@ -81,7 +81,7 @@ outer:
 	return locations, totalCount, nil
 }
 
-// locations queries the locations associated with the given definition or reference identifiers This
+// locations queries the locations associated with the given definition or reference identifiers. This
 // method returns a map from result set identifiers to another map from document paths to locations
 // within that document.
 func (s *Store) locations(ctx context.Context, bundleID int, ids []ID) (_ map[ID][]Location, err error) {
@@ -108,7 +108,7 @@ func (s *Store) locations(ctx context.Context, bundleID int, ids []ID) (_ map[ID
 
 	// Read the result sets and construct the set of documents we need to open to resolve range
 	// identifiers into actual offsets in a document.
-	paths, rangeIDsByResultID, err := s.readLocationsFromResultChunks(ctx, bundleID, ids, indexes)
+	paths, rangeIDsByResultID, err := s.readLocationsFromResultChunks(ctx, bundleID, ids, indexes, "")
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +171,9 @@ const resultChunkBatchSize = 50
 // readLocationsFromResultChunks reads the given result chunk indexes for a given bundle. This method returns
 // a map from documents to range identifiers that compose each of the given input result set identifiers. This
 // method also returns a deduplicated and sorted set of document paths that are referenced in the output map.
-func (s *Store) readLocationsFromResultChunks(ctx context.Context, bundleID int, ids []ID, indexes []int) ([]string, map[ID]map[string][]ID, error) {
+// If a non-empty target path is supplied, then any range falling outside that document path will be omitted
+// from the output.
+func (s *Store) readLocationsFromResultChunks(ctx context.Context, bundleID int, ids []ID, indexes []int, targetPath string) ([]string, map[ID]map[string][]ID, error) {
 	pathMap := map[string]struct{}{}
 	rangeIDsByResultID := make(map[ID]map[string][]ID, len(ids))
 
@@ -208,6 +210,10 @@ func (s *Store) readLocationsFromResultChunks(ctx context.Context, bundleID int,
 				rangeIDsByDocument := make(map[string][]ID, len(documentIDRangeIDs))
 				for _, documentIDRangeID := range documentIDRangeIDs {
 					if path, ok := resultChunkData.DocumentPaths[documentIDRangeID.DocumentID]; ok {
+						if targetPath != "" && path != targetPath {
+							continue
+						}
+
 						pathMap[path] = struct{}{}
 						rangeIDsByDocument[path] = append(rangeIDsByDocument[path], documentIDRangeID.RangeID)
 					}
@@ -236,9 +242,9 @@ SELECT idx, data FROM lsif_data_result_chunks WHERE dump_id = %s AND idx IN (%s)
 // documentBatchSize is the maximum number of documents we will query at once to resolve a single locations request.
 const documentBatchSize = 50
 
-// readRangesFromDocuments reads the given documents for a given bundle. This method returns a map from result set
-// identifiers to the set of locations composing that result set. The output resolves the missing data given via the
-// rangeIDsByResultID parameter. This method also returns a total count of ranges in the result set.
+// readRangesFromDocuments extracts range data from the documents with the given paths. This method returns a map from
+// result set identifiers to the set of locations composing that result set. The output resolves the missing data given
+// via the rangeIDsByResultID parameter. This method also returns a total count of ranges in the result set.
 func (s *Store) readRangesFromDocuments(ctx context.Context, bundleID int, ids []ID, paths []string, rangeIDsByResultID map[ID]map[string][]ID, traceLog observation.TraceLogger) (map[ID][]Location, int, error) {
 	totalCount := 0
 	locationsByResultID := make(map[ID][]Location, len(ids))
@@ -263,32 +269,7 @@ func (s *Store) readRangesFromDocuments(ctx context.Context, bundleID int, ids [
 		visitDocuments := s.makeDocumentVisitor(s.Store.Query(ctx, sqlf.Sprintf(readRangesFromDocumentsQuery, bundleID, sqlf.Join(pathQueries, ","))))
 
 		if err := visitDocuments(func(path string, document DocumentData) {
-			for id, rangeIDsByPath := range rangeIDsByResultID {
-				rangeIDs := rangeIDsByPath[path]
-				if len(rangeIDs) == 0 {
-					continue
-				}
-
-				locations := make([]Location, 0, len(rangeIDs))
-				for _, rangeID := range rangeIDs {
-					if r, exists := document.Ranges[rangeID]; exists {
-						locations = append(locations, Location{
-							DumpID: bundleID,
-							Path:   path,
-							Range:  newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter),
-						})
-					}
-				}
-				traceLog(
-					log.String("id", string(id)),
-					log.String("path", path),
-					log.Int("numLocationsForIDInPath", len(locations)),
-				)
-
-				totalCount += len(locations)
-				locationsByResultID[id] = append(locationsByResultID[id], locations...)
-				sortLocations(locationsByResultID[id])
-			}
+			totalCount += s.readRangesFromDocument(bundleID, rangeIDsByResultID, locationsByResultID, path, document, traceLog)
 		}); err != nil {
 			return nil, 0, err
 		}
@@ -301,6 +282,41 @@ const readRangesFromDocumentsQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/locations.go:readRangesFromDocuments
 SELECT path, data FROM lsif_data_documents WHERE dump_id = %s AND path IN (%s)
 `
+
+// readRangesFromDocument extracts range data from the given document. This method populates the given locationsByResultId
+// map, which resolves the missing data given via the rangeIDsByResultID parameter. This method returns a total count of
+// ranges in the result set.
+func (s *Store) readRangesFromDocument(bundleID int, rangeIDsByResultID map[ID]map[string][]ID, locationsByResultID map[ID][]Location, path string, document DocumentData, traceLog observation.TraceLogger) int {
+	totalCount := 0
+	for id, rangeIDsByPath := range rangeIDsByResultID {
+		rangeIDs := rangeIDsByPath[path]
+		if len(rangeIDs) == 0 {
+			continue
+		}
+
+		locations := make([]Location, 0, len(rangeIDs))
+		for _, rangeID := range rangeIDs {
+			if r, exists := document.Ranges[rangeID]; exists {
+				locations = append(locations, Location{
+					DumpID: bundleID,
+					Path:   path,
+					Range:  newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter),
+				})
+			}
+		}
+		traceLog(
+			log.String("id", string(id)),
+			log.String("path", path),
+			log.Int("numLocationsForIDInPath", len(locations)),
+		)
+
+		totalCount += len(locations)
+		locationsByResultID[id] = append(locationsByResultID[id], locations...)
+		sortLocations(locationsByResultID[id])
+	}
+
+	return totalCount
+}
 
 // sortLocationssorts locations by document, then by offset within a document.
 func sortLocations(locations []Location) {

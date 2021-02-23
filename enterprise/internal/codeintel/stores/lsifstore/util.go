@@ -20,6 +20,23 @@ func FindRanges(ranges map[ID]RangeData, line, character int) []RangeData {
 	return filtered
 }
 
+// FindRangesInWIndow filters the given ranges and returns those that intersect with the
+// given window of lines. Ranges are returned in reading order (top-down/left-right).
+func FindRangesInWindow(ranges map[ID]RangeData, startLine, endLine int) []RangeData {
+	var filtered []RangeData
+	for _, r := range ranges {
+		if RangeIntersectsSpan(r, startLine, endLine) {
+			filtered = append(filtered, r)
+		}
+	}
+
+	sort.Slice(filtered, func(i, j int) bool {
+		return CompareRanges(filtered[i], filtered[j]) < 0
+	})
+
+	return filtered
+}
+
 // CompareRanges compares two ranges.
 // Returns -1 if the range A starts before range B, or starts at the same place but ends earlier.
 // Returns 0 if they're exactly equal. Returns 1 otherwise.
