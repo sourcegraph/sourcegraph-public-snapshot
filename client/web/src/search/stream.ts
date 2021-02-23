@@ -3,7 +3,7 @@ import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber
 import { defaultIfEmpty, map, materialize, scan } from 'rxjs/operators'
 import { appendContextFilterToQuery } from '.'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { asError, isErrorLike } from '../../../shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { SearchPatternType } from '../graphql-operations'
 
 // This is an initial proof of concept implementation of search streaming.
@@ -16,7 +16,7 @@ export type SearchEvent =
     | { type: 'progress'; data: Progress }
     | { type: 'filters'; data: Filter[] }
     | { type: 'alert'; data: Alert }
-    | { type: 'error'; data: Error }
+    | { type: 'error'; data: ErrorLike }
     | { type: 'done'; data: {} }
 
 type Match = FileMatch | RepositoryMatch | CommitMatch | FileSymbolMatch
@@ -442,7 +442,16 @@ const messageHandlers: {
             eventSource.close()
         }),
     error: (type, eventSource, observer) =>
-        fromEvent(eventSource, type).subscribe(error => {
+        fromEvent(eventSource, type).subscribe(event => {
+            let error: ErrorLike | null = null
+            if (event instanceof MessageEvent) {
+                try {
+                    error = JSON.parse(event.data) as ErrorLike
+                } catch {
+                    error = null
+                }
+            }
+
             if (isErrorLike(error)) {
                 observer.error(error)
             } else {

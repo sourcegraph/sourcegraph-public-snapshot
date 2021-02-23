@@ -184,7 +184,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	resultsResolver, err := results()
 	if err != nil {
-		_ = eventWriter.Event("error", err.Error())
+		_ = eventWriter.Event("error", eventError{Message: err.Error()})
 		return
 	}
 
@@ -468,4 +468,10 @@ type eventAlert struct {
 type proposedQuery struct {
 	Description string `json:"description,omitempty"`
 	Query       string `json:"query"`
+}
+
+// eventError emulates a JavaScript error with a message property
+// as is returned when the search encounters an error.
+type eventError struct {
+	Message string `json:"message"`
 }
