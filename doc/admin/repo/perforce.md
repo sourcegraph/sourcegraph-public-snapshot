@@ -1,16 +1,15 @@
 # Using Perforce depots with Sourcegraph
 
-You can use [Perforce](https://perforce.com) depots with Sourcegraph by using the [git p4](https://git-scm.com/docs/git-p4) adapter, which creates an equivalent Git repository from a Perforce depot, and [`src serve-git`](../external_service/src_serve_git.md), Sourcegraph's tool for serving local directories.
+Sourcegraph supports [Perforce](https://perforce.com) depots using the [git p4](https://git-scm.com/docs/git-p4) adapter. This creates an equivalent Git repository from a Perforce depot. For Sourcegraph <3.25.1, [`src serve-git`](../external_service/src_serve_git.md), Sourcegraph's tool for serving local directories, is required. For Sourcegraph 3.25.1+ an experimental feature can be enabled to configure Perforce depots through the Sourcegraph UI.
 
 Screenshot of using Sourcegraph for code navigation in a Perforce depot:
 
 ![Viewing a Perforce repository on Sourcegraph](https://sourcegraphstatic.com/git-p4-example.png)
 
-> NOTE: Sourcegraph 3.25.1+ supports connect to a Perforce Server directly for syncing depots via the [git p4](https://git-scm.com/docs/git-p4) adapter but without using `src serve-git`.
 
-## Instructions since 3.25.1
+## Sourcegraph 3.25.1+ configuration instructions
 
-Syncing Perforce depots without `src serve-git` is currently behind a feature flag, the site admin has to enable the feature manually in the [site configuration](../config/site_config.md) to be able to add a Perforce code host connection via the UI:
+Adding Perforce depots through the UI is an experimental feature in Sourcegraph 3.25.1. To access this functionality, a site admin must enable the experimental feature in the [site configuration](../config/site_config.md):
 
 ```json
 {
@@ -36,17 +35,17 @@ To connect Perforce to Sourcegraph:
 
 > NOTE: Only "local" type depots are supported.
 
-There is one field for configuring which depots are mirrored/synchronized as repositories:
+Use the `depots` field to configure which depots are mirrored/synchronized as Git repositories to Sourcegraph:
 
-- [`depots`](perforce.md#depots)<br>A list of depot paths that can be either depot root or a arbitrary subdirectory.
+- [`depots`](perforce.md#depots)<br>A list of depot paths that can be either a depot root or an arbitrary subdirectory.
 
 ### Repository permissions
 
-> WARNING: Permissions syncing for Perforce depots is not yet supported, so all files that are synced from the Perfoce Server is readable by all Sourcegraph users. Following docs are based on prototypes and subject to change significantly.
+> WARNING: Permissions syncing for Perforce depots is not yet supported. All files that are synced from the Perforce Server will be readable by all Sourcegraph users. The following docs are based on prototypes and are subject to change.
 
-Sourcegraph only supports repository-level permissions, and does not have perfect one-to-one match to Perforce access control lists (which supports file-level permissions). The mitigation we have is to allow site admin to sync arbitrary subdirectories of depots to appear as repositories in Sourcegraph using `depots` configuration option, and the rule of thumb is to use the most concrete path of your permissions boundary.
+Sourcegraph only supports repository-level permissions and does not match the granularity of Perforce access control lists (which supports file-level permissions). The workaround is for site admins to sync arbitrary subdirectories of a depot, which can then enforce permissions in Sourcegraph. We suggest using the most concrete path of your permissions boundary.
 
-For example, if your Perforce depot `//Sourcegraph/` have different permisions for `//Sourcegraph/Backend/` and some subdirectories of  `//Sourcegraph/Frontend/`, we recommend setting the following `depots`:
+For example, if your Perforce depot `//Sourcegraph/` has different permissions for `//Sourcegraph/Backend/` and some subdirectories of `//Sourcegraph/Frontend/`, we recommend setting the following `depots`:
 
 ```json
 {
@@ -59,11 +58,11 @@ For example, if your Perforce depot `//Sourcegraph/` have different permisions f
 }
 ```
 
-By configuring diffrerent subdirectories that have different permissions, Sourcegraph is able to recognize and enforce permissions for each defined repository.
+By configuring each subdirectory that has unique permissions, Sourcegraph is able to recognize and enforce permissions for each defined repository.
 
 #### Known limitations
 
-Sourcegraph uses prefix-matching to determine if a user has access to a repository in Sourcegraph. That means, if a user has access to a directory but also has exclusions to some subdirectories at the same time, _those exclusions will not be effective in Sourcegraph_ because Sourcegraph does not support file-level permissions.
+Sourcegraph uses prefix-matching to determine if a user has access to a repository in Sourcegraph. That means if a user has access to a directory and also has exclusions to some subdirectories, _those exclusions will not be enforced in Sourcegraph_ because Sourcegraph does not support file-level permissions.
 
 For example, consider the following output of `p4 protects -u alice`:
 
@@ -74,13 +73,13 @@ write user alice * //TestDepot/...
 =write user alice * -//TestDepot/Secret/...
 ```
 
-If the site admin configres `"depots": ["//TestDepot/"]`, the exclusion of the last line will not be effective in Sourcegraph. In other words, the user alice _will have access_ to `//TestDepot/Secret/` in Sourcegraph although alice does not have access to this directory on the Perforce Server. The mitigation is to use the most concrete path of your permissions boundary as described in the above section.
+If the site admin configures `"depots": ["//TestDepot/"]`, the exclusion of the last line will not be enforced in Sourcegraph. In other words, the user alice _will have access_ to `//TestDepot/Secret/` in Sourcegraph even though alice does not have access to this directory on the Perforce Server. To mitigate, use the most concrete path of your permissions boundary as described in the above section.
 
 ### Configuration
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/external_service/perforce.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/external_service/perforce) to see rendered content.</div>
 
-## Instructions before 3.25.1
+## Sourcegraph <3.25.1 configuration instructions with `src serve-git`
 
 ### Prerequisites
 

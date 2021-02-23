@@ -15,7 +15,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
-- Syncing Perforce depots directly via Sourcegraph UI is supported behind the feature flag `"experimentalFeatures": { "perforce": "enabled" }`, please read [docs for how to add your Perforce depots](https://docs.sourcegraph.com/admin/repo/perforce). [#16703](https://github.com/sourcegraph/sourcegraph/issues/16703)
+- Syncing Perforce depots directly via Sourcegraph UI is supported behind the feature flag `"experimentalFeatures": { "perforce": "enabled" }`, for more information, see [how to add your Perforce depots](https://docs.sourcegraph.com/admin/repo/perforce). [#16703](https://github.com/sourcegraph/sourcegraph/issues/16703)
 
 ### Changed
 
