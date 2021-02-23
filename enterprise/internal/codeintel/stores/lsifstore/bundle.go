@@ -606,7 +606,7 @@ func (s *Store) readRangesFromDocuments(ctx context.Context, bundleID int, ids [
 				traceLog(
 					log.String("id", string(id)),
 					log.String("path", path),
-					log.Int("numLocationsForIDInPath", totalCount),
+					log.Int("numLocationsForIDInPath", len(locations)),
 				)
 
 				totalCount += len(locations)
