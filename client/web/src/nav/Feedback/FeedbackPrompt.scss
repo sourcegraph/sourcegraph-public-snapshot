@@ -14,23 +14,18 @@
         width: 20rem;
         padding: 1rem;
     }
-    &__header {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: relative;
 
-        &--close {
-            display: flex;
-            position: absolute;
-            padding: 0;
-            right: 0;
-            border: none;
-            background: transparent;
-        }
+    &__close {
+        display: flex;
+        position: absolute;
+        padding: 0;
+        top: 1rem;
+        right: 1rem;
+        border: none;
+        background: transparent;
     }
 
-    &__header-icon {
+    &__icon {
         height: 1rem;
         width: 1rem;
     }

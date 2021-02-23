@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -137,6 +138,7 @@ type happinessFeedbackSubmissionForHubSpot struct {
 	Score      int32   `url:"happiness_score"`
 	Feedback   *string `url:"happiness_feedback"`
 	CurrentURL string  `url:"happiness_current_url"`
+	IsTest     bool    `url:"happiness_is_test"`
 	SiteID     string  `url:"site_id"`
 }
 
@@ -172,6 +174,7 @@ func (r *schemaResolver) SubmitHappinessFeedback(ctx context.Context, args *stru
 		Score:      args.Input.Score,
 		Feedback:   args.Input.Feedback,
 		CurrentURL: args.Input.CurrentURL,
+		IsTest:     env.InsecureDev,
 		SiteID:     siteid.Get(),
 	}); err != nil {
 		// Log an error, but don't return one if the only failure was in submitting feedback results to HubSpot.

@@ -90,6 +90,9 @@ const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({ closePro
 
     return (
         <>
+            <button type="button" className="feedback-prompt__close" onClick={closePrompt}>
+                <CloseIcon className="feedback-prompt__icon" />
+            </button>
             {data?.submitHappinessFeedback ? (
                 <div className="feedback-prompt__success">
                     <TickIcon className="feedback-prompt__success--tick" />
@@ -110,12 +113,7 @@ const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({ closePro
                 </div>
             ) : (
                 <Form onSubmit={handleSubmit}>
-                    <header className="feedback-prompt__header">
-                        <h3 className="mb-0">What’s on your mind?</h3>
-                        <button type="button" className="feedback-prompt__header--close" onClick={closePrompt}>
-                            <CloseIcon className="feedback-prompt__header-icon" />
-                        </button>
-                    </header>
+                    <h3 className="mb-0">What’s on your mind?</h3>
 
                     <TextAreaAutosize
                         onChange={handleTextChange}
