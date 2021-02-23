@@ -36,7 +36,6 @@ const maxUnindexedRepoRevSearchesPerQuery = 200
 var textSearchLimiter = mutablelimiter.New(32)
 
 type FileMatch struct {
-	db          dbutil.DB
 	Path        string       `json:"Path"`
 	LineMatches []*lineMatch `json:"LineMatches"`
 	LimitHit    bool         `json:"LimitHit"`
@@ -280,7 +279,6 @@ func searchFilesInRepo(ctx context.Context, db dbutil.DB, searcherURLs *endpoint
 		resolvers = append(resolvers, &FileMatchResolver{
 			db: db,
 			FileMatch: FileMatch{
-				db:          db,
 				Path:        fm.Path,
 				LineMatches: lineMatches,
 				LimitHit:    fm.LimitHit,

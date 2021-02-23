@@ -64,7 +64,6 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 			lines = append(lines, &lineMatch{LineNumber: n})
 		}
 		return mkFileMatchResolver(db, FileMatch{
-			db:          db,
 			Path:        path,
 			LineMatches: lines,
 			Repo:        &types.RepoName{Name: "r"},

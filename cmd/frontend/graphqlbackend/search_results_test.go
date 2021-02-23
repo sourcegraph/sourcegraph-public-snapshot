@@ -1039,7 +1039,6 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 					&FileMatchResolver{
 						db: db,
 						FileMatch: FileMatch{
-							db: db,
 							symbols: []*searchSymbolResult{
 								// 1
 								{db: db},
@@ -1060,7 +1059,6 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 					&FileMatchResolver{
 						db: db,
 						FileMatch: FileMatch{
-							db: db,
 							symbols: []*searchSymbolResult{
 								// 1
 								{db: db},
@@ -1153,7 +1151,6 @@ func TestCompareSearchResults(t *testing.T) {
 
 	makeResult := func(repo, file string) *FileMatchResolver {
 		return mkFileMatchResolver(db, FileMatch{
-			db:   db,
 			Repo: &types.RepoName{Name: api.RepoName(repo)},
 			Path: file,
 		})
@@ -1482,7 +1479,6 @@ func fileResult(db dbutil.DB, uri string, lineMatches []*lineMatch, symbolMatche
 	return &FileMatchResolver{
 		db: db,
 		FileMatch: FileMatch{
-			db:          db,
 			uri:         uri,
 			LineMatches: lineMatches,
 			symbols:     symbolMatches,
