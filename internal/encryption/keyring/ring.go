@@ -25,9 +25,7 @@ func Init(ctx context.Context) error {
 // NewRing creates a keyring.Ring containing all the keys configured in site config
 func NewRing(ctx context.Context, keyConfig *schema.EncryptionKeys) (*Ring, error) {
 	if keyConfig == nil {
-		return &Ring{
-			ExternalServiceKey: &encryption.NoopKey{},
-		}, nil
+		return nil, nil
 	}
 	extsvc, err := NewKey(ctx, keyConfig.ExternalServiceKey)
 	if err != nil {
