@@ -4,7 +4,7 @@ import React, { useCallback } from 'react'
 interface Icon {
     name: string
     value: number
-    icon: JSX.Element
+    icon: React.ComponentType
 }
 
 interface Props {
@@ -26,7 +26,7 @@ export const IconRadioButtons: React.FunctionComponent<Props> = ({ name, icons, 
 
     return (
         <ul className="icon-radio-buttons">
-            {Object.values(icons).map(({ icon, name: iconName, value }) => (
+            {Object.values(icons).map(({ icon: Icon, name: iconName, value }) => (
                 <li key={iconName} className="d-flex">
                     <label className="icon-radio-buttons__label">
                         <input
@@ -52,7 +52,7 @@ export const IconRadioButtons: React.FunctionComponent<Props> = ({ name, icons, 
                                 'icon-radio-buttons__emoji--active': value === selected,
                             })}
                         >
-                            {icon}
+                            <Icon />
                         </span>
                     </label>
                 </li>
