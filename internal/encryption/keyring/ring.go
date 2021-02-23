@@ -4,14 +4,31 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/cloudkms"
 
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+var Default Ring
+
+func Init(ctx context.Context) error {
+	ring, err := NewRing(ctx, conf.Get().EncryptionKeys)
+	if err != nil {
+		return err
+	}
+	Default = *ring
+	return nil
+}
+
 // NewRing creates a keyring.Ring containing all the keys configured in site config
 func NewRing(ctx context.Context, keyConfig *schema.EncryptionKeys) (*Ring, error) {
+	if keyConfig == nil {
+		return &Ring{
+			ExternalServiceKey: &encryption.NoopKey{},
+		}, nil
+	}
 	extsvc, err := NewKey(ctx, keyConfig.ExternalServiceKey)
 	if err != nil {
 		return nil, err
