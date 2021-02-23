@@ -1073,7 +1073,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 			testRepoCorrupter(ctx, tmp)
 		}
 
-		if err := setRepositoryType(dir, syncer.Type()); err != nil {
+		if err := setRepositoryType(tmp, syncer.Type()); err != nil {
 			return errors.Wrap(err, `git config set "sourcegraph.type"`)
 		}
 

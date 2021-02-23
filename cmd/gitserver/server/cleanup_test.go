@@ -182,8 +182,16 @@ func TestCleanupExpired(t *testing.T) {
 	repoGCOld := path.Join(root, "repo-gc-old", ".git")
 	repoBoom := path.Join(root, "repo-boom", ".git")
 	repoCorrupt := path.Join(root, "repo-corrupt", ".git")
+	repoPerforce := path.Join(root, "repo-perforce", ".git")
+	repoPerforceGCOld := path.Join(root, "repo-perforce-gc-old", ".git")
 	remote := path.Join(root, "remote", ".git")
-	for _, path := range []string{repoNew, repoOld, repoGCNew, repoGCOld, repoBoom, repoCorrupt, remote} {
+	for _, path := range []string{
+		repoNew, repoOld,
+		repoGCNew, repoGCOld,
+		repoBoom, repoCorrupt,
+		repoPerforce, repoPerforceGCOld,
+		remote,
+	} {
 		cmd := exec.Command("git", "--bare", "init", path)
 		if err := cmd.Run(); err != nil {
 			t.Fatal(err)
@@ -218,10 +226,12 @@ func TestCleanupExpired(t *testing.T) {
 	writeFile(t, filepath.Join(repoGCOld, "gc.log"), []byte("warning: There are too many unreachable loose objects; run 'git prune' to remove them."))
 
 	for path, delta := range map[string]time.Duration{
-		repoOld:     2 * repoTTL,
-		repoGCOld:   2 * repoTTLGC,
-		repoBoom:    2 * repoTTL,
-		repoCorrupt: repoTTLGC / 2, // should only trigger corrupt, not old
+		repoOld:           2 * repoTTL,
+		repoGCOld:         2 * repoTTLGC,
+		repoBoom:          2 * repoTTL,
+		repoCorrupt:       repoTTLGC / 2, // should only trigger corrupt, not old
+		repoPerforce:      2 * repoTTL,
+		repoPerforceGCOld: 2 * repoTTLGC,
 	} {
 		ts := time.Now().Add(-delta)
 		if err := setRecloneTime(GitDir(path), ts); err != nil {
@@ -234,6 +244,12 @@ func TestCleanupExpired(t *testing.T) {
 	if err := gitConfigSet(GitDir(repoCorrupt), "sourcegraph.maybeCorruptRepo", "1"); err != nil {
 		t.Fatal(err)
 	}
+	if err := setRepositoryType(GitDir(repoPerforce), "perforce"); err != nil {
+		t.Fatal(err)
+	}
+	if err := setRepositoryType(GitDir(repoPerforceGCOld), "perforce"); err != nil {
+		t.Fatal(err)
+	}
 
 	now := time.Now()
 	repoNewTime := modTime(repoNew)
@@ -241,6 +257,8 @@ func TestCleanupExpired(t *testing.T) {
 	repoGCNewTime := modTime(repoGCNew)
 	repoGCOldTime := modTime(repoGCOld)
 	repoCorruptTime := modTime(repoBoom)
+	repoPerforceTime := modTime(repoPerforce)
+	repoPerforceGCOldTime := modTime(repoPerforceGCOld)
 	repoBoomTime := modTime(repoBoom)
 	repoBoomRecloneTime := recloneTime(repoBoom)
 
@@ -260,6 +278,12 @@ func TestCleanupExpired(t *testing.T) {
 	}
 	if repoGCNewTime.Before(modTime(repoGCNew)) {
 		t.Error("expected repoGCNew to not be modified")
+	}
+	if repoPerforceTime.Before(modTime(repoPerforce)) {
+		t.Error("expected repoPerforce to not be modified")
+	}
+	if repoPerforceGCOldTime.Before(modTime(repoPerforceGCOld)) {
+		t.Error("expected repoPerforceGCOld to not be modified")
 	}
 
 	// repos that should be recloned

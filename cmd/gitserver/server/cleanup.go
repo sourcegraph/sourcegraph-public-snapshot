@@ -609,7 +609,11 @@ func setRepositoryType(dir GitDir, typ string) error {
 
 // getRepositoryType returns the type of the repository.
 func getRepositoryType(dir GitDir) (string, error) {
-	return gitConfigGet(dir, "sourcegraph.type")
+	val, err := gitConfigGet(dir, "sourcegraph.type")
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(val), nil
 }
 
 // setRecloneTime sets the time a repository is cloned.
