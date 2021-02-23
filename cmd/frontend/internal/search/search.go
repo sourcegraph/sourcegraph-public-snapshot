@@ -140,7 +140,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					}
 					matchesBuf = append(matchesBuf, fromSymbolMatch(fm, symbols))
 				} else {
-					matchesBuf = append(matchesBuf, fromFileMatch(fm))
+					matchesBuf = append(matchesBuf, fromFileMatch(&fm.FileMatch))
 				}
 			}
 			if repo, ok := result.ToRepository(); ok {
@@ -303,7 +303,7 @@ func fromStrPtr(s *string) string {
 	return *s
 }
 
-func fromFileMatch(fm *graphqlbackend.FileMatchResolver) eventFileMatch {
+func fromFileMatch(fm *graphqlbackend.FileMatch) eventFileMatch {
 	lineMatches := make([]eventLineMatch, 0, len(fm.LineMatches))
 	for _, lm := range fm.LineMatches {
 		lineMatches = append(lineMatches, eventLineMatch{
