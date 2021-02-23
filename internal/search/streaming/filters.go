@@ -1,6 +1,7 @@
 package streaming
 
 import (
+	"container/heap"
 	"sort"
 	"strings"
 )
@@ -24,6 +25,21 @@ type Filter struct {
 
 	// Important is used to prioritize the order that filters appear in.
 	Important bool
+}
+
+// Less returns true if f is more important the o.
+func (f *Filter) Less(o *Filter) bool {
+	if f.Important != o.Important {
+		// Prefer more important
+		return f.Important
+	}
+	if f.Count != o.Count {
+		// Prefer higher count
+		return f.Count > o.Count
+	}
+	// Order alphabetically for equal scores.
+	return strings.Compare(f.Value, o.Value) < 0
+
 }
 
 // Filters is a map of filter values to the Filter.
@@ -54,28 +70,18 @@ func (m Filters) MarkImportant(value string) {
 
 // Compute returns an ordered slice of Filter to present to the user.
 func (m Filters) Compute() []*Filter {
-	all := make([]*Filter, 0, len(m))
-	repos := make([]*Filter, 0, len(m)/2) // heuristic - half of all filters are repo filters.
+	repos := filterHeap{max: 12}
+	other := filterHeap{max: 12}
 	for _, f := range m {
 		if f.Kind == "repo" {
-			repos = append(repos, f)
+			repos.Add(f)
 		} else {
-			all = append(all, f)
+			other.Add(f)
 		}
 	}
-	sort.Sort(filterSlice(all))
-	sort.Sort(filterSlice(repos))
 
-	// limit amount of filters to be rendered arbitrarily to 24, half each.
-	if len(all) > 12 {
-		all = all[:12]
-	}
-	if len(repos) > 12 {
-		repos = repos[:12]
-	}
-
-	all = append(all, repos...)
-	sort.Sort(filterSlice(all))
+	all := append(repos.filterSlice, other.filterSlice...)
+	sort.Sort(all)
 
 	return all
 }
@@ -87,20 +93,48 @@ func (fs filterSlice) Len() int {
 }
 
 func (fs filterSlice) Less(i, j int) bool {
-	left := fs[i]
-	right := fs[j]
-	if left.Important != right.Important {
-		// Prefer more important
-		return left.Important
-	}
-	if left.Count != right.Count {
-		// Prefer higher count
-		return left.Count > right.Count
-	}
-	// Order alphabetically for equal scores.
-	return strings.Compare(left.Value, right.Value) < 0
+	return fs[i].Less(fs[j])
 }
 
 func (fs filterSlice) Swap(i, j int) {
 	fs[i], fs[j] = fs[j], fs[i]
+}
+
+// filterHeap allows us to avoid creating an O(N) slice, sorting it O(NlogN)
+// and then keeping the max elements. Instead we use a heap to use O(max)
+// space and O(Nlogmax) runtime.
+type filterHeap struct {
+	filterSlice
+	max int
+}
+
+func (h *filterHeap) Add(f *Filter) {
+	if len(h.filterSlice) < h.max {
+		// Less than max, we keep the filter.
+		heap.Push(h, f)
+	} else if f.Less(h.filterSlice[0]) {
+		// f is more important than the least important filter we have
+		// kept. So Pop that filter away and add in f. We should keep the
+		// invariant that len == h.max.
+		heap.Pop(h)
+		heap.Push(h, f)
+	}
+}
+
+func (h *filterHeap) Less(i, j int) bool {
+	// We want a max heap so that the head of the heap is the least important
+	// value we have kept so far.
+	return h.filterSlice[j].Less(h.filterSlice[i])
+}
+
+func (h *filterHeap) Push(x interface{}) {
+	h.filterSlice = append(h.filterSlice, x.(*Filter))
+}
+
+func (h *filterHeap) Pop() interface{} {
+	old := h.filterSlice
+	n := len(old)
+	x := old[n-1]
+	h.filterSlice = old[0 : n-1]
+	return x
 }
