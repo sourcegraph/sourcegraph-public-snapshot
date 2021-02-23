@@ -46,9 +46,6 @@ func (token *OAuthBearerTokenWithSSH) SSHPublicKey() string {
 }
 
 func (token *OAuthBearerTokenWithSSH) Hash() string {
-	key := sha256.Sum256([]byte(token.Token))
-	pr := sha256.Sum256([]byte(token.PrivateKey))
-	pa := sha256.Sum256([]byte(token.Passphrase))
-	pu := sha256.Sum256([]byte(token.PublicKey))
-	return hex.EncodeToString(key[:]) + hex.EncodeToString(pr[:]) + hex.EncodeToString(pa[:]) + hex.EncodeToString(pu[:])
+	shaSum := sha256.Sum256([]byte(token.Token + token.PrivateKey + token.Passphrase + token.PublicKey))
+	return hex.EncodeToString(shaSum[:])
 }

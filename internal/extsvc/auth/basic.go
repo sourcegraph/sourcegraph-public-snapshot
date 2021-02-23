@@ -48,10 +48,6 @@ func (basic *BasicAuthWithSSH) SSHPublicKey() string {
 }
 
 func (basic *BasicAuthWithSSH) Hash() string {
-	uk := sha256.Sum256([]byte(basic.Username))
-	pk := sha256.Sum256([]byte(basic.Password))
-	pr := sha256.Sum256([]byte(basic.PrivateKey))
-	pa := sha256.Sum256([]byte(basic.Passphrase))
-	pu := sha256.Sum256([]byte(basic.PublicKey))
-	return hex.EncodeToString(uk[:]) + hex.EncodeToString(pk[:]) + hex.EncodeToString(pr[:]) + hex.EncodeToString(pa[:]) + hex.EncodeToString(pu[:])
+	shaSum := sha256.Sum256([]byte(basic.Username + basic.Password + basic.PrivateKey + basic.Passphrase + basic.PublicKey))
+	return hex.EncodeToString(shaSum[:])
 }
