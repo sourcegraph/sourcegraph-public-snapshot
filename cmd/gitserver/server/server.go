@@ -1073,6 +1073,10 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 			testRepoCorrupter(ctx, tmp)
 		}
 
+		if err := setRepositoryType(dir, syncer.Type()); err != nil {
+			return errors.Wrap(err, `git config set "sourcegraph.type"`)
+		}
+
 		removeBadRefs(ctx, tmp)
 		ensureHead(tmp)
 
@@ -1538,6 +1542,10 @@ func (s *Server) doRepoUpdate2(repo api.RepoName) error {
 	if output, err := runWith(ctx, cmd, configRemoteOpts, nil); err != nil {
 		log15.Error("Failed to update", "repo", repo, "error", err, "output", string(output))
 		return errors.Wrap(err, "failed to update")
+	}
+
+	if err := setRepositoryType(dir, syncer.Type()); err != nil {
+		return errors.Wrap(err, `git config set "sourcegraph.type"`)
 	}
 
 	removeBadRefs(ctx, dir)

@@ -21,6 +21,8 @@ import (
 // VCSSyncer describes whether and how to sync content from a VCS remote to
 // local disk.
 type VCSSyncer interface {
+	// Type returns the type of the syncer.
+	Type() string
 	// IsCloneable checks to see if the VCS remote URL is cloneable. Any non-nil
 	// error indicates there is a problem.
 	IsCloneable(ctx context.Context, remoteURL *url.URL) error
@@ -34,6 +36,10 @@ type VCSSyncer interface {
 
 // GitRepoSyncer is a syncer for Git repositories.
 type GitRepoSyncer struct{}
+
+func (s *GitRepoSyncer) Type() string {
+	return "git"
+}
 
 // IsCloneable checks to see if the Git remote URL is cloneable.
 func (s *GitRepoSyncer) IsCloneable(ctx context.Context, remoteURL *url.URL) error {
@@ -105,6 +111,10 @@ func (s *GitRepoSyncer) RemoteShowCommand(ctx context.Context, remoteURL *url.UR
 type PerforceDepotSyncer struct {
 	// MaxChanges indicates to only import at most n changes when possible.
 	MaxChanges int
+}
+
+func (s *PerforceDepotSyncer) Type() string {
+	return "perforce"
 }
 
 // decomposePerforceRemoteURL decomposes information back from a clone URL for a
