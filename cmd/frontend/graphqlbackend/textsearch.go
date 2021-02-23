@@ -61,6 +61,14 @@ func (fm *FileMatch) ResultCount() int {
 	return rc
 }
 
+// appendMatches appends the line matches from src as well as updating match
+// counts and limit.
+func (fm *FileMatch) appendMatches(src *FileMatch) {
+	fm.JLineMatches = append(fm.JLineMatches, src.JLineMatches...)
+	fm.symbols = append(fm.symbols, src.symbols...)
+	fm.JLimitHit = fm.JLimitHit || src.JLimitHit
+}
+
 // FileMatchResolver is a resolver for the GraphQL type `FileMatch`
 type FileMatchResolver struct {
 	FileMatch
@@ -145,9 +153,7 @@ func (fm *FileMatchResolver) path() string {
 // appendMatches appends the line matches from src as well as updating match
 // counts and limit.
 func (fm *FileMatchResolver) appendMatches(src *FileMatchResolver) {
-	fm.JLineMatches = append(fm.JLineMatches, src.JLineMatches...)
-	fm.symbols = append(fm.symbols, src.symbols...)
-	fm.JLimitHit = fm.JLimitHit || src.JLimitHit
+	fm.FileMatch.appendMatches(&src.FileMatch)
 }
 
 func (fm *FileMatchResolver) ResultCount() int32 {
