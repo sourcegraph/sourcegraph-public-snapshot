@@ -46,7 +46,7 @@ func GenerateRSAKey() (key *RSAKey, err error) {
 	}
 
 	// And generate an openSSH public key.
-	publicRsaKey, err := ssh.NewPublicKey(&privateKey.PublicKey)
+	publicKey, err := ssh.NewPublicKey(&privateKey.PublicKey)
 	if err != nil {
 		return nil, err
 	}
@@ -54,6 +54,6 @@ func GenerateRSAKey() (key *RSAKey, err error) {
 	return &RSAKey{
 		PrivateKey: string(pem.EncodeToMemory(block)),
 		Passphrase: passphrase,
-		PublicKey:  string(ssh.MarshalAuthorizedKey(publicRsaKey)),
+		PublicKey:  string(ssh.MarshalAuthorizedKey(publicKey)),
 	}, nil
 }
