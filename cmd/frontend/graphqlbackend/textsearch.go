@@ -50,6 +50,17 @@ type FileMatch struct {
 	InputRev *string
 }
 
+func (fm *FileMatch) ResultCount() int {
+	rc := len(fm.symbols)
+	for _, m := range fm.JLineMatches {
+		rc += len(m.OffsetAndLengths)
+	}
+	if rc == 0 {
+		return 1 // 1 to count "empty" results like type:path results
+	}
+	return rc
+}
+
 // FileMatchResolver is a resolver for the GraphQL type `FileMatch`
 type FileMatchResolver struct {
 	FileMatch
@@ -140,14 +151,7 @@ func (fm *FileMatchResolver) appendMatches(src *FileMatchResolver) {
 }
 
 func (fm *FileMatchResolver) ResultCount() int32 {
-	rc := len(fm.symbols)
-	for _, m := range fm.JLineMatches {
-		rc += len(m.OffsetAndLengths)
-	}
-	if rc == 0 {
-		return 1 // 1 to count "empty" results like type:path results
-	}
-	return int32(rc)
+	return int32(fm.FileMatch.ResultCount())
 }
 
 func (fm *FileMatchResolver) Select(t filter.SelectPath) SearchResultResolver {
