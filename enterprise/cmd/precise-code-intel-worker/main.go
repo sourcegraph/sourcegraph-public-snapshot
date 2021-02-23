@@ -64,7 +64,7 @@ func main() {
 	go debugserver.NewServerRoutine().Start()
 
 	if err := keyring.Init(context.Background()); err != nil {
-		log.Fatalf("Failed to intialise keyring: %v",err)
+		log.Fatalf("Failed to intialise keyring: %v", err)
 	}
 
 	// Connect to databases
