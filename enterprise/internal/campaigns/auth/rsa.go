@@ -21,7 +21,7 @@ type RSAKey struct {
 // private key with a passphrase.
 func GenerateRSAKey() (key *RSAKey, err error) {
 	// First generate the private key.
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
 		return nil, errors.Wrap(err, "generating private key")
 	}
