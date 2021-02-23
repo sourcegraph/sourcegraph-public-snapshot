@@ -134,7 +134,7 @@ outer:
 }
 
 const bulkMonikerResultsQuery = `
--- source: enterprise/internal/codeintel/stores/lsifstore/bundle.go:BulkMonikerResults
+-- source: enterprise/internal/codeintel/stores/lsifstore/monikers.go:BulkMonikerResults
 SELECT dump_id, scheme, identifier, data FROM %s WHERE dump_id IN (%s) AND (scheme, identifier) IN (%s) ORDER BY (scheme, identifier, dump_id)
 `
 

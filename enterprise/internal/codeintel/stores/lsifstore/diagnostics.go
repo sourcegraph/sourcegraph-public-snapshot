@@ -51,6 +51,6 @@ func (s *Store) Diagnostics(ctx context.Context, bundleID int, prefix string, li
 }
 
 const diagnosticsQuery = `
--- source: enterprise/internal/codeintel/stores/lsifstore/bundle.go:Diagnostics
+-- source: enterprise/internal/codeintel/stores/lsifstore/diagnostics.go:Diagnostics
 SELECT dump_id, path, data FROM lsif_data_documents WHERE dump_id = %s AND path LIKE %s ORDER BY path
 `

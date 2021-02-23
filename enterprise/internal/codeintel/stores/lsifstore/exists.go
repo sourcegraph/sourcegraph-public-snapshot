@@ -23,6 +23,6 @@ func (s *Store) Exists(ctx context.Context, bundleID int, path string) (_ bool, 
 }
 
 const existsQuery = `
--- source: enterprise/internal/codeintel/stores/lsifstore/bundle.go:Exists
+-- source: enterprise/internal/codeintel/stores/lsifstore/exists.go:Exists
 SELECT path FROM lsif_data_documents WHERE dump_id = %s AND path = %s LIMIT 1
 `
