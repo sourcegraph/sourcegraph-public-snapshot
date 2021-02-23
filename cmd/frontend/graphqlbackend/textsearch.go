@@ -36,14 +36,14 @@ const maxUnindexedRepoRevSearchesPerQuery = 200
 var textSearchLimiter = mutablelimiter.New(32)
 
 type FileMatch struct {
-	db           dbutil.DB
-	JPath        string       `json:"Path"`
-	JLineMatches []*lineMatch `json:"LineMatches"`
-	JLimitHit    bool         `json:"LimitHit"`
-	symbols      []*searchSymbolResult
-	uri          string
-	Repo         *types.RepoName
-	CommitID     api.CommitID
+	db          dbutil.DB
+	Path        string       `json:"Path"`
+	LineMatches []*lineMatch `json:"LineMatches"`
+	LimitHit    bool         `json:"LimitHit"`
+	symbols     []*searchSymbolResult
+	uri         string
+	Repo        *types.RepoName
+	CommitID    api.CommitID
 	// InputRev is the Git revspec that the user originally requested to search. It is used to
 	// preserve the original revision specifier from the user instead of navigating them to the
 	// absolute commit ID when they select a result.
@@ -52,7 +52,7 @@ type FileMatch struct {
 
 func (fm *FileMatch) ResultCount() int {
 	rc := len(fm.symbols)
-	for _, m := range fm.JLineMatches {
+	for _, m := range fm.LineMatches {
 		rc += len(m.OffsetAndLengths)
 	}
 	if rc == 0 {
@@ -64,9 +64,9 @@ func (fm *FileMatch) ResultCount() int {
 // appendMatches appends the line matches from src as well as updating match
 // counts and limit.
 func (fm *FileMatch) appendMatches(src *FileMatch) {
-	fm.JLineMatches = append(fm.JLineMatches, src.JLineMatches...)
+	fm.LineMatches = append(fm.LineMatches, src.LineMatches...)
 	fm.symbols = append(fm.symbols, src.symbols...)
-	fm.JLimitHit = fm.JLimitHit || src.JLimitHit
+	fm.LimitHit = fm.LimitHit || src.LimitHit
 }
 
 // FileMatchResolver is a resolver for the GraphQL type `FileMatch`
@@ -97,7 +97,7 @@ func (fm *FileMatchResolver) File() *GitTreeEntryResolver {
 			oid:          GitObjectID(fm.CommitID),
 			inputRev:     fm.InputRev,
 		},
-		stat: CreateFileInfo(fm.JPath, false),
+		stat: CreateFileInfo(fm.Path, false),
 	}
 }
 
@@ -127,15 +127,15 @@ func (fm *FileMatchResolver) Symbols() []*symbolResolver {
 }
 
 func (fm *FileMatchResolver) LineMatches() []lineMatchResolver {
-	r := make([]lineMatchResolver, 0, len(fm.JLineMatches))
-	for _, lm := range fm.JLineMatches {
+	r := make([]lineMatchResolver, 0, len(fm.FileMatch.LineMatches))
+	for _, lm := range fm.FileMatch.LineMatches {
 		r = append(r, lineMatchResolver{lm})
 	}
 	return r
 }
 
 func (fm *FileMatchResolver) LimitHit() bool {
-	return fm.JLimitHit
+	return fm.FileMatch.LimitHit
 }
 
 func (fm *FileMatchResolver) ToRepository() (*RepositoryResolver, bool) { return nil, false }
@@ -147,7 +147,7 @@ func (fm *FileMatchResolver) ToCommitSearchResult() (*CommitSearchResultResolver
 // path returns the path in repository for the file. This isn't directly
 // exposed in the GraphQL API (we expose a URI), but is used a lot internally.
 func (fm *FileMatchResolver) path() string {
-	return fm.JPath
+	return fm.Path
 }
 
 // appendMatches appends the line matches from src as well as updating match
@@ -165,19 +165,19 @@ func (fm *FileMatchResolver) Select(t filter.SelectPath) SearchResultResolver {
 	case filter.Repository:
 		return fm.Repository()
 	case filter.File:
-		fm.JLineMatches = nil
-		fm.symbols = nil
+		fm.FileMatch.LineMatches = nil
+		fm.FileMatch.symbols = nil
 		return fm
 	case filter.Symbol:
 		// Only return file match if symbols exist
 		if len(fm.symbols) > 0 {
-			fm.JLineMatches = nil
+			fm.FileMatch.LineMatches = nil
 			return fm
 		}
 		return nil
 	case filter.Content:
 		// Only return file match if line matches exist
-		if len(fm.JLineMatches) > 0 {
+		if len(fm.FileMatch.LineMatches) > 0 {
 			fm.symbols = nil
 			return fm
 		}
@@ -280,14 +280,14 @@ func searchFilesInRepo(ctx context.Context, db dbutil.DB, searcherURLs *endpoint
 		resolvers = append(resolvers, &FileMatchResolver{
 			db: db,
 			FileMatch: FileMatch{
-				db:           db,
-				JPath:        fm.Path,
-				JLineMatches: lineMatches,
-				JLimitHit:    fm.LimitHit,
-				Repo:         repo,
-				uri:          workspace + fm.Path,
-				CommitID:     commit,
-				InputRev:     &rev,
+				db:          db,
+				Path:        fm.Path,
+				LineMatches: lineMatches,
+				LimitHit:    fm.LimitHit,
+				Repo:        repo,
+				uri:         workspace + fm.Path,
+				CommitID:    commit,
+				InputRev:    &rev,
 			},
 			RepoResolver: repoResolver,
 		})
@@ -634,7 +634,7 @@ func structuralSearchBackcompat(ctx context.Context, db dbutil.DB, args *search.
 					return errors.New("structual search: Events from indexed.Search could not be converted to FileMatch")
 				}
 				name := string(fm.Repo.Name)
-				partition[name] = append(partition[name], fm.JPath)
+				partition[name] = append(partition[name], fm.Path)
 			}
 
 			// Filter Zoekt repos that didn't contain matches

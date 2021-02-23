@@ -63,7 +63,7 @@ func TestSearchResults(t *testing.T) {
 			case *RepositoryResolver:
 				resultDescriptions[i] = fmt.Sprintf("repo:%s", m.Name())
 			case *FileMatchResolver:
-				resultDescriptions[i] = fmt.Sprintf("%s:%d", m.JPath, m.JLineMatches[0].LineNumber)
+				resultDescriptions[i] = fmt.Sprintf("%s:%d", m.Path, m.FileMatch.LineMatches[0].LineNumber)
 			default:
 				t.Fatal("unexpected result type", result)
 			}
@@ -1153,9 +1153,9 @@ func TestCompareSearchResults(t *testing.T) {
 
 	makeResult := func(repo, file string) *FileMatchResolver {
 		return mkFileMatchResolver(db, FileMatch{
-			db:    db,
-			Repo:  &types.RepoName{Name: api.RepoName(repo)},
-			JPath: file,
+			db:   db,
+			Repo: &types.RepoName{Name: api.RepoName(repo)},
+			Path: file,
 		})
 	}
 
@@ -1482,10 +1482,10 @@ func fileResult(db dbutil.DB, uri string, lineMatches []*lineMatch, symbolMatche
 	return &FileMatchResolver{
 		db: db,
 		FileMatch: FileMatch{
-			db:           db,
-			uri:          uri,
-			JLineMatches: lineMatches,
-			symbols:      symbolMatches,
+			db:          db,
+			uri:         uri,
+			LineMatches: lineMatches,
+			symbols:     symbolMatches,
 		},
 	}
 }
@@ -1512,8 +1512,8 @@ func sortResultResolvers(rs []SearchResultResolver) {
 
 	for _, res := range rs {
 		if fm, ok := res.(*FileMatchResolver); ok {
-			sort.Slice(fm.JLineMatches, func(i, j int) bool {
-				return fm.JLineMatches[i].Preview < fm.JLineMatches[j].Preview
+			sort.Slice(fm.FileMatch.LineMatches, func(i, j int) bool {
+				return fm.FileMatch.LineMatches[i].Preview < fm.FileMatch.LineMatches[j].Preview
 			})
 			sort.Slice(fm.symbols, func(i, j int) bool {
 				return fm.symbols[i].symbol.Name < fm.symbols[j].symbol.Name
@@ -1704,7 +1704,7 @@ func searchResultResolversToString(srrs []SearchResultResolver) string {
 				symbols = append(symbols, symbol.symbol.Name)
 			}
 			lines := []string{}
-			for _, line := range v.JLineMatches {
+			for _, line := range v.FileMatch.LineMatches {
 				lines = append(lines, line.Preview)
 			}
 			return fmt.Sprintf("File{url:%s,symbols:[%s],lineMatches:[%s]}", v.uri, strings.Join(symbols, ","), strings.Join(lines, ","))
