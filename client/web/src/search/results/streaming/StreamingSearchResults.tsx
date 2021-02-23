@@ -200,6 +200,13 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         () => setItemsToShow(items => Math.min(results?.results.length || 0, items + incrementalItemsToShow)),
         [results?.results.length]
     )
+
+    // Reset scroll visibility state and expanded state when new search is started
+    useEffect(() => {
+        setItemsToShow(initialItemsToShow)
+        setAllExpanded(false)
+    }, [location.search])
+
     const logSearchResultClicked = useCallback(() => telemetryService.log('SearchResultClicked'), [telemetryService])
 
     const itemKey = useCallback((item: GQL.GenericSearchResultInterface | GQL.IFileMatch): string => {
@@ -318,27 +325,41 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     renderItem={renderResult}
                 />
 
-                {(!results || results?.state === 'loading') && (
-                    <div className="text-center my-4" data-testid="loading-container">
-                        <LoadingSpinner className="icon-inline" />
-                    </div>
-                )}
+                {itemsToShow >= (results?.results.length || 0) && (
+                    <>
+                        {(!results || results?.state === 'loading') && (
+                            <div className="text-center my-4" data-testid="loading-container">
+                                <LoadingSpinner className="icon-inline" />
+                            </div>
+                        )}
 
-                {results?.state === 'error' && (
-                    <ErrorAlert
-                        className="m-2"
-                        data-testid="search-results-list-error"
-                        error={results.error}
-                        history={history}
-                    />
-                )}
+                        {results?.state === 'error' && (
+                            <ErrorAlert
+                                className="m-3"
+                                data-testid="search-results-list-error"
+                                error={results.error}
+                                history={history}
+                            />
+                        )}
 
-                {results?.state === 'complete' && !results?.alert && results?.results.length === 0 && (
-                    <div className="alert alert-info d-flex m-2">
-                        <h3 className="m-0">
-                            <SearchIcon className="icon-inline" /> No results
-                        </h3>
-                    </div>
+                        {results?.state === 'complete' && !results?.alert && results?.results.length === 0 && (
+                            <div className="alert alert-info d-flex m-3">
+                                <h3 className="m-0">
+                                    <SearchIcon className="icon-inline" /> No results
+                                </h3>
+                            </div>
+                        )}
+
+                        {results?.state === 'complete' &&
+                            results.progress.skipped.some(skipped => skipped.reason.includes('-limit')) && (
+                                <div className="alert alert-info d-flex m-3">
+                                    <h3 className="m-0 font-weight-normal">
+                                        <strong>Result limit hit.</strong> Modify your search with <code>count:</code>{' '}
+                                        to return additional items.
+                                    </h3>
+                                </div>
+                            )}
+                    </>
                 )}
             </div>
         </div>

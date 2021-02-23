@@ -1449,16 +1449,26 @@ func TestSearchContext(t *testing.T) {
 	}
 }
 
-func commitResult(url string) *CommitSearchResultResolver {
+func commitResult(urlKey string) *CommitSearchResultResolver {
 	return &CommitSearchResultResolver{
-		url: url,
+		gitCommitResolver: &GitCommitResolver{
+			repoResolver: &RepositoryResolver{
+				name: api.RepoName(urlKey),
+			},
+		},
 	}
 }
 
-func diffResult(url string) *CommitSearchResultResolver {
+func diffResult(urlKey string) *CommitSearchResultResolver {
 	return &CommitSearchResultResolver{
-		url:         url,
-		diffPreview: &highlightedString{},
+		CommitSearchResult: CommitSearchResult{
+			diffPreview: &highlightedString{},
+		},
+		gitCommitResolver: &GitCommitResolver{
+			repoResolver: &RepositoryResolver{
+				name: api.RepoName(urlKey),
+			},
+		},
 	}
 }
 
@@ -1488,9 +1498,9 @@ func resultToString(r SearchResultResolver) string {
 		return fmt.Sprintf("Repository:%s", v.URL())
 	case *CommitSearchResultResolver:
 		if v.diffPreview != nil {
-			return fmt.Sprintf("Diff:%s", v.url)
+			return fmt.Sprintf("Diff:%s", v.Commit().URL())
 		}
-		return fmt.Sprintf("Commit:%s", v.url)
+		return fmt.Sprintf("Commit:%s", v.Commit().URL())
 	}
 	return "unknown"
 }
@@ -1531,7 +1541,7 @@ func TestUnionMerge(t *testing.T) {
 				},
 			},
 			right: SearchResultsResolver{db: db},
-			want:  autogold.Want("LeftOnly", "Commit:a, Diff:a, File{url:a,symbols:[],lineMatches:[]}, Repo:/a"),
+			want:  autogold.Want("LeftOnly", "Commit:/a/-/commit/, Diff:/a/-/commit/, File{url:a,symbols:[],lineMatches:[]}, Repo:/a"),
 		},
 		{
 			left: SearchResultsResolver{db: db},
@@ -1544,7 +1554,7 @@ func TestUnionMerge(t *testing.T) {
 					fileResult(db, "a", nil, nil),
 				},
 			},
-			want: autogold.Want("RightOnly", "Commit:a, Diff:a, File{url:a,symbols:[],lineMatches:[]}, Repo:/a"),
+			want: autogold.Want("RightOnly", "Commit:/a/-/commit/, Diff:/a/-/commit/, File{url:a,symbols:[],lineMatches:[]}, Repo:/a"),
 		},
 		{
 			left: SearchResultsResolver{db: db,
@@ -1563,7 +1573,7 @@ func TestUnionMerge(t *testing.T) {
 					fileResult(db, "b", nil, nil),
 				},
 			},
-			want: autogold.Want("MergeAllDifferent", "Commit:a, Commit:b, Diff:a, Diff:b, File{url:a,symbols:[],lineMatches:[]}, File{url:b,symbols:[],lineMatches:[]}, Repo:/a, Repo:/b"),
+			want: autogold.Want("MergeAllDifferent", "Commit:/a/-/commit/, Commit:/b/-/commit/, Diff:/a/-/commit/, Diff:/b/-/commit/, File{url:a,symbols:[],lineMatches:[]}, File{url:b,symbols:[],lineMatches:[]}, Repo:/a, Repo:/b"),
 		},
 		{
 			left: SearchResultsResolver{db: db,
@@ -1646,27 +1656,27 @@ func TestSearchResultDeduper(t *testing.T) {
 		},
 		{
 			[]SearchResultResolver{commitResult("a")},
-			autogold.Want("SingleCommit", "Commit:a"),
+			autogold.Want("SingleCommit", "Commit:/a/-/commit/"),
 		},
 		{
 			[]SearchResultResolver{commitResult("a"), commitResult("a")},
-			autogold.Want("DuplicateCommits", "Commit:a"),
+			autogold.Want("DuplicateCommits", "Commit:/a/-/commit/"),
 		},
 		{
 			[]SearchResultResolver{commitResult("a"), diffResult("a")},
-			autogold.Want("SharedURLCommitDiff", "Commit:a, Diff:a"),
+			autogold.Want("SharedURLCommitDiff", "Commit:/a/-/commit/, Diff:/a/-/commit/"),
 		},
 		{
 			[]SearchResultResolver{commitResult("a"), diffResult("b")},
-			autogold.Want("DifferentURLCommitDiff", "Commit:a, Diff:b"),
+			autogold.Want("DifferentURLCommitDiff", "Commit:/a/-/commit/, Diff:/b/-/commit/"),
 		},
 		{
 			[]SearchResultResolver{commitResult("a"), diffResult("a"), repoResult(db, "a"), fileResult(db, "a", nil, nil)},
-			autogold.Want("EachTypeSameURL", "Commit:a, Diff:a, File{url:a,symbols:[],lineMatches:[]}, Repo:/a"),
+			autogold.Want("EachTypeSameURL", "Commit:/a/-/commit/, Diff:/a/-/commit/, File{url:a,symbols:[],lineMatches:[]}, Repo:/a"),
 		},
 		{
 			[]SearchResultResolver{commitResult("a"), commitResult("b"), commitResult("a"), commitResult("b")},
-			autogold.Want("FourCommitsTwoURLs", "Commit:a, Commit:b"),
+			autogold.Want("FourCommitsTwoURLs", "Commit:/a/-/commit/, Commit:/b/-/commit/"),
 		},
 	}
 
