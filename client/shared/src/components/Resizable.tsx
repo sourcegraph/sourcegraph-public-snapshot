@@ -1,142 +1,65 @@
-import * as React from 'react'
-import { Subject, Subscription } from 'rxjs'
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators'
+import classnames from 'classnames'
+import React, { useRef, useCallback, useEffect } from 'react'
+import { useLocalStorage } from '../../../web/src/util/useLocalStorage'
 
-interface Props<C extends React.ReactElement = React.ReactElement> {
-    className?: string
-
+interface Props {
+    /**
+     * The element that is resizable.
+     */
+    children: JSX.Element
+    /**
+     * The default size for the element.
+     */
+    width: number
     /**
      * Where the resize handle is (which also determines the axis along which the element can be
      * resized).
      */
-    handlePosition: 'right' | 'left' | 'top'
-
-    /**
-     * Persist and restore the size of the element using this key.
-     */
-    storageKey: string
-
-    /**
-     * The default size for the element.
-     */
-    defaultSize: number
-
-    /**
-     * The element that is resizable on its right side.
-     */
-    element: C
+    position: 'right' | 'left' | 'top'
 }
 
-const isHorizontal = (handlePosition: Props['handlePosition']): boolean =>
-    handlePosition === 'right' || handlePosition === 'left'
+export const Resizable: React.FunctionComponent<Props> = ({ children, width, position }) => {
+    const [isResizable, setIsResizable] = React.useState(false)
+    const [size, setSize] = useLocalStorage('sidebar-width', width)
+    const reference = useRef<HTMLDivElement>(null)
+    const onMouseUp = useCallback(() => setIsResizable(false), [])
+    const onMouseDown = useCallback(() => setIsResizable(true), [])
 
-interface State {
-    resizing: boolean
-    size: number
-}
+    useEffect(() => {
+        document.addEventListener('mousemove', onMouseMove)
+        document.addEventListener('mouseup', onMouseUp)
 
-/**
- * Wraps an item in a flexbox and makes it resizable.
- */
-export class Resizable<C extends React.ReactElement> extends React.PureComponent<Props<C>, State> {
-    private static STORAGE_KEY_PREFIX = 'Resizable:'
-
-    private sizeUpdates = new Subject<number>()
-    private subscriptions = new Subscription()
-
-    private containerRef: HTMLElement | null = null
-
-    constructor(props: Props<C>) {
-        super(props)
-
-        this.state = {
-            resizing: false,
-            size: this.getSize(),
+        return () => {
+            document.removeEventListener('mousemove', onMouseMove)
+            document.removeEventListener('mouseup', onMouseUp)
         }
-    }
+    }, [isResizable])
 
-    private getSize(): number {
-        const storedSize = localStorage.getItem(`${Resizable.STORAGE_KEY_PREFIX}${this.props.storageKey}`)
-        if (storedSize !== null) {
-            const sizeNumber = parseInt(storedSize, 10)
-            if (sizeNumber >= 0) {
-                return sizeNumber
+    const onMouseMove = (event: MouseEvent): void => {
+        if (isResizable && reference.current) {
+            if (position === 'left') {
+                setSize(event.pageX - reference.current.getBoundingClientRect().left)
+            } else if (position === 'right') {
+                setSize(reference.current.getBoundingClientRect().right - event.pageX)
+            } else if (position === 'top') {
+                setSize(reference.current.getBoundingClientRect().bottom - event.pageY)
             }
         }
-        return this.props.defaultSize
     }
 
-    private setSize(size: number): void {
-        localStorage.setItem(`${Resizable.STORAGE_KEY_PREFIX}${this.props.storageKey}`, String(size))
-    }
-
-    public componentDidMount(): void {
-        this.subscriptions.add(
-            this.sizeUpdates.pipe(distinctUntilChanged(), debounceTime(250)).subscribe(size => this.setSize(size))
-        )
-    }
-
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    public render(): React.ReactNode {
-        return (
+    return (
+        <div
+            className={classnames({ 'flex-column-reverse': position === 'top' }, 'd-flex', 'w-100')}
+            ref={reference}
+            style={{ [position !== 'top' ? 'width' : 'height']: `${size}px` }}
+        >
+            {children}
             <div
-                // eslint-disable-next-line react/forbid-dom-props
-                style={{ [isHorizontal(this.props.handlePosition) ? 'width' : 'height']: `${this.state.size}px` }}
-                className={`resizable resizable--${this.props.handlePosition} ${this.props.className || ''}`}
-                ref={this.setContainerRef}
-            >
-                {this.props.element}
-                <div
-                    className={`resizable__handle resizable__handle--${this.props.handlePosition} ${
-                        this.state.resizing ? 'resizable__handle--resizing' : ''
-                    }`}
-                    onMouseDown={this.onMouseDown}
-                />
-            </div>
-        )
-    }
-
-    private setContainerRef = (event: HTMLElement | null): void => {
-        this.containerRef = event
-    }
-
-    private onMouseDown = (event: React.MouseEvent<HTMLDivElement>): void => {
-        event.preventDefault()
-        if (!this.state.resizing) {
-            this.setState({ resizing: true })
-
-            const onMouseMove = (event: MouseEvent): void => {
-                event.preventDefault()
-                if (this.state.resizing && this.containerRef) {
-                    let size = isHorizontal(this.props.handlePosition)
-                        ? this.props.handlePosition === 'right'
-                            ? event.pageX - this.containerRef.getBoundingClientRect().left
-                            : this.containerRef.getBoundingClientRect().right - event.pageX
-                        : this.containerRef.getBoundingClientRect().bottom - event.pageY
-                    if (event.shiftKey) {
-                        size = Math.ceil(size / 20) * 20
-                    }
-                    this.setState({ size })
-                    this.sizeUpdates.next(size)
-                }
-            }
-
-            const onMouseUp = (event: Event): void => {
-                event.preventDefault()
-                if (this.state.resizing) {
-                    this.setState({ resizing: false })
-                    if (event.currentTarget) {
-                        event.currentTarget.removeEventListener('mouseup', onMouseUp)
-                        event.currentTarget.removeEventListener('mousemove', onMouseMove as EventListener)
-                    }
-                }
-            }
-
-            event.currentTarget.ownerDocument.addEventListener('mousemove', onMouseMove)
-            event.currentTarget.ownerDocument.addEventListener('mouseup', onMouseUp)
-        }
-    }
+                onMouseDown={onMouseDown}
+                className="d-flex border-left"
+                aria-hidden={true}
+                style={{ borderLeft: '5px', borderColor: 'red', borderStyle: 'solid', cursor: 'col-resize' }}
+            />
+        </div>
+    )
 }

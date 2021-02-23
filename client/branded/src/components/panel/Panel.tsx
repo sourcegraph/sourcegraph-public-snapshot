@@ -255,10 +255,11 @@ function byPriority(a: { priority: number }, b: { priority: number }): number {
 /** A wrapper around Panel that makes it resizable. */
 export const ResizablePanel: React.FunctionComponent<Props> = props => (
     <Resizable
-        className="resizable-panel"
-        handlePosition="top"
-        defaultSize={350}
-        storageKey="panel-size"
-        element={<Panel {...props} />}
-    />
+        // className="resizable-panel"
+        position="top"
+        width={350}
+        // storageKey="panel-size"
+    >
+        <Panel {...props} />
+    </Resizable>
 )

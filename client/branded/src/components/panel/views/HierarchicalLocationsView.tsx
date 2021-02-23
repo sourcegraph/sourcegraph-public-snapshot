@@ -235,41 +235,40 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                                 group && (
                                     <Resizable
                                         key={index}
-                                        className="hierarchical-locations-view__resizable"
-                                        handlePosition="right"
-                                        storageKey={`hierarchical-locations-view-resizable:${group.name}`}
-                                        defaultSize={group.defaultSize}
-                                        element={
-                                            <div className="list-group list-group-flush hierarchical-locations-view__list test-hierarchical-locations-view-list">
-                                                {groups[index].map((group, innerIndex) => (
+                                        // className="hierarchical-locations-view__resizable"
+                                        position="left"
+                                        // storageKey={`hierarchical-locations-view-resizable:${group.name}`}
+                                        width={230}
+                                    >
+                                        <div className="list-group list-group-flush hierarchical-locations-view__list test-hierarchical-locations-view-list">
+                                            {groups[index].map((group, innerIndex) => (
+                                                <span
+                                                    key={innerIndex}
+                                                    className={`list-group-item hierarchical-locations-view__item ${
+                                                        selectedGroups[index] === group.key ? 'active' : ''
+                                                    }`}
+                                                    onClick={event =>
+                                                        this.onSelectTree(event, selectedGroups, index, group.key)
+                                                    }
+                                                >
                                                     <span
-                                                        key={innerIndex}
-                                                        className={`list-group-item hierarchical-locations-view__item ${
-                                                            selectedGroups[index] === group.key ? 'active' : ''
-                                                        }`}
-                                                        onClick={event =>
-                                                            this.onSelectTree(event, selectedGroups, index, group.key)
-                                                        }
+                                                        className="hierarchical-locations-view__item-name"
+                                                        title={group.key}
                                                     >
-                                                        <span
-                                                            className="hierarchical-locations-view__item-name"
-                                                            title={group.key}
-                                                        >
-                                                            <span className="hierarchical-locations-view__item-name-text">
-                                                                <RepoLink to={null} repoName={group.key} />
-                                                            </span>
-                                                        </span>
-                                                        <span className="badge badge-secondary badge-pill hierarchical-locations-view__item-badge">
-                                                            {group.count}
+                                                        <span className="hierarchical-locations-view__item-name-text">
+                                                            <RepoLink to={null} repoName={group.key} />
                                                         </span>
                                                     </span>
-                                                ))}
-                                                {this.state.locationsOrError.isLoading && (
-                                                    <LoadingSpinner className="icon-inline m-2 flex-shrink-0 test-loading-spinner" />
-                                                )}
-                                            </div>
-                                        }
-                                    />
+                                                    <span className="badge badge-secondary badge-pill hierarchical-locations-view__item-badge">
+                                                        {group.count}
+                                                    </span>
+                                                </span>
+                                            ))}
+                                            {this.state.locationsOrError.isLoading && (
+                                                <LoadingSpinner className="icon-inline m-2 flex-shrink-0 test-loading-spinner" />
+                                            )}
+                                        </div>
+                                    </Resizable>
                                 )
                         )}
                     <FileLocations

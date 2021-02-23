@@ -1,6 +1,6 @@
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
 import * as H from 'history'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback } from 'react'
 import { Button } from 'reactstrap'
 import { FormatListBulletedIcon } from '../../../shared/src/components/icons'
 import { Resizable } from '../../../shared/src/components/Resizable'
@@ -19,53 +19,29 @@ interface Props extends AbsoluteRepoFile, ExtensionsControllerProps, ThemeProps 
     className: string
     history: H.History
     location: H.Location
-    repoName: any
-    revision: any
-    commitID: any
-    filePath: any
-    extensionsController: any
-    isLightTheme: any
 }
 
 /**
  * The sidebar for a specific repo revision that shows the list of files and directories.
  */
-
-function areKeysPressed(keys: string[], keysPressed: Set<string>): boolean {
-    const required = new Set(keys)
-    for (const element of keysPressed) {
-        required.delete(element)
-    }
-    return required.size === 0
-}
-
 export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
-    // public componentDidMount(): void {
-    //     // Toggle sidebar visibility when the user presses 'alt+s'.
-    //     this.subscriptions.add(
-    //         fromEvent<KeyboardEvent>(window, 'keydown')
-    //             .pipe(filter(event => event.altKey && event.key === 's'))
-    //             .subscribe(event => {
-    //                 event.preventDefault()
-    //                 this.setState(previousState => ({ showSidebar: !previousState.showSidebar }))
-    //             })
-    //     )
-    // }
-
-    const [tabIndex, setTabIndex] = useLocalStorage('repo-revision-sidebar-last-tab', 0)
-    const [showSidebar, setShowSidebar] = useLocalStorage('repo-revision-sidebar-hidden', false)
-
+    // TODO: make (Alt+S/Opt+S) keyboard logic on panel
     const STORAGE_KEY = 'repo-revision-sidebar'
+    const TABS_KEY = 'repo-revision-sidebar-last-tab'
+    const SIDEBAR_KEY = 'repo-revision-sidebar-toggle'
+
+    const [tabIndex, setTabIndex] = useLocalStorage(TABS_KEY, 0)
+    const [toggleSidebar, setToggleSidebar] = useLocalStorage(SIDEBAR_KEY, true)
 
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
-    const sidebarToggle = useCallback(() => setShowSidebar(!showSidebar), [setShowSidebar, showSidebar])
+    const handleSidebarToggle = useCallback(() => setToggleSidebar(!toggleSidebar), [setToggleSidebar, toggleSidebar])
 
-    if (showSidebar) {
+    if (!toggleSidebar) {
         return (
             <button
                 type="button"
                 className="btn btn-icon repo-revision-sidebar-toggle repo-revision-container__sidebar-toggle"
-                onClick={sidebarToggle}
+                onClick={handleSidebarToggle}
                 data-tooltip="Show sidebar (Alt+S/Opt+S)"
             >
                 <FormatListBulletedIcon className="icon-inline" />
@@ -74,58 +50,51 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
     }
 
     return (
-        <Resizable
-            className="repo-revision-container__sidebar-resizable"
-            handlePosition="right"
-            storageKey={STORAGE_KEY}
-            defaultSize={256 /* px */}
-            element={
-                <Tabs className="w-100" defaultIndex={tabIndex} onChange={handleTabsChange}>
+        <Resizable width={256} position="left">
+            <Tabs className="w-100" defaultIndex={tabIndex} onChange={handleTabsChange}>
+                <div className="d-flex">
                     <TabList>
                         <Tab>Files</Tab>
                         <Tab>Symbols</Tab>
-                        <Button
-                            onClick={sidebarToggle}
-                            close={true}
-                            className="bg-transparent border-0 close ml-auto"
-                            title="Close sidebar (Alt+S/Opt+S)"
-                        />
                     </TabList>
-                    <div
-                        aria-hidden={true}
-                        className="d-flex overflow-auto repo-revision-container__tabpanels explorer"
-                    >
-                        <TabPanels className="w-100">
-                            <TabPanel tabIndex={-1}>
-                                <Tree
-                                    key="files"
-                                    repoName={props.repoName}
-                                    revision={props.revision}
-                                    commitID={props.commitID}
-                                    history={props.history}
-                                    location={props.location}
-                                    scrollRootSelector=".explorer"
-                                    activePath={props.filePath}
-                                    activePathIsDir={props.isDir}
-                                    sizeKey={`Resizable:${STORAGE_KEY}`}
-                                    extensionsController={props.extensionsController}
-                                    isLightTheme={props.isLightTheme}
-                                />
-                            </TabPanel>
-                            <TabPanel>
-                                <RepoRevisionSidebarSymbols
-                                    key="symbols"
-                                    repoID={props.repoID}
-                                    revision={props.revision}
-                                    activePath={props.filePath}
-                                    history={props.history}
-                                    location={props.location}
-                                />
-                            </TabPanel>
-                        </TabPanels>
-                    </div>
-                </Tabs>
-            }
-        />
+                    <Button
+                        onClick={handleSidebarToggle}
+                        close={true}
+                        className="bg-transparent border-0 close ml-auto"
+                        title="Close sidebar (Alt+S/Opt+S)"
+                    />
+                </div>
+                <div aria-hidden={true} className="d-flex overflow-auto repo-revision-container__tabpanels explorer">
+                    <TabPanels className="w-100">
+                        <TabPanel tabIndex={-1}>
+                            <Tree
+                                key="files"
+                                repoName={props.repoName}
+                                revision={props.revision}
+                                commitID={props.commitID}
+                                history={props.history}
+                                location={props.location}
+                                scrollRootSelector=".explorer"
+                                activePath={props.filePath}
+                                activePathIsDir={props.isDir}
+                                sizeKey={`Resizable:${STORAGE_KEY}`}
+                                extensionsController={props.extensionsController}
+                                isLightTheme={props.isLightTheme}
+                            />
+                        </TabPanel>
+                        <TabPanel>
+                            <RepoRevisionSidebarSymbols
+                                key="symbols"
+                                repoID={props.repoID}
+                                revision={props.revision}
+                                activePath={props.filePath}
+                                history={props.history}
+                                location={props.location}
+                            />
+                        </TabPanel>
+                    </TabPanels>
+                </div>
+            </Tabs>
+        </Resizable>
     )
 }
