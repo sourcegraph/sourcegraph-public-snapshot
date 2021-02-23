@@ -141,7 +141,7 @@ func (s *Server) cleanupRepos() {
 		}
 
 		// We believe converting a Perforce depot to a Git repository is generally a
-		// very expansive operation, therefore we do not try to reclone/redo the
+		// very expensive operation, therefore we do not try to reclone/redo the
 		// conversion only because it is old or slow to do "git gc".
 		if repoType == "perforce" && reason != maybeCorrupt {
 			reason = ""
