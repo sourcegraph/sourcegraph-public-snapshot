@@ -37,10 +37,10 @@ var textSearchLimiter = mutablelimiter.New(32)
 
 type FileMatch struct {
 	Path        string
-	LineMatches []*lineMatch
+	LineMatches []*LineMatch
 	LimitHit    bool
 
-	Symbols  []*searchSymbolResult `json:"-"`
+	Symbols  []*SearchSymbolResult `json:"-"`
 	uri      string                `json:"-"`
 	Repo     *types.RepoName       `json:"-"`
 	CommitID api.CommitID          `json:"-"`
@@ -188,8 +188,8 @@ func (fm *FileMatchResolver) Select(t filter.SelectPath) SearchResultResolver {
 	return nil
 }
 
-// lineMatch is the struct used by vscode to receive search results for a line
-type lineMatch struct {
+// LineMatch is the struct used by vscode to receive search results for a line
+type LineMatch struct {
 	Preview          string
 	OffsetAndLengths [][2]int32
 	LineNumber       int32
@@ -197,27 +197,27 @@ type lineMatch struct {
 }
 
 type lineMatchResolver struct {
-	*lineMatch
+	*LineMatch
 }
 
 func (lm lineMatchResolver) Preview() string {
-	return lm.lineMatch.Preview
+	return lm.LineMatch.Preview
 }
 
 func (lm lineMatchResolver) LineNumber() int32 {
-	return lm.lineMatch.LineNumber
+	return lm.LineMatch.LineNumber
 }
 
 func (lm lineMatchResolver) OffsetAndLengths() [][]int32 {
-	r := make([][]int32, len(lm.lineMatch.OffsetAndLengths))
-	for i := range lm.lineMatch.OffsetAndLengths {
-		r[i] = lm.lineMatch.OffsetAndLengths[i][:]
+	r := make([][]int32, len(lm.LineMatch.OffsetAndLengths))
+	for i := range lm.LineMatch.OffsetAndLengths {
+		r[i] = lm.LineMatch.OffsetAndLengths[i][:]
 	}
 	return r
 }
 
 func (lm lineMatchResolver) LimitHit() bool {
-	return lm.lineMatch.LimitHit
+	return lm.LineMatch.LimitHit
 }
 
 var mockSearchFilesInRepo func(ctx context.Context, repo *types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error)
@@ -263,13 +263,13 @@ func searchFilesInRepo(ctx context.Context, db dbutil.DB, searcherURLs *endpoint
 	repoResolver := NewRepositoryResolver(db, repo.ToRepo())
 	resolvers := make([]*FileMatchResolver, 0, len(matches))
 	for _, fm := range matches {
-		lineMatches := make([]*lineMatch, 0, len(fm.LineMatches))
+		lineMatches := make([]*LineMatch, 0, len(fm.LineMatches))
 		for _, lm := range fm.LineMatches {
 			ranges := make([][2]int32, 0, len(lm.OffsetAndLengths))
 			for _, ol := range lm.OffsetAndLengths {
 				ranges = append(ranges, [2]int32{int32(ol[0]), int32(ol[1])})
 			}
-			lineMatches = append(lineMatches, &lineMatch{
+			lineMatches = append(lineMatches, &LineMatch{
 				Preview:          lm.Preview,
 				OffsetAndLengths: ranges,
 				LineNumber:       int32(lm.LineNumber),
