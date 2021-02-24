@@ -321,6 +321,11 @@ func (r *RepositoryResolver) ResultCount() int32 {
 	return 1
 }
 
+func (r *RepositoryResolver) Limit(limit int) int {
+	// Always represents one result and limit > 0 so we just return limit - 1.
+	return limit - 1
+}
+
 func (r *RepositoryResolver) Type(ctx context.Context) (*types.Repo, error) {
 	return r.repo(ctx)
 }

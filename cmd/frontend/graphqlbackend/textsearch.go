@@ -69,6 +69,33 @@ func (fm *FileMatch) appendMatches(src *FileMatch) {
 	fm.LimitHit = fm.LimitHit || src.LimitHit
 }
 
+// Limit will mutate fm such that it only has limit results. limit is a number
+// greater than 0.
+//
+//   if limit >= ResultCount then nothing is done and we return limit - ResultCount.
+//   if limit < ResultCount then ResultCount becomes limit and we return 0.
+func (fm *FileMatch) Limit(limit int) int {
+	// Check if we need to limit.
+	if after := limit - fm.ResultCount(); after >= 0 {
+		return after
+	}
+
+	// Invariant: limit > 0
+	for i, m := range fm.LineMatches {
+		after := limit - len(m.OffsetAndLengths)
+		if after <= 0 {
+			fm.Symbols = nil
+			fm.LineMatches = fm.LineMatches[:i+1]
+			m.OffsetAndLengths = m.OffsetAndLengths[:limit]
+			return 0
+		}
+		limit = after
+	}
+
+	fm.Symbols = fm.Symbols[:limit]
+	return 0
+}
+
 // FileMatchResolver is a resolver for the GraphQL type `FileMatch`
 type FileMatchResolver struct {
 	FileMatch

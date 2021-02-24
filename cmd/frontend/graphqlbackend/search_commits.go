@@ -53,6 +53,16 @@ func (r *CommitSearchResult) ResultCount() int {
 	return 1
 }
 
+func (r *CommitSearchResult) Limit(limit int) int {
+	if len(r.highlights) == 0 {
+		return limit - 1 // just counting the commit
+	} else if len(r.highlights) > limit {
+		r.highlights = r.highlights[:limit]
+		return 0
+	}
+	return limit - len(r.highlights)
+}
+
 // CommitSearchResultResolver is a resolver for the GraphQL type `CommitSearchResult`
 type CommitSearchResultResolver struct {
 	CommitSearchResult
