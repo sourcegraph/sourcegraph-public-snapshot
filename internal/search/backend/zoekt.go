@@ -3,7 +3,6 @@ package backend
 import (
 	"context"
 	"net/http"
-	"strings"
 
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
@@ -56,15 +55,14 @@ func (s *StreamSearchAdapter) String() string {
 	return "streamSearchAdapter{" + s.Searcher.String() + "}"
 }
 
-func NewZoektStream(address string) zoekt.Streamer {
-	addressWithScheme := address
-	if !strings.HasPrefix(addressWithScheme, "http://") {
-		addressWithScheme = "http://" + addressWithScheme
+// ZoektDial connects to a Searcher HTTP RPC server at address (host:port).
+func ZoektDial(endpoint string) zoekt.Streamer {
+	client := &zoektStream{
+		rpc.Client(endpoint),
+		zoektstream.NewClient("http://"+endpoint, zoektHTTPClient),
 	}
-	return &zoektStream{
-		rpc.Client(address),
-		zoektstream.NewClient(addressWithScheme, zoektHTTPClient),
-	}
+
+	return NewMeteredSearcher(endpoint, client)
 }
 
 type zoektStream struct {
