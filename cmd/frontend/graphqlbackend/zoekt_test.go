@@ -1040,7 +1040,7 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 
 	repo := NewRepositoryResolver(db, &types.Repo{Name: "foo"})
 
-	results := zoektFileMatchToSymbolResults(repo, new(dbtesting.MockDB), "master", file)
+	results := zoektFileMatchToSymbolResults(repo, "master", file)
 	var symbols []protocol.Symbol
 	for _, res := range results {
 		// Check the fields which are not specific to the symbol

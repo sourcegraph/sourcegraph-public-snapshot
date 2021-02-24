@@ -396,7 +396,7 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 
 					var symbols []*SearchSymbolResult
 					if typ == symbolRequest {
-						symbols = zoektFileMatchToSymbolResults(repoResolver, db, inputRev, &file)
+						symbols = zoektFileMatchToSymbolResults(repoResolver, inputRev, &file)
 					}
 					fm := &FileMatchResolver{
 						db: db,
@@ -540,7 +540,7 @@ func escape(s string) string {
 	return string(escaped)
 }
 
-func zoektFileMatchToSymbolResults(repo *RepositoryResolver, db dbutil.DB, inputRev string, file *zoekt.FileMatch) []*SearchSymbolResult {
+func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, file *zoekt.FileMatch) []*SearchSymbolResult {
 	// Symbol search returns a resolver so we need to pass in some
 	// extra stuff. This is a sign that we can probably restructure
 	// resolvers to avoid this.
