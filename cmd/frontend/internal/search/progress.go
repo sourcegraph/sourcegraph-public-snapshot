@@ -29,6 +29,10 @@ func (p *progressAggregator) Update(event graphqlbackend.SearchEvent) {
 	p.Dirty = true
 	p.Stats.Update(&event.Stats)
 	for _, result := range event.Results {
+		if crs, ok := result.ToCommitSearchResult(); ok {
+			p.MatchCount += crs.HighlightsCount()
+			continue
+		}
 		p.MatchCount += int(result.ResultCount())
 	}
 

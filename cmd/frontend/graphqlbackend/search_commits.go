@@ -139,6 +139,10 @@ func (r *CommitSearchResultResolver) ResultCount() int32 {
 	return 1
 }
 
+func (r *CommitSearchResultResolver) HighlightsCount() int {
+	return len(r.highlights)
+}
+
 func commitParametersToDiffParameters(ctx context.Context, op *search.CommitParameters) (*search.DiffParameters, error) {
 	args := []string{
 		"--no-prefix",
