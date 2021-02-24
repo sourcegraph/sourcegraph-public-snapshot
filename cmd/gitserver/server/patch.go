@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -18,6 +19,8 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/agent"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -259,26 +262,23 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		// If the protocol is SSH and a private key was given, we want to
 		// use it for communication with the code host.
 		if remoteURL.Scheme == "ssh" && req.Push.PrivateKey != "" && req.Push.Passphrase != "" {
-			// Ensure tmp directory exists.
-			tmpKeyPath, err := s.tempDir("patch-key-")
+			// We set up an agent here, which sets up a socket that can be provided to
+			// SSH via the $SSH_AUTH_SOCK environment variable and the goroutine to drive
+			// it in the background.
+			// This is used to pass the private key to be used when pushing to the remote,
+			// without the need to store it on the disk.
+			agent, err := NewSSHAgent([]byte(req.Push.PrivateKey), []byte(req.Push.Passphrase))
 			if err != nil {
-				resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: make tmp patch key dir"))
+				resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: error creating ssh-agent"))
 				return http.StatusInternalServerError, resp
 			}
-			defer cleanUpTmpRepo(tmpKeyPath)
-			sshKeyPath := path.Join(tmpKeyPath, "private_key")
-			if err = ioutil.WriteFile(sshKeyPath, []byte(req.Push.PrivateKey), 0600); err != nil {
-				resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: writing ssh key to temp file"))
-				return http.StatusInternalServerError, resp
-			}
+			// Make sure we shut this down once we're done.
+			defer agent.Close()
+
 			cmd.Env = append(
 				os.Environ(),
 				[]string{
-					fmt.Sprintf("GIT_SSH_COMMAND=/usr/bin/ssh -i %s", sshKeyPath),
-					"GIT_SSH_VARIANT=ssh",
-					"DISPLAY=",
-					// Pass a credential helper that just prints the passphrase for the private key.
-					fmt.Sprintf("SSH_ASKPASS=%s", fmt.Sprintf(`!f() { test "$1" = get && printf "protocol=ssh\npassword=%s\nquit=true\n"; }; f`, req.Push.Passphrase)),
+					fmt.Sprintf("SSH_AUTH_SOCK=%s", agent.Socket()),
 				}...,
 			)
 		}
@@ -316,4 +316,100 @@ func cleanUpTmpRepo(path string) {
 // Copied from git package to avoid cycle import when testing git package.
 func ensureRefPrefix(ref string) string {
 	return "refs/heads/" + strings.TrimPrefix(ref, "refs/heads/")
+}
+
+type SSHAgent struct {
+	l    net.Listener
+	sock string
+}
+
+func NewSSHAgent(raw, passphrase []byte) (*SSHAgent, error) {
+	// This does error if the passphrase is invalid, so we get immediate
+	// feedback here if we screw up.
+	key, err := ssh.ParseRawPrivateKeyWithPassphrase(raw, passphrase)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing private key")
+	}
+
+	// The keyring type implements the agent.Agent interface we need to provide
+	// when serving an SSH agent. It also provides thread-safe storage for the
+	// keys we provide to it. No need to reinvent the wheel!
+	keyring := agent.NewKeyring()
+	err = keyring.Add(agent.AddedKey{
+		PrivateKey: key,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Now we need to set up a Unix socket. We need a temporary file.
+	f, err := ioutil.TempFile(os.TempDir(), "ssh-agent-*.sock")
+	if err != nil {
+		return nil, errors.Wrap(err, "creating temporary socket")
+	}
+	name := f.Name()
+
+	// Unfortunately, the Unix socket can't exist when we call Listen, so
+	// there's a potential race condition here. I don't think it's too bad in
+	// practice.
+	if err := f.Close(); err != nil {
+		return nil, errors.Wrap(err, "closing temporary socket")
+	}
+	if err := os.Remove(name); err != nil {
+		return nil, errors.Wrap(err, "removing temporary socket")
+	}
+
+	// Start listening.
+	l, err := net.Listen("unix", name)
+	if err != nil {
+		return nil, errors.Wrapf(err, "listening on socket %q", name)
+	}
+
+	// Set up the type we're going to return.
+	a := &SSHAgent{
+		l:    l,
+		sock: name,
+	}
+
+	// Spawn a goroutine to accept connections and handle them.
+	go func() {
+		for {
+			// This will return when we call l.Close(), which Agent.Close() does.
+			conn, err := l.Accept()
+			if err == io.EOF {
+				return
+			} else if err != nil {
+				log15.Error("error accepting socket connection", "err", err)
+				return
+			}
+
+			// We don't control how SSH handles the agent, so we should handle
+			// this "correctly" and spawn another goroutine, even though in
+			// practice there should only ever be one connection at a time to
+			// the agent.
+			go func(conn net.Conn) {
+				defer conn.Close()
+
+				if err := agent.ServeAgent(keyring, conn); err != nil && err != io.EOF {
+					log15.Error("error serving SSH agent", "err", err)
+				}
+			}(conn)
+		}
+	}()
+
+	return a, nil
+}
+
+func (a *SSHAgent) Close() error {
+	// net.Listen() helpfully recreated the socket file for us, so we need to
+	// remove it again.
+	os.Remove(a.sock)
+
+	// Close down the listener, which should terminate the goroutine we spawned
+	// in NewAgent().
+	return a.l.Close()
+}
+
+func (a *SSHAgent) Socket() string {
+	return a.sock
 }
