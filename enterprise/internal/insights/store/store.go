@@ -108,15 +108,57 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 	return points, err
 }
 
+// Note that the series_points table may contain duplicate points, or points recorded at irregular
+// intervals. In specific:
+//
+// 1. It may have multiple points recorded at the same exact point in time, e.g. with different
+//    repo_id (datapoint recorded per repository), or only a single point recorded (datapoint
+//    recorded globally.)
+// 2. Rarely, it may contain duplicate data points. For example, when repo-updater is started the
+//    initial jobs for recording insights will be enqueued, and then e.g. 12h later. If repo-updater
+//    gets restarted multiple times, there may be many multiple nearly identical data points recorded
+//    in a short period of time instead of at the 12h interval.
+// 3. Data backfilling may not operate at the same interval, or same # of points per interval, and
+//    thus the interval between data points may be irregular.
+// 4. Searches may not complete at the same exact time, so even in a perfect world if the interval
+//    should be 12h it may be off by a minute or so.
+//
+// Additionally, it is important to note that there may be data points associated with a repo OR not
+// associated with a repo at all (global.)
+//
+// Because we want 1 point per N interval, and do not want to display duplicate points in the UI, we
+// use a time_bucket() with an MAX() aggregation. This gives us one data point for some time interval,
+// even if multiple were recorded in that timeframe.
+//
+// One goal of this query is to get e.g. the total number of search results (value) across all repos
+// (or some subset selected by the WHERE clause.) In this case, you can imagine each repo having its
+// results recorded at the 12h interval. There may be duplicate points. The subquery uses a time_bucket()
+// and MAX() aggregation to get the "# of search results per unique repository", eliminating duplicate
+// data points, and the top-level SUM() adds those together to get "# of search results across all
+// repositories."
+//
+// Another goal of this query is to get e.g. "total # of services (value) deployed at our company",
+// in which case `repo_id` and other repo fields will be NULL. The inner query still eliminates potential
+// duplicate data points and the outer query in this case just SUMs one data point (as we don't have
+// points per repository.)
 var seriesPointsQueryFmtstr = `
 -- source: enterprise/internal/insights/store/store.go:SeriesPoints
-SELECT time_bucket(INTERVAL '12 hours', time) AS time_bucket,
-	SUM(value),
-	m.metadata
-FROM series_points p
-LEFT JOIN metadata m ON p.metadata_id = m.id
-WHERE %s
-GROUP BY metadata, time_bucket
+SELECT sub.time_bucket,
+	SUM(sub.max),
+	sub.metadata
+FROM (
+	SELECT time_bucket(INTERVAL '12 hours', time) AS time_bucket,
+		MAX(value),
+		m.metadata,
+		series_id,
+		repo_id
+	FROM series_points p
+	LEFT JOIN metadata m ON p.metadata_id = m.id
+	WHERE %s
+	GROUP BY time_bucket, metadata, series_id, repo_id
+	ORDER BY time_bucket DESC
+) sub
+GROUP BY time_bucket, metadata
 ORDER BY time_bucket DESC
 `
 
