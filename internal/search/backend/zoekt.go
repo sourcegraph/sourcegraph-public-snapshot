@@ -2,10 +2,22 @@ package backend
 
 import (
 	"context"
+	"net/http"
+	"strings"
 
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
+	"github.com/google/zoekt/rpc"
+	zoektstream "github.com/google/zoekt/stream"
+
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
+
+var zoektHTTPClient = &http.Client{
+	Transport: &ot.Transport{
+		RoundTripper: http.DefaultTransport,
+	},
+}
 
 // ZoektStreamFunc is a convenience function to create a stream receiver from a
 // function.
@@ -13,6 +25,12 @@ type ZoektStreamFunc func(*zoekt.SearchResult)
 
 func (f ZoektStreamFunc) Send(event *zoekt.SearchResult) {
 	f(event)
+}
+
+// streamSearcher is an interface which calls c.Send(result *zoekt.SearchResults)
+// as results are found.
+type streamSearcher interface {
+	StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, c zoekt.Sender) error
 }
 
 // StreamSearchEvent has fields optionally set representing events that happen
@@ -42,4 +60,20 @@ func (s *StreamSearchAdapter) StreamSearch(ctx context.Context, q query.Q, opts 
 
 func (s *StreamSearchAdapter) String() string {
 	return "streamSearchAdapter{" + s.Searcher.String() + "}"
+}
+
+func NewZoektStream(address string) zoekt.Streamer {
+	addressWithScheme := address
+	if !strings.HasPrefix(addressWithScheme, "http://") {
+		addressWithScheme = "http://" + addressWithScheme
+	}
+	return &zoektStream{
+		rpc.Client(address),
+		zoektstream.NewClient(addressWithScheme, zoektHTTPClient),
+	}
+}
+
+type zoektStream struct {
+	zoekt.Searcher
+	streamSearcher
 }
