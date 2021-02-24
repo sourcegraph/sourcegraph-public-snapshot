@@ -7,9 +7,9 @@ type Key interface {
 	Encrypter
 	Decrypter
 
-	// Identifier returns an identifier string containing anything to concretely identify
+	// ID returns an identifier string containing anything to concretely identify
 	// the underlying key, eg: key type, name, & version.
-	Identifier(ctx context.Context) (string, error)
+	ID(ctx context.Context) (string, error)
 }
 
 // Encrypter is anything that can encrypt a value

@@ -535,7 +535,7 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 	}
 	es.Unrestricted = !gjson.GetBytes(normalized, "authorization").Exists()
 
-	config, configWasEncrypted, err := e.maybeEncryptConfig(ctx, es.Config)
+	config, keyID, err := e.maybeEncryptConfig(ctx, es.Config)
 	if err != nil {
 		return err
 	}
@@ -543,7 +543,7 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 	return e.Store.Handle().DB().QueryRowContext(
 		ctx,
 		"INSERT INTO external_services(kind, display_name, config, encryption_key_id, created_at, updated_at, namespace_user_id, unrestricted, cloud_default) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id",
-		es.Kind, es.DisplayName, config, configWasEncrypted, es.CreatedAt, es.UpdatedAt, nullInt32Column(es.NamespaceUserID), es.Unrestricted, es.CloudDefault,
+		es.Kind, es.DisplayName, config, keyID, es.CreatedAt, es.UpdatedAt, nullInt32Column(es.NamespaceUserID), es.Unrestricted, es.CloudDefault,
 	).Scan(&es.ID)
 }
 
@@ -563,7 +563,7 @@ func (e *ExternalServiceStore) maybeEncryptConfig(ctx context.Context, config st
 			return "", "", err
 		}
 		config = string(encrypted)
-		keyIdent, err = key.Identifier(ctx)
+		keyIdent, err = key.ID(ctx)
 		if err != nil {
 			return "", "", err
 		}

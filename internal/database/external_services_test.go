@@ -1443,6 +1443,6 @@ func (k testKey) Decrypt(ctx context.Context, ciphertext []byte) (*encryption.Se
 	return &s, err
 }
 
-func (k testKey) Identifier(ctx context.Context) (string, error) {
+func (k testKey) ID(ctx context.Context) (string, error) {
 	return "testkey", nil
 }

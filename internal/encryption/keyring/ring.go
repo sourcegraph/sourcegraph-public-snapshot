@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/cloudkms"
 
@@ -14,13 +13,13 @@ import (
 )
 
 var (
-	mu          sync.Mutex
+	mu          sync.RWMutex
 	defaultRing Ring
 )
 
 func Default() Ring {
-	mu.Lock()
-	defer mu.Unlock()
+	mu.RLock()
+	defer mu.RUnlock()
 	return defaultRing
 }
 
@@ -39,8 +38,7 @@ func Init(ctx context.Context) error {
 		}
 		newRing, err := NewRing(ctx, newConfig)
 		if err != nil {
-			log15.Error("creating encryption keyring", "error", err)
-			return
+			panic("creating encryption keyring: " + err.Error())
 		}
 		mu.Lock()
 		defaultRing = *newRing

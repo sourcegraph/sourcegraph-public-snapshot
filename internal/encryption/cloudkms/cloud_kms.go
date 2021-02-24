@@ -32,7 +32,7 @@ type Key struct {
 	client *kms.KeyManagementClient
 }
 
-func (k *Key) Identifier(ctx context.Context) (string, error) {
+func (k *Key) ID(ctx context.Context) (string, error) {
 	key, err := k.client.GetCryptoKey(ctx, &kmspb.GetCryptoKeyRequest{
 		Name: k.name,
 	})

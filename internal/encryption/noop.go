@@ -6,7 +6,7 @@ var _ Key = &NoopKey{}
 
 type NoopKey struct{}
 
-func (k *NoopKey) Identifier(ctx context.Context) (string, error) {
+func (k *NoopKey) ID(ctx context.Context) (string, error) {
 	return "no-op", nil
 }
 
