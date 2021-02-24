@@ -62,7 +62,7 @@ func ExternalServicesWith(other basestore.ShareableStore) *ExternalServiceStore 
 }
 
 func (e *ExternalServiceStore) With(other basestore.ShareableStore) *ExternalServiceStore {
-	return &ExternalServiceStore{Store: e.Store.With(other)}
+	return &ExternalServiceStore{Store: e.Store.With(other), key: e.key}
 }
 
 func (e *ExternalServiceStore) WithEncryptionKey(key encryption.Key) *ExternalServiceStore {
@@ -71,7 +71,7 @@ func (e *ExternalServiceStore) WithEncryptionKey(key encryption.Key) *ExternalSe
 
 func (e *ExternalServiceStore) Transact(ctx context.Context) (*ExternalServiceStore, error) {
 	txBase, err := e.Store.Transact(ctx)
-	return &ExternalServiceStore{Store: txBase}, err
+	return &ExternalServiceStore{Store: txBase, key: e.key}, err
 }
 
 // ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
@@ -542,17 +542,17 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 
 	return e.Store.Handle().DB().QueryRowContext(
 		ctx,
-		"INSERT INTO external_services(kind, display_name, config, config_encrypted, created_at, updated_at, namespace_user_id, unrestricted, cloud_default) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id",
+		"INSERT INTO external_services(kind, display_name, config, encryption_key_id, created_at, updated_at, namespace_user_id, unrestricted, cloud_default) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id",
 		es.Kind, es.DisplayName, config, configWasEncrypted, es.CreatedAt, es.UpdatedAt, nullInt32Column(es.NamespaceUserID), es.Unrestricted, es.CloudDefault,
 	).Scan(&es.ID)
 }
 
 // maybeEncryptConfig encrypts and returns externals service config if an encryption.Key is configured
-func (e *ExternalServiceStore) maybeEncryptConfig(ctx context.Context, config string) (string, bool, error) {
+func (e *ExternalServiceStore) maybeEncryptConfig(ctx context.Context, config string) (string, string, error) {
 	// encrypt the config before writing if we have a key configured
 	var (
-		configWasEncrypted bool
-		key                = keyring.Default.ExternalServiceKey
+		keyIdent string
+		key      = keyring.Default.ExternalServiceKey
 	)
 	if e.key != nil {
 		key = e.key
@@ -560,16 +560,20 @@ func (e *ExternalServiceStore) maybeEncryptConfig(ctx context.Context, config st
 	if key != nil {
 		encrypted, err := key.Encrypt(ctx, []byte(config))
 		if err != nil {
-			return "", false, err
+			return "", "", err
 		}
 		config = string(encrypted)
-		configWasEncrypted = true
+		keyIdent, err = key.Identifier(ctx)
+		if err != nil {
+			return "", "", err
+		}
 	}
-	return config, configWasEncrypted, nil
+	return config, keyIdent, nil
 }
 
-func (e *ExternalServiceStore) maybeDecryptConfig(ctx context.Context, config string, configEncrypted bool) (string, error) {
-	if !configEncrypted {
+func (e *ExternalServiceStore) maybeDecryptConfig(ctx context.Context, config string, keyIdent string) (string, error) {
+	if keyIdent == "" {
+		// config is not encrypted, return plaintext
 		return config, nil
 	}
 	var key = keyring.Default.ExternalServiceKey
@@ -615,7 +619,7 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 
 	i := 0
 	for rows.Next() {
-		var configEncrypted bool
+		var keyIdent string
 		err = rows.Scan(
 			&svcs[i].ID,
 			&svcs[i].Kind,
@@ -629,13 +633,13 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			&dbutil.NullInt32{N: &svcs[i].NamespaceUserID},
 			&svcs[i].Unrestricted,
 			&svcs[i].CloudDefault,
-			&configEncrypted,
+			&keyIdent,
 		)
 		if err != nil {
 			return err
 		}
 
-		svcs[i].Config, err = e.maybeDecryptConfig(ctx, svcs[i].Config, configEncrypted)
+		svcs[i].Config, err = e.maybeDecryptConfig(ctx, svcs[i].Config, keyIdent)
 		if err != nil {
 			return err
 		}
@@ -649,7 +653,7 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 func (e *ExternalServiceStore) upsertExternalServicesQuery(ctx context.Context, svcs []*types.ExternalService) (*sqlf.Query, error) {
 	vals := make([]*sqlf.Query, 0, len(svcs))
 	for _, s := range svcs {
-		config, configEncrypted, err := e.maybeEncryptConfig(ctx, s.Config)
+		config, keyIdent, err := e.maybeEncryptConfig(ctx, s.Config)
 		if err != nil {
 			return nil, err
 		}
@@ -659,7 +663,7 @@ func (e *ExternalServiceStore) upsertExternalServicesQuery(ctx context.Context, 
 			s.Kind,
 			s.DisplayName,
 			config,
-			configEncrypted,
+			keyIdent,
 			s.CreatedAt.UTC(),
 			s.UpdatedAt.UTC(),
 			nullTimeColumn(s.DeletedAt),
@@ -688,7 +692,7 @@ INSERT INTO external_services (
   kind,
   display_name,
   config,
-  config_encrypted,
+  encryption_key_id,
   created_at,
   updated_at,
   deleted_at,
@@ -701,27 +705,26 @@ INSERT INTO external_services (
 VALUES %s
 ON CONFLICT(id) DO UPDATE
 SET
-  kind              = UPPER(excluded.kind),
-  display_name      = excluded.display_name,
-  config            = excluded.config,
-  config_encrypted  = excluded.config_encrypted,
-  created_at        = excluded.created_at,
-  updated_at        = excluded.updated_at,
-  deleted_at        = excluded.deleted_at,
-  last_sync_at      = excluded.last_sync_at,
-  next_sync_at      = excluded.next_sync_at,
-  namespace_user_id = excluded.namespace_user_id,
-  unrestricted      = excluded.unrestricted,
-  cloud_default     = excluded.cloud_default
+  kind               = UPPER(excluded.kind),
+  display_name       = excluded.display_name,
+  config             = excluded.config,
+  encryption_key_id  = excluded.encryption_key_id,
+  created_at         = excluded.created_at,
+  updated_at         = excluded.updated_at,
+  deleted_at         = excluded.deleted_at,
+  last_sync_at       = excluded.last_sync_at,
+  next_sync_at       = excluded.next_sync_at,
+  namespace_user_id  = excluded.namespace_user_id,
+  unrestricted       = excluded.unrestricted,
+  cloud_default      = excluded.cloud_default
 RETURNING *
 `
 
 // ExternalServiceUpdate contains optional fields to update.
 type ExternalServiceUpdate struct {
-	DisplayName     *string
-	Config          *string
-	configEncrypted bool
-	CloudDefault    *bool
+	DisplayName  *string
+	Config       *string
+	CloudDefault *bool
 }
 
 // Update updates an external service.
@@ -735,8 +738,8 @@ func (e *ExternalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 	e.ensureStore()
 
 	var (
-		normalized      []byte
-		configEncrypted bool
+		normalized []byte
+		keyIdent   string
 	)
 	if update.Config != nil {
 		// Query to get the kind (which is immutable) so we can validate the new config.
@@ -765,7 +768,7 @@ func (e *ExternalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 			return err
 		}
 		var config string
-		config, configEncrypted, err = e.maybeEncryptConfig(ctx, *update.Config)
+		config, keyIdent, err = e.maybeEncryptConfig(ctx, *update.Config)
 		if err != nil {
 			return err
 		}
@@ -801,7 +804,7 @@ func (e *ExternalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 
 	if update.Config != nil {
 		unrestricted := !gjson.GetBytes(normalized, "authorization").Exists()
-		q := sqlf.Sprintf(`config = %s, config_encrypted = %s, next_sync_at = NOW(), unrestricted = %s`, update.Config, configEncrypted, unrestricted)
+		q := sqlf.Sprintf(`config = %s, encryption_key_id = %s, next_sync_at = NOW(), unrestricted = %s`, update.Config, keyIdent, unrestricted)
 		if err := execUpdate(ctx, tx.DB(), q); err != nil {
 			return err
 		}
@@ -983,7 +986,7 @@ func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesLis
 	}
 
 	q := sqlf.Sprintf(`
-		SELECT id, kind, display_name, config, COALESCE(config_encrypted, false), created_at, updated_at, deleted_at, last_sync_at, next_sync_at, namespace_user_id, unrestricted, cloud_default
+		SELECT id, kind, display_name, config, encryption_key_id, created_at, updated_at, deleted_at, last_sync_at, next_sync_at, namespace_user_id, unrestricted, cloud_default
 		FROM external_services
 		WHERE (%s)
 		ORDER BY id `+opt.OrderByDirection+`
@@ -1006,9 +1009,9 @@ func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesLis
 			lastSyncAt      sql.NullTime
 			nextSyncAt      sql.NullTime
 			namespaceUserID sql.NullInt32
-			configEncrypted bool
+			keyIdent        string
 		)
-		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &h.Config, &configEncrypted, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namespaceUserID, &h.Unrestricted, &h.CloudDefault); err != nil {
+		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &h.Config, &keyIdent, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namespaceUserID, &h.Unrestricted, &h.CloudDefault); err != nil {
 			return nil, err
 		}
 
@@ -1025,7 +1028,7 @@ func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesLis
 			h.NamespaceUserID = namespaceUserID.Int32
 		}
 
-		h.Config, err = e.maybeDecryptConfig(ctx, h.Config, configEncrypted)
+		h.Config, err = e.maybeDecryptConfig(ctx, h.Config, keyIdent)
 		if err != nil {
 			return nil, err
 		}

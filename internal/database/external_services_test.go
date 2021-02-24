@@ -704,6 +704,17 @@ func TestExternalServicesStore_GetByID_Encrypted(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// create a store with a NoopKey to read the raw encrypted value
+	noopStore := ExternalServices(db).WithEncryptionKey(&encryption.NoopKey{})
+	encrypted, err := noopStore.GetByID(ctx, es.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// if the testKey worked, the config should just be a base64 encoded version
+	if encrypted.Config != base64.StdEncoding.EncodeToString([]byte(es.Config)) {
+		t.Fatalf("expected base64 encoded config, got %s", encrypted.Config)
+	}
+
 	// Should be able to get back by its ID
 	_, err = store.GetByID(ctx, es.ID)
 	if err != nil {
@@ -1295,10 +1306,21 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			t.Fatalf("Upsert error: %s", err)
 		}
 
+		// create a store with a NoopKey to read the raw encrypted value
+		noopStore := ExternalServicesWith(tx).WithEncryptionKey(&encryption.NoopKey{})
+
 		for _, e := range want {
 			if e.Kind != strings.ToUpper(e.Kind) {
 				t.Errorf("external service kind didn't get upper-cased: %q", e.Kind)
 				break
+			}
+			encrypted, err := noopStore.GetByID(ctx, e.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			// if the testKey worked, the config should just be a base64 encoded version
+			if encrypted.Config != base64.StdEncoding.EncodeToString([]byte(e.Config)) {
+				t.Fatalf("expected base64 encoded config, got %s", encrypted.Config)
 			}
 		}
 
@@ -1419,4 +1441,8 @@ func (k testKey) Decrypt(ctx context.Context, ciphertext []byte) (*encryption.Se
 	decoded, err := base64.StdEncoding.DecodeString(string(ciphertext))
 	s := encryption.NewSecret(string(decoded))
 	return &s, err
+}
+
+func (k testKey) Identifier(ctx context.Context) (string, error) {
+	return "testkey", nil
 }
