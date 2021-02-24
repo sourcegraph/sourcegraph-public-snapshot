@@ -1,8 +1,8 @@
 /* eslint-disable id-length */
 import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber, Notification } from 'rxjs'
 import { defaultIfEmpty, map, materialize, scan } from 'rxjs/operators'
-import { appendContextFilterToQuery } from '.'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { appendContextFilterToQuery } from '../../../shared/src/search/util'
 import { asError, isErrorLike } from '../../../shared/src/util/errors'
 import { SearchPatternType } from '../graphql-operations'
 

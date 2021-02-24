@@ -1,11 +1,11 @@
 import * as H from 'history'
 import classNames from 'classnames'
 import React, { useCallback, useEffect, useState } from 'react'
-import { CaseSensitivityProps, isContextFilterInQuery, PatternTypeProps, SearchContextProps } from '..'
+import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '..'
 import { Dropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { SearchContextMenu } from './SearchContextMenu'
 import { SubmitSearchParameters } from '../helpers'
-import { VersionContextProps } from '../../../../shared/src/search/util'
+import { isContextFilterInQuery, VersionContextProps } from '../../../../shared/src/search/util'
 
 export interface SearchContextDropdownProps
     extends Omit<SearchContextProps, 'showSearchContext'>,

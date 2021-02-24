@@ -5,6 +5,7 @@ import { discreteValueAliases } from '../search/query/filters'
 import { tryCatch } from './errors'
 import { SearchPatternType } from '../graphql-operations'
 import { findFilter, FilterKind } from '../search/query/validate'
+import { appendContextFilterToQuery } from '../search/util'
 
 export interface RepoSpec {
     /**
@@ -611,6 +612,10 @@ export function buildSearchURLQuery(
         queryParameter = replaceRange(queryParameter, globalCase.range)
     }
 
+    if (searchContextSpec) {
+        queryParameter = appendContextFilterToQuery(queryParameter, searchContextSpec)
+    }
+
     searchParameters.set('q', queryParameter)
     searchParameters.set('patternType', patternTypeParameter)
 
@@ -620,10 +625,6 @@ export function buildSearchURLQuery(
 
     if (versionContext) {
         searchParameters.set('c', versionContext)
-    }
-
-    if (searchContextSpec) {
-        searchParameters.set('context', searchContextSpec)
     }
 
     if (searchParametersList) {
