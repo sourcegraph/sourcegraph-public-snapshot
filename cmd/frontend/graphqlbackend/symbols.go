@@ -152,6 +152,7 @@ func searchZoektSymbols(ctx context.Context, db dbutil.DB, commit *GitCommitReso
 
 				res = append(res, toSymbolResolver(
 					db,
+					commit,
 					&SearchSymbolResult{
 						symbol: protocol.Symbol{
 							Name:       m.SymbolInfo.Sym,
@@ -216,15 +217,16 @@ func computeSymbols(ctx context.Context, db dbutil.DB, commit *GitCommitResolver
 			lang:    strings.ToLower(symbol.Language),
 			commit:  commit,
 		}
-		resolver := toSymbolResolver(db, &sr)
+		resolver := toSymbolResolver(db, commit, &sr)
 		resolvers = append(resolvers, resolver)
 	}
 	return resolvers, err
 }
 
-func toSymbolResolver(db dbutil.DB, sr *SearchSymbolResult) symbolResolver {
+func toSymbolResolver(db dbutil.DB, commit *GitCommitResolver, sr *SearchSymbolResult) symbolResolver {
 	return symbolResolver{
 		db:                 db,
+		commit:             commit,
 		SearchSymbolResult: sr,
 	}
 }
@@ -242,7 +244,8 @@ func (r *symbolConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.P
 }
 
 type symbolResolver struct {
-	db dbutil.DB
+	db     dbutil.DB
+	commit *GitCommitResolver
 	*SearchSymbolResult
 }
 

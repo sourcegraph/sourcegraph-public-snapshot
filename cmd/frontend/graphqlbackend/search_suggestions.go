@@ -255,7 +255,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 				if len(sr.symbol.Name) >= 4 && strings.Contains(strings.ToLower(sr.uri().String()), strings.ToLower(sr.symbol.Name)) {
 					score++
 				}
-				symbolResolver := toSymbolResolver(r.db, sr)
+				symbolResolver := toSymbolResolver(r.db, fileMatch.Commit(), sr)
 				results = append(results, newSearchSuggestionResolver(symbolResolver, score))
 			}
 		}
