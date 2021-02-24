@@ -110,6 +110,8 @@
 // 1528395786_diagnostic_counts_migration.up.sql (277B)
 // 1528395787_reconciler_changesets_view.down.sql (60B)
 // 1528395787_reconciler_changesets_view.up.sql (598B)
+// 1528395788_campaigns_ssh_key_migration.down.sql (18B)
+// 1528395788_campaigns_ssh_key_migration.up.sql (272B)
 
 package migrations
 
@@ -2378,6 +2380,46 @@ func _1528395787_reconciler_changesets_viewUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395788_campaigns_ssh_key_migrationDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xd2\xd5\x55\xf0\xcb\x2f\xc9\xc8\xcc\x4b\x57\x28\xc9\x57\x48\xc9\xd7\xe3\x02\x04\x00\x00\xff\xff\xbd\x7e\x9c\x52\x12\x00\x00\x00")
+
+func _1528395788_campaigns_ssh_key_migrationDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395788_campaigns_ssh_key_migrationDownSql,
+		"1528395788_campaigns_ssh_key_migration.down.sql",
+	)
+}
+
+func _1528395788_campaigns_ssh_key_migrationDownSql() (*asset, error) {
+	bytes, err := _1528395788_campaigns_ssh_key_migrationDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395788_campaigns_ssh_key_migration.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x6a, 0x42, 0x8f, 0xd2, 0x33, 0x7c, 0x76, 0x3a, 0x2f, 0x44, 0x54, 0x9, 0xe1, 0x1b, 0xa2, 0xc0, 0xcd, 0x9d, 0xe4, 0x44, 0x5, 0xbf, 0x96, 0xc1, 0xee, 0xfd, 0x33, 0x72, 0x7f, 0xcc, 0x84, 0x65}}
+	return a, nil
+}
+
+var __1528395788_campaigns_ssh_key_migrationUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x2c\xca\xb1\x4e\xc3\x30\x10\x80\xe1\xdd\x4f\x71\x5b\x5b\xc9\x54\xa8\x48\x30\x74\x82\x10\x5a\x4b\xad\x8d\x48\x60\x8d\x5c\xfb\xd2\x78\x88\xcf\xb2\xcf\x3c\x3f\x4a\xc4\xf6\x49\xff\xff\xd6\x9e\x94\x3e\x0a\xa1\x74\xd7\x7e\xf5\xa0\x74\x6f\x80\x2a\x0f\x34\x0e\x37\x1b\xfd\x30\x87\x7b\xb6\x1c\x28\x16\xd8\x06\x2f\x81\xd1\xce\x12\x1c\xcd\x89\x22\x46\x96\xe0\xb1\xb8\x1c\xd2\xb2\x48\x08\x91\x33\xf9\xea\xd0\x2f\x21\x65\x74\x96\x17\x47\x8a\x83\xc7\xc2\xb9\x3a\x0e\xbf\xb8\x13\x3f\xaf\x97\xef\xb6\x83\xed\x41\xc2\xc6\xd9\x39\xd9\x70\x8f\x65\x23\x61\x33\x66\x8a\x8c\xd1\x3f\xf8\xdb\xde\x56\x9e\x30\x72\x70\x96\x29\xaf\xf5\x33\x63\xb2\x19\x61\xa4\x0c\x5d\x77\x86\x54\xcb\x84\x05\x98\xc0\x91\x47\x98\xa8\xf0\xfa\x3d\xed\x0f\xcf\xfb\xc7\x7f\xbd\xac\xe2\x5c\x71\x27\x8c\x86\xc6\xe8\x8f\x8b\x6a\x7a\x78\x37\xa0\x4d\x7f\x56\xfa\x74\x14\xa2\x31\xd7\xab\xea\x8f\xe2\x2f\x00\x00\xff\xff\xda\xab\xa2\x5c\x10\x01\x00\x00")
+
+func _1528395788_campaigns_ssh_key_migrationUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395788_campaigns_ssh_key_migrationUpSql,
+		"1528395788_campaigns_ssh_key_migration.up.sql",
+	)
+}
+
+func _1528395788_campaigns_ssh_key_migrationUpSql() (*asset, error) {
+	bytes, err := _1528395788_campaigns_ssh_key_migrationUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395788_campaigns_ssh_key_migration.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xc8, 0x79, 0x2d, 0x15, 0xfe, 0xf4, 0xc6, 0xc0, 0x50, 0x70, 0xea, 0xdc, 0xc3, 0x27, 0x45, 0xed, 0x37, 0xe0, 0x79, 0xfd, 0x90, 0xd7, 0xd7, 0x82, 0x89, 0xe4, 0xbe, 0xf4, 0xc9, 0x1b, 0xa4, 0x5c}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2579,6 +2621,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395786_diagnostic_counts_migration.up.sql":                                          _1528395786_diagnostic_counts_migrationUpSql,
 	"1528395787_reconciler_changesets_view.down.sql":                                         _1528395787_reconciler_changesets_viewDownSql,
 	"1528395787_reconciler_changesets_view.up.sql":                                           _1528395787_reconciler_changesets_viewUpSql,
+	"1528395788_campaigns_ssh_key_migration.down.sql":                                        _1528395788_campaigns_ssh_key_migrationDownSql,
+	"1528395788_campaigns_ssh_key_migration.up.sql":                                          _1528395788_campaigns_ssh_key_migrationUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2735,6 +2779,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395786_diagnostic_counts_migration.up.sql":                                          {_1528395786_diagnostic_counts_migrationUpSql, map[string]*bintree{}},
 	"1528395787_reconciler_changesets_view.down.sql":                                         {_1528395787_reconciler_changesets_viewDownSql, map[string]*bintree{}},
 	"1528395787_reconciler_changesets_view.up.sql":                                           {_1528395787_reconciler_changesets_viewUpSql, map[string]*bintree{}},
+	"1528395788_campaigns_ssh_key_migration.down.sql":                                        {_1528395788_campaigns_ssh_key_migrationDownSql, map[string]*bintree{}},
+	"1528395788_campaigns_ssh_key_migration.up.sql":                                          {_1528395788_campaigns_ssh_key_migrationUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

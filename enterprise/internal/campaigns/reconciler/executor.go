@@ -559,25 +559,22 @@ func buildPushConfig(extSvcType, cloneURL string, a auth.Authenticator) (*protoc
 	}
 
 	switch av := a.(type) {
+	case *auth.OAuthBearerTokenWithSSH:
+		if err := setOAuthTokenAuth(u, extSvcType, av.Token); err != nil {
+			return nil, err
+		}
 	case *auth.OAuthBearerToken:
-		switch extSvcType {
-		case extsvc.TypeGitHub:
-			u.User = url.User(av.Token)
-
-		case extsvc.TypeGitLab:
-			u.User = url.UserPassword("git", av.Token)
-
-		case extsvc.TypeBitbucketServer:
-			return nil, errors.New("require username/token to push commits to BitbucketServer")
+		if err := setOAuthTokenAuth(u, extSvcType, av.Token); err != nil {
+			return nil, err
 		}
 
+	case *auth.BasicAuthWithSSH:
+		if err := setBasicAuth(u, extSvcType, av.Username, av.Password); err != nil {
+			return nil, err
+		}
 	case *auth.BasicAuth:
-		switch extSvcType {
-		case extsvc.TypeGitHub, extsvc.TypeGitLab:
-			return nil, errors.New("need token to push commits to " + extSvcType)
-
-		case extsvc.TypeBitbucketServer:
-			u.User = url.UserPassword(av.Username, av.Password)
+		if err := setBasicAuth(u, extSvcType, av.Username, av.Password); err != nil {
+			return nil, err
 		}
 
 	case nil:
@@ -589,6 +586,31 @@ func buildPushConfig(extSvcType, cloneURL string, a auth.Authenticator) (*protoc
 	}
 
 	return &protocol.PushConfig{RemoteURL: u.String()}, nil
+}
+
+func setOAuthTokenAuth(u *url.URL, extsvcType, token string) error {
+	switch extsvcType {
+	case extsvc.TypeGitHub:
+		u.User = url.User(token)
+
+	case extsvc.TypeGitLab:
+		u.User = url.UserPassword("git", token)
+
+	case extsvc.TypeBitbucketServer:
+		return errors.New("require username/token to push commits to BitbucketServer")
+	}
+	return nil
+}
+
+func setBasicAuth(u *url.URL, extSvcType, username, password string) error {
+	switch extSvcType {
+	case extsvc.TypeGitHub, extsvc.TypeGitLab:
+		return errors.New("need token to push commits to " + extSvcType)
+
+	case extsvc.TypeBitbucketServer:
+		u.User = url.UserPassword(username, password)
+	}
+	return nil
 }
 
 type getCampaigner interface {
@@ -627,14 +649,14 @@ func decorateChangesetBody(ctx context.Context, tx getCampaigner, nsStore getNam
 		return errors.Wrap(err, "retrieving namespace")
 	}
 
-	url, err := campaignURL(ctx, ns, campaign)
+	u, err := campaignURL(ctx, ns, campaign)
 	if err != nil {
 		return errors.Wrap(err, "building URL")
 	}
 
 	cs.Body = fmt.Sprintf(
 		"%s\n\n[_Created by Sourcegraph campaign `%s/%s`._](%s)",
-		cs.Body, ns.Name, campaign.Name, url,
+		cs.Body, ns.Name, campaign.Name, u,
 	)
 
 	return nil
