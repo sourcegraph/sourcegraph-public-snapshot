@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
@@ -25,24 +24,24 @@ func TestServiceApplyCampaign(t *testing.T) {
 	}
 
 	ctx := backend.WithAuthzBypass(context.Background())
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
-	admin := ct.CreateTestUser(t, true)
+	admin := ct.CreateTestUser(t, db, true)
 	adminCtx := actor.WithActor(context.Background(), actor.FromUser(admin.ID))
 
-	user := ct.CreateTestUser(t, false)
+	user := ct.CreateTestUser(t, db, false)
 	userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
 
-	repos, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 4)
+	repos, _ := ct.CreateTestRepos(t, ctx, db, 4)
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	store := store.NewWithClock(dbconn.Global, clock)
+	store := store.NewWithClock(db, clock)
 	svc := New(store)
 
 	t.Run("campaignSpec without changesetSpecs", func(t *testing.T) {
 		t.Run("new campaign", func(t *testing.T) {
-			ct.TruncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
+			ct.TruncateTables(t, db, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
 			campaignSpec := ct.CreateCampaignSpec(t, ctx, store, "campaign1", admin.ID)
 			campaign, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
 				CampaignSpecRandID: campaignSpec.RandID,
@@ -76,7 +75,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 		})
 
 		t.Run("existing campaign", func(t *testing.T) {
-			ct.TruncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
+			ct.TruncateTables(t, db, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
 			campaignSpec := ct.CreateCampaignSpec(t, ctx, store, "campaign2", admin.ID)
 			campaign := ct.CreateCampaign(t, ctx, store, "campaign2", admin.ID, campaignSpec.ID)
 
@@ -151,7 +150,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			})
 
 			t.Run("apply campaign spec with same name but different namespace", func(t *testing.T) {
-				user2 := ct.CreateTestUser(t, false)
+				user2 := ct.CreateTestUser(t, db, false)
 				campaignSpec2 := ct.CreateCampaignSpec(t, ctx, store, "campaign2", user2.ID)
 
 				campaign2, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
@@ -204,7 +203,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 	// covered in the tests above.
 	t.Run("campaignSpec with changesetSpecs", func(t *testing.T) {
 		t.Run("new campaign", func(t *testing.T) {
-			ct.TruncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
+			ct.TruncateTables(t, db, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
 			campaignSpec := ct.CreateCampaignSpec(t, ctx, store, "campaign3", admin.ID)
 
 			spec1 := ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
@@ -249,7 +248,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 		})
 
 		t.Run("campaign with changesets", func(t *testing.T) {
-			ct.TruncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
+			ct.TruncateTables(t, db, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
 			// First we create a campaignSpec and apply it, so that we have
 			// changesets and changesetSpecs in the database, wired up
 			// correctly.
@@ -425,7 +424,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 		})
 
 		t.Run("campaign tracking changesets owned by another campaign", func(t *testing.T) {
-			ct.TruncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
+			ct.TruncateTables(t, db, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
 			campaignSpec1 := ct.CreateCampaignSpec(t, ctx, store, "owner-campaign", admin.ID)
 
 			oldSpec1 := ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
@@ -500,7 +499,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 		})
 
 		t.Run("campaign with changeset that is unpublished", func(t *testing.T) {
-			ct.TruncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
+			ct.TruncateTables(t, db, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
 			campaignSpec1 := ct.CreateCampaignSpec(t, ctx, store, "unpublished-changesets", admin.ID)
 
 			ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
@@ -523,7 +522,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 		})
 
 		t.Run("campaign with changeset that wasn't processed before reapply", func(t *testing.T) {
-			ct.TruncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
+			ct.TruncateTables(t, db, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
 			campaignSpec1 := ct.CreateCampaignSpec(t, ctx, store, "queued-changesets", admin.ID)
 
 			specOpts := ct.TestSpecOpts{
@@ -677,8 +676,8 @@ func TestServiceApplyCampaign(t *testing.T) {
 		})
 
 		t.Run("missing repository permissions", func(t *testing.T) {
-			ct.TruncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
-			ct.MockRepoPermissions(t, user.ID, repos[0].ID, repos[2].ID, repos[3].ID)
+			ct.TruncateTables(t, db, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
+			ct.MockRepoPermissions(t, db, user.ID, repos[0].ID, repos[2].ID, repos[3].ID)
 
 			// NOTE: We cannot use a context that has authz bypassed.
 			campaignSpec := ct.CreateCampaignSpec(t, userCtx, store, "missing-permissions", user.ID)
@@ -713,7 +712,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 		})
 
 		t.Run("campaign with errored changeset", func(t *testing.T) {
-			ct.TruncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
+			ct.TruncateTables(t, db, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
 			campaignSpec1 := ct.CreateCampaignSpec(t, ctx, store, "errored-changeset-campaign", admin.ID)
 
 			spec1Opts := ct.TestSpecOpts{
@@ -796,7 +795,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 		})
 
 		t.Run("closed and detached changeset not re-enqueued for close", func(t *testing.T) {
-			ct.TruncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
+			ct.TruncateTables(t, db, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
 			campaignSpec1 := ct.CreateCampaignSpec(t, ctx, store, "detached-closed-changeset", admin.ID)
 
 			specOpts := ct.TestSpecOpts{
@@ -862,7 +861,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 		t.Run("campaign with changeset that is detached and reattached", func(t *testing.T) {
 			t.Run("changeset has been closed before re-attaching", func(t *testing.T) {
-				ct.TruncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
+				ct.TruncateTables(t, db, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
 				campaignSpec1 := ct.CreateCampaignSpec(t, ctx, store, "detach-reattach-changeset", admin.ID)
 
 				specOpts := ct.TestSpecOpts{
@@ -941,7 +940,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			})
 
 			t.Run("changeset has failed closing before re-attaching", func(t *testing.T) {
-				ct.TruncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
+				ct.TruncateTables(t, db, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
 				campaignSpec1 := ct.CreateCampaignSpec(t, ctx, store, "detach-reattach-failed-changeset", admin.ID)
 
 				specOpts := ct.TestSpecOpts{
@@ -1030,7 +1029,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			})
 
 			t.Run("changeset has not been closed before re-attaching", func(t *testing.T) {
-				ct.TruncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
+				ct.TruncateTables(t, db, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
 				// The difference to the previous test: we DON'T update the
 				// changeset to make it look closed. We want to make sure that
 				// we also pick up enqueued-to-be-closed changesets.
@@ -1106,7 +1105,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 	})
 
 	t.Run("applying to closed campaign", func(t *testing.T) {
-		ct.TruncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
+		ct.TruncateTables(t, db, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
 		campaignSpec := ct.CreateCampaignSpec(t, ctx, store, "closed-campaign", admin.ID)
 		campaign := ct.CreateCampaign(t, ctx, store, "closed-campaign", admin.ID, campaignSpec.ID)
 

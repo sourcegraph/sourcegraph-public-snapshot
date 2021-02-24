@@ -13,7 +13,6 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -25,13 +24,13 @@ func TestWorkerView(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	cstore := store.NewWithClock(dbconn.Global, clock)
+	cstore := store.NewWithClock(db, clock)
 
-	user := ct.CreateTestUser(t, true)
+	user := ct.CreateTestUser(t, db, true)
 	spec := ct.CreateCampaignSpec(t, ctx, cstore, "test-campaign", user.ID)
 	campaign := ct.CreateCampaign(t, ctx, cstore, "test-campaign", user.ID, spec.ID)
 	repos, _ := ct.CreateTestRepos(t, ctx, cstore.DB(), 2)
@@ -68,7 +67,7 @@ func TestWorkerView(t *testing.T) {
 		assertReturnedChangesetIDs(t, ctx, cstore.DB(), []int{})
 	})
 	t.Run("In campaign with deleted user namespace", func(t *testing.T) {
-		deletedUser := ct.CreateTestUser(t, true)
+		deletedUser := ct.CreateTestUser(t, db, true)
 		if err := database.UsersWith(cstore).Delete(ctx, deletedUser.ID); err != nil {
 			t.Fatal(err)
 		}
@@ -86,7 +85,7 @@ func TestWorkerView(t *testing.T) {
 		assertReturnedChangesetIDs(t, ctx, cstore.DB(), []int{})
 	})
 	t.Run("In campaign with deleted org namespace", func(t *testing.T) {
-		orgID := ct.InsertTestOrg(t, "deleted-org")
+		orgID := ct.InsertTestOrg(t, db, "deleted-org")
 		if err := database.OrgsWith(cstore).Delete(ctx, orgID); err != nil {
 			t.Fatal(err)
 		}
@@ -108,7 +107,7 @@ func TestWorkerView(t *testing.T) {
 		assertReturnedChangesetIDs(t, ctx, cstore.DB(), []int{})
 	})
 	t.Run("In campaign with deleted namespace but another campaign with an existing one", func(t *testing.T) {
-		deletedUser := ct.CreateTestUser(t, true)
+		deletedUser := ct.CreateTestUser(t, db, true)
 		if err := database.UsersWith(cstore).Delete(ctx, deletedUser.ID); err != nil {
 			t.Fatal(err)
 		}

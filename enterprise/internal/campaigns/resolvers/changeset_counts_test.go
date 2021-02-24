@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
@@ -71,16 +70,16 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	}
 
 	ctx := backend.WithAuthzBypass(context.Background())
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 	rcache.SetupForTest(t)
 
 	cf, save := httptestutil.NewGitHubRecorderFactory(t, *update, "test-changeset-counts-over-time")
 	defer save()
 
-	userID := ct.CreateTestUser(t, false).ID
+	userID := ct.CreateTestUser(t, db, false).ID
 
-	repoStore := database.Repos(dbconn.Global)
-	esStore := database.ExternalServices(dbconn.Global)
+	repoStore := database.Repos(db)
+	esStore := database.ExternalServices(db)
 
 	githubExtSvc := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
@@ -118,7 +117,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	})
 	defer mockState.Unmock()
 
-	cstore := store.New(dbconn.Global)
+	cstore := store.New(db)
 
 	spec := &campaigns.CampaignSpec{
 		NamespaceUserID: userID,
@@ -170,7 +169,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		}
 	}
 
-	s, err := graphqlbackend.NewSchema(dbconn.Global, &Resolver{store: cstore}, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

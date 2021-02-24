@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
@@ -28,9 +27,9 @@ func TestCampaignSpecResolver(t *testing.T) {
 	}
 
 	ctx := backend.WithAuthzBypass(context.Background())
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
-	cstore := store.New(dbconn.Global)
+	cstore := store.New(db)
 	repoStore := database.ReposWith(cstore)
 	esStore := database.ExternalServicesWith(cstore)
 
@@ -41,9 +40,9 @@ func TestCampaignSpecResolver(t *testing.T) {
 	repoID := graphqlbackend.MarshalRepositoryID(repo.ID)
 
 	orgname := "test-org"
-	userID := ct.CreateTestUser(t, false).ID
-	adminID := ct.CreateTestUser(t, true).ID
-	orgID := ct.InsertTestOrg(t, orgname)
+	userID := ct.CreateTestUser(t, db, false).ID
+	adminID := ct.CreateTestUser(t, db, true).ID
+	orgID := ct.InsertTestOrg(t, db, orgname)
 
 	spec, err := campaigns.NewCampaignSpecFromRaw(ct.TestRawCampaignSpec)
 	if err != nil {
@@ -79,7 +78,7 @@ func TestCampaignSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(dbconn.Global, &Resolver{store: cstore}, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
