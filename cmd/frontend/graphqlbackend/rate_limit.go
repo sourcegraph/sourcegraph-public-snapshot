@@ -302,8 +302,7 @@ func calcNodeCost(def ast.Node, fragmentCosts map[string]int, variables map[stri
 	}, visitErr
 }
 
-// getFragmentDependencies returns all the fragments this node and it's children
-// depend on.
+// getFragmentDependencies returns all the fragments this node depend on.
 func getFragmentDependencies(node ast.Node) map[string]struct{} {
 	deps := make(map[string]struct{})
 
