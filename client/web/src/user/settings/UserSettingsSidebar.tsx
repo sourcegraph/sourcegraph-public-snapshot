@@ -96,7 +96,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                                 to={`/organizations/${org.name}/settings`}
                                 className="text-truncate text-nowrap"
                             >
-                                <OrgAvatar org={org.name} className="d-inline-flex" /> {org.name}
+                                <OrgAvatar org={org.name} className="d-inline-flex mr-1" /> {org.name}
                             </SidebarNavItem>
                         ))}
                     </SidebarGroupItems>

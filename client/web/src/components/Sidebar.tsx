@@ -1,6 +1,5 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
-import { LinkWithIcon } from './LinkWithIcon'
 
 export const SIDEBAR_BUTTON_CLASS = 'btn btn-secondary d-block w-100 my-2'
 
@@ -10,24 +9,15 @@ export const SIDEBAR_BUTTON_CLASS = 'btn btn-secondary d-block w-100 my-2'
 export const SidebarNavItem: React.FunctionComponent<{
     to: string
     icon?: React.ComponentType<{ className?: string }>
-    exact?: boolean
     className?: string
-}> = ({ icon, children, className, ...linkProps }) => {
-    const sharedProps = {
-        className: `list-group-item list-group-item-action py-2 ${className}`,
-        activeClassName: 'active',
-        ...linkProps,
-    }
-
-    if (icon) {
-        return (
-            <LinkWithIcon icon={icon} {...sharedProps}>
-                {children}
-            </LinkWithIcon>
-        )
-    }
-
-    return <NavLink {...sharedProps}>{children}</NavLink>
+    exact?: boolean
+}> = ({ icon: Icon, children, className, to, exact }) => {
+    return (
+        <NavLink to={to} exact={exact} className={`list-group-item list-group-item-action py-2 active ${className}`}>
+            {Icon && <Icon className="icon-inline mr-2" />}
+            {children}
+        </NavLink>
+    )
 }
 
 /**
