@@ -289,9 +289,13 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
     // save changes and update code hosts
     const submit = useCallback(
-        (event: FormEvent<HTMLFormElement>): void => {
+        async (event: FormEvent<HTMLFormElement>): Promise<void> => {
             event.preventDefault()
             const syncTimes = new Map<string, string>()
+            const codeHostRepoPromises = []
+
+            setFetchingRepos('loading')
+
             for (const host of codeHosts.hosts) {
                 const repos: string[] = []
                 syncTimes.set(host.id, host.lastSyncAt)
@@ -301,17 +305,23 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     }
                     repos.push(repo.name)
                 }
-                setExternalServiceRepos({
-                    id: host.id,
-                    allRepos: selectionState.radio === 'all',
-                    repos: (selectionState.radio === 'selected' && repos) || null,
-                }).catch(error => {
-                    setRepoState({ ...repoState, error: String(error) })
-                })
-            }
-            setFetchingRepos('loading')
-            const started = Date.now()
 
+                codeHostRepoPromises.push(
+                    setExternalServiceRepos({
+                        id: host.id,
+                        allRepos: selectionState.radio === 'all',
+                        repos: (selectionState.radio === 'selected' && repos) || null,
+                    })
+                )
+            }
+
+            try {
+                await Promise.all(codeHostRepoPromises)
+            } catch (error) {
+                setRepoState({ ...repoState, error: String(error) })
+            }
+
+            const started = Date.now()
             const externalServiceSubscription = queryExternalServices({
                 first: null,
                 after: null,
@@ -320,6 +330,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 .pipe(
                     repeatUntil(
                         result => {
+                            debugger
                             // if the background job takes too long we should update the button
                             // text to indicate we're still working on it.
 
