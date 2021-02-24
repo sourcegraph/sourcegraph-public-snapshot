@@ -56,7 +56,7 @@ func (baseSuggestionResolver) ToRepository() (*RepositoryResolver, bool) { retur
 func (baseSuggestionResolver) ToFile() (*GitTreeEntryResolver, bool)     { return nil, false }
 func (baseSuggestionResolver) ToGitBlob() (*GitTreeEntryResolver, bool)  { return nil, false }
 func (baseSuggestionResolver) ToGitTree() (*GitTreeEntryResolver, bool)  { return nil, false }
-func (baseSuggestionResolver) ToSymbol() (*symbolResolver, bool)          { return &symbolResolver{}, false }
+func (baseSuggestionResolver) ToSymbol() (*symbolResolver, bool)         { return &symbolResolver{}, false }
 func (baseSuggestionResolver) ToLanguage() (*languageResolver, bool)     { return nil, false }
 
 // repositorySuggestionResolver implements searchSuggestionResolver for RepositoryResolver
