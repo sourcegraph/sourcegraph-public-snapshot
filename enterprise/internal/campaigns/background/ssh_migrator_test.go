@@ -15,7 +15,7 @@ import (
 func TestSSHMigrator(t *testing.T) {
 	ctx := context.Background()
 	db := dbtesting.GetDB(t)
-	user := ct.CreateTestUser(t, false)
+	user := ct.CreateTestUser(t, db, false)
 
 	cstore := store.New(db)
 
