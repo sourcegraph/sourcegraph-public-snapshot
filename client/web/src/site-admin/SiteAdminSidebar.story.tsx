@@ -1,6 +1,6 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import webStyles from '../../../web/src/main.scss'
+import webStyles from '../main.scss'
 import { SiteAdminSidebar } from './SiteAdminSidebar'
 import EarthIcon from 'mdi-react/EarthIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
@@ -83,13 +83,11 @@ const { add } = storiesOf('web/site-admin/AdminSidebar', module).addDecorator(st
 
 add(
     'Collapsible',
-    () => {
-        return (
-            <MemoryRouter>
-                <SiteAdminSidebar className={'site-admin-sidebar'} groups={[groups[1]]} />
-            </MemoryRouter>
-        )
-    },
+    () => (
+        <MemoryRouter>
+            <SiteAdminSidebar className={'site-admin-sidebar'} groups={[groups[1]]} />
+        </MemoryRouter>
+    ),
     {
         design: {
             type: 'figma',
@@ -101,13 +99,11 @@ add(
 
 add(
     'Collapsible with icon',
-    () => {
-        return (
-            <MemoryRouter>
-                <SiteAdminSidebar className={'site-admin-sidebar'} groups={[groups[0]]} />
-            </MemoryRouter>
-        )
-    },
+    () => (
+        <MemoryRouter>
+            <SiteAdminSidebar className={'site-admin-sidebar'} groups={[groups[0]]} />
+        </MemoryRouter>
+    ),
     {
         design: {
             type: 'figma',
@@ -119,13 +115,11 @@ add(
 
 add(
     'Non-collapsible with icon',
-    () => {
-        return (
-            <MemoryRouter>
-                <SiteAdminSidebar className={'site-admin-sidebar'} groups={[groups[2]]} />
-            </MemoryRouter>
-        )
-    },
+    () => (
+        <MemoryRouter>
+            <SiteAdminSidebar className={'site-admin-sidebar'} groups={[groups[2]]} />
+        </MemoryRouter>
+    ),
     {
         design: {
             type: 'figma',
@@ -137,13 +131,11 @@ add(
 
 add(
     'Non-collapsible',
-    () => {
-        return (
-            <MemoryRouter>
-                <SiteAdminSidebar className={'site-admin-sidebar'} groups={[groups[3]]} />
-            </MemoryRouter>
-        )
-    },
+    () => (
+        <MemoryRouter>
+            <SiteAdminSidebar className={'site-admin-sidebar'} groups={[groups[3]]} />
+        </MemoryRouter>
+    ),
     {
         design: {
             type: 'figma',
@@ -155,13 +147,11 @@ add(
 
 add(
     'Dropdown and single link',
-    () => {
-        return (
-            <MemoryRouter>
-                <SiteAdminSidebar className={'site-admin-sidebar'} groups={groups} />
-            </MemoryRouter>
-        )
-    },
+    () => (
+        <MemoryRouter>
+            <SiteAdminSidebar className={'site-admin-sidebar'} groups={groups} />
+        </MemoryRouter>
+    ),
     {
         design: {
             type: 'figma',
@@ -173,13 +163,11 @@ add(
 
 add(
     'Enterprise Items',
-    () => {
-        return (
-            <MemoryRouter>
-                <SiteAdminSidebar className={'site-admin-sidebar'} groups={enterpriseSiteAdminSidebarGroups} />
-            </MemoryRouter>
-        )
-    },
+    () => (
+        <MemoryRouter>
+            <SiteAdminSidebar className={'site-admin-sidebar'} groups={enterpriseSiteAdminSidebarGroups} />
+        </MemoryRouter>
+    ),
     {
         design: {
             type: 'figma',
