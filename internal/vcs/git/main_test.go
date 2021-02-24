@@ -18,7 +18,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -29,9 +28,9 @@ var root string
 func TestMain(m *testing.M) {
 	flag.Parse()
 
-	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.DiscardHandler())
-	}
+	//if !testing.Verbose() {
+	//	log15.Root().SetHandler(log15.DiscardHandler())
+	//}
 
 	code := m.Run()
 

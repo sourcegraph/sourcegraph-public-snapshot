@@ -91,7 +91,8 @@ func (s *GitRepoSyncer) FetchCommand(ctx context.Context, remoteURL *url.URL) (c
 	} else if useRefspecOverrides() {
 		cmd = refspecOverridesFetchCmd(ctx, remoteURL)
 	} else {
-		cmd = exec.CommandContext(ctx, "git", "fetch", "--progress", "--prune", remoteURL.String(),
+		cmd = exec.CommandContext(ctx, "git", "fetch",
+			"--progress", "--prune", remoteURL.String(),
 			// Normal git refs
 			"+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*",
 			// GitHub pull requests
