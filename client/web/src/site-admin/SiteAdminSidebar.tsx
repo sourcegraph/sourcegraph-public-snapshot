@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { SidebarCollapse, SidebarGroupItems, SidebarNavItem } from '../components/Sidebar'
+import { SidebarCollapseItems, SidebarGroupItems, SidebarNavItem } from '../components/Sidebar'
 import { NavGroupDescriptor } from '../util/contributions'
 
 export interface SiteAdminSideBarGroup extends NavGroupDescriptor {}
@@ -23,7 +23,12 @@ export const SiteAdminSidebar: React.FunctionComponent<SiteAdminSidebarProps> = 
                 ({ header, items, condition = () => true }, index) =>
                     condition({}) &&
                     (items.length > 1 ? (
-                        <SidebarCollapse icon={header?.icon} label={header?.label} key={index}>
+                        <SidebarCollapseItems
+                            icon={header?.icon}
+                            label={header?.label}
+                            key={index}
+                            openByDefault={false}
+                        >
                             <SidebarGroupItems>
                                 {items.map(
                                     ({ label, to, exact, condition = () => true }) =>
@@ -34,7 +39,7 @@ export const SiteAdminSidebar: React.FunctionComponent<SiteAdminSidebarProps> = 
                                         )
                                 )}
                             </SidebarGroupItems>
-                        </SidebarCollapse>
+                        </SidebarCollapseItems>
                     ) : (
                         <Link
                             key={items[0].label}

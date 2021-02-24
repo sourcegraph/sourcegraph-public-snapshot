@@ -37,12 +37,13 @@ export const SidebarGroupHeader: React.FunctionComponent<{
 /**
  * Sidebar with collapsible items
  */
-export const SidebarCollapse: React.FunctionComponent<{
+export const SidebarCollapseItems: React.FunctionComponent<{
     children: JSX.Element
     icon?: React.ComponentType<{ className?: string }>
     label?: string
-}> = ({ children, label, icon: Icon }) => {
-    const [isOpen, setOpen] = useState<boolean>(false)
+    openByDefault?: boolean
+}> = ({ children, label, icon: Icon, openByDefault = false }) => {
+    const [isOpen, setOpen] = useState<boolean>(openByDefault)
     const handleOpen = useCallback(() => setOpen(!isOpen), [isOpen])
     return (
         <div>
