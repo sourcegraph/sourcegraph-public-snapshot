@@ -208,7 +208,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 })
             }
 
-            if (searchContextSpec !== selectedSearchContextSpec) {
+            if (searchContextSpec && searchContextSpec !== selectedSearchContextSpec) {
                 setSelectedSearchContextSpec(searchContextSpec || '')
             }
         }

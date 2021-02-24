@@ -441,7 +441,7 @@ describe('Search', () => {
                     {
                         __typename: 'SearchContext',
                         id: '2',
-                        spec: '@user',
+                        spec: '@test',
                         description: '',
                         autoDefined: true,
                     },
@@ -473,6 +473,10 @@ describe('Search', () => {
             testContext.overrideGraphQL(testContextForSearchContexts)
         })
 
+        afterEach(async () => {
+            await driver.page.evaluate(() => localStorage.clear())
+        })
+
         const getSelectedSearchContextSpec = () =>
             driver.page.evaluate(() => document.querySelector('.test-selected-search-context-spec')?.textContent)
 
@@ -486,9 +490,9 @@ describe('Search', () => {
                 () => document.querySelector<HTMLButtonElement>('.test-search-context-dropdown')?.disabled
             )
         test('Search context selected based on URL', async () => {
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp&context=%40user')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp&context=%40test')
             await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
-            expect(await getSelectedSearchContextSpec()).toStrictEqual('context:@user')
+            expect(await getSelectedSearchContextSpec()).toStrictEqual('context:@test')
         })
 
         test('Missing context param should default to users context', async () => {
@@ -534,6 +538,23 @@ describe('Search', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
             await driver.page.waitForSelector('#monaco-query-input')
             expect(await isSearchContextDropdownVisible()).toBeFalsy()
+        })
+
+        test('Search context should be loaded from local storage', async () => {
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+            await driver.page.waitForSelector('#monaco-query-input')
+            await driver.page.click('.test-search-context-dropdown')
+            // Select global search context
+            await driver.findElementWithText('global', {
+                action: 'click',
+                selector: '.search-context-menu__item-name',
+            })
+
+            // Navigate to the search page again without a context parameter
+            // The selected search context should be global, not @test, because we saved it in localStorage
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+            await driver.page.waitForSelector('#monaco-query-input')
+            expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
         })
     })
 })
