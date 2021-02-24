@@ -518,7 +518,6 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, db dbutil.DB, input
 			}
 
 			symbols = append(symbols, &searchSymbolResult{
-				db: db,
 				symbol: protocol.Symbol{
 					Name:       m.SymbolInfo.Sym,
 					Kind:       m.SymbolInfo.Kind,

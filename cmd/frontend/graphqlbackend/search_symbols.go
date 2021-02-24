@@ -29,7 +29,6 @@ import (
 
 // searchSymbolResult is a result from symbol search.
 type searchSymbolResult struct {
-	db      dbutil.DB
 	symbol  protocol.Symbol
 	baseURI *gituri.URI
 	lang    string
@@ -209,7 +208,6 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 
 	for _, symbol := range symbols {
 		symbolRes := &searchSymbolResult{
-			db:      db,
 			symbol:  symbol,
 			baseURI: baseURI,
 			lang:    strings.ToLower(symbol.Language),
