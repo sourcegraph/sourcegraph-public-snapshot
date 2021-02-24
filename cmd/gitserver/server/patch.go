@@ -344,33 +344,21 @@ func NewSSHAgent(raw, passphrase []byte) (*SSHAgent, error) {
 		return nil, err
 	}
 
-	// Now we need to set up a Unix socket. We need a temporary file.
-	f, err := ioutil.TempFile(os.TempDir(), "ssh-agent-*.sock")
+	socketName, err := generateSocketFilename()
 	if err != nil {
-		return nil, errors.Wrap(err, "creating temporary socket")
-	}
-	name := f.Name()
-
-	// Unfortunately, the Unix socket can't exist when we call Listen, so
-	// there's a potential race condition here. I don't think it's too bad in
-	// practice.
-	if err := f.Close(); err != nil {
-		return nil, errors.Wrap(err, "closing temporary socket")
-	}
-	if err := os.Remove(name); err != nil {
-		return nil, errors.Wrap(err, "removing temporary socket")
+		return nil, err
 	}
 
 	// Start listening.
-	l, err := net.Listen("unix", name)
+	l, err := net.Listen("unix", socketName)
 	if err != nil {
-		return nil, errors.Wrapf(err, "listening on socket %q", name)
+		return nil, errors.Wrapf(err, "listening on socket %q", socketName)
 	}
 
 	// Set up the type we're going to return.
 	a := &SSHAgent{
 		l:       l,
-		sock:    name,
+		sock:    socketName,
 		keyring: keyring,
 	}
 	return a, nil
@@ -412,4 +400,24 @@ func (a *SSHAgent) Close() error {
 
 func (a *SSHAgent) Socket() string {
 	return a.sock
+}
+
+func generateSocketFilename() (string, error) {
+	// We need to set up a Unix socket. We need a temporary file.
+	f, err := ioutil.TempFile(os.TempDir(), "ssh-agent-*.sock")
+	if err != nil {
+		return "", errors.Wrap(err, "creating temporary socket")
+	}
+	name := f.Name()
+
+	// Unfortunately, the Unix socket can't exist when we call Listen, so
+	// there's a potential race condition here. I don't think it's too bad in
+	// practice.
+	if err := f.Close(); err != nil {
+		return "", errors.Wrap(err, "closing temporary socket")
+	}
+	if err := os.Remove(name); err != nil {
+		return "", errors.Wrap(err, "removing temporary socket")
+	}
+	return name, nil
 }
