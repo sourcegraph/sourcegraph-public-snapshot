@@ -3,7 +3,9 @@ package keyring
 import (
 	"context"
 	"fmt"
+	"sync"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/cloudkms"
 
@@ -11,14 +13,39 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-var Default Ring
+var (
+	mu          sync.Mutex
+	defaultRing Ring
+)
+
+func Default() Ring {
+	mu.Lock()
+	defer mu.Unlock()
+	return defaultRing
+}
 
 func Init(ctx context.Context) error {
-	ring, err := NewRing(ctx, conf.Get().EncryptionKeys)
+	config := conf.Get().EncryptionKeys
+	ring, err := NewRing(ctx, config)
 	if err != nil {
 		return err
 	}
-	Default = *ring
+	defaultRing = *ring
+
+	conf.Watch(func() {
+		newConfig := conf.Get().EncryptionKeys
+		if newConfig == config {
+			return
+		}
+		newRing, err := NewRing(ctx, newConfig)
+		if err != nil {
+			log15.Error("creating encryption keyring", "error", err)
+			return
+		}
+		mu.Lock()
+		defaultRing = *newRing
+		mu.Unlock()
+	})
 	return nil
 }
 
