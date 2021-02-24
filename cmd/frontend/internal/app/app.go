@@ -67,10 +67,10 @@ func NewHandler(db dbutil.DB) http.Handler {
 	r.Get(router.RegistryExtensionBundle).Handler(trace.Route(gziphandler.GzipHandler(http.HandlerFunc(registry.HandleRegistryExtensionBundle))))
 
 	// Usage statistics ZIP download
-	r.Get(router.UsageStatsDownload).Handler(trace.Route(http.HandlerFunc(usageStatsArchiveHandler)))
+	r.Get(router.UsageStatsDownload).Handler(trace.Route(http.HandlerFunc(usageStatsArchiveHandler(db))))
 
 	// Ping retrieval
-	r.Get(router.LatestPing).Handler(trace.Route(http.HandlerFunc(latestPingHandler)))
+	r.Get(router.LatestPing).Handler(trace.Route(http.HandlerFunc(latestPingHandler(db))))
 
 	r.Get(router.GDDORefs).Handler(trace.Route(errorutil.Handler(serveGDDORefs)))
 	r.Get(router.Editor).Handler(trace.Route(errorutil.Handler(serveEditor)))

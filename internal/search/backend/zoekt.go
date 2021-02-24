@@ -5,7 +5,6 @@ import (
 
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
-	zoektstream "github.com/google/zoekt/stream"
 )
 
 // ZoektStreamFunc is a convenience function to create a stream receiver from a
@@ -14,17 +13,6 @@ type ZoektStreamFunc func(*zoekt.SearchResult)
 
 func (f ZoektStreamFunc) Send(event *zoekt.SearchResult) {
 	f(event)
-}
-
-// StreamSearcher is an optional interface which sends results over a channel
-// as they are found.
-//
-// This is a Sourcegraph extension.
-type StreamSearcher interface {
-	zoekt.Searcher
-
-	// StreamSearch returns a channel which needs to be read until closed.
-	StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, c zoektstream.Streamer) error
 }
 
 // StreamSearchEvent has fields optionally set representing events that happen
@@ -43,7 +31,7 @@ type StreamSearchAdapter struct {
 	zoekt.Searcher
 }
 
-func (s *StreamSearchAdapter) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, c zoektstream.Streamer) error {
+func (s *StreamSearchAdapter) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, c zoekt.Sender) error {
 	sr, err := s.Search(ctx, q, opts)
 	if err != nil {
 		return err

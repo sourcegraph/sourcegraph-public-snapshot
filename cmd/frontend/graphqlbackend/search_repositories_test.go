@@ -43,7 +43,6 @@ func TestSearchRepositories(t *testing.T) {
 		case "foo/one":
 			return []*FileMatchResolver{
 				mkFileMatchResolver(db, FileMatch{
-					db:   db,
 					uri:  "git://" + string(repoName) + "?1a2b3c#" + "f.go",
 					Repo: &types.RepoName{ID: 123},
 				}),
@@ -51,7 +50,6 @@ func TestSearchRepositories(t *testing.T) {
 		case "bar/one":
 			return []*FileMatchResolver{
 				mkFileMatchResolver(db, FileMatch{
-					db:   db,
 					uri:  "git://" + string(repoName) + "?1a2b3c#" + "f.go",
 					Repo: &types.RepoName{ID: 789},
 				}),
@@ -133,7 +131,7 @@ func TestSearchRepositories(t *testing.T) {
 }
 
 func searchRepositoriesBatch(ctx context.Context, db dbutil.DB, args *search.TextParameters, limit int32) ([]SearchResultResolver, streaming.Stats, error) {
-	return collectStream(func(stream Streamer) error {
+	return collectStream(func(stream Sender) error {
 		return searchRepositories(ctx, db, args, limit, stream)
 	})
 }

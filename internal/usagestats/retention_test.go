@@ -24,7 +24,7 @@ func TestRetentionUsageStatistics(t *testing.T) {
 	userCreationDate := time.Date(2020, 10, 26, 0, 0, 0, 0, time.UTC)
 
 	mockTimeNow(eventDate)
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
 	events := []database.Event{{
 		Name:      "ViewHome",
@@ -41,7 +41,7 @@ func TestRetentionUsageStatistics(t *testing.T) {
 	}}
 
 	for _, event := range events {
-		err := database.GlobalEventLogs.Insert(ctx, &event)
+		err := database.EventLogs(db).Insert(ctx, &event)
 		if err != nil {
 			t.Fatal(err)
 		}

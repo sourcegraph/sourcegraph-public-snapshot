@@ -57,7 +57,7 @@ func TestDefaultNewSearchResolver(t *testing.T) {
 
 type mockSearchResolver struct {
 	done chan struct{}
-	c    graphqlbackend.Streamer
+	c    graphqlbackend.Sender
 }
 
 func (h *mockSearchResolver) Results(ctx context.Context) (*graphqlbackend.SearchResultsResolver, error) {

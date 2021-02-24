@@ -598,3 +598,23 @@ func TestLogOnelineBatchScanner_small(t *testing.T) {
 		t.Fatal("unexpected error:", err)
 	}
 }
+
+func TestMessage(t *testing.T) {
+	t.Run("Body", func(t *testing.T) {
+		tests := map[Message]string{
+			"hello":                 "",
+			"hello\n":               "",
+			"hello\n\n":             "",
+			"hello\nworld":          "world",
+			"hello\n\nworld":        "world",
+			"hello\n\nworld\nfoo":   "world\nfoo",
+			"hello\n\nworld\nfoo\n": "world\nfoo",
+		}
+		for input, want := range tests {
+			got := input.Body()
+			if got != want {
+				t.Errorf("got %q, want %q", got, want)
+			}
+		}
+	})
+}

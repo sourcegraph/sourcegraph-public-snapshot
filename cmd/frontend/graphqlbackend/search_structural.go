@@ -44,7 +44,7 @@ func buildQuery(args *search.TextParameters, repos *indexedRepoRevs, filePathPat
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearchHEADOnlyFiles(ctx context.Context, db dbutil.DB, args *search.TextParameters, repos *indexedRepoRevs, _ indexedRequestType, since func(t time.Time) time.Duration, c Streamer) error {
+func zoektSearchHEADOnlyFiles(ctx context.Context, db dbutil.DB, args *search.TextParameters, repos *indexedRepoRevs, _ indexedRequestType, since func(t time.Time) time.Duration, c Sender) error {
 	var (
 		err       error
 		limitHit  bool
@@ -161,12 +161,11 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, db dbutil.DB, args *search.Te
 		matches[i] = &FileMatchResolver{
 			db: db,
 			FileMatch: FileMatch{
-				db:        db,
-				JPath:     file.FileName,
-				JLimitHit: fileLimitHit,
-				uri:       fileMatchURI(repoRev.Repo.Name, "", file.FileName),
-				Repo:      repoRev.Repo,
-				CommitID:  api.CommitID(file.Version),
+				Path:     file.FileName,
+				LimitHit: fileLimitHit,
+				uri:      fileMatchURI(repoRev.Repo.Name, "", file.FileName),
+				Repo:     repoRev.Repo,
+				CommitID: api.CommitID(file.Version),
 			},
 			RepoResolver: repoResolvers[repoRev.Repo.Name],
 		}

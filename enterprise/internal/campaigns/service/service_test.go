@@ -501,26 +501,23 @@ func TestService(t *testing.T) {
 		})
 
 		t.Run("missing access to namespace org", func(t *testing.T) {
-			org, err := database.GlobalOrgs.Create(ctx, "test-org", nil)
-			if err != nil {
-				t.Fatal(err)
-			}
+			orgID := ct.InsertTestOrg(t, "test-org")
 
 			opts := CreateCampaignSpecOpts{
-				NamespaceOrgID:       org.ID,
+				NamespaceOrgID:       orgID,
 				RawSpec:              ct.TestRawCampaignSpec,
 				ChangesetSpecRandIDs: changesetSpecRandIDs,
 			}
 
 			userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
 
-			_, err = svc.CreateCampaignSpec(userCtx, opts)
+			_, err := svc.CreateCampaignSpec(userCtx, opts)
 			if have, want := err, backend.ErrNotAnOrgMember; have != want {
 				t.Fatalf("expected %s error but got %s", want, have)
 			}
 
 			// Create org membership and try again
-			if _, err := database.OrgMembers(db).Create(ctx, org.ID, user.ID); err != nil {
+			if _, err := database.OrgMembers(db).Create(ctx, orgID, user.ID); err != nil {
 				t.Fatal(err)
 			}
 
@@ -695,12 +692,9 @@ func TestService(t *testing.T) {
 		t.Run("new org namespace", func(t *testing.T) {
 			campaign := createCampaign(t, "old-name", admin.ID, admin.ID, 0)
 
-			org, err := database.GlobalOrgs.Create(ctx, "org", nil)
-			if err != nil {
-				t.Fatal(err)
-			}
+			orgID := ct.InsertTestOrg(t, "org")
 
-			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewNamespaceOrgID: org.ID}
+			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewNamespaceOrgID: orgID}
 			moved, err := svc.MoveCampaign(ctx, opts)
 			if err != nil {
 				t.Fatal(err)
@@ -718,15 +712,12 @@ func TestService(t *testing.T) {
 		t.Run("new org namespace but current user is missing access", func(t *testing.T) {
 			campaign := createCampaign(t, "old-name", user.ID, user.ID, 0)
 
-			org, err := database.GlobalOrgs.Create(ctx, "org-no-access", nil)
-			if err != nil {
-				t.Fatal(err)
-			}
+			orgID := ct.InsertTestOrg(t, "org-no-access")
 
-			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewNamespaceOrgID: org.ID}
+			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewNamespaceOrgID: orgID}
 
 			userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
-			_, err = svc.MoveCampaign(userCtx, opts)
+			_, err := svc.MoveCampaign(userCtx, opts)
 			if have, want := err, backend.ErrNotAnOrgMember; have != want {
 				t.Fatalf("expected %s error but got %s", want, have)
 			}

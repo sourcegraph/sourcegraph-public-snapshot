@@ -301,7 +301,7 @@ loop:
 			continue
 		case *CommitSearchResultResolver:
 			// Diff searches are cheap, because we implicitly have author date info.
-			addPoint(m.commit.commit.Author.Date)
+			addPoint(m.Commit().commit.Author.Date)
 		case *FileMatchResolver:
 			// File match searches are more expensive, because we must blame the
 			// (first) line in order to know its placement in our sparkline.
@@ -416,7 +416,7 @@ func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32)
 			value := fmt.Sprintf(`{"durationMs": %d}`, durationMs)
 			eventName := fmt.Sprintf("search.latencies.%s", types[0])
 			go func() {
-				err := usagestats.LogBackendEvent(actor.UID, eventName, json.RawMessage(value))
+				err := usagestats.LogBackendEvent(r.db, actor.UID, eventName, json.RawMessage(value))
 				if err != nil {
 					log15.Warn("Could not log search latency", "err", err)
 				}
@@ -1400,7 +1400,7 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 	return nil
 }
 
-func newAggregator(db dbutil.DB, stream Streamer, inputs *SearchInputs) *aggregator {
+func newAggregator(db dbutil.DB, stream Sender, inputs *SearchInputs) *aggregator {
 	return &aggregator{
 		db:           db,
 		parentStream: stream,
@@ -1412,7 +1412,7 @@ func newAggregator(db dbutil.DB, stream Streamer, inputs *SearchInputs) *aggrega
 }
 
 type aggregator struct {
-	parentStream Streamer
+	parentStream Sender
 	db           dbutil.DB
 
 	mu      sync.Mutex
@@ -1901,12 +1901,15 @@ func compareSearchResults(left, right SearchResultResolver, exactFilePatterns ma
 		case *RepositoryResolver:
 			return r.Name(), "", nil
 		case *FileMatchResolver:
-			return string(r.Repo.Name), r.JPath, nil
+			return string(r.Repo.Name), r.Path, nil
 		case *CommitSearchResultResolver:
 			// Commits are relatively sorted by date, and after repo
 			// or path names. We use ~ as the key for repo and
 			// paths,lexicographically last in ASCII.
-			return "~", "~", &r.commit.commit.Author.Date
+			if r.Commit().commit != nil {
+				return "~", "~", &r.Commit().commit.Author.Date
+			}
+			return "~", "~", &time.Time{}
 		}
 		// Unreachable.
 		panic("unreachable: compareSearchResults expects RepositoryResolver, FileMatchResolver, or CommitSearchResultResolver")
