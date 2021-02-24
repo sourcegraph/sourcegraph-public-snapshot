@@ -18,6 +18,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
@@ -102,7 +103,7 @@ func TestCleanupInactive(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s := &Server{ReposDir: root, DeleteStaleRepositories: true}
+	s := &Server{ReposDir: root}
 	s.Handler() // Handler as a side-effect sets up Server
 	s.cleanupRepos()
 

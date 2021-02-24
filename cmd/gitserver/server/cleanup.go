@@ -19,6 +19,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -72,7 +73,7 @@ const reposStatsName = "repos-stats.json"
 //
 // 1. Remove corrupt repos.
 // 2. Remove stale lock files.
-// 3. Remove inactive repos on sourcegraph.com
+// 3. Remove repos based on disk pressure.
 // 4. Reclone repos after a while. (simulate git gc)
 func (s *Server) cleanupRepos() {
 	janitorRunning.Set(1)

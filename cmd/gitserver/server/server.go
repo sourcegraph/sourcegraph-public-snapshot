@@ -109,10 +109,6 @@ type Server struct {
 	// ReposDir is the path to the base directory for gitserver storage.
 	ReposDir string
 
-	// DeleteStaleRepositories when true will delete old repositories when the
-	// Janitor job runs.
-	DeleteStaleRepositories bool
-
 	// DesiredPercentFree is the desired percentage of disk space to keep free.
 	DesiredPercentFree int
 
