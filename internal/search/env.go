@@ -43,20 +43,16 @@ func SearcherURLs() *endpoint.Map {
 
 func Indexed() *backend.Zoekt {
 	indexedSearchOnce.Do(func() {
-		dial := func(endpoint string) zoekt.Streamer {
-			return backend.NewMeteredSearcher(endpoint, &backend.StreamSearchAdapter{rpc.Client(endpoint)})
-		}
-
 		var client zoekt.Streamer
 		if indexers := Indexers(); indexers.Enabled() {
 			client = backend.NewMeteredSearcher(
 				"", // no hostname means its the aggregator
 				&backend.HorizontalSearcher{
 					Map:  indexers.Map,
-					Dial: dial,
+					Dial: backend.ZoektDial,
 				})
 		} else if addr := zoektAddr(os.Environ()); addr != "" {
-			client = dial(addr)
+			client = backend.ZoektDial(addr)
 		}
 
 		indexedSearch = &backend.Zoekt{Client: client}
