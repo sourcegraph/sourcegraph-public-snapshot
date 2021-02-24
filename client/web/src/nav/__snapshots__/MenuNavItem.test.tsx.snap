@@ -54,13 +54,12 @@ exports[`MenuNavItem add menu children 1`] = `
             </Reference>
           </DropdownToggle>
           <DropdownMenu
-            className="menu-nav-item__dropdown-menu"
             flip={true}
             tag="div"
           >
             <div
               aria-hidden={true}
-              className="menu-nav-item__dropdown-menu dropdown-menu"
+              className="dropdown-menu"
               role="menu"
               tabIndex="-1"
             >
