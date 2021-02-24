@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-lsp"
 
+	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -350,6 +351,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		file     string
 		symbol   string
 		lang     string
+		uri      *gituri.URI
 	}
 	seen := make(map[key]struct{}, len(allSuggestions))
 	uniqueSuggestions := allSuggestions[:0]
@@ -370,8 +372,8 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			// (that do specify a commit ID), because their key k (i.e., k in seen[k]) will not
 			// equal.
 			k.file = s.Path()
-		case *searchSymbolResult:
-			k.repoName = api.RepoName(s.commit.Repository().Name())
+		case *symbolResolver:
+			k.uri = s.uri
 			k.symbol = s.symbol.Name + s.symbol.Parent
 		case *languageResolver:
 			k.lang = s.name
