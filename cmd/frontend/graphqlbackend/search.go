@@ -584,7 +584,7 @@ func newSearchSuggestionResolver(result interface{}, score int) *searchSuggestio
 	case *GitTreeEntryResolver:
 		return &searchSuggestionResolver{result: r, score: score, length: len(r.Path()), label: r.Path()}
 
-	case *symbolResolver:
+	case symbolResolver:
 		return &searchSuggestionResolver{result: r, score: score, length: len(r.symbol.Name + " " + r.symbol.Parent), label: r.symbol.Name + " " + r.symbol.Parent}
 
 	case *languageResolver:

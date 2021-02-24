@@ -372,7 +372,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			// (that do specify a commit ID), because their key k (i.e., k in seen[k]) will not
 			// equal.
 			k.file = s.Path()
-		case *symbolResolver:
+		case symbolResolver:
 			k.uri = s.uri()
 			k.symbol = s.symbol.Name + s.symbol.Parent
 		case *languageResolver:
