@@ -1,6 +1,5 @@
 import AddIcon from 'mdi-react/AddIcon'
 import ConsoleIcon from 'mdi-react/ConsoleIcon'
-import LogoutIcon from 'mdi-react/LogoutIcon'
 import ServerIcon from 'mdi-react/ServerIcon'
 import MapSearchOutlineIcon from 'mdi-react/MapSearchOutlineIcon'
 import * as React from 'react'
@@ -14,7 +13,6 @@ import {
 } from '../../components/Sidebar'
 import { OrgAvatar } from '../../org/OrgAvatar'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
-import { eventLogger } from '../../tracking/eventLogger'
 import { NavItemDescriptor } from '../../util/contributions'
 import { UserAreaRouteContext } from '../area/UserArea'
 import {

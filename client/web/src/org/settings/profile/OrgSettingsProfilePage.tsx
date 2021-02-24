@@ -9,6 +9,8 @@ import { OrgAreaPageProps } from '../../area/OrgArea'
 import { updateOrganization } from '../../backend'
 import { ErrorAlert } from '../../../components/alerts'
 import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
+import { Timestamp } from '../../../components/time/Timestamp'
+import { PageHeader } from '../../../components/PageHeader'
 
 interface Props
     extends Pick<OrgAreaPageProps, 'org' | 'onOrganizationUpdate'>,
@@ -65,7 +67,21 @@ export const OrgSettingsProfilePage: React.FunctionComponent<Props> = ({ history
     return (
         <div className="org-settings-profile-page">
             <PageTitle title={org.name} />
-            <h2>Organization profile</h2>
+            <PageHeader
+                path={[{ text: 'Organisation profile' }]}
+                headingElement="h2"
+                className="org-settings-profile-page__heading"
+            />
+            <p>
+                {org.displayName ? (
+                    <>
+                        {org.displayName} ({org.name})
+                    </>
+                ) : (
+                    org.name
+                )}{' '}
+                was created <Timestamp date={org.createdAt} />.
+            </p>
             <Form className="org-settings-profile-page" onSubmit={onSubmit}>
                 <div className="form-group">
                     <label>Display name</label>
