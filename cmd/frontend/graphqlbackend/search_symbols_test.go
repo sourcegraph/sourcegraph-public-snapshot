@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"reflect"
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
@@ -13,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestMakeFileMatchURIFromSymbol(t *testing.T) {
@@ -26,16 +24,9 @@ func TestMakeFileMatchURIFromSymbol(t *testing.T) {
 		Pattern: "",
 	}
 	baseURI, _ := gituri.Parse("https://github.com/foo/bar")
-	gitSignatureWithDate := git.Signature{Date: time.Now().UTC().AddDate(0, 0, -1)}
 
 	repoResolver := NewRepositoryResolver(db, &types.Repo{ID: 1, Name: "repo"})
-	commit := toGitCommitResolver(
-		repoResolver,
-		db,
-		"c1",
-		&git.Commit{ID: "c1", Author: gitSignatureWithDate},
-	)
-	sr := &searchSymbolResult{symbol, baseURI, "go", commit}
+	sr := &searchSymbolResult{symbol, baseURI, "go"}
 
 	tests := []struct {
 		rev  string
