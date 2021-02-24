@@ -109,10 +109,6 @@ type Server struct {
 	// ReposDir is the path to the base directory for gitserver storage.
 	ReposDir string
 
-	// DeleteStaleRepositories when true will delete old repositories when the
-	// Janitor job runs.
-	DeleteStaleRepositories bool
-
 	// DesiredPercentFree is the desired percentage of disk space to keep free.
 	DesiredPercentFree int
 
@@ -1076,6 +1072,10 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		removeBadRefs(ctx, tmp)
 		ensureHead(tmp)
 
+		if err := setRepositoryType(tmp, syncer.Type()); err != nil {
+			return errors.Wrap(err, `git config set "sourcegraph.type"`)
+		}
+
 		// Update the last-changed stamp.
 		if err := setLastChanged(tmp); err != nil {
 			return errors.Wrapf(err, "failed to update last changed time")
@@ -1542,6 +1542,10 @@ func (s *Server) doRepoUpdate2(repo api.RepoName) error {
 
 	removeBadRefs(ctx, dir)
 	ensureHead(dir)
+
+	if err := setRepositoryType(dir, syncer.Type()); err != nil {
+		return errors.Wrap(err, `git config set "sourcegraph.type"`)
+	}
 
 	// Update the last-changed stamp.
 	if err := setLastChanged(dir); err != nil {

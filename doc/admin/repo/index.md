@@ -7,3 +7,4 @@
 - [Custom git or ssh config](custom_git_or_ssh_config.md)
 - [Adding non-Git repositories](../external_service/non-git.md)
   - [Adding Perforce repositories](perforce.md)
+- [Configure repository permissions](permissions.md)
