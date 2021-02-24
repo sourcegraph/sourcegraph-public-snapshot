@@ -117,10 +117,10 @@ func (fm *FileMatchResolver) Resource() string {
 	return fm.uri
 }
 
-func (fm *FileMatchResolver) Symbols() []*symbolResolver {
-	symbols := make([]*symbolResolver, len(fm.symbols))
+func (fm *FileMatchResolver) Symbols() []symbolResolver {
+	symbols := make([]symbolResolver, len(fm.symbols))
 	for i, s := range fm.symbols {
-		symbols[i] = toSymbolResolver(fm.db, s.symbol, s.baseURI, s.lang, s.commit)
+		symbols[i] = toSymbolResolver(fm.db, s)
 	}
 	return symbols
 }
