@@ -13,7 +13,7 @@ export const SidebarNavItem: React.FunctionComponent<{
     className?: string
     exact?: boolean
 }> = ({ icon: Icon, children, className, to, exact }) => (
-    <NavLink to={to} exact={exact} className={classNames(`list-group-item list-group-item-action py-2`, className)}>
+    <NavLink to={to} exact={exact} className={classNames('list-group-item list-group-item-action py-2', className)}>
         {Icon && <Icon className="icon-inline mr-2" />}
         {children}
     </NavLink>
