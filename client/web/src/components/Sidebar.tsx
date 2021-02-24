@@ -1,5 +1,6 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
+import classNames from 'classnames'
 
 export const SIDEBAR_BUTTON_CLASS = 'btn btn-secondary d-block w-100 my-2'
 
@@ -13,7 +14,7 @@ export const SidebarNavItem: React.FunctionComponent<{
     exact?: boolean
 }> = ({ icon: Icon, children, className, to, exact }) => {
     return (
-        <NavLink to={to} exact={exact} className={`list-group-item list-group-item-action py-2 active ${className}`}>
+        <NavLink to={to} exact={exact} className={classNames(`list-group-item list-group-item-action py-2`, className)}>
             {Icon && <Icon className="icon-inline mr-2" />}
             {children}
         </NavLink>
