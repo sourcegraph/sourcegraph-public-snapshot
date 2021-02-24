@@ -27,12 +27,6 @@ func (f ZoektStreamFunc) Send(event *zoekt.SearchResult) {
 	f(event)
 }
 
-// streamSearcher is an interface which calls c.Send(result *zoekt.SearchResults)
-// as results are found.
-type streamSearcher interface {
-	StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, c zoekt.Sender) error
-}
-
 // StreamSearchEvent has fields optionally set representing events that happen
 // during a search.
 //
@@ -75,5 +69,5 @@ func NewZoektStream(address string) zoekt.Streamer {
 
 type zoektStream struct {
 	zoekt.Searcher
-	streamSearcher
+	*zoektstream.Client
 }
