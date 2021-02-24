@@ -1,11 +1,12 @@
-import HeartIcon from 'mdi-react/HeartIcon'
+import BriefcaseIcon from 'mdi-react/BriefcaseIcon'
 import BrainIcon from 'mdi-react/BrainIcon'
 import {
-    otherGroup,
+    maintenanceGroup,
     siteAdminSidebarGroups,
     usersGroup,
     repositoriesGroup,
     overviewGroup,
+    extensionsGroup,
 } from '../../site-admin/sidebaritems'
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from '../../site-admin/SiteAdminSidebar'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
@@ -14,7 +15,7 @@ import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
  * Sidebar items that are only used on Sourcegraph.com.
  */
 const dotcomGroup: SiteAdminSideBarGroup = {
-    header: { label: 'Business', icon: HeartIcon },
+    header: { label: 'Business', icon: BriefcaseIcon },
     items: [
         {
             label: 'Customers',
@@ -58,13 +59,7 @@ export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = siteAdmi
                 // Extend overview group items
                 {
                     ...group,
-                    items: [
-                        ...group.items,
-                        {
-                            label: 'License',
-                            to: '/site-admin/license',
-                        },
-                    ],
+                    items: group.items,
                 },
             ]
         }
@@ -96,24 +91,18 @@ export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = siteAdmi
                 },
             ]
         }
-        if (group === otherGroup) {
+
+        if (group === maintenanceGroup) {
             return [
                 ...enterpriseGroups,
                 // Extend other group items
-                {
-                    ...group,
-                    items: [
-                        ...group.items,
-                        {
-                            label: 'Extensions',
-                            to: '/site-admin/registry/extensions',
-                        },
-                    ],
-                },
+                group,
+                extensionsGroup,
                 // Insert dotcom group after other group (on Sourcegraph.com)
                 dotcomGroup,
             ]
         }
+
         return [...enterpriseGroups, group]
     },
     []

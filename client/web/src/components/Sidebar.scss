@@ -1,4 +1,12 @@
 .sidebar {
     isolation: isolate;
     width: 12rem;
+
+    &__btn {
+        background: var(--color-bg-2);
+    }
+
+    &__icon {
+        color: $gray-13;
+    }
 }

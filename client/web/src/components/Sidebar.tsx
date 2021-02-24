@@ -1,6 +1,8 @@
-import React from 'react'
+import React, { useState, useCallback } from 'react'
 import { NavLink } from 'react-router-dom'
 import classNames from 'classnames'
+import { Button, Collapse } from 'reactstrap'
+import MenuDownIcon from 'mdi-react/MenuDownIcon'
 
 export const SIDEBAR_BUTTON_CLASS = 'btn btn-secondary d-block w-100 my-2'
 
@@ -31,6 +33,34 @@ export const SidebarGroupHeader: React.FunctionComponent<{
         {Icon && <Icon className="icon-inline mr-1" />} {label}
     </div>
 )
+
+/**
+ * Sidebar with collapsible items
+ */
+export const SidebarCollapse: React.FunctionComponent<{
+    children: JSX.Element
+    icon?: React.ComponentType<{ className?: string }>
+    label?: string
+}> = ({ children, label, icon: Icon }) => {
+    const [isOpen, setOpen] = useState<boolean>(false)
+    const handleOpen = useCallback(() => setOpen(!isOpen), [isOpen])
+    return (
+        <div>
+            <Button
+                color="secondary"
+                outline={true}
+                onClick={handleOpen}
+                className="btn sidebar__btn d-flex justify-content-between w-100 px-2"
+            >
+                <span>
+                    {Icon && <Icon className="sidebar__icon icon-inline mr-1" />} {label}
+                </span>
+                <MenuDownIcon className="icon-inline" />
+            </Button>
+            <Collapse isOpen={isOpen}>{children}</Collapse>
+        </div>
+    )
+}
 
 /**
  * A box of items in the side bar. Use `SideBarGroupHeader` and `SideBarGroupItems` as children.

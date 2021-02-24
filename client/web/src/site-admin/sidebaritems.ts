@@ -1,13 +1,16 @@
-import ServerIcon from 'mdi-react/ServerIcon'
+import EarthIcon from 'mdi-react/EarthIcon'
 import UsersIcon from 'mdi-react/UsersIcon'
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import SettingsIcon from 'mdi-react/SettingsIcon'
+import CogsIcon from 'mdi-react/CogsIcon'
+import MonitorStarIcon from 'mdi-react/MonitorStarIcon'
+import ConsoleIcon from 'mdi-react/ConsoleIcon'
+import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 
 export const overviewGroup: SiteAdminSideBarGroup = {
     header: {
-        label: 'Site admin',
-        icon: ServerIcon,
+        label: 'Statistics',
+        icon: EarthIcon,
     },
     items: [
         {
@@ -29,7 +32,7 @@ export const overviewGroup: SiteAdminSideBarGroup = {
 const configurationGroup: SiteAdminSideBarGroup = {
     header: {
         label: 'Configuration',
-        icon: SettingsIcon,
+        icon: CogsIcon,
     },
     items: [
         {
@@ -39,6 +42,10 @@ const configurationGroup: SiteAdminSideBarGroup = {
         {
             label: 'Global settings',
             to: '/site-admin/global-settings',
+        },
+        {
+            label: 'License',
+            to: '/site-admin/license',
         },
     ],
 }
@@ -50,7 +57,7 @@ export const repositoriesGroup: SiteAdminSideBarGroup = {
     },
     items: [
         {
-            label: 'Manage repositories',
+            label: 'Manage code hosts',
             to: '/site-admin/external-services',
         },
         {
@@ -81,7 +88,11 @@ export const usersGroup: SiteAdminSideBarGroup = {
     ],
 }
 
-export const otherGroup: SiteAdminSideBarGroup = {
+export const maintenanceGroup: SiteAdminSideBarGroup = {
+    header: {
+        label: 'Maintenance',
+        icon: MonitorStarIcon,
+    },
     items: [
         {
             label: 'Updates',
@@ -95,6 +106,44 @@ export const otherGroup: SiteAdminSideBarGroup = {
             label: 'Report a bug',
             to: '/site-admin/report-bug',
         },
+        {
+            label: 'Instrumentation',
+            to: '/-/debug/grafana',
+        },
+        {
+            label: 'Monitoring',
+            to: '/-/debug',
+        },
+        {
+            label: 'Tracing',
+            to: '/-/jaeger',
+        },
+    ],
+}
+
+export const extensionsGroup: SiteAdminSideBarGroup = {
+    header: {
+        label: 'Extensions',
+        icon: PuzzleOutlineIcon,
+    },
+    items: [
+        {
+            label: 'Extensions',
+            to: '/some/extensions',
+        },
+    ],
+}
+
+export const apiConsoleGroup: SiteAdminSideBarGroup = {
+    header: {
+        label: 'API Console',
+        icon: ConsoleIcon,
+    },
+    items: [
+        {
+            label: 'API Console',
+            to: '/api/console',
+        },
     ],
 }
 
@@ -103,5 +152,6 @@ export const siteAdminSidebarGroups: SiteAdminSideBarGroups = [
     configurationGroup,
     repositoriesGroup,
     usersGroup,
-    otherGroup,
+    maintenanceGroup,
+    apiConsoleGroup,
 ]

@@ -1,13 +1,6 @@
-import ConsoleIcon from 'mdi-react/ConsoleIcon'
-import * as React from 'react'
+import React from 'react'
 import { Link } from 'react-router-dom'
-import {
-    SIDEBAR_BUTTON_CLASS,
-    SidebarGroup,
-    SidebarGroupHeader,
-    SidebarGroupItems,
-    SidebarNavItem,
-} from '../components/Sidebar'
+import { SidebarCollapse, SidebarGroupItems, SidebarNavItem } from '../components/Sidebar'
 import { NavGroupDescriptor } from '../util/contributions'
 
 export interface SiteAdminSideBarGroup extends NavGroupDescriptor {}
@@ -24,37 +17,37 @@ export interface SiteAdminSidebarProps {
  * Sidebar for the site admin area.
  */
 export const SiteAdminSidebar: React.FunctionComponent<SiteAdminSidebarProps> = ({ className, groups }) => (
-    <div className={className}>
-        {groups.map(
-            ({ header, items, condition = () => true }, index) =>
-                condition({}) && (
-                    <SidebarGroup key={index}>
-                        {header && <SidebarGroupHeader icon={header.icon} label={header.label} />}
-                        <SidebarGroupItems>
-                            {items.map(
-                                ({ label, to, exact, condition = () => true }) =>
-                                    condition({}) && (
-                                        <SidebarNavItem to={to} exact={exact} key={label}>
-                                            {label}
-                                        </SidebarNavItem>
-                                    )
-                            )}
-                        </SidebarGroupItems>
-                    </SidebarGroup>
-                )
-        )}
-
-        <Link to="/api/console" className={SIDEBAR_BUTTON_CLASS}>
-            <ConsoleIcon className="icon-inline" /> API console
-        </Link>
-        <a href="/-/debug/" className={SIDEBAR_BUTTON_CLASS}>
-            Instrumentation
-        </a>
-        <a href="/-/debug/grafana" className={SIDEBAR_BUTTON_CLASS}>
-            Site Monitoring
-        </a>
-        <a href="/-/debug/jaeger" className={SIDEBAR_BUTTON_CLASS}>
-            Tracing
-        </a>
+    <div className={`site-admin-sidebar ${className}`}>
+        <div className="border">
+            {groups.map(
+                ({ header, items, condition = () => true }, index) =>
+                    condition({}) &&
+                    (items.length > 1 ? (
+                        <SidebarCollapse icon={header?.icon} label={header?.label} key={index}>
+                            <SidebarGroupItems>
+                                {items.map(
+                                    ({ label, to, exact, condition = () => true }) =>
+                                        condition({}) && (
+                                            <SidebarNavItem to={to} exact={exact} key={label}>
+                                                {label}
+                                            </SidebarNavItem>
+                                        )
+                                )}
+                            </SidebarGroupItems>
+                        </SidebarCollapse>
+                    ) : (
+                        <Link
+                            key={items[0].label}
+                            to={items[0].to}
+                            className="btn sidebar__btn d-flex justify-content-between w-100 px-2 btn btn-outline-secondary"
+                        >
+                            <span>
+                                {header?.icon && <header.icon className="sidebar__icon icon-inline mr-1" />}{' '}
+                                {items[0].label}
+                            </span>
+                        </Link>
+                    ))
+            )}
+        </div>
     </div>
 )
