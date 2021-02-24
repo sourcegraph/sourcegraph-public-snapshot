@@ -267,13 +267,10 @@ func (r symbolResolver) Language() string { return r.symbol.Language }
 
 func (r symbolResolver) Location() *locationResolver {
 	uri := r.baseURI.WithFilePath(r.symbol.Path)
+	stat := CreateFileInfo(uri.Fragment, false)
 	sr := symbolRange(r.symbol)
 	return &locationResolver{
-		resource: &GitTreeEntryResolver{
-			db:     r.db,
-			commit: r.commit,
-			stat:   CreateFileInfo(uri.Fragment, false), // assume the path refers to a file (not dir)
-		},
+		resource: NewGitTreeEntryResolver(r.commit, r.db, stat),
 		lspRange: &sr,
 	}
 }
