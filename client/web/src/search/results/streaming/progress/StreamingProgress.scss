@@ -64,6 +64,7 @@
         &.markdown code {
             // Force line breaks on markdown `code` elements
             white-space: normal;
+            word-break: break-all;
         }
     }
 
