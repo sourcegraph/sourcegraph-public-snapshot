@@ -531,7 +531,6 @@ func (e *badRequestError) Cause() error {
 
 // searchSuggestionResolver is a resolver for the GraphQL union type `SearchSuggestion`
 type searchSuggestionResolver struct {
-	db dbutil.DB
 	// result is either a RepositoryResolver or a GitTreeEntryResolver
 	result interface{}
 	// score defines how well this item matches the query for sorting purposes
@@ -563,11 +562,8 @@ func (r *searchSuggestionResolver) ToGitTree() (*GitTreeEntryResolver, bool) {
 }
 
 func (r *searchSuggestionResolver) ToSymbol() (*symbolResolver, bool) {
-	s, ok := r.result.(*searchSymbolResult)
-	if !ok {
-		return nil, false
-	}
-	return toSymbolResolver(r.db, s.symbol, s.baseURI, s.lang, s.commit), true
+	s, ok := r.result.(*symbolResolver)
+	return s, ok
 }
 
 func (r *searchSuggestionResolver) ToLanguage() (*languageResolver, bool) {
@@ -583,16 +579,16 @@ func (r *searchSuggestionResolver) ToLanguage() (*languageResolver, bool) {
 func newSearchSuggestionResolver(result interface{}, score int) *searchSuggestionResolver {
 	switch r := result.(type) {
 	case *RepositoryResolver:
-		return &searchSuggestionResolver{db: r.db, result: r, score: score, length: len(r.Name()), label: r.Name()}
+		return &searchSuggestionResolver{result: r, score: score, length: len(r.Name()), label: r.Name()}
 
 	case *GitTreeEntryResolver:
-		return &searchSuggestionResolver{db: r.db, result: r, score: score, length: len(r.Path()), label: r.Path()}
+		return &searchSuggestionResolver{result: r, score: score, length: len(r.Path()), label: r.Path()}
 
-	case *searchSymbolResult:
-		return &searchSuggestionResolver{db: r.db, result: r, score: score, length: len(r.symbol.Name + " " + r.symbol.Parent), label: r.symbol.Name + " " + r.symbol.Parent}
+	case *symbolResolver:
+		return &searchSuggestionResolver{result: r, score: score, length: len(r.symbol.Name + " " + r.symbol.Parent), label: r.symbol.Name + " " + r.symbol.Parent}
 
 	case *languageResolver:
-		return &searchSuggestionResolver{db: r.db, result: r, score: score, length: len(r.Name()), label: r.Name()}
+		return &searchSuggestionResolver{result: r, score: score, length: len(r.Name()), label: r.Name()}
 
 	default:
 		panic("never here")
