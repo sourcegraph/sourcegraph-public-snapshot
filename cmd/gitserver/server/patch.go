@@ -272,6 +272,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 				resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: error creating ssh-agent"))
 				return http.StatusInternalServerError, resp
 			}
+			go agent.Listen()
 			// Make sure we shut this down once we're done.
 			defer agent.Close()
 
@@ -319,8 +320,9 @@ func ensureRefPrefix(ref string) string {
 }
 
 type SSHAgent struct {
-	l    net.Listener
-	sock string
+	l       net.Listener
+	sock    string
+	keyring agent.Agent
 }
 
 func NewSSHAgent(raw, passphrase []byte) (*SSHAgent, error) {
@@ -367,37 +369,36 @@ func NewSSHAgent(raw, passphrase []byte) (*SSHAgent, error) {
 
 	// Set up the type we're going to return.
 	a := &SSHAgent{
-		l:    l,
-		sock: name,
+		l:       l,
+		sock:    name,
+		keyring: keyring,
 	}
-
-	// Spawn a goroutine to accept connections and handle them.
-	go func() {
-		for {
-			// This will return when we call l.Close(), which Agent.Close() does.
-			conn, err := l.Accept()
-			if err == io.EOF {
-				return
-			} else if err != nil {
-				log15.Error("error accepting socket connection", "err", err)
-				return
-			}
-
-			// We don't control how SSH handles the agent, so we should handle
-			// this "correctly" and spawn another goroutine, even though in
-			// practice there should only ever be one connection at a time to
-			// the agent.
-			go func(conn net.Conn) {
-				defer conn.Close()
-
-				if err := agent.ServeAgent(keyring, conn); err != nil && err != io.EOF {
-					log15.Error("error serving SSH agent", "err", err)
-				}
-			}(conn)
-		}
-	}()
-
 	return a, nil
+}
+
+func (a *SSHAgent) Listen() {
+	for {
+		// This will return when we call l.Close(), which Agent.Close() does.
+		conn, err := a.l.Accept()
+		if err == io.EOF {
+			return
+		} else if err != nil {
+			log15.Error("error accepting socket connection", "err", err)
+			return
+		}
+
+		// We don't control how SSH handles the agent, so we should handle
+		// this "correctly" and spawn another goroutine, even though in
+		// practice there should only ever be one connection at a time to
+		// the agent.
+		go func(conn net.Conn) {
+			defer conn.Close()
+
+			if err := agent.ServeAgent(a.keyring, conn); err != nil && err != io.EOF {
+				log15.Error("error serving SSH agent", "err", err)
+			}
+		}(conn)
+	}
 }
 
 func (a *SSHAgent) Close() error {
@@ -405,8 +406,7 @@ func (a *SSHAgent) Close() error {
 	// remove it again.
 	os.Remove(a.sock)
 
-	// Close down the listener, which should terminate the goroutine we spawned
-	// in NewAgent().
+	// Close down the listener, which terminates the loop in Listen().
 	return a.l.Close()
 }
 
