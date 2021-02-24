@@ -486,7 +486,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 
 	t.Run("GetRewirerMappings", func(t *testing.T) {
 		// Create some test data
-		user := ct.CreateTestUser(t, true)
+		user := ct.CreateTestUser(t, s.DB(), true)
 		campaignSpec := ct.CreateCampaignSpec(t, ctx, s, "get-rewirer-mappings", user.ID)
 		var mappings RewirerMappings = make(RewirerMappings, 3)
 		changesetSpecIDs := make([]int64, 0, cap(mappings))
@@ -690,7 +690,7 @@ func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *S
 	}
 
 	// Create a user.
-	user := ct.CreateTestUser(t, false)
+	user := ct.CreateTestUser(t, s.DB(), false)
 
 	// Next, we need old and new campaign specs.
 	oldCampaignSpec := ct.CreateCampaignSpec(t, ctx, s, "old", user.ID)
@@ -784,7 +784,7 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 	}
 
 	// Create a user.
-	user := ct.CreateTestUser(t, false)
+	user := ct.CreateTestUser(t, s.DB(), false)
 
 	// Next, we need old and new campaign specs.
 	oldCampaignSpec := ct.CreateCampaignSpec(t, ctx, s, "old", user.ID)
@@ -949,7 +949,7 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 	}
 
 	// Create a user.
-	user := ct.CreateTestUser(t, false)
+	user := ct.CreateTestUser(t, s.DB(), false)
 
 	// Next, we need a campaign spec.
 	oldCampaignSpec := ct.CreateCampaignSpec(t, ctx, s, "text", user.ID)
