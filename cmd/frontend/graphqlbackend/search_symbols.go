@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/go-lsp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
@@ -226,7 +225,7 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 					Symbols:  []*SearchSymbolResult{symbolRes},
 					uri:      uri,
 					Repo:     repoRevs.Repo,
-					CommitID: api.CommitID(symbolRes.commit.OID()),
+					CommitID: commitID,
 				},
 				RepoResolver: repoResolver,
 			}
