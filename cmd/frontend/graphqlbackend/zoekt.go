@@ -380,7 +380,7 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 
 					var symbols []*SearchSymbolResult
 					if typ == symbolRequest {
-						symbols = zoektFileMatchToSymbolResults(repoResolver, inputRev, &file)
+						symbols = zoektFileMatchToSymbolResults(repoResolver, db, inputRev, &file)
 					}
 					fm := &FileMatchResolver{
 						db: db,
@@ -493,11 +493,17 @@ func escape(s string) string {
 	return string(escaped)
 }
 
-func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, file *zoekt.FileMatch) []*SearchSymbolResult {
+func zoektFileMatchToSymbolResults(repo *RepositoryResolver, db dbutil.DB, inputRev string, file *zoekt.FileMatch) []*SearchSymbolResult {
 	// Symbol search returns a resolver so we need to pass in some
 	// extra stuff. This is a sign that we can probably restructure
 	// resolvers to avoid this.
 	baseURI := &gituri.URI{URL: url.URL{Scheme: "git", Host: repo.Name(), RawQuery: url.QueryEscape(inputRev)}}
+	commit := &GitCommitResolver{
+		db:           db,
+		repoResolver: repo,
+		oid:          GitObjectID(file.Version),
+		inputRev:     &inputRev,
+	}
 	lang := strings.ToLower(file.Language)
 
 	symbols := make([]*SearchSymbolResult, 0, len(file.LineMatches))
@@ -527,6 +533,7 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, fi
 				},
 				lang:    lang,
 				baseURI: baseURI,
+				commit:  commit,
 			})
 		}
 	}
