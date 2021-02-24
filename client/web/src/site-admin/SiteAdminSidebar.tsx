@@ -24,7 +24,7 @@ export interface SiteAdminSidebarProps {
  * Sidebar for the site admin area.
  */
 export const SiteAdminSidebar: React.FunctionComponent<SiteAdminSidebarProps> = ({ className, groups }) => (
-    <div className={`site-admin-sidebar ${className}`}>
+    <div className={className}>
         {groups.map(
             ({ header, items, condition = () => true }, index) =>
                 condition({}) && (

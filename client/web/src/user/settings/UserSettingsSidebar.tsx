@@ -62,7 +62,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
     }
 
     return (
-        <div className={`user-settings-sidebar ${props.className || ''}`}>
+        <div className={props.className}>
             {/* Indicate when the site admin is viewing another user's account */}
             {siteAdminViewingOtherUser && (
                 <SiteAdminAlert className="sidebar__alert">

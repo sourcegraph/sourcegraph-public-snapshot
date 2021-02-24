@@ -11,6 +11,7 @@ import { EditUserProfilePage as EditUserProfilePageFragment } from '../../../gra
 import { EditUserProfileForm } from './EditUserProfileForm'
 import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 import { Timestamp } from '../../../components/time/Timestamp'
+import { PageHeader } from '../../../components/PageHeader'
 
 export const EditUserProfilePageGQLFragment = gql`
     fragment EditUserProfilePage on User {
@@ -59,7 +60,11 @@ export const UserSettingsProfilePage: React.FunctionComponent<Props> = ({
     return (
         <div className="user-settings-profile-page">
             <PageTitle title="Profile" />
-            <h2>Profile</h2>
+            <PageHeader
+                path={[{ text: 'Profile' }]}
+                headingElement="h2"
+                className="user-settings-profile-page__heading"
+            />
             <p>
                 {user.displayName ? (
                     <>
@@ -70,7 +75,6 @@ export const UserSettingsProfilePage: React.FunctionComponent<Props> = ({
                 )}{' '}
                 started using Sourcegraph <Timestamp date={user.createdAt} />.
             </p>
-
             {props.activation?.completed && percentageDone(props.activation.completed) < 100 && (
                 <div className="card mb-3">
                     <div className="card-body">
