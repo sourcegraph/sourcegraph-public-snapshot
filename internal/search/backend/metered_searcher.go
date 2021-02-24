@@ -28,15 +28,15 @@ func init() {
 }
 
 type meteredSearcher struct {
-	StreamSearcher
+	zoekt.Streamer
 
 	hostname string
 }
 
-func NewMeteredSearcher(hostname string, z StreamSearcher) StreamSearcher {
+func NewMeteredSearcher(hostname string, z zoekt.Streamer) zoekt.Streamer {
 	return &meteredSearcher{
-		StreamSearcher: z,
-		hostname:       hostname,
+		Streamer: z,
+		hostname: hostname,
 	}
 }
 
@@ -113,7 +113,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		first sync.Once
 	)
 
-	err := m.StreamSearcher.StreamSearch(ctx, q, opts, ZoektStreamFunc(func(zsr *zoekt.SearchResult) {
+	err := m.Streamer.StreamSearch(ctx, q, opts, ZoektStreamFunc(func(zsr *zoekt.SearchResult) {
 		first.Do(func() {
 			if isLeaf {
 				tr.LogFields(
@@ -175,7 +175,7 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q) (*zoekt.RepoList,
 
 	tr, ctx := trace.New(ctx, "zoekt."+cat, queryString(q), tags...)
 
-	zsl, err := m.StreamSearcher.List(ctx, q)
+	zsl, err := m.Streamer.List(ctx, q)
 
 	code := "200"
 	if err != nil {
@@ -194,7 +194,7 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q) (*zoekt.RepoList,
 }
 
 func (m *meteredSearcher) String() string {
-	return "MeteredSearcher{" + m.StreamSearcher.String() + "}"
+	return "MeteredSearcher{" + m.Streamer.String() + "}"
 }
 
 func queryString(q query.Q) string {
