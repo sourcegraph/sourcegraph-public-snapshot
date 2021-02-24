@@ -176,6 +176,25 @@ query{
 			},
 		},
 		{
+			name: "Nested named fragments",
+			query: `
+query{
+    __typename
+	...FooFields
+}
+fragment FooFields on Foo {
+	...BarFields
+}
+fragment BarFields on Bar {
+	one
+}
+`,
+			want: QueryCost{
+				FieldCount: 2,
+				MaxDepth:   2,
+			},
+		},
+		{
 			name: "Search query",
 			query: `
 query Search($query: String!, $version: SearchVersion!, $patternType: SearchPatternType!, $versionContext: String) {
