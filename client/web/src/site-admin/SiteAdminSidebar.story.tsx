@@ -85,7 +85,7 @@ add(
     'Collapsible',
     () => (
         <MemoryRouter>
-            <SiteAdminSidebar className={'site-admin-sidebar'} groups={[groups[1]]} />
+            <SiteAdminSidebar className="site-admin-sidebar" groups={[groups[1]]} />
         </MemoryRouter>
     ),
     {
@@ -101,7 +101,7 @@ add(
     'Collapsible with icon',
     () => (
         <MemoryRouter>
-            <SiteAdminSidebar className={'site-admin-sidebar'} groups={[groups[0]]} />
+            <SiteAdminSidebar className="site-admin-sidebar" groups={[groups[0]]} />
         </MemoryRouter>
     ),
     {
@@ -117,7 +117,7 @@ add(
     'Non-collapsible with icon',
     () => (
         <MemoryRouter>
-            <SiteAdminSidebar className={'site-admin-sidebar'} groups={[groups[2]]} />
+            <SiteAdminSidebar className="site-admin-sidebar" groups={[groups[2]]} />
         </MemoryRouter>
     ),
     {
@@ -133,7 +133,7 @@ add(
     'Non-collapsible',
     () => (
         <MemoryRouter>
-            <SiteAdminSidebar className={'site-admin-sidebar'} groups={[groups[3]]} />
+            <SiteAdminSidebar className="site-admin-sidebar" groups={[groups[3]]} />
         </MemoryRouter>
     ),
     {
@@ -149,7 +149,7 @@ add(
     'Dropdown and single link',
     () => (
         <MemoryRouter>
-            <SiteAdminSidebar className={'site-admin-sidebar'} groups={groups} />
+            <SiteAdminSidebar className="site-admin-sidebar" groups={groups} />
         </MemoryRouter>
     ),
     {
@@ -165,7 +165,7 @@ add(
     'Enterprise Items',
     () => (
         <MemoryRouter>
-            <SiteAdminSidebar className={'site-admin-sidebar'} groups={enterpriseSiteAdminSidebarGroups} />
+            <SiteAdminSidebar className="site-admin-sidebar" groups={enterpriseSiteAdminSidebarGroups} />
         </MemoryRouter>
     ),
     {
