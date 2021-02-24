@@ -29,11 +29,11 @@ import (
 
 var zoektOnce sync.Once
 var endpointMap atomicEndpoints
-var zoektClient backend.StreamSearcher
+var zoektClient zoekt.Streamer
 
-func getZoektClient(indexerEndpoints []string) backend.StreamSearcher {
+func getZoektClient(indexerEndpoints []string) zoekt.Streamer {
 	zoektOnce.Do(func() {
-		dial := func(endpoint string) backend.StreamSearcher {
+		dial := func(endpoint string) zoekt.Streamer {
 			return backend.NewMeteredSearcher(endpoint, &backend.StreamSearchAdapter{zoektrpc.Client(endpoint)})
 		}
 		zoektClient = backend.NewMeteredSearcher(

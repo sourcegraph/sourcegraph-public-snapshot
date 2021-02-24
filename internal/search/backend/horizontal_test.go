@@ -20,7 +20,7 @@ func TestHorizontalSearcher(t *testing.T) {
 
 	searcher := &HorizontalSearcher{
 		Map: &endpoints,
-		Dial: func(endpoint string) StreamSearcher {
+		Dial: func(endpoint string) zoekt.Streamer {
 			var rle zoekt.RepoListEntry
 			rle.Repository.Name = endpoint
 			client := &mockSearcher{
@@ -109,7 +109,7 @@ func TestDoStreamSearch(t *testing.T) {
 
 	searcher := &HorizontalSearcher{
 		Map: &endpoints,
-		Dial: func(endpoint string) StreamSearcher {
+		Dial: func(endpoint string) zoekt.Streamer {
 			client := &mockSearcher{
 				searchResult: nil,
 				searchError:  fmt.Errorf("test error"),
@@ -149,7 +149,7 @@ func TestSyncSearchers(t *testing.T) {
 	dialNumCounter := 0
 	searcher := &HorizontalSearcher{
 		Map: &endpoints,
-		Dial: func(endpoint string) StreamSearcher {
+		Dial: func(endpoint string) zoekt.Streamer {
 			dialNumCounter++
 			return &mock{
 				dialNum: dialNumCounter,
