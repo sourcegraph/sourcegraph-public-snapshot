@@ -125,6 +125,10 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 	if args.Stream != nil {
 		defaultLimit = defaultMaxSearchResultsStreaming
 	}
+	if searchType == query.SearchTypeStructural {
+		// Set a lower max result count until structural search supports true streaming.
+		defaultLimit = defaultMaxSearchResults
+	}
 
 	if sp, _ := q.StringValue(query.FieldSelect); sp != "" && args.Stream != nil {
 		// Invariant: error already checked
