@@ -163,7 +163,6 @@ func searchZoektSymbols(ctx context.Context, db dbutil.DB, commit *GitCommitReso
 						},
 						baseURI: baseURI,
 						lang:    strings.ToLower(file.Language),
-						commit:  commit,
 					},
 				))
 			}
@@ -214,7 +213,6 @@ func computeSymbols(ctx context.Context, db dbutil.DB, commit *GitCommitResolver
 			symbol:  symbol,
 			baseURI: baseURI,
 			lang:    strings.ToLower(symbol.Language),
-			commit:  commit,
 		}
 		resolver := toSymbolResolver(db, &sr)
 		resolvers = append(resolvers, resolver)
@@ -270,9 +268,8 @@ func (r symbolResolver) Location() *locationResolver {
 	sr := symbolRange(r.symbol)
 	return &locationResolver{
 		resource: &GitTreeEntryResolver{
-			db:     r.db,
-			commit: r.commit,
-			stat:   CreateFileInfo(uri.Fragment, false), // assume the path refers to a file (not dir)
+			db:   r.db,
+			stat: CreateFileInfo(uri.Fragment, false), // assume the path refers to a file (not dir)
 		},
 		lspRange: &sr,
 	}
