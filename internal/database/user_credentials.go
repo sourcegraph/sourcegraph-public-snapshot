@@ -307,7 +307,7 @@ func (s *UserCredentialsStore) List(ctx context.Context, opts UserCredentialsLis
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
-	var forUpdate *sqlf.Query
+	forUpdate := &sqlf.Query{}
 	if opts.ForUpdate {
 		forUpdate = sqlf.Sprintf("FOR UPDATE")
 	}

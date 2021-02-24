@@ -96,6 +96,7 @@ func (s BitbucketServerSource) WithAuthenticator(a auth.Authenticator) (Source, 
 	case *auth.OAuthBearerToken,
 		*auth.OAuthBearerTokenWithSSH,
 		*auth.BasicAuth,
+		*auth.BasicAuthWithSSH,
 		*bitbucketserver.SudoableOAuthClient:
 		break
 
