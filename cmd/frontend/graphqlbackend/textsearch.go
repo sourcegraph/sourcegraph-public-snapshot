@@ -36,9 +36,9 @@ const maxUnindexedRepoRevSearchesPerQuery = 200
 var textSearchLimiter = mutablelimiter.New(32)
 
 type FileMatch struct {
-	Path        string       `json:"Path"`
-	LineMatches []*lineMatch `json:"LineMatches"`
-	LimitHit    bool         `json:"LimitHit"`
+	Path        string
+	LineMatches []*lineMatch
+	LimitHit    bool
 	symbols     []*searchSymbolResult
 	uri         string
 	Repo        *types.RepoName
