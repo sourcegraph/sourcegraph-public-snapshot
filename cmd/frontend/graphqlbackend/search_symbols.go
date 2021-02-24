@@ -131,14 +131,16 @@ func limitSymbolResults(res []*FileMatchResolver, limit int) []*FileMatchResolve
 	res2 := make([]*FileMatchResolver, 0, len(res))
 	nsym := 0
 	for _, r := range res {
-		r2 := *r
-		if nsym+len(r.symbols) > limit {
-			r2.symbols = r2.symbols[:limit-nsym]
+		symbols := r.FileMatch.Symbols
+		if nsym+len(symbols) > limit {
+			symbols = symbols[:limit-nsym]
 		}
-		if len(r2.symbols) > 0 {
+		if len(symbols) > 0 {
+			r2 := *r
+			r2.FileMatch.Symbols = symbols
 			res2 = append(res2, &r2)
 		}
-		nsym += len(r2.symbols)
+		nsym += len(symbols)
 		if nsym >= limit {
 			return res2
 		}
@@ -150,7 +152,7 @@ func limitSymbolResults(res []*FileMatchResolver, limit int) []*FileMatchResolve
 func symbolCount(fmrs []*FileMatchResolver) int {
 	nsym := 0
 	for _, fmr := range fmrs {
-		nsym += len(fmr.symbols)
+		nsym += len(fmr.FileMatch.Symbols)
 	}
 	return nsym
 }
@@ -205,13 +207,13 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 		}
 		uri := makeFileMatchURI(repoResolver.URL(), inputRev, symbolRes.uri().Fragment)
 		if fileMatch, ok := fileMatchesByURI[uri]; ok {
-			fileMatch.symbols = append(fileMatch.symbols, symbolRes)
+			fileMatch.FileMatch.Symbols = append(fileMatch.FileMatch.Symbols, symbolRes)
 		} else {
 			fileMatch := &FileMatchResolver{
 				db: db,
 				FileMatch: FileMatch{
 					Path:     symbolRes.symbol.Path,
-					symbols:  []*searchSymbolResult{symbolRes},
+					Symbols:  []*searchSymbolResult{symbolRes},
 					uri:      uri,
 					Repo:     repoRevs.Repo,
 					CommitID: api.CommitID(commitID),
