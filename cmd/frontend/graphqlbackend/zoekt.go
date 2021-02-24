@@ -316,32 +316,14 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 		// PERF: if we are going to be selecting to repo results only anyways, we can just ask
 		// zoekt for only results of type repo.
 		if args.PatternInfo.Select.Type == filter.Repository {
-			repoList, err := args.Zoekt.Client.List(ctx, finalQuery)
-			if err != nil {
-				return err
-			}
-
-			<-reposResolved
-			// getRepoInputRev is nil only if we encountered an error during repo resolution.
-			if getRepoInputRev == nil {
-				return nil
-			}
-
-			resolvers := make([]SearchResultResolver, 0, len(repoList.Repos))
-			for _, repo := range repoList.Repos {
-				rev, ok := repoRevMap[repo.Repository.Name]
-				if !ok {
-					continue
+			return zoektSearchReposOnly(ctx, args.Zoekt.Client, finalQuery, db, c, func() map[string]*search.RepositoryRevisions {
+				<-reposResolved
+				// getRepoInputRev is nil only if we encountered an error during repo resolution.
+				if getRepoInputRev == nil {
+					return nil
 				}
-
-				resolvers = append(resolvers, NewRepositoryResolver(db, &types.Repo{Name: rev.Repo.Name, ID: rev.Repo.ID}))
-			}
-
-			c.Send(SearchEvent{
-				Results: resolvers,
-				Stats:   streaming.Stats{}, // TODO
+				return repoRevMap
 			})
-			return nil
 		}
 
 		return args.Zoekt.Client.StreamSearch(ctx, finalQuery, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
@@ -465,6 +447,37 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 		return nil
 	}
 	c.Send(SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusSearched | search.RepoStatusIndexed)}})
+	return nil
+}
+
+// zoektSearchReposOnly is used when select:repo is set, in which case we can ask zoekt
+// only for the repos that contain matches for the query. This is a performance optimization,
+// and not required for proper function of select:repo.
+func zoektSearchReposOnly(ctx context.Context, client zoekt.Streamer, query zoektquery.Q, db dbutil.DB, c Sender, getRepoRevMap func() map[string]*search.RepositoryRevisions) error {
+	repoList, err := client.List(ctx, query)
+	if err != nil {
+		return err
+	}
+
+	repoRevMap := getRepoRevMap()
+	if repoRevMap == nil {
+		return nil
+	}
+
+	resolvers := make([]SearchResultResolver, 0, len(repoList.Repos))
+	for _, repo := range repoList.Repos {
+		rev, ok := repoRevMap[repo.Repository.Name]
+		if !ok {
+			continue
+		}
+
+		resolvers = append(resolvers, NewRepositoryResolver(db, &types.Repo{Name: rev.Repo.Name, ID: rev.Repo.ID}))
+	}
+
+	c.Send(SearchEvent{
+		Results: resolvers,
+		Stats:   streaming.Stats{}, // TODO
+	})
 	return nil
 }
 
