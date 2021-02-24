@@ -10,7 +10,6 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -23,13 +22,13 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 	}
 
 	ctx := backend.WithAuthzBypass(context.Background())
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
-	store := store.New(dbconn.Global)
+	store := store.New(db)
 
-	admin := ct.CreateTestUser(t, true)
+	admin := ct.CreateTestUser(t, db, true)
 
-	rs, extSvc := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
+	rs, extSvc := ct.CreateTestRepos(t, ctx, db, 1)
 
 	state := ct.MockChangesetSyncState(&protocol.RepoInfo{
 		Name: rs[0].Name,
@@ -159,6 +158,6 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 		})
 
 		// Clean up database.
-		ct.TruncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
+		ct.TruncateTables(t, db, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
 	}
 }

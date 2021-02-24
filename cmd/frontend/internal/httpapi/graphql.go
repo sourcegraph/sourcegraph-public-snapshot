@@ -60,9 +60,17 @@ func serveGraphQL(schema *graphql.Schema, isInternal bool) func(w http.ResponseW
 			return err
 		}
 
-		cost, costErr := graphqlbackend.EstimateQueryCost(params.Query, params.Variables)
-		if costErr != nil {
-			log15.Warn("estimating GraphQL cost", "error", costErr)
+		validationErrs := schema.ValidateWithVariables(params.Query, params.Variables)
+
+		var cost *graphqlbackend.QueryCost
+		var costErr error
+		if len(validationErrs) == 0 {
+			// Don't attempt to estimate an invalid request
+			cost, costErr = graphqlbackend.EstimateQueryCost(params.Query, params.Variables)
+			if costErr != nil {
+				// We send errors to Honeycomb, no need to spam logs
+				log15.Debug("estimating GraphQL cost", "error", costErr)
+			}
 		}
 
 		start := time.Now()
@@ -119,7 +127,7 @@ func traceGraphQL(r *http.Request,
 		log15.Warn("estimating GraphQL cost", "error", costErr)
 		ev.AddField("hasCostError", true)
 		ev.AddField("costError", costErr.Error())
-	} else {
+	} else if cost != nil {
 		ev.AddField("hasCostError", false)
 		ev.AddField("cost", cost.FieldCount)
 		ev.AddField("depth", cost.MaxDepth)

@@ -27,16 +27,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-// searchSymbolResult is a result from symbol search.
-type searchSymbolResult struct {
-	db      dbutil.DB
+// SearchSymbolResult is a result from symbol search.
+type SearchSymbolResult struct {
 	symbol  protocol.Symbol
 	baseURI *gituri.URI
 	lang    string
-	commit  *GitCommitResolver // TODO: change to utility type we create to remove git resolvers from search.
 }
 
-func (s *searchSymbolResult) uri() *gituri.URI {
+func (s *SearchSymbolResult) uri() *gituri.URI {
 	return s.baseURI.WithFilePath(s.symbol.Path)
 }
 
@@ -133,14 +131,16 @@ func limitSymbolResults(res []*FileMatchResolver, limit int) []*FileMatchResolve
 	res2 := make([]*FileMatchResolver, 0, len(res))
 	nsym := 0
 	for _, r := range res {
-		r2 := *r
-		if nsym+len(r.symbols) > limit {
-			r2.symbols = r2.symbols[:limit-nsym]
+		symbols := r.FileMatch.Symbols
+		if nsym+len(symbols) > limit {
+			symbols = symbols[:limit-nsym]
 		}
-		if len(r2.symbols) > 0 {
+		if len(symbols) > 0 {
+			r2 := *r
+			r2.FileMatch.Symbols = symbols
 			res2 = append(res2, &r2)
 		}
-		nsym += len(r2.symbols)
+		nsym += len(symbols)
 		if nsym >= limit {
 			return res2
 		}
@@ -152,7 +152,7 @@ func limitSymbolResults(res []*FileMatchResolver, limit int) []*FileMatchResolve
 func symbolCount(fmrs []*FileMatchResolver) int {
 	nsym := 0
 	for _, fmr := range fmrs {
-		nsym += len(fmr.symbols)
+		nsym += len(fmr.FileMatch.Symbols)
 	}
 	return nsym
 }
@@ -185,14 +185,6 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 	}
 
 	repoResolver := NewRepositoryResolver(db, repoRevs.Repo.ToRepo())
-	commitResolver := &GitCommitResolver{
-		db:           db,
-		repoResolver: repoResolver,
-		oid:          GitObjectID(commitID),
-		inputRev:     &inputRev,
-		// NOTE: Not all fields are set, for performance.
-	}
-
 	symbols, err := backend.Symbols.ListTags(ctx, search.SymbolsParameters{
 		Repo:            repoRevs.Repo.Name,
 		CommitID:        commitID,
@@ -208,26 +200,23 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 	fileMatches := make([]*FileMatchResolver, 0)
 
 	for _, symbol := range symbols {
-		symbolRes := &searchSymbolResult{
-			db:      db,
+		symbolRes := &SearchSymbolResult{
 			symbol:  symbol,
 			baseURI: baseURI,
 			lang:    strings.ToLower(symbol.Language),
-			commit:  commitResolver,
 		}
-		uri := makeFileMatchURIFromSymbol(symbolRes, inputRev)
+		uri := makeFileMatchURI(repoResolver.URL(), inputRev, symbolRes.uri().Fragment)
 		if fileMatch, ok := fileMatchesByURI[uri]; ok {
-			fileMatch.symbols = append(fileMatch.symbols, symbolRes)
+			fileMatch.FileMatch.Symbols = append(fileMatch.FileMatch.Symbols, symbolRes)
 		} else {
 			fileMatch := &FileMatchResolver{
 				db: db,
 				FileMatch: FileMatch{
-					db:       db,
-					JPath:    symbolRes.symbol.Path,
-					symbols:  []*searchSymbolResult{symbolRes},
+					Path:     symbolRes.symbol.Path,
+					Symbols:  []*SearchSymbolResult{symbolRes},
 					uri:      uri,
 					Repo:     repoRevs.Repo,
-					CommitID: api.CommitID(symbolRes.commit.OID()),
+					CommitID: api.CommitID(commitID),
 				},
 				RepoResolver: repoResolver,
 			}
@@ -238,14 +227,14 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 	return fileMatches, err
 }
 
-// makeFileMatchURIFromSymbol makes a git://repo?rev#path URI from a symbol
+// makeFileMatchURI makes a git://repo?rev#path URI from a symbol
 // search result to use in a fileMatchResolver
-func makeFileMatchURIFromSymbol(symbolResult *searchSymbolResult, inputRev string) string {
-	uri := "git:/" + string(symbolResult.commit.Repository().URL())
+func makeFileMatchURI(repoURL, inputRev, symbolFragment string) string {
+	uri := "git:/" + repoURL
 	if inputRev != "" {
 		uri += "?" + inputRev
 	}
-	uri += "#" + symbolResult.uri().Fragment
+	uri += "#" + symbolFragment
 	return uri
 }
 

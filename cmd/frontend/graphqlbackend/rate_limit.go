@@ -69,14 +69,48 @@ func EstimateQueryCost(query string, variables map[string]interface{}) (totalCos
 	}
 
 	// Calculate fragment costs first as we'll need them for the overall operation
-	// cost
+	// cost.
 	fragmentCosts := make(map[string]int)
+	// Fragments can reference other fragments so we need their dependencies.
+	fragmentDeps := make(map[string]map[string]struct{})
+
 	for _, frag := range fragments {
-		cost, err := calcNodeCost(frag, nil, variables)
-		if err != nil {
-			return nil, errors.Wrap(err, "calculating fragment cost")
+		deps := getFragmentDependencies(frag)
+		fragmentDeps[frag.Name.Value] = deps
+	}
+
+	// Checks whether we already have all the costs associated
+	// with fragments included in the fragment fragName
+	haveDepCosts := func(fragName string) bool {
+		deps := fragmentDeps[fragName]
+		for dep := range deps {
+			_, ok := fragmentCosts[dep]
+			if !ok {
+				return false
+			}
 		}
-		fragmentCosts[frag.Name.Value] = cost.FieldCount
+		return true
+	}
+
+	fragSeen := make(map[string]struct{})
+
+	for {
+		for _, frag := range fragments {
+			// Only try and calculate fragment cost if we've seen
+			// all fragments it depends on.
+			if !haveDepCosts(frag.Name.Value) {
+				continue
+			}
+			cost, err := calcNodeCost(frag, fragmentCosts, variables)
+			if err != nil {
+				return nil, errors.Wrap(err, "calculating fragment cost")
+			}
+			fragmentCosts[frag.Name.Value] = cost.FieldCount
+			fragSeen[frag.Name.Value] = struct{}{}
+		}
+		if len(fragSeen) == len(fragments) {
+			break
+		}
 	}
 
 	for _, def := range operations {
@@ -109,8 +143,8 @@ func calcNodeCost(def ast.Node, fragmentCosts map[string]int, variables map[stri
 	if fragmentCosts == nil {
 		fragmentCosts = make(map[string]int)
 	}
-	inlineFragmentCosts := make(map[string]int)
 	inlineFragmentDepth := 0
+	var inlineFragments []string
 
 	// limitStack keeps track of the limit as we increase and decrease our depth in
 	// the tree and encounter limit values
@@ -234,7 +268,8 @@ func calcNodeCost(def ast.Node, fragmentCosts map[string]int, variables map[stri
 					visitErr = errors.Wrap(err, "calculating inline fragment cost")
 					return visitor.ActionBreak, nil
 				}
-				inlineFragmentCosts[node.TypeCondition.Name.Value] = fragCost.FieldCount * multiplier
+				fragmentCosts[node.TypeCondition.Name.Value] = fragCost.FieldCount * multiplier
+				inlineFragments = append(inlineFragments, node.TypeCondition.Name.Value)
 			}
 			return visitor.ActionNoChange, nil
 		},
@@ -254,9 +289,10 @@ func calcNodeCost(def ast.Node, fragmentCosts map[string]int, variables map[stri
 
 	// We also need to pick the largest inline fragment in our tree
 	var maxInlineFragmentCost int
-	for _, v := range inlineFragmentCosts {
-		if v > maxInlineFragmentCost {
-			maxInlineFragmentCost = v
+	for _, v := range inlineFragments {
+		fragCost := fragmentCosts[v]
+		if fragCost > maxInlineFragmentCost {
+			maxInlineFragmentCost = fragCost
 		}
 	}
 
@@ -264,6 +300,25 @@ func calcNodeCost(def ast.Node, fragmentCosts map[string]int, variables map[stri
 		FieldCount: fieldCount + maxInlineFragmentCost,
 		MaxDepth:   maxDepth,
 	}, visitErr
+}
+
+// getFragmentDependencies returns all the fragments this node depend on.
+func getFragmentDependencies(node ast.Node) map[string]struct{} {
+	deps := make(map[string]struct{})
+
+	v := &visitor.VisitorOptions{
+		Enter: func(p visitor.VisitFuncParams) (string, interface{}) {
+			switch node := p.Node.(type) {
+			case *ast.FragmentSpread:
+				deps[node.Name.Value] = struct{}{}
+			}
+			return visitor.ActionNoChange, nil
+		},
+	}
+
+	_ = visitor.Visit(node, v, nil)
+
+	return deps
 }
 
 func extractInt(i interface{}) (int, error) {

@@ -556,16 +556,15 @@ func mkFileMatch(db dbutil.DB, repo *types.RepoName, path string, lineNumbers ..
 			Name: "repo",
 		}
 	}
-	var lines []*lineMatch
+	var lines []*LineMatch
 	for _, n := range lineNumbers {
-		lines = append(lines, &lineMatch{LineNumber: n})
+		lines = append(lines, &LineMatch{LineNumber: n})
 	}
 	return mkFileMatchResolver(db, FileMatch{
-		db:           db,
-		uri:          fileMatchURI(repo.Name, "", path),
-		JPath:        path,
-		JLineMatches: lines,
-		Repo:         repo,
+		uri:         fileMatchURI(repo.Name, "", path),
+		Path:        path,
+		LineMatches: lines,
+		Repo:        repo,
 	})
 }
 

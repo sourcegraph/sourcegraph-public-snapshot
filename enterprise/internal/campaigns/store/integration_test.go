@@ -3,7 +3,6 @@ package store
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
@@ -14,20 +13,20 @@ func TestIntegration(t *testing.T) {
 
 	t.Parallel()
 
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
 	t.Run("Store", func(t *testing.T) {
-		t.Run("Campaigns", storeTest(dbconn.Global, testStoreCampaigns))
-		t.Run("Changesets", storeTest(dbconn.Global, testStoreChangesets))
-		t.Run("ChangesetEvents", storeTest(dbconn.Global, testStoreChangesetEvents))
-		t.Run("ListChangesetSyncData", storeTest(dbconn.Global, testStoreListChangesetSyncData))
-		t.Run("ListChangesetsTextSearch", storeTest(dbconn.Global, testStoreListChangesetsTextSearch))
-		t.Run("CampaignSpecs", storeTest(dbconn.Global, testStoreCampaignSpecs))
-		t.Run("ChangesetSpecs", storeTest(dbconn.Global, testStoreChangesetSpecs))
-		t.Run("ChangesetSpecsCurrentState", storeTest(dbconn.Global, testStoreChangesetSpecsCurrentState))
-		t.Run("ChangesetSpecsCurrentStateAndTextSearch", storeTest(dbconn.Global, testStoreChangesetSpecsCurrentStateAndTextSearch))
-		t.Run("ChangesetSpecsTextSearch", storeTest(dbconn.Global, testStoreChangesetSpecsTextSearch))
-		t.Run("CodeHosts", storeTest(dbconn.Global, testStoreCodeHost))
-		t.Run("UserDeleteCascades", storeTest(dbconn.Global, testUserDeleteCascades))
+		t.Run("Campaigns", storeTest(db, testStoreCampaigns))
+		t.Run("Changesets", storeTest(db, testStoreChangesets))
+		t.Run("ChangesetEvents", storeTest(db, testStoreChangesetEvents))
+		t.Run("ListChangesetSyncData", storeTest(db, testStoreListChangesetSyncData))
+		t.Run("ListChangesetsTextSearch", storeTest(db, testStoreListChangesetsTextSearch))
+		t.Run("CampaignSpecs", storeTest(db, testStoreCampaignSpecs))
+		t.Run("ChangesetSpecs", storeTest(db, testStoreChangesetSpecs))
+		t.Run("ChangesetSpecsCurrentState", storeTest(db, testStoreChangesetSpecsCurrentState))
+		t.Run("ChangesetSpecsCurrentStateAndTextSearch", storeTest(db, testStoreChangesetSpecsCurrentStateAndTextSearch))
+		t.Run("ChangesetSpecsTextSearch", storeTest(db, testStoreChangesetSpecsTextSearch))
+		t.Run("CodeHosts", storeTest(db, testStoreCodeHost))
+		t.Run("UserDeleteCascades", storeTest(db, testUserDeleteCascades))
 	})
 }

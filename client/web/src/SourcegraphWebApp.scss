@@ -72,14 +72,6 @@ body,
     min-width: 0;
 }
 
-// Hide the given element from Percy.
-.percy-hide,
-.monaco-editor .cursor {
-    @media only percy {
-        visibility: hidden !important;
-    }
-}
-
 // Pages
 @import './Layout';
 @import './api/ApiConsole';
@@ -100,6 +92,7 @@ body,
 @import './tree/Tree';
 @import './nav/GlobalNavbar';
 @import './nav/NavLinks';
+@import './nav/IconRadioButtons.scss';
 @import './auth/ResetPasswordPage';
 @import './auth/SignInPage';
 @import './auth/SignUpPage';

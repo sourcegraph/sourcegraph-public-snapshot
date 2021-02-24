@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"strings"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -45,8 +44,10 @@ type GitCommitResolver struct {
 
 	gitRepo api.RepoName
 
-	commitOnce sync.Once
+	// commit should not be accessed directly since it might not be initialized.
+	// Use the resolver methods instead.
 	commit     *git.Commit
+	commitOnce sync.Once
 	commitErr  error
 }
 
@@ -127,7 +128,7 @@ func (r *GitCommitResolver) Message(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return commit.Message, err
+	return string(commit.Message), err
 }
 
 func (r *GitCommitResolver) Subject(ctx context.Context) (string, error) {
@@ -135,7 +136,7 @@ func (r *GitCommitResolver) Subject(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return GitCommitSubject(commit.Message), err
+	return commit.Message.Subject(), nil
 }
 
 func (r *GitCommitResolver) Body(ctx context.Context) (*string, error) {
@@ -144,7 +145,7 @@ func (r *GitCommitResolver) Body(ctx context.Context) (*string, error) {
 		return nil, err
 	}
 
-	body := GitCommitBody(commit.Message)
+	body := commit.Message.Body()
 	if body == "" {
 		return nil, nil
 	}
@@ -171,12 +172,12 @@ func (r *GitCommitResolver) Parents(ctx context.Context) ([]*GitCommitResolver, 
 	return resolvers, nil
 }
 
-func (r *GitCommitResolver) URL() (string, error) {
-	return r.repoResolver.URL() + "/-/commit/" + string(r.inputRevOrImmutableRev()), nil
+func (r *GitCommitResolver) URL() string {
+	return r.repoResolver.URL() + "/-/commit/" + r.inputRevOrImmutableRev()
 }
 
-func (r *GitCommitResolver) CanonicalURL() (string, error) {
-	return r.repoResolver.URL() + "/-/commit/" + string(r.oid), nil
+func (r *GitCommitResolver) CanonicalURL() string {
+	return r.repoResolver.URL() + "/-/commit/" + string(r.oid)
 }
 
 func (r *GitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
@@ -333,22 +334,4 @@ func (r *GitCommitResolver) repoRevURL() (string, error) {
 
 func (r *GitCommitResolver) canonicalRepoRevURL() (string, error) {
 	return r.repoResolver.URL() + "@" + string(r.oid), nil
-}
-
-// GitCommitSubject returns the first line of the Git commit message.
-func GitCommitSubject(message string) string {
-	i := strings.Index(message, "\n")
-	if i == -1 {
-		return message
-	}
-	return message[:i]
-}
-
-// GitCommitBody returns the contents of the Git commit message after the subject.
-func GitCommitBody(message string) string {
-	i := strings.Index(message, "\n")
-	if i == -1 {
-		return ""
-	}
-	return strings.TrimSpace(message[i:])
 }

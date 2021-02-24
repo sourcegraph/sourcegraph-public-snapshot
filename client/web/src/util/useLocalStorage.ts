@@ -12,8 +12,12 @@ export const useLocalStorage = <T>(
     initialValue: T
 ): [T, (value: T | ((previousValue: T) => T)) => void] => {
     const [storedValue, setStoredValue] = useState<T>(() => {
-        const item = localStorage.getItem(key)
-        return item ? (JSON.parse(item) as T) : initialValue
+        try {
+            const item = localStorage.getItem(key)
+            return item ? (JSON.parse(item) as T) : initialValue
+        } catch {
+            return initialValue
+        }
     })
 
     // We want `setValue` to have a stable identity like `setState`, so it shouldn't depend on `storedValue`.

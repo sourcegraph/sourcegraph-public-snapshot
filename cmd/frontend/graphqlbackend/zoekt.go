@@ -370,7 +370,7 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 					repoResolvers[repo.Name] = repoResolver
 				}
 
-				var lines []*lineMatch
+				var lines []*LineMatch
 				if typ != symbolRequest {
 					lines = zoektFileMatchToLineMatches(maxLineFragmentMatches, &file)
 				}
@@ -378,22 +378,21 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 				for _, inputRev := range inputRevs {
 					inputRev := inputRev // copy so we can take the pointer
 
-					var symbols []*searchSymbolResult
+					var symbols []*SearchSymbolResult
 					if typ == symbolRequest {
-						symbols = zoektFileMatchToSymbolResults(repoResolver, db, inputRev, &file)
+						symbols = zoektFileMatchToSymbolResults(repoResolver, inputRev, &file)
 					}
 					fm := &FileMatchResolver{
 						db: db,
 						FileMatch: FileMatch{
-							db:           db,
-							JPath:        file.FileName,
-							JLineMatches: lines,
-							JLimitHit:    fileLimitHit,
-							uri:          fileMatchURI(repo.Name, inputRev, file.FileName),
-							symbols:      symbols,
-							Repo:         repo,
-							CommitID:     api.CommitID(file.Version),
-							InputRev:     &inputRev,
+							Path:        file.FileName,
+							LineMatches: lines,
+							LimitHit:    fileLimitHit,
+							uri:         fileMatchURI(repo.Name, inputRev, file.FileName),
+							Symbols:     symbols,
+							Repo:        repo,
+							CommitID:    api.CommitID(file.Version),
+							InputRev:    &inputRev,
 						},
 						RepoResolver: repoResolver,
 					}
@@ -435,8 +434,8 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 	return nil
 }
 
-func zoektFileMatchToLineMatches(maxLineFragmentMatches int, file *zoekt.FileMatch) []*lineMatch {
-	lines := make([]*lineMatch, 0, len(file.LineMatches))
+func zoektFileMatchToLineMatches(maxLineFragmentMatches int, file *zoekt.FileMatch) []*LineMatch {
+	lines := make([]*LineMatch, 0, len(file.LineMatches))
 
 	for _, l := range file.LineMatches {
 		if l.FileName {
@@ -452,7 +451,7 @@ func zoektFileMatchToLineMatches(maxLineFragmentMatches int, file *zoekt.FileMat
 			length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
 			offsets[k] = [2]int32{int32(offset), int32(length)}
 		}
-		lines = append(lines, &lineMatch{
+		lines = append(lines, &LineMatch{
 			Preview:          string(l.Line),
 			LineNumber:       int32(l.LineNumber - 1),
 			OffsetAndLengths: offsets,
@@ -494,20 +493,14 @@ func escape(s string) string {
 	return string(escaped)
 }
 
-func zoektFileMatchToSymbolResults(repo *RepositoryResolver, db dbutil.DB, inputRev string, file *zoekt.FileMatch) []*searchSymbolResult {
+func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, file *zoekt.FileMatch) []*SearchSymbolResult {
 	// Symbol search returns a resolver so we need to pass in some
 	// extra stuff. This is a sign that we can probably restructure
 	// resolvers to avoid this.
 	baseURI := &gituri.URI{URL: url.URL{Scheme: "git", Host: repo.Name(), RawQuery: url.QueryEscape(inputRev)}}
-	commit := &GitCommitResolver{
-		db:           db,
-		repoResolver: repo,
-		oid:          GitObjectID(file.Version),
-		inputRev:     &inputRev,
-	}
 	lang := strings.ToLower(file.Language)
 
-	symbols := make([]*searchSymbolResult, 0, len(file.LineMatches))
+	symbols := make([]*SearchSymbolResult, 0, len(file.LineMatches))
 	for _, l := range file.LineMatches {
 		if l.FileName {
 			continue
@@ -518,8 +511,7 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, db dbutil.DB, input
 				continue
 			}
 
-			symbols = append(symbols, &searchSymbolResult{
-				db: db,
+			symbols = append(symbols, &SearchSymbolResult{
 				symbol: protocol.Symbol{
 					Name:       m.SymbolInfo.Sym,
 					Kind:       m.SymbolInfo.Kind,
@@ -535,7 +527,6 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, db dbutil.DB, input
 				},
 				lang:    lang,
 				baseURI: baseURI,
-				commit:  commit,
 			})
 		}
 	}

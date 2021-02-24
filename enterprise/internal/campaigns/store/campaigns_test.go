@@ -466,7 +466,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 	})
 
 	t.Run("GetCampaignDiffStat", func(t *testing.T) {
-		userID := ct.CreateTestUser(t, false).ID
+		userID := ct.CreateTestUser(t, s.DB(), false).ID
 		userCtx := actor.WithActor(ctx, actor.FromUser(userID))
 		repoStore := database.ReposWith(s)
 		esStore := database.ExternalServicesWith(s)
@@ -504,7 +504,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 		}
 
 		// Now revoke repo access, and check that we don't see it in the diff stat anymore.
-		ct.MockRepoPermissions(t, 0, repo.ID)
+		ct.MockRepoPermissions(t, s.DB(), 0, repo.ID)
 		{
 			want := &diff.Stat{
 				Added:   0,
@@ -543,8 +543,8 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 }
 
 func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	orgID := ct.InsertTestOrg(t, "user-delete-cascades")
-	user := ct.CreateTestUser(t, false)
+	orgID := ct.InsertTestOrg(t, s.DB(), "user-delete-cascades")
+	user := ct.CreateTestUser(t, s.DB(), false)
 
 	t.Run("User delete", func(t *testing.T) {
 		// Set up two campaigns and specs: one in the user's namespace (which

@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -36,9 +35,9 @@ func TestPermissionLevels(t *testing.T) {
 
 	db := dbtesting.GetDB(t)
 
-	cstore := store.New(dbconn.Global)
+	cstore := store.New(db)
 	sr := New(cstore)
-	s, err := graphqlbackend.NewSchema(dbconn.Global, sr, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,8 +51,8 @@ func TestPermissionLevels(t *testing.T) {
 	ctx := context.Background()
 
 	// Global test data that we reuse in every test
-	adminID := ct.CreateTestUser(t, true).ID
-	userID := ct.CreateTestUser(t, false).ID
+	adminID := ct.CreateTestUser(t, db, true).ID
+	userID := ct.CreateTestUser(t, db, false).ID
 
 	repoStore := database.ReposWith(cstore)
 	esStore := database.ExternalServicesWith(cstore)
@@ -760,11 +759,11 @@ func TestRepositoryPermissions(t *testing.T) {
 		t.Skip()
 	}
 
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
-	cstore := store.New(dbconn.Global)
+	cstore := store.New(db)
 	sr := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(dbconn.Global, sr, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -775,7 +774,7 @@ func TestRepositoryPermissions(t *testing.T) {
 	mockBackendCommits(t, testRev)
 
 	// Global test data that we reuse in every test
-	userID := ct.CreateTestUser(t, false).ID
+	userID := ct.CreateTestUser(t, db, false).ID
 
 	repoStore := database.ReposWith(cstore)
 	esStore := database.ExternalServicesWith(cstore)
@@ -873,7 +872,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		// Now we set permissions and filter out the repository of one changeset
 		filteredRepo := changesets[0].RepoID
 		accessibleRepo := changesets[1].RepoID
-		ct.MockRepoPermissions(t, userID, accessibleRepo)
+		ct.MockRepoPermissions(t, db, userID, accessibleRepo)
 
 		// Send query again and check that for each filtered repository we get a
 		// HiddenChangeset
@@ -972,7 +971,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		// Now we set permissions and filter out the repository of one changeset
 		filteredRepo := changesetSpecs[0].RepoID
 		accessibleRepo := changesetSpecs[1].RepoID
-		ct.MockRepoPermissions(t, userID, accessibleRepo)
+		ct.MockRepoPermissions(t, db, userID, accessibleRepo)
 
 		// Send query again and check that for each filtered repository we get a
 		// HiddenChangesetSpec.
