@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/store"
 )
 
@@ -272,14 +271,6 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request) (matche
 		fileMatchLimit = maxFileMatchLimit
 	}
 
-	var sp filter.SelectPath
-	if p.Select != "" {
-		sp, err = filter.SelectPathFromString(p.Select)
-		if err != nil {
-			return nil, false, false, err
-		}
-	}
-
 	patternInfo :=
 		&search.TextPatternInfo{
 			Pattern:                      p.Pattern,
@@ -296,7 +287,6 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request) (matche
 			PatternMatchesContent:        p.PatternMatchesContent,
 			PatternMatchesPath:           p.PatternMatchesPath,
 			Languages:                    p.Languages,
-			Select:                       sp,
 		}
 
 	if p.Branch == "" {
