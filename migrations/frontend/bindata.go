@@ -110,8 +110,8 @@
 // 1528395786_diagnostic_counts_migration.up.sql (277B)
 // 1528395787_reconciler_changesets_view.down.sql (60B)
 // 1528395787_reconciler_changesets_view.up.sql (598B)
-// 1528395788_add_config_encrypted.down.sql (87B)
-// 1528395788_add_config_encrypted.up.sql (98B)
+// 1528395788_add_encryption_key_ident.down.sql (88B)
+// 1528395788_add_encryption_key_ident.up.sql (116B)
 
 package migrations
 
@@ -2380,43 +2380,43 @@ func _1528395787_reconciler_changesets_viewUpSql() (*asset, error) {
 	return a, nil
 }
 
-var __1528395788_add_config_encryptedDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xad\x28\x49\x2d\xca\x4b\xcc\x89\x2f\x4e\x2d\x2a\xcb\x4c\x4e\x2d\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xce\xcf\x4b\xcb\x4c\x8f\x4f\xcd\x4b\x2e\xaa\x2c\x28\x49\x4d\xb1\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xb8\x04\x97\xac\x57\x00\x00\x00")
+var __1528395788_add_encryption_key_identDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xad\x28\x49\x2d\xca\x4b\xcc\x89\x2f\x4e\x2d\x2a\xcb\x4c\x4e\x2d\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xcd\x4b\x2e\xaa\x2c\x28\xc9\xcc\xcf\x8b\xcf\x4e\xad\x8c\xcf\x4c\xb1\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xac\x42\xaa\x36\x58\x00\x00\x00")
 
-func _1528395788_add_config_encryptedDownSqlBytes() ([]byte, error) {
+func _1528395788_add_encryption_key_identDownSqlBytes() ([]byte, error) {
 	return bindataRead(
-		__1528395788_add_config_encryptedDownSql,
-		"1528395788_add_config_encrypted.down.sql",
+		__1528395788_add_encryption_key_identDownSql,
+		"1528395788_add_encryption_key_ident.down.sql",
 	)
 }
 
-func _1528395788_add_config_encryptedDownSql() (*asset, error) {
-	bytes, err := _1528395788_add_config_encryptedDownSqlBytes()
+func _1528395788_add_encryption_key_identDownSql() (*asset, error) {
+	bytes, err := _1528395788_add_encryption_key_identDownSqlBytes()
 	if err != nil {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "1528395788_add_config_encrypted.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x92, 0xdf, 0x7d, 0x30, 0x6d, 0x25, 0x5, 0xf7, 0x5a, 0x3, 0xd4, 0x44, 0xe6, 0x9c, 0xab, 0xda, 0xbd, 0xa, 0x40, 0x94, 0x7c, 0x88, 0xd6, 0x2a, 0xeb, 0x1b, 0x9f, 0x65, 0xb8, 0xb7, 0x74, 0xa6}}
+	info := bindataFileInfo{name: "1528395788_add_encryption_key_ident.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x4a, 0x76, 0x2e, 0xb2, 0xd0, 0x38, 0xb1, 0x25, 0xef, 0x82, 0x23, 0xc8, 0x25, 0x58, 0x40, 0x89, 0xac, 0x1f, 0xc6, 0xdf, 0xf9, 0x6d, 0x4c, 0x17, 0x19, 0xff, 0x3f, 0xdf, 0x35, 0xda, 0xbe, 0xcc}}
 	return a, nil
 }
 
-var __1528395788_add_config_encryptedUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x04\xc0\x4b\x0a\xc2\x30\x10\x06\xe0\xfd\x9c\xe2\xbf\x47\x56\x69\x1b\x25\x90\x07\xd8\x11\xdc\x95\x1a\x47\x29\x94\x89\xa4\x41\xf4\xf6\x7e\x83\x3b\xfb\x64\x88\x6c\x60\x77\x01\xdb\x21\x38\xc8\xb7\x4b\xd3\x75\x5f\x0e\x69\x9f\xad\xc8\x01\x3b\x4d\x18\x73\xb8\xc6\x04\x7f\x42\xca\x0c\x77\xf3\x33\xcf\x28\x55\x9f\xdb\x6b\x11\x2d\xed\xf7\xee\xf2\xc0\xbd\xd6\x5d\x56\x35\x44\x63\x8e\xd1\xb3\xa1\x7f\x00\x00\x00\xff\xff\x87\xc3\x2e\x82\x62\x00\x00\x00")
+var __1528395788_add_encryption_key_identUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x1c\xca\x31\x0a\xc3\x20\x14\x06\xe0\xdd\x53\xfc\x5b\x0e\x91\xc9\x44\x53\x84\xa7\x42\xf3\x84\x6e\x52\xd2\x37\x48\x8b\x2d\x46\x4a\x72\xfb\x42\xf7\x6f\xb2\x17\x17\x46\xa5\x34\xb1\xbd\x82\xf5\x44\x16\x72\x74\x69\xf5\xfe\xca\xbb\xb4\x6f\xd9\x64\x87\x36\x06\x73\xa4\xe4\x03\xdc\x82\x10\x19\xf6\xe6\x56\x5e\x21\x75\x6b\xe7\xa7\x97\x77\xcd\x4f\x39\x73\x79\xa0\xcb\xd1\xff\x22\x24\x22\x18\xbb\xe8\x44\x8c\x61\x18\x95\x9a\xa3\xf7\x8e\x47\xf5\x0b\x00\x00\xff\xff\x79\xd6\xae\xd7\x74\x00\x00\x00")
 
-func _1528395788_add_config_encryptedUpSqlBytes() ([]byte, error) {
+func _1528395788_add_encryption_key_identUpSqlBytes() ([]byte, error) {
 	return bindataRead(
-		__1528395788_add_config_encryptedUpSql,
-		"1528395788_add_config_encrypted.up.sql",
+		__1528395788_add_encryption_key_identUpSql,
+		"1528395788_add_encryption_key_ident.up.sql",
 	)
 }
 
-func _1528395788_add_config_encryptedUpSql() (*asset, error) {
-	bytes, err := _1528395788_add_config_encryptedUpSqlBytes()
+func _1528395788_add_encryption_key_identUpSql() (*asset, error) {
+	bytes, err := _1528395788_add_encryption_key_identUpSqlBytes()
 	if err != nil {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "1528395788_add_config_encrypted.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x41, 0x50, 0x2c, 0xac, 0x2e, 0x8c, 0xc3, 0xa8, 0xd6, 0xa5, 0x5e, 0xf5, 0x92, 0x4d, 0x8b, 0x26, 0x39, 0x22, 0x57, 0x4b, 0x50, 0x52, 0xba, 0x3e, 0x77, 0xfc, 0x40, 0x1c, 0xbd, 0xf2, 0x64, 0x9b}}
+	info := bindataFileInfo{name: "1528395788_add_encryption_key_ident.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xed, 0xcd, 0xf6, 0x92, 0xb6, 0x1a, 0x3c, 0x2e, 0xbc, 0xd8, 0x75, 0x91, 0x76, 0xe3, 0xeb, 0x23, 0x8f, 0x65, 0xbf, 0xd5, 0xa9, 0x45, 0xfd, 0x50, 0xaf, 0x1f, 0x8a, 0x14, 0xff, 0x86, 0x67, 0xa4}}
 	return a, nil
 }
 
@@ -2621,8 +2621,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395786_diagnostic_counts_migration.up.sql":                                          _1528395786_diagnostic_counts_migrationUpSql,
 	"1528395787_reconciler_changesets_view.down.sql":                                         _1528395787_reconciler_changesets_viewDownSql,
 	"1528395787_reconciler_changesets_view.up.sql":                                           _1528395787_reconciler_changesets_viewUpSql,
-	"1528395788_add_config_encrypted.down.sql":                                               _1528395788_add_config_encryptedDownSql,
-	"1528395788_add_config_encrypted.up.sql":                                                 _1528395788_add_config_encryptedUpSql,
+	"1528395788_add_encryption_key_ident.down.sql":                                           _1528395788_add_encryption_key_identDownSql,
+	"1528395788_add_encryption_key_ident.up.sql":                                             _1528395788_add_encryption_key_identUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2779,8 +2779,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395786_diagnostic_counts_migration.up.sql":                                          {_1528395786_diagnostic_counts_migrationUpSql, map[string]*bintree{}},
 	"1528395787_reconciler_changesets_view.down.sql":                                         {_1528395787_reconciler_changesets_viewDownSql, map[string]*bintree{}},
 	"1528395787_reconciler_changesets_view.up.sql":                                           {_1528395787_reconciler_changesets_viewUpSql, map[string]*bintree{}},
-	"1528395788_add_config_encrypted.down.sql":                                               {_1528395788_add_config_encryptedDownSql, map[string]*bintree{}},
-	"1528395788_add_config_encrypted.up.sql":                                                 {_1528395788_add_config_encryptedUpSql, map[string]*bintree{}},
+	"1528395788_add_encryption_key_ident.down.sql":                                           {_1528395788_add_encryption_key_identDownSql, map[string]*bintree{}},
+	"1528395788_add_encryption_key_ident.up.sql":                                             {_1528395788_add_encryption_key_identUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
