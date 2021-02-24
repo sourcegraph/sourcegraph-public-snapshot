@@ -373,6 +373,30 @@ fragment BarFields on Bar {
 				MaxDepth:   1,
 			},
 		},
+		{
+			name: "More nested fragments",
+			query: `
+{
+  node {
+    ...FileFragment
+  }
+}
+
+fragment FileFragment on File {
+  ... on Usable {
+    ...UsableFields
+  }
+}
+
+fragment UsableFields on Usable {
+  isUsable
+}
+`,
+			want: QueryCost{
+				FieldCount: 3,
+				MaxDepth:   2,
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			want := tc.want
