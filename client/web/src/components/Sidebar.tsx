@@ -39,7 +39,7 @@ export const SidebarGroupHeader: React.FunctionComponent<{
     children?: undefined
 }> = ({ icon: Icon, label }) => (
     <div className="card-header">
-        {Icon && <Icon className="icon-inline" />} {label}
+        {Icon && <Icon className="icon-inline mr-1" />} {label}
     </div>
 )
 

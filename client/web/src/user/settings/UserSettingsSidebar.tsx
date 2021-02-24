@@ -2,6 +2,8 @@ import AddIcon from 'mdi-react/AddIcon'
 import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import ServerIcon from 'mdi-react/ServerIcon'
 import MapSearchOutlineIcon from 'mdi-react/MapSearchOutlineIcon'
+import AccountCircleIcon from 'mdi-react/AccountCircleIcon'
+import DomainIcon from 'mdi-react/DomainIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 import {
@@ -71,7 +73,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
             )}
 
             <SidebarGroup>
-                <SidebarGroupHeader label="User account" />
+                <SidebarGroupHeader label="User account" icon={AccountCircleIcon} />
                 <SidebarGroupItems>
                     {props.items.account.map(
                         ({ label, to, exact, condition = () => true }) =>
@@ -86,7 +88,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
 
             {(props.user.organizations.nodes.length > 0 || !siteAdminViewingOtherUser) && (
                 <SidebarGroup>
-                    <SidebarGroupHeader label="Organizations" />
+                    <SidebarGroupHeader label="Organizations" icon={DomainIcon} />
                     <SidebarGroupItems>
                         {props.user.organizations.nodes.map(org => (
                             <SidebarNavItem
