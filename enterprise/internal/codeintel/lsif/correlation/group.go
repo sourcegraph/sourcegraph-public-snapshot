@@ -195,7 +195,7 @@ func serializeResultChunks(ctx context.Context, state *State, numResultChunks in
 			}
 
 			documentPaths := map[lsifstore.ID]string{}
-			rangeIDsByResultID := map[lsifstore.ID][]lsifstore.DocumentIDRangeID{}
+			rangeIDsByResultID := make(map[lsifstore.ID][]lsifstore.DocumentIDRangeID, len(resultIDs))
 
 			for _, resultID := range resultIDs {
 				documentRanges, ok := state.DefinitionData[resultID]
