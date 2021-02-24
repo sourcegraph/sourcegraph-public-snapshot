@@ -9,7 +9,6 @@ import (
 
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
-	zoektstream "github.com/google/zoekt/stream"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -28,7 +27,7 @@ type HorizontalSearcher struct {
 }
 
 // StreamSearch does a search which merges the stream from every endpoint in Map.
-func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, streamer zoektstream.Streamer) error {
+func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, streamer zoekt.Sender) error {
 	clients, err := s.searchers()
 	if err != nil {
 		return err
@@ -71,7 +70,7 @@ func (s *HorizontalSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.
 
 // AggregateStreamSearch aggregates the stream events into a single batch
 // result.
-func AggregateStreamSearch(ctx context.Context, streamSearch func(context.Context, query.Q, *zoekt.SearchOptions, zoektstream.Streamer) error, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
+func AggregateStreamSearch(ctx context.Context, streamSearch func(context.Context, query.Q, *zoekt.SearchOptions, zoekt.Sender) error, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
 	start := time.Now()
 
 	var mu sync.Mutex
