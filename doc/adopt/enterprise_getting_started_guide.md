@@ -16,6 +16,7 @@ If you're deploying a new Enterprise instance, this page covers our most frequen
 - [GitHub integration](../integration/github.md)
 - [All code host integrations (not GitLab or GitHub)](../integration/index.md#integrations)
 - [Full guide to site config options](../admin/config/site_config.md#auth-sessionExpiry)
+- [Changelog](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md) to track releases and updates
 
 ### Docker-compose
 - [Basic installation guide](../admin/install/docker-compose/index.md)
