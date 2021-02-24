@@ -26,7 +26,8 @@ func TestMakeFileMatchURIFromSymbol(t *testing.T) {
 	baseURI, _ := gituri.Parse("https://github.com/foo/bar")
 
 	repoResolver := NewRepositoryResolver(db, &types.Repo{ID: 1, Name: "repo"})
-	sr := &SearchSymbolResult{symbol, baseURI, "go"}
+	commitResolver := toGitCommitResolver(repoResolver, db, "", nil)
+	sr := &SearchSymbolResult{symbol, baseURI, "go", commitResolver}
 
 	tests := []struct {
 		rev  string

@@ -32,6 +32,7 @@ type SearchSymbolResult struct {
 	symbol  protocol.Symbol
 	baseURI *gituri.URI
 	lang    string
+	commit  *GitCommitResolver // TODO: change to utility type we create to remove git resolvers from search.
 }
 
 func (s *SearchSymbolResult) uri() *gituri.URI {
@@ -185,6 +186,14 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 	}
 
 	repoResolver := NewRepositoryResolver(db, repoRevs.Repo.ToRepo())
+	commitResolver := &GitCommitResolver{
+		db:           db,
+		repoResolver: repoResolver,
+		oid:          GitObjectID(commitID),
+		inputRev:     &inputRev,
+		// NOTE: Not all fields are set, for performance.
+	}
+
 	symbols, err := backend.Symbols.ListTags(ctx, search.SymbolsParameters{
 		Repo:            repoRevs.Repo.Name,
 		CommitID:        commitID,
@@ -204,6 +213,7 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 			symbol:  symbol,
 			baseURI: baseURI,
 			lang:    strings.ToLower(symbol.Language),
+			commit:  commitResolver,
 		}
 		uri := makeFileMatchURI(repoResolver.URL(), inputRev, symbolRes.uri().Fragment)
 		if fileMatch, ok := fileMatchesByURI[uri]; ok {
@@ -216,7 +226,7 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 					Symbols:  []*SearchSymbolResult{symbolRes},
 					uri:      uri,
 					Repo:     repoRevs.Repo,
-					CommitID: api.CommitID(commitID),
+					CommitID: api.CommitID(symbolRes.commit.OID()),
 				},
 				RepoResolver: repoResolver,
 			}
