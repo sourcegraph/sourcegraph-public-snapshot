@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 )
@@ -254,7 +255,8 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 				if len(sr.symbol.Name) >= 4 && strings.Contains(strings.ToLower(sr.uri().String()), strings.ToLower(sr.symbol.Name)) {
 					score++
 				}
-				results = append(results, newSearchSuggestionResolver(sr, score))
+				symbolResolver := toSymbolResolver(r.db, sr.symbol, sr.baseURI, sr.lang, sr.commit)
+				results = append(results, newSearchSuggestionResolver(symbolResolver, score))
 			}
 		}
 
@@ -349,6 +351,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		file     string
 		symbol   string
 		lang     string
+		uri      *gituri.URI
 	}
 	seen := make(map[key]struct{}, len(allSuggestions))
 	uniqueSuggestions := allSuggestions[:0]
@@ -369,8 +372,8 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			// (that do specify a commit ID), because their key k (i.e., k in seen[k]) will not
 			// equal.
 			k.file = s.Path()
-		case *searchSymbolResult:
-			k.repoName = api.RepoName(s.commit.Repository().Name())
+		case *symbolResolver:
+			k.uri = s.uri
 			k.symbol = s.symbol.Name + s.symbol.Parent
 		case *languageResolver:
 			k.lang = s.name
