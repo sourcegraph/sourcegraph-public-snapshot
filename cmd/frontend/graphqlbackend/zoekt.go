@@ -545,12 +545,6 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, db dbutil.DB, input
 	// extra stuff. This is a sign that we can probably restructure
 	// resolvers to avoid this.
 	baseURI := &gituri.URI{URL: url.URL{Scheme: "git", Host: repo.Name(), RawQuery: url.QueryEscape(inputRev)}}
-	commit := &GitCommitResolver{
-		db:           db,
-		repoResolver: repo,
-		oid:          GitObjectID(file.Version),
-		inputRev:     &inputRev,
-	}
 	lang := strings.ToLower(file.Language)
 
 	symbols := make([]*SearchSymbolResult, 0, len(file.LineMatches))
@@ -580,7 +574,6 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, db dbutil.DB, input
 				},
 				lang:    lang,
 				baseURI: baseURI,
-				commit:  commit,
 			})
 		}
 	}
