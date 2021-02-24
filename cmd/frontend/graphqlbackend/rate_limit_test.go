@@ -354,6 +354,25 @@ fragment FileDiffFields on FileDiff {
 				"repo": "github.com/presslabs/mysql-operator",
 			},
 		},
+		{
+			name: "Nested named fragments",
+			query: `
+query{
+    __typename
+	...FooFields
+}
+fragment FooFields on Foo {
+	...BarFields
+}
+fragment BarFields on Bar {
+	one
+}
+`,
+			want: QueryCost{
+				FieldCount: 1,
+				MaxDepth:   1,
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			want := tc.want
