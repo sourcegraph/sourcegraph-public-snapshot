@@ -224,10 +224,9 @@ SELECT num_result_chunks FROM lsif_data_metadata WHERE dump_id = %s
 const resultChunkBatchSize = 50
 
 // readLocationsFromResultChunks reads the given result chunk indexes for a given bundle. This method returns
-// a map from documents to range identifiers that compose each of the given input result set identifiers. This
-// method also returns a deduplicated and sorted set of document paths that are referenced in the output map.
-// If a non-empty target path is supplied, then any range falling outside that document path will be omitted
-// from the output.
+// a map from documents to range identifiers that compose each of the given input result set identifiers. If
+// a non-empty target path is supplied, then any range falling outside that document path will be omitted from
+// the output.
 func (s *Store) readLocationsFromResultChunks(ctx context.Context, bundleID int, ids []ID, indexes []int, targetPath string) (map[ID]map[string][]ID, int, error) {
 	totalCount := 0
 	rangeIDsByResultID := make(map[ID]map[string][]ID, len(ids))
