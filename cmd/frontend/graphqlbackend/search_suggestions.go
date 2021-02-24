@@ -255,7 +255,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 				if len(sr.symbol.Name) >= 4 && strings.Contains(strings.ToLower(sr.uri().String()), strings.ToLower(sr.symbol.Name)) {
 					score++
 				}
-				symbolResolver := toSymbolResolver(r.db, sr.symbol, sr.baseURI, sr.lang, sr.commit)
+				symbolResolver := toSymbolResolver(r.db, sr)
 				results = append(results, newSearchSuggestionResolver(symbolResolver, score))
 			}
 		}
@@ -373,7 +373,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			// equal.
 			k.file = s.Path()
 		case *symbolResolver:
-			k.uri = s.uri
+			k.uri = s.uri()
 			k.symbol = s.symbol.Name + s.symbol.Parent
 		case *languageResolver:
 			k.lang = s.name
