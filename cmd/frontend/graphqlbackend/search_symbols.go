@@ -213,7 +213,7 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 			lang:    strings.ToLower(symbol.Language),
 			commit:  commitResolver,
 		}
-		uri := makeFileMatchURIFromSymbol(symbolRes, inputRev)
+		uri := makeFileMatchURI(repoResolver.URL(), inputRev, symbolRes.uri().Fragment)
 		if fileMatch, ok := fileMatchesByURI[uri]; ok {
 			fileMatch.symbols = append(fileMatch.symbols, symbolRes)
 		} else {
@@ -235,14 +235,14 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 	return fileMatches, err
 }
 
-// makeFileMatchURIFromSymbol makes a git://repo?rev#path URI from a symbol
+// makeFileMatchURI makes a git://repo?rev#path URI from a symbol
 // search result to use in a fileMatchResolver
-func makeFileMatchURIFromSymbol(symbolResult *searchSymbolResult, inputRev string) string {
-	uri := "git:/" + symbolResult.commit.Repository().URL()
+func makeFileMatchURI(repoURL, inputRev, symbolFragment string) string {
+	uri := "git:/" + repoURL
 	if inputRev != "" {
 		uri += "?" + inputRev
 	}
-	uri += "#" + symbolResult.uri().Fragment
+	uri += "#" + symbolFragment
 	return uri
 }
 

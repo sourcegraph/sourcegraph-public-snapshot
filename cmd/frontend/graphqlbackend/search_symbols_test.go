@@ -28,8 +28,9 @@ func TestMakeFileMatchURIFromSymbol(t *testing.T) {
 	baseURI, _ := gituri.Parse("https://github.com/foo/bar")
 	gitSignatureWithDate := git.Signature{Date: time.Now().UTC().AddDate(0, 0, -1)}
 
+	repoResolver := NewRepositoryResolver(db, &types.Repo{ID: 1, Name: "repo"})
 	commit := toGitCommitResolver(
-		NewRepositoryResolver(db, &types.Repo{ID: 1, Name: "repo"}),
+		repoResolver,
 		db,
 		"c1",
 		&git.Commit{ID: "c1", Author: gitSignatureWithDate},
@@ -45,7 +46,7 @@ func TestMakeFileMatchURIFromSymbol(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		got := makeFileMatchURIFromSymbol(sr, test.rev)
+		got := makeFileMatchURI(repoResolver.URL(), test.rev, sr.uri().Fragment)
 		if got != test.want {
 			t.Errorf("rev(%v) got %v want %v", test.rev, got, test.want)
 		}
