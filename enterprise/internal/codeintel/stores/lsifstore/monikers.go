@@ -135,7 +135,7 @@ outer:
 
 const bulkMonikerResultsQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/monikers.go:BulkMonikerResults
-SELECT dump_id, scheme, identifier, data FROM %s WHERE dump_id IN (%s) AND (scheme, identifier) IN (%s) ORDER BY (scheme, identifier, dump_id)
+SELECT dump_id, scheme, identifier, data FROM %s WHERE dump_id IN (%s) AND (scheme, identifier) IN (%s) ORDER BY (dump_id, scheme, identifier)
 `
 
 func monikersToString(vs []MonikerData) string {
