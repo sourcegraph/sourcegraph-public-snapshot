@@ -1220,6 +1220,14 @@ func getPatternInfo(q query.Q, opts *getPatternInfoOptions) (*search.TextPattern
 
 	languages, _ := q.StringValues(query.FieldLang)
 
+	var sp filter.SelectPath
+	if sf, _ := q.StringValue(query.FieldSelect); sf != "" {
+		sp, err = filter.SelectPathFromString(sf)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	patternInfo := &search.TextPatternInfo{
 		IsRegExp:                     isRegExp,
 		IsStructuralPat:              isStructuralPat,
@@ -1234,6 +1242,7 @@ func getPatternInfo(q query.Q, opts *getPatternInfoOptions) (*search.TextPattern
 		PathPatternsAreCaseSensitive: q.IsCaseSensitive(),
 		CombyRule:                    strings.Join(combyRule, ""),
 		Index:                        indexValue(q),
+		Select:                       sp,
 	}
 	if len(excludePatterns) > 0 {
 		patternInfo.ExcludePattern = searchrepos.UnionRegExps(excludePatterns)

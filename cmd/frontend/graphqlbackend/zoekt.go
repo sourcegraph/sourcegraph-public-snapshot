@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
+	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
@@ -262,18 +263,19 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 	// We use reposResolved to synchronize repo resolution and event processing.
 	reposResolved := make(chan struct{})
 	var getRepoInputRev zoektutil.RepoRevFunc
+	var repoRevMap map[string]*search.RepositoryRevisions
 
 	g, ctx := errgroup.WithContext(ctx)
 
 	// Resolve repositories.
 	g.Go(func() error {
 		defer close(reposResolved)
-		if args.Mode == search.ZoektGlobalSearch {
+		if args.Mode == search.ZoektGlobalSearch || args.PatternInfo.Select.Type == filter.Repository {
 			repos, err := getRepos(ctx, args.RepoPromise)
 			if err != nil {
 				return err
 			}
-			repoRevMap := make(map[string]*search.RepositoryRevisions, len(repos))
+			repoRevMap = make(map[string]*search.RepositoryRevisions, len(repos))
 			for _, r := range repos {
 				repoRevMap[string(r.Repo.Name)] = r
 			}
@@ -310,6 +312,20 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 			ctx, cancel = contextWithoutDeadline(ctx)
 			defer cancel()
 		}
+
+		// PERF: if we are going to be selecting to repo results only anyways, we can just ask
+		// zoekt for only results of type repo.
+		if args.PatternInfo.Select.Type == filter.Repository {
+			return zoektSearchReposOnly(ctx, args.Zoekt.Client, finalQuery, db, c, func() map[string]*search.RepositoryRevisions {
+				<-reposResolved
+				// getRepoInputRev is nil only if we encountered an error during repo resolution.
+				if getRepoInputRev == nil {
+					return nil
+				}
+				return repoRevMap
+			})
+		}
+
 		return args.Zoekt.Client.StreamSearch(ctx, finalQuery, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
 
 			mu.Lock()
@@ -431,6 +447,37 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 		return nil
 	}
 	c.Send(SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusSearched | search.RepoStatusIndexed)}})
+	return nil
+}
+
+// zoektSearchReposOnly is used when select:repo is set, in which case we can ask zoekt
+// only for the repos that contain matches for the query. This is a performance optimization,
+// and not required for proper function of select:repo.
+func zoektSearchReposOnly(ctx context.Context, client zoekt.Streamer, query zoektquery.Q, db dbutil.DB, c Sender, getRepoRevMap func() map[string]*search.RepositoryRevisions) error {
+	repoList, err := client.List(ctx, query)
+	if err != nil {
+		return err
+	}
+
+	repoRevMap := getRepoRevMap()
+	if repoRevMap == nil {
+		return nil
+	}
+
+	resolvers := make([]SearchResultResolver, 0, len(repoList.Repos))
+	for _, repo := range repoList.Repos {
+		rev, ok := repoRevMap[repo.Repository.Name]
+		if !ok {
+			continue
+		}
+
+		resolvers = append(resolvers, NewRepositoryResolver(db, &types.Repo{Name: rev.Repo.Name, ID: rev.Repo.ID}))
+	}
+
+	c.Send(SearchEvent{
+		Results: resolvers,
+		Stats:   streaming.Stats{}, // TODO
+	})
 	return nil
 }
 

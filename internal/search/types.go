@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
+	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -154,6 +155,7 @@ type TextPatternInfo struct {
 	IsCaseSensitive bool
 	FileMatchLimit  int32
 	Index           query.YesNoOnly
+	Select          filter.SelectPath
 
 	// We do not support IsMultiline
 	// IsMultiline     bool
