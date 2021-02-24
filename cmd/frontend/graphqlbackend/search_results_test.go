@@ -1039,7 +1039,7 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 					&FileMatchResolver{
 						db: db,
 						FileMatch: FileMatch{
-							symbols: []*searchSymbolResult{
+							Symbols: []*searchSymbolResult{
 								// 1
 								{},
 								// 2
@@ -1059,7 +1059,7 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 					&FileMatchResolver{
 						db: db,
 						FileMatch: FileMatch{
-							symbols: []*searchSymbolResult{
+							Symbols: []*searchSymbolResult{
 								// 1
 								{},
 								// 2
@@ -1481,7 +1481,7 @@ func fileResult(db dbutil.DB, uri string, lineMatches []*lineMatch, symbolMatche
 		FileMatch: FileMatch{
 			uri:         uri,
 			LineMatches: lineMatches,
-			symbols:     symbolMatches,
+			Symbols:     symbolMatches,
 		},
 	}
 }
@@ -1508,11 +1508,13 @@ func sortResultResolvers(rs []SearchResultResolver) {
 
 	for _, res := range rs {
 		if fm, ok := res.(*FileMatchResolver); ok {
-			sort.Slice(fm.FileMatch.LineMatches, func(i, j int) bool {
-				return fm.FileMatch.LineMatches[i].Preview < fm.FileMatch.LineMatches[j].Preview
+			lm := fm.FileMatch.LineMatches
+			sort.Slice(lm, func(i, j int) bool {
+				return lm[i].Preview < lm[j].Preview
 			})
-			sort.Slice(fm.symbols, func(i, j int) bool {
-				return fm.symbols[i].symbol.Name < fm.symbols[j].symbol.Name
+			syms := fm.FileMatch.Symbols
+			sort.Slice(syms, func(i, j int) bool {
+				return syms[i].symbol.Name < syms[j].symbol.Name
 			})
 		}
 	}
@@ -1696,7 +1698,7 @@ func searchResultResolversToString(srrs []SearchResultResolver) string {
 		switch v := srr.(type) {
 		case *FileMatchResolver:
 			symbols := []string{}
-			for _, symbol := range v.symbols {
+			for _, symbol := range v.FileMatch.Symbols {
 				symbols = append(symbols, symbol.symbol.Name)
 			}
 			lines := []string{}

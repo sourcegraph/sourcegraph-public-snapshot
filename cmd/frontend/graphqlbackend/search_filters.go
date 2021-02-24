@@ -145,7 +145,7 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			addLangFilter(fm.path(), lines, fm.LimitHit())
 			addFileFilter(fm.path(), lines, fm.LimitHit())
 
-			if len(fm.symbols) > 0 {
+			if len(fm.FileMatch.Symbols) > 0 {
 				s.filters.Add("type:symbol", "type:symbol", 1, fm.LimitHit(), "symbol")
 			}
 		} else if r, ok := result.ToRepository(); ok {

@@ -238,7 +238,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			if !ok {
 				continue
 			}
-			for _, sr := range fileMatch.symbols {
+			for _, sr := range fileMatch.FileMatch.Symbols {
 				score := 20
 				if sr.symbol.Parent == "" {
 					score++

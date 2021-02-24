@@ -50,7 +50,7 @@ type FileMatch struct {
 }
 
 func (fm *FileMatch) ResultCount() int {
-	rc := len(fm.symbols)
+	rc := len(fm.Symbols)
 	for _, m := range fm.LineMatches {
 		rc += len(m.OffsetAndLengths)
 	}
@@ -64,7 +64,7 @@ func (fm *FileMatch) ResultCount() int {
 // counts and limit.
 func (fm *FileMatch) appendMatches(src *FileMatch) {
 	fm.LineMatches = append(fm.LineMatches, src.LineMatches...)
-	fm.symbols = append(fm.symbols, src.symbols...)
+	fm.Symbols = append(fm.Symbols, src.Symbols...)
 	fm.LimitHit = fm.LimitHit || src.LimitHit
 }
 
@@ -118,8 +118,8 @@ func (fm *FileMatchResolver) Resource() string {
 }
 
 func (fm *FileMatchResolver) Symbols() []symbolResolver {
-	symbols := make([]symbolResolver, len(fm.symbols))
-	for i, s := range fm.symbols {
+	symbols := make([]symbolResolver, len(fm.FileMatch.Symbols))
+	for i, s := range fm.FileMatch.Symbols {
 		symbols[i] = toSymbolResolver(fm.db, s)
 	}
 	return symbols
@@ -165,11 +165,11 @@ func (fm *FileMatchResolver) Select(t filter.SelectPath) SearchResultResolver {
 		return fm.Repository()
 	case filter.File:
 		fm.FileMatch.LineMatches = nil
-		fm.FileMatch.symbols = nil
+		fm.FileMatch.Symbols = nil
 		return fm
 	case filter.Symbol:
 		// Only return file match if symbols exist
-		if len(fm.symbols) > 0 {
+		if len(fm.FileMatch.Symbols) > 0 {
 			fm.FileMatch.LineMatches = nil
 			return fm
 		}
@@ -177,7 +177,7 @@ func (fm *FileMatchResolver) Select(t filter.SelectPath) SearchResultResolver {
 	case filter.Content:
 		// Only return file match if line matches exist
 		if len(fm.FileMatch.LineMatches) > 0 {
-			fm.symbols = nil
+			fm.FileMatch.Symbols = nil
 			return fm
 		}
 		return nil
