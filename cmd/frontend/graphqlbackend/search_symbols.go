@@ -238,7 +238,7 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 // makeFileMatchURIFromSymbol makes a git://repo?rev#path URI from a symbol
 // search result to use in a fileMatchResolver
 func makeFileMatchURIFromSymbol(symbolResult *searchSymbolResult, inputRev string) string {
-	uri := "git:/" + string(symbolResult.commit.Repository().URL())
+	uri := "git:/" + symbolResult.commit.Repository().URL()
 	if inputRev != "" {
 		uri += "?" + inputRev
 	}
