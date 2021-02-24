@@ -40,7 +40,7 @@ type FileMatch struct {
 	LineMatches []*LineMatch
 	LimitHit    bool
 
-	Symbols  []*searchSymbolResult `json:"-"`
+	Symbols  []*SearchSymbolResult `json:"-"`
 	uri      string                `json:"-"`
 	Repo     *types.RepoName       `json:"-"`
 	CommitID api.CommitID          `json:"-"`

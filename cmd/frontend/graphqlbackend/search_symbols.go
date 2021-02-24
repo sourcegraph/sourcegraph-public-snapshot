@@ -27,14 +27,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-// searchSymbolResult is a result from symbol search.
-type searchSymbolResult struct {
+// SearchSymbolResult is a result from symbol search.
+type SearchSymbolResult struct {
 	symbol  protocol.Symbol
 	baseURI *gituri.URI
 	lang    string
 }
 
-func (s *searchSymbolResult) uri() *gituri.URI {
+func (s *SearchSymbolResult) uri() *gituri.URI {
 	return s.baseURI.WithFilePath(s.symbol.Path)
 }
 
@@ -200,7 +200,7 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 	fileMatches := make([]*FileMatchResolver, 0)
 
 	for _, symbol := range symbols {
-		symbolRes := &searchSymbolResult{
+		symbolRes := &SearchSymbolResult{
 			symbol:  symbol,
 			baseURI: baseURI,
 			lang:    strings.ToLower(symbol.Language),
@@ -213,7 +213,7 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 				db: db,
 				FileMatch: FileMatch{
 					Path:     symbolRes.symbol.Path,
-					Symbols:  []*searchSymbolResult{symbolRes},
+					Symbols:  []*SearchSymbolResult{symbolRes},
 					uri:      uri,
 					Repo:     repoRevs.Repo,
 					CommitID: api.CommitID(commitID),
