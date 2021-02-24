@@ -18,7 +18,7 @@ export const LinkWithIcon: React.FunctionComponent<{
     return (
         <LinkComponent {...linkProps} data-testid={dataTestID}>
             <Icon className="icon-inline" />
-            <span className="inline-block ml-1">{children}</span>
+            <span className="inline-block ml-2">{children}</span>
         </LinkComponent>
     )
 }
