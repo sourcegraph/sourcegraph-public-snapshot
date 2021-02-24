@@ -330,7 +330,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 .pipe(
                     repeatUntil(
                         result => {
-                            debugger
                             // if the background job takes too long we should update the button
                             // text to indicate we're still working on it.
 
