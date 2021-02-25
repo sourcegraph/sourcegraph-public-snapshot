@@ -14,6 +14,7 @@ var SyntectLanguageMap = map[string]string{
 	"bat":                  "bat",
 	"cmd":                  "cmd",
 	"build":                "build",
+	"build.in":             "build",
 	"c#":                   "cs",
 	"cs":                   "cs",
 	"csx":                  "csx",
