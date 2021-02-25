@@ -139,7 +139,7 @@ type happinessFeedbackSubmissionForHubSpot struct {
 	Email      *string `url:"email"`
 	Score      int32   `url:"happiness_score"`
 	Feedback   *string `url:"happiness_feedback"`
-	CurrentURL string  `url:"happiness_current_url"`
+	CurrentURL *string `url:"happiness_current_url"`
 	IsTest     bool    `url:"happiness_is_test"`
 	SiteID     string  `url:"site_id"`
 }
@@ -149,13 +149,15 @@ func (r *schemaResolver) SubmitHappinessFeedback(ctx context.Context, args *stru
 	Input *HappinessFeedbackSubmissionInput
 }) (*EmptyResponse, error) {
 	var email *string
+	var currentURL *string
 
 	if args.Input.Score < 1 || args.Input.Score > 4 {
 		return nil, errors.New("Score must be a value between 1 and 4")
 	}
 
-	// If we are on Sourcegraph.com, we want to capture the email of the user
+	// If we are on Sourcegraph.com, we want to capture the email and current url of the user
 	if envvar.SourcegraphDotComMode() {
+		currentURL = &args.Input.CurrentURL
 		actor := actor.FromContext(ctx)
 
 		// If user is authenticated, use their uid and set the email field.
@@ -175,7 +177,7 @@ func (r *schemaResolver) SubmitHappinessFeedback(ctx context.Context, args *stru
 		Email:      email,
 		Score:      args.Input.Score,
 		Feedback:   args.Input.Feedback,
-		CurrentURL: args.Input.CurrentURL,
+		CurrentURL: currentURL,
 		IsTest:     env.InsecureDev,
 		SiteID:     siteid.Get(),
 	}); err != nil {
