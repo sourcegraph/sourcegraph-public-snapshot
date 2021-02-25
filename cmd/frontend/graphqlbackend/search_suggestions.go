@@ -238,7 +238,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			if !ok {
 				continue
 			}
-			for _, sr := range fileMatch.FileMatch.Symbols {
+			for _, sr := range fileMatch.Symbols() {
 				score := 20
 				if sr.symbol.Parent == "" {
 					score++
@@ -255,8 +255,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 				if len(sr.symbol.Name) >= 4 && strings.Contains(strings.ToLower(sr.uri().String()), strings.ToLower(sr.symbol.Name)) {
 					score++
 				}
-				symbolResolver := toSymbolResolver(r.db, sr)
-				results = append(results, newSearchSuggestionResolver(symbolResolver, score))
+				results = append(results, newSearchSuggestionResolver(sr, score))
 			}
 		}
 

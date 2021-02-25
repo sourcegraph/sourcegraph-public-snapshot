@@ -26,6 +26,7 @@
 - [Commit messages](commit_messages.md)
 - [Exposing services](exposing-services.md)
 - [Developing a store](basestore.md)
+- [Developing an out-of-band migration](oobmigrations.md)
 
 ## [Languages](languages/index.md)
 

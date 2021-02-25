@@ -152,6 +152,7 @@ func searchZoektSymbols(ctx context.Context, db dbutil.DB, commit *GitCommitReso
 
 				res = append(res, toSymbolResolver(
 					db,
+					commit,
 					&SearchSymbolResult{
 						symbol: protocol.Symbol{
 							Name:       m.SymbolInfo.Sym,
@@ -163,7 +164,6 @@ func searchZoektSymbols(ctx context.Context, db dbutil.DB, commit *GitCommitReso
 						},
 						baseURI: baseURI,
 						lang:    strings.ToLower(file.Language),
-						commit:  commit,
 					},
 				))
 			}
@@ -214,17 +214,17 @@ func computeSymbols(ctx context.Context, db dbutil.DB, commit *GitCommitResolver
 			symbol:  symbol,
 			baseURI: baseURI,
 			lang:    strings.ToLower(symbol.Language),
-			commit:  commit,
 		}
-		resolver := toSymbolResolver(db, &sr)
+		resolver := toSymbolResolver(db, commit, &sr)
 		resolvers = append(resolvers, resolver)
 	}
 	return resolvers, err
 }
 
-func toSymbolResolver(db dbutil.DB, sr *SearchSymbolResult) symbolResolver {
+func toSymbolResolver(db dbutil.DB, commit *GitCommitResolver, sr *SearchSymbolResult) symbolResolver {
 	return symbolResolver{
 		db:                 db,
+		commit:             commit,
 		SearchSymbolResult: sr,
 	}
 }
@@ -242,7 +242,8 @@ func (r *symbolConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.P
 }
 
 type symbolResolver struct {
-	db dbutil.DB
+	db     dbutil.DB
+	commit *GitCommitResolver
 	*SearchSymbolResult
 }
 
@@ -267,13 +268,10 @@ func (r symbolResolver) Language() string { return r.symbol.Language }
 
 func (r symbolResolver) Location() *locationResolver {
 	uri := r.baseURI.WithFilePath(r.symbol.Path)
+	stat := CreateFileInfo(uri.Fragment, false)
 	sr := symbolRange(r.symbol)
 	return &locationResolver{
-		resource: &GitTreeEntryResolver{
-			db:     r.db,
-			commit: r.commit,
-			stat:   CreateFileInfo(uri.Fragment, false), // assume the path refers to a file (not dir)
-		},
+		resource: NewGitTreeEntryResolver(r.commit, r.db, stat),
 		lspRange: &sr,
 	}
 }

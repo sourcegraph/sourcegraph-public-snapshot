@@ -90,14 +90,18 @@ func (fm *FileMatchResolver) File() *GitTreeEntryResolver {
 	// (which would make it slow). This GitCommitResolver will return empty
 	// values for all other fields.
 	return &GitTreeEntryResolver{
-		db: fm.db,
-		commit: &GitCommitResolver{
-			db:           fm.db,
-			repoResolver: fm.RepoResolver,
-			oid:          GitObjectID(fm.CommitID),
-			inputRev:     fm.InputRev,
-		},
-		stat: CreateFileInfo(fm.Path, false),
+		db:     fm.db,
+		commit: fm.Commit(),
+		stat:   CreateFileInfo(fm.Path, false),
+	}
+}
+
+func (fm *FileMatchResolver) Commit() *GitCommitResolver {
+	return &GitCommitResolver{
+		db:           fm.db,
+		repoResolver: fm.RepoResolver,
+		oid:          GitObjectID(fm.CommitID),
+		inputRev:     fm.InputRev,
 	}
 }
 
@@ -119,9 +123,10 @@ func (fm *FileMatchResolver) Resource() string {
 }
 
 func (fm *FileMatchResolver) Symbols() []symbolResolver {
+	commit := fm.Commit()
 	symbols := make([]symbolResolver, len(fm.FileMatch.Symbols))
 	for i, s := range fm.FileMatch.Symbols {
-		symbols[i] = toSymbolResolver(fm.db, s)
+		symbols[i] = toSymbolResolver(fm.db, commit, s)
 	}
 	return symbols
 }

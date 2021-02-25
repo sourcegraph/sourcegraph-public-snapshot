@@ -17,6 +17,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/tmpfriend"
+	"github.com/throttled/throttled/v2/store/redigostore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
@@ -32,12 +33,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
@@ -120,6 +123,8 @@ func InitDB() (*sql.DB, error) {
 
 // Main is the main entrypoint for the frontend server program.
 func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner) enterprise.Services) error {
+	ctx := context.Background()
+
 	log.SetFlags(0)
 	log.SetPrefix("")
 
@@ -134,12 +139,27 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 
 	ui.InitRouter(db)
 
-	if err := handleConfigOverrides(); err != nil {
-		log.Fatal("applying config overrides:", err)
+	// override site config first
+	if err := overrideSiteConfig(ctx); err != nil {
+		log.Fatalf("failed to apply site config overrides: %v", err)
 	}
-
 	globals.ConfigurationServerFrontendOnly = conf.InitConfigurationServerFrontendOnly(&configurationSource{})
 	conf.MustValidateDefaults()
+
+	// now we can init the keyring, as it depends on site config
+	if err := keyring.Init(ctx); err != nil {
+		log.Fatalf("failed to initialize encryption keyring: %v", err)
+	}
+
+	if err := overrideGlobalSettings(ctx, db); err != nil {
+		log.Fatalf("failed to override global settings: %v", err)
+	}
+
+	// now the keyring is configured it's safe to override the rest of the config
+	// and that config can access the keyring
+	if err := overrideExtSvcConfig(ctx, db); err != nil {
+		log.Fatalf("failed to override external service config: %v", err)
+	}
 
 	// Filter trace logs
 	d, _ := time.ParseDuration(traceThreshold)
@@ -164,7 +184,7 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 			env.PrintHelp()
 
 			log.Print()
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 			defer cancel()
 			for _, st := range sysreq.Check(ctx, skippedSysReqs()) {
 				log.Printf("%s:", st.Name)
@@ -225,12 +245,18 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 		return err
 	}
 
-	server, err := makeExternalAPI(db, schema, enterprise)
+	ratelimitStore, err := redigostore.New(redispool.Cache, "gql:rl:", 0)
+	if err != nil {
+		return err
+	}
+	rateLimitWatcher := graphqlbackend.NewRateLimiteWatcher(ratelimitStore)
+
+	server, err := makeExternalAPI(db, schema, enterprise, rateLimitWatcher)
 	if err != nil {
 		return err
 	}
 
-	internalAPI, err := makeInternalAPI(schema, db, enterprise)
+	internalAPI, err := makeInternalAPI(schema, db, enterprise, rateLimitWatcher)
 	if err != nil {
 		return err
 	}
@@ -254,9 +280,9 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	return nil
 }
 
-func makeExternalAPI(db dbutil.DB, schema *graphql.Schema, enterprise enterprise.Services) (goroutine.BackgroundRoutine, error) {
+func makeExternalAPI(db dbutil.DB, schema *graphql.Schema, enterprise enterprise.Services, rateLimiter *graphqlbackend.RateLimitWatcher) (goroutine.BackgroundRoutine, error) {
 	// Create the external HTTP handler.
-	externalHandler, err := newExternalHTTPHandler(db, schema, enterprise.GitHubWebhook, enterprise.GitLabWebhook, enterprise.BitbucketServerWebhook, enterprise.NewCodeIntelUploadHandler, enterprise.NewExecutorProxyHandler)
+	externalHandler, err := newExternalHTTPHandler(db, schema, enterprise.GitHubWebhook, enterprise.GitLabWebhook, enterprise.BitbucketServerWebhook, enterprise.NewCodeIntelUploadHandler, enterprise.NewExecutorProxyHandler, rateLimiter)
 	if err != nil {
 		return nil, err
 	}
@@ -276,7 +302,7 @@ func makeExternalAPI(db dbutil.DB, schema *graphql.Schema, enterprise enterprise
 	return server, nil
 }
 
-func makeInternalAPI(schema *graphql.Schema, db dbutil.DB, enterprise enterprise.Services) (goroutine.BackgroundRoutine, error) {
+func makeInternalAPI(schema *graphql.Schema, db dbutil.DB, enterprise enterprise.Services, rateLimiter *graphqlbackend.RateLimitWatcher) (goroutine.BackgroundRoutine, error) {
 	if httpAddrInternal == "" {
 		return nil, nil
 	}
@@ -287,7 +313,7 @@ func makeInternalAPI(schema *graphql.Schema, db dbutil.DB, enterprise enterprise
 	}
 
 	// The internal HTTP handler does not include the auth handlers.
-	internalHandler := newInternalHTTPHandler(schema, db, enterprise.NewCodeIntelUploadHandler)
+	internalHandler := newInternalHTTPHandler(schema, db, enterprise.NewCodeIntelUploadHandler, rateLimiter)
 
 	server := httpserver.New(listener, &http.Server{
 		Handler:     internalHandler,
