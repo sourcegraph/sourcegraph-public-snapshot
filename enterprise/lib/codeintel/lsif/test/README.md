@@ -29,20 +29,20 @@ This command validates the output of an LSIF indexer. The following properties a
 - 1-to-n edges have a non-empty `inVs` array
 - Edges refer to identifiers attached to the correct element type, as follows:
 
-    | label                     | inV(s)                     | outV                | condition |
-    | ------------------------- | -------------------------- | ------------------- | --------- |
-    | `contains`                | `range`                    |                     | if outV is a `document` |
-    | `item`                    | `range`                    |                     | |
-    | `item`                    | `referenceResult`          |                     | if outV is a `referenceResult` |
-    | `next`                    | `resultSet`                | `range`/`resultSet` | |
-    | `textDocument/definition` | `definitionResult`         | `range`/`resultSet` | |
-    | `textDocument/references` | `referenceResult`          | `range`/`resultSet` | |
-    | `textDocument/hover`      | `hoverResult`              | `range`/`resultSet` | |
-    | `moniker`                 | `moniker`                  | `range`/`resultSet` | |
-    | `nextMoniker`             | `moniker`                  | `moniker`           | |
-    | `packageInformation`      | `packageInformation`       | `moniker`           | |
+  | label                     | inV(s)               | outV                | condition                      |
+  | ------------------------- | -------------------- | ------------------- | ------------------------------ |
+  | `contains`                | `range`              |                     | if outV is a `document`        |
+  | `item`                    | `range`              |                     |                                |
+  | `item`                    | `referenceResult`    |                     | if outV is a `referenceResult` |
+  | `next`                    | `resultSet`          | `range`/`resultSet` |                                |
+  | `textDocument/definition` | `definitionResult`   | `range`/`resultSet` |                                |
+  | `textDocument/references` | `referenceResult`    | `range`/`resultSet` |                                |
+  | `textDocument/hover`      | `hoverResult`        | `range`/`resultSet` |                                |
+  | `moniker`                 | `moniker`            | `range`/`resultSet` |                                |
+  | `nextMoniker`             | `moniker`            | `moniker`           |                                |
+  | `packageInformation`      | `packageInformation` | `moniker`           |                                |
 
-- Each vertex is reachable from a range or document vertex (*ignored: metadata, project, document, and event vertices*)
+- Each vertex is reachable from a range or document vertex (_ignored: metadata, project, document, and event vertices_)
 - Each range belongs to a unique document
 - No two ranges belonging to the same document improperly overlap
 - The inVs of each `item` edge belong to that document referred to by the edge's `document` field
