@@ -1569,8 +1569,6 @@ github.com/sourcegraph/httpgzip v0.0.0-20210213125624-48ebf036a6a1 h1:o9U79WCNQj
 github.com/sourcegraph/httpgzip v0.0.0-20210213125624-48ebf036a6a1/go.mod h1:RqWagzxNGCvucQQC9vX6aps474LCCOgshDpUTTyb+O8=
 github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf h1:oAdWFqhStsWiiMP/vkkHiMXqFXzl1XfUNOdxKJbd6bI=
 github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf/go.mod h1:ppFaPm6kpcHnZGqQTFhUIAQRIEhdQDWP1PCv4/ON354=
-github.com/sourcegraph/lsif-protocol v1.0.0 h1:NLxbnHuN2o4fibjRUrXTwuojD4+kDFPXra9PA1V6tQM=
-github.com/sourcegraph/lsif-protocol v1.0.0/go.mod h1:VEuG8FZ3ISQOAHbzdj+qwS9nUfFlMsP4rVRBnDLztkQ=
 github.com/sourcegraph/oauth2 v0.0.0-20201011192344-605770292164 h1:rv2hMQh0TjywisSWYyj1JrdnA8iVnkmYv9oEgKh5Thc=
 github.com/sourcegraph/oauth2 v0.0.0-20201011192344-605770292164/go.mod h1:gOpvHmFTYa4IltrdGE7lF6nIHvwfUNPOp7c8zoXwtLw=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG93cPwA5f7s/ZPBJnGOYQNK/vKsaDaseuKT5Asee8=
