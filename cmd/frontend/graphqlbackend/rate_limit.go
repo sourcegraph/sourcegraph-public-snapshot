@@ -366,9 +366,9 @@ type RateLimitWatcher struct {
 	rl    atomic.Value // *RateLimiter
 }
 
-// NewRateLimiter creates a new limiter with the provided store and starts
+// NewRateLimiteWatcher creates a new limiter with the provided store and starts
 // watching for config changes.
-func NewRateLimiter(store throttled.GCRAStore) *RateLimitWatcher {
+func NewRateLimiteWatcher(store throttled.GCRAStore) *RateLimitWatcher {
 	w := &RateLimitWatcher{
 		store: store,
 	}

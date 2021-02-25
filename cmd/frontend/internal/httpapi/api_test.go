@@ -20,7 +20,7 @@ func newTest() *httptestutil.Client {
 	enterpriseServices := enterprise.DefaultServices()
 	db := new(dbtesting.MockDB)
 	rateLimitStore, _ := memstore.New(1024)
-	rateLimiter := graphqlbackend.NewRateLimiter(rateLimitStore)
+	rateLimiter := graphqlbackend.NewRateLimiteWatcher(rateLimitStore)
 
 	return httptestutil.NewTest(NewHandler(db,
 		router.New(mux.NewRouter()),

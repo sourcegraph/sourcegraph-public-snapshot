@@ -231,7 +231,7 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	if err != nil {
 		return err
 	}
-	rateLimitWatcher := graphqlbackend.NewRateLimiter(ratelimitStore)
+	rateLimitWatcher := graphqlbackend.NewRateLimiteWatcher(ratelimitStore)
 
 	server, err := makeExternalAPI(db, schema, enterprise, rateLimitWatcher)
 	if err != nil {
