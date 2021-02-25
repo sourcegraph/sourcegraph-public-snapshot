@@ -210,10 +210,10 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 			}
 
 			var apiKEY amconfig.Secret
-			if opsGenieAPIKey != "" {
-				apiKEY = amconfig.Secret(opsGenieAPIKey)
-			} else {
+			if notifier.Opsgenie.ApiKey != "" {
 				apiKEY = amconfig.Secret(notifier.Opsgenie.ApiKey)
+			} else {
+				apiKEY = amconfig.Secret(opsGenieAPIKey)
 			}
 
 			responders := make([]amconfig.OpsGenieConfigResponder, len(notifier.Opsgenie.Responders))
