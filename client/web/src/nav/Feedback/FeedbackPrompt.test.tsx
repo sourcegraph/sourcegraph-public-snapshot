@@ -11,8 +11,9 @@ let mockResponse: MutationResult<SubmitHappinessFeedbackResult> = { loading: fal
 const mockSubmitFn = sinon.spy((parameters: SubmitHappinessFeedbackVariables) => undefined)
 const history = createMemoryHistory()
 
-jest.mock('../../hooks/useMutation', () => ({
+jest.mock('../../hooks', () => ({
     useMutation: () => [mockSubmitFn, mockResponse],
+    useRouteMatch: () => '/some-route',
 }))
 
 describe('FeedbackPrompt', () => {
@@ -67,7 +68,7 @@ describe('FeedbackPrompt', () => {
                 input: {
                     score: 4,
                     feedback: 'Lorem ipsum dolor sit amet',
-                    currentURL: 'http://localhost/',
+                    currentPath: '/some-route',
                 },
             })
         })

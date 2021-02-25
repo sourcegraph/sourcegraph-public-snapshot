@@ -2800,9 +2800,9 @@ input HappinessFeedbackSubmissionInput {
     """
     feedback: String
     """
-    The URL that the happiness feedback will be submitted from.
+    The path that the happiness feedback will be submitted from.
     """
-    currentURL: String!
+    currentPath: String
 }
 
 """

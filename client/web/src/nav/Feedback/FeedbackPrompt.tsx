@@ -10,11 +10,12 @@ import { gql } from '../../../../shared/src/graphql/graphql'
 import { LoaderButton } from '../../components/LoaderButton'
 import { SubmitHappinessFeedbackResult, SubmitHappinessFeedbackVariables } from '../../graphql-operations'
 import { useLocalStorage } from '../../util/useLocalStorage'
-import { useMutation } from '../../hooks/useMutation'
+import { useMutation, useRoutesMatch } from '../../hooks'
 import { IconRadioButtons } from '../IconRadioButtons'
 import { Happy, Sad, VeryHappy, VerySad } from './FeedbackIcons'
 import { Form } from '../../../../branded/src/components/Form'
 import { ErrorAlert } from '../../components/alerts'
+import { routes } from '../../routes'
 
 export const HAPPINESS_FEEDBACK_OPTIONS = [
     {
@@ -56,6 +57,7 @@ const LOCAL_STORAGE_KEY_RATING = 'feedbackPromptRating'
 const LOCAL_STORAGE_KEY_TEXT = 'feedbackPromptText'
 
 const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({ closePrompt, history }) => {
+    const match = useRoutesMatch(routes)
     const [rating, setRating] = useLocalStorage<number | undefined>(LOCAL_STORAGE_KEY_RATING, undefined)
     const [text, setText] = useLocalStorage<string>(LOCAL_STORAGE_KEY_TEXT, '')
     const handleRateChange = useCallback((value: number) => setRating(value), [setRating])
@@ -73,11 +75,11 @@ const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({ closePro
             event.preventDefault()
             if (rating) {
                 return submitFeedback({
-                    input: { score: rating, feedback: text, currentURL: window.location.href },
+                    input: { score: rating, feedback: text, currentPath: match },
                 })
             }
         },
-        [rating, submitFeedback, text]
+        [rating, submitFeedback, text, match]
     )
 
     useEffect(() => {
