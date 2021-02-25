@@ -382,7 +382,7 @@ func NewRateLimiteWatcher(store throttled.GCRAStore) *RateLimitWatcher {
 }
 
 // Get returns the current rate limiter. If rate limiting is currently disabled
-// (nil, false) us returned.
+// (nil, false) is returned.
 func (w *RateLimitWatcher) Get() (*RateLimiter, bool) {
 	if l, ok := w.rl.Load().(*RateLimiter); ok && l.enabled {
 		return l, true
