@@ -42,7 +42,7 @@ We implement several store implementations rather than combining all Postgres-re
 
 1. Higher cohesion and better understandability/maintainability of each store
 1. Better code isolation between teams/features (repo store vs codeintel store)
-1. We target more than one physical database instance (codeintel/codeinsights dbs are separate)
+1. We target more than one physical database instance (main app / codeintel / codeinsights DBs are separate)
 
 This creates a new problem around two stores _interacting_ when more than one store is required in a single code path. Stores should enable a way to borrow the underlying handle of another store instance so that they can operate within the same transaction context.
 
