@@ -1,6 +1,6 @@
 # Developing a store
 
-Code that interacts directly with a Postgres instance should be grouped and hidden behind a `Store` boundary. This enables a separation of concerns between our data access layer and the rest of the application logic. Consumers of such a store should rely on an interface type mirroring the methods from the target store that are of use to the consumer, allowing a mock to be substituted into the concrete store's place in unit tests.
+Code that interacts directly with a Postgres instance should be grouped and hidden behind a `Store` abstraction. This enables a separation of concerns between our data access layer and the rest of the application logic. Consumers of such a store should rely on an _interface_ with the methods from the target store that are used, allowing a mock to be substituted into the concrete store's place in unit tests.
 
 The following behaviors should be implemented over all stores:
 
