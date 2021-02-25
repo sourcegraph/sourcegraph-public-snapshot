@@ -2,7 +2,7 @@
   "ID": "MDExOlB1bGxSZXF1ZXN0NTA2MDg0ODU2",
   "Title": "This is a test PR, feel free to ignore",
   "Body": "I'm opening this PR to test something. Please ignore.",
-  "State": "OPEN",
+  "State": "CLOSED",
   "URL": "https://github.com/sourcegraph/automation-testing/pull/362",
   "HeadRefOid": "74097e5da1cf90978bcd25689fa76bd87bde8006",
   "BaseRefOid": "6274d04b734de9f057bb5f196a5046a9e86ba992",
@@ -10,13 +10,14 @@
   "BaseRefName": "master",
   "Number": 362,
   "Author": {
-   "AvatarURL": "https://avatars0.githubusercontent.com/u/19534377?v=4",
+   "AvatarURL": "https://avatars.githubusercontent.com/u/19534377?v=4",
    "Login": "eseliger",
-   "URL": "https://github.com/eseliger"
+   "URL": "https://github.com/eseliger",
+   "Email": "erikseliger@me.com"
   },
   "Participants": [
    {
-    "AvatarURL": "https://avatars0.githubusercontent.com/u/19534377?v=4",
+    "AvatarURL": "https://avatars.githubusercontent.com/u/19534377?v=4",
     "Login": "eseliger",
     "URL": "https://github.com/eseliger"
    }
@@ -34,13 +35,25 @@
       "MessageHeadline": "Update README.md",
       "URL": "https://github.com/sourcegraph/automation-testing/commit/74097e5da1cf90978bcd25689fa76bd87bde8006",
       "Committer": {
-       "AvatarURL": "https://avatars3.githubusercontent.com/u/19864447?v=4",
+       "AvatarURL": "https://avatars.githubusercontent.com/u/19864447?v=4",
        "Email": "noreply@github.com",
        "Name": "GitHub"
       },
       "CommittedDate": "2020-10-19T15:45:22Z",
       "PushedDate": "2020-10-19T15:45:24Z"
      }
+    }
+   },
+   {
+    "Type": "ClosedEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/19534377?v=4",
+      "Login": "eseliger",
+      "URL": "https://github.com/eseliger"
+     },
+     "CreatedAt": "2020-10-19T23:57:06Z",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/362#event-3895976907"
     }
    }
   ],
@@ -82,5 +95,5 @@
   },
   "IsDraft": false,
   "CreatedAt": "2020-10-19T15:45:29Z",
-  "UpdatedAt": "2020-10-19T15:45:29Z"
+  "UpdatedAt": "2020-10-19T23:57:06Z"
  }

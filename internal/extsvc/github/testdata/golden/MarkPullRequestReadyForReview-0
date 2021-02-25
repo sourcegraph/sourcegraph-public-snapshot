@@ -10,13 +10,14 @@
   "BaseRefName": "master",
   "Number": 361,
   "Author": {
-   "AvatarURL": "https://avatars0.githubusercontent.com/u/19534377?v=4",
+   "AvatarURL": "https://avatars.githubusercontent.com/u/19534377?v=4",
    "Login": "eseliger",
-   "URL": "https://github.com/eseliger"
+   "URL": "https://github.com/eseliger",
+   "Email": "erikseliger@me.com"
   },
   "Participants": [
    {
-    "AvatarURL": "https://avatars0.githubusercontent.com/u/19534377?v=4",
+    "AvatarURL": "https://avatars.githubusercontent.com/u/19534377?v=4",
     "Login": "eseliger",
     "URL": "https://github.com/eseliger"
    }
@@ -34,7 +35,7 @@
       "MessageHeadline": "Create draft PR",
       "URL": "https://github.com/sourcegraph/automation-testing/commit/b8330ebc3ab38f165c858e7d488b678d7358aa27",
       "Committer": {
-       "AvatarURL": "https://camo.githubusercontent.com/33d4c509ae479643c65ba8967c16b869c1558e90/68747470733a2f2f322e67726176617461722e636f6d2f6176617461722f34366333653536396163366530356264326136366339313661396666343934633f643d68747470732533412532462532466769746875622e6769746875626173736574732e636f6d253246696d6167657325324667726176617461727325324667726176617461722d757365722d3432302e706e6726723d67",
+       "AvatarURL": "https://camo.githubusercontent.com/3e3eb4d10714f844caf76fb37fd9d457c037d5dbd300f25f56c519ab743bb78e/68747470733a2f2f322e67726176617461722e636f6d2f6176617461722f34366333653536396163366530356264326136366339313661396666343934633f643d68747470732533412532462532466769746875622e6769746875626173736574732e636f6d253246696d6167657325324667726176617461727325324667726176617461722d757365722d3432302e706e6726723d67",
        "Email": "campaigns@sourcegraph.com",
        "Name": "Sourcegraph"
       },
@@ -47,7 +48,7 @@
     "Type": "ReadyForReviewEvent",
     "Item": {
      "Actor": {
-      "AvatarURL": "https://avatars0.githubusercontent.com/u/19534377?v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/19534377?v=4",
       "Login": "eseliger",
       "URL": "https://github.com/eseliger"
      },
@@ -58,7 +59,7 @@
     "Type": "ConvertToDraftEvent",
     "Item": {
      "Actor": {
-      "AvatarURL": "https://avatars0.githubusercontent.com/u/19534377?v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/19534377?v=4",
       "Login": "eseliger",
       "URL": "https://github.com/eseliger"
      },
@@ -69,7 +70,7 @@
     "Type": "ReadyForReviewEvent",
     "Item": {
      "Actor": {
-      "AvatarURL": "https://avatars0.githubusercontent.com/u/19534377?v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/19534377?v=4",
       "Login": "eseliger",
       "URL": "https://github.com/eseliger"
      },
@@ -80,7 +81,7 @@
     "Type": "ConvertToDraftEvent",
     "Item": {
      "Actor": {
-      "AvatarURL": "https://avatars0.githubusercontent.com/u/19534377?v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/19534377?v=4",
       "Login": "eseliger",
       "URL": "https://github.com/eseliger"
      },
@@ -91,7 +92,7 @@
     "Type": "ReadyForReviewEvent",
     "Item": {
      "Actor": {
-      "AvatarURL": "https://avatars0.githubusercontent.com/u/19534377?v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/19534377?v=4",
       "Login": "eseliger",
       "URL": "https://github.com/eseliger"
      },
