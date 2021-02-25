@@ -114,6 +114,13 @@ query Search($query: String!) {
 					file {
 						name
 					}
+					symbols {
+						name
+						containerName
+						kind
+						language
+						url
+					}
 					repository {
 						name
 					}
