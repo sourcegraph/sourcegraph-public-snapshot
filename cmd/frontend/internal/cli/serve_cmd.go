@@ -17,6 +17,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/tmpfriend"
+	"github.com/throttled/throttled/v2/store/redigostore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
@@ -38,6 +39,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
@@ -225,12 +227,18 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 		return err
 	}
 
-	server, err := makeExternalAPI(db, schema, enterprise)
+	ratelimitStore, err := redigostore.New(redispool.Cache, "gql:rl:", 0)
+	if err != nil {
+		return err
+	}
+	rateLimitWatcher := graphqlbackend.NewRateLimiteWatcher(ratelimitStore)
+
+	server, err := makeExternalAPI(db, schema, enterprise, rateLimitWatcher)
 	if err != nil {
 		return err
 	}
 
-	internalAPI, err := makeInternalAPI(schema, db, enterprise)
+	internalAPI, err := makeInternalAPI(schema, db, enterprise, rateLimitWatcher)
 	if err != nil {
 		return err
 	}
@@ -254,9 +262,9 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	return nil
 }
 
-func makeExternalAPI(db dbutil.DB, schema *graphql.Schema, enterprise enterprise.Services) (goroutine.BackgroundRoutine, error) {
+func makeExternalAPI(db dbutil.DB, schema *graphql.Schema, enterprise enterprise.Services, rateLimiter *graphqlbackend.RateLimitWatcher) (goroutine.BackgroundRoutine, error) {
 	// Create the external HTTP handler.
-	externalHandler, err := newExternalHTTPHandler(db, schema, enterprise.GitHubWebhook, enterprise.GitLabWebhook, enterprise.BitbucketServerWebhook, enterprise.NewCodeIntelUploadHandler, enterprise.NewExecutorProxyHandler)
+	externalHandler, err := newExternalHTTPHandler(db, schema, enterprise.GitHubWebhook, enterprise.GitLabWebhook, enterprise.BitbucketServerWebhook, enterprise.NewCodeIntelUploadHandler, enterprise.NewExecutorProxyHandler, rateLimiter)
 	if err != nil {
 		return nil, err
 	}
@@ -276,7 +284,7 @@ func makeExternalAPI(db dbutil.DB, schema *graphql.Schema, enterprise enterprise
 	return server, nil
 }
 
-func makeInternalAPI(schema *graphql.Schema, db dbutil.DB, enterprise enterprise.Services) (goroutine.BackgroundRoutine, error) {
+func makeInternalAPI(schema *graphql.Schema, db dbutil.DB, enterprise enterprise.Services, rateLimiter *graphqlbackend.RateLimitWatcher) (goroutine.BackgroundRoutine, error) {
 	if httpAddrInternal == "" {
 		return nil, nil
 	}
@@ -287,7 +295,7 @@ func makeInternalAPI(schema *graphql.Schema, db dbutil.DB, enterprise enterprise
 	}
 
 	// The internal HTTP handler does not include the auth handlers.
-	internalHandler := newInternalHTTPHandler(schema, db, enterprise.NewCodeIntelUploadHandler)
+	internalHandler := newInternalHTTPHandler(schema, db, enterprise.NewCodeIntelUploadHandler, rateLimiter)
 
 	server := httpserver.New(listener, &http.Server{
 		Handler:     internalHandler,
