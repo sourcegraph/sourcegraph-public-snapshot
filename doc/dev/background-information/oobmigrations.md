@@ -1,6 +1,6 @@
 # Developing an out-of-band migration
 
-Our primary mechanism applies a sequence of pure-SQL migrations (each in a transaction) to the database on application startup. This happens to block the new application version from reaching a working state until all migrations since the previous version have been applied. This is generally a non-issue as most schema migrations fast, and _most_ data migrations are fast enough to apply on application startup.
+Normal migrations apply a sequence of pure-SQL migrations (each in a transaction) to the database on application startup. This happens to block the new application version from reaching a working state until all migrations since the previous version have been applied. This is generally a non-issue as most schema migrations fast, and _most_ data migrations are fast enough to apply on application startup.
 
 Out-of-band migrations allow for application-specific logic to exist in a migration that can't be easily performed within a SQL command. For example:
 
