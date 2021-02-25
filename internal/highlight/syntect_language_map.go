@@ -230,6 +230,8 @@ var SyntectLanguageMap = map[string]string{
 	"psd1":                 "psd1",
 	"python":               "py",
 	"py":                   "py",
+	"pyst":                 "py",
+	"pyst-include":         "py",
 	"py3":                  "py3",
 	"pyw":                  "pyw",
 	"pyi":                  "pyi",
