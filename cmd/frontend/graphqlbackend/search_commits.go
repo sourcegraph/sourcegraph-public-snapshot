@@ -39,6 +39,20 @@ type CommitSearchResult struct {
 	highlights     []*highlightedRange
 }
 
+// ResultCount for CommitSearchResult returns the number of highlights if there
+// are highlights and 1 otherwise. We implemented this method because we want to
+// return a more meaningful result count for streaming while maintaining backward
+// compatibility for the batch API. The batch API calls the ResultCount on the
+// resolver, while streaming calls ResultCount in CommitSearchResult.
+func (r *CommitSearchResult) ResultCount() int {
+	if n := len(r.highlights); n > 0 {
+		return n
+	}
+	// Queries such as type:commit after:"1 week ago" don't have highlights. We count
+	// those results as 1.
+	return 1
+}
+
 // CommitSearchResultResolver is a resolver for the GraphQL type `CommitSearchResult`
 type CommitSearchResultResolver struct {
 	CommitSearchResult
@@ -137,10 +151,6 @@ func (r *CommitSearchResultResolver) ToCommitSearchResult() (*CommitSearchResult
 
 func (r *CommitSearchResultResolver) ResultCount() int32 {
 	return 1
-}
-
-func (r *CommitSearchResultResolver) HighlightsCount() int {
-	return len(r.highlights)
 }
 
 func commitParametersToDiffParameters(ctx context.Context, op *search.CommitParameters) (*search.DiffParameters, error) {
