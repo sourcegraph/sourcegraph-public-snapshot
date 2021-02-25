@@ -25,6 +25,7 @@
 - [Code reviews](code_reviews.md)
 - [Commit messages](commit_messages.md)
 - [Exposing services](exposing-services.md)
+- [Developing an out-of-band migration](oobmigrations.md)
 
 ## [Languages](languages/index.md)
 
