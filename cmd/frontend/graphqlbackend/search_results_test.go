@@ -1039,11 +1039,11 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 					&FileMatchResolver{
 						db: db,
 						FileMatch: FileMatch{
-							symbols: []*searchSymbolResult{
+							Symbols: []*SearchSymbolResult{
 								// 1
-								{db: db},
+								{},
 								// 2
-								{db: db},
+								{},
 							},
 						},
 					},
@@ -1059,11 +1059,11 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 					&FileMatchResolver{
 						db: db,
 						FileMatch: FileMatch{
-							symbols: []*searchSymbolResult{
+							Symbols: []*SearchSymbolResult{
 								// 1
-								{db: db},
+								{},
 								// 2
-								{db: db},
+								{},
 							},
 						},
 					},
@@ -1475,13 +1475,13 @@ func repoResult(db dbutil.DB, url string) *RepositoryResolver {
 	})
 }
 
-func fileResult(db dbutil.DB, uri string, lineMatches []*lineMatch, symbolMatches []*searchSymbolResult) *FileMatchResolver {
+func fileResult(db dbutil.DB, uri string, lineMatches []*LineMatch, symbolMatches []*SearchSymbolResult) *FileMatchResolver {
 	return &FileMatchResolver{
 		db: db,
 		FileMatch: FileMatch{
 			uri:         uri,
 			LineMatches: lineMatches,
-			symbols:     symbolMatches,
+			Symbols:     symbolMatches,
 		},
 	}
 }
@@ -1508,11 +1508,13 @@ func sortResultResolvers(rs []SearchResultResolver) {
 
 	for _, res := range rs {
 		if fm, ok := res.(*FileMatchResolver); ok {
-			sort.Slice(fm.FileMatch.LineMatches, func(i, j int) bool {
-				return fm.FileMatch.LineMatches[i].Preview < fm.FileMatch.LineMatches[j].Preview
+			lm := fm.FileMatch.LineMatches
+			sort.Slice(lm, func(i, j int) bool {
+				return lm[i].Preview < lm[j].Preview
 			})
-			sort.Slice(fm.symbols, func(i, j int) bool {
-				return fm.symbols[i].symbol.Name < fm.symbols[j].symbol.Name
+			syms := fm.FileMatch.Symbols
+			sort.Slice(syms, func(i, j int) bool {
+				return syms[i].symbol.Name < syms[j].symbol.Name
 			})
 		}
 	}
@@ -1574,7 +1576,7 @@ func TestUnionMerge(t *testing.T) {
 		{
 			left: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
-					fileResult(db, "b", []*lineMatch{
+					fileResult(db, "b", []*LineMatch{
 						{Preview: "a"},
 						{Preview: "b"},
 					}, nil),
@@ -1582,7 +1584,7 @@ func TestUnionMerge(t *testing.T) {
 			},
 			right: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
-					fileResult(db, "b", []*lineMatch{
+					fileResult(db, "b", []*LineMatch{
 						{Preview: "c"},
 						{Preview: "d"},
 					}, nil),
@@ -1593,7 +1595,7 @@ func TestUnionMerge(t *testing.T) {
 		{
 			left: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
-					fileResult(db, "a", []*lineMatch{
+					fileResult(db, "a", []*LineMatch{
 						{Preview: "a"},
 						{Preview: "b"},
 					}, nil),
@@ -1601,7 +1603,7 @@ func TestUnionMerge(t *testing.T) {
 			},
 			right: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
-					fileResult(db, "b", []*lineMatch{
+					fileResult(db, "b", []*LineMatch{
 						{Preview: "c"},
 						{Preview: "d"},
 					}, nil),
@@ -1612,17 +1614,17 @@ func TestUnionMerge(t *testing.T) {
 		{
 			left: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
-					fileResult(db, "a", nil, []*searchSymbolResult{
-						{db: db, symbol: protocol.Symbol{Name: "a"}},
-						{db: db, symbol: protocol.Symbol{Name: "b"}},
+					fileResult(db, "a", nil, []*SearchSymbolResult{
+						{symbol: protocol.Symbol{Name: "a"}},
+						{symbol: protocol.Symbol{Name: "b"}},
 					}),
 				},
 			},
 			right: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
-					fileResult(db, "a", nil, []*searchSymbolResult{
-						{db: db, symbol: protocol.Symbol{Name: "c"}},
-						{db: db, symbol: protocol.Symbol{Name: "d"}},
+					fileResult(db, "a", nil, []*SearchSymbolResult{
+						{symbol: protocol.Symbol{Name: "c"}},
+						{symbol: protocol.Symbol{Name: "d"}},
 					}),
 				},
 			},
@@ -1696,7 +1698,7 @@ func searchResultResolversToString(srrs []SearchResultResolver) string {
 		switch v := srr.(type) {
 		case *FileMatchResolver:
 			symbols := []string{}
-			for _, symbol := range v.symbols {
+			for _, symbol := range v.FileMatch.Symbols {
 				symbols = append(symbols, symbol.symbol.Name)
 			}
 			lines := []string{}

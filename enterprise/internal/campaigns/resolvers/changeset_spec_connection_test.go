@@ -14,7 +14,6 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -25,11 +24,11 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 	}
 
 	ctx := backend.WithAuthzBypass(context.Background())
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
-	userID := ct.CreateTestUser(t, false).ID
+	userID := ct.CreateTestUser(t, db, false).ID
 
-	cstore := store.New(dbconn.Global)
+	cstore := store.New(db)
 
 	campaignSpec := &campaigns.CampaignSpec{
 		UserID:          userID,
@@ -70,7 +69,7 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 		changesetSpecs = append(changesetSpecs, s)
 	}
 
-	s, err := graphqlbackend.NewSchema(dbconn.Global, &Resolver{store: cstore}, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

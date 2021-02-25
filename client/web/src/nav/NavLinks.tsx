@@ -26,6 +26,7 @@ import { ThemePreferenceProps } from '../theme'
 import { MenuNavItem } from './MenuNavItem'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
+import { FeedbackPrompt } from './Feedback/FeedbackPrompt'
 interface Props
     extends SettingsCascadeProps<Settings>,
         KeyboardShortcutsProps,
@@ -94,15 +95,16 @@ export class NavLinks extends React.PureComponent<Props> {
                                 <CampaignsNavItem />
                             </li>
                         )}
+                        <li className="nav-item d-lg-none">
+                            <MenuNavItem>
+                                {this.items}
+                                {this.props.showCampaigns && <CampaignsNavItem />}
+                            </MenuNavItem>
+                        </li>
                     </>
                 )}
-                <li className="nav-item d-lg-none">
-                    {!this.props.minimalNavLinks && (
-                        <MenuNavItem>
-                            {this.items}
-                            {this.props.showCampaigns && <CampaignsNavItem />}
-                        </MenuNavItem>
-                    )}
+                <li className="nav-item">
+                    <FeedbackPrompt history={this.props.history} />
                 </li>
                 {!this.props.authenticatedUser && (
                     <>

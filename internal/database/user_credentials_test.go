@@ -16,13 +16,14 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestUserCredentials_Create(t *testing.T) {
+func TestUserCredentials_CreateUpdate(t *testing.T) {
 	db := dbtesting.GetDB(t)
 	ctx, user := setUpUserCredentialTest(t, db)
 
@@ -43,7 +44,7 @@ func TestUserCredentials_Create(t *testing.T) {
 			scope := UserCredentialScope{
 				Domain:              name,
 				UserID:              user.ID,
-				ExternalServiceType: "github",
+				ExternalServiceType: extsvc.TypeGitHub,
 				ExternalServiceID:   "https://github.com",
 			}
 
@@ -84,6 +85,22 @@ func TestUserCredentials_Create(t *testing.T) {
 				t.Error("unexpected nil error")
 			} else if cred != nil {
 				t.Errorf("unexpected non-nil credential: %v", cred)
+			}
+
+			newExternalServiceType := extsvc.TypeGitLab
+
+			cred.ExternalServiceType = newExternalServiceType
+
+			if err := UserCredentials(db).Update(ctx, cred); err != nil {
+				t.Errorf("unexpected non-nil error updating: %+v", err)
+			}
+
+			updatedCred, err := UserCredentials(db).GetByID(ctx, cred.ID)
+			if err != nil {
+				t.Errorf("unexpected non-nil error getting credential: %+v", err)
+			}
+			if diff := cmp.Diff(cred, updatedCred); diff != "" {
+				t.Errorf("credential incorrectly updated: %s", diff)
 			}
 		})
 	}
@@ -245,12 +262,12 @@ func TestUserCredentials_List(t *testing.T) {
 
 	// Unlike the other tests in this file, we'll set up a couple of credentials
 	// right now, and then list from there.
-	github, err := UserCredentials(db).Create(ctx, githubScope, token)
+	githubCred, err := UserCredentials(db).Create(ctx, githubScope, token)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	gitlab, err := UserCredentials(db).Create(ctx, gitlabScope, token)
+	gitlabCred, err := UserCredentials(db).Create(ctx, gitlabScope, token)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -280,17 +297,17 @@ func TestUserCredentials_List(t *testing.T) {
 			scope: UserCredentialScope{
 				ExternalServiceID: "https://github.com",
 			},
-			want: github,
+			want: githubCred,
 		},
 		"service type only": {
 			scope: UserCredentialScope{
 				ExternalServiceType: "gitlab",
 			},
-			want: gitlab,
+			want: gitlabCred,
 		},
 		"full scope": {
 			scope: githubScope,
-			want:  github,
+			want:  githubCred,
 		},
 	} {
 		t.Run("single match on "+name, func(t *testing.T) {
@@ -309,56 +326,54 @@ func TestUserCredentials_List(t *testing.T) {
 		})
 	}
 
-	for name, scope := range map[string]UserCredentialScope{
+	for name, opts := range map[string]UserCredentialsListOpts{
 		"no options":   {},
-		"domain only":  {Domain: UserCredentialDomainCampaigns},
-		"user ID only": {UserID: user.ID},
+		"domain only":  {Scope: UserCredentialScope{Domain: UserCredentialDomainCampaigns}},
+		"user ID only": {Scope: UserCredentialScope{UserID: user.ID}},
 		"domain and user ID": {
-			Domain: UserCredentialDomainCampaigns,
-			UserID: user.ID,
+			Scope: UserCredentialScope{
+				Domain: UserCredentialDomainCampaigns,
+				UserID: user.ID,
+			},
 		},
+		"authenticator type": {AuthenticatorType: []UserCredentialType{UserCredentialTypeOAuthBearerToken}},
 	} {
 		t.Run("multiple matches on "+name, func(t *testing.T) {
-			creds, next, err := UserCredentials(db).List(ctx, UserCredentialsListOpts{
-				Scope: scope,
-			})
+			creds, next, err := UserCredentials(db).List(ctx, opts)
 			if err != nil {
 				t.Errorf("unexpected non-nil error: %v", err)
 			}
 			if next != 0 {
 				t.Errorf("unexpected next: have=%d want=%d", next, 0)
 			}
-			if diff := cmp.Diff(creds, []*UserCredential{github, gitlab}); diff != "" {
+			if diff := cmp.Diff(creds, []*UserCredential{githubCred, gitlabCred}); diff != "" {
 				t.Errorf("unexpected credentials:\n%s", diff)
 			}
 		})
 
 		t.Run("pagination for "+name, func(t *testing.T) {
-			creds, next, err := UserCredentials(db).List(ctx, UserCredentialsListOpts{
-				LimitOffset: &LimitOffset{Limit: 1},
-				Scope:       scope,
-			})
+			o := opts
+			o.LimitOffset = &LimitOffset{Limit: 1}
+			creds, next, err := UserCredentials(db).List(ctx, o)
 			if err != nil {
 				t.Errorf("unexpected non-nil error: %v", err)
 			}
 			if next != 1 {
 				t.Errorf("unexpected next: have=%d want=%d", next, 1)
 			}
-			if diff := cmp.Diff(creds, []*UserCredential{github}); diff != "" {
+			if diff := cmp.Diff(creds, []*UserCredential{githubCred}); diff != "" {
 				t.Errorf("unexpected credentials:\n%s", diff)
 			}
 
-			creds, next, err = UserCredentials(db).List(ctx, UserCredentialsListOpts{
-				LimitOffset: &LimitOffset{Limit: 1, Offset: next},
-				Scope:       scope,
-			})
+			o.LimitOffset = &LimitOffset{Limit: 1, Offset: next}
+			creds, next, err = UserCredentials(db).List(ctx, o)
 			if err != nil {
 				t.Errorf("unexpected non-nil error: %v", err)
 			}
 			if next != 0 {
 				t.Errorf("unexpected next: have=%d want=%d", next, 0)
 			}
-			if diff := cmp.Diff(creds, []*UserCredential{gitlab}); diff != "" {
+			if diff := cmp.Diff(creds, []*UserCredential{gitlabCred}); diff != "" {
 				t.Errorf("unexpected credentials:\n%s", diff)
 			}
 		})

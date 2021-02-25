@@ -318,7 +318,7 @@ func (s *Store) readRangesFromDocument(bundleID int, rangeIDsByResultID map[ID]m
 	return totalCount
 }
 
-// sortLocationssorts locations by document, then by offset within a document.
+// sortLocations sorts locations by document, then by offset within a document.
 func sortLocations(locations []Location) {
 	sort.Slice(locations, func(i, j int) bool {
 		if locations[i].Path == locations[j].Path {

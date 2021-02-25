@@ -394,6 +394,26 @@ describe('Search', () => {
                 'sourcegraph/sourcegraph@test/branch › stream.ts',
             ])
         })
+
+        test('Streaming search with error', async () => {
+            const searchStreamEvents: SearchEvent[] = [
+                {
+                    type: 'error',
+                    data: { message: 'Search is invalid' },
+                },
+            ]
+
+            testContext.overrideGraphQL({ ...commonSearchGraphQLResults, ...viewerSettingsWithStreamingSearch })
+            testContext.overrideSearchStreamEvents(searchStreamEvents)
+
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+            await driver.page.waitForSelector('[data-testid="search-results-list-error"]', { visible: true })
+
+            const results = await driver.page.evaluate(
+                () => document.querySelector('[data-testid="search-results-list-error"]')?.textContent
+            )
+            expect(results).toContain('Search is invalid')
+        })
     })
 
     describe('Search contexts', () => {

@@ -176,7 +176,8 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 
 func (s GithubSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
 	switch a.(type) {
-	case *auth.OAuthBearerToken:
+	case *auth.OAuthBearerToken,
+		*auth.OAuthBearerTokenWithSSH:
 		break
 
 	default:

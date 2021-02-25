@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"reflect"
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
@@ -13,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestMakeFileMatchURIFromSymbol(t *testing.T) {
@@ -26,15 +24,10 @@ func TestMakeFileMatchURIFromSymbol(t *testing.T) {
 		Pattern: "",
 	}
 	baseURI, _ := gituri.Parse("https://github.com/foo/bar")
-	gitSignatureWithDate := git.Signature{Date: time.Now().UTC().AddDate(0, 0, -1)}
 
-	commit := toGitCommitResolver(
-		NewRepositoryResolver(db, &types.Repo{ID: 1, Name: "repo"}),
-		db,
-		"c1",
-		&git.Commit{ID: "c1", Author: gitSignatureWithDate},
-	)
-	sr := &searchSymbolResult{db, symbol, baseURI, "go", commit}
+	repoResolver := NewRepositoryResolver(db, &types.Repo{ID: 1, Name: "repo"})
+	commitResolver := toGitCommitResolver(repoResolver, db, "", nil)
+	sr := &SearchSymbolResult{symbol, baseURI, "go", commitResolver}
 
 	tests := []struct {
 		rev  string
@@ -45,7 +38,7 @@ func TestMakeFileMatchURIFromSymbol(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		got := makeFileMatchURIFromSymbol(sr, test.rev)
+		got := makeFileMatchURI(repoResolver.URL(), test.rev, sr.uri().Fragment)
 		if got != test.want {
 			t.Errorf("rev(%v) got %v want %v", test.rev, got, test.want)
 		}
@@ -74,8 +67,7 @@ func TestLimitingSymbolResults(t *testing.T) {
 	})
 
 	t.Run("one file match, one symbol", func(t *testing.T) {
-		res := mkSymbolFileMatchResolvers(db, []*searchSymbolResult{{
-			db: db,
+		res := mkSymbolFileMatchResolvers(db, []*SearchSymbolResult{{
 			symbol: protocol.Symbol{
 				Name: "symbol-name-1",
 			},
@@ -104,13 +96,11 @@ func TestLimitingSymbolResults(t *testing.T) {
 	})
 
 	t.Run("two file matches, one symbol per file", func(t *testing.T) {
-		res := mkSymbolFileMatchResolvers(db, []*searchSymbolResult{{
-			db: db,
+		res := mkSymbolFileMatchResolvers(db, []*SearchSymbolResult{{
 			symbol: protocol.Symbol{
 				Name: "symbol-name-1",
 			},
-		}}, []*searchSymbolResult{{
-			db: db,
+		}}, []*SearchSymbolResult{{
 			symbol: protocol.Symbol{
 				Name: "symbol-name-2",
 			},
@@ -147,12 +137,12 @@ func TestLimitingSymbolResults(t *testing.T) {
 	})
 
 	t.Run("two file matches, multiple symbols per file", func(t *testing.T) {
-		res := mkSymbolFileMatchResolvers(db, []*searchSymbolResult{
-			{db: db, symbol: protocol.Symbol{Name: "symbol-name-1"}},
-			{db: db, symbol: protocol.Symbol{Name: "symbol-name-2"}},
-		}, []*searchSymbolResult{
-			{db: db, symbol: protocol.Symbol{Name: "symbol-name-3"}},
-			{db: db, symbol: protocol.Symbol{Name: "symbol-name-4"}},
+		res := mkSymbolFileMatchResolvers(db, []*SearchSymbolResult{
+			{symbol: protocol.Symbol{Name: "symbol-name-1"}},
+			{symbol: protocol.Symbol{Name: "symbol-name-2"}},
+		}, []*SearchSymbolResult{
+			{symbol: protocol.Symbol{Name: "symbol-name-3"}},
+			{symbol: protocol.Symbol{Name: "symbol-name-4"}},
 		})
 
 		t.Run("symbol count is 4", func(t *testing.T) {
@@ -174,37 +164,37 @@ func TestLimitingSymbolResults(t *testing.T) {
 			{
 				name:  "limit 1 => one file match with one symbol",
 				limit: 1,
-				want: mkSymbolFileMatchResolvers(db, []*searchSymbolResult{
-					{db: db, symbol: protocol.Symbol{Name: "symbol-name-1"}},
+				want: mkSymbolFileMatchResolvers(db, []*SearchSymbolResult{
+					{symbol: protocol.Symbol{Name: "symbol-name-1"}},
 				}),
 			},
 			{
 				name:  "limit 2 => one file match with all symbols",
 				limit: 2,
-				want: mkSymbolFileMatchResolvers(db, []*searchSymbolResult{
-					{db: db, symbol: protocol.Symbol{Name: "symbol-name-1"}},
-					{db: db, symbol: protocol.Symbol{Name: "symbol-name-2"}},
+				want: mkSymbolFileMatchResolvers(db, []*SearchSymbolResult{
+					{symbol: protocol.Symbol{Name: "symbol-name-1"}},
+					{symbol: protocol.Symbol{Name: "symbol-name-2"}},
 				}),
 			},
 			{
 				name:  "limit 3 => two file matches with three symbols",
 				limit: 3,
-				want: mkSymbolFileMatchResolvers(db, []*searchSymbolResult{
-					{db: db, symbol: protocol.Symbol{Name: "symbol-name-1"}},
-					{db: db, symbol: protocol.Symbol{Name: "symbol-name-2"}},
-				}, []*searchSymbolResult{
-					{db: db, symbol: protocol.Symbol{Name: "symbol-name-3"}},
+				want: mkSymbolFileMatchResolvers(db, []*SearchSymbolResult{
+					{symbol: protocol.Symbol{Name: "symbol-name-1"}},
+					{symbol: protocol.Symbol{Name: "symbol-name-2"}},
+				}, []*SearchSymbolResult{
+					{symbol: protocol.Symbol{Name: "symbol-name-3"}},
 				}),
 			},
 			{
 				name:  "limit 4 => two file matches with all symbols",
 				limit: 4,
-				want: mkSymbolFileMatchResolvers(db, []*searchSymbolResult{
-					{db: db, symbol: protocol.Symbol{Name: "symbol-name-1"}},
-					{db: db, symbol: protocol.Symbol{Name: "symbol-name-2"}},
-				}, []*searchSymbolResult{
-					{db: db, symbol: protocol.Symbol{Name: "symbol-name-3"}},
-					{db: db, symbol: protocol.Symbol{Name: "symbol-name-4"}},
+				want: mkSymbolFileMatchResolvers(db, []*SearchSymbolResult{
+					{symbol: protocol.Symbol{Name: "symbol-name-1"}},
+					{symbol: protocol.Symbol{Name: "symbol-name-2"}},
+				}, []*SearchSymbolResult{
+					{symbol: protocol.Symbol{Name: "symbol-name-3"}},
+					{symbol: protocol.Symbol{Name: "symbol-name-4"}},
 				}),
 			},
 		}
@@ -237,11 +227,11 @@ func TestSymbolRange(t *testing.T) {
 	})
 }
 
-func mkSymbolFileMatchResolvers(db dbutil.DB, symbols ...[]*searchSymbolResult) []*FileMatchResolver {
+func mkSymbolFileMatchResolvers(db dbutil.DB, symbols ...[]*SearchSymbolResult) []*FileMatchResolver {
 	var resolvers []*FileMatchResolver
 	for _, s := range symbols {
 		resolvers = append(resolvers, mkFileMatchResolver(db, FileMatch{
-			symbols: s,
+			Symbols: s,
 		}))
 	}
 	return resolvers

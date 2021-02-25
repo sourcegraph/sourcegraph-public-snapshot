@@ -125,6 +125,10 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 	if args.Stream != nil {
 		defaultLimit = defaultMaxSearchResultsStreaming
 	}
+	if searchType == query.SearchTypeStructural {
+		// Set a lower max result count until structural search supports true streaming.
+		defaultLimit = defaultMaxSearchResults
+	}
 
 	if sp, _ := q.StringValue(query.FieldSelect); sp != "" && args.Stream != nil {
 		// Invariant: error already checked
@@ -584,7 +588,7 @@ func newSearchSuggestionResolver(result interface{}, score int) *searchSuggestio
 	case *GitTreeEntryResolver:
 		return &searchSuggestionResolver{result: r, score: score, length: len(r.Path()), label: r.Path()}
 
-	case *symbolResolver:
+	case symbolResolver:
 		return &searchSuggestionResolver{result: r, score: score, length: len(r.symbol.Name + " " + r.symbol.Parent), label: r.symbol.Name + " " + r.symbol.Parent}
 
 	case *languageResolver:

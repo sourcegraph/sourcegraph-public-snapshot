@@ -7,7 +7,7 @@ export const InsightsNavItem: React.FunctionComponent = () => (
         to="/insights"
         text="Insights"
         icon={InsightsIcon}
-        className="nav-link btn btn-link px-1 text-decoration-none"
+        className="nav-link btn btn-link text-decoration-none"
         activeClassName="active"
     />
 )

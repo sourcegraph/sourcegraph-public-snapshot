@@ -238,7 +238,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			if !ok {
 				continue
 			}
-			for _, sr := range fileMatch.symbols {
+			for _, sr := range fileMatch.FileMatch.Symbols {
 				score := 20
 				if sr.symbol.Parent == "" {
 					score++
@@ -255,7 +255,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 				if len(sr.symbol.Name) >= 4 && strings.Contains(strings.ToLower(sr.uri().String()), strings.ToLower(sr.symbol.Name)) {
 					score++
 				}
-				symbolResolver := toSymbolResolver(r.db, sr.symbol, sr.baseURI, sr.lang, sr.commit)
+				symbolResolver := toSymbolResolver(r.db, sr)
 				results = append(results, newSearchSuggestionResolver(symbolResolver, score))
 			}
 		}
@@ -372,8 +372,8 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			// (that do specify a commit ID), because their key k (i.e., k in seen[k]) will not
 			// equal.
 			k.file = s.Path()
-		case *symbolResolver:
-			k.uri = s.uri
+		case symbolResolver:
+			k.uri = s.uri()
 			k.symbol = s.symbol.Name + s.symbol.Parent
 		case *languageResolver:
 			k.lang = s.name

@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -34,15 +33,15 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	cstore := store.NewWithClock(dbconn.Global, clock)
+	cstore := store.NewWithClock(db, clock)
 
-	admin := ct.CreateTestUser(t, true)
+	admin := ct.CreateTestUser(t, db, true)
 
-	rs, extSvc := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
+	rs, extSvc := ct.CreateTestRepos(t, ctx, db, 1)
 
 	state := ct.MockChangesetSyncState(&protocol.RepoInfo{
 		Name: rs[0].Name,
@@ -537,7 +536,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		})
 
 		// After each test: clean up database.
-		ct.TruncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
+		ct.TruncateTables(t, db, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
 	}
 }
 
@@ -547,16 +546,16 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
-	store := store.New(dbconn.Global)
+	cstore := store.New(db)
 
-	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
+	rs, _ := ct.CreateTestRepos(t, ctx, db, 1)
 
 	commonHeadRef := "refs/heads/collision"
 
 	// Create a published changeset.
-	ct.CreateChangeset(t, ctx, store, ct.TestChangesetOpts{
+	ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 		Repo:             rs[0].ID,
 		PublicationState: campaigns.ChangesetPublicationStatePublished,
 		ExternalBranch:   commonHeadRef,
@@ -575,7 +574,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	})
 	plan.Changeset = ct.BuildChangeset(ct.TestChangesetOpts{Repo: rs[0].ID})
 
-	err := ExecutePlan(ctx, nil, repos.NewFakeSourcer(nil, &ct.FakeChangesetSource{}), true, store, plan)
+	err := ExecutePlan(ctx, nil, repos.NewFakeSourcer(nil, &ct.FakeChangesetSource{}), true, cstore, plan)
 	if err == nil {
 		t.Fatal("reconciler did not return error")
 	}
@@ -588,14 +587,14 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 
 func TestExecutor_LoadAuthenticator(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
-	cstore := store.New(dbconn.Global)
+	cstore := store.New(db)
 
-	admin := ct.CreateTestUser(t, true)
-	user := ct.CreateTestUser(t, false)
+	admin := ct.CreateTestUser(t, db, true)
+	user := ct.CreateTestUser(t, db, false)
 
-	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
+	rs, _ := ct.CreateTestRepos(t, ctx, db, 1)
 	repo := rs[0]
 
 	campaignSpec := ct.CreateCampaignSpec(t, ctx, cstore, "reconciler-test-campaign", admin.ID)
@@ -712,26 +711,26 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 
 func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
-	cstore := store.New(dbconn.Global)
+	cstore := store.New(db)
 
-	admin := ct.CreateTestUser(t, true)
-	user := ct.CreateTestUser(t, false)
+	admin := ct.CreateTestUser(t, db, true)
+	user := ct.CreateTestUser(t, db, false)
 
-	rs, extSvc := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
+	rs, extSvc := ct.CreateTestRepos(t, ctx, db, 1)
 	gitHubRepo := rs[0]
 	gitHubRepoCloneURL := gitHubRepo.Sources[extSvc.URN()].CloneURL
 
-	gitLabRepos, gitLabExtSvc := ct.CreateGitlabTestRepos(t, ctx, dbconn.Global, 1)
+	gitLabRepos, gitLabExtSvc := ct.CreateGitlabTestRepos(t, ctx, db, 1)
 	gitLabRepo := gitLabRepos[0]
 	gitLabRepoCloneURL := gitLabRepo.Sources[gitLabExtSvc.URN()].CloneURL
 
-	bbsRepos, bbsExtSvc := ct.CreateBbsTestRepos(t, ctx, dbconn.Global, 1)
+	bbsRepos, bbsExtSvc := ct.CreateBbsTestRepos(t, ctx, db, 1)
 	bbsRepo := bbsRepos[0]
 	bbsRepoCloneURL := bbsRepo.Sources[bbsExtSvc.URN()].CloneURL
 
-	bbsSSHRepos, _ := ct.CreateBbsSSHTestRepos(t, ctx, dbconn.Global, 1)
+	bbsSSHRepos, _ := ct.CreateBbsSSHTestRepos(t, ctx, db, 1)
 	bbsSSHRepo := bbsSSHRepos[0]
 
 	gitClient := &ct.FakeGitserverClient{ResponseErr: nil}
