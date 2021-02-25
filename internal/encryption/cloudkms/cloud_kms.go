@@ -21,10 +21,12 @@ func NewKey(ctx context.Context, keyName string) (encryption.Key, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Key{
+	k := &Key{
 		name:   keyName,
 		client: client,
-	}, nil
+	}
+	_, err = k.ID(ctx)
+	return k, err
 }
 
 type Key struct {
