@@ -33,6 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
@@ -122,6 +123,8 @@ func InitDB() (*sql.DB, error) {
 
 // Main is the main entrypoint for the frontend server program.
 func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner) enterprise.Services) error {
+	ctx := context.Background()
+
 	log.SetFlags(0)
 	log.SetPrefix("")
 
@@ -136,12 +139,27 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 
 	ui.InitRouter(db)
 
-	if err := handleConfigOverrides(); err != nil {
-		log.Fatal("applying config overrides:", err)
+	// override site config first
+	if err := overrideSiteConfig(ctx); err != nil {
+		log.Fatalf("failed to apply site config overrides: %v", err)
 	}
-
 	globals.ConfigurationServerFrontendOnly = conf.InitConfigurationServerFrontendOnly(&configurationSource{})
 	conf.MustValidateDefaults()
+
+	// now we can init the keyring, as it depends on site config
+	if err := keyring.Init(ctx); err != nil {
+		log.Fatalf("failed to initialize encryption keyring: %v", err)
+	}
+
+	if err := overrideGlobalSettings(ctx, db); err != nil {
+		log.Fatalf("failed to override global settings: %v", err)
+	}
+
+	// now the keyring is configured it's safe to override the rest of the config
+	// and that config can access the keyring
+	if err := overrideExtSvcConfig(ctx, db); err != nil {
+		log.Fatalf("failed to override external service config: %v", err)
+	}
 
 	// Filter trace logs
 	d, _ := time.ParseDuration(traceThreshold)
@@ -166,7 +184,7 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 			env.PrintHelp()
 
 			log.Print()
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 			defer cancel()
 			for _, st := range sysreq.Check(ctx, skippedSysReqs()) {
 				log.Printf("%s:", st.Name)

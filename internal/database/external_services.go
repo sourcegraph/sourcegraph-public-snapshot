@@ -22,6 +22,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -39,6 +41,8 @@ type ExternalServiceStore struct {
 	GitHubValidators          []func(*schema.GitHubConnection) error
 	GitLabValidators          []func(*schema.GitLabConnection, []schema.AuthProviders) error
 	BitbucketServerValidators []func(*schema.BitbucketServerConnection) error
+
+	key encryption.Key
 
 	// PreCreateExternalService (if set) is invoked as a hook prior to creating a
 	// new external service in the database.
@@ -58,12 +62,16 @@ func ExternalServicesWith(other basestore.ShareableStore) *ExternalServiceStore 
 }
 
 func (e *ExternalServiceStore) With(other basestore.ShareableStore) *ExternalServiceStore {
-	return &ExternalServiceStore{Store: e.Store.With(other)}
+	return &ExternalServiceStore{Store: e.Store.With(other), key: e.key}
+}
+
+func (e *ExternalServiceStore) WithEncryptionKey(key encryption.Key) *ExternalServiceStore {
+	return &ExternalServiceStore{Store: e.Store, key: key}
 }
 
 func (e *ExternalServiceStore) Transact(ctx context.Context) (*ExternalServiceStore, error) {
 	txBase, err := e.Store.Transact(ctx)
-	return &ExternalServiceStore{Store: txBase}, err
+	return &ExternalServiceStore{Store: txBase, key: e.key}, err
 }
 
 // ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
@@ -525,14 +533,61 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 			return err
 		}
 	}
-
 	es.Unrestricted = !gjson.GetBytes(normalized, "authorization").Exists()
+
+	config, keyID, err := e.maybeEncryptConfig(ctx, es.Config)
+	if err != nil {
+		return err
+	}
 
 	return e.Store.Handle().DB().QueryRowContext(
 		ctx,
-		"INSERT INTO external_services(kind, display_name, config, created_at, updated_at, namespace_user_id, unrestricted, cloud_default) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
-		es.Kind, es.DisplayName, es.Config, es.CreatedAt, es.UpdatedAt, nullInt32Column(es.NamespaceUserID), es.Unrestricted, es.CloudDefault,
+		"INSERT INTO external_services(kind, display_name, config, encryption_key_id, created_at, updated_at, namespace_user_id, unrestricted, cloud_default) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id",
+		es.Kind, es.DisplayName, config, keyID, es.CreatedAt, es.UpdatedAt, nullInt32Column(es.NamespaceUserID), es.Unrestricted, es.CloudDefault,
 	).Scan(&es.ID)
+}
+
+// maybeEncryptConfig encrypts and returns externals service config if an encryption.Key is configured
+func (e *ExternalServiceStore) maybeEncryptConfig(ctx context.Context, config string) (string, string, error) {
+	// encrypt the config before writing if we have a key configured
+	var (
+		keyIdent string
+		key      = keyring.Default().ExternalServiceKey
+	)
+	if e.key != nil {
+		key = e.key
+	}
+	if key != nil {
+		encrypted, err := key.Encrypt(ctx, []byte(config))
+		if err != nil {
+			return "", "", err
+		}
+		config = string(encrypted)
+		keyIdent, err = key.ID(ctx)
+		if err != nil {
+			return "", "", err
+		}
+	}
+	return config, keyIdent, nil
+}
+
+func (e *ExternalServiceStore) maybeDecryptConfig(ctx context.Context, config string, keyIdent string) (string, error) {
+	if keyIdent == "" {
+		// config is not encrypted, return plaintext
+		return config, nil
+	}
+	var key = keyring.Default().ExternalServiceKey
+	if e.key != nil {
+		key = e.key
+	}
+	if key == nil {
+		return config, fmt.Errorf("couldn't decrypt encrypted config, key is nil")
+	}
+	decrypted, err := key.Decrypt(ctx, []byte(config))
+	if err != nil {
+		return config, err
+	}
+	return decrypted.Secret(), nil
 }
 
 // Upsert updates or inserts the given ExternalServices.
@@ -552,7 +607,10 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 		s.Unrestricted = !gjson.Get(s.Config, "authorization").Exists()
 	}
 
-	q := upsertExternalServicesQuery(svcs)
+	q, err := e.upsertExternalServicesQuery(ctx, svcs)
+	if err != nil {
+		return err
+	}
 	rows, err := e.Query(ctx, q)
 	if err != nil {
 		return err
@@ -561,6 +619,7 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 
 	i := 0
 	for rows.Next() {
+		var keyIdent string
 		err = rows.Scan(
 			&svcs[i].ID,
 			&svcs[i].Kind,
@@ -574,7 +633,13 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			&dbutil.NullInt32{N: &svcs[i].NamespaceUserID},
 			&svcs[i].Unrestricted,
 			&svcs[i].CloudDefault,
+			&keyIdent,
 		)
+		if err != nil {
+			return err
+		}
+
+		svcs[i].Config, err = e.maybeDecryptConfig(ctx, svcs[i].Config, keyIdent)
 		if err != nil {
 			return err
 		}
@@ -585,15 +650,20 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 	return err
 }
 
-func upsertExternalServicesQuery(svcs []*types.ExternalService) *sqlf.Query {
+func (e *ExternalServiceStore) upsertExternalServicesQuery(ctx context.Context, svcs []*types.ExternalService) (*sqlf.Query, error) {
 	vals := make([]*sqlf.Query, 0, len(svcs))
 	for _, s := range svcs {
+		config, keyIdent, err := e.maybeEncryptConfig(ctx, s.Config)
+		if err != nil {
+			return nil, err
+		}
 		vals = append(vals, sqlf.Sprintf(
 			upsertExternalServicesQueryValueFmtstr,
 			s.ID,
 			s.Kind,
 			s.DisplayName,
-			s.Config,
+			config,
+			keyIdent,
 			s.CreatedAt.UTC(),
 			s.UpdatedAt.UTC(),
 			nullTimeColumn(s.DeletedAt),
@@ -608,11 +678,11 @@ func upsertExternalServicesQuery(svcs []*types.ExternalService) *sqlf.Query {
 	return sqlf.Sprintf(
 		upsertExternalServicesQueryFmtstr,
 		sqlf.Join(vals, ",\n"),
-	)
+	), nil
 }
 
 const upsertExternalServicesQueryValueFmtstr = `
-  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 `
 
 const upsertExternalServicesQueryFmtstr = `
@@ -622,6 +692,7 @@ INSERT INTO external_services (
   kind,
   display_name,
   config,
+  encryption_key_id,
   created_at,
   updated_at,
   deleted_at,
@@ -634,17 +705,18 @@ INSERT INTO external_services (
 VALUES %s
 ON CONFLICT(id) DO UPDATE
 SET
-  kind         = UPPER(excluded.kind),
-  display_name = excluded.display_name,
-  config       = excluded.config,
-  created_at   = excluded.created_at,
-  updated_at   = excluded.updated_at,
-  deleted_at   = excluded.deleted_at,
-  last_sync_at = excluded.last_sync_at,
-  next_sync_at = excluded.next_sync_at,
-  namespace_user_id = excluded.namespace_user_id,
-  unrestricted = excluded.unrestricted,
-  cloud_default = excluded.cloud_default
+  kind               = UPPER(excluded.kind),
+  display_name       = excluded.display_name,
+  config             = excluded.config,
+  encryption_key_id  = excluded.encryption_key_id,
+  created_at         = excluded.created_at,
+  updated_at         = excluded.updated_at,
+  deleted_at         = excluded.deleted_at,
+  last_sync_at       = excluded.last_sync_at,
+  next_sync_at       = excluded.next_sync_at,
+  namespace_user_id  = excluded.namespace_user_id,
+  unrestricted       = excluded.unrestricted,
+  cloud_default      = excluded.cloud_default
 RETURNING *
 `
 
@@ -665,7 +737,10 @@ func (e *ExternalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 	}
 	e.ensureStore()
 
-	var normalized []byte
+	var (
+		normalized []byte
+		keyIdent   string
+	)
 	if update.Config != nil {
 		// Query to get the kind (which is immutable) so we can validate the new config.
 		externalService, err := e.GetByID(ctx, id)
@@ -692,6 +767,12 @@ func (e *ExternalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 		if err != nil {
 			return err
 		}
+		var config string
+		config, keyIdent, err = e.maybeEncryptConfig(ctx, *update.Config)
+		if err != nil {
+			return err
+		}
+		update.Config = &config
 	}
 
 	execUpdate := func(ctx context.Context, tx dbutil.DB, update *sqlf.Query) error {
@@ -723,7 +804,7 @@ func (e *ExternalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 
 	if update.Config != nil {
 		unrestricted := !gjson.GetBytes(normalized, "authorization").Exists()
-		q := sqlf.Sprintf(`config = %s, next_sync_at = NOW(), unrestricted = %s`, update.Config, unrestricted)
+		q := sqlf.Sprintf(`config = %s, encryption_key_id = %s, next_sync_at = NOW(), unrestricted = %s`, update.Config, keyIdent, unrestricted)
 		if err := execUpdate(ctx, tx.DB(), q); err != nil {
 			return err
 		}
@@ -905,7 +986,7 @@ func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesLis
 	}
 
 	q := sqlf.Sprintf(`
-		SELECT id, kind, display_name, config, created_at, updated_at, deleted_at, last_sync_at, next_sync_at, namespace_user_id, unrestricted, cloud_default
+		SELECT id, kind, display_name, config, encryption_key_id, created_at, updated_at, deleted_at, last_sync_at, next_sync_at, namespace_user_id, unrestricted, cloud_default
 		FROM external_services
 		WHERE (%s)
 		ORDER BY id `+opt.OrderByDirection+`
@@ -928,8 +1009,9 @@ func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesLis
 			lastSyncAt      sql.NullTime
 			nextSyncAt      sql.NullTime
 			namespaceUserID sql.NullInt32
+			keyIdent        string
 		)
-		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &h.Config, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namespaceUserID, &h.Unrestricted, &h.CloudDefault); err != nil {
+		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &h.Config, &keyIdent, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namespaceUserID, &h.Unrestricted, &h.CloudDefault); err != nil {
 			return nil, err
 		}
 
@@ -944,6 +1026,11 @@ func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesLis
 		}
 		if namespaceUserID.Valid {
 			h.NamespaceUserID = namespaceUserID.Int32
+		}
+
+		h.Config, err = e.maybeDecryptConfig(ctx, h.Config, keyIdent)
+		if err != nil {
+			return nil, err
 		}
 		results = append(results, &h)
 	}
