@@ -155,28 +155,79 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 	}
 	defer func() { _ = rc.Close() }()
 
-	var depotPrefixes []extsvc.RepoID
+	var includePrefixes, excludePrefixes []extsvc.RepoID
 	scanner := bufio.NewScanner(rc)
 	for scanner.Scan() {
+		line := scanner.Text()
+
+		// Trim comments
+		i := strings.Index(line, "##")
+		if i > -1 {
+			line = line[:i]
+		}
+
 		// e.g. read user alice * //Sourcegraph/...
 		fields := strings.Split(scanner.Text(), " ")
 		if len(fields) < 5 {
 			continue
 		}
+		level := fields[0]                               // e.g. read
 		depotPrefix := strings.TrimRight(fields[4], ".") // e.g. //Sourcegraph/
 
-		// Rule that starts with a "-" in depot prefix means block access, thus skip
+		// Rule that starts with a "-" in depot prefix means exclusion (i.e. revoke access)
 		if strings.HasPrefix(depotPrefix, "-") {
-			continue // TODO: Need to handle "no access" case
-		}
+			_, canRevokeReadAccess := map[string]struct{}{
+				"list":   {},
+				"read":   {},
+				"=read":  {},
+				"open":   {},
+				"write":  {},
+				"review": {},
+				"owner":  {},
+				"admin":  {},
+				"super":  {},
+			}[level]
+			if !canRevokeReadAccess {
+				continue
+			}
 
-		depotPrefixes = append(depotPrefixes, extsvc.RepoID(depotPrefix))
+			for i, prefix := range includePrefixes {
+				if !strings.HasPrefix(depotPrefix[1:], string(prefix)) {
+					continue
+				} else if depotPrefix[1:] == string(prefix) {
+					includePrefixes = append(includePrefixes[:i], includePrefixes[i+1:]...)
+					break
+				}
+
+				excludePrefixes = append(excludePrefixes, extsvc.RepoID(depotPrefix))
+				break
+			}
+
+		} else {
+			_, canGrantReadAccess := map[string]struct{}{
+				"read":   {},
+				"=read":  {},
+				"open":   {},
+				"=open":  {},
+				"write":  {},
+				"=write": {},
+				"review": {},
+				"owner":  {},
+				"admin":  {},
+				"super":  {},
+			}[level]
+			if !canGrantReadAccess {
+				continue
+			}
+
+			includePrefixes = append(includePrefixes, extsvc.RepoID(depotPrefix))
+		}
 	}
 	if err = scanner.Err(); err != nil {
 		return nil, extsvc.RepoIDPrefix, errors.Wrap(err, "scanner.Err")
 	}
 
-	return depotPrefixes, extsvc.RepoIDPrefix, nil
+	return append(includePrefixes, excludePrefixes...), extsvc.RepoIDPrefix, nil
 }
 
 // FetchRepoPerms returns a list of users that have access to the given
@@ -243,10 +294,13 @@ func (p *Provider) URN() string {
 func (p *Provider) Validate() (problems []string) {
 	// Validate the user has "super" access with "-u" option, see https://www.perforce.com/perforce/r12.1/manuals/cmdref/protects.html
 	rc, _, err := gitserver.DefaultClient.P4Exec(context.Background(), p.host, p.user, p.password, "protects", "-u", p.user)
-	if err != nil {
-		return []string{"validate user access level: " + err.Error()}
+	if err == nil {
+		_ = rc.Close()
+		return nil
 	}
-	defer func() { _ = rc.Close() }()
 
-	return nil
+	if strings.Contains(err.Error(), "You don't have permission for this operation.") {
+		return []string{"the user does not have super access"}
+	}
+	return []string{"validate user access level: " + err.Error()}
 }

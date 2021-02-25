@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
@@ -234,7 +235,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		accts = append(accts, acct)
 	}
 
-	var repoSpecs, repoPrefixSpecs []api.ExternalRepoSpec
+	var repoSpecs, includePrefixSpecs, excludePrefixSpecs []api.ExternalRepoSpec
 	for _, acct := range accts {
 		provider := providers[acct.ServiceID]
 		if provider == nil {
@@ -279,6 +280,8 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			}
 		}
 
+		fmt.Println("extIDs", extIDs)
+
 		switch extIDType {
 		case extsvc.RepoIDExact:
 			for _, extID := range extIDs {
@@ -291,11 +294,16 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 
 		case extsvc.RepoIDPrefix:
 			for _, extID := range extIDs {
-				repoPrefixSpecs = append(repoPrefixSpecs, api.ExternalRepoSpec{
-					ID:          string(extID),
+				spec := api.ExternalRepoSpec{
+					ID:          strings.TrimPrefix(string(extID), "-"),
 					ServiceType: provider.ServiceType(),
 					ServiceID:   provider.ServiceID(),
-				})
+				}
+				if strings.HasPrefix(string(extID), "-") {
+					excludePrefixSpecs = append(excludePrefixSpecs, spec)
+				} else {
+					includePrefixSpecs = append(includePrefixSpecs, spec)
+				}
 			}
 
 		default:
@@ -315,10 +323,11 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		}
 		repoNames = append(repoNames, rs...)
 	}
-	if len(repoPrefixSpecs) > 0 {
+	if len(includePrefixSpecs) > 0 {
 		rs, err := s.reposStore.RepoStore.ListRepoNames(ctx, database.ReposListOptions{
-			ExternalRepoPrefixes: repoPrefixSpecs,
-			OnlyPrivate:          true,
+			ExternalRepoIncludePrefixes: includePrefixSpecs,
+			ExternalRepoExcludePrefixes: excludePrefixSpecs,
+			OnlyPrivate:                 true,
 		})
 		if err != nil {
 			return errors.Wrap(err, "list external repositories by prefix matching")
