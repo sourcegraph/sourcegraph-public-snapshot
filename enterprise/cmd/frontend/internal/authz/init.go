@@ -26,8 +26,8 @@ func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigrat
 				eiauthz.ProvidersFromConfig(
 					ctx,
 					conf.Get(),
-					database.ExternalServices(dbconn.Global),
-					database.UserEmails(dbconn.Global),
+					database.ExternalServices(db),
+					database.UserEmails(db),
 				)
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}

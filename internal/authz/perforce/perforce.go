@@ -182,7 +182,6 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 // FetchRepoPerms returns a list of users that have access to the given
 // repository on the Perforce Server.
 func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error) {
-	// TODO: "p4 users", "p4 group -o Ops"
 	rc, _, err := gitserver.DefaultClient.P4Exec(ctx, p.host, p.user, p.password, "protects", "-a", repo.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "list ACLs by depot")
@@ -203,7 +202,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) 
 
 		// Rule that starts with a "-" in depot prefix means block access, thus skip
 		if strings.HasPrefix(depotPrefix, "-") {
-			continue
+			continue // TODO: Need to handle "no access" case
 		}
 
 		switch typ {
@@ -219,6 +218,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) 
 		return nil, errors.Wrap(err, "scanner.Err")
 	}
 
+	// TODO: "p4 users", "p4 group -o Ops"
 	fmt.Println("users", users)
 	fmt.Println("groups", groups)
 
@@ -241,6 +241,12 @@ func (p *Provider) URN() string {
 }
 
 func (p *Provider) Validate() (problems []string) {
-	// TODO: Validate with "p4 protects -u <p.user>" to make sure this is a super user to fetch ACL
+	// Validate the user has "super" access with "-u" option, see https://www.perforce.com/perforce/r12.1/manuals/cmdref/protects.html
+	rc, _, err := gitserver.DefaultClient.P4Exec(context.Background(), p.host, p.user, p.password, "protects", "-u", p.user)
+	if err != nil {
+		return []string{"validate user access level: " + err.Error()}
+	}
+	defer func() { _ = rc.Close() }()
+
 	return nil
 }
