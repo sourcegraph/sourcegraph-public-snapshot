@@ -6,7 +6,7 @@ The following behaviors should be implemented over all stores:
 
 #### Transactions
 
-Stores should enable _transactional execution_ over a set of operations. This ensures that if one operation fails then no other operations within the same transaction were visible to an external observer.
+Stores should enable _transactional execution_ over a set of queries to ensure that if one query in a set fails that any observable effects are rolled back.
 
 ```go
 func DoSomethingAtomic(ctx context.Context, store *MyStore) (err error) {
