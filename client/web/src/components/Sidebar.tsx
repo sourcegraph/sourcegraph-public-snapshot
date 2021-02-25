@@ -1,8 +1,9 @@
-import React, { useState, useCallback } from 'react'
-import { NavLink } from 'react-router-dom'
 import classNames from 'classnames'
-import { Button, Collapse } from 'reactstrap'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
+import MenuUpIcon from 'mdi-react/MenuUpIcon'
+import React, { useCallback, useState } from 'react'
+import { NavLink } from 'react-router-dom'
+import { Button, Collapse } from 'reactstrap'
 
 export const SIDEBAR_BUTTON_CLASS = 'btn btn-secondary d-block w-100 my-2'
 
@@ -46,20 +47,23 @@ export const SidebarCollapseItems: React.FunctionComponent<{
     const [isOpen, setOpen] = useState<boolean>(openByDefault)
     const handleOpen = useCallback(() => setOpen(!isOpen), [isOpen])
     return (
-        <div>
+        <>
             <Button
                 color="secondary"
                 outline={true}
                 onClick={handleOpen}
-                className="btn sidebar__btn d-flex justify-content-between w-100 px-2"
+                className={classNames(
+                    { 'border-bottom-0': !isOpen },
+                    'btn sidebar__btn d-flex justify-content-between w-100 px-2 border'
+                )}
             >
                 <span>
                     {Icon && <Icon className="sidebar__icon icon-inline mr-1" />} {label}
                 </span>
-                <MenuDownIcon className="icon-inline" />
+                {isOpen ? <MenuUpIcon className="icon-inline" /> : <MenuDownIcon className="icon-inline" />}
             </Button>
             <Collapse isOpen={isOpen}>{children}</Collapse>
-        </div>
+        </>
     )
 }
 

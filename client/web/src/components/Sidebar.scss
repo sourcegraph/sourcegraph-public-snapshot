@@ -4,9 +4,22 @@
 
     &__btn {
         background: var(--color-bg-2);
+        border-color: var(--secondary);
+        border-radius: 0;
+        &:first-child {
+            border-radius: $border-radius $border-radius 0 0;
+        }
+        &:last-child {
+            border-radius: 0 0 $border-radius $border-radius;
+        }
+        &--link {
+            &:first-of-type {
+                border-bottom: none !important;
+            }
+        }
     }
 
     &__icon {
-        color: var(----header-icon-color);
+        color: var(--color-bg-6);
     }
 }
