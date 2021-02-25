@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"sync/atomic"
@@ -32,6 +33,10 @@ func validate(indexFile *os.File) error {
 
 	for i, err := range ctx.Errors {
 		fmt.Printf("%d) %s\n", i+1, err)
+	}
+
+	if len(ctx.Errors) > 0 {
+		return errors.New(fmt.Sprintf("Detected %d errors", len(ctx.Errors)))
 	}
 
 	return nil
