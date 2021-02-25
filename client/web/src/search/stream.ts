@@ -2,7 +2,7 @@
 import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber, Notification } from 'rxjs'
 import { defaultIfEmpty, map, materialize, scan } from 'rxjs/operators'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { appendContextFilterToQuery } from '../../../shared/src/search/util'
+import { appendContextFilter } from '../../../shared/src/search/query/transformer'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { SearchPatternType } from '../graphql-operations'
 
@@ -498,7 +498,7 @@ function search({
     trace,
 }: StreamSearchOptions): Observable<SearchEvent> {
     return new Observable<SearchEvent>(observer => {
-        const finalQuery = appendContextFilterToQuery(`${query} ${caseSensitive ? 'case:yes' : ''}`, searchContextSpec)
+        const finalQuery = appendContextFilter(`${query} ${caseSensitive ? 'case:yes' : ''}`, searchContextSpec)
 
         const parameters = [
             ['q', finalQuery],

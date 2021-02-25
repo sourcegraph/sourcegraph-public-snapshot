@@ -71,8 +71,7 @@ import { CodeMonitoringProps } from './enterprise/code-monitoring'
 import { UserRepositoriesUpdateProps } from './util'
 import { FilterKind, findFilter } from '../../shared/src/search/query/validate'
 import { FilterType } from '../../shared/src/search/query/filters'
-import { replaceRange } from '../../shared/src/util/strings'
-import { Filter } from '../../shared/src/search/query/token'
+import { omitContextFilter } from '../../shared/src/search/query/transformer'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -147,15 +146,6 @@ export interface LayoutProps
     children?: never
 }
 
-const omitContextFilterFromQuery = (query: string, contextFilter: Filter): string => {
-    let finalQuery = replaceRange(query, contextFilter.range)
-    if (contextFilter.range.start === 0) {
-        // Remove space at the start
-        finalQuery = finalQuery.slice(1)
-    }
-    return finalQuery
-}
-
 export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const routeMatch = props.routes.find(({ path, exact }) => matchPath(props.location.pathname, { path, exact }))?.path
     const isSearchRelatedPage = (routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')) ?? false
@@ -199,7 +189,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         ) {
             // If a global search context spec is available to the user, we omit it from the
             // query and move it to the search contexts dropdown
-            finalQuery = omitContextFilterFromQuery(finalQuery, globalContextFilter)
+            finalQuery = omitContextFilter(finalQuery, globalContextFilter)
         }
 
         if (finalQuery !== currentQuery) {

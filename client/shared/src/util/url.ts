@@ -5,7 +5,7 @@ import { discreteValueAliases } from '../search/query/filters'
 import { tryCatch } from './errors'
 import { SearchPatternType } from '../graphql-operations'
 import { findFilter, FilterKind } from '../search/query/validate'
-import { appendContextFilterToQuery } from '../search/util'
+import { appendContextFilter } from '../search/query/transformer'
 
 export interface RepoSpec {
     /**
@@ -613,7 +613,7 @@ export function buildSearchURLQuery(
     }
 
     if (searchContextSpec) {
-        queryParameter = appendContextFilterToQuery(queryParameter, searchContextSpec)
+        queryParameter = appendContextFilter(queryParameter, searchContextSpec)
     }
 
     searchParameters.set('q', queryParameter)
