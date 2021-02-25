@@ -87,6 +87,7 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<{
                                 value={token}
                                 onChange={onChangeToken}
                                 className="form-control pr-4"
+                                autoComplete="off"
                             />
                             <ShieldCheckIcon
                                 className="icon-inline add-user-code-hosts-page__icon--inside text-muted"
