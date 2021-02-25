@@ -239,44 +239,134 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) 
 	}
 	defer func() { _ = rc.Close() }()
 
-	var users, groups []string
+	getAllUsers := func() ([]string, error) {
+		// TODO: "p4 users"
+		return []string{"admin", "alice", "bob"}, nil
+	}
+	getGroupMembers := func(group string) ([]string, error) {
+		// TODO: "p4 group -o Ops"
+		return []string{"alice"}, nil
+	}
+
+	users := make(map[string]struct{})
 	scanner := bufio.NewScanner(rc)
 	for scanner.Scan() {
+		line := scanner.Text()
+
+		// Trim comments
+		i := strings.Index(line, "##")
+		if i > -1 {
+			line = line[:i]
+		}
+
 		// e.g. write user alice * //Sourcegraph/...
 		fields := strings.Split(scanner.Text(), " ")
 		if len(fields) < 5 {
 			continue
 		}
+		level := fields[0]                               // e.g. read
 		typ := fields[1]                                 // e.g. user
-		username := fields[2]                            // e.g. alice
+		name := fields[2]                                // e.g. alice
 		depotPrefix := strings.TrimRight(fields[4], ".") // e.g. //Sourcegraph/
 
-		// Rule that starts with a "-" in depot prefix means block access, thus skip
+		// Rule that starts with a "-" in depot prefix means exclusion (i.e. revoke access)
 		if strings.HasPrefix(depotPrefix, "-") {
-			continue // TODO: Need to handle "no access" case
+			_, canRevokeReadAccess := map[string]struct{}{
+				"list":   {},
+				"read":   {},
+				"=read":  {},
+				"open":   {},
+				"write":  {},
+				"review": {},
+				"owner":  {},
+				"admin":  {},
+				"super":  {},
+			}[level]
+			if !canRevokeReadAccess {
+				continue
+			}
+
+			switch typ {
+			case "user":
+				if name == "*" {
+					users = make(map[string]struct{})
+				} else {
+					delete(users, name)
+				}
+			case "group":
+				members, err := getGroupMembers(name)
+				if err != nil {
+					return nil, errors.Wrapf(err, "list members of group %q", name)
+				}
+				for _, member := range members {
+					delete(users, member)
+				}
+
+			default:
+				log15.Warn("authz.perforce.Provider.FetchRepoPerms.unrecognizedType", "type", typ)
+			}
+
+		} else {
+			_, canGrantReadAccess := map[string]struct{}{
+				"read":   {},
+				"=read":  {},
+				"open":   {},
+				"=open":  {},
+				"write":  {},
+				"=write": {},
+				"review": {},
+				"owner":  {},
+				"admin":  {},
+				"super":  {},
+			}[level]
+			if !canGrantReadAccess {
+				continue
+			}
+
+			switch typ {
+			case "user":
+				if name == "*" {
+					all, err := getAllUsers()
+					if err != nil {
+						return nil, errors.Wrap(err, "list all users")
+					}
+					for _, user := range all {
+						users[user] = struct{}{}
+					}
+				} else {
+					users[name] = struct{}{}
+				}
+			case "group":
+				members, err := getGroupMembers(name)
+				if err != nil {
+					return nil, errors.Wrapf(err, "list members of group %q", name)
+				}
+				for _, member := range members {
+					users[member] = struct{}{}
+				}
+
+			default:
+				log15.Warn("authz.perforce.Provider.FetchRepoPerms.unrecognizedType", "type", typ)
+			}
 		}
 
-		switch typ {
-		case "user":
-			users = append(users, username)
-		case "group":
-			groups = append(groups, username)
-		default:
-			log15.Warn("authz.perforce.Provider.FetchRepoPerms.unrecognizedType", "type", typ)
-		}
 	}
 	if err = scanner.Err(); err != nil {
 		return nil, errors.Wrap(err, "scanner.Err")
 	}
 
-	// TODO: "p4 users", "p4 group -o Ops"
+	// TODO: "p4 users"
 	fmt.Println("users", users)
-	fmt.Println("groups", groups)
 
-	// TODO: Need to handle "no access" case
-	// TODO: Resolve group members
-	// TODO: Special handle * as username
-	return nil, nil
+	extIDs := make([]extsvc.AccountID, 0, len(users))
+	for user := range users {
+		extIDs = append(extIDs, extsvc.AccountID(map[string]string{
+			"admin": "admin@joe-perforce-server",
+			"alice": "alice@example.com",
+			"bob":   "bob@example.com",
+		}[user]))
+	}
+	return extIDs, nil
 }
 
 func (p *Provider) ServiceType() string {
