@@ -29,7 +29,9 @@ func Init(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	defaultRing = *ring
+	if ring != nil {
+		defaultRing = *ring
+	}
 
 	conf.ContributeValidator(func(cfg conf.Unified) conf.Problems {
 		if _, err := NewRing(ctx, cfg.EncryptionKeys); err != nil {
