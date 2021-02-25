@@ -4,7 +4,7 @@
 
     &__btn {
         background: var(--color-bg-2);
-        border-color: var(--secondary);
+        border-color: var(--border-color);
         border-radius: 0;
         &:first-child {
             border-radius: $border-radius $border-radius 0 0;

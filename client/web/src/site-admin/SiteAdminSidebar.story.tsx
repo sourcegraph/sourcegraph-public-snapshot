@@ -10,7 +10,7 @@ import { enterpriseSiteAdminSidebarGroups } from '../enterprise/site-admin/sideb
 const groups = [
     {
         header: {
-            label: 'With icon and collapsible',
+            label: 'icon / collapsible',
             icon: EarthIcon,
         },
         items: [
@@ -31,7 +31,7 @@ const groups = [
     },
     {
         header: {
-            label: 'Without icon and collapsible',
+            label: 'non-icon / collapsible',
         },
         items: [
             {
@@ -51,7 +51,7 @@ const groups = [
     },
     {
         header: {
-            label: 'With icon and non-collapsible',
+            label: 'icon / non-collapsible',
             icon: PuzzleOutlineIcon,
         },
         items: [
@@ -63,7 +63,7 @@ const groups = [
     },
     {
         header: {
-            label: 'Without icon and non-collapsible',
+            label: 'icon / non-collapsible',
         },
         items: [
             {
@@ -85,7 +85,9 @@ add(
     'Collapsible',
     () => (
         <MemoryRouter>
-            <SiteAdminSidebar className="site-admin-sidebar" groups={[groups[1]]} />
+            <div style={{ width: '192px' }}>
+                <SiteAdminSidebar className="site-admin-sidebar" groups={[groups[1]]} />
+            </div>
         </MemoryRouter>
     ),
     {
@@ -101,7 +103,9 @@ add(
     'Collapsible with icon',
     () => (
         <MemoryRouter>
-            <SiteAdminSidebar className="site-admin-sidebar" groups={[groups[0]]} />
+            <div style={{ width: '192px' }}>
+                <SiteAdminSidebar className="site-admin-sidebar" groups={[groups[0]]} />
+            </div>
         </MemoryRouter>
     ),
     {
@@ -133,7 +137,9 @@ add(
     'Non-collapsible',
     () => (
         <MemoryRouter>
-            <SiteAdminSidebar className="site-admin-sidebar" groups={[groups[3]]} />
+            <div style={{ width: '192px' }}>
+                <SiteAdminSidebar className="site-admin-sidebar" groups={[groups[3]]} />
+            </div>
         </MemoryRouter>
     ),
     {
@@ -149,7 +155,9 @@ add(
     'Dropdown and single link',
     () => (
         <MemoryRouter>
-            <SiteAdminSidebar className="site-admin-sidebar" groups={groups} />
+            <div style={{ width: '192px' }}>
+                <SiteAdminSidebar className="site-admin-sidebar" groups={groups} />
+            </div>
         </MemoryRouter>
     ),
     {
@@ -165,7 +173,9 @@ add(
     'Enterprise Items',
     () => (
         <MemoryRouter>
-            <SiteAdminSidebar className="site-admin-sidebar" groups={enterpriseSiteAdminSidebarGroups} />
+            <div style={{ width: '192px' }}>
+                <SiteAdminSidebar className="site-admin-sidebar" groups={enterpriseSiteAdminSidebarGroups} />
+            </div>
         </MemoryRouter>
     ),
     {
