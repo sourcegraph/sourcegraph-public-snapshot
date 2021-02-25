@@ -65,11 +65,11 @@ func overrideSiteConfig(ctx context.Context) error {
 	if path == "" {
 		return nil
 	}
-	raw, err := (&configurationSource{}).Read(ctx)
-	if err != nil {
-		return err
-	}
 	var updateFunc = func(ctx context.Context) error {
+		raw, err := (&configurationSource{}).Read(ctx)
+		if err != nil {
+			return err
+		}
 		site, err := ioutil.ReadFile(path)
 		if err != nil {
 			return errors.Wrap(err, "reading SITE_CONFIG_FILE")
@@ -82,7 +82,7 @@ func overrideSiteConfig(ctx context.Context) error {
 		}
 		return nil
 	}
-	err = updateFunc(ctx)
+	err := updateFunc(ctx)
 	if err != nil {
 		return err
 	}
@@ -137,11 +137,11 @@ func overrideExtSvcConfig(ctx context.Context, db dbutil.DB) error {
 	}
 	extsvcs := database.ExternalServices(db)
 
-	raw, err := (&configurationSource{}).Read(ctx)
-	if err != nil {
-		return err
-	}
 	var update = func(ctx context.Context) error {
+		raw, err := (&configurationSource{}).Read(ctx)
+		if err != nil {
+			return err
+		}
 		parsed, err := conf.ParseConfig(raw)
 		if err != nil {
 			return errors.Wrap(err, "parsing extsvc config")
