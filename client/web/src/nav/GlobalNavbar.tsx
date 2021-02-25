@@ -28,6 +28,7 @@ import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
 import { ExtensionAlertAnimationProps } from './UserNavItem'
+import { LayoutRouteProps } from '../routes'
 
 interface Props
     extends SettingsCascadeProps,
@@ -55,6 +56,7 @@ interface Props
     isSourcegraphDotCom: boolean
     isSearchRelatedPage: boolean
     showCampaigns: boolean
+    routes: readonly LayoutRouteProps<{}>[]
 
     // Whether globbing is enabled for filters.
     globbing: boolean
