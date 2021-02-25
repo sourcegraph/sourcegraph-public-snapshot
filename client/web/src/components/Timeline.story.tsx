@@ -14,6 +14,7 @@ add('Basic', () => (
     <WebStory>
         {() => (
             <Timeline
+                now={() => parseISO('2020-08-01T16:21:00+00:00')}
                 stages={[
                     {
                         icon: <CheckIcon />,
