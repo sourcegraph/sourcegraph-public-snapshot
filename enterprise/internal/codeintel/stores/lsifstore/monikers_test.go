@@ -32,7 +32,7 @@ func TestDatabaseMonikersByPosition(t *testing.T) {
 					Kind:                 "export",
 					Scheme:               "gomod",
 					Identifier:           "github.com/sourcegraph/lsif-go/protocol:NewMetaData",
-					PackageInformationID: "60",
+					PackageInformationID: "251",
 				},
 			},
 		}
@@ -57,12 +57,12 @@ func TestDatabaseBulkMonikerResults(t *testing.T) {
 	}
 
 	edgeReferenceLocations := []Location{
-		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(507, 1, 507, 5)},
-		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(530, 1, 530, 5)},
-		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(516, 8, 516, 12)},
 		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(410, 5, 410, 9)},
+		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(411, 1, 411, 8)},
+		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(440, 1, 440, 5)},
+		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(448, 8, 448, 12)},
+		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(449, 3, 449, 10)},
 		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(470, 8, 470, 12)},
-		{DumpID: testBundleID, Path: "internal/index/helper.go", Range: newRange(78, 8, 78, 12)},
 	}
 
 	markdownReferenceLocations := []Location{
