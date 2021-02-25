@@ -9,7 +9,7 @@ Some data migrations may require application-specific logic that can't be easily
 - decoding and interpreting opaque payloads
 - fetching data from another remote API or data store based on existing data
 
-Additionally, the estimated _scale_ of data may be too large to migrate on application startup in an efficient manner.
+Additionally, the estimated _scale_ of data may be too large to migrate on application startup in an efficient manner - in which case an out of band migration is suitable.
 
 Remember - the longer we block application startup on migrations, the more vulnerable an instance will become to downtime as no _new_ frontend containers will be able to service requests. In these cases, you should define an _out of band_ migration, which is run in the background of the application over time instead of at startup.
 
