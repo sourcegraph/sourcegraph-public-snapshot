@@ -34,7 +34,7 @@ For every registered migrator, the migration runner will periodically check for 
 
 #### Upgrades
 
-It is not valid for a user to upgrade beyond the version that an incomplete migration is deprecated. Site-admin must wait for these migrations to finish before an upgrade. Otherwise, the instance will have data in a format that is no longer readable by the new version.
+Site admins will be prevented from upgrading beyond the version where an incomplete migration has been deprecated. i.e., site-admin must wait for these migrations to finish before an upgrade. Otherwise, the instance will have data in a format that is no longer readable by the new version.
 
 Today, this is not actually enforced - [in the future](https://github.com/sourcegraph/sourcegraph/issues/18240), we'll ensure that the instance gives plenty of warnings prior to an upgrade and ensure the instance does not start in such an invalid state.
 
