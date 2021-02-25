@@ -1,5 +1,10 @@
-import { validateFilter } from './filters'
+import { escapeSpaces, validateFilter } from './filters'
 import { Literal, Quoted } from './token'
+
+expect.addSnapshotSerializer({
+    serialize: value => value as string,
+    test: () => true,
+})
 
 describe('validateFilter()', () => {
     interface TestCase {
@@ -65,4 +70,18 @@ describe('validateFilter()', () => {
             expect(validateFilter(filterType, token)).toStrictEqual(expected)
         })
     }
+})
+
+describe('escapeSpaces', () => {
+    test('escapes spaces in value', () => {
+        expect(escapeSpaces('contains a space')).toMatchInlineSnapshot('contains\\ a\\ space')
+    })
+
+    test('skips escaped values', () => {
+        expect(escapeSpaces('\\\\already\\ escaped')).toMatchInlineSnapshot('\\\\already\\ escaped')
+    })
+
+    test('terminates with \\', () => {
+        expect(escapeSpaces('last\\')).toMatchInlineSnapshot('last\\')
+    })
 })
