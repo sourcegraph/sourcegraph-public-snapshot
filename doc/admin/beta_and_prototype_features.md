@@ -1,6 +1,6 @@
 # Beta and prototype features
 
-Sourcegraph often beta-tests major features before we make them generally available. 
+Sourcegraph often beta tests major features before we make them generally available. 
 
 Exposing beta and prototype features gives you an opportunity to try our newest features sooner.
 
