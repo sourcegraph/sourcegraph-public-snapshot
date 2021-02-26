@@ -8,7 +8,7 @@ interface Props {
     authenticatedUser: Pick<AuthenticatedUser, 'email'>
 }
 
-const SIGN_UP_FORM_URL = 'https://share.hsforms.com/1tkScUc65Tm-Yu98zUZcLGw1n7ku'
+const SIGN_UP_FORM_URL = 'https://info.sourcegraph.com/product-research'
 
 export const ProductResearchPage: React.FunctionComponent<Props> = ({ telemetryService, authenticatedUser }) => {
     useEffect(() => {
