@@ -154,6 +154,24 @@ func TestNewRoutesAndReceivers(t *testing.T) {
 			wantReceivers: 4,
 			wantRoutes:    3,
 		},
+		{
+			name: "missing env var for opsgenie",
+			args: args{
+				newAlerts: []*schema.ObservabilityAlerts{{
+					Level: "warning",
+					Notifier: schema.Notifier{
+						Opsgenie: &schema.NotifierOpsGenie{
+							Type: "opsgenie",
+						},
+					},
+					Owners: []string{"distribution"},
+				}},
+			},
+
+			wantReceivers:  4,
+			wantRoutes:     3,
+			wantRenderFail: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
