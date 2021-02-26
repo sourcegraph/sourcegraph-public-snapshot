@@ -59,7 +59,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                     switchMap(([props]) => {
                         const markdownHTML = sanitizeHtml(
                             props.item.body.html || renderMarkdown(props.item.body.text),
-                            // This already going to be rendered inside a <code> tag so remove any extra <code> inside
+                            // This is already going to be rendered inside a <code> tag so remove any extra <code> inside
                             { allowedTags: sanitizeHtml.defaults.allowedTags.filter(tag => tag !== 'code') }
                         )
                         if (this.bodyIsCode()) {
