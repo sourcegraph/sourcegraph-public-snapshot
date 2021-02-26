@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react'
 import { matchPath, useLocation } from 'react-router'
 import { LayoutRouteProps } from '../routes'
 
