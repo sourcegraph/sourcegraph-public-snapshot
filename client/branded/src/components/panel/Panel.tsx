@@ -1,15 +1,12 @@
 import * as H from 'history'
-import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useEffect, useMemo } from 'react'
 import { BehaviorSubject, from, Observable } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
-import { ContributableMenu } from '../../../../shared/src/api/protocol/contribution'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
-import { ActionsNavItems } from '../../../../shared/src/actions/ActionsNavItems'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import { FetchFileParameters } from '../../../../shared/src/components/CodeExcerpt'
 import { Resizable } from '../../../../shared/src/components/Resizable'
-import { Spacer, Tab, TabsWithURLViewStatePersistence } from '../Tabs'
+import { Tab as Tab1 } from '../Tabs'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
@@ -26,6 +23,9 @@ import { wrapRemoteObservable } from '../../../../shared/src/api/client/api/comm
 import { ExtensionsLoadingPanelView } from './views/ExtensionsLoadingView'
 import { haveInitialExtensionsLoaded } from '../../../../shared/src/api/features'
 import { PanelViewData } from '../../../../shared/src/api/extension/extensionHostApi'
+import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
+import { useLocalStorage } from '../../../../shared/src/util/useLocalStorage'
+import { Button } from 'reactstrap'
 
 interface Props
     extends ExtensionsControllerProps,
@@ -56,7 +56,7 @@ export interface PanelViewWithComponent extends PanelViewData {
 /**
  * A tab and corresponding content to display in the panel.
  */
-interface PanelItem extends Tab<string> {
+interface PanelItem extends Tab1<string> {
     /**
      * Controls the relative order of panel items. The items are laid out from highest priority (at the beginning)
      * to lowest priority (at the end). The default is 0.
@@ -171,10 +171,11 @@ export const Panel = React.memo<Props>(props => {
         )
     )
 
-    const onDismiss = useCallback(
-        () => props.history.push(TabsWithURLViewStatePersistence.urlForTabID(props.location, null)),
-        [props.history, props.location]
-    )
+    const [tabIndex, setTabIndex] = useLocalStorage('TABS_KEY', 0)
+    const [togglePanel, setTogglePanel] = useLocalStorage('SIDEBAR_KEY', true)
+
+    const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
+    const handlePanelToggle = useCallback(() => setTogglePanel(!togglePanel), [setTogglePanel, togglePanel])
 
     const panelViews = [...(builtinPanels || []), ...(extensionPanels || [])]
 
@@ -191,60 +192,32 @@ export const Panel = React.memo<Props>(props => {
               )
               .sort(byPriority)
         : []
-    const hasTabs = items.length > 0
-    const activePanelViewID = TabsWithURLViewStatePersistence.readFromURL(props.location, items)
-    const activePanelView = items.find(item => item.id === activePanelViewID)
 
-    return (
-        <div className="panel">
-            {!areExtensionsReady ? (
-                <ExtensionsLoadingPanelView />
-            ) : hasTabs ? (
-                <TabsWithURLViewStatePersistence
-                    tabs={items}
-                    tabBarEndFragment={
-                        <>
-                            <Spacer />
-                            <ActionsNavItems
-                                {...props}
-                                // TODO remove references to Bootstrap from shared, get class name from prop
-                                // This is okay for now because the Panel is currently only used in the webapp
-                                listClass="nav panel__actions"
-                                actionItemClass="nav-link mw-100 panel__action"
-                                actionItemIconClass="icon-inline"
-                                menu={ContributableMenu.PanelToolbar}
-                                scope={
-                                    activePanelView !== undefined
-                                        ? {
-                                              type: 'panelView',
-                                              id: activePanelView.id,
-                                              hasLocations: Boolean(activePanelView.hasLocations),
-                                          }
-                                        : undefined
-                                }
-                                wrapInList={true}
-                            />
-                            <button
-                                type="button"
-                                onClick={onDismiss}
-                                className="btn btn-icon tab-bar__end-fragment-other-element panel__dismiss"
-                                data-tooltip="Close"
-                            >
-                                <CloseIcon className="icon-inline" />
-                            </button>
-                        </>
-                    }
-                    className="panel__tabs"
-                    tabBarClassName="panel__tab-bar"
-                    tabClassName="tab-bar__tab--h5like"
-                    location={props.location}
-                >
-                    {items?.map(({ id, element }) => React.cloneElement(element, { key: id }))}
-                </TabsWithURLViewStatePersistence>
-            ) : (
-                <EmptyPanelView />
-            )}
-        </div>
+    return !areExtensionsReady ? (
+        <ExtensionsLoadingPanelView />
+    ) : items ? (
+        <Tabs className="w-100" defaultIndex={tabIndex} onChange={handleTabsChange}>
+            <div className="d-flex">
+                <TabList>
+                    {items.map(({ label, id }) => (
+                        <Tab key={id}>{label}</Tab>
+                    ))}
+                </TabList>
+                <Button
+                    onClick={handlePanelToggle}
+                    close={true}
+                    className="bg-transparent border-0 close ml-auto"
+                    title="Close sidebar (Alt+S/Opt+S)"
+                />
+            </div>
+            <TabPanels>
+                {items.map(({ id, element }) => (
+                    <TabPanel key={id}>{element}</TabPanel>
+                ))}
+            </TabPanels>
+        </Tabs>
+    ) : (
+        <EmptyPanelView />
     )
 })
 
@@ -254,12 +227,14 @@ function byPriority(a: { priority: number }, b: { priority: number }): number {
 
 /** A wrapper around Panel that makes it resizable. */
 export const ResizablePanel: React.FunctionComponent<Props> = props => (
-    <Resizable
-        // className="resizable-panel"
-        position="top"
-        width={350}
-        // storageKey="panel-size"
-    >
-        <Panel {...props} />
-    </Resizable>
+    <div className="w-100 h-100">
+        <Resizable
+            // className="resizable-panel"
+            position="top"
+            defaultSize={350}
+            // storageKey="panel-size"
+        >
+            <Panel {...props} />
+        </Resizable>
+    </div>
 )

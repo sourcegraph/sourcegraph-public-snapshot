@@ -50,7 +50,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
     }
 
     return (
-        <Resizable width={256} position="left">
+        <Resizable defaultSize={256} position="left">
             <Tabs className="w-100" defaultIndex={tabIndex} onChange={handleTabsChange}>
                 <div className="d-flex">
                     <TabList>

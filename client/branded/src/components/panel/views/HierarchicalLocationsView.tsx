@@ -238,7 +238,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                                         // className="hierarchical-locations-view__resizable"
                                         position="left"
                                         // storageKey={`hierarchical-locations-view-resizable:${group.name}`}
-                                        width={230}
+                                        defaultSize={230}
                                     >
                                         <div className="list-group list-group-flush hierarchical-locations-view__list test-hierarchical-locations-view-list">
                                             {groups[index].map((group, innerIndex) => (
