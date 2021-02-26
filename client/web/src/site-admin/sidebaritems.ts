@@ -6,6 +6,9 @@ import CogsIcon from 'mdi-react/CogsIcon'
 import MonitorStarIcon from 'mdi-react/MonitorStarIcon'
 import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
+import BrainIcon from 'mdi-react/BrainIcon'
+import BriefcaseIcon from 'mdi-react/BriefcaseIcon'
+import { SHOW_BUSINESS_FEATURES } from '../enterprise/dotcom/productSubscriptions/features'
 
 export const overviewGroup: SiteAdminSideBarGroup = {
     header: {
@@ -147,11 +150,51 @@ export const apiConsoleGroup: SiteAdminSideBarGroup = {
     ],
 }
 
+export const businessGroup: SiteAdminSideBarGroup = {
+    header: { label: 'Business', icon: BriefcaseIcon },
+    items: [
+        {
+            label: 'Customers',
+            to: '/site-admin/dotcom/customers',
+            condition: () => SHOW_BUSINESS_FEATURES,
+        },
+        {
+            label: 'Subscriptions',
+            to: '/site-admin/dotcom/product/subscriptions',
+            condition: () => SHOW_BUSINESS_FEATURES,
+        },
+        {
+            label: 'License key lookup',
+            to: '/site-admin/dotcom/product/licenses',
+            condition: () => SHOW_BUSINESS_FEATURES,
+        },
+    ],
+    condition: () => SHOW_BUSINESS_FEATURES,
+}
+
+export const codeIntelGroup: SiteAdminSideBarGroup = {
+    header: { label: 'Code intelligence', icon: BrainIcon },
+    items: [
+        {
+            to: '/site-admin/code-intelligence/uploads',
+            label: 'Uploads',
+        },
+        {
+            to: '/site-admin/code-intelligence/indexes',
+            label: 'Auto indexing',
+            condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
+        },
+    ],
+}
+
 export const siteAdminSidebarGroups: SiteAdminSideBarGroups = [
     overviewGroup,
     configurationGroup,
     repositoriesGroup,
+    codeIntelGroup,
     usersGroup,
     maintenanceGroup,
+    extensionsGroup,
+    businessGroup,
     apiConsoleGroup,
 ]

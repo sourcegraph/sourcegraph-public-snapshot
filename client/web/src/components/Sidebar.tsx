@@ -48,21 +48,21 @@ export const SidebarCollapseItems: React.FunctionComponent<{
     const handleOpen = useCallback(() => setOpen(!isOpen), [isOpen])
     return (
         <>
-            <Button
-                color="secondary"
-                outline={true}
+            <button
+                aria-expanded={isOpen}
+                aria-controls={label}
+                type="button"
                 onClick={handleOpen}
-                className={classNames(
-                    { 'border-bottom-0': !isOpen },
-                    'btn sidebar__btn d-flex justify-content-between w-100 px-2 border'
-                )}
+                className="bg-2 border-0 d-flex justify-content-between list-group-item-action py-2 w-100"
             >
                 <span>
                     {Icon && <Icon className="sidebar__icon icon-inline mr-1" />} {label}
                 </span>
                 {isOpen ? <MenuUpIcon className="icon-inline" /> : <MenuDownIcon className="icon-inline" />}
-            </Button>
-            <Collapse isOpen={isOpen}>{children}</Collapse>
+            </button>
+            <Collapse id={label} isOpen={isOpen}>
+                {children}
+            </Collapse>
         </>
     )
 }
