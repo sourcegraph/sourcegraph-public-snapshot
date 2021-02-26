@@ -4,17 +4,21 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
 import { ErrorAlert } from '../../../components/alerts'
 import { deleteCampaignsCredential } from './backend'
-import { Scalars } from '../../../graphql-operations'
+import { CampaignsCodeHostFields, CampaignsCredentialFields } from '../../../graphql-operations'
+import { CodeHostSshPublicKey } from './CodeHostSshPublicKey'
+import { ModalHeader } from './ModalHeader'
 
 export interface RemoveCredentialModalProps {
-    credentialID: Scalars['ID']
+    codeHost: CampaignsCodeHostFields
+    credential: CampaignsCredentialFields
 
     onCancel: () => void
     afterDelete: () => void
 }
 
 export const RemoveCredentialModal: React.FunctionComponent<RemoveCredentialModalProps> = ({
-    credentialID,
+    codeHost,
+    credential,
     onCancel,
     afterDelete,
 }) => {
@@ -23,12 +27,12 @@ export const RemoveCredentialModal: React.FunctionComponent<RemoveCredentialModa
     const onDelete = useCallback<React.MouseEventHandler>(async () => {
         setIsLoading(true)
         try {
-            await deleteCampaignsCredential(credentialID)
+            await deleteCampaignsCredential(credential.id)
             afterDelete()
         } catch (error) {
             setIsLoading(asError(error))
         }
-    }, [afterDelete, credentialID])
+    }, [afterDelete, credential.id])
     return (
         <Dialog
             className="modal-body modal-body--top-third p-4 rounded border"
@@ -36,15 +40,32 @@ export const RemoveCredentialModal: React.FunctionComponent<RemoveCredentialModa
             aria-labelledby={labelId}
         >
             <div className="web-content test-remove-credential-modal">
-                <h3 className="text-danger" id={labelId}>
-                    Remove campaigns token?
-                </h3>
+                <ModalHeader
+                    id={labelId}
+                    externalServiceKind={codeHost.externalServiceKind}
+                    externalServiceURL={codeHost.externalServiceURL}
+                />
+
+                <h3 className="text-danger mb-4">Removing credentials is irreversible</h3>
 
                 {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
 
-                <p>You will not be able to create changesets on this code host if this token is removed.</p>
+                <p>
+                    To create changesets on this code host after removing credentials, you will need to repeat the 'Add
+                    credentials' process.
+                </p>
 
-                <div className="d-flex justify-content-end pt-5">
+                {codeHost.requiresSSH && (
+                    <CodeHostSshPublicKey
+                        externalServiceKind={codeHost.externalServiceKind}
+                        sshPublicKey={credential.sshPublicKey!}
+                        showInstructionsLink={false}
+                        showCopyButton={false}
+                        label="Public key to remove"
+                    />
+                )}
+
+                <div className="d-flex justify-content-end pt-1">
                     <button
                         type="button"
                         disabled={isLoading === true}
@@ -60,7 +81,7 @@ export const RemoveCredentialModal: React.FunctionComponent<RemoveCredentialModa
                         onClick={onDelete}
                     >
                         {isLoading === true && <LoadingSpinner className="icon-inline" />}
-                        Yes, remove connection
+                        Remove credentials
                     </button>
                 </div>
             </div>

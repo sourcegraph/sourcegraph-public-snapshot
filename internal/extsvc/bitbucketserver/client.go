@@ -1291,6 +1291,15 @@ func IsNotFound(err error) bool {
 	return false
 }
 
+// IsUnauthorized reports whether err is a Bitbucket Server API 401 error.
+func IsUnauthorized(err error) bool {
+	switch e := errors.Cause(err).(type) {
+	case *httpError:
+		return e.Unauthorized()
+	}
+	return false
+}
+
 // IsNoSuchLabel reports whether err is a Bitbucket Server API "No Such Label"
 // error.
 func IsNoSuchLabel(err error) bool {

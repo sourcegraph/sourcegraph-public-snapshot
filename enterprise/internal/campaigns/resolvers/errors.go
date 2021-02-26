@@ -1,5 +1,7 @@
 package resolvers
 
+import "fmt"
+
 type ErrIDIsZero struct{}
 
 func (e ErrIDIsZero) Error() string {
@@ -86,4 +88,16 @@ func (e ErrDuplicateCredential) Error() string {
 
 func (e ErrDuplicateCredential) Extensions() map[string]interface{} {
 	return map[string]interface{}{"code": "ErrDuplicateCredential"}
+}
+
+type ErrVerifyCredentialFailed struct {
+	SourceErr error
+}
+
+func (e ErrVerifyCredentialFailed) Error() string {
+	return fmt.Sprintf("Failed to verify the credential:\n```\n%s\n```\n", e.SourceErr)
+}
+
+func (e ErrVerifyCredentialFailed) Extensions() map[string]interface{} {
+	return map[string]interface{}{"code": "ErrVerifyCredentialFailed"}
 }

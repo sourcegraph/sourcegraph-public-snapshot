@@ -1,6 +1,7 @@
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 import React from 'react'
+import { ExternalServiceKind } from '../../../../../shared/src/graphql-operations'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 import { RemoveCredentialModal } from './RemoveCredentialModal'
 
@@ -13,8 +14,47 @@ const { add } = storiesOf('web/campaigns/settings/RemoveCredentialModal', module
         },
     })
 
-add('Confirmation', () => (
+const credential = {
+    id: '123',
+    createdAt: new Date().toISOString(),
+    sshPublicKey:
+        'ssh-rsa randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
+}
+
+add('No ssh', () => (
     <EnterpriseWebStory>
-        {props => <RemoveCredentialModal {...props} credentialID="123" afterDelete={noop} onCancel={noop} />}
+        {props => (
+            <RemoveCredentialModal
+                {...props}
+                codeHost={{
+                    credential,
+                    requiresSSH: false,
+                    externalServiceKind: ExternalServiceKind.GITHUB,
+                    externalServiceURL: 'https://github.com/',
+                }}
+                credential={credential}
+                afterDelete={noop}
+                onCancel={noop}
+            />
+        )}
+    </EnterpriseWebStory>
+))
+
+add('Requires ssh', () => (
+    <EnterpriseWebStory>
+        {props => (
+            <RemoveCredentialModal
+                {...props}
+                codeHost={{
+                    credential,
+                    requiresSSH: true,
+                    externalServiceKind: ExternalServiceKind.GITHUB,
+                    externalServiceURL: 'https://github.com/',
+                }}
+                credential={credential}
+                afterDelete={noop}
+                onCancel={noop}
+            />
+        )}
     </EnterpriseWebStory>
 ))

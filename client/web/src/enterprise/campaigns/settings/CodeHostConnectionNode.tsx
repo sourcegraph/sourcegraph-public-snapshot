@@ -7,6 +7,7 @@ import { CampaignsCodeHostFields, Scalars } from '../../../graphql-operations'
 import { AddCredentialModal } from './AddCredentialModal'
 import { RemoveCredentialModal } from './RemoveCredentialModal'
 import { Subject } from 'rxjs'
+import { ViewCredentialModal } from './ViewCredentialModal'
 
 export interface CodeHostConnectionNodeProps {
     node: CampaignsCodeHostFields
@@ -15,7 +16,7 @@ export interface CodeHostConnectionNodeProps {
     updateList: Subject<void>
 }
 
-type OpenModal = 'add' | 'delete'
+type OpenModal = 'add' | 'view' | 'delete'
 
 export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionNodeProps> = ({
     node,
@@ -33,7 +34,11 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
         event.preventDefault()
         setOpenModal('delete')
     }, [])
-    const onCancel = useCallback(() => {
+    const onClickView = useCallback<React.MouseEventHandler>(event => {
+        event.preventDefault()
+        setOpenModal('view')
+    }, [])
+    const closeModal = useCallback(() => {
         setOpenModal(undefined)
     }, [])
     const afterAction = useCallback(() => {
@@ -64,13 +69,20 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                     </h3>
                     <div className="mb-0">
                         {isEnabled && (
-                            <a
-                                href=""
-                                className="btn btn-link text-danger test-code-host-connection-node-btn-remove"
-                                onClick={onClickRemove}
-                            >
-                                Remove
-                            </a>
+                            <>
+                                <a
+                                    href=""
+                                    className="btn btn-link text-danger test-code-host-connection-node-btn-remove"
+                                    onClick={onClickRemove}
+                                >
+                                    Remove
+                                </a>
+                                {node.requiresSSH && (
+                                    <button type="button" onClick={onClickView} className="btn btn-secondary ml-2">
+                                        View public key
+                                    </button>
+                                )}
+                            </>
                         )}
                         {!isEnabled && (
                             <button
@@ -78,7 +90,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                                 className="btn btn-success test-code-host-connection-node-btn-add"
                                 onClick={onClickAdd}
                             >
-                                Add token
+                                Add credentials
                             </button>
                         )}
                     </div>
@@ -86,19 +98,24 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
             </li>
             {openModal === 'delete' && (
                 <RemoveCredentialModal
-                    onCancel={onCancel}
+                    onCancel={closeModal}
                     afterDelete={afterAction}
-                    credentialID={node.credential!.id}
+                    codeHost={node}
+                    credential={node.credential!}
                 />
+            )}
+            {openModal === 'view' && (
+                <ViewCredentialModal onClose={closeModal} codeHost={node} credential={node.credential!} />
             )}
             {openModal === 'add' && (
                 <AddCredentialModal
-                    onCancel={onCancel}
+                    onCancel={closeModal}
                     afterCreate={afterAction}
                     history={history}
                     userID={userID}
                     externalServiceKind={node.externalServiceKind}
                     externalServiceURL={node.externalServiceURL}
+                    requiresSSH={node.requiresSSH}
                 />
             )}
         </>

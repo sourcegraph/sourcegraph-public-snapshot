@@ -42,6 +42,11 @@ $green: $oc-green-7;
 $teal: $oc-teal-7;
 $cyan: $oc-cyan-3;
 
+// Logo colors
+$logo-orange: #f96216;
+$logo-blue: #00b4f2;
+$logo-purple: #b200f8;
+
 $primary: $blue;
 $secondary: #2b3750;
 $success: $green;
@@ -78,6 +83,9 @@ $text-muted: var(--text-muted);
     --danger: #{$danger};
     --merged: #{$merged};
     --color-border-active: #329af0;
+    --logo-orange: #{$logo-orange};
+    --logo-blue: #{$logo-blue};
+    --logo-purple: #{$logo-purple};
 }
 .theme-light {
     // Affects default browser styles
