@@ -1,3 +1,4 @@
+import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
 import * as H from 'history'
 import React, { useCallback, useEffect, useMemo } from 'react'
 import { BehaviorSubject, from, Observable } from 'rxjs'
@@ -8,12 +9,11 @@ import { FetchFileParameters } from '../../../../shared/src/components/CodeExcer
 import { Resizable } from '../../../../shared/src/components/Resizable'
 import { Tab as Tab1 } from '../Tabs'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
+import { VersionContextProps } from '../../../../shared/src/search/util'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
-import { EmptyPanelView } from './views/EmptyPanelView'
-import { PanelView } from './views/PanelView'
 import { ThemeProps } from '../../../../shared/src/theme'
-import { VersionContextProps } from '../../../../shared/src/search/util'
+
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { combineLatestOrDefault } from '../../../../shared/src/util/rxjs/combineLatestOrDefault'
 import { Location } from '@sourcegraph/extension-api-types'
@@ -23,7 +23,7 @@ import { wrapRemoteObservable } from '../../../../shared/src/api/client/api/comm
 import { ExtensionsLoadingPanelView } from './views/ExtensionsLoadingView'
 import { haveInitialExtensionsLoaded } from '../../../../shared/src/api/features'
 import { PanelViewData } from '../../../../shared/src/api/extension/extensionHostApi'
-import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
+
 import { useLocalStorage } from '../../../../shared/src/util/useLocalStorage'
 import { Button } from 'reactstrap'
 
@@ -114,6 +114,12 @@ export const Panel = React.memo<Props>(props => {
         useMemo(() => haveInitialExtensionsLoaded(props.extensionsController.extHostAPI), [props.extensionsController])
     )
 
+    const [panels, setPanels] = useState<PanelItem[]>([])
+    const [tabIndex, setTabIndex] = useState(0)
+    const { hash, pathname } = useLocation()
+    const history = useHistory()
+    const handlePanelClose = useCallback(() => history.replace(pathname), [history, pathname])
+
     const builtinPanels: PanelViewWithComponent[] | undefined = useObservable(
         useMemo(
             () =>
@@ -130,6 +136,19 @@ export const Panel = React.memo<Props>(props => {
             []
         )
     )
+    console.log(items)
+    console.log(panels)
+
+    const handleActiveTab = useCallback(
+        (index: number): void => {
+            history.replace(`${pathname}${hash.split('=')[0]}=${panels[index].id}`)
+        },
+        [hash, history, panels, pathname]
+    )
+
+    useEffect(() => {
+        setTabIndex(panels.findIndex(({ id }) => id === `${hash.split('=')[1]}`))
+    }, [hash, panels])
 
     const extensionPanels: PanelViewWithComponent[] | undefined = useObservable(
         useMemo(
@@ -171,12 +190,6 @@ export const Panel = React.memo<Props>(props => {
         )
     )
 
-    const [tabIndex, setTabIndex] = useLocalStorage('TABS_KEY', 0)
-    const [togglePanel, setTogglePanel] = useLocalStorage('SIDEBAR_KEY', true)
-
-    const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
-    const handlePanelToggle = useCallback(() => setTogglePanel(!togglePanel), [setTogglePanel, togglePanel])
-
     const panelViews = [...(builtinPanels || []), ...(extensionPanels || [])]
 
     const items = panelViews
@@ -204,7 +217,7 @@ export const Panel = React.memo<Props>(props => {
                     ))}
                 </TabList>
                 <Button
-                    onClick={handlePanelToggle}
+                    onClick={handlePanelClose}
                     close={true}
                     className="bg-transparent border-0 close ml-auto"
                     title="Close sidebar (Alt+S/Opt+S)"
