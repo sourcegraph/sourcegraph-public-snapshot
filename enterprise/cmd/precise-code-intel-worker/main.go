@@ -89,9 +89,9 @@ func main() {
 
 	// Initialize worker
 	worker := worker.NewWorker(
-		&worker.DBStoreShim{dbStore},
+		&worker.DBStoreShim{Store: dbStore},
 		workerStore,
-		&worker.LSIFStoreShim{lsifStore},
+		&worker.LSIFStoreShim{Store: lsifStore},
 		uploadStore,
 		gitserverClient,
 		config.WorkerPollInterval,
