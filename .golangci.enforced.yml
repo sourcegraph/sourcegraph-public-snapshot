@@ -1,0 +1,14 @@
+# See explanation of linters at https://golangci-lint.run/usage/linters/
+linters:
+  disable-all: true
+  enable:
+    - ineffassign
+
+run:
+  timeout: 5m
+
+  skip-dirs:
+    - client
+    - ui
+    - vendor
+    - node_modules
