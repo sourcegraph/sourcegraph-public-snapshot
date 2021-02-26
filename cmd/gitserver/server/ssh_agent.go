@@ -6,11 +6,11 @@ import (
 	"net"
 	"os"
 	"path"
+	"sync/atomic"
 	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	"go.uber.org/atomic"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
 )
@@ -105,9 +105,9 @@ func (a *sshAgent) Socket() string {
 	return a.sock
 }
 
-var sshAgentSockID = atomic.NewInt64(0)
+var sshAgentSockID int64 = 0
 
 func generateSocketFilename() string {
 	// We need to set up a Unix socket. We need a unique, temporary file.
-	return path.Join(os.TempDir(), fmt.Sprintf("ssh-agent-%d-%d.sock", time.Now().Unix(), sshAgentSockID.Inc()))
+	return path.Join(os.TempDir(), fmt.Sprintf("ssh-agent-%d-%d.sock", time.Now().Unix(), atomic.AddInt64(&sshAgentSockID, 1)))
 }
