@@ -415,7 +415,7 @@ describe('Search', () => {
             expect(results).toContain('Search is invalid')
         })
 
-        test.only('Streaming diff search syntax highlighting', async () => {
+        test('Streaming diff search syntax highlighting', async () => {
             const searchStreamEvents: SearchEvent[] = [
                 {
                     type: 'matches',
