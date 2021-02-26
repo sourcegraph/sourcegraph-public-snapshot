@@ -84,6 +84,6 @@
     }
 
     &__action {
-        padding: 0.25rem 0.75rem;
+        padding: 0.25rem 0.75rem calc(0.25rem + 3px);
     }
 }
