@@ -7,7 +7,7 @@ import {
     WebGraphQlOperations,
     SearchContextsResult,
 } from '../graphql-operations'
-import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
+import { Driver, createDriverForTest, percySnapshot } from '../../../shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { test } from 'mocha'
@@ -413,6 +413,60 @@ describe('Search', () => {
                 () => document.querySelector('[data-testid="search-results-list-error"]')?.textContent
             )
             expect(results).toContain('Search is invalid')
+        })
+
+        test('Streaming diff search syntax highlighting', async () => {
+            const searchStreamEvents: SearchEvent[] = [
+                {
+                    type: 'matches',
+                    data: [
+                        {
+                            type: 'commit',
+                            icon:
+                                'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgdmVyc2lvbj0iMS4xIiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTE3LDEyQzE3LDE0LjQyIDE1LjI4LDE2LjQ0IDEzLDE2LjlWMjFIMTFWMTYuOUM4LjcyLDE2LjQ0IDcsMTQuNDIgNywxMkM3LDkuNTggOC43Miw3LjU2IDExLDcuMVYzSDEzVjcuMUMxNS4yOCw3LjU2IDE3LDkuNTggMTcsMTJNMTIsOUEzLDMgMCAwLDAgOSwxMkEzLDMgMCAwLDAgMTIsMTVBMywzIDAgMCwwIDE1LDEyQTMsMyAwIDAsMCAxMiw5WiIgLz48L3N2Zz4=',
+                            label:
+                                '[sourcegraph/sourcegraph](/gitlab.sgdev.org/sourcegraph/sourcegraph) › [Rijnard van Tonder](/gitlab.sgdev.org/sourcegraph/sourcegraph/-/commit/b6dd338737c090fdab31d324542bfdaa7ce9f766): [search: if not specified, set fork:no by default (#8739)](/gitlab.sgdev.org/sourcegraph/sourcegraph/-/commit/b6dd338737c090fdab31d324542bfdaa7ce9f766)',
+                            url:
+                                '/gitlab.sgdev.org/sourcegraph/sourcegraph/-/commit/b6dd338737c090fdab31d324542bfdaa7ce9f766',
+                            detail:
+                                '[`b6dd338` one year ago](/gitlab.sgdev.org/sourcegraph/sourcegraph/-/commit/b6dd338737c090fdab31d324542bfdaa7ce9f766)',
+                            content:
+                                "```diff\nweb/src/regression/search.test.ts web/src/regression/search.test.ts\n@@ -434,0 +435,3 @@ describe('Search regression test suite', () => {\n+        test('Fork repos excluded by default', async () => {\n+            const urlQuery = buildSearchURLQuery('type:repo sgtest/mux', GQL.SearchPatternType.regexp, false)\n+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)\n@@ -434,0 +439,4 @@ describe('Search regression test suite', () => {\n+        })\n+        test('Forked repos included by by fork option', async () => {\n+            const urlQuery = buildSearchURLQuery('type:repo sgtest/mux fork:yes', GQL.SearchPatternType.regexp, false)\n+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)\n```",
+                            ranges: [
+                                [-1, 30, 4],
+                                [-4, 30, 4],
+                                [3, 9, 4],
+                                [4, 63, 4],
+                                [8, 9, 4],
+                                [9, 63, 4],
+                            ],
+                        },
+                    ],
+                },
+                { type: 'done', data: {} },
+            ]
+
+            const highlightResult: Partial<WebGraphQlOperations> = {
+                highlightCode: ({ isLightTheme }) => ({
+                    highlightCode: isLightTheme
+                        ? '<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span style="color:#657b83;">web/src/regression/search.test.ts web/src/regression/search.test.ts\n</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#268bd2;">@@ -434,0 +435,3 @@ </span><span style="color:#cb4b16;">describe(&#39;Search regression test suite&#39;, () =&gt; {\n</span></div></td></tr><tr><td class="line" data-line="3"></td><td class="code"><div><span style="background-color:#deeade;color:#2b3750;">+        test(&#39;Fork repos excluded by default&#39;, async () =&gt; {\n</span></div></td></tr><tr><td class="line" data-line="4"></td><td class="code"><div><span style="background-color:#deeade;color:#2b3750;">+            const urlQuery = buildSearchURLQuery(&#39;type:repo sgtest/mux&#39;, GQL.SearchPatternType.regexp, false)\n</span></div></td></tr><tr><td class="line" data-line="5"></td><td class="code"><div><span style="background-color:#deeade;color:#2b3750;">+            await driver.page.goto(config.sourcegraphBaseUrl + &#39;/search?&#39; + urlQuery)\n</span></div></td></tr><tr><td class="line" data-line="6"></td><td class="code"><div><span style="color:#268bd2;">@@ -434,0 +439,4 @@ </span><span style="color:#cb4b16;">describe(&#39;Search regression test suite&#39;, () =&gt; {\n</span></div></td></tr><tr><td class="line" data-line="7"></td><td class="code"><div><span style="background-color:#deeade;color:#2b3750;">+        })\n</span></div></td></tr><tr><td class="line" data-line="8"></td><td class="code"><div><span style="background-color:#deeade;color:#2b3750;">+        test(&#39;Forked repos included by by fork option&#39;, async () =&gt; {\n</span></div></td></tr><tr><td class="line" data-line="9"></td><td class="code"><div><span style="background-color:#deeade;color:#2b3750;">+            const urlQuery = buildSearchURLQuery(&#39;type:repo sgtest/mux fork:yes&#39;, GQL.SearchPatternType.regexp, false)\n</span></div></td></tr><tr><td class="line" data-line="10"></td><td class="code"><div><span style="background-color:#deeade;color:#2b3750;">+            await driver.page.goto(config.sourcegraphBaseUrl + &#39;/search?&#39; + urlQuery)</span></div></td></tr></tbody></table>'
+                        : '<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span style="color:#969896;">web/src/regression/search.test.ts web/src/regression/search.test.ts\n</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#268bd2;">@@ -434,0 +435,3 @@ </span><span style="color:#8fa1b3;">describe(&#39;Search regression test suite&#39;, () =&gt; {\n</span></div></td></tr><tr><td class="line" data-line="3"></td><td class="code"><div><span style="background-color:#0e2414;color:#f2f4f8;">+        test(&#39;Fork repos excluded by default&#39;, async () =&gt; {\n</span></div></td></tr><tr><td class="line" data-line="4"></td><td class="code"><div><span style="background-color:#0e2414;color:#f2f4f8;">+            const urlQuery = buildSearchURLQuery(&#39;type:repo sgtest/mux&#39;, GQL.SearchPatternType.regexp, false)\n</span></div></td></tr><tr><td class="line" data-line="5"></td><td class="code"><div><span style="background-color:#0e2414;color:#f2f4f8;">+            await driver.page.goto(config.sourcegraphBaseUrl + &#39;/search?&#39; + urlQuery)\n</span></div></td></tr><tr><td class="line" data-line="6"></td><td class="code"><div><span style="color:#268bd2;">@@ -434,0 +439,4 @@ </span><span style="color:#8fa1b3;">describe(&#39;Search regression test suite&#39;, () =&gt; {\n</span></div></td></tr><tr><td class="line" data-line="7"></td><td class="code"><div><span style="background-color:#0e2414;color:#f2f4f8;">+        })\n</span></div></td></tr><tr><td class="line" data-line="8"></td><td class="code"><div><span style="background-color:#0e2414;color:#f2f4f8;">+        test(&#39;Forked repos included by by fork option&#39;, async () =&gt; {\n</span></div></td></tr><tr><td class="line" data-line="9"></td><td class="code"><div><span style="background-color:#0e2414;color:#f2f4f8;">+            const urlQuery = buildSearchURLQuery(&#39;type:repo sgtest/mux fork:yes&#39;, GQL.SearchPatternType.regexp, false)\n</span></div></td></tr><tr><td class="line" data-line="10"></td><td class="code"><div><span style="background-color:#0e2414;color:#f2f4f8;">+            await driver.page.goto(config.sourcegraphBaseUrl + &#39;/search?&#39; + urlQuery)</span></div></td></tr></tbody></table>',
+                }),
+            }
+
+            testContext.overrideGraphQL({
+                ...commonSearchGraphQLResults,
+                ...viewerSettingsWithStreamingSearch,
+                ...highlightResult,
+            })
+            testContext.overrideSearchStreamEvents(searchStreamEvents)
+
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test%20type:diff&patternType=regexp')
+            await driver.page.waitForSelector('.search-result-match__code-excerpt .selection-highlight', {
+                visible: true,
+            })
+
+            await percySnapshot(driver.page, 'Streaming diff search syntax highlighting')
         })
     })
 
