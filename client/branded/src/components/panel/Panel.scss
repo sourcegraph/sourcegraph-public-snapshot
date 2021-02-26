@@ -84,6 +84,7 @@
     }
 
     &__action {
+        // stylelint-disable-next-line declaration-property-unit-whitelist
         padding: 0.25rem 0.75rem calc(0.25rem + 3px);
     }
 }
