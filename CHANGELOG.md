@@ -24,6 +24,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Auto complete suggestions for repositories and files containing spaces will now be automatically escaped when accepting the suggestion. [#18635](https://github.com/sourcegraph/sourcegraph/issues/18635)
+- An issue causing repository results containing spaces to not be clickable in some cases. [#18668](https://github.com/sourcegraph/sourcegraph/pull/18668)
 
 ### Removed
 
