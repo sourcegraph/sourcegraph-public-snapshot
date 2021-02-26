@@ -56,9 +56,13 @@ export const SidebarCollapseItems: React.FunctionComponent<{
                 className="bg-2 border-0 d-flex justify-content-between list-group-item-action py-2 w-100"
             >
                 <span>
-                    {Icon && <Icon className="sidebar__icon icon-inline mr-1" />} {label}
+                    {Icon && <Icon className="icon-inline mr-1" />} {label}
                 </span>
-                {isOpen ? <MenuUpIcon className="icon-inline" /> : <MenuDownIcon className="icon-inline" />}
+                {isOpen ? (
+                    <MenuUpIcon className="sidebar__chevron icon-inline" />
+                ) : (
+                    <MenuDownIcon className="sidebar__chevron icon-inline" />
+                )}
             </button>
             <Collapse id={label} isOpen={isOpen}>
                 {children}
