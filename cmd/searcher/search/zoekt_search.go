@@ -242,7 +242,7 @@ func zoektSearch(ctx context.Context, args *search.TextPatternInfo, repoBranches
 
 func writeZip(ctx context.Context, w io.Writer, fileMatches []zoekt.FileMatch) (err error) {
 	bytesWritten := 0
-	span, ctx := ot.StartSpanFromContext(ctx, "WriteZip")
+	span, _ := ot.StartSpanFromContext(ctx, "WriteZip")
 	defer func() {
 		span.LogFields(log.Int("bytes_written", bytesWritten))
 		span.Finish()
