@@ -38,3 +38,8 @@ On a self-hosted Sourcegraph instance, add the same JSON above to global setting
 <img src="https://sourcegraphstatic.com/docs/images/extensions/all-users-global-settings.png" style="padding:15px"></a>
 </div>
 
+### Default extensions
+
+The Sourcegraph-maintained Sourcegraph extension [git-extras](https://sourcegraph.com/extensions/sourcegraph/git-extras) and all search-based code intelligence extensions are enabled by default. 
+
+
