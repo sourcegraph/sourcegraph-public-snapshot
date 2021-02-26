@@ -36,7 +36,7 @@ add('popover', () => {
             {
                 reason: 'error',
                 message:
-                    'There was a network error retrieving search results. Check your Internet connection and try again.\n\nMarkdown sample:\n\n`this is very long code that should wrap github.com/sourcegraph/sourcegraph-browser-extension github.com/sourcegraph/sourcegraph-browser-extension`\n\n* item 1\n* item2',
+                    'There was a network error retrieving search results. Check your Internet connection and try again.\n\nMarkdown sample:\n\n`this is very long code that should wrap github.com/sourcegraph/sourcegraph-browser-extension github.com/sourcegraph/sourcegraph-browser-extension`\n\n* item 1\n* item2\n* `github.com/sourcegraph/sourcegraph-browser-extension-very-very-long-name-of-a-random-repo`',
                 severity: 'error',
                 title: 'Error loading results',
             },
