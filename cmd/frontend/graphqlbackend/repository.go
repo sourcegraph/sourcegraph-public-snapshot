@@ -299,7 +299,7 @@ func (r *RepositoryResolver) Label() (Markdown, error) {
 	} else {
 		label = r.Name()
 	}
-	text := "[" + label + "](/" + label + ")"
+	text := "[" + label + "](" + r.URL() + ")"
 	return Markdown(text), nil
 }
 
