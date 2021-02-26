@@ -19,7 +19,7 @@ func TestDatabasePackageInformation(t *testing.T) {
 	populateTestStore(t)
 	store := NewStore(dbconn.Global, &observation.TestContext)
 
-	if actual, exists, err := store.PackageInformation(context.Background(), testBundleID, "protocol/protocol.go", "60"); err != nil {
+	if actual, exists, err := store.PackageInformation(context.Background(), testBundleID, "protocol/protocol.go", "251"); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	} else if !exists {
 		t.Errorf("no package information")

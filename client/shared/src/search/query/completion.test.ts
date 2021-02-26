@@ -456,4 +456,22 @@ describe('getCompletionItems()', () => {
             )?.suggestions.map(({ insertText }) => insertText)
         ).toStrictEqual(['^some/path/main\\.go$ '])
     })
+
+    test('escapes spaces in repo value', async () => {
+        expect(
+            (
+                await getCompletionItems(
+                    toSuccess(scanSearchQuery('repo:')),
+                    { column: 5 },
+                    of([
+                        {
+                            __typename: 'Repository',
+                            name: 'repo/with a space',
+                        },
+                    ] as SearchSuggestion[]),
+                    false
+                )
+            )?.suggestions.map(({ insertText }) => insertText)
+        ).toStrictEqual(['^repo/with\\ a\\ space$ '])
+    })
 })
