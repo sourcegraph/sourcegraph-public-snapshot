@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
@@ -61,6 +62,10 @@ func main() {
 
 	// Start debug server
 	go debugserver.NewServerRoutine().Start()
+
+	if err := keyring.Init(context.Background()); err != nil {
+		log.Fatalf("Failed to intialise keyring: %v", err)
+	}
 
 	// Connect to databases
 	db := mustInitializeDB()

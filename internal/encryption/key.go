@@ -6,6 +6,10 @@ import "context"
 type Key interface {
 	Encrypter
 	Decrypter
+
+	// ID returns an identifier string containing anything to concretely identify
+	// the underlying key, eg: key type, name, & version.
+	ID(ctx context.Context) (string, error)
 }
 
 // Encrypter is anything that can encrypt a value

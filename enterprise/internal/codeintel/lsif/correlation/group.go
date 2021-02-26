@@ -3,9 +3,11 @@ package correlation
 import (
 	"context"
 	"math"
+	"sort"
 	"strings"
 
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bloomfilter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/datastructures"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/lsif"
@@ -193,7 +195,7 @@ func serializeResultChunks(ctx context.Context, state *State, numResultChunks in
 			}
 
 			documentPaths := map[lsifstore.ID]string{}
-			documentIDRangeIDs := map[lsifstore.ID][]lsifstore.DocumentIDRangeID{}
+			rangeIDsByResultID := make(map[lsifstore.ID][]lsifstore.DocumentIDRangeID, len(resultIDs))
 
 			for _, resultID := range resultIDs {
 				documentRanges, ok := state.DefinitionData[resultID]
@@ -201,29 +203,42 @@ func serializeResultChunks(ctx context.Context, state *State, numResultChunks in
 					documentRanges = state.ReferenceData[resultID]
 				}
 
-				// Ensure we always make an assignment for every definition and reference result,
-				// even if we've pruned all of the referenced documents and ranges. This prevents
-				// us from throwing an error in the bundle manager because we try to dereference
-				// a missing identifier.
-				documentIDRangeIDs[toID(resultID)] = nil
+				rangeIDMap := map[lsifstore.ID]int{}
+				var documentIDRangeIDs []lsifstore.DocumentIDRangeID
 
 				documentRanges.Each(func(documentID int, rangeIDs *datastructures.IDSet) {
-					documentPaths[toID(documentID)] = state.DocumentData[documentID]
+					docID := toID(documentID)
+					documentPaths[docID] = state.DocumentData[documentID]
 
 					rangeIDs.Each(func(rangeID int) {
-						documentIDRangeIDs[toID(resultID)] = append(documentIDRangeIDs[toID(resultID)], lsifstore.DocumentIDRangeID{
-							DocumentID: toID(documentID),
+						rangeIDMap[toID(rangeID)] = rangeID
+
+						documentIDRangeIDs = append(documentIDRangeIDs, lsifstore.DocumentIDRangeID{
+							DocumentID: docID,
 							RangeID:    toID(rangeID),
 						})
 					})
 				})
+
+				// Sort locations by containing document path then by offset within the text
+				// document (in reading order). This provides us with an obvious and deterministic
+				// ordering of a result set over multiple API requests.
+
+				sort.Sort(sortableDocumentIDRangeIDs{
+					state:         state,
+					documentPaths: documentPaths,
+					rangeIDMap:    rangeIDMap,
+					s:             documentIDRangeIDs,
+				})
+
+				rangeIDsByResultID[toID(resultID)] = documentIDRangeIDs
 			}
 
 			data := lsifstore.IndexedResultChunkData{
 				Index: index,
 				ResultChunk: lsifstore.ResultChunkData{
 					DocumentPaths:      documentPaths,
-					DocumentIDRangeIDs: documentIDRangeIDs,
+					DocumentIDRangeIDs: rangeIDsByResultID,
 				},
 			}
 
@@ -236,6 +251,34 @@ func serializeResultChunks(ctx context.Context, state *State, numResultChunks in
 	}()
 
 	return ch
+}
+
+// sortableDocumentIDRangeIDs implements sort.Interface for document/range id pairs.
+type sortableDocumentIDRangeIDs struct {
+	state         *State
+	documentPaths map[lsifstore.ID]string
+	rangeIDMap    map[lsifstore.ID]int
+	s             []lsifstore.DocumentIDRangeID
+}
+
+func (s sortableDocumentIDRangeIDs) Len() int      { return len(s.s) }
+func (s sortableDocumentIDRangeIDs) Swap(i, j int) { s.s[i], s.s[j] = s.s[j], s.s[i] }
+func (s sortableDocumentIDRangeIDs) Less(i, j int) bool {
+	iDocumentID := s.s[i].DocumentID
+	jDocumentID := s.s[j].DocumentID
+	iRange := s.state.RangeData[s.rangeIDMap[s.s[i].RangeID]]
+	jRange := s.state.RangeData[s.rangeIDMap[s.s[j].RangeID]]
+
+	if s.documentPaths[iDocumentID] != s.documentPaths[jDocumentID] {
+		return s.documentPaths[iDocumentID] <= s.documentPaths[jDocumentID]
+	}
+
+	if cmp := iRange.StartLine - jRange.StartLine; cmp != 0 {
+		return cmp < 0
+
+	}
+
+	return iRange.StartCharacter-jRange.StartCharacter < 0
 }
 
 func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*datastructures.DefaultIDSetMap, getResultID func(r lsif.Range) int) chan lsifstore.MonikerLocations {
@@ -297,6 +340,12 @@ func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*da
 					continue
 				}
 
+				// Sort locations by containing document path then by offset within the text
+				// document (in reading order). This provides us with an obvious and deterministic
+				// ordering of a result set over multiple API requests.
+
+				sort.Sort(sortableLocations(locations))
+
 				data := lsifstore.MonikerLocations{
 					Scheme:     scheme,
 					Identifier: identifier,
@@ -313,6 +362,23 @@ func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*da
 	}()
 
 	return ch
+}
+
+// sortableLocations implements sort.Interface for locations.
+type sortableLocations []lsifstore.LocationData
+
+func (s sortableLocations) Len() int      { return len(s) }
+func (s sortableLocations) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+func (s sortableLocations) Less(i, j int) bool {
+	if s[i].URI != s[j].URI {
+		return s[i].URI <= s[j].URI
+	}
+
+	if cmp := s[i].StartLine - s[j].StartLine; cmp != 0 {
+		return cmp < 0
+	}
+
+	return s[i].StartCharacter < s[j].StartCharacter
 }
 
 func gatherPackages(state *State, dumpID int) []lsifstore.Package {

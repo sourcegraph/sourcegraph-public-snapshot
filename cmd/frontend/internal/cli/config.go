@@ -60,31 +60,17 @@ var (
 	}, []string{"status"})
 )
 
-// handleConfigOverrides allows environments to forcibly override the
-// configuration in the database upon startup. This is used to e.g. ensure dev
-// environments have a consistent configuration and to load secrets from a
-// separate private repository.
-//
-// As this method writes to the configuration DB, it should be invoked before
-// the configuration server is started but after PostgreSQL is connected.
-func handleConfigOverrides() error {
-	ctx := context.Background()
-	log := log15.Root().New("svc", "config.file")
-
-	overrideSiteConfig := os.Getenv("SITE_CONFIG_FILE")
-	overrideExtSvcConfig := os.Getenv("EXTSVC_CONFIG_FILE")
-	overrideGlobalSettings := os.Getenv("GLOBAL_SETTINGS_FILE")
-	if overrideSiteConfig == "" && overrideExtSvcConfig == "" && overrideGlobalSettings == "" {
+func overrideSiteConfig(ctx context.Context) error {
+	path := os.Getenv("SITE_CONFIG_FILE")
+	if path == "" {
 		return nil
 	}
-
-	raw, err := (&configurationSource{}).Read(ctx)
-	if err != nil {
-		return errors.Wrap(err, "reading existing config for applying overrides")
-	}
-
-	if overrideSiteConfig != "" {
-		site, err := ioutil.ReadFile(overrideSiteConfig)
+	var updateFunc = func(ctx context.Context) error {
+		raw, err := (&configurationSource{}).Read(ctx)
+		if err != nil {
+			return err
+		}
+		site, err := ioutil.ReadFile(path)
 		if err != nil {
 			return errors.Wrap(err, "reading SITE_CONFIG_FILE")
 		}
@@ -94,14 +80,29 @@ func handleConfigOverrides() error {
 		if err != nil {
 			return errors.Wrap(err, "writing site config overrides to database")
 		}
+		return nil
+	}
+	err := updateFunc(ctx)
+	if err != nil {
+		return err
 	}
 
-	if overrideGlobalSettings != "" {
-		globalSettingsBytes, err := ioutil.ReadFile(overrideGlobalSettings)
+	go watchUpdate(ctx, path, updateFunc)
+	return nil
+}
+
+func overrideGlobalSettings(ctx context.Context, db dbutil.DB) error {
+	path := os.Getenv("GLOBAL_SETTINGS_FILE")
+	if path == "" {
+		return nil
+	}
+	settings := database.Settings(db)
+	var update = func(ctx context.Context) error {
+		globalSettingsBytes, err := ioutil.ReadFile(path)
 		if err != nil {
 			return errors.Wrap(err, "reading GLOBAL_SETTINGS_FILE")
 		}
-		currentSettings, err := database.GlobalSettings.GetLatest(ctx, api.SettingsSubject{Site: true})
+		currentSettings, err := settings.GetLatest(ctx, api.SettingsSubject{Site: true})
 		if err != nil {
 			return errors.Wrap(err, "could not fetch current settings")
 		}
@@ -113,21 +114,41 @@ func handleConfigOverrides() error {
 			if currentSettings != nil {
 				lastID = &currentSettings.ID
 			}
-			_, err = database.GlobalSettings.CreateIfUpToDate(ctx, api.SettingsSubject{Site: true}, lastID, nil, globalSettings)
+			_, err = settings.CreateIfUpToDate(ctx, api.SettingsSubject{Site: true}, lastID, nil, globalSettings)
 			if err != nil {
 				return errors.Wrap(err, "writing global setting override to database")
 			}
 		}
+		return nil
 	}
+	if err := update(ctx); err != nil {
+		return err
+	}
+	go watchUpdate(ctx, path, update)
 
-	if overrideExtSvcConfig != "" {
+	return nil
+}
+
+func overrideExtSvcConfig(ctx context.Context, db dbutil.DB) error {
+	log := log15.Root().New("svc", "config.file")
+	path := os.Getenv("EXTSVC_CONFIG_FILE")
+	if path == "" {
+		return nil
+	}
+	extsvcs := database.ExternalServices(db)
+
+	var update = func(ctx context.Context) error {
+		raw, err := (&configurationSource{}).Read(ctx)
+		if err != nil {
+			return err
+		}
 		parsed, err := conf.ParseConfig(raw)
 		if err != nil {
 			return errors.Wrap(err, "parsing extsvc config")
 		}
 		confGet := func() *conf.Unified { return parsed }
 
-		extsvcConfig, err := ioutil.ReadFile(overrideExtSvcConfig)
+		extsvcConfig, err := ioutil.ReadFile(path)
 		if err != nil {
 			return errors.Wrap(err, "reading EXTSVC_CONFIG_FILE")
 		}
@@ -139,7 +160,7 @@ func handleConfigOverrides() error {
 			log.Warn("EXTSVC_CONFIG_FILE contains zero external service configurations")
 		}
 
-		existing, err := database.GlobalExternalServices.List(ctx, database.ExternalServicesListOptions{
+		existing, err := extsvcs.List(ctx, database.ExternalServicesListOptions{
 			// NOTE: External services loaded from config file do not have namespace specified.
 			// Therefore, we only need to load those from database.
 			NoNamespace: true,
@@ -222,14 +243,14 @@ func handleConfigOverrides() error {
 		// Apply the delta update.
 		for extSvc := range toRemove {
 			log.Debug("Deleting external service", "id", extSvc.ID, "displayName", extSvc.DisplayName)
-			err := database.GlobalExternalServices.Delete(ctx, extSvc.ID)
+			err := extsvcs.Delete(ctx, extSvc.ID)
 			if err != nil {
 				return errors.Wrap(err, "ExternalServices.Delete")
 			}
 		}
 		for extSvc := range toAdd {
 			log.Debug("Adding external service", "displayName", extSvc.DisplayName)
-			if err := database.GlobalExternalServices.Create(ctx, confGet, extSvc); err != nil {
+			if err := extsvcs.Create(ctx, confGet, extSvc); err != nil {
 				return errors.Wrap(err, "ExternalServices.Create")
 			}
 		}
@@ -239,41 +260,43 @@ func handleConfigOverrides() error {
 			log.Debug("Updating external service", "id", id, "displayName", extSvc.DisplayName)
 
 			update := &database.ExternalServiceUpdate{DisplayName: &extSvc.DisplayName, Config: &extSvc.Config, CloudDefault: &extSvc.CloudDefault}
-			if err := database.GlobalExternalServices.Update(ctx, ps, id, update); err != nil {
+			if err := extsvcs.Update(ctx, ps, id, update); err != nil {
 				return errors.Wrap(err, "ExternalServices.Update")
 			}
 		}
+		return nil
+	}
+	if err := update(ctx); err != nil {
+		return err
 	}
 
-	// Kick off a background fsnotify watcher of the config files.
-	go configOverridesWatchOnce.Do(func() {
-		metricConfigOverrideRunning.Inc()
-		defer metricConfigOverrideRunning.Dec()
-
-		events, err := watchPaths(ctx, overrideSiteConfig, overrideExtSvcConfig, overrideGlobalSettings)
-		if err != nil {
-			log.Error("failed to watch config override files", "error", err)
-			return
-		}
-
-		for err := range events {
-			if err != nil {
-				log.Warn("error while watching config override files", "error", err)
-				metricConfigOverrideUpdates.WithLabelValues("watch_failed").Inc()
-				continue
-			}
-
-			if err := handleConfigOverrides(); err != nil {
-				log.Error("failed to update configuration from modified config override file", "error", err)
-				metricConfigOverrideUpdates.WithLabelValues("update_failed").Inc()
-			} else {
-				log.Info("updated configuration from modified config override files")
-				metricConfigOverrideUpdates.WithLabelValues("success").Inc()
-			}
-		}
-	})
+	go watchUpdate(ctx, path, update)
 
 	return nil
+}
+
+func watchUpdate(ctx context.Context, path string, update func(context.Context) error) {
+	log := log15.Root().New("svc", "config.file")
+	events, err := watchPaths(ctx, path)
+	if err != nil {
+		log.Error("failed to watch config override files", "error", err)
+		return
+	}
+	for err := range events {
+		if err != nil {
+			log.Warn("error while watching config override files", "error", err)
+			metricConfigOverrideUpdates.WithLabelValues("watch_failed").Inc()
+			continue
+		}
+
+		if err := update(ctx); err != nil {
+			log.Error("failed to update configuration from modified config override file", "error", err, "file", path)
+			metricConfigOverrideUpdates.WithLabelValues("update_failed").Inc()
+		} else {
+			log.Info("updated configuration from modified config override files", "file", path)
+			metricConfigOverrideUpdates.WithLabelValues("success").Inc()
+		}
+	}
 }
 
 // watchPaths returns a channel which watches the non-empty paths. Whenever

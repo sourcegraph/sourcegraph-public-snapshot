@@ -7,7 +7,7 @@ import { Observable } from 'rxjs'
 import { IRepository, IFile, ISymbol, ILanguage, IRepoGroup, ISearchContext } from '../../graphql/schema'
 import { SearchSuggestion } from '../suggestions'
 import { isDefined } from '../../util/types'
-import { FilterType, isNegatableFilter, resolveFilter, FILTERS } from './filters'
+import { FilterType, isNegatableFilter, resolveFilter, FILTERS, escapeSpaces } from './filters'
 import { first } from 'rxjs/operators'
 import { SymbolKind } from '../../graphql-operations'
 
@@ -67,6 +67,7 @@ const repositoryToCompletion = (
     options: { isFilterValue: boolean; globbing: boolean }
 ): PartialCompletionItem => {
     let insertText = options.globbing ? name : `^${escapeRegExp(name)}$`
+    insertText = escapeSpaces(insertText)
     insertText = (options.isFilterValue ? insertText : `${FilterType.repo}:${insertText}`) + ' '
     return {
         label: name,
@@ -82,6 +83,7 @@ const fileToCompletion = (
     options: { isFilterValue: boolean; globbing: boolean }
 ): PartialCompletionItem => {
     let insertText = options.globbing ? path : `^${escapeRegExp(path)}$`
+    insertText = escapeSpaces(insertText)
     insertText = (options.isFilterValue ? insertText : `${FilterType.file}:${insertText}`) + ' '
     return {
         label: name,

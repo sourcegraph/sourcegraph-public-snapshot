@@ -103,9 +103,11 @@ export class NavLinks extends React.PureComponent<Props> {
                         </li>
                     </>
                 )}
-                <li className="nav-item">
-                    <FeedbackPrompt history={this.props.history} />
-                </li>
+                {this.props.authenticatedUser && (
+                    <li className="nav-item">
+                        <FeedbackPrompt history={this.props.history} />
+                    </li>
+                )}
                 {!this.props.authenticatedUser && (
                     <>
                         {this.props.location.pathname !== '/sign-in' && (
