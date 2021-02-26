@@ -3,7 +3,7 @@ import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import React, { useCallback, useState } from 'react'
 import { NavLink } from 'react-router-dom'
-import { Button, Collapse } from 'reactstrap'
+import { Collapse } from 'reactstrap'
 
 export const SIDEBAR_BUTTON_CLASS = 'btn btn-secondary d-block w-100 my-2'
 
