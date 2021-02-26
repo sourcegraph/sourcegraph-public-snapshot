@@ -67,15 +67,14 @@ func (a *sshAgent) Listen() {
 	for {
 		// This will return when we call l.Close(), which Agent.Close() does.
 		conn, err := a.l.Accept()
-		if err == io.EOF {
-			return
-		} else if err != nil {
+		if err != nil {
 			select {
 			case <-a.done:
+				return
 			default:
 				log15.Error("error accepting socket connection", "err", err)
+				return
 			}
-			return
 		}
 
 		// We don't control how SSH handles the agent, so we should handle
