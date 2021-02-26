@@ -151,6 +151,12 @@ export const NavLinks: React.FC<Props> = props => {
                         {link}
                     </li>
                 ))}
+            {/* show status messages if authenticated user is admin or opted-in with a user tag  */}
+            {(authenticatedUser?.siteAdmin || authenticatedUser?.tags?.includes('AllowUserExternalServicePublic')) && (
+                <li className="nav-item">
+                    <StatusMessagesNavItem isSiteAdmin={authenticatedUser.siteAdmin} history={history} />
+                </li>
+            )}
             {!minimalNavLinks && (
                 <li className="nav-item">
                     <WebCommandListPopoverButton
@@ -159,26 +165,6 @@ export const NavLinks: React.FC<Props> = props => {
                         menu={ContributableMenu.CommandPalette}
                         keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE}
                     />
-                </li>
-            )}
-            {!authenticatedUser && (
-                <>
-                    <li className="nav-item mx-1">
-                        <Link className="nav-link btn btn-secondary" to="/sign-in">
-                            Log in
-                        </Link>
-                    </li>
-                    <li className="nav-item mx-1">
-                        <Link className="nav-link btn btn-primary" to="/sign-up">
-                            Sign up
-                        </Link>
-                    </li>
-                </>
-            )}
-            {/* show status messages if authenticated user is admin or opted-in with a user tag  */}
-            {(authenticatedUser?.siteAdmin || authenticatedUser?.tags?.includes('AllowUserExternalServicePublic')) && (
-                <li className="nav-item">
-                    <StatusMessagesNavItem isSiteAdmin={authenticatedUser.siteAdmin} history={history} />
                 </li>
             )}
             {authenticatedUser && (
@@ -195,6 +181,20 @@ export const NavLinks: React.FC<Props> = props => {
                         keyboardShortcutForSwitchTheme={KEYBOARD_SHORTCUT_SWITCH_THEME}
                     />
                 </li>
+            )}
+            {!authenticatedUser && (
+                <>
+                    <li className="nav-item mx-1">
+                        <Link className="nav-link btn btn-secondary" to="/sign-in">
+                            Log in
+                        </Link>
+                    </li>
+                    <li className="nav-item mx-1">
+                        <Link className="nav-link btn btn-primary" to="/sign-up">
+                            Sign up
+                        </Link>
+                    </li>
+                </>
             )}
         </ul>
     )
