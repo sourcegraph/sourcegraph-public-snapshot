@@ -21,7 +21,7 @@ func GitHubProxy() *monitoring.Container {
 							Name:        "github_proxy_waiting_requests",
 							Description: "number of requests waiting on the global mutex",
 							Query:       `max(github_proxy_waiting_requests)`,
-							Warning:     monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
+							Warning:     monitoring.Alert().GreaterOrEqual(100, nil).For(5 * time.Minute),
 							Panel:       monitoring.Panel().LegendFormat("requests waiting"),
 							Owner:       monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: `
