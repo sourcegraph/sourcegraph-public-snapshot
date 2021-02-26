@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -45,6 +46,10 @@ func (r *statusMessageResolver) ToCloningProgress() (*statusMessageResolver, boo
 	return r, r.message.Cloning != nil
 }
 
+func (r *statusMessageResolver) ToIndexingProgress() (*statusMessageResolver, bool) {
+	return r, r.message.Indexing != nil
+}
+
 func (r *statusMessageResolver) ToExternalServiceSyncError() (*statusMessageResolver, bool) {
 	return r, r.message.ExternalServiceSyncError != nil
 }
@@ -74,4 +79,13 @@ func (r *statusMessageResolver) ExternalService(ctx context.Context) (*externalS
 	}
 
 	return &externalServiceResolver{db: r.db, externalService: externalService}, nil
+}
+
+func (r *statusMessageResolver) Repository(ctx context.Context) (*RepositoryResolver, error) {
+	id := r.message.SyncError.RepositoryId
+	repo, err := database.Repos(r.db).Get(ctx, api.RepoID(id))
+	if err != nil {
+		return nil, err
+	}
+	return NewRepositoryResolver(r.db, repo), nil
 }
