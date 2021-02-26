@@ -13,7 +13,8 @@ import (
 )
 
 type Pipeline struct {
-	Steps []interface{} `json:"steps"`
+	Env   map[string]string `json:"env,omitempty"`
+	Steps []interface{}     `json:"steps"`
 }
 
 type BuildOptions struct {

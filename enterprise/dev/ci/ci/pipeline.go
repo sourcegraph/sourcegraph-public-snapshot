@@ -42,10 +42,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		env["PERCY_TARGET_BRANCH"] = c.branch
 	}
 
-	for k, v := range env {
-		bk.BeforeEveryStepOpts = append(bk.BeforeEveryStepOpts, bk.Env(k, v))
-	}
-
 	if c.profilingEnabled {
 		bk.AfterEveryStepOpts = append(bk.AfterEveryStepOpts, func(s *bk.Step) {
 			// wrap "time -v" around each command for CPU/RAM utilization information
@@ -151,7 +147,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Construct pipeline
-	pipeline := &bk.Pipeline{}
+	pipeline := &bk.Pipeline{
+		Env: env,
+	}
 	for _, p := range pipelineOperations {
 		p(pipeline)
 	}
