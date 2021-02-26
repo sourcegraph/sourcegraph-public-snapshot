@@ -42,8 +42,8 @@ type CommitSearchResult struct {
 // ResultCount for CommitSearchResult returns the number of highlights if there
 // are highlights and 1 otherwise. We implemented this method because we want to
 // return a more meaningful result count for streaming while maintaining backward
-// compatibility for the batch API. The batch API calls the ResultCount on the
-// resolver, while streaming calls ResultCount in CommitSearchResult.
+// compatibility for our GraphQL API. The GraphQL API calls ResultCount on the
+// resolver, while streaming calls ResultCount on CommitSearchResult.
 func (r *CommitSearchResult) ResultCount() int {
 	if n := len(r.highlights); n > 0 {
 		return n
