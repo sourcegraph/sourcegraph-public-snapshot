@@ -103,21 +103,21 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                     <>
                         <button
                             type="button"
-                            className="btn btn-link text-primary px-0 mr-2"
+                            className="btn btn-link text-primary px-0 mr-2 shadow-none"
                             onClick={toggleUpdateModal}
                         >
                             Edit
                         </button>
                         <button
                             type="button"
-                            className="btn btn-link text-danger px-0"
+                            className="btn btn-link text-danger px-0 shadow-none"
                             onClick={toggleRemoveConnectionModal}
                         >
                             Remove
                         </button>
                     </>
                 ) : (
-                    <button type="button" className="btn btn-success" onClick={toggleAddConnectionModal}>
+                    <button type="button" className="btn btn-success shadow-none" onClick={toggleAddConnectionModal}>
                         Connect
                     </button>
                 )}

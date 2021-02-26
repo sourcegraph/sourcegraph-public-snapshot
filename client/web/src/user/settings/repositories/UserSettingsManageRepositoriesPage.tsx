@@ -574,7 +574,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         </tbody>
     )
     return (
-        <div className="p-2 user-settings-repos">
+        <div className="user-settings-repos">
             <PageTitle title="Manage Repositories" />
             <h2 className="mb-2">Manage Repositories</h2>
             <p className="text-muted">
@@ -635,7 +635,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     </div>
                 </li>
             </ul>
-            <Form className="mt-4 d-flex " onSubmit={submit}>
+            <Form className="mt-4 d-flex" onSubmit={submit}>
                 <LoaderButton
                     loading={isLoading(fetchingRepos)}
                     className="btn btn-primary test-goto-add-external-service-page mr-2"
