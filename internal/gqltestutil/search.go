@@ -348,3 +348,142 @@ query SearchResultsStats($query: String!) {
 
 	return resp.Data.Search.Stats, nil
 }
+
+type SearchSuggestionsResult struct {
+	inner interface{}
+}
+
+func (srr *SearchSuggestionsResult) UnmarshalJSON(data []byte) error {
+	var typeDecoder struct {
+		TypeName string `json:"__typename"`
+	}
+	if err := json.Unmarshal(data, &typeDecoder); err != nil {
+		return err
+	}
+
+	switch typeDecoder.TypeName {
+	case "File":
+		var v FileSuggestionResult
+		err := json.Unmarshal(data, &v)
+		if err != nil {
+			return err
+		}
+		srr.inner = v
+	case "Repository":
+		var v RepositorySuggestionResult
+		err := json.Unmarshal(data, &v)
+		if err != nil {
+			return err
+		}
+		srr.inner = v
+	case "Symbol":
+		var v SymbolSuggestionResult
+		err := json.Unmarshal(data, &v)
+		if err != nil {
+			return err
+		}
+		srr.inner = v
+	case "Language":
+		var v LanguageSuggestionResult
+		err := json.Unmarshal(data, &v)
+		if err != nil {
+			return err
+		}
+		srr.inner = v
+	default:
+		return fmt.Errorf("unknown typename %s", typeDecoder.TypeName)
+	}
+
+	return nil
+}
+
+type RepositorySuggestionResult struct {
+	Name string
+}
+
+type FileSuggestionResult struct {
+	Path        string
+	Name        string
+	IsDirectory bool   `json:"isDirectory"`
+	URL         string `json:"url"`
+	Repository  struct {
+		Name string
+	}
+}
+
+type SymbolSuggestionResult struct {
+	Name          string
+	ContainerName string `json:"containerName"`
+	URL           string `json:"url"`
+	Kind          string
+	Location      struct {
+		Resource struct {
+			Path       string
+			Repository struct {
+				Name string
+			}
+		}
+	}
+}
+
+type LanguageSuggestionResult struct {
+	Name string
+}
+
+func (c *Client) SearchSuggestions(query string) ([]SearchSuggestionsResult, error) {
+	const gqlQuery = `
+query SearchSuggestions($query: String!) {
+	search(query: $query) {
+		suggestions {
+			__typename
+			... on Repository {
+				name
+			}
+			... on File {
+				path
+				name
+				isDirectory
+				url
+				repository {
+					name
+				}
+			}
+			... on Symbol {
+				name
+				containerName
+				url
+				kind
+				location {
+					resource {
+						path
+						repository {
+							name
+						}
+					}
+				}
+			}
+			... on Language {
+				name
+			}
+		}
+	}
+}`
+
+	variables := map[string]interface{}{
+		"query": query,
+	}
+
+	var resp struct {
+		Data struct {
+			Search struct {
+				Suggestions []SearchSuggestionsResult
+			} `json:"search"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", "", gqlQuery, variables, &resp)
+	if err != nil {
+		return nil, errors.Wrap(err, "request GraphQL")
+	}
+
+	return resp.Data.Search.Suggestions, nil
+}
