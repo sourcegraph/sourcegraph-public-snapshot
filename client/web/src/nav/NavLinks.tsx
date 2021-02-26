@@ -27,6 +27,8 @@ import { MenuNavItem } from './MenuNavItem'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
 import { FeedbackPrompt } from './Feedback/FeedbackPrompt'
+import { LayoutRouteProps } from '../routes'
+
 interface Props
     extends SettingsCascadeProps<Settings>,
         KeyboardShortcutsProps,
@@ -44,6 +46,7 @@ interface Props
     showCampaigns: boolean
     isSourcegraphDotCom: boolean
     minimalNavLinks?: boolean
+    routes: readonly LayoutRouteProps<{}>[]
 }
 
 export class NavLinks extends React.PureComponent<Props> {
@@ -105,7 +108,7 @@ export class NavLinks extends React.PureComponent<Props> {
                 )}
                 {this.props.authenticatedUser && (
                     <li className="nav-item">
-                        <FeedbackPrompt history={this.props.history} />
+                        <FeedbackPrompt history={this.props.history} routes={this.props.routes} />
                     </li>
                 )}
                 {!this.props.authenticatedUser && (

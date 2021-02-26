@@ -6,13 +6,15 @@ import { createMemoryHistory } from 'history'
 import { FeedbackPrompt, HAPPINESS_FEEDBACK_OPTIONS } from './FeedbackPrompt'
 import { SubmitHappinessFeedbackResult, SubmitHappinessFeedbackVariables } from '../../graphql-operations'
 import { MutationResult } from '../../hooks/useMutation'
+import { routes } from '../../routes'
 
 let mockResponse: MutationResult<SubmitHappinessFeedbackResult> = { loading: false }
 const mockSubmitFn = sinon.spy((parameters: SubmitHappinessFeedbackVariables) => undefined)
 const history = createMemoryHistory()
 
-jest.mock('../../hooks/useMutation', () => ({
+jest.mock('../../hooks', () => ({
     useMutation: () => [mockSubmitFn, mockResponse],
+    useRoutesMatch: () => '/some-route',
 }))
 
 describe('FeedbackPrompt', () => {
@@ -23,7 +25,7 @@ describe('FeedbackPrompt', () => {
     })
 
     beforeEach(() => {
-        queries = render(<FeedbackPrompt history={history} />)
+        queries = render(<FeedbackPrompt history={history} routes={routes} />)
     })
 
     test('Renders heading correctly', () => {
@@ -67,7 +69,7 @@ describe('FeedbackPrompt', () => {
                 input: {
                     score: 4,
                     feedback: 'Lorem ipsum dolor sit amet',
-                    currentURL: 'http://localhost/',
+                    currentPath: '/some-route',
                 },
             })
         })

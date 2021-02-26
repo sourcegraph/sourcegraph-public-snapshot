@@ -10,11 +10,12 @@ import { gql } from '../../../../shared/src/graphql/graphql'
 import { LoaderButton } from '../../components/LoaderButton'
 import { SubmitHappinessFeedbackResult, SubmitHappinessFeedbackVariables } from '../../graphql-operations'
 import { useLocalStorage } from '../../util/useLocalStorage'
-import { useMutation } from '../../hooks/useMutation'
+import { useMutation, useRoutesMatch } from '../../hooks'
 import { IconRadioButtons } from '../IconRadioButtons'
 import { Happy, Sad, VeryHappy, VerySad } from './FeedbackIcons'
 import { Form } from '../../../../branded/src/components/Form'
 import { ErrorAlert } from '../../components/alerts'
+import { LayoutRouteProps } from '../../routes'
 
 export const HAPPINESS_FEEDBACK_OPTIONS = [
     {
@@ -50,12 +51,13 @@ const SUBMIT_HAPPINESS_FEEDBACK_QUERY = gql`
 interface ContentProps {
     closePrompt: () => void
     history: H.History
+    routeMatch?: string
 }
 
 const LOCAL_STORAGE_KEY_RATING = 'feedbackPromptRating'
 const LOCAL_STORAGE_KEY_TEXT = 'feedbackPromptText'
 
-const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({ closePrompt, history }) => {
+const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({ closePrompt, history, routeMatch }) => {
     const [rating, setRating] = useLocalStorage<number | undefined>(LOCAL_STORAGE_KEY_RATING, undefined)
     const [text, setText] = useLocalStorage<string>(LOCAL_STORAGE_KEY_TEXT, '')
     const handleRateChange = useCallback((value: number) => setRating(value), [setRating])
@@ -73,11 +75,11 @@ const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({ closePro
             event.preventDefault()
             if (rating) {
                 return submitFeedback({
-                    input: { score: rating, feedback: text, currentURL: window.location.href },
+                    input: { score: rating, feedback: text, currentPath: routeMatch },
                 })
             }
         },
-        [rating, submitFeedback, text]
+        [rating, submitFeedback, text, routeMatch]
     )
 
     useEffect(() => {
@@ -158,13 +160,14 @@ const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({ closePro
 interface Props {
     open?: boolean
     history: H.History
+    routes: readonly LayoutRouteProps<{}>[]
 }
 
-export const FeedbackPrompt: React.FunctionComponent<Props> = ({ open, history }) => {
+export const FeedbackPrompt: React.FunctionComponent<Props> = ({ open, history, routes }) => {
     const [isOpen, setIsOpen] = useState(() => !!open)
     const handleToggle = useCallback(() => setIsOpen(open => !open), [])
-
     const forceClose = useCallback(() => setIsOpen(false), [])
+    const match = useRoutesMatch(routes)
 
     return (
         <ButtonDropdown a11y={false} isOpen={isOpen} toggle={handleToggle} className="feedback-prompt" group={false}>
@@ -179,7 +182,7 @@ export const FeedbackPrompt: React.FunctionComponent<Props> = ({ open, history }
                 <span className="d-none d-lg-block">Feedback</span>
             </DropdownToggle>
             <DropdownMenu right={true} className="web-content feedback-prompt__menu">
-                <FeedbackPromptContent closePrompt={forceClose} history={history} />
+                <FeedbackPromptContent closePrompt={forceClose} history={history} routeMatch={match} />
             </DropdownMenu>
         </ButtonDropdown>
     )
