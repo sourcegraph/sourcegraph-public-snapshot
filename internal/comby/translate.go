@@ -73,7 +73,8 @@ func parseTemplate(buf []byte) []Term {
 
 	appendTerm := func(term Term) {
 		result = append(result, term)
-		token = []rune{}
+		// Reset token, but reuse the backing memory
+		token = token[:0]
 	}
 
 	for len(buf) > 0 {
