@@ -48,7 +48,11 @@ describe('isContextFilterInQuery', () => {
         expect(isContextFilterInQuery('context:@user foo')).toBeTruthy()
     })
 
-    test('context filters in subexpressions', () => {
+    test('context filters in both subexpressions', () => {
         expect(isContextFilterInQuery('(context:@user foo) or (context:@test bar)')).toBeTruthy()
+    })
+
+    test('context filters in one subexpression', () => {
+        expect(isContextFilterInQuery('foo or (context:@test bar)')).toBeTruthy()
     })
 })

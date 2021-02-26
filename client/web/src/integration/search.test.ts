@@ -517,7 +517,7 @@ describe('Search', () => {
             expect(await getSelectedSearchContextSpec()).toStrictEqual('context:@test')
         })
 
-        test('Unavailable search context should remain in the query', async () => {
+        test('Unavailable search context should remain in the query and disable the search context dropdown', async () => {
             await driver.page.goto(
                 driver.sourcegraphBaseUrl + '/search?q=context:%40unavailableCtx+test&patternType=regexp'
             )
