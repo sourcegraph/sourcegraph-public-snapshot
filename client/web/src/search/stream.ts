@@ -36,8 +36,12 @@ interface LineMatch {
     offsetAndLengths: number[][]
 }
 
-interface FileSymbolMatch extends Omit<FileMatch, 'lineMatches' | 'type'> {
+interface FileSymbolMatch {
     type: 'symbol'
+    name: string
+    repository: string
+    branches?: string[]
+    version?: string
     symbols: SymbolMatch[]
 }
 
@@ -67,7 +71,11 @@ interface CommitMatch {
     ranges: number[][]
 }
 
-export type RepositoryMatch = { type: 'repo' } & Pick<FileMatch, 'repository' | 'branches'>
+export interface RepositoryMatch {
+    type: 'repo'
+    repository: string
+    branches?: string[]
+}
 
 /**
  * An aggregate type representing a progress update.
