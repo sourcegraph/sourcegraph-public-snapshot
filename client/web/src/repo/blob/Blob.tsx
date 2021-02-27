@@ -349,6 +349,15 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                         text: blobInfo.content,
                     })
                 }
+
+                extensionsController.extHostAPI.then(API => {
+                    API.addTextDocumentIfNotExists({
+                        uri,
+                        languageId: blobInfo.mode,
+                        text: blobInfo.content,
+                    })
+                })
+
                 const selections = lprToSelectionsZeroIndexed(position)
                 console.log('gonna set mode here', { ms: Date.now() })
                 propsReference.current.extensionsController.services.viewer.removeAllViewers()

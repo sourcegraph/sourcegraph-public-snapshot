@@ -62,10 +62,10 @@ export function createPlatformContext(): PlatformContext {
         forceUpdateTooltip: () => Tooltip.forceUpdate(),
         createExtensionHost: () => Promise.resolve(createExtensionHost()),
         urlToFile: toPrettyWebBlobURL,
-        getScriptURLForExtension: () =>
-            // return bundleURLs => Promise.resolve(bundleURLs)
-
-            undefined,
+        getScriptURLForExtension: () => {
+            return bundleURLs => Promise.resolve(bundleURLs)
+            // return undefined
+        },
         sourcegraphURL: window.context.externalURL,
         clientApplication: 'sourcegraph',
         sideloadedExtensionURL: new LocalStorageSubject<string | null>('sideloadedExtensionURL', null),

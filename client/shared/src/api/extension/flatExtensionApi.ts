@@ -36,6 +36,7 @@ import {
     bufferTime,
     throttleTime,
     debounceTime,
+    concatMap,
 } from 'rxjs/operators'
 import { proxySubscribable, providerResultToObservable } from './api/common'
 import { TextDocumentIdentifier, match } from '../client/types/textDocument'
@@ -57,7 +58,7 @@ import { ExtensionCodeEditor } from './api/codeEditor'
 import { ExtensionViewer, ViewerId } from '../viewerTypes'
 import { ExtensionDirectoryViewer } from './api/directoryViewer'
 import { ExtensionWorkspaceRoot } from './api/workspaceRoot'
-import { asError, createAggregateError, isErrorLike } from '../../util/errors'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { ViewerWithPartialModel } from '../client/services/viewerService'
 import { computeContext } from '../client/context/context'
 import {
@@ -81,6 +82,7 @@ import { fromFetch } from 'rxjs/fetch'
 import { checkOk } from '../../backend/fetch'
 import { memoizeObservable } from '../../util/memoizeObservable'
 import { ExecutableExtension } from '../client/services/extensionsService'
+import { areExtensionsSame } from '../../extensions/extensions'
 
 /**
  * Holds the entire state exposed to the extension host
@@ -719,237 +721,119 @@ export const initNewExtensionAPI = (
 
     state.contributions.subscribe(entries => console.log('exthostcontributions', entries))
 
-    wrapRemoteObservable(mainAPI.getEnabledExtensions()).subscribe(enabledExtensions =>
-        console.log('enabled extensions exthost', { ms: Date.now() })
+    const enabledExtensions = wrapRemoteObservable(mainAPI.getEnabledExtensions())
+    const activatedExtensionIDs = new Set<string>()
+
+    const activeExtensions: Observable<ConfiguredExtension[]> = combineLatest([
+        state.activeLanguages,
+        enabledExtensions,
+    ]).pipe(
+        tap(([activeLanguages, enabledExtensions]) => {
+            console.log('checking active in host')
+            console.log({ activeLanguages })
+            const activeExtensions = extensionsWithMatchedActivationEvent(enabledExtensions, activeLanguages)
+            for (const extension of activeExtensions) {
+                if (!activatedExtensionIDs.has(extension.id)) {
+                    activatedExtensionIDs.add(extension.id)
+                }
+            }
+        }),
+        map(([, extensions]) =>
+            extensions ? extensions.filter(extension => activatedExtensionIDs.has(extension.id)) : []
+        ),
+        distinctUntilChanged((a, b) => areExtensionsSame(a, b))
+    )
+    // expose activeExtensions to main for global debug, but also subscribe to it to
+    // determine which extensions to activate
+
+    const getScriptURLs = memoizeObservable(
+        () =>
+            from(mainAPI.getScriptURLForExtension()).pipe(
+                map(getScriptURL => {
+                    console.log({ getScriptURL })
+                    function getBundleURLs(urls: string[]): Promise<(string | ErrorLike)[]> {
+                        return getScriptURL ? getScriptURL(urls) : Promise.resolve(urls)
+                    }
+
+                    return getBundleURLs
+                })
+            ),
+        () => 'getScriptURL'
     )
 
-    // TODO(tj): this is at the bottom since the `extensionAPI` object to be given
-    // to extensions needs to be constructed first. Will need to migrate ALL services before actualizing this.
-    ;(function handleExtensionActivation() {
-        //     from(mainAPI.getScriptURLForExtension()).subscribe(getScriptURL => {
-        //         const memoizedGetScriptURLForExtension = memoizeObservable<string, string | null>(
-        //             url =>
-        //                 // TODO: make getScriptURL batched to avoid N roundtrips on initial extension activation
-        //                 (getScriptURL ? from(getScriptURL(url)) : of(url)).pipe(
-        //                     catchError(error => {
-        //                         console.error(`Error fetching extension script URL ${url}`, error)
-        //                         return [null]
-        //                     })
-        //                 ),
-        //             url => url
-        //         )
+    const previouslyActivatedExtensions = new Map<string, ExecutableExtension>()
+    const cachedScriptURLs = new Map<string, string>()
+    activeExtensions
+        .pipe(
+            withLatestFrom(getScriptURLs(null)),
+            concatMap(([activeExtensions, getScriptURLs]) => {
+                const toDeactivate = new Map<string, ExecutableExtension>()
+                const toActivate = new Map<string, ConfiguredExtension>()
+                const activeExtensionIDs = new Set<string>()
 
-        //         const enabledExtensions: Subscribable<ConfiguredExtension[]> = combineLatest([
-        //             viewerConfiguredExtensions(),
-        //             getSideloadedExtension(),
-        //         ]).pipe(
-        //             withLatestFrom(state.settings),
-        //             map(([[configuredExtensions, sideloadedExtension], settings]) => {
-        //                 let enabled = configuredExtensions.filter(extension =>
-        //                     isExtensionEnabled(settings.final, extension.id)
-        //                 )
-
-        //                 if (sideloadedExtension) {
-        //                     if (!isErrorLike(sideloadedExtension.manifest) && sideloadedExtension.manifest?.publisher) {
-        //                         // Disable extension with the same ID while this extension is sideloaded
-        //                         const constructedID = `${sideloadedExtension.manifest.publisher}/${sideloadedExtension.id}`
-        //                         enabled = enabled.filter(extension => extension.id !== constructedID)
-        //                     }
-
-        //                     enabled.push(sideloadedExtension)
-        //                 }
-        //                 return enabled
-        //             })
-        //         )
-
-        //         // TODO(tj): move to state
-        //         const activatedExtensionIDs = new Set<string>()
-        //         // An extension is activated when one or more of its activationEvents is true. After an extension has been
-        //         // activated, it remains active for the rest of the session (i.e., for as long as the browser tab remains open)
-        //         // as long as it remains enabled. If it is disabled, it is deactivated. (I.e., "activationEvents" are
-        //         // retrospective/sticky.
-        //         const activeExtensions: Subscribable<ExecutableExtension[]> = combineLatest([
-        //             state.activeLanguages,
-        //             enabledExtensions,
-        //         ]).pipe(
-        //             tap(([activeLanguages, enabledExtensions]) => {
-        //                 console.log('checking active in host')
-
-        //                 const activeExtensions = extensionsWithMatchedActivationEvent(enabledExtensions, activeLanguages)
-        //                 for (const extension of activeExtensions) {
-        //                     if (!activatedExtensionIDs.has(extension.id)) {
-        //                         activatedExtensionIDs.add(extension.id)
-        //                     }
-        //                 }
-        //             }),
-        //             map(([, extensions]) =>
-        //                 extensions ? extensions.filter(extension => activatedExtensionIDs.has(extension.id)) : []
-        //             ),
-        //             distinctUntilChanged((a, b) =>
-        //                 isEqual(new Set(a.map(extension => extension.id)), new Set(b.map(extension => extension.id)))
-        //             ),
-        //             switchMap(extensions => {
-        //                 console.log('in switchMap', { extensions })
-        //                 return combineLatestOrDefault(
-        //                     extensions.map(extension =>
-        //                         memoizedGetScriptURLForExtension(getScriptURLFromExtensionManifest(extension)).pipe(
-        //                             map(scriptURL =>
-        //                                 scriptURL === null
-        //                                     ? null
-        //                                     : {
-        //                                           id: extension.id,
-        //                                           manifest: extension.manifest,
-        //                                           scriptURL,
-        //                                       }
-        //                             )
-        //                         )
-        //                     )
-        //                 )
-        //             }),
-        //             map(extensions => extensions.filter(isDefined)),
-        //             distinctUntilChanged((a, b) =>
-        //                 isEqual(new Set(a.map(extension => extension.id)), new Set(b.map(extension => extension.id)))
-        //             ),
-        //             tap(() => console.log('here in host'))
-        //         )
-        //         // TODO(tj): expose `activeExtensions` to main thread for global debug
-
-        //         activeExtensions.subscribe(extensions => console.log({ extensions }))
-        //     })
-
-        const enabledExtensions: Subscribable<ConfiguredExtension[]> = combineLatest([
-            viewerConfiguredExtensions(),
-            getSideloadedExtension(),
-        ]).pipe(
-            withLatestFrom(state.settings),
-            map(([[configuredExtensions, sideloadedExtension], settings]) => {
-                let enabled = configuredExtensions.filter(extension => isExtensionEnabled(settings.final, extension.id))
-
-                if (sideloadedExtension) {
-                    if (!isErrorLike(sideloadedExtension.manifest) && sideloadedExtension.manifest?.publisher) {
-                        // Disable extension with the same ID while this extension is sideloaded
-                        const constructedID = `${sideloadedExtension.manifest.publisher}/${sideloadedExtension.id}`
-                        enabled = enabled.filter(extension => extension.id !== constructedID)
-                    }
-
-                    enabled.push(sideloadedExtension)
-                }
-                return enabled
-            })
-        )
-        // TODO: move activeExtensions to mainthread!
-        // TODO(tj): move to state
-        const activatedExtensionIDs = new Set<string>()
-        const cachedScriptURLs = new Map<string, string>()
-        // An extension is activated when one or more of its activationEvents is true. After an extension has been
-        // activated, it remains active for the rest of the session (i.e., for as long as the browser tab remains open)
-        // as long as it remains enabled. If it is disabled, it is deactivated. (I.e., "activationEvents" are
-        // retrospective/sticky.
-        const activeExtensions: Subscribable<ExecutableExtension[]> = combineLatest([
-            state.activeLanguages,
-            enabledExtensions,
-        ]).pipe(
-            tap(([activeLanguages, enabledExtensions]) => {
-                console.log('checking active in host')
-
-                const activeExtensions = extensionsWithMatchedActivationEvent(enabledExtensions, activeLanguages)
                 for (const extension of activeExtensions) {
-                    if (!activatedExtensionIDs.has(extension.id)) {
-                        activatedExtensionIDs.add(extension.id)
+                    // Populate set of currently active extension IDs
+                    activeExtensionIDs.add(extension.id)
+                    // Populate map of extensions to activate
+                    if (!previouslyActivatedExtensions.has(extension.id)) {
+                        toActivate.set(extension.id, extension)
                     }
                 }
-            }),
-            map(([, extensions]) =>
-                extensions ? extensions.filter(extension => activatedExtensionIDs.has(extension.id)) : []
-            ),
-            distinctUntilChanged((a, b) =>
-                isEqual(new Set(a.map(extension => extension.id)), new Set(b.map(extension => extension.id)))
-            ),
-            switchMap(extensions => {
-                console.log('in switchMap', { extensions })
-                return combineLatestOrDefault(
-                    extensions.map(extension =>
-                        // create a Map of scriptURL -> scriptURL|blobURL for caching purposes.
-                        // iterate over extensions, filter out extensions that have already resolved scriptURL.
-                        // call `getScriptURLForExtension` return fn with new extensions if defined, then add those
-                        // resolved script URLs (get id from index) to cache. this way we have one roundtrip at most
-                        memoizedGetScriptURLForExtension(getScriptURLFromExtensionManifest(extension)).pipe(
-                            map(scriptURL =>
-                                scriptURL === null
-                                    ? null
-                                    : {
-                                          id: extension.id,
-                                          manifest: extension.manifest,
-                                          scriptURL,
-                                      }
-                            )
-                        )
+
+                for (const [id, extension] of previouslyActivatedExtensions) {
+                    // Populate map of extensions to deactivate
+                    if (!activeExtensionIDs.has(id)) {
+                        toDeactivate.set(id, extension)
+                    }
+                }
+
+                // maybe concat map?
+
+                // make it an array in the first place
+                const toActivateArray = [...toActivate.values()]
+
+                console.log({ toActivate, toDeactivate })
+                return from(
+                    getScriptURLs(toActivateArray.map(extension => getScriptURLFromExtensionManifest(extension))).then(
+                        scriptURLs => {
+                            const executableExtensionsToActivate: ExecutableExtension[] = toActivateArray
+                                .map((extension, index) => ({
+                                    id: extension.id,
+                                    manifest: extension.manifest,
+                                    scriptURL: scriptURLs[index],
+                                }))
+                                .filter(
+                                    (extension): extension is ExecutableExtension =>
+                                        typeof extension.scriptURL === 'string'
+                                )
+                            // log bundle url errors on main thread
+                            return { executableExtensionsToActivate, toDeactivate }
+                        }
                     )
                 )
-            }),
-            map(extensions => extensions.filter(isDefined)),
-            distinctUntilChanged((a, b) =>
-                isEqual(new Set(a.map(extension => extension.id)), new Set(b.map(extension => extension.id)))
-            ),
-            tap(() => console.log('here in host'))
+            })
         )
-        // TODO(tj): expose `activeExtensions` to main thread for global debug
+        .subscribe(({ executableExtensionsToActivate }) => {
+            // add to/remove from previously activated extensions
 
-        // activeExtensions.subscribe(extensions => console.log({ extensions }))
+            console.time('importing all scripts')
+            self.importScripts(...executableExtensionsToActivate.map(({ scriptURL }) => scriptURL))
+            console.timeEnd('importing all scripts')
+        })
 
-        // activate extensions
-
-        // register extension contributions. try to find a way to prevent the original
-        // "unsub existing on registration" problem.
-        // maybe just remove support for observable entries! that's major indirection
-        // since all we really want is:
-        // activate extension -> fetch manifest -> register contributions (raw, will be parsed)
-    })()
+    // register extension contributions. try to find a way to prevent the original
+    // "unsub existing on registration" problem.
+    // maybe just remove support for observable entries! that's major indirection
+    // since all we really want is:
+    // activate extension -> fetch manifest -> register contributions (raw, will be parsed)
 
     // TJ note: try to more aggresively optimize now that more stuff is done on the
     // extension host side; minimize transfer weight!
-
-    function viewerConfiguredExtensions() {
-        return from(state.settings).pipe(
-            map(settings => (settings.final?.extensions ? Object.keys(settings.final.extensions) : [])),
-            distinctUntilChanged((a, b) => isEqual(a, b)),
-            switchMap(extensionIDs => queryConfiguredRegistryExtensions(graphQL, extensionIDs)),
-            catchError(error => throwError(asError(error))),
-            shareReplay(1)
-            // TODO(tj); return to publish + refCount after fixing contrib problem
-        )
-    }
-
-    function getSideloadedExtension(): Observable<ConfiguredExtension | null> {
-        return wrapRemoteObservable(mainAPI.getSideloadedExtensionURL()).pipe(
-            switchMap(url => (url ? getConfiguredSideloadedExtension(url) : of(null))),
-            catchError(error => {
-                console.error('Error sideloading extension', error)
-                return of(null)
-            })
-        )
-    }
 
     // consider how to avoid postMessage roundtrips for platforms that dont need this.
     // so I've reduced latency for platforms that don't need this, but how about for platforms that do?
     // batching?
     // NOW I've implemented batching, refactor
-    const memoizedGetScriptURLForExtension = memoizeObservable<string, string | null>(
-        url =>
-            getScriptURL(null).pipe(
-                switchMap(getScriptURL => (getScriptURL ? from(getScriptURL(url)) : of(url))),
-                catchError(error => {
-                    console.error(`Error fetching extension script URL ${url}`, error)
-                    return [null]
-                })
-            ),
-        url => url
-    )
-    // TODO(tj): explain why
-    const getScriptURL = memoizeObservable(
-        () => from(mainAPI.getScriptURLForExtension()),
-        () => 'getScriptURL'
-    )
 
     return {
         configuration: Object.assign(state.settings.pipe(mapTo(undefined)), {
@@ -972,6 +856,9 @@ export const initNewExtensionAPI = (
         },
     }
 }
+
+/** The WebWorker's global scope */
+declare const self: any
 
 // TODO (loic, felix) it might make sense to port tests with the rest of provider registries.
 /**

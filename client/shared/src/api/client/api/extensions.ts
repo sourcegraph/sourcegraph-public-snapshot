@@ -73,28 +73,25 @@ export class ClientExtensions {
 
                     // Activate extensions that haven't yet been activated.
                     for (const extension of toActivate) {
-                        console.log('Activating Sourcegraph extension:', extension.id)
-
+                        // console.log('Activating Sourcegraph extension:', extension.id)
                         // We could log the event after the activation promise resolves to ensure that there wasn't
                         // an error during activation, but we want to track the maximum number of times an extension could have been useful.
                         // Since extension activation is passive from the user's perspective, and we don't yet track extension usage events,
                         // there's no way that we could measure how often extensions are actually useful anyways.
-
                         // We only want to log non-default extension events
-                        if (!defaultExtensions[extension.id]) {
-                            // Hash extension IDs that specify host, since that means that it's a private registry extension.
-                            const telemetryExtensionID = splitExtensionID(extension.id).host
-                                ? hashCode(extension.id, 20)
-                                : extension.id
-
-                            this.platformContext.telemetryService?.log('ExtensionActivation', {
-                                extension_id: telemetryExtensionID,
-                            })
-                        }
-
-                        this.proxy.$activateExtension(extension.id, extension.scriptURL).catch(error => {
-                            console.error(`Error activating extension ${JSON.stringify(extension.id)}:`, error)
-                        })
+                        // if (!defaultExtensions[extension.id]) {
+                        //     // Hash extension IDs that specify host, since that means that it's a private registry extension.
+                        //     const telemetryExtensionID = splitExtensionID(extension.id).host
+                        //         ? hashCode(extension.id, 20)
+                        //         : extension.id
+                        //     this.platformContext.telemetryService?.log('ExtensionActivation', {
+                        //         extension_id: telemetryExtensionID,
+                        //     })
+                        // }
+                        // TODO(tj): ESSENTIAL TO KEEP TRACKING
+                        // this.proxy.$activateExtension(extension.id, extension.scriptURL).catch(error => {
+                        //     console.error(`Error activating extension ${JSON.stringify(extension.id)}:`, error)
+                        // })
                     }
                 })
         )
