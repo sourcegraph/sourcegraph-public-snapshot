@@ -54,11 +54,15 @@ export const Resizable: React.FunctionComponent<Props> = ({ children, defaultSiz
     return (
         <div
             className={classnames(
-                { 'flex-column-reverse': position === 'top', 'justify-content-end': position === 'top' },
-                'd-flex'
+                {
+                    'flex-column-reverse': position === 'top',
+                    'justify-content-end': position === 'top',
+                    'h-100': position === 'left',
+                },
+                'd-flex overflow-scroll'
             )}
             ref={reference}
-            style={{ [position !== 'top' ? 'width' : 'height']: `${size}px` }}
+            style={{ [position !== 'top' ? 'width' : 'height']: `${size}px`, minWidth: '6rem', minHeight: '6rem' }}
         >
             {children}
             <div
@@ -70,6 +74,7 @@ export const Resizable: React.FunctionComponent<Props> = ({ children, defaultSiz
                     borderColor: 'red',
                     borderStyle: 'solid',
                     cursor: position === 'top' ? 'row-resize' : 'col-resize',
+                    zIndex: 1,
                 }}
             />
         </div>

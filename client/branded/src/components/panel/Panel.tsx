@@ -56,7 +56,10 @@ export interface PanelViewWithComponent extends PanelViewData {
 /**
  * A tab and corresponding content to display in the panel.
  */
-interface PanelItem extends Tab1<string> {
+interface PanelItem {
+    id: string
+
+    label: React.ReactFragment
     /**
      * Controls the relative order of panel items. The items are laid out from highest priority (at the beginning)
      * to lowest priority (at the end). The default is 0.
@@ -216,12 +219,33 @@ export const Panel = React.memo<Props>(props => {
                         <Tab key={id}>{label}</Tab>
                     ))}
                 </TabList>
-                <Button
-                    onClick={handlePanelClose}
-                    close={true}
-                    className="bg-transparent border-0 close ml-auto"
-                    title="Close sidebar (Alt+S/Opt+S)"
-                />
+                <div>
+                    <ActionsNavItems
+                        {...props}
+                        // TODO remove references to Bootstrap from shared, get class name from prop
+                        // This is okay for now because the Panel is currently only used in the webapp
+                        // listClass="nav w-100 justify-content-end"
+                        // actionItemClass="nav-link"
+                        // actionItemIconClass="icon-inline"
+                        menu={ContributableMenu.PanelToolbar}
+                        scope={
+                            panels[tabIndex]
+                                ? {
+                                      type: 'panelView',
+                                      id: panels[tabIndex].id,
+                                      hasLocations: Boolean(panels[tabIndex].hasLocations),
+                                  }
+                                : undefined
+                        }
+                        wrapInList={true}
+                    />
+                    <Button
+                        onClick={handlePanelClose}
+                        close={true}
+                        className="bg-transparent border-0 close ml-auto"
+                        title="Close panel"
+                    />
+                </div>
             </div>
             <TabPanels>
                 {items.map(({ id, element }) => (
