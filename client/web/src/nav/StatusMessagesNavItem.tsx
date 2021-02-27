@@ -34,7 +34,7 @@ export function fetchAllStatusMessages(): Observable<StatusMessagesResult['statu
 
                 ... on IndexingProgress {
                     message
-                } 
+                }
 
                 ... on SyncError {
                     message
