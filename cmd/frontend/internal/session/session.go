@@ -267,9 +267,17 @@ func deleteSession(w http.ResponseWriter, r *http.Request) error {
 
 // InvalidateSessionsCurrentUser invalidates all sessions for the current user
 // If an error occurs, return the error
-func InvalidateSessionCurrentUser(r *http.Request) error {
+func InvalidateSessionCurrentUser(w http.ResponseWriter, r *http.Request) error {
 	a := actor.FromContext(r.Context())
-	return database.GlobalUsers.InvalidateSessionsByID(r.Context(), a.UID)
+	err := database.GlobalUsers.InvalidateSessionsByID(r.Context(), a.UID)
+	if err != nil {
+		return err
+	}
+
+	// We make sure the session is actually removed from the client and from Redis
+	// because SetData actually reuses the client session cookie if it exists.
+	// See https://github.com/sourcegraph/security-issues/issues/136
+	return deleteSession(w, r)
 }
 
 // InvalidateSessionsByID invalidates all sessions for a user
