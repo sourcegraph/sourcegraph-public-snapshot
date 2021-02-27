@@ -163,6 +163,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                         })
                     ),
                     map(blob => {
+                        console.log('could set model here', { ms: Date.now() })
                         const blobInfo: BlobInfo & { richHTML: string; aborted: boolean } = {
                             content: blob.content,
                             html: blob.highlight.html,

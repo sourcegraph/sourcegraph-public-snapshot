@@ -349,11 +349,15 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                         text: blobInfo.content,
                     })
                 }
+                const selections = lprToSelectionsZeroIndexed(position)
+                console.log('gonna set mode here', { ms: Date.now() })
                 propsReference.current.extensionsController.services.viewer.removeAllViewers()
+                // TODO(tj): set editor selections here, but add viewer and model in parent
+                // before render completes to speed up extension host processing
                 propsReference.current.extensionsController.services.viewer.addViewer({
                     type: 'CodeEditor' as const,
                     resource: uri,
-                    selections: lprToSelectionsZeroIndexed(position),
+                    selections,
                     isActive: true,
                 })
             })

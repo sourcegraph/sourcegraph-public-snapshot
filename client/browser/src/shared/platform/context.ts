@@ -144,17 +144,20 @@ export function createPlatformContext(
             // TODO(sqs): implement tooltips on the browser extension
         },
         createExtensionHost: () => createExtensionHost({ assetsURL }),
-        getScriptURLForExtension: async bundleURL => {
+        getScriptURLForExtension: () => {
             if (isInPage) {
-                return bundleURL
+                return undefined
             }
             // We need to import the extension's JavaScript file (in importScripts in the Web Worker) from a blob:
             // URI, not its original http:/https: URL, because Chrome extensions are not allowed to be published
             // with a CSP that allowlists https://* in script-src (see
             // https://developer.chrome.com/extensions/contentSecurityPolicy#relaxing-remote-script). (Firefox
             // add-ons have an even stricter restriction.)
-            const blobURL = await background.createBlobURL(bundleURL)
-            return blobURL
+
+            return bundleURL =>
+                Promise.allSettled(bundleURLs.map(bundleURL => background.createBlobURL(bundleURL))).then(results =>
+                    results.map(result => (result.status === 'rejected' ? asError(result.reason) : result.value))
+                )
         },
         urlToFile: ({ rawRepoName, ...target }, context) => {
             // We don't always resolve the rawRepoName, e.g. if there are multiple definitions.

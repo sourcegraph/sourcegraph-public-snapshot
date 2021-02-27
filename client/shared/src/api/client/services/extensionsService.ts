@@ -63,8 +63,7 @@ export interface IExtensionsService {
 /**
  * Manages the set of extensions that are available and activated.
  *
- * @internal This is an internal implementation detail and is different from the product feature called the
- * "extension registry" (where users can search for and enable extensions).
+ * @internal
  */
 export class ExtensionsService implements IExtensionsService {
     constructor(
@@ -75,6 +74,10 @@ export class ExtensionsService implements IExtensionsService {
             baseUrl: string
         ) => Subscribable<ConfiguredExtension | null> = getConfiguredSideloadedExtension
     ) {}
+    // TODO(tj): things to consider when moving to extension host side:
+    // exposing `sideloadedExtensionURL` from main thread, using mainThreadAPI's graphQL method.
+    // getScriptURLForExtension from main thread (platform context).. maybe we should expose platformContext to host?
+    // nvm, doesn't make sense to expose the whole thing (for example, 'initializeExtensionHost' )
 
     protected configuredExtensions: Subscribable<ConfiguredExtension[]> = viewerConfiguredExtensions({
         settings: this.platformContext.settings,
@@ -171,13 +174,14 @@ export class ExtensionsService implements IExtensionsService {
             map(extensions => extensions.filter(isDefined)),
             distinctUntilChanged((a, b) =>
                 isEqual(new Set(a.map(extension => extension.id)), new Set(b.map(extension => extension.id)))
-            )
+            ),
+            tap(() => console.log('here in client'))
         )
     }
 
     private memoizedGetScriptURLForExtension = memoizeObservable<string, string | null>(
         url =>
-            asObservable(this.platformContext.getScriptURLForExtension(url)).pipe(
+            asObservable(url).pipe(
                 catchError(error => {
                     console.error(`Error fetching extension script URL ${url}`, error)
                     return [null]

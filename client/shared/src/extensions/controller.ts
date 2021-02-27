@@ -1,9 +1,9 @@
-import { from, Subject, Subscription, Unsubscribable } from 'rxjs'
-import { map, publishReplay, refCount } from 'rxjs/operators'
+import { from, Subject, Subscription, Unsubscribable, combineLatest, of, Observable } from 'rxjs'
+import { catchError, map, publishReplay, refCount, switchMap, withLatestFrom } from 'rxjs/operators'
 import { Services } from '../api/client/services'
 import { ExecuteCommandParameters } from '../api/client/services/command'
 import { ContributionRegistry, parseContributionExpressions } from '../api/client/services/contribution'
-import { ExtensionsService } from '../api/client/services/extensionsService'
+import { ExecutableExtension, ExtensionsService } from '../api/client/services/extensionsService'
 import { InitData } from '../api/extension/extensionHost'
 import { registerBuiltinClientCommands } from '../commands/commands'
 import { Notification } from '../notifications/notification'
@@ -14,6 +14,11 @@ import { createExtensionHostClientConnection } from '../api/client/connection'
 import { Remote } from 'comlink'
 import { FlatExtensionHostAPI, NotificationType } from '../api/contract'
 import { CommandEntry, MainThreadAPIDependencies } from '../api/client/mainthread-api'
+import { viewerConfiguredExtensions } from './helpers'
+import { ConfiguredExtension, isExtensionEnabled } from './extension'
+import { checkOk } from '../backend/fetch'
+import { fromFetch } from 'rxjs/fetch'
+import { ExtensionManifest } from './extensionManifest'
 
 export interface Controller extends Unsubscribable {
     services: Services
@@ -101,7 +106,7 @@ export function createController(context: PlatformContext): Controller {
     const notifications = new Subject<Notification>()
 
     subscriptions.add(registerBuiltinClientCommands(services, context, mainThreadAPIDependencies))
-    subscriptions.add(registerExtensionContributions(services.contribution, services.extensions))
+    // subscriptions.add(registerExtensionContributions(services.contribution, services.extensions))
 
     // Debug helpers.
     const DEBUG = true
@@ -132,6 +137,7 @@ export function createController(context: PlatformContext): Controller {
                 return Promise.reject(error)
             }),
         registerCommand: entryToRegister => mainThreadAPIDependencies.registerCommand(entryToRegister),
+        // activeExtensions
         extHostAPI: extensionHostClientPromise.then(({ api }) => api),
         unsubscribe: () => subscriptions.unsubscribe(),
     }
@@ -141,6 +147,7 @@ export function registerExtensionContributions(
     contributionRegistry: Pick<ContributionRegistry, 'registerContributions'>,
     { activeExtensions }: Pick<ExtensionsService, 'activeExtensions'>
 ): Unsubscribable {
+    // TODO(tj): once extension activation is moved to host side, we can complete contribution move :)
     const contributions = from(activeExtensions).pipe(
         map(extensions =>
             extensions

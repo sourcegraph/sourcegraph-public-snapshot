@@ -33,6 +33,8 @@ export function viewerConfiguredExtensions({
  * @returns An observable that emits once with the results.
  */
 export function queryConfiguredRegistryExtensions(
+    // TODO(tj): can copy this over to extension host, just replace platformContext.requestGraphQL
+    // with mainThreadAPI.requestGraphQL
     { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
     extensionIDs: string[]
 ): Observable<ConfiguredRegistryExtension[]> {

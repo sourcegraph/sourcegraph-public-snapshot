@@ -11,6 +11,8 @@ import { GraphQLResult } from '../graphql/graphql'
 import { Context, FileDecorationsByPath } from './extension/flatExtensionApi'
 import { ViewerData, ViewerId } from './client/services/viewerService'
 import { ContributionScope } from './client/context/context'
+import { ErrorLike } from '../util/errors'
+import { ConfiguredExtension } from '../extensions/extension'
 
 // TODO: Move types to extension-api-types
 
@@ -214,4 +216,11 @@ export interface MainThreadAPI {
     // User interaction methods
     showMessage: (message: string) => Promise<void>
     showInputBox: (options?: sourcegraph.InputBoxOptions) => Promise<string | undefined>
+
+    getSideloadedExtensionURL: () => ProxySubscribable<string | null>
+    getScriptURLForExtension: () =>
+        | undefined
+        | (((bundleURLs: string[]) => Promise<(string | ErrorLike)[]>) & ProxyMarked)
+
+    getEnabledExtensions: () => ProxySubscribable<ConfiguredExtension[]>
 }

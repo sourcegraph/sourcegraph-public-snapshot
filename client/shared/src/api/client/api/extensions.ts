@@ -25,6 +25,9 @@ export class ClientExtensions {
         extensionRegistry: IExtensionsService,
         private platformContext: Pick<PlatformContext, 'telemetryService' | 'settings'>
     ) {
+        // TODO(tj): moving activation to host side.
+
+        // call function with `activeExtensions` and `settings` observables,
         this.subscriptions.add(
             from(extensionRegistry.activeExtensions)
                 .pipe(
@@ -33,6 +36,7 @@ export class ClientExtensions {
                     withLatestFrom(platformContext.settings)
                 )
                 .subscribe(([[oldExtensions, newExtensions], settings]) => {
+                    console.log('diffing exts')
                     // Diff next state's activated extensions vs. current state's.
                     if (!newExtensions) {
                         newExtensions = oldExtensions
@@ -65,6 +69,8 @@ export class ClientExtensions {
                         })
                     }
 
+                    const defaultExtensions = getEnabledExtensionsForSubject(settings, 'DefaultSettings') || {}
+
                     // Activate extensions that haven't yet been activated.
                     for (const extension of toActivate) {
                         console.log('Activating Sourcegraph extension:', extension.id)
@@ -73,8 +79,6 @@ export class ClientExtensions {
                         // an error during activation, but we want to track the maximum number of times an extension could have been useful.
                         // Since extension activation is passive from the user's perspective, and we don't yet track extension usage events,
                         // there's no way that we could measure how often extensions are actually useful anyways.
-
-                        const defaultExtensions = getEnabledExtensionsForSubject(settings, 'DefaultSettings') || {}
 
                         // We only want to log non-default extension events
                         if (!defaultExtensions[extension.id]) {

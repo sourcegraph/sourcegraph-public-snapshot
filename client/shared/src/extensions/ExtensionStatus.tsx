@@ -21,6 +21,7 @@ interface State {
     sideloadedExtensionURL?: string | null
 }
 
+// TODO(tj): refactor to function component
 class ExtensionStatus extends React.PureComponent<Props, State> {
     public state: State = {}
 

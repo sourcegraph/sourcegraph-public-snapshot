@@ -8,6 +8,7 @@ const PLAINTEXT_MODE = 'plaintext'
  * known mode, 'plaintext' is returned.
  */
 export function getModeFromPath(path: string): string {
+    console.log('getting mode', { path })
     const fileName = basename(path)
     const extension = getPathExtension(path)
 
