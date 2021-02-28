@@ -13,6 +13,7 @@ import {
     combineLatest,
     Subscribable,
     throwError,
+    Subscription,
 } from 'rxjs'
 import {
     FlatExtensionHostAPI,
@@ -21,7 +22,7 @@ import {
     PlainNotification,
     ProgressNotification,
 } from '../contract'
-import { syncSubscription } from '../util'
+import { syncSubscription, tryCatchPromise } from '../util'
 import {
     switchMap,
     mergeMap,
@@ -258,7 +259,9 @@ export const initNewExtensionAPI = (
     }
 
     const getTextDocument = (uri: string): ExtensionDocument => {
-        const textDocument = textDocuments.get(uri)
+        // TODO(tj): fix race condition when hover event comes before
+        // document is registered
+        const textDocument = state.textDocuments.get(uri)
         if (!textDocument) {
             throw new Error(`Text document does not exist with URI ${uri}`)
         }
@@ -327,8 +330,11 @@ export const initNewExtensionAPI = (
 
         // Language
         getHover: (textParameters: TextDocumentPositionParameters) => {
-            const document = textDocuments.get(textParameters.textDocument.uri)
+            // const document = textDocuments.get(textParameters.textDocument.uri)
+            console.log({ currStateDocs: state.textDocuments })
+            const document = getTextDocument(textParameters.textDocument.uri)
             const position = toPosition(textParameters.position)
+            console.log({ hoverProviders: state.hoverProviders })
 
             return proxySubscribable(
                 callProviders(
@@ -340,7 +346,8 @@ export const initNewExtensionAPI = (
             )
         },
         getDocumentHighlights: (textParameters: TextDocumentPositionParameters) => {
-            const document = textDocuments.get(textParameters.textDocument.uri)
+            // const document = textDocuments.get(textParameters.textDocument.uri)
+            const document = getTextDocument(textParameters.textDocument.uri)
             const position = toPosition(textParameters.position)
 
             return proxySubscribable(
@@ -353,7 +360,8 @@ export const initNewExtensionAPI = (
             )
         },
         getDefinition: (textParameters: TextDocumentPositionParameters) => {
-            const document = textDocuments.get(textParameters.textDocument.uri)
+            // const document = textDocuments.get(textParameters.textDocument.uri)
+            const document = getTextDocument(textParameters.textDocument.uri)
             const position = toPosition(textParameters.position)
 
             return proxySubscribable(
@@ -452,6 +460,7 @@ export const initNewExtensionAPI = (
             if (state.languageReferences.increment(textDocumentData.languageId)) {
                 state.activeLanguages.next(new Set<string>(state.languageReferences.keys()))
             }
+            console.log({ textDocumentData, docs: state.textDocuments })
         },
 
         // TODO(tj): for panel view location provider arguments
@@ -761,13 +770,13 @@ export const initNewExtensionAPI = (
         () => 'getScriptURL'
     )
 
-    const previouslyActivatedExtensions = new Map<string, ExecutableExtension>()
-    const cachedScriptURLs = new Map<string, string>()
+    const previouslyActivatedExtensions = new Set<string>()
+    const cachedScriURLs = new Map<string, string>()
     activeExtensions
         .pipe(
             withLatestFrom(getScriptURLs(null)),
             concatMap(([activeExtensions, getScriptURLs]) => {
-                const toDeactivate = new Map<string, ExecutableExtension>()
+                const toDeactivate = new Set<string>()
                 const toActivate = new Map<string, ConfiguredExtension>()
                 const activeExtensionIDs = new Set<string>()
 
@@ -780,10 +789,10 @@ export const initNewExtensionAPI = (
                     }
                 }
 
-                for (const [id, extension] of previouslyActivatedExtensions) {
+                for (const id of previouslyActivatedExtensions) {
                     // Populate map of extensions to deactivate
                     if (!activeExtensionIDs.has(id)) {
-                        toDeactivate.set(id, extension)
+                        toDeactivate.add(id)
                     }
                 }
 
@@ -792,10 +801,19 @@ export const initNewExtensionAPI = (
                 // make it an array in the first place
                 const toActivateArray = [...toActivate.values()]
 
+                // todo: move this to tap or sub
+                for (const [id] of toActivate) {
+                    previouslyActivatedExtensions.add(id)
+                }
+                for (const id of toDeactivate) {
+                    previouslyActivatedExtensions.delete(id)
+                }
+
                 console.log({ toActivate, toDeactivate })
                 return from(
                     getScriptURLs(toActivateArray.map(extension => getScriptURLFromExtensionManifest(extension))).then(
                         scriptURLs => {
+                            // TODO(tj): add to scriptURL cache
                             const executableExtensionsToActivate: ExecutableExtension[] = toActivateArray
                                 .map((extension, index) => ({
                                     id: extension.id,
@@ -807,18 +825,20 @@ export const initNewExtensionAPI = (
                                         typeof extension.scriptURL === 'string'
                                 )
                             // log bundle url errors on main thread
-                            return { executableExtensionsToActivate, toDeactivate }
+                            return { toActivate: executableExtensionsToActivate, toDeactivate }
                         }
+                    )
+                ).pipe(
+                    map(({ toActivate }) =>
+                        // TODO(tj): do three things:
+                        // register contributions, activate extensions, deactivate extensions
+                        from(Promise.all(toActivate.map(({ id, scriptURL }) => activateExtension(id, scriptURL))))
                     )
                 )
             })
         )
-        .subscribe(({ executableExtensionsToActivate }) => {
+        .subscribe(() => {
             // add to/remove from previously activated extensions
-
-            console.time('importing all scripts')
-            self.importScripts(...executableExtensionsToActivate.map(({ scriptURL }) => scriptURL))
-            console.timeEnd('importing all scripts')
         })
 
     // register extension contributions. try to find a way to prevent the original
@@ -1100,4 +1120,76 @@ function extensionsWithMatchedActivationEvent(
         }
         return false
     })
+}
+
+// TODO(tj): move to `activate.ts`
+
+/** Extensions' deactivate functions. */
+const extensionDeactivates = new Map<string, () => void | Promise<void>>()
+
+async function activateExtension(extensionID: string, bundleURL: string): Promise<void> {
+    // Load the extension bundle and retrieve the extension entrypoint module's exports on
+    // the global `module` property.
+    try {
+        const exports = {}
+        self.exports = exports
+        self.module = { exports }
+        self.importScripts(bundleURL)
+    } catch (error) {
+        throw new Error(
+            `error thrown while executing extension ${JSON.stringify(
+                extensionID
+            )} bundle (in importScripts of ${bundleURL}): ${String(error)}`
+        )
+    }
+    const extensionExports = self.module.exports
+    delete self.exports
+    delete self.module
+
+    if (!('activate' in extensionExports)) {
+        throw new Error(
+            `extension bundle for ${JSON.stringify(extensionID)} has no exported activate function (in ${bundleURL})`
+        )
+    }
+
+    // During extension deactivation, we first call the extension's `deactivate` function and then unsubscribe
+    // the Subscription passed to the `activate` function.
+    const extensionSubscriptions = new Subscription()
+    const extensionDeactivate = typeof extensionExports.deactivate === 'function' ? extensionExports.deactivate : null
+    extensionDeactivates.set(extensionID, async () => {
+        try {
+            if (extensionDeactivate) {
+                await Promise.resolve(extensionDeactivate())
+            }
+        } finally {
+            extensionSubscriptions.unsubscribe()
+        }
+    })
+
+    // The behavior should be consistent for both sync and async activate functions that throw
+    // errors or reject. Both cases should yield a rejected promise.
+    //
+    // TODO(sqs): Add timeouts to prevent long-running activate or deactivate functions from
+    // significantly delaying other extensions.
+    await tryCatchPromise<void>(() => extensionExports.activate({ subscriptions: extensionSubscriptions })).catch(
+        error => {
+            error = asError(error)
+            throw Object.assign(
+                new Error(
+                    `error during extension ${JSON.stringify(extensionID)} activate function: ${String(
+                        error.stack || error
+                    )}`
+                ),
+                { error }
+            )
+        }
+    )
+}
+
+async function deactivateExtension(extensionID: string): Promise<void> {
+    const deactivate = extensionDeactivates.get(extensionID)
+    if (deactivate) {
+        extensionDeactivates.delete(extensionID)
+        await Promise.resolve(deactivate())
+    }
 }
