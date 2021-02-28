@@ -135,7 +135,7 @@ type SearchResultsResolver struct {
 // Results are the results found by the search. It respects the limits set. To
 // access all results directly access the SearchResults field.
 func (sr *SearchResultsResolver) Results() []SearchResultResolver {
-	test := sr.limit
+	_, _, _, _ = 1, 2, 3, 4
 	if sr.limit > 0 && sr.limit < len(sr.SearchResults) {
 		return sr.SearchResults[:sr.limit]
 	}
