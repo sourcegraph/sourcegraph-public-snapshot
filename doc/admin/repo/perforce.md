@@ -43,6 +43,8 @@ Use the `depots` field to configure which depots are mirrored/synchronized as Gi
 
 > WARNING: Permissions syncing for Perforce depots is not yet supported. All files that are synced from the Perforce Server will be readable by all Sourcegraph users. The following docs are based on prototypes and are subject to change.
 
+> NOTE: A user (`p4.user`) with "super" access level is required to be able to fetch ACLs from a Perforce Server. 
+
 Sourcegraph only supports repository-level permissions and does not match the granularity of Perforce access control lists (which supports file-level permissions). The workaround is for site admins to sync arbitrary subdirectories of a depot, which can then enforce permissions in Sourcegraph. We suggest using the most concrete path of your permissions boundary.
 
 For example, if your Perforce depot `//Sourcegraph/` has different permissions for `//Sourcegraph/Backend/` and some subdirectories of `//Sourcegraph/Frontend/`, we recommend setting the following `depots`:
