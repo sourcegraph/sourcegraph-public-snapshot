@@ -220,7 +220,14 @@ export const UserArea: React.FunctionComponent<UserAreaProps> = ({
                                         <Route
                                             // eslint-disable-next-line react/jsx-no-bind
                                             render={routeComponentProps =>
-                                                render({ ...context, ...routeComponentProps })
+                                                render({
+                                                    ...context,
+                                                    ...routeComponentProps,
+                                                    ...{
+                                                        username,
+                                                        siteAdmin: Boolean(props.authenticatedUser?.siteAdmin),
+                                                    },
+                                                })
                                             }
                                             path={url + path}
                                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
