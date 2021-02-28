@@ -1,4 +1,4 @@
-# Campaigns
+# Batch changes
 
 <style>
 
@@ -36,27 +36,27 @@ body.theme-dark .markdown-body ul li:before {
 <p class="subtitle">Make large-scale code changes across many repositories and code hosts</p>
 
 <p class="lead">
-Create a campaign by specifying a search query to get a list of repositories and a script to run in each. The campaign then lets you create changesets (a generic term for pull requests or merge requests) on all affected repositories and track their progress until they're all merged. You can preview the changes and update them at any time. A campaign can also be used to track and manage manually created changesets.
+Create a batch change by specifying a search query to get a list of repositories and a script to run in each. The batch change then lets you create changesets (a generic term for pull requests or merge requests) on all affected repositories and track their progress until they're all merged. You can preview the changes and update them at any time. A batch change can also be used to track and manage manually created changesets.
 </p>
 
 <div class="cta-group">
 <a class="btn btn-primary" href="quickstart">★ Quickstart</a>
-<a class="btn" href="explanations/introduction_to_campaigns">Introduction to campaigns</a>
+<a class="btn" href="explanations/introduction_to_campaigns">Introduction to batch changes</a>
 <a class="btn" href="references/requirements">Requirements</a>
 </div>
 
-> NOTE: We highly recommend using the latest versions of Sourcegraph and src-cli with campaigns, since we're steadily shipping new features and improvements.
+> NOTE: We highly recommend using the latest versions of Sourcegraph and src-cli with Sourcegraph batch changes, since we're steadily shipping new features and improvements.
 
 ## Getting started
 
 <div class="getting-started">
   <a href="quickstart" class="btn" alt="Run through the Quickstart guide">
-   <span>New to campaigns?</span>
+   <span>New to batch changes?</span>
    </br>
-   Run through the <b>quickstart guide</b> and create a campaign in less than 10 minutes.
+   Run through the <b>quickstart guide</b> and create a batch change in less than 10 minutes.
   </a>
 
-  <a href="https://www.youtube.com/watch?v=EfKwKFzOs3E" class="btn" alt="Watch the campaigns demo video">
+  <a href="https://www.youtube.com/watch?v=EfKwKFzOs3E" class="btn" alt="Watch the Sourcegrapg batch changes demo video">
    <span>Demo video</span>
    </br>
    Watch the campaigns demo video to see what campaigns are capable of.
