@@ -80,6 +80,8 @@ import { aggregateStreamingSearch } from './search/stream'
 import { ISearchContext } from '../../shared/src/graphql/schema'
 import { logCodeInsightsChanges } from './insights/analytics'
 import { listUserRepositories } from './site-admin/backend'
+import { ApolloProvider } from '@apollo/client'
+import { client } from './client'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
@@ -438,82 +440,84 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         const { children, ...props } = this.props
 
         return (
-            <ErrorBoundary location={null}>
-                <ShortcutProvider>
-                    <BrowserRouter key={0}>
-                        {/* eslint-disable react/jsx-no-bind */}
-                        <Route
-                            path="/"
-                            render={routeComponentProps => (
-                                <LayoutWithActivation
-                                    {...props}
-                                    {...routeComponentProps}
-                                    authenticatedUser={authenticatedUser}
-                                    viewerSubject={this.state.viewerSubject}
-                                    settingsCascade={this.state.settingsCascade}
-                                    showCampaigns={this.props.showCampaigns}
-                                    // Theme
-                                    isLightTheme={this.isLightTheme()}
-                                    themePreference={this.state.themePreference}
-                                    onThemePreferenceChange={this.onThemePreferenceChange}
-                                    // Search query
-                                    navbarSearchQueryState={this.state.navbarSearchQueryState}
-                                    onNavbarQueryChange={this.onNavbarQueryChange}
-                                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                                    searchRequest={search}
-                                    parsedSearchQuery={this.state.parsedSearchQuery}
-                                    setParsedSearchQuery={this.setParsedSearchQuery}
-                                    patternType={this.state.searchPatternType}
-                                    setPatternType={this.setPatternType}
-                                    caseSensitive={this.state.searchCaseSensitivity}
-                                    setCaseSensitivity={this.setCaseSensitivity}
-                                    versionContext={this.state.versionContext}
-                                    setVersionContext={this.setVersionContext}
-                                    availableVersionContexts={this.state.availableVersionContexts}
-                                    previousVersionContext={this.state.previousVersionContext}
-                                    copyQueryButton={this.state.copyQueryButton}
-                                    // Extensions
-                                    platformContext={this.platformContext}
-                                    extensionsController={this.extensionsController}
-                                    telemetryService={eventLogger}
-                                    isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                    showRepogroupHomepage={this.state.showRepogroupHomepage}
-                                    showOnboardingTour={this.state.showOnboardingTour}
-                                    showSearchContext={this.canShowSearchContext()}
-                                    selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
-                                    setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
-                                    availableSearchContexts={this.state.availableSearchContexts}
-                                    defaultSearchContextSpec={this.state.defaultSearchContextSpec}
-                                    showEnterpriseHomePanels={this.state.showEnterpriseHomePanels}
-                                    globbing={this.state.globbing}
-                                    showMultilineSearchConsole={this.state.showMultilineSearchConsole}
-                                    showQueryBuilder={this.state.showQueryBuilder}
-                                    enableSmartQuery={this.state.enableSmartQuery}
-                                    enableCodeMonitoring={this.state.enableCodeMonitoring}
-                                    fetchSavedSearches={fetchSavedSearches}
-                                    fetchRecentSearches={fetchRecentSearches}
-                                    fetchRecentFileViews={fetchRecentFileViews}
-                                    createCodeMonitor={createCodeMonitor}
-                                    fetchUserCodeMonitors={fetchUserCodeMonitors}
-                                    fetchCodeMonitor={fetchCodeMonitor}
-                                    updateCodeMonitor={updateCodeMonitor}
-                                    deleteCodeMonitor={deleteCodeMonitor}
-                                    toggleCodeMonitorEnabled={toggleCodeMonitorEnabled}
-                                    streamSearch={aggregateStreamingSearch}
-                                    onUserRepositoriesUpdate={this.onUserRepositoriesUpdate}
-                                />
-                            )}
+            <ApolloProvider client={client}>
+                <ErrorBoundary location={null}>
+                    <ShortcutProvider>
+                        <BrowserRouter key={0}>
+                            {/* eslint-disable react/jsx-no-bind */}
+                            <Route
+                                path="/"
+                                render={routeComponentProps => (
+                                    <LayoutWithActivation
+                                        {...props}
+                                        {...routeComponentProps}
+                                        authenticatedUser={authenticatedUser}
+                                        viewerSubject={this.state.viewerSubject}
+                                        settingsCascade={this.state.settingsCascade}
+                                        showCampaigns={this.props.showCampaigns}
+                                        // Theme
+                                        isLightTheme={this.isLightTheme()}
+                                        themePreference={this.state.themePreference}
+                                        onThemePreferenceChange={this.onThemePreferenceChange}
+                                        // Search query
+                                        navbarSearchQueryState={this.state.navbarSearchQueryState}
+                                        onNavbarQueryChange={this.onNavbarQueryChange}
+                                        fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                        searchRequest={search}
+                                        parsedSearchQuery={this.state.parsedSearchQuery}
+                                        setParsedSearchQuery={this.setParsedSearchQuery}
+                                        patternType={this.state.searchPatternType}
+                                        setPatternType={this.setPatternType}
+                                        caseSensitive={this.state.searchCaseSensitivity}
+                                        setCaseSensitivity={this.setCaseSensitivity}
+                                        versionContext={this.state.versionContext}
+                                        setVersionContext={this.setVersionContext}
+                                        availableVersionContexts={this.state.availableVersionContexts}
+                                        previousVersionContext={this.state.previousVersionContext}
+                                        copyQueryButton={this.state.copyQueryButton}
+                                        // Extensions
+                                        platformContext={this.platformContext}
+                                        extensionsController={this.extensionsController}
+                                        telemetryService={eventLogger}
+                                        isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                                        showRepogroupHomepage={this.state.showRepogroupHomepage}
+                                        showOnboardingTour={this.state.showOnboardingTour}
+                                        showSearchContext={this.canShowSearchContext()}
+                                        selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
+                                        setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
+                                        availableSearchContexts={this.state.availableSearchContexts}
+                                        defaultSearchContextSpec={this.state.defaultSearchContextSpec}
+                                        showEnterpriseHomePanels={this.state.showEnterpriseHomePanels}
+                                        globbing={this.state.globbing}
+                                        showMultilineSearchConsole={this.state.showMultilineSearchConsole}
+                                        showQueryBuilder={this.state.showQueryBuilder}
+                                        enableSmartQuery={this.state.enableSmartQuery}
+                                        enableCodeMonitoring={this.state.enableCodeMonitoring}
+                                        fetchSavedSearches={fetchSavedSearches}
+                                        fetchRecentSearches={fetchRecentSearches}
+                                        fetchRecentFileViews={fetchRecentFileViews}
+                                        createCodeMonitor={createCodeMonitor}
+                                        fetchUserCodeMonitors={fetchUserCodeMonitors}
+                                        fetchCodeMonitor={fetchCodeMonitor}
+                                        updateCodeMonitor={updateCodeMonitor}
+                                        deleteCodeMonitor={deleteCodeMonitor}
+                                        toggleCodeMonitorEnabled={toggleCodeMonitorEnabled}
+                                        streamSearch={aggregateStreamingSearch}
+                                        onUserRepositoriesUpdate={this.onUserRepositoriesUpdate}
+                                    />
+                                )}
+                            />
+                            {/* eslint-enable react/jsx-no-bind */}
+                        </BrowserRouter>
+                        <Tooltip key={1} />
+                        <Notifications
+                            key={2}
+                            extensionsController={this.extensionsController}
+                            notificationClassNames={notificationClassNames}
                         />
-                        {/* eslint-enable react/jsx-no-bind */}
-                    </BrowserRouter>
-                    <Tooltip key={1} />
-                    <Notifications
-                        key={2}
-                        extensionsController={this.extensionsController}
-                        notificationClassNames={notificationClassNames}
-                    />
-                </ShortcutProvider>
-            </ErrorBoundary>
+                    </ShortcutProvider>
+                </ErrorBoundary>
+            </ApolloProvider>
         )
     }
 

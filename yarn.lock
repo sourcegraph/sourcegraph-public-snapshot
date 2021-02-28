@@ -33,6 +33,25 @@
     call-me-maybe "^1.0.1"
     js-yaml "^3.13.1"
 
+"@apollo/client@^3.3.11":
+  version "3.3.11"
+  resolved "https://registry.npmjs.org/@apollo/client/-/client-3.3.11.tgz#125051405e83dc899d471d43b79fd6045d92a802"
+  integrity sha512-54+D5FB6RJlQ+g37f432gaexnyvDsG5X6L9VO5kqN54HJlbF8hCf/8CXtAQEHCWodAwZhy6kOLp2RM96829q3A==
+  dependencies:
+    "@graphql-typed-document-node/core" "^3.0.0"
+    "@types/zen-observable" "^0.8.0"
+    "@wry/context" "^0.5.2"
+    "@wry/equality" "^0.3.0"
+    fast-json-stable-stringify "^2.0.0"
+    graphql-tag "^2.12.0"
+    hoist-non-react-statics "^3.3.2"
+    optimism "^0.14.0"
+    prop-types "^15.7.2"
+    symbol-observable "^2.0.0"
+    ts-invariant "^0.6.0"
+    tslib "^1.10.0"
+    zen-observable "^0.8.14"
+
 "@ardatan/aggregate-error@0.0.1":
   version "0.0.1"
   resolved "https://registry.npmjs.org/@ardatan/aggregate-error/-/aggregate-error-0.0.1.tgz#1403ac5de10d8ca689fc1f65844c27179ae1d44f"
@@ -1734,6 +1753,11 @@
     "@graphql-tools/utils" "^7.1.4"
     is-promise "4.0.0"
     tslib "~2.0.1"
+
+"@graphql-typed-document-node/core@^3.0.0":
+  version "3.1.0"
+  resolved "https://registry.npmjs.org/@graphql-typed-document-node/core/-/core-3.1.0.tgz#0eee6373e11418bfe0b5638f654df7a4ca6a3950"
+  integrity sha512-wYn6r8zVZyQJ6rQaALBEln5B1pzxb9shV5Ef97kTvn6yVGrqyXVnDqnU24MXnFubR+rZjBY9NWuxX3FB2sTsjg==
 
 "@hot-loader/react-dom@^16.14.0", "react-dom@npm:@hot-loader/react-dom@^16.14.0":
   version "16.14.0"
@@ -4186,6 +4210,11 @@
     "@types/events" "*"
     "@types/undertaker-registry" "*"
 
+"@types/ungap__global-this@^0.3.1":
+  version "0.3.1"
+  resolved "https://registry.npmjs.org/@types/ungap__global-this/-/ungap__global-this-0.3.1.tgz#18ce9f657da556037a29d50604335614ce703f4c"
+  integrity sha512-+/DsiV4CxXl6ZWefwHZDXSe1Slitz21tom38qPCaG0DYCS1NnDPIQDTKcmQ/tvK/edJUKkmuIDBJbmKDiB0r/g==
+
 "@types/unist@*", "@types/unist@^2.0.0", "@types/unist@^2.0.2":
   version "2.0.3"
   resolved "https://registry.npmjs.org/@types/unist/-/unist-2.0.3.tgz#9c088679876f374eb5983f150d4787aa6fb32d7e"
@@ -4281,6 +4310,11 @@
   dependencies:
     "@types/node" "*"
 
+"@types/zen-observable@^0.8.0":
+  version "0.8.2"
+  resolved "https://registry.npmjs.org/@types/zen-observable/-/zen-observable-0.8.2.tgz#808c9fa7e4517274ed555fa158f2de4b4f468e71"
+  integrity sha512-HrCIVMLjE1MOozVoD86622S7aunluLb2PJdPfb3nYiEtohm8mIB/vyv0Fd37AdeMFrTUQXEunw78YloMA3Qilg==
+
 "@typescript-eslint/eslint-plugin@^4.9.1":
   version "4.9.1"
   resolved "https://registry.npmjs.org/@typescript-eslint/eslint-plugin/-/eslint-plugin-4.9.1.tgz#66758cbe129b965fe9c63b04b405d0cf5280868b"
@@ -4350,6 +4384,11 @@
   dependencies:
     "@typescript-eslint/types" "4.9.1"
     eslint-visitor-keys "^2.0.0"
+
+"@ungap/global-this@^0.4.2":
+  version "0.4.4"
+  resolved "https://registry.npmjs.org/@ungap/global-this/-/global-this-0.4.4.tgz#8a1b2cfcd3e26e079a847daba879308c924dd695"
+  integrity sha512-mHkm6FvepJECMNthFuIgpAEFmPOk71UyXuIxYfjytvFTnSDBIz7jmViO+LfHI/AjrazWije0PnSP3+/NlwzqtA==
 
 "@ungap/promise-all-settled@1.1.2":
   version "1.1.2"
@@ -4520,6 +4559,27 @@
   dependencies:
     "@babel/runtime" "^7.9.2"
     axe-puppeteer "^1.1.0"
+
+"@wry/context@^0.5.2":
+  version "0.5.4"
+  resolved "https://registry.npmjs.org/@wry/context/-/context-0.5.4.tgz#b6c28038872e0a0e1ff14eb40b5bf4cab2ab4e06"
+  integrity sha512-/pktJKHUXDr4D6TJqWgudOPJW2Z+Nb+bqk40jufA3uTkLbnCRKdJPiYDIa/c7mfcPH8Hr6O8zjCERpg5Sq04Zg==
+  dependencies:
+    tslib "^1.14.1"
+
+"@wry/equality@^0.3.0":
+  version "0.3.3"
+  resolved "https://registry.npmjs.org/@wry/equality/-/equality-0.3.3.tgz#1ec8f9af01d40a2eb00d055d9a3173315126c648"
+  integrity sha512-pMrKHIgDAWxLDTGsbaVag+USmwZ2+gGrSBrtyGUxp2pxRg1Cad70lI/hd0NTPtJ4zJxN16EQ679U1Rts83AF5g==
+  dependencies:
+    tslib "^1.14.1"
+
+"@wry/trie@^0.2.1":
+  version "0.2.2"
+  resolved "https://registry.npmjs.org/@wry/trie/-/trie-0.2.2.tgz#99f20f0fcbbcda17006069b155c826cbabfc402f"
+  integrity sha512-OxqBB39x6MfHaa2HpMiRMfhuUnQTddD32Ko020eBeJXq87ivX6xnSSnzKHVbA21p7iqBASz8n/07b6W5wW1BVQ==
+  dependencies:
+    tslib "^1.14.1"
 
 "@xstate/fsm@^1.4.0":
   version "1.4.0"
@@ -11447,6 +11507,13 @@ graphql-tag@^2.11.0:
   resolved "https://registry.npmjs.org/graphql-tag/-/graphql-tag-2.11.0.tgz#1deb53a01c46a7eb401d6cb59dec86fa1cccbffd"
   integrity sha512-VmsD5pJqWJnQZMUeRwrDhfgoyqcfwEkvtpANqcoUG8/tOLkwNgU9mzub/Mc78OJMhHjx7gfAMTxzdG43VGg3bA==
 
+graphql-tag@^2.12.0:
+  version "2.12.1"
+  resolved "https://registry.npmjs.org/graphql-tag/-/graphql-tag-2.12.1.tgz#b065ef885e4800e4afd0842811b718a205f4aa58"
+  integrity sha512-LPewEE1vzGkHnCO8zdOGogKsHHBdtpGyihow1UuMwp6RnZa0lAS7NcbvltLOuo4pi5diQCPASAXZkQq44ffixA==
+  dependencies:
+    tslib "^1.14.1"
+
 graphql-upload@^11.0.0:
   version "11.0.0"
   resolved "https://registry.npmjs.org/graphql-upload/-/graphql-upload-11.0.0.tgz#24b245ff18f353bab6715e8a055db9fd73035e10"
@@ -11768,6 +11835,13 @@ hoist-non-react-statics@^3.1.0, hoist-non-react-statics@^3.3.0:
   version "3.3.0"
   resolved "https://registry.npmjs.org/hoist-non-react-statics/-/hoist-non-react-statics-3.3.0.tgz#b09178f0122184fb95acf525daaecb4d8f45958b"
   integrity sha512-0XsbTXxgiaCDYDIWFcwkmerZPSwywfUqYmwT4jzewKTQSWoE6FCMoUVOeBJWK3E/CrWbxRG3m5GzY4lnIwGRBA==
+  dependencies:
+    react-is "^16.7.0"
+
+hoist-non-react-statics@^3.3.2:
+  version "3.3.2"
+  resolved "https://registry.npmjs.org/hoist-non-react-statics/-/hoist-non-react-statics-3.3.2.tgz#ece0acaf71d62c2969c2ec59feff42a4b1a85b45"
+  integrity sha512-/gGivxi8JPKWNm/W0jSmzcMPpfpPLc3dY/6GxhX2hQ9iGj3aDfklV4ET7NjKpSinLpJ5vafa9iiGIEZg10SfBw==
   dependencies:
     react-is "^16.7.0"
 
@@ -16067,6 +16141,14 @@ opn@^5.5.0:
   integrity sha512-PqHpggC9bLV0VeWcdKhkpxY+3JTzetLSqTCWL/z/tFIbI6G8JCjondXklT1JinczLz2Xib62sSp0T/gKT4KksA==
   dependencies:
     is-wsl "^1.1.0"
+
+optimism@^0.14.0:
+  version "0.14.0"
+  resolved "https://registry.npmjs.org/optimism/-/optimism-0.14.0.tgz#256fb079a3428585b40a3a8462f907e0abd2fc49"
+  integrity sha512-ygbNt8n4DOCVpkwiLF+IrKKeNHOjtr9aXLWGP9HNJGoblSGsnVbJLstcH6/nE9Xy5ZQtlkSioFQNnthmENW6FQ==
+  dependencies:
+    "@wry/context" "^0.5.2"
+    "@wry/trie" "^0.2.1"
 
 optimize-css-assets-webpack-plugin@^5.0.3:
   version "5.0.3"
@@ -20572,6 +20654,11 @@ symbol-observable@^1.1.0:
   resolved "https://registry.npmjs.org/symbol-observable/-/symbol-observable-1.2.0.tgz#c22688aed4eab3cdc2dfeacbb561660560a00804"
   integrity sha512-e900nM8RRtGhlV36KGEU9k65K3mPb1WV70OdjfxlG2EAuM1noi/E/BaW/uMhL7bPEssK8QV57vN3esixjUvcXQ==
 
+symbol-observable@^2.0.0:
+  version "2.0.3"
+  resolved "https://registry.npmjs.org/symbol-observable/-/symbol-observable-2.0.3.tgz#5b521d3d07a43c351055fa43b8355b62d33fd16a"
+  integrity sha512-sQV7phh2WCYAn81oAkakC5qjq2Ml0g8ozqz03wOGnx9dDlG1de6yrF+0RAzSJD8fPUow3PTSMf2SAbOGxb93BA==
+
 symbol-tree@^3.2.2:
   version "3.2.2"
   resolved "https://registry.npmjs.org/symbol-tree/-/symbol-tree-3.2.2.tgz#ae27db38f660a7ae2e1c3b7d1bc290819b8519e6"
@@ -21174,6 +21261,15 @@ ts-graphql-plugin@^2.1.2:
     graphql-language-service-interface "^2.4.1"
     graphql-language-service-types "^1.6.1"
 
+ts-invariant@^0.6.0:
+  version "0.6.1"
+  resolved "https://registry.npmjs.org/ts-invariant/-/ts-invariant-0.6.1.tgz#eb4c52b45daaca8367abbfd6cff998ea871d592d"
+  integrity sha512-QQgN33g8E8yrdDuH29HASveLtbzMnRRgWh0i/JNTW4+zcLsdIOnfsgEDi/NKx4UckQyuMFt9Ujm6TWLWQ58Kvg==
+  dependencies:
+    "@types/ungap__global-this" "^0.3.1"
+    "@ungap/global-this" "^0.4.2"
+    tslib "^1.9.3"
+
 ts-key-enum@^2.0.0, ts-key-enum@^2.0.7:
   version "2.0.7"
   resolved "https://registry.npmjs.org/ts-key-enum/-/ts-key-enum-2.0.7.tgz#ea2c6f3bd770257a3d70fd60625bc3e99d19ab1e"
@@ -21224,6 +21320,11 @@ tslib@^1, tslib@^1.0.0, tslib@^1.10.0, tslib@^1.11.1, tslib@^1.11.2, tslib@^1.8.
   version "1.13.0"
   resolved "https://registry.npmjs.org/tslib/-/tslib-1.13.0.tgz#c881e13cc7015894ed914862d276436fa9a47043"
   integrity sha512-i/6DQjL8Xf3be4K/E6Wgpekn5Qasl1usyw++dAA35Ue5orEn65VIxOA+YvNNl9HV3qv70T7CNwjODHZrLwvd1Q==
+
+tslib@^1.14.1:
+  version "1.14.1"
+  resolved "https://registry.npmjs.org/tslib/-/tslib-1.14.1.tgz#cf2d38bdc34a134bcaf1091c41f6619e2f672d00"
+  integrity sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==
 
 tslib@^2, tslib@^2.0.0, tslib@^2.0.1, tslib@^2.0.3, tslib@~2.0.0, tslib@~2.0.1:
   version "2.0.3"
@@ -22806,6 +22907,11 @@ yocto-queue@^0.1.0:
   version "0.1.0"
   resolved "https://registry.npmjs.org/yocto-queue/-/yocto-queue-0.1.0.tgz#0294eb3dee05028d31ee1a5fa2c556a6aaf10a1b"
   integrity sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==
+
+zen-observable@^0.8.14:
+  version "0.8.15"
+  resolved "https://registry.npmjs.org/zen-observable/-/zen-observable-0.8.15.tgz#96415c512d8e3ffd920afd3889604e30b9eaac15"
+  integrity sha512-PQ2PC7R9rslx84ndNBZB/Dkv8V8fZEpk83RLgXtYd0fwUgEjseMn1Dgajh2x6S8QbZAFa9p2qVCEuYZNgve0dQ==
 
 zip-dir@1.0.2:
   version "1.0.2"
