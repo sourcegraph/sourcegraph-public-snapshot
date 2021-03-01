@@ -11,14 +11,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+// DefaultRepoStore is a subset of the API exposed by the database.DefaultRepos() store.
+type DefaultRepoStore interface {
+	List(ctx context.Context) ([]*types.RepoName, error)
+}
+
+// RepoStore is a subset of the API exposed by the database.Repos() store.
+type RepoStore interface {
+	List(ctx context.Context, opt database.ReposListOptions) (results []*types.Repo, err error)
+}
+
 // AllReposIterator implements an efficient way to iterate over every single repository on
 // Sourcegraph that should be considered for code insights.
 //
 // It caches multiple consecutive uses in order to ensure repository lists (which can be quite
 // large, e.g. 500,000+ repositories) are only fetched as frequently as needed.
 type AllReposIterator struct {
-	DefaultRepoStore *database.DefaultRepoStore
-	RepoStore        *database.RepoStore
+	DefaultRepoStore DefaultRepoStore
+	RepoStore        RepoStore
+	Clock            func() time.Time
 
 	// RepositoryListCacheTime describes how long to cache repository lists for. These API calls
 	// can result in hundreds of thousands of repositories, so choose wisely.
@@ -28,6 +39,10 @@ type AllReposIterator struct {
 	cachedRepoNamesAge time.Time
 	cachedRepoNames    []string
 	cachedPageRequests map[database.LimitOffset]cachedPageRequest
+}
+
+func (a *AllReposIterator) timeSince(t time.Time) time.Duration {
+	return a.Clock().Sub(t)
 }
 
 // ForEach invokes the given function for every repository that we should consider gathering data
@@ -41,7 +56,7 @@ type AllReposIterator struct {
 func (a *AllReposIterator) ForEach(ctx context.Context, forEach func(repoName string) error) error {
 	if envvar.SourcegraphDotComMode() {
 		// Use cached results if we have them and it is reasonable to do so.
-		if time.Since(a.cachedRepoNamesAge) < a.RepositoryListCacheTime {
+		if a.timeSince(a.cachedRepoNamesAge) < a.RepositoryListCacheTime {
 			for _, repo := range a.cachedRepoNames {
 				if err := forEach(repo); err != nil {
 					return err
@@ -62,7 +77,7 @@ func (a *AllReposIterator) ForEach(ctx context.Context, forEach func(repoName st
 		for i, r := range res {
 			names[i] = string(r.Name)
 		}
-		a.cachedRepoNamesAge = time.Now()
+		a.cachedRepoNamesAge = a.Clock()
 		a.cachedRepoNames = names
 		for _, repo := range a.cachedRepoNames {
 			if err := forEach(repo); err != nil {
@@ -110,7 +125,7 @@ func (a *AllReposIterator) cachedRepoStoreList(ctx context.Context, page databas
 		a.cachedPageRequests = map[database.LimitOffset]cachedPageRequest{}
 	}
 	cacheEntry, ok := a.cachedPageRequests[page]
-	if ok && time.Since(cacheEntry.age) < a.RepositoryListCacheTime {
+	if ok && a.timeSince(cacheEntry.age) < a.RepositoryListCacheTime {
 		return cacheEntry.results, nil
 	}
 
@@ -127,7 +142,7 @@ func (a *AllReposIterator) cachedRepoStoreList(ctx context.Context, page databas
 		return nil, err
 	}
 	a.cachedPageRequests[page] = cachedPageRequest{
-		age:     time.Now(),
+		age:     a.Clock(),
 		results: repos,
 	}
 	return repos, nil
