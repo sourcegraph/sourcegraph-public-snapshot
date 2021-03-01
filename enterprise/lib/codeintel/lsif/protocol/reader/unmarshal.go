@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	jsoniter "github.com/json-iterator/go"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/protocol"
 )
 
 var unmarshaller = jsoniter.ConfigFastest
@@ -116,13 +117,14 @@ func unmarshalEdgeFast(line []byte) (Edge, bool) {
 }
 
 var vertexUnmarshalers = map[string]func(line []byte) (interface{}, error){
-	"metaData":           unmarshalMetaData,
-	"document":           unmarshalDocument,
-	"range":              unmarshalRange,
-	"hoverResult":        unmarshalHover,
-	"moniker":            unmarshalMoniker,
-	"packageInformation": unmarshalPackageInformation,
-	"diagnosticResult":   unmarshalDiagnosticResult,
+	"metaData":             unmarshalMetaData,
+	"document":             unmarshalDocument,
+	"documentSymbolResult": unmarshalDocumentSymbolResult,
+	"range":                unmarshalRange,
+	"hoverResult":          unmarshalHover,
+	"moniker":              unmarshalMoniker,
+	"packageInformation":   unmarshalPackageInformation,
+	"diagnosticResult":     unmarshalDiagnosticResult,
 }
 
 func unmarshalMetaData(line []byte) (interface{}, error) {
@@ -138,6 +140,16 @@ func unmarshalMetaData(line []byte) (interface{}, error) {
 		Version:     payload.Version,
 		ProjectRoot: payload.ProjectRoot,
 	}, nil
+}
+
+func unmarshalDocumentSymbolResult(line []byte) (interface{}, error) {
+	var payload struct {
+		Result []*protocol.RangeBasedDocumentSymbol `json:"result"`
+	}
+	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
+		return nil, err
+	}
+	return payload.Result, nil
 }
 
 func unmarshalDocument(line []byte) (interface{}, error) {
@@ -156,19 +168,65 @@ func unmarshalRange(line []byte) (interface{}, error) {
 		Line      int `json:"line"`
 		Character int `json:"character"`
 	}
-	var payload struct {
+	type _range struct {
 		Start _position `json:"start"`
 		End   _position `json:"end"`
 	}
+	type _tag struct {
+		Type      string               `json:"type"`
+		Text      string               `json:"text"`
+		Kind      int                  `json:"kind"`
+		FullRange *_range              `json:"fullRange,omitempty"`
+		Detail    string               `json:"detail,omitempty"`
+		Tags      []protocol.SymbolTag `json:"tags,omitempty"`
+	}
+	var payload struct {
+		Start _position `json:"start"`
+		End   _position `json:"end"`
+		Tag   *_tag     `json:"tag"`
+	}
+
 	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
 		return nil, err
 	}
 
+	var tag *protocol.RangeTag
+	if payload.Tag != nil {
+		var fullRange *protocol.RangeData
+		if payload.Tag.FullRange != nil {
+			fullRange = &protocol.RangeData{
+				Start: protocol.Pos{
+					Line:      payload.Tag.FullRange.Start.Line,
+					Character: payload.Tag.FullRange.Start.Character,
+				},
+				End: protocol.Pos{
+					Line:      payload.Tag.FullRange.End.Line,
+					Character: payload.Tag.FullRange.End.Character,
+				},
+			}
+		}
+		tag = &protocol.RangeTag{
+			Type:      payload.Tag.Type,
+			Text:      payload.Tag.Text,
+			Kind:      protocol.SymbolKind(payload.Tag.Kind),
+			FullRange: fullRange,
+			Detail:    payload.Tag.Detail,
+			Tags:      payload.Tag.Tags,
+		}
+	}
+
 	return Range{
-		StartLine:      payload.Start.Line,
-		StartCharacter: payload.Start.Character,
-		EndLine:        payload.End.Line,
-		EndCharacter:   payload.End.Character,
+		RangeData: protocol.RangeData{
+			Start: protocol.Pos{
+				Line:      payload.Start.Line,
+				Character: payload.Start.Character,
+			},
+			End: protocol.Pos{
+				Line:      payload.End.Line,
+				Character: payload.End.Character,
+			},
+		},
+		Tag: tag,
 	}, nil
 }
 

@@ -39,14 +39,31 @@ func (e *Emitter) EmitDocument(languageID, path string) uint64 {
 }
 
 func (e *Emitter) EmitRange(start, end protocol.Pos) uint64 {
+	return e.EmitRangeWithTag(start, end, nil)
+}
+
+// EmitRangeWithTag emits a range with a "tag" property describing a symbol.
+func (e *Emitter) EmitRangeWithTag(start, end protocol.Pos, tag *protocol.RangeTag) uint64 {
 	id := e.nextID()
-	e.writer.Write(protocol.NewRange(id, start, end))
+	e.writer.Write(protocol.NewRange(id, start, end, tag))
 	return id
 }
 
 func (e *Emitter) EmitResultSet() uint64 {
 	id := e.nextID()
 	e.writer.Write(protocol.NewResultSet(id))
+	return id
+}
+
+func (e *Emitter) EmitDocumentSymbolResult(result []*protocol.RangeBasedDocumentSymbol) uint64 {
+	id := e.nextID()
+	e.writer.Write(protocol.NewDocumentSymbolResult(id, result))
+	return id
+}
+
+func (e *Emitter) EmitDocumentSymbolEdge(resultV, docV uint64) uint64 {
+	id := e.nextID()
+	e.writer.Write(protocol.NewDocumentSymbolEdge(id, resultV, docV))
 	return id
 }
 

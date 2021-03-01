@@ -1,5 +1,7 @@
 package reader
 
+import "github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/protocol"
+
 type Element struct {
 	ID      int
 	Type    string
@@ -20,10 +22,8 @@ type MetaData struct {
 }
 
 type Range struct {
-	StartLine      int
-	StartCharacter int
-	EndLine        int
-	EndCharacter   int
+	protocol.RangeData
+	Tag *protocol.RangeTag `json:"tag,omitempty"`
 }
 
 type ResultSet struct{}

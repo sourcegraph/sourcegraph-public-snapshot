@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/protocol"
 )
 
 func TestUnmarshalElement(t *testing.T) {
@@ -106,10 +107,56 @@ func TestUnmarshalRange(t *testing.T) {
 	}
 
 	expectedRange := Range{
-		StartLine:      1,
-		StartCharacter: 2,
-		EndLine:        3,
-		EndCharacter:   4,
+		RangeData: protocol.RangeData{
+			Start: protocol.Pos{
+				Line:      1,
+				Character: 2,
+			},
+			End: protocol.Pos{
+				Line:      3,
+				Character: 4,
+			},
+		},
+	}
+	if diff := cmp.Diff(expectedRange, r); diff != "" {
+		t.Errorf("unexpected range (-want +got):\n%s", diff)
+	}
+}
+
+func TestUnmarshalRangeWithTag(t *testing.T) {
+	r, err := unmarshalRange([]byte(`{"id": "04", "type": "vertex", "label": "range", "start": {"line": 1, "character": 2}, "end": {"line": 3, "character": 4}, "tag": {"type": "declaration", "text": "foo", "kind": 12, "fullRange": {"start": {"line": 1, "character": 2}, "end": {"line": 5, "character": 1}}, "detail": "detail", "tags": [1]}}`))
+	if err != nil {
+		t.Fatalf("unexpected error unmarshalling range data: %s", err)
+	}
+
+	expectedRange := Range{
+		RangeData: protocol.RangeData{
+			Start: protocol.Pos{
+				Line:      1,
+				Character: 2,
+			},
+			End: protocol.Pos{
+				Line:      3,
+				Character: 4,
+			},
+		},
+		Tag: &protocol.RangeTag{
+			Type: "declaration",
+			Text: "foo",
+			Kind: protocol.Function,
+			FullRange: &protocol.RangeData{
+				Start: protocol.Pos{
+					Line:      1,
+					Character: 2,
+				},
+				End: protocol.Pos{
+					Line:      5,
+					Character: 1,
+				},
+			},
+			Detail: "detail",
+			Tags:   []protocol.SymbolTag{protocol.Deprecated},
+		},
 	}
 	if diff := cmp.Diff(expectedRange, r); diff != "" {
 		t.Errorf("unexpected range (-want +got):\n%s", diff)
