@@ -1785,6 +1785,139 @@ func TestRepos_ListRepoNames_externalServiceID(t *testing.T) {
 	}
 }
 
+// This function tests for both individual uses of ExternalRepoIncludePrefixes,
+// ExternalRepoExcludePrefixes as well as combination of these two options.
+func TestRepos_ListRepoNames_externalRepoPrefixes(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	db := dbtesting.GetDB(t)
+	ctx := actor.WithInternalActor(context.Background())
+
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+
+	svc := &types.ExternalService{
+		Kind:        extsvc.KindPerforce,
+		DisplayName: "Perforce - Test",
+		Config:      `{"p4.port": "ssl:111.222.333.444:1666", "p4.user": "admin", "p4.passwd": "pa$$word", "repositoryPathPattern": "perforce/{depot}"}`,
+	}
+	if err := ExternalServices(db).Create(ctx, confGet, svc); err != nil {
+		t.Fatal(err)
+	}
+
+	repos := types.Repos{
+		{
+			Name:    api.RepoName("perforce/Marketing"),
+			URI:     "Marketing",
+			Private: true,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "//Marketing/",
+				ServiceType: extsvc.TypePerforce,
+				ServiceID:   "ssl:111.222.333.444:1666",
+			},
+		},
+		{
+			Name:    api.RepoName("perforce/Engineering"),
+			URI:     "Engineering",
+			Private: true,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "//Engineering/",
+				ServiceType: extsvc.TypePerforce,
+				ServiceID:   "ssl:111.222.333.444:1666",
+			},
+		},
+		{
+			Name:    api.RepoName("perforce/Engineering/Frontend"),
+			URI:     "Engineering/Frontend",
+			Private: true,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "//Engineering/Frontend/",
+				ServiceType: extsvc.TypePerforce,
+				ServiceID:   "ssl:111.222.333.444:1666",
+			},
+		},
+		{
+			Name:    api.RepoName("perforce/Engineering/Backend"),
+			URI:     "Engineering/Backend",
+			Private: true,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "//Engineering/Backend/",
+				ServiceType: extsvc.TypePerforce,
+				ServiceID:   "ssl:111.222.333.444:1666",
+			},
+		},
+	}
+	if err := Repos(db).Create(ctx, repos...); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name string
+		opt  ReposListOptions
+		want []*types.RepoName
+	}{
+		{
+			name: "only apply ExternalRepoIncludePrefixes",
+			opt: ReposListOptions{
+				ExternalRepoIncludePrefixes: []api.ExternalRepoSpec{
+					{
+						ID:          "//Engineering/",
+						ServiceType: extsvc.TypePerforce,
+						ServiceID:   "ssl:111.222.333.444:1666",
+					},
+				},
+			},
+			want: repoNamesFromRepos(repos[1:]),
+		},
+		{
+			name: "only apply ExternalRepoExcludePrefixes",
+			opt: ReposListOptions{
+				ExternalRepoExcludePrefixes: []api.ExternalRepoSpec{
+					{
+						ID:          "//Engineering/",
+						ServiceType: extsvc.TypePerforce,
+						ServiceID:   "ssl:111.222.333.444:1666",
+					},
+				},
+			},
+			want: repoNamesFromRepos(repos[:1]),
+		},
+		{
+			name: "apply both ExternalRepoIncludePrefixes and ExternalRepoExcludePrefixes",
+			opt: ReposListOptions{
+				ExternalRepoIncludePrefixes: []api.ExternalRepoSpec{
+					{
+						ID:          "//Engineering/",
+						ServiceType: extsvc.TypePerforce,
+						ServiceID:   "ssl:111.222.333.444:1666",
+					},
+				},
+				ExternalRepoExcludePrefixes: []api.ExternalRepoSpec{
+					{
+						ID:          "//Engineering/Backend/",
+						ServiceType: extsvc.TypePerforce,
+						ServiceID:   "ssl:111.222.333.444:1666",
+					},
+				},
+			},
+			want: repoNamesFromRepos(repos[1:3]),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			repos, err := Repos(db).ListRepoNames(ctx, test.opt)
+			if err != nil {
+				t.Fatal(err)
+			}
+			assertJSONEqual(t, test.want, repos)
+		})
+	}
+}
+
 func TestRepos_createRepo_dupe(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
