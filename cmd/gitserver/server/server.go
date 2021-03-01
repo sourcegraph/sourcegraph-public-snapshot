@@ -15,7 +15,6 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -1070,7 +1069,11 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		}
 
 		removeBadRefs(ctx, tmp)
-		ensureHead(tmp)
+
+		if err := setHEAD(ctx, tmp, syncer, repo, remoteURL); err != nil {
+			log15.Error("Failed to ensure HEAD exists", "repo", repo, "error", err)
+			return errors.Wrap(err, "failed to ensure HEAD exists")
+		}
 
 		if err := setRepositoryType(tmp, syncer.Type()); err != nil {
 			return errors.Wrap(err, `git config set "sourcegraph.type"`)
@@ -1368,14 +1371,76 @@ func removeBadRefs(ctx context.Context, dir GitDir) {
 	_ = cmd.Run()
 }
 
-// ensureHead verifies that there is a HEAD file within the repo, and that
-// it is of non-zero length. If either condition is met, we configure a
+// ensureHEAD verifies that there is a HEAD file within the repo, and that it
+// is of non-zero length. If either condition is met, we configure a
 // best-effort default.
-func ensureHead(dir GitDir) {
+func ensureHEAD(dir GitDir) {
 	head, err := os.Stat(dir.Path("HEAD"))
 	if os.IsNotExist(err) || head.Size() == 0 {
 		ioutil.WriteFile(dir.Path("HEAD"), []byte("ref: refs/heads/master"), 0600)
 	}
+}
+
+// setHEAD configures git repo defaults (such as what HEAD is) which are
+// needed for git commands to work.
+func setHEAD(ctx context.Context, dir GitDir, syncer VCSSyncer, repo api.RepoName, remoteURL *url.URL) error {
+	// Verify that there is a HEAD file within the repo, and that it is of
+	// non-zero length.
+	ensureHEAD(dir)
+
+	// Fallback to git's default branch name if git remote show fails.
+	headBranch := "master"
+
+	// try to fetch HEAD from origin
+	cmd, err := syncer.RemoteShowCommand(ctx, remoteURL)
+	if err != nil {
+		return errors.Wrap(err, "get remote show command")
+	}
+	cmd.Dir = string(dir)
+	output, err := runWithRemoteOpts(ctx, cmd, nil)
+	if err != nil {
+		log15.Error("Failed to fetch remote info", "repo", repo, "error", err, "output", string(output))
+		return errors.Wrap(err, "failed to fetch remote info")
+	}
+
+	submatches := headBranchPattern.FindSubmatch(output)
+	if len(submatches) == 2 {
+		submatch := string(submatches[1])
+		if submatch != "(unknown)" {
+			headBranch = submatch
+		}
+	}
+
+	// check if branch pointed to by HEAD exists
+	cmd = exec.CommandContext(ctx, "git", "rev-parse", headBranch, "--")
+	cmd.Dir = string(dir)
+	if err := cmd.Run(); err != nil {
+		// branch does not exist, pick first branch
+		cmd := exec.CommandContext(ctx, "git", "branch")
+		cmd.Dir = string(dir)
+		list, err := cmd.Output()
+		if err != nil {
+			log15.Error("Failed to list branches", "repo", repo, "error", err, "output", string(output))
+			return errors.Wrap(err, "failed to list branches")
+		}
+		lines := strings.Split(string(list), "\n")
+		branch := strings.TrimPrefix(strings.TrimPrefix(lines[0], "* "), "  ")
+		if branch != "" {
+			headBranch = branch
+		}
+	}
+
+	log15.Info("Setting HEAD to", "HEAD", headBranch)
+
+	// set HEAD
+	cmd = exec.CommandContext(ctx, "git", "symbolic-ref", "HEAD", "refs/heads/"+headBranch)
+	cmd.Dir = string(dir)
+	if output, err := cmd.CombinedOutput(); err != nil {
+		log15.Error("Failed to set HEAD", "repo", repo, "error", err, "output", string(output))
+		return errors.Wrap(err, "Failed to set HEAD")
+	}
+
+	return nil
 }
 
 // setLastChanged discerns an approximate last-changed timestamp for a
@@ -1512,7 +1577,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoName) error {
 	repo = protocol.NormalizeRepo(repo)
 	dir := s.dir(repo)
 
-	url, err := s.getRemoteURL(ctx, repo)
+	remoteURL, err := s.getRemoteURL(ctx, repo)
 	if err != nil {
 		return errors.Wrap(err, "failed to determine Git remote URL")
 	}
@@ -1522,7 +1587,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoName) error {
 		return errors.Wrap(err, "get VCS syncer")
 	}
 
-	cmd, configRemoteOpts, err := syncer.FetchCommand(ctx, url)
+	cmd, configRemoteOpts, err := syncer.FetchCommand(ctx, remoteURL)
 	if err != nil {
 		return errors.Wrap(err, "get fetch command")
 	}
@@ -1541,7 +1606,11 @@ func (s *Server) doRepoUpdate2(repo api.RepoName) error {
 	}
 
 	removeBadRefs(ctx, dir)
-	ensureHead(dir)
+
+	if err := setHEAD(ctx, dir, syncer, repo, remoteURL); err != nil {
+		log15.Error("Failed to ensure HEAD exists", "repo", repo, "error", err)
+		return errors.Wrap(err, "failed to ensure HEAD exists")
+	}
 
 	if err := setRepositoryType(dir, syncer.Type()); err != nil {
 		return errors.Wrap(err, `git config set "sourcegraph.type"`)
@@ -1552,54 +1621,6 @@ func (s *Server) doRepoUpdate2(repo api.RepoName) error {
 		log15.Warn("Failed to update last changed time", "repo", repo, "error", err)
 	}
 
-	// Fallback to git's default branch name if git remote show fails.
-	headBranch := "master"
-
-	// try to fetch HEAD from origin
-	cmd, err = syncer.RemoteShowCommand(ctx, url)
-	if err != nil {
-		return errors.Wrap(err, "get remote show command")
-	}
-	cmd.Dir = path.Join(s.ReposDir, string(repo))
-	output, err := runWithRemoteOpts(ctx, cmd, nil)
-	if err != nil {
-		log15.Error("Failed to fetch remote info", "repo", repo, "error", err, "output", string(output))
-		return errors.Wrap(err, "failed to fetch remote info")
-	}
-	submatches := headBranchPattern.FindSubmatch(output)
-	if len(submatches) == 2 {
-		submatch := string(submatches[1])
-		if submatch != "(unknown)" {
-			headBranch = submatch
-		}
-	}
-
-	// check if branch pointed to by HEAD exists
-	cmd = exec.CommandContext(ctx, "git", "rev-parse", headBranch, "--")
-	cmd.Dir = path.Join(s.ReposDir, string(repo))
-	if err := cmd.Run(); err != nil {
-		// branch does not exist, pick first branch
-		cmd := exec.CommandContext(ctx, "git", "branch")
-		cmd.Dir = path.Join(s.ReposDir, string(repo))
-		list, err := cmd.Output()
-		if err != nil {
-			log15.Error("Failed to list branches", "repo", repo, "error", err, "output", string(output))
-			return errors.Wrap(err, "failed to list branches")
-		}
-		lines := strings.Split(string(list), "\n")
-		branch := strings.TrimPrefix(strings.TrimPrefix(lines[0], "* "), "  ")
-		if branch != "" {
-			headBranch = branch
-		}
-	}
-
-	// set HEAD
-	cmd = exec.CommandContext(ctx, "git", "symbolic-ref", "HEAD", "refs/heads/"+headBranch)
-	cmd.Dir = path.Join(s.ReposDir, string(repo))
-	if output, err := cmd.CombinedOutput(); err != nil {
-		log15.Error("Failed to set HEAD", "repo", repo, "error", err, "output", string(output))
-		return errors.Wrap(err, "Failed to set HEAD")
-	}
 	return nil
 }
 
