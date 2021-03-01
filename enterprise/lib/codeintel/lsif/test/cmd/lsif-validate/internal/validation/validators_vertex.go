@@ -70,16 +70,16 @@ func validateRangeVertex(ctx *ValidationContext, lineContext reader2.LineContext
 		return false
 	}
 
-	if r.StartLine < 0 || r.StartCharacter < 0 || r.EndLine < 0 || r.EndCharacter < 0 {
+	if r.Start.Line < 0 || r.Start.Character < 0 || r.End.Line < 0 || r.End.Character < 0 {
 		ctx.AddError("illegal range bounds").AddContext(lineContext)
 		return false
 	}
 
-	if r.StartLine > r.EndLine {
+	if r.Start.Line > r.End.Line {
 		ctx.AddError("illegal range extents").AddContext(lineContext)
 		return false
 	}
-	if r.StartLine == r.EndLine && r.StartCharacter > r.EndCharacter {
+	if r.Start.Line == r.End.Line && r.Start.Character > r.End.Character {
 		ctx.AddError("illegal range extents").AddContext(lineContext)
 		return false
 	}

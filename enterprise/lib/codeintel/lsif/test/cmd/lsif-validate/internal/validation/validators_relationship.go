@@ -128,7 +128,7 @@ func ensureDisjoint(ctx *ValidationContext, documentID int, ranges []reader2.Lin
 		r2 := ranges[j].Element.Payload.(reader.Range)
 
 		// Sort by starting offset (if on the same line, break ties by start character)
-		return r1.StartLine < r2.StartLine || (r1.StartLine == r2.StartLine && r1.StartCharacter < r2.StartCharacter)
+		return r1.Start.Line < r2.Start.Line || (r1.Start.Line == r2.Start.Line && r1.Start.Character < r2.Start.Character)
 	})
 
 	for i := 1; i < len(ranges); i++ {
@@ -138,12 +138,12 @@ func ensureDisjoint(ctx *ValidationContext, documentID int, ranges []reader2.Lin
 		r2 := lineContext2.Element.Payload.(reader.Range)
 
 		// r1 ends after r2, so r1 properly encloses r2
-		if r1.EndLine > r2.EndLine || (r1.EndLine == r2.EndLine && r1.EndCharacter >= r2.EndCharacter) {
+		if r1.End.Line > r2.End.Line || (r1.End.Line == r2.End.Line && r1.End.Character >= r2.End.Character) {
 			continue
 		}
 
 		// r1 ends before r2 starts so they are disjoint
-		if r1.EndLine < r2.StartLine || (r1.EndLine == r2.StartLine && r1.EndCharacter < r2.StartCharacter) {
+		if r1.End.Line < r2.Start.Line || (r1.End.Line == r2.Start.Line && r1.End.Character < r2.Start.Character) {
 			continue
 		}
 
