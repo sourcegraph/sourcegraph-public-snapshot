@@ -146,6 +146,9 @@ func (m *RepoStatusMap) String() string {
 // RepoStatusSingleton is a convenience function to contain a RepoStatusMap
 // with one entry.
 func RepoStatusSingleton(id api.RepoID, status RepoStatus) RepoStatusMap {
+	if status == 0 {
+		return RepoStatusMap{}
+	}
 	return RepoStatusMap{
 		m:      map[api.RepoID]RepoStatus{id: status},
 		status: status,
