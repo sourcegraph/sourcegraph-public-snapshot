@@ -112,15 +112,12 @@ require cluster-admin privileges.
 
 ## Cloud installation guides
 
-<div class="alert alert-info">
+>**Security note:** If you intend to set this up as a production instance, we recommend you create the cluster in a VPC
+>or other secure network that restricts unauthenticated access from the public Internet. You can later expose the
+>necessary ports via an
+>[Internet Gateway](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Internet_Gateway.html) or equivalent
+>mechanism. Take care to secure your cluster in a manner that meets your organization's security requirements.
 
-**Security note:** If you intend to set this up as a production instance, we recommend you create the cluster in a VPC
-or other secure network that restricts unauthenticated access from the public Internet. You can later expose the
-necessary ports via an
-[Internet Gateway](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Internet_Gateway.html) or equivalent
-mechanism. Take care to secure your cluster in a manner that meets your organization's security requirements.
-
-</div>
 
 Follow the instructions linked in the table below to provision a Kubernetes cluster for the
 infrastructure provider of your choice, using the recommended node and list types in the
