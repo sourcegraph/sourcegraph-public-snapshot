@@ -8,11 +8,6 @@ const UserSettingsArea = lazyComponent(() => import('../settings/UserSettingsAre
 
 export const userAreaRoutes: readonly UserAreaRoute[] = [
     {
-        path: '',
-        exact: true,
-        render: lazyComponent(() => import('./UserOverviewPage'), 'UserOverviewPage'),
-    },
-    {
         path: '/settings',
         render: props => (
             <UserSettingsArea

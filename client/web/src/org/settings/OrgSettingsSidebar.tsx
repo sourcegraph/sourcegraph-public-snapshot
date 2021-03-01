@@ -1,11 +1,9 @@
+import ClipboardAccountOutlineIcon from 'mdi-react/ClipboardAccountOutlineIcon'
+import AccountMultipleIcon from 'mdi-react/AccountMultipleIcon'
+import EarthIcon from 'mdi-react/EarthIcon'
 import * as React from 'react'
-import { NavLink, RouteComponentProps } from 'react-router-dom'
-import {
-    SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS,
-    SidebarGroup,
-    SidebarGroupHeader,
-    SidebarGroupItems,
-} from '../../components/Sidebar'
+import { RouteComponentProps } from 'react-router-dom'
+import { SidebarGroup, SidebarGroupItems, SidebarNavItem } from '../../components/Sidebar'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { OrgAreaPageProps } from '../area/OrgArea'
 
@@ -24,7 +22,7 @@ export const OrgSettingsSidebar: React.FunctionComponent<Props> = ({ org, authen
     const siteAdminViewingOtherOrg = authenticatedUser && org.viewerCanAdminister && !org.viewerIsMember
 
     return (
-        <div className={`org-settings-sidebar ${className || ''}`}>
+        <div className={className}>
             {/* Indicate when the site admin is viewing another org's settings */}
             {siteAdminViewingOtherOrg && (
                 <SiteAdminAlert className="sidebar__alert">
@@ -33,14 +31,16 @@ export const OrgSettingsSidebar: React.FunctionComponent<Props> = ({ org, authen
             )}
 
             <SidebarGroup>
-                <SidebarGroupHeader label="Organization" />
                 <SidebarGroupItems>
-                    <NavLink to={match.url} exact={true} className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}>
-                        Settings
-                    </NavLink>
-                    <NavLink to={`${match.url}/profile`} exact={true} className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}>
+                    <SidebarNavItem icon={EarthIcon} to={match.url} exact={true}>
+                        Organization Settings
+                    </SidebarNavItem>
+                    <SidebarNavItem icon={ClipboardAccountOutlineIcon} to={`${match.url}/profile`} exact={true}>
                         Profile
-                    </NavLink>
+                    </SidebarNavItem>
+                    <SidebarNavItem icon={AccountMultipleIcon} to={`${match.url}/members`} exact={true}>
+                        Members
+                    </SidebarNavItem>
                 </SidebarGroupItems>
             </SidebarGroup>
         </div>

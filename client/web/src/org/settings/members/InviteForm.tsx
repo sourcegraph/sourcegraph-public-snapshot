@@ -4,26 +4,26 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import EmailOpenOutlineIcon from 'mdi-react/EmailOpenOutlineIcon'
 import React, { useCallback, useState } from 'react'
 import { map } from 'rxjs/operators'
-import { gql } from '../../../../shared/src/graphql/graphql'
-import { asError, createAggregateError, isErrorLike } from '../../../../shared/src/util/errors'
-import { requestGraphQL } from '../../backend/graphql'
-import { CopyableText } from '../../components/CopyableText'
-import { DismissibleAlert } from '../../components/DismissibleAlert'
-import { Form } from '../../../../branded/src/components/Form'
-import { eventLogger } from '../../tracking/eventLogger'
-import { ErrorAlert } from '../../components/alerts'
+import { gql } from '../../../../../shared/src/graphql/graphql'
+import { asError, createAggregateError, isErrorLike } from '../../../../../shared/src/util/errors'
+import { requestGraphQL } from '../../../backend/graphql'
+import { CopyableText } from '../../../components/CopyableText'
+import { DismissibleAlert } from '../../../components/DismissibleAlert'
+import { Form } from '../../../../../branded/src/components/Form'
+import { eventLogger } from '../../../tracking/eventLogger'
+import { ErrorAlert } from '../../../components/alerts'
 import * as H from 'history'
-import { AuthenticatedUser } from '../../auth'
-import { Scalars } from '../../../../shared/src/graphql-operations'
+import { AuthenticatedUser } from '../../../auth'
+import { Scalars } from '../../../../../shared/src/graphql-operations'
 import {
     InviteUserToOrganizationResult,
     InviteUserToOrganizationVariables,
     AddUserToOrganizationResult,
     AddUserToOrganizationVariables,
     InviteUserToOrganizationFields,
-} from '../../graphql-operations'
+} from '../../../graphql-operations'
 import classNames from 'classnames'
-import { Link } from '../../../../shared/src/components/Link'
+import { Link } from '../../../../../shared/src/components/Link'
 
 const emailInvitesEnabled = window.context.emailEnabled
 

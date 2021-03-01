@@ -8,15 +8,6 @@ const OrgSettingsArea = lazyComponent(() => import('../settings/OrgSettingsArea'
 
 export const orgAreaRoutes: readonly OrgAreaRoute[] = [
     {
-        path: '',
-        exact: true,
-        render: lazyComponent(() => import('./OrgOverviewPage'), 'OrgOverviewPage'),
-    },
-    {
-        path: '/members',
-        render: lazyComponent(() => import('./OrgMembersPage'), 'OrgMembersPage'),
-    },
-    {
         path: '/settings',
         render: props => <OrgSettingsArea {...props} isLightTheme={props.isLightTheme} />,
     },
