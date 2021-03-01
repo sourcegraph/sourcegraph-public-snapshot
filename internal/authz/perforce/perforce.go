@@ -137,7 +137,6 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 
 	// Drain remaining body
 	_, _ = io.Copy(ioutil.Discard, rc)
-
 	return nil, nil
 }
 
@@ -239,13 +238,87 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) 
 	}
 	defer func() { _ = rc.Close() }()
 
+	var cachedUserEmails map[string]string
+	getAllUserEmails := func() (map[string]string, error) {
+		if cachedUserEmails != nil {
+			return cachedUserEmails, nil
+		}
+
+		userEmails := make(map[string]string)
+		rc, _, err := gitserver.DefaultClient.P4Exec(ctx, p.host, p.user, p.password, "users")
+		if err != nil {
+			return nil, errors.Wrap(err, "list users")
+		}
+		defer func() { _ = rc.Close() }()
+
+		scanner := bufio.NewScanner(rc)
+		for scanner.Scan() {
+			// e.g. alice <alice@example.com> (Alice) accessed 2020/12/04
+			fields := strings.Split(scanner.Text(), " ")
+			if len(fields) < 2 {
+				continue
+			}
+			username := fields[0]                  // e.g. alice
+			email := strings.Trim(fields[1], "<>") // e.g. alice@example.com
+
+			userEmails[username] = email
+		}
+		if err = scanner.Err(); err != nil {
+			return nil, errors.Wrap(err, "scanner.Err")
+		}
+		fmt.Println("getAllUsers", userEmails)
+
+		cachedUserEmails = userEmails
+		return userEmails, nil
+	}
 	getAllUsers := func() ([]string, error) {
-		// TODO: "p4 users"
-		return []string{"admin", "alice", "bob"}, nil
+		userEmails, err := getAllUserEmails()
+		if err != nil {
+			return nil, errors.Wrap(err, "get all user emails")
+		}
+
+		users := make([]string, 0, len(userEmails))
+		for name := range userEmails {
+			users = append(users, name)
+		}
+		return users, nil
 	}
 	getGroupMembers := func(group string) ([]string, error) {
-		// TODO: "p4 group -o Ops"
-		return []string{"alice"}, nil
+		rc, _, err := gitserver.DefaultClient.P4Exec(ctx, p.host, p.user, p.password, "group", "-o", group)
+		if err != nil {
+			return nil, errors.Wrap(err, "list group members")
+		}
+		defer func() { _ = rc.Close() }()
+
+		var members []string
+		startScan := false
+		scanner := bufio.NewScanner(rc)
+		for scanner.Scan() {
+			line := scanner.Text()
+
+			// Only start scan when we encounter the "Users:" line
+			if !startScan {
+				if strings.HasPrefix(line, "Users:") {
+					startScan = true
+				}
+				continue
+			}
+
+			// Lines for users always start with a tab "\t"
+			if !strings.HasPrefix(line, "\t") {
+				break
+			}
+
+			members = append(members, strings.TrimSpace(line))
+		}
+		if err = scanner.Err(); err != nil {
+			return nil, errors.Wrap(err, "scanner.Err")
+		}
+
+		// Drain remaining body
+		_, _ = io.Copy(ioutil.Discard, rc)
+		fmt.Println("getGroupMembers", group, members)
+		return members, nil
 	}
 
 	users := make(map[string]struct{})
@@ -355,17 +428,19 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) 
 		return nil, errors.Wrap(err, "scanner.Err")
 	}
 
-	// TODO: "p4 users"
-	fmt.Println("users", users)
-
+	userEmails, err := getAllUserEmails()
+	if err != nil {
+		return nil, errors.Wrap(err, "get all user emails")
+	}
 	extIDs := make([]extsvc.AccountID, 0, len(users))
 	for user := range users {
-		extIDs = append(extIDs, extsvc.AccountID(map[string]string{
-			"admin": "admin@joe-perforce-server",
-			"alice": "alice@example.com",
-			"bob":   "bob@example.com",
-		}[user]))
+		email, ok := userEmails[user]
+		if !ok {
+			continue
+		}
+		extIDs = append(extIDs, extsvc.AccountID(email))
 	}
+	fmt.Println("extIDs", extIDs)
 	return extIDs, nil
 }
 
