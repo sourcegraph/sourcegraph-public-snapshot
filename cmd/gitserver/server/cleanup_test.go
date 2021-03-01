@@ -182,8 +182,9 @@ func TestCleanupExpired(t *testing.T) {
 	repoGCOld := path.Join(root, "repo-gc-old", ".git")
 	repoBoom := path.Join(root, "repo-boom", ".git")
 	repoCorrupt := path.Join(root, "repo-corrupt", ".git")
+	repoRemoteURLScrub := path.Join(root, "repo-remote-url-scrub", ".git")
 	remote := path.Join(root, "remote", ".git")
-	for _, path := range []string{repoNew, repoOld, repoGCNew, repoGCOld, repoBoom, repoCorrupt, remote} {
+	for _, path := range []string{repoNew, repoOld, repoGCNew, repoGCOld, repoBoom, repoCorrupt, repoRemoteURLScrub, remote} {
 		cmd := exec.Command("git", "--bare", "init", path)
 		if err := cmd.Run(); err != nil {
 			t.Fatal(err)
@@ -234,6 +235,9 @@ func TestCleanupExpired(t *testing.T) {
 	if err := gitConfigSet(GitDir(repoCorrupt), "sourcegraph.maybeCorruptRepo", "1"); err != nil {
 		t.Fatal(err)
 	}
+	if err := exec.Command("git", "-C", repoRemoteURLScrub, "remote", "add", "origin", "http://hello:world@boom.com/").Run(); err != nil {
+		t.Fatal(err)
+	}
 
 	now := time.Now()
 	repoNewTime := modTime(repoNew)
@@ -282,6 +286,13 @@ func TestCleanupExpired(t *testing.T) {
 	}
 	if !now.After(recloneTime(repoBoom)) {
 		t.Error("expected repoBoom reclone time to be updated to not now")
+	}
+
+	// we scrubbed remote URL
+	if out, err := exec.Command("git", "-C", repoRemoteURLScrub, "remote", "-v").Output(); len(out) > 0 {
+		t.Fatalf("expected no output from git remote after URL scrubbing, got: %s", out)
+	} else if err != nil {
+		t.Fatal(err)
 	}
 }
 
