@@ -626,7 +626,7 @@ func (a searchAlert) Results(context.Context) (*SearchResultsResolver, error) {
 	return alert.wrap(), nil
 }
 
-func (searchAlert) Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error) {
+func (searchAlert) Suggestions(context.Context, *searchSuggestionsArgs) ([]SearchSuggestionResolver, error) {
 	return nil, nil
 }
 func (searchAlert) Stats(context.Context) (*searchResultsStats, error) { return nil, nil }

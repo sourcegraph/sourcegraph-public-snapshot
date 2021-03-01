@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
@@ -26,11 +25,11 @@ func TestChangesetConnectionResolver(t *testing.T) {
 	}
 
 	ctx := backend.WithAuthzBypass(context.Background())
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
-	userID := ct.CreateTestUser(t, false).ID
+	userID := ct.CreateTestUser(t, db, false).ID
 
-	cstore := store.New(dbconn.Global)
+	cstore := store.New(db)
 	repoStore := database.ReposWith(cstore)
 	esStore := database.ExternalServicesWith(cstore)
 
@@ -39,7 +38,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 	if err := repoStore.Create(ctx, repo, inaccessibleRepo); err != nil {
 		t.Fatal(err)
 	}
-	ct.MockRepoPermissions(t, userID, repo.ID)
+	ct.MockRepoPermissions(t, db, userID, repo.ID)
 
 	spec := &campaigns.CampaignSpec{
 		NamespaceUserID: userID,
@@ -110,7 +109,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 	addChangeset(t, ctx, cstore, changeset3, campaign.ID)
 	addChangeset(t, ctx, cstore, changeset4, campaign.ID)
 
-	s, err := graphqlbackend.NewSchema(dbconn.Global, &Resolver{store: cstore}, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

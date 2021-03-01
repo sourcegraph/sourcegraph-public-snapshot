@@ -18,7 +18,7 @@ import (
 // Note: Zoekt starts up background goroutines, so call Close when done using
 // the Client.
 type Zoekt struct {
-	Client StreamSearcher
+	Client zoekt.Streamer
 
 	// DisableCache when true prevents caching of Client.List. Useful in
 	// tests.

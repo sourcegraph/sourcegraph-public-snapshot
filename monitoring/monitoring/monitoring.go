@@ -274,12 +274,12 @@ func (c *Container) alertDescription(o Observable, alert *ObservableAlertDefinit
 	// description based on thresholds. no special description for 'alert.strictCompare',
 	// because the description is pretty ambiguous to fit different alerts.
 	units := o.Panel.unitType.short()
-	if alert.greaterThan != nil {
+	if alert.greaterThan {
 		// e.g. "zoekt-indexserver: 20+ indexed search request errors every 5m by code"
-		description = fmt.Sprintf("%s: %v%s+ %s", c.Name, *alert.greaterThan, units, o.Description)
-	} else if alert.lessThan != nil {
+		description = fmt.Sprintf("%s: %v%s+ %s", c.Name, alert.threshold, units, o.Description)
+	} else if alert.lessThan {
 		// e.g. "zoekt-indexserver: less than 20 indexed search requests every 5m by code"
-		description = fmt.Sprintf("%s: less than %v%s %s", c.Name, *alert.lessThan, units, o.Description)
+		description = fmt.Sprintf("%s: less than %v%s %s", c.Name, alert.threshold, units, o.Description)
 	} else {
 		return "", fmt.Errorf("unable to generate description for observable %+v", o)
 	}
@@ -310,42 +310,9 @@ func (c *Container) renderRules() (*promRulesFile, error) {
 						continue
 					}
 
-					var (
-						// Wrap the query in `max()` or `min()` so that if there are multiple series (e.g. per-container)
-						// they get "flattened" into a single metric. The `aggregator` variable sets the required operator.
-						//
-						// We only support per-service alerts, not per-container/replica, and not doing so can cause issues.
-						// See https://github.com/sourcegraph/sourcegraph/issues/11571#issuecomment-654571953,
-						// https://github.com/sourcegraph/sourcegraph/issues/17599, and related pull requests.
-						aggregator string
-						// Comparator sets how a metric should be compared against a threshold
-						comparator string
-						// Threshold sets the value to be compared against
-						threshold float64
-					)
-
-					// Set values to build a query with
-					if a.greaterThan != nil {
-						aggregator = "max" // alert if the largest value is exceeds upper bound
-						comparator = ">="
-						if a.strictCompare {
-							comparator = ">"
-						}
-						threshold = *a.greaterThan
-					} else if a.lessThan != nil {
-						aggregator = "min" // alert if the smallest value is exceeds lower bound
-						comparator = "<="
-						if a.strictCompare {
-							comparator = "<"
-						}
-						threshold = *a.lessThan
-					} else {
-						continue
-					}
-
 					// The alertQuery must contribute a query that returns true when it should be firing.
 					alertQuery := fmt.Sprintf("%s((%s) %s %v)",
-						aggregator, o.Query, comparator, threshold)
+						a.aggregator, o.Query, a.comparator, a.threshold)
 
 					// If the data must exist, we alert if the query returns no value as well
 					if o.DataMustExist {
@@ -644,38 +611,71 @@ func Alert() *ObservableAlertDefinition {
 
 // ObservableAlertDefinition defines when an alert would be considered firing.
 type ObservableAlertDefinition struct {
-	greaterThan   *float64
-	lessThan      *float64
-	strictCompare bool
-
-	duration time.Duration
+	greaterThan bool
+	lessThan    bool
+	duration    time.Duration
+	// Wrap the query in `max()` or `min()` so that if there are multiple series (e.g. per-container)
+	// they get "flattened" into a single metric. The `aggregator` variable sets the required operator.
+	//
+	// We only support per-service alerts, not per-container/replica, and not doing so can cause issues.
+	// See https://github.com/sourcegraph/sourcegraph/issues/11571#issuecomment-654571953,
+	// https://github.com/sourcegraph/sourcegraph/issues/17599, and related pull requests.
+	aggregator string
+	// Comparator sets how a metric should be compared against a threshold
+	comparator string
+	// Threshold sets the value to be compared against
+	threshold float64
 }
 
 // GreaterOrEqual indicates the alert should fire when greater or equal the given value.
-func (a *ObservableAlertDefinition) GreaterOrEqual(f float64) *ObservableAlertDefinition {
-	a.greaterThan = &f
-	a.strictCompare = false
+func (a *ObservableAlertDefinition) GreaterOrEqual(f float64, aggregator *string) *ObservableAlertDefinition {
+	a.greaterThan = true
+	if aggregator != nil {
+		a.aggregator = *aggregator
+	} else {
+		a.aggregator = "max"
+	}
+	a.comparator = ">="
+	a.threshold = f
 	return a
 }
 
 // LessOrEqual indicates the alert should fire when less than or equal to the given value.
-func (a *ObservableAlertDefinition) LessOrEqual(f float64) *ObservableAlertDefinition {
-	a.lessThan = &f
-	a.strictCompare = false
+func (a *ObservableAlertDefinition) LessOrEqual(f float64, aggregator *string) *ObservableAlertDefinition {
+	a.lessThan = true
+	if aggregator != nil {
+		a.aggregator = *aggregator
+	} else {
+		a.aggregator = "min"
+	}
+	a.comparator = "<="
+	a.threshold = f
 	return a
 }
 
 // Greater indicates the alert should fire when strictly greater to this value.
-func (a *ObservableAlertDefinition) Greater(f float64) *ObservableAlertDefinition {
-	a.greaterThan = &f
-	a.strictCompare = true
+func (a *ObservableAlertDefinition) Greater(f float64, aggregator *string) *ObservableAlertDefinition {
+	a.greaterThan = true
+	if aggregator != nil {
+		a.aggregator = *aggregator
+	} else {
+		a.aggregator = "max"
+	}
+	a.comparator = ">"
+	a.threshold = f
 	return a
 }
 
 // Less indicates the alert should fire when strictly less than this value.
-func (a *ObservableAlertDefinition) Less(f float64) *ObservableAlertDefinition {
-	a.lessThan = &f
-	a.strictCompare = true
+func (a *ObservableAlertDefinition) Less(f float64, aggregator *string) *ObservableAlertDefinition {
+	a.lessThan = true
+	if aggregator != nil {
+		a.aggregator = *aggregator
+	} else {
+		a.aggregator = "min"
+	}
+	a.comparator = "<"
+	a.threshold = f
 	return a
 }
 
@@ -687,14 +687,14 @@ func (a *ObservableAlertDefinition) For(d time.Duration) *ObservableAlertDefinit
 }
 
 func (a *ObservableAlertDefinition) isEmpty() bool {
-	return a == nil || (*a == ObservableAlertDefinition{}) || (a.greaterThan == nil && a.lessThan == nil)
+	return a == nil || (*a == ObservableAlertDefinition{}) || (!a.greaterThan && !a.lessThan)
 }
 
 func (a *ObservableAlertDefinition) validate() error {
 	if a.isEmpty() {
 		return nil
 	}
-	if a.greaterThan != nil && a.lessThan != nil {
+	if a.greaterThan && a.lessThan {
 		return errors.New("only one bound (greater or less) can be set")
 	}
 	return nil

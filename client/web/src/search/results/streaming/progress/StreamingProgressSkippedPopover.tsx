@@ -111,7 +111,8 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
                     key={skipped.reason}
                     skipped={skipped}
                     history={history}
-                    startOpen={index === 0 && skipped.severity !== 'info'} // Start with first item open, but only if it's not info severity
+                    // Start with first item open, but only if it's not info severity or if there's only one item
+                    startOpen={index === 0 && (skipped.severity !== 'info' || sortedSkippedItems.length === 1)}
                 />
             ))}
             {sortedSkippedItems.some(skipped => skipped.suggested) && (

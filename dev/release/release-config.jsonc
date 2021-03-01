@@ -14,12 +14,12 @@
     "captainGitHubUsername": "davejrt",
 
     // Release versions
-    "previousRelease": "3.24.1",
-    "upcomingRelease": "3.25.0",
+    "previousRelease": "3.25.1",
+    "upcomingRelease": "3.26.0",
 
     // Release dates
-    "releaseDate": "20 February 2021 10:00 PST",
-    "oneWorkingDayAfterRelease": "21 February 2021 10:00 PST",
+    "releaseDate": "20 March 2021 10:00 PST",
+    "oneWorkingDayAfterRelease": "22 March 2021 10:00 PST",
 
     // Channel where messages from the tooling are posted
     "slackAnnounceChannel": "dev-announce",

@@ -61,6 +61,7 @@ const defaultProps = (
     showCampaigns: true,
     activation: undefined,
     hideNavLinks: false,
+    routes: [],
 })
 
 const { add } = storiesOf('web/nav/GlobalNav', module)

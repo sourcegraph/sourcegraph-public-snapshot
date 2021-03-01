@@ -339,3 +339,55 @@ func TestContainsRefGlobs(t *testing.T) {
 		})
 	}
 }
+
+func TestHasTypeRepo(t *testing.T) {
+	tests := []struct {
+		query           string
+		wantHasTypeRepo bool
+	}{
+		{
+			query:           "sourcegraph type:repo",
+			wantHasTypeRepo: true,
+		},
+		{
+			query:           "sourcegraph type:symbol type:repo",
+			wantHasTypeRepo: true,
+		},
+		{
+			query:           "(sourcegraph type:repo) or (goreman type:repo)",
+			wantHasTypeRepo: true,
+		},
+		{
+			query:           "sourcegraph repohasfile:Dockerfile type:repo",
+			wantHasTypeRepo: true,
+		},
+		{
+			query:           "repo:sourcegraph type:repo",
+			wantHasTypeRepo: true,
+		},
+		{
+			query:           "repo:sourcegraph",
+			wantHasTypeRepo: false,
+		},
+		{
+			query:           "repository",
+			wantHasTypeRepo: false,
+		},
+		{
+			query:           "",
+			wantHasTypeRepo: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.query, func(t *testing.T) {
+			q, err := ParseLiteral(tt.query)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := HasTypeRepo(q); got != tt.wantHasTypeRepo {
+				t.Fatalf("got %t, expected %t", got, tt.wantHasTypeRepo)
+			}
+		})
+	}
+}

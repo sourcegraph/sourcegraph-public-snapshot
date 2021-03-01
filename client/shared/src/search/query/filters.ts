@@ -373,3 +373,38 @@ export const validateFilter = (
     }
     return { valid: true }
 }
+
+/**
+ * Prepends a \ to spaces, taking care to skip over existing escape sequences. We apply this to
+ * regexp field values like repo: and file:.
+ *
+ * @param value the value to escape
+ */
+export const escapeSpaces = (value: string): string => {
+    const escaped: string[] = []
+    let current = 0
+    while (value[current]) {
+        switch (value[current]) {
+            case '\\': {
+                if (value[current + 1]) {
+                    escaped.push('\\', value[current + 1])
+                    current = current + 2 // Continue past escaped value.
+                    continue
+                }
+                escaped.push('\\')
+                current = current + 1
+                continue
+            }
+            case ' ': {
+                escaped.push('\\', ' ')
+                current = current + 1
+                continue
+            }
+            default:
+                escaped.push(value[current])
+                current = current + 1
+                continue
+        }
+    }
+    return escaped.join('')
+}

@@ -538,15 +538,15 @@ func buildCommitOpts(repo *types.Repo, extSvc *types.ExternalService, spec *camp
 	return opts, nil
 }
 
-// ErrNoSSHPush is returned by buildPushConfig if the clone URL of the
-// repository uses the ssh:// scheme, which is currently not supported by campaigns.
-type ErrNoSSHPush struct{}
+// ErrNoSSHCredential is returned by buildPushConfig if the clone URL of the
+// repository uses the ssh:// scheme, but the authenticator doesn't support SSH pushes.
+type ErrNoSSHCredential struct{}
 
-func (e ErrNoSSHPush) Error() string {
-	return "campaigns currently do not support pushing commits via SSH, only HTTP(s) is supported. See https://docs.sourcegraph.com/admin/repo/auth for information on which settings can cause SSH to be used."
+func (e ErrNoSSHCredential) Error() string {
+	return "The used credential doesn't support SSH pushes, but the repo requires pushing over SSH."
 }
 
-func (e ErrNoSSHPush) NonRetryable() bool { return true }
+func (e ErrNoSSHCredential) NonRetryable() bool { return true }
 
 func buildPushConfig(extSvcType, cloneURL string, a auth.Authenticator) (*protocol.PushConfig, error) {
 	u, err := url.Parse(cloneURL)
@@ -554,41 +554,86 @@ func buildPushConfig(extSvcType, cloneURL string, a auth.Authenticator) (*protoc
 		return nil, errors.Wrap(err, "parsing repository clone URL")
 	}
 
+	// If the repo is cloned using SSH, we need to pass along a private key and passphrase.
 	if u.Scheme == "ssh" {
-		return nil, ErrNoSSHPush{}
+		if a == nil {
+			// This is OK: we'll just send no key and gitserver will use
+			// the keys installed locally.
+			// This path is only triggered when `loadAuthenticator` returns
+			// nil, which is only the case for site-admins currently.
+			// We want to revisit this once we start disabling usage of global
+			// credentials altogether in RFC312.
+			return &protocol.PushConfig{RemoteURL: cloneURL}, nil
+		}
+		sshA, ok := a.(auth.AuthenticatorWithSSH)
+		if !ok {
+			return nil, ErrNoSSHCredential{}
+		}
+		privateKey, passphrase := sshA.SSHPrivateKey()
+		return &protocol.PushConfig{
+			RemoteURL:  cloneURL,
+			PrivateKey: privateKey,
+			Passphrase: passphrase,
+		}, nil
 	}
 
 	switch av := a.(type) {
+	case *auth.OAuthBearerTokenWithSSH:
+		if err := setOAuthTokenAuth(u, extSvcType, av.Token); err != nil {
+			return nil, err
+		}
 	case *auth.OAuthBearerToken:
-		switch extSvcType {
-		case extsvc.TypeGitHub:
-			u.User = url.User(av.Token)
-
-		case extsvc.TypeGitLab:
-			u.User = url.UserPassword("git", av.Token)
-
-		case extsvc.TypeBitbucketServer:
-			return nil, errors.New("require username/token to push commits to BitbucketServer")
+		if err := setOAuthTokenAuth(u, extSvcType, av.Token); err != nil {
+			return nil, err
 		}
 
+	case *auth.BasicAuthWithSSH:
+		if err := setBasicAuth(u, extSvcType, av.Username, av.Password); err != nil {
+			return nil, err
+		}
 	case *auth.BasicAuth:
-		switch extSvcType {
-		case extsvc.TypeGitHub, extsvc.TypeGitLab:
-			return nil, errors.New("need token to push commits to " + extSvcType)
-
-		case extsvc.TypeBitbucketServer:
-			u.User = url.UserPassword(av.Username, av.Password)
+		if err := setBasicAuth(u, extSvcType, av.Username, av.Password); err != nil {
+			return nil, err
 		}
 
 	case nil:
 		// This is OK: we'll just send an empty token and gitserver will use
 		// the credential stored in the clone URL of the repository.
+		// This path is only triggered when `loadAuthenticator` returns
+		// nil, which is only the case for site-admins currently.
+		// We want to revisit this once we start disabling usage of global
+		// credentials altogether in RFC312.
 
 	default:
 		return nil, ErrNoPushCredentials{credentialsType: fmt.Sprintf("%T", a)}
 	}
 
 	return &protocol.PushConfig{RemoteURL: u.String()}, nil
+}
+
+func setOAuthTokenAuth(u *url.URL, extsvcType, token string) error {
+	switch extsvcType {
+	case extsvc.TypeGitHub:
+		u.User = url.User(token)
+
+	case extsvc.TypeGitLab:
+		u.User = url.UserPassword("git", token)
+
+	case extsvc.TypeBitbucketServer:
+		return errors.New("require username/token to push commits to BitbucketServer")
+	}
+	return nil
+}
+
+func setBasicAuth(u *url.URL, extSvcType, username, password string) error {
+	switch extSvcType {
+	case extsvc.TypeGitHub, extsvc.TypeGitLab:
+		return errors.New("need token to push commits to " + extSvcType)
+
+	case extsvc.TypeBitbucketServer:
+		u.User = url.UserPassword(username, password)
+	}
+	return nil
 }
 
 type getCampaigner interface {
@@ -627,14 +672,14 @@ func decorateChangesetBody(ctx context.Context, tx getCampaigner, nsStore getNam
 		return errors.Wrap(err, "retrieving namespace")
 	}
 
-	url, err := campaignURL(ctx, ns, campaign)
+	u, err := campaignURL(ctx, ns, campaign)
 	if err != nil {
 		return errors.Wrap(err, "building URL")
 	}
 
 	cs.Body = fmt.Sprintf(
 		"%s\n\n[_Created by Sourcegraph campaign `%s/%s`._](%s)",
-		cs.Body, ns.Name, campaign.Name, url,
+		cs.Body, ns.Name, campaign.Name, u,
 	)
 
 	return nil

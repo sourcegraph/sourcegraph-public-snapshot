@@ -48,7 +48,7 @@ func newAuthzProvider(urn string, a *schema.GitHubAuthorization, instanceURL, to
 	return NewProvider(urn, ghURL, token, nil), nil
 }
 
-// ValidateGitHubAuthz validates the authorization fields of the given GitHub external
+// ValidateAuthz validates the authorization fields of the given GitHub external
 // service config.
 func ValidateAuthz(cfg *schema.GitHubConnection) error {
 	_, err := newAuthzProvider("", cfg.Authorization, cfg.Url, cfg.Token)

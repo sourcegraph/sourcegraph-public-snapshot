@@ -3,6 +3,7 @@ import Dialog from '@reach/dialog'
 import ShieldCheckIcon from 'mdi-react/ShieldCheckIcon'
 
 import { Form } from '../../../../../branded/src/components/Form'
+import { LoaderButton } from '../../../components/LoaderButton'
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
 import { asError, ErrorLike } from '../../../../../shared/src/util/errors'
 import { addExternalService } from '../../../components/externalServices/backend'
@@ -90,6 +91,7 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
                                 value={token}
                                 onChange={onChangeToken}
                                 className="form-control pr-4"
+                                autoComplete="off"
                             />
                             <ShieldCheckIcon
                                 className="icon-inline add-user-code-hosts-page__icon--inside text-muted"
@@ -103,9 +105,14 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
                         <button type="button" className="btn btn-outline-secondary mr-2" onClick={onDidCancel}>
                             Cancel
                         </button>
-                        <button type="submit" disabled={!token || isLoading} className="btn btn-primary">
-                            Add code host connection
-                        </button>
+                        <LoaderButton
+                            type="submit"
+                            className="btn btn-primary"
+                            loading={isLoading}
+                            disabled={!token || isLoading}
+                            label="Add code host connection"
+                            alwaysShowLabel={true}
+                        />
                     </div>
                 </Form>
             </div>

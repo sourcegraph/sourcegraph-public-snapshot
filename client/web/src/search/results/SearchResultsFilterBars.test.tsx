@@ -90,4 +90,18 @@ describe('SearchResultsFilterBars', () => {
         sinon.assert.calledOnce(onShowMoreResultsClick)
         sinon.assert.calledWith(onShowMoreResultsClick, 'count:5')
     })
+
+    it('should escape repo filter values containing spaces', () => {
+        const onFilterClickSpy = sinon.spy((value: string) => {})
+        const repoFilters: DynamicSearchFilter[] = [{ value: 'repo:foo bar baz' }]
+        const element = mount(
+            <SearchResultsFilterBars {...defaultProps} repoFilters={repoFilters} onFilterClick={onFilterClickSpy} />
+        )
+
+        const filterChip = element.find(FilterChip)
+        filterChip.simulate('click')
+
+        sinon.assert.calledOnce(onFilterClickSpy)
+        sinon.assert.calledWith(onFilterClickSpy, 'repo:foo\\ bar\\ baz')
+    })
 })

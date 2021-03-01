@@ -397,13 +397,23 @@ func servePingFromSelfHosted(w http.ResponseWriter, r *http.Request) error {
 		return nil
 	}
 	email := r.URL.Query().Get("email")
-	cookie, err := r.Cookie("sourcegraphSourceUrl")
+
+	sourceURLCookie, err := r.Cookie("sourcegraphSourceUrl")
 	var sourceURL string
-	if err == nil && cookie != nil {
-		sourceURL = cookie.Value
+	if err == nil && sourceURLCookie != nil {
+		sourceURL = sourceURLCookie.Value
 	}
+
+	anonymousUIDCookie, err := r.Cookie("sourcegraphAnonymousUid")
+	var anonymousUserId string
+	if err == nil && anonymousUIDCookie != nil {
+		anonymousUserId = anonymousUIDCookie.Value
+	}
+
 	hubspotutil.SyncUser(email, hubspotutil.SelfHostedSiteInitEventID, &hubspot.ContactProperties{
-		FirstSourceURL: sourceURL,
+		IsServerAdmin:   true,
+		AnonymousUserID: anonymousUserId,
+		FirstSourceURL:  sourceURL,
 	})
 	return nil
 }

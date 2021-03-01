@@ -26,6 +26,9 @@ import { ThemePreferenceProps } from '../theme'
 import { MenuNavItem } from './MenuNavItem'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
+import { FeedbackPrompt } from './Feedback/FeedbackPrompt'
+import { LayoutRouteProps } from '../routes'
+
 interface Props
     extends SettingsCascadeProps<Settings>,
         KeyboardShortcutsProps,
@@ -43,6 +46,7 @@ interface Props
     showCampaigns: boolean
     isSourcegraphDotCom: boolean
     minimalNavLinks?: boolean
+    routes: readonly LayoutRouteProps<{}>[]
 }
 
 export class NavLinks extends React.PureComponent<Props> {
@@ -94,16 +98,19 @@ export class NavLinks extends React.PureComponent<Props> {
                                 <CampaignsNavItem />
                             </li>
                         )}
+                        <li className="nav-item d-lg-none">
+                            <MenuNavItem>
+                                {this.items}
+                                {this.props.showCampaigns && <CampaignsNavItem />}
+                            </MenuNavItem>
+                        </li>
                     </>
                 )}
-                <li className="nav-item d-lg-none">
-                    {!this.props.minimalNavLinks && (
-                        <MenuNavItem>
-                            {this.items}
-                            {this.props.showCampaigns && <CampaignsNavItem />}
-                        </MenuNavItem>
-                    )}
-                </li>
+                {this.props.authenticatedUser && (
+                    <li className="nav-item">
+                        <FeedbackPrompt history={this.props.history} routes={this.props.routes} />
+                    </li>
+                )}
                 {!this.props.authenticatedUser && (
                     <>
                         {this.props.location.pathname !== '/sign-in' && (

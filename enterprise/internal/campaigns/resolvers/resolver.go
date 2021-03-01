@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -855,6 +856,11 @@ func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlb
 		return nil, ErrDuplicateCredential{}
 	}
 
+	keypair, err := encryption.GenerateRSAKey()
+	if err != nil {
+		return nil, err
+	}
+
 	var a auth.Authenticator
 	if kind == extsvc.KindBitbucketServer {
 		svc := service.New(r.store)
@@ -862,9 +868,19 @@ func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlb
 		if err != nil {
 			return nil, err
 		}
-		a = &auth.BasicAuth{Username: username, Password: args.Credential}
+		a = &auth.BasicAuthWithSSH{
+			BasicAuth:  auth.BasicAuth{Username: username, Password: args.Credential},
+			PrivateKey: keypair.PrivateKey,
+			PublicKey:  keypair.PublicKey,
+			Passphrase: keypair.Passphrase,
+		}
 	} else {
-		a = &auth.OAuthBearerToken{Token: args.Credential}
+		a = &auth.OAuthBearerTokenWithSSH{
+			OAuthBearerToken: auth.OAuthBearerToken{Token: args.Credential},
+			PrivateKey:       keypair.PrivateKey,
+			PublicKey:        keypair.PublicKey,
+			Passphrase:       keypair.Passphrase,
+		}
 	}
 
 	cred, err := r.store.UserCredentials().Create(ctx, scope, a)

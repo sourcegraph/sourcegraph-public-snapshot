@@ -984,4 +984,26 @@ func TestSearch(t *testing.T) {
 			})
 		}
 	})
+
+	t.Run("Suggestions", func(t *testing.T) {
+		tests := []struct {
+			query           string
+			suggestionCount int
+		}{
+			{`repo:sourcegraph-typescript$ type:file file:deploy`, 11},
+		}
+
+		for _, test := range tests {
+			t.Run(test.query, func(t *testing.T) {
+				results, err := client.SearchSuggestions(test.query)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if len(results) != test.suggestionCount {
+					t.Fatalf("expected %d results, but got %d", test.suggestionCount, len(results))
+				}
+			})
+		}
+	})
 }

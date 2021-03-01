@@ -1144,7 +1144,7 @@ const PERFORCE: AddExternalServiceOptions = {
                 <a
                     rel="noopener noreferrer"
                     target="_blank"
-                    href="https://docs.sourcegraph.com/admin/external_service/perforce#configuration"
+                    href="https://docs.sourcegraph.com/admin/repo/perforce#configuration"
                 >
                     the docs for more advanced options
                 </a>

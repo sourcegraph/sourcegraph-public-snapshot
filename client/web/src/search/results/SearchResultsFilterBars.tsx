@@ -7,6 +7,7 @@ import { SearchFilters } from '../../../../shared/src/api/protocol'
 import { QuickLink } from '../../schema/settings.schema'
 import { FilterChip } from '../FilterChip'
 import { QuickLinks } from '../QuickLinks'
+import { escapeSpaces } from '../../../../shared/src/search/query/filters'
 
 export interface DynamicSearchFilter {
     name?: string
@@ -175,7 +176,7 @@ export const SearchResultsFilterBars: React.FunctionComponent<SearchResultsFilte
                                 query={navbarSearchQuery}
                                 onFilterChosen={onFilterClick}
                                 key={filter.value}
-                                value={filter.value}
+                                value={escapeSpaces(filter.value)}
                                 count={filter.count}
                                 limitHit={filter.limitHit}
                             />

@@ -546,6 +546,7 @@ Foreign-key constraints:
  namespace_user_id | integer                  | 
  unrestricted      | boolean                  | not null default false
  cloud_default     | boolean                  | not null default false
+ encryption_key_id | text                     | not null default ''::text
 Indexes:
     "external_services_pkey" PRIMARY KEY, btree (id)
     "kind_cloud_default" UNIQUE, btree (kind, cloud_default) WHERE cloud_default = true
@@ -559,6 +560,23 @@ Referenced by:
     TABLE "external_service_sync_jobs" CONSTRAINT "external_services_id_fk" FOREIGN KEY (external_service_id) REFERENCES external_services(id)
 Triggers:
     trig_delete_external_service_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON external_services FOR EACH ROW EXECUTE PROCEDURE delete_external_service_ref_on_external_service_repos()
+
+```
+
+# Table "public.gitserver_repos"
+```
+        Column         |           Type           |              Modifiers              
+-----------------------+--------------------------+-------------------------------------
+ repo_id               | integer                  | not null
+ clone_status          | text                     | not null default 'not_cloned'::text
+ last_external_service | bigint                   | 
+ shard_id              | text                     | not null
+ last_error            | text                     | 
+ updated_at            | timestamp with time zone | not null default now()
+Indexes:
+    "gitserver_repos_pkey" PRIMARY KEY, btree (repo_id)
+Foreign-key constraints:
+    "gitserver_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id)
 
 ```
 
@@ -1222,6 +1240,7 @@ Referenced by:
     TABLE "default_repos" CONSTRAINT "default_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "gitserver_repos" CONSTRAINT "gitserver_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id)
     TABLE "lsif_index_configuration" CONSTRAINT "lsif_index_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
 Triggers:
     trig_delete_repo_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON repo FOR EACH ROW EXECUTE PROCEDURE delete_repo_ref_on_external_service_repos()

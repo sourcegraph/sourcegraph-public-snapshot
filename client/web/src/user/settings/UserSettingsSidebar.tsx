@@ -32,10 +32,12 @@ export interface UserSettingsSidebarItemConditionContext {
     isSourcegraphDotCom: boolean
 }
 
-export type UserSettingsSidebarItems = Record<
-    'account',
-    readonly NavItemDescriptor<UserSettingsSidebarItemConditionContext>[]
->
+type UserSettingsSidebarItem = NavItemDescriptor<UserSettingsSidebarItemConditionContext>
+
+export interface UserSettingsSidebarItems {
+    account: readonly UserSettingsSidebarItem[]
+    misc?: readonly UserSettingsSidebarItem[]
+}
 
 export interface UserSettingsSidebarProps extends UserAreaRouteContext, OnboardingTourProps, RouteComponentProps<{}> {
     items: UserSettingsSidebarItems
@@ -85,7 +87,20 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                     )}
                 </SidebarGroupItems>
             </SidebarGroup>
-
+            {props.items.misc?.length && (
+                <SidebarGroup>
+                    <SidebarGroupItems>
+                        {props.items.misc.map(
+                            ({ label, to, exact, condition = () => true }) =>
+                                condition(context) && (
+                                    <SidebarNavItem key={label} to={props.match.path + to} exact={exact}>
+                                        {label}
+                                    </SidebarNavItem>
+                                )
+                        )}
+                    </SidebarGroupItems>
+                </SidebarGroup>
+            )}
             {(props.user.organizations.nodes.length > 0 || !siteAdminViewingOtherUser) && (
                 <SidebarGroup>
                     <SidebarGroupHeader label="Organizations" icon={DomainIcon} />

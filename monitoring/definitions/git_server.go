@@ -90,8 +90,8 @@ func GitServer() *monitoring.Container {
 							Name:        "disk_space_remaining",
 							Description: "disk space remaining by instance",
 							Query:       `(src_gitserver_disk_space_available / src_gitserver_disk_space_total) * 100`,
-							Warning:     monitoring.Alert().LessOrEqual(25),
-							Critical:    monitoring.Alert().LessOrEqual(15),
+							Warning:     monitoring.Alert().LessOrEqual(25, nil),
+							Critical:    monitoring.Alert().LessOrEqual(15, nil),
 							Panel: monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Percentage).With(func(o monitoring.Observable, g *sdk.GraphPanel) {
 								g.Legend.RightSide = true
 							}),
@@ -184,8 +184,8 @@ func GitServer() *monitoring.Container {
 							Name:        "running_git_commands",
 							Description: "git commands sent to each gitserver instance",
 							Query:       "sum by (instance, cmd) (src_gitserver_exec_running{instance=~\"${shard:regex}\"})",
-							Warning:     monitoring.Alert().GreaterOrEqual(50).For(2 * time.Minute),
-							Critical:    monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
+							Warning:     monitoring.Alert().GreaterOrEqual(50, nil).For(2 * time.Minute),
+							Critical:    monitoring.Alert().GreaterOrEqual(100, nil).For(5 * time.Minute),
 							Panel: monitoring.Panel().LegendFormat("{{instance}} {{cmd}}").With(func(o monitoring.Observable, g *sdk.GraphPanel) {
 								g.Legend.RightSide = true
 							}),
@@ -204,7 +204,7 @@ func GitServer() *monitoring.Container {
 							Name:        "repository_clone_queue_size",
 							Description: "repository clone queue size",
 							Query:       "sum(src_gitserver_clone_queue)",
-							Warning:     monitoring.Alert().GreaterOrEqual(25),
+							Warning:     monitoring.Alert().GreaterOrEqual(25, nil),
 							Panel:       monitoring.Panel().LegendFormat("queue size"),
 							Owner:       monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: `
@@ -216,7 +216,7 @@ func GitServer() *monitoring.Container {
 							Name:        "repository_existence_check_queue_size",
 							Description: "repository existence check queue size",
 							Query:       "sum(src_gitserver_lsremote_queue)",
-							Warning:     monitoring.Alert().GreaterOrEqual(25),
+							Warning:     monitoring.Alert().GreaterOrEqual(25, nil),
 							Panel:       monitoring.Panel().LegendFormat("queue size"),
 							Owner:       monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: `

@@ -17,6 +17,10 @@ type SelectPath struct {
 	Type SelectType
 }
 
+func (sp SelectPath) String() string {
+	return string(sp.Type)
+}
+
 var validSelectors = map[SelectType]struct{}{
 	Commit:     {},
 	Content:    {},

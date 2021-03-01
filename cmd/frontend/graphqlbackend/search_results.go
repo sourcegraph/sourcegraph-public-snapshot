@@ -81,14 +81,6 @@ func (c *SearchResultsResolver) repositoryResolvers(mask search.RepoStatus) []*R
 	return resolvers
 }
 
-func (c *SearchResultsResolver) RepositoriesSearched() []*RepositoryResolver {
-	return c.repositoryResolvers(search.RepoStatusSearched)
-}
-
-func (c *SearchResultsResolver) IndexedRepositoriesSearched() []*RepositoryResolver {
-	return c.repositoryResolvers(search.RepoStatusIndexed)
-}
-
 func (c *SearchResultsResolver) Cloning() []*RepositoryResolver {
 	return c.repositoryResolvers(search.RepoStatusCloning)
 }
@@ -301,7 +293,7 @@ loop:
 			continue
 		case *CommitSearchResultResolver:
 			// Diff searches are cheap, because we implicitly have author date info.
-			addPoint(m.commit.commit.Author.Date)
+			addPoint(m.Commit().commit.Author.Date)
 		case *FileMatchResolver:
 			// File match searches are more expensive, because we must blame the
 			// (first) line in order to know its placement in our sparkline.
@@ -612,6 +604,14 @@ func (r *searchResolver) evaluateAndStream(ctx context.Context, scopeParameters 
 	r2.stream = nil
 
 	result, err := r2.evaluateAnd(ctx, scopeParameters, operands)
+	if err != nil {
+		return nil, err
+	}
+	// evaluateAnd may return result, err = nil, nil because downstream calls return
+	// nil, nil. See further comments in evaluateAnd.
+	if result == nil {
+		return &SearchResultsResolver{}, nil
+	}
 	r.stream.Send(SearchEvent{
 		Results: result.SearchResults,
 		Stats:   result.Stats,
@@ -631,7 +631,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 	start := time.Now()
 
 	if len(operands) == 0 {
-		return nil, nil
+		return &SearchResultsResolver{}, nil
 	}
 
 	var (
@@ -1220,6 +1220,14 @@ func getPatternInfo(q query.Q, opts *getPatternInfoOptions) (*search.TextPattern
 
 	languages, _ := q.StringValues(query.FieldLang)
 
+	var sp filter.SelectPath
+	if sf, _ := q.StringValue(query.FieldSelect); sf != "" {
+		sp, err = filter.SelectPathFromString(sf)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	patternInfo := &search.TextPatternInfo{
 		IsRegExp:                     isRegExp,
 		IsStructuralPat:              isStructuralPat,
@@ -1234,6 +1242,7 @@ func getPatternInfo(q query.Q, opts *getPatternInfoOptions) (*search.TextPattern
 		PathPatternsAreCaseSensitive: q.IsCaseSensitive(),
 		CombyRule:                    strings.Join(combyRule, ""),
 		Index:                        indexValue(q),
+		Select:                       sp,
 	}
 	if len(excludePatterns) > 0 {
 		patternInfo.ExcludePattern = searchrepos.UnionRegExps(excludePatterns)
@@ -1901,12 +1910,15 @@ func compareSearchResults(left, right SearchResultResolver, exactFilePatterns ma
 		case *RepositoryResolver:
 			return r.Name(), "", nil
 		case *FileMatchResolver:
-			return string(r.Repo.Name), r.JPath, nil
+			return string(r.Repo.Name), r.Path, nil
 		case *CommitSearchResultResolver:
 			// Commits are relatively sorted by date, and after repo
 			// or path names. We use ~ as the key for repo and
 			// paths,lexicographically last in ASCII.
-			return "~", "~", &r.commit.commit.Author.Date
+			if r.Commit().commit != nil {
+				return "~", "~", &r.Commit().commit.Author.Date
+			}
+			return "~", "~", &time.Time{}
 		}
 		// Unreachable.
 		panic("unreachable: compareSearchResults expects RepositoryResolver, FileMatchResolver, or CommitSearchResultResolver")

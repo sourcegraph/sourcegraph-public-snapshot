@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"path"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -24,7 +23,7 @@ type SearchFilters struct {
 	// Globbing is true if the user has enabled globbing support.
 	Globbing bool
 
-	filters map[string]*streaming.Filter
+	filters streaming.Filters
 }
 
 // commonFileFilters are common filters used. It is used by SearchFilters to
@@ -75,26 +74,7 @@ func (s *SearchFilters) Update(event SearchEvent) {
 
 	// Initialize state on first call.
 	if s.filters == nil {
-		s.filters = map[string]*streaming.Filter{}
-	}
-
-	add := func(value string, label string, count int32, limitHit bool, kind string) {
-		sf, ok := s.filters[value]
-		if !ok {
-			sf = &streaming.Filter{
-				Value:      value,
-				Label:      label,
-				Count:      int(count),
-				IsLimitHit: limitHit,
-				Kind:       kind,
-			}
-			s.filters[value] = sf
-		} else {
-			sf.Count += int(count)
-		}
-	}
-	important := func(value string) {
-		s.filters[value].Important = true
+		s.filters = make(streaming.Filters)
 	}
 
 	addRepoFilter := func(repo *RepositoryResolver, rev string, lineMatchCount int32) {
@@ -112,7 +92,7 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			filter = filter + fmt.Sprintf(`@%s`, rev)
 		}
 		limitHit := event.Stats.Status.Get(repo.IDInt32())&search.RepoStatusLimitHit != 0
-		add(filter, uri, lineMatchCount, limitHit, "repo")
+		s.filters.Add(filter, uri, lineMatchCount, limitHit, "repo")
 	}
 
 	addFileFilter := func(fileMatchPath string, lineMatchCount int32, limitHit bool) {
@@ -121,9 +101,9 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			// since we have no native library call to match `**` for globs.
 			if ff.regexp.MatchString(fileMatchPath) {
 				if s.Globbing {
-					add(ff.globFilter, ff.globFilter, lineMatchCount, limitHit, "file")
+					s.filters.Add(ff.globFilter, ff.globFilter, lineMatchCount, limitHit, "file")
 				} else {
-					add(ff.regexFilter, ff.regexFilter, lineMatchCount, limitHit, "file")
+					s.filters.Add(ff.regexFilter, ff.regexFilter, lineMatchCount, limitHit, "file")
 				}
 			}
 		}
@@ -141,18 +121,18 @@ func (s *SearchFilters) Update(event SearchEvent) {
 					language = strconv.Quote(language)
 				}
 				value := fmt.Sprintf(`lang:%s`, language)
-				add(value, value, lineMatchCount, limitHit, "lang")
+				s.filters.Add(value, value, lineMatchCount, limitHit, "lang")
 			}
 		}
 	}
 
 	if event.Stats.ExcludedForks > 0 {
-		add("fork:yes", "fork:yes", int32(event.Stats.ExcludedForks), event.Stats.IsLimitHit, "repo")
-		important("fork:yes")
+		s.filters.Add("fork:yes", "fork:yes", int32(event.Stats.ExcludedForks), event.Stats.IsLimitHit, "repo")
+		s.filters.MarkImportant("fork:yes")
 	}
 	if event.Stats.ExcludedArchived > 0 {
-		add("archived:yes", "archived:yes", int32(event.Stats.ExcludedArchived), event.Stats.IsLimitHit, "repo")
-		important("archived:yes")
+		s.filters.Add("archived:yes", "archived:yes", int32(event.Stats.ExcludedArchived), event.Stats.IsLimitHit, "repo")
+		s.filters.MarkImportant("archived:yes")
 	}
 	for _, result := range event.Results {
 		if fm, ok := result.ToFileMatch(); ok {
@@ -165,8 +145,8 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			addLangFilter(fm.path(), lines, fm.LimitHit())
 			addFileFilter(fm.path(), lines, fm.LimitHit())
 
-			if len(fm.symbols) > 0 {
-				add("type:symbol", "type:symbol", 1, fm.LimitHit(), "symbol")
+			if len(fm.FileMatch.Symbols) > 0 {
+				s.filters.Add("type:symbol", "type:symbol", 1, fm.LimitHit(), "symbol")
 			}
 		} else if r, ok := result.ToRepository(); ok {
 			// It should be fine to leave this blank since revision specifiers
@@ -180,36 +160,5 @@ func (s *SearchFilters) Update(event SearchEvent) {
 // Compute returns an ordered slice of Filters to present to the user based on
 // events passed to Next.
 func (s *SearchFilters) Compute() []*streaming.Filter {
-	filterSlice := make([]*streaming.Filter, 0, len(s.filters))
-	repoFilterSlice := make([]*streaming.Filter, 0, len(s.filters)/2) // heuristic - half of all filters are repo filters.
-	for _, f := range s.filters {
-		if f.Kind == "repo" {
-			repoFilterSlice = append(repoFilterSlice, f)
-		} else {
-			filterSlice = append(filterSlice, f)
-		}
-	}
-	sort.Slice(filterSlice, func(i, j int) bool {
-		if filterSlice[i].Important == filterSlice[j].Important {
-			return filterSlice[i].Count > filterSlice[j].Count
-		}
-		return filterSlice[i].Important
-	})
-	// limit amount of non-repo filters to be rendered arbitrarily to 12
-	if len(filterSlice) > 12 {
-		filterSlice = filterSlice[:12]
-	}
-
-	allFilters := append(filterSlice, repoFilterSlice...)
-	sort.Slice(allFilters, func(i, j int) bool {
-		left := allFilters[i]
-		right := allFilters[j]
-		if left.Important == right.Important {
-			// Order alphabetically for equal scores.
-			return strings.Compare(left.Value, right.Value) < 0
-		}
-		return left.Important
-	})
-
-	return allFilters
+	return s.filters.Compute()
 }

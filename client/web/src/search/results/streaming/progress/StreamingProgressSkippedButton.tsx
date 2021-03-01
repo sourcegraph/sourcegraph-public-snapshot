@@ -31,7 +31,7 @@ export const StreamingProgressSkippedButton: React.FunctionComponent<
                 <ButtonDropdown isOpen={isOpen} toggle={toggleOpen}>
                     <DropdownToggle
                         className={classNames(
-                            'streaming-progress__skipped mb-0 ml-2 d-flex align-items-center text-decoration-none',
+                            'streaming-progress__skipped mb-0 ml-2 d-flex align-items-center text-decoration-none btn-sm',
                             {
                                 'streaming-progress__skipped--warning': skippedWithWarningOrError,
                             }

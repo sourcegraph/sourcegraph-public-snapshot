@@ -19,6 +19,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -72,7 +73,7 @@ const reposStatsName = "repos-stats.json"
 //
 // 1. Remove corrupt repos.
 // 2. Remove stale lock files.
-// 3. Remove inactive repos on sourcegraph.com
+// 3. Remove repos based on disk pressure.
 // 4. Reclone repos after a while. (simulate git gc)
 func (s *Server) cleanupRepos() {
 	janitorRunning.Set(1)
@@ -111,7 +112,20 @@ func (s *Server) cleanupRepos() {
 		return false, setGitAttributes(dir)
 	}
 
+	scrubRemoteURL := func(dir GitDir) (done bool, err error) {
+		cmd := exec.Command("git", "remote", "remove", "origin")
+		dir.Set(cmd)
+		// ignore error since we fail if the remote has already been scrubbed.
+		_ = cmd.Run()
+		return false, nil
+	}
+
 	maybeReclone := func(dir GitDir) (done bool, err error) {
+		repoType, err := getRepositoryType(dir)
+		if err != nil {
+			return false, err
+		}
+
 		recloneTime, err := getRecloneTime(dir)
 		if err != nil {
 			return false, err
@@ -120,8 +134,9 @@ func (s *Server) cleanupRepos() {
 		// Add a jitter to spread out recloning of repos cloned at the same
 		// time.
 		var reason string
+		const maybeCorrupt = "maybeCorrupt"
 		if maybeCorrupt, _ := gitConfigGet(dir, "sourcegraph.maybeCorruptRepo"); maybeCorrupt != "" {
-			reason = "maybeCorrupt"
+			reason = maybeCorrupt
 			// unset flag to stop constantly recloning if it fails.
 			_ = gitConfigUnset(dir, "sourcegraph.maybeCorruptRepo")
 		}
@@ -133,6 +148,14 @@ func (s *Server) cleanupRepos() {
 				reason = fmt.Sprintf("git gc %s", string(bytes.TrimSpace(gclog)))
 			}
 		}
+
+		// We believe converting a Perforce depot to a Git repository is generally a
+		// very expensive operation, therefore we do not try to reclone/redo the
+		// conversion only because it is old or slow to do "git gc".
+		if repoType == "perforce" && reason != maybeCorrupt {
+			reason = ""
+		}
+
 		if reason == "" {
 			return false, nil
 		}
@@ -213,6 +236,9 @@ func (s *Server) cleanupRepos() {
 		// We always want to have the same git attributes file at
 		// info/attributes.
 		{"ensure git attributes", ensureGitAttributes},
+		// 2021-03-01 (tomas,keegan) we used to store an authenticated remote
+		// URL on disk. We no longer need it so we can scrub it.
+		{"scrub remote URL", scrubRemoteURL},
 		// Old git clones accumulate loose git objects that waste space and
 		// slow down git operations. Periodically do a fresh clone to avoid
 		// these problems. git gc is slow and resource intensive. It is
@@ -588,11 +614,25 @@ func (s *Server) SetupAndClearTmp() (string, error) {
 	return dir, nil
 }
 
+// setRepositoryType sets the type of the repository.
+func setRepositoryType(dir GitDir, typ string) error {
+	return gitConfigSet(dir, "sourcegraph.type", typ)
+}
+
+// getRepositoryType returns the type of the repository.
+func getRepositoryType(dir GitDir) (string, error) {
+	val, err := gitConfigGet(dir, "sourcegraph.type")
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(val), nil
+}
+
 // setRecloneTime sets the time a repository is cloned.
 func setRecloneTime(dir GitDir, now time.Time) error {
 	err := gitConfigSet(dir, "sourcegraph.recloneTimestamp", strconv.FormatInt(now.Unix(), 10))
 	if err != nil {
-		ensureHead(dir)
+		ensureHEAD(dir)
 		return errors.Wrap(err, "failed to update recloneTimestamp")
 	}
 	return nil

@@ -25,7 +25,8 @@ type operations struct {
 	writeReferences    *observation.Operation
 	writeResultChunks  *observation.Operation
 
-	locations *observation.Operation
+	locations           *observation.Operation
+	locationsWithinFile *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -71,6 +72,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		writeReferences:    op("WriteReferences"),
 		writeResultChunks:  op("WriteResultChunks"),
 
-		locations: subOp("locations"),
+		locations:           subOp("locations"),
+		locationsWithinFile: subOp("locationsWithinFile"),
 	}
 }

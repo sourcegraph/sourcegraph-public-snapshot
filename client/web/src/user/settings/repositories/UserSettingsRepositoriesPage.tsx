@@ -56,6 +56,19 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
 }) => {
     const [hasRepos, setHasRepos] = useState(false)
     const [pendingOrError, setPendingOrError] = useState<Status>()
+    const [showFilteredConnection, setShowFilteredConnection] = useState(true)
+
+    const NoResults: JSX.Element = (
+        <div className="border rounded p-3">
+            <h3>You have not added any repositories to Sourcegraph</h3>
+            <small>
+                <Link className="text-primary" to={`${routingPrefix}/repositories/manage`}>
+                    Add repositories
+                </Link>{' '}
+                to start searching your code with Sourcegraph.
+            </small>
+        </div>
+    )
 
     const filters =
         useObservable<FilteredConnectionFilter[]>(
@@ -66,6 +79,10 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                             result => {
                                 let pending: Status
                                 const now = new Date().getTime()
+
+                                // show filtered connection if any code hosts has at least one repo
+                                setShowFilteredConnection(result.nodes.some(({ repoCount }) => repoCount !== 0))
+
                                 for (const node of result.nodes) {
                                     // if the next sync time is not blank, or in the future we must not be syncing
                                     if (node.nextSyncAt !== '' && now - new Date(node.nextSyncAt).getTime() > 0) {
@@ -139,11 +156,20 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         (args: FilteredConnectionQueryArguments): Observable<RepositoriesResult['repositories']> =>
             listUserRepositories({ ...args, id: userID }).pipe(
                 repeatUntil(
-                    (result): boolean =>
-                        result.nodes &&
-                        result.nodes.length > 0 &&
-                        result.nodes.every(nodes => !nodes.mirrorInfo.cloneInProgress && nodes.mirrorInfo.cloned) &&
-                        !(pendingOrError === 'pending'),
+                    (result): boolean => {
+                        // don't repeat the query when user doesn't have repos
+                        if (result.nodes && result.nodes.length === 0) {
+                            return true
+                        }
+
+                        return (
+                            result.nodes &&
+                            result.nodes.length > 0 &&
+                            result.nodes.every(nodes => !nodes.mirrorInfo.cloneInProgress && nodes.mirrorInfo.cloned) &&
+                            !(pendingOrError === 'pending')
+                        )
+                    },
+
                     { delay: 2000 }
                 )
             ),
@@ -163,47 +189,12 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         telemetryService.logViewEvent('UserSettingsRepositories')
     }, [telemetryService])
 
-    let body: JSX.Element
-    if (filters[1] && filters[1].values.length === 1) {
-        body = (
-            <div className="card p-3 m-2">
-                <h3 className="mb-1">You have not added any repositories to Sourcegraph</h3>
-                <p className="text-muted mb-0">
-                    <Link className="text-primary" to={`${routingPrefix}/code-hosts`}>
-                        Connect a code host
-                    </Link>{' '}
-                    to start adding your repositories to Sourcegraph.
-                </p>
-            </div>
-        )
-    } else {
-        body = (
-            <FilteredConnection<SiteAdminRepositoryFields, Omit<UserRepositoriesResult, 'node'>>
-                className="table mt-3"
-                defaultFirst={15}
-                compact={false}
-                noun="repository"
-                pluralNoun="repositories"
-                queryConnection={queryRepositories}
-                nodeComponent={Row}
-                listComponent="table"
-                listClassName="w-100"
-                onUpdate={updated}
-                filters={filters}
-                history={history}
-                location={location}
-                totalCountSummaryComponent={TotalCountSummary}
-                inputClassName="user-settings-repos__filter-input"
-            />
-        )
-    }
-
     return (
         <div className="user-settings-repositories-page">
             {pendingOrError === 'pending' && (
                 <div className="alert alert-info">
-                    <span className="font-weight-bold">Some repositories are still being fetched.</span>
-                    These repositories may not appear in the list of repositories.
+                    <span className="font-weight-bold">Some repositories are still being updated.</span> These
+                    repositories may not appear up-to-date in the list of repositories.
                 </div>
             )}
             {isErrorLike(pendingOrError) && <ErrorAlert error={pendingOrError} icon={true} history={history} />}
@@ -229,7 +220,28 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                     connected code hosts
                 </Link>
             </p>
-            {body}
+            {showFilteredConnection ? (
+                <FilteredConnection<SiteAdminRepositoryFields, Omit<UserRepositoriesResult, 'node'>>
+                    className="table mt-3"
+                    defaultFirst={15}
+                    compact={false}
+                    noun="repository"
+                    pluralNoun="repositories"
+                    queryConnection={queryRepositories}
+                    nodeComponent={Row}
+                    listComponent="table"
+                    listClassName="w-100"
+                    onUpdate={updated}
+                    filters={filters}
+                    history={history}
+                    location={location}
+                    totalCountSummaryComponent={TotalCountSummary}
+                    hideControlsWhenEmpty={true}
+                    inputClassName="user-settings-repos__filter-input"
+                />
+            ) : (
+                NoResults
+            )}
         </div>
     )
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go/gqltesting"
 
+	"github.com/hexops/autogold"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -144,4 +145,18 @@ func assertRepoResolverHydrated(ctx context.Context, t *testing.T, r *Repository
 	if uri != hydrated.URI {
 		t.Fatalf("wrong URI. want=%q, have=%q", hydrated.URI, uri)
 	}
+}
+
+func TestRepositoryLabel(t *testing.T) {
+	test := func(name string) string {
+		r := &RepositoryResolver{
+			name: api.RepoName(name),
+			id:   api.RepoID(0),
+		}
+		result, _ := r.Label()
+		return result.HTML()
+	}
+
+	autogold.Want("encodes spaces for URL in HTML", `<p><a href="/repo%20with%20spaces" rel="nofollow">repo with spaces</a></p>
+`).Equal(t, test("repo with spaces"))
 }

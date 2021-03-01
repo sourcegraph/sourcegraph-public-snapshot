@@ -515,6 +515,10 @@ type Mutation {
     """
     submitSurvey(input: SurveySubmissionInput!): EmptyResponse
     """
+    Submits happiness feedback.
+    """
+    submitHappinessFeedback(input: HappinessFeedbackSubmissionInput!): EmptyResponse
+    """
     Submits a request for a Sourcegraph Enterprise trial license.
     """
     requestTrial(email: String!): EmptyResponse
@@ -2784,6 +2788,24 @@ input SurveySubmissionInput {
 }
 
 """
+Input for a happiness feedback submission.
+"""
+input HappinessFeedbackSubmissionInput {
+    """
+    User's happiness rating, from 1-4.
+    """
+    score: Int!
+    """
+    The answer to "What's going well? What could be better?".
+    """
+    feedback: String
+    """
+    The path that the happiness feedback will be submitted from.
+    """
+    currentPath: String
+}
+
+"""
 The state of the campaign
 """
 enum CampaignState {
@@ -3586,25 +3608,6 @@ type SearchResults {
     large, list).
     """
     repositoriesCount: Int!
-    """
-    DEPRECATED in v3.24. Will be removed in v3.26.
-
-    Repositories that were actually searched. Excludes repositories that would have been searched but were not
-    because a timeout or error occurred while performing the search, or because the result limit was already
-    reached, or because they were excluded due to being forks or archives.
-    In paginated search requests, this represents the set of repositories searched for the
-    individual paginated request / input cursor and not the global set of repositories that
-    would be searched if further requests were made.
-    """
-    repositoriesSearched: [Repository!]!
-        @deprecated(reason: "expensive to calculate and unused by official clients. Will be removed in v3.26.")
-    """
-    DEPRECATED in v3.24. Will be removed in v3.26.
-
-    Indexed repositories searched. This is a subset of repositoriesSearched.
-    """
-    indexedRepositoriesSearched: [Repository!]!
-        @deprecated(reason: "expensive to calculate and unused by official clients. Will be removed in v3.26.")
     """
     Repositories that are busy cloning onto gitserver.
     In paginated search requests, some repositories may be cloning. These are reported here

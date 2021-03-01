@@ -81,6 +81,7 @@ exports[`GlobalNavbar default 1`] = `
       parsedSearchQuery="r:golang/oauth2 test f:travis"
       patternType="literal"
       platformContext={Object {}}
+      routes={Array []}
       selectedSearchContextSpec=""
       setCaseSensitivity={[Function]}
       setPatternType={[Function]}
