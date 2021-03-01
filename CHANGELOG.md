@@ -30,6 +30,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Removed the deprecated GraphQL fields `SearchResults.repositoriesSearched` and `SearchResults.indexedRepositoriesSearched`.
 
+## 3.25.2
+
+### Fixed
+
+- A security vulnerability with in the authentication workflow has been fixed. [#18686](https://github.com/sourcegraph/sourcegraph/pull/18686)
+
 ## 3.25.1
 
 ### Added
