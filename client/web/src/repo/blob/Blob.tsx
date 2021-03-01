@@ -193,10 +193,15 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             ),
             getHover: position =>
                 // before, static methods could read from this.props
-                getHover(
-                    getLSPTextDocumentPositionParameters(position, propsReference.current.blobInfo.mode),
-                    propsReference.current
-                ),
+                {
+                    console.log('asking for hover client blob', { ms: Date.now() })
+
+                    /* before, static methods could read from this.props*/
+                    return getHover(
+                        getLSPTextDocumentPositionParameters(position, propsReference.current.blobInfo.mode),
+                        propsReference.current
+                    )
+                },
             getDocumentHighlights: position =>
                 getDocumentHighlights(
                     getLSPTextDocumentPositionParameters(position, propsReference.current.blobInfo.mode),
@@ -351,6 +356,9 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 }
 
                 extensionsController.extHostAPI.then(API => {
+                    // ohhhh, might be since we have to unwrap the api... why don't we just do all
+                    // 'hoverification' after unwrapping the api once?
+                    console.log('request to add document', { ms: Date.now() })
                     API.addTextDocumentIfNotExists({
                         uri,
                         languageId: blobInfo.mode,

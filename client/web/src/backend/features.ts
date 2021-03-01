@@ -28,11 +28,14 @@ export function getHover(
     context: RepoSpec & ResolvedRevisionSpec & FileSpec & UIPositionSpec,
     { extensionsController }: ExtensionsControllerProps
 ): Observable<MaybeLoadingResult<HoverMerged | null>> {
+    console.log('asking for hover client before unwrapping api', { ms: Date.now() })
     return concat(
         [{ isLoading: true, result: null }],
         from(extensionsController.extHostAPI).pipe(
-            switchMap(extensionHost =>
-                wrapRemoteObservable(
+            switchMap(extensionHost => {
+                console.log('asking for hover client after unwrapping api', { ms: Date.now() })
+
+                return wrapRemoteObservable(
                     extensionHost.getHover({
                         textDocument: {
                             uri: toURIWithPath(context),
@@ -43,7 +46,7 @@ export function getHover(
                         },
                     })
                 )
-            )
+            })
         )
     )
 }

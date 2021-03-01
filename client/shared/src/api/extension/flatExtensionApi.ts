@@ -330,6 +330,7 @@ export const initNewExtensionAPI = (
 
         // Language
         getHover: (textParameters: TextDocumentPositionParameters) => {
+            console.log('asking for hover host side', { ms: Date.now() })
             // const document = textDocuments.get(textParameters.textDocument.uri)
             console.log({ currStateDocs: state.textDocuments })
             const document = getTextDocument(textParameters.textDocument.uri)
@@ -450,6 +451,8 @@ export const initNewExtensionAPI = (
         },
 
         addTextDocumentIfNotExists: textDocumentData => {
+            console.log('adding document', { ms: Date.now() })
+
             if (state.textDocuments.has(textDocumentData.uri)) {
                 return
             }
