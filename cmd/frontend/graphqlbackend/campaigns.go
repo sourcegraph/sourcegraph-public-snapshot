@@ -132,9 +132,14 @@ type CampaignsResolver interface {
 	DeleteCampaignsCredential(ctx context.Context, args *DeleteCampaignsCredentialArgs) (*EmptyResponse, error)
 
 	// Queries
+
+	// Old:
 	Campaigns(ctx context.Context, args *ListCampaignsArgs) (CampaignsConnectionResolver, error)
 	Campaign(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error)
+	// New:
+	BatchChange(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error)
 	BatchChangeByID(ctx context.Context, id graphql.ID) (BatchChangeResolver, error)
+
 	ChangesetByID(ctx context.Context, id graphql.ID) (ChangesetResolver, error)
 
 	CampaignSpecByID(ctx context.Context, id graphql.ID) (CampaignSpecResolver, error)
@@ -554,10 +559,6 @@ func (defaultCampaignsResolver) DeleteCampaignsCredential(ctx context.Context, a
 }
 
 // Queries
-func (defaultCampaignsResolver) CampaignByID(ctx context.Context, id graphql.ID) (BatchChangeResolver, error) {
-	return nil, campaignsOnlyInEnterprise
-}
-
 func (defaultCampaignsResolver) BatchChangeByID(ctx context.Context, id graphql.ID) (BatchChangeResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }

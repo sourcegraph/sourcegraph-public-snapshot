@@ -28,10 +28,11 @@ type batchChangeResolver struct {
 	namespaceErr  error
 }
 
-const campaignIDKind = "Campaign"
+// TODO: We need to marshal the ID depending on how we landed here
+const batchChangeIDKind = "BatchChange"
 
 func marshalCampaignID(id int64) graphql.ID {
-	return relay.MarshalID(campaignIDKind, id)
+	return relay.MarshalID(batchChangeIDKind, id)
 }
 
 func unmarshalCampaignID(id graphql.ID) (campaignID int64, err error) {
