@@ -515,7 +515,7 @@ describe('Search', () => {
                     {
                         __typename: 'SearchContext',
                         id: '2',
-                        spec: '@user',
+                        spec: '@test',
                         description: '',
                         autoDefined: true,
                     },
@@ -560,9 +560,9 @@ describe('Search', () => {
                 () => document.querySelector<HTMLButtonElement>('.test-search-context-dropdown')?.disabled
             )
         test('Search context selected based on URL', async () => {
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp&context=%40user')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:%40test+test&patternType=regexp')
             await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
-            expect(await getSelectedSearchContextSpec()).toStrictEqual('context:@user')
+            expect(await getSelectedSearchContextSpec()).toStrictEqual('context:@test')
         })
 
         test('Missing context param should default to users context', async () => {
@@ -571,24 +571,13 @@ describe('Search', () => {
             expect(await getSelectedSearchContextSpec()).toStrictEqual('context:@test')
         })
 
-        test('Unavailable search context should get appended to navbar query and disable the search context dropdown', async () => {
+        test('Unavailable search context should remain in the query and disable the search context dropdown', async () => {
             await driver.page.goto(
-                driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp&context=%40unavailableCtx'
+                driver.sourcegraphBaseUrl + '/search?q=context:%40unavailableCtx+test&patternType=regexp'
             )
             await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
             await driver.page.waitForSelector('#monaco-query-input')
             expect(await getSearchFieldValue(driver)).toStrictEqual('context:@unavailableCtx test')
-            expect(await isSearchContextDropdownDisabled()).toBeTruthy()
-        })
-
-        test('Unavailable search context should not get appended to navbar query if context is already present', async () => {
-            await driver.page.goto(
-                driver.sourcegraphBaseUrl +
-                    '/search?q=context:%40anotherUnavailableCtx+test&patternType=regexp&context=%40unavailableCtx'
-            )
-            await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
-            await driver.page.waitForSelector('#monaco-query-input')
-            expect(await getSearchFieldValue(driver)).toStrictEqual('context:@anotherUnavailableCtx test')
             expect(await isSearchContextDropdownDisabled()).toBeTruthy()
         })
 
