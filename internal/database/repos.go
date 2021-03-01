@@ -476,6 +476,14 @@ type ReposListOptions struct {
 	// ExternalRepos of repos to list. When zero-valued, this is omitted from the predicate set.
 	ExternalRepos []api.ExternalRepoSpec
 
+	// ExternalRepoIncludePrefixes is the list of specs to include repos using
+	// prefix matching. When zero-valued, this is omitted from the predicate set.
+	ExternalRepoIncludePrefixes []api.ExternalRepoSpec
+
+	// ExternalRepoExcludePrefixes is the list of specs to exclude repos using
+	// prefix matching. When zero-valued, this is omitted from the predicate set.
+	ExternalRepoExcludePrefixes []api.ExternalRepoSpec
+
 	// PatternQuery is an expression tree of patterns to query. The atoms of
 	// the query are strings which are regular expression patterns.
 	PatternQuery query.Q
@@ -1129,6 +1137,22 @@ func (*RepoStore) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error)
 			er = append(er, sqlf.Sprintf("(external_id = %s AND external_service_type = %s AND external_service_id = %s)", spec.ID, spec.ServiceType, spec.ServiceID))
 		}
 		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n OR ")))
+	}
+
+	if len(opt.ExternalRepoIncludePrefixes) > 0 {
+		er := make([]*sqlf.Query, 0, len(opt.ExternalRepoIncludePrefixes))
+		for _, spec := range opt.ExternalRepoIncludePrefixes {
+			er = append(er, sqlf.Sprintf("(external_id LIKE %s AND external_service_type = %s AND external_service_id = %s)", spec.ID+"%", spec.ServiceType, spec.ServiceID))
+		}
+		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n OR ")))
+	}
+
+	if len(opt.ExternalRepoExcludePrefixes) > 0 {
+		er := make([]*sqlf.Query, 0, len(opt.ExternalRepoExcludePrefixes))
+		for _, spec := range opt.ExternalRepoExcludePrefixes {
+			er = append(er, sqlf.Sprintf("(external_id NOT LIKE %s AND external_service_type = %s AND external_service_id = %s)", spec.ID+"%", spec.ServiceType, spec.ServiceID))
+		}
+		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n AND ")))
 	}
 
 	if opt.NoForks {
