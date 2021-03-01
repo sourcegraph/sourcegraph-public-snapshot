@@ -771,7 +771,7 @@ export const initNewExtensionAPI = (
     )
 
     const previouslyActivatedExtensions = new Set<string>()
-    const cachedScriURLs = new Map<string, string>()
+    const cachedScriptURLs = new Map<string, string>()
     activeExtensions
         .pipe(
             withLatestFrom(getScriptURLs(null)),
@@ -829,9 +829,21 @@ export const initNewExtensionAPI = (
                         }
                     )
                 ).pipe(
+                    tap(({ toActivate }) =>
+                        toActivate.map(extension => {
+                            if (
+                                extension.manifest &&
+                                !isErrorLike(extension.manifest) &&
+                                extension.manifest.contributes
+                            ) {
+                                exposedToMain.registerContributions(extension.manifest.contributes)
+                            }
+                        })
+                    ),
                     map(({ toActivate }) =>
                         // TODO(tj): do three things:
                         // register contributions, activate extensions, deactivate extensions
+                        // consider how to make contributions easy to batch add + remove by extension ID...
                         from(Promise.all(toActivate.map(({ id, scriptURL }) => activateExtension(id, scriptURL))))
                     )
                 )

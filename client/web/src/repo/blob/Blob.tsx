@@ -356,6 +356,13 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                         languageId: blobInfo.mode,
                         text: blobInfo.content,
                     })
+
+                    API.addViewerIfNotExists({
+                        type: 'CodeEditor' as const,
+                        resource: uri,
+                        selections: lprToSelectionsZeroIndexed(position),
+                        isActive: true,
+                    })
                 })
 
                 const selections = lprToSelectionsZeroIndexed(position)
