@@ -78,7 +78,7 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
         >
             <div className="web-content">
                 <h3 id={`heading--connect-with-${name}`} className="mb-4">
-                    Connect with {name}
+                    Connect with {name}.com
                 </h3>
                 <Form onSubmit={onTokenSubmit}>
                     <div className="form-group mb-4">

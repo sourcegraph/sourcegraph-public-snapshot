@@ -75,7 +75,7 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<{
         >
             <div className="web-content">
                 <h3 id={`heading--update-${name}-code-host`} className="mb-4">
-                    Update {name} token
+                    Update {name}.com token
                 </h3>
                 <Form onSubmit={onTokenSubmit}>
                     <div className="form-group mb-4">
