@@ -30,7 +30,7 @@ func Postgres() *monitoring.Container {
 						Owner:             monitoring.ObservableOwnerCoreApplication,
 						Query:             `sum by (datname) (pg_stat_activity_count{datname!~"template.*|postgres|cloudsqladmin"})`,
 						Panel:             monitoring.Panel().LegendFormat("{{datname}}"),
-						Warning:           monitoring.Alert().LessOrEqual(5).For(5 * time.Minute),
+						Warning:           monitoring.Alert().LessOrEqual(5, nil).For(5 * time.Minute),
 						PossibleSolutions: "none",
 					},
 					monitoring.Observable{
@@ -39,8 +39,8 @@ func Postgres() *monitoring.Container {
 						Owner:             monitoring.ObservableOwnerCoreApplication,
 						Query:             `sum by (datname) (pg_stat_activity_max_tx_duration{datname!~"template.*|postgres|cloudsqladmin"})`,
 						Panel:             monitoring.Panel().LegendFormat("{{datname}}").Unit(monitoring.Milliseconds),
-						Warning:           monitoring.Alert().GreaterOrEqual(300).For(5 * time.Minute),
-						Critical:          monitoring.Alert().GreaterOrEqual(500).For(10 * time.Minute),
+						Warning:           monitoring.Alert().GreaterOrEqual(300, nil).For(5 * time.Minute),
+						Critical:          monitoring.Alert().GreaterOrEqual(500, nil).For(10 * time.Minute),
 						PossibleSolutions: "none",
 					},
 				},
@@ -56,7 +56,7 @@ func Postgres() *monitoring.Container {
 							Owner:             monitoring.ObservableOwnerCoreApplication,
 							Query:             "pg_up",
 							Panel:             monitoring.Panel().LegendFormat("{{app}}"),
-							Critical:          monitoring.Alert().LessOrEqual(0).For(5 * time.Minute),
+							Critical:          monitoring.Alert().LessOrEqual(0, nil).For(5 * time.Minute),
 							PossibleSolutions: "none",
 							Interpretation:    "A non-zero value indicates the database is online.",
 						},
@@ -66,7 +66,7 @@ func Postgres() *monitoring.Container {
 							Owner:       monitoring.ObservableOwnerCoreApplication,
 							Query:       "pg_exporter_last_scrape_error",
 							Panel:       monitoring.Panel().LegendFormat("{{app}}"),
-							Warning:     monitoring.Alert().GreaterOrEqual(1).For(5 * time.Minute),
+							Warning:     monitoring.Alert().GreaterOrEqual(1, nil).For(5 * time.Minute),
 							PossibleSolutions: `
 								- Ensure the Postgres exporter can access the Postgres database. Also, check the Postgres exporter logs for errors.
 							`,
@@ -78,7 +78,7 @@ func Postgres() *monitoring.Container {
 							Owner:          monitoring.ObservableOwnerCoreApplication,
 							Query:          "pg_sg_migration_status",
 							Panel:          monitoring.Panel().LegendFormat("{{app}}"),
-							Critical:       monitoring.Alert().GreaterOrEqual(1).For(5 * time.Minute),
+							Critical:       monitoring.Alert().GreaterOrEqual(1, nil).For(5 * time.Minute),
 							Interpretation: "A 0 value indicates that no migration is in progress.",
 							PossibleSolutions: `
 								The database migration has been in progress for 5 or more minutes - please contact Sourcegraph if this persists.
@@ -92,7 +92,7 @@ func Postgres() *monitoring.Container {
 						//	Owner:           monitoring.ObservableOwnerCoreApplication,
 						//	Query:           `avg(rate(pg_stat_database_blks_hit{datname!~"template.*|postgres|cloudsqladmin"}[5m]) / (rate(pg_stat_database_blks_hit{datname!~"template.*|postgres|cloudsqladmin"}[5m]) + rate(pg_stat_database_blks_read{datname!~"template.*|postgres|cloudsqladmin"}[5m]))) by (datname) * 100`,
 						//	DataMayNotExist: true,
-						//	Warning:         monitoring.Alert().LessOrEqual(0.98).For(5 * time.Minute),
+						//	Warning:         monitoring.Alert().LessOrEqual(0.98, nil).For(5 * time.Minute),
 						//	PossibleSolutions: "Cache hit ratio should be at least 99%, please [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose) " +
 						//		"to add additional indexes",
 						//	PanelOptions: monitoring.PanelOptions().Unit(monitoring.Percentage)},
@@ -191,7 +191,7 @@ func makePostgresTableBloatPanel(name, description string, owner monitoring.Obse
 		Panel:       monitoring.Panel().LegendFormat("{{relname}}"),
 		// TODO(efritz) - re-enable this after we correctly tune autovacuum daemon or have
 		// docs specifying our recommended settings.
-		// Critical:    monitoring.Alert().GreaterOrEqual(bloatThreshold).For(5 * time.Minute),
+		// Critical:    monitoring.Alert().GreaterOrEqual(bloatThreshold, nil).For(5 * time.Minute),
 		// PossibleSolutions: `
 		// 	- Run ANALYZE on the table to correct its statistics
 		// 	- Run VACUUM on the table manually to remove dead tuples

@@ -3,12 +3,18 @@ package graphqlbackend
 import (
 	"fmt"
 	"strconv"
+	"sync/atomic"
 
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/graphql-go/graphql/language/kinds"
 	"github.com/graphql-go/graphql/language/parser"
 	"github.com/graphql-go/graphql/language/visitor"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/throttled/throttled/v2"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // Included in tracing so that we can differentiate different costs as we tweak
@@ -69,14 +75,48 @@ func EstimateQueryCost(query string, variables map[string]interface{}) (totalCos
 	}
 
 	// Calculate fragment costs first as we'll need them for the overall operation
-	// cost
+	// cost.
 	fragmentCosts := make(map[string]int)
+	// Fragments can reference other fragments so we need their dependencies.
+	fragmentDeps := make(map[string]map[string]struct{})
+
 	for _, frag := range fragments {
-		cost, err := calcNodeCost(frag, nil, variables)
-		if err != nil {
-			return nil, errors.Wrap(err, "calculating fragment cost")
+		deps := getFragmentDependencies(frag)
+		fragmentDeps[frag.Name.Value] = deps
+	}
+
+	// Checks whether we already have all the costs associated
+	// with fragments included in the fragment fragName
+	haveDepCosts := func(fragName string) bool {
+		deps := fragmentDeps[fragName]
+		for dep := range deps {
+			_, ok := fragmentCosts[dep]
+			if !ok {
+				return false
+			}
 		}
-		fragmentCosts[frag.Name.Value] = cost.FieldCount
+		return true
+	}
+
+	fragSeen := make(map[string]struct{})
+
+	for {
+		for _, frag := range fragments {
+			// Only try and calculate fragment cost if we've seen
+			// all fragments it depends on.
+			if !haveDepCosts(frag.Name.Value) {
+				continue
+			}
+			cost, err := calcNodeCost(frag, fragmentCosts, variables)
+			if err != nil {
+				return nil, errors.Wrap(err, "calculating fragment cost")
+			}
+			fragmentCosts[frag.Name.Value] = cost.FieldCount
+			fragSeen[frag.Name.Value] = struct{}{}
+		}
+		if len(fragSeen) == len(fragments) {
+			break
+		}
 	}
 
 	for _, def := range operations {
@@ -109,8 +149,8 @@ func calcNodeCost(def ast.Node, fragmentCosts map[string]int, variables map[stri
 	if fragmentCosts == nil {
 		fragmentCosts = make(map[string]int)
 	}
-	inlineFragmentCosts := make(map[string]int)
 	inlineFragmentDepth := 0
+	var inlineFragments []string
 
 	// limitStack keeps track of the limit as we increase and decrease our depth in
 	// the tree and encounter limit values
@@ -234,7 +274,8 @@ func calcNodeCost(def ast.Node, fragmentCosts map[string]int, variables map[stri
 					visitErr = errors.Wrap(err, "calculating inline fragment cost")
 					return visitor.ActionBreak, nil
 				}
-				inlineFragmentCosts[node.TypeCondition.Name.Value] = fragCost.FieldCount * multiplier
+				fragmentCosts[node.TypeCondition.Name.Value] = fragCost.FieldCount * multiplier
+				inlineFragments = append(inlineFragments, node.TypeCondition.Name.Value)
 			}
 			return visitor.ActionNoChange, nil
 		},
@@ -254,9 +295,10 @@ func calcNodeCost(def ast.Node, fragmentCosts map[string]int, variables map[stri
 
 	// We also need to pick the largest inline fragment in our tree
 	var maxInlineFragmentCost int
-	for _, v := range inlineFragmentCosts {
-		if v > maxInlineFragmentCost {
-			maxInlineFragmentCost = v
+	for _, v := range inlineFragments {
+		fragCost := fragmentCosts[v]
+		if fragCost > maxInlineFragmentCost {
+			maxInlineFragmentCost = fragCost
 		}
 	}
 
@@ -264,6 +306,25 @@ func calcNodeCost(def ast.Node, fragmentCosts map[string]int, variables map[stri
 		FieldCount: fieldCount + maxInlineFragmentCost,
 		MaxDepth:   maxDepth,
 	}, visitErr
+}
+
+// getFragmentDependencies returns all the fragments this node depend on.
+func getFragmentDependencies(node ast.Node) map[string]struct{} {
+	deps := make(map[string]struct{})
+
+	v := &visitor.VisitorOptions{
+		Enter: func(p visitor.VisitFuncParams) (string, interface{}) {
+			switch node := p.Node.(type) {
+			case *ast.FragmentSpread:
+				deps[node.Name.Value] = struct{}{}
+			}
+			return visitor.ActionNoChange, nil
+		},
+	}
+
+	_ = visitor.Visit(node, v, nil)
+
+	return deps
 }
 
 func extractInt(i interface{}) (int, error) {
@@ -296,4 +357,145 @@ func shouldCheckParam(p visitor.VisitFuncParams) bool {
 		return false
 	}
 	return true
+}
+
+// RateLimitWatcher stores the currently configured rate limiter and whether or
+// not rate limiting is enabled.
+type RateLimitWatcher struct {
+	store throttled.GCRAStore
+	rl    atomic.Value // *RateLimiter
+}
+
+// NewRateLimiteWatcher creates a new limiter with the provided store and starts
+// watching for config changes.
+func NewRateLimiteWatcher(store throttled.GCRAStore) *RateLimitWatcher {
+	w := &RateLimitWatcher{
+		store: store,
+	}
+
+	conf.Watch(func() {
+		log15.Debug("Rate limit config updated, applying changes")
+		w.updateFromConfig(conf.Get().ApiRatelimit)
+	})
+
+	return w
+}
+
+// Get returns the current rate limiter. If rate limiting is currently disabled
+// (nil, false) is returned.
+func (w *RateLimitWatcher) Get() (*RateLimiter, bool) {
+	if l, ok := w.rl.Load().(*RateLimiter); ok && l.enabled {
+		return l, true
+	}
+	return nil, false
+}
+
+func (w *RateLimitWatcher) updateFromConfig(rlc *schema.ApiRatelimit) {
+	// We can burst up to a max of 20% of limit
+	maxBurstPercentage := 0.2
+
+	if rlc == nil || !rlc.Enabled {
+		w.rl.Store(&RateLimiter{enabled: false})
+		return
+	}
+
+	ipQuota := throttled.RateQuota{
+		MaxRate:  throttled.PerHour(rlc.PerIP),
+		MaxBurst: int(float64(rlc.PerIP) * maxBurstPercentage),
+	}
+	ipLimiter, err := throttled.NewGCRARateLimiter(w.store, ipQuota)
+	if err != nil {
+		log15.Warn("error creating ip rate limiter", "error", err)
+		return
+	}
+
+	userQuota := throttled.RateQuota{
+		MaxRate:  throttled.PerHour(rlc.PerUser),
+		MaxBurst: int(float64(rlc.PerUser) * maxBurstPercentage),
+	}
+	userLimiter, err := throttled.NewGCRARateLimiter(w.store, userQuota)
+	if err != nil {
+		log15.Warn("error creating user rate limiter", "error", err)
+		return
+	}
+
+	overrides := make(map[string]limiter)
+	for _, o := range rlc.Overrides {
+		switch l := o.Limit.(type) {
+		case string:
+			if l == "blocked" {
+				overrides[o.Key] = &fixedLimiter{
+					limited: true,
+					result: throttled.RateLimitResult{
+						Limit:      0,
+						Remaining:  0,
+						ResetAfter: 0,
+						RetryAfter: 0,
+					},
+				}
+			} else if l == "unlimited" {
+				overrides[o.Key] = &fixedLimiter{
+					limited: false,
+					result: throttled.RateLimitResult{
+						Limit:      100000,
+						Remaining:  100000,
+						ResetAfter: 0,
+						RetryAfter: 0,
+					},
+				}
+			} else {
+				log15.Warn("unknown limit value", "value", l)
+				return
+			}
+		case int:
+			rl, err := throttled.NewGCRARateLimiter(w.store, throttled.RateQuota{
+				MaxRate:  throttled.PerHour(l),
+				MaxBurst: int(float64(l) * maxBurstPercentage),
+			})
+			if err != nil {
+				log15.Warn("error creating override rate limiter", "key", o.Key, "error", err)
+				return
+			}
+			overrides[o.Key] = rl
+		}
+	}
+
+	// Store the new limiter
+	w.rl.Store(&RateLimiter{
+		enabled:     true,
+		ipLimiter:   ipLimiter,
+		userLimiter: userLimiter,
+		overrides:   overrides,
+	})
+}
+
+type RateLimiter struct {
+	enabled     bool
+	ipLimiter   *throttled.GCRARateLimiter
+	userLimiter *throttled.GCRARateLimiter
+	overrides   map[string]limiter
+}
+
+func (rl *RateLimiter) RateLimit(uid string, isIP bool, cost int) (bool, throttled.RateLimitResult, error) {
+	if r, ok := rl.overrides[uid]; ok {
+		return r.RateLimit(uid, cost)
+	}
+	if isIP {
+		return rl.ipLimiter.RateLimit(uid, cost)
+	}
+	return rl.userLimiter.RateLimit(uid, cost)
+}
+
+type limiter interface {
+	RateLimit(string, int) (bool, throttled.RateLimitResult, error)
+}
+
+// fixedLimiter is a rate limiter that always returns the same result
+type fixedLimiter struct {
+	limited bool
+	result  throttled.RateLimitResult
+}
+
+func (f *fixedLimiter) RateLimit(string, int) (bool, throttled.RateLimitResult, error) {
+	return f.limited, f.result, nil
 }

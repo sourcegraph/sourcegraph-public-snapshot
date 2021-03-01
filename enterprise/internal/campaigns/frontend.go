@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/background"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/webhooks"
@@ -30,5 +31,5 @@ func InitFrontend(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *o
 	)
 	enterpriseServices.GitLabWebhook = webhooks.NewGitLabWebhook(cstore)
 
-	return nil
+	return background.RegisterMigrations(cstore, outOfBandMigrationRunner)
 }

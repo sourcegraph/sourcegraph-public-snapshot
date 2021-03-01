@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -32,9 +31,10 @@ import (
 )
 
 func TestNullIDResilience(t *testing.T) {
-	sr := &Resolver{store: store.New(dbconn.Global)}
+	db := dbtesting.GetDB(t)
+	sr := New(store.New(db))
 
-	s, err := graphqlbackend.NewSchema(dbconn.Global, sr, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -90,12 +90,12 @@ func TestCreateCampaignSpec(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
-	user := ct.CreateTestUser(t, true)
+	user := ct.CreateTestUser(t, db, true)
 	userID := user.ID
 
-	cstore := store.New(dbconn.Global)
+	cstore := store.New(db)
 	repoStore := database.ReposWith(cstore)
 	esStore := database.ExternalServicesWith(cstore)
 
@@ -120,7 +120,7 @@ func TestCreateCampaignSpec(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(dbconn.Global, r, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -264,11 +264,11 @@ func TestCreateChangesetSpec(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
-	userID := ct.CreateTestUser(t, true).ID
+	userID := ct.CreateTestUser(t, db, true).ID
 
-	cstore := store.New(dbconn.Global)
+	cstore := store.New(db)
 	repoStore := database.ReposWith(cstore)
 	esStore := database.ExternalServicesWith(cstore)
 
@@ -278,7 +278,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(dbconn.Global, r, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -337,13 +337,13 @@ func TestApplyCampaign(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
-	userID := ct.CreateTestUser(t, true).ID
+	userID := ct.CreateTestUser(t, db, true).ID
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	cstore := store.NewWithClock(dbconn.Global, clock)
+	cstore := store.NewWithClock(db, clock)
 	repoStore := database.ReposWith(cstore)
 	esStore := database.ExternalServicesWith(cstore)
 
@@ -389,7 +389,7 @@ func TestApplyCampaign(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(dbconn.Global, r, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -494,11 +494,11 @@ func TestCreateCampaign(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
-	userID := ct.CreateTestUser(t, true).ID
+	userID := ct.CreateTestUser(t, db, true).ID
 
-	cstore := store.New(dbconn.Global)
+	cstore := store.New(db)
 
 	campaignSpec := &campaigns.CampaignSpec{
 		RawSpec: ct.TestRawCampaignSpec,
@@ -514,7 +514,7 @@ func TestCreateCampaign(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(dbconn.Global, r, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -556,15 +556,15 @@ func TestMoveCampaign(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
-	user := ct.CreateTestUser(t, true)
+	user := ct.CreateTestUser(t, db, true)
 	userID := user.ID
 
 	orgName := "move-campaign-test"
-	orgID := ct.InsertTestOrg(t, orgName)
+	orgID := ct.InsertTestOrg(t, db, orgName)
 
-	cstore := store.New(dbconn.Global)
+	cstore := store.New(db)
 
 	campaignSpec := &campaigns.CampaignSpec{
 		RawSpec:         ct.TestRawCampaignSpec,
@@ -588,7 +588,7 @@ func TestMoveCampaign(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(dbconn.Global, r, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -796,16 +796,16 @@ func TestCreateCampaignsCredential(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
-	pruneUserCredentials(t)
+	pruneUserCredentials(t, db)
 
-	userID := ct.CreateTestUser(t, false).ID
+	userID := ct.CreateTestUser(t, db, false).ID
 
-	cstore := store.New(dbconn.Global)
+	cstore := store.New(db)
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(dbconn.Global, r, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -850,13 +850,15 @@ func TestDeleteCampaignsCredential(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
-	pruneUserCredentials(t)
+	pruneUserCredentials(t, db)
 
-	userID := ct.CreateTestUser(t, true).ID
+	userID := ct.CreateTestUser(t, db, true).ID
 
-	cred, err := database.GlobalUserCredentials.Create(ctx, database.UserCredentialScope{
+	cstore := store.New(db)
+
+	cred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 		Domain:              database.UserCredentialDomainCampaigns,
 		ExternalServiceType: extsvc.TypeGitHub,
 		ExternalServiceID:   "https://github.com/",
@@ -866,10 +868,8 @@ func TestDeleteCampaignsCredential(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cstore := store.New(dbconn.Global)
-
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(dbconn.Global, r, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

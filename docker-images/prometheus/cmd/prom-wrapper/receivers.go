@@ -208,6 +208,14 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 				}
 				apiURL = &amconfig.URL{URL: u}
 			}
+
+			var apiKEY amconfig.Secret
+			if notifier.Opsgenie.ApiKey != "" {
+				apiKEY = amconfig.Secret(notifier.Opsgenie.ApiKey)
+			} else {
+				apiKEY = amconfig.Secret(opsGenieAPIKey)
+			}
+
 			responders := make([]amconfig.OpsGenieConfigResponder, len(notifier.Opsgenie.Responders))
 			for i, resp := range notifier.Opsgenie.Responders {
 				responders[i] = amconfig.OpsGenieConfigResponder{
@@ -218,7 +226,7 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 				}
 			}
 			receiver.OpsGenieConfigs = append(receiver.OpsGenieConfigs, &amconfig.OpsGenieConfig{
-				APIKey: amconfig.Secret(notifier.Opsgenie.ApiKey),
+				APIKey: apiKEY,
 				APIURL: apiURL,
 
 				Message:     notificationTitleTemplate,

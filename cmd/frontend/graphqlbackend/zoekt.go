@@ -17,11 +17,13 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
+	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
@@ -262,18 +264,19 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 	// We use reposResolved to synchronize repo resolution and event processing.
 	reposResolved := make(chan struct{})
 	var getRepoInputRev zoektutil.RepoRevFunc
+	var repoRevMap map[string]*search.RepositoryRevisions
 
 	g, ctx := errgroup.WithContext(ctx)
 
 	// Resolve repositories.
 	g.Go(func() error {
 		defer close(reposResolved)
-		if args.Mode == search.ZoektGlobalSearch {
+		if args.Mode == search.ZoektGlobalSearch || args.PatternInfo.Select.Type == filter.Repository {
 			repos, err := getRepos(ctx, args.RepoPromise)
 			if err != nil {
 				return err
 			}
-			repoRevMap := make(map[string]*search.RepositoryRevisions, len(repos))
+			repoRevMap = make(map[string]*search.RepositoryRevisions, len(repos))
 			for _, r := range repos {
 				repoRevMap[string(r.Repo.Name)] = r
 			}
@@ -310,6 +313,20 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 			ctx, cancel = contextWithoutDeadline(ctx)
 			defer cancel()
 		}
+
+		// PERF: if we are going to be selecting to repo results only anyways, we can just ask
+		// zoekt for only results of type repo.
+		if args.PatternInfo.Select.Type == filter.Repository {
+			return zoektSearchReposOnly(ctx, args.Zoekt.Client, finalQuery, db, c, func() map[string]*search.RepositoryRevisions {
+				<-reposResolved
+				// getRepoInputRev is nil only if we encountered an error during repo resolution.
+				if getRepoInputRev == nil {
+					return nil
+				}
+				return repoRevMap
+			})
+		}
+
 		return args.Zoekt.Client.StreamSearch(ctx, finalQuery, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
 
 			mu.Lock()
@@ -348,7 +365,6 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 
 			limitHit = limitHit || len(partial) > 0
 
-			lastID := api.RepoID(-1) // PERF: avoid Update call if we have the same repository
 			matches := make([]SearchResultResolver, 0, len(files))
 			repoResolvers := make(RepositoryResolverCache)
 			for _, file := range files {
@@ -370,7 +386,7 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 					repoResolvers[repo.Name] = repoResolver
 				}
 
-				var lines []*lineMatch
+				var lines []*LineMatch
 				if typ != symbolRequest {
 					lines = zoektFileMatchToLineMatches(maxLineFragmentMatches, &file)
 				}
@@ -378,30 +394,25 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 				for _, inputRev := range inputRevs {
 					inputRev := inputRev // copy so we can take the pointer
 
-					var symbols []*searchSymbolResult
+					var symbols []*SearchSymbolResult
 					if typ == symbolRequest {
-						symbols = zoektFileMatchToSymbolResults(repoResolver, db, inputRev, &file)
+						symbols = zoektFileMatchToSymbolResults(repoResolver, inputRev, &file)
 					}
 					fm := &FileMatchResolver{
 						db: db,
 						FileMatch: FileMatch{
-							db:           db,
-							JPath:        file.FileName,
-							JLineMatches: lines,
-							JLimitHit:    fileLimitHit,
-							uri:          fileMatchURI(repo.Name, inputRev, file.FileName),
-							symbols:      symbols,
-							Repo:         repo,
-							CommitID:     api.CommitID(file.Version),
-							InputRev:     &inputRev,
+							Path:        file.FileName,
+							LineMatches: lines,
+							LimitHit:    fileLimitHit,
+							uri:         fileMatchURI(repo.Name, inputRev, file.FileName),
+							Symbols:     symbols,
+							Repo:        repo,
+							CommitID:    api.CommitID(file.Version),
+							InputRev:    &inputRev,
 						},
 						RepoResolver: repoResolver,
 					}
 					matches = append(matches, fm)
-					if id := repo.ID; lastID != id {
-						statusMap.Update(id, search.RepoStatusSearched|search.RepoStatusIndexed)
-						lastID = id
-					}
 				}
 			}
 
@@ -428,15 +439,45 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 	}
 
 	if !foundResults && since(t0) >= searchOpts.MaxWallTime {
-		c.Send(SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout | search.RepoStatusIndexed)}})
+		c.Send(SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout)}})
 		return nil
 	}
-	c.Send(SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusSearched | search.RepoStatusIndexed)}})
 	return nil
 }
 
-func zoektFileMatchToLineMatches(maxLineFragmentMatches int, file *zoekt.FileMatch) []*lineMatch {
-	lines := make([]*lineMatch, 0, len(file.LineMatches))
+// zoektSearchReposOnly is used when select:repo is set, in which case we can ask zoekt
+// only for the repos that contain matches for the query. This is a performance optimization,
+// and not required for proper function of select:repo.
+func zoektSearchReposOnly(ctx context.Context, client zoekt.Streamer, query zoektquery.Q, db dbutil.DB, c Sender, getRepoRevMap func() map[string]*search.RepositoryRevisions) error {
+	repoList, err := client.List(ctx, query)
+	if err != nil {
+		return err
+	}
+
+	repoRevMap := getRepoRevMap()
+	if repoRevMap == nil {
+		return nil
+	}
+
+	resolvers := make([]SearchResultResolver, 0, len(repoList.Repos))
+	for _, repo := range repoList.Repos {
+		rev, ok := repoRevMap[repo.Repository.Name]
+		if !ok {
+			continue
+		}
+
+		resolvers = append(resolvers, NewRepositoryResolver(db, &types.Repo{Name: rev.Repo.Name, ID: rev.Repo.ID}))
+	}
+
+	c.Send(SearchEvent{
+		Results: resolvers,
+		Stats:   streaming.Stats{}, // TODO
+	})
+	return nil
+}
+
+func zoektFileMatchToLineMatches(maxLineFragmentMatches int, file *zoekt.FileMatch) []*LineMatch {
+	lines := make([]*LineMatch, 0, len(file.LineMatches))
 
 	for _, l := range file.LineMatches {
 		if l.FileName {
@@ -452,7 +493,7 @@ func zoektFileMatchToLineMatches(maxLineFragmentMatches int, file *zoekt.FileMat
 			length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
 			offsets[k] = [2]int32{int32(offset), int32(length)}
 		}
-		lines = append(lines, &lineMatch{
+		lines = append(lines, &LineMatch{
 			Preview:          string(l.Line),
 			LineNumber:       int32(l.LineNumber - 1),
 			OffsetAndLengths: offsets,
@@ -494,20 +535,14 @@ func escape(s string) string {
 	return string(escaped)
 }
 
-func zoektFileMatchToSymbolResults(repo *RepositoryResolver, db dbutil.DB, inputRev string, file *zoekt.FileMatch) []*searchSymbolResult {
+func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, file *zoekt.FileMatch) []*SearchSymbolResult {
 	// Symbol search returns a resolver so we need to pass in some
 	// extra stuff. This is a sign that we can probably restructure
 	// resolvers to avoid this.
 	baseURI := &gituri.URI{URL: url.URL{Scheme: "git", Host: repo.Name(), RawQuery: url.QueryEscape(inputRev)}}
-	commit := &GitCommitResolver{
-		db:           db,
-		repoResolver: repo,
-		oid:          GitObjectID(file.Version),
-		inputRev:     &inputRev,
-	}
 	lang := strings.ToLower(file.Language)
 
-	symbols := make([]*searchSymbolResult, 0, len(file.LineMatches))
+	symbols := make([]*SearchSymbolResult, 0, len(file.LineMatches))
 	for _, l := range file.LineMatches {
 		if l.FileName {
 			continue
@@ -518,8 +553,7 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, db dbutil.DB, input
 				continue
 			}
 
-			symbols = append(symbols, &searchSymbolResult{
-				db: db,
+			symbols = append(symbols, &SearchSymbolResult{
 				symbol: protocol.Symbol{
 					Name:       m.SymbolInfo.Sym,
 					Kind:       m.SymbolInfo.Kind,
@@ -535,7 +569,6 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, db dbutil.DB, input
 				},
 				lang:    lang,
 				baseURI: baseURI,
-				commit:  commit,
 			})
 		}
 	}
@@ -550,6 +583,9 @@ func contextWithoutDeadline(cOld context.Context) (context.Context, context.Canc
 
 	// Set trace context so we still get spans propagated
 	cNew = trace.CopyContext(cNew, cOld)
+
+	// Copy actor from cOld to cNew.
+	cNew = actor.WithActor(cNew, actor.FromContext(cOld))
 
 	go func() {
 		select {

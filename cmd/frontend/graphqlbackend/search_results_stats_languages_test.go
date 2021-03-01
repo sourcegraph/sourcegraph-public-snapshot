@@ -59,16 +59,15 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 	defer git.ResetMocks()
 
 	fileMatch := func(path string, lineNumbers ...int32) *FileMatchResolver {
-		var lines []*lineMatch
+		var lines []*LineMatch
 		for _, n := range lineNumbers {
-			lines = append(lines, &lineMatch{LineNumber: n})
+			lines = append(lines, &LineMatch{LineNumber: n})
 		}
 		return mkFileMatchResolver(db, FileMatch{
-			db:           db,
-			JPath:        path,
-			JLineMatches: lines,
-			Repo:         &types.RepoName{Name: "r"},
-			CommitID:     wantCommitID,
+			Path:        path,
+			LineMatches: lines,
+			Repo:        &types.RepoName{Name: "r"},
+			CommitID:    wantCommitID,
 		})
 	}
 

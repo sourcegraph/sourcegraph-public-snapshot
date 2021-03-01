@@ -350,6 +350,9 @@ interface FilteredConnectionDisplayProps extends ConnectionDisplayProps {
     /** Hides the filter input field. */
     hideSearch?: boolean
 
+    /** Hides filters and search when the list of nodes is empty  */
+    hideControlsWhenEmpty?: boolean
+
     /** Autofocuses the filter input field. */
     autoFocus?: boolean
 
@@ -823,6 +826,13 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
             errors.push(this.state.connectionOrError.error)
         }
 
+        // const shouldShowControls =
+        //     this.state.connectionOrError &&
+        //     !isErrorLike(this.state.connectionOrError) &&
+        //     this.state.connectionOrError.nodes &&
+        //     this.state.connectionOrError.nodes.length > 0 &&
+        //     this.props.hideControlsWhenEmpty
+
         const compactnessClass = `filtered-connection--${this.props.compact ? 'compact' : 'noncompact'}`
         return (
             <div
@@ -832,38 +842,40 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                     this.props.className
                 )}
             >
-                {(!this.props.hideSearch || this.props.filters) && (
-                    <Form
-                        className="w-100 d-inline-flex justify-content-between flex-row filtered-connection__form"
-                        onSubmit={this.onSubmit}
-                    >
-                        {this.props.filters && (
-                            <FilteredConnectionFilterControl
-                                filters={this.props.filters}
-                                onDidSelectValue={this.onDidSelectValue}
-                                values={this.state.activeValues}
-                            >
-                                {this.props.additionalFilterElement}
-                            </FilteredConnectionFilterControl>
-                        )}
-                        {!this.props.hideSearch && (
-                            <input
-                                className={classNames('form-control', this.props.inputClassName)}
-                                type="search"
-                                placeholder={`Search ${this.props.pluralNoun}...`}
-                                name="query"
-                                value={this.state.query}
-                                onChange={this.onChange}
-                                autoFocus={this.props.autoFocus}
-                                autoComplete="off"
-                                autoCorrect="off"
-                                autoCapitalize="off"
-                                ref={this.setFilterRef}
-                                spellCheck={false}
-                            />
-                        )}
-                    </Form>
-                )}
+                {
+                    /* shouldShowControls && */ (!this.props.hideSearch || this.props.filters) && (
+                        <Form
+                            className="w-100 d-inline-flex justify-content-between flex-row filtered-connection__form"
+                            onSubmit={this.onSubmit}
+                        >
+                            {this.props.filters && (
+                                <FilteredConnectionFilterControl
+                                    filters={this.props.filters}
+                                    onDidSelectValue={this.onDidSelectValue}
+                                    values={this.state.activeValues}
+                                >
+                                    {this.props.additionalFilterElement}
+                                </FilteredConnectionFilterControl>
+                            )}
+                            {!this.props.hideSearch && (
+                                <input
+                                    className={classNames('form-control', this.props.inputClassName)}
+                                    type="search"
+                                    placeholder={`Search ${this.props.pluralNoun}...`}
+                                    name="query"
+                                    value={this.state.query}
+                                    onChange={this.onChange}
+                                    autoFocus={this.props.autoFocus}
+                                    autoComplete="off"
+                                    autoCorrect="off"
+                                    autoCapitalize="off"
+                                    ref={this.setFilterRef}
+                                    spellCheck={false}
+                                />
+                            )}
+                        </Form>
+                    )
+                }
                 {errors.length > 0 && (
                     <div className="alert alert-danger filtered-connection__error">
                         {errors.map((error, index) => (

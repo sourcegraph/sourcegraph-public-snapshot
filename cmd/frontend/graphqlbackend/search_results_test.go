@@ -63,7 +63,7 @@ func TestSearchResults(t *testing.T) {
 			case *RepositoryResolver:
 				resultDescriptions[i] = fmt.Sprintf("repo:%s", m.Name())
 			case *FileMatchResolver:
-				resultDescriptions[i] = fmt.Sprintf("%s:%d", m.JPath, m.JLineMatches[0].LineNumber)
+				resultDescriptions[i] = fmt.Sprintf("%s:%d", m.Path, m.FileMatch.LineMatches[0].LineNumber)
 			default:
 				t.Fatal("unexpected result type", result)
 			}
@@ -1039,12 +1039,11 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 					&FileMatchResolver{
 						db: db,
 						FileMatch: FileMatch{
-							db: db,
-							symbols: []*searchSymbolResult{
+							Symbols: []*SearchSymbolResult{
 								// 1
-								{db: db},
+								{},
 								// 2
-								{db: db},
+								{},
 							},
 						},
 					},
@@ -1060,12 +1059,11 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 					&FileMatchResolver{
 						db: db,
 						FileMatch: FileMatch{
-							db: db,
-							symbols: []*searchSymbolResult{
+							Symbols: []*SearchSymbolResult{
 								// 1
-								{db: db},
+								{},
 								// 2
-								{db: db},
+								{},
 							},
 						},
 					},
@@ -1153,9 +1151,8 @@ func TestCompareSearchResults(t *testing.T) {
 
 	makeResult := func(repo, file string) *FileMatchResolver {
 		return mkFileMatchResolver(db, FileMatch{
-			db:    db,
-			Repo:  &types.RepoName{Name: api.RepoName(repo)},
-			JPath: file,
+			Repo: &types.RepoName{Name: api.RepoName(repo)},
+			Path: file,
 		})
 	}
 
@@ -1449,16 +1446,26 @@ func TestSearchContext(t *testing.T) {
 	}
 }
 
-func commitResult(url string) *CommitSearchResultResolver {
+func commitResult(urlKey string) *CommitSearchResultResolver {
 	return &CommitSearchResultResolver{
-		url: url,
+		gitCommitResolver: &GitCommitResolver{
+			repoResolver: &RepositoryResolver{
+				name: api.RepoName(urlKey),
+			},
+		},
 	}
 }
 
-func diffResult(url string) *CommitSearchResultResolver {
+func diffResult(urlKey string) *CommitSearchResultResolver {
 	return &CommitSearchResultResolver{
-		url:         url,
-		diffPreview: &highlightedString{},
+		CommitSearchResult: CommitSearchResult{
+			diffPreview: &highlightedString{},
+		},
+		gitCommitResolver: &GitCommitResolver{
+			repoResolver: &RepositoryResolver{
+				name: api.RepoName(urlKey),
+			},
+		},
 	}
 }
 
@@ -1468,14 +1475,13 @@ func repoResult(db dbutil.DB, url string) *RepositoryResolver {
 	})
 }
 
-func fileResult(db dbutil.DB, uri string, lineMatches []*lineMatch, symbolMatches []*searchSymbolResult) *FileMatchResolver {
+func fileResult(db dbutil.DB, uri string, lineMatches []*LineMatch, symbolMatches []*SearchSymbolResult) *FileMatchResolver {
 	return &FileMatchResolver{
 		db: db,
 		FileMatch: FileMatch{
-			db:           db,
-			uri:          uri,
-			JLineMatches: lineMatches,
-			symbols:      symbolMatches,
+			uri:         uri,
+			LineMatches: lineMatches,
+			Symbols:     symbolMatches,
 		},
 	}
 }
@@ -1488,9 +1494,9 @@ func resultToString(r SearchResultResolver) string {
 		return fmt.Sprintf("Repository:%s", v.URL())
 	case *CommitSearchResultResolver:
 		if v.diffPreview != nil {
-			return fmt.Sprintf("Diff:%s", v.url)
+			return fmt.Sprintf("Diff:%s", v.Commit().URL())
 		}
-		return fmt.Sprintf("Commit:%s", v.url)
+		return fmt.Sprintf("Commit:%s", v.Commit().URL())
 	}
 	return "unknown"
 }
@@ -1502,11 +1508,13 @@ func sortResultResolvers(rs []SearchResultResolver) {
 
 	for _, res := range rs {
 		if fm, ok := res.(*FileMatchResolver); ok {
-			sort.Slice(fm.JLineMatches, func(i, j int) bool {
-				return fm.JLineMatches[i].Preview < fm.JLineMatches[j].Preview
+			lm := fm.FileMatch.LineMatches
+			sort.Slice(lm, func(i, j int) bool {
+				return lm[i].Preview < lm[j].Preview
 			})
-			sort.Slice(fm.symbols, func(i, j int) bool {
-				return fm.symbols[i].symbol.Name < fm.symbols[j].symbol.Name
+			syms := fm.FileMatch.Symbols
+			sort.Slice(syms, func(i, j int) bool {
+				return syms[i].symbol.Name < syms[j].symbol.Name
 			})
 		}
 	}
@@ -1518,7 +1526,7 @@ func TestUnionMerge(t *testing.T) {
 	cases := []struct {
 		left  SearchResultsResolver
 		right SearchResultsResolver
-		want  SearchResultsResolver
+		want  autogold.Value
 	}{
 		{
 			left: SearchResultsResolver{
@@ -1531,18 +1539,8 @@ func TestUnionMerge(t *testing.T) {
 				},
 			},
 			right: SearchResultsResolver{db: db},
-			want: SearchResultsResolver{
-				db: db,
-				SearchResults: []SearchResultResolver{
-					&CommitSearchResultResolver{url: "a"},
-					&CommitSearchResultResolver{
-						diffPreview: &highlightedString{},
-						url:         "a",
-					},
-					&FileMatchResolver{db: db, FileMatch: FileMatch{db: db, uri: "a"}},
-					NewRepositoryResolver(db, &types.Repo{Name: api.RepoName("a")}),
-				},
-			}},
+			want:  autogold.Want("LeftOnly", "Commit:/a/-/commit/, Diff:/a/-/commit/, File{url:a,symbols:[],lineMatches:[]}, Repo:/a"),
+		},
 		{
 			left: SearchResultsResolver{db: db},
 			right: SearchResultsResolver{
@@ -1554,16 +1552,8 @@ func TestUnionMerge(t *testing.T) {
 					fileResult(db, "a", nil, nil),
 				},
 			},
-			want: SearchResultsResolver{db: db, SearchResults: []SearchResultResolver{
-				&CommitSearchResultResolver{url: "a"},
-				&CommitSearchResultResolver{
-					diffPreview: &highlightedString{},
-					url:         "a",
-				},
-				&FileMatchResolver{db: db, FileMatch: FileMatch{db: db, uri: "a"}},
-				NewRepositoryResolver(db, &types.Repo{Name: api.RepoName("a")}),
-			},
-			}},
+			want: autogold.Want("RightOnly", "Commit:/a/-/commit/, Diff:/a/-/commit/, File{url:a,symbols:[],lineMatches:[]}, Repo:/a"),
+		},
 		{
 			left: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
@@ -1581,27 +1571,12 @@ func TestUnionMerge(t *testing.T) {
 					fileResult(db, "b", nil, nil),
 				},
 			},
-			want: SearchResultsResolver{db: db, SearchResults: []SearchResultResolver{
-				&CommitSearchResultResolver{url: "a"},
-				&CommitSearchResultResolver{url: "b"},
-				&CommitSearchResultResolver{
-					diffPreview: &highlightedString{},
-					url:         "a",
-				},
-				&CommitSearchResultResolver{
-					diffPreview: &highlightedString{},
-					url:         "b",
-				},
-				&FileMatchResolver{db: db, FileMatch: FileMatch{db: db, uri: "a"}},
-				&FileMatchResolver{db: db, FileMatch: FileMatch{db: db, uri: "b"}},
-				NewRepositoryResolver(db, &types.Repo{Name: api.RepoName("a")}),
-				NewRepositoryResolver(db, &types.Repo{Name: api.RepoName("b")}),
-			}},
+			want: autogold.Want("MergeAllDifferent", "Commit:/a/-/commit/, Commit:/b/-/commit/, Diff:/a/-/commit/, Diff:/b/-/commit/, File{url:a,symbols:[],lineMatches:[]}, File{url:b,symbols:[],lineMatches:[]}, Repo:/a, Repo:/b"),
 		},
 		{
 			left: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
-					fileResult(db, "b", []*lineMatch{
+					fileResult(db, "b", []*LineMatch{
 						{Preview: "a"},
 						{Preview: "b"},
 					}, nil),
@@ -1609,29 +1584,18 @@ func TestUnionMerge(t *testing.T) {
 			},
 			right: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
-					fileResult(db, "b", []*lineMatch{
+					fileResult(db, "b", []*LineMatch{
 						{Preview: "c"},
 						{Preview: "d"},
 					}, nil),
 				},
 			},
-			want: SearchResultsResolver{db: db, SearchResults: []SearchResultResolver{
-				&FileMatchResolver{db: db, FileMatch: FileMatch{
-					db: db,
-					JLineMatches: []*lineMatch{
-						{Preview: "a"},
-						{Preview: "b"},
-						{Preview: "c"},
-						{Preview: "d"},
-					},
-					uri: "b",
-				}},
-			}},
+			want: autogold.Want("MergeFileLineMatches", "File{url:b,symbols:[],lineMatches:[a,b,c,d]}"),
 		},
 		{
 			left: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
-					fileResult(db, "a", []*lineMatch{
+					fileResult(db, "a", []*LineMatch{
 						{Preview: "a"},
 						{Preview: "b"},
 					}, nil),
@@ -1639,102 +1603,46 @@ func TestUnionMerge(t *testing.T) {
 			},
 			right: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
-					fileResult(db, "b", []*lineMatch{
+					fileResult(db, "b", []*LineMatch{
 						{Preview: "c"},
 						{Preview: "d"},
 					}, nil),
 				},
 			},
-			want: SearchResultsResolver{db: db, SearchResults: []SearchResultResolver{
-				&FileMatchResolver{db: db, FileMatch: FileMatch{
-					db: db,
-					JLineMatches: []*lineMatch{
-						{Preview: "a"},
-						{Preview: "b"},
-					},
-					uri: "a",
-				}},
-				&FileMatchResolver{db: db, FileMatch: FileMatch{
-					db: db,
-					JLineMatches: []*lineMatch{
-						{Preview: "c"},
-						{Preview: "d"},
-					},
-					uri: "b",
-				}},
-			}},
+			want: autogold.Want("NoMergeFileSymbols", "File{url:a,symbols:[],lineMatches:[a,b]}, File{url:b,symbols:[],lineMatches:[c,d]}"),
 		},
 		{
 			left: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
-					fileResult(db, "a", nil, []*searchSymbolResult{
-						{db: db, symbol: protocol.Symbol{Name: "a"}},
-						{db: db, symbol: protocol.Symbol{Name: "b"}},
+					fileResult(db, "a", nil, []*SearchSymbolResult{
+						{symbol: protocol.Symbol{Name: "a"}},
+						{symbol: protocol.Symbol{Name: "b"}},
 					}),
 				},
 			},
 			right: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
-					fileResult(db, "a", nil, []*searchSymbolResult{
-						{db: db, symbol: protocol.Symbol{Name: "c"}},
-						{db: db, symbol: protocol.Symbol{Name: "d"}},
+					fileResult(db, "a", nil, []*SearchSymbolResult{
+						{symbol: protocol.Symbol{Name: "c"}},
+						{symbol: protocol.Symbol{Name: "d"}},
 					}),
 				},
 			},
-			want: SearchResultsResolver{db: db, SearchResults: []SearchResultResolver{
-				&FileMatchResolver{db: db, FileMatch: FileMatch{
-					db: db,
-					symbols: []*searchSymbolResult{
-						{db: db, symbol: protocol.Symbol{Name: "a"}},
-						{db: db, symbol: protocol.Symbol{Name: "b"}},
-						{db: db, symbol: protocol.Symbol{Name: "c"}},
-						{db: db, symbol: protocol.Symbol{Name: "d"}},
-					},
-					uri: "a",
-				}},
-			}}},
+			want: autogold.Want("MergeFileSymbols", "File{url:a,symbols:[a,b,c,d],lineMatches:[]}"),
+		},
 	}
 
 	for _, tc := range cases {
 		t.Run("", func(t *testing.T) {
 			got := unionMerge(&tc.left, &tc.right)
 			sortResultResolvers(got.SearchResults)
-			if !reflect.DeepEqual(got.SearchResults, tc.want.SearchResults) {
-				t.Fatal(cmp.Diff(got.SearchResults, tc.want.SearchResults))
-			}
+			tc.want.Equal(t, searchResultResolversToString(got.SearchResults))
 		})
 	}
 }
 
 func TestSearchResultDeduper(t *testing.T) {
 	db := new(dbtesting.MockDB)
-
-	url := func(r SearchResultResolver) string {
-		switch v := r.(type) {
-		case *FileMatchResolver:
-			return v.uri
-		case *CommitSearchResultResolver:
-			return v.url
-		case *RepositoryResolver:
-			return v.URL()
-		}
-		return ""
-	}
-
-	resultType := func(r SearchResultResolver) string {
-		switch v := r.(type) {
-		case *FileMatchResolver:
-			return "File"
-		case *CommitSearchResultResolver:
-			if v.diffPreview != nil {
-				return "Diff"
-			}
-			return "Commit"
-		case *RepositoryResolver:
-			return "Repo"
-		}
-		return ""
-	}
 
 	cases := []struct {
 		input []SearchResultResolver
@@ -1746,36 +1654,28 @@ func TestSearchResultDeduper(t *testing.T) {
 		},
 		{
 			[]SearchResultResolver{commitResult("a")},
-			autogold.Want("SingleCommit", "Commit:a"),
+			autogold.Want("SingleCommit", "Commit:/a/-/commit/"),
 		},
 		{
 			[]SearchResultResolver{commitResult("a"), commitResult("a")},
-			autogold.Want("DuplicateCommits", "Commit:a"),
+			autogold.Want("DuplicateCommits", "Commit:/a/-/commit/"),
 		},
 		{
 			[]SearchResultResolver{commitResult("a"), diffResult("a")},
-			autogold.Want("SharedURLCommitDiff", "Commit:a, Diff:a"),
+			autogold.Want("SharedURLCommitDiff", "Commit:/a/-/commit/, Diff:/a/-/commit/"),
 		},
 		{
 			[]SearchResultResolver{commitResult("a"), diffResult("b")},
-			autogold.Want("DifferentURLCommitDiff", "Commit:a, Diff:b"),
+			autogold.Want("DifferentURLCommitDiff", "Commit:/a/-/commit/, Diff:/b/-/commit/"),
 		},
 		{
 			[]SearchResultResolver{commitResult("a"), diffResult("a"), repoResult(db, "a"), fileResult(db, "a", nil, nil)},
-			autogold.Want("EachTypeSameURL", "Commit:a, Diff:a, File:a, Repo:/a"),
+			autogold.Want("EachTypeSameURL", "Commit:/a/-/commit/, Diff:/a/-/commit/, File{url:a,symbols:[],lineMatches:[]}, Repo:/a"),
 		},
 		{
 			[]SearchResultResolver{commitResult("a"), commitResult("b"), commitResult("a"), commitResult("b")},
-			autogold.Want("FourCommitsTwoURLs", "Commit:a, Commit:b"),
+			autogold.Want("FourCommitsTwoURLs", "Commit:/a/-/commit/, Commit:/b/-/commit/"),
 		},
-	}
-
-	toString := func(srrs []SearchResultResolver) string {
-		var searchResultStrings []string
-		for _, srr := range srrs {
-			searchResultStrings = append(searchResultStrings, fmt.Sprintf("%s:%s", resultType(srr), url(srr)))
-		}
-		return strings.Join(searchResultStrings, ", ")
 	}
 
 	for _, tc := range cases {
@@ -1788,9 +1688,40 @@ func TestSearchResultDeduper(t *testing.T) {
 			deduped := dedup.Results()
 			sortResultResolvers(deduped)
 
-			tc.want.Equal(t, toString(deduped))
+			tc.want.Equal(t, searchResultResolversToString(deduped))
 		})
 	}
+}
+
+func searchResultResolversToString(srrs []SearchResultResolver) string {
+	toString := func(srr SearchResultResolver) string {
+		switch v := srr.(type) {
+		case *FileMatchResolver:
+			symbols := []string{}
+			for _, symbol := range v.FileMatch.Symbols {
+				symbols = append(symbols, symbol.symbol.Name)
+			}
+			lines := []string{}
+			for _, line := range v.FileMatch.LineMatches {
+				lines = append(lines, line.Preview)
+			}
+			return fmt.Sprintf("File{url:%s,symbols:[%s],lineMatches:[%s]}", v.uri, strings.Join(symbols, ","), strings.Join(lines, ","))
+		case *CommitSearchResultResolver:
+			if v.diffPreview != nil {
+				return fmt.Sprintf("Diff:%s", v.URL())
+			}
+			return fmt.Sprintf("Commit:%s", v.URL())
+		case *RepositoryResolver:
+			return fmt.Sprintf("Repo:%s", v.URL())
+		}
+		return ""
+	}
+
+	var searchResultStrings []string
+	for _, srr := range srrs {
+		searchResultStrings = append(searchResultStrings, toString(srr))
+	}
+	return strings.Join(searchResultStrings, ", ")
 }
 
 func TestIsGlobalSearch(t *testing.T) {

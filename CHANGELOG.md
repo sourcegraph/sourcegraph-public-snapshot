@@ -15,7 +15,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
--
+- Opsgenie API keys can now be added via an environment variable. [#18662](https://github.com/sourcegraph/sourcegraph/pull/18662)
 
 ### Changed
 
@@ -23,11 +23,18 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- Auto complete suggestions for repositories and files containing spaces will now be automatically escaped when accepting the suggestion. [#18635](https://github.com/sourcegraph/sourcegraph/issues/18635)
+- An issue causing repository results containing spaces to not be clickable in some cases. [#18668](https://github.com/sourcegraph/sourcegraph/pull/18668)
 
 ### Removed
 
--
+- Removed the deprecated GraphQL fields `SearchResults.repositoriesSearched` and `SearchResults.indexedRepositoriesSearched`.
+
+## 3.25.1
+
+### Added
+
+- Experimental: Sync Perforce depots directly through the Sourcegraph UI. To enable, use the feature flag `"experimentalFeatures": { "perforce": "enabled" }`. For more information, see [how to add your Perforce depots](https://docs.sourcegraph.com/admin/repo/perforce). [#16703](https://github.com/sourcegraph/sourcegraph/issues/16703)
 
 ## 3.25.0
 

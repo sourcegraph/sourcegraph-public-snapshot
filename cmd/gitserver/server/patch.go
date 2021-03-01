@@ -254,6 +254,31 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		cmd = exec.CommandContext(ctx, "git", "push", "--force", remoteURL.String(), fmt.Sprintf("%s:%s", cmtHash, ref))
 		cmd.Dir = repoGitDir
 
+		// If the protocol is SSH and a private key was given, we want to
+		// use it for communication with the code host.
+		if remoteURL.Scheme == "ssh" && req.Push.PrivateKey != "" && req.Push.Passphrase != "" {
+			// We set up an agent here, which sets up a socket that can be provided to
+			// SSH via the $SSH_AUTH_SOCK environment variable and the goroutine to drive
+			// it in the background.
+			// This is used to pass the private key to be used when pushing to the remote,
+			// without the need to store it on the disk.
+			agent, err := newSSHAgent([]byte(req.Push.PrivateKey), []byte(req.Push.Passphrase))
+			if err != nil {
+				resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: error creating ssh-agent"))
+				return http.StatusInternalServerError, resp
+			}
+			go agent.Listen()
+			// Make sure we shut this down once we're done.
+			defer agent.Close()
+
+			cmd.Env = append(
+				os.Environ(),
+				[]string{
+					fmt.Sprintf("SSH_AUTH_SOCK=%s", agent.Socket()),
+				}...,
+			)
+		}
+
 		if out, err = run(cmd, "pushing ref"); err != nil {
 			log15.Error("Failed to push", "ref", ref, "commit", cmtHash, "output", string(out))
 			return http.StatusInternalServerError, resp

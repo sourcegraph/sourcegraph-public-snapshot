@@ -15,7 +15,6 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -27,22 +26,22 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 	}
 
 	ctx := backend.WithAuthzBypass(context.Background())
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
-	pruneUserCredentials(t)
+	pruneUserCredentials(t, db)
 
-	userID := ct.CreateTestUser(t, false).ID
+	userID := ct.CreateTestUser(t, db, false).ID
 
-	cstore := store.New(dbconn.Global)
+	cstore := store.New(db)
 
-	ghRepos, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
+	ghRepos, _ := ct.CreateTestRepos(t, ctx, db, 1)
 	ghRepo := ghRepos[0]
-	glRepos, _ := ct.CreateGitlabTestRepos(t, ctx, dbconn.Global, 1)
+	glRepos, _ := ct.CreateGitlabTestRepos(t, ctx, db, 1)
 	glRepo := glRepos[0]
-	bbsRepos, _ := ct.CreateBbsTestRepos(t, ctx, dbconn.Global, 1)
+	bbsRepos, _ := ct.CreateBbsTestRepos(t, ctx, db, 1)
 	bbsRepo := bbsRepos[0]
 
-	cred, err := database.GlobalUserCredentials.Create(ctx, database.UserCredentialScope{
+	cred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 		Domain:              database.UserCredentialDomainCampaigns,
 		ExternalServiceID:   ghRepo.ExternalRepo.ServiceID,
 		ExternalServiceType: ghRepo.ExternalRepo.ServiceType,
@@ -52,7 +51,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(dbconn.Global, &Resolver{store: cstore}, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -112,7 +112,7 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 	}
 
 	fm, _ := results.Results()[0].ToFileMatch()
-	if got, want := fm.JPath, indexedFileName; got != want {
+	if got, want := fm.Path, indexedFileName; got != want {
 		t.Fatalf("wrong indexed filename. want=%s, have=%s\n", want, got)
 	}
 }

@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/testing"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
@@ -15,11 +14,11 @@ func TestWebhooksIntegration(t *testing.T) {
 
 	t.Parallel()
 
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
-	user := ct.CreateTestUser(t, false)
+	user := ct.CreateTestUser(t, db, false)
 
-	t.Run("GitHubWebhook", testGitHubWebhook(dbconn.Global, user.ID))
-	t.Run("BitbucketWebhook", testBitbucketWebhook(dbconn.Global, user.ID))
-	t.Run("GitLabWebhook", testGitLabWebhook(dbconn.Global, user.ID))
+	t.Run("GitHubWebhook", testGitHubWebhook(db, user.ID))
+	t.Run("BitbucketWebhook", testBitbucketWebhook(db, user.ID))
+	t.Run("GitLabWebhook", testGitLabWebhook(db, user.ID))
 }

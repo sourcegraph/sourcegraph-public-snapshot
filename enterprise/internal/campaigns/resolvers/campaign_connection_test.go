@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
@@ -26,11 +25,11 @@ func TestCampaignConnectionResolver(t *testing.T) {
 	}
 
 	ctx := backend.WithAuthzBypass(context.Background())
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
-	userID := ct.CreateTestUser(t, true).ID
+	userID := ct.CreateTestUser(t, db, true).ID
 
-	cstore := store.New(dbconn.Global)
+	cstore := store.New(db)
 	repoStore := database.ReposWith(cstore)
 	esStore := database.ExternalServicesWith(cstore)
 
@@ -77,7 +76,7 @@ func TestCampaignConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(dbconn.Global, &Resolver{store: cstore}, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -178,20 +177,17 @@ func TestCampaignsListing(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
-	userID := ct.CreateTestUser(t, true).ID
+	userID := ct.CreateTestUser(t, db, true).ID
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
-	org, err := database.GlobalOrgs.Create(ctx, "org", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	orgID := ct.InsertTestOrg(t, db, "org")
 
-	store := store.New(dbconn.Global)
+	store := store.New(db)
 
 	r := &Resolver{store: store}
-	s, err := graphqlbackend.NewSchema(dbconn.Global, r, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -254,14 +250,14 @@ func TestCampaignsListing(t *testing.T) {
 		createCampaignSpec(t, spec)
 
 		campaign := &campaigns.Campaign{
-			NamespaceOrgID: org.ID,
+			NamespaceOrgID: orgID,
 			CampaignSpecID: spec.ID,
 			LastApplierID:  userID,
 			LastAppliedAt:  time.Now(),
 		}
 		createCampaign(t, campaign)
 
-		orgAPIID := string(graphqlbackend.MarshalOrgID(org.ID))
+		orgAPIID := string(graphqlbackend.MarshalOrgID(orgID))
 		input := map[string]interface{}{"node": orgAPIID}
 
 		var response struct{ Node apitest.Org }

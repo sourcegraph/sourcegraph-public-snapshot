@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -33,16 +32,16 @@ func TestServicePermissionLevels(t *testing.T) {
 	}
 
 	ctx := backend.WithAuthzBypass(context.Background())
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
-	s := store.New(dbconn.Global)
+	s := store.New(db)
 	svc := New(s)
 
-	admin := ct.CreateTestUser(t, true)
-	user := ct.CreateTestUser(t, false)
-	otherUser := ct.CreateTestUser(t, false)
+	admin := ct.CreateTestUser(t, db, true)
+	user := ct.CreateTestUser(t, db, false)
+	otherUser := ct.CreateTestUser(t, db, false)
 
-	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
+	rs, _ := ct.CreateTestRepos(t, ctx, db, 1)
 
 	createTestData := func(t *testing.T, s *store.Store, svc *Service, author int32) (*campaigns.Campaign, *campaigns.Changeset, *campaigns.CampaignSpec) {
 		spec := testCampaignSpec(author)
@@ -172,14 +171,14 @@ func TestService(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	db := dbtesting.GetDB(t)
 
-	admin := ct.CreateTestUser(t, true)
-	user := ct.CreateTestUser(t, false)
+	admin := ct.CreateTestUser(t, db, true)
+	user := ct.CreateTestUser(t, db, false)
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
 
-	s := store.NewWithClock(dbconn.Global, clock)
-	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 4)
+	s := store.NewWithClock(db, clock)
+	rs, _ := ct.CreateTestRepos(t, ctx, db, 4)
 
 	fakeSource := &ct.FakeChangesetSource{}
 	sourcer := repos.NewFakeSourcer(nil, fakeSource)
@@ -316,7 +315,7 @@ func TestService(t *testing.T) {
 		}
 
 		// rs[0] is filtered out
-		ct.MockRepoPermissions(t, user.ID, rs[1].ID, rs[2].ID, rs[3].ID)
+		ct.MockRepoPermissions(t, db, user.ID, rs[1].ID, rs[2].ID, rs[3].ID)
 
 		// should result in a not found error
 		if err := svc.EnqueueChangesetSync(ctx, changeset.ID); !errcode.IsNotFound(err) {
@@ -360,7 +359,7 @@ func TestService(t *testing.T) {
 		})
 
 		// rs[0] is filtered out
-		ct.MockRepoPermissions(t, user.ID, rs[1].ID, rs[2].ID, rs[3].ID)
+		ct.MockRepoPermissions(t, db, user.ID, rs[1].ID, rs[2].ID, rs[3].ID)
 
 		// should result in a not found error
 		if _, _, err := svc.ReenqueueChangeset(ctx, changeset.ID); !errcode.IsNotFound(err) {
@@ -450,7 +449,7 @@ func TestService(t *testing.T) {
 		})
 
 		t.Run("missing repository permissions", func(t *testing.T) {
-			ct.MockRepoPermissions(t, user.ID)
+			ct.MockRepoPermissions(t, db, user.ID)
 
 			opts := CreateCampaignSpecOpts{
 				NamespaceUserID:      user.ID,
@@ -501,26 +500,23 @@ func TestService(t *testing.T) {
 		})
 
 		t.Run("missing access to namespace org", func(t *testing.T) {
-			org, err := database.GlobalOrgs.Create(ctx, "test-org", nil)
-			if err != nil {
-				t.Fatal(err)
-			}
+			orgID := ct.InsertTestOrg(t, db, "test-org")
 
 			opts := CreateCampaignSpecOpts{
-				NamespaceOrgID:       org.ID,
+				NamespaceOrgID:       orgID,
 				RawSpec:              ct.TestRawCampaignSpec,
 				ChangesetSpecRandIDs: changesetSpecRandIDs,
 			}
 
 			userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
 
-			_, err = svc.CreateCampaignSpec(userCtx, opts)
+			_, err := svc.CreateCampaignSpec(userCtx, opts)
 			if have, want := err, backend.ErrNotAnOrgMember; have != want {
 				t.Fatalf("expected %s error but got %s", want, have)
 			}
 
 			// Create org membership and try again
-			if _, err := database.OrgMembers(db).Create(ctx, org.ID, user.ID); err != nil {
+			if _, err := database.OrgMembers(db).Create(ctx, orgID, user.ID); err != nil {
 				t.Fatal(err)
 			}
 
@@ -600,7 +596,7 @@ func TestService(t *testing.T) {
 		})
 
 		t.Run("missing repository permissions", func(t *testing.T) {
-			ct.MockRepoPermissions(t, user.ID, rs[1].ID, rs[2].ID, rs[3].ID)
+			ct.MockRepoPermissions(t, db, user.ID, rs[1].ID, rs[2].ID, rs[3].ID)
 
 			_, err := svc.CreateChangesetSpec(ctx, rawSpec, admin.ID)
 			if !errcode.IsNotFound(err) {
@@ -661,7 +657,7 @@ func TestService(t *testing.T) {
 		t.Run("new user namespace", func(t *testing.T) {
 			campaign := createCampaign(t, "old-name", admin.ID, admin.ID, 0)
 
-			user2 := ct.CreateTestUser(t, false)
+			user2 := ct.CreateTestUser(t, db, false)
 
 			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewNamespaceUserID: user2.ID}
 			moved, err := svc.MoveCampaign(ctx, opts)
@@ -681,7 +677,7 @@ func TestService(t *testing.T) {
 		t.Run("new user namespace but current user is not admin", func(t *testing.T) {
 			campaign := createCampaign(t, "old-name", user.ID, user.ID, 0)
 
-			user2 := ct.CreateTestUser(t, false)
+			user2 := ct.CreateTestUser(t, db, false)
 
 			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewNamespaceUserID: user2.ID}
 
@@ -695,12 +691,9 @@ func TestService(t *testing.T) {
 		t.Run("new org namespace", func(t *testing.T) {
 			campaign := createCampaign(t, "old-name", admin.ID, admin.ID, 0)
 
-			org, err := database.GlobalOrgs.Create(ctx, "org", nil)
-			if err != nil {
-				t.Fatal(err)
-			}
+			orgID := ct.InsertTestOrg(t, db, "org")
 
-			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewNamespaceOrgID: org.ID}
+			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewNamespaceOrgID: orgID}
 			moved, err := svc.MoveCampaign(ctx, opts)
 			if err != nil {
 				t.Fatal(err)
@@ -718,15 +711,12 @@ func TestService(t *testing.T) {
 		t.Run("new org namespace but current user is missing access", func(t *testing.T) {
 			campaign := createCampaign(t, "old-name", user.ID, user.ID, 0)
 
-			org, err := database.GlobalOrgs.Create(ctx, "org-no-access", nil)
-			if err != nil {
-				t.Fatal(err)
-			}
+			orgID := ct.InsertTestOrg(t, db, "org-no-access")
 
-			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewNamespaceOrgID: org.ID}
+			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewNamespaceOrgID: orgID}
 
 			userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
-			_, err = svc.MoveCampaign(userCtx, opts)
+			_, err := svc.MoveCampaign(userCtx, opts)
 			if have, want := err, backend.ErrNotAnOrgMember; have != want {
 				t.Fatalf("expected %s error but got %s", want, have)
 			}
@@ -812,7 +802,7 @@ func TestService(t *testing.T) {
 		testSvc := New(s)
 		testSvc.sourcer = sourcer
 
-		rs, _ := ct.CreateBbsTestRepos(t, ctx, dbconn.Global, 1)
+		rs, _ := ct.CreateBbsTestRepos(t, ctx, db, 1)
 		repo := rs[0]
 
 		url := repo.ExternalRepo.ServiceID

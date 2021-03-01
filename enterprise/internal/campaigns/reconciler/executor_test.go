@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -34,15 +33,15 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	store := store.NewWithClock(dbconn.Global, clock)
+	cstore := store.NewWithClock(db, clock)
 
-	admin := ct.CreateTestUser(t, true)
+	admin := ct.CreateTestUser(t, db, true)
 
-	rs, extSvc := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
+	rs, extSvc := ct.CreateTestRepos(t, ctx, db, 1)
 
 	state := ct.MockChangesetSyncState(&protocol.RepoInfo{
 		Name: rs[0].Name,
@@ -399,8 +398,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			// Create necessary associations.
-			campaignSpec := ct.CreateCampaignSpec(t, ctx, store, "executor-test-campaign", admin.ID)
-			campaign := ct.CreateCampaign(t, ctx, store, "executor-test-campaign", admin.ID, campaignSpec.ID)
+			campaignSpec := ct.CreateCampaignSpec(t, ctx, cstore, "executor-test-campaign", admin.ID)
+			campaign := ct.CreateCampaign(t, ctx, cstore, "executor-test-campaign", admin.ID, campaignSpec.ID)
 
 			// Create the changesetSpec with associations wired up correctly.
 			var changesetSpec *campaigns.ChangesetSpec
@@ -411,7 +410,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				specOpts.User = admin.ID
 				specOpts.Repo = rs[0].ID
 				specOpts.CampaignSpec = campaignSpec.ID
-				changesetSpec = ct.CreateChangesetSpec(t, ctx, store, specOpts)
+				changesetSpec = ct.CreateChangesetSpec(t, ctx, cstore, specOpts)
 			}
 
 			// Create the changeset with correct associations.
@@ -422,7 +421,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			if changesetSpec != nil {
 				changesetOpts.CurrentSpec = changesetSpec.ID
 			}
-			changeset := ct.CreateChangeset(t, ctx, store, changesetOpts)
+			changeset := ct.CreateChangeset(t, ctx, cstore, changesetOpts)
 
 			// Setup gitserver dependency.
 			gitClient := &ct.FakeGitserverClient{ResponseErr: nil}
@@ -460,7 +459,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				sourcer,
 				// Don't actually sleep for the sake of testing.
 				true,
-				store,
+				cstore,
 				tc.plan,
 			)
 			if err != nil {
@@ -516,7 +515,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			if changesetSpec != nil {
 				assertions.CurrentSpec = changesetSpec.ID
 			}
-			ct.ReloadAndAssertChangeset(t, ctx, store, changeset, assertions)
+			ct.ReloadAndAssertChangeset(t, ctx, cstore, changeset, assertions)
 
 			// Assert that the body included a backlink if needed. We'll do
 			// more detailed unit tests of decorateChangesetBody elsewhere;
@@ -537,7 +536,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		})
 
 		// After each test: clean up database.
-		ct.TruncateTables(t, dbconn.Global, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
+		ct.TruncateTables(t, db, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
 	}
 }
 
@@ -547,16 +546,16 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
-	store := store.New(dbconn.Global)
+	cstore := store.New(db)
 
-	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
+	rs, _ := ct.CreateTestRepos(t, ctx, db, 1)
 
 	commonHeadRef := "refs/heads/collision"
 
 	// Create a published changeset.
-	ct.CreateChangeset(t, ctx, store, ct.TestChangesetOpts{
+	ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 		Repo:             rs[0].ID,
 		PublicationState: campaigns.ChangesetPublicationStatePublished,
 		ExternalBranch:   commonHeadRef,
@@ -575,7 +574,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	})
 	plan.Changeset = ct.BuildChangeset(ct.TestChangesetOpts{Repo: rs[0].ID})
 
-	err := ExecutePlan(ctx, nil, repos.NewFakeSourcer(nil, &ct.FakeChangesetSource{}), true, store, plan)
+	err := ExecutePlan(ctx, nil, repos.NewFakeSourcer(nil, &ct.FakeChangesetSource{}), true, cstore, plan)
 	if err == nil {
 		t.Fatal("reconciler did not return error")
 	}
@@ -588,19 +587,19 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 
 func TestExecutor_LoadAuthenticator(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
-	store := store.New(dbconn.Global)
+	cstore := store.New(db)
 
-	admin := ct.CreateTestUser(t, true)
-	user := ct.CreateTestUser(t, false)
+	admin := ct.CreateTestUser(t, db, true)
+	user := ct.CreateTestUser(t, db, false)
 
-	rs, _ := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
+	rs, _ := ct.CreateTestRepos(t, ctx, db, 1)
 	repo := rs[0]
 
-	campaignSpec := ct.CreateCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
-	adminCampaign := ct.CreateCampaign(t, ctx, store, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
-	userCampaign := ct.CreateCampaign(t, ctx, store, "reconciler-test-campaign", user.ID, campaignSpec.ID)
+	campaignSpec := ct.CreateCampaignSpec(t, ctx, cstore, "reconciler-test-campaign", admin.ID)
+	adminCampaign := ct.CreateCampaign(t, ctx, cstore, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
+	userCampaign := ct.CreateCampaign(t, ctx, cstore, "reconciler-test-campaign", user.ID, campaignSpec.ID)
 
 	t.Run("imported changeset uses global token", func(t *testing.T) {
 		a, err := (&executor{
@@ -621,7 +620,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 			ch: &campaigns.Changeset{
 				OwnedByCampaignID: 1234,
 			},
-			tx: store,
+			tx: cstore,
 		}).loadAuthenticator(ctx)
 		if err == nil {
 			t.Error("unexpected nil error")
@@ -634,7 +633,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 				OwnedByCampaignID: adminCampaign.ID,
 			},
 			repo: repo,
-			tx:   store,
+			tx:   cstore,
 		}).loadAuthenticator(ctx)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
@@ -650,7 +649,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 				OwnedByCampaignID: userCampaign.ID,
 			},
 			repo: repo,
-			tx:   store,
+			tx:   cstore,
 		}).loadAuthenticator(ctx)
 		if err == nil {
 			t.Error("unexpected nil error")
@@ -659,7 +658,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 
 	t.Run("owned by admin user with credential", func(t *testing.T) {
 		token := &auth.OAuthBearerToken{Token: "abcdef"}
-		if _, err := database.GlobalUserCredentials.Create(ctx, database.UserCredentialScope{
+		if _, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 			Domain:              database.UserCredentialDomainCampaigns,
 			UserID:              admin.ID,
 			ExternalServiceType: repo.ExternalRepo.ServiceType,
@@ -673,7 +672,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 				OwnedByCampaignID: adminCampaign.ID,
 			},
 			repo: repo,
-			tx:   store,
+			tx:   cstore,
 		}).loadAuthenticator(ctx)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
@@ -685,7 +684,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 
 	t.Run("owned by normal user with credential", func(t *testing.T) {
 		token := &auth.OAuthBearerToken{Token: "abcdef"}
-		if _, err := database.GlobalUserCredentials.Create(ctx, database.UserCredentialScope{
+		if _, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 			Domain:              database.UserCredentialDomainCampaigns,
 			UserID:              user.ID,
 			ExternalServiceType: repo.ExternalRepo.ServiceType,
@@ -699,7 +698,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 				OwnedByCampaignID: userCampaign.ID,
 			},
 			repo: repo,
-			tx:   store,
+			tx:   cstore,
 		}).loadAuthenticator(ctx)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
@@ -712,27 +711,28 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 
 func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
-	store := store.New(dbconn.Global)
+	cstore := store.New(db)
 
-	admin := ct.CreateTestUser(t, true)
-	user := ct.CreateTestUser(t, false)
+	admin := ct.CreateTestUser(t, db, true)
+	user := ct.CreateTestUser(t, db, false)
 
-	rs, extSvc := ct.CreateTestRepos(t, ctx, dbconn.Global, 1)
+	rs, extSvc := ct.CreateTestRepos(t, ctx, db, 1)
 	gitHubRepo := rs[0]
 	gitHubRepoCloneURL := gitHubRepo.Sources[extSvc.URN()].CloneURL
 
-	gitLabRepos, gitLabExtSvc := ct.CreateGitlabTestRepos(t, ctx, dbconn.Global, 1)
+	gitLabRepos, gitLabExtSvc := ct.CreateGitlabTestRepos(t, ctx, db, 1)
 	gitLabRepo := gitLabRepos[0]
 	gitLabRepoCloneURL := gitLabRepo.Sources[gitLabExtSvc.URN()].CloneURL
 
-	bbsRepos, bbsExtSvc := ct.CreateBbsTestRepos(t, ctx, dbconn.Global, 1)
+	bbsRepos, bbsExtSvc := ct.CreateBbsTestRepos(t, ctx, db, 1)
 	bbsRepo := bbsRepos[0]
 	bbsRepoCloneURL := bbsRepo.Sources[bbsExtSvc.URN()].CloneURL
 
-	bbsSSHRepos, _ := ct.CreateBbsSSHTestRepos(t, ctx, dbconn.Global, 1)
+	bbsSSHRepos, bbsSSHExtsvc := ct.CreateBbsSSHTestRepos(t, ctx, db, 1)
 	bbsSSHRepo := bbsSSHRepos[0]
+	bbsSSHRepoCloneURL := bbsSSHRepo.Sources[bbsSSHExtsvc.URN()].CloneURL
 
 	gitClient := &ct.FakeGitserverClient{ResponseErr: nil}
 	fakeSource := &ct.FakeChangesetSource{Svc: extSvc}
@@ -819,17 +819,48 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			},
 		},
 		{
-			name:    "ssh clone URL",
-			user:    admin,
+			name:    "ssh clone URL no credentials",
+			user:    user,
 			repo:    bbsSSHRepo,
 			wantErr: true,
+		},
+		{
+			name: "ssh clone URL no credentials admin",
+			user: admin,
+			repo: bbsSSHRepo,
+			wantPushConfig: &gitprotocol.PushConfig{
+				RemoteURL: bbsSSHRepoCloneURL,
+			},
+		},
+		{
+			name: "ssh clone URL SSH credential",
+			user: admin,
+			repo: bbsSSHRepo,
+			credentials: &auth.OAuthBearerTokenWithSSH{
+				OAuthBearerToken: auth.OAuthBearerToken{Token: "test"},
+				PrivateKey:       "private key",
+				PublicKey:        "public key",
+				Passphrase:       "passphrase",
+			},
+			wantPushConfig: &gitprotocol.PushConfig{
+				RemoteURL:  bbsSSHRepoCloneURL,
+				PrivateKey: "private key",
+				Passphrase: "passphrase",
+			},
+		},
+		{
+			name:        "ssh clone URL non-SSH credential",
+			user:        admin,
+			repo:        bbsSSHRepo,
+			credentials: &auth.OAuthBearerToken{Token: "test"},
+			wantErr:     true,
 		},
 	}
 
 	for i, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.credentials != nil {
-				cred, err := database.GlobalUserCredentials.Create(ctx, database.UserCredentialScope{
+				cred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 					Domain:              database.UserCredentialDomainCampaigns,
 					UserID:              tt.user.ID,
 					ExternalServiceType: tt.repo.ExternalRepo.ServiceType,
@@ -838,11 +869,11 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				defer func() { database.GlobalUserCredentials.Delete(ctx, cred.ID) }()
+				defer func() { cstore.UserCredentials().Delete(ctx, cred.ID) }()
 			}
 
-			campaignSpec := ct.CreateCampaignSpec(t, ctx, store, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID)
-			campaign := ct.CreateCampaign(t, ctx, store, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID, campaignSpec.ID)
+			campaignSpec := ct.CreateCampaignSpec(t, ctx, cstore, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID)
+			campaign := ct.CreateCampaign(t, ctx, cstore, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID, campaignSpec.ID)
 
 			plan.Changeset = &campaigns.Changeset{
 				OwnedByCampaignID: campaign.ID,
@@ -859,7 +890,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 				gitClient,
 				sourcer,
 				true,
-				store,
+				cstore,
 				plan,
 			)
 

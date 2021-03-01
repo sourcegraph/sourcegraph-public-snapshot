@@ -479,3 +479,13 @@ func ContainsRefGlobs(q Q) bool {
 	}
 	return containsRefGlobs
 }
+
+func HasTypeRepo(q Q) bool {
+	found := false
+	VisitField(q, "type", func(value string, _ bool, _ Annotation) {
+		if value == "repo" {
+			found = true
+		}
+	})
+	return found
+}
