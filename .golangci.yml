@@ -14,8 +14,6 @@ linters-settings:
       - octalLiteral
       - whyNoLint
       - wrapperFunc
-  goimports:
-    local-prefixes: github.com/sourcegraph/sourcegraph
   golint:
     min-confidence: 0
   govet:
