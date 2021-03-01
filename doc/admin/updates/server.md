@@ -35,7 +35,7 @@ In Sourcegraph version 3.20, we would automatically generate a secret key file (
 
 ## 3.16 -> 3.17
 
-- There was [a bug](https://github.com/sourcegraph/sourcegraph/issues/11618) in the `sourcegraph/server:3.25.1` release that caused the version displayed on the `site-admin/update` page to be `0.0.0+dev` instead of `3.17.0`. This issue [was fixed](https://github.com/sourcegraph/sourcegraph/pull/11633) in the `3.17.2` release. We recommend that you avoid this issue by upgrading past `3.17.0` to `3.17.2` using the [Standard upgrade procedure](#Standard-upgrade-procedure) listed below.
+- There was [a bug](https://github.com/sourcegraph/sourcegraph/issues/11618) in the `sourcegraph/server:3.25.2` release that caused the version displayed on the `site-admin/update` page to be `0.0.0+dev` instead of `3.17.0`. This issue [was fixed](https://github.com/sourcegraph/sourcegraph/pull/11633) in the `3.17.2` release. We recommend that you avoid this issue by upgrading past `3.17.0` to `3.17.2` using the [Standard upgrade procedure](#Standard-upgrade-procedure) listed below.
 
 ## Standard upgrade procedure
 
