@@ -11,14 +11,14 @@ import {
     ChangesetCountsOverTimeResult,
     ExternalChangesetFileDiffsVariables,
     ExternalChangesetFileDiffsResult,
-    CampaignChangesetsVariables,
-    CampaignChangesetsResult,
     WebGraphQlOperations,
     ExternalChangesetFileDiffsFields,
     DiffHunkLineType,
     ChangesetSpecType,
     ListCampaign,
-    CampaignByNamespaceResult,
+    BatchChangeByNamespaceResult,
+    BatchChangeChangesetsVariables,
+    BatchChangeChangesetsResult,
 } from '../graphql-operations'
 import {
     ChangesetSpecOperation,
@@ -156,9 +156,9 @@ const ExternalChangesetFileDiffs: (
     },
 })
 
-const CampaignChangesets: (variables: CampaignChangesetsVariables) => CampaignChangesetsResult = () => ({
+const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => BatchChangeChangesetsResult = () => ({
     node: {
-        __typename: 'Campaign',
+        __typename: 'BatchChange',
         changesets: {
             totalCount: 1,
             pageInfo: {
@@ -216,7 +216,7 @@ const CampaignChangesets: (variables: CampaignChangesetsVariables) => CampaignCh
 
 function mockCommonGraphQLResponses(
     entityType: 'user' | 'org',
-    campaignOverrides?: Partial<NonNullable<CampaignByNamespaceResult['campaign']>>
+    campaignOverrides?: Partial<NonNullable<BatchChangeByNamespaceResult['batchChange']>>
 ): Partial<WebGraphQlOperations & SharedGraphQlOperations> {
     const namespaceURL = entityType === 'user' ? '/users/alice' : '/organizations/test-org'
     return {
@@ -254,15 +254,15 @@ function mockCommonGraphQLResponses(
                 tags: [],
             },
         }),
-        CampaignByNamespace: () => ({
-            campaign: {
-                __typename: 'Campaign',
+        BatchChangeByNamespace: () => ({
+            batchChange: {
+                __typename: 'BatchChange',
                 id: 'campaign123',
                 changesetsStats: { closed: 2, deleted: 1, merged: 3, open: 8, total: 19, unpublished: 3, draft: 2 },
                 closedAt: null,
                 createdAt: subDays(new Date(), 5).toISOString(),
                 updatedAt: subDays(new Date(), 5).toISOString(),
-                description: '### Very cool campaign',
+                description: '### Very cool batch change',
                 initialApplier: {
                     url: '/users/alice',
                     username: 'alice',
@@ -440,7 +440,7 @@ describe('Campaigns', () => {
                     ...commonWebGraphQlResults,
                     ...campaignLicenseGraphQlResults,
                     ...mockCommonGraphQLResponses(entityType),
-                    CampaignChangesets,
+                    BatchChangeChangesets,
                     ChangesetCountsOverTime,
                     ExternalChangesetFileDiffs,
                 })
@@ -475,7 +475,7 @@ describe('Campaigns', () => {
                     ...commonWebGraphQlResults,
                     ...campaignLicenseGraphQlResults,
                     ...mockCommonGraphQLResponses(entityType, { closedAt: subDays(new Date(), 1).toISOString() }),
-                    CampaignChangesets,
+                    BatchChangeChangesets,
                     ChangesetCountsOverTime,
                     ExternalChangesetFileDiffs,
                     DeleteCampaign: () => ({
@@ -695,7 +695,7 @@ describe('Campaigns', () => {
                 testContext.overrideGraphQL({
                     ...commonWebGraphQlResults,
                     ...mockCommonGraphQLResponses(entityType),
-                    CampaignChangesets,
+                    BatchChangeChangesets,
                     ExternalChangesetFileDiffs,
                     CloseCampaign: () => ({
                         closeCampaign: {

@@ -4,14 +4,14 @@ import React from 'react'
 import { CampaignDetailsPage } from './CampaignDetailsPage'
 import { of } from 'rxjs'
 import {
-    CampaignFields,
+    BatchChangeFields,
     ChangesetCheckState,
     ChangesetReviewState,
     ChangesetSpecType,
     ChangesetState,
 } from '../../../graphql-operations'
 import {
-    fetchCampaignByNamespace,
+    fetchBatchChangeByNamespace,
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs,
     queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
@@ -30,8 +30,8 @@ const { add } = storiesOf('web/campaigns/details/CampaignDetailsPage', module)
 
 const now = new Date()
 
-const campaignDefaults: CampaignFields = {
-    __typename: 'Campaign',
+const batchChangeDefaults: BatchChangeFields = {
+    __typename: 'BatchChange',
     changesetsStats: {
         closed: 1,
         deleted: 1,
@@ -285,11 +285,11 @@ for (const [name, { url, supersededCampaignSpec }] of Object.entries(stories)) {
         const supersedingCampaignSpec = boolean('supersedingCampaignSpec', !!supersededCampaignSpec)
         const viewerCanAdminister = boolean('viewerCanAdminister', true)
         const isClosed = boolean('isClosed', false)
-        const campaign: CampaignFields = useMemo(
+        const batchChange: BatchChangeFields = useMemo(
             () => ({
-                ...campaignDefaults,
+                ...batchChangeDefaults,
                 currentSpec: {
-                    originalInput: campaignDefaults.currentSpec.originalInput,
+                    originalInput: batchChangeDefaults.currentSpec.originalInput,
                     supersedingCampaignSpec: supersedingCampaignSpec
                         ? {
                               createdAt: subDays(new Date(), 1).toISOString(),
@@ -303,15 +303,15 @@ for (const [name, { url, supersededCampaignSpec }] of Object.entries(stories)) {
             [supersedingCampaignSpec, viewerCanAdminister, isClosed]
         )
 
-        const fetchCampaign: typeof fetchCampaignByNamespace = useCallback(() => of(campaign), [campaign])
+        const fetchBatchChange: typeof fetchBatchChangeByNamespace = useCallback(() => of(batchChange), [batchChange])
         return (
             <EnterpriseWebStory initialEntries={[url]}>
                 {props => (
                     <CampaignDetailsPage
                         {...props}
                         namespaceID="namespace123"
-                        campaignName="awesome-campaign"
-                        fetchCampaignByNamespace={fetchCampaign}
+                        batchChangeName="awesome-campaign"
+                        fetchBatchChangeByNamespace={fetchBatchChange}
                         queryChangesets={queryChangesets}
                         queryChangesetCountsOverTime={queryChangesetCountsOverTime}
                         queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
@@ -326,9 +326,9 @@ for (const [name, { url, supersededCampaignSpec }] of Object.entries(stories)) {
 }
 
 add('Empty changesets', () => {
-    const campaign: CampaignFields = useMemo(() => campaignDefaults, [])
+    const batchChange: BatchChangeFields = useMemo(() => batchChangeDefaults, [])
 
-    const fetchCampaign: typeof fetchCampaignByNamespace = useCallback(() => of(campaign), [campaign])
+    const fetchBatchChange: typeof fetchBatchChangeByNamespace = useCallback(() => of(batchChange), [batchChange])
 
     const queryEmptyChangesets = useCallback(
         () =>
@@ -348,8 +348,8 @@ add('Empty changesets', () => {
                 <CampaignDetailsPage
                     {...props}
                     namespaceID="namespace123"
-                    campaignName="awesome-campaign"
-                    fetchCampaignByNamespace={fetchCampaign}
+                    batchChangeName="awesome-campaign"
+                    fetchBatchChangeByNamespace={fetchBatchChange}
                     queryChangesets={queryEmptyChangesets}
                     queryChangesetCountsOverTime={queryChangesetCountsOverTime}
                     queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}

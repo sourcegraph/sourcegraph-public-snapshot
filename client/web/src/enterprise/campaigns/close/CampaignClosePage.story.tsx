@@ -5,16 +5,16 @@ import { CampaignClosePage } from './CampaignClosePage'
 import {
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs,
-    fetchCampaignByNamespace,
+    fetchBatchChangeByNamespace,
 } from '../detail/backend'
 import { of } from 'rxjs'
 import { subDays } from 'date-fns'
 import {
     ChangesetCheckState,
     ChangesetReviewState,
-    CampaignFields,
     ChangesetSpecType,
     ChangesetState,
+    BatchChangeFields,
 } from '../../../graphql-operations'
 import { useMemo, useCallback } from '@storybook/addons'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
@@ -29,8 +29,8 @@ const { add } = storiesOf('web/campaigns/close/CampaignClosePage', module)
 
 const now = new Date()
 
-const campaignDefaults: CampaignFields = {
-    __typename: 'Campaign',
+const batchChangeDefaults: BatchChangeFields = {
+    __typename: 'BatchChange',
     changesetsStats: {
         closed: 1,
         deleted: 1,
@@ -200,14 +200,14 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
 
 add('Overview', () => {
     const viewerCanAdminister = boolean('viewerCanAdminister', true)
-    const campaign: CampaignFields = useMemo(
+    const batchChange: BatchChangeFields = useMemo(
         () => ({
-            ...campaignDefaults,
+            ...batchChangeDefaults,
             viewerCanAdminister,
         }),
         [viewerCanAdminister]
     )
-    const fetchCampaign: typeof fetchCampaignByNamespace = useCallback(() => of(campaign), [campaign])
+    const fetchBatchChange: typeof fetchBatchChangeByNamespace = useCallback(() => of(batchChange), [batchChange])
     return (
         <EnterpriseWebStory>
             {props => (
@@ -216,8 +216,8 @@ add('Overview', () => {
                     queryChangesets={queryChangesets}
                     queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
                     namespaceID="n123"
-                    campaignName="c123"
-                    fetchCampaignByNamespace={fetchCampaign}
+                    batchChangeName="c123"
+                    fetchBatchChangeByNamespace={fetchBatchChange}
                     extensionsController={{} as any}
                     platformContext={{} as any}
                 />
@@ -227,8 +227,8 @@ add('Overview', () => {
 })
 
 add('No open changesets', () => {
-    const campaign: CampaignFields = useMemo(() => campaignDefaults, [])
-    const fetchCampaign: typeof fetchCampaignByNamespace = useCallback(() => of(campaign), [campaign])
+    const batchChange: BatchChangeFields = useMemo(() => batchChangeDefaults, [])
+    const fetchBatchChange: typeof fetchBatchChangeByNamespace = useCallback(() => of(batchChange), [batchChange])
     const queryEmptyChangesets = useCallback(
         () =>
             of({
@@ -249,8 +249,8 @@ add('No open changesets', () => {
                     queryChangesets={queryEmptyChangesets}
                     queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
                     namespaceID="n123"
-                    campaignName="c123"
-                    fetchCampaignByNamespace={fetchCampaign}
+                    batchChangeName="c123"
+                    fetchBatchChangeByNamespace={fetchBatchChange}
                     extensionsController={{} as any}
                     platformContext={{} as any}
                 />

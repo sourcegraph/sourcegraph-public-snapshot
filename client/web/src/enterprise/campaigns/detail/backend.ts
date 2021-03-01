@@ -3,9 +3,11 @@ import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphq
 import { Observable } from 'rxjs'
 import { diffStatFields, fileDiffFields } from '../../../backend/diff'
 import {
-    CampaignFields,
-    CampaignChangesetsVariables,
-    CampaignChangesetsResult,
+    BatchChangeChangesetsVariables,
+    BatchChangeChangesetsResult,
+    BatchChangeFields,
+    BatchChangeByNamespaceResult,
+    BatchChangeByNamespaceVariables,
     ExternalChangesetFileDiffsResult,
     ExternalChangesetFileDiffsVariables,
     ExternalChangesetFileDiffsFields,
@@ -17,8 +19,6 @@ import {
     ChangesetCountsOverTimeResult,
     DeleteCampaignResult,
     DeleteCampaignVariables,
-    CampaignByNamespaceResult,
-    CampaignByNamespaceVariables,
     ChangesetDiffResult,
     ChangesetDiffVariables,
     ReenqueueChangesetVariables,
@@ -39,8 +39,8 @@ const changesetsStatsFragment = gql`
     }
 `
 
-const campaignFragment = gql`
-    fragment CampaignFields on Campaign {
+const batchChangeFragment = gql`
+    fragment BatchChangeFields on BatchChange {
         __typename
         id
         url
@@ -97,27 +97,27 @@ const changesetLabelFragment = gql`
     }
 `
 
-export const fetchCampaignByNamespace = (
+export const fetchBatchChangeByNamespace = (
     namespaceID: Scalars['ID'],
-    campaign: CampaignFields['name']
-): Observable<CampaignFields | null> =>
-    requestGraphQL<CampaignByNamespaceResult, CampaignByNamespaceVariables>(
+    batchChange: BatchChangeFields['name']
+): Observable<BatchChangeFields | null> =>
+    requestGraphQL<BatchChangeByNamespaceResult, BatchChangeByNamespaceVariables>(
         gql`
-            query CampaignByNamespace($namespaceID: ID!, $campaign: String!) {
-                campaign(namespace: $namespaceID, name: $campaign) {
-                    ...CampaignFields
+            query BatchChangeByNamespace($namespaceID: ID!, $batchChange: String!) {
+                batchChange(namespace: $namespaceID, name: $batchChange) {
+                    ...BatchChangeFields
                 }
             }
-            ${campaignFragment}
+            ${batchChangeFragment}
         `,
-        { namespaceID, campaign }
+        { namespaceID, batchChange }
     ).pipe(
         map(dataOrThrowErrors),
-        map(({ campaign }) => {
-            if (!campaign) {
+        map(({ batchChange }) => {
+            if (!batchChange) {
                 return null
             }
-            return campaign
+            return batchChange
         })
     )
 
@@ -194,39 +194,39 @@ export const changesetFieldsFragment = gql`
 `
 
 export const queryChangesets = ({
-    campaign,
+    batchChange,
     first,
     after,
     state,
     reviewState,
     checkState,
-    onlyPublishedByThisCampaign,
+    onlyPublishedByThisBatchChange,
     search,
-}: CampaignChangesetsVariables): Observable<
-    (CampaignChangesetsResult['node'] & { __typename: 'Campaign' })['changesets']
+}: BatchChangeChangesetsVariables): Observable<
+    (BatchChangeChangesetsResult['node'] & { __typename: 'BatchChange' })['changesets']
 > =>
-    requestGraphQL<CampaignChangesetsResult, CampaignChangesetsVariables>(
+    requestGraphQL<BatchChangeChangesetsResult, BatchChangeChangesetsVariables>(
         gql`
-            query CampaignChangesets(
-                $campaign: ID!
+            query BatchChangeChangesets(
+                $batchChange: ID!
                 $first: Int
                 $after: String
                 $state: ChangesetState
                 $reviewState: ChangesetReviewState
                 $checkState: ChangesetCheckState
-                $onlyPublishedByThisCampaign: Boolean
+                $onlyPublishedByThisBatchChange: Boolean
                 $search: String
             ) {
-                node(id: $campaign) {
+                node(id: $batchChange) {
                     __typename
-                    ... on Campaign {
+                    ... on BatchChange {
                         changesets(
                             first: $first
                             after: $after
                             state: $state
                             reviewState: $reviewState
                             checkState: $checkState
-                            onlyPublishedByThisCampaign: $onlyPublishedByThisCampaign
+                            onlyPublishedByThisBatchChange: $onlyPublishedByThisBatchChange
                             search: $search
                         ) {
                             totalCount
@@ -245,23 +245,23 @@ export const queryChangesets = ({
             ${changesetFieldsFragment}
         `,
         {
-            campaign,
+            batchChange,
             first,
             after,
             state,
             reviewState,
             checkState,
-            onlyPublishedByThisCampaign,
+            onlyPublishedByThisBatchChange,
             search,
         }
     ).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {
             if (!node) {
-                throw new Error(`Campaign with ID ${campaign} does not exist`)
+                throw new Error(`Batch change with ID ${batchChange} does not exist`)
             }
-            if (node.__typename !== 'Campaign') {
-                throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
+            if (node.__typename !== 'BatchChange') {
+                throw new Error(`The given ID is a ${node.__typename}, not a BatchChange`)
             }
             return node.changesets
         })
