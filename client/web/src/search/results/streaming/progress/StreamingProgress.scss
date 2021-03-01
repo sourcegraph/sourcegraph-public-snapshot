@@ -61,9 +61,16 @@
         // Halfway past the icon, minus half the border size, plus the icon's right margin
         padding-left: calc(#{$icon-inline-size} / 2 - #{$border-size} / 2 + 0.5rem);
 
-        &.markdown code {
-            // Force line breaks on markdown `code` elements
-            white-space: normal;
+        &.markdown {
+            code {
+                // Force line breaks on markdown `code` elements
+                white-space: normal;
+                word-break: break-all;
+            }
+
+            ul {
+                padding-left: 1rem;
+            }
         }
     }
 

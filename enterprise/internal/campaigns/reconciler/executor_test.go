@@ -730,8 +730,9 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	bbsRepo := bbsRepos[0]
 	bbsRepoCloneURL := bbsRepo.Sources[bbsExtSvc.URN()].CloneURL
 
-	bbsSSHRepos, _ := ct.CreateBbsSSHTestRepos(t, ctx, db, 1)
+	bbsSSHRepos, bbsSSHExtsvc := ct.CreateBbsSSHTestRepos(t, ctx, db, 1)
 	bbsSSHRepo := bbsSSHRepos[0]
+	bbsSSHRepoCloneURL := bbsSSHRepo.Sources[bbsSSHExtsvc.URN()].CloneURL
 
 	gitClient := &ct.FakeGitserverClient{ResponseErr: nil}
 	fakeSource := &ct.FakeChangesetSource{Svc: extSvc}
@@ -818,10 +819,41 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			},
 		},
 		{
-			name:    "ssh clone URL",
-			user:    admin,
+			name:    "ssh clone URL no credentials",
+			user:    user,
 			repo:    bbsSSHRepo,
 			wantErr: true,
+		},
+		{
+			name: "ssh clone URL no credentials admin",
+			user: admin,
+			repo: bbsSSHRepo,
+			wantPushConfig: &gitprotocol.PushConfig{
+				RemoteURL: bbsSSHRepoCloneURL,
+			},
+		},
+		{
+			name: "ssh clone URL SSH credential",
+			user: admin,
+			repo: bbsSSHRepo,
+			credentials: &auth.OAuthBearerTokenWithSSH{
+				OAuthBearerToken: auth.OAuthBearerToken{Token: "test"},
+				PrivateKey:       "private key",
+				PublicKey:        "public key",
+				Passphrase:       "passphrase",
+			},
+			wantPushConfig: &gitprotocol.PushConfig{
+				RemoteURL:  bbsSSHRepoCloneURL,
+				PrivateKey: "private key",
+				Passphrase: "passphrase",
+			},
+		},
+		{
+			name:        "ssh clone URL non-SSH credential",
+			user:        admin,
+			repo:        bbsSSHRepo,
+			credentials: &auth.OAuthBearerToken{Token: "test"},
+			wantErr:     true,
 		},
 	}
 

@@ -6,8 +6,10 @@ package search
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -68,6 +70,14 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Limit: inputs.MaxResults(),
 	}
 
+	// Display is the number of results we send down. If display is < 0 we
+	// want to send everything we find before hitting a limit. Otherwise we
+	// can only send up to limit results.
+	display := args.Display
+	if limit := inputs.MaxResults(); display < 0 || display > limit {
+		display = limit
+	}
+
 	sendProgress := func() {
 		_ = eventWriter.Event("progress", progress.Current())
 	}
@@ -121,7 +131,13 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		filters.Update(event)
 
 		for _, result := range event.Results {
+			if display <= 0 {
+				break
+			}
+
 			if fm, ok := result.ToFileMatch(); ok {
+				display = fm.Limit(display)
+
 				if syms := fm.Symbols(); len(syms) > 0 {
 					// Inlining to avoid exporting a bunch of stuff from
 					// graphqlbackend
@@ -144,9 +160,13 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			if repo, ok := result.ToRepository(); ok {
+				display = repo.Limit(display)
+
 				matchesBuf = append(matchesBuf, fromRepository(repo))
 			}
 			if commit, ok := result.ToCommitSearchResult(); ok {
+				display = commit.Limit(display)
+
 				matchesBuf = append(matchesBuf, fromCommit(commit))
 			}
 			if len(matchesBuf) == cap(matchesBuf) {
@@ -264,6 +284,7 @@ type args struct {
 	Version        string
 	PatternType    string
 	VersionContext string
+	Display        int
 }
 
 func parseURLQuery(q url.Values) (*args, error) {
@@ -284,6 +305,12 @@ func parseURLQuery(q url.Values) (*args, error) {
 
 	if a.Query == "" {
 		return nil, errors.New("no query found")
+	}
+
+	display := get("display", "-1")
+	var err error
+	if a.Display, err = strconv.Atoi(display); err != nil {
+		return nil, fmt.Errorf("display must be an integer, got %q: %w", display, err)
 	}
 
 	return &a, nil

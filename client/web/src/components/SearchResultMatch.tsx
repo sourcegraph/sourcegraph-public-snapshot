@@ -57,9 +57,11 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                     filter(([, isVisible]) => isVisible),
                     distinctUntilChanged((a, b) => isEqual(a, b)),
                     switchMap(([props]) => {
-                        const markdownHTML = props.item.body.html
-                            ? sanitizeHtml(props.item.body.html)
-                            : renderMarkdown(props.item.body.text)
+                        const markdownHTML = sanitizeHtml(
+                            props.item.body.html || renderMarkdown(props.item.body.text),
+                            // This is already going to be rendered inside a <code> tag so remove any extra <code> inside
+                            { allowedTags: sanitizeHtml.defaults.allowedTags.filter(tag => tag !== 'code') }
+                        )
                         if (this.bodyIsCode()) {
                             const lang = this.getLanguage() || 'txt'
                             const parser = new DOMParser()

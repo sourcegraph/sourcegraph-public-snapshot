@@ -204,6 +204,15 @@ type PushConfig struct {
 	// The URL needs to include HTTP basic auth credentials if no
 	// unauthenticated requests are allowed by the remote host.
 	RemoteURL string
+
+	// PrivateKey is used when the remote URL uses scheme `ssh`. If set,
+	// this value is used as the content of the private key. Needs to be
+	// set in conjunction with a passphrase.
+	PrivateKey string
+
+	// Passphrase is the passphrase to decrypt the private key. It is required
+	// when passing PrivateKey.
+	Passphrase string
 }
 
 // CreateCommitFromPatchResponse is the response type returned after creating

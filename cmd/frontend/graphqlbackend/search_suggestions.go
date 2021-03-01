@@ -2,9 +2,9 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 	"math"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/go-lsp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -25,6 +24,148 @@ import (
 )
 
 const maxSearchSuggestions = 100
+
+// SearchSuggestionResolver is a resolver for the GraphQL union type `SearchSuggestion`
+type SearchSuggestionResolver interface {
+	// Score defines how well this item matches the query for sorting purposes
+	Score() int
+
+	// Length holds the length of the item name as a second sorting criterium
+	Length() int
+
+	// Label to sort alphabetically by when all else is equal.
+	Label() string
+
+	// Key is a key used to deduplicate suggestion results
+	Key() suggestionKey
+
+	ToRepository() (*RepositoryResolver, bool)
+	ToFile() (*GitTreeEntryResolver, bool)
+	ToGitBlob() (*GitTreeEntryResolver, bool)
+	ToGitTree() (*GitTreeEntryResolver, bool)
+	ToSymbol() (*symbolResolver, bool)
+	ToLanguage() (*languageResolver, bool)
+}
+
+// baseSuggestionResolver implements all the To* methods, returning false for all of them.
+// Its intent is to be embedded into other suggestion resolvers to simplify implementing
+// searchSuggestionResolver.
+type baseSuggestionResolver struct{}
+
+func (baseSuggestionResolver) ToRepository() (*RepositoryResolver, bool) { return nil, false }
+func (baseSuggestionResolver) ToFile() (*GitTreeEntryResolver, bool)     { return nil, false }
+func (baseSuggestionResolver) ToGitBlob() (*GitTreeEntryResolver, bool)  { return nil, false }
+func (baseSuggestionResolver) ToGitTree() (*GitTreeEntryResolver, bool)  { return nil, false }
+func (baseSuggestionResolver) ToSymbol() (*symbolResolver, bool)         { return &symbolResolver{}, false }
+func (baseSuggestionResolver) ToLanguage() (*languageResolver, bool)     { return nil, false }
+
+// repositorySuggestionResolver implements searchSuggestionResolver for RepositoryResolver
+type repositorySuggestionResolver struct {
+	baseSuggestionResolver
+	repo  *RepositoryResolver
+	score int
+}
+
+func (r repositorySuggestionResolver) Score() int                                { return r.score }
+func (r repositorySuggestionResolver) Length() int                               { return len(r.repo.Name()) }
+func (r repositorySuggestionResolver) Label() string                             { return r.repo.Name() }
+func (r repositorySuggestionResolver) ToRepository() (*RepositoryResolver, bool) { return r.repo, true }
+func (r repositorySuggestionResolver) Key() suggestionKey {
+	return suggestionKey{repoName: r.repo.Name()}
+}
+
+// gitTreeSuggestionResolver implements searchSuggestionResolver for GitTreeEntryResolver
+type gitTreeSuggestionResolver struct {
+	baseSuggestionResolver
+	gitTreeEntry *GitTreeEntryResolver
+	score        int
+}
+
+func (g gitTreeSuggestionResolver) Score() int    { return g.score }
+func (g gitTreeSuggestionResolver) Length() int   { return len(g.gitTreeEntry.Path()) }
+func (g gitTreeSuggestionResolver) Label() string { return g.gitTreeEntry.Path() }
+func (g gitTreeSuggestionResolver) ToFile() (*GitTreeEntryResolver, bool) {
+	return g.gitTreeEntry, true
+}
+func (g gitTreeSuggestionResolver) ToGitBlob() (*GitTreeEntryResolver, bool) {
+	return g.gitTreeEntry, g.gitTreeEntry.stat.Mode().IsRegular()
+}
+func (g gitTreeSuggestionResolver) ToGitTree() (*GitTreeEntryResolver, bool) {
+	return g.gitTreeEntry, g.gitTreeEntry.stat.Mode().IsDir()
+}
+func (g gitTreeSuggestionResolver) Key() suggestionKey {
+	return suggestionKey{
+		repoName: g.gitTreeEntry.Commit().Repository().Name(),
+		repoRev:  string(g.gitTreeEntry.Commit().OID()),
+		file:     g.gitTreeEntry.Path(),
+	}
+}
+
+// symbolSuggestionResolver implements searchSuggestionResolver for symbolResolver
+type symbolSuggestionResolver struct {
+	baseSuggestionResolver
+	symbol symbolResolver
+	score  int
+}
+
+func (s symbolSuggestionResolver) Score() int { return s.score }
+func (s symbolSuggestionResolver) Length() int {
+	return len(s.symbol.symbol.Name) + len(s.symbol.symbol.Parent)
+}
+func (s symbolSuggestionResolver) Label() string {
+	return s.symbol.symbol.Name + " " + s.symbol.symbol.Parent
+}
+func (s symbolSuggestionResolver) ToSymbol() (*symbolResolver, bool) { return &s.symbol, true }
+func (s symbolSuggestionResolver) Key() suggestionKey {
+	return suggestionKey{
+		uri:    s.symbol.uri(),
+		symbol: s.symbol.symbol.Name + s.symbol.symbol.Parent,
+	}
+}
+
+// languageSuggestionResolver implements searchSuggestionResolver for languageResolver
+type languageSuggestionResolver struct {
+	baseSuggestionResolver
+	lang  *languageResolver
+	score int
+}
+
+func (l languageSuggestionResolver) Score() int                            { return l.score }
+func (l languageSuggestionResolver) Length() int                           { return len(l.lang.Name()) }
+func (l languageSuggestionResolver) Label() string                         { return l.lang.Name() }
+func (l languageSuggestionResolver) ToLanguage() (*languageResolver, bool) { return l.lang, true }
+func (l languageSuggestionResolver) Key() suggestionKey {
+	return suggestionKey{
+		lang: l.lang.Name(),
+	}
+}
+
+func sortSearchSuggestions(s []SearchSuggestionResolver) {
+	sort.Slice(s, func(i, j int) bool {
+		// Sort by score
+		a, b := s[i], s[j]
+		if a.Score() != b.Score() {
+			return a.Score() > b.Score()
+		}
+		// Prefer shorter strings for the same match score
+		// E.g. prefer gorilla/mux over gorilla/muxy, Microsoft/vscode over g3ortega/vscode-crystal
+		if a.Length() != b.Length() {
+			return a.Length() < b.Length()
+		}
+
+		// All else equal, sort alphabetically.
+		return a.Label() < b.Label()
+	})
+}
+
+type suggestionKey struct {
+	repoName string
+	repoRev  string
+	file     string
+	symbol   string
+	lang     string
+	uri      *gituri.URI
+}
 
 type searchSuggestionsArgs struct {
 	First *int32
@@ -37,7 +178,7 @@ func (a *searchSuggestionsArgs) applyDefaultsAndConstraints() {
 	}
 }
 
-type showSearchSuggestionResolvers func() ([]*searchSuggestionResolver, error)
+type showSearchSuggestionResolvers func() ([]SearchSuggestionResolver, error)
 
 var (
 	mockShowRepoSuggestions showSearchSuggestionResolvers
@@ -46,7 +187,7 @@ var (
 	mockShowSymbolMatches   showSearchSuggestionResolvers
 )
 
-func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestionsArgs) ([]*searchSuggestionResolver, error) {
+func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestionsArgs) ([]SearchSuggestionResolver, error) {
 
 	// If globbing is activated, convert regex patterns of repo, file, and repohasfile
 	// from "field:^foo$" to "field:^foo".
@@ -72,9 +213,9 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		}
 	}
 
-	var suggesters []func(ctx context.Context) ([]*searchSuggestionResolver, error)
+	var suggesters []func(ctx context.Context) ([]SearchSuggestionResolver, error)
 
-	showRepoSuggestions := func(ctx context.Context) ([]*searchSuggestionResolver, error) {
+	showRepoSuggestions := func(ctx context.Context) ([]SearchSuggestionResolver, error) {
 		if mockShowRepoSuggestions != nil {
 			return mockShowRepoSuggestions()
 		}
@@ -102,12 +243,12 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		if len(effectiveRepoFieldValues) > 0 {
 			resolved, err := r.resolveRepositories(ctx, effectiveRepoFieldValues)
 
-			resolvers := make([]*searchSuggestionResolver, 0, len(resolved.RepoRevs))
+			resolvers := make([]SearchSuggestionResolver, 0, len(resolved.RepoRevs))
 			for _, rev := range resolved.RepoRevs {
-				resolvers = append(resolvers, newSearchSuggestionResolver(
-					NewRepositoryResolver(r.db, rev.Repo.ToRepo()),
-					math.MaxInt32,
-				))
+				resolvers = append(resolvers, repositorySuggestionResolver{
+					repo:  NewRepositoryResolver(r.db, rev.Repo.ToRepo()),
+					score: math.MaxInt32,
+				})
 			}
 
 			return resolvers, err
@@ -116,7 +257,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 	}
 	suggesters = append(suggesters, showRepoSuggestions)
 
-	showFileSuggestions := func(ctx context.Context) ([]*searchSuggestionResolver, error) {
+	showFileSuggestions := func(ctx context.Context) ([]SearchSuggestionResolver, error) {
 		if mockShowFileSuggestions != nil {
 			return mockShowFileSuggestions()
 		}
@@ -135,7 +276,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 	}
 	suggesters = append(suggesters, showFileSuggestions)
 
-	showLangSuggestions := func(ctx context.Context) ([]*searchSuggestionResolver, error) {
+	showLangSuggestions := func(ctx context.Context) ([]SearchSuggestionResolver, error) {
 		if mockShowLangSuggestions != nil {
 			return mockShowLangSuggestions()
 		}
@@ -189,19 +330,19 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			return nil, err
 		}
 
-		resolvers := make([]*searchSuggestionResolver, 0, len(inventory.Languages))
+		resolvers := make([]SearchSuggestionResolver, 0, len(inventory.Languages))
 		for _, l := range inventory.Languages {
-			resolvers = append(resolvers, newSearchSuggestionResolver(
-				&languageResolver{db: r.db, name: strings.ToLower(l.Name)},
-				math.MaxInt32,
-			))
+			resolvers = append(resolvers, languageSuggestionResolver{
+				lang:  &languageResolver{db: r.db, name: strings.ToLower(l.Name)},
+				score: math.MaxInt32,
+			})
 		}
 
 		return resolvers, err
 	}
 	suggesters = append(suggesters, showLangSuggestions)
 
-	showSymbolMatches := func(ctx context.Context) (results []*searchSuggestionResolver, err error) {
+	showSymbolMatches := func(ctx context.Context) (results []SearchSuggestionResolver, err error) {
 		if mockShowSymbolMatches != nil {
 			return mockShowSymbolMatches()
 		}
@@ -232,7 +373,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			return nil, err
 		}
 
-		results = make([]*searchSuggestionResolver, 0)
+		results = make([]SearchSuggestionResolver, 0)
 		for _, match := range fileMatches {
 			fileMatch, ok := match.ToFileMatch()
 			if !ok {
@@ -255,7 +396,10 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 				if len(sr.symbol.Name) >= 4 && strings.Contains(strings.ToLower(sr.uri().String()), strings.ToLower(sr.symbol.Name)) {
 					score++
 				}
-				results = append(results, newSearchSuggestionResolver(sr, score))
+				results = append(results, symbolSuggestionResolver{
+					symbol: sr,
+					score:  score,
+				})
 			}
 		}
 
@@ -267,7 +411,10 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		}
 		if boost > 0 {
 			for i := 0; i < boost; i++ {
-				results[i].score += 200
+				if res, ok := results[i].(symbolSuggestionResolver); ok {
+					res.score += 200
+					results[i] = res
+				}
 			}
 		}
 
@@ -275,7 +422,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 	}
 	suggesters = append(suggesters, showSymbolMatches)
 
-	showFilesWithTextMatches := func(ctx context.Context) ([]*searchSuggestionResolver, error) {
+	showFilesWithTextMatches := func(ctx context.Context) ([]SearchSuggestionResolver, error) {
 		// If terms are specified, then show files that have text matches. Set an aggressive timeout
 		// to avoid delaying repo and file suggestions for too long.
 		ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
@@ -285,16 +432,19 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			if err == context.DeadlineExceeded {
 				err = nil // don't log as error below
 			}
-			var suggestions []*searchSuggestionResolver
+			var suggestions []SearchSuggestionResolver
 			if results != nil {
 				if len(results.SearchResults) > int(*args.First) {
 					results.SearchResults = results.SearchResults[:*args.First]
 				}
-				suggestions = make([]*searchSuggestionResolver, 0, len(results.SearchResults))
+				suggestions = make([]SearchSuggestionResolver, 0, len(results.SearchResults))
 				for i, res := range results.SearchResults {
 					if fm, ok := res.ToFileMatch(); ok {
 						entryResolver := fm.File()
-						suggestions = append(suggestions, newSearchSuggestionResolver(entryResolver, len(results.SearchResults)-i))
+						suggestions = append(suggestions, gitTreeSuggestionResolver{
+							gitTreeEntry: entryResolver,
+							score:        len(results.SearchResults) - i,
+						})
 					}
 				}
 			}
@@ -306,13 +456,13 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 
 	// Run suggesters.
 	var (
-		allSuggestions []*searchSuggestionResolver
+		allSuggestions []SearchSuggestionResolver
 		mu             sync.Mutex
 		par            = parallel.NewRun(len(suggesters))
 	)
 	for _, suggester := range suggesters {
 		par.Acquire()
-		go func(suggester func(ctx context.Context) ([]*searchSuggestionResolver, error)) {
+		go func(suggester func(ctx context.Context) ([]SearchSuggestionResolver, error)) {
 			defer par.Release()
 			ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 			defer cancel()
@@ -344,42 +494,10 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 	}
 
 	// Eliminate duplicates.
-	type key struct {
-		repoName api.RepoName
-		repoRev  string
-		file     string
-		symbol   string
-		lang     string
-		uri      *gituri.URI
-	}
-	seen := make(map[key]struct{}, len(allSuggestions))
+	seen := make(map[suggestionKey]struct{}, len(allSuggestions))
 	uniqueSuggestions := allSuggestions[:0]
 	for _, s := range allSuggestions {
-		var k key
-		switch s := s.result.(type) {
-		case *RepositoryResolver:
-			k.repoName = s.name
-		case *GitTreeEntryResolver:
-			k.repoName = s.commit.repoResolver.name
-			// We explicitly do not use GitCommitResolver.OID() to get the OID here
-			// because it could significantly slow down search suggestions from zoekt as
-			// it doesn't specify the commit the default branch is on. This result would in
-			// computing this commit for each suggestion, which could be heavy.
-			k.repoRev = string(s.commit.oid)
-			// Zoekt only searches the default branch and sets commit ID to an empty string. This
-			// may cause duplicate suggestions when merging results from Zoekt and non-Zoekt sources
-			// (that do specify a commit ID), because their key k (i.e., k in seen[k]) will not
-			// equal.
-			k.file = s.Path()
-		case symbolResolver:
-			k.uri = s.uri()
-			k.symbol = s.symbol.Name + s.symbol.Parent
-		case *languageResolver:
-			k.lang = s.name
-		default:
-			panic(fmt.Sprintf("unhandled: %#v", s))
-		}
-
+		k := s.Key()
 		if _, dup := seen[k]; !dup {
 			uniqueSuggestions = append(uniqueSuggestions, s)
 			seen[k] = struct{}{}

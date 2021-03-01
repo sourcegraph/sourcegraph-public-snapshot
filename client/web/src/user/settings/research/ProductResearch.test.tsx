@@ -21,7 +21,7 @@ describe('ProductResearchPage', () => {
 
     test('renders sign up now link correctly', () => {
         expect(queries.getByText('Sign up now').closest('a')?.href).toMatchInlineSnapshot(
-            '"https://share.hsforms.com/1tkScUc65Tm-Yu98zUZcLGw1n7ku?email=test%40sourcegraph.com"'
+            '"https://info.sourcegraph.com/product-research?email=test%40sourcegraph.com"'
         )
     })
 })
