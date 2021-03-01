@@ -1544,8 +1544,6 @@ github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d h1:yKm7XZV6j9
 github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d/go.mod h1:UdhH50NIW0fCiwBSr0co2m7BnFLdv4fQTgdqdJTHFeE=
 github.com/sourcegraph/campaignutils v0.0.0-20201124155628-5d86cf20398d h1:BvdJF34dFf+M4anMVVGDaXDoAJbAonWV3SLILngzXds=
 github.com/sourcegraph/campaignutils v0.0.0-20201124155628-5d86cf20398d/go.mod h1:xm6i78Mk2t4DBLQDqEFc/3x6IPf7yYZCgbNaTQGhJHA=
-github.com/sourcegraph/codeintelutils v0.0.0-20200824140252-1db3aed5cf58 h1:Ps+U1xoZP+Zoph39YfRB6Q846ghO8pgrAgp0MiObvPs=
-github.com/sourcegraph/codeintelutils v0.0.0-20200824140252-1db3aed5cf58/go.mod h1:HplI8gRslTrTUUsSYwu28hSOderix7m5dHNca7xBzeo=
 github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81 h1:v4/JVxZSPWifxmICRqgXK7khThjw03RfdGhyeA2S4EQ=
 github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81/go.mod h1:xIvvI5FiHLxhv8prbzVpaMHaaGPFPFQSuTcxC91ryOo=
 github.com/sourcegraph/go-ctags v0.0.0-20201109224903-0e02e034fdb1 h1:di6PFtd0Fp/tvp4PddGk8yDrOwUpu2Y/UBZ39dgvLoc=
@@ -1575,8 +1573,6 @@ github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e/go.mod h1:HuIsMU8RRBOtsCgI77wP899iHVBQpCmg4ErYMZB+2IA=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152 h1:z/MpntplPaW6QW95pzcAR/72Z5TWDyDnSo0EOcyij9o=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152/go.mod h1:GIjDIg/heH5DOkXY3YJ/wNhfHsQHoXGjl8G8amsYQ1I=
-github.com/sourcegraph/zoekt v0.0.0-20210224103651-ed2848a6422c h1:iCwC2/0fZ2UJM/HhdT82dBwCaSgBllcp8PCoDC565qk=
-github.com/sourcegraph/zoekt v0.0.0-20210224103651-ed2848a6422c/go.mod h1:1Uv3ThqJ+VWQQS1qFIzufLA8jkQ6a+FDk3OFI6qPZVQ=
 github.com/sourcegraph/zoekt v0.0.0-20210225093519-da52e7c141aa h1:RiKzBMOLlWkKy7MSG1YZx6KTxIjMvHKd9eMR0egv34k=
 github.com/sourcegraph/zoekt v0.0.0-20210225093519-da52e7c141aa/go.mod h1:1Uv3ThqJ+VWQQS1qFIzufLA8jkQ6a+FDk3OFI6qPZVQ=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
@@ -1638,8 +1634,6 @@ github.com/subosito/gotenv v1.2.0 h1:Slr1R9HxAlEKefgq5jn9U+DnETlIUa6HfgEzj0g5d7s
 github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69rRypqCw=
 github.com/temoto/robotstxt v1.1.1 h1:Gh8RCs8ouX3hRSxxK7B1mO5RFByQ4CmJZDwgom++JaA=
 github.com/temoto/robotstxt v1.1.1/go.mod h1:+1AmkuG3IYkh1kv0d2qEB9Le88ehNO0zwOr3ujewlOo=
-github.com/throttled/throttled v1.0.0 h1:GQ7a1ilkYMXnZ6V0EG7RiU3qHk1k/kpXO/aIQQXPfEQ=
-github.com/throttled/throttled v2.2.5+incompatible h1:65UB52X0qNTYiT0Sohp8qLYVFwZQPDw85uSa65OljjQ=
 github.com/throttled/throttled/v2 v2.7.1 h1:FnBysDX4Sok55bvfDMI0l2Y71V1vM2wi7O79OW7fNtw=
 github.com/throttled/throttled/v2 v2.7.1/go.mod h1:fuOeyK9fmnA+LQnsBbfT/mmPHjmkdogRBQxaD8YsgZ8=
 github.com/tidwall/gjson v1.6.1 h1:LRbvNuNuvAiISWg6gxLEFuCe72UKy5hDqhxW/8183ws=
