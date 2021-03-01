@@ -7,6 +7,8 @@ linters:
   disable-all: true
   enable:
     - ineffassign
+    - typecheck
+    - nolintlint
 
 run:
   timeout: 5m
