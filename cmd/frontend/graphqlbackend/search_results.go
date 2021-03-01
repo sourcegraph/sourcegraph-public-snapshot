@@ -604,6 +604,14 @@ func (r *searchResolver) evaluateAndStream(ctx context.Context, scopeParameters 
 	r2.stream = nil
 
 	result, err := r2.evaluateAnd(ctx, scopeParameters, operands)
+	if err != nil {
+		return nil, err
+	}
+	// evaluateAnd may return result, err = nil, nil because downstream calls return
+	// nil, nil. See further comments in evaluateAnd.
+	if result == nil {
+		return &SearchResultsResolver{}, nil
+	}
 	r.stream.Send(SearchEvent{
 		Results: result.SearchResults,
 		Stats:   result.Stats,
@@ -623,7 +631,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 	start := time.Now()
 
 	if len(operands) == 0 {
-		return nil, nil
+		return &SearchResultsResolver{}, nil
 	}
 
 	var (
