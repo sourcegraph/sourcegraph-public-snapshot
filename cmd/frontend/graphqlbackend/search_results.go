@@ -81,14 +81,6 @@ func (c *SearchResultsResolver) repositoryResolvers(mask search.RepoStatus) []*R
 	return resolvers
 }
 
-func (c *SearchResultsResolver) RepositoriesSearched() []*RepositoryResolver {
-	return c.repositoryResolvers(search.RepoStatusSearched)
-}
-
-func (c *SearchResultsResolver) IndexedRepositoriesSearched() []*RepositoryResolver {
-	return c.repositoryResolvers(search.RepoStatusIndexed)
-}
-
 func (c *SearchResultsResolver) Cloning() []*RepositoryResolver {
 	return c.repositoryResolvers(search.RepoStatusCloning)
 }

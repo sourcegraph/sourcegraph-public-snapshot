@@ -28,7 +28,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
--
+- Removed the deprecated GraphQL fields `SearchResults.repositoriesSearched` and `SearchResults.indexedRepositoriesSearched`.
 
 ## 3.25.1
 
