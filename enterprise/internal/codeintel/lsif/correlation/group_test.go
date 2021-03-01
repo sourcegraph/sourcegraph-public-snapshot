@@ -7,12 +7,13 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/lsif-protocol/reader"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bloomfilter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/datastructures"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/lsif"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/protocol"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/protocol/reader"
 )
 
 func TestGroupBundleData(t *testing.T) {
@@ -25,90 +26,90 @@ func TestGroupBundleData(t *testing.T) {
 		RangeData: map[int]lsif.Range{
 			2001: {
 				Range: reader.Range{
-					StartLine:      1,
-					StartCharacter: 2,
-					EndLine:        3,
-					EndCharacter:   4,
+					RangeData: protocol.RangeData{
+						Start: protocol.Pos{Line: 1, Character: 2},
+						End:   protocol.Pos{Line: 3, Character: 4},
+					},
 				},
 				DefinitionResultID: 3001,
 				ReferenceResultID:  0,
 			},
 			2002: {
 				Range: reader.Range{
-					StartLine:      2,
-					StartCharacter: 3,
-					EndLine:        4,
-					EndCharacter:   5,
+					RangeData: protocol.RangeData{
+						Start: protocol.Pos{Line: 2, Character: 3},
+						End:   protocol.Pos{Line: 4, Character: 5},
+					},
 				},
 				DefinitionResultID: 0,
 				ReferenceResultID:  3006,
 			},
 			2003: {
 				Range: reader.Range{
-					StartLine:      3,
-					StartCharacter: 4,
-					EndLine:        5,
-					EndCharacter:   6,
+					RangeData: protocol.RangeData{
+						Start: protocol.Pos{Line: 3, Character: 4},
+						End:   protocol.Pos{Line: 5, Character: 6},
+					},
 				},
 				DefinitionResultID: 3002,
 				ReferenceResultID:  0,
 			},
 			2004: {
 				Range: reader.Range{
-					StartLine:      4,
-					StartCharacter: 5,
-					EndLine:        6,
-					EndCharacter:   7,
+					RangeData: protocol.RangeData{
+						Start: protocol.Pos{Line: 4, Character: 5},
+						End:   protocol.Pos{Line: 6, Character: 7},
+					},
 				},
 				DefinitionResultID: 0,
 				ReferenceResultID:  3007,
 			},
 			2005: {
 				Range: reader.Range{
-					StartLine:      5,
-					StartCharacter: 6,
-					EndLine:        7,
-					EndCharacter:   8,
+					RangeData: protocol.RangeData{
+						Start: protocol.Pos{Line: 5, Character: 6},
+						End:   protocol.Pos{Line: 7, Character: 8},
+					},
 				},
 				DefinitionResultID: 3003,
 				ReferenceResultID:  0,
 			},
 			2006: {
 				Range: reader.Range{
-					StartLine:      6,
-					StartCharacter: 7,
-					EndLine:        8,
-					EndCharacter:   9,
+					RangeData: protocol.RangeData{
+						Start: protocol.Pos{Line: 6, Character: 7},
+						End:   protocol.Pos{Line: 8, Character: 9},
+					},
 				},
 				DefinitionResultID: 0,
 				HoverResultID:      3008,
 			},
 			2007: {
 				Range: reader.Range{
-					StartLine:      7,
-					StartCharacter: 8,
-					EndLine:        9,
-					EndCharacter:   0,
+					RangeData: protocol.RangeData{
+						Start: protocol.Pos{Line: 7, Character: 8},
+						End:   protocol.Pos{Line: 9, Character: 0},
+					},
 				},
 				DefinitionResultID: 3004,
 				ReferenceResultID:  0,
 			},
 			2008: {
 				Range: reader.Range{
-					StartLine:      8,
-					StartCharacter: 9,
-					EndLine:        0,
-					EndCharacter:   1,
+					RangeData: protocol.RangeData{
+						Start: protocol.Pos{Line: 8, Character: 9},
+						End:   protocol.Pos{Line: 0, Character: 1},
+					},
 				},
 				DefinitionResultID: 0,
 				HoverResultID:      3009,
 			},
 			2009: {
 				Range: reader.Range{
-					StartLine:      9,
-					StartCharacter: 0,
-					EndLine:        1,
-					EndCharacter:   2,
+					RangeData: protocol.RangeData{
+						Start: protocol.Pos{Line: 9, Character: 0},
+						End:   protocol.Pos{Line: 1, Character: 2},
+					},
 				},
 				DefinitionResultID: 3005,
 				ReferenceResultID:  0,

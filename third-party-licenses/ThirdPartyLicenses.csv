@@ -332,7 +332,6 @@ Go,github.com/sourcegraph/gosaml2,v0.6.1-0.20210128133756-84151d087b10,Apache 2.
 Go,github.com/sourcegraph/gosyntect,v0.0.0-20200429204402-842ed26129d0,MIT,"",Approved
 Go,github.com/sourcegraph/httpgzip,v0.0.0-20210213125624-48ebf036a6a1,MIT,"",Approved
 Go,github.com/sourcegraph/jsonx,v0.0.0-20200629203448-1a936bd500cf,MIT,"",Approved
-Go,github.com/sourcegraph/lsif-protocol,v1.0.0,MIT,"",Approved
 Go,github.com/sourcegraph/oauth2,v0.0.0-20201011192344-605770292164,New BSD,"",Approved
 Go,github.com/sourcegraph/syntaxhighlight,v0.0.0-20170531221838-bd320f5d308e,New BSD,"",Approved
 Go,github.com/sourcegraph/yaml,v1.0.1-0.20200714132230-56936252f152,MIT,"",Approved
