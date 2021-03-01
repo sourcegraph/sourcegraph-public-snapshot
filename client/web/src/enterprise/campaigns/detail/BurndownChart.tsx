@@ -74,13 +74,13 @@ const tooltipItemSorter = ({ dataKey }: TooltipPayload): number =>
  * A burndown chart showing progress of the campaigns changesets.
  */
 export const CampaignBurndownChart: React.FunctionComponent<Props> = ({
-    campaignID,
+    campaignID: batchChangeID,
     queryChangesetCountsOverTime = _queryChangesetCountsOverTime,
     width = '100%',
 }) => {
     const changesetCountsOverTime: ChangesetCountsOverTimeFields[] | undefined = useObservable(
-        useMemo(() => queryChangesetCountsOverTime({ campaign: campaignID }), [
-            campaignID,
+        useMemo(() => queryChangesetCountsOverTime({ batchChange: batchChangeID }), [
+            batchChangeID,
             queryChangesetCountsOverTime,
         ])
     )

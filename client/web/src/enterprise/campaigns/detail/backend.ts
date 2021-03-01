@@ -416,14 +416,14 @@ const changesetCountsOverTimeFragment = gql`
 `
 
 export const queryChangesetCountsOverTime = ({
-    campaign,
+    batchChange,
 }: ChangesetCountsOverTimeVariables): Observable<ChangesetCountsOverTimeFields[]> =>
     requestGraphQL<ChangesetCountsOverTimeResult, ChangesetCountsOverTimeVariables>(
         gql`
-            query ChangesetCountsOverTime($campaign: ID!) {
-                node(id: $campaign) {
+            query ChangesetCountsOverTime($batchChange: ID!) {
+                node(id: $batchChange) {
                     __typename
-                    ... on Campaign {
+                    ... on BatchChange {
                         changesetCountsOverTime {
                             ...ChangesetCountsOverTimeFields
                         }
@@ -433,15 +433,15 @@ export const queryChangesetCountsOverTime = ({
 
             ${changesetCountsOverTimeFragment}
         `,
-        { campaign }
+        { batchChange }
     ).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {
             if (!node) {
-                throw new Error(`Campaign with ID ${campaign} does not exist`)
+                throw new Error(`BatchChange with ID ${batchChange} does not exist`)
             }
-            if (node.__typename !== 'Campaign') {
-                throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
+            if (node.__typename !== 'BatchChange') {
+                throw new Error(`The given ID is a ${node.__typename}, not a BatchChange`)
             }
             return node.changesetCountsOverTime
         })
