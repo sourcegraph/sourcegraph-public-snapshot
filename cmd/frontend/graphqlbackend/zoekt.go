@@ -365,7 +365,6 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 
 			limitHit = limitHit || len(partial) > 0
 
-			lastID := api.RepoID(-1) // PERF: avoid Update call if we have the same repository
 			matches := make([]SearchResultResolver, 0, len(files))
 			repoResolvers := make(RepositoryResolverCache)
 			for _, file := range files {
@@ -414,10 +413,6 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 						RepoResolver: repoResolver,
 					}
 					matches = append(matches, fm)
-					if id := repo.ID; lastID != id {
-						statusMap.Update(id, search.RepoStatusSearched|search.RepoStatusIndexed)
-						lastID = id
-					}
 				}
 			}
 
@@ -444,10 +439,9 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 	}
 
 	if !foundResults && since(t0) >= searchOpts.MaxWallTime {
-		c.Send(SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout | search.RepoStatusIndexed)}})
+		c.Send(SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout)}})
 		return nil
 	}
-	c.Send(SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusSearched | search.RepoStatusIndexed)}})
 	return nil
 }
 

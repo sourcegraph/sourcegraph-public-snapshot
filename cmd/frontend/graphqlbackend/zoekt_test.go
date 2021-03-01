@@ -82,12 +82,6 @@ func TestIndexedSearch(t *testing.T) {
 				useFullDeadline: false,
 				since:           func(time.Time) time.Duration { return time.Second - time.Millisecond },
 			},
-			wantCommon: streaming.Stats{
-				Status: mkStatusMap(map[string]search.RepoStatus{
-					"foo/bar":    search.RepoStatusSearched | search.RepoStatusIndexed,
-					"foo/foobar": search.RepoStatusSearched | search.RepoStatusIndexed,
-				}),
-			},
 			wantErr: false,
 		},
 		{
@@ -101,8 +95,8 @@ func TestIndexedSearch(t *testing.T) {
 			},
 			wantCommon: streaming.Stats{
 				Status: mkStatusMap(map[string]search.RepoStatus{
-					"foo/bar":    search.RepoStatusIndexed | search.RepoStatusTimedout,
-					"foo/foobar": search.RepoStatusIndexed | search.RepoStatusTimedout,
+					"foo/bar":    search.RepoStatusTimedout,
+					"foo/foobar": search.RepoStatusTimedout,
 				}),
 			},
 		},
@@ -171,12 +165,6 @@ func TestIndexedSearch(t *testing.T) {
 				"",
 				"",
 			},
-			wantCommon: streaming.Stats{
-				Status: mkStatusMap(map[string]search.RepoStatus{
-					"foo/bar":    search.RepoStatusSearched | search.RepoStatusIndexed,
-					"foo/foobar": search.RepoStatusSearched | search.RepoStatusIndexed,
-				}),
-			},
 			wantErr: false,
 		},
 		{
@@ -202,11 +190,6 @@ func TestIndexedSearch(t *testing.T) {
 				since: func(time.Time) time.Duration { return 0 },
 			},
 			wantMatchCount: 3,
-			wantCommon: streaming.Stats{
-				Status: mkStatusMap(map[string]search.RepoStatus{
-					"foo/bar": search.RepoStatusSearched | search.RepoStatusIndexed,
-				}),
-			},
 			wantMatchURLs: []string{
 				"git://foo/bar?HEAD#baz.go",
 				"git://foo/bar?dev#baz.go",
@@ -236,11 +219,6 @@ func TestIndexedSearch(t *testing.T) {
 						FileName:   "baz.go",
 					},
 				},
-			},
-			wantCommon: streaming.Stats{
-				Status: mkStatusMap(map[string]search.RepoStatus{
-					"foo/bar": search.RepoStatusSearched | search.RepoStatusIndexed,
-				}),
 			},
 			wantUnindexed: makeRepositoryRevisions("foo/bar@unindexed"),
 			wantMatchURLs: []string{
