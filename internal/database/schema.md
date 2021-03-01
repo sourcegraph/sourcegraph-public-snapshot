@@ -570,6 +570,7 @@ Triggers:
  repo_id               | integer                  | not null
  clone_status          | text                     | not null default 'not_cloned'::text
  last_external_service | bigint                   | 
+ shard_id              | text                     | not null
  last_error            | text                     | 
  updated_at            | timestamp with time zone | not null default now()
 Indexes:
