@@ -16,6 +16,7 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) v1.15 or later
 
 > WARNING: You need to create a [fork of our deployment reference.](configure.md#fork-this-repository)
+
 ## Steps
 
 - Make sure you have configured `kubectl` to [access your cluster](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/).
