@@ -132,7 +132,7 @@ func packetWrite(str string) []byte {
 // means we can fetch a 1 GiB archive in ~8.5 seconds.
 func flowrateWriter(w io.Writer) io.Writer {
 	const megabit = int64(1000 * 1000)
-	const limit = int64(1000 * megabit) // 1 Gbps
+	const limit = 1000 * megabit // 1 Gbps
 	return flowrate.NewWriter(w, limit)
 }
 

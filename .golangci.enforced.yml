@@ -9,6 +9,7 @@ linters:
     - ineffassign
     - typecheck
     - nolintlint
+    - unconvert
 
 run:
   timeout: 5m

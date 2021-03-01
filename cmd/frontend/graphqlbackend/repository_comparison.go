@@ -160,7 +160,7 @@ func (r *RepositoryComparisonResolver) Commits(
 ) *gitCommitConnectionResolver {
 	return &gitCommitConnectionResolver{
 		db:            r.db,
-		revisionRange: string(r.baseRevspec) + ".." + string(r.headRevspec),
+		revisionRange: r.baseRevspec + ".." + r.headRevspec,
 		first:         args.First,
 		repo:          r.repo,
 	}

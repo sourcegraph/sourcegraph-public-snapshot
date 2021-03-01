@@ -117,5 +117,5 @@ type encryptedValue struct {
 
 func crc32Sum(data []byte) uint32 {
 	t := crc32.MakeTable(crc32.Castagnoli)
-	return crc32.Checksum([]byte(data), t)
+	return crc32.Checksum(data, t)
 }

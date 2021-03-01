@@ -81,7 +81,7 @@ func CountGoImporters(ctx context.Context, repo api.RepoName) (count int, err er
 	// addressed in the future. See https://github.com/sourcegraph/sourcegraph/issues/2663.
 	for _, pkg := range goPackages {
 		// Assumes the import path is the same as the repo name - not always true!
-		response, err := ctxhttp.Get(ctx, countGoImportersHTTPClient, "https://api.godoc.org/importers/"+string(pkg))
+		response, err := ctxhttp.Get(ctx, countGoImportersHTTPClient, "https://api.godoc.org/importers/"+pkg)
 		if err != nil {
 			return 0, err
 		}

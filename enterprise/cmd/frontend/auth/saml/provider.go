@@ -262,7 +262,7 @@ func readProviderConfig(pc *schema.SAMLAuthProvider) (*providerConfig, error) {
 
 func readIdentityProviderMetadata(ctx context.Context, c *providerConfig) ([]byte, error) {
 	if c.identityProviderMetadata != nil {
-		return []byte(c.identityProviderMetadata), nil
+		return c.identityProviderMetadata, nil
 	}
 
 	resp, err := ctxhttp.Get(ctx, nil, c.identityProviderMetadataURL.String())

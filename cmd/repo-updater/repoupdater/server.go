@@ -165,7 +165,7 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 		tmp[i] = &types.Repo{
 			ID:           r.ID,
 			ExternalRepo: r.ExternalRepo,
-			Name:         api.RepoName(r.Name),
+			Name:         r.Name,
 			Private:      r.Private,
 			URI:          r.URI,
 			Description:  r.Description,
@@ -641,7 +641,7 @@ func newRepoInfo(r *types.Repo) (*protocol.RepoInfo, error) {
 	}
 
 	info := protocol.RepoInfo{
-		Name:         api.RepoName(r.Name),
+		Name:         r.Name,
 		Description:  r.Description,
 		Fork:         r.Fork,
 		Archived:     r.Archived,

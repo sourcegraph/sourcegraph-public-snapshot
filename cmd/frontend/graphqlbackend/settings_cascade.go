@@ -126,7 +126,7 @@ func (r *settingsCascade) Merged(ctx context.Context) (_ *configurationResolver,
 	if err != nil {
 		messages = append(messages, err.Error())
 	}
-	return &configurationResolver{contents: string(s), messages: messages}, nil
+	return &configurationResolver{contents: s, messages: messages}, nil
 }
 
 // deeplyMergedSettingsFields contains the names of top-level settings fields whose values should be
