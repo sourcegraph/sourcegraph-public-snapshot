@@ -24,7 +24,6 @@ import { UserAreaUserFields, UserAreaResult, UserAreaVariables } from '../../gra
 import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { requestGraphQL } from '../../backend/graphql'
-import { EditUserProfilePageGQLFragment } from '../settings/profile/UserSettingsProfilePage'
 import { Page } from '../../components/Page'
 import { UserRepositoriesUpdateProps } from '../../util'
 
@@ -60,7 +59,6 @@ export const UserAreaGQLFragment = gql`
         tags @include(if: $siteAdmin)
         ...EditUserProfilePage
     }
-    ${EditUserProfilePageGQLFragment}
 `
 
 const fetchUser = (args: UserAreaVariables): Observable<UserAreaUserFields> =>

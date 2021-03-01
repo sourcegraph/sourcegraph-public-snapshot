@@ -1,88 +1,52 @@
 import React, { useCallback, useState } from 'react'
-import { map } from 'rxjs/operators'
-import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
-import { isErrorLike } from '../../../../../shared/src/util/errors'
-import { requestGraphQL } from '../../../backend/graphql'
-import { UpdateUserResult, UpdateUserVariables, UserAreaUserFields } from '../../../graphql-operations'
+import { gql, useMutation } from '@apollo/client'
+import { useHistory } from 'react-router'
+import { UpdateUserResult, UpdateUserVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserProfileFormFields, UserProfileFormFieldsValue } from './UserProfileFormFields'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { UserAreaGQLFragment } from '../../area/UserArea'
 import { Form } from '../../../../../branded/src/components/Form'
-import { AuthenticatedUser } from '../../../auth'
 
 interface Props {
-    authenticatedUser: Pick<AuthenticatedUser, 'siteAdmin'>
-    user: Pick<GQL.IUser, 'id' | 'viewerCanChangeUsername'>
-
+    user: Pick<GQL.IUser, 'id' | 'username' | 'viewerCanChangeUsername'>
     initialValue: UserProfileFormFieldsValue
-
-    /** Called when the user is successfully updated. */
-    onUpdate: (newValue: UserAreaUserFields) => void
-
     after?: React.ReactFragment
 }
+
+const UPDATE_USER = gql`
+    mutation UpdateUser($user: ID!, $username: String!, $displayName: String, $avatarURL: String) {
+        updateUser(user: $user, username: $username, displayName: $displayName, avatarURL: $avatarURL) {
+            id
+            username
+            displayName
+            avatarURL
+        }
+    }
+`
 
 /**
  * A form to edit a user's profile.
  */
-export const EditUserProfileForm: React.FunctionComponent<Props> = ({
-    user,
-    authenticatedUser,
-    initialValue,
-    onUpdate,
-    after,
-}) => {
+export const EditUserProfileForm: React.FunctionComponent<Props> = ({ user, initialValue, after }) => {
+    const history = useHistory()
     const [value, setValue] = useState<UserProfileFormFieldsValue>(initialValue)
     const onChange = useCallback<React.ComponentProps<typeof UserProfileFormFields>['onChange']>(
         newValue => setValue(previous => ({ ...previous, ...newValue })),
         []
     )
-
-    /** Operation state: false (initial state), true (loading), Error, or 'success'. */
-    const [opState, setOpState] = useState<boolean | Error | 'success'>(false)
-    const onSubmit = useCallback<React.FormEventHandler>(
-        async event => {
-            event.preventDefault()
-            setOpState(true)
-            eventLogger.log('UpdateUserClicked')
-            try {
-                const updatedUser = await requestGraphQL<UpdateUserResult, UpdateUserVariables>(
-                    gql`
-                        mutation UpdateUser(
-                            $user: ID!
-                            $username: String!
-                            $displayName: String
-                            $avatarURL: String
-                            $siteAdmin: Boolean!
-                        ) {
-                            updateUser(
-                                user: $user
-                                username: $username
-                                displayName: $displayName
-                                avatarURL: $avatarURL
-                            ) {
-                                ...UserAreaUserFields
-                            }
-                        }
-                        ${UserAreaGQLFragment}
-                    `,
-                    { ...value, user: user.id, siteAdmin: authenticatedUser.siteAdmin }
-                )
-                    .pipe(
-                        map(dataOrThrowErrors),
-                        map(data => data.updateUser)
-                    )
-                    .toPromise()
-                eventLogger.log('UserProfileUpdated')
-                setOpState('success')
-                onUpdate(updatedUser)
-            } catch (error) {
-                eventLogger.log('UpdateUserFailed')
-                setOpState(error)
-            }
+    const [updateUser, { data, loading, error }] = useMutation<UpdateUserResult, UpdateUserVariables>(UPDATE_USER, {
+        onCompleted: ({ updateUser }) => {
+            history.replace(`/users/${updateUser.username}/settings/profile`)
         },
-        [onUpdate, user.id, authenticatedUser.siteAdmin, value]
+    })
+
+    const onSubmit = useCallback<React.FormEventHandler>(
+        event => {
+            event.preventDefault()
+            eventLogger.log('UpdateUserClicked')
+            return updateUser({ variables: { ...value, user: user.id } })
+        },
+        [user.id, value, updateUser]
     )
 
     return (
@@ -91,18 +55,13 @@ export const EditUserProfileForm: React.FunctionComponent<Props> = ({
                 value={value}
                 onChange={onChange}
                 usernameFieldDisabled={!user.viewerCanChangeUsername}
-                disabled={opState === true}
+                disabled={loading}
             />
-            <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={opState === true}
-                id="test-EditUserProfileForm__save"
-            >
+            <button type="submit" className="btn btn-primary" disabled={loading} id="test-EditUserProfileForm__save">
                 Save
             </button>
-            {isErrorLike(opState) && <div className="mt-3 alert alert-danger">{opState.message}</div>}
-            {opState === 'success' && (
+            {error && <div className="mt-3 alert alert-danger">{error.message}</div>}
+            {data?.updateUser && (
                 <div className="mt-3 alert alert-success test-EditUserProfileForm__success">User profile updated.</div>
             )}
             {after && (

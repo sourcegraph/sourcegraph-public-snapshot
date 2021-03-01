@@ -1,58 +1,45 @@
-import React, { useCallback, useEffect } from 'react'
+import React, { useEffect } from 'react'
 import H from 'history'
 import { percentageDone } from '../../../../../shared/src/components/activation/Activation'
 import { ActivationChecklist } from '../../../../../shared/src/components/activation/ActivationChecklist'
-import { gql } from '../../../../../shared/src/graphql/graphql'
-import { isErrorLike } from '../../../../../shared/src/util/errors'
-import { refreshAuthenticatedUser } from '../../../auth'
 import { PageTitle } from '../../../components/PageTitle'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { EditUserProfilePage as EditUserProfilePageFragment } from '../../../graphql-operations'
+import {
+    EditUserProfilePage as EditUserProfilePageFragment,
+    GetUserProfileResult,
+    GetUserProfileVariables,
+} from '../../../graphql-operations'
 import { EditUserProfileForm } from './EditUserProfileForm'
 import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
+import { useQuery, gql } from '@apollo/client'
 
-export const EditUserProfilePageGQLFragment = gql`
-    fragment EditUserProfilePage on User {
-        id
-        username
-        displayName
-        avatarURL
-        viewerCanChangeUsername
+const GET_USER_PROFILE = gql`
+    query GetUserProfile($username: String!) {
+        user(username: $username) {
+            id
+            username
+            displayName
+            avatarURL
+            viewerCanChangeUsername
+        }
     }
 `
 
-interface Props extends Pick<UserSettingsAreaRouteContext, 'onUserUpdate' | 'activation' | 'authenticatedUser'> {
+interface Props extends Pick<UserSettingsAreaRouteContext, 'activation'> {
     user: EditUserProfilePageFragment
 
     history: H.History
     location: H.Location
+
+    username: string
 }
 
-export const UserSettingsProfilePage: React.FunctionComponent<Props> = ({
-    user,
-    authenticatedUser,
-    onUserUpdate: parentOnUpdate,
-    ...props
-}) => {
+export const UserSettingsProfilePage: React.FunctionComponent<Props> = ({ username, ...props }) => {
+    const { data, error } = useQuery<GetUserProfileResult, GetUserProfileVariables>(GET_USER_PROFILE, {
+        variables: { username },
+    })
+
     useEffect(() => eventLogger.logViewEvent('UserProfile'), [])
-
-    const onUpdate = useCallback<React.ComponentProps<typeof EditUserProfileForm>['onUpdate']>(
-        newValue => {
-            // Handle when username changes.
-            if (newValue.username !== user.username) {
-                props.history.push(`/users/${newValue.username}/settings/profile`)
-            }
-
-            parentOnUpdate(newValue)
-
-            // In case the edited user is the current user, immediately reflect the changes in the
-            // UI.
-            refreshAuthenticatedUser()
-                .toPromise()
-                .finally(() => {})
-        },
-        [parentOnUpdate, props.history, user.username]
-    )
 
     return (
         <div className="user-settings-profile-page">
@@ -72,12 +59,10 @@ export const UserSettingsProfilePage: React.FunctionComponent<Props> = ({
                     />
                 </div>
             )}
-            {user && !isErrorLike(user) && (
+            {data?.user && !error && (
                 <EditUserProfileForm
-                    user={user}
-                    authenticatedUser={authenticatedUser}
-                    initialValue={user}
-                    onUpdate={onUpdate}
+                    user={data.user}
+                    initialValue={data.user}
                     after={
                         window.context.sourcegraphDotComMode && (
                             <p className="mt-4">
