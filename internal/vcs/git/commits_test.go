@@ -329,6 +329,24 @@ func TestRepository_Commits_options(t *testing.T) {
 			wantCommits: wantGitCommits2,
 			wantTotal:   1,
 		},
+		"before": {
+			repo: MakeGitRepository(t, gitCommands...),
+			opt: CommitsOptions{
+				Before: "2006-01-02T15:04:07Z",
+				Range:  "HEAD",
+				N:      1,
+			},
+			wantCommits: []*Commit{
+				{
+					ID:        "b266c7e3ca00b1a17ad0b1449825d0854225c007",
+					Author:    Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+					Committer: &Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+					Message:   "bar",
+					Parents:   []api.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
+				},
+			},
+			wantTotal: 1,
+		},
 	}
 
 	for label, test := range tests {
