@@ -10,6 +10,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
+// MaximumRangesDefinitionLocations is the maximum limit when querying definition locations for a
+// Ranges request.
+const MaximumRangesDefinitionLocations = 10000
+
 // Ranges returns definition, reference, and hover data for each range within the given span of lines.
 func (s *Store) Ranges(ctx context.Context, bundleID int, path string, startLine, endLine int) (_ []CodeIntelligenceRange, err error) {
 	ctx, traceLog, endObservation := s.operations.ranges.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
@@ -30,7 +34,7 @@ func (s *Store) Ranges(ctx context.Context, bundleID int, path string, startLine
 	traceLog(log.Int("numIntersectingRanges", len(ranges)))
 
 	definitionResultIDs := extractResultIDs(ranges, func(r RangeData) ID { return r.DefinitionResultID })
-	definitionLocations, err := s.locations(ctx, bundleID, definitionResultIDs)
+	definitionLocations, _, err := s.locations(ctx, bundleID, definitionResultIDs, MaximumRangesDefinitionLocations, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +94,7 @@ func (s *Store) locationsWithinFile(ctx context.Context, bundleID int, ids []ID,
 
 	// Read the result sets and gather the set of range identifiers we need to resolve with
 	// the given document data.
-	_, rangeIDsByResultID, err := s.readLocationsFromResultChunks(ctx, bundleID, ids, indexes, path)
+	rangeIDsByResultID, _, err := s.readLocationsFromResultChunks(ctx, bundleID, ids, indexes, path)
 	if err != nil {
 		return nil, err
 	}

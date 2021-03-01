@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"sort"
 	"strconv"
 	"sync"
 
@@ -58,7 +57,7 @@ type SearchArgs struct {
 
 type SearchImplementer interface {
 	Results(context.Context) (*SearchResultsResolver, error)
-	Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error)
+	Suggestions(context.Context, *searchSuggestionsArgs) ([]SearchSuggestionResolver, error)
 	//lint:ignore U1000 is used by graphql via reflection
 	Stats(context.Context) (*searchResultsStats, error)
 
@@ -475,7 +474,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	return resolved, err
 }
 
-func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*searchSuggestionResolver, error) {
+func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]SearchSuggestionResolver, error) {
 	resolved, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -509,10 +508,13 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 		return nil, err
 	}
 
-	var suggestions []*searchSuggestionResolver
+	var suggestions []SearchSuggestionResolver
 	for i, result := range fileResults {
 		assumedScore := len(fileResults) - i // Greater score is first, so we inverse the index.
-		suggestions = append(suggestions, newSearchSuggestionResolver(result.File(), assumedScore))
+		suggestions = append(suggestions, gitTreeSuggestionResolver{
+			gitTreeEntry: result.File(),
+			score:        assumedScore,
+		})
 	}
 	return suggestions, nil
 }
@@ -531,90 +533,6 @@ func (e *badRequestError) Error() string {
 
 func (e *badRequestError) Cause() error {
 	return e.err
-}
-
-// searchSuggestionResolver is a resolver for the GraphQL union type `SearchSuggestion`
-type searchSuggestionResolver struct {
-	// result is either a RepositoryResolver or a GitTreeEntryResolver
-	result interface{}
-	// score defines how well this item matches the query for sorting purposes
-	score int
-	// length holds the length of the item name as a second sorting criterium
-	length int
-	// label to sort alphabetically by when all else is equal.
-	label string
-}
-
-func (r *searchSuggestionResolver) ToRepository() (*RepositoryResolver, bool) {
-	res, ok := r.result.(*RepositoryResolver)
-	return res, ok
-}
-
-func (r *searchSuggestionResolver) ToFile() (*GitTreeEntryResolver, bool) {
-	res, ok := r.result.(*GitTreeEntryResolver)
-	return res, ok
-}
-
-func (r *searchSuggestionResolver) ToGitBlob() (*GitTreeEntryResolver, bool) {
-	res, ok := r.result.(*GitTreeEntryResolver)
-	return res, ok && res.stat.Mode().IsRegular()
-}
-
-func (r *searchSuggestionResolver) ToGitTree() (*GitTreeEntryResolver, bool) {
-	res, ok := r.result.(*GitTreeEntryResolver)
-	return res, ok && res.stat.Mode().IsDir()
-}
-
-func (r *searchSuggestionResolver) ToSymbol() (*symbolResolver, bool) {
-	s, ok := r.result.(*symbolResolver)
-	return s, ok
-}
-
-func (r *searchSuggestionResolver) ToLanguage() (*languageResolver, bool) {
-	res, ok := r.result.(*languageResolver)
-	return res, ok
-}
-
-// newSearchSuggestionResolver returns a new searchSuggestionResolver wrapping the
-// given result.
-//
-// A panic occurs if the type of result is not a *RepositoryResolver, *GitTreeEntryResolver,
-// *searchSymbolResult or *languageResolver.
-func newSearchSuggestionResolver(result interface{}, score int) *searchSuggestionResolver {
-	switch r := result.(type) {
-	case *RepositoryResolver:
-		return &searchSuggestionResolver{result: r, score: score, length: len(r.Name()), label: r.Name()}
-
-	case *GitTreeEntryResolver:
-		return &searchSuggestionResolver{result: r, score: score, length: len(r.Path()), label: r.Path()}
-
-	case symbolResolver:
-		return &searchSuggestionResolver{result: r, score: score, length: len(r.symbol.Name + " " + r.symbol.Parent), label: r.symbol.Name + " " + r.symbol.Parent}
-
-	case *languageResolver:
-		return &searchSuggestionResolver{result: r, score: score, length: len(r.Name()), label: r.Name()}
-
-	default:
-		panic("never here")
-	}
-}
-
-func sortSearchSuggestions(s []*searchSuggestionResolver) {
-	sort.Slice(s, func(i, j int) bool {
-		// Sort by score
-		a, b := s[i], s[j]
-		if a.score != b.score {
-			return a.score > b.score
-		}
-		// Prefer shorter strings for the same match score
-		// E.g. prefer gorilla/mux over gorilla/muxy, Microsoft/vscode over g3ortega/vscode-crystal
-		if a.length != b.length {
-			return a.length < b.length
-		}
-
-		// All else equal, sort alphabetically.
-		return a.label < b.label
-	})
 }
 
 // handleRepoSearchResult handles the limitHit and searchErr returned by a search function,
@@ -645,8 +563,6 @@ func handleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timed
 		status |= search.RepoStatusTimedout
 	} else if searchErr != nil {
 		fatalErr = searchErr
-	} else {
-		status |= search.RepoStatusSearched
 	}
 	return streaming.Stats{
 		Status:     search.RepoStatusSingleton(repoRev.Repo.ID, status),

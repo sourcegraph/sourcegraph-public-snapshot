@@ -82,12 +82,6 @@ func TestIndexedSearch(t *testing.T) {
 				useFullDeadline: false,
 				since:           func(time.Time) time.Duration { return time.Second - time.Millisecond },
 			},
-			wantCommon: streaming.Stats{
-				Status: mkStatusMap(map[string]search.RepoStatus{
-					"foo/bar":    search.RepoStatusSearched | search.RepoStatusIndexed,
-					"foo/foobar": search.RepoStatusSearched | search.RepoStatusIndexed,
-				}),
-			},
 			wantErr: false,
 		},
 		{
@@ -101,8 +95,8 @@ func TestIndexedSearch(t *testing.T) {
 			},
 			wantCommon: streaming.Stats{
 				Status: mkStatusMap(map[string]search.RepoStatus{
-					"foo/bar":    search.RepoStatusIndexed | search.RepoStatusTimedout,
-					"foo/foobar": search.RepoStatusIndexed | search.RepoStatusTimedout,
+					"foo/bar":    search.RepoStatusTimedout,
+					"foo/foobar": search.RepoStatusTimedout,
 				}),
 			},
 		},
@@ -171,12 +165,6 @@ func TestIndexedSearch(t *testing.T) {
 				"",
 				"",
 			},
-			wantCommon: streaming.Stats{
-				Status: mkStatusMap(map[string]search.RepoStatus{
-					"foo/bar":    search.RepoStatusSearched | search.RepoStatusIndexed,
-					"foo/foobar": search.RepoStatusSearched | search.RepoStatusIndexed,
-				}),
-			},
 			wantErr: false,
 		},
 		{
@@ -202,11 +190,6 @@ func TestIndexedSearch(t *testing.T) {
 				since: func(time.Time) time.Duration { return 0 },
 			},
 			wantMatchCount: 3,
-			wantCommon: streaming.Stats{
-				Status: mkStatusMap(map[string]search.RepoStatus{
-					"foo/bar": search.RepoStatusSearched | search.RepoStatusIndexed,
-				}),
-			},
 			wantMatchURLs: []string{
 				"git://foo/bar?HEAD#baz.go",
 				"git://foo/bar?dev#baz.go",
@@ -236,11 +219,6 @@ func TestIndexedSearch(t *testing.T) {
 						FileName:   "baz.go",
 					},
 				},
-			},
-			wantCommon: streaming.Stats{
-				Status: mkStatusMap(map[string]search.RepoStatus{
-					"foo/bar": search.RepoStatusSearched | search.RepoStatusIndexed,
-				}),
 			},
 			wantUnindexed: makeRepositoryRevisions("foo/bar@unindexed"),
 			wantMatchURLs: []string{
@@ -1040,7 +1018,7 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 
 	repo := NewRepositoryResolver(db, &types.Repo{Name: "foo"})
 
-	results := zoektFileMatchToSymbolResults(repo, new(dbtesting.MockDB), "master", file)
+	results := zoektFileMatchToSymbolResults(repo, "master", file)
 	var symbols []protocol.Symbol
 	for _, res := range results {
 		// Check the fields which are not specific to the symbol
@@ -1049,15 +1027,6 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 		}
 		if got, want := res.baseURI.URL.String(), "git://foo?master"; got != want {
 			t.Fatalf("baseURI: got %q want %q", got, want)
-		}
-		if got, want := res.commit.Repository().Name(), "foo"; got != want {
-			t.Fatalf("reporesolver: got %q want %q", got, want)
-		}
-		if got, want := string(res.commit.OID()), "deadbeef"; got != want {
-			t.Fatalf("oid: got %q want %q", got, want)
-		}
-		if got, want := *res.commit.InputRev(), "master"; got != want {
-			t.Fatalf("inputRev: got %q want %q", got, want)
 		}
 
 		symbols = append(symbols, res.symbol)

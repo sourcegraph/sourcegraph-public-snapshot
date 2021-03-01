@@ -241,19 +241,21 @@ var testSearchGQLQuery = `
 		}
 `
 
-func testStringResult(result *searchSuggestionResolver) string {
+func testStringResult(result SearchSuggestionResolver) string {
 	var name string
-	switch r := result.result.(type) {
-	case *RepositoryResolver:
-		name = "repo:" + r.Name()
-	case *GitTreeEntryResolver:
-		name = "file:" + r.Path()
-	case *languageResolver:
-		name = "lang:" + r.name
+	switch r := result.(type) {
+	case repositorySuggestionResolver:
+		name = "repo:" + r.repo.Name()
+	case gitTreeSuggestionResolver:
+		name = "file:" + r.gitTreeEntry.Path()
+	case languageSuggestionResolver:
+		name = "lang:" + r.lang.name
+	case symbolSuggestionResolver:
+		name = "symbol:" + r.symbol.symbol.Name
 	default:
 		panic("never here")
 	}
-	if result.score == 0 {
+	if result.Score() == 0 {
 		return "<removed>"
 	}
 	return name

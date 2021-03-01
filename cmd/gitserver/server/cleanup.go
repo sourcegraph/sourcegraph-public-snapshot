@@ -112,6 +112,14 @@ func (s *Server) cleanupRepos() {
 		return false, setGitAttributes(dir)
 	}
 
+	scrubRemoteURL := func(dir GitDir) (done bool, err error) {
+		cmd := exec.Command("git", "remote", "remove", "origin")
+		dir.Set(cmd)
+		// ignore error since we fail if the remote has already been scrubbed.
+		_ = cmd.Run()
+		return false, nil
+	}
+
 	maybeReclone := func(dir GitDir) (done bool, err error) {
 		repoType, err := getRepositoryType(dir)
 		if err != nil {
@@ -228,6 +236,9 @@ func (s *Server) cleanupRepos() {
 		// We always want to have the same git attributes file at
 		// info/attributes.
 		{"ensure git attributes", ensureGitAttributes},
+		// 2021-03-01 (tomas,keegan) we used to store an authenticated remote
+		// URL on disk. We no longer need it so we can scrub it.
+		{"scrub remote URL", scrubRemoteURL},
 		// Old git clones accumulate loose git objects that waste space and
 		// slow down git operations. Periodically do a fresh clone to avoid
 		// these problems. git gc is slow and resource intensive. It is
@@ -621,7 +632,7 @@ func getRepositoryType(dir GitDir) (string, error) {
 func setRecloneTime(dir GitDir, now time.Time) error {
 	err := gitConfigSet(dir, "sourcegraph.recloneTimestamp", strconv.FormatInt(now.Unix(), 10))
 	if err != nil {
-		ensureHead(dir)
+		ensureHEAD(dir)
 		return errors.Wrap(err, "failed to update recloneTimestamp")
 	}
 	return nil

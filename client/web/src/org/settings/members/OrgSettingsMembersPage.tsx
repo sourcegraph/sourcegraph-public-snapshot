@@ -3,21 +3,21 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
-import { gql } from '../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { queryGraphQL } from '../../backend/graphql'
-import { FilteredConnection } from '../../components/FilteredConnection'
-import { PageTitle } from '../../components/PageTitle'
-import { eventLogger } from '../../tracking/eventLogger'
-import { userURL } from '../../user'
-import { removeUserFromOrganization } from '../backend'
-import { InviteForm } from '../invite/InviteForm'
-import { OrgAreaPageProps } from './OrgArea'
-import { ErrorAlert } from '../../components/alerts'
+import { gql } from '../../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../../shared/src/graphql/schema'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import { queryGraphQL } from '../../../backend/graphql'
+import { FilteredConnection } from '../../../components/FilteredConnection'
+import { PageTitle } from '../../../components/PageTitle'
+import { eventLogger } from '../../../tracking/eventLogger'
+import { userURL } from '../../../user'
+import { removeUserFromOrganization } from '../../backend'
+import { InviteForm } from './InviteForm'
+import { OrgAreaPageProps } from '../../area/OrgArea'
+import { ErrorAlert } from '../../../components/alerts'
 import * as H from 'history'
-import { AuthenticatedUser } from '../../auth'
-import { OrgAreaOrganizationFields } from '../../graphql-operations'
+import { AuthenticatedUser } from '../../../auth'
+import { OrgAreaOrganizationFields } from '../../../graphql-operations'
 
 interface UserNodeProps {
     /** The user to display in this list item. */
@@ -141,7 +141,7 @@ interface State {
 /**
  * The organizations members page
  */
-export class OrgMembersPage extends React.PureComponent<Props, State> {
+export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
     private componentUpdates = new Subject<Props>()
     private userUpdates = new Subject<void>()
     private subscriptions = new Subscription()

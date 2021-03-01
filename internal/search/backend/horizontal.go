@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
+	"github.com/google/zoekt/stream"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -37,29 +38,24 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	var mu sync.Mutex
 	dedupper := dedupper{}
 
-	g, ctx := errgroup.WithContext(context.Background())
+	g, ctx := errgroup.WithContext(ctx)
 	for _, c := range clients {
 		c := c
 		g.Go(func() error {
-			sr, err := c.Search(ctx, q, opts)
-			if err != nil {
-				return err
-			}
+			return c.StreamSearch(ctx, q, opts, stream.SenderFunc(func(sr *zoekt.SearchResult) {
+				// This shouldn't happen, but skip event if sr is nil.
+				if sr == nil {
+					return
+				}
 
-			// This shouldn't happen, but skip event if sr is nil.
-			if sr == nil {
-				return nil
-			}
+				mu.Lock()
+				sr.Files = dedupper.Dedup(sr.Files)
+				mu.Unlock()
 
-			mu.Lock()
-			sr.Files = dedupper.Dedup(sr.Files)
-			mu.Unlock()
-			streamer.Send(sr)
-
-			return nil
+				streamer.Send(sr)
+			}))
 		})
 	}
-
 	return g.Wait()
 }
 

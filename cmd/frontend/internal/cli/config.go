@@ -49,11 +49,6 @@ func printConfigValidation() {
 }
 
 var (
-	configOverridesWatchOnce    sync.Once
-	metricConfigOverrideRunning = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "src_frontend_config_file_watcher_running",
-		Help: "1 if the configuration file overrides watcher is running.",
-	})
 	metricConfigOverrideUpdates = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_frontend_config_file_watcher_updates",
 		Help: "Incremented each time the config file is updated.",

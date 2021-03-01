@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"testing/quick"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
@@ -96,13 +97,9 @@ func TestSearchFilesInRepos(t *testing.T) {
 	}
 	assertReposStatus(t, repoNames, common.Status, map[string]search.RepoStatus{
 		"foo/cloning":          search.RepoStatusCloning,
-		"foo/empty":            search.RepoStatusSearched,
 		"foo/missing":          search.RepoStatusMissing,
 		"foo/missing-database": search.RepoStatusMissing,
-		"foo/no-rev":           0,
-		"foo/one":              search.RepoStatusSearched,
 		"foo/timedout":         search.RepoStatusTimedout,
-		"foo/two":              search.RepoStatusSearched,
 	})
 
 	// If we specify a rev and it isn't found, we fail the whole search since
@@ -397,6 +394,79 @@ func TestLimitSearcherRepos(t *testing.T) {
 			}
 			if !reflect.DeepEqual(gotLimited, tst.wantLimited) {
 				t.Errorf("got limited %+v want %+v", gotLimited, tst.wantLimited)
+			}
+		})
+	}
+}
+
+func TestFileMatch_Limit(t *testing.T) {
+	desc := func(fm *FileMatch) string {
+		parts := []string{fmt.Sprintf("symbols=%d", len(fm.Symbols))}
+		for _, lm := range fm.LineMatches {
+			parts = append(parts, fmt.Sprintf("lm=%d", len(lm.OffsetAndLengths)))
+		}
+		return strings.Join(parts, " ")
+	}
+
+	f := func(lineMatches []LineMatch, symbols []int, limitInput uint32) bool {
+		fm := &FileMatch{
+			// SearchSymbolResult fails to generate due to private fields. So
+			// we just generate a slice of ints and use its length. This is
+			// fine for limit which only looks at the slice and not in it.
+			Symbols: make([]*SearchSymbolResult, len(symbols)),
+		}
+		// We don't use *LineMatch as args since quick can generate nil.
+		for _, lm := range lineMatches {
+			lm := lm
+			fm.LineMatches = append(fm.LineMatches, &lm)
+		}
+		beforeDesc := desc(fm)
+
+		// It isn't interesting to test limit > ResultCount, so we bound it to
+		// [1, ResultCount]
+		count := fm.ResultCount()
+		limit := (int(limitInput) % count) + 1
+
+		after := fm.Limit(limit)
+		newCount := fm.ResultCount()
+
+		if after == 0 && newCount == limit {
+			return true
+		}
+
+		afterDesc := desc(fm)
+		t.Logf("failed limit=%d count=%d => after=%d newCount=%d:\nbeforeDesc: %s\nafterDesc:  %s", limit, count, after, newCount, beforeDesc, afterDesc)
+		return false
+	}
+	t.Run("quick", func(t *testing.T) {
+		if err := quick.Check(f, nil); err != nil {
+			t.Error("quick check failed")
+		}
+	})
+
+	cases := []struct {
+		Name        string
+		LineMatches []LineMatch
+		Symbols     int
+		Limit       int
+	}{{
+		Name: "1 line match",
+		LineMatches: []LineMatch{{
+			OffsetAndLengths: [][2]int32{{1, 1}},
+		}},
+		Limit: 1,
+	}, {
+		Name:  "file path match",
+		Limit: 1,
+	}, {
+		Name:  "file path match 2",
+		Limit: 2,
+	}}
+
+	for _, c := range cases {
+		t.Run(c.Name, func(t *testing.T) {
+			if !f(c.LineMatches, make([]int, c.Symbols), uint32(c.Limit)) {
+				t.Error("failed")
 			}
 		})
 	}

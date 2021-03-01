@@ -17,6 +17,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
@@ -364,7 +365,6 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 
 			limitHit = limitHit || len(partial) > 0
 
-			lastID := api.RepoID(-1) // PERF: avoid Update call if we have the same repository
 			matches := make([]SearchResultResolver, 0, len(files))
 			repoResolvers := make(RepositoryResolverCache)
 			for _, file := range files {
@@ -396,7 +396,7 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 
 					var symbols []*SearchSymbolResult
 					if typ == symbolRequest {
-						symbols = zoektFileMatchToSymbolResults(repoResolver, db, inputRev, &file)
+						symbols = zoektFileMatchToSymbolResults(repoResolver, inputRev, &file)
 					}
 					fm := &FileMatchResolver{
 						db: db,
@@ -413,10 +413,6 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 						RepoResolver: repoResolver,
 					}
 					matches = append(matches, fm)
-					if id := repo.ID; lastID != id {
-						statusMap.Update(id, search.RepoStatusSearched|search.RepoStatusIndexed)
-						lastID = id
-					}
 				}
 			}
 
@@ -443,10 +439,9 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 	}
 
 	if !foundResults && since(t0) >= searchOpts.MaxWallTime {
-		c.Send(SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout | search.RepoStatusIndexed)}})
+		c.Send(SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout)}})
 		return nil
 	}
-	c.Send(SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusSearched | search.RepoStatusIndexed)}})
 	return nil
 }
 
@@ -540,17 +535,11 @@ func escape(s string) string {
 	return string(escaped)
 }
 
-func zoektFileMatchToSymbolResults(repo *RepositoryResolver, db dbutil.DB, inputRev string, file *zoekt.FileMatch) []*SearchSymbolResult {
+func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, file *zoekt.FileMatch) []*SearchSymbolResult {
 	// Symbol search returns a resolver so we need to pass in some
 	// extra stuff. This is a sign that we can probably restructure
 	// resolvers to avoid this.
 	baseURI := &gituri.URI{URL: url.URL{Scheme: "git", Host: repo.Name(), RawQuery: url.QueryEscape(inputRev)}}
-	commit := &GitCommitResolver{
-		db:           db,
-		repoResolver: repo,
-		oid:          GitObjectID(file.Version),
-		inputRev:     &inputRev,
-	}
 	lang := strings.ToLower(file.Language)
 
 	symbols := make([]*SearchSymbolResult, 0, len(file.LineMatches))
@@ -580,7 +569,6 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, db dbutil.DB, input
 				},
 				lang:    lang,
 				baseURI: baseURI,
-				commit:  commit,
 			})
 		}
 	}
@@ -595,6 +583,9 @@ func contextWithoutDeadline(cOld context.Context) (context.Context, context.Canc
 
 	// Set trace context so we still get spans propagated
 	cNew = trace.CopyContext(cNew, cOld)
+
+	// Copy actor from cOld to cNew.
+	cNew = actor.WithActor(cNew, actor.FromContext(cOld))
 
 	go func() {
 		select {

@@ -1,22 +1,20 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
-
-export const SIDEBAR_CARD_CLASS = 'card mb-3'
-
-export const SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS = 'list-group-item list-group-item-action py-2'
+import classNames from 'classnames'
 
 export const SIDEBAR_BUTTON_CLASS = 'btn btn-secondary d-block w-100 my-2'
 
 /**
  * Item of `SideBarGroupItems`.
  */
-export const SidebarNavItem: React.FunctionComponent<{ to: string; exact?: boolean; className?: string }> = ({
-    children,
-    to,
-    exact,
-    className = '',
-}) => (
-    <NavLink to={to} exact={exact} className={`${SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS} ${className}`}>
+export const SidebarNavItem: React.FunctionComponent<{
+    to: string
+    icon?: React.ComponentType<{ className?: string }>
+    className?: string
+    exact?: boolean
+}> = ({ icon: Icon, children, className, to, exact }) => (
+    <NavLink to={to} exact={exact} className={classNames('list-group-item list-group-item-action py-2', className)}>
+        {Icon && <Icon className="icon-inline mr-2" />}
         {children}
     </NavLink>
 )
@@ -30,7 +28,7 @@ export const SidebarGroupHeader: React.FunctionComponent<{
     children?: undefined
 }> = ({ icon: Icon, label }) => (
     <div className="card-header">
-        {Icon && <Icon className="icon-inline" />} {label}
+        {Icon && <Icon className="icon-inline mr-1" />} {label}
     </div>
 )
 
@@ -38,7 +36,7 @@ export const SidebarGroupHeader: React.FunctionComponent<{
  * A box of items in the side bar. Use `SideBarGroupHeader` and `SideBarGroupItems` as children.
  */
 export const SidebarGroup: React.FunctionComponent<{}> = ({ children }) => (
-    <div className={SIDEBAR_CARD_CLASS}>{children}</div>
+    <div className="card mb-3 sidebar">{children}</div>
 )
 
 /**

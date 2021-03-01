@@ -115,7 +115,7 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 
 	var defaultRepos []*types.RepoName
 
-	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 && !hasTypeRepo(op.Query) && searchcontexts.IsGlobalSearchContext(searchContext) {
+	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 && !query.HasTypeRepo(op.Query) && searchcontexts.IsGlobalSearchContext(searchContext) {
 		start := time.Now()
 		defaultRepos, err = defaultRepositories(ctx, r.DefaultReposFunc, r.Zoekt, excludePatterns)
 		if err != nil {
@@ -574,19 +574,6 @@ func findPatternRevs(includePatterns []string) (includePatternRevs []patternRevs
 		}
 	}
 	return
-}
-
-func hasTypeRepo(q query.Q) bool {
-	fields := q.Fields()
-	if len(fields["type"]) == 0 {
-		return false
-	}
-	for _, t := range fields["type"] {
-		if t.Value() == "repo" {
-			return true
-		}
-	}
-	return false
 }
 
 type defaultReposFunc func(ctx context.Context) ([]*types.RepoName, error)

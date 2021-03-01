@@ -29,6 +29,12 @@ func (p *progressAggregator) Update(event graphqlbackend.SearchEvent) {
 	p.Dirty = true
 	p.Stats.Update(&event.Stats)
 	for _, result := range event.Results {
+		// We use a different result count in streaming than graphql. We don't
+		// want to break existing graphql clients like saved searches.
+		if crs, ok := result.ToCommitSearchResult(); ok {
+			p.MatchCount += crs.CommitSearchResult.ResultCount()
+			continue
+		}
 		p.MatchCount += int(result.ResultCount())
 	}
 

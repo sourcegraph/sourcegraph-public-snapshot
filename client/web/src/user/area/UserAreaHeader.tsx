@@ -1,8 +1,6 @@
 import * as React from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 import { PageHeader } from '../../components/PageHeader'
-import { orgURL } from '../../org'
-import { OrgAvatar } from '../../org/OrgAvatar'
 import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { UserAvatar } from '../UserAvatar'
 import { UserAreaRouteContext } from './UserArea'
@@ -63,22 +61,6 @@ export const UserAreaHeader: React.FunctionComponent<Props> = ({ url, navItems, 
                                     )
                             )}
                         </ul>
-                        <div className="flex-1" />
-                        {props.user.organizations.nodes.length > 0 && (
-                            <div className="d-flex align-items-center pb-1">
-                                <small className="mr-2">Organizations</small>
-                                {props.user.organizations.nodes.map(org => (
-                                    <Link
-                                        className="mr-2"
-                                        key={org.id}
-                                        to={orgURL(org.name)}
-                                        data-tooltip={org.displayName || org.name}
-                                    >
-                                        <OrgAvatar org={org.name} />
-                                    </Link>
-                                ))}
-                            </div>
-                        )}
                     </div>
                 </>
             )}

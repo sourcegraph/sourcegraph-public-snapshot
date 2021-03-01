@@ -6,10 +6,10 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	cauth "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
@@ -82,7 +82,7 @@ func (m *sshMigrator) Up(ctx context.Context) error {
 		switch a := cred.Credential.(type) {
 		case *auth.OAuthBearerToken:
 			newCred := &auth.OAuthBearerTokenWithSSH{OAuthBearerToken: *a}
-			keypair, err := cauth.GenerateRSAKey()
+			keypair, err := encryption.GenerateRSAKey()
 			if err != nil {
 				return err
 			}
@@ -95,7 +95,7 @@ func (m *sshMigrator) Up(ctx context.Context) error {
 			}
 		case *auth.BasicAuth:
 			newCred := &auth.BasicAuthWithSSH{BasicAuth: *a}
-			keypair, err := cauth.GenerateRSAKey()
+			keypair, err := encryption.GenerateRSAKey()
 			if err != nil {
 				return err
 			}
