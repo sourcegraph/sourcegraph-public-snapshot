@@ -12,7 +12,7 @@ jobs:
           with:
              recipients: |
                   team/extensibility=@joelkw @jeanduplessis @felixfbecker
-                  team/frontend-platform=@jeanduplessis @alicjasuska @felixfbecker
+                  team/frontend-platform=@jeanduplessis @alicjasuska @felixfbecker @umpox @valerybugakov @5h1ru
                   team/cloud=@tsenart
                   team/search=@lguychard
                   team/code-intelligence=@macraig

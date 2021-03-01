@@ -3,6 +3,7 @@ import Dialog from '@reach/dialog'
 import ShieldCheckIcon from 'mdi-react/ShieldCheckIcon'
 
 import { Form } from '../../../../../branded/src/components/Form'
+import { LoaderButton } from '../../../components/LoaderButton'
 import { asError, ErrorLike } from '../../../../../shared/src/util/errors'
 import { updateExternalService } from '../../../components/externalServices/backend'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
@@ -87,6 +88,7 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<{
                                 value={token}
                                 onChange={onChangeToken}
                                 className="form-control pr-4"
+                                autoComplete="off"
                             />
                             <ShieldCheckIcon
                                 className="icon-inline add-user-code-hosts-page__icon--inside text-muted"
@@ -100,9 +102,14 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<{
                         <button type="button" className="btn btn-outline-secondary mr-2" onClick={onDidCancel}>
                             Cancel
                         </button>
-                        <button type="submit" disabled={!token || isLoading} className="btn btn-primary">
-                            Update token
-                        </button>
+                        <LoaderButton
+                            type="submit"
+                            className="btn btn-primary"
+                            loading={isLoading}
+                            disabled={!token || isLoading}
+                            label="Update token"
+                            alwaysShowLabel={true}
+                        />
                     </div>
                 </Form>
             </div>

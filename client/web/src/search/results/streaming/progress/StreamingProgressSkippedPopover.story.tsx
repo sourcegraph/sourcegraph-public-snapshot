@@ -36,7 +36,7 @@ add('popover', () => {
             {
                 reason: 'error',
                 message:
-                    'There was a network error retrieving search results. Check your Internet connection and try again.\n\nMarkdown sample:\n\n`this is very long code that should wrap github.com/sourcegraph/sourcegraph-browser-extension github.com/sourcegraph/sourcegraph-browser-extension`\n\n* item 1\n* item2',
+                    'There was a network error retrieving search results. Check your Internet connection and try again.\n\nMarkdown sample:\n\n`this is very long code that should wrap github.com/sourcegraph/sourcegraph-browser-extension github.com/sourcegraph/sourcegraph-browser-extension`\n\n* item 1\n* item2\n* `github.com/sourcegraph/sourcegraph-browser-extension-very-very-long-name-of-a-random-repo`',
                 severity: 'error',
                 title: 'Error loading results',
             },
@@ -71,7 +71,7 @@ add('popover', () => {
     )
 })
 
-add('only info', () => {
+add('only info, all should be closed', () => {
     const progress: Progress = {
         durationMs: 1500,
         matchCount: 2,
@@ -79,7 +79,7 @@ add('only info', () => {
         skipped: [
             {
                 reason: 'excluded-fork',
-                message: '',
+                message: 'By default we exclude forked repositories. Include them with `fork:yes` in your query.',
                 severity: 'info',
                 title: '10k forked repositories excluded',
                 suggested: {
@@ -95,6 +95,32 @@ add('only info', () => {
                 suggested: {
                     title: 'include archived',
                     queryExpression: 'archived:yes',
+                },
+            },
+        ],
+    }
+
+    return (
+        <WebStory>
+            {() => <StreamingProgressSkippedPopover progress={progress} onSearchAgain={() => {}} history={history} />}
+        </WebStory>
+    )
+})
+
+add('only one info, should be open', () => {
+    const progress: Progress = {
+        durationMs: 1500,
+        matchCount: 2,
+        repositoriesCount: 2,
+        skipped: [
+            {
+                reason: 'excluded-fork',
+                message: 'By default we exclude forked repositories. Include them with `fork:yes` in your query.',
+                severity: 'info',
+                title: '10k forked repositories excluded',
+                suggested: {
+                    title: 'include forked',
+                    queryExpression: 'fork:yes',
                 },
             },
         ],

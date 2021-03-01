@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -77,8 +76,8 @@ func (r *changesetSpecResolver) Type() campaigns.ChangesetSpecDescriptionType {
 
 func (r *changesetSpecResolver) Description(ctx context.Context) (graphqlbackend.ChangesetDescription, error) {
 	descriptionResolver := &changesetDescriptionResolver{
-		db:   r.store.DB(),
-		desc: r.changesetSpec.Spec,
+		store: r.store,
+		desc:  r.changesetSpec.Spec,
 		// Note: r.repo can never be nil, because Description is a VisibleChangesetSpecResolver-only field.
 		repoResolver: graphqlbackend.NewRepositoryResolver(r.store.DB(), r.repo),
 		diffStat:     r.changesetSpec.DiffStat(),
@@ -118,7 +117,7 @@ var _ graphqlbackend.ChangesetDescription = &changesetDescriptionResolver{}
 // interfaces: ExistingChangesetReferenceResolver and
 // GitBranchChangesetDescriptionResolver.
 type changesetDescriptionResolver struct {
-	db           dbutil.DB
+	store        *store.Store
 	repoResolver *graphqlbackend.RepositoryResolver
 	desc         *campaigns.ChangesetSpecDescription
 	diffStat     diff.Stat
@@ -162,14 +161,14 @@ func (r *changesetDescriptionResolver) Diff(ctx context.Context) (graphqlbackend
 	if err != nil {
 		return nil, err
 	}
-	return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.db, r.repoResolver, r.desc.BaseRev, diff)
+	return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DB(), r.repoResolver, r.desc.BaseRev, diff)
 }
 
 func (r *changesetDescriptionResolver) Commits() []graphqlbackend.GitCommitDescriptionResolver {
 	var resolvers []graphqlbackend.GitCommitDescriptionResolver
 	for _, c := range r.desc.Commits {
 		resolvers = append(resolvers, &gitCommitDescriptionResolver{
-			db:          r.db,
+			store:       r.store,
 			message:     c.Message,
 			diff:        c.Diff,
 			authorName:  c.AuthorName,
@@ -182,7 +181,7 @@ func (r *changesetDescriptionResolver) Commits() []graphqlbackend.GitCommitDescr
 var _ graphqlbackend.GitCommitDescriptionResolver = &gitCommitDescriptionResolver{}
 
 type gitCommitDescriptionResolver struct {
-	db          dbutil.DB
+	store       *store.Store
 	message     string
 	diff        string
 	authorName  string
@@ -191,7 +190,7 @@ type gitCommitDescriptionResolver struct {
 
 func (r *gitCommitDescriptionResolver) Author() *graphqlbackend.PersonResolver {
 	return graphqlbackend.NewPersonResolver(
-		r.db,
+		r.store.DB(),
 		r.authorName,
 		r.authorEmail,
 		// Try to find the corresponding Sourcegraph user.

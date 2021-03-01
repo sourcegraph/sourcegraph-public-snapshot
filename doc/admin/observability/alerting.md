@@ -54,6 +54,30 @@ Once configured, Sourcegraph alerts will automatically be routed to the appropri
 ]
 ```
 
+#### Opsgenie
+
+```json
+"observability.alerts": [
+  {
+    "level": "critical",
+    "notifier": {
+      "type": "opsgenie",
+      // Opsgenie API key. This API key can also be set by the environment variable OPSGENIE_API_KEY on the prometheus container. Setting here takes precedence over the environment variable.
+      "apiKey": "xxxxxx",
+      "responders": [
+        {
+          "type": "team",
+          "name": "my-team"
+        }
+      ]
+    },
+    "owners": [
+      "my-team",
+    ]
+  }
+]
+```
+
 #### Webhook
 
 ```json

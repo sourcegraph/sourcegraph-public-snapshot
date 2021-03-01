@@ -136,7 +136,9 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                 .pipe(
                     startWith(this.props),
                     map(props =>
-                        parseSearchURL(props.location.search, { appendCaseFilter: true, appendContextFilter: true })
+                        parseSearchURL(props.location.search, {
+                            appendCaseFilter: true,
+                        })
                     ),
                     // Search when a new search query was specified in the URL
                     distinctUntilChanged((a, b) => isEqual(a, b)),
@@ -148,7 +150,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             patternType: SearchPatternType
                             caseSensitive: boolean
                             versionContext: string | undefined
-                            searchContextSpec: string | undefined
                         } => !!queryAndPatternTypeAndCase.query && !!queryAndPatternTypeAndCase.patternType
                     ),
                     tap(({ query, caseSensitive }) => {

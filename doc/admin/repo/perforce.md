@@ -1,17 +1,90 @@
-# Using Perforce repositories with Sourcegraph
+# Using Perforce depots with Sourcegraph
 
-You can use [Perforce](https://perforce.com) repositories with Sourcegraph by using the [git p4](https://git-scm.com/docs/git-p4) adapter, which creates an equivalent Git repository from a Perforce repository, and [`src serve-git`](../external_service/src_serve_git.md), Sourcegraph's tool for serving local directories.
+Sourcegraph supports [Perforce](https://perforce.com) depots using the [git p4](https://git-scm.com/docs/git-p4) adapter. This creates an equivalent Git repository from a Perforce depot. For Sourcegraph <3.25.1, [`src serve-git`](../external_service/src_serve_git.md), Sourcegraph's tool for serving local directories, is required. For Sourcegraph 3.25.1+ an experimental feature can be enabled to configure Perforce depots through the Sourcegraph UI.
 
-Screenshot of using Sourcegraph for code navigation in a Perforce repository:
+Screenshot of using Sourcegraph for code navigation in a Perforce depot:
 
 ![Viewing a Perforce repository on Sourcegraph](https://sourcegraphstatic.com/git-p4-example.png)
 
-## Instructions
+
+## Sourcegraph 3.25.1+ configuration instructions
+
+Adding Perforce depots through the UI is an experimental feature in Sourcegraph 3.25.1. To access this functionality, a site admin must enable the experimental feature in the [site configuration](../config/site_config.md):
+
+```json
+{
+	"experimentalFeatures": {
+		"perforce": "enabled"
+  }
+  ...
+}
+```
+
+To connect Perforce to Sourcegraph:
+
+1. Depending on whether you are a site admin or user:
+   1. *Site admin*: Go to **Site admin > Manage repositories > Add repositories**
+   1. *User*: Go to **Settings > Manage repositories**.
+1. Select **Perforce**.
+1. Configure the connection to Perforce using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
+1. Press **Add repositories**.
+
+**NOTE** That adding code hosts as a user is currently in private beta.
+
+### Depot syncing
+
+> NOTE: Only "local" type depots are supported.
+
+Use the `depots` field to configure which depots are mirrored/synchronized as Git repositories to Sourcegraph:
+
+- [`depots`](perforce.md#depots)<br>A list of depot paths that can be either a depot root or an arbitrary subdirectory.
+
+### Repository permissions
+
+> WARNING: Permissions syncing for Perforce depots is not yet supported. All files that are synced from the Perforce Server will be readable by all Sourcegraph users. The following docs are based on prototypes and are subject to change.
+
+Sourcegraph only supports repository-level permissions and does not match the granularity of Perforce access control lists (which supports file-level permissions). The workaround is for site admins to sync arbitrary subdirectories of a depot, which can then enforce permissions in Sourcegraph. We suggest using the most concrete path of your permissions boundary.
+
+For example, if your Perforce depot `//Sourcegraph/` has different permissions for `//Sourcegraph/Backend/` and some subdirectories of `//Sourcegraph/Frontend/`, we recommend setting the following `depots`:
+
+```json
+{
+  ...
+  "depots": [
+    "//Sourcegraph/Backend/",
+    "//Sourcegraph/Frontend/Web/",
+    "//Sourcegraph/Frontend/Extension/",
+  ]
+}
+```
+
+By configuring each subdirectory that has unique permissions, Sourcegraph is able to recognize and enforce permissions for each defined repository.
+
+#### Known limitations
+
+Sourcegraph uses prefix-matching to determine if a user has access to a repository in Sourcegraph. That means if a user has access to a directory and also has exclusions to some subdirectories, _those exclusions will not be enforced in Sourcegraph_ because Sourcegraph does not support file-level permissions.
+
+For example, consider the following output of `p4 protects -u alice`:
+
+```
+list user * * -//...
+list user * * -//spec/...
+write user alice * //TestDepot/...
+=write user alice * -//TestDepot/Secret/...
+```
+
+If the site admin configures `"depots": ["//TestDepot/"]`, the exclusion of the last line will not be enforced in Sourcegraph. In other words, the user alice _will have access_ to `//TestDepot/Secret/` in Sourcegraph even though alice does not have access to this directory on the Perforce Server. To mitigate, use the most concrete path of your permissions boundary as described in the above section.
+
+### Configuration
+
+<div markdown-func=jsonschemadoc jsonschemadoc:path="admin/external_service/perforce.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/external_service/perforce) to see rendered content.</div>
+
+## Sourcegraph <3.25.1 configuration instructions with `src serve-git`
 
 ### Prerequisites
 
 - Git
-- Perforce `p4` CLI configured to access your Perforce repository
+- Perforce `p4` CLI configured to access your Perforce depot
 - `git p4` (see "[Adding `git p4` to an existing install](https://git.wiki.kernel.org/index.php/GitP4#Adding_git-p4_to_an_existing_install)")
 - [`src serve-git`](../external_service/src_serve_git.md)
 
@@ -19,11 +92,11 @@ Screenshot of using Sourcegraph for code navigation in a Perforce repository:
 
 For each Perforce repository you want to use with Sourcegraph, follow these steps:
 
-1. Create a local Git repository with the contents of your Perforce repository: `git p4 clone //DEPOT/PATH@all` (replace `//DEPOT/PATH` with the Perforce repository path).
+1. Create a local Git repository with the contents of your Perforce depot: `git p4 clone //DEPOT/PATH@all` (replace `//DEPOT/PATH` with the Perforce repository path).
 1. Run `src serve-git` from the parent directory that holds all of the new local Git repositories.
 1. Follow the instructions in the [`src serve-git` Quickstart](../external_service/src_serve_git.md#quickstart) to add the repositories to your Sourcegraph instance.
 
-### Updating Perforce repositories
+### Updating Perforce depots
 
 To update the repository after new Perforce commits are made, run `git p4 sync` in the local repository directory. These changes will be automatically reflected in Sourcegraph as long as `src serve-git` is running.
 
@@ -37,11 +110,11 @@ If you do this, the repositories you created on your Git host are normal Git rep
 
 ### Alternative for extra-large codebases
 
-The instructions below will help you get Perforce repositories on Sourcegraph quickly and easily, while retaining all code change history. If your Perforce codebase is large enough that converting it to Git takes long enough to cause noticeable staleness on Sourcegraph, you can use `src-expose`'s [optional syncing functionality](../external_service/non-git.md#syncing-repositories) along with a faster fetching command (like `p4 sync` instead of `git p4 sync`) to periodically fetch and squash changes without trying to preserve the original Perforce history.
+The instructions below will help you get Perforce depots on Sourcegraph quickly and easily, while retaining all code change history. If your Perforce codebase is large enough that converting it to Git takes long enough to cause noticeable staleness on Sourcegraph, you can use `src-expose`'s [optional syncing functionality](../external_service/non-git.md#syncing-repositories) along with a faster fetching command (like `p4 sync` instead of `git p4 sync`) to periodically fetch and squash changes without trying to preserve the original Perforce history.
 
 ## Known issues
 
 We intend to improve Sourcegraph's Perforce support in the future. Please [file an issue](https://github.com/sourcegraph/sourcegraph/issues) to help us prioritize any specific improvements you'd like to see.
 
-- Sourcegraph was initially built for Git repositories only, so it exposes Git concepts that are meaningless for converted Perforce repositories, such as the commit SHA, branches, and tags.
-- The commit messages for a Perforce repository converted to a Git repository have an extra line at the end with Perforce information, such as `[git-p4: depot-paths = "//guest/acme_org/myproject/": change = 12345]`.
+- Sourcegraph was initially built for Git repositories only, so it exposes Git concepts that are meaningless for converted Perforce depots, such as the commit SHA, branches, and tags.
+- The commit messages for a Perforce depot converted to a Git repository have an extra line at the end with Perforce information, such as `[git-p4: depot-paths = "//guest/acme_org/myproject/": change = 12345]`.

@@ -20,6 +20,9 @@ var SurveyFormID = "a86bbac5-576d-4ca0-86c1-0c60837c3eab"
 // TrialFormID is ID for the request trial form.
 var TrialFormID = "0bbc9f90-3741-4c7a-b5f5-6c81f130ea9d"
 
+// HappinessFeedbackFormID is the ID for a Happiness survey.
+var HappinessFeedbackFormID = "417ec50b-39b4-41fa-a267-75da6f56a7cf"
+
 // SignupEventID is the HubSpot ID for signup events.
 // HubSpot Events and IDs are all defined in HubSpot "Events" web console:
 // https://app.hubspot.com/reports/2762526/events

@@ -49,6 +49,7 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     enableSmartQuery: false,
     showOnboardingTour: false,
     branding: undefined,
+    routes: [],
 }
 
 describe('GlobalNavbar', () => {

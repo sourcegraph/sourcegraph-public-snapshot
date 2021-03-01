@@ -6,8 +6,10 @@ package search
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -68,6 +70,14 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Limit: inputs.MaxResults(),
 	}
 
+	// Display is the number of results we send down. If display is < 0 we
+	// want to send everything we find before hitting a limit. Otherwise we
+	// can only send up to limit results.
+	display := args.Display
+	if limit := inputs.MaxResults(); display < 0 || display > limit {
+		display = limit
+	}
+
 	sendProgress := func() {
 		_ = eventWriter.Event("progress", progress.Current())
 	}
@@ -121,7 +131,13 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		filters.Update(event)
 
 		for _, result := range event.Results {
+			if display <= 0 {
+				break
+			}
+
 			if fm, ok := result.ToFileMatch(); ok {
+				display = fm.Limit(display)
+
 				if syms := fm.Symbols(); len(syms) > 0 {
 					// Inlining to avoid exporting a bunch of stuff from
 					// graphqlbackend
@@ -140,13 +156,17 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					}
 					matchesBuf = append(matchesBuf, fromSymbolMatch(fm, symbols))
 				} else {
-					matchesBuf = append(matchesBuf, fromFileMatch(fm))
+					matchesBuf = append(matchesBuf, fromFileMatch(&fm.FileMatch))
 				}
 			}
 			if repo, ok := result.ToRepository(); ok {
+				display = repo.Limit(display)
+
 				matchesBuf = append(matchesBuf, fromRepository(repo))
 			}
 			if commit, ok := result.ToCommitSearchResult(); ok {
+				display = commit.Limit(display)
+
 				matchesBuf = append(matchesBuf, fromCommit(commit))
 			}
 			if len(matchesBuf) == cap(matchesBuf) {
@@ -184,7 +204,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	resultsResolver, err := results()
 	if err != nil {
-		_ = eventWriter.Event("error", err.Error())
+		_ = eventWriter.Event("error", eventError{Message: err.Error()})
 		return
 	}
 
@@ -264,6 +284,7 @@ type args struct {
 	Version        string
 	PatternType    string
 	VersionContext string
+	Display        int
 }
 
 func parseURLQuery(q url.Values) (*args, error) {
@@ -286,6 +307,12 @@ func parseURLQuery(q url.Values) (*args, error) {
 		return nil, errors.New("no query found")
 	}
 
+	display := get("display", "-1")
+	var err error
+	if a.Display, err = strconv.Atoi(display); err != nil {
+		return nil, fmt.Errorf("display must be an integer, got %q: %w", display, err)
+	}
+
 	return &a, nil
 }
 
@@ -303,9 +330,9 @@ func fromStrPtr(s *string) string {
 	return *s
 }
 
-func fromFileMatch(fm *graphqlbackend.FileMatchResolver) eventFileMatch {
-	lineMatches := make([]eventLineMatch, 0, len(fm.JLineMatches))
-	for _, lm := range fm.JLineMatches {
+func fromFileMatch(fm *graphqlbackend.FileMatch) eventFileMatch {
+	lineMatches := make([]eventLineMatch, 0, len(fm.LineMatches))
+	for _, lm := range fm.LineMatches {
 		lineMatches = append(lineMatches, eventLineMatch{
 			Line:             lm.Preview,
 			LineNumber:       lm.LineNumber,
@@ -320,7 +347,7 @@ func fromFileMatch(fm *graphqlbackend.FileMatchResolver) eventFileMatch {
 
 	return eventFileMatch{
 		Type:        fileMatch,
-		Path:        fm.JPath,
+		Path:        fm.Path,
 		Repository:  string(fm.Repo.Name),
 		Branches:    branches,
 		Version:     string(fm.CommitID),
@@ -336,7 +363,7 @@ func fromSymbolMatch(fm *graphqlbackend.FileMatchResolver, symbols []symbol) eve
 
 	return eventSymbolMatch{
 		Type:       symbolMatch,
-		Path:       fm.JPath,
+		Path:       fm.Path,
 		Repository: string(fm.Repo.Name),
 		Branches:   branches,
 		Version:    string(fm.CommitID),
@@ -468,4 +495,10 @@ type eventAlert struct {
 type proposedQuery struct {
 	Description string `json:"description,omitempty"`
 	Query       string `json:"query"`
+}
+
+// eventError emulates a JavaScript error with a message property
+// as is returned when the search encounters an error.
+type eventError struct {
+	Message string `json:"message"`
 }

@@ -17,7 +17,6 @@ import (
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -25,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
@@ -62,12 +62,16 @@ func main() {
 	// Start debug server
 	go debugserver.NewServerRoutine().Start()
 
+	if err := keyring.Init(context.Background()); err != nil {
+		log.Fatalf("Failed to intialise keyring: %v", err)
+	}
+
 	// Connect to databases
 	db := mustInitializeDB()
 	codeIntelDB := mustInitializeCodeIntelDB()
 
 	// Initialize stores
-	dbStore := store.NewWithDB(db, observationContext)
+	dbStore := dbstore.NewWithDB(db, observationContext)
 	workerStore := dbstore.WorkerutilUploadStore(dbStore, observationContext)
 	lsifStore := lsifstore.NewStore(codeIntelDB, observationContext)
 	gitserverClient := gitserver.New(dbStore, observationContext)
@@ -85,9 +89,9 @@ func main() {
 
 	// Initialize worker
 	worker := worker.NewWorker(
-		&worker.DBStoreShim{dbStore},
+		&worker.DBStoreShim{Store: dbStore},
 		workerStore,
-		&worker.LSIFStoreShim{lsifStore},
+		&worker.LSIFStoreShim{Store: lsifStore},
 		uploadStore,
 		gitserverClient,
 		config.WorkerPollInterval,

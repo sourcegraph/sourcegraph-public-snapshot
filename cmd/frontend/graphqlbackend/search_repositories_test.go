@@ -43,7 +43,6 @@ func TestSearchRepositories(t *testing.T) {
 		case "foo/one":
 			return []*FileMatchResolver{
 				mkFileMatchResolver(db, FileMatch{
-					db:   db,
 					uri:  "git://" + string(repoName) + "?1a2b3c#" + "f.go",
 					Repo: &types.RepoName{ID: 123},
 				}),
@@ -51,7 +50,6 @@ func TestSearchRepositories(t *testing.T) {
 		case "bar/one":
 			return []*FileMatchResolver{
 				mkFileMatchResolver(db, FileMatch{
-					db:   db,
 					uri:  "git://" + string(repoName) + "?1a2b3c#" + "f.go",
 					Repo: &types.RepoName{ID: 789},
 				}),

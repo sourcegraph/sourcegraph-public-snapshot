@@ -240,7 +240,7 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { database.Mocks.Repos.ListRepoNames = nil }()
 
 		// Mock to bypass language suggestions.
-		mockShowLangSuggestions = func() ([]*searchSuggestionResolver, error) { return nil, nil }
+		mockShowLangSuggestions = func() ([]SearchSuggestionResolver, error) { return nil, nil }
 		defer func() { mockShowLangSuggestions = nil }()
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
@@ -322,11 +322,11 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { backend.Mocks.Repos.GetInventory = nil }()
 
 		// Mock to bypass other suggestions.
-		mockShowRepoSuggestions = func() ([]*searchSuggestionResolver, error) { return nil, nil }
+		mockShowRepoSuggestions = func() ([]SearchSuggestionResolver, error) { return nil, nil }
 		defer func() { mockShowRepoSuggestions = nil }()
-		mockShowFileSuggestions = func() ([]*searchSuggestionResolver, error) { return nil, nil }
+		mockShowFileSuggestions = func() ([]SearchSuggestionResolver, error) { return nil, nil }
 		defer func() { mockShowFileSuggestions = nil }()
-		mockShowSymbolMatches = func() ([]*searchSuggestionResolver, error) { return nil, nil }
+		mockShowSymbolMatches = func() ([]SearchSuggestionResolver, error) { return nil, nil }
 		defer func() { mockShowSymbolMatches = nil }()
 
 		for _, v := range searchVersions {
@@ -361,7 +361,7 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { database.Mocks.Repos.ListRepoNames = nil }()
 
 		// Mock to bypass language suggestions.
-		mockShowLangSuggestions = func() ([]*searchSuggestionResolver, error) { return nil, nil }
+		mockShowLangSuggestions = func() ([]SearchSuggestionResolver, error) { return nil, nil }
 		defer func() { mockShowLangSuggestions = nil }()
 
 		calledSearchFilesInRepos := atomic.NewBool(false)

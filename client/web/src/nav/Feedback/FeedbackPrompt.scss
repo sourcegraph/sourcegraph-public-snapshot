@@ -1,0 +1,54 @@
+.feedback-prompt {
+    margin: 0 0.375rem;
+    // Required as parent .nav-links applies nowrap
+    white-space: normal;
+
+    &__toggle {
+        border: 1px solid var(--border-color);
+        &:hover {
+            border: 1px solid var(--header-icon-color);
+        }
+    }
+    &__menu {
+        text-align: center;
+        width: 20rem;
+        padding: 1rem;
+    }
+
+    &__close {
+        display: flex;
+        position: absolute;
+        padding: 0;
+        top: 1rem;
+        right: 1rem;
+        border: none;
+        background: transparent;
+    }
+
+    &__icon {
+        height: 1rem;
+        width: 1rem;
+    }
+
+    &__textarea {
+        resize: none;
+        margin: 1rem 0;
+    }
+    &__success {
+        white-space: normal;
+        padding: 0.5rem;
+
+        &--tick {
+            background-color: $success;
+            color: $white;
+            border-radius: 50%;
+            width: (30/16) + rem;
+            height: auto;
+            padding: 0.125rem;
+            margin-bottom: 1rem;
+        }
+    }
+    &__button {
+        margin-top: 1rem;
+    }
+}

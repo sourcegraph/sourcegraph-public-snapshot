@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"sort"
 	"strings"
@@ -16,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -678,6 +680,62 @@ func TestExternalServicesStore_GetByID(t *testing.T) {
 	}
 }
 
+func TestExternalServicesStore_GetByID_Encrypted(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	ctx := context.Background()
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	es := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+	}
+
+	store := ExternalServices(db).WithEncryptionKey(testKey{})
+
+	err := store.Create(ctx, confGet, es)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// create a store with a NoopKey to read the raw encrypted value
+	noopStore := ExternalServices(db).WithEncryptionKey(&encryption.NoopKey{})
+	encrypted, err := noopStore.GetByID(ctx, es.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// if the testKey worked, the config should just be a base64 encoded version
+	if encrypted.Config != base64.StdEncoding.EncodeToString([]byte(es.Config)) {
+		t.Fatalf("expected base64 encoded config, got %s", encrypted.Config)
+	}
+
+	// Should be able to get back by its ID
+	_, err = store.GetByID(ctx, es.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Delete this external service
+	err = store.Delete(ctx, es.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Should now get externalServiceNotFoundError
+	_, err = store.GetByID(ctx, es.ID)
+	gotErr := fmt.Sprintf("%v", err)
+	wantErr := fmt.Sprintf("external service not found: %v", es.ID)
+	if gotErr != wantErr {
+		t.Errorf("error: want %q but got %q", wantErr, gotErr)
+	}
+}
+
 func TestGetAffiliatedSyncErrors(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -1229,6 +1287,101 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			t.Errorf("List:\n%s", diff)
 		}
 	})
+
+	t.Run("with encryption key", func(t *testing.T) {
+		tx, err := ExternalServices(db).WithEncryptionKey(testKey{}).Transact(ctx)
+		if err != nil {
+			t.Fatalf("Transact error: %s", err)
+		}
+		defer func() {
+			err = tx.Done(err)
+			if err != nil {
+				t.Fatalf("Done error: %s", err)
+			}
+		}()
+
+		want := types.GenerateExternalServices(7, svcs...)
+
+		if err := tx.Upsert(ctx, want...); err != nil {
+			t.Fatalf("Upsert error: %s", err)
+		}
+
+		// create a store with a NoopKey to read the raw encrypted value
+		noopStore := ExternalServicesWith(tx).WithEncryptionKey(&encryption.NoopKey{})
+
+		for _, e := range want {
+			if e.Kind != strings.ToUpper(e.Kind) {
+				t.Errorf("external service kind didn't get upper-cased: %q", e.Kind)
+				break
+			}
+			encrypted, err := noopStore.GetByID(ctx, e.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			// if the testKey worked, the config should just be a base64 encoded version
+			if encrypted.Config != base64.StdEncoding.EncodeToString([]byte(e.Config)) {
+				t.Fatalf("expected base64 encoded config, got %s", encrypted.Config)
+			}
+		}
+
+		sort.Sort(want)
+
+		have, err := tx.List(ctx, ExternalServicesListOptions{
+			Kinds: svcs.Kinds(),
+		})
+		if err != nil {
+			t.Fatalf("List error: %s", err)
+		}
+
+		sort.Sort(types.ExternalServices(have))
+
+		if diff := cmp.Diff(have, []*types.ExternalService(want), cmpopts.EquateEmpty()); diff != "" {
+			t.Fatalf("List:\n%s", diff)
+		}
+
+		now := clock.Now()
+		suffix := "-updated"
+		for _, r := range want {
+			r.DisplayName += suffix
+			r.Kind += suffix
+			r.Config += suffix
+			r.UpdatedAt = now
+			r.CreatedAt = now
+		}
+
+		if err = tx.Upsert(ctx, want...); err != nil {
+			t.Errorf("Upsert error: %s", err)
+		}
+		have, err = tx.List(ctx, ExternalServicesListOptions{})
+		if err != nil {
+			t.Fatalf("List error: %s", err)
+		}
+
+		sort.Sort(types.ExternalServices(have))
+
+		if diff := cmp.Diff(have, []*types.ExternalService(want), cmpopts.EquateEmpty()); diff != "" {
+			t.Errorf("List:\n%s", diff)
+		}
+
+		want.Apply(func(e *types.ExternalService) {
+			e.UpdatedAt = now
+			e.DeletedAt = now
+		})
+
+		if err = tx.Upsert(ctx, want.Clone()...); err != nil {
+			t.Errorf("Upsert error: %s", err)
+		}
+		have, err = tx.List(ctx, ExternalServicesListOptions{})
+		if err != nil {
+			t.Errorf("List error: %s", err)
+		}
+
+		sort.Sort(types.ExternalServices(have))
+
+		if diff := cmp.Diff(have, []*types.ExternalService(nil), cmpopts.EquateEmpty()); diff != "" {
+			t.Errorf("List:\n%s", diff)
+		}
+	})
 }
 
 func TestExternalServicesStore_OneCloudDefaultPerKind(t *testing.T) {
@@ -1273,4 +1426,23 @@ func TestExternalServicesStore_OneCloudDefaultPerKind(t *testing.T) {
 			t.Fatal("Expected an error")
 		}
 	})
+}
+
+// testKey is an encryption.Key that just base64 encodes the plaintext,
+// to make sure the data is actually transformed, so as to be unreadable
+// by misconfigured Stores, but doesn't do any encryption.
+type testKey struct{}
+
+func (k testKey) Encrypt(ctx context.Context, plaintext []byte) ([]byte, error) {
+	return []byte(base64.StdEncoding.EncodeToString(plaintext)), nil
+}
+
+func (k testKey) Decrypt(ctx context.Context, ciphertext []byte) (*encryption.Secret, error) {
+	decoded, err := base64.StdEncoding.DecodeString(string(ciphertext))
+	s := encryption.NewSecret(string(decoded))
+	return &s, err
+}
+
+func (k testKey) ID(ctx context.Context) (string, error) {
+	return "testkey", nil
 }

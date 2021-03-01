@@ -121,6 +121,11 @@ type PatternInfo struct {
 	// a flag to activate the old structural search path, which queries zoekt for the
 	// file list in the frontend and passes it to searcher.
 	CombyRule string
+
+	// Select is the value of the the select field in the query. It is not necessary to
+	// use it since selection is done after the query completes, but exposing it can enable
+	// optimizations.
+	Select string
 }
 
 func (p *PatternInfo) String() string {
@@ -152,6 +157,9 @@ func (p *PatternInfo) String() string {
 	}
 	for _, lang := range p.Languages {
 		args = append(args, fmt.Sprintf("lang:%s", lang))
+	}
+	if p.Select != "" {
+		args = append(args, fmt.Sprintf("select:%s", p.Select))
 	}
 
 	path := "glob"

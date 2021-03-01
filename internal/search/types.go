@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
+	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -82,17 +83,41 @@ type SymbolsParameters struct {
 	First int
 }
 
+// GlobalSearchMode designates code paths which optimize performance for global
+// searches, i.e., literal or regexp, indexed searches without repo: filter.
 type GlobalSearchMode int
 
-// Keep the order in sync with func (m GlobalSearchMode) String() string.
 const (
+	// ZoektGlobalSearch designates a performance optimised code path for indexed
+	// searches. For a global search we don't need to resolve repos before searching
+	// shards on Zoekt, instead we can resolve repos and call Zoekt concurrently.
+	//
+	// Note: Even for a global search we have to resolve repos to filter search results
+	// returned by Zoekt.
 	ZoektGlobalSearch GlobalSearchMode = iota + 1
+
+	// SearcherOnly designated a code path on which we skip indexed search, even if
+	// the user specified index:yes. SearcherOnly is used in conjunction with
+	// ZoektGlobalSearch and designates the non-indexed part of the performance
+	// optimised code path.
 	SearcherOnly
+
+	// Disables file/path search. Used only in conjunction with ZoektGlobalSearch on
+	// Sourcegraph.com.
 	NoFilePath
 )
 
+var globalSearchModeStrings = map[GlobalSearchMode]string{
+	ZoektGlobalSearch: "ZoektGlobalSearch",
+	SearcherOnly:      "SearcherOnly",
+	NoFilePath:        "NoFilePath",
+}
+
 func (m GlobalSearchMode) String() string {
-	return []string{"None", "ZoektGlobalSearch", "SearcherOnly", "NoFilePath"}[m]
+	if s, ok := globalSearchModeStrings[m]; ok {
+		return s
+	}
+	return "None"
 }
 
 // TextParameters are the parameters passed to a search backend. It contains the Pattern
@@ -146,6 +171,7 @@ type TextPatternInfo struct {
 	IsCaseSensitive bool
 	FileMatchLimit  int32
 	Index           query.YesNoOnly
+	Select          filter.SelectPath
 
 	// We do not support IsMultiline
 	// IsMultiline     bool

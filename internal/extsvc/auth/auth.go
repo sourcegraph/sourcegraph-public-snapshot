@@ -24,3 +24,18 @@ type Authenticator interface {
 	// This value must use a cryptographic hash (for example, SHA-256).
 	Hash() string
 }
+
+// AuthenticatorWithSSH wraps the Authenticator interface and augments it by
+// additional methods to authenticate over SSH with this credential, in addition
+// to the enclosed Authenticator. This can be used for a credential that needs
+// to access an HTTP API, and git over SSH, for example.
+type AuthenticatorWithSSH interface {
+	Authenticator
+
+	// SSHPrivateKey returns an RSA private key, and the passphrase securing it.
+	SSHPrivateKey() (privateKey string, passphrase string)
+	// SSHPublicKey returns the public key counterpart to the private key in OpenSSH
+	// authorized_keys file format. This is usually accepted by code hosts to
+	// allow access to git over SSH.
+	SSHPublicKey() (publicKey string)
+}

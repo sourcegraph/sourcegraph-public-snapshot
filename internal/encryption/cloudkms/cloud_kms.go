@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"hash/crc32"
 	"strings"
 
@@ -20,15 +21,29 @@ func NewKey(ctx context.Context, keyName string) (encryption.Key, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Key{
+	k := &Key{
 		name:   keyName,
 		client: client,
-	}, nil
+	}
+	_, err = k.ID(ctx)
+	return k, err
 }
 
 type Key struct {
 	name   string
 	client *kms.KeyManagementClient
+}
+
+func (k *Key) ID(ctx context.Context) (string, error) {
+	key, err := k.client.GetCryptoKey(ctx, &kmspb.GetCryptoKeyRequest{
+		Name: k.name,
+	})
+	if err != nil {
+		return "", errors.Wrap(err, "getting key ident")
+	}
+	// return the primary key version name, as that will include which key
+	// revision is currently in use
+	return fmt.Sprintf("cloudkms:%s", key.Primary.Name), nil
 }
 
 // Decrypt a secret, it must have been encrypted with the same Key

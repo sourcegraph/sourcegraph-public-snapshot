@@ -149,7 +149,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                             <CodeIntelUploadMeta node={uploadOrError} now={now} />
                         </div>
                     </div>
-                    <CodeIntelUploadTimeline upload={uploadOrError} className="mb-3" />
+                    <CodeIntelUploadTimeline now={now} upload={uploadOrError} className="mb-3" />
                 </>
             )}
         </div>

@@ -921,13 +921,13 @@ const SiteSchemaJSON = `{
           "description": "Limit granted per user per hour",
           "type": "integer",
           "minimum": 1,
-          "default": 5000
+          "default": 1000000
         },
         "perIP": {
           "description": "Limit granted per IP per hour, only applied to anonymous users",
           "type": "integer",
           "minimum": 1,
-          "default": 5000
+          "default": 1000000
         },
         "overrides": {
           "description": "An array of rate limit overrides",
@@ -1288,7 +1288,7 @@ const SiteSchemaJSON = `{
     "NotifierOpsGenie": {
       "description": "OpsGenie notifier",
       "type": "object",
-      "required": ["type", "apiKey"],
+      "required": ["type"],
       "properties": {
         "type": {
           "type": "string",
