@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/joho/godotenv"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goreman"
 )

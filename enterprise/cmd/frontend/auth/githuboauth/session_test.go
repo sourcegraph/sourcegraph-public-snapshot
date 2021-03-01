@@ -11,12 +11,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-github/github"
 	"github.com/pkg/errors"
+	"golang.org/x/oauth2"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"golang.org/x/oauth2"
 )
 
 func init() {

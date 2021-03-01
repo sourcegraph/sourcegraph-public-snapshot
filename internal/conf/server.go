@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/jsonx"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
 

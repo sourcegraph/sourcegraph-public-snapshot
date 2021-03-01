@@ -19,6 +19,7 @@ import (
 	"golang.org/x/tools/imports"
 
 	"github.com/fatih/astrewrite"
+
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 

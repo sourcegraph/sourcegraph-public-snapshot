@@ -13,11 +13,12 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/net/context/ctxhttp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"golang.org/x/net/context/ctxhttp"
 )
 
 var MockCountGoImporters func(ctx context.Context, repo api.RepoName) (int, error)

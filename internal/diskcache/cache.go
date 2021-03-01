@@ -15,6 +15,7 @@ import (
 
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 

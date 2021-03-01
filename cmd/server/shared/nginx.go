@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/server/shared/assets"
 )
 

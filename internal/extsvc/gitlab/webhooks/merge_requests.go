@@ -2,6 +2,7 @@ package webhooks
 
 import (
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 )
 

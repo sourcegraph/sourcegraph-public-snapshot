@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	ctags "github.com/sourcegraph/go-ctags"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
