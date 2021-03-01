@@ -6,7 +6,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -27,9 +26,10 @@ type RepoStore interface {
 // It caches multiple consecutive uses in order to ensure repository lists (which can be quite
 // large, e.g. 500,000+ repositories) are only fetched as frequently as needed.
 type AllReposIterator struct {
-	DefaultRepoStore DefaultRepoStore
-	RepoStore        RepoStore
-	Clock            func() time.Time
+	DefaultRepoStore      DefaultRepoStore
+	RepoStore             RepoStore
+	Clock                 func() time.Time
+	SourcegraphDotComMode bool // result of envvar.SourcegraphDotComMode()
 
 	// RepositoryListCacheTime describes how long to cache repository lists for. These API calls
 	// can result in hundreds of thousands of repositories, so choose wisely.
@@ -54,7 +54,7 @@ func (a *AllReposIterator) timeSince(t time.Time) time.Duration {
 //
 // If the forEach function returns an error, pagination is stopped and the error returned.
 func (a *AllReposIterator) ForEach(ctx context.Context, forEach func(repoName string) error) error {
-	if envvar.SourcegraphDotComMode() {
+	if a.SourcegraphDotComMode {
 		// Use cached results if we have them and it is reasonable to do so.
 		if a.timeSince(a.cachedRepoNamesAge) < a.RepositoryListCacheTime {
 			for _, repo := range a.cachedRepoNames {
