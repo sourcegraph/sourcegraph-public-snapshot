@@ -15,6 +15,10 @@ type CreateCampaignArgs struct {
 	CampaignSpec graphql.ID
 }
 
+type CreateBatchChangeArgs struct {
+	BatchSpec graphql.ID
+}
+
 type ApplyCampaignArgs struct {
 	CampaignSpec   graphql.ID
 	EnsureCampaign *graphql.ID
@@ -76,7 +80,7 @@ type ChangesetApplyPreviewConnectionArgs struct {
 	Action       *campaigns.ReconcilerOperation
 }
 
-type CampaignArgs struct {
+type BatchChangeArgs struct {
 	Namespace string
 	Name      string
 }
@@ -111,10 +115,14 @@ type ListViewerCampaignsCodeHostsArgs struct {
 
 type CampaignsResolver interface {
 	// Mutations
-	CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (CampaignResolver, error)
-	ApplyCampaign(ctx context.Context, args *ApplyCampaignArgs) (CampaignResolver, error)
-	MoveCampaign(ctx context.Context, args *MoveCampaignArgs) (CampaignResolver, error)
-	CloseCampaign(ctx context.Context, args *CloseCampaignArgs) (CampaignResolver, error)
+	// OLD
+	CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (BatchChangeResolver, error)
+	// NEW
+	CreateBatchChange(ctx context.Context, args *CreateBatchChangeArgs) (BatchChangeResolver, error)
+
+	ApplyCampaign(ctx context.Context, args *ApplyCampaignArgs) (BatchChangeResolver, error)
+	MoveCampaign(ctx context.Context, args *MoveCampaignArgs) (BatchChangeResolver, error)
+	CloseCampaign(ctx context.Context, args *CloseCampaignArgs) (BatchChangeResolver, error)
 	DeleteCampaign(ctx context.Context, args *DeleteCampaignArgs) (*EmptyResponse, error)
 	CreateChangesetSpec(ctx context.Context, args *CreateChangesetSpecArgs) (ChangesetSpecResolver, error)
 	CreateCampaignSpec(ctx context.Context, args *CreateCampaignSpecArgs) (CampaignSpecResolver, error)
@@ -125,8 +133,8 @@ type CampaignsResolver interface {
 
 	// Queries
 	Campaigns(ctx context.Context, args *ListCampaignsArgs) (CampaignsConnectionResolver, error)
-	Campaign(ctx context.Context, args *CampaignArgs) (CampaignResolver, error)
-	CampaignByID(ctx context.Context, id graphql.ID) (CampaignResolver, error)
+	Campaign(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error)
+	BatchChangeByID(ctx context.Context, id graphql.ID) (BatchChangeResolver, error)
 	ChangesetByID(ctx context.Context, id graphql.ID) (ChangesetResolver, error)
 
 	CampaignSpecByID(ctx context.Context, id graphql.ID) (CampaignSpecResolver, error)
@@ -158,7 +166,7 @@ type CampaignSpecResolver interface {
 
 	DiffStat(ctx context.Context) (*DiffStat, error)
 
-	AppliesToCampaign(ctx context.Context) (CampaignResolver, error)
+	AppliesToCampaign(ctx context.Context) (BatchChangeResolver, error)
 
 	SupersedingCampaignSpec(context.Context) (CampaignSpecResolver, error)
 
@@ -346,19 +354,22 @@ type ChangesetCountsArgs struct {
 }
 
 type ListChangesetsArgs struct {
-	First                       int32
-	After                       *string
-	PublicationState            *campaigns.ChangesetPublicationState
-	ReconcilerState             *[]campaigns.ReconcilerState
-	ExternalState               *campaigns.ChangesetExternalState
-	State                       *campaigns.ChangesetState
-	ReviewState                 *campaigns.ChangesetReviewState
-	CheckState                  *campaigns.ChangesetCheckState
+	First            int32
+	After            *string
+	PublicationState *campaigns.ChangesetPublicationState
+	ReconcilerState  *[]campaigns.ReconcilerState
+	ExternalState    *campaigns.ChangesetExternalState
+	State            *campaigns.ChangesetState
+	ReviewState      *campaigns.ChangesetReviewState
+	CheckState       *campaigns.ChangesetCheckState
+	// old
 	OnlyPublishedByThisCampaign *bool
-	Search                      *string
+	//new
+	OnlyPublishedByThisBatchChange *bool
+	Search                         *string
 }
 
-type CampaignResolver interface {
+type BatchChangeResolver interface {
 	ID() graphql.ID
 	Name() string
 	Description() *string
@@ -380,7 +391,7 @@ type CampaignResolver interface {
 }
 
 type CampaignsConnectionResolver interface {
-	Nodes(ctx context.Context) ([]CampaignResolver, error)
+	Nodes(ctx context.Context) ([]BatchChangeResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
@@ -494,11 +505,15 @@ type defaultCampaignsResolver struct{}
 var DefaultCampaignsResolver CampaignsResolver = defaultCampaignsResolver{}
 
 // Mutations
-func (defaultCampaignsResolver) CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (CampaignResolver, error) {
+func (defaultCampaignsResolver) CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (BatchChangeResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) ApplyCampaign(ctx context.Context, args *ApplyCampaignArgs) (CampaignResolver, error) {
+func (defaultCampaignsResolver) CreateBatchChange(ctx context.Context, args *CreateBatchChangeArgs) (BatchChangeResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) ApplyCampaign(ctx context.Context, args *ApplyCampaignArgs) (BatchChangeResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
@@ -510,11 +525,11 @@ func (defaultCampaignsResolver) CreateCampaignSpec(ctx context.Context, args *Cr
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) MoveCampaign(ctx context.Context, args *MoveCampaignArgs) (CampaignResolver, error) {
+func (defaultCampaignsResolver) MoveCampaign(ctx context.Context, args *MoveCampaignArgs) (BatchChangeResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) CloseCampaign(ctx context.Context, args *CloseCampaignArgs) (CampaignResolver, error) {
+func (defaultCampaignsResolver) CloseCampaign(ctx context.Context, args *CloseCampaignArgs) (BatchChangeResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
@@ -539,11 +554,19 @@ func (defaultCampaignsResolver) DeleteCampaignsCredential(ctx context.Context, a
 }
 
 // Queries
-func (defaultCampaignsResolver) CampaignByID(ctx context.Context, id graphql.ID) (CampaignResolver, error) {
+func (defaultCampaignsResolver) CampaignByID(ctx context.Context, id graphql.ID) (BatchChangeResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) Campaign(ctx context.Context, args *CampaignArgs) (CampaignResolver, error) {
+func (defaultCampaignsResolver) BatchChangeByID(ctx context.Context, id graphql.ID) (BatchChangeResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) Campaign(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) BatchChange(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 

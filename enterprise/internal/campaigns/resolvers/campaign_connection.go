@@ -24,14 +24,14 @@ type campaignsConnectionResolver struct {
 	err       error
 }
 
-func (r *campaignsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.CampaignResolver, error) {
+func (r *campaignsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.BatchChangeResolver, error) {
 	nodes, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]graphqlbackend.CampaignResolver, 0, len(nodes))
+	resolvers := make([]graphqlbackend.BatchChangeResolver, 0, len(nodes))
 	for _, c := range nodes {
-		resolvers = append(resolvers, &campaignResolver{store: r.store, Campaign: c})
+		resolvers = append(resolvers, &batchChangeResolver{store: r.store, Campaign: c})
 	}
 	return resolvers, nil
 }

@@ -9396,6 +9396,7 @@ type CampaignSpec implements Node {
 }
 
 extend type Mutation {
+
     """
     Create a campaign from a campaign spec and locally computed changeset specs. The newly created
     campaign is returned.
@@ -9407,7 +9408,7 @@ extend type Mutation {
         The campaign spec that describes the desired state of the campaign.
         """
         campaignSpec: ID!
-    ): Campaign!
+    ): Campaign!  @deprecated(reason: "campaigns have been renamed to batch changes. Use createBatchChange instead.")
 
     """
     Create or update a campaign from a campaign spec and locally computed changeset specs. If no
@@ -9651,7 +9652,7 @@ extend type Query {
         The campaigns name.
         """
         name: String!
-    ): Campaign
+    ): Campaign @deprecated(reason: "campaigns have been renamed to batch changes. Use batchChange instead.")
 }
 
 ############################################################################################
@@ -9659,3 +9660,189 @@ extend type Query {
 #                                 End campaigns schema                                     #
 #                                                                                          #
 ############################################################################################
+
+extend type Mutation {
+    """
+    Create a batch change from a batch spec and locally computed changeset specs. The newly created
+    batch change is returned.
+    If a batch change in the same namespace with the same name already exists,
+    an error with the error code ErrMatchingBatchChangeExists is returned.
+    """
+    createBatchChange(
+        """
+        The batch spec that describes the desired state of the batch change.
+        """
+        batchSpec: ID!
+    ): BatchChange!
+}
+
+extend type Query {
+    """
+    Looks up a batch change by namespace and campaign name.
+    """
+    batchChange(
+        """
+        The namespace where the batch change lives.
+        """
+        namespace: ID!
+        """
+        The batch changes name.
+        """
+        name: String!
+    ): BatchChange
+}
+
+"""
+A batch change is a set of related changes to apply to code across one or more repositories.
+"""
+type BatchChange implements Node {
+    """
+    The unique ID for the batch change.
+    """
+    id: ID!
+
+    """
+    The namespace where this batch change is defined.
+    """
+    namespace: Namespace!
+
+    """
+    The name of the batch change.
+    """
+    name: String!
+
+    """
+    The description (as Markdown).
+    """
+    description: String
+
+    """
+    The user that created the initial spec. In an org, this will be different from the namespace, or null if the user was deleted.
+    """
+    specCreator: User
+
+    """
+    The user who created the batch change initially by applying the spec for the first time, or null if the user was deleted.
+    """
+    initialApplier: User
+
+    """
+    The user who last updated the batch change by applying a spec to this batch change.
+    If the batch change hasn't been updated, the lastApplier is the initialApplier, or null if the user was deleted.
+    """
+    lastApplier: User
+
+    """
+    Whether the current user can edit or delete this batch change.
+    """
+    viewerCanAdminister: Boolean!
+
+    """
+    The URL to this batch change.
+    """
+    url: String!
+
+    """
+    The date and time when the batch change was created.
+    """
+    createdAt: DateTime!
+
+    """
+    The date and time when the batch change was updated. That can be by applying a spec, or by an internal process.
+    For reading the time the batch change spec was changed last, see lastAppliedAt.
+    """
+    updatedAt: DateTime!
+
+    """
+    The date and time when the batch change was last updated with a new spec.
+    """
+    lastAppliedAt: DateTime!
+
+    """
+    The date and time when the batch change was closed. If set, applying a spec for this batch change will fail with an error.
+    """
+    closedAt: DateTime
+
+    """
+    Stats on all the changesets that are tracked in this batch change.
+    """
+    changesetsStats: ChangesetsStats!
+
+    """
+    The changesets in this batch change that already exist on the code host.
+    """
+    changesets(
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Only include changesets with any of the given reconciler states.
+        """
+        reconcilerState: [ChangesetReconcilerState!]
+            @deprecated(
+                reason: "Use state instead. This field is deprecated, has no effect, and will be removed in a future release."
+            )
+        """
+        Only include changesets with the given publication state.
+        """
+        publicationState: ChangesetPublicationState
+            @deprecated(
+                reason: "Use state instead. This field is deprecated, has no effect, and will be removed in a future release."
+            )
+        """
+        Only include changesets with the given external state.
+        """
+        externalState: ChangesetExternalState
+            @deprecated(
+                reason: "Use state instead. This field is deprecated, has no effect, and will be removed in a future release."
+            )
+        """
+        Only include changesets with the given state.
+        """
+        state: ChangesetState
+        """
+        Only include changesets with the given review state.
+        """
+        reviewState: ChangesetReviewState
+        """
+        Only include changesets with the given check state.
+        """
+        checkState: ChangesetCheckState
+        """
+        Only return changesets that have been published by this batch change. Imported changesets will be omitted.
+        """
+        onlyPublishedByThisBatchChange: Boolean
+        """
+        Search for changesets matching this query. Queries may include quoted substrings to match phrases, and words may be preceded by - to negate them.
+        """
+        search: String
+    ): ChangesetConnection!
+
+    """
+    The changeset counts over time, in 1-day intervals backwards from the point in time given in
+    the "to" parameter.
+    """
+    changesetCountsOverTime(
+        """
+        Only include changeset counts up to this point in time (inclusive). Defaults to BatchChange.createdAt.
+        """
+        from: DateTime
+        """
+        Only include changeset counts up to this point in time (inclusive). Defaults to the
+        current time.
+        """
+        to: DateTime
+    ): [ChangesetCounts!]!
+
+    """
+    The diff stat for all the changesets in the batch change.
+    """
+    diffStat: DiffStat!
+
+    """
+    The current change spec this change reflects.
+    """
+    currentSpec: CampaignSpec!
+}

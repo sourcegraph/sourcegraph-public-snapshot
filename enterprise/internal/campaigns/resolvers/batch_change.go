@@ -16,9 +16,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
-var _ graphqlbackend.CampaignResolver = &campaignResolver{}
+var _ graphqlbackend.BatchChangeResolver = &batchChangeResolver{}
 
-type campaignResolver struct {
+type batchChangeResolver struct {
 	store *store.Store
 	*campaigns.Campaign
 
@@ -39,22 +39,22 @@ func unmarshalCampaignID(id graphql.ID) (campaignID int64, err error) {
 	return
 }
 
-func (r *campaignResolver) ID() graphql.ID {
+func (r *batchChangeResolver) ID() graphql.ID {
 	return marshalCampaignID(r.Campaign.ID)
 }
 
-func (r *campaignResolver) Name() string {
+func (r *batchChangeResolver) Name() string {
 	return r.Campaign.Name
 }
 
-func (r *campaignResolver) Description() *string {
+func (r *batchChangeResolver) Description() *string {
 	if r.Campaign.Description == "" {
 		return nil
 	}
 	return &r.Campaign.Description
 }
 
-func (r *campaignResolver) InitialApplier(ctx context.Context) (*graphqlbackend.UserResolver, error) {
+func (r *batchChangeResolver) InitialApplier(ctx context.Context) (*graphqlbackend.UserResolver, error) {
 	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DB(), r.Campaign.InitialApplierID)
 	if errcode.IsNotFound(err) {
 		return nil, nil
@@ -62,7 +62,7 @@ func (r *campaignResolver) InitialApplier(ctx context.Context) (*graphqlbackend.
 	return user, err
 }
 
-func (r *campaignResolver) LastApplier(ctx context.Context) (*graphqlbackend.UserResolver, error) {
+func (r *batchChangeResolver) LastApplier(ctx context.Context) (*graphqlbackend.UserResolver, error) {
 	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DB(), r.Campaign.LastApplierID)
 	if errcode.IsNotFound(err) {
 		return nil, nil
@@ -70,11 +70,11 @@ func (r *campaignResolver) LastApplier(ctx context.Context) (*graphqlbackend.Use
 	return user, err
 }
 
-func (r *campaignResolver) LastAppliedAt() graphqlbackend.DateTime {
+func (r *batchChangeResolver) LastAppliedAt() graphqlbackend.DateTime {
 	return graphqlbackend.DateTime{Time: r.Campaign.LastAppliedAt}
 }
 
-func (r *campaignResolver) SpecCreator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
+func (r *batchChangeResolver) SpecCreator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
 	spec, err := r.store.GetCampaignSpec(ctx, store.GetCampaignSpecOpts{
 		ID: r.Campaign.CampaignSpecID,
 	})
@@ -88,11 +88,11 @@ func (r *campaignResolver) SpecCreator(ctx context.Context) (*graphqlbackend.Use
 	return user, err
 }
 
-func (r *campaignResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
+func (r *batchChangeResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	return checkSiteAdminOrSameUser(ctx, r.Campaign.InitialApplierID)
 }
 
-func (r *campaignResolver) URL(ctx context.Context) (string, error) {
+func (r *batchChangeResolver) URL(ctx context.Context) (string, error) {
 	n, err := r.Namespace(ctx)
 	if err != nil {
 		return "", err
@@ -100,11 +100,11 @@ func (r *campaignResolver) URL(ctx context.Context) (string, error) {
 	return campaignURL(n, r), nil
 }
 
-func (r *campaignResolver) Namespace(ctx context.Context) (graphqlbackend.NamespaceResolver, error) {
+func (r *batchChangeResolver) Namespace(ctx context.Context) (graphqlbackend.NamespaceResolver, error) {
 	return r.computeNamespace(ctx)
 }
 
-func (r *campaignResolver) computeNamespace(ctx context.Context) (graphqlbackend.NamespaceResolver, error) {
+func (r *batchChangeResolver) computeNamespace(ctx context.Context) (graphqlbackend.NamespaceResolver, error) {
 	r.namespaceOnce.Do(func() {
 		if r.Campaign.NamespaceUserID != 0 {
 			r.namespace.Namespace, r.namespaceErr = graphqlbackend.UserByIDInt32(
@@ -128,22 +128,22 @@ func (r *campaignResolver) computeNamespace(ctx context.Context) (graphqlbackend
 	return r.namespace, r.namespaceErr
 }
 
-func (r *campaignResolver) CreatedAt() graphqlbackend.DateTime {
+func (r *batchChangeResolver) CreatedAt() graphqlbackend.DateTime {
 	return graphqlbackend.DateTime{Time: r.Campaign.CreatedAt}
 }
 
-func (r *campaignResolver) UpdatedAt() graphqlbackend.DateTime {
+func (r *batchChangeResolver) UpdatedAt() graphqlbackend.DateTime {
 	return graphqlbackend.DateTime{Time: r.Campaign.UpdatedAt}
 }
 
-func (r *campaignResolver) ClosedAt() *graphqlbackend.DateTime {
+func (r *batchChangeResolver) ClosedAt() *graphqlbackend.DateTime {
 	if !r.Campaign.Closed() {
 		return nil
 	}
 	return &graphqlbackend.DateTime{Time: r.Campaign.ClosedAt}
 }
 
-func (r *campaignResolver) ChangesetsStats(ctx context.Context) (graphqlbackend.ChangesetsStatsResolver, error) {
+func (r *batchChangeResolver) ChangesetsStats(ctx context.Context) (graphqlbackend.ChangesetsStatsResolver, error) {
 	stats, err := r.store.GetChangesetsStats(ctx, store.GetChangesetsStatsOpts{
 		CampaignID: r.Campaign.ID,
 	})
@@ -153,7 +153,7 @@ func (r *campaignResolver) ChangesetsStats(ctx context.Context) (graphqlbackend.
 	return &changesetsStatsResolver{stats: stats}, nil
 }
 
-func (r *campaignResolver) Changesets(
+func (r *batchChangeResolver) Changesets(
 	ctx context.Context,
 	args *graphqlbackend.ListChangesetsArgs,
 ) (graphqlbackend.ChangesetsConnectionResolver, error) {
@@ -169,7 +169,7 @@ func (r *campaignResolver) Changesets(
 	}, nil
 }
 
-func (r *campaignResolver) ChangesetCountsOverTime(
+func (r *batchChangeResolver) ChangesetCountsOverTime(
 	ctx context.Context,
 	args *graphqlbackend.ChangesetCountsArgs,
 ) ([]graphqlbackend.ChangesetCountsResolver, error) {
@@ -224,7 +224,7 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 	return resolvers, nil
 }
 
-func (r *campaignResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
+func (r *batchChangeResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
 	diffStat, err := r.store.GetCampaignDiffStat(ctx, store.GetCampaignDiffStatOpts{CampaignID: r.Campaign.ID})
 	if err != nil {
 		return nil, err
@@ -232,7 +232,7 @@ func (r *campaignResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffSt
 	return graphqlbackend.NewDiffStat(*diffStat), nil
 }
 
-func (r *campaignResolver) CurrentSpec(ctx context.Context) (graphqlbackend.CampaignSpecResolver, error) {
+func (r *batchChangeResolver) CurrentSpec(ctx context.Context) (graphqlbackend.CampaignSpecResolver, error) {
 	campaignSpec, err := r.store.GetCampaignSpec(ctx, store.GetCampaignSpecOpts{ID: r.Campaign.CampaignSpecID})
 	if err != nil {
 		// This spec should always exist, so fail hard on not found errors as well.

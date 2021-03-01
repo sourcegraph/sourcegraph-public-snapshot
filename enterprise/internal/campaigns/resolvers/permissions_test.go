@@ -137,7 +137,7 @@ func TestPermissionLevels(t *testing.T) {
 		userCampaignSpec, userCampaignSpecID := createCampaignSpec(t, cstore, userID)
 		userCampaign := createCampaign(t, cstore, "user", userID, userCampaignSpecID)
 
-		t.Run("CampaignByID", func(t *testing.T) {
+		t.Run("BatchChangeByID", func(t *testing.T) {
 			tests := []struct {
 				name                    string
 				currentUser             int32

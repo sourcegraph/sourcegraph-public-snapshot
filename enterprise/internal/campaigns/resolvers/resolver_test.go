@@ -745,6 +745,17 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 				OwnedByCampaignID: campaignID,
 			},
 		},
+		// Setting OnlyPublishedByThisBatchChange true.
+		{
+			args: &graphqlbackend.ListChangesetsArgs{
+				OnlyPublishedByThisBatchChange: &wantOnlyPublishedByThisCampaign[0],
+			},
+			wantSafe: true,
+			wantParsed: store.ListChangesetsOpts{
+				PublicationState:  &wantPublicationStates[0],
+				OwnedByCampaignID: campaignID,
+			},
+		},
 		// Setting a positive search.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{

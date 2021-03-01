@@ -427,8 +427,13 @@ func (r *NodeResolver) ToMonitorTriggerEvent() (MonitorTriggerEventResolver, boo
 	return n, ok
 }
 
-func (r *NodeResolver) ToCampaign() (CampaignResolver, bool) {
-	n, ok := r.Node.(CampaignResolver)
+func (r *NodeResolver) ToCampaign() (BatchChangeResolver, bool) {
+	n, ok := r.Node.(BatchChangeResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToBatchChange() (BatchChangeResolver, bool) {
+	n, ok := r.Node.(BatchChangeResolver)
 	return n, ok
 }
 
@@ -617,8 +622,8 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 	switch relay.UnmarshalKind(id) {
 	case "AccessToken":
 		return accessTokenByID(ctx, r.db, id)
-	case "Campaign":
-		return r.CampaignByID(ctx, id)
+	case "Campaign", "BatchChange":
+		return r.BatchChangeByID(ctx, id)
 	case "CampaignSpec":
 		return r.CampaignSpecByID(ctx, id)
 	case "ChangesetSpec":
