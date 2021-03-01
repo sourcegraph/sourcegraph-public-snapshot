@@ -72,7 +72,9 @@ export SRC_LOG_FORMAT=${SRC_LOG_FORMAT:-condensed}
 export GITHUB_BASE_URL=${GITHUB_BASE_URL:-http://127.0.0.1:3180}
 export SRC_REPOS_DIR=$HOME/.sourcegraph/repos
 export INSECURE_DEV=1
-export SRC_GIT_SERVERS=127.0.0.1:3178
+# In dev we only expect to have one gitserver instance
+export SRC_GIT_SERVER_1=127.0.0.1:3178
+export SRC_GIT_SERVERS=$SRC_GIT_SERVER_1
 export GOLANGSERVER_SRC_GIT_SERVERS=host.docker.internal:3178
 export SEARCHER_URL=http://127.0.0.1:3181
 export REPO_UPDATER_URL=http://127.0.0.1:3182
