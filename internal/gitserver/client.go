@@ -26,6 +26,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -90,8 +91,11 @@ type Client struct {
 
 // AddrForRepo returns the gitserver address to use for the given repo name.
 func (c *Client) AddrForRepo(ctx context.Context, repo api.RepoName) string {
-	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
-	return c.addrForKey(ctx, string(repo))
+	addrs := c.Addrs(ctx)
+	if len(addrs) == 0 {
+		panic("unexpected state: no gitserver addresses")
+	}
+	return AddrForRepo(addrs, repo)
 }
 
 // addrForKey returns the gitserver address to use for the given string key,
@@ -104,6 +108,15 @@ func (c *Client) addrForKey(ctx context.Context, key string) string {
 	return addrForKey(addrs, key)
 }
 
+// AddrForRepo returns the gitserver address to use for the given repo name.
+// It should never be called with an empty slice.
+func AddrForRepo(addrs []string, repo api.RepoName) string {
+	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
+	return addrForKey(addrs, string(repo))
+}
+
+// addrForKey returns the gitserver address to use for the given string key,
+// which is hashed for sharding purposes.
 func addrForKey(addrs []string, key string) string {
 	sum := md5.Sum([]byte(key))
 	serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(addrs))

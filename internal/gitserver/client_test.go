@@ -19,6 +19,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -249,4 +250,39 @@ func createSimpleGitRepo(t *testing.T, root string) string {
 	}
 
 	return dir
+}
+
+func TestAddrForRepo(t *testing.T) {
+	addrs := []string{"gitserver-1", "gitserver-2"}
+
+	testCases := []struct {
+		name string
+		repo api.RepoName
+		want string
+	}{
+		{
+			name: "repo1",
+			repo: api.RepoName("repo1"),
+			want: "gitserver-1",
+		},
+		{
+			name: "check we normalise",
+			repo: api.RepoName("repo1.git"),
+			want: "gitserver-1",
+		},
+		{
+			name: "another repo",
+			repo: api.RepoName("another-repo"),
+			want: "gitserver-1",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := gitserver.AddrForRepo(addrs, tc.repo)
+			if got != tc.want {
+				t.Fatalf("Want %q, got %q", tc.want, got)
+			}
+		})
+	}
 }
