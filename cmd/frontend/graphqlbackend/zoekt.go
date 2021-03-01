@@ -522,7 +522,7 @@ func escape(s string) string {
 		}
 	}
 	if count == 0 {
-		return string(s)
+		return s
 	}
 
 	escaped := make([]rune, 0, len(s)+count)

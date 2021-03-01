@@ -234,7 +234,7 @@ func updatePhabRepos(ctx context.Context, repos []*types.Repo) error {
 		repo := r.Metadata.(*phabricator.Repo)
 		err := api.InternalClient.PhabricatorRepoCreate(
 			ctx,
-			api.RepoName(r.Name),
+			r.Name,
 			repo.Callsign,
 			r.ExternalRepo.ServiceID,
 		)
