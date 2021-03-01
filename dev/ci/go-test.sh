@@ -21,3 +21,14 @@ go mod download
 
 echo "--- go test"
 go test -timeout 4m -coverprofile=coverage.txt -covermode=atomic -race ./...
+
+# Test enterprise/lib submodule
+pushd enterprise/lib >/dev/null
+
+echo "--- go mod download enterprise/lib"
+go mod download
+
+echo "--- go test enterprise/lib"
+go test -timeout 4m -coverprofile=coverage.txt -covermode=atomic -race ./...
+
+popd >/dev/null
