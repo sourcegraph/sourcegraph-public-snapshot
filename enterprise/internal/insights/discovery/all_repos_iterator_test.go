@@ -58,14 +58,14 @@ func TestAllReposIterator(t *testing.T) {
 
 	// Were the RepoStore.List calls as we expected?
 	autogold.Want("repoStoreListCalls0", []database.ReposListOptions{
-		database.ReposListOptions{
+		{
 			OnlyCloned: true,
 			OrderBy: database.RepoListOrderBy{database.RepoListSort{
 				Field: database.RepoListColumn("name"),
 			}},
 			LimitOffset: &database.LimitOffset{Limit: 1000},
 		},
-		database.ReposListOptions{
+		{
 			OnlyCloned: true,
 			OrderBy:    database.RepoListOrderBy{database.RepoListSort{Field: database.RepoListColumn("name")}},
 			LimitOffset: &database.LimitOffset{
@@ -73,7 +73,7 @@ func TestAllReposIterator(t *testing.T) {
 				Offset: 3,
 			},
 		},
-		database.ReposListOptions{
+		{
 			OnlyCloned: true,
 			OrderBy:    database.RepoListOrderBy{database.RepoListSort{Field: database.RepoListColumn("name")}},
 			LimitOffset: &database.LimitOffset{
@@ -81,7 +81,7 @@ func TestAllReposIterator(t *testing.T) {
 				Offset: 6,
 			},
 		},
-		database.ReposListOptions{
+		{
 			OnlyCloned: true,
 			OrderBy:    database.RepoListOrderBy{database.RepoListSort{Field: database.RepoListColumn("name")}},
 			LimitOffset: &database.LimitOffset{
@@ -116,14 +116,14 @@ func TestAllReposIterator(t *testing.T) {
 		})
 		autogold.Want("items2", []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}).Equal(t, each)
 		autogold.Want("repoStoreListCalls2", []database.ReposListOptions{
-			database.ReposListOptions{
+			{
 				OnlyCloned: true,
 				OrderBy: database.RepoListOrderBy{database.RepoListSort{
 					Field: database.RepoListColumn("name"),
 				}},
 				LimitOffset: &database.LimitOffset{Limit: 1000},
 			},
-			database.ReposListOptions{
+			{
 				OnlyCloned: true,
 				OrderBy:    database.RepoListOrderBy{database.RepoListSort{Field: database.RepoListColumn("name")}},
 				LimitOffset: &database.LimitOffset{
@@ -131,7 +131,7 @@ func TestAllReposIterator(t *testing.T) {
 					Offset: 3,
 				},
 			},
-			database.ReposListOptions{
+			{
 				OnlyCloned: true,
 				OrderBy:    database.RepoListOrderBy{database.RepoListSort{Field: database.RepoListColumn("name")}},
 				LimitOffset: &database.LimitOffset{
@@ -139,7 +139,7 @@ func TestAllReposIterator(t *testing.T) {
 					Offset: 6,
 				},
 			},
-			database.ReposListOptions{
+			{
 				OnlyCloned: true,
 				OrderBy:    database.RepoListOrderBy{database.RepoListSort{Field: database.RepoListColumn("name")}},
 				LimitOffset: &database.LimitOffset{
