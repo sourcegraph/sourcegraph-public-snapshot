@@ -1371,13 +1371,14 @@ func removeBadRefs(ctx context.Context, dir GitDir) {
 	_ = cmd.Run()
 }
 
-// ensureHead verifies that there is a HEAD file within the repo, and that
-// it is of non-zero length. If either condition is met, we configure a
-// best-effort default.
+// ensureHead configures git repo defaults (such as what HEAD is) which are
+// needed for git commands to work.
 func ensureHead(ctx context.Context, dir GitDir, syncer VCSSyncer, repo api.RepoName, remoteURL *url.URL) error {
-	head, err := os.Stat(dir.Path("HEAD"))
-	if err == nil && head.Size() != 0 {
-		return nil
+	// Verify that there is a HEAD file within the repo, and that it is of
+	// non-zero length.
+	if head, err := os.Stat(dir.Path("HEAD")); os.IsNotExist(err) || head.Size() == 0 {
+		// Use default git head if the file is missing.
+		ioutil.WriteFile(dir.Path("HEAD"), []byte("ref: refs/heads/master"), 0600)
 	}
 
 	// Fallback to git's default branch name if git remote show fails.
