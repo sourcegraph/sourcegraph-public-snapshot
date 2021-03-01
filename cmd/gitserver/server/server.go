@@ -1074,7 +1074,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 
 		removeBadRefs(ctx, tmp)
 
-		if err := ensureHead(ctx, tmp, syncer, repo, remoteURL); err != nil {
+		if err := setHEAD(ctx, tmp, syncer, repo, remoteURL); err != nil {
 			log15.Error("Failed to ensure HEAD exists", "repo", repo, "error", err)
 			return errors.Wrap(err, "failed to ensure HEAD exists")
 		}
@@ -1371,9 +1371,9 @@ func removeBadRefs(ctx context.Context, dir GitDir) {
 	_ = cmd.Run()
 }
 
-// ensureHead configures git repo defaults (such as what HEAD is) which are
+// setHEAD configures git repo defaults (such as what HEAD is) which are
 // needed for git commands to work.
-func ensureHead(ctx context.Context, dir GitDir, syncer VCSSyncer, repo api.RepoName, remoteURL *url.URL) error {
+func setHEAD(ctx context.Context, dir GitDir, syncer VCSSyncer, repo api.RepoName, remoteURL *url.URL) error {
 	// Verify that there is a HEAD file within the repo, and that it is of
 	// non-zero length.
 	if head, err := os.Stat(dir.Path("HEAD")); os.IsNotExist(err) || head.Size() == 0 {
@@ -1600,7 +1600,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoName) error {
 
 	removeBadRefs(ctx, dir)
 
-	if err := ensureHead(ctx, dir, syncer, repo, remoteURL); err != nil {
+	if err := setHEAD(ctx, dir, syncer, repo, remoteURL); err != nil {
 		log15.Error("Failed to ensure HEAD exists", "repo", repo, "error", err)
 		return errors.Wrap(err, "failed to ensure HEAD exists")
 	}
