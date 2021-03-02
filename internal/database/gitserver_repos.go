@@ -17,7 +17,7 @@ type GitserverRepoStore struct {
 	*basestore.Store
 }
 
-// Repos instantiates and returns a new RepoStore with prepared statements.
+// GitserverRepos instantiates and returns a new GitserverRepoStore.
 func GitserverRepos(db dbutil.DB) *GitserverRepoStore {
 	return &GitserverRepoStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
