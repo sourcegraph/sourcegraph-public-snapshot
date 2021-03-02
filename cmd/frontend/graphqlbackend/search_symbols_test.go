@@ -230,7 +230,7 @@ func TestSymbolRange(t *testing.T) {
 func mkSymbolFileMatchResolvers(db dbutil.DB, symbols ...[]*results.SearchSymbolResult) []*FileMatchResolver {
 	var resolvers []*FileMatchResolver
 	for _, s := range symbols {
-		resolvers = append(resolvers, mkFileMatchResolver(db, FileMatch{
+		resolvers = append(resolvers, mkFileMatchResolver(db, results.FileMatch{
 			Symbols: s,
 		}))
 	}

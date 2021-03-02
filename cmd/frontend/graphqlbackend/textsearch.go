@@ -36,70 +36,9 @@ const maxUnindexedRepoRevSearchesPerQuery = 200
 // A global limiter on number of concurrent searcher searches.
 var textSearchLimiter = mutablelimiter.New(32)
 
-type FileMatch struct {
-	Path        string
-	LineMatches []*results.LineMatch
-	LimitHit    bool
-
-	Symbols  []*results.SearchSymbolResult `json:"-"`
-	uri      string                        `json:"-"`
-	Repo     *types.RepoName               `json:"-"`
-	CommitID api.CommitID                  `json:"-"`
-	// InputRev is the Git revspec that the user originally requested to search. It is used to
-	// preserve the original revision specifier from the user instead of navigating them to the
-	// absolute commit ID when they select a result.
-	InputRev *string `json:"-"`
-}
-
-func (fm *FileMatch) ResultCount() int {
-	rc := len(fm.Symbols)
-	for _, m := range fm.LineMatches {
-		rc += len(m.OffsetAndLengths)
-	}
-	if rc == 0 {
-		return 1 // 1 to count "empty" results like type:path results
-	}
-	return rc
-}
-
-// appendMatches appends the line matches from src as well as updating match
-// counts and limit.
-func (fm *FileMatch) appendMatches(src *FileMatch) {
-	fm.LineMatches = append(fm.LineMatches, src.LineMatches...)
-	fm.Symbols = append(fm.Symbols, src.Symbols...)
-	fm.LimitHit = fm.LimitHit || src.LimitHit
-}
-
-// Limit will mutate fm such that it only has limit results. limit is a number
-// greater than 0.
-//
-//   if limit >= ResultCount then nothing is done and we return limit - ResultCount.
-//   if limit < ResultCount then ResultCount becomes limit and we return 0.
-func (fm *FileMatch) Limit(limit int) int {
-	// Check if we need to limit.
-	if after := limit - fm.ResultCount(); after >= 0 {
-		return after
-	}
-
-	// Invariant: limit > 0
-	for i, m := range fm.LineMatches {
-		after := limit - len(m.OffsetAndLengths)
-		if after <= 0 {
-			fm.Symbols = nil
-			fm.LineMatches = fm.LineMatches[:i+1]
-			m.OffsetAndLengths = m.OffsetAndLengths[:limit]
-			return 0
-		}
-		limit = after
-	}
-
-	fm.Symbols = fm.Symbols[:limit]
-	return 0
-}
-
 // FileMatchResolver is a resolver for the GraphQL type `FileMatch`
 type FileMatchResolver struct {
-	FileMatch
+	results.FileMatch
 
 	RepoResolver *RepositoryResolver
 	db           dbutil.DB
@@ -110,7 +49,7 @@ func (fm *FileMatchResolver) Equal(other *FileMatchResolver) bool {
 }
 
 func (fm *FileMatchResolver) Key() string {
-	return fm.uri
+	return fm.URI
 }
 
 func (fm *FileMatchResolver) File() *GitTreeEntryResolver {
@@ -147,7 +86,7 @@ func (fm *FileMatchResolver) RevSpec() *gitRevSpec {
 }
 
 func (fm *FileMatchResolver) Resource() string {
-	return fm.uri
+	return fm.URI
 }
 
 func (fm *FileMatchResolver) Symbols() []symbolResolver {
@@ -186,7 +125,7 @@ func (fm *FileMatchResolver) path() string {
 // appendMatches appends the line matches from src as well as updating match
 // counts and limit.
 func (fm *FileMatchResolver) appendMatches(src *FileMatchResolver) {
-	fm.FileMatch.appendMatches(&src.FileMatch)
+	fm.FileMatch.AppendMatches(&src.FileMatch)
 }
 
 func (fm *FileMatchResolver) ResultCount() int32 {
@@ -304,12 +243,12 @@ func searchFilesInRepo(ctx context.Context, db dbutil.DB, searcherURLs *endpoint
 
 		resolvers = append(resolvers, &FileMatchResolver{
 			db: db,
-			FileMatch: FileMatch{
+			FileMatch: results.FileMatch{
 				Path:        fm.Path,
 				LineMatches: lineMatches,
 				LimitHit:    fm.LimitHit,
 				Repo:        repo,
-				uri:         workspace + fm.Path,
+				URI:         workspace + fm.Path,
 				CommitID:    commit,
 				InputRev:    &rev,
 			},
