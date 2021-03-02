@@ -19,7 +19,7 @@ import (
 
 // seededRand is used to populate the RandID fields on CampaignSpec and
 // ChangesetSpec when creating them.
-var seededRand *rand.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
+var seededRand *rand.Rand = rand.New(rand.NewSource(timeutil.Now().UnixNano()))
 
 // ErrNoResults is returned by Store method calls that found no results.
 var ErrNoResults = errors.New("no results")

@@ -50,7 +50,7 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 			return nil, err
 		}
 		for _, d := range syncData {
-			scheduledSyncs[d.ChangesetID] = syncer.NextSync(time.Now, d)
+			scheduledSyncs[d.ChangesetID] = syncer.NextSync(r.store.Clock(), d)
 		}
 	}
 

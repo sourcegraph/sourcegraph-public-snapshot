@@ -741,30 +741,30 @@ func (*GitHubWebhook) pullRequestReviewCommentEvent(e *gh.PullRequestReviewComme
 	return &comment
 }
 
-func (*GitHubWebhook) commitStatusEvent(e *gh.StatusEvent) *github.CommitStatus {
+func (h *GitHubWebhook) commitStatusEvent(e *gh.StatusEvent) *github.CommitStatus {
 	return &github.CommitStatus{
 		SHA:        e.GetSHA(),
 		State:      e.GetState(),
 		Context:    e.GetContext(),
-		ReceivedAt: time.Now(),
+		ReceivedAt: h.Now(),
 	}
 }
 
-func (*GitHubWebhook) checkSuiteEvent(cs *gh.CheckSuite) *github.CheckSuite {
+func (h *GitHubWebhook) checkSuiteEvent(cs *gh.CheckSuite) *github.CheckSuite {
 	return &github.CheckSuite{
 		ID:         cs.GetNodeID(),
 		Status:     cs.GetStatus(),
 		Conclusion: cs.GetConclusion(),
-		ReceivedAt: time.Now(),
+		ReceivedAt: h.Now(),
 	}
 }
 
-func (*GitHubWebhook) checkRunEvent(cr *gh.CheckRun) *github.CheckRun {
+func (h *GitHubWebhook) checkRunEvent(cr *gh.CheckRun) *github.CheckRun {
 	return &github.CheckRun{
 		ID:         cr.GetNodeID(),
 		Status:     cr.GetStatus(),
 		Conclusion: cr.GetConclusion(),
-		ReceivedAt: time.Now(),
+		ReceivedAt: h.Now(),
 	}
 }
 
