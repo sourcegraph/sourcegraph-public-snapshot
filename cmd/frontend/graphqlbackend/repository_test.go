@@ -9,6 +9,7 @@ import (
 	"github.com/graph-gophers/graphql-go/gqltesting"
 
 	"github.com/hexops/autogold"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"

@@ -16,9 +16,10 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
+	nettrace "golang.org/x/net/trace"
+
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	nettrace "golang.org/x/net/trace"
 )
 
 // maxFileSize is the limit on file size in bytes. Only files smaller than this are processed.

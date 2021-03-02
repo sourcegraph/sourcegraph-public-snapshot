@@ -4,17 +4,19 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"reflect"
+	"testing"
+
 	"github.com/graph-gophers/graphql-go/gqltesting"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"io/ioutil"
-	"net/http"
-	"reflect"
-	"testing"
 )
 
 func TestSetExternalServiceRepos(t *testing.T) {

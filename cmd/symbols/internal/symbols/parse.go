@@ -13,10 +13,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	ctags "github.com/sourcegraph/go-ctags"
+	nettrace "golang.org/x/net/trace"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	nettrace "golang.org/x/net/trace"
 )
 
 // startParsers starts the parser process pool.

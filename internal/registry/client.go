@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 

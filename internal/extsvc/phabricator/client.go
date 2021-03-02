@@ -11,10 +11,11 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/uber/gonduit"
 	"github.com/uber/gonduit/core"
 	"github.com/uber/gonduit/requests"
+
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
 var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{

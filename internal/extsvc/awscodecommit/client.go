@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws/awserr"
 	"github.com/aws/aws-sdk-go-v2/service/codecommit"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
 
