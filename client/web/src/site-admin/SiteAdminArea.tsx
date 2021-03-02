@@ -1,6 +1,6 @@
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import * as React from 'react'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import React, { useLayoutEffect, useRef } from 'react'
+import { Route, RouteComponentProps, Switch, useLocation } from 'react-router'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
@@ -57,6 +57,16 @@ interface SiteAdminAreaProps
 }
 
 const AuthenticatedSiteAdminArea: React.FunctionComponent<SiteAdminAreaProps> = props => {
+    const { pathname } = useLocation()
+
+    const ref = useRef<HTMLDivElement>(null)
+
+    useLayoutEffect(() => {
+        if (ref.current) {
+            ref.current.scrollIntoView()
+        }
+    }, [pathname])
+
     // If not site admin, redirect to sign in.
     if (!props.authenticatedUser.siteAdmin) {
         return <NotSiteAdminPage />
@@ -76,7 +86,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<SiteAdminAreaProps> = 
     return (
         <Page>
             <PageHeader path={[{ text: 'Site Admin' }]} />
-            <div className="site-admin-area d-flex my-3">
+            <div className="site-admin-area d-flex my-3" ref={ref}>
                 <SiteAdminSidebar className="sidebar flex-0 mr-3" groups={props.sideBarGroups} />
                 <div className="flex-bounded">
                     <ErrorBoundary location={props.location}>

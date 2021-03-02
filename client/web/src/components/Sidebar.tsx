@@ -64,7 +64,7 @@ export const SidebarCollapseItems: React.FunctionComponent<{
                     <MenuDownIcon className="sidebar__chevron icon-inline" />
                 )}
             </button>
-            <Collapse id={label} isOpen={isOpen}>
+            <Collapse id={label} isOpen={isOpen} className="border-top">
                 {children}
             </Collapse>
         </>
