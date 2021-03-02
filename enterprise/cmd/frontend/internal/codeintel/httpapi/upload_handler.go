@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/utils"
+	codeintelutils "github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/utils"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
