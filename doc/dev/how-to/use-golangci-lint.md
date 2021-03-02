@@ -1,4 +1,4 @@
-# Go Linting
+# Linting with `golangci-lint`
 
 ## How it works
 
