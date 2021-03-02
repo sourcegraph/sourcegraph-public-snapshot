@@ -28,7 +28,7 @@ You need to run `direnv allow` after editing the `.envrc` file.
 
 Alternatively you can use the 1password CLI tool:
 
-``` sh
+```sh
 # dev-private token for ghe.sgdev.org
 op get item bw4nttlfqve3rc6xqzbqq7l7pm | jq -r '.. | select(.t? == "token name: dev-private") | @sh "export GITHUB_TOKEN=\(.v)"'
 # AWS and Bitbucket tokens
