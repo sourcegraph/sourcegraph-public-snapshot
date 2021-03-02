@@ -67,15 +67,6 @@ type TxBeginner interface {
 	BeginTx(context.Context, *sql.TxOptions) (*sql.Tx, error)
 }
 
-type stdoutLogger struct{}
-
-func (stdoutLogger) Printf(format string, v ...interface{}) {
-	fmt.Printf(format, v...)
-}
-func (logger stdoutLogger) Verbose() bool {
-	return true
-}
-
 func IsPostgresError(err error, codename string) bool {
 	e, ok := errors.Cause(err).(*pgconn.PgError)
 	return ok && e.Code == codename
@@ -360,23 +351,3 @@ type Scanner interface {
 // A ScanFunc scans one or more rows from a scanner, returning
 // the last id column scanned and the count of scanned rows.
 type ScanFunc func(Scanner) (last, count int64, err error)
-
-// ScanAll scans each row using the given ScanFunc. It automatically closes the rows afterwards.
-func ScanAll(rows *sql.Rows, scan ScanFunc) (last, count int64, err error) {
-	defer func() {
-		if e := rows.Close(); err == nil {
-			err = e
-		}
-	}()
-
-	last = -1
-	for rows.Next() {
-		var n int64
-		if last, n, err = scan(rows); err != nil {
-			return last, count, err
-		}
-		count += n
-	}
-
-	return last, count, rows.Err()
-}
