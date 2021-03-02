@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/results"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
@@ -396,7 +397,7 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 				for _, inputRev := range inputRevs {
 					inputRev := inputRev // copy so we can take the pointer
 
-					var symbols []*SearchSymbolResult
+					var symbols []*results.SearchSymbolResult
 					if typ == symbolRequest {
 						symbols = zoektFileMatchToSymbolResults(repoResolver, inputRev, &file)
 					}
@@ -564,14 +565,14 @@ func escape(s string) string {
 	return string(escaped)
 }
 
-func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, file *zoekt.FileMatch) []*SearchSymbolResult {
+func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, file *zoekt.FileMatch) []*results.SearchSymbolResult {
 	// Symbol search returns a resolver so we need to pass in some
 	// extra stuff. This is a sign that we can probably restructure
 	// resolvers to avoid this.
 	baseURI := &gituri.URI{URL: url.URL{Scheme: "git", Host: repo.Name(), RawQuery: url.QueryEscape(inputRev)}}
 	lang := strings.ToLower(file.Language)
 
-	symbols := make([]*SearchSymbolResult, 0, len(file.LineMatches))
+	symbols := make([]*results.SearchSymbolResult, 0, len(file.LineMatches))
 	for _, l := range file.LineMatches {
 		if l.FileName {
 			continue
@@ -582,7 +583,7 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, fi
 				continue
 			}
 
-			symbols = append(symbols, &SearchSymbolResult{
+			symbols = append(symbols, &results.SearchSymbolResult{
 				Symbol: protocol.Symbol{
 					Name:       m.SymbolInfo.Sym,
 					Kind:       m.SymbolInfo.Kind,

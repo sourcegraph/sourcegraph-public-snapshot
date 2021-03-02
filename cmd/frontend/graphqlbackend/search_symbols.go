@@ -19,23 +19,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/results"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
-
-// SearchSymbolResult is a result from symbol search.
-type SearchSymbolResult struct {
-	Symbol  protocol.Symbol
-	BaseURI *gituri.URI
-	Lang    string
-}
-
-func (s *SearchSymbolResult) URI() *gituri.URI {
-	return s.BaseURI.WithFilePath(s.Symbol.Path)
-}
 
 var mockSearchSymbols func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, stats *streaming.Stats, err error)
 
@@ -200,7 +190,7 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 	fileMatches := make([]*FileMatchResolver, 0)
 
 	for _, symbol := range symbols {
-		symbolRes := &SearchSymbolResult{
+		symbolRes := &results.SearchSymbolResult{
 			Symbol:  symbol,
 			BaseURI: baseURI,
 			Lang:    strings.ToLower(symbol.Language),
@@ -213,7 +203,7 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 				db: db,
 				FileMatch: FileMatch{
 					Path:     symbolRes.Symbol.Path,
-					Symbols:  []*SearchSymbolResult{symbolRes},
+					Symbols:  []*results.SearchSymbolResult{symbolRes},
 					uri:      uri,
 					Repo:     repoRevs.Repo,
 					CommitID: commitID,

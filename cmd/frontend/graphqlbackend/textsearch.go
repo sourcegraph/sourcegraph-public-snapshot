@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
+	"github.com/sourcegraph/sourcegraph/internal/search/results"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -40,10 +41,10 @@ type FileMatch struct {
 	LineMatches []*LineMatch
 	LimitHit    bool
 
-	Symbols  []*SearchSymbolResult `json:"-"`
-	uri      string                `json:"-"`
-	Repo     *types.RepoName       `json:"-"`
-	CommitID api.CommitID          `json:"-"`
+	Symbols  []*results.SearchSymbolResult `json:"-"`
+	uri      string                        `json:"-"`
+	Repo     *types.RepoName               `json:"-"`
+	CommitID api.CommitID                  `json:"-"`
 	// InputRev is the Git revspec that the user originally requested to search. It is used to
 	// preserve the original revision specifier from the user instead of navigating them to the
 	// absolute commit ID when they select a result.

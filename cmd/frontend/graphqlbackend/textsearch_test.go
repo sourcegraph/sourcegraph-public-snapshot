@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/results"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -413,7 +414,7 @@ func TestFileMatch_Limit(t *testing.T) {
 			// SearchSymbolResult fails to generate due to private fields. So
 			// we just generate a slice of ints and use its length. This is
 			// fine for limit which only looks at the slice and not in it.
-			Symbols: make([]*SearchSymbolResult, len(symbols)),
+			Symbols: make([]*results.SearchSymbolResult, len(symbols)),
 		}
 		// We don't use *LineMatch as args since quick can generate nil.
 		for _, lm := range lineMatches {
