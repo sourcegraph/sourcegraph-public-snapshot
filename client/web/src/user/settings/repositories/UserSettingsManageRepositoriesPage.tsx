@@ -642,10 +642,10 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     alwaysShowLabel={true}
                     type="submit"
                     label={
-                        (!fetchingRepos && 'Save changes') ||
-                        (fetchingRepos === 'loading' && 'Saving changes...') ||
-                        (fetchingRepos === 'slow' && 'Still working...') ||
-                        "That's a lot of code..."
+                        (!fetchingRepos && 'Save') ||
+                        (fetchingRepos === 'loading' && 'Saving...') ||
+                        (fetchingRepos === 'slow' && 'Still saving...') ||
+                        "Any time now..."
                     }
                     disabled={!selectionState.radio || isLoading(fetchingRepos)}
                 />
