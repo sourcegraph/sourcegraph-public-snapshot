@@ -133,13 +133,13 @@ type CampaignsResolver interface {
 
 	// Queries
 
-	// Old:
-	Campaigns(ctx context.Context, args *ListCampaignsArgs) (CampaignsConnectionResolver, error)
+	// Deprecated
 	Campaign(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error)
 	// New:
 	BatchChange(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error)
 	BatchChangeByID(ctx context.Context, id graphql.ID) (BatchChangeResolver, error)
 
+	Campaigns(ctx context.Context, args *ListCampaignsArgs) (CampaignsConnectionResolver, error)
 	ChangesetByID(ctx context.Context, id graphql.ID) (ChangesetResolver, error)
 
 	CampaignSpecByID(ctx context.Context, id graphql.ID) (CampaignSpecResolver, error)
@@ -393,6 +393,11 @@ type BatchChangeResolver interface {
 	ClosedAt() *DateTime
 	DiffStat(ctx context.Context) (*DiffStat, error)
 	CurrentSpec(ctx context.Context) (CampaignSpecResolver, error)
+
+	// TODO: This should be removed once we remove campaigns.
+	// It's here so that in the NodeResolver we can have the same resolver,
+	// BatchChangeResolver, act as a Campaign and a BatchChange.
+	ActAsCampaign() bool
 }
 
 type CampaignsConnectionResolver interface {

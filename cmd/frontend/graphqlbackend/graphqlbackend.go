@@ -429,7 +429,10 @@ func (r *NodeResolver) ToMonitorTriggerEvent() (MonitorTriggerEventResolver, boo
 
 func (r *NodeResolver) ToCampaign() (BatchChangeResolver, bool) {
 	n, ok := r.Node.(BatchChangeResolver)
-	return n, ok
+	if !ok {
+		return nil, false
+	}
+	return n, n.ActAsCampaign()
 }
 
 func (r *NodeResolver) ToBatchChange() (BatchChangeResolver, bool) {

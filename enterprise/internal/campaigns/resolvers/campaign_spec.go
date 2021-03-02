@@ -225,17 +225,17 @@ func (r *campaignSpecResolver) DiffStat(ctx context.Context) (*graphqlbackend.Di
 
 func (r *campaignSpecResolver) AppliesToCampaign(ctx context.Context) (graphqlbackend.BatchChangeResolver, error) {
 	svc := service.New(r.store)
-	campaign, err := svc.GetCampaignMatchingCampaignSpec(ctx, r.campaignSpec)
+	batchChange, err := svc.GetCampaignMatchingCampaignSpec(ctx, r.campaignSpec)
 	if err != nil {
 		return nil, err
 	}
-	if campaign == nil {
+	if batchChange == nil {
 		return nil, nil
 	}
 
 	return &batchChangeResolver{
-		store:    r.store,
-		Campaign: campaign,
+		store:       r.store,
+		batchChange: batchChange,
 	}, nil
 }
 

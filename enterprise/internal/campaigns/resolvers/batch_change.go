@@ -20,43 +20,50 @@ var _ graphqlbackend.BatchChangeResolver = &batchChangeResolver{}
 
 type batchChangeResolver struct {
 	store *store.Store
-	*campaigns.Campaign
+
+	batchChange *campaigns.Campaign
 
 	// Cache the namespace on the resolver, since it's accessed more than once.
 	namespaceOnce sync.Once
 	namespace     graphqlbackend.NamespaceResolver
 	namespaceErr  error
+
+	// TODO: This should be removed once we remove campaigns completely
+	shouldActAsCampaign bool
 }
 
-// TODO: We need to marshal the ID depending on how we landed here
 const batchChangeIDKind = "BatchChange"
 
-func marshalCampaignID(id int64) graphql.ID {
+func marshalBatchChangeID(id int64) graphql.ID {
 	return relay.MarshalID(batchChangeIDKind, id)
 }
 
-func unmarshalCampaignID(id graphql.ID) (campaignID int64, err error) {
+func unmarshalBatchChangeID(id graphql.ID) (campaignID int64, err error) {
 	err = relay.UnmarshalSpec(id, &campaignID)
 	return
 }
 
+func (r *batchChangeResolver) ActAsCampaign() bool {
+	return r.shouldActAsCampaign
+}
+
 func (r *batchChangeResolver) ID() graphql.ID {
-	return marshalCampaignID(r.Campaign.ID)
+	return marshalBatchChangeID(r.batchChange.ID)
 }
 
 func (r *batchChangeResolver) Name() string {
-	return r.Campaign.Name
+	return r.batchChange.Name
 }
 
 func (r *batchChangeResolver) Description() *string {
-	if r.Campaign.Description == "" {
+	if r.batchChange.Description == "" {
 		return nil
 	}
-	return &r.Campaign.Description
+	return &r.batchChange.Description
 }
 
 func (r *batchChangeResolver) InitialApplier(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DB(), r.Campaign.InitialApplierID)
+	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DB(), r.batchChange.InitialApplierID)
 	if errcode.IsNotFound(err) {
 		return nil, nil
 	}
@@ -64,7 +71,7 @@ func (r *batchChangeResolver) InitialApplier(ctx context.Context) (*graphqlbacke
 }
 
 func (r *batchChangeResolver) LastApplier(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DB(), r.Campaign.LastApplierID)
+	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DB(), r.batchChange.LastApplierID)
 	if errcode.IsNotFound(err) {
 		return nil, nil
 	}
@@ -72,12 +79,12 @@ func (r *batchChangeResolver) LastApplier(ctx context.Context) (*graphqlbackend.
 }
 
 func (r *batchChangeResolver) LastAppliedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.Campaign.LastAppliedAt}
+	return graphqlbackend.DateTime{Time: r.batchChange.LastAppliedAt}
 }
 
 func (r *batchChangeResolver) SpecCreator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
 	spec, err := r.store.GetCampaignSpec(ctx, store.GetCampaignSpecOpts{
-		ID: r.Campaign.CampaignSpecID,
+		ID: r.batchChange.CampaignSpecID,
 	})
 	if err != nil {
 		return nil, err
@@ -90,7 +97,7 @@ func (r *batchChangeResolver) SpecCreator(ctx context.Context) (*graphqlbackend.
 }
 
 func (r *batchChangeResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	return checkSiteAdminOrSameUser(ctx, r.Campaign.InitialApplierID)
+	return checkSiteAdminOrSameUser(ctx, r.batchChange.InitialApplierID)
 }
 
 func (r *batchChangeResolver) URL(ctx context.Context) (string, error) {
@@ -107,22 +114,22 @@ func (r *batchChangeResolver) Namespace(ctx context.Context) (graphqlbackend.Nam
 
 func (r *batchChangeResolver) computeNamespace(ctx context.Context) (graphqlbackend.NamespaceResolver, error) {
 	r.namespaceOnce.Do(func() {
-		if r.Campaign.NamespaceUserID != 0 {
+		if r.batchChange.NamespaceUserID != 0 {
 			r.namespace.Namespace, r.namespaceErr = graphqlbackend.UserByIDInt32(
 				ctx,
 				r.store.DB(),
-				r.Campaign.NamespaceUserID,
+				r.batchChange.NamespaceUserID,
 			)
 		} else {
 			r.namespace.Namespace, r.namespaceErr = graphqlbackend.OrgByIDInt32(
 				ctx,
 				r.store.DB(),
-				r.Campaign.NamespaceOrgID,
+				r.batchChange.NamespaceOrgID,
 			)
 		}
 		if errcode.IsNotFound(r.namespaceErr) {
 			r.namespace.Namespace = nil
-			r.namespaceErr = errors.New("namespace of campaign has been deleted")
+			r.namespaceErr = errors.New("namespace of batch change has been deleted")
 		}
 	})
 
@@ -130,23 +137,23 @@ func (r *batchChangeResolver) computeNamespace(ctx context.Context) (graphqlback
 }
 
 func (r *batchChangeResolver) CreatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.Campaign.CreatedAt}
+	return graphqlbackend.DateTime{Time: r.batchChange.CreatedAt}
 }
 
 func (r *batchChangeResolver) UpdatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.Campaign.UpdatedAt}
+	return graphqlbackend.DateTime{Time: r.batchChange.UpdatedAt}
 }
 
 func (r *batchChangeResolver) ClosedAt() *graphqlbackend.DateTime {
-	if !r.Campaign.Closed() {
+	if !r.batchChange.Closed() {
 		return nil
 	}
-	return &graphqlbackend.DateTime{Time: r.Campaign.ClosedAt}
+	return &graphqlbackend.DateTime{Time: r.batchChange.ClosedAt}
 }
 
 func (r *batchChangeResolver) ChangesetsStats(ctx context.Context) (graphqlbackend.ChangesetsStatsResolver, error) {
 	stats, err := r.store.GetChangesetsStats(ctx, store.GetChangesetsStatsOpts{
-		CampaignID: r.Campaign.ID,
+		CampaignID: r.batchChange.ID,
 	})
 	if err != nil {
 		return nil, err
@@ -158,11 +165,11 @@ func (r *batchChangeResolver) Changesets(
 	ctx context.Context,
 	args *graphqlbackend.ListChangesetsArgs,
 ) (graphqlbackend.ChangesetsConnectionResolver, error) {
-	opts, safe, err := listChangesetOptsFromArgs(args, r.Campaign.ID)
+	opts, safe, err := listChangesetOptsFromArgs(args, r.batchChange.ID)
 	if err != nil {
 		return nil, err
 	}
-	opts.CampaignID = r.Campaign.ID
+	opts.CampaignID = r.batchChange.ID
 	return &changesetsConnectionResolver{
 		store:    r.store,
 		opts:     opts,
@@ -178,7 +185,7 @@ func (r *batchChangeResolver) ChangesetCountsOverTime(
 
 	publishedState := campaigns.ChangesetPublicationStatePublished
 	opts := store.ListChangesetsOpts{
-		CampaignID: r.Campaign.ID,
+		CampaignID: r.batchChange.ID,
 		// Only load fully-synced changesets, so that the data we use for computing the changeset counts is complete.
 		PublicationState: &publishedState,
 	}
@@ -190,7 +197,7 @@ func (r *batchChangeResolver) ChangesetCountsOverTime(
 	now := r.store.Clock()()
 
 	weekAgo := now.Add(-7 * 24 * time.Hour)
-	start := r.Campaign.CreatedAt.UTC()
+	start := r.batchChange.CreatedAt.UTC()
 	if start.After(weekAgo) {
 		start = weekAgo
 	}
@@ -226,7 +233,7 @@ func (r *batchChangeResolver) ChangesetCountsOverTime(
 }
 
 func (r *batchChangeResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
-	diffStat, err := r.store.GetCampaignDiffStat(ctx, store.GetCampaignDiffStatOpts{CampaignID: r.Campaign.ID})
+	diffStat, err := r.store.GetCampaignDiffStat(ctx, store.GetCampaignDiffStatOpts{CampaignID: r.batchChange.ID})
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +241,7 @@ func (r *batchChangeResolver) DiffStat(ctx context.Context) (*graphqlbackend.Dif
 }
 
 func (r *batchChangeResolver) CurrentSpec(ctx context.Context) (graphqlbackend.CampaignSpecResolver, error) {
-	campaignSpec, err := r.store.GetCampaignSpec(ctx, store.GetCampaignSpecOpts{ID: r.Campaign.CampaignSpecID})
+	campaignSpec, err := r.store.GetCampaignSpec(ctx, store.GetCampaignSpecOpts{ID: r.batchChange.CampaignSpecID})
 	if err != nil {
 		// This spec should always exist, so fail hard on not found errors as well.
 		return nil, err

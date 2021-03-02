@@ -120,21 +120,41 @@ func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 	return NewChangesetResolver(r.store, changeset, repo), nil
 }
 
+// TODO(campaigns-deprecation): Remove when campaigns are fully removed
+func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchChangeResolver, error) {
+	res, err := r.BatchChangeByID(ctx, id)
+	if batchChangeRes, ok := res.(*batchChangeResolver); ok {
+		batchChangeRes.shouldActAsCampaign = true
+		return batchChangeRes, err
+	}
+	return res, err
+}
+
+// TODO(campaigns-deprecation): Remove when campaigns are fully removed
+func (r *Resolver) Campaign(ctx context.Context, args *graphqlbackend.BatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {
+	res, err := r.BatchChange(ctx, args)
+	if batchChangeRes, ok := res.(*batchChangeResolver); ok {
+		batchChangeRes.shouldActAsCampaign = true
+		return batchChangeRes, err
+	}
+	return res, err
+}
+
 func (r *Resolver) BatchChangeByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchChangeResolver, error) {
 	if err := campaignsEnabled(ctx); err != nil {
 		return nil, err
 	}
 
-	campaignID, err := unmarshalCampaignID(id)
+	batchChangeID, err := unmarshalBatchChangeID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	if campaignID == 0 {
+	if batchChangeID == 0 {
 		return nil, nil
 	}
 
-	campaign, err := r.store.GetCampaign(ctx, store.GetCampaignOpts{ID: campaignID})
+	batchChange, err := r.store.GetCampaign(ctx, store.GetCampaignOpts{ID: batchChangeID})
 	if err != nil {
 		if err == store.ErrNoResults {
 			return nil, nil
@@ -142,11 +162,7 @@ func (r *Resolver) BatchChangeByID(ctx context.Context, id graphql.ID) (graphqlb
 		return nil, err
 	}
 
-	return &batchChangeResolver{store: r.store, Campaign: campaign}, nil
-}
-
-func (r *Resolver) Campaign(ctx context.Context, args *graphqlbackend.BatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {
-	return r.BatchChange(ctx, args)
+	return &batchChangeResolver{store: r.store, batchChange: batchChange}, nil
 }
 
 func (r *Resolver) BatchChange(ctx context.Context, args *graphqlbackend.BatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {
@@ -161,7 +177,7 @@ func (r *Resolver) BatchChange(ctx context.Context, args *graphqlbackend.BatchCh
 		return nil, err
 	}
 
-	campaign, err := r.store.GetCampaign(ctx, opts)
+	batchChange, err := r.store.GetCampaign(ctx, opts)
 	if err != nil {
 		if err == store.ErrNoResults {
 			return nil, nil
@@ -169,7 +185,7 @@ func (r *Resolver) BatchChange(ctx context.Context, args *graphqlbackend.BatchCh
 		return nil, err
 	}
 
-	return &batchChangeResolver{store: r.store, Campaign: campaign}, nil
+	return &batchChangeResolver{store: r.store, batchChange: batchChange}, nil
 }
 
 func (r *Resolver) CampaignSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignSpecResolver, error) {
@@ -287,7 +303,7 @@ func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.C
 	}
 
 	svc := service.New(r.store)
-	campaign, err := svc.ApplyCampaign(ctx, opts)
+	batchChange, err := svc.ApplyCampaign(ctx, opts)
 	if err != nil {
 		if err == service.ErrEnsureCampaignFailed {
 			return nil, ErrEnsureCampaignFailed{}
@@ -299,7 +315,7 @@ func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.C
 		return nil, err
 	}
 
-	return &batchChangeResolver{store: r.store, Campaign: campaign}, nil
+	return &batchChangeResolver{store: r.store, batchChange: batchChange}, nil
 }
 
 func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.ApplyCampaignArgs) (graphqlbackend.BatchChangeResolver, error) {
@@ -326,7 +342,7 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 	}
 
 	if args.EnsureCampaign != nil {
-		opts.EnsureCampaignID, err = unmarshalCampaignID(*args.EnsureCampaign)
+		opts.EnsureCampaignID, err = unmarshalBatchChangeID(*args.EnsureCampaign)
 		if err != nil {
 			return nil, err
 		}
@@ -335,7 +351,7 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 	svc := service.New(r.store)
 	// 🚨 SECURITY: ApplyCampaign checks whether the user has permission to
 	// apply the campaign spec
-	campaign, err := svc.ApplyCampaign(ctx, opts)
+	batchChange, err := svc.ApplyCampaign(ctx, opts)
 	if err != nil {
 		if err == service.ErrEnsureCampaignFailed {
 			return nil, ErrEnsureCampaignFailed{}
@@ -347,7 +363,7 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 		return nil, err
 	}
 
-	return &batchChangeResolver{store: r.store, Campaign: campaign}, nil
+	return &batchChangeResolver{store: r.store, batchChange: batchChange}, nil
 }
 
 func (r *Resolver) CreateCampaignSpec(ctx context.Context, args *graphqlbackend.CreateCampaignSpecArgs) (graphqlbackend.CampaignSpecResolver, error) {
@@ -472,17 +488,17 @@ func (r *Resolver) MoveCampaign(ctx context.Context, args *graphqlbackend.MoveCa
 		return nil, err
 	}
 
-	campaignID, err := unmarshalCampaignID(args.Campaign)
+	batchChangeID, err := unmarshalBatchChangeID(args.Campaign)
 	if err != nil {
 		return nil, err
 	}
 
-	if campaignID == 0 {
+	if batchChangeID == 0 {
 		return nil, ErrIDIsZero{}
 	}
 
 	opts := service.MoveCampaignOpts{
-		CampaignID: campaignID,
+		CampaignID: batchChangeID,
 	}
 
 	if args.NewName != nil {
@@ -498,12 +514,12 @@ func (r *Resolver) MoveCampaign(ctx context.Context, args *graphqlbackend.MoveCa
 
 	svc := service.New(r.store)
 	// 🚨 SECURITY: MoveCampaign checks whether the current user is authorized.
-	campaign, err := svc.MoveCampaign(ctx, opts)
+	batchChange, err := svc.MoveCampaign(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	return &batchChangeResolver{store: r.store, Campaign: campaign}, nil
+	return &batchChangeResolver{store: r.store, batchChange: batchChange}, nil
 }
 
 func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.DeleteCampaignArgs) (_ *graphqlbackend.EmptyResponse, err error) {
@@ -516,18 +532,18 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 		return nil, err
 	}
 
-	campaignID, err := unmarshalCampaignID(args.Campaign)
+	batchChangeID, err := unmarshalBatchChangeID(args.Campaign)
 	if err != nil {
 		return nil, err
 	}
 
-	if campaignID == 0 {
+	if batchChangeID == 0 {
 		return nil, ErrIDIsZero{}
 	}
 
 	svc := service.New(r.store)
 	// 🚨 SECURITY: DeleteCampaign checks whether current user is authorized.
-	err = svc.DeleteCampaign(ctx, campaignID)
+	err = svc.DeleteCampaign(ctx, batchChangeID)
 	return &graphqlbackend.EmptyResponse{}, err
 }
 
@@ -612,7 +628,7 @@ func (r *Resolver) CampaignsCodeHosts(ctx context.Context, args *graphqlbackend.
 // If the args do not include a filter that would reveal sensitive information
 // about a changeset the user doesn't have access to, the second return value
 // is false.
-func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, campaignID int64) (opts store.ListChangesetsOpts, optsSafe bool, err error) {
+func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, batchChangeID int64) (opts store.ListChangesetsOpts, optsSafe bool, err error) {
 	if args == nil {
 		return opts, true, nil
 	}
@@ -711,7 +727,7 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, campaign
 	if args.OnlyPublishedByThisCampaign != nil || args.OnlyPublishedByThisBatchChange != nil {
 		published := campaigns.ChangesetPublicationStatePublished
 
-		opts.OwnedByCampaignID = campaignID
+		opts.OwnedByCampaignID = batchChangeID
 		opts.PublicationState = &published
 	}
 	if args.Search != nil {
@@ -740,23 +756,23 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 		return nil, err
 	}
 
-	campaignID, err := unmarshalCampaignID(args.Campaign)
+	batchChangeID, err := unmarshalBatchChangeID(args.Campaign)
 	if err != nil {
 		return nil, errors.Wrap(err, "unmarshaling campaign id")
 	}
 
-	if campaignID == 0 {
+	if batchChangeID == 0 {
 		return nil, ErrIDIsZero{}
 	}
 
 	svc := service.New(r.store)
 	// 🚨 SECURITY: CloseCampaign checks whether current user is authorized.
-	campaign, err := svc.CloseCampaign(ctx, campaignID, args.CloseChangesets)
+	batchChange, err := svc.CloseCampaign(ctx, batchChangeID, args.CloseChangesets)
 	if err != nil {
-		return nil, errors.Wrap(err, "closing campaign")
+		return nil, errors.Wrap(err, "closing batch change")
 	}
 
-	return &batchChangeResolver{store: r.store, Campaign: campaign}, nil
+	return &batchChangeResolver{store: r.store, batchChange: batchChange}, nil
 }
 
 func (r *Resolver) SyncChangeset(ctx context.Context, args *graphqlbackend.SyncChangesetArgs) (_ *graphqlbackend.EmptyResponse, err error) {
