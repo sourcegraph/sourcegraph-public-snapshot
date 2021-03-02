@@ -366,6 +366,9 @@ func FindNearestCommit(ctx context.Context, repoName api.RepoName, revSpec strin
 		Range:     string(branchCommit),
 		DateOrder: true,
 	})
+	if err != nil {
+		return nil, err
+	}
 	var commitBefore *Commit
 	if len(commitsBefore) > 0 {
 		commitBefore = commitsBefore[0]
