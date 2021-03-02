@@ -75,3 +75,38 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 		t.Fatalf("Expected %d statuses, got %d", wantStatusCount, statusCount)
 	}
 }
+
+func TestGitserverRepoCreateNullShard(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	db := dbtesting.GetDB(t)
+	ctx := context.Background()
+
+	repo1 := &types.Repo{
+		Name:         "github.com/sourcegraph/repo1",
+		URI:          "github.com/sourcegraph/repo1",
+		Description:  "",
+		ExternalRepo: api.ExternalRepoSpec{},
+		Sources:      nil,
+	}
+
+	// Create two test repos
+	err := Repos(db).Create(ctx, repo1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gitserverRepo := &types.GitserverRepo{
+		RepoID:              repo1.ID,
+		ShardID:             "",
+		CloneStatus:         "not_cloned",
+		LastExternalService: 0,
+	}
+
+	// Create one GitServerRepo
+	if err := GitserverRepos(db).Create(ctx, gitserverRepo); err == nil {
+		t.Fatal("Expected an error")
+	}
+}

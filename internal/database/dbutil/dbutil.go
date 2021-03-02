@@ -96,6 +96,14 @@ func (nt NullTime) Value() (driver.Value, error) {
 // sql.NullString. When the scanned value is null, String is set to the zero value.
 type NullString struct{ S *string }
 
+// NewNullString returns a NullString treating zero value as null.
+func NewNullString(s string) NullString {
+	if s == "" {
+		return NullString{}
+	}
+	return NullString{S: &s}
+}
+
 // Scan implements the Scanner interface.
 func (nt *NullString) Scan(value interface{}) error {
 	switch v := value.(type) {
@@ -147,6 +155,14 @@ func (n NullInt32) Value() (driver.Value, error) {
 // sql.Scanner interface so it can be used as a scan destination, similar to
 // sql.NullString. When the scanned value is null, int64 is set to the zero value.
 type NullInt64 struct{ N *int64 }
+
+// NewNullInt64 returns a NullInt64 treating zero value as null.
+func NewNullInt64(i int64) NullInt64 {
+	if i == 0 {
+		return NullInt64{}
+	}
+	return NullInt64{N: &i}
+}
 
 // Scan implements the Scanner interface.
 func (n *NullInt64) Scan(value interface{}) error {

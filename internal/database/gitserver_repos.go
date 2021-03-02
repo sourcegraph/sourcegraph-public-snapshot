@@ -39,24 +39,9 @@ func (s *GitserverRepoStore) Transact(ctx context.Context) (*GitserverRepoStore,
 
 // Create adds a row representing the GitServer status of a repo
 func (s *GitserverRepoStore) Create(ctx context.Context, gr *types.GitserverRepo) error {
-	var shardID sql.NullString
-	var lastExtSvc sql.NullInt64
-	var lastError sql.NullString
-	if gr.LastExternalService > 0 {
-		lastExtSvc.Int64 = gr.LastExternalService
-		lastExtSvc.Valid = true
-	}
-	if gr.LastError != "" {
-		lastError.String = gr.LastError
-		lastError.Valid = true
-	}
-	if gr.ShardID != "" {
-		shardID.String = gr.ShardID
-		shardID.Valid = true
-	}
 	err := s.Exec(ctx, sqlf.Sprintf(`
 INSERT INTO gitserver_repos(repo_id, clone_status, shard_id, last_external_service, last_error) VALUES (%s,%s,%s,%s,%s)
-`, gr.RepoID, gr.CloneStatus, shardID, lastExtSvc, lastError))
+`, gr.RepoID, gr.CloneStatus, dbutil.NewNullString(gr.ShardID), dbutil.NewNullInt64(gr.LastExternalService), dbutil.NewNullString(gr.LastError)))
 
 	return errors.Wrap(err, "creating GitserverRepo")
 }
