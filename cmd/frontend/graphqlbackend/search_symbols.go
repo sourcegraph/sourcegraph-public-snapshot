@@ -28,13 +28,13 @@ import (
 
 // SearchSymbolResult is a result from symbol search.
 type SearchSymbolResult struct {
-	symbol  protocol.Symbol
-	baseURI *gituri.URI
-	lang    string
+	Symbol  protocol.Symbol
+	BaseURI *gituri.URI
+	Lang    string
 }
 
-func (s *SearchSymbolResult) uri() *gituri.URI {
-	return s.baseURI.WithFilePath(s.symbol.Path)
+func (s *SearchSymbolResult) URI() *gituri.URI {
+	return s.BaseURI.WithFilePath(s.Symbol.Path)
 }
 
 var mockSearchSymbols func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, stats *streaming.Stats, err error)
@@ -201,18 +201,18 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 
 	for _, symbol := range symbols {
 		symbolRes := &SearchSymbolResult{
-			symbol:  symbol,
-			baseURI: baseURI,
-			lang:    strings.ToLower(symbol.Language),
+			Symbol:  symbol,
+			BaseURI: baseURI,
+			Lang:    strings.ToLower(symbol.Language),
 		}
-		uri := makeFileMatchURI(repoResolver.URL(), inputRev, symbolRes.uri().Fragment)
+		uri := makeFileMatchURI(repoResolver.URL(), inputRev, symbolRes.URI().Fragment)
 		if fileMatch, ok := fileMatchesByURI[uri]; ok {
 			fileMatch.FileMatch.Symbols = append(fileMatch.FileMatch.Symbols, symbolRes)
 		} else {
 			fileMatch := &FileMatchResolver{
 				db: db,
 				FileMatch: FileMatch{
-					Path:     symbolRes.symbol.Path,
+					Path:     symbolRes.Symbol.Path,
 					Symbols:  []*SearchSymbolResult{symbolRes},
 					uri:      uri,
 					Repo:     repoRevs.Repo,

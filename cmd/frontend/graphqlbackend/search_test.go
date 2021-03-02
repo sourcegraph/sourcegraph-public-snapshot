@@ -251,7 +251,7 @@ func testStringResult(result SearchSuggestionResolver) string {
 	case languageSuggestionResolver:
 		name = "lang:" + r.lang.name
 	case symbolSuggestionResolver:
-		name = "symbol:" + r.symbol.symbol.Name
+		name = "symbol:" + r.symbol.Symbol.Name
 	default:
 		panic("never here")
 	}

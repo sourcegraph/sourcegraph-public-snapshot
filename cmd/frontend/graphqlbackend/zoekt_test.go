@@ -1022,14 +1022,14 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 	var symbols []protocol.Symbol
 	for _, res := range results {
 		// Check the fields which are not specific to the symbol
-		if got, want := res.lang, "go"; got != want {
+		if got, want := res.Lang, "go"; got != want {
 			t.Fatalf("lang: got %q want %q", got, want)
 		}
-		if got, want := res.baseURI.URL.String(), "git://foo?master"; got != want {
+		if got, want := res.BaseURI.URL.String(), "git://foo?master"; got != want {
 			t.Fatalf("baseURI: got %q want %q", got, want)
 		}
 
-		symbols = append(symbols, res.symbol)
+		symbols = append(symbols, res.Symbol)
 	}
 
 	want := []protocol.Symbol{{

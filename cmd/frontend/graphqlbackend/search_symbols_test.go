@@ -37,7 +37,7 @@ func TestMakeFileMatchURIFromSymbol(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		got := makeFileMatchURI(repoResolver.URL(), test.rev, sr.uri().Fragment)
+		got := makeFileMatchURI(repoResolver.URL(), test.rev, sr.URI().Fragment)
 		if got != test.want {
 			t.Errorf("rev(%v) got %v want %v", test.rev, got, test.want)
 		}
@@ -67,7 +67,7 @@ func TestLimitingSymbolResults(t *testing.T) {
 
 	t.Run("one file match, one symbol", func(t *testing.T) {
 		res := mkSymbolFileMatchResolvers(db, []*SearchSymbolResult{{
-			symbol: protocol.Symbol{
+			Symbol: protocol.Symbol{
 				Name: "symbol-name-1",
 			},
 		}})
@@ -96,11 +96,11 @@ func TestLimitingSymbolResults(t *testing.T) {
 
 	t.Run("two file matches, one symbol per file", func(t *testing.T) {
 		res := mkSymbolFileMatchResolvers(db, []*SearchSymbolResult{{
-			symbol: protocol.Symbol{
+			Symbol: protocol.Symbol{
 				Name: "symbol-name-1",
 			},
 		}}, []*SearchSymbolResult{{
-			symbol: protocol.Symbol{
+			Symbol: protocol.Symbol{
 				Name: "symbol-name-2",
 			},
 		}})
@@ -137,11 +137,11 @@ func TestLimitingSymbolResults(t *testing.T) {
 
 	t.Run("two file matches, multiple symbols per file", func(t *testing.T) {
 		res := mkSymbolFileMatchResolvers(db, []*SearchSymbolResult{
-			{symbol: protocol.Symbol{Name: "symbol-name-1"}},
-			{symbol: protocol.Symbol{Name: "symbol-name-2"}},
+			{Symbol: protocol.Symbol{Name: "symbol-name-1"}},
+			{Symbol: protocol.Symbol{Name: "symbol-name-2"}},
 		}, []*SearchSymbolResult{
-			{symbol: protocol.Symbol{Name: "symbol-name-3"}},
-			{symbol: protocol.Symbol{Name: "symbol-name-4"}},
+			{Symbol: protocol.Symbol{Name: "symbol-name-3"}},
+			{Symbol: protocol.Symbol{Name: "symbol-name-4"}},
 		})
 
 		t.Run("symbol count is 4", func(t *testing.T) {
@@ -164,36 +164,36 @@ func TestLimitingSymbolResults(t *testing.T) {
 				name:  "limit 1 => one file match with one symbol",
 				limit: 1,
 				want: mkSymbolFileMatchResolvers(db, []*SearchSymbolResult{
-					{symbol: protocol.Symbol{Name: "symbol-name-1"}},
+					{Symbol: protocol.Symbol{Name: "symbol-name-1"}},
 				}),
 			},
 			{
 				name:  "limit 2 => one file match with all symbols",
 				limit: 2,
 				want: mkSymbolFileMatchResolvers(db, []*SearchSymbolResult{
-					{symbol: protocol.Symbol{Name: "symbol-name-1"}},
-					{symbol: protocol.Symbol{Name: "symbol-name-2"}},
+					{Symbol: protocol.Symbol{Name: "symbol-name-1"}},
+					{Symbol: protocol.Symbol{Name: "symbol-name-2"}},
 				}),
 			},
 			{
 				name:  "limit 3 => two file matches with three symbols",
 				limit: 3,
 				want: mkSymbolFileMatchResolvers(db, []*SearchSymbolResult{
-					{symbol: protocol.Symbol{Name: "symbol-name-1"}},
-					{symbol: protocol.Symbol{Name: "symbol-name-2"}},
+					{Symbol: protocol.Symbol{Name: "symbol-name-1"}},
+					{Symbol: protocol.Symbol{Name: "symbol-name-2"}},
 				}, []*SearchSymbolResult{
-					{symbol: protocol.Symbol{Name: "symbol-name-3"}},
+					{Symbol: protocol.Symbol{Name: "symbol-name-3"}},
 				}),
 			},
 			{
 				name:  "limit 4 => two file matches with all symbols",
 				limit: 4,
 				want: mkSymbolFileMatchResolvers(db, []*SearchSymbolResult{
-					{symbol: protocol.Symbol{Name: "symbol-name-1"}},
-					{symbol: protocol.Symbol{Name: "symbol-name-2"}},
+					{Symbol: protocol.Symbol{Name: "symbol-name-1"}},
+					{Symbol: protocol.Symbol{Name: "symbol-name-2"}},
 				}, []*SearchSymbolResult{
-					{symbol: protocol.Symbol{Name: "symbol-name-3"}},
-					{symbol: protocol.Symbol{Name: "symbol-name-4"}},
+					{Symbol: protocol.Symbol{Name: "symbol-name-3"}},
+					{Symbol: protocol.Symbol{Name: "symbol-name-4"}},
 				}),
 			},
 		}
