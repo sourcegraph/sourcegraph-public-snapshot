@@ -28,7 +28,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 		p := newOAuthProvider(OAuthProviderOp{
 			BaseURL: mustURL(t, "https://gitlab.com"),
 		}, nil)
-		_, err := p.FetchUserPerms(context.Background(), nil)
+		_, _, err := p.FetchUserPerms(context.Background(), nil)
 		want := "no account provided"
 		got := fmt.Sprintf("%v", err)
 		if got != want {
@@ -40,7 +40,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 		p := newOAuthProvider(OAuthProviderOp{
 			BaseURL: mustURL(t, "https://gitlab.com"),
 		}, nil)
-		_, err := p.FetchUserPerms(context.Background(),
+		_, _, err := p.FetchUserPerms(context.Background(),
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
 					ServiceType: extsvc.TypeGitHub,
@@ -89,7 +89,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 	)
 
 	authData := json.RawMessage(`{"access_token": "my_access_token"}`)
-	repoIDs, err := p.FetchUserPerms(context.Background(),
+	repoIDs, _, err := p.FetchUserPerms(context.Background(),
 		&extsvc.Account{
 			AccountSpec: extsvc.AccountSpec{
 				ServiceType: extsvc.TypeGitLab,
