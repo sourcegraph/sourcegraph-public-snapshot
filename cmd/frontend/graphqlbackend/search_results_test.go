@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/results"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -1039,7 +1040,7 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 					&FileMatchResolver{
 						db: db,
 						FileMatch: FileMatch{
-							Symbols: []*SearchSymbolResult{
+							Symbols: []*results.SearchSymbolResult{
 								// 1
 								{},
 								// 2
@@ -1059,7 +1060,7 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 					&FileMatchResolver{
 						db: db,
 						FileMatch: FileMatch{
-							Symbols: []*SearchSymbolResult{
+							Symbols: []*results.SearchSymbolResult{
 								// 1
 								{},
 								// 2
@@ -1475,7 +1476,7 @@ func repoResult(db dbutil.DB, url string) *RepositoryResolver {
 	})
 }
 
-func fileResult(db dbutil.DB, uri string, lineMatches []*LineMatch, symbolMatches []*SearchSymbolResult) *FileMatchResolver {
+func fileResult(db dbutil.DB, uri string, lineMatches []*LineMatch, symbolMatches []*results.SearchSymbolResult) *FileMatchResolver {
 	return &FileMatchResolver{
 		db: db,
 		FileMatch: FileMatch{
@@ -1614,7 +1615,7 @@ func TestUnionMerge(t *testing.T) {
 		{
 			left: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
-					fileResult(db, "a", nil, []*SearchSymbolResult{
+					fileResult(db, "a", nil, []*results.SearchSymbolResult{
 						{Symbol: protocol.Symbol{Name: "a"}},
 						{Symbol: protocol.Symbol{Name: "b"}},
 					}),
@@ -1622,7 +1623,7 @@ func TestUnionMerge(t *testing.T) {
 			},
 			right: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
-					fileResult(db, "a", nil, []*SearchSymbolResult{
+					fileResult(db, "a", nil, []*results.SearchSymbolResult{
 						{Symbol: protocol.Symbol{Name: "c"}},
 						{Symbol: protocol.Symbol{Name: "d"}},
 					}),
