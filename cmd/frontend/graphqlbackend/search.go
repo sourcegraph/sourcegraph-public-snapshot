@@ -563,8 +563,6 @@ func handleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timed
 		status |= search.RepoStatusTimedout
 	} else if searchErr != nil {
 		fatalErr = searchErr
-	} else {
-		status |= search.RepoStatusSearched
 	}
 	return streaming.Stats{
 		Status:     search.RepoStatusSingleton(repoRev.Repo.ID, status),

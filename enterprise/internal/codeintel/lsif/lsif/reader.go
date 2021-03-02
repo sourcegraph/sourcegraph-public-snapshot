@@ -4,7 +4,7 @@ import (
 	"context"
 	"io"
 
-	"github.com/sourcegraph/lsif-protocol/reader"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/protocol/reader"
 )
 
 type Pair struct {

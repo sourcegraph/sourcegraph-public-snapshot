@@ -443,7 +443,8 @@ const mapPathMeta = (token: Literal): DecoratedToken[] => {
         if (token.value[current] === '\\') {
             current = current + 2 // Continue past escaped value.
             continue
-        } else if (token.value[current] === '/') {
+        }
+        if (token.value[current] === '/') {
             tokens.push({
                 type: 'literal',
                 range: { start: offset + start, end: offset + current - 1 },

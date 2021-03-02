@@ -19,7 +19,10 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
--
+- A repository's `remote.origin.url` is not stored on gitserver disk anymore. Note: if you use the experimental feature `customGitFetch` your setting may need to be updated to specify the remote URL. [#18535](https://github.com/sourcegraph/sourcegraph/pull/18535)
+- Repositories and files containing spaces will now render with escaped spaces in the query bar rather than being
+  quoted. [#18642](https://github.com/sourcegraph/sourcegraph/pull/18642)
+- Sourcegraph is now built with Go 1.16. [#18447](https://github.com/sourcegraph/sourcegraph/pull/18447)
 
 ### Fixed
 
@@ -28,7 +31,13 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
--
+- Removed the deprecated GraphQL fields `SearchResults.repositoriesSearched` and `SearchResults.indexedRepositoriesSearched`.
+
+## 3.25.2
+
+### Fixed
+
+- A security vulnerability with in the authentication workflow has been fixed. [#18686](https://github.com/sourcegraph/sourcegraph/pull/18686)
 
 ## 3.25.1
 

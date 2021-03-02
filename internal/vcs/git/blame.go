@@ -87,8 +87,8 @@ func blameFileCmd(ctx context.Context, command cmdFunc, path string, opt *BlameO
 		nLines, _ := strconv.Atoi(hunkHeader[3])
 		hunk := &Hunk{
 			CommitID:  api.CommitID(commitID),
-			StartLine: int(lineNoCur),
-			EndLine:   int(lineNoCur + nLines),
+			StartLine: lineNoCur,
+			EndLine:   lineNoCur + nLines,
 			StartByte: byteOffset,
 		}
 
