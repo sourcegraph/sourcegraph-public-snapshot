@@ -7,7 +7,7 @@ Campaigns’ default behavior is to stop if creating the diff on a repo errors. 
 ### Can we close a campaign and still leave the changesets open?
 Yes. There is a confirmation page that shows you all the actions that will occur on the various changesets in the campaign after you close it. Open changesets will be marked 'Kept open', which means that campaigns won't alter them. See [closing a campaign](../how-tos/closing_or_deleting_a_campaign.md#closing-a-campaign).
 
-### How scalable is campaigns? How many changesets can I create?
+### How scalable are campaigns? How many changesets can I create?
 Campaigns can create tens of thousands changesets. This is something we run testing on internally.
 Known limitations:
 
