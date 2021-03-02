@@ -15,9 +15,5 @@ else
   pkgs=("$@")
 fi
 
-echo "--- go install"
-go install -tags=dev -buildmode=archive "${pkgs[@]}"
-asdf reshim
-
 echo "--- lint"
 "./dev/golangci-lint.sh" --config .golangci.enforced.yml run "${pkgs[@]}"
