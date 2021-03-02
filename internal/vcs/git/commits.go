@@ -69,6 +69,7 @@ type CommitsOptions struct {
 
 	Author string // include only commits whose author matches this
 	After  string // include only commits after this date
+	Before string // include only commits before this date
 
 	Path string // only commits modifying the given path are selected (optional)
 
@@ -258,6 +259,9 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 
 	if opt.After != "" {
 		args = append(args, "--after="+opt.After)
+	}
+	if opt.Before != "" {
+		args = append(args, "--before="+opt.Before)
 	}
 
 	if opt.MessageQuery != "" {
