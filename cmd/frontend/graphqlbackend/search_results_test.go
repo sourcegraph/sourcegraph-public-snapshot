@@ -1039,7 +1039,7 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 				results: []SearchResultResolver{
 					&FileMatchResolver{
 						db: db,
-						FileMatch: FileMatch{
+						FileMatch: results.FileMatch{
 							Symbols: []*results.SearchSymbolResult{
 								// 1
 								{},
@@ -1059,7 +1059,7 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 				results: []SearchResultResolver{
 					&FileMatchResolver{
 						db: db,
-						FileMatch: FileMatch{
+						FileMatch: results.FileMatch{
 							Symbols: []*results.SearchSymbolResult{
 								// 1
 								{},
@@ -1151,7 +1151,7 @@ func TestCompareSearchResults(t *testing.T) {
 	db := new(dbtesting.MockDB)
 
 	makeResult := func(repo, file string) *FileMatchResolver {
-		return mkFileMatchResolver(db, FileMatch{
+		return mkFileMatchResolver(db, results.FileMatch{
 			Repo: &types.RepoName{Name: api.RepoName(repo)},
 			Path: file,
 		})
@@ -1479,8 +1479,8 @@ func repoResult(db dbutil.DB, url string) *RepositoryResolver {
 func fileResult(db dbutil.DB, uri string, lineMatches []*results.LineMatch, symbolMatches []*results.SearchSymbolResult) *FileMatchResolver {
 	return &FileMatchResolver{
 		db: db,
-		FileMatch: FileMatch{
-			uri:         uri,
+		FileMatch: results.FileMatch{
+			URI:         uri,
 			LineMatches: lineMatches,
 			Symbols:     symbolMatches,
 		},
@@ -1490,7 +1490,7 @@ func fileResult(db dbutil.DB, uri string, lineMatches []*results.LineMatch, symb
 func resultToString(r SearchResultResolver) string {
 	switch v := r.(type) {
 	case *FileMatchResolver:
-		return fmt.Sprintf("File:%s", v.uri)
+		return fmt.Sprintf("File:%s", v.URI)
 	case *RepositoryResolver:
 		return fmt.Sprintf("Repository:%s", v.URL())
 	case *CommitSearchResultResolver:
@@ -1706,7 +1706,7 @@ func searchResultResolversToString(srrs []SearchResultResolver) string {
 			for _, line := range v.FileMatch.LineMatches {
 				lines = append(lines, line.Preview)
 			}
-			return fmt.Sprintf("File{url:%s,symbols:[%s],lineMatches:[%s]}", v.uri, strings.Join(symbols, ","), strings.Join(lines, ","))
+			return fmt.Sprintf("File{url:%s,symbols:[%s],lineMatches:[%s]}", v.URI, strings.Join(symbols, ","), strings.Join(lines, ","))
 		case *CommitSearchResultResolver:
 			if v.diffPreview != nil {
 				return fmt.Sprintf("Diff:%s", v.URL())

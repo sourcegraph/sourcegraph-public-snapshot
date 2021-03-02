@@ -403,11 +403,11 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 					}
 					fm := &FileMatchResolver{
 						db: db,
-						FileMatch: FileMatch{
+						FileMatch: results.FileMatch{
 							Path:        file.FileName,
 							LineMatches: lines,
 							LimitHit:    fileLimitHit,
-							uri:         fileMatchURI(repo.Name, inputRev, file.FileName),
+							URI:         fileMatchURI(repo.Name, inputRev, file.FileName),
 							Symbols:     symbols,
 							Repo:        repo,
 							CommitID:    api.CommitID(file.Version),
