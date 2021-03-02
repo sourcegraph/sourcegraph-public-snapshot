@@ -72,7 +72,7 @@ type CommitsOptions struct {
 	Before string // include only commits before this date
 
 	Reverse   bool // Whether or not commits should be given in reverse order (optional)
-	DateOrder bool // Whether or not commits should be sorted by date.
+	DateOrder bool // Whether or not commits should be sorted by date (optional)
 
 	Path string // only commits modifying the given path are selected (optional)
 
