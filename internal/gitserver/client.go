@@ -322,7 +322,7 @@ func (c *Client) P4Exec(ctx context.Context, host, user, password string, args .
 
 	default:
 		// Read response body at best effort
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		_ = resp.Body.Close()
 		return nil, nil, fmt.Errorf("unexpected status code: %d - %s", resp.StatusCode, body)
 	}
