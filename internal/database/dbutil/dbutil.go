@@ -319,30 +319,6 @@ func PostgresDSN(prefix, currentUser string, getenv func(string) string) string 
 	return dsn.String()
 }
 
-// NullTimeColumn returns nil if t is a zero value, otherwise it returns the address of t.
-func NullTimeColumn(t time.Time) *time.Time {
-	if t.IsZero() {
-		return nil
-	}
-	return &t
-}
-
-// NullTimeColumn returns nil if s is a zero value, otherwise it returns the address of s.
-func NullStringColumn(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
-}
-
-// NullInt32Column returns nil if i is a zero value, otherwise it returns the address of i.
-func NullInt32Column(i int32) *int32 {
-	if i == 0 {
-		return nil
-	}
-	return &i
-}
-
 // Scanner captures the Scan method of sql.Rows and sql.Row
 type Scanner interface {
 	Scan(dst ...interface{}) error
