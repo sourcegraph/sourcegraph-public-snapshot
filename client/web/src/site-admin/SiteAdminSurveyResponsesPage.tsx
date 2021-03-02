@@ -1,8 +1,9 @@
-import * as React from 'react'
+import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
+import React, { useCallback, useEffect } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
-import { Tab, TabsWithLocalStorageViewStatePersistence } from '../../../branded/src/components/Tabs'
+import { useLocalStorage } from '../../../shared/src/util/useLocalStorage'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { SingleValueCard } from '../components/SingleValueCard'
@@ -257,75 +258,74 @@ class SiteAdminSurveyResponsesSummary extends React.PureComponent<{}, SiteAdminS
 
 interface Props extends RouteComponentProps<{}> {}
 
-type surveyResultsDisplays = 'chronological' | 'by-user'
-
-interface State {}
-
 class FilteredSurveyResponseConnection extends FilteredConnection<SurveyResponseFields, {}> {}
 class FilteredUserSurveyResponseConnection extends FilteredConnection<UserWithSurveyResponseFields, {}> {}
 
 /**
  * A page displaying the survey responses on this site.
  */
-export class SiteAdminSurveyResponsesPage extends React.Component<Props, State> {
-    public state: State = {}
-    private static TABS: Tab<surveyResultsDisplays>[] = [
-        { id: 'chronological', label: 'Chronological feed' },
-        { id: 'by-user', label: 'Sort by user' },
-    ]
-    private static LAST_TAB_STORAGE_KEY = 'site-admin-survey-responses-last-tab'
 
-    public componentDidMount(): void {
+export const SiteAdminSurveyResponsesPage: React.FunctionComponent<Props> = props => {
+    const LAST_TAB_STORAGE_KEY = 'site-admin-survey-responses-last-tab'
+    const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
+
+    const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
+
+    useEffect(() => {
         eventLogger.logViewEvent('SiteAdminSurveyResponses')
-    }
+    }, [])
 
-    public render(): JSX.Element | null {
-        return (
-            <div className="site-admin-survey-responses-page">
-                <PageTitle title="User feedback survey - Admin" />
-                <h2>User feedback survey</h2>
-                <p>
-                    After using Sourcegraph for a few days, users are presented with a request to answer "How likely is
-                    it that you would recommend Sourcegraph to a friend?" on a scale from 0–10 and to provide some
-                    feedback. Responses are visible below (and are also sent to Sourcegraph).
-                </p>
+    return (
+        <div className="site-admin-survey-responses-page">
+            <PageTitle title="User feedback survey - Admin" />
+            <h2>User feedback survey</h2>
+            <p>
+                After using Sourcegraph for a few days, users are presented with a request to answer "How likely is it
+                that you would recommend Sourcegraph to a friend?" on a scale from 0–10 and to provide some feedback.
+                Responses are visible below (and are also sent to Sourcegraph).
+            </p>
 
-                <SiteAdminSurveyResponsesSummary />
+            <SiteAdminSurveyResponsesSummary />
 
-                <h3>Responses</h3>
+            <h3>Responses</h3>
 
-                <TabsWithLocalStorageViewStatePersistence
-                    tabs={SiteAdminSurveyResponsesPage.TABS}
-                    storageKey={SiteAdminSurveyResponsesPage.LAST_TAB_STORAGE_KEY}
-                    tabClassName="tab-bar__tab--h5like"
-                >
-                    <FilteredSurveyResponseConnection
-                        key="chronological"
-                        className="list-group list-group-flush"
-                        hideSearch={true}
-                        noun="survey response"
-                        pluralNoun="survey responses"
-                        queryConnection={fetchAllSurveyResponses}
-                        nodeComponent={SurveyResponseNode}
-                        history={this.props.history}
-                        location={this.props.location}
-                    />
-                    <FilteredUserSurveyResponseConnection
-                        key="by-user"
-                        listComponent="table"
-                        headComponent={UserSurveyResponsesHeader}
-                        className="table mt-2 site-admin-survey-responses-connection"
-                        hideSearch={false}
-                        filters={USER_ACTIVITY_FILTERS}
-                        noun="user"
-                        pluralNoun="users"
-                        queryConnection={fetchAllUsersWithSurveyResponses}
-                        nodeComponent={UserSurveyResponseNode}
-                        history={this.props.history}
-                        location={this.props.location}
-                    />
-                </TabsWithLocalStorageViewStatePersistence>
-            </div>
-        )
-    }
+            <Tabs defaultIndex={tabIndex} onChange={handleTabsChange}>
+                <TabList className="d-flex justify-content-around">
+                    <Tab className="flex-1">Chronological feed</Tab>
+                    <Tab className="flex-1">Sort by user</Tab>
+                </TabList>
+                <TabPanels>
+                    <TabPanel>
+                        <FilteredSurveyResponseConnection
+                            key="chronological"
+                            className="list-group list-group-flush"
+                            hideSearch={true}
+                            noun="survey response"
+                            pluralNoun="survey responses"
+                            queryConnection={fetchAllSurveyResponses}
+                            nodeComponent={SurveyResponseNode}
+                            history={props.history}
+                            location={props.location}
+                        />
+                    </TabPanel>
+                    <TabPanel>
+                        <FilteredUserSurveyResponseConnection
+                            key="by-user"
+                            listComponent="table"
+                            headComponent={UserSurveyResponsesHeader}
+                            className="table mt-2 site-admin-survey-responses-connection"
+                            hideSearch={false}
+                            filters={USER_ACTIVITY_FILTERS}
+                            noun="user"
+                            pluralNoun="users"
+                            queryConnection={fetchAllUsersWithSurveyResponses}
+                            nodeComponent={UserSurveyResponseNode}
+                            history={props.history}
+                            location={props.location}
+                        />
+                    </TabPanel>
+                </TabPanels>
+            </Tabs>
+        </div>
+    )
 }
