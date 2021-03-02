@@ -19,6 +19,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -28,7 +29,7 @@ import (
 func TestClient_ListCloned(t *testing.T) {
 	addrs := []string{"gitserver-0", "gitserver-1"}
 	cli := &gitserver.Client{
-		Addrs: func(ctx context.Context) []string { return addrs },
+		Addrs: func() []string { return addrs },
 		HTTPClient: httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
 			switch r.URL.String() {
 			case "http://gitserver-0/list?cloned":
@@ -102,7 +103,7 @@ func TestClient_Archive(t *testing.T) {
 	defer srv.Close()
 
 	cli := gitserver.NewClient(&http.Client{})
-	cli.Addrs = func(context.Context) []string {
+	cli.Addrs = func() []string {
 		u, _ := url.Parse(srv.URL)
 		return []string{u.Host}
 	}
@@ -249,4 +250,39 @@ func createSimpleGitRepo(t *testing.T, root string) string {
 	}
 
 	return dir
+}
+
+func TestAddrForRepo(t *testing.T) {
+	addrs := []string{"gitserver-1", "gitserver-2", "gitserver-3"}
+
+	testCases := []struct {
+		name string
+		repo api.RepoName
+		want string
+	}{
+		{
+			name: "repo1",
+			repo: api.RepoName("repo1"),
+			want: "gitserver-3",
+		},
+		{
+			name: "check we normalise",
+			repo: api.RepoName("repo1.git"),
+			want: "gitserver-3",
+		},
+		{
+			name: "another repo",
+			repo: api.RepoName("github.com/sourcegraph/sourcegraph.git"),
+			want: "gitserver-2",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := gitserver.AddrForRepo(tc.repo, addrs)
+			if got != tc.want {
+				t.Fatalf("Want %q, got %q", tc.want, got)
+			}
+		})
+	}
 }
