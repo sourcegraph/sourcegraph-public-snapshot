@@ -1,20 +1,21 @@
+import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
 import * as H from 'history'
-import * as React from 'react'
+import React, { useCallback, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { CircleChevronLeftIcon } from '../../../shared/src/components/icons'
-import { TabsWithLocalStorageViewStatePersistence } from '../../../branded/src/components/Tabs'
-import { gql, dataOrThrowErrors } from '../../../shared/src/graphql/graphql'
+import { GitRefType, Scalars } from '../../../shared/src/graphql-operations'
+import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
+import { RevisionSpec } from '../../../shared/src/util/url'
+import { useLocalStorage } from '../../../shared/src/util/useLocalStorage'
 import { queryGraphQL } from '../backend/graphql'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../components/FilteredConnection'
 import { eventLogger } from '../tracking/eventLogger'
 import { replaceRevisionInURL } from '../util/url'
 import { GitReferenceNode, queryGitReferences } from './GitReference'
-import { RevisionSpec } from '../../../shared/src/util/url'
-import { GitRefType, Scalars } from '../../../shared/src/graphql-operations'
 
 const fetchRepositoryCommits = memoizeObservable(
     (
@@ -167,29 +168,48 @@ interface RevisionsPopoverTab {
  * A popover that displays a searchable list of revisions (grouped by type) for
  * the current repository.
  */
-export class RevisionsPopover extends React.PureComponent<Props> {
-    private static LAST_TAB_STORAGE_KEY = 'RevisionsPopover.lastTab'
+export const RevisionsPopover: React.FunctionComponent<Props> = props => {
+    const LAST_TAB_STORAGE_KEY = 'RevisionsPopover.lastTab'
 
-    private static TABS: RevisionsPopoverTab[] = [
+    useEffect(() => {
+        eventLogger.logViewEvent('RevisionsPopover')
+    }, [])
+
+    const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
+    const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
+
+    const TABS: RevisionsPopoverTab[] = [
         { id: 'branches', label: 'Branches', noun: 'branch', pluralNoun: 'branches', type: GitRefType.GIT_BRANCH },
         { id: 'tags', label: 'Tags', noun: 'tag', pluralNoun: 'tags', type: GitRefType.GIT_TAG },
         { id: 'commits', label: 'Commits', noun: 'commit', pluralNoun: 'commits' },
     ]
 
-    public componentDidMount(): void {
-        eventLogger.logViewEvent('RevisionsPopover')
-    }
+    const queryGitBranches = (args: FilteredConnectionQueryArguments): Observable<GQL.IGitRefConnection> =>
+        queryGitReferences({ ...args, repo: props.repo, type: GitRefType.GIT_BRANCH, withBehindAhead: false })
 
-    public render(): JSX.Element | null {
-        return (
-            <div className="revisions-popover connection-popover">
-                <TabsWithLocalStorageViewStatePersistence
-                    tabs={RevisionsPopover.TABS}
-                    storageKey={RevisionsPopover.LAST_TAB_STORAGE_KEY}
-                    className="revisions-popover__tabs"
-                >
-                    {RevisionsPopover.TABS.map(tab =>
-                        tab.type ? (
+    const queryGitTags = (args: FilteredConnectionQueryArguments): Observable<GQL.IGitRefConnection> =>
+        queryGitReferences({ ...args, repo: props.repo, type: GitRefType.GIT_TAG, withBehindAhead: false })
+
+    const queryRepositoryCommits = (args: FilteredConnectionQueryArguments): Observable<GQL.IGitCommitConnection> =>
+        fetchRepositoryCommits({
+            ...args,
+            repo: props.repo,
+            revision: props.currentRev || props.defaultBranch,
+        })
+
+    return (
+        <Tabs defaultIndex={tabIndex} className="revisions-popover" onChange={handleTabsChange}>
+            <TabList className="d-flex">
+                {TABS.map(({ label, id }) => (
+                    <Tab className="d-flex flex-1 justify-content-around" key={id}>
+                        {label}
+                    </Tab>
+                ))}
+            </TabList>
+            <TabPanels className="bg-white">
+                {TABS.map(tab => (
+                    <TabPanel className="" key={tab.id}>
+                        {tab.type ? (
                             <FilteredConnection<GQL.IGitRef, Omit<GitReferencePopoverNodeProps, 'node'>>
                                 key={tab.id}
                                 className="connection-popover__content"
@@ -197,21 +217,19 @@ export class RevisionsPopover extends React.PureComponent<Props> {
                                 compact={true}
                                 noun={tab.noun}
                                 pluralNoun={tab.pluralNoun}
-                                queryConnection={
-                                    tab.type === GitRefType.GIT_BRANCH ? this.queryGitBranches : this.queryGitTags
-                                }
+                                queryConnection={tab.type === GitRefType.GIT_BRANCH ? queryGitBranches : queryGitTags}
                                 nodeComponent={GitReferencePopoverNode}
                                 nodeComponentProps={{
-                                    defaultBranch: this.props.defaultBranch,
-                                    currentRevision: this.props.currentRev,
-                                    location: this.props.location,
+                                    defaultBranch: props.defaultBranch,
+                                    currentRevision: props.currentRev,
+                                    location: props.location,
                                 }}
                                 defaultFirst={50}
                                 autoFocus={true}
                                 noSummaryIfAllNodesVisible={true}
                                 useURLQuery={false}
-                                history={this.props.history}
-                                location={this.props.location}
+                                history={props.history}
+                                location={props.location}
                             />
                         ) : (
                             <FilteredConnection<GQL.IGitCommit, Omit<GitCommitNodeProps, 'node'>>
@@ -220,36 +238,24 @@ export class RevisionsPopover extends React.PureComponent<Props> {
                                 compact={true}
                                 noun={tab.noun}
                                 pluralNoun={tab.pluralNoun}
-                                queryConnection={this.queryRepositoryCommits}
+                                // eslint-disable-next-line react/jsx-no-bind
+                                queryConnection={queryRepositoryCommits}
                                 nodeComponent={GitCommitNode}
                                 nodeComponentProps={{
-                                    currentCommitID: this.props.currentCommitID,
-                                    location: this.props.location,
+                                    currentCommitID: props.currentCommitID,
+                                    location: props.location,
                                 }}
                                 defaultFirst={15}
                                 autoFocus={true}
-                                history={this.props.history}
-                                location={this.props.location}
+                                history={props.history}
+                                location={props.location}
                                 noSummaryIfAllNodesVisible={true}
                                 useURLQuery={false}
                             />
-                        )
-                    )}
-                </TabsWithLocalStorageViewStatePersistence>
-            </div>
-        )
-    }
-
-    private queryGitBranches = (args: FilteredConnectionQueryArguments): Observable<GQL.IGitRefConnection> =>
-        queryGitReferences({ ...args, repo: this.props.repo, type: GitRefType.GIT_BRANCH, withBehindAhead: false })
-
-    private queryGitTags = (args: FilteredConnectionQueryArguments): Observable<GQL.IGitRefConnection> =>
-        queryGitReferences({ ...args, repo: this.props.repo, type: GitRefType.GIT_TAG, withBehindAhead: false })
-
-    private queryRepositoryCommits = (args: FilteredConnectionQueryArguments): Observable<GQL.IGitCommitConnection> =>
-        fetchRepositoryCommits({
-            ...args,
-            repo: this.props.repo,
-            revision: this.props.currentRev || this.props.defaultBranch,
-        })
+                        )}
+                    </TabPanel>
+                ))}
+            </TabPanels>
+        </Tabs>
+    )
 }

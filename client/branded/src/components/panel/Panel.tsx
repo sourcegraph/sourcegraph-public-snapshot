@@ -219,14 +219,15 @@ export const Panel = React.memo<Props>(props => {
                         <Tab key={id}>{label}</Tab>
                     ))}
                 </TabList>
-                <div>
+                <div className="align-items-center d-flex mr-2">
                     <ActionsNavItems
                         {...props}
                         // TODO remove references to Bootstrap from shared, get class name from prop
                         // This is okay for now because the Panel is currently only used in the webapp
-                        // listClass="nav w-100 justify-content-end"
-                        // actionItemClass="nav-link"
-                        // actionItemIconClass="icon-inline"
+                        listClass="d-flex justify-content-end list-unstyled m-0"
+                        listItemClass="pr-4"
+                        // actionItemClass="d-flex flex-nowrap"
+                        actionItemIconClass="icon-inline"
                         menu={ContributableMenu.PanelToolbar}
                         scope={
                             panels[tabIndex]
