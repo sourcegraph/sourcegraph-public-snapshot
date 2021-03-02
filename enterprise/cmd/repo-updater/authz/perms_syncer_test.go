@@ -67,7 +67,7 @@ type mockProvider struct {
 	serviceType string
 	serviceID   string
 
-	fetchUserPerms func(context.Context, *extsvc.Account) ([]extsvc.RepoID, error)
+	fetchUserPerms func(context.Context, *extsvc.Account) ([]extsvc.RepoID, extsvc.RepoIDType, error)
 	fetchRepoPerms func(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error)
 }
 
@@ -80,7 +80,7 @@ func (p *mockProvider) ServiceID() string   { return p.serviceID }
 func (p *mockProvider) URN() string         { return extsvc.URN(p.serviceType, p.id) }
 func (*mockProvider) Validate() []string    { return nil }
 
-func (p *mockProvider) FetchUserPerms(ctx context.Context, acct *extsvc.Account) ([]extsvc.RepoID, error) {
+func (p *mockProvider) FetchUserPerms(ctx context.Context, acct *extsvc.Account) ([]extsvc.RepoID, extsvc.RepoIDType, error) {
 	return p.fetchUserPerms(ctx, acct)
 }
 
@@ -156,8 +156,8 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			p.fetchUserPerms = func(context.Context, *extsvc.Account) ([]extsvc.RepoID, error) {
-				return []extsvc.RepoID{"1"}, test.fetchErr
+			p.fetchUserPerms = func(context.Context, *extsvc.Account) ([]extsvc.RepoID, extsvc.RepoIDType, error) {
+				return []extsvc.RepoID{"1"}, extsvc.RepoIDExact, test.fetchErr
 			}
 
 			err := s.syncUserPerms(context.Background(), 1, test.noPerms)
@@ -215,8 +215,8 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 			return nil
 		}
 
-		p.fetchUserPerms = func(ctx context.Context, account *extsvc.Account) ([]extsvc.RepoID, error) {
-			return nil, &github.APIError{Code: http.StatusUnauthorized}
+		p.fetchUserPerms = func(ctx context.Context, account *extsvc.Account) ([]extsvc.RepoID, extsvc.RepoIDType, error) {
+			return nil, extsvc.RepoIDExact, &github.APIError{Code: http.StatusUnauthorized}
 		}
 
 		err := s.syncUserPerms(context.Background(), 1, false)
@@ -236,8 +236,8 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 			return nil
 		}
 
-		p.fetchUserPerms = func(ctx context.Context, account *extsvc.Account) ([]extsvc.RepoID, error) {
-			return nil, &github.APIError{
+		p.fetchUserPerms = func(ctx context.Context, account *extsvc.Account) ([]extsvc.RepoID, extsvc.RepoIDType, error) {
+			return nil, extsvc.RepoIDExact, &github.APIError{
 				URL:     "https://api.github.com/user/repos",
 				Code:    http.StatusForbidden,
 				Message: "Sorry. Your account was suspended",
