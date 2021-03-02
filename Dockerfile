@@ -4,7 +4,7 @@
 #
 # Nothing fancy here: we copy in the source code and build on the Alpine Go
 # image. Refer to .dockerignore to get a sense of what we're not going to copy.
-FROM golang:1.16-alpine@sha256:a23dc7ff6fb9b0fa3017035404b0abea819801b6bf0eb08667b3a549d3d17dbd as builder
+FROM golang:1.16-alpine@sha256:0d62e9ae180d3a794b162fbc1d13b5084687fdfa0bdfc8b5c424cd5627da8d81 as builder
 
 COPY . /src
 WORKDIR /src
