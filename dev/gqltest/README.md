@@ -29,7 +29,10 @@ You need to run `direnv allow` after editing the `.envrc` file.
 Alternatively you can use the 1password CLI tool:
 
 ``` sh
-eval $(op get item 5q5lnpirajegt7uifngeabrak4 | jq -r '.details.sections[] | .fields[] | @sh "export \(.t)=\(.v)")
+# dev-private token for ghe.sgdev.org
+op get item bw4nttlfqve3rc6xqzbqq7l7pm | jq -r '.. | select(.t? == "token name: dev-private") | @sh "export GITHUB_TOKEN=\(.v)"'
+# AWS and Bitbucket tokens
+op get item 5q5lnpirajegt7uifngeabrak4 | jq -r '.details.sections[] | .fields[] | @sh "export \(.t)=\(.v)"
 ```
 
 ## How to run tests
