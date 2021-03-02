@@ -479,7 +479,7 @@ describe('Repository', () => {
             )?.replace(/\u00A0/g, ' ')
             assert.strictEqual(
                 searchQuery,
-                'repo:^github\\.com/ggilmore/q-test$ file:"^Geoffrey\'s random queries\\\\.32r242442bf/% token\\\\.4288249258\\\\.sql"'
+                "repo:^github\\.com/ggilmore/q-test$ file:^Geoffrey's\\ random\\ queries\\.32r242442bf/%\\ token\\.4288249258\\.sql"
             )
 
             await driver.page.waitForSelector('.test-go-to-code-host')

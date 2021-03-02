@@ -1,6 +1,6 @@
 package lsif
 
-import "github.com/sourcegraph/lsif-protocol/reader"
+import "github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/protocol/reader"
 
 type Element reader.Element
 type Edge reader.Edge

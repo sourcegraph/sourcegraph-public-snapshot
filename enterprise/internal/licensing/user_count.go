@@ -92,7 +92,7 @@ func checkMaxUsers(ctx context.Context, s UsersStore, signature string) error {
 		log15.Error("licensing.checkMaxUsers: error getting user count", "error", err)
 		return err
 	}
-	err = setMaxUsers(signature, int(count))
+	err = setMaxUsers(signature, count)
 	if err != nil {
 		log15.Error("licensing.checkMaxUsers: error setting new max users", "error", err)
 		return err

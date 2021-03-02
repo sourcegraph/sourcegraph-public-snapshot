@@ -66,11 +66,9 @@ fi
 tmpdir="$(mktemp -d -t src-binaries.XXXXXXXX)"
 trap 'rm -rf "$tmpdir"' EXIT
 
-TAGS='dev'
 if [ -n "$DELVE" ]; then
   echo -e "Building Go code with optimizations disabled (for debugging)." >&2
   GCFLAGS='all=-N -l'
-  TAGS="$TAGS delve"
 fi
 
 # build a list of "cmd,true" and "cmd,false" pairs to indicate whether each command
@@ -133,7 +131,7 @@ do_install() {
   # believes it hasn't changed.
   do_md5 "${cmdlist[@]}" >"${tmpdir}/digest.txt"
 
-  if (go install -v -gcflags="$GCFLAGS" -tags "$TAGS" -race="$race" "${cmds[@]}"); then
+  if (go install -v -gcflags="$GCFLAGS" -race="$race" "${cmds[@]}"); then
     if $verbose; then
       # Add the digests after compilation
       do_md5 "${cmdlist[@]}" >>"${tmpdir}/digest.txt"

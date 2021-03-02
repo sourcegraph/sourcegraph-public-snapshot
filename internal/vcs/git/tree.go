@@ -297,7 +297,7 @@ func lsTreeUncached(ctx context.Context, repo api.RepoName, commit api.CommitID,
 
 		fis[i] = &util.FileInfo{
 			Name_: name, // full path relative to root (not just basename)
-			Mode_: os.FileMode(mode),
+			Mode_: mode,
 			Size_: size,
 			Sys_:  sys,
 		}

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -66,7 +65,7 @@ func Indexed() *backend.Zoekt {
 
 func Indexers() *backend.Indexers {
 	indexersOnce.Do(func() {
-		if addr := zoektAddr(os.Environ()); addr != "" && !disableHorizontalSearch() {
+		if addr := zoektAddr(os.Environ()); addr != "" {
 			indexers = &backend.Indexers{
 				Map:     endpoint.New(addr),
 				Indexed: reposAtEndpoint,
@@ -78,12 +77,6 @@ func Indexers() *backend.Indexers {
 		}
 	})
 	return indexers
-}
-
-// escape hatch to disable new indexed-search code path. Can remove in 3.11
-func disableHorizontalSearch() bool {
-	v, _ := strconv.ParseBool(os.Getenv("DISABLE_HORIZONTAL_INDEXED_SEARCH"))
-	return v
 }
 
 func zoektAddr(environ []string) string {
