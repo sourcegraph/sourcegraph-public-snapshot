@@ -409,7 +409,7 @@ func TestFileMatch_Limit(t *testing.T) {
 		return strings.Join(parts, " ")
 	}
 
-	f := func(lineMatches []LineMatch, symbols []int, limitInput uint32) bool {
+	f := func(lineMatches []results.LineMatch, symbols []int, limitInput uint32) bool {
 		fm := &FileMatch{
 			// SearchSymbolResult fails to generate due to private fields. So
 			// we just generate a slice of ints and use its length. This is
@@ -447,12 +447,12 @@ func TestFileMatch_Limit(t *testing.T) {
 
 	cases := []struct {
 		Name        string
-		LineMatches []LineMatch
+		LineMatches []results.LineMatch
 		Symbols     int
 		Limit       int
 	}{{
 		Name: "1 line match",
-		LineMatches: []LineMatch{{
+		LineMatches: []results.LineMatch{{
 			OffsetAndLengths: [][2]int32{{1, 1}},
 		}},
 		Limit: 1,

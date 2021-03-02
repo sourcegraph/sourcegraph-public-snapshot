@@ -1476,7 +1476,7 @@ func repoResult(db dbutil.DB, url string) *RepositoryResolver {
 	})
 }
 
-func fileResult(db dbutil.DB, uri string, lineMatches []*LineMatch, symbolMatches []*results.SearchSymbolResult) *FileMatchResolver {
+func fileResult(db dbutil.DB, uri string, lineMatches []*results.LineMatch, symbolMatches []*results.SearchSymbolResult) *FileMatchResolver {
 	return &FileMatchResolver{
 		db: db,
 		FileMatch: FileMatch{
@@ -1577,7 +1577,7 @@ func TestUnionMerge(t *testing.T) {
 		{
 			left: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
-					fileResult(db, "b", []*LineMatch{
+					fileResult(db, "b", []*results.LineMatch{
 						{Preview: "a"},
 						{Preview: "b"},
 					}, nil),
@@ -1585,7 +1585,7 @@ func TestUnionMerge(t *testing.T) {
 			},
 			right: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
-					fileResult(db, "b", []*LineMatch{
+					fileResult(db, "b", []*results.LineMatch{
 						{Preview: "c"},
 						{Preview: "d"},
 					}, nil),
@@ -1596,7 +1596,7 @@ func TestUnionMerge(t *testing.T) {
 		{
 			left: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
-					fileResult(db, "a", []*LineMatch{
+					fileResult(db, "a", []*results.LineMatch{
 						{Preview: "a"},
 						{Preview: "b"},
 					}, nil),
@@ -1604,7 +1604,7 @@ func TestUnionMerge(t *testing.T) {
 			},
 			right: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
-					fileResult(db, "b", []*LineMatch{
+					fileResult(db, "b", []*results.LineMatch{
 						{Preview: "c"},
 						{Preview: "d"},
 					}, nil),
