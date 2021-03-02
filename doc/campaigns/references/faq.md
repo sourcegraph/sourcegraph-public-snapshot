@@ -24,6 +24,5 @@ Known limitations:
 Campaigns does not support a declarative syntax for issues or tickets.
 However, [steps](../references/campaign_spec_yaml_reference.md#steps-run) can be used to run any container. Some users have built scripts ([example](https://github.com/sourcegraph/campaign-examples/tree/master/jira-tickets)) to create tickets at each apply.
 
-
 ### What happens to the preview page if the campaign spec is not applied?
 Unapplied campaign specs are removed from the database after 7 days.
