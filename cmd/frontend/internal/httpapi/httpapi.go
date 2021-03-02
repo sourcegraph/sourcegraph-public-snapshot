@@ -197,7 +197,7 @@ func (h *errorHandler) Handle(w http.ResponseWriter, r *http.Request, status int
 
 	var displayErrBody string
 	if h.WriteErrBody {
-		displayErrBody = string(errBody)
+		displayErrBody = errBody
 	}
 	http.Error(w, displayErrBody, status)
 	traceSpan := opentracing.SpanFromContext(r.Context())

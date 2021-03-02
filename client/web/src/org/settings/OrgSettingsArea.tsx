@@ -11,6 +11,7 @@ import { ThemeProps } from '../../../../shared/src/theme'
 import { OrgAreaPageProps } from '../area/OrgArea'
 import { OrgSettingsSidebar } from './OrgSettingsSidebar'
 import { OrgSettingsProfilePage } from './profile/OrgSettingsProfilePage'
+import { OrgSettingsMembersPage } from './members/OrgSettingsMembersPage'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -73,6 +74,14 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                 exact={true}
                                 render={routeComponentProps => (
                                     <OrgSettingsProfilePage {...routeComponentProps} {...props} />
+                                )}
+                            />
+                            <Route
+                                path={`${props.match.path}/members`}
+                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                exact={true}
+                                render={routeComponentProps => (
+                                    <OrgSettingsMembersPage {...routeComponentProps} {...props} />
                                 )}
                             />
                             <Route component={NotFoundPage} />

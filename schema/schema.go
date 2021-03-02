@@ -893,7 +893,7 @@ type NotifierEmail struct {
 
 // NotifierOpsGenie description: OpsGenie notifier
 type NotifierOpsGenie struct {
-	ApiKey   string `json:"apiKey"`
+	ApiKey   string `json:"apiKey,omitempty"`
 	ApiUrl   string `json:"apiUrl,omitempty"`
 	Priority string `json:"priority,omitempty"`
 	// Responders description: List of responders responsible for notifications.

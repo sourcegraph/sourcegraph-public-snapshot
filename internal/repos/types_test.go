@@ -438,7 +438,7 @@ func TestExternalService_Exclude(t *testing.T) {
 				tmp[i] = &types.Repo{
 					ID:           r.ID,
 					ExternalRepo: r.ExternalRepo,
-					Name:         api.RepoName(r.Name),
+					Name:         r.Name,
 					Private:      r.Private,
 					URI:          r.URI,
 					Description:  r.Description,

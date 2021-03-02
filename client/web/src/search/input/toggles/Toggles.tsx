@@ -3,21 +3,16 @@ import * as H from 'history'
 import RegexIcon from 'mdi-react/RegexIcon'
 import classNames from 'classnames'
 import FormatLetterCaseIcon from 'mdi-react/FormatLetterCaseIcon'
-import {
-    PatternTypeProps,
-    CaseSensitivityProps,
-    CopyQueryButtonProps,
-    SearchContextProps,
-    appendContextFilterToQuery,
-} from '../..'
+import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps, SearchContextProps } from '../..'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
 import { submitSearch } from '../../helpers'
 import { QueryInputToggle } from './QueryInputToggle'
 import { isErrorLike } from '../../../../../shared/src/util/errors'
 import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
 import { CopyQueryButton } from './CopyQueryButton'
-import { VersionContextProps } from '../../../../../shared/src/search/util'
 import { SearchPatternType } from '../../../graphql-operations'
+import { VersionContextProps } from '../../../../../shared/src/search/util'
+import { appendContextFilter } from '../../../../../shared/src/search/query/transformer'
 import { findFilter, FilterKind } from '../../../../../shared/src/search/query/validate'
 import { KEYBOARD_SHORTCUT_COPY_FULL_QUERY } from '../../../keyboardShortcuts/keyboardShortcuts'
 import { isMacPlatform } from '../../../util'
@@ -45,7 +40,7 @@ export const getFullQuery = (
     const finalQuery = [query, `patternType:${patternType}`, caseSensitive ? 'case:yes' : '']
         .filter(queryPart => !!queryPart)
         .join(' ')
-    return appendContextFilterToQuery(finalQuery, searchContextSpec)
+    return appendContextFilter(finalQuery, searchContextSpec)
 }
 
 /**

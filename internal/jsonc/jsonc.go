@@ -36,7 +36,7 @@ func Parse(text string) ([]byte, error) {
 // Normalize is like Parse, except it ignores errors and always returns valid JSON, even if that
 // JSON is a subset of the input.
 func Normalize(input string) []byte {
-	output, _ := jsonx.Parse(string(input), jsonx.ParseOptions{Comments: true, TrailingCommas: true})
+	output, _ := jsonx.Parse(input, jsonx.ParseOptions{Comments: true, TrailingCommas: true})
 	if len(output) == 0 {
 		return []byte("{}")
 	}

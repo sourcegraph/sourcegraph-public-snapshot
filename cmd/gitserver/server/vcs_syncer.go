@@ -70,10 +70,22 @@ func (s *GitRepoSyncer) IsCloneable(ctx context.Context, remoteURL *url.URL) err
 
 // CloneCommand returns the command to be executed for cloning a Git repository.
 func (s *GitRepoSyncer) CloneCommand(ctx context.Context, remoteURL *url.URL, tmpPath string) (cmd *exec.Cmd, err error) {
-	if useRefspecOverrides() {
-		return refspecOverridesCloneCmd(ctx, remoteURL, tmpPath)
+	if err := os.MkdirAll(tmpPath, os.ModePerm); err != nil {
+		return nil, errors.Wrapf(err, "clone failed to create tmp dir")
 	}
-	return exec.CommandContext(ctx, "git", "clone", "--mirror", "--progress", remoteURL.String(), tmpPath), nil
+
+	cmd = exec.CommandContext(ctx, "git", "init", "--bare", ".")
+	cmd.Dir = tmpPath
+	if err := cmd.Run(); err != nil {
+		return nil, errors.Wrapf(err, "clone setup failed")
+	}
+
+	cmd, _, err = s.FetchCommand(ctx, remoteURL)
+	if err != nil {
+		return nil, errors.Wrapf(err, "clone setup failed for FetchCommand")
+	}
+	cmd.Dir = tmpPath
+	return cmd, nil
 }
 
 // FetchCommand returns the command to be executed for fetching updates of a Git repository.
@@ -85,7 +97,8 @@ func (s *GitRepoSyncer) FetchCommand(ctx context.Context, remoteURL *url.URL) (c
 	} else if useRefspecOverrides() {
 		cmd = refspecOverridesFetchCmd(ctx, remoteURL)
 	} else {
-		cmd = exec.CommandContext(ctx, "git", "fetch", "--prune", remoteURL.String(),
+		cmd = exec.CommandContext(ctx, "git", "fetch",
+			"--progress", "--prune", remoteURL.String(),
 			// Normal git refs
 			"+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*",
 			// GitHub pull requests

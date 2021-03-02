@@ -15,19 +15,29 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
--
+- Opsgenie API keys can now be added via an environment variable. [#18662](https://github.com/sourcegraph/sourcegraph/pull/18662)
 
 ### Changed
 
--
+- A repository's `remote.origin.url` is not stored on gitserver disk anymore. Note: if you use the experimental feature `customGitFetch` your setting may need to be updated to specify the remote URL. [#18535](https://github.com/sourcegraph/sourcegraph/pull/18535)
+- Repositories and files containing spaces will now render with escaped spaces in the query bar rather than being
+  quoted. [#18642](https://github.com/sourcegraph/sourcegraph/pull/18642)
+- Sourcegraph is now built with Go 1.16. [#18447](https://github.com/sourcegraph/sourcegraph/pull/18447)
 
 ### Fixed
 
 - Auto complete suggestions for repositories and files containing spaces will now be automatically escaped when accepting the suggestion. [#18635](https://github.com/sourcegraph/sourcegraph/issues/18635)
+- An issue causing repository results containing spaces to not be clickable in some cases. [#18668](https://github.com/sourcegraph/sourcegraph/pull/18668)
 
 ### Removed
 
--
+- Removed the deprecated GraphQL fields `SearchResults.repositoriesSearched` and `SearchResults.indexedRepositoriesSearched`.
+
+## 3.25.2
+
+### Fixed
+
+- A security vulnerability with in the authentication workflow has been fixed. [#18686](https://github.com/sourcegraph/sourcegraph/pull/18686)
 
 ## 3.25.1
 

@@ -193,7 +193,7 @@ func (s *GitolitePhabricatorMetadataSyncer) Sync(ctx context.Context, repos []*t
 		}
 
 		for _, r := range grouped[e.ID] {
-			name := api.RepoName(r.Name)
+			name := r.Name
 
 			metadata, err := gitserver.DefaultClient.GetGitolitePhabricatorMetadata(ctx, conf.Host, name)
 			if err != nil {

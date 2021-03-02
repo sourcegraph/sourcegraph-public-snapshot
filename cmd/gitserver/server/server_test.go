@@ -256,7 +256,7 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_packed_refs(b *testing.B) {
 
 	dir := filepath.Join(tmp, ".git")
 	gitDir := GitDir(dir)
-	if err := os.Mkdir(string(dir), 0700); err != nil {
+	if err := os.Mkdir(dir, 0700); err != nil {
 		b.Fatal(err)
 	}
 
@@ -334,7 +334,7 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_unpacked_refs(b *testing.B) 
 
 	dir := filepath.Join(tmp, ".git")
 	gitDir := GitDir(dir)
-	if err := os.Mkdir(string(dir), 0700); err != nil {
+	if err := os.Mkdir(dir, 0700); err != nil {
 		b.Fatal(err)
 	}
 

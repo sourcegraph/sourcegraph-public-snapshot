@@ -30,7 +30,7 @@ type ActionJob struct {
 }
 
 func (a *ActionJob) RecordID() int {
-	return int(a.Id)
+	return a.Id
 }
 
 type ActionJobMetadata struct {

@@ -100,7 +100,7 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, db dbutil.DB, args *search.Te
 
 	// Set all repos to "timed out"
 	if since(t0) >= searchOpts.MaxWallTime {
-		c.Send(SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout | search.RepoStatusIndexed)}})
+		c.Send(SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout)}})
 	}
 
 	// We always return approximate results (limitHit true) unless we run the branch to perform a more complete search.
@@ -117,7 +117,7 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, db dbutil.DB, args *search.Te
 			return err
 		}
 		if since(t0) >= searchOpts.MaxWallTime {
-			c.Send(SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout | search.RepoStatusIndexed)}})
+			c.Send(SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout)}})
 		}
 		// This is the only place limitHit can be set false, meaning we covered everything.
 		limitHit = resp.FilesSkipped+resp.ShardsSkipped > 0

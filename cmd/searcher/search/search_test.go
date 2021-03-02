@@ -401,7 +401,7 @@ func TestSearch_badrequest(t *testing.T) {
 func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
 	form := url.Values{
 		"Repo":            []string{string(p.Repo)},
-		"URL":             []string{string(p.URL)},
+		"URL":             []string{p.URL},
 		"Commit":          []string{string(p.Commit)},
 		"Pattern":         []string{p.Pattern},
 		"FetchTimeout":    []string{p.FetchTimeout},

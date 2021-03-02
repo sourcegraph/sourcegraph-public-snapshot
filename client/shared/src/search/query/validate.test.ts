@@ -1,4 +1,4 @@
-import { findFilter, FilterKind } from './validate'
+import { findFilter, FilterKind, isContextFilterInQuery } from './validate'
 
 expect.addSnapshotSerializer({
     serialize: value => JSON.stringify(value, null, 2),
@@ -36,5 +36,23 @@ describe('finds a filter', () => {
 
     test('invalid subexpression filter when global', () => {
         expect(findFilter('repo:sg/sg case:yes', 'case', FilterKind.Subexpression)).toBeUndefined()
+    })
+})
+
+describe('isContextFilterInQuery', () => {
+    test('no context filter in query', () => {
+        expect(isContextFilterInQuery('foo')).toBeFalsy()
+    })
+
+    test('context filter in query', () => {
+        expect(isContextFilterInQuery('context:@user foo')).toBeTruthy()
+    })
+
+    test('context filters in both subexpressions', () => {
+        expect(isContextFilterInQuery('(context:@user foo) or (context:@test bar)')).toBeTruthy()
+    })
+
+    test('context filters in one subexpression', () => {
+        expect(isContextFilterInQuery('foo or (context:@test bar)')).toBeTruthy()
     })
 })
