@@ -38,12 +38,11 @@ To connect Perforce to Sourcegraph:
 Use the `depots` field to configure which depots are mirrored/synchronized as Git repositories to Sourcegraph:
 
 - [`depots`](perforce.md#depots)<br>A list of depot paths that can be either a depot root or an arbitrary subdirectory.
+- [`p4.user`](perforce.md#p4-user)<br>The user to be authenticated for p4 CLI, and should be capable of performing `p4 ping`, `p4 login`, `p4 trust` and any p4 commands involved with `git p4 clone` and `git p4 sync` for listed `depots`. If repository permissions are mirrored, the user needs additional ability to perform the `p4 protects`, `p4 groups`, `p4 group`, `p4 users` commands (aka. "super" access level).
 
 ### Repository permissions
 
 > WARNING: Permissions syncing for Perforce depots is not yet supported. All files that are synced from the Perforce Server will be readable by all Sourcegraph users. The following docs are based on prototypes and are subject to change.
-
-> NOTE: A user (`p4.user`) with "super" access level is required to be able to fetch ACLs from a Perforce Server. 
 
 Sourcegraph only supports repository-level permissions and does not match the granularity of Perforce access control lists (which supports file-level permissions). The workaround is for site admins to sync arbitrary subdirectories of a depot, which can then enforce permissions in Sourcegraph. We suggest using the most concrete path of your permissions boundary.
 
@@ -55,7 +54,7 @@ For example, if your Perforce depot `//Sourcegraph/` has different permissions f
   "depots": [
     "//Sourcegraph/Backend/",
     "//Sourcegraph/Frontend/Web/",
-    "//Sourcegraph/Frontend/Extension/",
+    "//Sourcegraph/Frontend/Extension/"
   ]
 }
 ```
@@ -76,6 +75,8 @@ write user alice * //TestDepot/...
 ```
 
 If the site admin configures `"depots": ["//TestDepot/"]`, the exclusion of the last line will not be enforced in Sourcegraph. In other words, the user alice _will have access_ to `//TestDepot/Secret/` in Sourcegraph even though alice does not have access to this directory on the Perforce Server. To mitigate, use the most concrete path of your permissions boundary as described in the above section.
+
+Besides, the host (fourth) value is disregarded from the output of `p4 protects`.
 
 ### Configuration
 
