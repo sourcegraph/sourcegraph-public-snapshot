@@ -37,12 +37,8 @@
         border-bottom: 1px solid var(--border-color);
     }
 
-    &__row-label {
-        margin: 0.25rem 0;
-
-        &--empty {
-            color: var(--color-text-3);
-        }
+    &__row-label--empty {
+        color: var(--color-text-3);
     }
 
     &__filters {

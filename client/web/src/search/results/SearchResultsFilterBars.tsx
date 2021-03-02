@@ -134,7 +134,7 @@ export const SearchResultsFilterBars: React.FunctionComponent<SearchResultsFilte
     <div className="search-results-filter-bars">
         <div className="search-results-filter-bars__row" data-testid="filters-bar">
             <span
-                className={classNames('search-results-filter-bars__row-label', {
+                className={classNames('my-1', {
                     'search-results-filter-bars__row-label--empty': !(
                         (searchSucceeded && genericFilters.length > 0) ||
                         (extensionFilters && extensionFilters.length > 0)
@@ -174,7 +174,7 @@ export const SearchResultsFilterBars: React.FunctionComponent<SearchResultsFilte
         </div>
         <div className="search-results-filter-bars__row" data-testid="repo-filters-bar">
             <span
-                className={classNames('search-results-filter-bars__row-label', {
+                className={classNames('my-1', {
                     'search-results-filter-bars__row-label--empty': !(
                         searchSucceeded &&
                         repoFilters &&
