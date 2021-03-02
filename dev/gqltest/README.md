@@ -26,6 +26,12 @@ export BITBUCKET_SERVER_USERNAME=<REDACTED>
 
 You need to run `direnv allow` after editing the `.envrc` file.
 
+Alternatively you can use the 1password CLI tool:
+
+``` sh
+eval $(op get item 5q5lnpirajegt7uifngeabrak4 | jq -r '.details.sections[] | .fields[] | @sh "export \(.t)=\(.v)")
+```
+
 ## How to run tests
 
 GraphQL-based integration tests are running against a live Sourcegraph instance, the eaiset way to make one is by booting up a single Docker container:
