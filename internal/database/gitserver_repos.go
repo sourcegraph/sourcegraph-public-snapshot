@@ -91,27 +91,26 @@ ORDER BY repo.id ASC
 
 	for rows.Next() {
 		var rgs types.RepoGitserverStatus
-		var cloneStatus sql.NullString
-		var shardID sql.NullString
-		var lastExtSvc sql.NullInt64
-		var lastError sql.NullString
-		var updatedAt sql.NullTime
+		var gr types.GitserverRepo
 
-		if err := rows.Scan(&rgs.ID, &rgs.Name, &cloneStatus, &shardID, &lastExtSvc, &lastError, &updatedAt); err != nil {
+		var cloneStatus string
+
+		if err := rows.Scan(&rgs.ID,
+			&rgs.Name,
+			&dbutil.NullString{S: &cloneStatus},
+			&dbutil.NullString{S: &gr.ShardID},
+			&dbutil.NullInt64{N: &gr.LastExternalService},
+			&dbutil.NullString{S: &gr.LastError},
+			&dbutil.NullTime{Time: &gr.UpdatedAt},
+		); err != nil {
 			return errors.Wrap(err, "scanning row")
 		}
 
 		// Clone status will only be null if we don't have a corresponding row in
 		// gitserver_repos
-		if cloneStatus.Valid {
-			rgs.GitserverRepo = &types.GitserverRepo{
-				RepoID:              rgs.ID,
-				ShardID:             shardID.String,
-				CloneStatus:         types.ParseCloneStatus(cloneStatus.String),
-				LastExternalService: lastExtSvc.Int64,
-				LastError:           lastError.String,
-				UpdatedAt:           updatedAt.Time,
-			}
+		if cloneStatus != "" {
+			gr.CloneStatus = types.ParseCloneStatus(cloneStatus)
+			rgs.GitserverRepo = &gr
 		}
 
 		err := repoFn(rgs)
