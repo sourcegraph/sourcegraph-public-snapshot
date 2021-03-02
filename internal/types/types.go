@@ -386,7 +386,7 @@ type CodeHostRepository struct {
 }
 
 // RepoGitserverStatus includes basic repo data along with the current gitserver
-// status for the repo which may be unknown.
+// status for the repo, which may be unknown.
 type RepoGitserverStatus struct {
 	// ID is the unique numeric ID for this repository.
 	ID api.RepoID

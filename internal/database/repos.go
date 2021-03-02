@@ -49,7 +49,7 @@ func (e *RepoNotFoundErr) NotFound() bool {
 	return true
 }
 
-// RepoStore handles access the the repo table
+// RepoStore handles access to the repo table
 type RepoStore struct {
 	*basestore.Store
 

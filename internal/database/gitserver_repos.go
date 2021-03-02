@@ -77,10 +77,10 @@ ORDER BY repo.id ASC
 	for rows.Next() {
 		var rgs types.RepoGitserverStatus
 		var gr types.GitserverRepo
-
 		var cloneStatus string
 
-		if err := rows.Scan(&rgs.ID,
+		if err := rows.Scan(
+			&rgs.ID,
 			&rgs.Name,
 			&dbutil.NullString{S: &cloneStatus},
 			&dbutil.NullString{S: &gr.ShardID},
