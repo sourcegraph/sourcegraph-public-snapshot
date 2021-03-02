@@ -285,6 +285,49 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 	}
 }
 
+// P4Exec sends a p4 command with given arguments and returns an io.ReadCloser for the output.
+func (c *Client) P4Exec(ctx context.Context, host, user, password string, args ...string) (_ io.ReadCloser, _ http.Header, errRes error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "Client.P4Exec")
+	defer func() {
+		if errRes != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", errRes.Error())
+		}
+		span.Finish()
+	}()
+	span.SetTag("request", "P4Exec")
+	span.SetTag("host", host)
+	span.SetTag("args", args)
+
+	// Check that ctx is not expired.
+	if err := ctx.Err(); err != nil {
+		deadlineExceededCounter.Inc()
+		return nil, nil, err
+	}
+
+	req := &protocol.P4ExecRequest{
+		P4Port:   host,
+		P4User:   user,
+		P4Passwd: password,
+		Args:     args,
+	}
+	resp, err := c.httpPost(ctx, "", "p4-exec", req)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		return resp.Body, resp.Trailer, nil
+
+	default:
+		// Read response body at best effort
+		body, _ := io.ReadAll(resp.Body)
+		_ = resp.Body.Close()
+		return nil, nil, fmt.Errorf("unexpected status code: %d - %s", resp.StatusCode, body)
+	}
+}
+
 var deadlineExceededCounter = prometheus.NewCounter(prometheus.CounterOpts{
 	Name: "src_gitserver_client_deadline_exceeded",
 	Help: "Times that Client.sendExec() returned context.DeadlineExceeded",
