@@ -44,14 +44,22 @@ func cloneURLToRepoName(cloneURL, baseURL, repositoryPathPattern string) (string
 		return "", nil
 	}
 
+	// For SCP-style clone URLs, the path may not start with a slash
+	// e.g. both of the following are valid clone URLs
+	// - git@codehost.com:a/b
+	// - git@codehost.com:/a/b
+	standardizedPath := parsedCloneURL.Path
+	if strings.HasPrefix(parsedBaseURL.Path, "/") && !strings.HasPrefix(standardizedPath, "/") {
+		standardizedPath = "/" + standardizedPath
+	}
 	basePrefix := parsedBaseURL.Path
 	if !strings.HasSuffix(basePrefix, "/") {
-		basePrefix = basePrefix + "/"
+		basePrefix += "/"
 	}
-	if parsedCloneURL.Path != parsedBaseURL.Path && !strings.HasPrefix(parsedCloneURL.Path, basePrefix) {
-		return "", urlMismatchErr{cloneURL: cloneURL, hostURL: baseURL}
+	if standardizedPath != parsedBaseURL.Path && !strings.HasPrefix(standardizedPath, basePrefix) {
+		return "", nil
 	}
-	relativeRepoPath := strings.TrimPrefix(parsedCloneURL.Path, basePrefix)
+	relativeRepoPath := strings.TrimPrefix(standardizedPath, basePrefix)
 	base := url.URL{
 		Host: parsedBaseURL.Host,
 		Path: parsedBaseURL.Path,
