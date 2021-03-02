@@ -89,7 +89,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	const matchesChunk = 1000
-	matchesBuf := make([]interface{}, 0, matchesChunk)
+	matchesBuf := make([]streamhttp.EventMatch, 0, matchesChunk)
 	flushMatchesBuf := func() {
 		if len(matchesBuf) > 0 {
 			if err := eventWriter.Event("matches", matchesBuf); err != nil {
@@ -332,7 +332,7 @@ func fromStrPtr(s *string) string {
 	return *s
 }
 
-func fromFileMatch(fm *graphqlbackend.FileMatch) streamhttp.EventFileMatch {
+func fromFileMatch(fm *graphqlbackend.FileMatch) *streamhttp.EventFileMatch {
 	lineMatches := make([]streamhttp.EventLineMatch, 0, len(fm.LineMatches))
 	for _, lm := range fm.LineMatches {
 		lineMatches = append(lineMatches, streamhttp.EventLineMatch{
@@ -347,7 +347,7 @@ func fromFileMatch(fm *graphqlbackend.FileMatch) streamhttp.EventFileMatch {
 		branches = []string{*fm.InputRev}
 	}
 
-	return streamhttp.EventFileMatch{
+	return &streamhttp.EventFileMatch{
 		Type:        streamhttp.FileMatchType,
 		Path:        fm.Path,
 		Repository:  string(fm.Repo.Name),
@@ -357,13 +357,13 @@ func fromFileMatch(fm *graphqlbackend.FileMatch) streamhttp.EventFileMatch {
 	}
 }
 
-func fromSymbolMatch(fm *graphqlbackend.FileMatchResolver, symbols []streamhttp.Symbol) streamhttp.EventSymbolMatch {
+func fromSymbolMatch(fm *graphqlbackend.FileMatchResolver, symbols []streamhttp.Symbol) *streamhttp.EventSymbolMatch {
 	var branches []string
 	if fm.InputRev != nil {
 		branches = []string{*fm.InputRev}
 	}
 
-	return streamhttp.EventSymbolMatch{
+	return &streamhttp.EventSymbolMatch{
 		Type:       streamhttp.SymbolMatchType,
 		Path:       fm.Path,
 		Repository: string(fm.Repo.Name),
@@ -373,20 +373,20 @@ func fromSymbolMatch(fm *graphqlbackend.FileMatchResolver, symbols []streamhttp.
 	}
 }
 
-func fromRepository(repo *graphqlbackend.RepositoryResolver) streamhttp.EventRepoMatch {
+func fromRepository(repo *graphqlbackend.RepositoryResolver) *streamhttp.EventRepoMatch {
 	var branches []string
 	if rev := repo.Rev(); rev != "" {
 		branches = []string{rev}
 	}
 
-	return streamhttp.EventRepoMatch{
+	return &streamhttp.EventRepoMatch{
 		Type:       streamhttp.RepoMatchType,
 		Repository: repo.Name(),
 		Branches:   branches,
 	}
 }
 
-func fromCommit(commit *graphqlbackend.CommitSearchResultResolver) streamhttp.EventCommitMatch {
+func fromCommit(commit *graphqlbackend.CommitSearchResultResolver) *streamhttp.EventCommitMatch {
 	var content string
 	var ranges [][3]int32
 	if matches := commit.Matches(); len(matches) == 1 {
@@ -398,7 +398,7 @@ func fromCommit(commit *graphqlbackend.CommitSearchResultResolver) streamhttp.Ev
 			ranges[i] = [3]int32{h.Line(), h.Character(), h.Length()}
 		}
 	}
-	return streamhttp.EventCommitMatch{
+	return &streamhttp.EventCommitMatch{
 		Type:    streamhttp.CommitMatchType,
 		Icon:    commit.Icon(),
 		Label:   commit.Label().Text(),

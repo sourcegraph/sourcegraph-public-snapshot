@@ -2,6 +2,13 @@ package http
 
 import "fmt"
 
+// EventMatch is an interface which only the top level match event types
+// implement. Use this for your results slice rather than interface{}.
+type EventMatch interface {
+	// private marker method so only top level event match types are allowed.
+	eventMatch()
+}
+
 // EventFileMatch is a subset of zoekt.FileMatch for our Event API.
 type EventFileMatch struct {
 	// Type is always FileMatchType. Included here for marshalling.
@@ -14,6 +21,8 @@ type EventFileMatch struct {
 
 	LineMatches []EventLineMatch `json:"lineMatches"`
 }
+
+func (e *EventFileMatch) eventMatch() {}
 
 // EventLineMatch is a subset of zoekt.LineMatch for our Event API.
 type EventLineMatch struct {
@@ -31,6 +40,8 @@ type EventRepoMatch struct {
 	Branches   []string `json:"branches,omitempty"`
 }
 
+func (e *EventRepoMatch) eventMatch() {}
+
 // EventSymbolMatch is EventFileMatch but with Symbols instead of LineMatches
 type EventSymbolMatch struct {
 	// Type is always SymbolMatchType. Included here for marshalling.
@@ -43,6 +54,8 @@ type EventSymbolMatch struct {
 
 	Symbols []Symbol `json:"symbols"`
 }
+
+func (e *EventSymbolMatch) eventMatch() {}
 
 type Symbol struct {
 	URL           string `json:"url"`
@@ -67,6 +80,8 @@ type EventCommitMatch struct {
 	// [line, character, length]
 	Ranges [][3]int32 `json:"ranges"`
 }
+
+func (e *EventCommitMatch) eventMatch() {}
 
 // EventFilter is a suggestion for a search filter. Currently has a 1-1
 // correspondance with the SearchFilter graphql type.
