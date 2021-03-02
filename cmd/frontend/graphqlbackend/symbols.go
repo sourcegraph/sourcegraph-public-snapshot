@@ -154,7 +154,7 @@ func searchZoektSymbols(ctx context.Context, db dbutil.DB, commit *GitCommitReso
 					db,
 					commit,
 					&SearchSymbolResult{
-						symbol: protocol.Symbol{
+						Symbol: protocol.Symbol{
 							Name:       m.SymbolInfo.Sym,
 							Kind:       m.SymbolInfo.Kind,
 							Parent:     m.SymbolInfo.Parent,
@@ -162,8 +162,8 @@ func searchZoektSymbols(ctx context.Context, db dbutil.DB, commit *GitCommitReso
 							Path:       file.FileName,
 							Line:       l.LineNumber,
 						},
-						baseURI: baseURI,
-						lang:    strings.ToLower(file.Language),
+						BaseURI: baseURI,
+						Lang:    strings.ToLower(file.Language),
 					},
 				))
 			}
@@ -211,9 +211,9 @@ func computeSymbols(ctx context.Context, db dbutil.DB, commit *GitCommitResolver
 	resolvers := make([]symbolResolver, 0, len(symbols))
 	for _, symbol := range symbols {
 		sr := SearchSymbolResult{
-			symbol:  symbol,
-			baseURI: baseURI,
-			lang:    strings.ToLower(symbol.Language),
+			Symbol:  symbol,
+			BaseURI: baseURI,
+			Lang:    strings.ToLower(symbol.Language),
 		}
 		resolver := toSymbolResolver(db, commit, &sr)
 		resolvers = append(resolvers, resolver)
@@ -247,29 +247,29 @@ type symbolResolver struct {
 	*SearchSymbolResult
 }
 
-func (r symbolResolver) Name() string { return r.symbol.Name }
+func (r symbolResolver) Name() string { return r.Symbol.Name }
 
 func (r symbolResolver) ContainerName() *string {
-	if r.symbol.Parent == "" {
+	if r.Symbol.Parent == "" {
 		return nil
 	}
-	return &r.symbol.Parent
+	return &r.Symbol.Parent
 }
 
 func (r symbolResolver) Kind() string /* enum SymbolKind */ {
-	kind := ctagsKindToLSPSymbolKind(r.symbol.Kind)
+	kind := ctagsKindToLSPSymbolKind(r.Symbol.Kind)
 	if kind == 0 {
 		return "UNKNOWN"
 	}
 	return strings.ToUpper(kind.String())
 }
 
-func (r symbolResolver) Language() string { return r.symbol.Language }
+func (r symbolResolver) Language() string { return r.Symbol.Language }
 
 func (r symbolResolver) Location() *locationResolver {
-	uri := r.baseURI.WithFilePath(r.symbol.Path)
+	uri := r.BaseURI.WithFilePath(r.Symbol.Path)
 	stat := CreateFileInfo(uri.Fragment, false)
-	sr := symbolRange(r.symbol)
+	sr := symbolRange(r.Symbol)
 	return &locationResolver{
 		resource: NewGitTreeEntryResolver(r.commit, r.db, stat),
 		lspRange: &sr,
@@ -280,4 +280,4 @@ func (r symbolResolver) URL(ctx context.Context) (string, error) { return r.Loca
 
 func (r symbolResolver) CanonicalURL() (string, error) { return r.Location().CanonicalURL() }
 
-func (r symbolResolver) FileLocal() bool { return r.symbol.FileLimited }
+func (r symbolResolver) FileLocal() bool { return r.Symbol.FileLimited }

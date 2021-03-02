@@ -583,7 +583,7 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, fi
 			}
 
 			symbols = append(symbols, &SearchSymbolResult{
-				symbol: protocol.Symbol{
+				Symbol: protocol.Symbol{
 					Name:       m.SymbolInfo.Sym,
 					Kind:       m.SymbolInfo.Kind,
 					Parent:     m.SymbolInfo.Parent,
@@ -596,8 +596,8 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, fi
 					// It must escape `/` or `\` in the line.
 					Pattern: fmt.Sprintf("/^%s$/", escape(string(l.Line))),
 				},
-				lang:    lang,
-				baseURI: baseURI,
+				Lang:    lang,
+				BaseURI: baseURI,
 			})
 		}
 	}

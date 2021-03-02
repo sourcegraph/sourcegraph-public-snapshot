@@ -1514,7 +1514,7 @@ func sortResultResolvers(rs []SearchResultResolver) {
 			})
 			syms := fm.FileMatch.Symbols
 			sort.Slice(syms, func(i, j int) bool {
-				return syms[i].symbol.Name < syms[j].symbol.Name
+				return syms[i].Symbol.Name < syms[j].Symbol.Name
 			})
 		}
 	}
@@ -1615,16 +1615,16 @@ func TestUnionMerge(t *testing.T) {
 			left: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
 					fileResult(db, "a", nil, []*SearchSymbolResult{
-						{symbol: protocol.Symbol{Name: "a"}},
-						{symbol: protocol.Symbol{Name: "b"}},
+						{Symbol: protocol.Symbol{Name: "a"}},
+						{Symbol: protocol.Symbol{Name: "b"}},
 					}),
 				},
 			},
 			right: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
 					fileResult(db, "a", nil, []*SearchSymbolResult{
-						{symbol: protocol.Symbol{Name: "c"}},
-						{symbol: protocol.Symbol{Name: "d"}},
+						{Symbol: protocol.Symbol{Name: "c"}},
+						{Symbol: protocol.Symbol{Name: "d"}},
 					}),
 				},
 			},
@@ -1699,7 +1699,7 @@ func searchResultResolversToString(srrs []SearchResultResolver) string {
 		case *FileMatchResolver:
 			symbols := []string{}
 			for _, symbol := range v.FileMatch.Symbols {
-				symbols = append(symbols, symbol.symbol.Name)
+				symbols = append(symbols, symbol.Symbol.Name)
 			}
 			lines := []string{}
 			for _, line := range v.FileMatch.LineMatches {
