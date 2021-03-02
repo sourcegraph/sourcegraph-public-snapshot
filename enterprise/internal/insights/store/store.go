@@ -147,7 +147,7 @@ SELECT sub.time_bucket,
 	SUM(sub.max),
 	sub.metadata
 FROM (
-	SELECT time_bucket(INTERVAL '12 hours', time) AS time_bucket,
+	SELECT time_bucket(INTERVAL '15 days', time) AS time_bucket,
 		MAX(value),
 		m.metadata,
 		series_id,
