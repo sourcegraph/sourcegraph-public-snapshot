@@ -15,6 +15,7 @@
 - [Developing the web clients](web/index.md)
   - [Developing the web app](web/web_app.md)
   - [Developing the code host integrations](web/code_host_integrations.md)
+  - [Styling UI](web/styling.md)
 - [Developing the GraphQL API](graphql_api.md)
 - [Developing campaigns](campaigns/index.md)
 - [Developing code intelligence](codeintel/index.md)
