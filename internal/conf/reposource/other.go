@@ -1,22 +1,12 @@
 package reposource
 
 import (
-	"fmt"
 	"net/url"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-type urlMismatchErr struct {
-	cloneURL string
-	hostURL  string
-}
-
-func (e urlMismatchErr) Error() string {
-	return fmt.Sprintf("cloneURL %q did not match git host %q", e.cloneURL, e.hostURL)
-}
 
 type Other struct {
 	*schema.OtherExternalServiceConnection
