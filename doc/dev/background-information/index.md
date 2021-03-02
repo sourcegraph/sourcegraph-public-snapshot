@@ -45,6 +45,7 @@
 - [Continuous Integration](continuous_integration.md)
 - [How to run tests](testing.md)
 - [Testing Principles](testing_principles.md)
+- [Testing web code](testing_web_code.md)
 
 ## Tools
 
