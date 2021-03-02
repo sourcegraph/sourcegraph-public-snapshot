@@ -41,6 +41,7 @@ type ExternalServiceStore struct {
 	GitHubValidators          []func(*schema.GitHubConnection) error
 	GitLabValidators          []func(*schema.GitLabConnection, []schema.AuthProviders) error
 	BitbucketServerValidators []func(*schema.BitbucketServerConnection) error
+	PerforceValidators        []func(*schema.PerforceConnection) error
 
 	key encryption.Key
 
@@ -282,6 +283,13 @@ func (e *ExternalServiceStore) ValidateConfig(ctx context.Context, opt ValidateE
 		}
 		err = e.validateBitbucketCloudConnection(ctx, opt.ExternalServiceID, &c)
 
+	case extsvc.KindPerforce:
+		var c schema.PerforceConnection
+		if err = jsoniter.Unmarshal(normalized, &c); err != nil {
+			return nil, err
+		}
+		err = e.validatePerforceConnection(ctx, opt.ExternalServiceID, &c)
+
 	case extsvc.KindOther:
 		var c schema.OtherExternalServiceConnection
 		if err = jsoniter.Unmarshal(normalized, &c); err != nil {
@@ -365,6 +373,14 @@ func (e *ExternalServiceStore) validateBitbucketServerConnection(ctx context.Con
 
 func (e *ExternalServiceStore) validateBitbucketCloudConnection(ctx context.Context, id int64, c *schema.BitbucketCloudConnection) error {
 	return e.validateDuplicateRateLimits(ctx, id, extsvc.KindBitbucketCloud, c)
+}
+
+func (e *ExternalServiceStore) validatePerforceConnection(ctx context.Context, id int64, c *schema.PerforceConnection) error {
+	err := new(multierror.Error)
+	for _, validate := range e.PerforceValidators {
+		err = multierror.Append(err, validate(c))
+	}
+	return err.ErrorOrNil()
 }
 
 // validateDuplicateRateLimits returns an error if given config has duplicated non-default rate limit
