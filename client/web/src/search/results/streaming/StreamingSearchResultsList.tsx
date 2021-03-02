@@ -17,6 +17,7 @@ import { ErrorAlert } from '../../../components/alerts'
 import { SearchResult } from '../../../components/SearchResult'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { AggregateStreamingSearchResults } from '../../stream'
+import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
 
 const initialItemsToShow = 15
 const incrementalItemsToShow = 10
@@ -108,40 +109,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
             />
 
             {itemsToShow >= (results?.results.length || 0) && (
-                <>
-                    {(!results || results?.state === 'loading') && (
-                        <div className="text-center my-4" data-testid="loading-container">
-                            <LoadingSpinner className="icon-inline" />
-                        </div>
-                    )}
-
-                    {results?.state === 'error' && (
-                        <ErrorAlert
-                            className="m-3"
-                            data-testid="search-results-list-error"
-                            error={results.error}
-                            history={history}
-                        />
-                    )}
-
-                    {results?.state === 'complete' && !results.alert && results?.results.length === 0 && (
-                        <div className="alert alert-info d-flex m-3">
-                            <h3 className="m-0">
-                                <SearchIcon className="icon-inline" /> No results
-                            </h3>
-                        </div>
-                    )}
-
-                    {results?.state === 'complete' &&
-                        results.progress.skipped.some(skipped => skipped.reason.includes('-limit')) && (
-                            <div className="alert alert-info d-flex m-3">
-                                <h3 className="m-0 font-weight-normal">
-                                    <strong>Result limit hit.</strong> Modify your search with <code>count:</code> to
-                                    return additional items.
-                                </h3>
-                            </div>
-                        )}
-                </>
+                <StreamingSearchResultFooter results={results} history={history} />
             )}
         </>
     )
