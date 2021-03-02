@@ -201,6 +201,65 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 	}
 }
 
+func TestRepository_FindNearestCommit(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	commitDates := []string{
+		"2006-01-02T15:04:05Z",
+		"2007-01-02T15:04:05Z",
+		"2008-01-02T15:04:05Z",
+	}
+	testCases := []struct {
+		name   string
+		target time.Time
+		want   string
+	}{
+		{
+			name:   "exactly first commit",
+			target: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z"),
+			want:   "2006-01-02T15:04:05Z",
+		},
+		{
+			name:   "very far away",
+			target: MustParseTime(time.RFC3339, "2000-01-02T15:04:05Z"),
+			want:   "2006-01-02T15:04:05Z",
+		},
+		{
+			name:   "near second commit",
+			target: MustParseTime(time.RFC3339, "2006-08-02T15:04:05Z"),
+			want:   "2007-01-02T15:04:05Z",
+		},
+		{
+			name:   "exactly third commit",
+			target: MustParseTime(time.RFC3339, "2008-01-02T15:04:05Z"),
+			want:   "2008-01-02T15:04:05Z",
+		},
+		{
+			name:   "past third commit",
+			target: MustParseTime(time.RFC3339, "2008-01-02T20:04:05Z"),
+			want:   "2008-01-02T15:04:05Z",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			gitCommands := make([]string, len(commitDates))
+			for i, date := range commitDates {
+				gitCommands[i] = fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit --allow-empty -m foo --date=%s --author='a <a@a.com>'", date, date)
+			}
+
+			repo := MakeGitRepository(t, gitCommands...)
+			gotCommit, err := FindNearestCommit(ctx, repo, "HEAD", tc.target)
+			if err != nil {
+				t.Fatal(err)
+			}
+			got := gotCommit.Committer.Date.Format(time.RFC3339)
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
 func TestRepository_Commits(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
