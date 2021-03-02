@@ -608,6 +608,7 @@ Indexes:
  num_resets      | integer                  | not null default 0
  num_failures    | integer                  | not null default 0
  execution_logs  | json[]                   | 
+ record_time     | timestamp with time zone | 
 Indexes:
     "insights_query_runner_jobs_pkey" PRIMARY KEY, btree (id)
     "insights_query_runner_jobs_state_btree" btree (state)
