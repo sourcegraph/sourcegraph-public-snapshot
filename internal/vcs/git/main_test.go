@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -74,7 +75,7 @@ func init() {
 		}
 	}()
 
-	gitserver.DefaultClient.Addrs = func(ctx context.Context) []string {
+	gitserver.DefaultClient.Addrs = func() []string {
 		return []string{l.Addr().String()}
 	}
 }
