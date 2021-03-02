@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react'
 
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import { ButtonDropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'reactstrap'
 import { CircleDashedIcon } from '../../../components/CircleDashedIcon'
 
 import { AddCodeHostConnectionModal } from './AddCodeHostConnectionModal'
@@ -48,6 +49,9 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
         () => setIsRemoveConnectionModalOpen(!isRemoveConnectionModalOpen),
         [isRemoveConnectionModalOpen]
     )
+
+    const [dropdownOpen, setOpen] = useState(false)
+    const toggleDropdown = useCallback((): void => setOpen(!dropdownOpen), [dropdownOpen])
 
     return (
         <div className="p-2 d-flex align-items-start">
@@ -100,28 +104,37 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
             </div>
             <div className="align-self-center">
                 {service?.id ? (
-                    <>
-                        <button
-                            type="button"
-                            className="btn btn-link text-primary px-0 mr-2 shadow-none"
-                            onClick={toggleUpdateModal}
-                        >
-                            Edit
-                        </button>
-                        <button
-                            type="button"
-                            className="btn btn-link text-danger px-0 shadow-none"
-                            onClick={toggleRemoveConnectionModal}
-                        >
-                            Remove
-                        </button>
-                    </>
-                ) : (
-                    <button type="button" className="btn btn-success shadow-none" onClick={toggleAddConnectionModal}>
-                        Connect
+                    <button
+                        type="button"
+                        className="btn btn-link text-danger px-0 shadow-none"
+                        onClick={toggleRemoveConnectionModal}
+                    >
+                        Remove
                     </button>
+                ) : (
+                    <ButtonDropdown isOpen={dropdownOpen} toggle={toggleDropdown} direction="down">
+                        <DropdownToggle caret={true}>Connect</DropdownToggle>
+                        <DropdownMenu>
+                            <DropdownItem>Connect with {name} </DropdownItem>
+                            <DropdownItem onClick={toggleAddConnectionModal}>Connect with access token</DropdownItem>
+                        </DropdownMenu>
+                    </ButtonDropdown>
                 )}
             </div>
         </div>
     )
 }
+
+{
+    /* <button
+                            type="button"
+                            className="btn btn-link text-primary px-0 mr-2 shadow-none"
+                            onClick={toggleUpdateModal}
+                        >
+                            Edit
+                        </button> */
+}
+
+//     <button type="button" className="btn btn-success shadow-none" onClick={toggleAddConnectionModal}>
+//     Connect
+// </button>

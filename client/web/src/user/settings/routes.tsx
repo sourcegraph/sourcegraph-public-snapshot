@@ -116,6 +116,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
                 history={props.history}
                 match={props.match}
                 location={props.location}
+                context={window.context}
             />
         ),
         exact: true,

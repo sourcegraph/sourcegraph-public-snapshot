@@ -7,4 +7,26 @@
     &__icon--dashed {
         color: var(--border-color);
     }
+    &__btn--gitlab {
+        background-color: #6e49cb;
+        color: $white;
+        &:hover {
+            color: $white;
+            background-color: #583aa2;
+        }
+    }
+}
+
+$gitlab: #6e49cb;
+
+.btn-gitlab {
+    @include button-variant(
+        $gitlab,
+        darken($gitlab, 7.5%),
+        darken($gitlab, 10%),
+        lighten($gitlab, 5%),
+        lighten($gitlab, 10%),
+        darken($gitlab, 30%)
+    );
+    color: $white;
 }
