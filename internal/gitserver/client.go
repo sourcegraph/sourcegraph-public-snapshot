@@ -95,7 +95,7 @@ func (c *Client) AddrForRepo(ctx context.Context, repo api.RepoName) string {
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
 	}
-	return AddrForRepo(addrs, repo)
+	return AddrForRepo(repo, addrs)
 }
 
 // addrForKey returns the gitserver address to use for the given string key,
@@ -105,19 +105,19 @@ func (c *Client) addrForKey(ctx context.Context, key string) string {
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
 	}
-	return addrForKey(addrs, key)
+	return addrForKey(key, addrs)
 }
 
 // AddrForRepo returns the gitserver address to use for the given repo name.
 // It should never be called with an empty slice.
-func AddrForRepo(addrs []string, repo api.RepoName) string {
+func AddrForRepo(repo api.RepoName, addrs []string) string {
 	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
-	return addrForKey(addrs, string(repo))
+	return addrForKey(string(repo), addrs)
 }
 
 // addrForKey returns the gitserver address to use for the given string key,
 // which is hashed for sharding purposes.
-func addrForKey(addrs []string, key string) string {
+func addrForKey(key string, addrs []string) string {
 	sum := md5.Sum([]byte(key))
 	serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(addrs))
 	return addrs[serverIndex]
@@ -496,7 +496,7 @@ func (c *Client) ListCloned(ctx context.Context) ([]string, error) {
 			if len(r) > 0 {
 				filtered := r[:0]
 				for _, repo := range r {
-					if addrForKey(addrs, repo) == addr {
+					if addrForKey(repo, addrs) == addr {
 						filtered = append(filtered, repo)
 					}
 				}

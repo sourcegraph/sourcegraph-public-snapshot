@@ -253,7 +253,7 @@ func createSimpleGitRepo(t *testing.T, root string) string {
 }
 
 func TestAddrForRepo(t *testing.T) {
-	addrs := []string{"gitserver-1", "gitserver-2"}
+	addrs := []string{"gitserver-1", "gitserver-2", "gitserver-3"}
 
 	testCases := []struct {
 		name string
@@ -263,23 +263,23 @@ func TestAddrForRepo(t *testing.T) {
 		{
 			name: "repo1",
 			repo: api.RepoName("repo1"),
-			want: "gitserver-1",
+			want: "gitserver-3",
 		},
 		{
 			name: "check we normalise",
 			repo: api.RepoName("repo1.git"),
-			want: "gitserver-1",
+			want: "gitserver-3",
 		},
 		{
 			name: "another repo",
-			repo: api.RepoName("another-repo"),
-			want: "gitserver-1",
+			repo: api.RepoName("github.com/sourcegraph/sourcegraph.git"),
+			want: "gitserver-2",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := gitserver.AddrForRepo(addrs, tc.repo)
+			got := gitserver.AddrForRepo(tc.repo, addrs)
 			if got != tc.want {
 				t.Fatalf("Want %q, got %q", tc.want, got)
 			}
