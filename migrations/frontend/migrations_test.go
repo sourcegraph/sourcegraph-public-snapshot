@@ -1,9 +1,6 @@
 package migrations_test
 
 import (
-	"path/filepath"
-	"reflect"
-	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -14,13 +11,17 @@ import (
 const FirstMigration = 1528395733
 
 func TestIDConstraints(t *testing.T) {
-	ups, err := filepath.Glob("*.up.sql")
+	fs, err := migrations.MigrationsFS.ReadDir(".")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	byID := map[int][]string{}
-	for _, name := range ups {
+	for _, migration := range fs {
+		name := migration.Name()
+		if strings.HasSuffix(name, ".down.sql") {
+			continue
+		}
 		id, err := strconv.Atoi(name[:strings.IndexByte(name, '_')])
 		if err != nil {
 			t.Fatalf("failed to parse name %q: %v", name, err)
@@ -36,18 +37,5 @@ func TestIDConstraints(t *testing.T) {
 		if len(names) > 1 {
 			t.Errorf("multiple migrations with ID %d: %s", id, strings.Join(names, " "))
 		}
-	}
-}
-
-func TestNeedsGenerate(t *testing.T) {
-	want, err := filepath.Glob("*.sql")
-	if err != nil {
-		t.Fatal(err)
-	}
-	got := migrations.AssetNames()
-	sort.Strings(want)
-	sort.Strings(got)
-	if !reflect.DeepEqual(got, want) {
-		t.Fatal("bindata out of date. Please run:\n  go generate github.com/sourcegraph/sourcegraph/migrations/...")
 	}
 }

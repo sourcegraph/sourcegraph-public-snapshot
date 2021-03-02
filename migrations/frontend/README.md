@@ -30,16 +30,15 @@ explicit transaction blocks added to the migration script template.
 # Enter statements here
 ```
 
-After adding SQL statements to those files, embed them into the Go code and update the schema doc:
+After adding SQL statements to those files, update the schema doc:
 
 ```
 ./dev/generate.sh
 ```
 
-or, to only run the DB generate scripts (subset of the command above):
+or, to only run the DB schema generate script (subset of the command above):
 
 ```
-go generate ./migrations/frontend/
 go generate ./internal/database/
 ```
 

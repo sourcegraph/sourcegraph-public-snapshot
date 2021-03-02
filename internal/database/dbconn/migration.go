@@ -2,13 +2,15 @@ package dbconn
 
 import (
 	"database/sql"
+	"embed"
 	"fmt"
+	"net/http"
 	"os"
 	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
-	bindata "github.com/golang-migrate/migrate/v4/source/go_bindata"
+	"github.com/golang-migrate/migrate/v4/source/httpfs"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
@@ -25,9 +27,8 @@ type Database struct {
 	// MigrationsTable is the migrations SQL table name.
 	MigrationsTable string
 
-	// Resource describes the raw migration assets to run to migrate the target schema to a new
-	// version.
-	Resource *bindata.AssetSource
+	// EmbeddedFS holds the embedded FS containing all the sql files for the up and down migrations.
+	EmbeddedFS embed.FS
 
 	// TargetsTimescaleDB indicates if the database targets TimescaleDB. Otherwise, Postgres.
 	TargetsTimescaleDB bool
@@ -37,20 +38,20 @@ var (
 	Frontend = &Database{
 		Name:            "frontend",
 		MigrationsTable: "schema_migrations",
-		Resource:        bindata.Resource(frontendMigrations.AssetNames(), frontendMigrations.Asset),
+		EmbeddedFS:      frontendMigrations.MigrationsFS,
 	}
 
 	CodeIntel = &Database{
 		Name:            "codeintel",
 		MigrationsTable: "codeintel_schema_migrations",
-		Resource:        bindata.Resource(codeintelMigrations.AssetNames(), codeintelMigrations.Asset),
+		EmbeddedFS:      codeintelMigrations.MigrationsFS,
 	}
 
 	CodeInsights = &Database{
 		Name:               "codeinsights",
 		TargetsTimescaleDB: true,
 		MigrationsTable:    "codeinsights_schema_migrations",
-		Resource:           bindata.Resource(codeinsightsMigrations.AssetNames(), codeinsightsMigrations.Asset),
+		EmbeddedFS:         codeinsightsMigrations.MigrationsFS,
 	}
 )
 
@@ -68,7 +69,6 @@ func MigrateDB(db *sql.DB, database *Database) error {
 // NewMigrate returns a new configured migration object for the given database. The migration can
 // be subsequently run by invoking `dbconn.DoMigrate`.
 func NewMigrate(db *sql.DB, database *Database) (*migrate.Migrate, error) {
-
 	driver, err := postgres.WithInstance(db, &postgres.Config{
 		MigrationsTable: database.MigrationsTable,
 	})
@@ -76,12 +76,14 @@ func NewMigrate(db *sql.DB, database *Database) (*migrate.Migrate, error) {
 		return nil, err
 	}
 
-	d, err := bindata.WithInstance(database.Resource)
+	// This is a workaround until embed is officially supported by go-migrate.
+	// https://github.com/golang-migrate/migrate/issues/471#issuecomment-782442944
+	d, err := httpfs.New(http.FS(database.EmbeddedFS), ".")
 	if err != nil {
 		return nil, err
 	}
 
-	m, err := migrate.NewWithInstance("go-bindata", d, "postgres", driver)
+	m, err := migrate.NewWithInstance("httpfs", d, "postgres", driver)
 	if err != nil {
 		return nil, err
 	}

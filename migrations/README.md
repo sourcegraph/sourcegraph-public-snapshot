@@ -42,10 +42,9 @@ There will be up/down `.sql` migration files created in the instance's migration
 
 **NOTE**: the migration runner does not use transactions. Use the explicit transaction blocks added to the migration script template.
 
-After adding SQL statements to those files, embed them into the Go code and update the schema doc:
+After adding SQL statements to those files, update the schema doc:
 
 ```
-go generate ./migrations/...
 go generate ./internal/database/
 ```
 
@@ -71,33 +70,13 @@ On longer running branches, you might find that your migration now conflicts wit
 
 1. It's usually easiest to separate out your migration into a separate commit, with nothing else in it. (You probably want this to be the first commit on your branch, for rebasing simplicity.)
 2. Before you rebase, you should migrate down to the version before your migration. `./dev/db/migrate.sh <database> down 1` will usually take care of this for you.
-3. Once you start rebasing, you'll get an error like this on your migration commit:
-
-   ```
-   Auto-merging migrations/frontend/bindata.go
-   CONFLICT (content): Merge conflict in migrations/frontend/bindata.go
-   Auto-merging internal/database/schema.md
-   error: could not apply 4931031d10... Add migrations.
-   Resolve all conflicts manually, mark them as resolved with
-   "git add/rm <conflicted_files>", then run "git rebase --continue".
-   You can instead skip this commit: run "git rebase --skip".
-   To abort and get back to the state before "git rebase", run "git rebase --abort".
-   Could not apply 4931031d10... Add migrations.
-   ```
-
-   We need to renumber your migration, and regenerate the generated files.
-
-4. You can renumber your migration by `git mv`-ing the relevant up and down files, or with this script: `./dev/db/rebase_migration.sh <database> <either your up or down file>`
-5. Once done, you need to regenerate the schema and bindata. If you use `rebase_migration.sh`, it will suggest what to do, but it's roughly:
+3. After rebasing, a test should fail testing that migration IDs are never duplicates. You can renumber your migration by `git mv`-ing the relevant up and down files, or with this script: `./dev/db/rebase_migration.sh <database> <either your up or down file>`
+4. Once done, you need to regenerate the schema. If you use `rebase_migration.sh`, it will suggest what to do, but it's roughly:
 
    ```bash
-   rm migrations/<database>/bindata.go
-   go generate ./migrations/<database>
    ./dev/db/migrate.sh <database> up
    go generate ./internal/<database>
    ```
-
-6. From there, `git add` your updated files, and you should be able to continue your rebase.
 
 ## Customer rollbacks
 
