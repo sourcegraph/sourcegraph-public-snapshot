@@ -405,3 +405,48 @@ func TestCapFirst(t *testing.T) {
 		})
 	}
 }
+
+func TestAlertForNoResolvedReposWithNonGlobalSearchContext(t *testing.T) {
+	db := new(dbtesting.MockDB)
+
+	mockResolveRepositories = func(effectiveRepoFieldValues []string) (resolved searchrepos.Resolved, err error) {
+		return searchrepos.Resolved{
+			RepoRevs:        []*search.RepositoryRevisions{},
+			MissingRepoRevs: make([]*search.RepositoryRevisions, 0),
+			OverLimit:       false,
+		}, nil
+	}
+	defer func() {
+		mockResolveRepositories = nil
+	}()
+
+	searchQuery := "context:@user repo:r1 foo"
+	wantAlert := &searchAlert{
+		db:             db,
+		prometheusType: "no_resolved_repos__context_none_in_common",
+		title:          "No repositories found for your query within the context @user",
+		proposedQueries: []*searchQueryDescription{{
+			description: "search in the global context",
+			query:       "context:global repo:r1 foo",
+			patternType: query.SearchTypeRegex,
+		}},
+	}
+
+	q, err := query.ParseLiteral(searchQuery)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sr := searchResolver{
+		db: db,
+		SearchInputs: &SearchInputs{
+			OriginalQuery: searchQuery,
+			Query:         q,
+			UserSettings:  &schema.Settings{},
+		},
+	}
+
+	alert := sr.alertForNoResolvedRepos(context.Background())
+	if !reflect.DeepEqual(alert, wantAlert) {
+		t.Fatalf("have alert %+v, want: %+v", alert, wantAlert)
+	}
+}
