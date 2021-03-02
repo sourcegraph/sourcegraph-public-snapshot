@@ -72,11 +72,11 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	want := []*CommitSearchResultResolver{{
 		db: db,
 		CommitSearchResult: CommitSearchResult{
-			commit:      git.Commit{ID: "c1", Author: gitSignatureWithDate},
-			repoName:    types.RepoName{ID: 1, Name: "repo"},
-			diffPreview: &highlightedString{value: "x", highlights: []*highlightedRange{}},
-			body:        "```diff\nx```",
-			highlights:  []*highlightedRange{},
+			Commit:      git.Commit{ID: "c1", Author: gitSignatureWithDate},
+			RepoName:    types.RepoName{ID: 1, Name: "repo"},
+			DiffPreview: &highlightedString{value: "x", highlights: []*highlightedRange{}},
+			Body:        "```diff\nx```",
+			Highlights:  []*highlightedRange{},
 		},
 	}}
 
@@ -116,7 +116,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 }
 
 func (r *CommitSearchResultResolver) String() string {
-	return fmt.Sprintf("{commit: %+v diffPreview: %+v messagePreview: %+v}", r.Commit(), r.diffPreview, r.messagePreview)
+	return fmt.Sprintf("{commit: %+v diffPreview: %+v messagePreview: %+v}", r.Commit(), r.DiffPreview(), r.MessagePreview())
 }
 
 func TestExpandUsernamesToEmails(t *testing.T) {
@@ -316,7 +316,7 @@ func searchCommitsInRepo(ctx context.Context, db dbutil.DB, op search.CommitPara
 func TestCommitSearchResult_Limit(t *testing.T) {
 	f := func(nHighlights []int, limitInput uint32) bool {
 		cr := &CommitSearchResult{
-			highlights: make([]*highlightedRange, len(nHighlights)),
+			Highlights: make([]*highlightedRange, len(nHighlights)),
 		}
 
 		// It isn't interesting to test limit > ResultCount, so we bound it to
