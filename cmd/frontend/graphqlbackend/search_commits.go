@@ -29,14 +29,14 @@ import (
 )
 
 type CommitSearchResult struct {
-	commit         git.Commit
-	repoName       types.RepoName
-	refs           []string
-	sourceRefs     []string
-	messagePreview *highlightedString
-	diffPreview    *highlightedString
-	body           string
-	highlights     []*highlightedRange
+	Commit         git.Commit
+	RepoName       types.RepoName
+	Refs           []string
+	SourceRefs     []string
+	MessagePreview *highlightedString
+	DiffPreview    *highlightedString
+	Body           string
+	Highlights     []*highlightedRange
 }
 
 // ResultCount for CommitSearchResult returns the number of highlights if there
@@ -45,7 +45,7 @@ type CommitSearchResult struct {
 // compatibility for our GraphQL API. The GraphQL API calls ResultCount on the
 // resolver, while streaming calls ResultCount on CommitSearchResult.
 func (r *CommitSearchResult) ResultCount() int {
-	if n := len(r.highlights); n > 0 {
+	if n := len(r.Highlights); n > 0 {
 		return n
 	}
 	// Queries such as type:commit after:"1 week ago" don't have highlights. We count
@@ -54,13 +54,13 @@ func (r *CommitSearchResult) ResultCount() int {
 }
 
 func (r *CommitSearchResult) Limit(limit int) int {
-	if len(r.highlights) == 0 {
+	if len(r.Highlights) == 0 {
 		return limit - 1 // just counting the commit
-	} else if len(r.highlights) > limit {
-		r.highlights = r.highlights[:limit]
+	} else if len(r.Highlights) > limit {
+		r.Highlights = r.Highlights[:limit]
 		return 0
 	}
-	return limit - len(r.highlights)
+	return limit - len(r.Highlights)
 }
 
 // CommitSearchResultResolver is a resolver for the GraphQL type `CommitSearchResult`
@@ -90,15 +90,15 @@ func (r *CommitSearchResultResolver) Commit() *GitCommitResolver {
 		if r.gitCommitResolver != nil {
 			return
 		}
-		repoResolver := NewRepositoryResolver(r.db, r.repoName.ToRepo())
-		r.gitCommitResolver = toGitCommitResolver(repoResolver, r.db, r.commit.ID, &r.commit)
+		repoResolver := NewRepositoryResolver(r.db, r.RepoName.ToRepo())
+		r.gitCommitResolver = toGitCommitResolver(repoResolver, r.db, r.CommitSearchResult.Commit.ID, &r.CommitSearchResult.Commit)
 	})
 	return r.gitCommitResolver
 }
 
 func (r *CommitSearchResultResolver) Refs() []*GitRefResolver {
-	out := make([]*GitRefResolver, 0, len(r.refs))
-	for _, ref := range r.refs {
+	out := make([]*GitRefResolver, 0, len(r.CommitSearchResult.Refs))
+	for _, ref := range r.CommitSearchResult.Refs {
 		out = append(out, &GitRefResolver{
 			repo: r.Commit().Repository(),
 			name: ref,
@@ -108,8 +108,8 @@ func (r *CommitSearchResultResolver) Refs() []*GitRefResolver {
 }
 
 func (r *CommitSearchResultResolver) SourceRefs() []*GitRefResolver {
-	out := make([]*GitRefResolver, 0, len(r.sourceRefs))
-	for _, ref := range r.refs {
+	out := make([]*GitRefResolver, 0, len(r.CommitSearchResult.SourceRefs))
+	for _, ref := range r.CommitSearchResult.SourceRefs {
 		out = append(out, &GitRefResolver{
 			repo: r.Commit().Repository(),
 			name: ref,
@@ -118,16 +118,20 @@ func (r *CommitSearchResultResolver) SourceRefs() []*GitRefResolver {
 	return out
 }
 
-func (r *CommitSearchResultResolver) MessagePreview() *highlightedString { return r.messagePreview }
-func (r *CommitSearchResultResolver) DiffPreview() *highlightedString    { return r.diffPreview }
+func (r *CommitSearchResultResolver) MessagePreview() *highlightedString {
+	return r.CommitSearchResult.MessagePreview
+}
+func (r *CommitSearchResultResolver) DiffPreview() *highlightedString {
+	return r.CommitSearchResult.DiffPreview
+}
 
 func (r *CommitSearchResultResolver) Icon() string {
 	return "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgdmVyc2lvbj0iMS4xIiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTE3LDEyQzE3LDE0LjQyIDE1LjI4LDE2LjQ0IDEzLDE2LjlWMjFIMTFWMTYuOUM4LjcyLDE2LjQ0IDcsMTQuNDIgNywxMkM3LDkuNTggOC43Miw3LjU2IDExLDcuMVYzSDEzVjcuMUMxNS4yOCw3LjU2IDE3LDkuNTggMTcsMTJNMTIsOUEzLDMgMCAwLDAgOSwxMkEzLDMgMCAwLDAgMTIsMTVBMywzIDAgMCwwIDE1LDEyQTMsMyAwIDAsMCAxMiw5WiIgLz48L3N2Zz4="
 }
 
 func (r *CommitSearchResultResolver) Label() Markdown {
-	message := r.commit.Message.Subject()
-	author := r.commit.Author.Name
+	message := r.CommitSearchResult.Commit.Message.Subject()
+	author := r.CommitSearchResult.Commit.Author.Name
 	repoName := displayRepoName(r.Commit().Repository().Name())
 	repoURL := r.Commit().Repository().URL()
 	url := r.Commit().URL()
@@ -141,14 +145,18 @@ func (r *CommitSearchResultResolver) URL() string {
 }
 
 func (r *CommitSearchResultResolver) Detail() Markdown {
-	commitHash := r.commit.ID.Short()
+	commitHash := r.CommitSearchResult.Commit.ID.Short()
 	timeagoConfig := timeago.NoMax(timeago.English)
-	detail := fmt.Sprintf("[`%v` %v](%v)", commitHash, timeagoConfig.Format(r.commit.Author.Date), r.Commit().URL())
+	detail := fmt.Sprintf("[`%v` %v](%v)", commitHash, timeagoConfig.Format(r.CommitSearchResult.Commit.Author.Date), r.Commit().URL())
 	return Markdown(detail)
 }
 
 func (r *CommitSearchResultResolver) Matches() []*searchResultMatchResolver {
-	match := &searchResultMatchResolver{body: r.body, highlights: r.highlights, url: r.Commit().URL()}
+	match := &searchResultMatchResolver{
+		body:       r.CommitSearchResult.Body,
+		highlights: r.CommitSearchResult.Highlights,
+		url:        r.Commit().URL(),
+	}
 	matches := []*searchResultMatchResolver{match}
 	return matches
 }
@@ -449,14 +457,14 @@ func logCommitSearchResultsToResolvers(ctx context.Context, db dbutil.DB, op *se
 		results[i] = &CommitSearchResultResolver{
 			db: db,
 			CommitSearchResult: CommitSearchResult{
-				commit:         rawResult.Commit,
-				refs:           rawResult.Refs,
-				sourceRefs:     rawResult.SourceRefs,
-				messagePreview: messagePreview,
-				diffPreview:    diffPreview,
-				body:           matchBody,
-				highlights:     matchHighlights,
-				repoName:       repoName,
+				Commit:         rawResult.Commit,
+				Refs:           rawResult.Refs,
+				SourceRefs:     rawResult.SourceRefs,
+				MessagePreview: messagePreview,
+				DiffPreview:    diffPreview,
+				Body:           matchBody,
+				Highlights:     matchHighlights,
+				RepoName:       repoName,
 			},
 		}
 	}

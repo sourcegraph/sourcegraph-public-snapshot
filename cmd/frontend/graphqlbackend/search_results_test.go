@@ -1460,7 +1460,7 @@ func commitResult(urlKey string) *CommitSearchResultResolver {
 func diffResult(urlKey string) *CommitSearchResultResolver {
 	return &CommitSearchResultResolver{
 		CommitSearchResult: CommitSearchResult{
-			diffPreview: &highlightedString{},
+			DiffPreview: &highlightedString{},
 		},
 		gitCommitResolver: &GitCommitResolver{
 			repoResolver: &RepositoryResolver{
@@ -1494,7 +1494,7 @@ func resultToString(r SearchResultResolver) string {
 	case *RepositoryResolver:
 		return fmt.Sprintf("Repository:%s", v.URL())
 	case *CommitSearchResultResolver:
-		if v.diffPreview != nil {
+		if v.DiffPreview() != nil {
 			return fmt.Sprintf("Diff:%s", v.Commit().URL())
 		}
 		return fmt.Sprintf("Commit:%s", v.Commit().URL())
@@ -1708,7 +1708,7 @@ func searchResultResolversToString(srrs []SearchResultResolver) string {
 			}
 			return fmt.Sprintf("File{url:%s,symbols:[%s],lineMatches:[%s]}", v.URI, strings.Join(symbols, ","), strings.Join(lines, ","))
 		case *CommitSearchResultResolver:
-			if v.diffPreview != nil {
+			if v.DiffPreview() != nil {
 				return fmt.Sprintf("Diff:%s", v.URL())
 			}
 			return fmt.Sprintf("Commit:%s", v.URL())
