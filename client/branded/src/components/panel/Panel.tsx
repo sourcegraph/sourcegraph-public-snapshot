@@ -113,38 +113,37 @@ class Panel extends React.PureComponent<Props, State> {
                         tabBarEndFragment={
                             <>
                                 <Spacer />
+                                <ActionsNavItems
+                                    {...this.props}
+                                    // TODO remove references to Bootstrap from shared, get class name from prop
+                                    // This is okay for now because the Panel is currently only used in the webapp
+                                    listClass="nav panel__actions"
+                                    actionItemClass="nav-link mw-100 panel__action"
+                                    actionItemIconClass="icon-inline"
+                                    menu={ContributableMenu.PanelToolbar}
+                                    scope={
+                                        activePanelView !== undefined
+                                            ? {
+                                                  type: 'panelView',
+                                                  id: activePanelView.id,
+                                                  hasLocations: Boolean(activePanelView.hasLocations),
+                                              }
+                                            : undefined
+                                    }
+                                    wrapInList={true}
+                                />
                                 <button
                                     type="button"
                                     onClick={this.onDismiss}
-                                    className="btn btn-icon tab-bar__end-fragment-other-element"
+                                    className="btn btn-icon tab-bar__end-fragment-other-element panel__dismiss"
                                     data-tooltip="Close"
                                 >
                                     <CloseIcon className="icon-inline" />
                                 </button>
                             </>
                         }
-                        toolbarFragment={
-                            <ActionsNavItems
-                                {...this.props}
-                                // TODO remove references to Bootstrap from shared, get class name from prop
-                                // This is okay for now because the Panel is currently only used in the webapp
-                                listClass="nav w-100 justify-content-end"
-                                actionItemClass="nav-link"
-                                actionItemIconClass="icon-inline"
-                                menu={ContributableMenu.PanelToolbar}
-                                scope={
-                                    activePanelViewID !== undefined
-                                        ? {
-                                              type: 'panelView',
-                                              id: activePanelViewID,
-                                              hasLocations: Boolean(activePanelView?.hasLocations),
-                                          }
-                                        : undefined
-                                }
-                                wrapInList={true}
-                            />
-                        }
                         className="panel__tabs"
+                        tabBarClassName="panel__tab-bar"
                         tabClassName="tab-bar__tab--h5like"
                         location={this.props.location}
                     >
