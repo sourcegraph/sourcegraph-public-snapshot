@@ -1,4 +1,4 @@
-import React, { useLayoutEffect } from 'react'
+import React, { useLayoutEffect, useMemo, useState } from 'react'
 import ReactDOM from 'react-dom'
 import isAbsoluteUrl from 'is-absolute-url'
 import {
@@ -9,6 +9,9 @@ import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { isDefined, property } from '../../../../shared/src/util/types'
+import { Observable } from 'rxjs'
+import { useObservable } from '../../../../shared/src/util/useObservable'
+import { filter, finalize, map, tap } from 'rxjs/operators'
 
 export interface LineDecoratorProps extends ThemeProps {
     /** 1-based line number */
@@ -16,6 +19,7 @@ export interface LineDecoratorProps extends ThemeProps {
     portalID: string
     decorations: TextDocumentDecoration[]
     codeViewReference: React.MutableRefObject<HTMLElement | null | undefined>
+    codeViewElements: Observable<HTMLElement | null>
     getCodeElementFromLineNumber: (codeView: HTMLElement, line: number) => HTMLTableCellElement | null
 }
 
@@ -23,7 +27,40 @@ export interface LineDecoratorProps extends ThemeProps {
  * Component that decorates lines of code and appends line attachments set by extensions
  */
 export const LineDecorator = React.memo<LineDecoratorProps>(
-    ({ getCodeElementFromLineNumber, line, decorations, codeViewReference, portalID, isLightTheme }) => {
+    ({
+        getCodeElementFromLineNumber,
+        line,
+        decorations,
+        codeViewReference,
+        portalID,
+        isLightTheme,
+        codeViewElements,
+    }) => {
+        const [newPortalNode, setNewPortalNode] = React.useState<HTMLDivElement | null>(null)
+
+        // TODO(tj): consider useLayoutEffect to sub to replaysubject
+        useObservable(
+            useMemo(
+                () =>
+                    codeViewElements.pipe(
+                        map(codeView => {
+                            // if (!codeView) {
+                            //     // clear
+                            //     newPortalNode?.remove()
+                            //     setNewPortalNode(newPortal => {
+                            //         newPortal?.remove()
+                            //         return null
+                            //     })
+                            // }
+                        }),
+                        finalize(fd => {
+                            newPortalNode?.remove()
+                        })
+                    ),
+                [codeViewElements]
+            )
+        )
+
         const [portalNode, setPortalNode] = React.useState<HTMLDivElement | null>(null)
 
         // `LineDecorator` uses `useLayoutEffect` instead of `useEffect` in order to synchronously re-render
@@ -53,7 +90,13 @@ export const LineDecorator = React.memo<LineDecoratorProps>(
                 }
             }
 
+            const subscription = codeViewElements.subscribe(codeView => {
+                if (codeView) {
+                }
+            })
+
             return () => {
+                subscription.unsubscribe()
                 // No portal node to remove on first render
                 portalNode?.remove()
             }

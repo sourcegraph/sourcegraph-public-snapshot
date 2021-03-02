@@ -54,16 +54,15 @@ export class Services {
     // notifications have moved to both main thread and ext host (depending on whether they need user input)
     // moved to ext host
     public readonly workspace = createWorkspaceService()
-
-    // TODO general services
+    public readonly extensions: IExtensionsService
     public readonly contribution = new ContributionRegistry(
         this.viewer,
         this.model,
         this.platformContext.settings,
         this.context.data
     )
+
     public readonly view = createViewService()
-    public readonly extensions: IExtensionsService
 
     // Feature provider services
     public readonly textDocumentReferences = new TextDocumentLocationProviderRegistry<ReferenceParameters>()
