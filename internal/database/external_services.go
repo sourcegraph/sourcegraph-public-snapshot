@@ -41,7 +41,7 @@ type ExternalServiceStore struct {
 	GitHubValidators          []func(*schema.GitHubConnection) error
 	GitLabValidators          []func(*schema.GitLabConnection, []schema.AuthProviders) error
 	BitbucketServerValidators []func(*schema.BitbucketServerConnection) error
-	PerforceValidators        []func(connection *schema.PerforceConnection) error
+	PerforceValidators        []func(*schema.PerforceConnection) error
 
 	key encryption.Key
 
