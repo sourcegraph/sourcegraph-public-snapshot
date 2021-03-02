@@ -20,7 +20,6 @@ Known limitations:
 
 - Does your `repositoriesMatchingQuery` contain all the necessary flags? If you copied the query from the sourcegraph UI, note that some flags are represented as buttons (case sensitivity, regex, structural search), and do not appear in the query unless the experimental [`copyQueryButton`](https://github.com/sourcegraph/sourcegraph/pull/18317) feature toggle is enabled.
 
-
 ### Can I create tickets or issues along with campaigns?
 Campaigns does not support a declarative syntax for issues or tickets.
 However, [steps](../references/campaign_spec_yaml_reference.md#steps-run) can be used to run any container. Some users have built scripts ([example](https://github.com/sourcegraph/campaign-examples/tree/master/jira-tickets)) to create tickets at each apply.
