@@ -389,7 +389,7 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 					repoResolvers[repo.Name] = repoResolver
 				}
 
-				var lines []*LineMatch
+				var lines []*results.LineMatch
 				if typ != symbolRequest {
 					lines = zoektFileMatchToLineMatches(maxLineFragmentMatches, &file)
 				}
@@ -506,8 +506,8 @@ func zoektSearchReposOnly(ctx context.Context, client zoekt.Streamer, query zoek
 	return nil
 }
 
-func zoektFileMatchToLineMatches(maxLineFragmentMatches int, file *zoekt.FileMatch) []*LineMatch {
-	lines := make([]*LineMatch, 0, len(file.LineMatches))
+func zoektFileMatchToLineMatches(maxLineFragmentMatches int, file *zoekt.FileMatch) []*results.LineMatch {
+	lines := make([]*results.LineMatch, 0, len(file.LineMatches))
 
 	for _, l := range file.LineMatches {
 		if l.FileName {
@@ -523,7 +523,7 @@ func zoektFileMatchToLineMatches(maxLineFragmentMatches int, file *zoekt.FileMat
 			length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
 			offsets[k] = [2]int32{int32(offset), int32(length)}
 		}
-		lines = append(lines, &LineMatch{
+		lines = append(lines, &results.LineMatch{
 			Preview:          string(l.Line),
 			LineNumber:       int32(l.LineNumber - 1),
 			OffsetAndLengths: offsets,

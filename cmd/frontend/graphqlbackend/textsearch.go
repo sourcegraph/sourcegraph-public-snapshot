@@ -38,7 +38,7 @@ var textSearchLimiter = mutablelimiter.New(32)
 
 type FileMatch struct {
 	Path        string
-	LineMatches []*LineMatch
+	LineMatches []*results.LineMatch
 	LimitHit    bool
 
 	Symbols  []*results.SearchSymbolResult `json:"-"`
@@ -221,16 +221,8 @@ func (fm *FileMatchResolver) Select(t filter.SelectPath) SearchResultResolver {
 	return nil
 }
 
-// LineMatch is the struct used by vscode to receive search results for a line
-type LineMatch struct {
-	Preview          string
-	OffsetAndLengths [][2]int32
-	LineNumber       int32
-	LimitHit         bool
-}
-
 type lineMatchResolver struct {
-	*LineMatch
+	*results.LineMatch
 }
 
 func (lm lineMatchResolver) Preview() string {
@@ -296,13 +288,13 @@ func searchFilesInRepo(ctx context.Context, db dbutil.DB, searcherURLs *endpoint
 	repoResolver := NewRepositoryResolver(db, repo.ToRepo())
 	resolvers := make([]*FileMatchResolver, 0, len(matches))
 	for _, fm := range matches {
-		lineMatches := make([]*LineMatch, 0, len(fm.LineMatches))
+		lineMatches := make([]*results.LineMatch, 0, len(fm.LineMatches))
 		for _, lm := range fm.LineMatches {
 			ranges := make([][2]int32, 0, len(lm.OffsetAndLengths))
 			for _, ol := range lm.OffsetAndLengths {
 				ranges = append(ranges, [2]int32{int32(ol[0]), int32(ol[1])})
 			}
-			lineMatches = append(lineMatches, &LineMatch{
+			lineMatches = append(lineMatches, &results.LineMatch{
 				Preview:          lm.Preview,
 				OffsetAndLengths: ranges,
 				LineNumber:       int32(lm.LineNumber),
