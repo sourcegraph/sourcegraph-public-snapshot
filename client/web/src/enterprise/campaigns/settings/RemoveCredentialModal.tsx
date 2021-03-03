@@ -1,5 +1,4 @@
 import React, { useCallback, useState } from 'react'
-import * as H from 'history'
 import Dialog from '@reach/dialog'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
@@ -12,15 +11,12 @@ export interface RemoveCredentialModalProps {
 
     onCancel: () => void
     afterDelete: () => void
-
-    history: H.History
 }
 
 export const RemoveCredentialModal: React.FunctionComponent<RemoveCredentialModalProps> = ({
     credentialID,
     onCancel,
     afterDelete,
-    history,
 }) => {
     const labelId = 'removeCredential'
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
@@ -44,7 +40,7 @@ export const RemoveCredentialModal: React.FunctionComponent<RemoveCredentialModa
                     Remove campaigns token?
                 </h3>
 
-                {isErrorLike(isLoading) && <ErrorAlert error={isLoading} history={history} />}
+                {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
 
                 <p>You will not be able to create changesets on this code host if this token is removed.</p>
 

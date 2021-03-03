@@ -105,9 +105,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                 renderItem={renderResult}
             />
 
-            {itemsToShow >= (results?.results.length || 0) && (
-                <StreamingSearchResultFooter results={results} history={history} />
-            )}
+            {itemsToShow >= (results?.results.length || 0) && <StreamingSearchResultFooter results={results} />}
         </>
     )
 }
