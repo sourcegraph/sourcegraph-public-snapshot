@@ -62,7 +62,9 @@ Please file an issue: https://github.com/sourcegraph/sourcegraph-jetbrains/issue
 ## Development
 
 - Start IntelliJ and choose `Check out from Version Control` -> `Git` -> `https://github.com/sourcegraph/sourcegraph-jetbrains`
-- Develop as you would normally (hit Debug icon in top right of IntelliJ).
+- Develop as you would normally (hit Debug icon in top right of IntelliJ) or using gradlew commands:
+  1. `./gradlew runIde` to run an IDE instance with sourcegraph plugin installed
+  2. `./gradlew buildPlugin` to build plugin artifact (`build/distributions/Sourcegraph.zip`)
 - To create `sourcegraph.jar`:
   1. Update `plugin.xml` (change version AND describe changes in change notes).
   2. Update `Util.java` (change `VERSION` constant).

@@ -1,0 +1,23 @@
+plugins {
+    id 'java'
+    id 'org.jetbrains.intellij' version '0.7.2'
+}
+
+group 'com.sourcegraph.jetbrains'
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+intellij {
+    version 'IC-2020.1'
+    pluginName 'Sourcegraph'
+    updateSinceUntilBuild false
+    sandboxDirectory 'idea-sandbox'
+}
+
+runIde {
+    systemProperty("idea.is.internal", true)
+}
+
