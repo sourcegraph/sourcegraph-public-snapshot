@@ -1,6 +1,6 @@
 import { Observable, ReplaySubject } from 'rxjs'
 import { catchError, map, mergeMap, tap } from 'rxjs/operators'
-import { dataOrThrowErrors, gql } from '../../ui-kit-legacy-shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql } from '@sourcegraph/ui-kit-legacy-shared/src/graphql/graphql'
 import { requestGraphQL } from './backend/graphql'
 import { CurrentAuthStateResult } from './graphql-operations'
 

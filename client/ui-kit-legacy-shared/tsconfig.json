@@ -1,6 +1,5 @@
 {
   "extends": "../../tsconfig.json",
-  "references": [],
   "compilerOptions": {
     "jsx": "react",
     "module": "esnext",
@@ -19,6 +18,7 @@
       },
     ],
   },
+  "references": [],
   "include": ["**/*", ".*", "./src/**/*.json"],
   "exclude": ["../../node_modules", "./node_modules", "./out", "./src/end-to-end"],
 }
