@@ -558,7 +558,13 @@ func (r *Resolver) MoveBatchChange(ctx context.Context, args *graphqlbackend.Mov
 }
 
 func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.DeleteCampaignArgs) (_ *graphqlbackend.EmptyResponse, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.DeleteCampaign", fmt.Sprintf("Campaign: %q", args.Campaign))
+	return r.DeleteBatchChange(ctx, &graphqlbackend.DeleteBatchChangeArgs{
+		BatchChange: args.Campaign,
+	})
+}
+
+func (r *Resolver) DeleteBatchChange(ctx context.Context, args *graphqlbackend.DeleteBatchChangeArgs) (_ *graphqlbackend.EmptyResponse, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.DeleteCampaign", fmt.Sprintf("BatchChange: %q", args.BatchChange))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -567,7 +573,7 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 		return nil, err
 	}
 
-	batchChangeID, err := unmarshalBatchChangeID(args.Campaign)
+	batchChangeID, err := unmarshalBatchChangeID(args.BatchChange)
 	if err != nil {
 		return nil, err
 	}
