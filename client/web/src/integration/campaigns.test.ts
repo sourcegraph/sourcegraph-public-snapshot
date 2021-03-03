@@ -121,7 +121,7 @@ const mockDiff: NonNullable<ExternalChangesetFileDiffsFields['diff']> = {
 
 const ChangesetCountsOverTime: (variables: ChangesetCountsOverTimeVariables) => ChangesetCountsOverTimeResult = () => ({
     node: {
-        __typename: 'Campaign',
+        __typename: 'BatchChange',
         changesetCountsOverTime: [
             {
                 closed: 12,
