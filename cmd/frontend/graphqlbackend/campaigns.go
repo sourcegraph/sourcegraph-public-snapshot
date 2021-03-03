@@ -36,6 +36,13 @@ type CloseCampaignArgs struct {
 	CloseChangesets bool
 }
 
+// TODO(campaigns-deprecation)
+type MoveCampaignArgs struct {
+	Campaign     graphql.ID
+	NewName      *string
+	NewNamespace *graphql.ID
+}
+
 type CreateBatchChangeArgs struct {
 	BatchSpec graphql.ID
 }
@@ -43,12 +50,6 @@ type CreateBatchChangeArgs struct {
 type ApplyBatchChangeArgs struct {
 	BatchSpec         graphql.ID
 	EnsureBatchChange *graphql.ID
-}
-
-type MoveCampaignArgs struct {
-	Campaign     graphql.ID
-	NewName      *string
-	NewNamespace *graphql.ID
 }
 
 type ListBatchChangesArgs struct {
@@ -63,6 +64,12 @@ type ListBatchChangesArgs struct {
 type CloseBatchChangeArgs struct {
 	BatchChange     graphql.ID
 	CloseChangesets bool
+}
+
+type MoveBatchChangeArgs struct {
+	BatchChange  graphql.ID
+	NewName      *string
+	NewNamespace *graphql.ID
 }
 
 type DeleteCampaignArgs struct {
@@ -143,9 +150,9 @@ type CampaignsResolver interface {
 	CreateCampaignSpec(ctx context.Context, args *CreateCampaignSpecArgs) (BatchSpecResolver, error)
 	ApplyCampaign(ctx context.Context, args *ApplyCampaignArgs) (BatchChangeResolver, error)
 	CloseCampaign(ctx context.Context, args *CloseCampaignArgs) (BatchChangeResolver, error)
+	MoveCampaign(ctx context.Context, args *MoveCampaignArgs) (BatchChangeResolver, error)
 	// TODO: To-be-deprecated (these need to be marked as deprecated and use
 	// the code for the new implementations) and then moved up to "Deprecated:"
-	MoveCampaign(ctx context.Context, args *MoveCampaignArgs) (BatchChangeResolver, error)
 	DeleteCampaign(ctx context.Context, args *DeleteCampaignArgs) (*EmptyResponse, error)
 	CreateCampaignsCredential(ctx context.Context, args *CreateCampaignsCredentialArgs) (CampaignsCredentialResolver, error)
 	DeleteCampaignsCredential(ctx context.Context, args *DeleteCampaignsCredentialArgs) (*EmptyResponse, error)
@@ -154,6 +161,7 @@ type CampaignsResolver interface {
 	CreateBatchSpec(ctx context.Context, args *CreateBatchSpecArgs) (BatchSpecResolver, error)
 	ApplyBatchChange(ctx context.Context, args *ApplyBatchChangeArgs) (BatchChangeResolver, error)
 	CloseBatchChange(ctx context.Context, args *CloseBatchChangeArgs) (BatchChangeResolver, error)
+	MoveBatchChange(ctx context.Context, args *MoveBatchChangeArgs) (BatchChangeResolver, error)
 
 	CreateChangesetSpec(ctx context.Context, args *CreateChangesetSpecArgs) (ChangesetSpecResolver, error)
 	SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error)
@@ -579,6 +587,11 @@ func (defaultCampaignsResolver) CloseCampaign(ctx context.Context, args *CloseCa
 	return nil, campaignsOnlyInEnterprise
 }
 
+// TODO(campaigns-deprecation):
+func (defaultCampaignsResolver) MoveCampaign(ctx context.Context, args *MoveCampaignArgs) (BatchChangeResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
 func (defaultCampaignsResolver) CreateBatchChange(ctx context.Context, args *CreateBatchChangeArgs) (BatchChangeResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
@@ -594,11 +607,12 @@ func (defaultCampaignsResolver) ApplyBatchChange(ctx context.Context, args *Appl
 func (defaultCampaignsResolver) CreateChangesetSpec(ctx context.Context, args *CreateChangesetSpecArgs) (ChangesetSpecResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
-func (defaultCampaignsResolver) MoveCampaign(ctx context.Context, args *MoveCampaignArgs) (BatchChangeResolver, error) {
+
+func (defaultCampaignsResolver) CloseBatchChange(ctx context.Context, args *CloseBatchChangeArgs) (BatchChangeResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) CloseBatchChange(ctx context.Context, args *CloseBatchChangeArgs) (BatchChangeResolver, error) {
+func (defaultCampaignsResolver) MoveBatchChange(ctx context.Context, args *MoveBatchChangeArgs) (BatchChangeResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 

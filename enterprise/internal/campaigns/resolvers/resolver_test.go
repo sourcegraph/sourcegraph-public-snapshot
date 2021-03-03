@@ -61,13 +61,13 @@ func TestNullIDResilience(t *testing.T) {
 	}
 
 	mutations := []string{
-		fmt.Sprintf(`mutation { closeCampaign(campaign: %q) { id } }`, marshalBatchChangeID(0)),
+		fmt.Sprintf(`mutation { closeBatchChange(batchChange: %q) { id } }`, marshalBatchChangeID(0)),
 		fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } }`, marshalBatchChangeID(0)),
 		fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, marshalChangesetID(0)),
 		fmt.Sprintf(`mutation { reenqueueChangeset(changeset: %q) { id } }`, marshalChangesetID(0)),
 		fmt.Sprintf(`mutation { applyBatchChange(batchSpec: %q) { id } }`, marshalBatchSpecRandID("")),
 		fmt.Sprintf(`mutation { createBatchChange(batchSpec: %q) { id } }`, marshalBatchSpecRandID("")),
-		fmt.Sprintf(`mutation { moveCampaign(campaign: %q, newName: "foobar") { id } }`, marshalBatchChangeID(0)),
+		fmt.Sprintf(`mutation { moveBatchChange(batchChange: %q, newName: "foobar") { id } }`, marshalBatchChangeID(0)),
 		fmt.Sprintf(`mutation { createCampaignsCredential(externalServiceKind: GITHUB, externalServiceURL: "http://test", credential: "123123", user: %q) { id } }`, graphqlbackend.MarshalUserID(0)),
 		fmt.Sprintf(`mutation { deleteCampaignsCredential(campaignsCredential: %q) { alwaysNil } }`, marshalCampaignsCredentialID(0)),
 	}
@@ -550,7 +550,7 @@ mutation($campaignSpec: ID!){
 }
 `
 
-func TestMoveCampaign(t *testing.T) {
+func TestMoveBatchChange(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -597,15 +597,15 @@ func TestMoveCampaign(t *testing.T) {
 	campaignAPIID := string(marshalBatchChangeID(campaign.ID))
 	newCampaignName := "new-name"
 	input := map[string]interface{}{
-		"campaign": campaignAPIID,
-		"newName":  newCampaignName,
+		"batchChange": campaignAPIID,
+		"newName":     newCampaignName,
 	}
 
-	var response struct{ MoveCampaign apitest.BatchChange }
+	var response struct{ MoveBatchChange apitest.BatchChange }
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 	apitest.MustExec(actorCtx, t, s, input, &response, mutationMoveCampaign)
 
-	haveCampaign := response.MoveCampaign
+	haveCampaign := response.MoveBatchChange
 	if diff := cmp.Diff(input["newName"], haveCampaign.Name); diff != "" {
 		t.Fatalf("unexpected name (-want +got):\n%s", diff)
 	}
@@ -618,13 +618,13 @@ func TestMoveCampaign(t *testing.T) {
 	// Move to a new namespace
 	orgAPIID := graphqlbackend.MarshalOrgID(orgID)
 	input = map[string]interface{}{
-		"campaign":     string(marshalBatchChangeID(campaign.ID)),
+		"batchChange":  string(marshalBatchChangeID(campaign.ID)),
 		"newNamespace": orgAPIID,
 	}
 
 	apitest.MustExec(actorCtx, t, s, input, &response, mutationMoveCampaign)
 
-	haveCampaign = response.MoveCampaign
+	haveCampaign = response.MoveBatchChange
 	if diff := cmp.Diff(string(orgAPIID), haveCampaign.Namespace.ID); diff != "" {
 		t.Fatalf("unexpected namespace (-want +got):\n%s", diff)
 	}
@@ -638,8 +638,8 @@ const mutationMoveCampaign = `
 fragment u on User { id, databaseID, siteAdmin }
 fragment o on Org  { id, name }
 
-mutation($campaign: ID!, $newName: String, $newNamespace: ID){
-  moveCampaign(campaign: $campaign, newName: $newName, newNamespace: $newNamespace) {
+mutation($batchChange: ID!, $newName: String, $newNamespace: ID){
+  moveBatchChange(batchChange: $batchChange, newName: $newName, newNamespace: $newNamespace) {
 	id, name, description
 	initialApplier  { ...u }
 	namespace {

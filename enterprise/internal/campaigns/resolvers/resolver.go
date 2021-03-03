@@ -504,8 +504,16 @@ func (r *Resolver) CreateChangesetSpec(ctx context.Context, args *graphqlbackend
 }
 
 func (r *Resolver) MoveCampaign(ctx context.Context, args *graphqlbackend.MoveCampaignArgs) (graphqlbackend.BatchChangeResolver, error) {
+	return r.MoveBatchChange(ctx, &graphqlbackend.MoveBatchChangeArgs{
+		BatchChange:  args.Campaign,
+		NewName:      args.NewName,
+		NewNamespace: args.NewNamespace,
+	})
+}
+
+func (r *Resolver) MoveBatchChange(ctx context.Context, args *graphqlbackend.MoveBatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {
 	var err error
-	tr, ctx := trace.New(ctx, "Resolver.MoveCampaign", fmt.Sprintf("Campaign %s", args.Campaign))
+	tr, ctx := trace.New(ctx, "Resolver.MoveBatchChange", fmt.Sprintf("Campaign %s", args.BatchChange))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -515,7 +523,7 @@ func (r *Resolver) MoveCampaign(ctx context.Context, args *graphqlbackend.MoveCa
 		return nil, err
 	}
 
-	batchChangeID, err := unmarshalBatchChangeID(args.Campaign)
+	batchChangeID, err := unmarshalBatchChangeID(args.BatchChange)
 	if err != nil {
 		return nil, err
 	}
