@@ -71,7 +71,6 @@ func (a *AllReposIterator) ForEach(ctx context.Context, forEach func(repoName st
 				a.cachedRepoNames = append(a.cachedRepoNames, string(r.Name))
 			}
 			a.cachedRepoNamesAge = a.Clock()
-			return nil
 		}
 		for _, repo := range a.cachedRepoNames {
 			if err := forEach(repo); err != nil {
