@@ -56,14 +56,14 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 		framesToBackfill: 52,
 		frameLength:      7 * 24 * time.Hour,
 
-		allReposIterator: &discovery.AllReposIterator{
+		allReposIterator: (&discovery.AllReposIterator{
 			DefaultRepoStore: database.DefaultRepos(workerBaseStore.Handle().DB()),
 			RepoStore:        database.Repos(workerBaseStore.Handle().DB()),
 
 			// If a new repository is added to Sourcegraph, it can take 0-15m for it to be picked
 			// up for backfilling.
 			RepositoryListCacheTime: 15 * time.Minute,
-		},
+		}).ForEach,
 	}
 
 	// We use a periodic goroutine here just for metrics tracking. We specify 5s here so it runs as
@@ -76,12 +76,18 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 	), operation)
 }
 
+// RepoStore is a subset of the API exposed by the database.Repos() store.
+type RepoStore interface {
+	List(ctx context.Context, opt database.ReposListOptions) (results []*types.Repo, err error)
+	GetByName(ctx context.Context, name api.RepoName) (*types.Repo, error)
+}
+
 type historicalEnqueuer struct {
 	// Required fields used for mocking in tests.
 	now                   func() time.Time
 	settingStore          discovery.SettingStore
 	insightsStore         *store.Store
-	repoStore             *database.RepoStore
+	repoStore             RepoStore
 	enqueueQueryRunnerJob func(ctx context.Context, job *queryrunner.Job) error
 
 	// framesToBackfill describes the number of historical timeframes to backfill data for.
@@ -91,7 +97,11 @@ type historicalEnqueuer struct {
 	frameLength time.Duration
 
 	// The iterator to use for walking over all repositories on Sourcegraph.
-	allReposIterator *discovery.AllReposIterator
+	allReposIterator func(ctx context.Context, each func(repoName string) error) error
+}
+
+func (h *historicalEnqueuer) timeSince(t time.Time) time.Duration {
+	return h.now().Sub(t)
 }
 
 func (h *historicalEnqueuer) Handler(ctx context.Context) error {
@@ -206,16 +216,16 @@ func (h *historicalEnqueuer) buildFrame(
 	//    loop for potentially 500,000+ repositories if there is actually no work to
 	//    perform (because all have had historical data built already.)
 	//
-	lastIteration := time.Now()
+	lastIteration := h.now()
 	yield := func() {
 		if diff := time.Since(lastIteration); diff < 100*time.Millisecond {
 			time.Sleep(diff)
-			lastIteration = time.Now()
+			lastIteration = h.now()
 		}
 	}
 
 	// For every repository that we want to potentially gather historical data for.
-	hardErr = h.allReposIterator.ForEach(ctx, func(repoName string) error {
+	hardErr = h.allReposIterator(ctx, func(repoName string) error {
 		yield()
 
 		// Lookup the repository (we need its database ID)
