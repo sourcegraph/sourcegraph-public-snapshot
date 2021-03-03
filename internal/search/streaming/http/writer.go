@@ -44,7 +44,18 @@ func NewWriter(w http.ResponseWriter) (*Writer, error) {
 	}, nil
 }
 
-func (e *Writer) Event(event string, data interface{}) (err error) {
+// Event writes event with data json marshalled.
+func (e *Writer) Event(event string, data interface{}) error {
+	encoded, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	return e.EventBytes(event, encoded)
+}
+
+// EventBytes writes dataLine as an event. dataLine is not allowed to contain
+// a newline.
+func (e *Writer) EventBytes(event string, dataLine []byte) (err error) {
 	// write is a helper to avoid error handling. Additionally it counts the
 	// number of bytes written.
 	start := time.Now()
@@ -69,11 +80,6 @@ func (e *Writer) Event(event string, data interface{}) (err error) {
 		}
 	}()
 
-	encoded, err := json.Marshal(data)
-	if err != nil {
-		return err
-	}
-
 	if event != "" {
 		// event: $event\n
 		write([]byte("event: "))
@@ -83,7 +89,7 @@ func (e *Writer) Event(event string, data interface{}) (err error) {
 
 	// data: json($data)\n\n
 	write([]byte("data: "))
-	write(encoded)
+	write(dataLine)
 	write([]byte("\n\n"))
 
 	e.flush()
