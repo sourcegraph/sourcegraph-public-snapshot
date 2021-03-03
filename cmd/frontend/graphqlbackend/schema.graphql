@@ -9448,7 +9448,7 @@ extend type Mutation {
         GitHub and "declined" on Bitbucket Server).
         """
         closeChangesets: Boolean = false
-    ): Campaign!
+    ): Campaign! @deprecated(reason: "campaigns have been renamed to batch changes. Use closeBatchChange instead.")
 
     """
     Delete a campaign. A deleted campaign is completely removed and can't be un-deleted. The
@@ -9726,6 +9726,19 @@ extend type Mutation {
         deleted). The returned error has the error code ErrEnsureBatchChangeFailed.
         """
         ensureBatchChange: ID
+    ): BatchChange!
+
+    """
+    Close a batch change.
+    """
+    closeBatchChange(
+        batchChange: ID!
+        """
+        Whether to close the changesets associated with this batch change on their respective code
+        hosts. "Close" means the appropriate final state on the code host (e.g., "closed" on
+        GitHub and "declined" on Bitbucket Server).
+        """
+        closeChangesets: Boolean = false
     ): BatchChange!
 }
 
