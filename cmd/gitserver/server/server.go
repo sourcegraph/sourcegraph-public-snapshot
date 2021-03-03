@@ -33,8 +33,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -42,6 +44,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
@@ -281,7 +284,58 @@ func (s *Server) Janitor(interval time.Duration) {
 // run in a background goroutine.
 func (s *Server) SyncRepoState(interval time.Duration, db dbutil.DB) {
 	for {
+		s.syncRepoState(db)
 		time.Sleep(interval)
+	}
+}
+
+func (s *Server) syncRepoState(db dbutil.DB) {
+	// TODO: Instrumentation
+	ctx := context.Background()
+	store := database.GitserverRepos(db)
+	addrs := conf.Get().ServiceConnections.GitServers
+
+	err := store.IterateRepoGitserverStatus(ctx, func(repo types.RepoGitserverStatus) error {
+		// Ensure we're only dealing with repos we are responsible for
+		if addr := gitserver.AddrForRepo(repo.Name, addrs); addr != s.Hostname {
+			return nil
+		}
+
+		dir := s.dir(repo.Name)
+		cloned := repoCloned(dir)
+		_, cloning := s.locker.Status(dir)
+
+		var shouldUpdate bool
+		if repo.GitserverRepo == nil {
+			repo.GitserverRepo = &types.GitserverRepo{
+				RepoID: repo.ID,
+			}
+			shouldUpdate = true
+		}
+		if repo.GitserverRepo.ShardID != s.Hostname {
+			repo.GitserverRepo.ShardID = s.Hostname
+			shouldUpdate = true
+		}
+		cloneStatus := cloneStatus(cloned, cloning)
+		if repo.GitserverRepo.CloneStatus != cloneStatus {
+			repo.GitserverRepo.CloneStatus = cloneStatus
+			shouldUpdate = true
+		}
+
+		if !shouldUpdate {
+			return nil
+		}
+
+		if err := store.Upsert(ctx, *repo.GitserverRepo); err != nil {
+			log15.Error("Upserting GitserverRepo", "error", err)
+			return nil
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		log15.Error("Iterating over GitserverRepoState", "error", err)
 	}
 }
 
