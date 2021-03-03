@@ -1435,8 +1435,6 @@ func setHEAD(ctx context.Context, dir GitDir, syncer VCSSyncer, repo api.RepoNam
 		}
 	}
 
-	log15.Info("Setting HEAD to", "HEAD", headBranch)
-
 	// set HEAD
 	cmd = exec.CommandContext(ctx, "git", "symbolic-ref", "HEAD", "refs/heads/"+headBranch)
 	cmd.Dir = string(dir)
