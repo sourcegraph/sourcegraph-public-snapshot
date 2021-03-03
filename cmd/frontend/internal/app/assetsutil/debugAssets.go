@@ -31,7 +31,7 @@ func GetDebugAssetsLocation(r *http.Request) (*url.URL, error) {
 	}
 
 	debugAssetsURL, err := url.Parse(debugAssetsValue)
-	if (err != nil) {
+	if err != nil {
 		return nil, err
 	}
 
