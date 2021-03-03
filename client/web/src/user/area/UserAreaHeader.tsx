@@ -4,7 +4,6 @@ import { PageHeader } from '../../components/PageHeader'
 import { orgURL } from '../../org'
 import { OrgAvatar } from '../../org/OrgAvatar'
 import { NavItemWithIconDescriptor } from '../../util/contributions'
-import { UserAvatar } from '../UserAvatar'
 import { UserAreaRouteContext } from './UserArea'
 
 interface Props extends UserAreaRouteContext {
@@ -40,7 +39,6 @@ export const UserAreaHeader: React.FunctionComponent<Props> = ({ url, navItems, 
                                         )}
                                     </span>
                                 ),
-                                icon: () => <UserAvatar className="user-area-header__avatar" user={props.user} />,
                             },
                         ]}
                         className="mb-3"

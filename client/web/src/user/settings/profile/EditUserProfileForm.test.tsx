@@ -9,10 +9,8 @@ describe('EditUserProfileForm', () => {
         expect(
             mount(
                 <EditUserProfileForm
-                    authenticatedUser={{ siteAdmin: false }}
                     user={{ id: 'x', viewerCanChangeUsername: true }}
                     initialValue={{ username: 'u', displayName: 'd', avatarURL: 'https://example.com/image.jpg' }}
-                    onUpdate={() => {}}
                     after="AFTER"
                 />
             )

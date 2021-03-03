@@ -1,7 +1,4 @@
-import React, { useState, FunctionComponent } from 'react'
-
-import { requestGraphQL } from '../../../backend/graphql'
-import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
+import React, { FunctionComponent } from 'react'
 import {
     UserEmailsResult,
     RemoveUserEmailResult,
@@ -11,118 +8,71 @@ import {
     ResendVerificationEmailResult,
     ResendVerificationEmailVariables,
 } from '../../../graphql-operations'
-import { asError, ErrorLike } from '../../../../../shared/src/util/errors'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { gql, useMutation } from '@apollo/client'
+import { FETCH_USER_EMAILS } from './UserSettingsEmailsPage'
+
+const REMOVE_USER_EMAIL = gql`
+    mutation RemoveUserEmail($user: ID!, $email: String!) {
+        removeUserEmail(user: $user, email: $email) {
+            alwaysNil
+        }
+    }
+`
+
+const SET_EMAIL_VERIFIED = gql`
+    mutation SetUserEmailVerified($user: ID!, $email: String!, $verified: Boolean!) {
+        setUserEmailVerified(user: $user, email: $email, verified: $verified) {
+            alwaysNil
+        }
+    }
+`
+
+const RESEND_EMAIL_VERIFICATION = gql`
+    mutation ResendVerificationEmail($user: ID!, $email: String!) {
+        resendVerificationEmail(user: $user, email: $email) {
+            alwaysNil
+        }
+    }
+`
 
 interface Props {
     user: string
     email: NonNullable<UserEmailsResult['node']>['emails'][number]
-    onError: (error: ErrorLike) => void
-
-    onDidRemove?: (email: string) => void
-    onEmailVerify?: () => void
-    onEmailResendVerification?: () => void
 }
 
 export const UserEmail: FunctionComponent<Props> = ({
     user,
     email: { email, isPrimary, verified, verificationPending, viewerCanManuallyVerify },
-    onError,
-    onDidRemove,
-    onEmailVerify,
-    onEmailResendVerification,
 }) => {
-    const [isLoading, setIsLoading] = useState(false)
-
-    const handleError = (error: ErrorLike): void => {
-        onError(asError(error))
-        setIsLoading(false)
-    }
-
-    const removeEmail = async (): Promise<void> => {
-        setIsLoading(true)
-
-        try {
-            dataOrThrowErrors(
-                await requestGraphQL<RemoveUserEmailResult, RemoveUserEmailVariables>(
-                    gql`
-                        mutation RemoveUserEmail($user: ID!, $email: String!) {
-                            removeUserEmail(user: $user, email: $email) {
-                                alwaysNil
-                            }
-                        }
-                    `,
-                    { user, email }
-                ).toPromise()
-            )
-
-            setIsLoading(false)
-            eventLogger.log('UserEmailAddressDeleted')
-
-            if (onDidRemove) {
-                onDidRemove(email)
-            }
-        } catch (error) {
-            handleError(error)
+    const refetchQueries = [{ query: FETCH_USER_EMAILS, variables: { user } }]
+    const [verifyUserEmail, verifyEmailResponse] = useMutation<
+        SetUserEmailVerifiedResult,
+        SetUserEmailVerifiedVariables
+    >(SET_EMAIL_VERIFIED, { refetchQueries })
+    const [removeUserEmail, removeUserEmailResponse] = useMutation<RemoveUserEmailResult, RemoveUserEmailVariables>(
+        REMOVE_USER_EMAIL,
+        {
+            onCompleted: () => eventLogger.log('UserEmailAddressDeleted'),
+            refetchQueries,
         }
-    }
+    )
+    const [resendEmailVerification, resendEmailResponse] = useMutation<
+        ResendVerificationEmailResult,
+        ResendVerificationEmailVariables
+    >(RESEND_EMAIL_VERIFICATION, {
+        onCompleted: () => eventLogger.log('UserEmailAddressVerificationResent'),
+        refetchQueries,
+    })
 
-    const updateEmailVerification = async (verified: boolean): Promise<void> => {
-        setIsLoading(true)
+    const isLoading = removeUserEmailResponse.loading || verifyEmailResponse.loading || resendEmailResponse.loading
 
-        try {
-            dataOrThrowErrors(
-                await requestGraphQL<SetUserEmailVerifiedResult, SetUserEmailVerifiedVariables>(
-                    gql`
-                        mutation SetUserEmailVerified($user: ID!, $email: String!, $verified: Boolean!) {
-                            setUserEmailVerified(user: $user, email: $email, verified: $verified) {
-                                alwaysNil
-                            }
-                        }
-                    `,
-                    { user, email, verified }
-                ).toPromise()
-            )
-
-            setIsLoading(false)
-
-            if (verified) {
-                eventLogger.log('UserEmailAddressMarkedVerified')
-            } else {
-                eventLogger.log('UserEmailAddressMarkedUnverified')
-            }
-
-            if (onEmailVerify) {
-                onEmailVerify()
-            }
-        } catch (error) {
-            handleError(error)
-        }
-    }
-
-    const resendEmailVerification = async (email: string): Promise<void> => {
-        setIsLoading(true)
-
-        try {
-            dataOrThrowErrors(
-                await requestGraphQL<ResendVerificationEmailResult, ResendVerificationEmailVariables>(
-                    gql`
-                        mutation ResendVerificationEmail($user: ID!, $email: String!) {
-                            resendVerificationEmail(user: $user, email: $email) {
-                                alwaysNil
-                            }
-                        }
-                    `,
-                    { user, email }
-                ).toPromise()
-            )
-
-            setIsLoading(false)
-            eventLogger.log('UserEmailAddressVerificationResent')
-
-            onEmailResendVerification?.()
-        } catch (error) {
-            handleError(error)
+    const updateEmailVerification = async (): Promise<void> => {
+        await verifyUserEmail({ variables: { user, email, verified } })
+        if (verified) {
+            eventLogger.log('UserEmailAddressMarkedVerified')
+        } else {
+            eventLogger.log('UserEmailAddressMarkedUnverified')
         }
     }
 
@@ -142,7 +92,7 @@ export const UserEmail: FunctionComponent<Props> = ({
                             <button
                                 type="button"
                                 className="btn btn-link text-primary p-0"
-                                onClick={() => resendEmailVerification(email)}
+                                onClick={() => resendEmailVerification({ variables: { user, email } })}
                                 disabled={isLoading}
                             >
                                 Resend verification email
@@ -151,11 +101,11 @@ export const UserEmail: FunctionComponent<Props> = ({
                     )}
                 </div>
                 <div>
-                    {viewerCanManuallyVerify && (
+                    {!viewerCanManuallyVerify && (
                         <button
                             type="button"
                             className="btn btn-link text-primary p-0"
-                            onClick={() => updateEmailVerification(!verified)}
+                            onClick={updateEmailVerification}
                             disabled={isLoading}
                         >
                             {verified ? 'Mark as unverified' : 'Mark as verified'}
@@ -165,7 +115,7 @@ export const UserEmail: FunctionComponent<Props> = ({
                         <button
                             type="button"
                             className="btn btn-link text-danger p-0"
-                            onClick={removeEmail}
+                            onClick={() => removeUserEmail({ variables: { user, email } })}
                             disabled={isLoading}
                         >
                             Remove

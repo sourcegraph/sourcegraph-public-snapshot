@@ -8,7 +8,7 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { Form } from '../../../../../branded/src/components/Form'
 
 interface Props {
-    user: Pick<GQL.IUser, 'id' | 'username' | 'viewerCanChangeUsername'>
+    user: Pick<GQL.IUser, 'id' | 'viewerCanChangeUsername'>
     initialValue: UserProfileFormFieldsValue
     after?: React.ReactFragment
 }

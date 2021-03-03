@@ -1,32 +1,39 @@
-import React, { FunctionComponent, useMemo, useState } from 'react'
+import React, { FunctionComponent, useMemo } from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 
 import { AddUserEmailResult, AddUserEmailVariables } from '../../../graphql-operations'
-import { gql, dataOrThrowErrors } from '../../../../../shared/src/graphql/graphql'
-import { requestGraphQL } from '../../../backend/graphql'
-import { asError, isErrorLike, ErrorLike } from '../../../../../shared/src/util/errors'
 import { useInputValidation, deriveInputClassName } from '../../../../../shared/src/util/useInputValidation'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { ErrorAlert } from '../../../components/alerts'
 import { LoaderButton } from '../../../components/LoaderButton'
 import { LoaderInput } from '../../../../../branded/src/components/LoaderInput'
+import { gql, useMutation } from '@apollo/client'
+import { FETCH_USER_EMAILS } from './UserSettingsEmailsPage'
 
 interface Props {
     user: string
-    onDidAdd: () => void
     history: H.History
 
     className?: string
 }
 
-type Status = undefined | 'loading' | ErrorLike
+const ADD_USER_EMAIL = gql`
+    mutation AddUserEmail($user: ID!, $email: String!) {
+        addUserEmail(user: $user, email: $email) {
+            alwaysNil
+        }
+    }
+`
 
-export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, onDidAdd, history }) => {
-    const [statusOrError, setStatusOrError] = useState<Status>()
+export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, history }) => {
+    const [addUserEmail, { error, loading }] = useMutation<AddUserEmailResult, AddUserEmailVariables>(ADD_USER_EMAIL, {
+        onCompleted: () => eventLogger.log('NewUserEmailAddressAdded'),
+        refetchQueries: [{ query: FETCH_USER_EMAILS, variables: { user } }],
+    })
 
-    const [emailState, nextEmailFieldChange, emailInputReference, overrideEmailState] = useInputValidation(
+    const [emailState, nextEmailFieldChange, emailInputReference] = useInputValidation(
         useMemo(
             () => ({
                 synchronousValidators: [],
@@ -38,35 +45,7 @@ export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, on
 
     const onSubmit: React.FormEventHandler<HTMLFormElement> = async event => {
         event.preventDefault()
-
-        if (emailState.kind === 'VALID') {
-            setStatusOrError('loading')
-
-            try {
-                dataOrThrowErrors(
-                    await requestGraphQL<AddUserEmailResult, AddUserEmailVariables>(
-                        gql`
-                            mutation AddUserEmail($user: ID!, $email: String!) {
-                                addUserEmail(user: $user, email: $email) {
-                                    alwaysNil
-                                }
-                            }
-                        `,
-                        { user, email: emailState.value }
-                    ).toPromise()
-                )
-
-                eventLogger.log('NewUserEmailAddressAdded')
-                overrideEmailState({ value: '' })
-                setStatusOrError(undefined)
-
-                if (onDidAdd) {
-                    onDidAdd()
-                }
-            } catch (error) {
-                setStatusOrError(asError(error))
-            }
-        }
+        return addUserEmail({ variables: { user, email: emailState.value } })
     }
 
     return (
@@ -106,10 +85,10 @@ export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, on
                     />
                 </LoaderInput>
                 <LoaderButton
-                    loading={statusOrError === 'loading'}
+                    loading={loading}
                     label="Add"
                     type="submit"
-                    disabled={statusOrError === 'loading' || emailState.kind !== 'VALID'}
+                    disabled={loading || emailState.kind !== 'VALID'}
                     className="btn btn-primary"
                 />
                 {emailState.kind === 'INVALID' && (
@@ -118,7 +97,7 @@ export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, on
                     </small>
                 )}
             </form>
-            {isErrorLike(statusOrError) && <ErrorAlert className="mt-2" error={statusOrError} history={history} />}
+            {error && <ErrorAlert className="mt-2" error={error} history={history} />}
         </div>
     )
 }

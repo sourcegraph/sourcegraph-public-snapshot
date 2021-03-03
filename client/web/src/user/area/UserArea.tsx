@@ -57,7 +57,6 @@ export const UserAreaGQLFragment = gql`
             updatedAt
         }
         tags @include(if: $siteAdmin)
-        ...EditUserProfilePage
     }
 `
 
@@ -67,7 +66,6 @@ const fetchUser = (args: UserAreaVariables): Observable<UserAreaUserFields> =>
             query UserArea($username: String!, $siteAdmin: Boolean!) {
                 user(username: $username) {
                     ...UserAreaUserFields
-                    ...EditUserProfilePage
                 }
             }
             ${UserAreaGQLFragment}

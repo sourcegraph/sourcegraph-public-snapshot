@@ -32,7 +32,6 @@ describe('User profile page', () => {
             settingsURL: '/users/test/settings',
             avatarURL: '',
             viewerCanAdminister: true,
-            viewerCanChangeUsername: true,
             siteAdmin: true,
             builtinAuth: true,
             createdAt: '2020-04-10T21:11:42Z',

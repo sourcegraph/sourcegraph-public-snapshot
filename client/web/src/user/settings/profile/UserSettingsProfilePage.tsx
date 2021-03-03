@@ -1,17 +1,13 @@
 import React, { useEffect } from 'react'
 import H from 'history'
+import { useQuery, gql } from '@apollo/client'
 import { percentageDone } from '../../../../../shared/src/components/activation/Activation'
 import { ActivationChecklist } from '../../../../../shared/src/components/activation/ActivationChecklist'
 import { PageTitle } from '../../../components/PageTitle'
 import { eventLogger } from '../../../tracking/eventLogger'
-import {
-    EditUserProfilePage as EditUserProfilePageFragment,
-    GetUserProfileResult,
-    GetUserProfileVariables,
-} from '../../../graphql-operations'
+import { GetUserProfileResult, GetUserProfileVariables } from '../../../graphql-operations'
 import { EditUserProfileForm } from './EditUserProfileForm'
 import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
-import { useQuery, gql } from '@apollo/client'
 
 const GET_USER_PROFILE = gql`
     query GetUserProfile($username: String!) {
@@ -25,18 +21,14 @@ const GET_USER_PROFILE = gql`
     }
 `
 
-interface Props extends Pick<UserSettingsAreaRouteContext, 'activation'> {
-    user: EditUserProfilePageFragment
-
+interface Props extends Pick<UserSettingsAreaRouteContext, 'activation' | 'user'> {
     history: H.History
     location: H.Location
-
-    username: string
 }
 
-export const UserSettingsProfilePage: React.FunctionComponent<Props> = ({ username, ...props }) => {
+export const UserSettingsProfilePage: React.FunctionComponent<Props> = ({ user, ...props }) => {
     const { data, error } = useQuery<GetUserProfileResult, GetUserProfileVariables>(GET_USER_PROFILE, {
-        variables: { username },
+        variables: { username: user.username },
     })
 
     useEffect(() => eventLogger.logViewEvent('UserProfile'), [])
