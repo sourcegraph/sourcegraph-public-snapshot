@@ -1,7 +1,9 @@
-package graphqlbackend
+package filter
 
 import (
 	"strings"
+
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 // toSelectKind maps an internal symbol kind (cf. ctagsKind) to a corresponding
@@ -73,8 +75,8 @@ var toSelectKind = map[string]string{
 	"annotation":      "type-parameter",
 }
 
-func pick(symbols []*SearchSymbolResult, satisfy func(*SearchSymbolResult) bool) []*SearchSymbolResult {
-	var result []*SearchSymbolResult
+func pick(symbols []*result.SearchSymbolResult, satisfy func(*result.SearchSymbolResult) bool) []*result.SearchSymbolResult {
+	var result []*result.SearchSymbolResult
 	for _, symbol := range symbols {
 		if satisfy(symbol) {
 			result = append(result, symbol)
@@ -83,9 +85,9 @@ func pick(symbols []*SearchSymbolResult, satisfy func(*SearchSymbolResult) bool)
 	return result
 }
 
-func SelectKind(symbols []*SearchSymbolResult, field string) []*SearchSymbolResult {
-	return pick(symbols, func(s *SearchSymbolResult) bool {
-		if field == toSelectKind[strings.ToLower(s.symbol.Kind)] {
+func SelectSymbolKind(symbols []*result.SearchSymbolResult, field string) []*result.SearchSymbolResult {
+	return pick(symbols, func(s *result.SearchSymbolResult) bool {
+		if field == toSelectKind[strings.ToLower(s.Symbol.Kind)] {
 			return true
 		}
 		return false

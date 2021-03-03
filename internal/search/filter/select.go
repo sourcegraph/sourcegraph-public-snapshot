@@ -25,17 +25,13 @@ func (sp SelectPath) String() string {
 	return string(sp.Type)
 }
 
-var validSelectors = map[SelectType]struct{}{
+var validSelectors = map[SelectType]map[string]interface{}{
 	Commit:     {},
 	Content:    {},
 	File:       {},
 	Repository: {},
-	Symbol:     {},
-}
-
-var validFields = map[SelectType]interface{}{
-	/* cf. SymbolKind https://microsoft.github.io/language-server-protocol/specification */
-	Symbol: map[string]interface{}{
+	Symbol: {
+		/* cf. SymbolKind https://microsoft.github.io/language-server-protocol/specification */
 		"file":           struct{}{},
 		"module":         struct{}{},
 		"namespace":      struct{}{},
@@ -76,7 +72,7 @@ func SelectPathFromString(s string) (SelectPath, error) {
 		return SelectPath{}, fmt.Errorf("invalid select type '%s'", s)
 	}
 	if len(fields) > 0 {
-		if _, ok := validFields[SelectType(selector)].(map[string]interface{})[fields[0]]; !ok {
+		if _, ok := validSelectors[SelectType(selector)][fields[0]]; !ok {
 			return SelectPath{}, fmt.Errorf("invalid field '%s' on select type '%s'", fields[0], selector)
 		}
 	}
