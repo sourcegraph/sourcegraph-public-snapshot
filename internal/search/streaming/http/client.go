@@ -36,7 +36,9 @@ type Decoder struct {
 }
 
 func (rr Decoder) ReadAll(r io.Reader) error {
+	const maxPayloadSize = 10 * 1024 * 1024 // 10mb
 	scanner := bufio.NewScanner(r)
+	scanner.Buffer(make([]byte, 0, 4096), maxPayloadSize)
 	// bufio.ScanLines, except we look for two \n\n which separate events.
 	split := func(data []byte, atEOF bool) (int, []byte, error) {
 		if atEOF && len(data) == 0 {
