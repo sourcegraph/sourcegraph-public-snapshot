@@ -91,6 +91,10 @@ func TestAndOrQuery_Validation(t *testing.T) {
 			input: "-context:a",
 			want:  `field "context" does not support negation`,
 		},
+		{
+			input: "type:symbol select:symbol.timelime",
+			want:  "invalid field 'timelime' on select type 'symbol'",
+		},
 	}
 	for _, c := range cases {
 		t.Run("validate and/or query", func(t *testing.T) {

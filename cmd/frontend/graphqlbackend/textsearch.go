@@ -142,9 +142,15 @@ func (fm *FileMatchResolver) Select(t filter.SelectPath) SearchResultResolver {
 		fm.FileMatch.Symbols = nil
 		return fm
 	case filter.Symbol:
-		// Only return file match if symbols exist
 		if len(fm.FileMatch.Symbols) > 0 {
-			fm.FileMatch.LineMatches = nil
+			fm.FileMatch.LineMatches = nil // Only return symbol match if symbols exist
+			if len(t.Fields) > 0 {
+				filteredSymbols := filter.SelectSymbolKind(fm.FileMatch.Symbols, t.Fields[0])
+				if len(filteredSymbols) == 0 {
+					return nil // Remove file match if there are no symbol results after filtering
+				}
+				fm.FileMatch.Symbols = filteredSymbols
+			}
 			return fm
 		}
 		return nil
