@@ -535,9 +535,9 @@ func TestPermissionLevels(t *testing.T) {
 				},
 			},
 			{
-				name: "closeCampaign",
+				name: "closeBatchChange",
 				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
-					return fmt.Sprintf(`mutation { closeCampaign(campaign: %q, closeChangesets: false) { id } }`, campaignID)
+					return fmt.Sprintf(`mutation { closeBatchChange(batchChange: %q, closeChangesets: false) { id } }`, campaignID)
 				},
 			},
 			{
