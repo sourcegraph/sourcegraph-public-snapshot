@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 

@@ -385,6 +385,50 @@ type CodeHostRepository struct {
 	Private    bool
 }
 
+// RepoGitserverStatus includes basic repo data along with the current gitserver
+// status for the repo, which may be unknown.
+type RepoGitserverStatus struct {
+	// ID is the unique numeric ID for this repository.
+	ID api.RepoID
+	// Name is the name for this repository (e.g., "github.com/user/repo").
+	Name api.RepoName
+
+	// GitserverRepo data if it exists
+	GitserverRepo *GitserverRepo
+}
+
+type CloneStatus string
+
+const (
+	CloneStatusUnknown   CloneStatus = ""
+	CloneStatusNotCloned CloneStatus = "not_cloned"
+	CloneStatusCloning   CloneStatus = "cloning"
+	CloneStatusCloned    CloneStatus = "cloned"
+)
+
+func ParseCloneStatus(s string) CloneStatus {
+	cs := CloneStatus(s)
+	switch cs {
+	case CloneStatusNotCloned, CloneStatusCloning, CloneStatusCloned:
+		return cs
+	default:
+		return CloneStatusUnknown
+	}
+}
+
+// GitserverRepo  represents the data gitserver knows about a repo
+type GitserverRepo struct {
+	RepoID api.RepoID
+	// Usually represented by a gitserver hostname
+	ShardID     string
+	CloneStatus CloneStatus
+	// The last external service used to sync or clone this repo
+	LastExternalService int64
+	// The last error that occured or empty if the last action was successful
+	LastError string
+	UpdatedAt time.Time
+}
+
 // ExternalService is a connection to an external service.
 type ExternalService struct {
 	ID              int64

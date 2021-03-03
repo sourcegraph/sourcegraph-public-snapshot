@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"

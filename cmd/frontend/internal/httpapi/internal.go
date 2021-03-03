@@ -524,7 +524,7 @@ func serveGitTar(w http.ResponseWriter, r *http.Request) error {
 		Format:  "tar",
 	}
 
-	location := gitserver.DefaultClient.ArchiveURL(r.Context(), repo, opts)
+	location := gitserver.DefaultClient.ArchiveURL(repo, opts)
 
 	w.Header().Set("Location", location.String())
 	w.WriteHeader(http.StatusFound)
@@ -560,7 +560,7 @@ func serveGitExec(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	// Find the correct shard to query
-	addr := gitserver.DefaultClient.AddrForRepo(r.Context(), repo.Name)
+	addr := gitserver.DefaultClient.AddrForRepo(repo.Name)
 
 	director := func(req *http.Request) {
 		req.URL.Scheme = "http"
@@ -578,7 +578,7 @@ func serveGitExec(w http.ResponseWriter, r *http.Request) error {
 // gitserver for the repo.
 type gitServiceHandler struct {
 	Gitserver interface {
-		AddrForRepo(context.Context, api.RepoName) string
+		AddrForRepo(api.RepoName) string
 	}
 }
 
@@ -595,7 +595,7 @@ func (s *gitServiceHandler) redirectToGitServer(w http.ResponseWriter, r *http.R
 
 	u := &url.URL{
 		Scheme:   "http",
-		Host:     s.Gitserver.AddrForRepo(r.Context(), api.RepoName(repo)),
+		Host:     s.Gitserver.AddrForRepo(api.RepoName(repo)),
 		Path:     path.Join("/git", repo, gitPath),
 		RawQuery: r.URL.RawQuery,
 	}

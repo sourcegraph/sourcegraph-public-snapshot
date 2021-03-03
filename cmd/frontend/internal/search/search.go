@@ -12,8 +12,10 @@ import (
 	"strconv"
 	"time"
 
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -50,7 +52,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		tr.Finish()
 	}()
 
-	eventWriter, err := newEventStreamWriter(w)
+	eventWriter, err := streamhttp.NewWriter(w)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -87,7 +89,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	const matchesChunk = 1000
-	matchesBuf := make([]interface{}, 0, matchesChunk)
+	matchesBuf := make([]streamhttp.EventMatch, 0, matchesChunk)
 	flushMatchesBuf := func() {
 		if len(matchesBuf) > 0 {
 			if err := eventWriter.Event("matches", matchesBuf); err != nil {
@@ -141,13 +143,13 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				if syms := fm.Symbols(); len(syms) > 0 {
 					// Inlining to avoid exporting a bunch of stuff from
 					// graphqlbackend
-					symbols := make([]symbol, 0, len(syms))
+					symbols := make([]streamhttp.Symbol, 0, len(syms))
 					for _, sym := range syms {
 						u, err := sym.URL(ctx)
 						if err != nil {
 							continue
 						}
-						symbols = append(symbols, symbol{
+						symbols = append(symbols, streamhttp.Symbol{
 							URL:           u,
 							Name:          sym.Name(),
 							ContainerName: fromStrPtr(sym.ContainerName()),
@@ -185,9 +187,9 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Send dynamic filters once.
 	if filters := filters.Compute(); len(filters) > 0 {
-		buf := make([]eventFilter, 0, len(filters))
+		buf := make([]streamhttp.EventFilter, 0, len(filters))
 		for _, f := range filters {
-			buf = append(buf, eventFilter{
+			buf = append(buf, streamhttp.EventFilter{
 				Value:    f.Value,
 				Label:    f.Label,
 				Count:    f.Count,
@@ -204,21 +206,21 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	resultsResolver, err := results()
 	if err != nil {
-		_ = eventWriter.Event("error", eventError{Message: err.Error()})
+		_ = eventWriter.Event("error", streamhttp.EventError{Message: err.Error()})
 		return
 	}
 
 	if alert := resultsResolver.Alert(); alert != nil {
-		var pqs []proposedQuery
+		var pqs []streamhttp.ProposedQuery
 		if proposed := alert.ProposedQueries(); proposed != nil {
 			for _, pq := range *proposed {
-				pqs = append(pqs, proposedQuery{
+				pqs = append(pqs, streamhttp.ProposedQuery{
 					Description: fromStrPtr(pq.Description()),
 					Query:       pq.Query(),
 				})
 			}
 		}
-		_ = eventWriter.Event("alert", eventAlert{
+		_ = eventWriter.Event("alert", streamhttp.EventAlert{
 			Title:           alert.Title(),
 			Description:     fromStrPtr(alert.Description()),
 			ProposedQueries: pqs,
@@ -330,10 +332,10 @@ func fromStrPtr(s *string) string {
 	return *s
 }
 
-func fromFileMatch(fm *graphqlbackend.FileMatch) eventFileMatch {
-	lineMatches := make([]eventLineMatch, 0, len(fm.LineMatches))
+func fromFileMatch(fm *graphqlbackend.FileMatch) *streamhttp.EventFileMatch {
+	lineMatches := make([]streamhttp.EventLineMatch, 0, len(fm.LineMatches))
 	for _, lm := range fm.LineMatches {
-		lineMatches = append(lineMatches, eventLineMatch{
+		lineMatches = append(lineMatches, streamhttp.EventLineMatch{
 			Line:             lm.Preview,
 			LineNumber:       lm.LineNumber,
 			OffsetAndLengths: lm.OffsetAndLengths,
@@ -345,8 +347,8 @@ func fromFileMatch(fm *graphqlbackend.FileMatch) eventFileMatch {
 		branches = []string{*fm.InputRev}
 	}
 
-	return eventFileMatch{
-		Type:        fileMatch,
+	return &streamhttp.EventFileMatch{
+		Type:        streamhttp.FileMatchType,
 		Path:        fm.Path,
 		Repository:  string(fm.Repo.Name),
 		Branches:    branches,
@@ -355,14 +357,14 @@ func fromFileMatch(fm *graphqlbackend.FileMatch) eventFileMatch {
 	}
 }
 
-func fromSymbolMatch(fm *graphqlbackend.FileMatchResolver, symbols []symbol) eventSymbolMatch {
+func fromSymbolMatch(fm *graphqlbackend.FileMatchResolver, symbols []streamhttp.Symbol) *streamhttp.EventSymbolMatch {
 	var branches []string
 	if fm.InputRev != nil {
 		branches = []string{*fm.InputRev}
 	}
 
-	return eventSymbolMatch{
-		Type:       symbolMatch,
+	return &streamhttp.EventSymbolMatch{
+		Type:       streamhttp.SymbolMatchType,
 		Path:       fm.Path,
 		Repository: string(fm.Repo.Name),
 		Branches:   branches,
@@ -371,20 +373,20 @@ func fromSymbolMatch(fm *graphqlbackend.FileMatchResolver, symbols []symbol) eve
 	}
 }
 
-func fromRepository(repo *graphqlbackend.RepositoryResolver) eventRepoMatch {
+func fromRepository(repo *graphqlbackend.RepositoryResolver) *streamhttp.EventRepoMatch {
 	var branches []string
 	if rev := repo.Rev(); rev != "" {
 		branches = []string{rev}
 	}
 
-	return eventRepoMatch{
-		Type:       repoMatch,
+	return &streamhttp.EventRepoMatch{
+		Type:       streamhttp.RepoMatchType,
 		Repository: repo.Name(),
 		Branches:   branches,
 	}
 }
 
-func fromCommit(commit *graphqlbackend.CommitSearchResultResolver) eventCommitMatch {
+func fromCommit(commit *graphqlbackend.CommitSearchResultResolver) *streamhttp.EventCommitMatch {
 	var content string
 	var ranges [][3]int32
 	if matches := commit.Matches(); len(matches) == 1 {
@@ -396,8 +398,8 @@ func fromCommit(commit *graphqlbackend.CommitSearchResultResolver) eventCommitMa
 			ranges[i] = [3]int32{h.Line(), h.Character(), h.Length()}
 		}
 	}
-	return eventCommitMatch{
-		Type:    commitMatch,
+	return &streamhttp.EventCommitMatch{
+		Type:    streamhttp.CommitMatchType,
 		Icon:    commit.Icon(),
 		Label:   commit.Label().Text(),
 		URL:     commit.URL(),
@@ -407,98 +409,17 @@ func fromCommit(commit *graphqlbackend.CommitSearchResultResolver) eventCommitMa
 	}
 }
 
-// eventFileMatch is a subset of zoekt.FileMatch for our event API.
-type eventFileMatch struct {
-	// Type is always fileMatch. Included here for marshalling.
-	Type matchType `json:"type"`
-
-	Path       string   `json:"name"`
-	Repository string   `json:"repository"`
-	Branches   []string `json:"branches,omitempty"`
-	Version    string   `json:"version,omitempty"`
-
-	LineMatches []eventLineMatch `json:"lineMatches"`
-}
-
-// eventLineMatch is a subset of zoekt.LineMatch for our event API.
-type eventLineMatch struct {
-	Line             string     `json:"line"`
-	LineNumber       int32      `json:"lineNumber"`
-	OffsetAndLengths [][2]int32 `json:"offsetAndLengths"`
-}
-
-// eventRepoMatch is a subset of zoekt.FileMatch for our event API.
-type eventRepoMatch struct {
-	// Type is always repoMatch. Included here for marshalling.
-	Type matchType `json:"type"`
-
-	Repository string   `json:"repository"`
-	Branches   []string `json:"branches,omitempty"`
-}
-
-// eventSymbolMatch is eventFileMatch but with Symbols instead of LineMatches
-type eventSymbolMatch struct {
-	// Type is always symbolMatch. Included here for marshalling.
-	Type matchType `json:"type"`
-
-	Path       string   `json:"name"`
-	Repository string   `json:"repository"`
-	Branches   []string `json:"branches,omitempty"`
-	Version    string   `json:"version,omitempty"`
-
-	Symbols []symbol `json:"symbols"`
-}
-
-type symbol struct {
-	URL           string `json:"url"`
-	Name          string `json:"name"`
-	ContainerName string `json:"containerName"`
-	Kind          string `json:"kind"`
-}
-
-// eventCommitMatch is the generic results interface from GQL. There is a lot
-// of potential data that may be useful here, and some thought needs to be put
-// into what is actually useful in a commit result / or if we should have a
-// "type" for that.
-type eventCommitMatch struct {
-	// Type is always commitMatch. Included here for marshalling.
-	Type matchType `json:"type"`
-
-	Icon    string `json:"icon"`
-	Label   string `json:"label"`
-	URL     string `json:"url"`
-	Detail  string `json:"detail"`
-	Content string `json:"content"`
-	// [line, character, length]
-	Ranges [][3]int32 `json:"ranges"`
-}
-
-// eventFilter is a suggestion for a search filter. Currently has a 1-1
-// correspondance with the SearchFilter graphql type.
-type eventFilter struct {
-	Value    string `json:"value"`
-	Label    string `json:"label"`
-	Count    int    `json:"count"`
-	LimitHit bool   `json:"limitHit"`
-	Kind     string `json:"kind"`
-}
-
-// eventAlert is GQL.SearchAlert. It replaces when sent to match existing
-// behaviour.
-type eventAlert struct {
-	Title           string          `json:"title"`
-	Description     string          `json:"description,omitempty"`
-	ProposedQueries []proposedQuery `json:"proposedQueries"`
-}
-
-// proposedQuery is a suggested query to run when we emit an alert.
-type proposedQuery struct {
-	Description string `json:"description,omitempty"`
-	Query       string `json:"query"`
-}
-
-// eventError emulates a JavaScript error with a message property
-// as is returned when the search encounters an error.
-type eventError struct {
-	Message string `json:"message"`
+// eventStreamOTHook returns a StatHook which logs to log.
+func eventStreamOTHook(log func(...otlog.Field)) func(streamhttp.WriterStat) {
+	return func(stat streamhttp.WriterStat) {
+		fields := []otlog.Field{
+			otlog.String("streamhttp.Event", stat.Event),
+			otlog.Int("bytes", stat.Bytes),
+			otlog.Int64("duration_ms", stat.Duration.Milliseconds()),
+		}
+		if stat.Error != nil {
+			fields = append(fields, otlog.Error(stat.Error))
+		}
+		log(fields...)
+	}
 }

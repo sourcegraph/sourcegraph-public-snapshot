@@ -33,15 +33,19 @@ type Provider interface {
 	// provided user, implementations should return nil, nil.
 	FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account) (mine *extsvc.Account, err error)
 
-	// FetchUserPerms returns a list of repository/project IDs (on code host) that the
-	// given account has read access on the code host. The repository ID should be the
-	// same value as it would be used as api.ExternalRepoSpec.ID. The returned list
-	// should only include private repositories/project IDs.
+	// FetchUserPerms returns a list of repository/project IDs (on code host) that
+	// the given account has read access on the code host. The repository/project ID
+	// should be the same value as it would be used as or prefix of
+	// api.ExternalRepoSpec.ID. The returned list should only include private
+	// repositories/project IDs.
+	//
+	// The second return value (extsvc.RepoIDType) should indicate whether the
+	// returned list of extsvc.RepoID contain exact matches or prefix matches.
 	//
 	// Because permissions fetching APIs are often expensive, the implementation should
 	// try to return partial but valid results in case of error, and it is up to callers
 	// to decide whether to discard.
-	FetchUserPerms(ctx context.Context, account *extsvc.Account) ([]extsvc.RepoID, error)
+	FetchUserPerms(ctx context.Context, account *extsvc.Account) ([]extsvc.RepoID, extsvc.RepoIDType, error)
 
 	// FetchRepoPerms returns a list of user IDs (on code host) who have read access to
 	// the given repository/project on the code host. The user ID should be the same value

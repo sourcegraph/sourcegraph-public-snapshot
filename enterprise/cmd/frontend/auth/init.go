@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/app"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/githuboauth"

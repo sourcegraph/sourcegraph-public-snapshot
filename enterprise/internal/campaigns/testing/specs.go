@@ -7,6 +7,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/go-diff/diff"
+
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 

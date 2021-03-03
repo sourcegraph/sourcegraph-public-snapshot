@@ -49,7 +49,7 @@ func (e *RepoNotFoundErr) NotFound() bool {
 	return true
 }
 
-// RepoStore is a DB-backed implementation of the Repos.
+// RepoStore handles access to the repo table
 type RepoStore struct {
 	*basestore.Store
 
@@ -61,7 +61,8 @@ func Repos(db dbutil.DB) *RepoStore {
 	return &RepoStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
-// NewRepoStoreWithDB instantiates and returns a new RepoStore using the other store handle.
+// NewRepoStoreWithDB instantiates and returns a new RepoStore using the other
+// store handle.
 func ReposWith(other basestore.ShareableStore) *RepoStore {
 	return &RepoStore{Store: basestore.NewWithHandle(other.Handle())}
 }
@@ -743,7 +744,6 @@ WHERE
 func (s *RepoStore) Create(ctx context.Context, repos ...*types.Repo) (err error) {
 	tr, ctx := trace.New(ctx, "repos.Create", "")
 	defer func() {
-
 		tr.SetError(err)
 		tr.Finish()
 	}()

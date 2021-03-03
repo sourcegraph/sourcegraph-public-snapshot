@@ -39,7 +39,6 @@ var (
 	reposDir        = env.Get("SRC_REPOS_DIR", "/data/repos", "Root dir containing repos.")
 	wantPctFree     = env.Get("SRC_REPOS_DESIRED_PERCENT_FREE", "10", "Target percentage of free space on disk.")
 	janitorInterval = env.Get("SRC_REPOS_JANITOR_INTERVAL", "1m", "Interval between cleanup runs")
-	envNodeName     = env.Get("NODE_NAME", "", "Node name, usually set in k8s")
 	envHostname     = env.Get("HOSTNAME", "", "Hostname override")
 )
 
@@ -184,9 +183,6 @@ func main() {
 }
 
 func hostnameBestEffort() string {
-	if envNodeName != "" {
-		return envNodeName
-	}
 	if envHostname != "" {
 		return envHostname
 	}

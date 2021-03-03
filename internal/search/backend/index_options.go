@@ -6,6 +6,7 @@ import (
 	"sort"
 
 	"github.com/google/zoekt"
+
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

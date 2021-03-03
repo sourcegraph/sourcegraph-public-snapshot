@@ -51,6 +51,9 @@ type MigrationError struct {
 
 // scanMigrations scans a slice of migrations from the return value of `*Store.query`.
 func scanMigrations(rows *sql.Rows, queryErr error) (_ []Migration, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	var values []Migration

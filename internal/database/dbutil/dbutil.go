@@ -67,15 +67,6 @@ type TxBeginner interface {
 	BeginTx(context.Context, *sql.TxOptions) (*sql.Tx, error)
 }
 
-type stdoutLogger struct{}
-
-func (stdoutLogger) Printf(format string, v ...interface{}) {
-	fmt.Printf(format, v...)
-}
-func (logger stdoutLogger) Verbose() bool {
-	return true
-}
-
 func IsPostgresError(err error, codename string) bool {
 	e, ok := errors.Cause(err).(*pgconn.PgError)
 	return ok && e.Code == codename
@@ -104,6 +95,14 @@ func (nt NullTime) Value() (driver.Value, error) {
 // sql.Scanner interface so it can be used as a scan destination, similar to
 // sql.NullString. When the scanned value is null, String is set to the zero value.
 type NullString struct{ S *string }
+
+// NewNullString returns a NullString treating zero value as null.
+func NewNullString(s string) NullString {
+	if s == "" {
+		return NullString{}
+	}
+	return NullString{S: &s}
+}
 
 // Scan implements the Scanner interface.
 func (nt *NullString) Scan(value interface{}) error {
@@ -156,6 +155,14 @@ func (n NullInt32) Value() (driver.Value, error) {
 // sql.Scanner interface so it can be used as a scan destination, similar to
 // sql.NullString. When the scanned value is null, int64 is set to the zero value.
 type NullInt64 struct{ N *int64 }
+
+// NewNullInt64 returns a NullInt64 treating zero value as null.
+func NewNullInt64(i int64) NullInt64 {
+	if i == 0 {
+		return NullInt64{}
+	}
+	return NullInt64{N: &i}
+}
 
 // Scan implements the Scanner interface.
 func (n *NullInt64) Scan(value interface{}) error {
@@ -328,30 +335,6 @@ func PostgresDSN(prefix, currentUser string, getenv func(string) string) string 
 	return dsn.String()
 }
 
-// NullTimeColumn returns nil if t is a zero value, otherwise it returns the address of t.
-func NullTimeColumn(t time.Time) *time.Time {
-	if t.IsZero() {
-		return nil
-	}
-	return &t
-}
-
-// NullTimeColumn returns nil if s is a zero value, otherwise it returns the address of s.
-func NullStringColumn(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
-}
-
-// NullInt32Column returns nil if i is a zero value, otherwise it returns the address of i.
-func NullInt32Column(i int32) *int32 {
-	if i == 0 {
-		return nil
-	}
-	return &i
-}
-
 // Scanner captures the Scan method of sql.Rows and sql.Row
 type Scanner interface {
 	Scan(dst ...interface{}) error
@@ -360,23 +343,3 @@ type Scanner interface {
 // A ScanFunc scans one or more rows from a scanner, returning
 // the last id column scanned and the count of scanned rows.
 type ScanFunc func(Scanner) (last, count int64, err error)
-
-// ScanAll scans each row using the given ScanFunc. It automatically closes the rows afterwards.
-func ScanAll(rows *sql.Rows, scan ScanFunc) (last, count int64, err error) {
-	defer func() {
-		if e := rows.Close(); err == nil {
-			err = e
-		}
-	}()
-
-	last = -1
-	for rows.Next() {
-		var n int64
-		if last, n, err = scan(rows); err != nil {
-			return last, count, err
-		}
-		count += n
-	}
-
-	return last, count, rows.Err()
-}

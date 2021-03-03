@@ -14,11 +14,12 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"go.uber.org/automaxprocs/maxprocs"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"go.uber.org/automaxprocs/maxprocs"
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/uber/jaeger-client-go"

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/google/zoekt/ignore"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"

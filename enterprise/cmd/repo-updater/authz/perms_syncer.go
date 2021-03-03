@@ -246,7 +246,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			return errors.Wrap(err, "wait for rate limiter")
 		}
 
-		extIDs, err := provider.FetchUserPerms(ctx, acct)
+		extIDs, _, err := provider.FetchUserPerms(ctx, acct)
 		if err != nil {
 			// The "401 Unauthorized" is returned by code hosts when the token is no longer valid
 			unauthorized := errcode.IsUnauthorized(errors.Cause(err))

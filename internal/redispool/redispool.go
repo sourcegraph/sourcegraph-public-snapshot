@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
+
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )

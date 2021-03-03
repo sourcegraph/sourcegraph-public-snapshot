@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
+
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

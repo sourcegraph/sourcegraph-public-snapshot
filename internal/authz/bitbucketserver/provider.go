@@ -128,20 +128,20 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 // callers to decide whether to discard.
 //
 // API docs: https://docs.atlassian.com/bitbucket-server/rest/5.16.0/bitbucket-rest.html#idm8296923984
-func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) ([]extsvc.RepoID, error) {
+func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) ([]extsvc.RepoID, extsvc.RepoIDType, error) {
 	switch {
 	case account == nil:
-		return nil, errors.New("no account provided")
+		return nil, extsvc.RepoIDExact, errors.New("no account provided")
 	case account.Data == nil:
-		return nil, errors.New("no account data provided")
+		return nil, extsvc.RepoIDExact, errors.New("no account data provided")
 	case !extsvc.IsHostOfAccount(p.codeHost, account):
-		return nil, fmt.Errorf("not a code host of the account: want %q but have %q",
+		return nil, extsvc.RepoIDExact, fmt.Errorf("not a code host of the account: want %q but have %q",
 			p.codeHost.ServiceID, account.AccountSpec.ServiceID)
 	}
 
 	var user bitbucketserver.User
 	if err := json.Unmarshal(*account.Data, &user); err != nil {
-		return nil, errors.Wrap(err, "unmarshaling account data")
+		return nil, extsvc.RepoIDExact, errors.Wrap(err, "unmarshaling account data")
 	}
 
 	ids, err := p.repoIDs(ctx, user.Name, false)
@@ -151,7 +151,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 		extIDs = append(extIDs, extsvc.RepoID(strconv.FormatUint(uint64(id), 10)))
 	}
 
-	return extIDs, err
+	return extIDs, extsvc.RepoIDExact, err
 }
 
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to

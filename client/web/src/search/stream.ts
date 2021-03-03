@@ -258,7 +258,7 @@ export function toGQLRepositoryMatch(repo: RepositoryMatch): GQL.IRepository {
         icon: repoIcon,
         label: toMarkdown(`[${label}](${url})`),
         url: '/' + url,
-        detail: toMarkdown('Repository name match'),
+        detail: toMarkdown('Repository match'),
         matches: [],
         name: repo.repository,
     }

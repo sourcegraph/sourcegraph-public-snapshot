@@ -2,6 +2,7 @@ package syncer
 
 import (
 	"context"
+	"sort"
 
 	"github.com/pkg/errors"
 
@@ -14,10 +15,18 @@ import (
 // The first external service to have a token configured will be returned then.
 // If no external service matching the above criteria is found, an error is returned.
 func loadExternalService(ctx context.Context, esStore ExternalServiceStore, repo *types.Repo) (*types.ExternalService, error) {
-	es, err := esStore.List(ctx, database.ExternalServicesListOptions{IDs: repo.ExternalServiceIDs()})
+	es, err := esStore.List(ctx, database.ExternalServicesListOptions{
+		// Consider all available external services for this repo.
+		IDs: repo.ExternalServiceIDs(),
+	})
 	if err != nil {
 		return nil, err
 	}
+
+	// Sort the external services so user owned external service go last.
+	sort.Slice(es, func(i, j int) bool {
+		return es[i].NamespaceUserID == 0
+	})
 
 	for _, e := range es {
 		cfg, err := e.Configuration()

@@ -5,6 +5,7 @@ import (
 	"net/http/httputil"
 
 	"github.com/neelance/parallel"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
