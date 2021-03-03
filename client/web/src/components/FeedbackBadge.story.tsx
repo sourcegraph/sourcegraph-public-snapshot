@@ -2,9 +2,9 @@ import React from 'react'
 import { storiesOf } from '@storybook/react'
 import { select } from '@storybook/addon-knobs'
 import webStyles from '../SourcegraphWebApp.scss'
-import { StatusBadge } from './StatusBadge'
+import { FeedbackBadge } from './FeedbackBadge'
 
-const { add } = storiesOf('web/StatusBadge', module).addDecorator(story => (
+const { add } = storiesOf('web/Badge', module).addDecorator(story => (
     <>
         <style>{webStyles}</style>
         <div className="layout__app-router-container">
@@ -13,7 +13,9 @@ const { add } = storiesOf('web/StatusBadge', module).addDecorator(story => (
     </>
 ))
 
-add('Basic', () => {
+add('Feedback', () => {
     const status = select('Status', { Beta: 'beta', Prototype: 'prototype' }, 'beta')
-    return <StatusBadge status={status} tooltip="This is a tooltip" feedback={{ mailto: 'support@sourcegraph.com' }} />
+    return (
+        <FeedbackBadge status={status} tooltip="This is a tooltip" feedback={{ mailto: 'support@sourcegraph.com' }} />
+    )
 })
