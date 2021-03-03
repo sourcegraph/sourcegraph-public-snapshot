@@ -24,6 +24,7 @@ export const Badge: React.FC<BadgeProps> = props => {
             data-tooltip={tooltip}
             className={classnames(
                 'badge',
+                'badge--capitalized',
                 'd-inline-flex',
                 'align-items-center',
                 statusStyleMapping[status],

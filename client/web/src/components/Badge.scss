@@ -1,3 +1,5 @@
 .badge {
-    text-transform: capitalize;
+    &--capitalized {
+        text-transform: capitalize;
+    }
 }
