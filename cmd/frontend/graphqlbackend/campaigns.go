@@ -114,39 +114,43 @@ type ListViewerCampaignsCodeHostsArgs struct {
 }
 
 type CampaignsResolver interface {
-	// Mutations
-	// OLD
+	//
+	// MUTATIONS
+	//
+	// Deprecated:
 	CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (BatchChangeResolver, error)
-	// NEW
-	CreateBatchChange(ctx context.Context, args *CreateBatchChangeArgs) (BatchChangeResolver, error)
-
+	// TODO: To-be-deprecated (these need to be marked as deprecated and use
+	// the code for the new implementations) and then moved up to "Deprecated:"
 	ApplyCampaign(ctx context.Context, args *ApplyCampaignArgs) (BatchChangeResolver, error)
 	MoveCampaign(ctx context.Context, args *MoveCampaignArgs) (BatchChangeResolver, error)
 	CloseCampaign(ctx context.Context, args *CloseCampaignArgs) (BatchChangeResolver, error)
 	DeleteCampaign(ctx context.Context, args *DeleteCampaignArgs) (*EmptyResponse, error)
-	CreateChangesetSpec(ctx context.Context, args *CreateChangesetSpecArgs) (ChangesetSpecResolver, error)
 	CreateCampaignSpec(ctx context.Context, args *CreateCampaignSpecArgs) (CampaignSpecResolver, error)
-	SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error)
-	ReenqueueChangeset(ctx context.Context, args *ReenqueueChangesetArgs) (ChangesetResolver, error)
 	CreateCampaignsCredential(ctx context.Context, args *CreateCampaignsCredentialArgs) (CampaignsCredentialResolver, error)
 	DeleteCampaignsCredential(ctx context.Context, args *DeleteCampaignsCredentialArgs) (*EmptyResponse, error)
+	// New:
+	CreateBatchChange(ctx context.Context, args *CreateBatchChangeArgs) (BatchChangeResolver, error)
+
+	CreateChangesetSpec(ctx context.Context, args *CreateChangesetSpecArgs) (ChangesetSpecResolver, error)
+	SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error)
+	ReenqueueChangeset(ctx context.Context, args *ReenqueueChangesetArgs) (ChangesetResolver, error)
 
 	// Queries
 
-	// Deprecated
+	// Deprecated:
 	Campaign(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error)
+	// TODO: To-be-deprecated (these need to be marked as deprecated and use
+	// the code for the new implementations) and then moved up to "Deprecated:"
+	Campaigns(ctx context.Context, args *ListCampaignsArgs) (CampaignsConnectionResolver, error)
+	CampaignsCredentialByID(ctx context.Context, id graphql.ID) (CampaignsCredentialResolver, error)
+	CampaignsCodeHosts(ctx context.Context, args *ListCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error)
+	CampaignSpecByID(ctx context.Context, id graphql.ID) (CampaignSpecResolver, error)
 	// New:
 	BatchChange(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error)
 	BatchChangeByID(ctx context.Context, id graphql.ID) (BatchChangeResolver, error)
 
-	Campaigns(ctx context.Context, args *ListCampaignsArgs) (CampaignsConnectionResolver, error)
 	ChangesetByID(ctx context.Context, id graphql.ID) (ChangesetResolver, error)
-
-	CampaignSpecByID(ctx context.Context, id graphql.ID) (CampaignSpecResolver, error)
 	ChangesetSpecByID(ctx context.Context, id graphql.ID) (ChangesetSpecResolver, error)
-
-	CampaignsCredentialByID(ctx context.Context, id graphql.ID) (CampaignsCredentialResolver, error)
-	CampaignsCodeHosts(ctx context.Context, args *ListCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error)
 }
 
 type CampaignSpecResolver interface {
@@ -394,7 +398,7 @@ type BatchChangeResolver interface {
 	DiffStat(ctx context.Context) (*DiffStat, error)
 	CurrentSpec(ctx context.Context) (CampaignSpecResolver, error)
 
-	// TODO: This should be removed once we remove campaigns.
+	// NOTE: This should be removed once we remove campaigns.
 	// It's here so that in the NodeResolver we can have the same resolver,
 	// BatchChangeResolver, act as a Campaign and a BatchChange.
 	ActAsCampaign() bool
