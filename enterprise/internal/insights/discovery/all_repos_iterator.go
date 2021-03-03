@@ -32,7 +32,8 @@ type AllReposIterator struct {
 	SourcegraphDotComMode bool // result of envvar.SourcegraphDotComMode()
 
 	// RepositoryListCacheTime describes how long to cache repository lists for. These API calls
-	// can result in hundreds of thousands of repositories, so choose wisely.
+	// can result in hundreds of thousands of repositories, so choose wisely as it can be expensive
+	// to pull such large numbers of rows from the DB frequently.
 	RepositoryListCacheTime time.Duration
 
 	// Internal fields below.
@@ -55,30 +56,23 @@ func (a *AllReposIterator) timeSince(t time.Time) time.Duration {
 // If the forEach function returns an error, pagination is stopped and the error returned.
 func (a *AllReposIterator) ForEach(ctx context.Context, forEach func(repoName string) error) error {
 	if a.SourcegraphDotComMode {
-		// Use cached results if we have them and it is reasonable to do so.
-		if a.timeSince(a.cachedRepoNamesAge) < a.RepositoryListCacheTime {
-			for _, repo := range a.cachedRepoNames {
-				if err := forEach(repo); err != nil {
-					return err
-				}
+		// Has the cache expired or empty? If so, refresh it.
+		if a.timeSince(a.cachedRepoNamesAge) > a.RepositoryListCacheTime || a.cachedRepoNames == nil {
+			a.cachedRepoNames = a.cachedRepoNames[:0]
+
+			// We shouldn't try to fill historical data for ALL repos on Sourcegraph.com, it would take
+			// forever. Instead, we use the same list of default repositories used when you do a global
+			// search on Sourcegraph.com.
+			res, err := a.DefaultRepoStore.List(ctx)
+			if err != nil {
+				return errors.Wrap(err, "DefaultRepoStore.List")
 			}
+			for _, r := range res {
+				a.cachedRepoNames = append(a.cachedRepoNames, string(r.Name))
+			}
+			a.cachedRepoNamesAge = a.Clock()
 			return nil
 		}
-		a.cachedRepoNames = nil
-
-		// We shouldn't try to fill historical data for ALL repos on Sourcegraph.com, it would take
-		// forever. Instead, we use the same list of default repositories used when you do a global
-		// search on Sourcegraph.com.
-		res, err := a.DefaultRepoStore.List(ctx)
-		if err != nil {
-			return errors.Wrap(err, "DefaultRepoStore.List")
-		}
-		names := make([]string, len(res))
-		for i, r := range res {
-			names[i] = string(r.Name)
-		}
-		a.cachedRepoNamesAge = a.Clock()
-		a.cachedRepoNames = names
 		for _, repo := range a.cachedRepoNames {
 			if err := forEach(repo); err != nil {
 				return errors.Wrap(err, "forEach")
