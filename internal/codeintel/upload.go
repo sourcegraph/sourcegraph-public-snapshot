@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"github.com/sourcegraph/codeintelutils"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/utils"
 )
 
 type UploadIndexOpts = codeintelutils.UploadIndexOpts

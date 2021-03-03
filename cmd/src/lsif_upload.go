@@ -15,7 +15,7 @@ import (
 	"github.com/efritz/pentimento"
 	"github.com/pkg/browser"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/codeintelutils"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/utils"
 	"github.com/sourcegraph/src-cli/internal/codeintel"
 )
 
