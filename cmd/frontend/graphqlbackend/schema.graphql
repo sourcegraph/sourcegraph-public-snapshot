@@ -9396,7 +9396,6 @@ type CampaignSpec implements Node {
 }
 
 extend type Mutation {
-
     """
     Create a campaign from a campaign spec and locally computed changeset specs. The newly created
     campaign is returned.
@@ -9408,7 +9407,7 @@ extend type Mutation {
         The campaign spec that describes the desired state of the campaign.
         """
         campaignSpec: ID!
-    ): Campaign!  @deprecated(reason: "campaigns have been renamed to batch changes. Use createBatchChange instead.")
+    ): Campaign! @deprecated(reason: "campaigns have been renamed to batch changes. Use createBatchChange instead.")
 
     """
     Create or update a campaign from a campaign spec and locally computed changeset specs. If no
@@ -9639,7 +9638,8 @@ extend type Query {
         Only include campaigns that the viewer can administer.
         """
         viewerCanAdminister: Boolean
-    ): CampaignConnection! @deprecated(reason: "campaigns have been renamed to batch changes. Use batchChanges instead.")
+    ): CampaignConnection!
+        @deprecated(reason: "campaigns have been renamed to batch changes. Use batchChanges instead.")
     """
     Looks up a campaign by namespace and campaign name.
     """
@@ -9928,7 +9928,6 @@ type BatchChange implements Node {
     """
     currentSpec: CampaignSpec!
 }
-
 
 """
 A batch spec is an immutable description of the desired state of a campaign. To create a
