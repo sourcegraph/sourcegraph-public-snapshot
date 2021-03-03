@@ -4,8 +4,9 @@ package discovery
 
 import (
 	"context"
-	types "github.com/sourcegraph/sourcegraph/internal/types"
 	"sync"
+
+	types "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // MockDefaultRepoStore is a mock implementation of the DefaultRepoStore
