@@ -122,3 +122,14 @@ const getFileDecorationsFromHost = memoizeObservable(
         ),
     ({ parentNodeUri, files }) => `parentNodeUri:${parentNodeUri} files:${files.length}`
 )
+
+/**
+ * Typically used to display loading indicators re: ready state of extension features
+ */
+export const haveInitialExtensionsLoaded = memoizeObservable(
+    ({ extensionsController }: ExtensionsControllerProps) =>
+        from(extensionsController.extHostAPI).pipe(
+            switchMap(extensionHost => wrapRemoteObservable(extensionHost.haveInitialExtensionsLoaded()))
+        ),
+    () => 'haveInitialExtensionsLoaded' // only one instance
+)

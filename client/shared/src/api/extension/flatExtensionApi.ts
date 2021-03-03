@@ -90,6 +90,7 @@ import { areExtensionsSame } from '../../extensions/extensions'
  * as a single object
  */
 export interface ExtensionHostState {
+    haveInitialExtensionsLoaded: BehaviorSubject<boolean>
     settings: BehaviorSubject<Readonly<SettingsCascade>>
 
     // Workspace
@@ -210,6 +211,8 @@ export const initNewExtensionAPI = (
     textDocuments: ExtensionDocuments
 ): InitResult => {
     const state: ExtensionHostState = {
+        haveInitialExtensionsLoaded: new BehaviorSubject<boolean>(false),
+
         roots: new BehaviorSubject<readonly ExtensionWorkspaceRoot[]>([]),
         versionContext: new BehaviorSubject<string | undefined>(undefined),
 
@@ -294,6 +297,8 @@ export const initNewExtensionAPI = (
     }
 
     const exposedToMain: FlatExtensionHostAPI = {
+        haveInitialExtensionsLoaded: () => proxySubscribable(state.haveInitialExtensionsLoaded.asObservable()),
+
         // Configuration
         syncSettingsData: settings => state.settings.next(Object.freeze(settings)),
 
@@ -846,11 +851,17 @@ export const initNewExtensionAPI = (
                         // register contributions, activate extensions, deactivate extensions
                         // consider how to make contributions easy to batch add + remove by extension ID...
                         from(Promise.all(toActivate.map(({ id, scriptURL }) => activateExtension(id, scriptURL))))
-                    )
+                    ),
+                    tap(() => console.log('areExtensionFeaturesLoading activated all exts in host', { ms: Date.now() }))
                 )
             })
         )
         .subscribe(() => {
+            // what to do when there r NO extensions?
+            if (state.haveInitialExtensionsLoaded.value === false) {
+                state.haveInitialExtensionsLoaded.next(true)
+            }
+
             // add to/remove from previously activated extensions
         })
 

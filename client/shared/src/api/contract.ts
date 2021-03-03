@@ -188,6 +188,11 @@ export interface FlatExtensionHostAPI {
     // Notifications
     getPlainNotifications: () => ProxySubscribable<PlainNotification>
     getProgressNotifications: () => ProxySubscribable<ProgressNotification & ProxyMarked>
+
+    /**
+     * Emits true when the initial batch of extensions have been loaded.
+     */
+    haveInitialExtensionsLoaded: () => ProxySubscribable<boolean>
 }
 
 /**

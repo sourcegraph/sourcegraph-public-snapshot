@@ -1,36 +1,28 @@
-import { createHoverifier, findPositionsFromEvents, HoveredToken, HoverState } from '@sourcegraph/codeintellify'
+import { createHoverifier, findPositionsFromEvents, HoveredToken } from '@sourcegraph/codeintellify'
 import { getCodeElementsInRange, locateTarget } from '@sourcegraph/codeintellify/lib/token_position'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
-import { isEqual, pick } from 'lodash'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
     BehaviorSubject,
     combineLatest,
-    defer,
     EMPTY,
     from,
     fromEvent,
-    merge,
-    Observable,
+    of,
     ReplaySubject,
     Subject,
     Subscription,
+    timer,
 } from 'rxjs'
 import {
-    bufferCount,
     catchError,
     concatMap,
     distinctUntilChanged,
     filter,
-    finalize,
     first,
     map,
     mapTo,
-    publishReplay,
-    refCount,
-    share,
-    skip,
     switchMap,
     tap,
     withLatestFrom,
@@ -43,7 +35,7 @@ import { getHoverActions } from '../../../../shared/src/hover/actions'
 import { HoverContext } from '../../../../shared/src/hover/HoverOverlay'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
-import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { asError, isErrorLike } from '../../../../shared/src/util/errors'
 import { isDefined, property } from '../../../../shared/src/util/types'
 import {
     AbsoluteRepoFile,
@@ -59,7 +51,7 @@ import {
     toPositionOrRangeHash,
     toURIWithPath,
 } from '../../../../shared/src/util/url'
-import { getHover, getDocumentHighlights } from '../../backend/features'
+import { getHover, getDocumentHighlights, haveInitialExtensionsLoaded } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { LineDecorator } from './LineDecorator'
@@ -72,6 +64,7 @@ import { useObservable } from '../../../../shared/src/util/useObservable'
 import { ViewerId } from '../../../../shared/src/api/viewerTypes'
 import { Remote } from 'comlink'
 import { FlatExtensionHostAPI } from '../../../../shared/src/api/contract'
+import { getModeFromPath } from '../../../../shared/src/languages'
 
 /**
  * toPortalID builds an ID that will be used for the {@link LineDecorator} portal containers.
@@ -138,8 +131,31 @@ const domFunctions = {
     },
 }
 
+/**
+ * Renders a code view augmented by Sourcegraph extensions
+ *
+ * Documentation:
+ * What is the difference between blobInfoChanges and viewerUpdates?
+ *
+ * - blobInfoChanges: emits when document info has loaded from the backend (including raw HTML)
+ * - viewerUpdates: emits when the extension host confirms that it knows about the current viewer.
+ *  message to extension host is sent on each blobInfo change, and when that message receives a response
+ *  with the viewerId (handle to viewer on extension host side), viewerUpdates emits it along with
+ *  other data (such as subscriptions, extension host API) relevant to observers for this viewer.
+ *
+ * The possible states that Blob can be in:
+ * - "extension host bootstrapping": Initial page load, the initial set of extensions
+ * haven't been loaded yet. Regardless of whether or not the extension host knows about
+ * the current viewer, users can't interact with extensions yet.
+ * - "extension host ready": Extensions have loaded, extension host knows about the current viewer
+ * - "extension host loading viewer": Extensions have loaded, but the extension host
+ * doesn't know about the current viewer yet. We know that we are in this state
+ * when blobInfo changes. On entering this state, clear resources from
+ * previous viewer (e.g. hoverifier subscription, line decorations). If we don't remove extension features
+ * in this state, hovers can lead to errors like `DocumentNotFoundError`.
+ */
 export const Blob: React.FunctionComponent<BlobProps> = props => {
-    const { location, isLightTheme, extensionsController, blobInfo } = props
+    const { location, isLightTheme, extensionsController, blobInfo, platformContext } = props
 
     // Element reference subjects passed to `hoverifier`. They must be `ReplaySubjects` because
     // the ref callback is called before hoverifier is created in `useEffect`
@@ -175,7 +191,8 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         nextLocationPosition(parsedHash)
     }, [parsedHash])
 
-    // Subject that emits on every render. Source for `hoverOverlayRerenders`
+    // Subject that emits on every render. Source for `hoverOverlayRerenders`, used to
+    // reposition hover overlay if needed when `Blob` rerenders
     const rerenders = useMemo(() => new ReplaySubject(1), [])
     useEffect(() => {
         rerenders.next()
@@ -184,215 +201,147 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     // Emits on blob info changes to update extension host model
     const blobInfoChanges = useMemo(() => new ReplaySubject<BlobInfo>(1), [])
     const nextBlobInfoChange = useCallback((blobInfo: BlobInfo) => blobInfoChanges.next(blobInfo), [blobInfoChanges])
+
+    // What is the difference between blobInfoChanges and viewerUpdates?
+
+    // - blobInfoChanges: emits when document info has loaded from the backend (including raw HTML)
+    // - viewerUpdates: emits when the extension host confirms that it knows about the current viewer.
+    // message to extension host is sent on each blobInfo change, and when that message receives a response
+    // with the viewerId (handle to viewer on extension host side), viewerUpdates emits it along with
+    // other data (such as subscriptions, extension host API) relevant to observers for this viewer.
+    //
+    // The possible states that Blob can be in:
+    // - "extension host bootstrapping": Initial page load, the initial set of extensions
+    // haven't been loaded yet. Regardless of whether or not the extension host knows about
+    // the current viewer, users can't interact with extensions yet.
+    // - "extension host ready": Extensions have loaded, extension host knows about the current viewer
+    // - "extension host loading viewer": Extensions have loaded, but the extension host
+    // doesn't know about the current viewer yet. We know that we are in this state
+    // when blobInfo changes. On entering this state, clear resources from
+    // previous viewer (e.g. hoverifier subscription, line decorations). If we don't remove extension features
+    // in this state, hovers can lead to errors like `DocumentNotFoundError`.
+
+    const viewerUpdates = useMemo(
+        () =>
+            new BehaviorSubject<{
+                viewerId: ViewerId
+                blobInfo: BlobInfo
+                extensionHostAPI: Remote<FlatExtensionHostAPI>
+                subscriptions: Subscription
+            } | null>(null),
+        []
+    )
+
     useEffect(() => {
         nextBlobInfoChange(blobInfo)
-
-        // Clear decorations when blobInfo changes. We can't wait for + don't care about the round trip
-        // of client (blobInfo change) -> ext host (add viewer) -> client (receive viewerId) that viewerUpdates emits after.
         return () => {
-            // also clear viewerData
+            // Clean up for any resources used by the previous viewer.
+            // We can't wait for + don't care about the round trip of
+            // client (blobInfo change) -> ext host (add viewer) -> client (receive viewerId)
+            // that viewerUpdates emits after.
+            viewerUpdates.value?.subscriptions.unsubscribe()
 
-            setDecorationsOrError(undefined)
+            // Clear viewerUpdates to signify that we are in the "extension host loading viewer" state
+            viewerUpdates.next(null)
         }
-    }, [blobInfo, nextBlobInfoChange])
+    }, [blobInfo, nextBlobInfoChange, viewerUpdates])
 
     const closeButtonClicks = useMemo(() => new Subject<MouseEvent>(), [])
     const nextCloseButtonClick = useCallback((click: MouseEvent) => closeButtonClicks.next(click), [closeButtonClicks])
 
-    /** Create hoverifier */
-    // We don't want to recreate hoverifier on each render, so props can't be a dependency
-    // in useEffect, but hoverifier needs a way to access the latest props.
-    const propsReference = useRef<BlobProps>(props)
-    propsReference.current = props
-
-    const [hoverState, setHoverState] = useState<HoverState<HoverContext, HoverMerged, ActionItemAction>>({})
-
     const [decorationsOrError, setDecorationsOrError] = useState<TextDocumentDecoration[] | Error | undefined>()
 
-    const singleClickGoToDefinition = useMemo(
+    const hoverifier = useMemo(
         () =>
-            Boolean(
-                props.settingsCascade.final &&
-                    !isErrorLike(props.settingsCascade.final) &&
-                    props.settingsCascade.final.singleClickGoToDefinition === true
-            ),
-        [props.settingsCascade.final]
-    )
-
-    // This effect is meant to run only after first render, cleanup on unmount.
-    // TODO: Create a hoverifier class
-    useEffect(() => {
-        const subscriptions = new Subscription()
-
-        // TODO(tj): singleClickGoToDefinition is not in danger of changng while Blob is active
-        // basically all of the props I was scared of will not change often
-
-        const singleClickGoToDefinition = Boolean(
-            propsReference.current.settingsCascade.final &&
-                !isErrorLike(propsReference.current.settingsCascade.final) &&
-                propsReference.current.settingsCascade.final.singleClickGoToDefinition === true
-        )
-
-        console.time('creating hoverifier')
-        const hoverifier = createHoverifier<HoverContext, HoverMerged, ActionItemAction>({
-            closeButtonClicks,
-            hoverOverlayElements,
-            hoverOverlayRerenders: rerenders.pipe(
-                withLatestFrom(hoverOverlayElements, blobElements),
-                map(([, hoverOverlayElement, blobElement]) => ({
-                    hoverOverlayElement,
-                    relativeElement: blobElement,
-                })),
-                filter(property('relativeElement', isDefined)),
-                // Can't reposition HoverOverlay if it wasn't rendered
-                filter(property('hoverOverlayElement', isDefined))
-            ),
-            getHover: position =>
-                // before, static methods could read from this.props
-                {
-                    console.log('asking for hover client blob', { ms: Date.now() })
+            createHoverifier<HoverContext, HoverMerged, ActionItemAction>({
+                closeButtonClicks,
+                hoverOverlayElements,
+                hoverOverlayRerenders: rerenders.pipe(
+                    withLatestFrom(hoverOverlayElements, blobElements),
+                    map(([, hoverOverlayElement, blobElement]) => ({
+                        hoverOverlayElement,
+                        relativeElement: blobElement,
+                    })),
+                    filter(property('relativeElement', isDefined)),
+                    // Can't reposition HoverOverlay if it wasn't rendered
+                    filter(property('hoverOverlayElement', isDefined))
+                ),
+                getHover: context => {
+                    console.log('asking for hover client blob new', { ms: Date.now() })
                     // ensures that extensionhost knows about the document, queues up
                     // hovers from before initialization!!
 
-                    /* before, static methods could read from this.props*/
-                    return getHover(
-                        getLSPTextDocumentPositionParameters(position, propsReference.current.blobInfo.mode),
-                        propsReference.current
-                    )
+                    return getHover(getLSPTextDocumentPositionParameters(context, getModeFromPath(context.filePath)), {
+                        extensionsController,
+                    })
                 },
-            getDocumentHighlights: position =>
-                getDocumentHighlights(
-                    getLSPTextDocumentPositionParameters(position, propsReference.current.blobInfo.mode),
-                    propsReference.current
-                ),
-            getActions: context => getHoverActions(propsReference.current, context),
-            pinningEnabled: !singleClickGoToDefinition,
-        })
-        console.timeEnd('creating hoverifier')
-
-        subscriptions.add(hoverifier)
-
-        subscriptions.add(
-            hoverifier.hoverify({
-                positionEvents: codeViewElements.pipe(filter(isDefined), findPositionsFromEvents({ domFunctions })),
-                positionJumps: locationPositions.pipe(
-                    withLatestFrom(codeViewElements, blobElements),
-                    map(([position, codeView, scrollElement]) => ({
-                        position,
-                        // locationPositions is derived from componentUpdates,
-                        // so these elements are guaranteed to have been rendered.
-                        codeView: codeView!,
-                        scrollElement: scrollElement!,
-                    }))
-                ),
-                resolveContext: () => {
-                    const { repoName, revision, commitID, filePath } = propsReference.current.blobInfo
-                    return {
-                        repoName,
-                        revision,
-                        commitID,
-                        filePath,
-                    }
-                },
-                dom: domFunctions,
-            })
-        )
-
-        let hoveredTokenElement: HTMLElement | undefined
-        let goToDefinition: (event: MouseEvent) => void
-        // Make latest hover state accessible to other callbacks in this scope
-        // without re-initializing hoverifier. Reassign on each hoverStateUpdates emission
-        let latestHoverState: typeof hoverState = {}
-        subscriptions.add(
-            hoverifier.hoverStateUpdates.subscribe(update => {
-                if (singleClickGoToDefinition && hoveredTokenElement !== update.hoveredTokenElement && goToDefinition) {
-                    if (hoveredTokenElement) {
-                        hoveredTokenElement.style.cursor = 'auto'
-                        hoveredTokenElement.removeEventListener('click', goToDefinition)
-                    }
-
-                    if (update.hoveredTokenElement) {
-                        // Create new goToDefinition function that closes over latest hover state
-                        goToDefinition = (event: MouseEvent): void => {
-                            const goToDefinitionAction =
-                                Array.isArray(update.actionsOrError) &&
-                                update.actionsOrError.find(action => action.action.id === 'goToDefinition.preloaded')
-                            if (goToDefinitionAction) {
-                                propsReference.current.history.push(
-                                    goToDefinitionAction.action.commandArguments![0] as string
-                                )
-                                event.stopPropagation()
-                            }
-                        }
-                        update.hoveredTokenElement.style.cursor = 'pointer'
-                        update.hoveredTokenElement.addEventListener('click', goToDefinition)
-                    }
-                    hoveredTokenElement = update.hoveredTokenElement
-                }
-                latestHoverState = update
-                setHoverState(update)
-            })
-        )
-
-        return () => {
-            subscriptions.unsubscribe()
-        }
-    }, [
-        hoverOverlayElements,
-        blobElements,
-        codeViewElements,
-        rerenders,
-        locationPositions,
-        blobInfoChanges,
-        closeButtonClicks,
-    ])
+                getDocumentHighlights: context =>
+                    getDocumentHighlights(
+                        getLSPTextDocumentPositionParameters(context, getModeFromPath(context.filePath)),
+                        { extensionsController }
+                    ),
+                getActions: context => getHoverActions({ extensionsController, platformContext }, context),
+                pinningEnabled: true,
+            }),
+        [
+            // None of these dependencies are likely to change
+            extensionsController,
+            platformContext,
+            hoverOverlayElements,
+            blobElements,
+            rerenders,
+            closeButtonClicks,
+        ]
+    )
 
     // Update URL when clicking on a line (which will trigger the line highlighting defined below)
     useObservable(
-        useMemo(() => {
-            console.log('new update url sub')
-            return codeViewElements.pipe(
-                filter(isDefined),
-                switchMap(codeView => fromEvent<MouseEvent>(codeView, 'click')),
-                // Ignore click events caused by the user selecting text
-                filter(() => !window.getSelection()?.toString()),
-                tap(event => {
-                    // Prevent selecting text on shift click (click+drag to select will still work)
-                    // Note that this is only called if the selection was empty initially (see above),
-                    // so this only clears a selection caused by this click.
-                    window.getSelection()!.removeAllRanges()
+        useMemo(
+            () =>
+                codeViewElements.pipe(
+                    filter(isDefined),
+                    switchMap(codeView => fromEvent<MouseEvent>(codeView, 'click')),
+                    // Ignore click events caused by the user selecting text
+                    filter(() => !window.getSelection()?.toString()),
+                    tap(event => {
+                        // Prevent selecting text on shift click (click+drag to select will still work)
+                        // Note that this is only called if the selection was empty initially (see above),
+                        // so this only clears a selection caused by this click.
+                        window.getSelection()!.removeAllRanges()
 
-                    const position = locateTarget(event.target as HTMLElement, domFunctions)
-                    let hash: string
-                    if (
-                        position &&
-                        event.shiftKey &&
-                        hoverState.selectedPosition &&
-                        hoverState.selectedPosition.line !== undefined
-                    ) {
-                        hash = toPositionOrRangeHash({
-                            range: {
-                                start: {
-                                    line: Math.min(hoverState.selectedPosition.line, position.line),
+                        const position = locateTarget(event.target as HTMLElement, domFunctions)
+                        let hash: string
+                        if (
+                            position &&
+                            event.shiftKey &&
+                            hoverifier.hoverState.selectedPosition &&
+                            hoverifier.hoverState.selectedPosition.line !== undefined
+                        ) {
+                            // Compare with previous selections (maintained by hoverifier)
+                            hash = toPositionOrRangeHash({
+                                range: {
+                                    start: {
+                                        line: Math.min(hoverifier.hoverState.selectedPosition.line, position.line),
+                                    },
+                                    end: {
+                                        line: Math.max(hoverifier.hoverState.selectedPosition.line, position.line),
+                                    },
                                 },
-                                end: {
-                                    line: Math.max(hoverState.selectedPosition.line, position.line),
-                                },
-                            },
-                        })
-                    } else {
-                        hash = toPositionOrRangeHash({ position })
-                    }
+                            })
+                        } else {
+                            hash = toPositionOrRangeHash({ position })
+                        }
 
-                    if (!hash.startsWith('#')) {
-                        hash = '#' + hash
-                    }
+                        if (!hash.startsWith('#')) {
+                            hash = '#' + hash
+                        }
 
-                    propsReference.current.history.push({ ...propsReference.current.location, hash })
-                }),
-                mapTo(undefined)
-            )
-        }, [codeViewElements, hoverState.selectedPosition])
+                        props.history.push({ ...location, hash })
+                    }),
+                    mapTo(undefined)
+                ),
+            [codeViewElements, hoverifier, props.history, location]
+        )
     )
 
     // Line highlighting when position in hash changes
@@ -423,19 +372,9 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         )
     )
 
+    // EXTENSION FEATURES
 
-    const viewerUpdates = useMemo(
-        () =>
-            new BehaviorSubject<{
-                viewerId: ViewerId
-                blobInfo: BlobInfo
-                extensionHostAPI: Remote<FlatExtensionHostAPI>
-            } | null>(null),
-        []
-    )
-
-    // Extensibility. TODO(tj): explain why this is different from blobInfo updates,
-    // and when you'd use this instead
+    // Data source for `viewerUpdates`
     useObservable(
         useMemo(
             () =>
@@ -446,11 +385,11 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                     locationPositions.pipe(first()),
                     from(extensionsController.extHostAPI),
                 ]).pipe(
-                    concatMap(([blobInfo, initialPosition, extensionHostAPI]) =>
-                        defer(async () => {
-                            const uri = toURIWithPath(blobInfo)
+                    concatMap(([blobInfo, initialPosition, extensionHostAPI]) => {
+                        const uri = toURIWithPath(blobInfo)
 
-                            const [, viewerId] = await Promise.all([
+                        return from(
+                            Promise.all([
                                 // This call should be made before adding viewer, but since
                                 // messages to web worker are handled in order, we can use Promise.all
                                 extensionHostAPI.addTextDocumentIfNotExists({
@@ -465,12 +404,19 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                                     isActive: true,
                                 }),
                             ])
-                            console.log({ viewerId })
-                            return { viewerId, blobInfo, extensionHostAPI }
-                        })
-                    ),
+                        ).pipe(map(([, viewerId]) => ({ viewerId, blobInfo, extensionHostAPI })))
+                    }),
                     tap(({ viewerId, blobInfo, extensionHostAPI }) => {
-                        viewerUpdates.next({ viewerId, blobInfo, extensionHostAPI })
+                        const subscriptions = new Subscription()
+
+                        // Cleanup on navigation between/away from viewers
+                        subscriptions.add(() => {
+                            extensionHostAPI
+                                .removeViewer(viewerId)
+                                .catch(error => console.error('Error removing viewer from extension host', error))
+                        })
+
+                        viewerUpdates.next({ viewerId, blobInfo, extensionHostAPI, subscriptions })
                     }),
                     mapTo(undefined)
                 ),
@@ -478,21 +424,51 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         )
     )
 
-    // Cleanup when navigation between/away from viewers
-    // Remove viewer on change or unmount
-    useEffect(() => {
-        const viewerId = viewerUpdates.value?.viewerId
+    // Hoverify
+    useObservable(
+        useMemo(
+            () =>
+                viewerUpdates.pipe(
+                    filter(isDefined),
+                    tap(viewerData => {
+                        const subscription = hoverifier.hoverify({
+                            positionEvents: codeViewElements.pipe(
+                                filter(isDefined),
+                                findPositionsFromEvents({ domFunctions })
+                            ),
+                            positionJumps: locationPositions.pipe(
+                                withLatestFrom(
+                                    codeViewElements.pipe(filter(isDefined)),
+                                    blobElements.pipe(filter(isDefined))
+                                ),
+                                map(([position, codeView, scrollElement]) => ({
+                                    position,
+                                    // locationPositions is derived from componentUpdates,
+                                    // so these elements are guaranteed to have been rendered.
+                                    codeView,
+                                    scrollElement,
+                                }))
+                            ),
+                            resolveContext: () => {
+                                const { repoName, revision, commitID, filePath } = viewerData.blobInfo
+                                return {
+                                    repoName,
+                                    revision,
+                                    commitID,
+                                    filePath,
+                                }
+                            },
+                            dom: domFunctions,
+                        })
+                        viewerData.subscriptions.add(() => subscription.unsubscribe())
+                    }),
+                    mapTo(undefined)
+                ),
+            [hoverifier, viewerUpdates, codeViewElements, blobElements, locationPositions]
+        )
+    )
 
-        return () => {
-            if (viewerId) {
-                extensionsController.extHostAPI
-                    .then(extensionHostAPI => extensionHostAPI.removeViewer(viewerId))
-                    .catch(error => console.error('Error removing viewer from extension host', error))
-            }
-        }
-    }, [viewerUpdates.value, extensionsController.extHostAPI])
-
-    // Update position/selections on extension host
+    // Update position/selections on extension host (extensions use selections to set line decorations)
     useObservable(
         useMemo(
             () =>
@@ -502,8 +478,12 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                             return EMPTY
                         }
 
-                        // Skip the initial position since it should be sent to extension host on viewer initialization
-                        return locationPositions.pipe(skip(1)).pipe(
+                        // We can't skip the initial position since we can't guarantee that user hadn't
+                        // changed selection between sending the initial message to extension host
+                        // for viewer initialization -> receiving viewerId.
+                        // The extension host will ensure that extensions are only notified when
+                        // selection values have actually changed.
+                        return locationPositions.pipe(
                             tap(position => {
                                 viewerData.extensionHostAPI
                                     .setEditorSelections(viewerData.viewerId, lprToSelectionsZeroIndexed(position))
@@ -519,21 +499,25 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         )
     )
 
-    // Set decorations
+    // Listen for line decorations from extensions
     useObservable(
         useMemo(
             () =>
                 viewerUpdates.pipe(
-                    switchMap(viewerData =>
-                        viewerData
-                            ? wrapRemoteObservable(viewerData.extensionHostAPI.getTextDecorations(viewerData.viewerId))
-                            : EMPTY
-                    ),
+                    switchMap(viewerData => {
+                        if (!viewerData) {
+                            return EMPTY
+                        }
+
+                        // Schedule decorations to be cleared when this viewer is removed.
+                        // We store decoration state independent of this observable since we want to clear decorations
+                        // immediately on viewer change. If we wait for the latest emission of decorations from the
+                        // extension host, decorations from the previous viewer will be visible for a noticeable amount of time
+                        // on the current viewer
+                        viewerData.subscriptions.add(() => setDecorationsOrError(undefined))
+                        return wrapRemoteObservable(viewerData.extensionHostAPI.getTextDecorations(viewerData.viewerId))
+                    }),
                     catchError(error => [asError(error)]),
-                    // We store decoration state indepdent of this observable since we want to clear decorations
-                    // immediately on viewer change. If we wait for the latest emission of decorations from the
-                    // extension host, decorations from the previous viewer will be visible for a notiable amount of time
-                    // on the current viewer
                     tap(decorations => setDecorationsOrError(decorations)),
                     mapTo(undefined)
                 ),
@@ -541,7 +525,32 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         )
     )
 
-    // Single-click jump-to-definition
+    // Display loading indicator when extension features take a long time to initialize
+    const showExtensionFeaturesLoading = !!useObservable(
+        useMemo(
+            () =>
+                combineLatest([viewerUpdates, haveInitialExtensionsLoaded({ extensionsController })]).pipe(
+                    // To prevent timer restarting in case two `nulls` viewerUpdates are emitted
+                    distinctUntilChanged(),
+                    switchMap(([viewerData, haveInitialExtensionsLoaded]) => {
+                        if (!haveInitialExtensionsLoaded) {
+                            // In "extension host bootstrapping" state
+                            return timer(300).pipe(mapTo(true))
+                        }
+
+                        if (viewerData) {
+                            // In "extension host ready" state
+                            return of(false)
+                        }
+
+                        // In "extension host loading viewer" state (i.e. navigating between viewers)
+                        // This typically won't be the reason to display a loading indicator
+                        return timer(300).pipe(mapTo(true))
+                    })
+                ),
+            [viewerUpdates, extensionsController]
+        )
+    )
 
     // Memoize `groupedDecorations` to avoid clearing and setting decorations in `LineDecorator`s on renders in which
     // decorations haven't changed.
@@ -550,8 +559,12 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         [decorationsOrError]
     )
 
+    // Passed to HoverOverlay
+    const hoverState = useObservable(hoverifier.hoverStateUpdates) || {}
+
     return (
         <div className={`blob ${props.className}`} ref={nextBlobElement}>
+            {showExtensionFeaturesLoading && <p>extension features loading...</p>}
             <code
                 className={`blob__code ${props.wrapCode ? ' blob__code--wrapped' : ''} test-blob`}
                 ref={nextCodeViewElement}

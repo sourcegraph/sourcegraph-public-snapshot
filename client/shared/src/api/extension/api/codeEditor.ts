@@ -6,6 +6,7 @@ import * as sourcegraph from 'sourcegraph'
 import { createDecorationType } from './decorations'
 import { ExtensionDocument } from './textDocument'
 import { CodeEditorData, ViewerId } from '../../viewerTypes'
+import { isEqual } from 'lodash'
 
 const DEFAULT_DECORATION_TYPE = createDecorationType()
 
@@ -77,7 +78,11 @@ export class ExtensionCodeEditor implements sourcegraph.CodeEditor, ProxyMarked 
     // TODO(tj): Add status bar items
 
     public update(data: Pick<CodeEditorData, 'selections'>): void {
-        this.selectionsChanges.next(data.selections.map(selection => Selection.fromPlain(selection)))
+        const newSelections = data.selections.map(selection => Selection.fromPlain(selection))
+
+        if (!isEqual(newSelections, this.selections)) {
+            this.selectionsChanges.next(newSelections)
+        }
     }
 
     public toJSON(): any {
