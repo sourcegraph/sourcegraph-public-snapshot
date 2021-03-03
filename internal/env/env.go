@@ -134,7 +134,7 @@ func MustGetDuration(name string, defaultValue time.Duration, description string
 	s := Get(name, defaultValue.String(), description)
 	d, err := time.ParseDuration(s)
 	if err != nil {
-		panic(fmt.Sprintf("parsing duration from environment %q, %q", name, s))
+		panic(fmt.Sprintf("parsing environment variable %q. Expected valid time.Duration, got %q", name, s))
 	}
 	return d
 }
@@ -144,7 +144,7 @@ func MustGetInt(name string, defaultValue int, description string) int {
 	s := Get(name, strconv.Itoa(defaultValue), description)
 	i, err := strconv.Atoi(s)
 	if err != nil {
-		panic(fmt.Sprintf("parsing int from environment %q, %q", name, s))
+		panic(fmt.Sprintf("parsing environment variable %q. Expected valid integer, got %q", name, s))
 	}
 	return i
 }
