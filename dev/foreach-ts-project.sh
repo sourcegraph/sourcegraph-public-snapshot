@@ -12,12 +12,12 @@ export ARGS=$*
 
 DIRS=(
   client/web
-  client/shared
-  client/branded
-  client/browser
-  client/packages/sourcegraph-extension-api
-  client/packages/@sourcegraph/eslint-plugin-sourcegraph
-  client/packages/@sourcegraph/extension-api-types
+  client/ui-kit-legacy-shared
+  client/ui-kit-legacy-branded
+  client/extension-browser
+  client/extension-api
+  client/eslint-plugin-sourcegraph
+  client/extension-api-types
   dev/release
   dev/ts-morph
 )

@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "../../tsc-build/ui-kit",
+    "rootDir": ".",
+    "baseUrl": "./src",
+  },
+  "include": ["./**/*.ts*"],
+  "references": [],
+}

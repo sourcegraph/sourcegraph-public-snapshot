@@ -1,0 +1,6 @@
+@import '../../../../../ui-kit-legacy-shared/src/hover/HoverOverlay.scss';
+
+.hover-overlay {
+    isolation: isolate;
+    z-index: 2000;
+}

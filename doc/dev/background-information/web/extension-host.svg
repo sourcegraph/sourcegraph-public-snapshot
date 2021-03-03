@@ -43,7 +43,7 @@
 		</g>
 		<path d="M 280 90 L 280 98.63" fill="none" stroke="#ffffff" stroke-miterlimit="10" pointer-events="none" />
 		<path d="M 280 103.88 L 276.5 96.88 L 280 98.63 L 283.5 96.88 Z" fill="#ffffff" stroke="#ffffff" stroke-miterlimit="10" pointer-events="none" />
-		<a xlink:href="https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/shared/src/platform/context.ts#L59-65">
+		<a xlink:href="https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/ui-kit-legacy-shared/src/platform/context.ts#L59-65">
 			<rect x="70" y="35" width="420" height="55" rx="8.25" ry="8.25" fill="#eeeeee" stroke="#ffffff" />
 			<g transform="translate(-0.5 -0.5)">
 				<switch>
@@ -69,7 +69,7 @@
 		<path d="M 405 203.88 L 401.5 196.88 L 405 198.63 L 408.5 196.88 Z" fill="#ffffff" stroke="#ffffff" stroke-miterlimit="10" />
 		<path d="M 280 170 L 280 190 L 150 190 L 150 198.63" fill="none" stroke="#ffffff" stroke-miterlimit="10" />
 		<path d="M 150 203.88 L 146.5 196.88 L 150 198.63 L 153.5 196.88 Z" fill="#ffffff" stroke="#ffffff" stroke-miterlimit="10" />
-		<a xlink:href="https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/shared/src/extensions/controller.ts#L65-71">
+		<a xlink:href="https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/ui-kit-legacy-shared/src/extensions/controller.ts#L65-71">
 			<rect x="70" y="105" width="420" height="65" rx="9.75" ry="9.75" fill="#eeeeee" stroke="#ffffff" />
 			<g transform="translate(-0.5 -0.5)">
 				<switch>
@@ -91,7 +91,7 @@
 				</switch>
 			</g>
 		</a>
-		<a xlink:href="https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/shared/src/platform/context.ts#L120-128">
+		<a xlink:href="https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/ui-kit-legacy-shared/src/platform/context.ts#L120-128">
 			<rect x="280" y="205" width="250" height="185" rx="11.1" ry="11.1" fill="#eeeeee" stroke="#ffffff" />
 			<g transform="translate(-0.5 -0.5)">
 				<switch>
@@ -151,7 +151,7 @@
 		</a>
 		<path d="M 149.95 235 L 149.95 412.62" fill="none" stroke="#ffffff" stroke-miterlimit="10" />
 		<path d="M 149.95 417.87 L 146.45 410.87 L 149.95 412.62 L 153.45 410.87 Z" fill="#ffffff" stroke="#ffffff" stroke-miterlimit="10" />
-		<a xlink:href="https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/shared/src/api/client/connection.ts#L55">
+		<a xlink:href="https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/ui-kit-legacy-shared/src/api/client/connection.ts#L55">
 			<rect x="30" y="205" width="240" height="30" rx="4.5" ry="4.5" fill="#eeeeee" stroke="#ffffff" />
 			<g transform="translate(-0.5 -0.5)">
 				<switch>

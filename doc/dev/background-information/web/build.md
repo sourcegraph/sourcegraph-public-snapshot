@@ -10,7 +10,7 @@ We use TypeScript for two products:
   - 2 different entrypoints: [OSS `main.tsx`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/web/src/main.tsx) and [Enterprise `main.tsx`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/web/src/enterprise/main.tsx)
 - [`browser`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/client/brower): The Sourcegraph browser extension
 
-These both use shared TypeScript code in [`../shared`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/shared). Each product has its own separate Webpack configuration.
+These both use shared TypeScript code in [`../ui-kit-legacy-shared`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/shared). Each product has its own separate Webpack configuration.
 
 ## Build process and configuration
 

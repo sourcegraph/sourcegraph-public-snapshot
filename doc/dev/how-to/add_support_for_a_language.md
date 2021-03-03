@@ -33,7 +33,7 @@ To support precise code intelligence, [write an LSIF indexer](../../code_intelli
 0. _Code intelligence extensions are powered by symbol search. If the target language is not supported by symbols, stop and follow the guide above first._
 1. Add (or update) the target language's configuration in [languages.ts](https://github.com/sourcegraph/code-intel-extensions/blob/e255e3776f213b30f2c073b98e0a959cad67c19c/shared/language-specs/languages.ts#L336). See the definition of [LanguageSpec](https://github.com/sourcegraph/code-intel-extensions/blob/e255e3776f213b30f2c073b98e0a959cad67c19c/shared/language-specs/spec.ts#L7) for an available set of fields. The likely differences will be the characters that make up the identifier, the comment delimiters, and the set of file extensions to search within for definitions and references.
 1. Ensure an [icon](https://github.com/sourcegraph/code-intel-extensions/tree/e255e3776f213b30f2c073b98e0a959cad67c19c/icons) exists for the target language. This ensures that the BuildKite pipeline will generate and publish an extension for the new language definition.
-1. Correlate the language's file extensions and the new Sourcegraph extension by adding entries to the switch in [getModeFromExtension](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@a4517f560a1c312e5effd6d3a858b76b56936e0e/-/blob/client/shared/src/languages.ts#L40:10). This enables the providers from the Sourcegraph extension to be registered when a text document with the correlated extensions is opened. The value returned from this function and the `languageId` from the language's configuration should match exactly.
+1. Correlate the language's file extensions and the new Sourcegraph extension by adding entries to the switch in [getModeFromExtension](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@a4517f560a1c312e5effd6d3a858b76b56936e0e/-/blob/client/ui-kit-legacy-shared/src/languages.ts#L40:10). This enables the providers from the Sourcegraph extension to be registered when a text document with the correlated extensions is opened. The value returned from this function and the `languageId` from the language's configuration should match exactly.
 
 ## Syntax highlighting support
 
@@ -44,7 +44,7 @@ To support syntax highlighting on code files, search results, diff views, and mo
 
 To support syntax highlighting in hovers:
 
-1. Update the [highlight.js contributions](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@e7ffd56b10e9bae004dfbb5d7d1c1accc93072fd/-/blob/client/shared/src/highlight/contributions.ts#L21) map in [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph).
+1. Update the [highlight.js contributions](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@e7ffd56b10e9bae004dfbb5d7d1c1accc93072fd/-/blob/client/ui-kit-legacy-shared/src/highlight/contributions.ts#L21) map in [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph).
 
 ## Search support
 

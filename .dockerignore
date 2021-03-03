@@ -98,6 +98,3 @@ cmd/indexer/debug
 # Web
 node_modules/
 /client/web
-
-# Extensions
-/packages/sourcegraph-extension-api/dist

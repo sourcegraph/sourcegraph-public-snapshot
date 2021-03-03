@@ -1,6 +1,6 @@
 {
   "extends": "../../tsconfig.json",
-  "references": [{ "path": "../../shared" }],
+  "references": [{ "path": "../../ui-kit-legacy-shared" }],
   "compilerOptions": {
     "module": "commonjs",
     "baseUrl": ".",

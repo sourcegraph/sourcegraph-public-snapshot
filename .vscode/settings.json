@@ -4,7 +4,7 @@
     "**/bower_components": true,
     "dist": true,
     "ui/assets": true,
-    "client/browser/build": true,
+    "client/extension-browser/build": true,
     "**/coverage": true,
     "**/out": true,
     "**/__fixtures__/**": true,

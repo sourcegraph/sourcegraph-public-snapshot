@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "name": "@sourcegraph/ui-kit-legacy-branded",
+  "version": "1.0.0",
+  "scripts": {
+    "eslint": "eslint --cache '**/*.[jt]s?(x)'",
+    "stylelint": "stylelint 'src/**/*.scss' --quiet",
+    "test": "jest"
+  }
+}

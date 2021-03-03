@@ -9,7 +9,7 @@ import {
     StructureKind,
     SourceFile,
 } from 'ts-morph'
-import { anyOf } from '../../shared/src/util/types'
+import { anyOf } from '../../ui-kit-legacy-shared/src/util/types'
 
 /**
  * Code mod to add a missing history prop to JSX and props interfaces,

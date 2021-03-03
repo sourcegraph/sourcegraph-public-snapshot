@@ -14,8 +14,8 @@
     "prettier": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --write --list-different --config prettier.config.js",
     "prettier-check": "yarn -s run prettier --write=false",
     "all:eslint": "DOCSITE_LIST=\"$(./dev/docsite.sh -config doc/docsite.json ls)\" dev/foreach-ts-project.sh yarn -s run eslint --quiet",
-    "all:stylelint": "yarn --cwd client/web run stylelint && yarn --cwd client/shared run stylelint && yarn --cwd client/branded run stylelint && yarn --cwd client/browser run stylelint",
-    "all:tsgql": "yarn --cwd client/web run tsgql validate -p . --exitOnWarn && yarn --cwd client/shared run tsgql validate -p . --exitOnWarn && yarn --cwd client/browser run tsgql validate -p . --exitOnWarn",
+    "all:stylelint": "yarn --cwd client/web run stylelint && yarn --cwd client/ui-kit-legacy-shared run stylelint && yarn --cwd client/ui-kit-legacy-branded run stylelint && yarn --cwd client/extension-browser run stylelint",
+    "all:tsgql": "yarn --cwd client/web run tsgql validate -p . --exitOnWarn && yarn --cwd client/ui-kit-legacy-shared run tsgql validate -p . --exitOnWarn && yarn --cwd client/extension-browser run tsgql validate -p . --exitOnWarn",
     "build-ts": "tsc -b tsconfig.all.json",
     "graphql-lint": "graphql-schema-linter cmd/frontend/graphqlbackend/schema.graphql",
     "build-web": "yarn --cwd client/web run build",
@@ -23,9 +23,9 @@
     "generate": "gulp generate",
     "watch-generate": "gulp watchGenerate",
     "test": "jest --testPathIgnorePatterns end-to-end regression integration storybook",
-    "test-integration": "TS_NODE_PROJECT=client/web/src/integration/tsconfig.json NODE_NO_WARNINGS=1 mocha --parallel=$CI --retries=1 ./client/web/src/integration/**/*.test.ts",
+    "test-integration": "TS_NODE_PROJECT=client/web/src/integration/tsconfig.json NODE_NO_WARNINGS=1 mocha --parallel=$CI --retries=1 ./client/app-web/src/integration/**/*.test.ts",
     "cover-integration": "nyc --hook-require=false yarn test-integration",
-    "test-e2e": "TS_NODE_PROJECT=client/web/src/end-to-end/tsconfig.json mocha ./client/web/src/end-to-end/end-to-end.test.ts",
+    "test-e2e": "TS_NODE_PROJECT=client/web/src/end-to-end/tsconfig.json mocha ./client/app-web/src/end-to-end/end-to-end.test.ts",
     "cover-e2e": "nyc --hook-require=false --silent=true yarn test-e2e",
     "storybook": "start-storybook -p 9001 -c .storybook -s ui/assets",
     "build-storybook": "build-storybook -c .storybook -s ui/assets",
@@ -71,6 +71,11 @@
       "**/assets"
     ]
   },
+  "workspaces": {
+    "packages": [
+      "client/*"
+    ]
+  },
   "devDependencies": {
     "@atlassian/aui": "^7.10.1",
     "@babel/core": "^7.12.3",
@@ -95,7 +100,7 @@
     "@slack/web-api": "^5.10.0",
     "@sourcegraph/babel-plugin-transform-react-hot-loader-wrapper": "^1.0.0",
     "@sourcegraph/eslint-config": "^0.20.19",
-    "@sourcegraph/eslint-plugin-sourcegraph": "link:client/packages/@sourcegraph/eslint-plugin-sourcegraph",
+    "@sourcegraph/eslint-plugin-sourcegraph": "link:client/eslint-plugin-sourcegraph",
     "@sourcegraph/prettierrc": "^3.0.3",
     "@sourcegraph/stylelint-config": "^1.2.0",
     "@sourcegraph/tsconfig": "^4.0.1",
@@ -270,7 +275,7 @@
     "@slimsag/react-shortcuts": "^1.2.1",
     "@sourcegraph/codeintellify": "^7.2.0",
     "@sourcegraph/extension-api-classes": "^1.1.0",
-    "@sourcegraph/extension-api-types": "link:client/packages/@sourcegraph/extension-api-types",
+    "@sourcegraph/extension-api-types": "link:client/extension-api-types",
     "@sourcegraph/react-loading-spinner": "0.0.7",
     "@sqs/jsonc-parser": "^1.0.3",
     "bootstrap": "^4.5.2",
@@ -320,7 +325,7 @@
     "sanitize-html": "^1.26.0",
     "semver": "^7.3.2",
     "shepherd.js": "^8.0.2",
-    "sourcegraph": "link:client/packages/sourcegraph-extension-api",
+    "sourcegraph": "link:client/extension-api",
     "string-score": "^1.0.1",
     "tagged-template-noop": "^2.1.1",
     "textarea-caret": "^3.1.0",

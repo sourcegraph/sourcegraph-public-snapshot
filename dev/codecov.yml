@@ -21,7 +21,7 @@ coverage:
       search:
         informational: true
         paths:
-          - client/shared/src/search
+          - client/ui-kit-legacy-shared/src/search
           - client/web/src/enterprise/search
           - client/web/src/search
           - cmd/frontend/graphqlbackend/*search*

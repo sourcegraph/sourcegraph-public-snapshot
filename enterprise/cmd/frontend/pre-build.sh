@@ -20,7 +20,7 @@ fi
 
 build_browser() {
   echo "--- yarn browser"
-  (cd client/browser && TARGETS=phabricator eval "${MAYBE_TIME_PREFIX} yarn build")
+  (cd client/extension-browser && TARGETS=phabricator eval "${MAYBE_TIME_PREFIX} yarn build")
 }
 
 build_web() {

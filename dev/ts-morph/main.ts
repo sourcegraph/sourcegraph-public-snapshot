@@ -29,8 +29,8 @@ async function main(): Promise<void> {
     project.addSourceFilesFromTsConfig(path.resolve(repoRoot, 'shared/tsconfig.json'))
     project.addSourceFilesAtPaths([
         path.resolve(repoRoot, 'client/web/src/**/*.d.ts'),
-        path.resolve(repoRoot, 'client/shared/src/**/*.d.ts'),
-        path.resolve(repoRoot, 'client/browser/src/**/*.d.ts'),
+        path.resolve(repoRoot, 'client/ui-kit-legacy-shared/src/**/*.d.ts'),
+        path.resolve(repoRoot, 'client/extension-browser/src/**/*.d.ts'),
     ])
 
     console.log('Getting diagnostics')

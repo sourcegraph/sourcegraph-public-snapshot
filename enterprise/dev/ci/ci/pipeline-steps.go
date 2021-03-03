@@ -66,11 +66,11 @@ func addWebApp(pipeline *bk.Pipeline) {
 func addBrowserExt(pipeline *bk.Pipeline) {
 	// Browser extension build
 	pipeline.AddStep(":webpack::chrome: Build browser extension",
-		bk.Cmd("dev/ci/yarn-build.sh client/browser"))
+		bk.Cmd("dev/ci/yarn-build.sh client/extension-browser"))
 
 	// Browser extension tests
 	pipeline.AddStep(":jest::chrome: Test browser extension",
-		bk.Cmd("dev/ci/yarn-test.sh client/browser"),
+		bk.Cmd("dev/ci/yarn-test.sh client/extension-browser"),
 		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
 }
 
@@ -102,14 +102,14 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 
 		// Shared tests
 		pipeline.AddStep(":jest: Test shared client code",
-			bk.Cmd("dev/ci/yarn-test.sh client/shared"),
+			bk.Cmd("dev/ci/yarn-test.sh client/ui-kit-legacy-shared"),
 			bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
 	}
 }
 
 func addBrandedTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest: Test branded client code",
-		bk.Cmd("dev/ci/yarn-test.sh client/branded"),
+		bk.Cmd("dev/ci/yarn-test.sh client/ui-kit-legacy-branded"),
 		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
 }
 
@@ -166,7 +166,7 @@ func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("pushd client/browser"),
+			bk.Cmd("pushd client/extension-browser"),
 			bk.Cmd("yarn -s run build"),
 			bk.Cmd("yarn -s mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts"),
 			bk.Cmd("popd"),
@@ -183,7 +183,7 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 	// Release to the Chrome Webstore
 	pipeline.AddStep(":rocket::chrome: Extension release",
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd client/browser"),
+		bk.Cmd("pushd client/extension-browser"),
 		bk.Cmd("yarn -s run build"),
 		bk.Cmd("yarn release:chrome"),
 		bk.Cmd("popd"))
@@ -191,14 +191,14 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 	// Build and self sign the FF add-on and upload it to a storage bucket
 	pipeline.AddStep(":rocket::firefox: Extension release",
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd client/browser"),
+		bk.Cmd("pushd client/extension-browser"),
 		bk.Cmd("yarn release:ff"),
 		bk.Cmd("popd"))
 
 	// Release to npm
 	pipeline.AddStep(":rocket::npm: NPM Release",
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd client/browser"),
+		bk.Cmd("pushd client/extension-browser"),
 		bk.Cmd("yarn -s run build"),
 		bk.Cmd("yarn release:npm"),
 		bk.Cmd("popd"))

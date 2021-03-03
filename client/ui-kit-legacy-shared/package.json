@@ -1,0 +1,15 @@
+{
+  "private": true,
+  "name": "@sourcegraph/ui-kit-legacy-shared",
+  "version": "1.0.0",
+  "scripts": {
+    "eslint": "eslint --cache '**/*.[jt]s?(x)'",
+    "stylelint": "stylelint 'src/**/*.scss' --quiet",
+    "test": "jest",
+    "graphql": "gulp graphQlSchema",
+    "schema": "gulp schema",
+    "operations": "gulp graphQlOperations",
+    "watch-schema": "gulp watchSchema"
+  },
+  "sideEffects": true
+}

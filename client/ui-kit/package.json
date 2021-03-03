@@ -1,0 +1,13 @@
+{
+  "name": "@sourcegraph/ui-kit",
+  "version": "0.0.1",
+  "description": "Sourcegraph design system",
+  "main": "./index.ts",
+  "sideEffects": false,
+  "scripts": {
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+  }
+}
