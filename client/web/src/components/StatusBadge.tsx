@@ -1,11 +1,13 @@
 import React from 'react'
+import classnames from 'classnames'
 
-type Status = 'beta' | 'prototype' | 'wip'
+type Status = 'beta' | 'prototype' | 'wip' | 'new'
 
 const statusStyleMapping: Record<Status, string> = {
     prototype: 'badge-warning',
     wip: 'badge-warning',
     beta: 'badge-info',
+    new: 'badge-info',
 }
 
 interface Props {
@@ -17,17 +19,22 @@ interface Props {
         text?: string
     }
     tooltip?: string
+    className?: string
 }
 
-export const StatusBadge: React.FunctionComponent<Props> = ({ status, feedback, tooltip }) => (
-    <div className="d-flex align-items-center">
-        <span className={`badge ${statusStyleMapping[status]} text-uppercase mr-2`} data-tooltip={tooltip}>
-            {status}
-        </span>
-        {feedback && (
-            <a href={`mailto:${feedback.mailto}`} target="_blank" rel="noopener noreferrer">
-                {feedback.text || 'Share feedback'}
-            </a>
-        )}
-    </div>
-)
+export const StatusBadge: React.FC<Props> = props => {
+    const { className, status, feedback, tooltip } = props
+
+    return (
+        <div className={classnames('d-flex', 'align-items-center', className)}>
+            <span className={classnames('badge', 'text-uppercase', statusStyleMapping[status])} data-tooltip={tooltip}>
+                {status}
+            </span>
+            {feedback && (
+                <a href={`mailto:${feedback.mailto}`} className="ml-2" target="_blank" rel="noopener noreferrer">
+                    {feedback.text || 'Share feedback'}
+                </a>
+            )}
+        </div>
+    )
+}
