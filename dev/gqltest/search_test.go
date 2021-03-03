@@ -266,6 +266,10 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query: `repo:^github\.com/sgtest/mux$`,
 			},
 			{
+				name:  "repohasfile returns results for global search",
+				query: "repohasfile:README",
+			},
+			{
 				name:  `exclude counts for fork and archive`,
 				query: `repo:mux|archived|go-diff`,
 				wantMissing: []string{
@@ -327,10 +331,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:          "something with more than 1000 results and use count:1000",
 				query:         ". count:1000",
 				minMatchCount: 1000,
-			},
-			{
-				name:  "repohasfile returns results for global search",
-				query: "repohasfile:README",
 			},
 			{
 				name:  "regular expression without indexed search",
