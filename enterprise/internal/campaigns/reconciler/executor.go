@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 // ExecutePlan executes the given reconciler plan.
@@ -468,7 +469,7 @@ func (e ErrMissingCredentials) NonRetryable() bool { return true }
 type ErrNoPushCredentials struct{ credentialsType string }
 
 func (e ErrNoPushCredentials) Error() string {
-	return fmt.Sprintf("cannot use credentials of type %T to push commits", e.credentialsType)
+	return fmt.Sprintf("cannot use credentials of type %s to push commits", e.credentialsType)
 }
 
 func (e ErrNoPushCredentials) NonRetryable() bool { return true }
@@ -549,22 +550,24 @@ func (e ErrNoSSHCredential) Error() string {
 func (e ErrNoSSHCredential) NonRetryable() bool { return true }
 
 func buildPushConfig(extSvcType, cloneURL string, a auth.Authenticator) (*protocol.PushConfig, error) {
-	u, err := url.Parse(cloneURL)
+	if a == nil {
+		// This is OK: we'll just send no key and gitserver will use
+		// the keys installed locally for SSH and the token from the
+		// clone URL for https.
+		// This path is only triggered when `loadAuthenticator` returns
+		// nil, which is only the case for site-admins currently.
+		// We want to revisit this once we start disabling usage of global
+		// credentials altogether in RFC312.
+		return &protocol.PushConfig{RemoteURL: cloneURL}, nil
+	}
+
+	u, err := vcs.ParseURL(cloneURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing repository clone URL")
 	}
 
 	// If the repo is cloned using SSH, we need to pass along a private key and passphrase.
 	if u.Scheme == "ssh" {
-		if a == nil {
-			// This is OK: we'll just send no key and gitserver will use
-			// the keys installed locally.
-			// This path is only triggered when `loadAuthenticator` returns
-			// nil, which is only the case for site-admins currently.
-			// We want to revisit this once we start disabling usage of global
-			// credentials altogether in RFC312.
-			return &protocol.PushConfig{RemoteURL: cloneURL}, nil
-		}
 		sshA, ok := a.(auth.AuthenticatorWithSSH)
 		if !ok {
 			return nil, ErrNoSSHCredential{}
@@ -595,15 +598,6 @@ func buildPushConfig(extSvcType, cloneURL string, a auth.Authenticator) (*protoc
 		if err := setBasicAuth(u, extSvcType, av.Username, av.Password); err != nil {
 			return nil, err
 		}
-
-	case nil:
-		// This is OK: we'll just send an empty token and gitserver will use
-		// the credential stored in the clone URL of the repository.
-		// This path is only triggered when `loadAuthenticator` returns
-		// nil, which is only the case for site-admins currently.
-		// We want to revisit this once we start disabling usage of global
-		// credentials altogether in RFC312.
-
 	default:
 		return nil, ErrNoPushCredentials{credentialsType: fmt.Sprintf("%T", a)}
 	}

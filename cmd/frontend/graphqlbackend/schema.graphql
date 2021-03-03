@@ -8621,6 +8621,12 @@ type CampaignsCodeHost {
     The configured credential, if any.
     """
     credential: CampaignsCredential
+
+    """
+    If true, some of the repositories on this code host require
+    an SSH key to be configured.
+    """
+    requiresSSH: Boolean!
 }
 
 """
@@ -8641,6 +8647,12 @@ type CampaignsCredential implements Node {
     The URL of the external service.
     """
     externalServiceURL: String!
+
+    """
+    The public key to use on the external service for SSH keypair authentication.
+    Not set if the credential doesn't support SSH access.
+    """
+    sshPublicKey: String
 
     """
     The date and time this token has been created at.

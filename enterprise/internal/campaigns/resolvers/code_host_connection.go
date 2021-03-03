@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/store"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 type campaignsCodeHostConnectionResolver struct {
@@ -64,7 +63,7 @@ func (c *campaignsCodeHostConnectionResolver) Nodes(ctx context.Context) ([]grap
 			externalServiceType: ch.ExternalServiceType,
 		}
 		cred := credsByIDType[t]
-		nodes[i] = &campaignsCodeHostResolver{externalServiceKind: extsvc.TypeToKind(ch.ExternalServiceType), externalServiceURL: ch.ExternalServiceID, credential: cred}
+		nodes[i] = &campaignsCodeHostResolver{codeHost: ch, credential: cred}
 	}
 
 	return nodes, nil

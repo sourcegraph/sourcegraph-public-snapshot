@@ -328,6 +328,7 @@ type CampaignsCodeHostConnectionResolver interface {
 type CampaignsCodeHostResolver interface {
 	ExternalServiceKind() string
 	ExternalServiceURL() string
+	RequiresSSH() bool
 	Credential() CampaignsCredentialResolver
 }
 
@@ -335,6 +336,7 @@ type CampaignsCredentialResolver interface {
 	ID() graphql.ID
 	ExternalServiceKind() string
 	ExternalServiceURL() string
+	SSHPublicKey() *string
 	CreatedAt() DateTime
 }
 

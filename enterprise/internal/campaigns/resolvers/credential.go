@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 )
 
 const campaignsCredentialIDKind = "CampaignsCredential"
@@ -37,6 +38,14 @@ func (c *campaignsCredentialResolver) ExternalServiceKind() string {
 func (c *campaignsCredentialResolver) ExternalServiceURL() string {
 	// This is usually the code host URL.
 	return c.credential.ExternalServiceID
+}
+
+func (c *campaignsCredentialResolver) SSHPublicKey() *string {
+	if a, ok := c.credential.Credential.(auth.AuthenticatorWithSSH); ok {
+		publicKey := a.SSHPublicKey()
+		return &publicKey
+	}
+	return nil
 }
 
 func (c *campaignsCredentialResolver) CreatedAt() graphqlbackend.DateTime {

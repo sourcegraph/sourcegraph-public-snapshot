@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
@@ -866,6 +867,9 @@ func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlb
 		svc := service.New(r.store)
 		username, err := svc.FetchUsernameForBitbucketServerToken(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), args.Credential)
 		if err != nil {
+			if bitbucketserver.IsUnauthorized(err) {
+				return nil, &ErrVerifyCredentialFailed{SourceErr: err}
+			}
 			return nil, err
 		}
 		a = &auth.BasicAuthWithSSH{

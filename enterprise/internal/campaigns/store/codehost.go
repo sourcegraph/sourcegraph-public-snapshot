@@ -33,11 +33,20 @@ func (s *Store) ListCodeHosts(ctx context.Context, opts ListCodeHostsOpts) ([]*c
 var listCodeHostsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store_codehost.go:ListCodeHosts
 SELECT
-	external_service_type, external_service_id
+	repo.external_service_type, repo.external_service_id, COUNT(esr.external_service_id) > 0 AS ssh_required
 FROM repo
+LEFT JOIN external_service_repos esr
+	ON
+		esr.repo_id = repo.id AND
+		(
+			-- Either start with ssh://
+			esr.clone_url ILIKE %s OR
+			-- OR have no scheme specified at all
+			esr.clone_url !~* '[[:alpha:]]+://'
+		)
 WHERE %s
-GROUP BY external_service_type, external_service_id
-ORDER BY external_service_type ASC, external_service_id ASC
+GROUP BY repo.external_service_type, repo.external_service_id
+ORDER BY repo.external_service_type ASC, repo.external_service_id ASC
 `
 
 func listCodeHostsQuery(opts ListCodeHostsOpts) *sqlf.Query {
@@ -51,7 +60,7 @@ func listCodeHostsQuery(opts ListCodeHostsOpts) *sqlf.Query {
 	for extSvcType := range campaigns.SupportedExternalServices {
 		supportedTypes = append(supportedTypes, sqlf.Sprintf("%s", extSvcType))
 	}
-	preds = append(preds, sqlf.Sprintf("external_service_type IN (%s)", sqlf.Join(supportedTypes, ", ")))
+	preds = append(preds, sqlf.Sprintf("repo.external_service_type IN (%s)", sqlf.Join(supportedTypes, ", ")))
 
 	if len(opts.RepoIDs) > 0 {
 		repoIDs := make([]*sqlf.Query, len(opts.RepoIDs))
@@ -61,13 +70,14 @@ func listCodeHostsQuery(opts ListCodeHostsOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("repo.id IN (%s)", sqlf.Join(repoIDs, ",")))
 	}
 
-	return sqlf.Sprintf(listCodeHostsQueryFmtstr, sqlf.Join(preds, "AND"))
+	return sqlf.Sprintf(listCodeHostsQueryFmtstr, sqlf.Sprintf("%s", "ssh://%"), sqlf.Join(preds, "AND"))
 }
 
 func scanCodeHost(c *campaigns.CodeHost, sc scanner) error {
 	return sc.Scan(
 		&c.ExternalServiceType,
 		&c.ExternalServiceID,
+		&c.RequiresSSH,
 	)
 }
 
@@ -79,6 +89,7 @@ type GetExternalServiceIDOpts struct {
 func (s *Store) GetExternalServiceID(ctx context.Context, opts GetExternalServiceIDOpts) (int64, error) {
 	q := getExternalServiceIDQuery(opts)
 
+	// Returns the first external service to match.
 	id, ok, err := basestore.ScanFirstInt(s.Query(ctx, q))
 	if err != nil {
 		return 0, err
