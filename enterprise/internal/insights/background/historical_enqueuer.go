@@ -43,6 +43,7 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 
 	historicalEnqueuer := &historicalEnqueuer{
 		now:           time.Now,
+		sleep:         time.Sleep,
 		settingStore:  settingStore,
 		insightsStore: insightsStore,
 		repoStore:     database.Repos(workerBaseStore.Handle().DB()),
@@ -85,8 +86,9 @@ type RepoStore interface {
 type historicalEnqueuer struct {
 	// Required fields used for mocking in tests.
 	now                   func() time.Time
+	sleep                 func(t time.Duration)
 	settingStore          discovery.SettingStore
-	insightsStore         *store.Store
+	insightsStore         store.Interface
 	repoStore             RepoStore
 	enqueueQueryRunnerJob func(ctx context.Context, job *queryrunner.Job) error
 
@@ -218,8 +220,8 @@ func (h *historicalEnqueuer) buildFrame(
 	//
 	lastIteration := h.now()
 	yield := func() {
-		if diff := time.Since(lastIteration); diff < 100*time.Millisecond {
-			time.Sleep(diff)
+		if diff := h.since(lastIteration); diff < 100*time.Millisecond {
+			h.sleep(diff)
 			lastIteration = h.now()
 		}
 	}
