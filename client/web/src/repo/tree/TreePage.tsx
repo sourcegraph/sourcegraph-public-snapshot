@@ -322,7 +322,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                 /not a directory/i.test(treeOrError.message) ? (
                     <Redirect to={toPrettyBlobURL({ repoName: repo.name, revision, commitID, filePath })} />
                 ) : (
-                    <ErrorAlert error={treeOrError} history={props.history} />
+                    <ErrorAlert error={treeOrError} />
                 )
             ) : (
                 <>

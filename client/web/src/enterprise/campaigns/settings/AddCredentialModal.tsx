@@ -119,7 +119,7 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
                 <h3 id={labelId}>
                     {modalTitles[externalServiceKind]} campaigns token for {externalServiceURL}
                 </h3>
-                {isErrorLike(isLoading) && <ErrorAlert error={isLoading} history={history} />}
+                {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
                 <Form onSubmit={onSubmit}>
                     <div className="form-group">
                         <label htmlFor="token">Personal access token</label>

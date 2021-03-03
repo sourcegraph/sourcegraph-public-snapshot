@@ -609,7 +609,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                             selectionState.radio === 'selected' && (
                                 <div className="ml-4">
                                     {filterControls}
-                                    {repoState.error !== '' && <ErrorAlert error={repoState.error} history={history} />}
+                                    {repoState.error !== '' && <ErrorAlert error={repoState.error} />}
                                     <table role="grid" className="table">
                                         {
                                             // if we're selecting repos, and the repos are still loading, display the loading animation

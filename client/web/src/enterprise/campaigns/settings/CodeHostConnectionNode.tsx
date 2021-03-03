@@ -88,7 +88,6 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                 <RemoveCredentialModal
                     onCancel={onCancel}
                     afterDelete={afterAction}
-                    history={history}
                     credentialID={node.credential!.id}
                 />
             )}

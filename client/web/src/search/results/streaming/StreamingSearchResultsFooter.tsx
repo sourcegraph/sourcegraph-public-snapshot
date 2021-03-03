@@ -1,19 +1,12 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import * as H from 'history'
 import SearchIcon from 'mdi-react/SearchIcon'
 import React from 'react'
 import { ErrorAlert } from '../../../components/alerts'
 import { AggregateStreamingSearchResults } from '../../stream'
 import { StreamingProgressCount } from './progress/StreamingProgressCount'
 
-interface StreamingSearchResultsListFooterProps {
-    results?: AggregateStreamingSearchResults
-    history: H.History
-}
-
-export const StreamingSearchResultFooter: React.FunctionComponent<StreamingSearchResultsListFooterProps> = ({
+export const StreamingSearchResultFooter: React.FunctionComponent<{ results?: AggregateStreamingSearchResults }> = ({
     results,
-    history,
 }) => (
     <div className="d-flex flex-column align-items-center">
         {(!results || results?.state === 'loading') && (
@@ -27,12 +20,7 @@ export const StreamingSearchResultFooter: React.FunctionComponent<StreamingSearc
         )}
 
         {results?.state === 'error' && (
-            <ErrorAlert
-                className="m-3"
-                data-testid="search-results-list-error"
-                error={results.error}
-                history={history}
-            />
+            <ErrorAlert className="m-3" data-testid="search-results-list-error" error={results.error} />
         )}
 
         {results?.state === 'complete' && !results.alert && results?.results.length === 0 && (
