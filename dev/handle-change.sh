@@ -11,10 +11,6 @@ failed=false
 
 for i; do
   case $i in
-    "cmd/frontend/graphqlbackend/schema.graphql")
-      # We assume that frontend needs to be rebuilt when the schema changes, and add it to the list.
-      cmdlist+=("frontend")
-      ;;
     monitoring/*)
       generate_monitoring=true
       ;;
