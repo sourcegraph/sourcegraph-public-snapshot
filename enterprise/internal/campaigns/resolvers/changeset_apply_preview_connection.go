@@ -84,7 +84,7 @@ func (r *changesetApplyPreviewConnectionResolver) Nodes(ctx context.Context) ([]
 			return nil, err
 		}
 		for _, d := range syncData {
-			scheduledSyncs[d.ChangesetID] = syncer.NextSync(time.Now, d)
+			scheduledSyncs[d.ChangesetID] = syncer.NextSync(r.store.Clock(), d)
 		}
 	}
 
