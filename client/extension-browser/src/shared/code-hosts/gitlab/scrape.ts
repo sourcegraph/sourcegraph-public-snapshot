@@ -2,7 +2,7 @@ import { last, take } from 'lodash'
 
 import { FileSpec, RawRepoSpec, RevisionSpec } from '../../../../../ui-kit-legacy-shared/src/util/url'
 import { commitIDFromPermalink } from '../../util/dom'
-import { FileInfo } from '../ui-kit-legacy-shared/codeHost'
+import { FileInfo } from '../shared/codeHost'
 import { isExtension } from '../../context'
 
 export enum GitLabPageKind {

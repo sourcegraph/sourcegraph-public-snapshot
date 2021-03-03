@@ -1,4 +1,4 @@
-import { testToolbarMountGetter } from '../ui-kit-legacy-shared/codeHostTestUtils'
+import { testToolbarMountGetter } from '../shared/codeHostTestUtils'
 import { commitCodeView, diffCodeView } from './codeHost'
 
 describe('phabricator/codeHost', () => {

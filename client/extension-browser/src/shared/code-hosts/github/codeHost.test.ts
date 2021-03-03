@@ -1,7 +1,7 @@
 import { existsSync, readdirSync } from 'fs'
 import { startCase } from 'lodash'
-import { testCodeHostMountGetters, testToolbarMountGetter } from '../ui-kit-legacy-shared/codeHostTestUtils'
-import { CodeView } from '../ui-kit-legacy-shared/codeViews'
+import { testCodeHostMountGetters, testToolbarMountGetter } from '../shared/codeHostTestUtils'
+import { CodeView } from '../shared/codeViews'
 import {
     createFileActionsToolbarMount,
     createFileLineContainerToolbarMount,

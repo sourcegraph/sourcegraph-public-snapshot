@@ -1,5 +1,5 @@
 import { DiffPart } from '@sourcegraph/codeintellify'
-import { DOMFunctions } from '../ui-kit-legacy-shared/codeViews'
+import { DOMFunctions } from '../shared/codeViews'
 import { isDiffPageType, parseURL } from './util'
 
 const getDiffCodePart = (codeElement: HTMLElement): DiffPart => {

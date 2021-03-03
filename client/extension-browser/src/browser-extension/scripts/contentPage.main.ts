@@ -4,18 +4,18 @@ import { fromEvent, Subscription } from 'rxjs'
 import { first } from 'rxjs/operators'
 import { setLinkComponent, AnchorLink } from '../../../../ui-kit-legacy-shared/src/components/Link'
 import { storage } from '../web-extension-api/storage'
-import { determineCodeHost } from '../../ui-kit-legacy-shared/code-hosts/shared/codeHost'
-import { injectCodeIntelligence } from '../../ui-kit-legacy-shared/code-hosts/shared/inject'
-import { initSentry } from '../../ui-kit-legacy-shared/sentry'
+import { determineCodeHost } from '../../shared/code-hosts/shared/codeHost'
+import { injectCodeIntelligence } from '../../shared/code-hosts/shared/inject'
+import { initSentry } from '../../shared/sentry'
 import {
     checkIsSourcegraph,
     EXTENSION_MARKER_ID,
     injectExtensionMarker,
     NATIVE_INTEGRATION_ACTIVATED,
     signalBrowserExtensionInstalled,
-} from '../../ui-kit-legacy-shared/code-hosts/sourcegraph/inject'
+} from '../../shared/code-hosts/sourcegraph/inject'
 import { DEFAULT_SOURCEGRAPH_URL, getAssetsURL } from '../../shared/util/context'
-import { featureFlags } from '../../ui-kit-legacy-shared/util/featureFlags'
+import { featureFlags } from '../../shared/util/featureFlags'
 import { assertEnvironment } from '../environmentAssertion'
 
 const subscriptions = new Subscription()

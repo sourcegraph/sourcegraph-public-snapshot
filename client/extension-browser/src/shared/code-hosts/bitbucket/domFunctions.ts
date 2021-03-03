@@ -1,5 +1,5 @@
 import { DiffPart } from '@sourcegraph/codeintellify'
-import { DOMFunctions } from '../ui-kit-legacy-shared/codeViews'
+import { DOMFunctions } from '../shared/codeViews'
 
 const getSingleFileLineElementFromLineNumber = (codeView: HTMLElement, line: number): HTMLElement => {
     const lineNumberElement = codeView.querySelector<HTMLElement>(`[data-line-number="${line}"]`)

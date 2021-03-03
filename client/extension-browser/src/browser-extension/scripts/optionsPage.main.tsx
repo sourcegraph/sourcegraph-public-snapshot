@@ -7,9 +7,9 @@ import { from, noop, Observable, combineLatest } from 'rxjs'
 import { GraphQLResult } from '../../../../ui-kit-legacy-shared/src/graphql/graphql'
 import { background } from '../web-extension-api/runtime'
 import { observeStorageKey, storage } from '../web-extension-api/storage'
-import { initSentry } from '../../ui-kit-legacy-shared/sentry'
-import { fetchSite } from '../../ui-kit-legacy-shared/backend/server'
-import { featureFlags } from '../../ui-kit-legacy-shared/util/featureFlags'
+import { initSentry } from '../../shared/sentry'
+import { fetchSite } from '../../shared/backend/server'
+import { featureFlags } from '../../shared/util/featureFlags'
 import {
     OptionFlagKey,
     OptionFlagWithValue,
@@ -17,7 +17,7 @@ import {
     observeOptionFlags,
     shouldOverrideSendTelemetry,
     optionFlagDefinitions,
-} from '../../ui-kit-legacy-shared/util/optionFlags'
+} from '../../shared/util/optionFlags'
 import { assertEnvironment } from '../environmentAssertion'
 import {
     observeSourcegraphURL,
@@ -26,7 +26,7 @@ import {
     DEFAULT_SOURCEGRAPH_URL,
 } from '../../shared/util/context'
 import { catchError, map, mapTo } from 'rxjs/operators'
-import { isExtension } from '../../ui-kit-legacy-shared/context'
+import { isExtension } from '../../shared/context'
 import { OptionsPage, URL_AUTH_ERROR, URL_FETCH_ERROR } from '../options-menu/OptionsPage'
 import { asError } from '../../../../ui-kit-legacy-shared/src/util/errors'
 import { useObservable } from '../../../../ui-kit-legacy-shared/src/util/useObservable'

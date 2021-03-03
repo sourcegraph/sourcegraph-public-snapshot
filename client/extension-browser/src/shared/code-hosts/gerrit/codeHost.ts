@@ -2,9 +2,9 @@ import { compact, find, head } from 'lodash'
 import { interval, Observable, Subject } from 'rxjs'
 import { filter, map, refCount, publishReplay } from 'rxjs/operators'
 import { MutationRecordLike } from '../../util/dom'
-import { CodeHost } from '../ui-kit-legacy-shared/codeHost'
-import { CodeView, DOMFunctions } from '../ui-kit-legacy-shared/codeViews'
-import { queryWithSelector, ViewResolver, CustomSelectorFunction } from '../ui-kit-legacy-shared/views'
+import { CodeHost } from '../shared/codeHost'
+import { CodeView, DOMFunctions } from '../shared/codeViews'
+import { queryWithSelector, ViewResolver, CustomSelectorFunction } from '../shared/views'
 
 const PATCHSET_LABEL_PATTERN = /patchset (\d+)/i
 

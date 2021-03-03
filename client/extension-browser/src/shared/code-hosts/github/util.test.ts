@@ -1,6 +1,6 @@
 import { startCase } from 'lodash'
 import { parseURL, getDiffFileName } from './util'
-import { getFixtureBody } from '../ui-kit-legacy-shared/codeHostTestUtils'
+import { getFixtureBody } from '../shared/codeHostTestUtils'
 
 describe('util', () => {
     describe('parseURL()', () => {

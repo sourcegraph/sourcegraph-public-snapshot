@@ -1,5 +1,5 @@
 import { DiffPart } from '@sourcegraph/codeintellify'
-import { DOMFunctions } from '../ui-kit-legacy-shared/codeViews'
+import { DOMFunctions } from '../shared/codeViews'
 
 /**
  * Returns `true` if the element is a line number cell in a Phabricator diff code views.

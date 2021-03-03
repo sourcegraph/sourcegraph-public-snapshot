@@ -8,9 +8,9 @@ import {
     RevisionSpec,
 } from '../../../../../ui-kit-legacy-shared/src/util/url'
 import { querySelectorOrSelf } from '../../util/dom'
-import { CodeHost, MountGetter } from '../ui-kit-legacy-shared/codeHost'
-import { CodeView, DOMFunctions } from '../ui-kit-legacy-shared/codeViews'
-import { ViewResolver } from '../ui-kit-legacy-shared/views'
+import { CodeHost, MountGetter } from '../shared/codeHost'
+import { CodeView, DOMFunctions } from '../shared/codeViews'
+import { ViewResolver } from '../shared/views'
 import { getContext } from './context'
 import { diffDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import {

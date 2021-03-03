@@ -9,9 +9,9 @@ import {
     RevisionSpec,
 } from '../../../../../ui-kit-legacy-shared/src/util/url'
 import { fetchBlobContentLines } from '../../repo/backend'
-import { CodeHost } from '../ui-kit-legacy-shared/codeHost'
-import { CodeView, toCodeViewResolver } from '../ui-kit-legacy-shared/codeViews'
-import { ViewResolver } from '../ui-kit-legacy-shared/views'
+import { CodeHost } from '../shared/codeHost'
+import { CodeView, toCodeViewResolver } from '../shared/codeViews'
+import { ViewResolver } from '../shared/views'
 import { convertSpacesToTabs, spacesToTabsAdjustment } from '.'
 import { diffDomFunctions, diffusionDOMFns } from './domFunctions'
 import { resolveDiffFileInfo, resolveDiffusionFileInfo, resolveRevisionFileInfo } from './fileInfo'

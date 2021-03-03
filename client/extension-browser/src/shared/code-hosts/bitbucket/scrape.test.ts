@@ -1,5 +1,5 @@
 import { readFile } from 'mz/fs'
-import { getFixtureBody } from '../ui-kit-legacy-shared/codeHostTestUtils'
+import { getFixtureBody } from '../shared/codeHostTestUtils'
 import {
     getFileInfoFromSingleFileSourceCodeView,
     getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView,

@@ -1,4 +1,4 @@
-import { isBackground, isInPage } from '../../ui-kit-legacy-shared/context'
+import { isBackground, isInPage } from '../../shared/context'
 import { BackgroundPageApi } from './types'
 
 const messageSender = <T extends keyof BackgroundPageApi>(type: T): BackgroundPageApi[T] => (payload?: any) => {

@@ -1,7 +1,4 @@
-import {
-    testCodeHostMountGetters as testMountGetters,
-    testToolbarMountGetter,
-} from '../ui-kit-legacy-shared/codeHostTestUtils'
+import { testCodeHostMountGetters as testMountGetters, testToolbarMountGetter } from '../shared/codeHostTestUtils'
 import { getToolbarMount, gitlabCodeHost } from './codeHost'
 import { readFile } from 'mz/fs'
 

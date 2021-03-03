@@ -1,5 +1,5 @@
 import { GraphQLResult } from '../../../../ui-kit-legacy-shared/src/graphql/graphql'
-import { OptionFlagValues } from '../../ui-kit-legacy-shared/util/optionFlags'
+import { OptionFlagValues } from '../../shared/util/optionFlags'
 
 export interface PhabricatorMapping {
     callsign: string

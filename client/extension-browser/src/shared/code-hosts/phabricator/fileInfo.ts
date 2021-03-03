@@ -1,7 +1,7 @@
 import { Observable, zip } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 import { PlatformContext } from '../../../../../ui-kit-legacy-shared/src/platform/context'
-import { FileInfo, DiffInfo, BlobInfo } from '../ui-kit-legacy-shared/codeHost'
+import { FileInfo, DiffInfo, BlobInfo } from '../shared/codeHost'
 import { PhabricatorMode } from '.'
 import { queryConduitHelper, resolveDiffRevision } from './backend'
 import { getFilepathFromFileForDiff, getFilePathFromFileForRevision } from './scrape'

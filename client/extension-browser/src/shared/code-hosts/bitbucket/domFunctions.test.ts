@@ -1,5 +1,5 @@
 import { startCase } from 'lodash'
-import { testDOMFunctions } from '../ui-kit-legacy-shared/codeHostTestUtils'
+import { testDOMFunctions } from '../shared/codeHostTestUtils'
 import { diffDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 
 describe('Bitbucket DOM functions', () => {

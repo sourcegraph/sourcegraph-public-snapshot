@@ -1,5 +1,5 @@
 import { querySelectorOrSelf } from '../../util/dom'
-import { MountGetter } from '../ui-kit-legacy-shared/codeHost'
+import { MountGetter } from '../shared/codeHost'
 
 export const getCommandPaletteMount: MountGetter = (container: HTMLElement): HTMLElement | null => {
     const headerElement = querySelectorOrSelf(container, '.navbar-collapse')

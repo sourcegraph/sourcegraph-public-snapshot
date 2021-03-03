@@ -1,12 +1,9 @@
 import '../../../../ui-kit-legacy-shared/src/polyfills'
 
 import { setLinkComponent, AnchorLink } from '../../../../ui-kit-legacy-shared/src/components/Link'
-import { injectCodeIntelligence } from '../../ui-kit-legacy-shared/code-hosts/shared/inject'
-import { injectExtensionMarker } from '../../ui-kit-legacy-shared/code-hosts/sourcegraph/inject'
-import {
-    getPhabricatorCSS,
-    getSourcegraphURLFromConduit,
-} from '../../ui-kit-legacy-shared/code-hosts/phabricator/backend'
+import { injectCodeIntelligence } from '../../shared/code-hosts/shared/inject'
+import { injectExtensionMarker } from '../../shared/code-hosts/sourcegraph/inject'
+import { getPhabricatorCSS, getSourcegraphURLFromConduit } from '../../shared/code-hosts/phabricator/backend'
 import { metaClickOverride } from './util'
 import { getAssetsURL } from '../../shared/util/context'
 

@@ -1,5 +1,5 @@
 import { startCase } from 'lodash'
-import { DOMFunctionsTest, testDOMFunctions } from '../ui-kit-legacy-shared/codeHostTestUtils'
+import { DOMFunctionsTest, testDOMFunctions } from '../shared/codeHostTestUtils'
 import { diffDomFunctions, diffusionDOMFns } from './domFunctions'
 
 type PhabricatorPage = 'commit' | 'differential'

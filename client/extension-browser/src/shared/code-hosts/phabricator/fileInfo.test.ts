@@ -1,13 +1,13 @@
 import { readFile } from 'mz/fs'
 import { Observable, throwError, of } from 'rxjs'
 import { resolveDiffusionFileInfo, resolveRevisionFileInfo, resolveDiffFileInfo } from './fileInfo'
-import { GraphQLResponseMap, mockRequestGraphQL } from '../ui-kit-legacy-shared/testHelpers'
+import { GraphQLResponseMap, mockRequestGraphQL } from '../shared/testHelpers'
 import { QueryConduitHelper } from './backend'
 import { SuccessGraphQLResult } from '../../../../../ui-kit-legacy-shared/src/graphql/graphql'
 import { IMutation, IQuery } from '../../../../../ui-kit-legacy-shared/src/graphql/schema'
 import { resetAllMemoizationCaches } from '../../../../../ui-kit-legacy-shared/src/util/memoizeObservable'
 import { PlatformContext } from '../../../../../ui-kit-legacy-shared/src/platform/context'
-import { DiffOrBlobInfo } from '../ui-kit-legacy-shared/codeHost'
+import { DiffOrBlobInfo } from '../shared/codeHost'
 
 interface ConduitResponseMap {
     [endpoint: string]: (parameters: any) => Observable<any>

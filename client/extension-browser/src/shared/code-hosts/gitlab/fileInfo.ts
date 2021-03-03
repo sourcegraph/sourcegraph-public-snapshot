@@ -1,7 +1,7 @@
 import { Observable, from } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
-import { DiffInfo, BlobInfo } from '../ui-kit-legacy-shared/codeHost'
+import { DiffInfo, BlobInfo } from '../shared/codeHost'
 
 import { getBaseCommitIDForCommit, getMergeRequestDetailsFromAPI } from './api'
 import {

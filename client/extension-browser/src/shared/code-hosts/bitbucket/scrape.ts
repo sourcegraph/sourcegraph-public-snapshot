@@ -1,7 +1,7 @@
 import * as path from 'path'
 import { createAggregateError } from '../../../../../ui-kit-legacy-shared/src/util/errors'
 import { DiffResolvedRevisionSpec } from '../../repo'
-import { FileInfo, DiffInfo } from '../ui-kit-legacy-shared/codeHost'
+import { FileInfo, DiffInfo } from '../shared/codeHost'
 
 export interface BitbucketRepoInfo {
     repoSlug: string

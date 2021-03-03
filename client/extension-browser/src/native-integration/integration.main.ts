@@ -1,12 +1,12 @@
 import '../../../ui-kit-legacy-shared/src/polyfills'
 
 import { setLinkComponent, AnchorLink } from '../../../ui-kit-legacy-shared/src/components/Link'
-import { injectCodeIntelligence } from '../ui-kit-legacy-shared/code-hosts/shared/inject'
+import { injectCodeIntelligence } from '../shared/code-hosts/shared/inject'
 import {
     EXTENSION_MARKER_ID,
     injectExtensionMarker,
     NATIVE_INTEGRATION_ACTIVATED,
-} from '../ui-kit-legacy-shared/code-hosts/sourcegraph/inject'
+} from '../shared/code-hosts/sourcegraph/inject'
 import { getAssetsURL } from '../shared/util/context'
 
 const IS_EXTENSION = false
