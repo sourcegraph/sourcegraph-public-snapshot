@@ -790,17 +790,12 @@ func (r *searchResolver) evaluateOperator(ctx context.Context, scopeParameters [
 	if len(operator.Operands) == 0 {
 		return nil, nil
 	}
-	var result *SearchResultsResolver
-	var err error
+
 	if operator.Kind == query.And {
-		result, err = r.evaluateAndStream(ctx, scopeParameters, operator.Operands)
+		return r.evaluateAndStream(ctx, scopeParameters, operator.Operands)
 	} else {
-		result, err = r.evaluateOr(ctx, scopeParameters, operator.Operands)
+		return r.evaluateOr(ctx, scopeParameters, operator.Operands)
 	}
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
 }
 
 // setQuery sets a new query in the search resolver, for potentially repeated
