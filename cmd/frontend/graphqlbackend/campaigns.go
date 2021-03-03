@@ -11,9 +11,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
-// DEPRECATED
+// TODO(campaigns-deprecation)
 type CreateCampaignArgs struct {
 	CampaignSpec graphql.ID
+}
+
+// TODO(campaigns-deprecation)
+type CreateCampaignSpecArgs struct {
+	Namespace graphql.ID
+
+	CampaignSpec   string
+	ChangesetSpecs []graphql.ID
 }
 
 type CreateBatchChangeArgs struct {
@@ -59,14 +67,6 @@ type ReenqueueChangesetArgs struct {
 
 type CreateChangesetSpecArgs struct {
 	ChangesetSpec string
-}
-
-// DEPRECATED
-type CreateCampaignSpecArgs struct {
-	Namespace graphql.ID
-
-	CampaignSpec   string
-	ChangesetSpecs []graphql.ID
 }
 
 type CreateBatchSpecArgs struct {
@@ -126,7 +126,7 @@ type CampaignsResolver interface {
 	//
 	// MUTATIONS
 	//
-	// Deprecated:
+	// TODO(campaigns-deprecation)
 	CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (BatchChangeResolver, error)
 	CreateCampaignSpec(ctx context.Context, args *CreateCampaignSpecArgs) (BatchSpecResolver, error)
 	// TODO: To-be-deprecated (these need to be marked as deprecated and use
@@ -147,7 +147,7 @@ type CampaignsResolver interface {
 
 	// Queries
 
-	// Deprecated:
+	// TODO(campaigns-deprecation)
 	Campaign(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error)
 	Campaigns(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
 	CampaignByID(ctx context.Context, id graphql.ID) (BatchChangeResolver, error)
@@ -188,7 +188,8 @@ type BatchSpecResolver interface {
 
 	DiffStat(ctx context.Context) (*DiffStat, error)
 
-	// Deprecated (defined so that BatchSpecResolver can act as a CampaignSpec):
+	// TODO(campaigns-deprecation)
+	// Defined so that BatchSpecResolver can act as a CampaignSpec:
 	AppliesToCampaign(ctx context.Context) (BatchChangeResolver, error)
 	SupersedingCampaignSpec(context.Context) (BatchSpecResolver, error)
 	// New:
@@ -197,9 +198,9 @@ type BatchSpecResolver interface {
 
 	ViewerCampaignsCodeHosts(ctx context.Context, args *ListViewerCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error)
 
-	// TODO: This should be removed once we remove campaigns.
-	// It's here so that in the NodeResolver we can have the same resolver,
-	// BatchChangeResolver, act as a Campaign and a BatchChange.
+	// TODO(campaigns-deprecation): This should be removed once we remove
+	// campaigns. It's here so that in the NodeResolver we can have the same
+	// resolver, BatchChangeResolver, act as a Campaign and a BatchChange.
 	ActAsCampaignSpec() bool
 }
 
@@ -419,7 +420,7 @@ type BatchChangeResolver interface {
 	DiffStat(ctx context.Context) (*DiffStat, error)
 	CurrentSpec(ctx context.Context) (BatchSpecResolver, error)
 
-	// TODO: This should be removed once we remove campaigns.
+	// TODO(campaigns-deprecation): This should be removed once we remove campaigns.
 	// It's here so that in the NodeResolver we can have the same resolver,
 	// BatchChangeResolver, act as a Campaign and a BatchChange.
 	ActAsCampaign() bool
@@ -540,12 +541,12 @@ type defaultCampaignsResolver struct{}
 var DefaultCampaignsResolver CampaignsResolver = defaultCampaignsResolver{}
 
 // Mutations
-// DEPRECATED
+// TODO(campaigns-deprecation):
 func (defaultCampaignsResolver) CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (BatchChangeResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
-// DEPRECATED
+// TODO(campaigns-deprecation):
 func (defaultCampaignsResolver) CreateCampaignSpec(ctx context.Context, args *CreateCampaignSpecArgs) (BatchSpecResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
@@ -594,22 +595,22 @@ func (defaultCampaignsResolver) DeleteCampaignsCredential(ctx context.Context, a
 }
 
 // Queries
-// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
+// TODO(campaigns-deprecation)
 func (defaultCampaignsResolver) Campaigns(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
-// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
+// TODO(campaigns-deprecation)
 func (defaultCampaignsResolver) Campaign(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
-// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
+// TODO(campaigns-deprecation)
 func (defaultCampaignsResolver) CampaignSpecByID(ctx context.Context, id graphql.ID) (BatchSpecResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
-// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
+// TODO(campaigns-deprecation)
 func (defaultCampaignsResolver) CampaignByID(ctx context.Context, id graphql.ID) (BatchChangeResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
