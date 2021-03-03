@@ -342,11 +342,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 			},
 			{
 				name:  "double-quoted pattern, nonzero result",
-				query: `"func main() {\n" patterntype:regexp count:1 stable:yes type:file`,
+				query: `"func main() {\n" patterntype:regexp count:1 type:file`,
 			},
 			{
 				name:  "exclude repo, nonzero result",
-				query: `"func main() {\n" -repo:go-diff patterntype:regexp count:1 stable:yes type:file`,
+				query: `"func main() {\n" -repo:go-diff patterntype:regexp count:1 type:file`,
 			},
 			{
 				name:       "fork:no",
@@ -365,7 +365,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			},
 			{
 				name:  "repo search by name, case yes, nonzero result",
-				query: `repo:^github\.com/sgtest/go-diff$ String case:yes count:1 stable:yes type:file`,
+				query: `repo:^github\.com/sgtest/go-diff$ String case:yes count:1 type:file`,
 			},
 			{
 				name:  "true is an alias for yes when fork is set",
@@ -373,15 +373,15 @@ func testSearchClient(t *testing.T, client searchClient) {
 			},
 			{
 				name:  "non-master branch, nonzero result",
-				query: `repo:^github\.com/sgtest/java-langserver$@v1 void sendPartialResult(Object requestId, JsonPatch jsonPatch); patterntype:literal count:1 stable:yes type:file`,
+				query: `repo:^github\.com/sgtest/java-langserver$@v1 void sendPartialResult(Object requestId, JsonPatch jsonPatch); patterntype:literal count:1 type:file`,
 			},
 			{
 				name:  "indexed multiline search, nonzero result",
-				query: `repo:^github\.com/sgtest/java-langserver$ \nimport index:only patterntype:regexp count:1 stable:yes type:file`,
+				query: `repo:^github\.com/sgtest/java-langserver$ \nimport index:only patterntype:regexp count:1 type:file`,
 			},
 			{
 				name:  "unindexed multiline search, nonzero result",
-				query: `repo:^github\.com/sgtest/java-langserver$ \nimport index:no patterntype:regexp count:1 stable:yes type:file`,
+				query: `repo:^github\.com/sgtest/java-langserver$ \nimport index:no patterntype:regexp count:1 type:file`,
 			},
 			{
 				name:       "random characters, zero result",
@@ -444,7 +444,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			// Regex text search
 			{
 				name:  `regex, unindexed, nonzero result`,
-				query: `^func.*$ patterntype:regexp index:only count:1 stable:yes type:file`,
+				query: `^func.*$ patterntype:regexp index:only count:1 type:file`,
 			},
 			{
 				name:  `regex, fork only, nonzero result`,
@@ -452,7 +452,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			},
 			{
 				name:  `regex, filter by language`,
-				query: `\bfunc\b lang:go count:1 stable:yes type:file patterntype:regexp`,
+				query: `\bfunc\b lang:go count:1 type:file patterntype:regexp`,
 			},
 			{
 				name:       `regex, filename, zero results`,
@@ -590,31 +590,31 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}{
 			{
 				name:  `And operator, basic`,
-				query: `repo:^github\.com/sgtest/go-diff$ func and main count:1 stable:yes type:file`,
+				query: `repo:^github\.com/sgtest/go-diff$ func and main count:1 type:file`,
 			},
 			{
 				name:  `Or operator, single and double quoted`,
-				query: `repo:^github\.com/sgtest/go-diff$ "func PrintMultiFileDiff" or 'func readLine(' stable:yes type:file count:1 patterntype:regexp`,
+				query: `repo:^github\.com/sgtest/go-diff$ "func PrintMultiFileDiff" or 'func readLine(' type:file count:1 patterntype:regexp`,
 			},
 			{
 				name:  `Literals, grouped parens with parens-as-patterns heuristic`,
-				query: `repo:^github\.com/sgtest/go-diff$ (() or ()) stable:yes type:file count:1 patterntype:regexp`,
+				query: `repo:^github\.com/sgtest/go-diff$ (() or ()) type:file count:1 patterntype:regexp`,
 			},
 			{
 				name:  `Literals, no grouped parens`,
-				query: `repo:^github\.com/sgtest/go-diff$ () or () stable:yes type:file count:1 patterntype:regexp`,
+				query: `repo:^github\.com/sgtest/go-diff$ () or () type:file count:1 patterntype:regexp`,
 			},
 			{
 				name:  `Literals, escaped parens`,
-				query: `repo:^github\.com/sgtest/go-diff$ \(\) or \(\) stable:yes type:file count:1 patterntype:regexp`,
+				query: `repo:^github\.com/sgtest/go-diff$ \(\) or \(\) type:file count:1 patterntype:regexp`,
 			},
 			{
 				name:  `Literals, escaped and unescaped parens, no group`,
-				query: `repo:^github\.com/sgtest/go-diff$ () or \(\) stable:yes type:file count:1 patterntype:regexp`,
+				query: `repo:^github\.com/sgtest/go-diff$ () or \(\) type:file count:1 patterntype:regexp`,
 			},
 			{
 				name:  `Literals, escaped and unescaped parens, grouped`,
-				query: `repo:^github\.com/sgtest/go-diff$ (() or \(\)) stable:yes type:file count:1 patterntype:regexp`,
+				query: `repo:^github\.com/sgtest/go-diff$ (() or \(\)) type:file count:1 patterntype:regexp`,
 			},
 			{
 				name:       `Literals, double paren`,
@@ -633,15 +633,15 @@ func testSearchClient(t *testing.T, client searchClient) {
 			},
 			{
 				name:  `Mixed regexp and literal`,
-				query: `repo:^github\.com/sgtest/go-diff$ func(.*) or does_not_exist_3744 count:1 stable:yes type:file`,
+				query: `repo:^github\.com/sgtest/go-diff$ func(.*) or does_not_exist_3744 count:1 type:file`,
 			},
 			{
 				name:  `Mixed regexp and literal heuristic`,
-				query: `repo:^github\.com/sgtest/go-diff$ func( or func(.*) count:1 stable:yes type:file`,
+				query: `repo:^github\.com/sgtest/go-diff$ func( or func(.*) count:1 type:file`,
 			},
 			{
 				name:       `Mixed regexp and quoted literal`,
-				query:      `repo:^github\.com/sgtest/go-diff$ "*" and cert.*Load count:1 stable:yes type:file`,
+				query:      `repo:^github\.com/sgtest/go-diff$ "*" and cert.*Load count:1 type:file`,
 				zeroResult: true,
 			},
 			{
@@ -728,7 +728,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			},
 			{
 				name:  `Concat converted to .* for regexp search`,
-				query: `repo:^github\.com/sgtest/go-diff$ file:^diff/print\.go t := or ts Time patterntype:regexp stable:yes type:file`,
+				query: `repo:^github\.com/sgtest/go-diff$ file:^diff/print\.go t := or ts Time patterntype:regexp type:file`,
 			},
 			{
 				name:  `Structural search uses literal search parser`,
