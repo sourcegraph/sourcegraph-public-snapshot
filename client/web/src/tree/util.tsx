@@ -15,23 +15,6 @@ export interface SingleChildGitTree extends TreeEntryInfo {
     children: SingleChildGitTree[]
 }
 
-// export function scrollIntoView(element: Element, scrollRoot: Element): void {
-// if (!scrollRoot.getBoundingClientRect) {
-//     return element.scrollIntoView()
-// }
-// const rootRectangle = scrollRoot.getBoundingClientRect()
-// const elementRectangle = element.getBoundingClientRect()
-// const elementAbove = elementRectangle.top <= rootRectangle.top + 30
-// const elementBelow = elementRectangle.bottom >= rootRectangle.bottom
-
-// if (elementAbove) {
-//     element.scrollIntoView({ block: 'start', inline: 'start' })
-// } else if (elementBelow) {
-//     element.scrollIntoView({ block: 'end', inline: 'start' })
-// }
-// element.scrollIntoView({ block: 'start', inline: 'start' })
-// }
-
 export const getDomElement = (path: string): Element | null =>
     document.querySelector(`[data-tree-path='${path.replace(/'/g, "\\'")}']`)
 
