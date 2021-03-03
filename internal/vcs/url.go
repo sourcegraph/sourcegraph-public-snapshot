@@ -52,16 +52,18 @@ func ParseURL(rawurl string) (u *url.URL, err error) {
 }
 
 var schemes = map[string]struct{}{
-	"ssh":      {},
-	"git":      {},
-	"git+ssh":  {},
-	"http":     {},
-	"https":    {},
-	"ftp":      {},
-	"ftps":     {},
-	"rsync":    {},
-	"file":     {},
-	"perforce": {},
+	"ssh":       {},
+	"git":       {},
+	"git+ssh":   {},
+	"git+http":  {},
+	"git+https": {},
+	"http":      {},
+	"https":     {},
+	"ftp":       {},
+	"ftps":      {},
+	"rsync":     {},
+	"file":      {},
+	"perforce":  {},
 }
 
 func parseScheme(rawurl string) (*url.URL, error) {

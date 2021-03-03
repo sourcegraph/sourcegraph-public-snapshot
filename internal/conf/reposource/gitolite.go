@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -14,11 +15,11 @@ type Gitolite struct {
 var _ RepoSource = Gitolite{}
 
 func (c Gitolite) CloneURLToRepoName(cloneURL string) (repoName api.RepoName, err error) {
-	parsedCloneURL, err := parseCloneURL(cloneURL)
+	parsedCloneURL, err := vcs.ParseURL(cloneURL)
 	if err != nil {
 		return "", err
 	}
-	parsedHostURL, err := parseCloneURL(c.Host)
+	parsedHostURL, err := vcs.ParseURL(c.Host)
 	if err != nil {
 		return "", err
 	}
