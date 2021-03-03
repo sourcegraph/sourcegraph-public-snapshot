@@ -1,6 +1,5 @@
 import React from 'react'
 import classnames from 'classnames'
-import { capitalize } from 'lodash'
 
 export type BadgeStatus = 'beta' | 'prototype' | 'wip' | 'new'
 
@@ -31,7 +30,7 @@ export const Badge: React.FC<BadgeProps> = props => {
                 className
             )}
         >
-            {capitalize(status)}
+            {status}
         </span>
     )
 }
