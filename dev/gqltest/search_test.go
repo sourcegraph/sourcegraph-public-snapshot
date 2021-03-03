@@ -270,6 +270,14 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query: "repohasfile:README",
 			},
 			{
+				name:  "repo search by name, nonzero result",
+				query: "repo:go-diff$",
+			},
+			{
+				name:  "true is an alias for yes when fork is set",
+				query: `repo:github\.com/sgtest/mux fork:true`,
+			},
+			{
 				name:  `exclude counts for fork and archive`,
 				query: `repo:mux|archived|go-diff`,
 				wantMissing: []string{
@@ -360,16 +368,8 @@ func testSearchClient(t *testing.T, client searchClient) {
 			},
 			// Repo search
 			{
-				name:  "repo search by name, nonzero result",
-				query: "repo:go-diff$",
-			},
-			{
 				name:  "repo search by name, case yes, nonzero result",
 				query: `repo:^github\.com/sgtest/go-diff$ String case:yes count:1 type:file`,
-			},
-			{
-				name:  "true is an alias for yes when fork is set",
-				query: `repo:github\.com/sgtest/mux fork:true`,
 			},
 			{
 				name:  "non-master branch, nonzero result",
