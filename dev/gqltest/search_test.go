@@ -74,7 +74,14 @@ func TestSearch(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	testSearchClient(t, client)
+	t.Run("graphql", func(t *testing.T) {
+		testSearchClient(t, client)
+	})
+	t.Run("stream", func(t *testing.T) {
+		testSearchClient(t, &gqltestutil.SearchStreamClient{
+			Client: client,
+		})
+	})
 
 	testSearchOther(t)
 }
