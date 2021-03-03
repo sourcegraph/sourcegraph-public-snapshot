@@ -678,20 +678,6 @@ func alertForError(db dbutil.DB, err error, inputs *SearchInputs) *searchAlert {
 			description:    `Running your structural search requires more memory. You could try reducing the number of repositories with the "repo:" filter. If you are an administrator, try double the memory allocated for the "searcher" service. If you're unsure, reach out to us at support@sourcegraph.com.`,
 		}
 		a.priority = 4
-	} else if strings.Contains(err.Error(), "no indexed repositories for structural search") {
-		var msg string
-		if envvar.SourcegraphDotComMode() {
-			msg = "The good news is you can index any repository you like in a self-install. It takes less than 5 minutes to set up: https://docs.sourcegraph.com/#quickstart"
-		} else {
-			msg = "Learn more about managing indexed repositories in our documentation: https://docs.sourcegraph.com/admin/search#indexed-search."
-		}
-		alert = &searchAlert{
-			db:             db,
-			prometheusType: "structural_search_on_zero_indexed_repos",
-			title:          "Unindexed repositories or repository revisions with structural search",
-			description:    fmt.Sprintf("Structural search currently only works on indexed repositories or revisions. Some of the repositories or revisions to search are not indexed, so we can't return results for them. %s", msg),
-		}
-		alert.priority = 3
 	} else if errors.As(err, &rErr) {
 		alert = &searchAlert{
 			db:             db,
