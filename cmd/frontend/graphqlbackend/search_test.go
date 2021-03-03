@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/results"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -559,11 +559,11 @@ func mkFileMatch(db dbutil.DB, repo *types.RepoName, path string, lineNumbers ..
 			Name: "repo",
 		}
 	}
-	var lines []*results.LineMatch
+	var lines []*result.LineMatch
 	for _, n := range lineNumbers {
-		lines = append(lines, &results.LineMatch{LineNumber: n})
+		lines = append(lines, &result.LineMatch{LineNumber: n})
 	}
-	return mkFileMatchResolver(db, results.FileMatch{
+	return mkFileMatchResolver(db, result.FileMatch{
 		URI:         fileMatchURI(repo.Name, "", path),
 		Path:        path,
 		LineMatches: lines,
