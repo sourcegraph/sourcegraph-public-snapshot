@@ -554,8 +554,8 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         this.extensionsController.services.workspace.versionContext.next(resolvedVersionContext)
     }
 
-    private onUserRepositoriesUpdate = (): void => {
-        this.userRepositoriesUpdates.next()
+    private onUserRepositoriesUpdate = (userRepoCount: number): void => {
+        this.setState({ hasUserAddedRepositories: userRepoCount > 0 })
     }
 
     private canShowSearchContext = (): boolean => this.state.showSearchContext && this.state.hasUserAddedRepositories
