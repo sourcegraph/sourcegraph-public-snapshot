@@ -19,7 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/results"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -190,7 +190,7 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 	fileMatches := make([]*FileMatchResolver, 0)
 
 	for _, symbol := range symbols {
-		symbolRes := &results.SearchSymbolResult{
+		symbolRes := &result.SearchSymbolResult{
 			Symbol:  symbol,
 			BaseURI: baseURI,
 			Lang:    strings.ToLower(symbol.Language),
@@ -201,9 +201,9 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 		} else {
 			fileMatch := &FileMatchResolver{
 				db: db,
-				FileMatch: results.FileMatch{
+				FileMatch: result.FileMatch{
 					Path:     symbolRes.Symbol.Path,
-					Symbols:  []*results.SearchSymbolResult{symbolRes},
+					Symbols:  []*result.SearchSymbolResult{symbolRes},
 					URI:      uri,
 					Repo:     repoRevs.Repo,
 					CommitID: commitID,

@@ -25,7 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
-	"github.com/sourcegraph/sourcegraph/internal/search/results"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -38,7 +38,7 @@ var textSearchLimiter = mutablelimiter.New(32)
 
 // FileMatchResolver is a resolver for the GraphQL type `FileMatch`
 type FileMatchResolver struct {
-	results.FileMatch
+	result.FileMatch
 
 	RepoResolver *RepositoryResolver
 	db           dbutil.DB
@@ -161,7 +161,7 @@ func (fm *FileMatchResolver) Select(t filter.SelectPath) SearchResultResolver {
 }
 
 type lineMatchResolver struct {
-	*results.LineMatch
+	*result.LineMatch
 }
 
 func (lm lineMatchResolver) Preview() string {
@@ -227,13 +227,13 @@ func searchFilesInRepo(ctx context.Context, db dbutil.DB, searcherURLs *endpoint
 	repoResolver := NewRepositoryResolver(db, repo.ToRepo())
 	resolvers := make([]*FileMatchResolver, 0, len(matches))
 	for _, fm := range matches {
-		lineMatches := make([]*results.LineMatch, 0, len(fm.LineMatches))
+		lineMatches := make([]*result.LineMatch, 0, len(fm.LineMatches))
 		for _, lm := range fm.LineMatches {
 			ranges := make([][2]int32, 0, len(lm.OffsetAndLengths))
 			for _, ol := range lm.OffsetAndLengths {
 				ranges = append(ranges, [2]int32{int32(ol[0]), int32(ol[1])})
 			}
-			lineMatches = append(lineMatches, &results.LineMatch{
+			lineMatches = append(lineMatches, &result.LineMatch{
 				Preview:          lm.Preview,
 				OffsetAndLengths: ranges,
 				LineNumber:       int32(lm.LineNumber),
@@ -243,7 +243,7 @@ func searchFilesInRepo(ctx context.Context, db dbutil.DB, searcherURLs *endpoint
 
 		resolvers = append(resolvers, &FileMatchResolver{
 			db: db,
-			FileMatch: results.FileMatch{
+			FileMatch: result.FileMatch{
 				Path:        fm.Path,
 				LineMatches: lineMatches,
 				LimitHit:    fm.LimitHit,

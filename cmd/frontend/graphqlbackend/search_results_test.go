@@ -25,7 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/results"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -1039,8 +1039,8 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 				results: []SearchResultResolver{
 					&FileMatchResolver{
 						db: db,
-						FileMatch: results.FileMatch{
-							Symbols: []*results.SearchSymbolResult{
+						FileMatch: result.FileMatch{
+							Symbols: []*result.SearchSymbolResult{
 								// 1
 								{},
 								// 2
@@ -1059,8 +1059,8 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 				results: []SearchResultResolver{
 					&FileMatchResolver{
 						db: db,
-						FileMatch: results.FileMatch{
-							Symbols: []*results.SearchSymbolResult{
+						FileMatch: result.FileMatch{
+							Symbols: []*result.SearchSymbolResult{
 								// 1
 								{},
 								// 2
@@ -1151,7 +1151,7 @@ func TestCompareSearchResults(t *testing.T) {
 	db := new(dbtesting.MockDB)
 
 	makeResult := func(repo, file string) *FileMatchResolver {
-		return mkFileMatchResolver(db, results.FileMatch{
+		return mkFileMatchResolver(db, result.FileMatch{
 			Repo: &types.RepoName{Name: api.RepoName(repo)},
 			Path: file,
 		})
@@ -1476,10 +1476,10 @@ func repoResult(db dbutil.DB, url string) *RepositoryResolver {
 	})
 }
 
-func fileResult(db dbutil.DB, uri string, lineMatches []*results.LineMatch, symbolMatches []*results.SearchSymbolResult) *FileMatchResolver {
+func fileResult(db dbutil.DB, uri string, lineMatches []*result.LineMatch, symbolMatches []*result.SearchSymbolResult) *FileMatchResolver {
 	return &FileMatchResolver{
 		db: db,
-		FileMatch: results.FileMatch{
+		FileMatch: result.FileMatch{
 			URI:         uri,
 			LineMatches: lineMatches,
 			Symbols:     symbolMatches,
@@ -1577,7 +1577,7 @@ func TestUnionMerge(t *testing.T) {
 		{
 			left: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
-					fileResult(db, "b", []*results.LineMatch{
+					fileResult(db, "b", []*result.LineMatch{
 						{Preview: "a"},
 						{Preview: "b"},
 					}, nil),
@@ -1585,7 +1585,7 @@ func TestUnionMerge(t *testing.T) {
 			},
 			right: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
-					fileResult(db, "b", []*results.LineMatch{
+					fileResult(db, "b", []*result.LineMatch{
 						{Preview: "c"},
 						{Preview: "d"},
 					}, nil),
@@ -1596,7 +1596,7 @@ func TestUnionMerge(t *testing.T) {
 		{
 			left: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
-					fileResult(db, "a", []*results.LineMatch{
+					fileResult(db, "a", []*result.LineMatch{
 						{Preview: "a"},
 						{Preview: "b"},
 					}, nil),
@@ -1604,7 +1604,7 @@ func TestUnionMerge(t *testing.T) {
 			},
 			right: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
-					fileResult(db, "b", []*results.LineMatch{
+					fileResult(db, "b", []*result.LineMatch{
 						{Preview: "c"},
 						{Preview: "d"},
 					}, nil),
@@ -1615,7 +1615,7 @@ func TestUnionMerge(t *testing.T) {
 		{
 			left: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
-					fileResult(db, "a", nil, []*results.SearchSymbolResult{
+					fileResult(db, "a", nil, []*result.SearchSymbolResult{
 						{Symbol: protocol.Symbol{Name: "a"}},
 						{Symbol: protocol.Symbol{Name: "b"}},
 					}),
@@ -1623,7 +1623,7 @@ func TestUnionMerge(t *testing.T) {
 			},
 			right: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
-					fileResult(db, "a", nil, []*results.SearchSymbolResult{
+					fileResult(db, "a", nil, []*result.SearchSymbolResult{
 						{Symbol: protocol.Symbol{Name: "c"}},
 						{Symbol: protocol.Symbol{Name: "d"}},
 					}),
