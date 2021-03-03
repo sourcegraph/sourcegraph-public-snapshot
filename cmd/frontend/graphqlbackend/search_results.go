@@ -856,16 +856,16 @@ func (r *searchResolver) evaluate(ctx context.Context, q query.Q) (*SearchResult
 // resolved.
 func invalidateRepoCache(q []query.Node) bool {
 	var seenRepo, seenRevision, seenRepoGroup, seenContext int
-	query.VisitField(q, "repo", func(_ string, _ bool, _ query.Annotation) {
+	query.VisitField(q, query.FieldRepo, func(_ string, _ bool, _ query.Annotation) {
 		seenRepo += 1
 	})
-	query.VisitField(q, "rev", func(_ string, _ bool, _ query.Annotation) {
+	query.VisitField(q, query.FieldRev, func(_ string, _ bool, _ query.Annotation) {
 		seenRevision += 1
 	})
-	query.VisitField(q, "repogroup", func(_ string, _ bool, _ query.Annotation) {
+	query.VisitField(q, query.FieldRepoGroup, func(_ string, _ bool, _ query.Annotation) {
 		seenRepoGroup += 1
 	})
-	query.VisitField(q, "context", func(_ string, _ bool, _ query.Annotation) {
+	query.VisitField(q, query.FieldContext, func(_ string, _ bool, _ query.Annotation) {
 		seenContext += 1
 	})
 	return seenRepo+seenRepoGroup > 1 || seenRevision > 1 || seenContext > 1
@@ -879,7 +879,8 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 	}()
 	var countStr string
 	wantCount := defaultMaxSearchResults
-	query.VisitField(r.Query, "count", func(value string, _ bool, _ query.Annotation) {
+	query.VisitField(r.Query, query.FieldCount, func(value string, _ bool, _ query.Annotation) {
+		wantCount, _ = strconv.Atoi(countStr)
 		countStr = value
 	})
 	if countStr != "" {
