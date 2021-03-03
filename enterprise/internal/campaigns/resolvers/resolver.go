@@ -547,7 +547,8 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 	return &graphqlbackend.EmptyResponse{}, err
 }
 
-func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignsArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
+func (r *Resolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBatchChangesArgs) (graphqlbackend.BatchChangesConnectionResolver, error) {
+	fmt.Printf("we are here!")
 	if err := campaignsEnabled(ctx); err != nil {
 		return nil, err
 	}
@@ -590,10 +591,14 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 		}
 	}
 
-	return &campaignsConnectionResolver{
+	return &batchChangesConnectionResolver{
 		store: r.store,
 		opts:  opts,
 	}, nil
+}
+
+func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListBatchChangesArgs) (graphqlbackend.BatchChangesConnectionResolver, error) {
+	return r.BatchChanges(ctx, args)
 }
 
 func (r *Resolver) CampaignsCodeHosts(ctx context.Context, args *graphqlbackend.ListCampaignsCodeHostsArgs) (graphqlbackend.CampaignsCodeHostConnectionResolver, error) {

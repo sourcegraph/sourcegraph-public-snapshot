@@ -172,14 +172,14 @@ func TestPermissionLevels(t *testing.T) {
 
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
-					graphqlID := string(marshalCampaignID(tc.campaign))
+					graphqlID := string(marshalBatchChangeID(tc.campaign))
 
-					var res struct{ Node apitest.Campaign }
+					var res struct{ Node apitest.BatchChange }
 
-					input := map[string]interface{}{"campaign": graphqlID}
+					input := map[string]interface{}{"batchChange": graphqlID}
 					queryCampaign := `
-				  query($campaign: ID!) {
-				    node(id: $campaign) { ... on Campaign { id, viewerCanAdminister } }
+				  query($batchChange: ID!) {
+				    node(id: $batchChange) { ... on BatchChange { id, viewerCanAdminister } }
 				  }
                 `
 
@@ -187,10 +187,10 @@ func TestPermissionLevels(t *testing.T) {
 					apitest.MustExec(actorCtx, t, s, input, &res, queryCampaign)
 
 					if have, want := res.Node.ID, graphqlID; have != want {
-						t.Fatalf("queried campaign has wrong id %q, want %q", have, want)
+						t.Fatalf("queried batch change has wrong id %q, want %q", have, want)
 					}
 					if have, want := res.Node.ViewerCanAdminister, tc.wantViewerCanAdminister; have != want {
-						t.Fatalf("queried campaign's ViewerCanAdminister is wrong %t, want %t", have, want)
+						t.Fatalf("queried batch change's ViewerCanAdminister is wrong %t, want %t", have, want)
 					}
 				})
 			}
@@ -449,7 +449,7 @@ func TestPermissionLevels(t *testing.T) {
 			}
 		})
 
-		t.Run("Campaigns", func(t *testing.T) {
+		t.Run("BatchChanges", func(t *testing.T) {
 			tests := []struct {
 				name                string
 				currentUser         int32
@@ -486,13 +486,13 @@ func TestPermissionLevels(t *testing.T) {
 					actorCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
 					expectedIDs := make(map[string]bool, len(tc.wantCampaigns))
 					for _, c := range tc.wantCampaigns {
-						graphqlID := string(marshalCampaignID(c))
+						graphqlID := string(marshalBatchChangeID(c))
 						expectedIDs[graphqlID] = true
 					}
 
 					query := fmt.Sprintf(`
 				query {
-					campaigns(viewerCanAdminister: %t) { totalCount, nodes { id } }
+					batchChanges(viewerCanAdminister: %t) { totalCount, nodes { id } }
 					node(id: %q) {
 						id
 						... on ExternalChangeset {
@@ -501,11 +501,11 @@ func TestPermissionLevels(t *testing.T) {
 					}
 					}`, tc.viewerCanAdminister, marshalChangesetID(changeset.ID), tc.viewerCanAdminister)
 					var res struct {
-						Campaigns apitest.CampaignConnection
-						Node      apitest.Changeset
+						BatchChanges apitest.BatchChangeConnection
+						Node         apitest.Changeset
 					}
 					apitest.MustExec(actorCtx, t, s, nil, &res, query)
-					for _, conn := range []apitest.CampaignConnection{res.Campaigns, res.Node.Campaigns} {
+					for _, conn := range []apitest.BatchChangeConnection{res.BatchChanges, res.Node.Campaigns} {
 						if have, want := conn.TotalCount, len(tc.wantCampaigns); have != want {
 							t.Fatalf("wrong count of campaigns returned, want=%d have=%d", want, have)
 						}
@@ -523,15 +523,15 @@ func TestPermissionLevels(t *testing.T) {
 		})
 	})
 
-	t.Run("campaign mutations", func(t *testing.T) {
+	t.Run("batch change mutations", func(t *testing.T) {
 		mutations := []struct {
 			name         string
 			mutationFunc func(campaignID, changesetID, campaignSpecID string) string
 		}{
 			{
-				name: "createCampaign",
+				name: "createBatchChange",
 				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
-					return fmt.Sprintf(`mutation { createCampaign(campaignSpec: %q) { id } }`, campaignSpecID)
+					return fmt.Sprintf(`mutation { createBatchChange(batchSpec: %q) { id } }`, campaignSpecID)
 				},
 			},
 			{
@@ -625,7 +625,7 @@ func TestPermissionLevels(t *testing.T) {
 							}
 
 							mutation := m.mutationFunc(
-								string(marshalCampaignID(campaignID)),
+								string(marshalBatchChangeID(campaignID)),
 								string(marshalChangesetID(changeset.ID)),
 								string(marshalCampaignSpecRandID(campaignSpecRandID)),
 							)
@@ -851,7 +851,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		userCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
 		input := map[string]interface{}{
-			"campaign": string(marshalCampaignID(campaign.ID)),
+			"campaign": string(marshalBatchChangeID(campaign.ID)),
 		}
 		testCampaignResponse(t, s, userCtx, input, wantCampaignResponse{
 			changesetTypes:  map[string]int{"ExternalChangeset": 2},
@@ -904,7 +904,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		// should not be returned, since that would leak information about the
 		// hidden changesets.
 		input = map[string]interface{}{
-			"campaign":   string(marshalCampaignID(campaign.ID)),
+			"campaign":   string(marshalBatchChangeID(campaign.ID)),
 			"checkState": string(campaigns.ChangesetCheckStatePassed),
 		}
 		wantCheckStateResponse := want
@@ -916,7 +916,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		testCampaignResponse(t, s, userCtx, input, wantCheckStateResponse)
 
 		input = map[string]interface{}{
-			"campaign":    string(marshalCampaignID(campaign.ID)),
+			"campaign":    string(marshalBatchChangeID(campaign.ID)),
 			"reviewState": string(campaigns.ChangesetReviewStateChangesRequested),
 		}
 		wantReviewStateResponse := wantCheckStateResponse
@@ -1010,7 +1010,7 @@ type wantCampaignResponse struct {
 func testCampaignResponse(t *testing.T, s *graphql.Schema, ctx context.Context, in map[string]interface{}, w wantCampaignResponse) {
 	t.Helper()
 
-	var response struct{ Node apitest.Campaign }
+	var response struct{ Node apitest.BatchChange }
 	apitest.MustExec(ctx, t, s, in, &response, queryCampaignPermLevels)
 
 	if have, want := response.Node.ID, in["campaign"]; have != want {
@@ -1041,7 +1041,7 @@ func testCampaignResponse(t *testing.T, s *graphql.Schema, ctx context.Context, 
 const queryCampaignPermLevels = `
 query($campaign: ID!, $reviewState: ChangesetReviewState, $checkState: ChangesetCheckState) {
   node(id: $campaign) {
-    ... on Campaign {
+    ... on BatchChange {
 	  id
 
 	  changesetsStats { unpublished, open, merged, closed, total }

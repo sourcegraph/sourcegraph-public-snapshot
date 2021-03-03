@@ -130,8 +130,8 @@ func TestCampaignSpecResolver(t *testing.T) {
 			Deleted: changesetSpec.DiffStatDeleted,
 		},
 
-		AppliesToCampaign: apitest.Campaign{
-			ID: string(marshalCampaignID(matchingCampaign.ID)),
+		AppliesToCampaign: apitest.BatchChange{
+			ID: string(marshalBatchChangeID(matchingCampaign.ID)),
 		},
 
 		AllCodeHosts: apitest.CampaignsCodeHostsConnection{

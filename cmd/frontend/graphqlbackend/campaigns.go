@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
+// DEPRECATED
 type CreateCampaignArgs struct {
 	CampaignSpec graphql.ID
 }
@@ -30,7 +31,7 @@ type MoveCampaignArgs struct {
 	NewNamespace *graphql.ID
 }
 
-type ListCampaignsArgs struct {
+type ListBatchChangesArgs struct {
 	First               int32
 	After               *string
 	State               *string
@@ -139,15 +140,16 @@ type CampaignsResolver interface {
 
 	// Deprecated:
 	Campaign(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error)
+	Campaigns(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
 	// TODO: To-be-deprecated (these need to be marked as deprecated and use
 	// the code for the new implementations) and then moved up to "Deprecated:"
-	Campaigns(ctx context.Context, args *ListCampaignsArgs) (CampaignsConnectionResolver, error)
 	CampaignsCredentialByID(ctx context.Context, id graphql.ID) (CampaignsCredentialResolver, error)
 	CampaignsCodeHosts(ctx context.Context, args *ListCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error)
 	CampaignSpecByID(ctx context.Context, id graphql.ID) (CampaignSpecResolver, error)
 	// New:
 	BatchChange(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error)
 	BatchChangeByID(ctx context.Context, id graphql.ID) (BatchChangeResolver, error)
+	BatchChanges(cx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
 
 	ChangesetByID(ctx context.Context, id graphql.ID) (ChangesetResolver, error)
 	ChangesetSpecByID(ctx context.Context, id graphql.ID) (ChangesetSpecResolver, error)
@@ -404,7 +406,7 @@ type BatchChangeResolver interface {
 	ActAsCampaign() bool
 }
 
-type CampaignsConnectionResolver interface {
+type BatchChangesConnectionResolver interface {
 	Nodes(ctx context.Context) ([]BatchChangeResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
@@ -447,7 +449,7 @@ type ChangesetResolver interface {
 	ReconcilerState() campaigns.ReconcilerState
 	ExternalState() *campaigns.ChangesetExternalState
 	State() (campaigns.ChangesetState, error)
-	Campaigns(ctx context.Context, args *ListCampaignsArgs) (CampaignsConnectionResolver, error)
+	Campaigns(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
 
 	ToExternalChangeset() (ExternalChangesetResolver, bool)
 	ToHiddenExternalChangeset() (HiddenExternalChangesetResolver, bool)
@@ -519,6 +521,7 @@ type defaultCampaignsResolver struct{}
 var DefaultCampaignsResolver CampaignsResolver = defaultCampaignsResolver{}
 
 // Mutations
+// DEPRECATED
 func (defaultCampaignsResolver) CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (BatchChangeResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
@@ -568,11 +571,17 @@ func (defaultCampaignsResolver) DeleteCampaignsCredential(ctx context.Context, a
 }
 
 // Queries
-func (defaultCampaignsResolver) BatchChangeByID(ctx context.Context, id graphql.ID) (BatchChangeResolver, error) {
+// DEPRECATED
+func (defaultCampaignsResolver) Campaigns(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
+// DEPRECATED
 func (defaultCampaignsResolver) Campaign(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) BatchChangeByID(ctx context.Context, id graphql.ID) (BatchChangeResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
@@ -580,7 +589,7 @@ func (defaultCampaignsResolver) BatchChange(ctx context.Context, args *BatchChan
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) Campaigns(ctx context.Context, args *ListCampaignsArgs) (CampaignsConnectionResolver, error) {
+func (defaultCampaignsResolver) BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 

@@ -42,7 +42,7 @@ func TestNullIDResilience(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 
 	ids := []graphql.ID{
-		marshalCampaignID(0),
+		marshalBatchChangeID(0),
 		marshalChangesetID(0),
 		marshalCampaignSpecRandID(""),
 		marshalChangesetSpecRandID(""),
@@ -61,13 +61,13 @@ func TestNullIDResilience(t *testing.T) {
 	}
 
 	mutations := []string{
-		fmt.Sprintf(`mutation { closeCampaign(campaign: %q) { id } }`, marshalCampaignID(0)),
-		fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } }`, marshalCampaignID(0)),
+		fmt.Sprintf(`mutation { closeCampaign(campaign: %q) { id } }`, marshalBatchChangeID(0)),
+		fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } }`, marshalBatchChangeID(0)),
 		fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, marshalChangesetID(0)),
 		fmt.Sprintf(`mutation { reenqueueChangeset(changeset: %q) { id } }`, marshalChangesetID(0)),
 		fmt.Sprintf(`mutation { applyCampaign(campaignSpec: %q) { id } }`, marshalCampaignSpecRandID("")),
 		fmt.Sprintf(`mutation { createCampaign(campaignSpec: %q) { id } }`, marshalCampaignSpecRandID("")),
-		fmt.Sprintf(`mutation { moveCampaign(campaign: %q, newName: "foobar") { id } }`, marshalCampaignID(0)),
+		fmt.Sprintf(`mutation { moveCampaign(campaign: %q, newName: "foobar") { id } }`, marshalBatchChangeID(0)),
 		fmt.Sprintf(`mutation { createCampaignsCredential(externalServiceKind: GITHUB, externalServiceURL: "http://test", credential: "123123", user: %q) { id } }`, graphqlbackend.MarshalUserID(0)),
 		fmt.Sprintf(`mutation { deleteCampaignsCredential(campaignsCredential: %q) { alwaysNil } }`, marshalCampaignsCredentialID(0)),
 	}
@@ -399,7 +399,7 @@ func TestApplyCampaign(t *testing.T) {
 		"campaignSpec": string(marshalCampaignSpecRandID(campaignSpec.RandID)),
 	}
 
-	var response struct{ ApplyCampaign apitest.Campaign }
+	var response struct{ ApplyCampaign apitest.BatchChange }
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 	apitest.MustExec(actorCtx, t, s, input, &response, mutationApplyCampaign)
 
@@ -410,7 +410,7 @@ func TestApplyCampaign(t *testing.T) {
 	}
 
 	have := response.ApplyCampaign
-	want := apitest.Campaign{
+	want := apitest.BatchChange{
 		ID:          have.ID,
 		Name:        campaignSpec.Spec.Name,
 		Description: campaignSpec.Spec.Description,
@@ -450,11 +450,11 @@ func TestApplyCampaign(t *testing.T) {
 	}
 
 	// Execute it again but ensureCampaign set to wrong campaign ID
-	campaignID, err := unmarshalCampaignID(graphql.ID(have3.ID))
+	campaignID, err := unmarshalBatchChangeID(graphql.ID(have3.ID))
 	if err != nil {
 		t.Fatal(err)
 	}
-	input["ensureCampaign"] = marshalCampaignID(campaignID + 999)
+	input["ensureCampaign"] = marshalBatchChangeID(campaignID + 999)
 	errs := apitest.Exec(actorCtx, t, s, input, &response, mutationApplyCampaign)
 	if len(errs) == 0 {
 		t.Fatalf("expected errors, got none")
@@ -523,7 +523,7 @@ func TestCreateCampaign(t *testing.T) {
 		"campaignSpec": string(marshalCampaignSpecRandID(campaignSpec.RandID)),
 	}
 
-	var response struct{ CreateCampaign apitest.Campaign }
+	var response struct{ CreateCampaign apitest.BatchChange }
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
 	// First time it should work, because no campaign exists
@@ -594,14 +594,14 @@ func TestMoveCampaign(t *testing.T) {
 	}
 
 	// Move to a new name
-	campaignAPIID := string(marshalCampaignID(campaign.ID))
+	campaignAPIID := string(marshalBatchChangeID(campaign.ID))
 	newCampaignName := "new-name"
 	input := map[string]interface{}{
 		"campaign": campaignAPIID,
 		"newName":  newCampaignName,
 	}
 
-	var response struct{ MoveCampaign apitest.Campaign }
+	var response struct{ MoveCampaign apitest.BatchChange }
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 	apitest.MustExec(actorCtx, t, s, input, &response, mutationMoveCampaign)
 
@@ -618,7 +618,7 @@ func TestMoveCampaign(t *testing.T) {
 	// Move to a new namespace
 	orgAPIID := graphqlbackend.MarshalOrgID(orgID)
 	input = map[string]interface{}{
-		"campaign":     string(marshalCampaignID(campaign.ID)),
+		"campaign":     string(marshalBatchChangeID(campaign.ID)),
 		"newNamespace": orgAPIID,
 	}
 

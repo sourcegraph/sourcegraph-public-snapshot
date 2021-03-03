@@ -9639,7 +9639,7 @@ extend type Query {
         Only include campaigns that the viewer can administer.
         """
         viewerCanAdminister: Boolean
-    ): CampaignConnection!
+    ): CampaignConnection! @deprecated(reason: "campaigns have been renamed to batch changes. Use batchChanges instead.")
     """
     Looks up a campaign by namespace and campaign name.
     """
@@ -9678,6 +9678,27 @@ extend type Mutation {
 
 extend type Query {
     """
+    A list of batch changes.
+    """
+    batchChanges(
+        """
+        Returns the first n batch changes from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Only return batch changes in this state.
+        """
+        state: BatchChangeState
+        """
+        Only include batch changes that the viewer can administer.
+        """
+        viewerCanAdminister: Boolean
+    ): CampaignConnection!
+    """
     Looks up a batch change by namespace and campaign name.
     """
     batchChange(
@@ -9690,6 +9711,14 @@ extend type Query {
         """
         name: String!
     ): BatchChange
+}
+
+"""
+The state of the batch change
+"""
+enum BatchChangeState {
+    OPEN
+    CLOSED
 }
 
 """
