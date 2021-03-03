@@ -9435,7 +9435,8 @@ extend type Mutation {
     """
     Move a campaign to a different namespace, or rename it in the current namespace.
     """
-    moveCampaign(campaign: ID!, newName: String, newNamespace: ID): Campaign! @deprecated(reason: "campaigns have been renamed to batch changes. Use moveBatchChange instead.")
+    moveCampaign(campaign: ID!, newName: String, newNamespace: ID): Campaign!
+        @deprecated(reason: "campaigns have been renamed to batch changes. Use moveBatchChange instead.")
 
     """
     Close a campaign.
@@ -9454,7 +9455,8 @@ extend type Mutation {
     Delete a campaign. A deleted campaign is completely removed and can't be un-deleted. The
     campaign's changesets are kept as-is; to close them, use the closeCampaign mutation first.
     """
-    deleteCampaign(campaign: ID!): EmptyResponse @deprecated(reason: "campaigns have been renamed to batch changes. Use deleteBatchChange instead.")
+    deleteCampaign(campaign: ID!): EmptyResponse
+        @deprecated(reason: "campaigns have been renamed to batch changes. Use deleteBatchChange instead.")
 
     """
     Upload a changeset spec that will be used in a future update to a campaign. The changeset spec
