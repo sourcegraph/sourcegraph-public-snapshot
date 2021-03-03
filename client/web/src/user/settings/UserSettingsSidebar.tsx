@@ -25,7 +25,7 @@ import {
 import { OnboardingTourProps } from '../../search'
 import { AuthenticatedUser } from '../../auth'
 import { UserAreaUserFields } from '../../graphql-operations'
-import { StatusBadge } from '../../components/StatusBadge'
+import { StatusBadge, BadgeStatus } from '../../components/StatusBadge'
 
 export interface UserSettingsSidebarItemConditionContext {
     user: UserAreaUserFields
@@ -34,7 +34,7 @@ export interface UserSettingsSidebarItemConditionContext {
 }
 
 type UserSettingsSidebarItem = NavItemDescriptor<UserSettingsSidebarItemConditionContext> & {
-    hasNewLabel?: boolean
+    status?: BadgeStatus
 }
 
 export interface UserSettingsSidebarItems {
@@ -81,10 +81,10 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                 <SidebarGroupHeader label="User account" icon={AccountCircleIcon} />
                 <SidebarGroupItems>
                     {props.items.account.map(
-                        ({ label, to, exact, hasNewLabel, condition = () => true }) =>
+                        ({ label, to, exact, status, condition = () => true }) =>
                             condition(context) && (
                                 <SidebarNavItem key={label} to={props.match.path + to} exact={exact}>
-                                    {label} {hasNewLabel && <StatusBadge className="ml-1 d-inline-flex" status="new" />}
+                                    {label} {status && <StatusBadge className="ml-1 d-inline-flex" status={status} />}
                                 </SidebarNavItem>
                             )
                     )}

@@ -1,9 +1,9 @@
 import React from 'react'
 import classnames from 'classnames'
 
-type Status = 'beta' | 'prototype' | 'wip' | 'new'
+export type BadgeStatus = 'beta' | 'prototype' | 'wip' | 'new'
 
-const statusStyleMapping: Record<Status, string> = {
+const statusStyleMapping: Record<BadgeStatus, string> = {
     prototype: 'badge-warning',
     wip: 'badge-warning',
     beta: 'badge-info',
@@ -11,7 +11,7 @@ const statusStyleMapping: Record<Status, string> = {
 }
 
 interface Props {
-    status: Status
+    status: BadgeStatus
     /** Render a mailto href to share feedback */
     feedback?: {
         mailto: string
