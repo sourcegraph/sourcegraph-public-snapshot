@@ -180,6 +180,12 @@ func (o *OrgResolver) Campaigns(ctx context.Context, args *ListCampaignsArgs) (C
 	return EnterpriseResolvers.campaignsResolver.Campaigns(ctx, args)
 }
 
+func (o *OrgResolver) BatchChanges(ctx context.Context, args *ListCampaignsArgs) (CampaignsConnectionResolver, error) {
+	id := o.ID()
+	args.Namespace = &id
+	return EnterpriseResolvers.campaignsResolver.Campaigns(ctx, args)
+}
+
 func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	Name        string
 	DisplayName *string

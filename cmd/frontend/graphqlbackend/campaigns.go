@@ -123,17 +123,35 @@ type CampaignsResolver interface {
 	CreateCampaignsCredential(ctx context.Context, args *CreateCampaignsCredentialArgs) (CampaignsCredentialResolver, error)
 	DeleteCampaignsCredential(ctx context.Context, args *DeleteCampaignsCredentialArgs) (*EmptyResponse, error)
 
+	CreateBatchChange(ctx context.Context, args *CreateCampaignArgs) (CampaignResolver, error)
+	ApplyBatchChange(ctx context.Context, args *ApplyCampaignArgs) (CampaignResolver, error)
+	MoveBatchChange(ctx context.Context, args *MoveCampaignArgs) (CampaignResolver, error)
+	CloseBatchChange(ctx context.Context, args *CloseCampaignArgs) (CampaignResolver, error)
+	DeleteBatchChange(ctx context.Context, args *DeleteCampaignArgs) (*EmptyResponse, error)
+	CreateBatchChangeSpec(ctx context.Context, args *CreateCampaignSpecArgs) (CampaignSpecResolver, error)
+	CreateBatchChangesCredential(ctx context.Context, args *CreateCampaignsCredentialArgs) (CampaignsCredentialResolver, error)
+	DeleteBatchChangesCredential(ctx context.Context, args *DeleteCampaignsCredentialArgs) (*EmptyResponse, error)
+
 	// Queries
 	Campaigns(ctx context.Context, args *ListCampaignsArgs) (CampaignsConnectionResolver, error)
 	Campaign(ctx context.Context, args *CampaignArgs) (CampaignResolver, error)
 	CampaignByID(ctx context.Context, id graphql.ID) (CampaignResolver, error)
 	ChangesetByID(ctx context.Context, id graphql.ID) (ChangesetResolver, error)
 
+	BatchChanges(ctx context.Context, args *ListCampaignsArgs) (CampaignsConnectionResolver, error)
+	BatchChange(ctx context.Context, args *CampaignArgs) (CampaignResolver, error)
+	BatchChangeByID(ctx context.Context, id graphql.ID) (CampaignResolver, error)
+
 	CampaignSpecByID(ctx context.Context, id graphql.ID) (CampaignSpecResolver, error)
 	ChangesetSpecByID(ctx context.Context, id graphql.ID) (ChangesetSpecResolver, error)
 
+	BatchChangeSpecByID(ctx context.Context, id graphql.ID) (CampaignSpecResolver, error)
+
 	CampaignsCredentialByID(ctx context.Context, id graphql.ID) (CampaignsCredentialResolver, error)
 	CampaignsCodeHosts(ctx context.Context, args *ListCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error)
+
+	BatchChangesCredentialByID(ctx context.Context, id graphql.ID) (CampaignsCredentialResolver, error)
+	BatchChangesCodeHosts(ctx context.Context, args *ListCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error)
 }
 
 type CampaignSpecResolver interface {
@@ -159,10 +177,13 @@ type CampaignSpecResolver interface {
 	DiffStat(ctx context.Context) (*DiffStat, error)
 
 	AppliesToCampaign(ctx context.Context) (CampaignResolver, error)
+	AppliesToBatchChange(ctx context.Context) (CampaignResolver, error)
 
 	SupersedingCampaignSpec(context.Context) (CampaignSpecResolver, error)
+	SupersedingBatchChangeSpec(context.Context) (CampaignSpecResolver, error)
 
 	ViewerCampaignsCodeHosts(ctx context.Context, args *ListViewerCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error)
+	ViewerBatchChangesCodeHosts(ctx context.Context, args *ListViewerCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error)
 }
 
 type CampaignDescriptionResolver interface {
@@ -344,16 +365,17 @@ type ChangesetCountsArgs struct {
 }
 
 type ListChangesetsArgs struct {
-	First                       int32
-	After                       *string
-	PublicationState            *campaigns.ChangesetPublicationState
-	ReconcilerState             *[]campaigns.ReconcilerState
-	ExternalState               *campaigns.ChangesetExternalState
-	State                       *campaigns.ChangesetState
-	ReviewState                 *campaigns.ChangesetReviewState
-	CheckState                  *campaigns.ChangesetCheckState
-	OnlyPublishedByThisCampaign *bool
-	Search                      *string
+	First                          int32
+	After                          *string
+	PublicationState               *campaigns.ChangesetPublicationState
+	ReconcilerState                *[]campaigns.ReconcilerState
+	ExternalState                  *campaigns.ChangesetExternalState
+	State                          *campaigns.ChangesetState
+	ReviewState                    *campaigns.ChangesetReviewState
+	CheckState                     *campaigns.ChangesetCheckState
+	OnlyPublishedByThisCampaign    *bool
+	OnlyPublishedByThisBatchChange *bool
+	Search                         *string
 }
 
 type CampaignResolver interface {
@@ -421,6 +443,7 @@ type ChangesetResolver interface {
 	ExternalState() *campaigns.ChangesetExternalState
 	State() (campaigns.ChangesetState, error)
 	Campaigns(ctx context.Context, args *ListCampaignsArgs) (CampaignsConnectionResolver, error)
+	BatchChanges(ctx context.Context, args *ListCampaignsArgs) (CampaignsConnectionResolver, error)
 
 	ToExternalChangeset() (ExternalChangesetResolver, bool)
 	ToHiddenExternalChangeset() (HiddenExternalChangesetResolver, bool)

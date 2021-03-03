@@ -223,7 +223,7 @@ func (r *campaignSpecResolver) DiffStat(ctx context.Context) (*graphqlbackend.Di
 	return totalStat, nil
 }
 
-func (r *campaignSpecResolver) AppliesToCampaign(ctx context.Context) (graphqlbackend.CampaignResolver, error) {
+func (r *campaignSpecResolver) AppliesToBatchChange(ctx context.Context) (graphqlbackend.CampaignResolver, error) {
 	svc := service.New(r.store)
 	campaign, err := svc.GetCampaignMatchingCampaignSpec(ctx, r.campaignSpec)
 	if err != nil {
@@ -239,7 +239,11 @@ func (r *campaignSpecResolver) AppliesToCampaign(ctx context.Context) (graphqlba
 	}, nil
 }
 
-func (r *campaignSpecResolver) SupersedingCampaignSpec(ctx context.Context) (graphqlbackend.CampaignSpecResolver, error) {
+func (r *campaignSpecResolver) AppliesToCampaign(ctx context.Context) (graphqlbackend.CampaignResolver, error) {
+	return r.AppliesToBatchChange(ctx)
+}
+
+func (r *campaignSpecResolver) SupersedingBatchChangeSpec(ctx context.Context) (graphqlbackend.CampaignSpecResolver, error) {
 	namespace, err := r.computeNamespace(ctx)
 	if err != nil {
 		return nil, err
@@ -272,7 +276,11 @@ func (r *campaignSpecResolver) SupersedingCampaignSpec(ctx context.Context) (gra
 	return resolver, nil
 }
 
-func (r *campaignSpecResolver) ViewerCampaignsCodeHosts(ctx context.Context, args *graphqlbackend.ListViewerCampaignsCodeHostsArgs) (graphqlbackend.CampaignsCodeHostConnectionResolver, error) {
+func (r *campaignSpecResolver) SupersedingCampaignSpec(ctx context.Context) (graphqlbackend.CampaignSpecResolver, error) {
+	return r.SupersedingBatchChangeSpec(ctx)
+}
+
+func (r *campaignSpecResolver) ViewerBatchChangesCodeHosts(ctx context.Context, args *graphqlbackend.ListViewerCampaignsCodeHostsArgs) (graphqlbackend.CampaignsCodeHostConnectionResolver, error) {
 	actor := actor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
 		return nil, backend.ErrNotAuthenticated
@@ -313,4 +321,8 @@ func (r *campaignSpecResolver) ViewerCampaignsCodeHosts(ctx context.Context, arg
 			Offset: offset,
 		},
 	}, nil
+}
+
+func (r *campaignSpecResolver) ViewerCampaignsCodeHosts(ctx context.Context, args *graphqlbackend.ListViewerCampaignsCodeHostsArgs) (graphqlbackend.CampaignsCodeHostConnectionResolver, error) {
+	return r.ViewerBatchChangesCodeHosts(ctx, args)
 }

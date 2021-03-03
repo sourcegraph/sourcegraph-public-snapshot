@@ -432,6 +432,21 @@ func (r *NodeResolver) ToCampaign() (CampaignResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToBatchChange() (CampaignResolver, bool) {
+	n, ok := r.Node.(CampaignResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToBatchChangeSpec() (CampaignSpecResolver, bool) {
+	n, ok := r.Node.(CampaignSpecResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToBatchChangesCredential() (CampaignsCredentialResolver, bool) {
+	n, ok := r.Node.(CampaignsCredentialResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToExternalChangeset() (ExternalChangesetResolver, bool) {
 	n, ok := r.Node.(ChangesetResolver)
 	if !ok {

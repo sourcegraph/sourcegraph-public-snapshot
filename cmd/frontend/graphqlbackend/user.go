@@ -356,6 +356,12 @@ func (r *UserResolver) Campaigns(ctx context.Context, args *ListCampaignsArgs) (
 	return EnterpriseResolvers.campaignsResolver.Campaigns(ctx, args)
 }
 
+func (r *UserResolver) BatchChanges(ctx context.Context, args *ListCampaignsArgs) (CampaignsConnectionResolver, error) {
+	id := r.ID()
+	args.Namespace = &id
+	return EnterpriseResolvers.campaignsResolver.Campaigns(ctx, args)
+}
+
 type ListUserRepositoriesArgs struct {
 	First             *int32
 	Query             *string
@@ -430,6 +436,11 @@ func (r *UserResolver) Repositories(ctx context.Context, args *ListUserRepositor
 }
 
 func (r *UserResolver) CampaignsCodeHosts(ctx context.Context, args *ListCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error) {
+	args.UserID = r.user.ID
+	return EnterpriseResolvers.campaignsResolver.CampaignsCodeHosts(ctx, args)
+}
+
+func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error) {
 	args.UserID = r.user.ID
 	return EnterpriseResolvers.campaignsResolver.CampaignsCodeHosts(ctx, args)
 }

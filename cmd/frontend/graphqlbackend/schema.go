@@ -8198,6 +8198,29 @@ interface Changeset {
     id: ID!
 
     """
+    TODO(eseliger): This is sad.
+    The campaigns that contain this changeset.
+    """
+    batchChanges(
+        """
+        Returns the first n campaigns from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Only return campaigns in this state.
+        """
+        state: BatchChangeState
+        """
+        Only include campaigns that the viewer can administer.
+        """
+        viewerCanAdminister: Boolean
+    ): BatchChangeConnection!
+
+    """
     The campaigns that contain this changeset.
     """
     campaigns(
@@ -8266,6 +8289,29 @@ type HiddenExternalChangeset implements Node & Changeset {
     The unique ID for the changeset.
     """
     id: ID!
+
+    """
+    TODO(eseliger): This is sad.
+    The campaigns that contain this changeset.
+    """
+    batchChanges(
+        """
+        Returns the first n campaigns from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Only return campaigns in this state.
+        """
+        state: BatchChangeState
+        """
+        Only include campaigns that the viewer can administer.
+        """
+        viewerCanAdminister: Boolean
+    ): BatchChangeConnection!
 
     """
     The campaigns that contain this changeset.
@@ -8347,6 +8393,29 @@ type ExternalChangeset implements Node & Changeset {
     The repository changed by this changeset.
     """
     repository: Repository!
+
+    """
+    TODO(eseliger): This is sad.
+    The campaigns that contain this changeset.
+    """
+    batchChanges(
+        """
+        Returns the first n campaigns from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Only return campaigns in this state.
+        """
+        state: BatchChangeState
+        """
+        Only include campaigns that the viewer can administer.
+        """
+        viewerCanAdminister: Boolean
+    ): BatchChangeConnection!
 
     """
     The campaigns that contain this changeset.
@@ -9652,4 +9721,631 @@ extend type Query {
 #                                 End campaigns schema                                     #
 #                                                                                          #
 ############################################################################################
+
+"""
+The state of the campaign
+"""
+enum BatchChangeState {
+    OPEN
+    CLOSED
+}
+
+"""
+A campaign is a set of related changes to apply to code across one or more repositories.
+"""
+type BatchChange implements Node {
+    """
+    The unique ID for the campaign.
+    """
+    id: ID!
+
+    """
+    The namespace where this campaign is defined.
+    """
+    namespace: Namespace!
+
+    """
+    The name of the campaign.
+    """
+    name: String!
+
+    """
+    The description (as Markdown).
+    """
+    description: String
+
+    """
+    The user that created the initial spec. In an org, this will be different from the namespace, or null if the user was deleted.
+    """
+    specCreator: User
+
+    """
+    The user who created the campaign initially by applying the spec for the first time, or null if the user was deleted.
+    """
+    initialApplier: User
+
+    """
+    The user who last updated the campaign by applying a spec to this campaign.
+    If the campaign hasn't been updated, the lastApplier is the initialApplier, or null if the user was deleted.
+    """
+    lastApplier: User
+
+    """
+    Whether the current user can edit or delete this campaign.
+    """
+    viewerCanAdminister: Boolean!
+
+    """
+    The URL to this campaign.
+    """
+    url: String!
+
+    """
+    The date and time when the campaign was created.
+    """
+    createdAt: DateTime!
+
+    """
+    The date and time when the campaign was updated. That can be by applying a spec, or by an internal process.
+    For reading the time the campaign spec was changed last, see lastAppliedAt.
+    """
+    updatedAt: DateTime!
+
+    """
+    The date and time when the campaign was last updated with a new spec.
+    """
+    lastAppliedAt: DateTime!
+
+    """
+    The date and time when the campaign was closed. If set, applying a spec for this campaign will fail with an error.
+    """
+    closedAt: DateTime
+
+    """
+    Stats on all the changesets that are tracked in this campaign.
+    """
+    changesetsStats: ChangesetsStats!
+
+    """
+    The changesets in this campaign that already exist on the code host.
+    """
+    changesets(
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Only include changesets with any of the given reconciler states.
+        """
+        reconcilerState: [ChangesetReconcilerState!]
+            @deprecated(
+                reason: "Use state instead. This field is deprecated, has no effect, and will be removed in a future release."
+            )
+        """
+        Only include changesets with the given publication state.
+        """
+        publicationState: ChangesetPublicationState
+            @deprecated(
+                reason: "Use state instead. This field is deprecated, has no effect, and will be removed in a future release."
+            )
+        """
+        Only include changesets with the given external state.
+        """
+        externalState: ChangesetExternalState
+            @deprecated(
+                reason: "Use state instead. This field is deprecated, has no effect, and will be removed in a future release."
+            )
+        """
+        Only include changesets with the given state.
+        """
+        state: ChangesetState
+        """
+        Only include changesets with the given review state.
+        """
+        reviewState: ChangesetReviewState
+        """
+        Only include changesets with the given check state.
+        """
+        checkState: ChangesetCheckState
+        """
+        Only return changesets that have been published by this campaign. Imported changesets will be omitted.
+        """
+        onlyPublishedByThisBatchChange: Boolean
+        """
+        Search for changesets matching this query. Queries may include quoted substrings to match phrases, and words may be preceded by - to negate them.
+        """
+        search: String
+    ): ChangesetConnection!
+
+    """
+    The changeset counts over time, in 1-day intervals backwards from the point in time given in
+    the "to" parameter.
+    """
+    changesetCountsOverTime(
+        """
+        Only include changeset counts up to this point in time (inclusive). Defaults to Campaign.createdAt.
+        """
+        from: DateTime
+        """
+        Only include changeset counts up to this point in time (inclusive). Defaults to the
+        current time.
+        """
+        to: DateTime
+    ): [ChangesetCounts!]!
+
+    """
+    The diff stat for all the changesets in the campaign.
+    """
+    diffStat: DiffStat!
+
+    """
+    The current campaign spec this campaign reflects.
+    """
+    currentSpec: BatchChangeSpec!
+}
+
+"""
+A list of campaigns.
+"""
+type BatchChangeConnection {
+    """
+    A list of campaigns.
+    """
+    nodes: [BatchChange!]!
+
+    """
+    The total number of campaigns in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A connection of all code hosts usable with campaigns and accessible by the user
+this is requested on.
+"""
+type BatchChangesCodeHostConnection {
+    """
+    A list of code hosts.
+    """
+    nodes: [BatchChangesCodeHost!]!
+
+    """
+    The total number of configured external services in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A code host usable with campaigns. This service is accessible by the user it belongs to.
+"""
+type BatchChangesCodeHost {
+    """
+    The kind of external service.
+    """
+    externalServiceKind: ExternalServiceKind!
+
+    """
+    The URL of the external service.
+    """
+    externalServiceURL: String!
+
+    """
+    The configured credential, if any.
+    """
+    credential: BatchChangesCredential
+}
+
+"""
+A user token configured for campaigns use on the specified code host.
+"""
+type BatchChangesCredential implements Node {
+    """
+    A globally unique identifier.
+    """
+    id: ID!
+
+    """
+    The kind of external service.
+    """
+    externalServiceKind: ExternalServiceKind!
+
+    """
+    The URL of the external service.
+    """
+    externalServiceURL: String!
+
+    """
+    The date and time this token has been created at.
+    """
+    createdAt: DateTime!
+}
+
+"""
+A CampaignDescription describes a campaign.
+"""
+type BatchChangeDescription {
+    """
+    The name as parsed from the input.
+    """
+    name: String!
+
+    """
+    The description as parsed from the input.
+    """
+    description: String!
+}
+
+"""
+A campaign spec is an immutable description of the desired state of a campaign. To create a
+campaign spec, use the createCampaignSpec mutation.
+"""
+type BatchChangeSpec implements Node {
+    """
+    The unique ID for a campaign spec.
+
+    The ID is unguessable (i.e., long and randomly generated, not sequential).
+    Consider a campaign to fix a security vulnerability: the campaign author may prefer
+    to prepare the campaign, including the description in private so that the window
+    between revealing the problem and merging the fixes is as short as possible.
+    """
+    id: ID!
+
+    """
+    The original YAML or JSON input that was used to create this campaign spec.
+    """
+    originalInput: String!
+
+    """
+    The parsed JSON value of the original input. If the original input was YAML, the YAML is
+    converted to the equivalent JSON.
+    """
+    parsedInput: JSONValue!
+
+    """
+    The CampaignDescription that describes this campaign.
+    """
+    description: BatchChangeDescription!
+
+    """
+    Generates a preview what operations would be performed if the campaign spec would be applied.
+    This preview is not a guarantee, since the state of the changesets can change between the time
+    the preview is generated and when the campaign spec is applied.
+    """
+    applyPreview(
+        """
+        Returns the first n entries from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Search for changesets matching this query. Queries may include quoted substrings to match phrases, and words may be preceded by - to negate them.
+        """
+        search: String
+        """
+        Search for changesets that are currently in this state.
+        """
+        currentState: ChangesetState
+        """
+        Search for changesets that will have the given action performed.
+        """
+        action: ChangesetSpecOperation
+    ): ChangesetApplyPreviewConnection!
+
+    """
+    The specs for changesets associated with this campaign.
+    """
+    changesetSpecs(first: Int = 50, after: String): ChangesetSpecConnection!
+
+    """
+    The user who created this campaign spec (or null if the user no longer exists).
+    """
+    creator: User
+
+    """
+    The date when this campaign spec was created.
+    """
+    createdAt: DateTime!
+
+    """
+    The namespace (either a user or organization) of the campaign spec.
+    """
+    namespace: Namespace!
+
+    """
+    The date, if any, when this campaign spec expires and is automatically purged. A campaign spec
+    never expires if it has been applied.
+    """
+    expiresAt: DateTime
+
+    """
+    The URL of a web page that allows applying this campaign spec and
+    displays a preview of which changesets will be created by applying it.
+    """
+    applyURL: String!
+
+    """
+    When true, the viewing user can apply this spec.
+    """
+    viewerCanAdminister: Boolean!
+
+    """
+    The diff stat for all the changeset specs in the campaign spec.
+    """
+    diffStat: DiffStat!
+
+    """
+    The campaign this spec will update when applied. If it's null, the
+    campaign doesn't yet exist.
+    """
+    appliesToBatchChange: BatchChange
+
+    """
+    The newest version of this campaign spec, as identified by its namespace
+    and name. If this is the newest version, this field will be null.
+    """
+    supersedingBatchChangeSpec: BatchChangeSpec
+
+    """
+    The code host connections required for applying this spec. Includes the credentials of the current user.
+    """
+    viewerBatchChangesCodeHosts(
+        """
+        Returns the first n code hosts from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Only returns the code hosts for which the viewer doesn't have credentials.
+        """
+        onlyWithoutCredential: Boolean = false
+    ): BatchChangesCodeHostConnection!
+}
+
+############################################################################################
+#                                                                                          #
+#                                 End campaigns schema                                     #
+#                                                                                          #
+############################################################################################
+extend type Mutation {
+    """
+    Create a campaign from a campaign spec and locally computed changeset specs. The newly created
+    campaign is returned.
+    If a campaign in the same namespace with the same name already exists, an error with the error code
+    ErrMatchingCampaignExists is returned.
+    """
+    createBatchChange(
+        """
+        The campaign spec that describes the desired state of the campaign.
+        """
+        batchChangeSpec: ID!
+    ): BatchChange!
+
+    """
+    Create or update a campaign from a campaign spec and locally computed changeset specs. If no
+    campaign exists in the namespace with the name given in the campaign spec, a campaign will be
+    created. Otherwise, the existing campaign will be updated. The campaign is returned.
+    Closed campaigns cannot be applied to. In that case, an error with the error code ErrApplyClosedCampaign
+    will be returned.
+    """
+    applyBatchChange(
+        """
+        The campaign spec that describes the new desired state of the campaign.
+        """
+        batchChangeSpec: ID!
+
+        """
+        If set, return an error if the campaign identified using the namespace and campaignSpec
+        parameters does not match the campaign with this ID. This lets callers use a stable ID
+        that refers to a specific campaign during an edit session (and is not susceptible to
+        conflicts if the underlying campaign is moved to a different namespace, renamed, or
+        deleted). The returned error has the error code ErrEnsureCampaignFailed.
+        """
+        ensureBatchChange: ID
+    ): BatchChange!
+
+    """
+    Move a campaign to a different namespace, or rename it in the current namespace.
+    """
+    moveBatchChange(batchChange: ID!, newName: String, newNamespace: ID): BatchChange!
+
+    """
+    Close a campaign.
+    """
+    closeBatchChange(
+        batchChange: ID!
+        """
+        Whether to close the changesets associated with this campaign on their respective code
+        hosts. "Close" means the appropriate final state on the code host (e.g., "closed" on
+        GitHub and "declined" on Bitbucket Server).
+        """
+        closeChangesets: Boolean = false
+    ): BatchChange!
+
+    """
+    Delete a campaign. A deleted campaign is completely removed and can't be un-deleted. The
+    campaign's changesets are kept as-is; to close them, use the closeCampaign mutation first.
+    """
+    deleteBatchChange(batchChange: ID!): EmptyResponse
+
+    """
+    Create a campaign spec that will be used to create a campaign (with the createCampaign
+    mutation), or to update a campaign (with the applyCampaign mutation).
+
+    The returned CampaignSpec is immutable and expires after a certain period of time (if not used
+    in a call to applyCampaign), which can be queried on CampaignSpec.expiresAt.
+
+    If campaigns are unlicensed and the number of changesetSpecIDs is higher than what's allowed in
+    the free tier, an error with the error code ErrCampaignsUnlicensed is returned.
+    """
+    createBatchChangeSpec(
+        """
+        The namespace (either a user or organization). A campaign spec can only be applied to (or
+        used to create) campaigns in this namespace.
+        """
+        namespace: ID!
+
+        """
+        The campaign spec as YAML (or the equivalent JSON). See
+        https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/schema/campaign_spec.schema.json
+        for the JSON Schema that describes the structure of this input.
+        """
+        batchChangeSpec: String!
+
+        """
+        Changeset specs that were locally computed and then uploaded using createChangesetSpec.
+        """
+        changesetSpecs: [ID!]!
+    ): BatchChangeSpec!
+
+    """
+    Create a new credential for the given user for the given code host.
+    If another token for that code host already exists, an error with the error code
+    ErrDuplicateCredential is returned.
+    """
+    createBatchChangesCredential(
+        """
+        The user for which to create the credential.
+        """
+        user: ID!
+
+        """
+        The kind of external service being configured.
+        """
+        externalServiceKind: ExternalServiceKind!
+
+        """
+        The URL of the external service being configured.
+        """
+        externalServiceURL: String!
+
+        """
+        The credential to be stored. This can never be retrieved through the API and will be stored encrypted.
+        """
+        credential: String!
+    ): BatchChangesCredential!
+
+    """
+    Hard-deletes a given campaigns credential.
+    """
+    deleteBatchChangesCredential(batchChangesCredential: ID!): EmptyResponse!
+}
+
+extend type Org {
+    """
+    A list of campaigns initially applied in this organization.
+    """
+    batchChanges(
+        """
+        Returns the first n campaigns from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Only return campaigns in this state.
+        """
+        state: BatchChangeState
+        """
+        Only include campaigns that the viewer can administer.
+        """
+        viewerCanAdminister: Boolean
+    ): BatchChangeConnection!
+}
+
+extend type User {
+    """
+    A list of campaigns applied under this user's namespace.
+    """
+    batchChanges(
+        """
+        Returns the first n campaigns from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Only return campaigns in this state.
+        """
+        state: BatchChangeState
+        """
+        Only include campaigns that the viewer can administer.
+        """
+        viewerCanAdminister: Boolean
+    ): BatchChangeConnection!
+
+    """
+    Returns a connection of configured external services accessible by this user, for usage with campaigns.
+    These are all code hosts configured on the Sourcegraph instance that are supported by campaigns. They are
+    connected to CampaignCredential resources, if one has been created for the code host connection before.
+    """
+    BatchChangesCodeHosts(
+        """
+        Returns the first n code hosts from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): BatchChangesCodeHostConnection!
+}
+
+extend type Query {
+    """
+    A list of campaigns.
+    """
+    batchChanges(
+        """
+        Returns the first n campaigns from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Only return campaigns in this state.
+        """
+        state: BatchChangeState
+        """
+        Only include campaigns that the viewer can administer.
+        """
+        viewerCanAdminister: Boolean
+    ): BatchChangeConnection!
+
+    """
+    Looks up a campaign by namespace and campaign name.
+    """
+    batchChange(
+        """
+        The namespace where the campaign lives.
+        """
+        namespace: ID!
+        """
+        The campaigns name.
+        """
+        name: String!
+    ): BatchChange
+}
 `
