@@ -4,8 +4,37 @@ import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import { isEqual, pick } from 'lodash'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { combineLatest, from, fromEvent, merge, Observable, ReplaySubject, Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, filter, map, share, switchMap, withLatestFrom } from 'rxjs/operators'
+import {
+    BehaviorSubject,
+    combineLatest,
+    defer,
+    EMPTY,
+    from,
+    fromEvent,
+    merge,
+    Observable,
+    ReplaySubject,
+    Subject,
+    Subscription,
+} from 'rxjs'
+import {
+    bufferCount,
+    catchError,
+    concatMap,
+    distinctUntilChanged,
+    filter,
+    finalize,
+    first,
+    map,
+    mapTo,
+    publishReplay,
+    refCount,
+    share,
+    skip,
+    switchMap,
+    tap,
+    withLatestFrom,
+} from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { groupDecorationsByLine } from '../../../../shared/src/api/client/services/decoration'
 import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
@@ -38,6 +67,11 @@ import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryServic
 import { HoverThresholdProps } from '../RepoContainer'
 import useDeepCompareEffect from 'use-deep-compare-effect'
 import iterate from 'iterare'
+import { wrapRemoteObservable } from '../../../../shared/src/api/client/api/common'
+import { useObservable } from '../../../../shared/src/util/useObservable'
+import { ViewerId } from '../../../../shared/src/api/viewerTypes'
+import { Remote } from 'comlink'
+import { FlatExtensionHostAPI } from '../../../../shared/src/api/contract'
 
 /**
  * toPortalID builds an ID that will be used for the {@link LineDecorator} portal containers.
@@ -152,6 +186,14 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     const nextBlobInfoChange = useCallback((blobInfo: BlobInfo) => blobInfoChanges.next(blobInfo), [blobInfoChanges])
     useEffect(() => {
         nextBlobInfoChange(blobInfo)
+
+        // Clear decorations when blobInfo changes. We can't wait for + don't care about the round trip
+        // of client (blobInfo change) -> ext host (add viewer) -> client (receive viewerId) that viewerUpdates emits after.
+        return () => {
+            // also clear viewerData
+
+            setDecorationsOrError(undefined)
+        }
     }, [blobInfo, nextBlobInfoChange])
 
     const closeButtonClicks = useMemo(() => new Subject<MouseEvent>(), [])
@@ -165,12 +207,25 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
 
     const [hoverState, setHoverState] = useState<HoverState<HoverContext, HoverMerged, ActionItemAction>>({})
 
-    const [decorationsOrError, setDecorationsOrError] = useState<TextDocumentDecoration[] | Error | null>()
+    const [decorationsOrError, setDecorationsOrError] = useState<TextDocumentDecoration[] | Error | undefined>()
+
+    const singleClickGoToDefinition = useMemo(
+        () =>
+            Boolean(
+                props.settingsCascade.final &&
+                    !isErrorLike(props.settingsCascade.final) &&
+                    props.settingsCascade.final.singleClickGoToDefinition === true
+            ),
+        [props.settingsCascade.final]
+    )
 
     // This effect is meant to run only after first render, cleanup on unmount.
     // TODO: Create a hoverifier class
     useEffect(() => {
         const subscriptions = new Subscription()
+
+        // TODO(tj): singleClickGoToDefinition is not in danger of changng while Blob is active
+        // basically all of the props I was scared of will not change often
 
         const singleClickGoToDefinition = Boolean(
             propsReference.current.settingsCascade.final &&
@@ -178,6 +233,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 propsReference.current.settingsCascade.final.singleClickGoToDefinition === true
         )
 
+        console.time('creating hoverifier')
         const hoverifier = createHoverifier<HoverContext, HoverMerged, ActionItemAction>({
             closeButtonClicks,
             hoverOverlayElements,
@@ -195,6 +251,8 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 // before, static methods could read from this.props
                 {
                     console.log('asking for hover client blob', { ms: Date.now() })
+                    // ensures that extensionhost knows about the document, queues up
+                    // hovers from before initialization!!
 
                     /* before, static methods could read from this.props*/
                     return getHover(
@@ -210,6 +268,8 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             getActions: context => getHoverActions(propsReference.current, context),
             pinningEnabled: !singleClickGoToDefinition,
         })
+        console.timeEnd('creating hoverifier')
+
         subscriptions.add(hoverifier)
 
         subscriptions.add(
@@ -274,144 +334,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             })
         )
 
-        // TODO(tj): useObservable
-        // When clicking a line, update the URL (which will in turn trigger a highlight of the line)
-        subscriptions.add(
-            codeViewElements
-                .pipe(
-                    filter(isDefined),
-                    switchMap(codeView => fromEvent<MouseEvent>(codeView, 'click')),
-                    // Ignore click events caused by the user selecting text
-                    filter(() => !window.getSelection()?.toString())
-                )
-                .subscribe(event => {
-                    // Prevent selecting text on shift click (click+drag to select will still work)
-                    // Note that this is only called if the selection was empty initially (see above),
-                    // so this only clears a selection caused by this click.
-                    window.getSelection()!.removeAllRanges()
-
-                    const position = locateTarget(event.target as HTMLElement, domFunctions)
-                    let hash: string
-                    if (
-                        position &&
-                        event.shiftKey &&
-                        latestHoverState.selectedPosition &&
-                        latestHoverState.selectedPosition.line !== undefined
-                    ) {
-                        hash = toPositionOrRangeHash({
-                            range: {
-                                start: {
-                                    line: Math.min(latestHoverState.selectedPosition.line, position.line),
-                                },
-                                end: {
-                                    line: Math.max(latestHoverState.selectedPosition.line, position.line),
-                                },
-                            },
-                        })
-                    } else {
-                        hash = toPositionOrRangeHash({ position })
-                    }
-
-                    if (!hash.startsWith('#')) {
-                        hash = '#' + hash
-                    }
-
-                    propsReference.current.history.push({ ...propsReference.current.location, hash })
-                })
-        )
-
-        // TODO(tj): useObservable
-        // Update selected line when position in hash changes
-        subscriptions.add(
-            locationPositions.pipe(withLatestFrom(codeViewElements)).subscribe(([position, codeView]) => {
-                codeView = codeView! // locationPositions is derived from componentUpdates, so this is guaranteed to exist
-                const codeCells = getCodeElementsInRange({
-                    codeView,
-                    position,
-                    getCodeElementFromLineNumber: domFunctions.getCodeElementFromLineNumber,
-                })
-                // Remove existing highlighting
-                for (const selected of codeView.querySelectorAll('.selected')) {
-                    selected.classList.remove('selected')
-                }
-                for (const { element } of codeCells) {
-                    // Highlight row
-                    const row = element.parentElement as HTMLTableRowElement
-                    row.classList.add('selected')
-                }
-            })
-        )
-
-        // TODO(tj): useObservable
-        // Update the Sourcegraph extensions model to reflect the current file.
-        subscriptions.add(
-            combineLatest([blobInfoChanges, locationPositions]).subscribe(([blobInfo, position]) => {
-                const uri = toURIWithPath(blobInfo)
-                if (!propsReference.current.extensionsController.services.model.hasModel(uri)) {
-                    propsReference.current.extensionsController.services.model.addModel({
-                        uri,
-                        languageId: blobInfo.mode,
-                        text: blobInfo.content,
-                    })
-                }
-
-                extensionsController.extHostAPI.then(API => {
-                    // ohhhh, might be since we have to unwrap the api... why don't we just do all
-                    // 'hoverification' after unwrapping the api once?
-                    console.log('request to add document', { ms: Date.now() })
-                    API.addTextDocumentIfNotExists({
-                        uri,
-                        languageId: blobInfo.mode,
-                        text: blobInfo.content,
-                    })
-
-                    API.addViewerIfNotExists({
-                        type: 'CodeEditor' as const,
-                        resource: uri,
-                        selections: lprToSelectionsZeroIndexed(position),
-                        isActive: true,
-                    })
-                })
-
-                const selections = lprToSelectionsZeroIndexed(position)
-                console.log('gonna set mode here', { ms: Date.now() })
-                propsReference.current.extensionsController.services.viewer.removeAllViewers()
-                // TODO(tj): set editor selections here, but add viewer and model in parent
-                // before render completes to speed up extension host processing
-                propsReference.current.extensionsController.services.viewer.addViewer({
-                    type: 'CodeEditor' as const,
-                    resource: uri,
-                    selections,
-                    isActive: true,
-                })
-            })
-        )
-
-        // TODO(tj): useObservable
-        // Get decorations for the current file
-        let lastBlobInfo: (AbsoluteRepoFile & ModeSpec) | undefined
-        const decorations = blobInfoChanges.pipe(
-            switchMap(blobInfo => {
-                const blobInfoChanged = !isEqual(blobInfo, lastBlobInfo)
-                lastBlobInfo = blobInfo // record so we can compute blobInfoChanged
-                // Only clear decorations if the model changed. If only the extensions changed,
-                // keep the old decorations until the new ones are available, to avoid UI jitter
-                return merge(
-                    blobInfoChanged ? [null] : [],
-                    propsReference.current.extensionsController.services.textDocumentDecoration.getDecorations({
-                        uri: `git://${blobInfo.repoName}?${blobInfo.commitID}#${blobInfo.filePath}`,
-                    })
-                )
-            }),
-            share()
-        )
-
-        subscriptions.add(
-            decorations.pipe(catchError(error => [asError(error)])).subscribe(decorationsOrError => {
-                setDecorationsOrError(decorationsOrError)
-            })
-        )
-
         return () => {
             subscriptions.unsubscribe()
         }
@@ -425,14 +347,208 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         closeButtonClicks,
     ])
 
+    // Update URL when clicking on a line (which will trigger the line highlighting defined below)
+    useObservable(
+        useMemo(() => {
+            console.log('new update url sub')
+            return codeViewElements.pipe(
+                filter(isDefined),
+                switchMap(codeView => fromEvent<MouseEvent>(codeView, 'click')),
+                // Ignore click events caused by the user selecting text
+                filter(() => !window.getSelection()?.toString()),
+                tap(event => {
+                    // Prevent selecting text on shift click (click+drag to select will still work)
+                    // Note that this is only called if the selection was empty initially (see above),
+                    // so this only clears a selection caused by this click.
+                    window.getSelection()!.removeAllRanges()
+
+                    const position = locateTarget(event.target as HTMLElement, domFunctions)
+                    let hash: string
+                    if (
+                        position &&
+                        event.shiftKey &&
+                        hoverState.selectedPosition &&
+                        hoverState.selectedPosition.line !== undefined
+                    ) {
+                        hash = toPositionOrRangeHash({
+                            range: {
+                                start: {
+                                    line: Math.min(hoverState.selectedPosition.line, position.line),
+                                },
+                                end: {
+                                    line: Math.max(hoverState.selectedPosition.line, position.line),
+                                },
+                            },
+                        })
+                    } else {
+                        hash = toPositionOrRangeHash({ position })
+                    }
+
+                    if (!hash.startsWith('#')) {
+                        hash = '#' + hash
+                    }
+
+                    propsReference.current.history.push({ ...propsReference.current.location, hash })
+                }),
+                mapTo(undefined)
+            )
+        }, [codeViewElements, hoverState.selectedPosition])
+    )
+
+    // Line highlighting when position in hash changes
+    useObservable(
+        useMemo(
+            () =>
+                locationPositions.pipe(
+                    withLatestFrom(codeViewElements.pipe(filter(isDefined))),
+                    tap(([position, codeView]) => {
+                        const codeCells = getCodeElementsInRange({
+                            codeView,
+                            position,
+                            getCodeElementFromLineNumber: domFunctions.getCodeElementFromLineNumber,
+                        })
+                        // Remove existing highlighting
+                        for (const selected of codeView.querySelectorAll('.selected')) {
+                            selected.classList.remove('selected')
+                        }
+                        for (const { element } of codeCells) {
+                            // Highlight row
+                            const row = element.parentElement as HTMLTableRowElement
+                            row.classList.add('selected')
+                        }
+                    }),
+                    mapTo(undefined)
+                ),
+            [locationPositions, codeViewElements]
+        )
+    )
+
+
+    const viewerUpdates = useMemo(
+        () =>
+            new BehaviorSubject<{
+                viewerId: ViewerId
+                blobInfo: BlobInfo
+                extensionHostAPI: Remote<FlatExtensionHostAPI>
+            } | null>(null),
+        []
+    )
+
+    // Extensibility. TODO(tj): explain why this is different from blobInfo updates,
+    // and when you'd use this instead
+    useObservable(
+        useMemo(
+            () =>
+                combineLatest([
+                    blobInfoChanges,
+                    // Use the initial position when the document is opened.
+                    // Don't want to create new viewers on position change
+                    locationPositions.pipe(first()),
+                    from(extensionsController.extHostAPI),
+                ]).pipe(
+                    concatMap(([blobInfo, initialPosition, extensionHostAPI]) =>
+                        defer(async () => {
+                            const uri = toURIWithPath(blobInfo)
+
+                            const [, viewerId] = await Promise.all([
+                                // This call should be made before adding viewer, but since
+                                // messages to web worker are handled in order, we can use Promise.all
+                                extensionHostAPI.addTextDocumentIfNotExists({
+                                    uri,
+                                    languageId: blobInfo.mode,
+                                    text: blobInfo.content,
+                                }),
+                                extensionHostAPI.addViewerIfNotExists({
+                                    type: 'CodeEditor' as const,
+                                    resource: uri,
+                                    selections: lprToSelectionsZeroIndexed(initialPosition),
+                                    isActive: true,
+                                }),
+                            ])
+                            console.log({ viewerId })
+                            return { viewerId, blobInfo, extensionHostAPI }
+                        })
+                    ),
+                    tap(({ viewerId, blobInfo, extensionHostAPI }) => {
+                        viewerUpdates.next({ viewerId, blobInfo, extensionHostAPI })
+                    }),
+                    mapTo(undefined)
+                ),
+            [blobInfoChanges, locationPositions, viewerUpdates, extensionsController]
+        )
+    )
+
+    // Cleanup when navigation between/away from viewers
+    // Remove viewer on change or unmount
+    useEffect(() => {
+        const viewerId = viewerUpdates.value?.viewerId
+
+        return () => {
+            if (viewerId) {
+                extensionsController.extHostAPI
+                    .then(extensionHostAPI => extensionHostAPI.removeViewer(viewerId))
+                    .catch(error => console.error('Error removing viewer from extension host', error))
+            }
+        }
+    }, [viewerUpdates.value, extensionsController.extHostAPI])
+
+    // Update position/selections on extension host
+    useObservable(
+        useMemo(
+            () =>
+                viewerUpdates.pipe(
+                    switchMap(viewerData => {
+                        if (!viewerData) {
+                            return EMPTY
+                        }
+
+                        // Skip the initial position since it should be sent to extension host on viewer initialization
+                        return locationPositions.pipe(skip(1)).pipe(
+                            tap(position => {
+                                viewerData.extensionHostAPI
+                                    .setEditorSelections(viewerData.viewerId, lprToSelectionsZeroIndexed(position))
+                                    .catch(error =>
+                                        console.error('Error updating editor selections on extension host', error)
+                                    )
+                            })
+                        )
+                    }),
+                    mapTo(undefined)
+                ),
+            [viewerUpdates, locationPositions]
+        )
+    )
+
+    // Set decorations
+    useObservable(
+        useMemo(
+            () =>
+                viewerUpdates.pipe(
+                    switchMap(viewerData =>
+                        viewerData
+                            ? wrapRemoteObservable(viewerData.extensionHostAPI.getTextDecorations(viewerData.viewerId))
+                            : EMPTY
+                    ),
+                    catchError(error => [asError(error)]),
+                    // We store decoration state indepdent of this observable since we want to clear decorations
+                    // immediately on viewer change. If we wait for the latest emission of decorations from the
+                    // extension host, decorations from the previous viewer will be visible for a notiable amount of time
+                    // on the current viewer
+                    tap(decorations => setDecorationsOrError(decorations)),
+                    mapTo(undefined)
+                ),
+            [viewerUpdates]
+        )
+    )
+
+    // Single-click jump-to-definition
+
     // Memoize `groupedDecorations` to avoid clearing and setting decorations in `LineDecorator`s on renders in which
     // decorations haven't changed.
     const groupedDecorations = useMemo(
         () => decorationsOrError && !isErrorLike(decorationsOrError) && groupDecorationsByLine(decorationsOrError),
         [decorationsOrError]
     )
-
-    // TODO(tj): Refactor to class component. use lodash memoize for line decorations
 
     return (
         <div className={`blob ${props.className}`} ref={nextBlobElement}>
@@ -462,7 +578,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                                 getCodeElementFromLineNumber={domFunctions.getCodeElementFromLineNumber}
                                 line={line}
                                 decorations={decorations}
-                                codeViewReference={codeViewReference}
+                                codeViewElements={codeViewElements}
                             />
                         )
                     })
@@ -482,422 +598,5 @@ function getLSPTextDocumentPositionParameters(
         revision: position.revision,
         mode,
         position,
-    }
-}
-
-interface BlobState extends HoverState<HoverContext, HoverMerged, ActionItemAction> {
-    /**
-     * lineDecorationAttachmentIDs is a map from line numbers with portal nodes created to portal IDs. It's used to
-     * render the portals for {@link LineDecorationAttachment}. The line numbers are taken from the blob so they
-     * are 1-indexed.
-     */
-    lineDecorationAttachmentIDs: { [key: number]: string }
-
-    /** The decorations to display in the blob. */
-    decorationsOrError?: TextDocumentDecoration[] | null | ErrorLike
-}
-
-class BlobClass extends React.Component<BlobProps, BlobState> {
-    /** Emits with the latest Props on every componentDidUpdate and on componentDidMount */
-    private componentUpdates = new Subject<BlobProps>()
-
-    /** Emits whenever the ref callback for the code element is called */
-    private codeViewElements = new ReplaySubject<HTMLElement | null>(1)
-    private nextCodeViewElement = (element: HTMLElement | null): void => this.codeViewElements.next(element)
-
-    /** Emits whenever the ref callback for the blob element is called */
-    private blobElements = new Subject<HTMLElement | null>()
-    private nextBlobElement = (element: HTMLElement | null): void => this.blobElements.next(element)
-
-    /** Emits whenever the ref callback for the hover element is called */
-    private hoverOverlayElements = new Subject<HTMLElement | null>()
-    private nextOverlayElement = (element: HTMLElement | null): void => this.hoverOverlayElements.next(element)
-
-    /** Emits when the close button was clicked */
-    private closeButtonClicks = new Subject<MouseEvent>()
-    private nextCloseButtonClick = (event: MouseEvent): void => this.closeButtonClicks.next(event)
-
-    /** Subscriptions to be disposed on unmout */
-    private subscriptions = new Subscription()
-
-    constructor(props: BlobProps) {
-        super(props)
-        this.state = {
-            lineDecorationAttachmentIDs: {},
-        }
-
-        /** Emits parsed positions found in the URL */
-        const locationPositions: Observable<LineOrPositionOrRange> = this.componentUpdates.pipe(
-            map(props => parseHash(props.location.hash)),
-            distinctUntilChanged((a, b) => isEqual(a, b)),
-            share()
-        )
-
-        const singleClickGoToDefinition = Boolean(
-            this.props.settingsCascade.final &&
-                !isErrorLike(this.props.settingsCascade.final) &&
-                this.props.settingsCascade.final.singleClickGoToDefinition === true
-        )
-
-        const hoverifier = createHoverifier<
-            RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec,
-            HoverMerged,
-            ActionItemAction
-        >({
-            closeButtonClicks: this.closeButtonClicks,
-            hoverOverlayElements: this.hoverOverlayElements,
-            hoverOverlayRerenders: this.componentUpdates.pipe(
-                withLatestFrom(this.hoverOverlayElements, this.blobElements),
-                // After componentDidUpdate, the blob element is guaranteed to have been rendered
-                map(([, hoverOverlayElement, blobElement]) => ({ hoverOverlayElement, relativeElement: blobElement! })),
-                // Can't reposition HoverOverlay if it wasn't rendered
-                filter(property('hoverOverlayElement', isDefined))
-            ),
-            getHover: position => getHover(this.getLSPTextDocumentPositionParams(position), this.props),
-            getDocumentHighlights: position =>
-                getDocumentHighlights(this.getLSPTextDocumentPositionParams(position), this.props),
-            getActions: context => getHoverActions(this.props, context),
-            pinningEnabled: !singleClickGoToDefinition,
-        })
-        this.subscriptions.add(hoverifier)
-
-        this.subscriptions.add(
-            hoverifier.hoverify({
-                positionEvents: this.codeViewElements.pipe(
-                    filter(isDefined),
-                    findPositionsFromEvents({ domFunctions })
-                ),
-                positionJumps: locationPositions.pipe(
-                    withLatestFrom(this.codeViewElements, this.blobElements),
-                    map(([position, codeView, scrollElement]) => ({
-                        position,
-                        // locationPositions is derived from componentUpdates,
-                        // so these elements are guaranteed to have been rendered.
-                        codeView,
-                        scrollElement,
-                    }))
-                ),
-                resolveContext: () => ({
-                    repoName: this.props.blobInfo.repoName,
-                    revision: this.props.blobInfo.revision,
-                    commitID: this.props.blobInfo.commitID,
-                    filePath: this.props.blobInfo.filePath,
-                }),
-                dom: domFunctions,
-            })
-        )
-        const goToDefinition = (event: MouseEvent): void => {
-            const goToDefinitionAction =
-                Array.isArray(this.state.actionsOrError) &&
-                this.state.actionsOrError.find(action => action.action.id === 'goToDefinition.preloaded')
-            if (goToDefinitionAction) {
-                this.props.history.push(goToDefinitionAction.action.commandArguments![0] as string)
-                event.stopPropagation()
-            }
-        }
-
-        let hoveredTokenElement: HTMLElement | undefined
-        this.subscriptions.add(
-            hoverifier.hoverStateUpdates.subscribe(update => {
-                if (singleClickGoToDefinition && hoveredTokenElement !== update.hoveredTokenElement) {
-                    if (hoveredTokenElement) {
-                        hoveredTokenElement.style.cursor = 'auto'
-                        hoveredTokenElement.removeEventListener('click', goToDefinition)
-                    }
-                    if (update.hoveredTokenElement) {
-                        update.hoveredTokenElement.style.cursor = 'pointer'
-                        update.hoveredTokenElement.addEventListener('click', goToDefinition)
-                    }
-                    hoveredTokenElement = update.hoveredTokenElement
-                }
-                this.setState(update)
-            })
-        )
-
-        // When clicking a line, update the URL (which will in turn trigger a highlight of the line)
-        this.subscriptions.add(
-            this.codeViewElements
-                .pipe(
-                    filter(isDefined),
-                    switchMap(codeView => fromEvent<MouseEvent>(codeView, 'click')),
-                    // Ignore click events caused by the user selecting text
-                    filter(() => !window.getSelection()?.toString())
-                )
-                .subscribe(event => {
-                    // Prevent selecting text on shift click (click+drag to select will still work)
-                    // Note that this is only called if the selection was empty initially (see above),
-                    // so this only clears a selection caused by this click.
-                    window.getSelection()!.removeAllRanges()
-
-                    const position = locateTarget(event.target as HTMLElement, domFunctions)
-                    let hash: string
-                    if (
-                        position &&
-                        event.shiftKey &&
-                        this.state.selectedPosition &&
-                        this.state.selectedPosition.line !== undefined
-                    ) {
-                        hash = toPositionOrRangeHash({
-                            range: {
-                                start: {
-                                    line: Math.min(this.state.selectedPosition.line, position.line),
-                                },
-                                end: {
-                                    line: Math.max(this.state.selectedPosition.line, position.line),
-                                },
-                            },
-                        })
-                    } else {
-                        hash = toPositionOrRangeHash({ position })
-                    }
-
-                    if (!hash.startsWith('#')) {
-                        hash = '#' + hash
-                    }
-
-                    this.props.history.push({ ...this.props.location, hash })
-                })
-        )
-
-        // LOCATION CHANGES
-        this.subscriptions.add(
-            locationPositions.pipe(withLatestFrom(this.codeViewElements)).subscribe(([position, codeView]) => {
-                codeView = codeView! // locationPositions is derived from componentUpdates, so this is guaranteed to exist
-                const codeCells = getCodeElementsInRange({
-                    codeView,
-                    position,
-                    getCodeElementFromLineNumber: domFunctions.getCodeElementFromLineNumber,
-                })
-                // Remove existing highlighting
-                for (const selected of codeView.querySelectorAll('.selected')) {
-                    selected.classList.remove('selected')
-                }
-                for (const { line, element } of codeCells) {
-                    this.createLineDecorationAttachmentDOMNode(line, element)
-                    // Highlight row
-                    const row = element.parentElement as HTMLTableRowElement
-                    row.classList.add('selected')
-                }
-            })
-        )
-
-        /** Emits when the URL's target blob (repository, revision, path, and content) changes. */
-        const modelChanges: Observable<BlobInfo> = this.componentUpdates.pipe(
-            map(({ blobInfo }) => blobInfo),
-            distinctUntilChanged((a, b) => isEqual(a, b)),
-            share()
-        )
-
-        // Update the Sourcegraph extensions model to reflect the current file.
-        this.subscriptions.add(
-            combineLatest([modelChanges, locationPositions]).subscribe(([model, position]) => {
-                const uri = toURIWithPath(model)
-                if (!this.props.extensionsController.services.model.hasModel(uri)) {
-                    this.props.extensionsController.services.model.addModel({
-                        uri,
-                        languageId: model.mode,
-                        text: model.content,
-                    })
-                }
-                this.props.extensionsController.services.viewer.removeAllViewers()
-                this.props.extensionsController.services.viewer.addViewer({
-                    type: 'CodeEditor' as const,
-                    resource: uri,
-                    selections: lprToSelectionsZeroIndexed(position),
-                    isActive: true,
-                })
-            })
-        )
-
-        /** Decorations */
-        let lastModel: (AbsoluteRepoFile & ModeSpec) | undefined
-        const decorations: Observable<TextDocumentDecoration[] | null> = modelChanges.pipe(
-            switchMap(model => {
-                const modelChanged = !isEqual(model, lastModel)
-                lastModel = model // record so we can compute modelChanged
-
-                // Only clear decorations if the model changed. If only the extensions changed, keep
-                // the old decorations until the new ones are available, to avoid UI jitter.
-                return merge(
-                    modelChanged ? [null] : [],
-                    this.props.extensionsController.services.textDocumentDecoration.getDecorations({
-                        uri: `git://${model.repoName}?${model.commitID}#${model.filePath}`,
-                    })
-                )
-            }),
-            share()
-        )
-        this.subscriptions.add(
-            decorations
-                .pipe(catchError(error => [asError(error)]))
-                .subscribe(decorationsOrError => this.setState({ decorationsOrError }))
-        )
-
-        /** Render decorations. */
-        let decoratedElements: HTMLElement[] = []
-        this.subscriptions.add(
-            combineLatest([
-                decorations.pipe(
-                    map(decorations => decorations || []),
-                    catchError(error => {
-                        console.error(error)
-
-                        // Treat decorations error as empty decorations.
-                        return [[] as TextDocumentDecoration[]]
-                    })
-                ),
-                this.codeViewElements,
-            ]).subscribe(([decorations, codeView]) => {
-                if (codeView) {
-                    if (decoratedElements) {
-                        // Clear previous decorations.
-                        for (const element of decoratedElements) {
-                            element.style.backgroundColor = ''
-                            element.style.border = ''
-                            element.style.borderColor = ''
-                            element.style.borderWidth = ''
-                        }
-                    }
-
-                    for (const decoration of decorations) {
-                        const line = decoration.range.start.line + 1
-                        const codeCell = domFunctions.getCodeElementFromLineNumber(codeView, line)
-                        if (!codeCell) {
-                            continue
-                        }
-                        const row = codeCell.parentElement as HTMLTableRowElement
-                        let decorated = false
-                        const style = decorationStyleForTheme(decoration, this.props.isLightTheme)
-                        if (style.backgroundColor) {
-                            row.style.backgroundColor = style.backgroundColor
-                            decorated = true
-                        }
-                        if (style.border) {
-                            row.style.border = style.border
-                            decorated = true
-                        }
-                        if (style.borderColor) {
-                            row.style.borderColor = style.borderColor
-                            decorated = true
-                        }
-                        if (style.borderWidth) {
-                            row.style.borderWidth = style.borderWidth
-                            decorated = true
-                        }
-                        if (decorated) {
-                            decoratedElements.push(row)
-                        }
-
-                        if (decoration.after) {
-                            const codeCell = row.cells[1]
-                            this.createLineDecorationAttachmentDOMNode(line, codeCell)
-                        }
-                    }
-                } else {
-                    decoratedElements = []
-                }
-            })
-        )
-    }
-
-    private getLSPTextDocumentPositionParams(
-        position: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
-    ): RepoSpec & RevisionSpec & ResolvedRevisionSpec & FileSpec & UIPositionSpec & ModeSpec {
-        return {
-            repoName: position.repoName,
-            filePath: position.filePath,
-            commitID: position.commitID,
-            revision: position.revision,
-            mode: this.props.mode,
-            position,
-        }
-    }
-
-    /**
-     * Appends a {@link LineDecorationAttachment} portal DOM node to the given code cell if it doesn't contain one
-     * already.
-     *
-     * @param line 1-indexed line number
-     * @param codeCell The `<td class="code">` element
-     */
-    private createLineDecorationAttachmentDOMNode(line: number, codeCell: HTMLElement): void {
-        if (codeCell.querySelector('.line-decoration-attachment-portal')) {
-            return
-        }
-        const portalNode = document.createElement('div')
-
-        const id = toPortalID(line)
-        portalNode.id = id
-        portalNode.classList.add('line-decoration-attachment-portal')
-
-        codeCell.append(portalNode)
-
-        this.setState(state => ({
-            lineDecorationAttachmentIDs: {
-                ...state.lineDecorationAttachmentIDs,
-                [line]: id,
-            },
-        }))
-    }
-
-    public componentDidMount(): void {
-        this.componentUpdates.next(this.props)
-    }
-
-    public shouldComponentUpdate(nextProps: Readonly<BlobProps>, nextState: Readonly<BlobState>): boolean {
-        return !isEqual(this.props, nextProps) || !isEqual(this.state, nextState)
-    }
-
-    public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
-    }
-
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    public render(): React.ReactNode {
-        const { decorationsOrError } = this.state
-        const groupedDecorations =
-            decorationsOrError && !isErrorLike(decorationsOrError) && groupDecorationsByLine(decorationsOrError)
-
-        const rend =
-            groupedDecorations &&
-            iterate(groupedDecorations)
-                .map(([line, decorations]) => {
-                    const portalID = toPortalID(line)
-                    return (
-                        <LineDecorator
-                            isLightTheme={this.props.isLightTheme}
-                            key={`${portalID}-${this.props.blobInfo.filePath}`}
-                            portalID={portalID}
-                            getCodeElementFromLineNumber={domFunctions.getCodeElementFromLineNumber}
-                            line={line}
-                            decorations={decorations}
-                            codeViewReference={codeViewReference}
-                            codeViewElements={this.codeViewElements}
-                        />
-                    )
-                })
-                .toArray()
-
-        return (
-            <div className={`blob ${this.props.className}`} ref={this.nextBlobElement}>
-                <code
-                    className={`blob__code ${this.props.wrapCode ? ' blob__code--wrapped' : ''} test-blob`}
-                    ref={this.nextCodeViewElement}
-                    dangerouslySetInnerHTML={{ __html: this.props.html }}
-                />
-                {this.state.hoverOverlayProps && (
-                    <WebHoverOverlay
-                        {...this.props}
-                        {...this.state.hoverOverlayProps}
-                        hoverRef={this.nextOverlayElement}
-                        telemetryService={this.props.telemetryService}
-                        onCloseButtonClick={this.nextCloseButtonClick}
-                    />
-                )}
-            </div>
-        )
     }
 }

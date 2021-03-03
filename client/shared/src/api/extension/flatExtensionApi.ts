@@ -400,7 +400,7 @@ export const initNewExtensionAPI = (
 
         // MODELS
 
-        //  TODO(tj): if not exists?
+        //  TODO(tj): if not exists? doesn't seem that we can guarantee that just based on uri
         addViewerIfNotExists: viewerData => {
             const viewerId = `viewer#${state.lastViewerId++}`
             if (viewerData.type === 'CodeEditor') {
@@ -451,8 +451,6 @@ export const initNewExtensionAPI = (
         },
 
         addTextDocumentIfNotExists: textDocumentData => {
-            console.log('adding document', { ms: Date.now() })
-
             if (state.textDocuments.has(textDocumentData.uri)) {
                 return
             }

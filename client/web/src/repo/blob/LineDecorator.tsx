@@ -9,7 +9,7 @@ import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { isDefined, property } from '../../../../shared/src/util/types'
-import { Observable } from 'rxjs'
+import { Observable, ReplaySubject } from 'rxjs'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { filter, finalize, map, tap } from 'rxjs/operators'
 
@@ -18,8 +18,7 @@ export interface LineDecoratorProps extends ThemeProps {
     line: number
     portalID: string
     decorations: TextDocumentDecoration[]
-    codeViewReference: React.MutableRefObject<HTMLElement | null | undefined>
-    codeViewElements: Observable<HTMLElement | null>
+    codeViewElements: ReplaySubject<HTMLElement | null>
     getCodeElementFromLineNumber: (codeView: HTMLElement, line: number) => HTMLTableCellElement | null
 }
 
@@ -27,40 +26,7 @@ export interface LineDecoratorProps extends ThemeProps {
  * Component that decorates lines of code and appends line attachments set by extensions
  */
 export const LineDecorator = React.memo<LineDecoratorProps>(
-    ({
-        getCodeElementFromLineNumber,
-        line,
-        decorations,
-        codeViewReference,
-        portalID,
-        isLightTheme,
-        codeViewElements,
-    }) => {
-        const [newPortalNode, setNewPortalNode] = React.useState<HTMLDivElement | null>(null)
-
-        // TODO(tj): consider useLayoutEffect to sub to replaysubject
-        useObservable(
-            useMemo(
-                () =>
-                    codeViewElements.pipe(
-                        map(codeView => {
-                            // if (!codeView) {
-                            //     // clear
-                            //     newPortalNode?.remove()
-                            //     setNewPortalNode(newPortal => {
-                            //         newPortal?.remove()
-                            //         return null
-                            //     })
-                            // }
-                        }),
-                        finalize(fd => {
-                            newPortalNode?.remove()
-                        })
-                    ),
-                [codeViewElements]
-            )
-        )
-
+    ({ getCodeElementFromLineNumber, line, decorations, portalID, isLightTheme, codeViewElements }) => {
         const [portalNode, setPortalNode] = React.useState<HTMLDivElement | null>(null)
 
         // `LineDecorator` uses `useLayoutEffect` instead of `useEffect` in order to synchronously re-render
@@ -70,78 +36,75 @@ export const LineDecorator = React.memo<LineDecoratorProps>(
 
         // Create portal node and attach to code cell
         useLayoutEffect(() => {
-            // code view ref should always be set at this point
-            if (codeViewReference.current) {
-                const codeCell = getCodeElementFromLineNumber(codeViewReference.current, line)
+            let innerPortalNode: HTMLDivElement | null = null
+            let decoratedElements: HTMLElement[] = []
 
-                const innerPortalNode =
-                    portalNode ??
-                    // First render, create portalNode
-                    (() => {
-                        const innerPortalNode = document.createElement('div')
-                        innerPortalNode.id = portalID
-                        innerPortalNode.classList.add('line-decoration-attachment-portal')
-                        return innerPortalNode
-                    })()
-
-                if (innerPortalNode.parentElement !== codeCell) {
-                    codeCell?.append(innerPortalNode)
-                    setPortalNode(innerPortalNode)
-                }
-            }
-
+            // TODO(tj): confirm that this fixes theme toggle decorations bug (probably should, since we have references observable now)
             const subscription = codeViewElements.subscribe(codeView => {
                 if (codeView) {
+                    const codeCell = getCodeElementFromLineNumber(codeView, line)
+                    const row = codeCell?.parentElement as HTMLTableRowElement | undefined
+
+                    // Clear previous decoration styles if exists
+                    for (const element of decoratedElements) {
+                        element.style.backgroundColor = ''
+                        element.style.border = ''
+                        element.style.borderColor = ''
+                        element.style.borderWidth = ''
+                    }
+
+                    // Apply line decoration styles
+                    if (row) {
+                        for (const decoration of decorations) {
+                            let decorated = false
+                            const style = decorationStyleForTheme(decoration, isLightTheme)
+                            if (style.backgroundColor) {
+                                row.style.backgroundColor = style.backgroundColor
+                                decorated = true
+                            }
+                            if (style.border) {
+                                row.style.border = style.border
+                                decorated = true
+                            }
+                            if (style.borderColor) {
+                                row.style.borderColor = style.borderColor
+                                decorated = true
+                            }
+                            if (style.borderWidth) {
+                                row.style.borderWidth = style.borderWidth
+                                decorated = true
+                            }
+                            if (decorated) {
+                                decoratedElements.push(row)
+                            }
+                        }
+                    } else {
+                        decoratedElements = []
+                    }
+
+                    // Create portal
+                    // Remove existing portal node if exists
+                    innerPortalNode?.remove()
+                    innerPortalNode = document.createElement('div')
+                    innerPortalNode.id = portalID
+                    innerPortalNode.classList.add('line-decoration-attachment-portal')
+                    codeCell?.append(innerPortalNode)
+                    setPortalNode(innerPortalNode)
+                } else {
+                    // code view ref passed `null`, so element is leaving DOM
+                    innerPortalNode?.remove()
+                    for (const element of decoratedElements) {
+                        element.style.backgroundColor = ''
+                        element.style.border = ''
+                        element.style.borderColor = ''
+                        element.style.borderWidth = ''
+                    }
                 }
             })
 
             return () => {
                 subscription.unsubscribe()
-                // No portal node to remove on first render
-                portalNode?.remove()
-            }
-        }, [portalNode, getCodeElementFromLineNumber, line, codeViewReference, portalID])
-
-        // Render line decorations
-        useLayoutEffect(() => {
-            let decoratedElements: HTMLElement[] = []
-
-            // Code view ref should always be set at this point
-            if (codeViewReference.current) {
-                const codeCell = getCodeElementFromLineNumber(codeViewReference.current, line)
-                const row = codeCell?.parentElement as HTMLTableRowElement | undefined
-
-                if (row) {
-                    for (const decoration of decorations) {
-                        let decorated = false
-                        const style = decorationStyleForTheme(decoration, isLightTheme)
-                        if (style.backgroundColor) {
-                            row.style.backgroundColor = style.backgroundColor
-                            decorated = true
-                        }
-                        if (style.border) {
-                            row.style.border = style.border
-                            decorated = true
-                        }
-                        if (style.borderColor) {
-                            row.style.borderColor = style.borderColor
-                            decorated = true
-                        }
-                        if (style.borderWidth) {
-                            row.style.borderWidth = style.borderWidth
-                            decorated = true
-                        }
-                        if (decorated) {
-                            decoratedElements.push(row)
-                        }
-                    }
-                }
-            } else {
-                decoratedElements = []
-            }
-
-            return () => {
-                // Clear previous decorations
+                innerPortalNode?.remove()
                 for (const element of decoratedElements) {
                     element.style.backgroundColor = ''
                     element.style.border = ''
@@ -149,7 +112,7 @@ export const LineDecorator = React.memo<LineDecoratorProps>(
                     element.style.borderWidth = ''
                 }
             }
-        }, [decorations, codeViewReference, getCodeElementFromLineNumber, isLightTheme, line])
+        }, [getCodeElementFromLineNumber, codeViewElements, line, portalID, decorations, isLightTheme])
 
         if (!portalNode) {
             return null
