@@ -745,14 +745,10 @@ func (r *searchResolver) evaluateOr(ctx context.Context, scopeParameters []query
 		return nil, nil
 	}
 
-	var countStr string
 	wantCount := defaultMaxSearchResults
-	query.VisitField(scopeParameters, "count", func(value string, _ bool, _ query.Annotation) {
-		countStr = value
+	query.VisitField(scopeParameters, query.FieldCount, func(value string, _ bool, _ query.Annotation) {
+		wantCount, _ = strconv.Atoi(value) // Invariant: count is validated.
 	})
-	if countStr != "" {
-		wantCount, _ = strconv.Atoi(countStr) // Invariant: count is validated.
-	}
 
 	result, err := r.evaluatePatternExpression(ctx, scopeParameters, operands[0])
 	if err != nil {
@@ -872,15 +868,10 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	var countStr string
 	wantCount := defaultMaxSearchResults
 	query.VisitField(r.Query, query.FieldCount, func(value string, _ bool, _ query.Annotation) {
-		wantCount, _ = strconv.Atoi(countStr)
-		countStr = value
+		wantCount, _ = strconv.Atoi(value)
 	})
-	if countStr != "" {
-		wantCount, _ = strconv.Atoi(countStr) // Invariant: count is validated.
-	}
 
 	if invalidateRepoCache(r.Query) {
 		r.invalidateRepoCache = true
