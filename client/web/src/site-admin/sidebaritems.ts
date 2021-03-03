@@ -111,11 +111,11 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
         },
         {
             label: 'Instrumentation',
-            to: '/-/debug/grafana',
+            to: '/-/debug/',
         },
         {
             label: 'Monitoring',
-            to: '/-/debug',
+            to: '/-/debug/grafana',
         },
         {
             label: 'Tracing',
@@ -132,7 +132,7 @@ export const extensionsGroup: SiteAdminSideBarGroup = {
     items: [
         {
             label: 'Extensions',
-            to: '/some/extensions',
+            to: '/site-admin/registry/extensions',
         },
     ],
 }
