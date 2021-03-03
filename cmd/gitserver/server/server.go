@@ -33,6 +33,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -267,9 +268,21 @@ func (s *Server) Handler() http.Handler {
 	return mux
 }
 
-// Janitor does clean up tasks over s.ReposDir.
-func (s *Server) Janitor() {
-	s.cleanupRepos()
+// Janitor does clean up tasks over s.ReposDir and is expected to run in a
+// background goroutine.
+func (s *Server) Janitor(interval time.Duration) {
+	for {
+		s.cleanupRepos()
+		time.Sleep(interval)
+	}
+}
+
+// SyncRepoState syncs state on disk to the database for all repos and is expected to
+// run in a background goroutine.
+func (s *Server) SyncRepoState(interval time.Duration, db dbutil.DB) {
+	for {
+		time.Sleep(interval)
+	}
 }
 
 // Stop cancels the running background jobs and returns when done.
