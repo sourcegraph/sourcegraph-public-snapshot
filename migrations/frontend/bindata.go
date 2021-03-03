@@ -116,6 +116,8 @@
 // 1528395789_add_encryption_key_ident.up.sql (116B)
 // 1528395790_create_gitserver_repos.down.sql (55B)
 // 1528395790_create_gitserver_repos.up.sql (313B)
+// 1528395791_add_user_public_repos.down.sql (57B)
+// 1528395791_add_user_public_repos.up.sql (318B)
 // 1528395791_insights_query_runner_jobs_record_time.down.sql (81B)
 // 1528395791_insights_query_runner_jobs_record_time.up.sql (92B)
 
@@ -2506,6 +2508,46 @@ func _1528395790_create_gitserver_reposUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395791_add_user_public_reposDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x2d\x4e\x2d\x8a\x2f\x28\x4d\xca\xc9\x4c\x8e\x2f\x4a\x2d\xc8\x2f\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x7b\x56\x0c\x79\x39\x00\x00\x00")
+
+func _1528395791_add_user_public_reposDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395791_add_user_public_reposDownSql,
+		"1528395791_add_user_public_repos.down.sql",
+	)
+}
+
+func _1528395791_add_user_public_reposDownSql() (*asset, error) {
+	bytes, err := _1528395791_add_user_public_reposDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395791_add_user_public_repos.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x38, 0x14, 0x37, 0x23, 0x3, 0xc0, 0x9, 0x8, 0xd7, 0xe0, 0x9c, 0xb9, 0x24, 0x2c, 0xc2, 0x79, 0x21, 0xa1, 0xaa, 0x3c, 0x54, 0x7b, 0x45, 0x8d, 0x6a, 0xb, 0xd5, 0x59, 0x72, 0xb7, 0x30, 0x4d}}
+	return a, nil
+}
+
+var __1528395791_add_user_public_reposUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\x90\xc1\x4a\xc4\x30\x18\x84\xef\x79\x8a\x39\xb6\xb0\x6f\xb0\xa7\x6c\x76\xba\x04\xb3\x09\xa6\x29\xe8\xa9\xa0\x06\x09\x88\x96\xb4\x05\x1f\x5f\xd2\x56\x41\x68\xaf\xf3\xfd\xf3\x31\xfc\x17\xde\xb4\x3d\x0b\xa1\x3c\x65\x20\x82\xbc\x18\x42\x37\xb0\x2e\x80\x4f\xba\x0d\x2d\xe6\x31\xe6\x7e\x98\x5f\x3e\xd2\x6b\x9f\xe3\xf0\x35\xa2\x12\x00\xd6\x3c\xbd\x21\x7d\x4e\xf1\x3d\xe6\xa5\x62\x3b\x63\x4e\x0b\x2d\x97\xfd\x9c\x13\xa6\xf8\x3d\xed\xb1\xc3\x66\x67\xf5\x63\xc7\x6a\xd3\x9f\xfe\x4c\xf5\x8a\x1b\xe7\xa9\x6f\x16\x0f\x7c\xc6\xef\x51\x0d\xcf\x86\x9e\x56\x71\xdd\x3b\xa2\x2a\xa9\xb3\xb8\xd2\x30\x10\x4a\xb6\x4a\x5e\xb9\xa3\xd8\xc6\xfc\x53\x94\xec\xc0\x20\xea\xf2\x2d\x77\xbf\xeb\x70\x16\x3f\x01\x00\x00\xff\xff\xc7\x9d\xd5\xd7\x3e\x01\x00\x00")
+
+func _1528395791_add_user_public_reposUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395791_add_user_public_reposUpSql,
+		"1528395791_add_user_public_repos.up.sql",
+	)
+}
+
+func _1528395791_add_user_public_reposUpSql() (*asset, error) {
+	bytes, err := _1528395791_add_user_public_reposUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395791_add_user_public_repos.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xa8, 0xee, 0x86, 0xf, 0x72, 0xda, 0x56, 0xde, 0xa9, 0x42, 0xf0, 0x3b, 0xa5, 0x71, 0x3, 0x7b, 0x3e, 0x2c, 0x40, 0x9c, 0x3c, 0x30, 0xe8, 0x35, 0x11, 0x62, 0x72, 0x3c, 0xf7, 0x5c, 0xb1, 0x33}}
+	return a, nil
+}
+
 var __1528395791_insights_query_runner_jobs_record_timeDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\xcc\x2b\xce\x4c\xcf\x28\x29\x8e\x2f\x2c\x4d\x2d\xaa\x8c\x2f\x2a\xcd\xcb\x4b\x2d\x8a\xcf\xca\x4f\x2a\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\x28\x4a\x4d\xce\x2f\x4a\x89\x2f\xc9\xcc\x4d\xb5\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xdf\x3f\xd9\xad\x51\x00\x00\x00")
 
 func _1528395791_insights_query_runner_jobs_record_timeDownSqlBytes() ([]byte, error) {
@@ -2753,6 +2795,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395789_add_encryption_key_ident.up.sql":                                             _1528395789_add_encryption_key_identUpSql,
 	"1528395790_create_gitserver_repos.down.sql":                                             _1528395790_create_gitserver_reposDownSql,
 	"1528395790_create_gitserver_repos.up.sql":                                               _1528395790_create_gitserver_reposUpSql,
+	"1528395791_add_user_public_repos.down.sql":                                              _1528395791_add_user_public_reposDownSql,
+	"1528395791_add_user_public_repos.up.sql":                                                _1528395791_add_user_public_reposUpSql,
 	"1528395791_insights_query_runner_jobs_record_time.down.sql":                             _1528395791_insights_query_runner_jobs_record_timeDownSql,
 	"1528395791_insights_query_runner_jobs_record_time.up.sql":                               _1528395791_insights_query_runner_jobs_record_timeUpSql,
 }
@@ -2917,6 +2961,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395789_add_encryption_key_ident.up.sql":                                             {_1528395789_add_encryption_key_identUpSql, map[string]*bintree{}},
 	"1528395790_create_gitserver_repos.down.sql":                                             {_1528395790_create_gitserver_reposDownSql, map[string]*bintree{}},
 	"1528395790_create_gitserver_repos.up.sql":                                               {_1528395790_create_gitserver_reposUpSql, map[string]*bintree{}},
+	"1528395791_add_user_public_repos.down.sql":                                              {_1528395791_add_user_public_reposDownSql, map[string]*bintree{}},
+	"1528395791_add_user_public_repos.up.sql":                                                {_1528395791_add_user_public_reposUpSql, map[string]*bintree{}},
 	"1528395791_insights_query_runner_jobs_record_time.down.sql":                             {_1528395791_insights_query_runner_jobs_record_timeDownSql, map[string]*bintree{}},
 	"1528395791_insights_query_runner_jobs_record_time.up.sql":                               {_1528395791_insights_query_runner_jobs_record_timeUpSql, map[string]*bintree{}},
 }}
