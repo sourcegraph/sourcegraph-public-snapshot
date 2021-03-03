@@ -97,4 +97,4 @@ cmd/indexer/debug
 
 # Web
 node_modules/
-/client/web
+/client/app-web

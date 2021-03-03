@@ -9,7 +9,7 @@ module.exports = {
     'client/extension-browser/jest.config.js',
     'client/ui-kit-legacy-shared/jest.config.js',
     'client/ui-kit-legacy-branded/jest.config.js',
-    'client/web/jest.config.js',
+    'client/app-web/jest.config.js',
     '.storybook/jest.config.js',
   ],
 }

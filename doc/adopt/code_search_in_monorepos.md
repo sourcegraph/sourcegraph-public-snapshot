@@ -17,7 +17,7 @@ Here are the best arguments for using a code search tool on a monorepo, from mon
 
 **Scenario:** You're deep in flow, but then a team member asks you a question about how some other code works, or something like that.
 
-- 🤬 Using your editor's search, you can find the answer. But then how do you share that with your team member? Screenshot your editor? Type out "see lines 38-40 of `client/web/src/user/account/AccountForm.tsx` …"?
+- 🤬 Using your editor's search, you can find the answer. But then how do you share that with your team member? Screenshot your editor? Type out "see lines 38-40 of `client/app-web/src/user/account/AccountForm.tsx` …"?
 - 😊 With a code search tool, you'd just copy the URL and paste it to the other person. They can visit the link and see what you mean instantly.
 
 **Another scenario:** You're coding and come across a bug that, upon a quick search in your editor, is present in dozens of files (such as a typo, function misuse, etc.).
@@ -47,7 +47,7 @@ It might *seem* like staying in a single tool (your editor) means staying in flo
 - 😊 A separate code search tool would let you quickly triage a bug on any branch without changing your local branch or affecting your dev setup.
 - 😊 The code search tool can show much more helpful code context, such as [Git blame information after each line](https://sourcegraph.com/extensions/sourcegraph/git-extras), [code coverage overlays](https://sourcegraph.com/extensions/sourcegraph/codecov), runtime info from [Datadog](https://sourcegraph.com/extensions/sourcegraph/datadog-metrics)/[LightStep](https://sourcegraph.com/extensions/sourcegraph/lightstep)/[Sentry](https://sourcegraph.com/extensions/sourcegraph/sentry)/etc., static analysis and lint results from [SonarQube](https://sourcegraph.com/extensions/sourcegraph/sonarqube), and more. You could configure some of these things to display in your editor, but that's cumbersome and they're noisy for the majority of the time when you're writing code.
 - 😊 A code search tool does all the hard work (indexing and analysis) on the server beforehand, so your local machine remains fast and responsive.
- 
+
     > "The JetBrains IDEs have great search capabilities. However, indexing a large repo is slow and draining on even a powerful MacBook Pro, and that happens every time you switch to another branch."
 - 😊 If you identify a likely culprit (such as a problematic line of code) via code search, it's easy to get a permalink to that line to add to the bug report.
 

@@ -65,7 +65,7 @@
 <!-- web_app -->
 <g id="node1" class="node">
 <title>web_app</title>
-<g id="a_node1"><a xlink:href="https://github.com/sourcegraph/sourcegraph/tree/main/client/web" xlink:title="Web App\n(SPA)" target="_blank">
+<g id="a_node1"><a xlink:href="https://github.com/sourcegraph/sourcegraph/tree/main/client/app-web" xlink:title="Web App\n(SPA)" target="_blank">
 <ellipse fill="#fff0d0" stroke="black" cx="119" cy="-844" rx="36" ry="36"/>
 <text text-anchor="middle" x="119" y="-847" font-family="Iosevka" font-size="10.00">Web App</text>
 <text text-anchor="middle" x="119" y="-836" font-family="Iosevka" font-size="10.00">(SPA)</text>

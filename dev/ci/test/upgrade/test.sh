@@ -51,6 +51,6 @@ echo "TEST: Checking Sourcegraph instance is accessible"
 curl -f http://localhost:7080
 curl -f http://localhost:7080/healthz
 echo "TEST: Running tests"
-pushd client/web
+pushd client/app-web
 yarn run test:regression:core
 popd

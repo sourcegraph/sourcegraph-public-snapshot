@@ -15,7 +15,7 @@ vendor/
 out/
 dist/
 client/ui-kit-legacy-shared/src/graphqlschema.ts
-client/web/src/schema/
+client/app-web/src/schema/
 ts-node-*
 testdata
 .github/*

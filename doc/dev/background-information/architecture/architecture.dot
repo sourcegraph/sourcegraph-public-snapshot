@@ -43,7 +43,7 @@ digraph architecture {
             fillcolor="#fff0d0"
         ]
 
-        web_app [label="Web App\n(SPA)" URL="https://github.com/sourcegraph/sourcegraph/tree/main/client/web"]
+        web_app [label="Web App\n(SPA)" URL="https://github.com/sourcegraph/sourcegraph/tree/main/client/app-web"]
         browser_ext [label="Browser\nExtensions" URL="https://github.com/sourcegraph/sourcegraph/tree/main/client/extension-browser/"]
         src_cli [label="src-cli" URL="https://github.com/sourcegraph/src-cli"]
         native_integrations [label="Native\nIntegrations"]

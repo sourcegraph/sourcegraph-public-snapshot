@@ -102,7 +102,7 @@ package-lock.json
 coverage/
 out/
 client/ui-kit-legacy-shared/src/graphql/schema.ts
-client/web/src/schema/*
+client/app-web/src/schema/*
 puppeteer/
 package-lock.json
 /dist
@@ -112,21 +112,21 @@ graphql-operations.ts
 
 # We use symlinks in the deeper node_modules to share the same .bin as the root (for CLI tools)
 # unignore node_modules itself
-!/client/web/node_modules
+!/client/app-web/node_modules
 !/client/ui-kit-legacy-shared/node_modules
 !/client/ui-kit-legacy-branded/node_modules
 !/client/extension-browser/node_modules
 !/client/extension-api/node_modules
 !/client/extension-api-types/node_modules
 # ignore everything inside node_modules
-/client/web/node_modules/*
+/client/app-web/node_modules/*
 /client/ui-kit-legacy-shared/node_modules/*
 /client/ui-kit-legacy-branded/node_modules/*
 /client/extension-browser/node_modules/*
 /client/extension-api/node_modules/*
 /client/extension-api-types/node_modules/*
 # except .bin
-!/client/web/node_modules/.bin
+!/client/app-web/node_modules/.bin
 !/client/ui-kit-legacy-shared/node_modules/.bin
 !/client/ui-kit-legacy-branded/node_modules/.bin
 !/client/extension-browser/node_modules/.bin

@@ -17,13 +17,13 @@ coverage:
           - enterprise/cmd/frontend/internal/campaigns
           - internal/campaigns
           - enterprise/internal/campaigns
-          - client/web/src/enterprise/campaigns
+          - client/app-web/src/enterprise/campaigns
       search:
         informational: true
         paths:
           - client/ui-kit-legacy-shared/src/search
-          - client/web/src/enterprise/search
-          - client/web/src/search
+          - client/app-web/src/enterprise/search
+          - client/app-web/src/search
           - cmd/frontend/graphqlbackend/*search*
           - cmd/frontend/internal/search
           - cmd/searcher

@@ -71,7 +71,7 @@ describe('getDiffFileName()', () => {
         'github.com': {
             commit: 'doc/dev/incidents.md',
             'pull-request-discussion': 'web/src/regression/util/TestResourceManager.ts',
-            'pull-request': 'packages/extension-api/src/sourcegraph.d.ts',
+            'pull-request': 'packages/sourcegraph-extension-api/src/sourcegraph.d.ts',
         },
         'ghe-2.14.11': {
             commit: 'mux.go',

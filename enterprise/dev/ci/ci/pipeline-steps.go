@@ -46,19 +46,19 @@ func addLint(pipeline *bk.Pipeline) {
 func addWebApp(pipeline *bk.Pipeline) {
 	// Webapp build
 	pipeline.AddStep(":webpack::globe_with_meridians: Build",
-		bk.Cmd("dev/ci/yarn-build.sh client/web"),
+		bk.Cmd("dev/ci/yarn-build.sh client/app-web"),
 		bk.Env("NODE_ENV", "production"),
 		bk.Env("ENTERPRISE", "0"))
 
 	// Webapp enterprise build
 	pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build",
-		bk.Cmd("dev/ci/yarn-build.sh client/web"),
+		bk.Cmd("dev/ci/yarn-build.sh client/app-web"),
 		bk.Env("NODE_ENV", "production"),
 		bk.Env("ENTERPRISE", "1"))
 
 	// Webapp tests
 	pipeline.AddStep(":jest::globe_with_meridians: Test",
-		bk.Cmd("dev/ci/yarn-test.sh client/web"),
+		bk.Cmd("dev/ci/yarn-test.sh client/app-web"),
 		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
 }
 

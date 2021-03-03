@@ -23,7 +23,7 @@ Prerequisites:
 Run the tests:
 
 1. From the repository root directory, `cd web` and then `yarn` and `yarn generate`.
-1. From the repository root directory, `cd client/web`.
+1. From the repository root directory, `cd client/app-web`.
 1. Create a `.envrc` file using the information in the 1Password Shared vault (look for `test:regression envrc` note.), and run `direnv allow` after.
 1. Run `yarn run test:regression`.
 1. You should see a Chrome window pop up and the tests will play in that window. The initial run may
