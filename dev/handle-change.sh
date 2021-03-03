@@ -3,7 +3,6 @@
 set -e
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
-generate_graphql=false
 generate_monitoring=false
 generate_schema=false
 cmdlist=()
@@ -13,7 +12,8 @@ failed=false
 for i; do
   case $i in
     "cmd/frontend/graphqlbackend/schema.graphql")
-      generate_graphql=true
+      # We assume that frontend needs to be rebuilt when the schema changes, and add it to the list.
+      cmdlist+=("frontend")
       ;;
     monitoring/*)
       generate_monitoring=true
@@ -49,7 +49,6 @@ for i; do
   esac
 done
 
-$generate_graphql && { go generate github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend || failed=true; }
 $generate_monitoring && { pushd monitoring >/dev/null && go generate && popd >/dev/null || failed=true; }
 $generate_schema && { go generate github.com/sourcegraph/sourcegraph/schema || failed=true; }
 
