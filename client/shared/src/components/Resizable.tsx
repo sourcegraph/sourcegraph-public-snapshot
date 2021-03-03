@@ -29,9 +29,9 @@ export const Resizable: React.FunctionComponent<Props> = ({ children, defaultSiz
     const onMouseMove = useCallback(
         (event: MouseEvent): void => {
             if (isResizable && reference.current) {
-                if (position === 'left') {
+                if (position === 'right') {
                     setSize(event.pageX - reference.current.getBoundingClientRect().left)
-                } else if (position === 'right') {
+                } else if (position === 'left') {
                     setSize(reference.current.getBoundingClientRect().right - event.pageX)
                 } else if (position === 'top') {
                     setSize(reference.current.getBoundingClientRect().bottom - event.pageY)
@@ -67,15 +67,15 @@ export const Resizable: React.FunctionComponent<Props> = ({ children, defaultSiz
             {children}
             <div
                 onMouseDown={onMouseDown}
-                className="d-flex border-left"
+                className={classnames(
+                    {
+                        'resizable--top': position === 'top',
+                        'resizable--left': position === 'left',
+                        'resizable--right': position === 'right',
+                    },
+                    'd-flex border-left'
+                )}
                 aria-hidden={true}
-                style={{
-                    borderLeft: '5px',
-                    borderColor: 'red',
-                    borderStyle: 'solid',
-                    cursor: position === 'top' ? 'row-resize' : 'col-resize',
-                    zIndex: 1,
-                }}
             />
         </div>
     )

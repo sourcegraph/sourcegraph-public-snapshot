@@ -51,7 +51,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
 
     return (
         // eslint-disable-next-line react/forbid-dom-props
-        <Resizable defaultSize={256} position="left">
+        <Resizable defaultSize={256} position="right">
             <Tabs className="w-100" defaultIndex={tabIndex} onChange={handleTabsChange}>
                 <div className="d-flex">
                     <TabList>

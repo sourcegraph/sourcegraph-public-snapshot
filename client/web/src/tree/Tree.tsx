@@ -338,9 +338,6 @@ export class Tree extends React.PureComponent<Props, State> {
 
     private selectNode = (node: TreeNode): void => {
         if (node) {
-            // const root = (this.props.scrollRootSelector
-            //     ? document.querySelector(this.props.scrollRootSelector)
-            //     : document.querySelector('.tree-container')) as HTMLElement
             const element = getDomElement(node.path)
             if (element) {
                 element.scrollIntoView({ block: 'start', inline: 'start' })

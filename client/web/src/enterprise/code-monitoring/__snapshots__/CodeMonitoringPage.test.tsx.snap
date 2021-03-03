@@ -4359,7 +4359,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                   </small>
                 </p>
                 <button
-                  className="btn btn-secondary btn-sm filtered-connection__show-more"
+                  className="btn btn-secondary btn-sm filtered-connection__show-more position-sticky"
                   onClick={[Function]}
                   type="button"
                 >
