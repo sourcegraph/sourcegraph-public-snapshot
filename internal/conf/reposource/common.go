@@ -10,7 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 // RepoSource is a wrapper around a repository source (typically a code host config) that provides a
@@ -27,6 +27,25 @@ type RepoSource interface {
 	CloneURLToRepoName(cloneURL string) (repoName api.RepoName, err error)
 }
 
+var nonSCPURLRegex = lazyregexp.New(`^(git\+)?(https?|ssh|rsync|file|git)://`)
+
+// parseCloneURL parses a git clone URL into a URL struct. It supports the SCP-style git@host:path
+// syntax that is common among code hosts.
+func parseCloneURL(cloneURL string) (*url.URL, error) {
+	if nonSCPURLRegex.MatchString(cloneURL) {
+		return url.Parse(cloneURL)
+	}
+
+	// Support SCP-style syntax
+	u, err := url.Parse("fake://" + strings.Replace(cloneURL, ":", "/", 1))
+	if err != nil {
+		return nil, err
+	}
+	u.Scheme = ""
+	u.Path = strings.TrimPrefix(u.Path, "/")
+	return u, nil
+}
+
 // hostname returns the hostname of a URL without www.
 func hostname(url *url.URL) string {
 	return strings.TrimPrefix(url.Hostname(), "www.")
@@ -35,7 +54,6 @@ func hostname(url *url.URL) string {
 // parseURLs parses the clone URL and repository host base URL into structs. It also returns a
 // boolean indicating whether the hostnames of the URLs match.
 func parseURLs(cloneURL, baseURL string) (parsedCloneURL, parsedBaseURL *url.URL, equalHosts bool, err error) {
-
 	if baseURL != "" {
 		parsedBaseURL, err = url.Parse(baseURL)
 		if err != nil {
@@ -44,13 +62,10 @@ func parseURLs(cloneURL, baseURL string) (parsedCloneURL, parsedBaseURL *url.URL
 		parsedBaseURL = extsvc.NormalizeBaseURL(parsedBaseURL)
 	}
 
-	parsedCloneURL, err = vcs.ParseURL(cloneURL)
+	parsedCloneURL, err = parseCloneURL(cloneURL)
 	if err != nil {
 		return nil, nil, false, fmt.Errorf("Error parsing cloneURL: %s", err)
 	}
-	// Normalize clone URL like base URL
-	parsedCloneURL.Host = strings.ToLower(parsedCloneURL.Host)
-
 	hostsMatch := parsedBaseURL != nil && hostname(parsedBaseURL) == hostname(parsedCloneURL)
 	return parsedCloneURL, parsedBaseURL, hostsMatch, nil
 }
