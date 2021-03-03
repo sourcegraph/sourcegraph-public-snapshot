@@ -25,7 +25,7 @@ import {
 import { OnboardingTourProps } from '../../search'
 import { AuthenticatedUser } from '../../auth'
 import { UserAreaUserFields } from '../../graphql-operations'
-import { StatusBadge, BadgeStatus } from '../../components/StatusBadge'
+import { Badge, BadgeStatus } from '../../components/Badge'
 
 export interface UserSettingsSidebarItemConditionContext {
     user: UserAreaUserFields
@@ -83,8 +83,8 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                     {props.items.account.map(
                         ({ label, to, exact, status, condition = () => true }) =>
                             condition(context) && (
-                                <SidebarNavItem key={label} to={props.match.path + to} exact={exact}>
-                                    {label} {status && <StatusBadge className="ml-1 d-inline-flex" status={status} />}
+                                <SidebarNavItem key={label} to={props.match.path + to} exact={exact} className="d-flex">
+                                    {label} {status && <Badge className="ml-1" status={status} />}
                                 </SidebarNavItem>
                             )
                     )}
