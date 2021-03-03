@@ -1071,6 +1071,8 @@ const (
 	TagAllowUserExternalServicePrivate = "AllowUserExternalServicePrivate"
 	// If the owner of an external service has this tag, the service is allowed to sync public code only
 	TagAllowUserExternalServicePublic = "AllowUserExternalServicePublic"
+	// If the user is allowed to load debug assets (eg. webpack dev server running locally)
+	TagAllowDebugAssets = "AllowDebugAssets"
 )
 
 // SetTag adds (present=true) or removes (present=false) a tag from the given user's set of tags. An
