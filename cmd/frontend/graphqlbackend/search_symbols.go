@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -263,7 +262,7 @@ func unescapePattern(pattern string) string {
 // data member that currently exposes line content: the symbols Pattern member,
 // which has the form /^ ... $/. We find the offset of the symbol name in this
 // line, after escaping the Pattern.
-func computeSymbolOffset(s protocol.Symbol) int {
+func computeSymbolOffset(s result.Symbol) int {
 	if s.Pattern == "" {
 		return 0
 	}
@@ -274,7 +273,7 @@ func computeSymbolOffset(s protocol.Symbol) int {
 	return 0
 }
 
-func symbolRange(s protocol.Symbol) lsp.Range {
+func symbolRange(s result.Symbol) lsp.Range {
 	offset := computeSymbolOffset(s)
 	return lsp.Range{
 		Start: lsp.Position{Line: s.Line - 1, Character: offset},

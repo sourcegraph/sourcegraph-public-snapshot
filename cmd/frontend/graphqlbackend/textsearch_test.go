@@ -28,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
-	symbolprotocol "github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -481,9 +480,9 @@ func TestSelect(t *testing.T) {
 	data := FileMatchResolver{
 		FileMatch: result.FileMatch{
 			Symbols: []*result.SearchSymbolResult{
-				{Symbol: symbolprotocol.Symbol{Name: "a()", Kind: "func"}},
-				{Symbol: symbolprotocol.Symbol{Name: "b()", Kind: "function"}},
-				{Symbol: symbolprotocol.Symbol{Name: "var c", Kind: "variable"}},
+				{Symbol: result.Symbol{Name: "a()", Kind: "func"}},
+				{Symbol: result.Symbol{Name: "b()", Kind: "function"}},
+				{Symbol: result.Symbol{Name: "var c", Kind: "variable"}},
 			},
 		},
 	}

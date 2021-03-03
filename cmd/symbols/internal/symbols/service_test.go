@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
 	symbolsclient "github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
@@ -82,8 +83,8 @@ func TestService(t *testing.T) {
 	server := httptest.NewServer(service.Handler())
 	defer server.Close()
 	client := symbolsclient.Client{URL: server.URL}
-	x := protocol.Symbol{Name: "x", Path: "a.js"}
-	y := protocol.Symbol{Name: "y", Path: "a.js"}
+	x := result.Symbol{Name: "x", Path: "a.js"}
+	y := result.Symbol{Name: "y", Path: "a.js"}
 
 	tests := map[string]struct {
 		args search.SymbolsParameters
@@ -91,11 +92,11 @@ func TestService(t *testing.T) {
 	}{
 		"simple": {
 			args: search.SymbolsParameters{First: 10},
-			want: protocol.SearchResult{Symbols: []protocol.Symbol{x, y}},
+			want: protocol.SearchResult{Symbols: []result.Symbol{x, y}},
 		},
 		"onematch": {
 			args: search.SymbolsParameters{Query: "x", First: 10},
-			want: protocol.SearchResult{Symbols: []protocol.Symbol{x}},
+			want: protocol.SearchResult{Symbols: []result.Symbol{x}},
 		},
 		"nomatches": {
 			args: search.SymbolsParameters{Query: "foo", First: 10},
@@ -103,11 +104,11 @@ func TestService(t *testing.T) {
 		},
 		"caseinsensitiveexactmatch": {
 			args: search.SymbolsParameters{Query: "^X$", First: 10},
-			want: protocol.SearchResult{Symbols: []protocol.Symbol{x}},
+			want: protocol.SearchResult{Symbols: []result.Symbol{x}},
 		},
 		"casesensitiveexactmatch": {
 			args: search.SymbolsParameters{Query: "^x$", IsCaseSensitive: true, First: 10},
-			want: protocol.SearchResult{Symbols: []protocol.Symbol{x}},
+			want: protocol.SearchResult{Symbols: []result.Symbol{x}},
 		},
 		"casesensitivenoexactmatch": {
 			args: search.SymbolsParameters{Query: "^X$", IsCaseSensitive: true, First: 10},
@@ -115,11 +116,11 @@ func TestService(t *testing.T) {
 		},
 		"caseinsensitiveexactpathmatch": {
 			args: search.SymbolsParameters{IncludePatterns: []string{"^A.js$"}, First: 10},
-			want: protocol.SearchResult{Symbols: []protocol.Symbol{x, y}},
+			want: protocol.SearchResult{Symbols: []result.Symbol{x, y}},
 		},
 		"casesensitiveexactpathmatch": {
 			args: search.SymbolsParameters{IncludePatterns: []string{"^a.js$"}, IsCaseSensitive: true, First: 10},
-			want: protocol.SearchResult{Symbols: []protocol.Symbol{x, y}},
+			want: protocol.SearchResult{Symbols: []result.Symbol{x, y}},
 		},
 		"casesensitivenoexactpathmatch": {
 			args: search.SymbolsParameters{IncludePatterns: []string{"^A.js$"}, IsCaseSensitive: true, First: 10},
