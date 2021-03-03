@@ -65,7 +65,7 @@ func TestNullIDResilience(t *testing.T) {
 		fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } }`, marshalBatchChangeID(0)),
 		fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, marshalChangesetID(0)),
 		fmt.Sprintf(`mutation { reenqueueChangeset(changeset: %q) { id } }`, marshalChangesetID(0)),
-		fmt.Sprintf(`mutation { applyCampaign(campaignSpec: %q) { id } }`, marshalBatchSpecRandID("")),
+		fmt.Sprintf(`mutation { applyBatchChange(batchSpec: %q) { id } }`, marshalBatchSpecRandID("")),
 		fmt.Sprintf(`mutation { createBatchChange(batchSpec: %q) { id } }`, marshalBatchSpecRandID("")),
 		fmt.Sprintf(`mutation { moveCampaign(campaign: %q, newName: "foobar") { id } }`, marshalBatchChangeID(0)),
 		fmt.Sprintf(`mutation { createCampaignsCredential(externalServiceKind: GITHUB, externalServiceURL: "http://test", credential: "123123", user: %q) { id } }`, graphqlbackend.MarshalUserID(0)),
@@ -331,7 +331,7 @@ mutation($changesetSpec: String!){
 }
 `
 
-func TestApplyCampaign(t *testing.T) {
+func TestApplyBatchChange(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -396,12 +396,12 @@ func TestApplyCampaign(t *testing.T) {
 
 	userAPIID := string(graphqlbackend.MarshalUserID(userID))
 	input := map[string]interface{}{
-		"campaignSpec": string(marshalBatchSpecRandID(campaignSpec.RandID)),
+		"batchSpec": string(marshalBatchSpecRandID(campaignSpec.RandID)),
 	}
 
-	var response struct{ ApplyCampaign apitest.BatchChange }
+	var response struct{ ApplyBatchChange apitest.BatchChange }
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
-	apitest.MustExec(actorCtx, t, s, input, &response, mutationApplyCampaign)
+	apitest.MustExec(actorCtx, t, s, input, &response, mutationApplyBatchChange)
 
 	apiUser := &apitest.User{
 		ID:         userAPIID,
@@ -409,7 +409,7 @@ func TestApplyCampaign(t *testing.T) {
 		SiteAdmin:  true,
 	}
 
-	have := response.ApplyCampaign
+	have := response.ApplyBatchChange
 	want := apitest.BatchChange{
 		ID:          have.ID,
 		Name:        campaignSpec.Spec.Name,
@@ -435,38 +435,38 @@ func TestApplyCampaign(t *testing.T) {
 	}
 
 	// Now we execute it again and make sure we get the same campaign back
-	apitest.MustExec(actorCtx, t, s, input, &response, mutationApplyCampaign)
-	have2 := response.ApplyCampaign
+	apitest.MustExec(actorCtx, t, s, input, &response, mutationApplyBatchChange)
+	have2 := response.ApplyBatchChange
 	if diff := cmp.Diff(want, have2); diff != "" {
 		t.Fatalf("unexpected response (-want +got):\n%s", diff)
 	}
 
-	// Execute it again with ensureCampaign set to correct campaign's ID
-	input["ensureCampaign"] = have2.ID
-	apitest.MustExec(actorCtx, t, s, input, &response, mutationApplyCampaign)
-	have3 := response.ApplyCampaign
+	// Execute it again with ensureBatchChange set to correct campaign's ID
+	input["ensureBatchChange"] = have2.ID
+	apitest.MustExec(actorCtx, t, s, input, &response, mutationApplyBatchChange)
+	have3 := response.ApplyBatchChange
 	if diff := cmp.Diff(want, have3); diff != "" {
 		t.Fatalf("unexpected response (-want +got):\n%s", diff)
 	}
 
-	// Execute it again but ensureCampaign set to wrong campaign ID
+	// Execute it again but ensureBatchChange set to wrong campaign ID
 	campaignID, err := unmarshalBatchChangeID(graphql.ID(have3.ID))
 	if err != nil {
 		t.Fatal(err)
 	}
-	input["ensureCampaign"] = marshalBatchChangeID(campaignID + 999)
-	errs := apitest.Exec(actorCtx, t, s, input, &response, mutationApplyCampaign)
+	input["ensureBatchChange"] = marshalBatchChangeID(campaignID + 999)
+	errs := apitest.Exec(actorCtx, t, s, input, &response, mutationApplyBatchChange)
 	if len(errs) == 0 {
 		t.Fatalf("expected errors, got none")
 	}
 }
 
-const mutationApplyCampaign = `
+const mutationApplyBatchChange = `
 fragment u on User { id, databaseID, siteAdmin }
 fragment o on Org  { id, name }
 
-mutation($campaignSpec: ID!, $ensureCampaign: ID){
-  applyCampaign(campaignSpec: $campaignSpec, ensureCampaign: $ensureCampaign) {
+mutation($batchSpec: ID!, $ensureBatchChange: ID){
+  applyBatchChange(batchSpec: $batchSpec, ensureBatchChange: $ensureBatchChange) {
     id, name, description
     initialApplier    { ...u }
     lastApplier       { ...u }

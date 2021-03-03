@@ -559,9 +559,9 @@ func TestPermissionLevels(t *testing.T) {
 				},
 			},
 			{
-				name: "applyCampaign",
+				name: "applyBatchChange",
 				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
-					return fmt.Sprintf(`mutation { applyCampaign(campaignSpec: %q) { id } }`, campaignSpecID)
+					return fmt.Sprintf(`mutation { applyBatchChange(batchSpec: %q) { id } }`, campaignSpecID)
 				},
 			},
 			{

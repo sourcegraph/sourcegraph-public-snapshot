@@ -9431,7 +9431,7 @@ extend type Mutation {
         deleted). The returned error has the error code ErrEnsureCampaignFailed.
         """
         ensureCampaign: ID
-    ): Campaign!
+    ): Campaign! @deprecated(reason: "campaigns have been renamed to batch changes. Use applyBatchChange instead.")
 
     """
     Move a campaign to a different namespace, or rename it in the current namespace.
@@ -9704,6 +9704,29 @@ extend type Mutation {
         """
         changesetSpecs: [ID!]!
     ): BatchSpec! @deprecated(reason: "campaigns have been renamed to batch changes. Use createBatchSpec instead.")
+
+    """
+    Create or update a batch change from a batch spec and locally computed changeset specs. If no
+    batch change exists in the namespace with the name given in the batch spec, a batch change will be
+    created. Otherwise, the existing batch change will be updated. The batch change is returned.
+    Closed batch changes cannot be applied to. In that case, an error with the error code ErrApplyClosedbatch change
+    will be returned.
+    """
+    applyBatchChange(
+        """
+        The batch spec that describes the new desired state of the batch change.
+        """
+        batchSpec: ID!
+
+        """
+        If set, return an error if the batch change identified using the namespace and batch changeSpec
+        parameters does not match the batch change with this ID. This lets callers use a stable ID
+        that refers to a specific batch change during an edit session (and is not susceptible to
+        conflicts if the underlying batch change is moved to a different namespace, renamed, or
+        deleted). The returned error has the error code ErrEnsureBatchChangeFailed.
+        """
+        ensureBatchChange: ID
+    ): BatchChange!
 }
 
 extend type Query {

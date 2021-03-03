@@ -288,7 +288,7 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 // New
 func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.CreateBatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {
 	var err error
-	tr, _ := trace.New(ctx, "Resolver.CreateCampaign", fmt.Sprintf("CampaignSpec %s", args.BatchSpec))
+	tr, _ := trace.New(ctx, "Resolver.CreateBatchChange", fmt.Sprintf("BatchSpec %s", args.BatchSpec))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -329,8 +329,15 @@ func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.C
 }
 
 func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.ApplyCampaignArgs) (graphqlbackend.BatchChangeResolver, error) {
+	return r.ApplyBatchChange(ctx, &graphqlbackend.ApplyBatchChangeArgs{
+		BatchSpec:         args.CampaignSpec,
+		EnsureBatchChange: args.EnsureCampaign,
+	})
+}
+
+func (r *Resolver) ApplyBatchChange(ctx context.Context, args *graphqlbackend.ApplyBatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {
 	var err error
-	tr, ctx := trace.New(ctx, "Resolver.ApplyCampaign", fmt.Sprintf("CampaignSpec %s", args.CampaignSpec))
+	tr, ctx := trace.New(ctx, "Resolver.ApplyBatchChange", fmt.Sprintf("BatchSpec %s", args.BatchSpec))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -342,7 +349,7 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 
 	opts := service.ApplyCampaignOpts{}
 
-	opts.CampaignSpecRandID, err = unmarshalBatchSpecID(args.CampaignSpec)
+	opts.CampaignSpecRandID, err = unmarshalBatchSpecID(args.BatchSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -351,8 +358,8 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 		return nil, ErrIDIsZero{}
 	}
 
-	if args.EnsureCampaign != nil {
-		opts.EnsureCampaignID, err = unmarshalBatchChangeID(*args.EnsureCampaign)
+	if args.EnsureBatchChange != nil {
+		opts.EnsureCampaignID, err = unmarshalBatchChangeID(*args.EnsureBatchChange)
 		if err != nil {
 			return nil, err
 		}
