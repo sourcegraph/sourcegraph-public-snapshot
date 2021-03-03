@@ -193,6 +193,8 @@ export interface FlatExtensionHostAPI {
      * Emits true when the initial batch of extensions have been loaded.
      */
     haveInitialExtensionsLoaded: () => ProxySubscribable<boolean>
+
+    getActiveExtensions: () => ProxySubscribable<ConfiguredExtension[]>
 }
 
 /**

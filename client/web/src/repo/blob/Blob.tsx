@@ -135,6 +135,7 @@ const domFunctions = {
  * Renders a code view augmented by Sourcegraph extensions
  *
  * Documentation:
+ *
  * What is the difference between blobInfoChanges and viewerUpdates?
  *
  * - blobInfoChanges: emits when document info has loaded from the backend (including raw HTML)
@@ -201,25 +202,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     // Emits on blob info changes to update extension host model
     const blobInfoChanges = useMemo(() => new ReplaySubject<BlobInfo>(1), [])
     const nextBlobInfoChange = useCallback((blobInfo: BlobInfo) => blobInfoChanges.next(blobInfo), [blobInfoChanges])
-
-    // What is the difference between blobInfoChanges and viewerUpdates?
-
-    // - blobInfoChanges: emits when document info has loaded from the backend (including raw HTML)
-    // - viewerUpdates: emits when the extension host confirms that it knows about the current viewer.
-    // message to extension host is sent on each blobInfo change, and when that message receives a response
-    // with the viewerId (handle to viewer on extension host side), viewerUpdates emits it along with
-    // other data (such as subscriptions, extension host API) relevant to observers for this viewer.
-    //
-    // The possible states that Blob can be in:
-    // - "extension host bootstrapping": Initial page load, the initial set of extensions
-    // haven't been loaded yet. Regardless of whether or not the extension host knows about
-    // the current viewer, users can't interact with extensions yet.
-    // - "extension host ready": Extensions have loaded, extension host knows about the current viewer
-    // - "extension host loading viewer": Extensions have loaded, but the extension host
-    // doesn't know about the current viewer yet. We know that we are in this state
-    // when blobInfo changes. On entering this state, clear resources from
-    // previous viewer (e.g. hoverifier subscription, line decorations). If we don't remove extension features
-    // in this state, hovers can lead to errors like `DocumentNotFoundError`.
 
     const viewerUpdates = useMemo(
         () =>

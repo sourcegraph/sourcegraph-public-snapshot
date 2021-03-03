@@ -296,6 +296,27 @@ export const initNewExtensionAPI = (
         return viewer
     }
 
+    const enabledExtensions = wrapRemoteObservable(mainAPI.getEnabledExtensions())
+    const activatedExtensionIDs = new Set<string>()
+
+    const activeExtensions: Observable<ConfiguredExtension[]> = combineLatest([
+        state.activeLanguages,
+        enabledExtensions,
+    ]).pipe(
+        tap(([activeLanguages, enabledExtensions]) => {
+            const activeExtensions = extensionsWithMatchedActivationEvent(enabledExtensions, activeLanguages)
+            for (const extension of activeExtensions) {
+                if (!activatedExtensionIDs.has(extension.id)) {
+                    activatedExtensionIDs.add(extension.id)
+                }
+            }
+        }),
+        map(([, extensions]) =>
+            extensions ? extensions.filter(extension => activatedExtensionIDs.has(extension.id)) : []
+        ),
+        distinctUntilChanged((a, b) => areExtensionsSame(a, b))
+    )
+
     const exposedToMain: FlatExtensionHostAPI = {
         haveInitialExtensionsLoaded: () => proxySubscribable(state.haveInitialExtensionsLoaded.asObservable()),
 
@@ -563,6 +584,8 @@ export const initNewExtensionAPI = (
         // Notifications
         getPlainNotifications: () => proxySubscribable(state.plainNotifications.asObservable()),
         getProgressNotifications: () => proxySubscribable(state.progressNotifications.asObservable()),
+
+        getActiveExtensions: () => proxySubscribable(activeExtensions),
     }
 
     // Configuration
@@ -736,28 +759,6 @@ export const initNewExtensionAPI = (
 
     state.contributions.subscribe(entries => console.log('exthostcontributions', entries))
 
-    const enabledExtensions = wrapRemoteObservable(mainAPI.getEnabledExtensions())
-    const activatedExtensionIDs = new Set<string>()
-
-    const activeExtensions: Observable<ConfiguredExtension[]> = combineLatest([
-        state.activeLanguages,
-        enabledExtensions,
-    ]).pipe(
-        tap(([activeLanguages, enabledExtensions]) => {
-            console.log('checking active in host')
-            console.log({ activeLanguages })
-            const activeExtensions = extensionsWithMatchedActivationEvent(enabledExtensions, activeLanguages)
-            for (const extension of activeExtensions) {
-                if (!activatedExtensionIDs.has(extension.id)) {
-                    activatedExtensionIDs.add(extension.id)
-                }
-            }
-        }),
-        map(([, extensions]) =>
-            extensions ? extensions.filter(extension => activatedExtensionIDs.has(extension.id)) : []
-        ),
-        distinctUntilChanged((a, b) => areExtensionsSame(a, b))
-    )
     // expose activeExtensions to main for global debug, but also subscribe to it to
     // determine which extensions to activate
 
@@ -777,8 +778,8 @@ export const initNewExtensionAPI = (
     )
 
     const previouslyActivatedExtensions = new Set<string>()
-    const cachedScriptURLs = new Map<string, string>()
-    activeExtensions
+    const extensionContributions = new Map<string, Contributions>()
+    const subscription = activeExtensions
         .pipe(
             withLatestFrom(getScriptURLs(null)),
             concatMap(([activeExtensions, getScriptURLs]) => {
@@ -802,82 +803,86 @@ export const initNewExtensionAPI = (
                     }
                 }
 
-                // maybe concat map?
-
-                // make it an array in the first place
-                const toActivateArray = [...toActivate.values()]
-
-                // todo: move this to tap or sub
-                for (const [id] of toActivate) {
-                    previouslyActivatedExtensions.add(id)
-                }
-                for (const id of toDeactivate) {
-                    previouslyActivatedExtensions.delete(id)
-                }
-
-                console.log({ toActivate, toDeactivate })
                 return from(
-                    getScriptURLs(toActivateArray.map(extension => getScriptURLFromExtensionManifest(extension))).then(
-                        scriptURLs => {
-                            // TODO(tj): add to scriptURL cache
-                            const executableExtensionsToActivate: ExecutableExtension[] = toActivateArray
-                                .map((extension, index) => ({
-                                    id: extension.id,
-                                    manifest: extension.manifest,
-                                    scriptURL: scriptURLs[index],
-                                }))
-                                .filter(
-                                    (extension): extension is ExecutableExtension =>
-                                        typeof extension.scriptURL === 'string'
-                                )
-                            // log bundle url errors on main thread
-                            return { toActivate: executableExtensionsToActivate, toDeactivate }
-                        }
-                    )
+                    getScriptURLs(
+                        [...toActivate.values()].map(extension => getScriptURLFromExtensionManifest(extension))
+                    ).then(scriptURLs => {
+                        // TODO: (not urgent) add scriptURL cache
+
+                        const executableExtensionsToActivate: ExecutableExtension[] = [...toActivate.values()]
+                            .map((extension, index) => ({
+                                id: extension.id,
+                                manifest: extension.manifest,
+                                scriptURL: scriptURLs[index],
+                            }))
+                            .filter(
+                                (extension): extension is ExecutableExtension => typeof extension.scriptURL === 'string'
+                            )
+
+                        return { toActivate: executableExtensionsToActivate, toDeactivate }
+                    })
                 ).pipe(
-                    tap(({ toActivate }) =>
-                        toActivate.map(extension => {
+                    tap(({ toActivate }) => {
+                        // Register extension contributions before loading extensions
+                        // so that contributed UI elements are visible ASAP
+                        for (const extension of toActivate) {
                             if (
                                 extension.manifest &&
                                 !isErrorLike(extension.manifest) &&
                                 extension.manifest.contributes
                             ) {
-                                exposedToMain.registerContributions(extension.manifest.contributes)
+                                const parsedContributions = parseContributionExpressions(extension.manifest.contributes)
+                                extensionContributions.set(extension.id, parsedContributions)
+                                state.contributions.next([...state.contributions.value, parsedContributions])
                             }
-                        })
+                        }
+                    }),
+                    map(({ toActivate, toDeactivate }) =>
+                        from(
+                            Promise.all([
+                                toActivate.map(({ id, scriptURL }) =>
+                                    activateExtension(id, scriptURL).catch(error =>
+                                        console.error(`Error activating extension ${id}: ${error}`)
+                                    )
+                                ),
+                                [...toDeactivate].map(id =>
+                                    deactivateExtension(id).catch(error =>
+                                        console.error(`Error deactivating extension ${id}: ${error}`)
+                                    )
+                                ),
+                            ])
+                        )
                     ),
-                    map(({ toActivate }) =>
-                        // TODO(tj): do three things:
-                        // register contributions, activate extensions, deactivate extensions
-                        // consider how to make contributions easy to batch add + remove by extension ID...
-                        from(Promise.all(toActivate.map(({ id, scriptURL }) => activateExtension(id, scriptURL))))
-                    ),
-                    tap(() => console.log('areExtensionFeaturesLoading activated all exts in host', { ms: Date.now() }))
+                    map(() => ({ activated: toActivate, deactivated: toDeactivate })),
+                    catchError(error => {
+                        console.error(`Uncaught error during extension activation: ${error}`)
+                        return []
+                    })
                 )
             })
         )
-        .subscribe(() => {
-            // what to do when there r NO extensions?
+        .subscribe(({ activated, deactivated }) => {
+            const contributionsToRemove = [...deactivated].map(id => extensionContributions.get(id)).filter(Boolean)
+
+            for (const id of deactivated) {
+                previouslyActivatedExtensions.delete(id)
+                extensionContributions.delete(id)
+            }
+
+            for (const [id] of activated) {
+                previouslyActivatedExtensions.add(id)
+            }
+
+            if (contributionsToRemove.length) {
+                state.contributions.next(
+                    state.contributions.value.filter(contributions => !contributionsToRemove.includes(contributions))
+                )
+            }
+
             if (state.haveInitialExtensionsLoaded.value === false) {
                 state.haveInitialExtensionsLoaded.next(true)
             }
-
-            // add to/remove from previously activated extensions
         })
-
-    // register extension contributions. try to find a way to prevent the original
-    // "unsub existing on registration" problem.
-    // maybe just remove support for observable entries! that's major indirection
-    // since all we really want is:
-    // activate extension -> fetch manifest -> register contributions (raw, will be parsed)
-
-    // TJ note: try to more aggresively optimize now that more stuff is done on the
-    // extension host side; minimize transfer weight!
-
-    // consider how to avoid postMessage roundtrips for platforms that dont need this.
-    // so I've reduced latency for platforms that don't need this, but how about for platforms that do?
-    // batching?
-    // NOW I've implemented batching, refactor
 
     return {
         configuration: Object.assign(state.settings.pipe(mapTo(undefined)), {
