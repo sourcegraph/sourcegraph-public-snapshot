@@ -7,10 +7,11 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/lsif-protocol/reader"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/datastructures"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/lsif"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/protocol"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/protocol/reader"
 )
 
 func TestCorrelate(t *testing.T) {
@@ -34,56 +35,56 @@ func TestCorrelate(t *testing.T) {
 		RangeData: map[int]lsif.Range{
 			4: {
 				Range: reader.Range{
-					StartLine:      1,
-					StartCharacter: 2,
-					EndLine:        3,
-					EndCharacter:   4,
+					RangeData: protocol.RangeData{
+						Start: protocol.Pos{Line: 1, Character: 2},
+						End:   protocol.Pos{Line: 3, Character: 4},
+					},
 				},
 				DefinitionResultID: 13,
 			},
 			5: {
 				Range: reader.Range{
-					StartLine:      2,
-					StartCharacter: 3,
-					EndLine:        4,
-					EndCharacter:   5,
+					RangeData: protocol.RangeData{
+						Start: protocol.Pos{Line: 2, Character: 3},
+						End:   protocol.Pos{Line: 4, Character: 5},
+					},
 				},
 				ReferenceResultID: 15,
 			},
 			6: {
 				Range: reader.Range{
-					StartLine:      3,
-					StartCharacter: 4,
-					EndLine:        5,
-					EndCharacter:   6,
+					RangeData: protocol.RangeData{
+						Start: protocol.Pos{Line: 3, Character: 4},
+						End:   protocol.Pos{Line: 5, Character: 6},
+					},
 				},
 				DefinitionResultID: 13,
 				HoverResultID:      17,
 			},
 			7: {
 				Range: reader.Range{
-					StartLine:      4,
-					StartCharacter: 5,
-					EndLine:        6,
-					EndCharacter:   7,
+					RangeData: protocol.RangeData{
+						Start: protocol.Pos{Line: 4, Character: 5},
+						End:   protocol.Pos{Line: 6, Character: 7},
+					},
 				},
 				ReferenceResultID: 15,
 			},
 			8: {
 				Range: reader.Range{
-					StartLine:      5,
-					StartCharacter: 6,
-					EndLine:        7,
-					EndCharacter:   8,
+					RangeData: protocol.RangeData{
+						Start: protocol.Pos{Line: 5, Character: 6},
+						End:   protocol.Pos{Line: 7, Character: 8},
+					},
 				},
 				HoverResultID: 17,
 			},
 			9: {
 				Range: reader.Range{
-					StartLine:      6,
-					StartCharacter: 7,
-					EndLine:        8,
-					EndCharacter:   9,
+					RangeData: protocol.RangeData{
+						Start: protocol.Pos{Line: 6, Character: 7},
+						End:   protocol.Pos{Line: 8, Character: 9},
+					},
 				},
 			},
 		},

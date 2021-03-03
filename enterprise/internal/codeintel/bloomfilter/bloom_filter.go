@@ -138,16 +138,16 @@ func index(b int32) (int32, int32) {
 func hashLocations(v string, m, k int32) []int32 {
 	a := fowlerNollVo1a(v, 0)
 	b := fowlerNollVo1a(v, 1576284489) // The seed value is chosen randomly
-	x := a % int32(m)
+	x := a % m
 	r := make([]int32, k)
 
 	for i := int32(0); i < k; i++ {
 		if x < 0 {
-			r[i] = x + int32(m)
+			r[i] = x + m
 		} else {
 			r[i] = x
 		}
-		x = (x + b) % int32(m)
+		x = (x + b) % m
 	}
 
 	return r
@@ -164,7 +164,7 @@ func fowlerNollVo1a(v string, seed int32) int32 {
 	for _, r := range utf16Runes(v) {
 		c := int64(r)
 		if d := c & 0xff00; d != 0 {
-			a = fowlerNollVoMultiply(int32(a ^ int64(d>>8)))
+			a = fowlerNollVoMultiply(int32(a ^ d>>8))
 		}
 		a = fowlerNollVoMultiply(int32(a) ^ int32(c&0xff))
 	}

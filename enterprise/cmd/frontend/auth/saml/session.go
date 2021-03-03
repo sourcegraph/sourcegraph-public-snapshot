@@ -6,6 +6,7 @@ import (
 
 	"github.com/beevik/etree"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -29,7 +30,7 @@ func SignOut(w http.ResponseWriter, r *http.Request) (logoutURL string, err erro
 	}
 	{
 		if data, err := doc.WriteToString(); err == nil {
-			traceLog(fmt.Sprintf("LogoutRequest: %s", p.ConfigID().ID), string(data))
+			traceLog(fmt.Sprintf("LogoutRequest: %s", p.ConfigID().ID), data)
 		}
 	}
 	return p.samlSP.BuildAuthURLRedirect("/", doc)

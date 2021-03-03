@@ -11,11 +11,11 @@ import (
 	"strconv"
 
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/codeintelutils"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
+	codeintelutils "github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/utils"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"

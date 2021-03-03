@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
@@ -238,7 +239,7 @@ func (o dbExtensionsListOptions) sqlConditions() []*sqlf.Query {
 func (o dbExtensionsListOptions) sqlOrder() []*sqlf.Query {
 	ids := make([]*sqlf.Query, len(o.PrioritizeExtensionIDs)+1)
 	for i, id := range o.PrioritizeExtensionIDs {
-		ids[i] = sqlf.Sprintf("%v", string(id))
+		ids[i] = sqlf.Sprintf("%v", id)
 	}
 	ids[len(o.PrioritizeExtensionIDs)] = sqlf.Sprintf("NULL")
 	return []*sqlf.Query{sqlf.Sprintf(extensionIDExpr+` IN (%v) ASC`, sqlf.Join(ids, ","))}

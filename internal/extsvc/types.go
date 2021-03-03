@@ -246,6 +246,19 @@ type AccountID string
 // Server) or a GraphQL ID (e.g. GitHub) depends on the code host type.
 type RepoID string
 
+// RepoIDType indicates the type of the RepoID.
+type RepoIDType string
+
+const (
+	// RepoIDExact indicates the RepoID is an exact match, e.g.
+	// "github.com/alice/repo" can only identify itself.
+	RepoIDExact RepoIDType = "exact"
+	// RepoIDPrefix indicates the RepoID is a prefix match, e.g. "//Sourcegraph/"
+	// can identify "//Sourcegraph/CoreApp", "//Sourcegraph/Backend" and everything
+	// starts with it.
+	RepoIDPrefix RepoIDType = "prefix"
+)
+
 // ParseConfig attempts to unmarshal the given JSON config into a configuration struct defined in the schema package.
 func ParseConfig(kind, config string) (cfg interface{}, _ error) {
 	switch strings.ToUpper(kind) {

@@ -27,10 +27,19 @@ interface Props {
     byline?: React.ReactNode
     /** Align additional content (e.g. buttons) alongside the heading */
     actions?: React.ReactNode
+    /** Heading element to use, defaults to h1 */
+    headingElement?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
     className?: string
 }
 
-export const PageHeader: React.FunctionComponent<Props> = ({ annotation, path, byline, actions, className }) => {
+export const PageHeader: React.FunctionComponent<Props> = ({
+    annotation,
+    path,
+    byline,
+    actions,
+    className,
+    headingElement: HeadingX = 'h1',
+}) => {
     if (path.length === 0) {
         return null
     }
@@ -44,7 +53,7 @@ export const PageHeader: React.FunctionComponent<Props> = ({ annotation, path, b
         >
             <div>
                 {annotation && <small className="text-muted d-block mb-2">{annotation}</small>}
-                <h1 className="flex-grow-1 d-block m-0">
+                <HeadingX className="flex-grow-1 d-block m-0">
                     {path.map(({ to, text, icon: Icon }, index) => (
                         <React.Fragment key={index}>
                             {index !== 0 && <span className="mr-2 text-muted">/</span>}
@@ -54,7 +63,7 @@ export const PageHeader: React.FunctionComponent<Props> = ({ annotation, path, b
                             </LinkOrSpan>
                         </React.Fragment>
                     ))}
-                </h1>
+                </HeadingX>
                 {byline && <small className="text-muted d-block mt-1">{byline}</small>}
             </div>
             {actions && <div className="mt-3 mt-md-0">{actions}</div>}

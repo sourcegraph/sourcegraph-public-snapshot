@@ -4,9 +4,10 @@ import (
 	"context"
 	"sync"
 
+	"go.uber.org/atomic"
+
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"go.uber.org/atomic"
 )
 
 // SearchEvent is an event on a search stream. It contains fields which can be

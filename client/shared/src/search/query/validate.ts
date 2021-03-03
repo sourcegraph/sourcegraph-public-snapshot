@@ -1,3 +1,4 @@
+import { FilterType } from './filters'
 import { scanSearchQuery } from './scanner'
 import { Filter } from './token'
 
@@ -52,4 +53,14 @@ export const findFilter = (query: string, field: string, kind: FilterKind): Filt
         }
     }
     return kind === FilterKind.Global ? filter : undefined
+}
+
+export function isContextFilterInQuery(query: string): boolean {
+    const scannedQuery = scanSearchQuery(query)
+    return (
+        scannedQuery.type === 'success' &&
+        scannedQuery.term.some(
+            token => token.type === 'filter' && token.field.value.toLowerCase() === FilterType.context
+        )
+    )
 }

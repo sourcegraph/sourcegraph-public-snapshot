@@ -1,4 +1,7 @@
 .org-settings-profile-page {
+    &__heading {
+        margin-bottom: 0.875rem;
+    }
     &__updated-text {
         opacity: 0;
         transition: opacity 500ms ease-out;

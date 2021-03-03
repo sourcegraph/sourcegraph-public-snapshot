@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"github.com/sourcegraph/go-lsp"
+
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
 

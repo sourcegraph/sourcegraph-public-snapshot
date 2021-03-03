@@ -114,6 +114,10 @@
 // 1528395788_campaigns_ssh_key_migration.up.sql (272B)
 // 1528395789_add_encryption_key_ident.down.sql (88B)
 // 1528395789_add_encryption_key_ident.up.sql (116B)
+// 1528395790_create_gitserver_repos.down.sql (55B)
+// 1528395790_create_gitserver_repos.up.sql (313B)
+// 1528395791_insights_query_runner_jobs_record_time.down.sql (81B)
+// 1528395791_insights_query_runner_jobs_record_time.up.sql (92B)
 
 package migrations
 
@@ -2462,6 +2466,86 @@ func _1528395789_add_encryption_key_identUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395790_create_gitserver_reposDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xcf\x2c\x29\x4e\x2d\x2a\x4b\x2d\x8a\x2f\x4a\x2d\xc8\x2f\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xfd\x48\x48\x12\x37\x00\x00\x00")
+
+func _1528395790_create_gitserver_reposDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395790_create_gitserver_reposDownSql,
+		"1528395790_create_gitserver_repos.down.sql",
+	)
+}
+
+func _1528395790_create_gitserver_reposDownSql() (*asset, error) {
+	bytes, err := _1528395790_create_gitserver_reposDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395790_create_gitserver_repos.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x52, 0xaf, 0xd8, 0x12, 0x54, 0x35, 0x92, 0xf, 0xc5, 0xa0, 0x21, 0xee, 0x20, 0x6a, 0x2f, 0xe0, 0x2e, 0x36, 0xc9, 0x61, 0x45, 0x38, 0x66, 0xc2, 0x93, 0x47, 0xc7, 0x84, 0x21, 0x1e, 0x70, 0x8e}}
+	return a, nil
+}
+
+var __1528395790_create_gitserver_reposUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x54\x90\xcd\x4a\x03\x31\x14\x85\xf7\x79\x8a\xb3\x6b\x0b\xbe\x41\x57\x6d\xb9\xd5\xe0\xfc\xc8\x4c\x44\xeb\x26\xc4\x26\xd6\x40\x9a\x0c\xc9\x1d\xed\xe3\xcb\xcc\x80\xe8\x2e\x9c\x9c\xef\xde\x8f\xbb\xa7\x7b\xd9\x6c\x85\x38\x74\xb4\x53\x04\xb5\xdb\x57\x04\x79\x44\xd3\x2a\xd0\xab\xec\x55\x8f\x8b\xe7\xe2\xf2\x97\xcb\x3a\xbb\x21\x15\xb1\x16\x00\x30\xbd\xb5\xb7\xf0\x91\xd1\xd1\x91\x3a\x6a\x0e\xd4\xcf\xf1\xda\xdb\x0d\x9e\x3a\x59\xef\xba\x13\x1e\xe9\x74\x37\x03\xe7\x90\xa2\xd3\x85\x0d\x8f\x05\xec\x6e\x3c\xef\x68\x9e\xab\x0a\xd6\x7d\x98\x31\x30\x56\x31\xb1\x9e\x7b\x76\xb5\x40\xc1\x14\xd6\xee\xc6\x2e\x47\x13\xf4\xa4\xe1\xcf\x0e\xef\xfe\xe2\x23\x2f\x8d\xf2\x69\xb2\x9d\x44\xfe\x8d\xfc\x4b\xe7\x9c\xf2\xfc\xbb\x84\xe3\x60\x0d\x3b\xab\x0d\x83\xfd\xd5\x15\x36\xd7\x01\x2f\x52\x3d\x40\xc9\x9a\xf0\xd6\x36\xf4\x2b\x14\xd3\xf7\x7a\x83\x98\x18\x71\x0c\x41\x6c\xa6\x43\xb5\x75\x2d\xd5\x56\xfc\x04\x00\x00\xff\xff\x9a\xea\x43\x6d\x39\x01\x00\x00")
+
+func _1528395790_create_gitserver_reposUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395790_create_gitserver_reposUpSql,
+		"1528395790_create_gitserver_repos.up.sql",
+	)
+}
+
+func _1528395790_create_gitserver_reposUpSql() (*asset, error) {
+	bytes, err := _1528395790_create_gitserver_reposUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395790_create_gitserver_repos.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x20, 0x5a, 0xce, 0x50, 0x7b, 0xee, 0xb1, 0xa2, 0x48, 0xed, 0xbd, 0x5, 0x59, 0x84, 0xef, 0x97, 0x83, 0x10, 0xd3, 0x1, 0x5c, 0xf5, 0x62, 0x66, 0xd8, 0x9a, 0xff, 0xa1, 0xb9, 0x54, 0x60, 0x8d}}
+	return a, nil
+}
+
+var __1528395791_insights_query_runner_jobs_record_timeDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\xcc\x2b\xce\x4c\xcf\x28\x29\x8e\x2f\x2c\x4d\x2d\xaa\x8c\x2f\x2a\xcd\xcb\x4b\x2d\x8a\xcf\xca\x4f\x2a\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\x28\x4a\x4d\xce\x2f\x4a\x89\x2f\xc9\xcc\x4d\xb5\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xdf\x3f\xd9\xad\x51\x00\x00\x00")
+
+func _1528395791_insights_query_runner_jobs_record_timeDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395791_insights_query_runner_jobs_record_timeDownSql,
+		"1528395791_insights_query_runner_jobs_record_time.down.sql",
+	)
+}
+
+func _1528395791_insights_query_runner_jobs_record_timeDownSql() (*asset, error) {
+	bytes, err := _1528395791_insights_query_runner_jobs_record_timeDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395791_insights_query_runner_jobs_record_time.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x4c, 0xd7, 0x8c, 0x4c, 0x8b, 0xc7, 0x56, 0xc8, 0xa7, 0x77, 0x28, 0x49, 0x9f, 0x9e, 0x81, 0x81, 0xa6, 0xf4, 0xdc, 0xf5, 0x16, 0x1b, 0x66, 0x1c, 0xdd, 0x5d, 0xea, 0xa0, 0x2, 0xe3, 0xbe, 0x2b}}
+	return a, nil
+}
+
+var __1528395791_insights_query_runner_jobs_record_timeUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\xcc\x2b\xce\x4c\xcf\x28\x29\x8e\x2f\x2c\x4d\x2d\xaa\x8c\x2f\x2a\xcd\xcb\x4b\x2d\x8a\xcf\xca\x4f\x2a\x56\x70\x74\x71\x51\x70\xf6\xf7\x09\xf5\xf5\x53\x28\x4a\x4d\xce\x2f\x4a\x89\x2f\xc9\xcc\x4d\x55\x00\x11\xc5\x25\x89\xb9\x05\x25\x55\xd6\x5c\x5c\xce\xfe\xbe\xbe\x9e\x21\xd6\x5c\x80\x00\x00\x00\xff\xff\x22\x83\x15\xd2\x5c\x00\x00\x00")
+
+func _1528395791_insights_query_runner_jobs_record_timeUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395791_insights_query_runner_jobs_record_timeUpSql,
+		"1528395791_insights_query_runner_jobs_record_time.up.sql",
+	)
+}
+
+func _1528395791_insights_query_runner_jobs_record_timeUpSql() (*asset, error) {
+	bytes, err := _1528395791_insights_query_runner_jobs_record_timeUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395791_insights_query_runner_jobs_record_time.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x2a, 0x6b, 0x91, 0xaa, 0xdf, 0x12, 0x1a, 0x89, 0x84, 0xc4, 0x9b, 0x63, 0x34, 0xae, 0x2, 0xba, 0xd8, 0x7b, 0xf, 0x2c, 0x88, 0x18, 0xd8, 0xda, 0x62, 0x89, 0xf, 0x8, 0x49, 0x98, 0x67, 0x8d}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2667,6 +2751,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395788_campaigns_ssh_key_migration.up.sql":                                          _1528395788_campaigns_ssh_key_migrationUpSql,
 	"1528395789_add_encryption_key_ident.down.sql":                                           _1528395789_add_encryption_key_identDownSql,
 	"1528395789_add_encryption_key_ident.up.sql":                                             _1528395789_add_encryption_key_identUpSql,
+	"1528395790_create_gitserver_repos.down.sql":                                             _1528395790_create_gitserver_reposDownSql,
+	"1528395790_create_gitserver_repos.up.sql":                                               _1528395790_create_gitserver_reposUpSql,
+	"1528395791_insights_query_runner_jobs_record_time.down.sql":                             _1528395791_insights_query_runner_jobs_record_timeDownSql,
+	"1528395791_insights_query_runner_jobs_record_time.up.sql":                               _1528395791_insights_query_runner_jobs_record_timeUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2827,6 +2915,10 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395788_campaigns_ssh_key_migration.up.sql":                                          {_1528395788_campaigns_ssh_key_migrationUpSql, map[string]*bintree{}},
 	"1528395789_add_encryption_key_ident.down.sql":                                           {_1528395789_add_encryption_key_identDownSql, map[string]*bintree{}},
 	"1528395789_add_encryption_key_ident.up.sql":                                             {_1528395789_add_encryption_key_identUpSql, map[string]*bintree{}},
+	"1528395790_create_gitserver_repos.down.sql":                                             {_1528395790_create_gitserver_reposDownSql, map[string]*bintree{}},
+	"1528395790_create_gitserver_repos.up.sql":                                               {_1528395790_create_gitserver_reposUpSql, map[string]*bintree{}},
+	"1528395791_insights_query_runner_jobs_record_time.down.sql":                             {_1528395791_insights_query_runner_jobs_record_timeDownSql, map[string]*bintree{}},
+	"1528395791_insights_query_runner_jobs_record_time.up.sql":                               {_1528395791_insights_query_runner_jobs_record_timeUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

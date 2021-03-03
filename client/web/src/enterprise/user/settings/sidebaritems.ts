@@ -31,6 +31,8 @@ export const enterpriseUserSettingsSideBarItems: UserSettingsSidebarItems = {
             exact: true,
             condition: ({ authenticatedUser }) => !!authenticatedUser.siteAdmin,
         },
+    ],
+    misc: [
         {
             to: '/event-log',
             label: 'Event log',

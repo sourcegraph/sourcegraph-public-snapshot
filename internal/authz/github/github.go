@@ -68,19 +68,19 @@ func (p *Provider) Validate() (problems []string) {
 // callers to decide whether to discard.
 //
 // API docs: https://developer.github.com/v3/repos/#list-repositories-for-the-authenticated-user
-func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) ([]extsvc.RepoID, error) {
+func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) ([]extsvc.RepoID, extsvc.RepoIDType, error) {
 	if account == nil {
-		return nil, errors.New("no account provided")
+		return nil, extsvc.RepoIDExact, errors.New("no account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
-		return nil, fmt.Errorf("not a code host of the account: want %q but have %q",
+		return nil, extsvc.RepoIDExact, fmt.Errorf("not a code host of the account: want %q but have %q",
 			account.AccountSpec.ServiceID, p.codeHost.ServiceID)
 	}
 
 	_, tok, err := github.GetExternalAccountData(&account.AccountData)
 	if err != nil {
-		return nil, errors.Wrap(err, "get external account data")
+		return nil, extsvc.RepoIDExact, errors.Wrap(err, "get external account data")
 	} else if tok == nil {
-		return nil, errors.New("no token found in the external account data")
+		return nil, extsvc.RepoIDExact, errors.New("no token found in the external account data")
 	}
 
 	// 🚨 SECURITY: Use user token is required to only list repositories the user has access to.
@@ -94,7 +94,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 		var repos []*github.Repository
 		repos, hasNextPage, _, err = client.ListAffiliatedRepositories(ctx, github.VisibilityPrivate, page)
 		if err != nil {
-			return repoIDs, err
+			return repoIDs, extsvc.RepoIDExact, err
 		}
 
 		for _, r := range repos {
@@ -102,7 +102,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 		}
 	}
 
-	return repoIDs, nil
+	return repoIDs, extsvc.RepoIDExact, nil
 }
 
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to

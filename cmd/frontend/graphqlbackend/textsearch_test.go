@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -39,12 +40,12 @@ func TestSearchFilesInRepos(t *testing.T) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
-			return []*FileMatchResolver{mkFileMatchResolver(db, FileMatch{
-				uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+			return []*FileMatchResolver{mkFileMatchResolver(db, result.FileMatch{
+				URI: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
 			})}, false, nil
 		case "foo/two":
-			return []*FileMatchResolver{mkFileMatchResolver(db, FileMatch{
-				uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+			return []*FileMatchResolver{mkFileMatchResolver(db, result.FileMatch{
+				URI: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
 			})}, false, nil
 		case "foo/empty":
 			return nil, false, nil
@@ -97,13 +98,9 @@ func TestSearchFilesInRepos(t *testing.T) {
 	}
 	assertReposStatus(t, repoNames, common.Status, map[string]search.RepoStatus{
 		"foo/cloning":          search.RepoStatusCloning,
-		"foo/empty":            search.RepoStatusSearched,
 		"foo/missing":          search.RepoStatusMissing,
 		"foo/missing-database": search.RepoStatusMissing,
-		"foo/no-rev":           0,
-		"foo/one":              search.RepoStatusSearched,
 		"foo/timedout":         search.RepoStatusTimedout,
-		"foo/two":              search.RepoStatusSearched,
 	})
 
 	// If we specify a rev and it isn't found, we fail the whole search since
@@ -132,16 +129,16 @@ func TestSearchFilesInReposStream(t *testing.T) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
-			return []*FileMatchResolver{mkFileMatchResolver(db, FileMatch{
-				uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+			return []*FileMatchResolver{mkFileMatchResolver(db, result.FileMatch{
+				URI: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
 			})}, false, nil
 		case "foo/two":
-			return []*FileMatchResolver{mkFileMatchResolver(db, FileMatch{
-				uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+			return []*FileMatchResolver{mkFileMatchResolver(db, result.FileMatch{
+				URI: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
 			})}, false, nil
 		case "foo/three":
-			return []*FileMatchResolver{mkFileMatchResolver(db, FileMatch{
-				uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+			return []*FileMatchResolver{mkFileMatchResolver(db, result.FileMatch{
+				URI: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
 			})}, false, nil
 		default:
 			return nil, false, errors.New("Unexpected repo")
@@ -206,8 +203,8 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo":
-			return []*FileMatchResolver{mkFileMatchResolver(db, FileMatch{
-				uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+			return []*FileMatchResolver{mkFileMatchResolver(db, result.FileMatch{
+				URI: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
 			})}, false, nil
 		default:
 			panic("unexpected repo")
@@ -248,7 +245,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 
 	resultURIs := make([]string, len(results))
 	for i, result := range results {
-		resultURIs[i] = result.uri
+		resultURIs[i] = result.URI
 	}
 	sort.Strings(resultURIs)
 
@@ -404,7 +401,7 @@ func TestLimitSearcherRepos(t *testing.T) {
 }
 
 func TestFileMatch_Limit(t *testing.T) {
-	desc := func(fm *FileMatch) string {
+	desc := func(fm *result.FileMatch) string {
 		parts := []string{fmt.Sprintf("symbols=%d", len(fm.Symbols))}
 		for _, lm := range fm.LineMatches {
 			parts = append(parts, fmt.Sprintf("lm=%d", len(lm.OffsetAndLengths)))
@@ -412,12 +409,12 @@ func TestFileMatch_Limit(t *testing.T) {
 		return strings.Join(parts, " ")
 	}
 
-	f := func(lineMatches []LineMatch, symbols []int, limitInput uint32) bool {
-		fm := &FileMatch{
+	f := func(lineMatches []result.LineMatch, symbols []int, limitInput uint32) bool {
+		fm := &result.FileMatch{
 			// SearchSymbolResult fails to generate due to private fields. So
 			// we just generate a slice of ints and use its length. This is
 			// fine for limit which only looks at the slice and not in it.
-			Symbols: make([]*SearchSymbolResult, len(symbols)),
+			Symbols: make([]*result.SearchSymbolResult, len(symbols)),
 		}
 		// We don't use *LineMatch as args since quick can generate nil.
 		for _, lm := range lineMatches {
@@ -450,12 +447,12 @@ func TestFileMatch_Limit(t *testing.T) {
 
 	cases := []struct {
 		Name        string
-		LineMatches []LineMatch
+		LineMatches []result.LineMatch
 		Symbols     int
 		Limit       int
 	}{{
 		Name: "1 line match",
-		LineMatches: []LineMatch{{
+		LineMatches: []result.LineMatch{{
 			OffsetAndLengths: [][2]int32{{1, 1}},
 		}},
 		Limit: 1,

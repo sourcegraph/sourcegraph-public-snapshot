@@ -22,10 +22,11 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	nettrace "golang.org/x/net/trace"
+
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	nettrace "golang.org/x/net/trace"
 
 	"github.com/pkg/errors"
 

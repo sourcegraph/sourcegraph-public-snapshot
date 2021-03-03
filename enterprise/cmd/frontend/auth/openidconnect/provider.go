@@ -11,12 +11,13 @@ import (
 
 	"github.com/coreos/go-oidc"
 	"github.com/pkg/errors"
+	"golang.org/x/net/context/ctxhttp"
+	"golang.org/x/oauth2"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/globals"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"golang.org/x/net/context/ctxhttp"
-	"golang.org/x/oauth2"
 )
 
 const providerType = "openidconnect"

@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	jsonutil "github.com/sourcegraph/campaignutils/json"
 	"github.com/sourcegraph/go-diff/diff"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/schema"
 )

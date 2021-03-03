@@ -34,7 +34,7 @@ func TestGetTrackedRepo(t *testing.T) {
 	}
 	// a trackedRepo must always be tracked
 	for _, r := range trackedRepo {
-		if GetTrackedRepo(api.RepoName(r)) != string(r) {
+		if GetTrackedRepo(api.RepoName(r)) != r {
 			t.Errorf("Repo should be tracked: %v", r)
 		}
 	}

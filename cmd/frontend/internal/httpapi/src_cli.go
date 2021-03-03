@@ -7,6 +7,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
+
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
 )
 

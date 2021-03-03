@@ -107,6 +107,13 @@ If you are running Sourcegraph as a Kubernetes cluster, you have two additional 
    service](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/docs/configure.md#nginx-service),
    modify
    [`nginx.ConfigMap.yaml`](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/nginx-svc/nginx.ConfigMap.yaml).
+   
+## What external HTTP checks are configured?
+
+We leave the choice of which external HTTP check monitor up to our users. What we provide out-of-the-box is extensive metrics monitoring through Prometheus and Grafana, with builtin alert thresholds and dashboards, and Kubernetes/Docker HTTP health checks which verify that the server is running. Sourcegraph's frontend has a default health check at
+https://$SOURCEGRAPH_BASE_URL/healthz. Some users choose to set up their own external HTTP health checker which tests if the homepage loads, a repository page loads, and if a search GraphQL request returns successfully. 
+
+
 
 ## Can I consume Sourcegraph's metrics in my own monitoring system (Datadog, New Relic, etc.)?
 
