@@ -28,7 +28,7 @@ type batchChangeResolver struct {
 	namespace     graphqlbackend.NamespaceResolver
 	namespaceErr  error
 
-	// TODO: This should be removed once we remove campaigns completely
+	// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
 	shouldActAsCampaign bool
 }
 
@@ -240,12 +240,12 @@ func (r *batchChangeResolver) DiffStat(ctx context.Context) (*graphqlbackend.Dif
 	return graphqlbackend.NewDiffStat(*diffStat), nil
 }
 
-func (r *batchChangeResolver) CurrentSpec(ctx context.Context) (graphqlbackend.CampaignSpecResolver, error) {
+func (r *batchChangeResolver) CurrentSpec(ctx context.Context) (graphqlbackend.BatchSpecResolver, error) {
 	campaignSpec, err := r.store.GetCampaignSpec(ctx, store.GetCampaignSpecOpts{ID: r.batchChange.CampaignSpecID})
 	if err != nil {
 		// This spec should always exist, so fail hard on not found errors as well.
 		return nil, err
 	}
 
-	return &campaignSpecResolver{store: r.store, campaignSpec: campaignSpec}, nil
+	return &batchSpecResolver{store: r.store, campaignSpec: campaignSpec}, nil
 }

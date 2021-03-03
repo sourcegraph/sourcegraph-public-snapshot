@@ -427,6 +427,7 @@ func (r *NodeResolver) ToMonitorTriggerEvent() (MonitorTriggerEventResolver, boo
 	return n, ok
 }
 
+// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
 func (r *NodeResolver) ToCampaign() (BatchChangeResolver, bool) {
 	n, ok := r.Node.(BatchChangeResolver)
 	if !ok {
@@ -435,8 +436,22 @@ func (r *NodeResolver) ToCampaign() (BatchChangeResolver, bool) {
 	return n, n.ActAsCampaign()
 }
 
+// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
+func (r *NodeResolver) ToCampaignSpec() (BatchSpecResolver, bool) {
+	n, ok := r.Node.(BatchSpecResolver)
+	if !ok {
+		return nil, false
+	}
+	return n, n.ActAsCampaignSpec()
+}
+
 func (r *NodeResolver) ToBatchChange() (BatchChangeResolver, bool) {
 	n, ok := r.Node.(BatchChangeResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToBatchSpec() (BatchSpecResolver, bool) {
+	n, ok := r.Node.(BatchSpecResolver)
 	return n, ok
 }
 
@@ -458,11 +473,6 @@ func (r *NodeResolver) ToHiddenExternalChangeset() (HiddenExternalChangesetResol
 
 func (r *NodeResolver) ToChangesetEvent() (ChangesetEventResolver, bool) {
 	n, ok := r.Node.(ChangesetEventResolver)
-	return n, ok
-}
-
-func (r *NodeResolver) ToCampaignSpec() (CampaignSpecResolver, bool) {
-	n, ok := r.Node.(CampaignSpecResolver)
 	return n, ok
 }
 
@@ -625,10 +635,14 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 	switch relay.UnmarshalKind(id) {
 	case "AccessToken":
 		return accessTokenByID(ctx, r.db, id)
-	case "Campaign", "BatchChange":
+	case "Campaign":
+		return r.CampaignByID(ctx, id)
+	case "BatchChange":
 		return r.BatchChangeByID(ctx, id)
 	case "CampaignSpec":
 		return r.CampaignSpecByID(ctx, id)
+	case "BatchSpec":
+		return r.BatchSpecByID(ctx, id)
 	case "ChangesetSpec":
 		return r.ChangesetSpecByID(ctx, id)
 	case "Changeset":

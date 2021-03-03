@@ -4,7 +4,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
 
-func campaignsApplyURL(n graphqlbackend.Namespace, c graphqlbackend.CampaignSpecResolver) string {
+func campaignsApplyURL(n graphqlbackend.Namespace, c graphqlbackend.BatchSpecResolver) string {
 	return n.URL() + "/campaigns/apply/" + string(c.ID())
 }
 

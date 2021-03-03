@@ -196,49 +196,49 @@ func TestPermissionLevels(t *testing.T) {
 			}
 		})
 
-		t.Run("CampaignSpecByID", func(t *testing.T) {
+		t.Run("BatchSpecByID", func(t *testing.T) {
 			tests := []struct {
 				name                    string
 				currentUser             int32
-				campaignSpec            string
+				batchSpec               string
 				wantViewerCanAdminister bool
 			}{
 				{
 					name:                    "site-admin viewing own campaign spec",
 					currentUser:             adminID,
-					campaignSpec:            adminCampaignSpec,
+					batchSpec:               adminCampaignSpec,
 					wantViewerCanAdminister: true,
 				},
 				{
 					name:                    "non-site-admin viewing other's campaign spec",
 					currentUser:             userID,
-					campaignSpec:            adminCampaignSpec,
+					batchSpec:               adminCampaignSpec,
 					wantViewerCanAdminister: false,
 				},
 				{
 					name:                    "site-admin viewing other's campaign spec",
 					currentUser:             adminID,
-					campaignSpec:            userCampaignSpec,
+					batchSpec:               userCampaignSpec,
 					wantViewerCanAdminister: true,
 				},
 				{
 					name:                    "non-site-admin viewing own campaign spec",
 					currentUser:             userID,
-					campaignSpec:            userCampaignSpec,
+					batchSpec:               userCampaignSpec,
 					wantViewerCanAdminister: true,
 				},
 			}
 
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
-					graphqlID := string(marshalCampaignSpecRandID(tc.campaignSpec))
+					graphqlID := string(marshalBatchSpecRandID(tc.batchSpec))
 
-					var res struct{ Node apitest.CampaignSpec }
+					var res struct{ Node apitest.BatchSpec }
 
-					input := map[string]interface{}{"campaignSpec": graphqlID}
+					input := map[string]interface{}{"batchSpec": graphqlID}
 					queryCampaignSpec := `
-				  query($campaignSpec: ID!) {
-				    node(id: $campaignSpec) { ... on CampaignSpec { id, viewerCanAdminister } }
+				  query($batchSpec: ID!) {
+				    node(id: $batchSpec) { ... on BatchSpec { id, viewerCanAdminister } }
 				  }
                 `
 
@@ -627,7 +627,7 @@ func TestPermissionLevels(t *testing.T) {
 							mutation := m.mutationFunc(
 								string(marshalBatchChangeID(campaignID)),
 								string(marshalChangesetID(changeset.ID)),
-								string(marshalCampaignSpecRandID(campaignSpecRandID)),
+								string(marshalBatchSpecRandID(campaignSpecRandID)),
 							)
 
 							actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
@@ -1153,14 +1153,14 @@ func testCampaignSpecResponse(t *testing.T, s *graphql.Schema, ctx context.Conte
 	t.Helper()
 
 	in := map[string]interface{}{
-		"campaignSpec": string(marshalCampaignSpecRandID(campaignSpecRandID)),
+		"batchSpec": string(marshalBatchSpecRandID(campaignSpecRandID)),
 	}
 
-	var response struct{ Node apitest.CampaignSpec }
+	var response struct{ Node apitest.BatchSpec }
 	apitest.MustExec(ctx, t, s, in, &response, queryCampaignSpecPermLevels)
 
-	if have, want := response.Node.ID, in["campaignSpec"]; have != want {
-		t.Fatalf("campaignSpec id is wrong. have %q, want %q", have, want)
+	if have, want := response.Node.ID, in["batchSpec"]; have != want {
+		t.Fatalf("batch spec id is wrong. have %q, want %q", have, want)
 	}
 
 	if diff := cmp.Diff(w.changesetSpecsCount, response.Node.ChangesetSpecs.TotalCount); diff != "" {
@@ -1189,9 +1189,9 @@ func testCampaignSpecResponse(t *testing.T, s *graphql.Schema, ctx context.Conte
 }
 
 const queryCampaignSpecPermLevels = `
-query($campaignSpec: ID!) {
-  node(id: $campaignSpec) {
-    ... on CampaignSpec {
+query($batchSpec: ID!) {
+  node(id: $batchSpec) {
+    ... on BatchSpec {
       id
 
       applyPreview(first: 100) {

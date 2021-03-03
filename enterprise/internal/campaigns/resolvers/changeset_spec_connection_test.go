@@ -74,7 +74,7 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	apiID := string(marshalCampaignSpecRandID(campaignSpec.RandID))
+	apiID := string(marshalBatchSpecRandID(campaignSpec.RandID))
 
 	tests := []struct {
 		first int
@@ -88,8 +88,8 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		input := map[string]interface{}{"campaignSpec": apiID, "first": tc.first}
-		var response struct{ Node apitest.CampaignSpec }
+		input := map[string]interface{}{"batchSpec": apiID, "first": tc.first}
+		var response struct{ Node apitest.BatchSpec }
 		apitest.MustExec(ctx, t, s, input, &response, queryChangesetSpecConnection)
 
 		specs := response.Node.ChangesetSpecs
@@ -104,13 +104,13 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 
 	var endCursor *string
 	for i := range changesetSpecs {
-		input := map[string]interface{}{"campaignSpec": apiID, "first": 1}
+		input := map[string]interface{}{"batchSpec": apiID, "first": 1}
 		if endCursor != nil {
 			input["after"] = *endCursor
 		}
 		wantHasNextPage := i != len(changesetSpecs)-1
 
-		var response struct{ Node apitest.CampaignSpec }
+		var response struct{ Node apitest.BatchSpec }
 		apitest.MustExec(ctx, t, s, input, &response, queryChangesetSpecConnection)
 
 		specs := response.Node.ChangesetSpecs
@@ -134,11 +134,11 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 }
 
 const queryChangesetSpecConnection = `
-query($campaignSpec: ID!, $first: Int!, $after: String) {
-  node(id: $campaignSpec) {
+query($batchSpec: ID!, $first: Int!, $after: String) {
+  node(id: $batchSpec) {
     __typename
 
-    ... on CampaignSpec {
+    ... on BatchSpec {
       id
 
       changesetSpecs(first: $first, after: $after) {

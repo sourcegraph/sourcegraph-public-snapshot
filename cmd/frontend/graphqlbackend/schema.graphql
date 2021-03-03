@@ -9509,7 +9509,7 @@ extend type Mutation {
         Changeset specs that were locally computed and then uploaded using createChangesetSpec.
         """
         changesetSpecs: [ID!]!
-    ): CampaignSpec!
+    ): CampaignSpec! @deprecated(reason: "campaigns have been renamed to batch changes. Use createBatchSpec instead.")
 
     """
     Enqueue the given changeset for high-priority syncing.
@@ -9674,6 +9674,36 @@ extend type Mutation {
         """
         batchSpec: ID!
     ): BatchChange!
+
+    """
+    Create a batch spec that will be used to create a campaign (with the createCampaign
+    mutation), or to update a campaign (with the applyCampaign mutation).
+
+    The returned BatchSpec is immutable and expires after a certain period of time (if not used
+    in a call to applyCampaign), which can be queried on BatchSpec.expiresAt.
+
+    If campaigns are unlicensed and the number of changesetSpecIDs is higher than what's allowed in
+    the free tier, an error with the error code ErrCampaignsUnlicensed is returned.
+    """
+    createBatchSpec(
+        """
+        The namespace (either a user or organization). A batch spec can only be applied to (or
+        used to create) campaigns in this namespace.
+        """
+        namespace: ID!
+
+        """
+        The batch spec as YAML (or the equivalent JSON). See
+        https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/schema/campaign_spec.schema.json
+        for the JSON Schema that describes the structure of this input.
+        """
+        batchSpec: String!
+
+        """
+        Changeset specs that were locally computed and then uploaded using createChangesetSpec.
+        """
+        changesetSpecs: [ID!]!
+    ): BatchSpec! @deprecated(reason: "campaigns have been renamed to batch changes. Use createBatchSpec instead.")
 }
 
 extend type Query {
@@ -9874,4 +9904,137 @@ type BatchChange implements Node {
     The current change spec this change reflects.
     """
     currentSpec: CampaignSpec!
+}
+
+
+"""
+A batch spec is an immutable description of the desired state of a campaign. To create a
+batch spec, use the createBatchSpec mutation.
+"""
+type BatchSpec implements Node {
+    """
+    The unique ID for a batch spec.
+
+    The ID is unguessable (i.e., long and randomly generated, not sequential).
+    Consider a campaign to fix a security vulnerability: the campaign author may prefer
+    to prepare the campaign, including the description in private so that the window
+    between revealing the problem and merging the fixes is as short as possible.
+    """
+    id: ID!
+
+    """
+    The original YAML or JSON input that was used to create this batch spec.
+    """
+    originalInput: String!
+
+    """
+    The parsed JSON value of the original input. If the original input was YAML, the YAML is
+    converted to the equivalent JSON.
+    """
+    parsedInput: JSONValue!
+
+    """
+    The CampaignDescription that describes this campaign.
+    """
+    description: CampaignDescription!
+
+    """
+    Generates a preview what operations would be performed if the batch spec would be applied.
+    This preview is not a guarantee, since the state of the changesets can change between the time
+    the preview is generated and when the batch spec is applied.
+    """
+    applyPreview(
+        """
+        Returns the first n entries from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Search for changesets matching this query. Queries may include quoted substrings to match phrases, and words may be preceded by - to negate them.
+        """
+        search: String
+        """
+        Search for changesets that are currently in this state.
+        """
+        currentState: ChangesetState
+        """
+        Search for changesets that will have the given action performed.
+        """
+        action: ChangesetSpecOperation
+    ): ChangesetApplyPreviewConnection!
+
+    """
+    The specs for changesets associated with this campaign.
+    """
+    changesetSpecs(first: Int = 50, after: String): ChangesetSpecConnection!
+
+    """
+    The user who created this batch spec (or null if the user no longer exists).
+    """
+    creator: User
+
+    """
+    The date when this batch spec was created.
+    """
+    createdAt: DateTime!
+
+    """
+    The namespace (either a user or organization) of the batch spec.
+    """
+    namespace: Namespace!
+
+    """
+    The date, if any, when this batch spec expires and is automatically purged. A batch spec
+    never expires if it has been applied.
+    """
+    expiresAt: DateTime
+
+    """
+    The URL of a web page that allows applying this batch spec and
+    displays a preview of which changesets will be created by applying it.
+    """
+    applyURL: String!
+
+    """
+    When true, the viewing user can apply this spec.
+    """
+    viewerCanAdminister: Boolean!
+
+    """
+    The diff stat for all the changeset specs in the batch spec.
+    """
+    diffStat: DiffStat!
+
+    """
+    The campaign this spec will update when applied. If it's null, the
+    campaign doesn't yet exist.
+    """
+    appliesToBatchChange: BatchChange
+
+    """
+    The newest version of this batch spec, as identified by its namespace
+    and name. If this is the newest version, this field will be null.
+    """
+    supersedingBatchSpec: BatchSpec
+
+    """
+    The code host connections required for applying this spec. Includes the credentials of the current user.
+    """
+    viewerCampaignsCodeHosts(
+        """
+        Returns the first n code hosts from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Only returns the code hosts for which the viewer doesn't have credentials.
+        """
+        onlyWithoutCredential: Boolean = false
+    ): CampaignsCodeHostConnection!
 }

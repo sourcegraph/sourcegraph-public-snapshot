@@ -120,22 +120,22 @@ type ExternalURL struct {
 }
 
 type Changeset struct {
-	Typename     string `json:"__typename"`
-	ID           string
-	Repository   Repository
-	Campaigns BatchChangeConnection
-	CreatedAt    string
-	UpdatedAt    string
-	NextSyncAt   string
-	Title        string
-	Body         string
-	Error        string
-	State        string
-	ExternalID   string
-	ExternalURL  ExternalURL
-	ReviewState  string
-	CheckState   string
-	Events       ChangesetEventConnection
+	Typename    string `json:"__typename"`
+	ID          string
+	Repository  Repository
+	Campaigns   BatchChangeConnection
+	CreatedAt   string
+	UpdatedAt   string
+	NextSyncAt  string
+	Title       string
+	Body        string
+	Error       string
+	State       string
+	ExternalID  string
+	ExternalURL ExternalURL
+	ReviewState string
+	CheckState  string
+	Events      ChangesetEventConnection
 
 	Diff Comparison
 
@@ -183,7 +183,7 @@ type ChangesetCounts struct {
 	OpenPending          int32
 }
 
-type CampaignSpec struct {
+type BatchSpec struct {
 	Typename string `json:"__typename"`
 	ID       string
 
@@ -202,8 +202,6 @@ type CampaignSpec struct {
 
 	DiffStat DiffStat
 
-	AppliesToCampaign BatchChange
-
 	ViewerCampaignsCodeHosts CampaignsCodeHostsConnection
 	// Alias for the above.
 	AllCodeHosts CampaignsCodeHostsConnection
@@ -213,7 +211,12 @@ type CampaignSpec struct {
 	CreatedAt graphqlbackend.DateTime
 	ExpiresAt *graphqlbackend.DateTime
 
-	SupersedingCampaignSpec *CampaignSpec
+	// DEPRECATED
+	SupersedingCampaignSpec *BatchSpec
+	AppliesToCampaign       BatchChange
+	// NEW
+	SupersedingBatchSpec *BatchSpec
+	AppliesToBatchChange BatchChange
 }
 
 // ChangesetSpecDelta is the delta between two ChangesetSpecs describing the same Changeset.

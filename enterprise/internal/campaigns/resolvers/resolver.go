@@ -140,6 +140,16 @@ func (r *Resolver) Campaign(ctx context.Context, args *graphqlbackend.BatchChang
 	return res, err
 }
 
+// TODO(campaigns-deprecation): Remove when campaigns are fully removed
+func (r *Resolver) CampaignSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchSpecResolver, error) {
+	res, err := r.BatchSpecByID(ctx, id)
+	if batchSpecRes, ok := res.(*batchSpecResolver); ok {
+		batchSpecRes.shouldActAsCampaignSpec = true
+		return batchSpecRes, err
+	}
+	return res, err
+}
+
 func (r *Resolver) BatchChangeByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchChangeResolver, error) {
 	if err := campaignsEnabled(ctx); err != nil {
 		return nil, err
@@ -188,12 +198,12 @@ func (r *Resolver) BatchChange(ctx context.Context, args *graphqlbackend.BatchCh
 	return &batchChangeResolver{store: r.store, batchChange: batchChange}, nil
 }
 
-func (r *Resolver) CampaignSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignSpecResolver, error) {
+func (r *Resolver) BatchSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchSpecResolver, error) {
 	if err := campaignsEnabled(ctx); err != nil {
 		return nil, err
 	}
 
-	campaignSpecRandID, err := unmarshalCampaignSpecID(id)
+	campaignSpecRandID, err := unmarshalBatchSpecID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +221,7 @@ func (r *Resolver) CampaignSpecByID(ctx context.Context, id graphql.ID) (graphql
 		return nil, err
 	}
 
-	return &campaignSpecResolver{store: r.store, campaignSpec: campaignSpec}, nil
+	return &batchSpecResolver{store: r.store, campaignSpec: campaignSpec}, nil
 }
 
 func (r *Resolver) ChangesetSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetSpecResolver, error) {
@@ -293,7 +303,7 @@ func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.C
 		FailIfCampaignExists: true,
 	}
 
-	opts.CampaignSpecRandID, err = unmarshalCampaignSpecID(args.BatchSpec)
+	opts.CampaignSpecRandID, err = unmarshalBatchSpecID(args.BatchSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -332,7 +342,7 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 
 	opts := service.ApplyCampaignOpts{}
 
-	opts.CampaignSpecRandID, err = unmarshalCampaignSpecID(args.CampaignSpec)
+	opts.CampaignSpecRandID, err = unmarshalBatchSpecID(args.CampaignSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -366,9 +376,19 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 	return &batchChangeResolver{store: r.store, batchChange: batchChange}, nil
 }
 
-func (r *Resolver) CreateCampaignSpec(ctx context.Context, args *graphqlbackend.CreateCampaignSpecArgs) (graphqlbackend.CampaignSpecResolver, error) {
+// TODO(campaigns-deprecation): Remove when campaigns are fully removed
+func (r *Resolver) CreateCampaignSpec(ctx context.Context, args *graphqlbackend.CreateCampaignSpecArgs) (graphqlbackend.BatchSpecResolver, error) {
+	return r.CreateBatchSpec(ctx, &graphqlbackend.CreateBatchSpecArgs{
+		Namespace:      args.Namespace,
+		ChangesetSpecs: args.ChangesetSpecs,
+		// Use the new method by renaming the args field
+		BatchSpec: args.CampaignSpec,
+	})
+}
+
+func (r *Resolver) CreateBatchSpec(ctx context.Context, args *graphqlbackend.CreateBatchSpecArgs) (graphqlbackend.BatchSpecResolver, error) {
 	var err error
-	tr, ctx := trace.New(ctx, "Resolver.CreateCampaignSpec", fmt.Sprintf("Namespace %s, Spec %q", args.Namespace, args.CampaignSpec))
+	tr, ctx := trace.New(ctx, "Resolver.CreateCampaignSpec", fmt.Sprintf("Namespace %s, Spec %q", args.Namespace, args.BatchSpec))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -392,7 +412,7 @@ func (r *Resolver) CreateCampaignSpec(ctx context.Context, args *graphqlbackend.
 		}
 	}
 
-	opts := service.CreateCampaignSpecOpts{RawSpec: args.CampaignSpec}
+	opts := service.CreateCampaignSpecOpts{RawSpec: args.BatchSpec}
 
 	err = graphqlbackend.UnmarshalNamespaceID(args.Namespace, &opts.NamespaceUserID, &opts.NamespaceOrgID)
 	if err != nil {
@@ -417,7 +437,7 @@ func (r *Resolver) CreateCampaignSpec(ctx context.Context, args *graphqlbackend.
 		return nil, err
 	}
 
-	specResolver := &campaignSpecResolver{
+	specResolver := &batchSpecResolver{
 		store:        r.store,
 		campaignSpec: campaignSpec,
 	}
@@ -548,7 +568,6 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 }
 
 func (r *Resolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBatchChangesArgs) (graphqlbackend.BatchChangesConnectionResolver, error) {
-	fmt.Printf("we are here!")
 	if err := campaignsEnabled(ctx); err != nil {
 		return nil, err
 	}
@@ -597,6 +616,7 @@ func (r *Resolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBa
 	}, nil
 }
 
+// TODO(campaigns-deprecation): Remove when campaigns are fully removed
 func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListBatchChangesArgs) (graphqlbackend.BatchChangesConnectionResolver, error) {
 	return r.BatchChanges(ctx, args)
 }

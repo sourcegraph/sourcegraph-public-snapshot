@@ -61,10 +61,18 @@ type CreateChangesetSpecArgs struct {
 	ChangesetSpec string
 }
 
+// DEPRECATED
 type CreateCampaignSpecArgs struct {
 	Namespace graphql.ID
 
 	CampaignSpec   string
+	ChangesetSpecs []graphql.ID
+}
+
+type CreateBatchSpecArgs struct {
+	Namespace graphql.ID
+
+	BatchSpec      string
 	ChangesetSpecs []graphql.ID
 }
 
@@ -120,17 +128,18 @@ type CampaignsResolver interface {
 	//
 	// Deprecated:
 	CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (BatchChangeResolver, error)
+	CreateCampaignSpec(ctx context.Context, args *CreateCampaignSpecArgs) (BatchSpecResolver, error)
 	// TODO: To-be-deprecated (these need to be marked as deprecated and use
 	// the code for the new implementations) and then moved up to "Deprecated:"
 	ApplyCampaign(ctx context.Context, args *ApplyCampaignArgs) (BatchChangeResolver, error)
 	MoveCampaign(ctx context.Context, args *MoveCampaignArgs) (BatchChangeResolver, error)
 	CloseCampaign(ctx context.Context, args *CloseCampaignArgs) (BatchChangeResolver, error)
 	DeleteCampaign(ctx context.Context, args *DeleteCampaignArgs) (*EmptyResponse, error)
-	CreateCampaignSpec(ctx context.Context, args *CreateCampaignSpecArgs) (CampaignSpecResolver, error)
 	CreateCampaignsCredential(ctx context.Context, args *CreateCampaignsCredentialArgs) (CampaignsCredentialResolver, error)
 	DeleteCampaignsCredential(ctx context.Context, args *DeleteCampaignsCredentialArgs) (*EmptyResponse, error)
 	// New:
 	CreateBatchChange(ctx context.Context, args *CreateBatchChangeArgs) (BatchChangeResolver, error)
+	CreateBatchSpec(ctx context.Context, args *CreateBatchSpecArgs) (BatchSpecResolver, error)
 
 	CreateChangesetSpec(ctx context.Context, args *CreateChangesetSpecArgs) (ChangesetSpecResolver, error)
 	SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error)
@@ -141,21 +150,23 @@ type CampaignsResolver interface {
 	// Deprecated:
 	Campaign(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error)
 	Campaigns(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
+	CampaignByID(ctx context.Context, id graphql.ID) (BatchChangeResolver, error)
+	CampaignSpecByID(ctx context.Context, id graphql.ID) (BatchSpecResolver, error)
 	// TODO: To-be-deprecated (these need to be marked as deprecated and use
 	// the code for the new implementations) and then moved up to "Deprecated:"
 	CampaignsCredentialByID(ctx context.Context, id graphql.ID) (CampaignsCredentialResolver, error)
 	CampaignsCodeHosts(ctx context.Context, args *ListCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error)
-	CampaignSpecByID(ctx context.Context, id graphql.ID) (CampaignSpecResolver, error)
 	// New:
 	BatchChange(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error)
 	BatchChangeByID(ctx context.Context, id graphql.ID) (BatchChangeResolver, error)
 	BatchChanges(cx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
+	BatchSpecByID(ctx context.Context, id graphql.ID) (BatchSpecResolver, error)
 
 	ChangesetByID(ctx context.Context, id graphql.ID) (ChangesetResolver, error)
 	ChangesetSpecByID(ctx context.Context, id graphql.ID) (ChangesetSpecResolver, error)
 }
 
-type CampaignSpecResolver interface {
+type BatchSpecResolver interface {
 	ID() graphql.ID
 
 	OriginalInput() (string, error)
@@ -177,11 +188,19 @@ type CampaignSpecResolver interface {
 
 	DiffStat(ctx context.Context) (*DiffStat, error)
 
+	// Deprecated (defined so that BatchSpecResolver can act as a CampaignSpec):
 	AppliesToCampaign(ctx context.Context) (BatchChangeResolver, error)
-
-	SupersedingCampaignSpec(context.Context) (CampaignSpecResolver, error)
+	SupersedingCampaignSpec(context.Context) (BatchSpecResolver, error)
+	// New:
+	AppliesToBatchChange(ctx context.Context) (BatchChangeResolver, error)
+	SupersedingBatchSpec(context.Context) (BatchSpecResolver, error)
 
 	ViewerCampaignsCodeHosts(ctx context.Context, args *ListViewerCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error)
+
+	// TODO: This should be removed once we remove campaigns.
+	// It's here so that in the NodeResolver we can have the same resolver,
+	// BatchChangeResolver, act as a Campaign and a BatchChange.
+	ActAsCampaignSpec() bool
 }
 
 type CampaignDescriptionResolver interface {
@@ -398,9 +417,9 @@ type BatchChangeResolver interface {
 	ChangesetCountsOverTime(ctx context.Context, args *ChangesetCountsArgs) ([]ChangesetCountsResolver, error)
 	ClosedAt() *DateTime
 	DiffStat(ctx context.Context) (*DiffStat, error)
-	CurrentSpec(ctx context.Context) (CampaignSpecResolver, error)
+	CurrentSpec(ctx context.Context) (BatchSpecResolver, error)
 
-	// NOTE: This should be removed once we remove campaigns.
+	// TODO: This should be removed once we remove campaigns.
 	// It's here so that in the NodeResolver we can have the same resolver,
 	// BatchChangeResolver, act as a Campaign and a BatchChange.
 	ActAsCampaign() bool
@@ -526,7 +545,16 @@ func (defaultCampaignsResolver) CreateCampaign(ctx context.Context, args *Create
 	return nil, campaignsOnlyInEnterprise
 }
 
+// DEPRECATED
+func (defaultCampaignsResolver) CreateCampaignSpec(ctx context.Context, args *CreateCampaignSpecArgs) (BatchSpecResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
 func (defaultCampaignsResolver) CreateBatchChange(ctx context.Context, args *CreateBatchChangeArgs) (BatchChangeResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) CreateBatchSpec(ctx context.Context, args *CreateBatchSpecArgs) (BatchSpecResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
@@ -537,11 +565,6 @@ func (defaultCampaignsResolver) ApplyCampaign(ctx context.Context, args *ApplyCa
 func (defaultCampaignsResolver) CreateChangesetSpec(ctx context.Context, args *CreateChangesetSpecArgs) (ChangesetSpecResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
-
-func (defaultCampaignsResolver) CreateCampaignSpec(ctx context.Context, args *CreateCampaignSpecArgs) (CampaignSpecResolver, error) {
-	return nil, campaignsOnlyInEnterprise
-}
-
 func (defaultCampaignsResolver) MoveCampaign(ctx context.Context, args *MoveCampaignArgs) (BatchChangeResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
@@ -571,13 +594,23 @@ func (defaultCampaignsResolver) DeleteCampaignsCredential(ctx context.Context, a
 }
 
 // Queries
-// DEPRECATED
+// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
 func (defaultCampaignsResolver) Campaigns(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
-// DEPRECATED
+// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
 func (defaultCampaignsResolver) Campaign(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
+func (defaultCampaignsResolver) CampaignSpecByID(ctx context.Context, id graphql.ID) (BatchSpecResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
+func (defaultCampaignsResolver) CampaignByID(ctx context.Context, id graphql.ID) (BatchChangeResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
@@ -593,11 +626,11 @@ func (defaultCampaignsResolver) BatchChanges(ctx context.Context, args *ListBatc
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) ChangesetByID(ctx context.Context, id graphql.ID) (ChangesetResolver, error) {
+func (defaultCampaignsResolver) BatchSpecByID(ctx context.Context, id graphql.ID) (BatchSpecResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) CampaignSpecByID(ctx context.Context, id graphql.ID) (CampaignSpecResolver, error) {
+func (defaultCampaignsResolver) ChangesetByID(ctx context.Context, id graphql.ID) (ChangesetResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
