@@ -326,7 +326,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			{
 				name:          "something with more than 1000 results and use count:1000",
 				query:         ". count:1000",
-				minMatchCount: 1001,
+				minMatchCount: 1000,
 			},
 			{
 				name:  "repohasfile returns results for global search",
