@@ -2,7 +2,6 @@
 This is a compilation of some common questions about campaigns.
 
 ### What happens if my campaign creation breaks down at 900 changesets out of 1,000? Do I have to re-run it all again?
-
 Campaigns’ default behavior is to stop if creating the diff on a repo errors. You can choose to ignore errors instead by adding the [`-skip-errors`](../../cli/references/campaigns/preview.md) flag to the `src campaigns preview` command.
 
 ### Can we close a campaign and still leave the changesets open?
