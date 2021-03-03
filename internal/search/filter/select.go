@@ -1,6 +1,9 @@
 package filter
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type SelectType string
 
@@ -12,9 +15,10 @@ const (
 	Symbol     SelectType = "symbol"
 )
 
-// SelectPath is the parsed representation of the select field's value.
+// SelectPath represents a parsed and validated select value and fields.
 type SelectPath struct {
-	Type SelectType
+	Type   SelectType
+	Fields []string
 }
 
 func (sp SelectPath) String() string {
@@ -29,9 +33,52 @@ var validSelectors = map[SelectType]struct{}{
 	Symbol:     {},
 }
 
+var validFields = map[SelectType]interface{}{
+	/* cf. SymbolKind https://microsoft.github.io/language-server-protocol/specification */
+	Symbol: map[string]interface{}{
+		"file":           struct{}{},
+		"module":         struct{}{},
+		"namespace":      struct{}{},
+		"package":        struct{}{},
+		"class":          struct{}{},
+		"method":         struct{}{},
+		"property":       struct{}{},
+		"field":          struct{}{},
+		"constructor":    struct{}{},
+		"enum":           struct{}{},
+		"interface":      struct{}{},
+		"function":       struct{}{},
+		"variable":       struct{}{},
+		"constant":       struct{}{},
+		"string":         struct{}{},
+		"number":         struct{}{},
+		"boolean":        struct{}{},
+		"array":          struct{}{},
+		"object":         struct{}{},
+		"key":            struct{}{},
+		"null":           struct{}{},
+		"enum-member":    struct{}{},
+		"struct":         struct{}{},
+		"event":          struct{}{},
+		"operator":       struct{}{},
+		"type-parameter": struct{}{},
+	},
+}
+
+func splitFields(s string) (string, []string) {
+	v := strings.Split(s, ".")
+	return v[0], v[1:]
+}
+
 func SelectPathFromString(s string) (SelectPath, error) {
-	if _, ok := validSelectors[SelectType(s)]; !ok {
+	selector, fields := splitFields(s)
+	if _, ok := validSelectors[SelectType(selector)]; !ok {
 		return SelectPath{}, fmt.Errorf("invalid select type '%s'", s)
 	}
-	return SelectPath{SelectType(s)}, nil
+	if len(fields) > 0 {
+		if _, ok := validFields[SelectType(selector)].(map[string]interface{})[fields[0]]; !ok {
+			return SelectPath{}, fmt.Errorf("invalid field '%s' on select type '%s'", fields[0], selector)
+		}
+	}
+	return SelectPath{Type: SelectType(selector), Fields: fields}, nil
 }
