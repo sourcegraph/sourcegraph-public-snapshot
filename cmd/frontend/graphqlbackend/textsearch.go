@@ -44,6 +44,7 @@ type FileMatchResolver struct {
 	db           dbutil.DB
 }
 
+// Equal provides custom comparison which is used by go-cmp
 func (fm *FileMatchResolver) Equal(other *FileMatchResolver) bool {
 	return reflect.DeepEqual(fm, other)
 }

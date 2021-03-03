@@ -109,6 +109,7 @@ func (c *Stats) String() string {
 	return "Stats{" + strings.Join(parts, " ") + "}"
 }
 
+// Equal provides custom comparison which is used by go-cmp
 func (c *Stats) Equal(other *Stats) bool {
 	return reflect.DeepEqual(c, other)
 }
