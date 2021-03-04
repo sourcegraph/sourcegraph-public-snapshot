@@ -10119,7 +10119,73 @@ type BatchSpec implements Node {
     ): BatchChangesCodeHostConnection!
 }
 
+"""
+A list of batch changes.
+"""
+type BatchChangeConnection {
+    """
+    A list of batch changes.
+    """
+    nodes: [BatchChange!]!
+
+    """
+    The total number of batch changes in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+extend type Org {
+    """
+    A list of batch changes initially applied in this organization.
+    """
+    batchChanges(
+        """
+        Returns the first n batch changes from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Only return batch changes in this state.
+        """
+        state: BatchChangeState
+        """
+        Only include batch changes that the viewer can administer.
+        """
+        viewerCanAdminister: Boolean
+    ): BatchChangeConnection!
+}
+
 extend type User {
+    """
+    A list of batch changes applied under this user's namespace.
+    """
+    batchChanges(
+        """
+        Returns the first n batch changes from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Only return batch changes in this state.
+        """
+        state: BatchChangeState
+        """
+        Only include batch changes that the viewer can administer.
+        """
+        viewerCanAdminister: Boolean
+    ): BatchChangeConnection!
+
     """
     Returns a connection of configured external services accessible by this user, for usage with batch changes.
     These are all code hosts configured on the Sourcegraph instance that are supported by batch changes. They are
@@ -10213,4 +10279,12 @@ type BatchChangesCredential implements Node {
     The date and time this token has been created at.
     """
     createdAt: DateTime!
+}
+
+"""
+The state of the batch change.
+"""
+enum BatchChangeState {
+    OPEN
+    CLOSED
 }

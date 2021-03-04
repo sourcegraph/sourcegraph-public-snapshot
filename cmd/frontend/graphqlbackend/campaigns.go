@@ -200,10 +200,6 @@ type CampaignsResolver interface {
 	SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error)
 	ReenqueueChangeset(ctx context.Context, args *ReenqueueChangesetArgs) (ChangesetResolver, error)
 
-	// TODO: To-be-deprecated
-	// User.campaigns
-	// Org.campaigns
-
 	// Queries
 
 	// TODO(campaigns-deprecation)

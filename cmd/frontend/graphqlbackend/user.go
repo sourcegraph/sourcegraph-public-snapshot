@@ -350,10 +350,17 @@ func (r *UserResolver) ViewerCanChangeUsername(ctx context.Context) bool {
 	return viewerCanChangeUsername(ctx, r.user.ID)
 }
 
+// TODO(campaigns-deprecation):
 func (r *UserResolver) Campaigns(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
 	id := r.ID()
 	args.Namespace = &id
 	return EnterpriseResolvers.campaignsResolver.Campaigns(ctx, args)
+}
+
+func (r *UserResolver) BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
+	id := r.ID()
+	args.Namespace = &id
+	return EnterpriseResolvers.campaignsResolver.BatchChanges(ctx, args)
 }
 
 type ListUserRepositoriesArgs struct {
