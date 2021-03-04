@@ -452,7 +452,7 @@ func (r *NodeResolver) ToBatchChange() (BatchChangeResolver, bool) {
 
 func (r *NodeResolver) ToBatchSpec() (BatchSpecResolver, bool) {
 	n, ok := r.Node.(BatchSpecResolver)
-	return n, ok
+	return n, n.ActAsCampaignSpec()
 }
 
 func (r *NodeResolver) ToExternalChangeset() (ExternalChangesetResolver, bool) {
