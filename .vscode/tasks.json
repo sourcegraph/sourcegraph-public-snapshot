@@ -87,7 +87,7 @@
       "label": "eslint:browser",
       "type": "npm",
       "script": "eslint",
-      "path": "client/extension-browser/",
+      "path": "client/browser-extension/",
       "problemMatcher": ["$eslint-stylish"],
     },
     {

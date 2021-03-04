@@ -12,7 +12,7 @@ import { PlatformContext } from '../platform/context'
 
 import webStyles from '../../../app-web/src/SourcegraphWebApp.scss'
 import bitbucketStyles from '@atlassian/aui/dist/aui/css/aui.css'
-import browserExtensionStyles from '../../../extension-browser/src/app.scss'
+import browserExtensionStyles from '../../../browser-extension/src/app.scss'
 import { BadgeAttachmentRenderOptions, MarkupContent, Badged } from 'sourcegraph'
 
 registerHighlightContributions()

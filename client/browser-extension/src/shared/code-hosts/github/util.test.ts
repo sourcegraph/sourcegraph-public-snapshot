@@ -40,7 +40,7 @@ describe('util', () => {
             {
                 name: 'snippet permalink',
                 url:
-                    'https://github.com/sourcegraph/sourcegraph/blob/6a91ccec97a46bfb511b7ff58d790554a7d075c8/client/extension-browser/src/shared/repo/backend.tsx#L128-L151',
+                    'https://github.com/sourcegraph/sourcegraph/blob/6a91ccec97a46bfb511b7ff58d790554a7d075c8/client/browser-extension/src/shared/repo/backend.tsx#L128-L151',
             },
             {
                 name: 'pull request list',

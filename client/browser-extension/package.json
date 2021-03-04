@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "@sourcegraph/extension-browser",
+  "name": "@sourcegraph/browser-extension",
   "version": "1.0.0",
   "engines": {
     "yarn": ">1.10.0"

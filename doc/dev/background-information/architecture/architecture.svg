@@ -93,7 +93,7 @@
 <!-- browser_ext -->
 <g id="node2" class="node">
 <title>browser_ext</title>
-<g id="a_node2"><a xlink:href="https://github.com/sourcegraph/sourcegraph/tree/main/client/extension-browser/" xlink:title="Browser\nExtensions" target="_blank">
+<g id="a_node2"><a xlink:href="https://github.com/sourcegraph/sourcegraph/tree/main/client/browser-extension/" xlink:title="Browser\nExtensions" target="_blank">
 <ellipse fill="#fff0d0" stroke="black" cx="119" cy="-743" rx="36" ry="36"/>
 <text text-anchor="middle" x="119" y="-746" font-family="Iosevka" font-size="10.00">Browser</text>
 <text text-anchor="middle" x="119" y="-735" font-family="Iosevka" font-size="10.00">Extensions</text>

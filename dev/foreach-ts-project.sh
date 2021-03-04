@@ -14,7 +14,7 @@ DIRS=(
   client/app-web
   client/ui-kit-legacy-shared
   client/ui-kit-legacy-branded
-  client/extension-browser
+  client/browser-extension
   client/extension-api
   client/eslint-plugin-sourcegraph
   client/extension-api-types

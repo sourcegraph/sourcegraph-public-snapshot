@@ -81,7 +81,7 @@ Now, follow the steps below for the browser you intend to work with.
 
 - Browse to [chrome://extensions](chrome://extensions).
 - If you already have the Sourcegraph extension installed, disable it using the toggle.
-- Enable 'developer mode', click on [Load unpacked extensions](https://developer.chrome.com/extensions/getstarted#unpacked), save it in the `sourcegraph/client/extension-browser/build/chrome` folder.
+- Enable 'developer mode', click on [Load unpacked extensions](https://developer.chrome.com/extensions/getstarted#unpacked), save it in the `sourcegraph/client/browser-extension/build/chrome` folder.
 - Browse to any public repository on GitHub to confirm it is working.
 - After making changes it is sometimes necessary to refresh the extension. This is done by going to [chrome://extensions](chrome://extensions) and clicking the "Reload" icon.
 
@@ -197,7 +197,7 @@ Install dependencies with `yarn` (install it globally with `npm i -g yarn` if ne
 
 ```sh
 yarn
-cd client/extension-browser
+cd client/browser-extension
 yarn build
 ```
 

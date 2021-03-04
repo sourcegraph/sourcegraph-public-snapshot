@@ -1,6 +1,6 @@
 # Sourcegraph browser extension
 
-The [open-source](https://github.com/sourcegraph/sourcegraph/tree/main/client/extension-browser) Sourcegraph
+The [open-source](https://github.com/sourcegraph/sourcegraph/tree/main/client/browser-extension) Sourcegraph
 browser extension adds code intelligence to files and diffs on GitHub, GitHub
 Enterprise, GitLab, Phabricator, and Bitbucket Server.
 

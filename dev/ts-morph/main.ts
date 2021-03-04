@@ -30,7 +30,7 @@ async function main(): Promise<void> {
     project.addSourceFilesAtPaths([
         path.resolve(repoRoot, 'client/app-web/src/**/*.d.ts'),
         path.resolve(repoRoot, 'client/ui-kit-legacy-shared/src/**/*.d.ts'),
-        path.resolve(repoRoot, 'client/extension-browser/src/**/*.d.ts'),
+        path.resolve(repoRoot, 'client/browser-extension/src/**/*.d.ts'),
     ])
 
     console.log('Getting diagnostics')

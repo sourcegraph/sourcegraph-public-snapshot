@@ -115,21 +115,21 @@ graphql-operations.ts
 !/client/app-web/node_modules
 !/client/ui-kit-legacy-shared/node_modules
 !/client/ui-kit-legacy-branded/node_modules
-!/client/extension-browser/node_modules
+!/client/browser-extension/node_modules
 !/client/extension-api/node_modules
 !/client/extension-api-types/node_modules
 # ignore everything inside node_modules
 /client/app-web/node_modules/*
 /client/ui-kit-legacy-shared/node_modules/*
 /client/ui-kit-legacy-branded/node_modules/*
-/client/extension-browser/node_modules/*
+/client/browser-extension/node_modules/*
 /client/extension-api/node_modules/*
 /client/extension-api-types/node_modules/*
 # except .bin
 !/client/app-web/node_modules/.bin
 !/client/ui-kit-legacy-shared/node_modules/.bin
 !/client/ui-kit-legacy-branded/node_modules/.bin
-!/client/extension-browser/node_modules/.bin
+!/client/browser-extension/node_modules/.bin
 !/client/extension-api/node_modules/.bin
 !/client/extension-api-types/node_modules/.bin
 
