@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"os"
+	"strconv"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
@@ -55,13 +57,9 @@ func StartBackgroundJobs(ctx context.Context, mainAppDB *sql.DB) {
 	queryRunnerWorkerMetrics, queryRunnerResetterMetrics := newWorkerMetrics(observationContext, "query_runner_worker")
 
 	// Start background goroutines for all of our workers.
-	go goroutine.MonitorBackgroundRoutines(ctx, []goroutine.BackgroundRoutine{
+	routines := []goroutine.BackgroundRoutine{
 		// Register the background goroutine which discovers and enqueues insights work.
 		newInsightEnqueuer(ctx, workerBaseStore, settingStore, observationContext),
-
-		// Register the background goroutine which discovers historical gaps in data and enqueues
-		// work to fill them.
-		newInsightHistoricalEnqueuer(ctx, workerBaseStore, settingStore, insightsStore, observationContext),
 
 		// Register the query-runner worker and resetter, which executes search queries and records
 		// results to TimescaleDB.
@@ -69,7 +67,16 @@ func StartBackgroundJobs(ctx context.Context, mainAppDB *sql.DB) {
 		queryrunner.NewResetter(ctx, workerBaseStore, queryRunnerResetterMetrics),
 
 		// TODO(slimsag): future: register another worker here for webhook querying.
-	}...)
+	}
+
+	// Register the background goroutine which discovers historical gaps in data and enqueues
+	// work to fill them - if not disabled.
+	disableHistorical, _ := strconv.ParseBool(os.Getenv("DISABLE_CODE_INSIGHTS_HISTORICAL"))
+	if !disableHistorical {
+		routines = append(routines, newInsightHistoricalEnqueuer(ctx, workerBaseStore, settingStore, insightsStore, observationContext))
+	}
+
+	go goroutine.MonitorBackgroundRoutines(ctx, routines...)
 }
 
 // newWorkerMetrics returns a basic set of metrics to be used for a worker and its resetter:
