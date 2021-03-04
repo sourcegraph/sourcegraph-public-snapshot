@@ -492,6 +492,7 @@ describe('Search', () => {
             await driver.page.waitForSelector('.search-result-match__code-excerpt .selection-highlight', {
                 visible: true,
             })
+            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
 
             await percySnapshot(driver.page, 'Streaming diff search syntax highlighting')
         })
