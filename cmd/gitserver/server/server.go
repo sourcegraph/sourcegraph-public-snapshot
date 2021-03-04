@@ -286,9 +286,9 @@ func (s *Server) Janitor(interval time.Duration) {
 
 // SyncRepoState syncs state on disk to the database for all repos and is expected to
 // run in a background goroutine.
-func (s *Server) SyncRepoState(interval time.Duration, db dbutil.DB) {
+func (s *Server) SyncRepoState(db dbutil.DB, interval time.Duration, batchSize int) {
 	for {
-		s.syncRepoState(db)
+		s.syncRepoState(db, batchSize)
 		time.Sleep(interval)
 	}
 }
@@ -303,10 +303,27 @@ var repoStateUpsertCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "Incremented each time we upsert repo state in the database",
 }, []string{"success"})
 
-func (s *Server) syncRepoState(db dbutil.DB) {
+func (s *Server) syncRepoState(db dbutil.DB, batchSize int) {
 	ctx := context.Background()
 	store := database.GitserverRepos(db)
 	addrs := conf.Get().ServiceConnections.GitServers
+	batch := make([]types.GitserverRepo, 0, batchSize)
+
+	writeBatch := func() {
+		if len(batch) == 0 {
+			return
+		}
+		// We always clear the batch
+		defer func() {
+			batch = batch[0:0]
+		}()
+		if err := store.Upsert(ctx, batch...); err != nil {
+			repoStateUpsertCounter.WithLabelValues("false").Add(float64(len(batch)))
+			log15.Error("Upserting GitserverRepo", "error", err)
+			return
+		}
+		repoStateUpsertCounter.WithLabelValues("true").Add(float64(len(batch)))
+	}
 
 	err := store.IterateRepoGitserverStatus(ctx, func(repo types.RepoGitserverStatus) error {
 		repoSyncStateCounter.WithLabelValues("check").Inc()
@@ -343,15 +360,17 @@ func (s *Server) syncRepoState(db dbutil.DB) {
 			return nil
 		}
 
-		if err := store.Upsert(ctx, *repo.GitserverRepo); err != nil {
-			repoStateUpsertCounter.WithLabelValues("false").Inc()
-			log15.Error("Upserting GitserverRepo", "error", err)
-			return nil
+		batch = append(batch, *repo.GitserverRepo)
+
+		if len(batch) >= batchSize {
+			writeBatch()
 		}
-		repoStateUpsertCounter.WithLabelValues("true").Inc()
 
 		return nil
 	})
+
+	// Attempt final write
+	writeBatch()
 
 	if err != nil {
 		log15.Error("Iterating over GitserverRepoState", "error", err)

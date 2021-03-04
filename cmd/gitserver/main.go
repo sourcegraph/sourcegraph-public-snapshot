@@ -36,11 +36,12 @@ import (
 )
 
 var (
-	reposDir              = env.Get("SRC_REPOS_DIR", "/data/repos", "Root dir containing repos.")
-	wantPctFree           = env.MustGetInt("SRC_REPOS_DESIRED_PERCENT_FREE", 10, "Target percentage of free space on disk.")
-	janitorInterval       = env.MustGetDuration("SRC_REPOS_JANITOR_INTERVAL", 1*time.Minute, "Interval between cleanup runs")
-	syncRepoStateInterval = env.MustGetDuration("SRC_REPOS_SYNC_STATE_INTERVAL", 1*time.Minute, "Interval between state syncs")
-	envHostname           = env.Get("HOSTNAME", "", "Hostname override")
+	reposDir               = env.Get("SRC_REPOS_DIR", "/data/repos", "Root dir containing repos.")
+	wantPctFree            = env.MustGetInt("SRC_REPOS_DESIRED_PERCENT_FREE", 10, "Target percentage of free space on disk.")
+	janitorInterval        = env.MustGetDuration("SRC_REPOS_JANITOR_INTERVAL", 1*time.Minute, "Interval between cleanup runs")
+	syncRepoStateInterval  = env.MustGetDuration("SRC_REPOS_SYNC_STATE_INTERVAL", 1*time.Minute, "Interval between state syncs")
+	syncRepoStateBatchSize = env.MustGetInt("SRC_REPOS_SYNC_STATE_BATCH_SIZE", 500, "Number of upserts to perform per batch")
+	envHostname            = env.Get("HOSTNAME", "", "Hostname override")
 )
 
 func main() {
@@ -137,7 +138,7 @@ func main() {
 
 	go debugserver.Start()
 	go gitserver.Janitor(janitorInterval)
-	go gitserver.SyncRepoState(syncRepoStateInterval, db)
+	go gitserver.SyncRepoState(db, syncRepoStateInterval, syncRepoStateBatchSize)
 
 	port := "3178"
 	host := ""
