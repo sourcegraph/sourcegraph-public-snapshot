@@ -123,6 +123,7 @@ type ChangesetEventsConnectionArgs struct {
 	After *string
 }
 
+// TODO(campaigns-deprecation)
 type CreateCampaignsCredentialArgs struct {
 	ExternalServiceKind string
 	ExternalServiceURL  string
@@ -130,17 +131,43 @@ type CreateCampaignsCredentialArgs struct {
 	Credential          string
 }
 
+// TODO(campaigns-deprecation)
 type DeleteCampaignsCredentialArgs struct {
 	CampaignsCredential graphql.ID
 }
 
+// TODO(campaigns-deprecation)
 type ListCampaignsCodeHostsArgs struct {
 	First  int32
 	After  *string
 	UserID int32
 }
 
+// TODO(campaigns-deprecation)
 type ListViewerCampaignsCodeHostsArgs struct {
+	First                 int32
+	After                 *string
+	OnlyWithoutCredential bool
+}
+
+type CreateBatchChangesCredentialArgs struct {
+	ExternalServiceKind string
+	ExternalServiceURL  string
+	User                graphql.ID
+	Credential          string
+}
+
+type DeleteBatchChangesCredentialArgs struct {
+	BatchChangesCredential graphql.ID
+}
+
+type ListBatchChangesCodeHostsArgs struct {
+	First  int32
+	After  *string
+	UserID int32
+}
+
+type ListViewerBatchChangesCodeHostsArgs struct {
 	First                 int32
 	After                 *string
 	OnlyWithoutCredential bool
@@ -157,8 +184,6 @@ type CampaignsResolver interface {
 	CloseCampaign(ctx context.Context, args *CloseCampaignArgs) (BatchChangeResolver, error)
 	MoveCampaign(ctx context.Context, args *MoveCampaignArgs) (BatchChangeResolver, error)
 	DeleteCampaign(ctx context.Context, args *DeleteCampaignArgs) (*EmptyResponse, error)
-	// TODO: To-be-deprecated (these need to be marked as deprecated and use
-	// the code for the new implementations) and then moved up to "Deprecated:"
 	CreateCampaignsCredential(ctx context.Context, args *CreateCampaignsCredentialArgs) (CampaignsCredentialResolver, error)
 	DeleteCampaignsCredential(ctx context.Context, args *DeleteCampaignsCredentialArgs) (*EmptyResponse, error)
 	// New:
@@ -168,6 +193,8 @@ type CampaignsResolver interface {
 	CloseBatchChange(ctx context.Context, args *CloseBatchChangeArgs) (BatchChangeResolver, error)
 	MoveBatchChange(ctx context.Context, args *MoveBatchChangeArgs) (BatchChangeResolver, error)
 	DeleteBatchChange(ctx context.Context, args *DeleteBatchChangeArgs) (*EmptyResponse, error)
+	CreateBatchChangesCredential(ctx context.Context, args *CreateBatchChangesCredentialArgs) (BatchChangesCredentialResolver, error)
+	DeleteBatchChangesCredential(ctx context.Context, args *DeleteBatchChangesCredentialArgs) (*EmptyResponse, error)
 
 	CreateChangesetSpec(ctx context.Context, args *CreateChangesetSpecArgs) (ChangesetSpecResolver, error)
 	SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error)
@@ -184,8 +211,6 @@ type CampaignsResolver interface {
 	Campaigns(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
 	CampaignByID(ctx context.Context, id graphql.ID) (BatchChangeResolver, error)
 	CampaignSpecByID(ctx context.Context, id graphql.ID) (BatchSpecResolver, error)
-	// TODO: To-be-deprecated (these need to be marked as deprecated and use
-	// the code for the new implementations) and then moved up to "Deprecated:"
 	CampaignsCredentialByID(ctx context.Context, id graphql.ID) (CampaignsCredentialResolver, error)
 	CampaignsCodeHosts(ctx context.Context, args *ListCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error)
 	// New:
@@ -196,6 +221,9 @@ type CampaignsResolver interface {
 
 	ChangesetByID(ctx context.Context, id graphql.ID) (ChangesetResolver, error)
 	ChangesetSpecByID(ctx context.Context, id graphql.ID) (ChangesetSpecResolver, error)
+
+	BatchChangesCredentialByID(ctx context.Context, id graphql.ID) (BatchChangesCredentialResolver, error)
+	BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error)
 }
 
 type BatchSpecResolver interface {
@@ -229,6 +257,8 @@ type BatchSpecResolver interface {
 	SupersedingBatchSpec(context.Context) (BatchSpecResolver, error)
 
 	ViewerCampaignsCodeHosts(ctx context.Context, args *ListViewerCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error)
+
+	ViewerBatchChangesCodeHosts(ctx context.Context, args *ListViewerBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error)
 
 	// TODO(campaigns-deprecation): This should be removed once we remove
 	// campaigns. It's here so that in the NodeResolver we can have the same
@@ -390,12 +420,14 @@ type GitCommitDescriptionResolver interface {
 	Diff() string
 }
 
+// TODO(campaigns-deprecation)
 type CampaignsCodeHostConnectionResolver interface {
 	Nodes(ctx context.Context) ([]CampaignsCodeHostResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
+// TODO(campaigns-deprecation)
 type CampaignsCodeHostResolver interface {
 	ExternalServiceKind() string
 	ExternalServiceURL() string
@@ -403,7 +435,29 @@ type CampaignsCodeHostResolver interface {
 	Credential() CampaignsCredentialResolver
 }
 
+// TODO(campaigns-deprecation)
 type CampaignsCredentialResolver interface {
+	ID() graphql.ID
+	ExternalServiceKind() string
+	ExternalServiceURL() string
+	SSHPublicKey() *string
+	CreatedAt() DateTime
+}
+
+type BatchChangesCodeHostConnectionResolver interface {
+	Nodes(ctx context.Context) ([]BatchChangesCodeHostResolver, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type BatchChangesCodeHostResolver interface {
+	ExternalServiceKind() string
+	ExternalServiceURL() string
+	RequiresSSH() bool
+	Credential() BatchChangesCredentialResolver
+}
+
+type BatchChangesCredentialResolver interface {
 	ID() graphql.ID
 	ExternalServiceKind() string
 	ExternalServiceURL() string
@@ -639,11 +693,21 @@ func (defaultCampaignsResolver) ReenqueueChangeset(ctx context.Context, args *Re
 	return nil, campaignsOnlyInEnterprise
 }
 
+// TODO(campaigns-deprecation)
 func (defaultCampaignsResolver) CreateCampaignsCredential(ctx context.Context, args *CreateCampaignsCredentialArgs) (CampaignsCredentialResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
+// TODO(campaigns-deprecation)
 func (defaultCampaignsResolver) DeleteCampaignsCredential(ctx context.Context, args *DeleteCampaignsCredentialArgs) (*EmptyResponse, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) CreateBatchChangesCredential(ctx context.Context, args *CreateBatchChangesCredentialArgs) (BatchChangesCredentialResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) DeleteBatchChangesCredential(ctx context.Context, args *DeleteBatchChangesCredentialArgs) (*EmptyResponse, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
@@ -692,10 +756,20 @@ func (defaultCampaignsResolver) ChangesetSpecByID(ctx context.Context, id graphq
 	return nil, campaignsOnlyInEnterprise
 }
 
+// TODO(campaigns-deprecation)
 func (defaultCampaignsResolver) CampaignsCredentialByID(ctx context.Context, id graphql.ID) (CampaignsCredentialResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
+// TODO(campaigns-deprecation)
 func (defaultCampaignsResolver) CampaignsCodeHosts(ctx context.Context, args *ListCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) BatchChangesCredentialByID(ctx context.Context, id graphql.ID) (BatchChangesCredentialResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }

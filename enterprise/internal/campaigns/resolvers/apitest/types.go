@@ -52,8 +52,8 @@ type User struct {
 	DatabaseID int32
 	SiteAdmin  bool
 
-	Campaigns          BatchChangeConnection
-	CampaignsCodeHosts CampaignsCodeHostsConnection
+	Campaigns             BatchChangeConnection
+	BatchChangesCodeHosts BatchChangesCodeHostsConnection
 }
 
 type Org struct {
@@ -202,11 +202,10 @@ type BatchSpec struct {
 
 	DiffStat DiffStat
 
-	ViewerCampaignsCodeHosts CampaignsCodeHostsConnection
 	// Alias for the above.
-	AllCodeHosts CampaignsCodeHostsConnection
+	AllCodeHosts BatchChangesCodeHostsConnection
 	// Alias for the above.
-	OnlyWithoutCredential CampaignsCodeHostsConnection
+	OnlyWithoutCredential BatchChangesCodeHostsConnection
 
 	CreatedAt graphqlbackend.DateTime
 	ExpiresAt *graphqlbackend.DateTime
@@ -335,7 +334,7 @@ type EmptyResponse struct {
 	AlwaysNil string
 }
 
-type CampaignsCodeHostsConnection struct {
+type BatchChangesCodeHostsConnection struct {
 	PageInfo   PageInfo
 	Nodes      []CampaignsCodeHost
 	TotalCount int

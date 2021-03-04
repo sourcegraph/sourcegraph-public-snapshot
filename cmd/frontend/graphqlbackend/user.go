@@ -434,6 +434,11 @@ func (r *UserResolver) CampaignsCodeHosts(ctx context.Context, args *ListCampaig
 	return EnterpriseResolvers.campaignsResolver.CampaignsCodeHosts(ctx, args)
 }
 
+func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error) {
+	args.UserID = r.user.ID
+	return EnterpriseResolvers.campaignsResolver.BatchChangesCodeHosts(ctx, args)
+}
+
 func viewerCanChangeUsername(ctx context.Context, userID int32) bool {
 	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
 		return false

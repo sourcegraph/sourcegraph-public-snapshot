@@ -66,7 +66,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 			ExternalServiceURL:  ghRepo.ExternalRepo.ServiceID,
 			ExternalServiceKind: extsvc.TypeToKind(ghRepo.ExternalRepo.ServiceType),
 			Credential: apitest.CampaignsCredential{
-				ID:                  string(marshalCampaignsCredentialID(cred.ID)),
+				ID:                  string(marshalBatchChangesCredentialID(cred.ID)),
 				ExternalServiceKind: extsvc.TypeToKind(cred.ExternalServiceType),
 				ExternalServiceURL:  cred.ExternalServiceID,
 				CreatedAt:           cred.CreatedAt.Format(time.RFC3339),
@@ -101,7 +101,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 				wantEndCursor = &tc.wantEndCursor
 			}
 
-			wantChangesets := apitest.CampaignsCodeHostsConnection{
+			wantChangesets := apitest.BatchChangesCodeHostsConnection{
 				TotalCount: tc.wantTotalCount,
 				PageInfo: apitest.PageInfo{
 					EndCursor:   wantEndCursor,
@@ -110,7 +110,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 				Nodes: tc.wantNodes,
 			}
 
-			if diff := cmp.Diff(wantChangesets, response.Node.CampaignsCodeHosts); diff != "" {
+			if diff := cmp.Diff(wantChangesets, response.Node.BatchChangesCodeHosts); diff != "" {
 				t.Fatalf("wrong changesets response (-want +got):\n%s", diff)
 			}
 		})
@@ -127,7 +127,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 		var response struct{ Node apitest.User }
 		apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryCodeHostConnection)
 
-		hosts := response.Node.CampaignsCodeHosts
+		hosts := response.Node.BatchChangesCodeHosts
 		if diff := cmp.Diff(1, len(hosts.Nodes)); diff != "" {
 			t.Fatalf("unexpected number of nodes (-want +got):\n%s", diff)
 		}
@@ -151,7 +151,7 @@ const queryCodeHostConnection = `
 query($user: ID!, $first: Int, $after: String){
   node(id: $user) {
     ... on User {
-      campaignsCodeHosts(first: $first, after: $after) {
+      batchChangesCodeHosts(first: $first, after: $after) {
         totalCount
         nodes {
 		  externalServiceKind

@@ -46,7 +46,7 @@ func TestNullIDResilience(t *testing.T) {
 		marshalChangesetID(0),
 		marshalBatchSpecRandID(""),
 		marshalChangesetSpecRandID(""),
-		marshalCampaignsCredentialID(0),
+		marshalBatchChangesCredentialID(0),
 	}
 
 	for _, id := range ids {
@@ -68,8 +68,8 @@ func TestNullIDResilience(t *testing.T) {
 		fmt.Sprintf(`mutation { applyBatchChange(batchSpec: %q) { id } }`, marshalBatchSpecRandID("")),
 		fmt.Sprintf(`mutation { createBatchChange(batchSpec: %q) { id } }`, marshalBatchSpecRandID("")),
 		fmt.Sprintf(`mutation { moveBatchChange(batchChange: %q, newName: "foobar") { id } }`, marshalBatchChangeID(0)),
-		fmt.Sprintf(`mutation { createCampaignsCredential(externalServiceKind: GITHUB, externalServiceURL: "http://test", credential: "123123", user: %q) { id } }`, graphqlbackend.MarshalUserID(0)),
-		fmt.Sprintf(`mutation { deleteCampaignsCredential(campaignsCredential: %q) { alwaysNil } }`, marshalCampaignsCredentialID(0)),
+		fmt.Sprintf(`mutation { createBatchChangesCredential(externalServiceKind: GITHUB, externalServiceURL: "http://test", credential: "123123", user: %q) { id } }`, graphqlbackend.MarshalUserID(0)),
+		fmt.Sprintf(`mutation { deleteBatchChangesCredential(batchChangesCredential: %q) { alwaysNil } }`, marshalBatchChangesCredentialID(0)),
 	}
 
 	for _, m := range mutations {
@@ -801,7 +801,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 	}
 }
 
-func TestCreateCampaignsCredential(t *testing.T) {
+func TestCreateBatchChangesCredential(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -828,13 +828,13 @@ func TestCreateCampaignsCredential(t *testing.T) {
 		"credential":          "SOSECRET",
 	}
 
-	var response struct{ CreateCampaignsCredential apitest.CampaignsCredential }
+	var response struct{ CreateBatchChangesCredential apitest.CampaignsCredential }
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
 	// First time it should work, because no credential exists
 	apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateCredential)
 
-	if response.CreateCampaignsCredential.ID == "" {
+	if response.CreateBatchChangesCredential.ID == "" {
 		t.Fatalf("expected credential to be created, but was not")
 	}
 
@@ -851,11 +851,11 @@ func TestCreateCampaignsCredential(t *testing.T) {
 
 const mutationCreateCredential = `
 mutation($user: ID!, $externalServiceKind: ExternalServiceKind!, $externalServiceURL: String!, $credential: String!) {
-  createCampaignsCredential(user: $user, externalServiceKind: $externalServiceKind, externalServiceURL: $externalServiceURL, credential: $credential) { id }
+  createBatchChangesCredential(user: $user, externalServiceKind: $externalServiceKind, externalServiceURL: $externalServiceURL, credential: $credential) { id }
 }
 `
 
-func TestDeleteCampaignsCredential(t *testing.T) {
+func TestDeleteBatchChangesCredential(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -886,10 +886,10 @@ func TestDeleteCampaignsCredential(t *testing.T) {
 	}
 
 	input := map[string]interface{}{
-		"campaignsCredential": marshalCampaignsCredentialID(cred.ID),
+		"batchChangesCredential": marshalBatchChangesCredentialID(cred.ID),
 	}
 
-	var response struct{ DeleteCampaignsCredential apitest.EmptyResponse }
+	var response struct{ DeleteBatchChangesCredential apitest.EmptyResponse }
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
 	// First time it should work, because a credential exists
@@ -907,8 +907,8 @@ func TestDeleteCampaignsCredential(t *testing.T) {
 }
 
 const mutationDeleteCredential = `
-mutation($campaignsCredential: ID!) {
-  deleteCampaignsCredential(campaignsCredential: $campaignsCredential) { alwaysNil }
+mutation($batchChangesCredential: ID!) {
+  deleteBatchChangesCredential(batchChangesCredential: $batchChangesCredential) { alwaysNil }
 }
 `
 

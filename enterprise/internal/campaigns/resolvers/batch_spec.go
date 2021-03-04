@@ -287,7 +287,20 @@ func (r *batchSpecResolver) SupersedingBatchSpec(ctx context.Context) (graphqlba
 	return resolver, nil
 }
 
+// TODO(campaigns-deprecation): Remove when campaigns are fully removed
 func (r *batchSpecResolver) ViewerCampaignsCodeHosts(ctx context.Context, args *graphqlbackend.ListViewerCampaignsCodeHostsArgs) (graphqlbackend.CampaignsCodeHostConnectionResolver, error) {
+	res, err := r.ViewerBatchChangesCodeHosts(ctx, &graphqlbackend.ListViewerBatchChangesCodeHostsArgs{
+		First:                 args.First,
+		After:                 args.After,
+		OnlyWithoutCredential: args.OnlyWithoutCredential,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &campaignsCodeHostConnectionResolver{BatchChangesCodeHostConnectionResolver: res}, nil
+}
+
+func (r *batchSpecResolver) ViewerBatchChangesCodeHosts(ctx context.Context, args *graphqlbackend.ListViewerBatchChangesCodeHostsArgs) (graphqlbackend.BatchChangesCodeHostConnectionResolver, error) {
 	actor := actor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
 		return nil, backend.ErrNotAuthenticated
@@ -297,7 +310,7 @@ func (r *batchSpecResolver) ViewerCampaignsCodeHosts(ctx context.Context, args *
 	if args.OnlyWithoutCredential {
 		if authErr := backend.CheckCurrentUserIsSiteAdmin(ctx); authErr == nil {
 			// For site-admins never return anything
-			return &emptyCampaignsCodeHostConnectionResolver{}, nil
+			return &emptyBatchChangesCodeHostConnectionResolver{}, nil
 		} else if authErr != nil && authErr != backend.ErrMustBeSiteAdmin {
 			return nil, authErr
 		}
@@ -316,7 +329,7 @@ func (r *batchSpecResolver) ViewerCampaignsCodeHosts(ctx context.Context, args *
 		}
 	}
 
-	return &campaignsCodeHostConnectionResolver{
+	return &batchChangesCodeHostConnectionResolver{
 		userID:                actor.UID,
 		onlyWithoutCredential: args.OnlyWithoutCredential,
 		store:                 r.store,

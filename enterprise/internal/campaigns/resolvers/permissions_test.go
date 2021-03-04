@@ -348,21 +348,21 @@ func TestPermissionLevels(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					graphqlID := string(marshalCampaignsCredentialID(cred.ID))
+					graphqlID := string(marshalBatchChangesCredentialID(cred.ID))
 
 					var res struct{ Node apitest.CampaignsCredential }
 
 					input := map[string]interface{}{"id": graphqlID}
 					queryCodeHosts := `
 				  query($id: ID!) {
-				    node(id: $id) { ... on CampaignsCredential { id } }
+				    node(id: $id) { ... on BatchChangesCredential { id } }
 				  }
                 `
 
 					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
 					errors := apitest.Exec(actorCtx, t, s, input, &res, queryCodeHosts)
 					if !tc.wantErr && len(errors) != 0 {
-						t.Fatal("got error but didn't expect one")
+						t.Fatalf("got error but didn't expect one: %v", errors)
 					} else if tc.wantErr && len(errors) == 0 {
 						t.Fatal("expected error but got none")
 					}
@@ -375,7 +375,7 @@ func TestPermissionLevels(t *testing.T) {
 			}
 		})
 
-		t.Run("DeleteCampaignsCredential", func(t *testing.T) {
+		t.Run("DeleteBatchChangesCredential", func(t *testing.T) {
 			tests := []struct {
 				name        string
 				currentUser int32
@@ -419,16 +419,16 @@ func TestPermissionLevels(t *testing.T) {
 					var res struct{ Node apitest.CampaignsCredential }
 
 					input := map[string]interface{}{
-						"campaignsCredential": marshalCampaignsCredentialID(cred.ID),
+						"batchChangesCredential": marshalBatchChangesCredentialID(cred.ID),
 					}
-					mutationDeleteCampaignsCredential := `
-					mutation($campaignsCredential: ID!) {
-						deleteCampaignsCredential(campaignsCredential: $campaignsCredential) { alwaysNil }
+					mutationDeleteBatchChangesCredential := `
+					mutation($batchChangesCredential: ID!) {
+						deleteBatchChangesCredential(batchChangesCredential: $batchChangesCredential) { alwaysNil }
 					}
                 `
 
 					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
-					errors := apitest.Exec(actorCtx, t, s, input, &res, mutationDeleteCampaignsCredential)
+					errors := apitest.Exec(actorCtx, t, s, input, &res, mutationDeleteBatchChangesCredential)
 					if tc.wantAuthErr {
 						if len(errors) != 1 {
 							t.Fatalf("expected 1 error, but got %d: %s", len(errors), errors)

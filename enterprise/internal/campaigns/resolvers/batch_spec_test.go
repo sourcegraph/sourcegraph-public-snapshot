@@ -134,11 +134,11 @@ func TestBatchSpecResolver(t *testing.T) {
 			ID: string(marshalBatchChangeID(matchingCampaign.ID)),
 		},
 
-		AllCodeHosts: apitest.CampaignsCodeHostsConnection{
+		AllCodeHosts: apitest.BatchChangesCodeHostsConnection{
 			TotalCount: 1,
 			Nodes:      []apitest.CampaignsCodeHost{{ExternalServiceKind: extsvc.KindGitHub, ExternalServiceURL: "https://github.com/"}},
 		},
-		OnlyWithoutCredential: apitest.CampaignsCodeHostsConnection{
+		OnlyWithoutCredential: apitest.BatchChangesCodeHostsConnection{
 			TotalCount: 1,
 			Nodes:      []apitest.CampaignsCodeHost{{ExternalServiceKind: extsvc.KindGitHub, ExternalServiceURL: "https://github.com/"}},
 		},
@@ -218,7 +218,7 @@ func TestBatchSpecResolver(t *testing.T) {
 		// Expect creator to not be returned anymore.
 		want.Creator = nil
 		// Expect all set for admin user.
-		want.OnlyWithoutCredential = apitest.CampaignsCodeHostsConnection{
+		want.OnlyWithoutCredential = apitest.BatchChangesCodeHostsConnection{
 			Nodes: []apitest.CampaignsCodeHost{},
 		}
 		// Expect no superseding campaign spec, since this request is run as a
@@ -242,7 +242,7 @@ func TestBatchSpecResolver(t *testing.T) {
 		// Expect creator to not be returned anymore.
 		want.Creator = nil
 		// Expect all set for admin user.
-		want.OnlyWithoutCredential = apitest.CampaignsCodeHostsConnection{
+		want.OnlyWithoutCredential = apitest.BatchChangesCodeHostsConnection{
 			Nodes: []apitest.CampaignsCodeHost{},
 		}
 
@@ -282,7 +282,7 @@ query($batchSpec: ID!) {
 	  appliesToBatchChange { id }
 	  supersedingBatchSpec { id }
 
-	  allCodeHosts: viewerCampaignsCodeHosts {
+	  allCodeHosts: viewerBatchChangesCodeHosts {
 		totalCount
 		  nodes {
 			  externalServiceKind
@@ -290,7 +290,7 @@ query($batchSpec: ID!) {
 		  }
 	  }
 
-	  onlyWithoutCredential: viewerCampaignsCodeHosts(onlyWithoutCredential: true) {
+	  onlyWithoutCredential: viewerBatchChangesCodeHosts(onlyWithoutCredential: true) {
 		  totalCount
 		  nodes {
 			  externalServiceKind

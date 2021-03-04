@@ -492,8 +492,14 @@ func (r *NodeResolver) ToVisibleChangesetSpec() (VisibleChangesetSpecResolver, b
 	return n.ToVisibleChangesetSpec()
 }
 
+// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
 func (r *NodeResolver) ToCampaignsCredential() (CampaignsCredentialResolver, bool) {
 	n, ok := r.Node.(CampaignsCredentialResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToBatchChangesCredential() (BatchChangesCredentialResolver, bool) {
+	n, ok := r.Node.(BatchChangesCredentialResolver)
 	return n, ok
 }
 
@@ -649,6 +655,8 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return r.ChangesetByID(ctx, id)
 	case "CampaignsCredential":
 		return r.CampaignsCredentialByID(ctx, id)
+	case "BatchChangesCredential":
+		return r.BatchChangesCredentialByID(ctx, id)
 	case "ProductLicense":
 		if f := ProductLicenseByID; f != nil {
 			return f(ctx, r.db, id)
