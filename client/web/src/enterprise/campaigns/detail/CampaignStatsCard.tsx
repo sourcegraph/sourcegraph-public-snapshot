@@ -2,7 +2,7 @@ import React from 'react'
 import ProgressCheckIcon from 'mdi-react/ProgressCheckIcon'
 import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 import classNames from 'classnames'
-import { CampaignFields, ChangesetsStatsFields, DiffStatFields } from '../../../graphql-operations'
+import { BatchChangeFields, ChangesetsStatsFields, DiffStatFields } from '../../../graphql-operations'
 import { CampaignStateBadge } from './CampaignStateBadge'
 import {
     ChangesetStatusUnpublished,
@@ -17,7 +17,7 @@ import { DiffStat } from '../../../components/diff/DiffStat'
 interface CampaignStatsCardProps {
     stats: ChangesetsStatsFields
     diff: DiffStatFields
-    closedAt: CampaignFields['closedAt']
+    closedAt: BatchChangeFields['closedAt']
     className?: string
 }
 

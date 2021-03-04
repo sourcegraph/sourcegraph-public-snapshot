@@ -10,37 +10,37 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 )
 
-const campaignsCredentialIDKind = "CampaignsCredential"
+const batchChangesCredentialIDKind = "BatchChangesCredential"
 
-func marshalCampaignsCredentialID(id int64) graphql.ID {
-	return relay.MarshalID(campaignsCredentialIDKind, id)
+func marshalBatchChangesCredentialID(id int64) graphql.ID {
+	return relay.MarshalID(batchChangesCredentialIDKind, id)
 }
 
-func unmarshalCampaignsCredentialID(id graphql.ID) (cid int64, err error) {
+func unmarshalBatchChangesCredentialID(id graphql.ID) (cid int64, err error) {
 	err = relay.UnmarshalSpec(id, &cid)
 	return
 }
 
-type campaignsCredentialResolver struct {
+type batchChangesCredentialResolver struct {
 	credential *database.UserCredential
 }
 
-var _ graphqlbackend.CampaignsCredentialResolver = &campaignsCredentialResolver{}
+var _ graphqlbackend.BatchChangesCredentialResolver = &batchChangesCredentialResolver{}
 
-func (c *campaignsCredentialResolver) ID() graphql.ID {
-	return marshalCampaignsCredentialID(c.credential.ID)
+func (c *batchChangesCredentialResolver) ID() graphql.ID {
+	return marshalBatchChangesCredentialID(c.credential.ID)
 }
 
-func (c *campaignsCredentialResolver) ExternalServiceKind() string {
+func (c *batchChangesCredentialResolver) ExternalServiceKind() string {
 	return extsvc.TypeToKind(c.credential.ExternalServiceType)
 }
 
-func (c *campaignsCredentialResolver) ExternalServiceURL() string {
+func (c *batchChangesCredentialResolver) ExternalServiceURL() string {
 	// This is usually the code host URL.
 	return c.credential.ExternalServiceID
 }
 
-func (c *campaignsCredentialResolver) SSHPublicKey() *string {
+func (c *batchChangesCredentialResolver) SSHPublicKey() *string {
 	if a, ok := c.credential.Credential.(auth.AuthenticatorWithSSH); ok {
 		publicKey := a.SSHPublicKey()
 		return &publicKey
@@ -48,6 +48,6 @@ func (c *campaignsCredentialResolver) SSHPublicKey() *string {
 	return nil
 }
 
-func (c *campaignsCredentialResolver) CreatedAt() graphqlbackend.DateTime {
+func (c *batchChangesCredentialResolver) CreatedAt() graphqlbackend.DateTime {
 	return graphqlbackend.DateTime{Time: c.credential.CreatedAt}
 }

@@ -2,11 +2,11 @@ import React, { useState, useMemo, useCallback } from 'react'
 import * as H from 'history'
 import { PageTitle } from '../../../components/PageTitle'
 import { CampaignCloseAlert } from './CampaignCloseAlert'
-import { CampaignChangesetsResult, CampaignFields, Scalars } from '../../../graphql-operations'
+import { BatchChangeChangesetsResult, BatchChangeFields, Scalars } from '../../../graphql-operations'
 import {
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
     queryChangesets as _queryChangesets,
-    fetchCampaignByNamespace as _fetchCampaignByNamespace,
+    fetchBatchChangeByNamespace as _fetchCampaignByNamespace,
 } from '../detail/backend'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
@@ -33,14 +33,14 @@ export interface CampaignClosePageProps
      */
     namespaceID: Scalars['ID']
     /**
-     * The campaign name.
+     * The batch change name.
      */
-    campaignName: CampaignFields['name']
+    batchChangeName: BatchChangeFields['name']
     history: H.History
     location: H.Location
 
     /** For testing only. */
-    fetchCampaignByNamespace?: typeof _fetchCampaignByNamespace
+    fetchBatchChangeByNamespace?: typeof _fetchCampaignByNamespace
     /** For testing only. */
     queryChangesets?: typeof _queryChangesets
     /** For testing only. */
@@ -51,14 +51,14 @@ export interface CampaignClosePageProps
 
 export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> = ({
     namespaceID,
-    campaignName,
+    batchChangeName: campaignName,
     history,
     location,
     extensionsController,
     isLightTheme,
     platformContext,
     telemetryService,
-    fetchCampaignByNamespace = _fetchCampaignByNamespace,
+    fetchBatchChangeByNamespace: fetchCampaignByNamespace = _fetchCampaignByNamespace,
     queryChangesets,
     queryExternalChangesetWithFileDiffs,
     closeCampaign,
@@ -75,7 +75,9 @@ export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> 
     const [totalCount, setTotalCount] = useState<number>()
 
     const onFetchChangesets = useCallback(
-        (connection?: (CampaignChangesetsResult['node'] & { __typename: 'Campaign' })['changesets'] | ErrorLike) => {
+        (
+            connection?: (BatchChangeChangesetsResult['node'] & { __typename: 'BatchChange' })['changesets'] | ErrorLike
+        ) => {
             if (!connection || isErrorLike(connection)) {
                 return
             }

@@ -19,7 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
-func TestCampaignConnectionResolver(t *testing.T) {
+func TestBatchChangeConnectionResolver(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -33,7 +33,7 @@ func TestCampaignConnectionResolver(t *testing.T) {
 	repoStore := database.ReposWith(cstore)
 	esStore := database.ExternalServicesWith(cstore)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/campaign-connection-test", newGitHubExternalService(t, esStore))
+	repo := newGitHubTestRepo("github.com/sourcegraph/batch-change-connection-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
@@ -82,12 +82,12 @@ func TestCampaignConnectionResolver(t *testing.T) {
 	}
 
 	// Campaigns are returned in reverse order.
-	nodes := []apitest.Campaign{
+	nodes := []apitest.BatchChange{
 		{
-			ID: string(marshalCampaignID(campaign2.ID)),
+			ID: string(marshalBatchChangeID(campaign2.ID)),
 		},
 		{
-			ID: string(marshalCampaignID(campaign1.ID)),
+			ID: string(marshalBatchChangeID(campaign1.ID)),
 		},
 	}
 
@@ -95,7 +95,7 @@ func TestCampaignConnectionResolver(t *testing.T) {
 		firstParam      int
 		wantHasNextPage bool
 		wantTotalCount  int
-		wantNodes       []apitest.Campaign
+		wantNodes       []apitest.BatchChange
 	}{
 		{firstParam: 1, wantHasNextPage: true, wantTotalCount: 2, wantNodes: nodes[:1]},
 		{firstParam: 2, wantHasNextPage: false, wantTotalCount: 2, wantNodes: nodes},
@@ -105,21 +105,21 @@ func TestCampaignConnectionResolver(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(fmt.Sprintf("first=%d", tc.firstParam), func(t *testing.T) {
 			input := map[string]interface{}{"first": int64(tc.firstParam)}
-			var response struct{ Campaigns apitest.CampaignConnection }
+			var response struct{ BatchChanges apitest.BatchChangeConnection }
 			apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryCampaignsConnection)
 
-			wantConnection := apitest.CampaignConnection{
+			wantConnection := apitest.BatchChangeConnection{
 				TotalCount: tc.wantTotalCount,
 				PageInfo: apitest.PageInfo{
 					HasNextPage: tc.wantHasNextPage,
 					// We don't test on the cursor here.
-					EndCursor: response.Campaigns.PageInfo.EndCursor,
+					EndCursor: response.BatchChanges.PageInfo.EndCursor,
 				},
 				Nodes: tc.wantNodes,
 			}
 
-			if diff := cmp.Diff(wantConnection, response.Campaigns); diff != "" {
-				t.Fatalf("wrong campaigns response (-want +got):\n%s", diff)
+			if diff := cmp.Diff(wantConnection, response.BatchChanges); diff != "" {
+				t.Fatalf("wrong batchChanges response (-want +got):\n%s", diff)
 			}
 		})
 	}
@@ -133,22 +133,22 @@ func TestCampaignConnectionResolver(t *testing.T) {
 			}
 			wantHasNextPage := i != len(nodes)-1
 
-			var response struct{ Campaigns apitest.CampaignConnection }
+			var response struct{ BatchChanges apitest.BatchChangeConnection }
 			apitest.MustExec(ctx, t, s, input, &response, queryCampaignsConnection)
 
-			if diff := cmp.Diff(1, len(response.Campaigns.Nodes)); diff != "" {
+			if diff := cmp.Diff(1, len(response.BatchChanges.Nodes)); diff != "" {
 				t.Fatalf("unexpected number of nodes (-want +got):\n%s", diff)
 			}
 
-			if diff := cmp.Diff(len(nodes), response.Campaigns.TotalCount); diff != "" {
+			if diff := cmp.Diff(len(nodes), response.BatchChanges.TotalCount); diff != "" {
 				t.Fatalf("unexpected total count (-want +got):\n%s", diff)
 			}
 
-			if diff := cmp.Diff(wantHasNextPage, response.Campaigns.PageInfo.HasNextPage); diff != "" {
+			if diff := cmp.Diff(wantHasNextPage, response.BatchChanges.PageInfo.HasNextPage); diff != "" {
 				t.Fatalf("unexpected hasNextPage (-want +got):\n%s", diff)
 			}
 
-			endCursor = response.Campaigns.PageInfo.EndCursor
+			endCursor = response.BatchChanges.PageInfo.EndCursor
 			if want, have := wantHasNextPage, endCursor != nil; have != want {
 				t.Fatalf("unexpected endCursor existence. want=%t, have=%t", want, have)
 			}
@@ -158,7 +158,7 @@ func TestCampaignConnectionResolver(t *testing.T) {
 
 const queryCampaignsConnection = `
 query($first: Int, $after: String) {
-  campaigns(first: $first, after: $after) {
+  batchChanges(first: $first, after: $after) {
     totalCount
     pageInfo {
 	  hasNextPage
@@ -171,7 +171,7 @@ query($first: Int, $after: String) {
 }
 `
 
-func TestCampaignsListing(t *testing.T) {
+func TestBatchChangesListing(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -212,7 +212,7 @@ func TestCampaignsListing(t *testing.T) {
 		}
 	}
 
-	t.Run("listing a users campaigns", func(t *testing.T) {
+	t.Run("listing a users batch changes", func(t *testing.T) {
 		spec := &campaigns.CampaignSpec{}
 		createCampaignSpec(t, spec)
 
@@ -232,10 +232,10 @@ func TestCampaignsListing(t *testing.T) {
 
 		want := apitest.User{
 			ID: userAPIID,
-			Campaigns: apitest.CampaignConnection{
+			BatchChanges: apitest.BatchChangeConnection{
 				TotalCount: 1,
-				Nodes: []apitest.Campaign{
-					{ID: string(marshalCampaignID(campaign.ID))},
+				Nodes: []apitest.BatchChange{
+					{ID: string(marshalBatchChangeID(campaign.ID))},
 				},
 			},
 		}
@@ -265,10 +265,10 @@ func TestCampaignsListing(t *testing.T) {
 
 		want := apitest.Org{
 			ID: orgAPIID,
-			Campaigns: apitest.CampaignConnection{
+			BatchChanges: apitest.BatchChangeConnection{
 				TotalCount: 1,
-				Nodes: []apitest.Campaign{
-					{ID: string(marshalCampaignID(campaign.ID))},
+				Nodes: []apitest.BatchChange{
+					{ID: string(marshalBatchChangeID(campaign.ID))},
 				},
 			},
 		}
@@ -284,7 +284,7 @@ query($node: ID!) {
   node(id: $node) {
     ... on User {
       id
-      campaigns {
+      batchChanges {
         totalCount
         nodes {
           id
@@ -294,7 +294,7 @@ query($node: ID!) {
 
     ... on Org {
       id
-      campaigns {
+      batchChanges {
         totalCount
         nodes {
           id

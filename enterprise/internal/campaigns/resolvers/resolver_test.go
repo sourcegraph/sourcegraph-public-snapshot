@@ -42,11 +42,11 @@ func TestNullIDResilience(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 
 	ids := []graphql.ID{
-		marshalCampaignID(0),
+		marshalBatchChangeID(0),
 		marshalChangesetID(0),
-		marshalCampaignSpecRandID(""),
+		marshalBatchSpecRandID(""),
 		marshalChangesetSpecRandID(""),
-		marshalCampaignsCredentialID(0),
+		marshalBatchChangesCredentialID(0),
 	}
 
 	for _, id := range ids {
@@ -61,15 +61,15 @@ func TestNullIDResilience(t *testing.T) {
 	}
 
 	mutations := []string{
-		fmt.Sprintf(`mutation { closeCampaign(campaign: %q) { id } }`, marshalCampaignID(0)),
-		fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } }`, marshalCampaignID(0)),
+		fmt.Sprintf(`mutation { closeBatchChange(batchChange: %q) { id } }`, marshalBatchChangeID(0)),
+		fmt.Sprintf(`mutation { deleteBatchChange(batchChange: %q) { alwaysNil } }`, marshalBatchChangeID(0)),
 		fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, marshalChangesetID(0)),
 		fmt.Sprintf(`mutation { reenqueueChangeset(changeset: %q) { id } }`, marshalChangesetID(0)),
-		fmt.Sprintf(`mutation { applyCampaign(campaignSpec: %q) { id } }`, marshalCampaignSpecRandID("")),
-		fmt.Sprintf(`mutation { createCampaign(campaignSpec: %q) { id } }`, marshalCampaignSpecRandID("")),
-		fmt.Sprintf(`mutation { moveCampaign(campaign: %q, newName: "foobar") { id } }`, marshalCampaignID(0)),
-		fmt.Sprintf(`mutation { createCampaignsCredential(externalServiceKind: GITHUB, externalServiceURL: "http://test", credential: "123123", user: %q) { id } }`, graphqlbackend.MarshalUserID(0)),
-		fmt.Sprintf(`mutation { deleteCampaignsCredential(campaignsCredential: %q) { alwaysNil } }`, marshalCampaignsCredentialID(0)),
+		fmt.Sprintf(`mutation { applyBatchChange(batchSpec: %q) { id } }`, marshalBatchSpecRandID("")),
+		fmt.Sprintf(`mutation { createBatchChange(batchSpec: %q) { id } }`, marshalBatchSpecRandID("")),
+		fmt.Sprintf(`mutation { moveBatchChange(batchChange: %q, newName: "foobar") { id } }`, marshalBatchChangeID(0)),
+		fmt.Sprintf(`mutation { createBatchChangesCredential(externalServiceKind: GITHUB, externalServiceURL: "http://test", credential: "123123", user: %q) { id } }`, graphqlbackend.MarshalUserID(0)),
+		fmt.Sprintf(`mutation { deleteBatchChangesCredential(batchChangesCredential: %q) { alwaysNil } }`, marshalBatchChangesCredentialID(0)),
 	}
 
 	for _, m := range mutations {
@@ -84,7 +84,7 @@ func TestNullIDResilience(t *testing.T) {
 	}
 }
 
-func TestCreateCampaignSpec(t *testing.T) {
+func TestCreateBatchSpec(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -99,7 +99,7 @@ func TestCreateCampaignSpec(t *testing.T) {
 	repoStore := database.ReposWith(cstore)
 	esStore := database.ExternalServicesWith(cstore)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/create-campaign-spec-test", newGitHubExternalService(t, esStore))
+	repo := newGitHubTestRepo("github.com/sourcegraph/create-batch-spec-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
@@ -126,7 +126,7 @@ func TestCreateCampaignSpec(t *testing.T) {
 	}
 
 	userAPIID := string(graphqlbackend.MarshalUserID(userID))
-	rawSpec := ct.TestRawCampaignSpec
+	rawSpec := ct.TestRawBatchSpec
 
 	for name, tc := range map[string]struct {
 		changesetSpecs []*campaigns.ChangesetSpec
@@ -171,14 +171,14 @@ func TestCreateCampaignSpec(t *testing.T) {
 
 			input := map[string]interface{}{
 				"namespace":      userAPIID,
-				"campaignSpec":   rawSpec,
+				"batchSpec":      rawSpec,
 				"changesetSpecs": changesetSpecIDs,
 			}
 
-			var response struct{ CreateCampaignSpec apitest.CampaignSpec }
+			var response struct{ CreateBatchSpec apitest.BatchSpec }
 
 			actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
-			errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateCampaignSpec)
+			errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateBatchSpec)
 			if tc.wantErr {
 				if errs == nil {
 					t.Error("unexpected lack of errors")
@@ -193,7 +193,7 @@ func TestCreateCampaignSpec(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				have := response.CreateCampaignSpec
+				have := response.CreateBatchSpec
 
 				wantNodes := make([]apitest.ChangesetSpec, len(changesetSpecIDs))
 				for i, id := range changesetSpecIDs {
@@ -203,7 +203,7 @@ func TestCreateCampaignSpec(t *testing.T) {
 					}
 				}
 
-				want := apitest.CampaignSpec{
+				want := apitest.BatchSpec{
 					ID:            have.ID,
 					CreatedAt:     have.CreatedAt,
 					ExpiresAt:     have.ExpiresAt,
@@ -225,12 +225,12 @@ func TestCreateCampaignSpec(t *testing.T) {
 	}
 }
 
-const mutationCreateCampaignSpec = `
+const mutationCreateBatchSpec = `
 fragment u on User { id, databaseID, siteAdmin }
 fragment o on Org  { id, name }
 
-mutation($namespace: ID!, $campaignSpec: String!, $changesetSpecs: [ID!]!){
-  createCampaignSpec(namespace: $namespace, campaignSpec: $campaignSpec, changesetSpecs: $changesetSpecs) {
+mutation($namespace: ID!, $batchSpec: String!, $changesetSpecs: [ID!]!){
+  createBatchSpec(namespace: $namespace, batchSpec: $batchSpec, changesetSpecs: $changesetSpecs) {
     id
     originalInput
     parsedInput
@@ -331,7 +331,7 @@ mutation($changesetSpec: String!){
 }
 `
 
-func TestApplyCampaign(t *testing.T) {
+func TestApplyBatchChange(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -355,7 +355,7 @@ func TestApplyCampaign(t *testing.T) {
 	repoAPIID := graphqlbackend.MarshalRepositoryID(repo.ID)
 
 	campaignSpec := &campaigns.CampaignSpec{
-		RawSpec: ct.TestRawCampaignSpec,
+		RawSpec: ct.TestRawBatchSpec,
 		Spec: campaigns.CampaignSpecFields{
 			Name:        "my-campaign",
 			Description: "My description",
@@ -396,12 +396,12 @@ func TestApplyCampaign(t *testing.T) {
 
 	userAPIID := string(graphqlbackend.MarshalUserID(userID))
 	input := map[string]interface{}{
-		"campaignSpec": string(marshalCampaignSpecRandID(campaignSpec.RandID)),
+		"batchSpec": string(marshalBatchSpecRandID(campaignSpec.RandID)),
 	}
 
-	var response struct{ ApplyCampaign apitest.Campaign }
+	var response struct{ ApplyBatchChange apitest.BatchChange }
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
-	apitest.MustExec(actorCtx, t, s, input, &response, mutationApplyCampaign)
+	apitest.MustExec(actorCtx, t, s, input, &response, mutationApplyBatchChange)
 
 	apiUser := &apitest.User{
 		ID:         userAPIID,
@@ -409,8 +409,8 @@ func TestApplyCampaign(t *testing.T) {
 		SiteAdmin:  true,
 	}
 
-	have := response.ApplyCampaign
-	want := apitest.Campaign{
+	have := response.ApplyBatchChange
+	want := apitest.BatchChange{
 		ID:          have.ID,
 		Name:        campaignSpec.Spec.Name,
 		Description: campaignSpec.Spec.Description,
@@ -435,38 +435,38 @@ func TestApplyCampaign(t *testing.T) {
 	}
 
 	// Now we execute it again and make sure we get the same campaign back
-	apitest.MustExec(actorCtx, t, s, input, &response, mutationApplyCampaign)
-	have2 := response.ApplyCampaign
+	apitest.MustExec(actorCtx, t, s, input, &response, mutationApplyBatchChange)
+	have2 := response.ApplyBatchChange
 	if diff := cmp.Diff(want, have2); diff != "" {
 		t.Fatalf("unexpected response (-want +got):\n%s", diff)
 	}
 
-	// Execute it again with ensureCampaign set to correct campaign's ID
-	input["ensureCampaign"] = have2.ID
-	apitest.MustExec(actorCtx, t, s, input, &response, mutationApplyCampaign)
-	have3 := response.ApplyCampaign
+	// Execute it again with ensureBatchChange set to correct campaign's ID
+	input["ensureBatchChange"] = have2.ID
+	apitest.MustExec(actorCtx, t, s, input, &response, mutationApplyBatchChange)
+	have3 := response.ApplyBatchChange
 	if diff := cmp.Diff(want, have3); diff != "" {
 		t.Fatalf("unexpected response (-want +got):\n%s", diff)
 	}
 
-	// Execute it again but ensureCampaign set to wrong campaign ID
-	campaignID, err := unmarshalCampaignID(graphql.ID(have3.ID))
+	// Execute it again but ensureBatchChange set to wrong campaign ID
+	campaignID, err := unmarshalBatchChangeID(graphql.ID(have3.ID))
 	if err != nil {
 		t.Fatal(err)
 	}
-	input["ensureCampaign"] = marshalCampaignID(campaignID + 999)
-	errs := apitest.Exec(actorCtx, t, s, input, &response, mutationApplyCampaign)
+	input["ensureBatchChange"] = marshalBatchChangeID(campaignID + 999)
+	errs := apitest.Exec(actorCtx, t, s, input, &response, mutationApplyBatchChange)
 	if len(errs) == 0 {
 		t.Fatalf("expected errors, got none")
 	}
 }
 
-const mutationApplyCampaign = `
+const mutationApplyBatchChange = `
 fragment u on User { id, databaseID, siteAdmin }
 fragment o on Org  { id, name }
 
-mutation($campaignSpec: ID!, $ensureCampaign: ID){
-  applyCampaign(campaignSpec: $campaignSpec, ensureCampaign: $ensureCampaign) {
+mutation($batchSpec: ID!, $ensureBatchChange: ID){
+  applyBatchChange(batchSpec: $batchSpec, ensureBatchChange: $ensureBatchChange) {
     id, name, description
     initialApplier    { ...u }
     lastApplier       { ...u }
@@ -488,7 +488,7 @@ mutation($campaignSpec: ID!, $ensureCampaign: ID){
 }
 `
 
-func TestCreateCampaign(t *testing.T) {
+func TestCreateBatchChange(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -501,7 +501,7 @@ func TestCreateCampaign(t *testing.T) {
 	cstore := store.New(db)
 
 	campaignSpec := &campaigns.CampaignSpec{
-		RawSpec: ct.TestRawCampaignSpec,
+		RawSpec: ct.TestRawBatchSpec,
 		Spec: campaigns.CampaignSpecFields{
 			Name:        "my-campaign",
 			Description: "My description",
@@ -520,21 +520,21 @@ func TestCreateCampaign(t *testing.T) {
 	}
 
 	input := map[string]interface{}{
-		"campaignSpec": string(marshalCampaignSpecRandID(campaignSpec.RandID)),
+		"batchSpec": string(marshalBatchSpecRandID(campaignSpec.RandID)),
 	}
 
-	var response struct{ CreateCampaign apitest.Campaign }
+	var response struct{ CreateBatchChange apitest.BatchChange }
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
 	// First time it should work, because no campaign exists
-	apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateCampaign)
+	apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateBatchChange)
 
-	if response.CreateCampaign.ID == "" {
+	if response.CreateBatchChange.ID == "" {
 		t.Fatalf("expected campaign to be created, but was not")
 	}
 
 	// Second time it should fail
-	errors := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateCampaign)
+	errors := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateBatchChange)
 
 	if len(errors) != 1 {
 		t.Fatalf("expected single errors, but got none")
@@ -544,13 +544,13 @@ func TestCreateCampaign(t *testing.T) {
 	}
 }
 
-const mutationCreateCampaign = `
-mutation($campaignSpec: ID!){
-  createCampaign(campaignSpec: $campaignSpec) { id }
+const mutationCreateBatchChange = `
+mutation($batchSpec: ID!){
+  createBatchChange(batchSpec: $batchSpec) { id }
 }
 `
 
-func TestMoveCampaign(t *testing.T) {
+func TestMoveBatchChange(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -561,13 +561,13 @@ func TestMoveCampaign(t *testing.T) {
 	user := ct.CreateTestUser(t, db, true)
 	userID := user.ID
 
-	orgName := "move-campaign-test"
+	orgName := "move-batch-change-test"
 	orgID := ct.InsertTestOrg(t, db, orgName)
 
 	cstore := store.New(db)
 
 	campaignSpec := &campaigns.CampaignSpec{
-		RawSpec:         ct.TestRawCampaignSpec,
+		RawSpec:         ct.TestRawBatchSpec,
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
@@ -594,18 +594,18 @@ func TestMoveCampaign(t *testing.T) {
 	}
 
 	// Move to a new name
-	campaignAPIID := string(marshalCampaignID(campaign.ID))
+	campaignAPIID := string(marshalBatchChangeID(campaign.ID))
 	newCampaignName := "new-name"
 	input := map[string]interface{}{
-		"campaign": campaignAPIID,
-		"newName":  newCampaignName,
+		"batchChange": campaignAPIID,
+		"newName":     newCampaignName,
 	}
 
-	var response struct{ MoveCampaign apitest.Campaign }
+	var response struct{ MoveBatchChange apitest.BatchChange }
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 	apitest.MustExec(actorCtx, t, s, input, &response, mutationMoveCampaign)
 
-	haveCampaign := response.MoveCampaign
+	haveCampaign := response.MoveBatchChange
 	if diff := cmp.Diff(input["newName"], haveCampaign.Name); diff != "" {
 		t.Fatalf("unexpected name (-want +got):\n%s", diff)
 	}
@@ -618,13 +618,13 @@ func TestMoveCampaign(t *testing.T) {
 	// Move to a new namespace
 	orgAPIID := graphqlbackend.MarshalOrgID(orgID)
 	input = map[string]interface{}{
-		"campaign":     string(marshalCampaignID(campaign.ID)),
+		"batchChange":  string(marshalBatchChangeID(campaign.ID)),
 		"newNamespace": orgAPIID,
 	}
 
 	apitest.MustExec(actorCtx, t, s, input, &response, mutationMoveCampaign)
 
-	haveCampaign = response.MoveCampaign
+	haveCampaign = response.MoveBatchChange
 	if diff := cmp.Diff(string(orgAPIID), haveCampaign.Namespace.ID); diff != "" {
 		t.Fatalf("unexpected namespace (-want +got):\n%s", diff)
 	}
@@ -638,8 +638,8 @@ const mutationMoveCampaign = `
 fragment u on User { id, databaseID, siteAdmin }
 fragment o on Org  { id, name }
 
-mutation($campaign: ID!, $newName: String, $newNamespace: ID){
-  moveCampaign(campaign: $campaign, newName: $newName, newNamespace: $newNamespace) {
+mutation($batchChange: ID!, $newName: String, $newNamespace: ID){
+  moveBatchChange(batchChange: $batchChange, newName: $newName, newNamespace: $newNamespace) {
 	id, name, description
 	initialApplier  { ...u }
 	namespace {
@@ -745,6 +745,17 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 				OwnedByCampaignID: campaignID,
 			},
 		},
+		// Setting OnlyPublishedByThisBatchChange true.
+		{
+			args: &graphqlbackend.ListChangesetsArgs{
+				OnlyPublishedByThisBatchChange: &wantOnlyPublishedByThisCampaign[0],
+			},
+			wantSafe: true,
+			wantParsed: store.ListChangesetsOpts{
+				PublicationState:  &wantPublicationStates[0],
+				OwnedByCampaignID: campaignID,
+			},
+		},
 		// Setting a positive search.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
@@ -790,7 +801,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 	}
 }
 
-func TestCreateCampaignsCredential(t *testing.T) {
+func TestCreateBatchChangesCredential(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -817,13 +828,15 @@ func TestCreateCampaignsCredential(t *testing.T) {
 		"credential":          "SOSECRET",
 	}
 
-	var response struct{ CreateCampaignsCredential apitest.CampaignsCredential }
+	var response struct {
+		CreateBatchChangesCredential apitest.BatchChangesCredential
+	}
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
 	// First time it should work, because no credential exists
 	apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateCredential)
 
-	if response.CreateCampaignsCredential.ID == "" {
+	if response.CreateBatchChangesCredential.ID == "" {
 		t.Fatalf("expected credential to be created, but was not")
 	}
 
@@ -840,11 +853,11 @@ func TestCreateCampaignsCredential(t *testing.T) {
 
 const mutationCreateCredential = `
 mutation($user: ID!, $externalServiceKind: ExternalServiceKind!, $externalServiceURL: String!, $credential: String!) {
-  createCampaignsCredential(user: $user, externalServiceKind: $externalServiceKind, externalServiceURL: $externalServiceURL, credential: $credential) { id }
+  createBatchChangesCredential(user: $user, externalServiceKind: $externalServiceKind, externalServiceURL: $externalServiceURL, credential: $credential) { id }
 }
 `
 
-func TestDeleteCampaignsCredential(t *testing.T) {
+func TestDeleteBatchChangesCredential(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -875,10 +888,10 @@ func TestDeleteCampaignsCredential(t *testing.T) {
 	}
 
 	input := map[string]interface{}{
-		"campaignsCredential": marshalCampaignsCredentialID(cred.ID),
+		"batchChangesCredential": marshalBatchChangesCredentialID(cred.ID),
 	}
 
-	var response struct{ DeleteCampaignsCredential apitest.EmptyResponse }
+	var response struct{ DeleteBatchChangesCredential apitest.EmptyResponse }
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
 	// First time it should work, because a credential exists
@@ -896,8 +909,8 @@ func TestDeleteCampaignsCredential(t *testing.T) {
 }
 
 const mutationDeleteCredential = `
-mutation($campaignsCredential: ID!) {
-  deleteCampaignsCredential(campaignsCredential: $campaignsCredential) { alwaysNil }
+mutation($batchChangesCredential: ID!) {
+  deleteBatchChangesCredential(batchChangesCredential: $batchChangesCredential) { alwaysNil }
 }
 `
 

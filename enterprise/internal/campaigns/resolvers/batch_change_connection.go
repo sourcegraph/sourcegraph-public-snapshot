@@ -11,32 +11,32 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
-var _ graphqlbackend.CampaignsConnectionResolver = &campaignsConnectionResolver{}
+var _ graphqlbackend.BatchChangesConnectionResolver = &batchChangesConnectionResolver{}
 
-type campaignsConnectionResolver struct {
+type batchChangesConnectionResolver struct {
 	store *store.Store
 	opts  store.ListCampaignsOpts
 
 	// cache results because they are used by multiple fields
-	once      sync.Once
-	campaigns []*campaigns.Campaign
-	next      int64
-	err       error
+	once         sync.Once
+	batchChanges []*campaigns.Campaign
+	next         int64
+	err          error
 }
 
-func (r *campaignsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.CampaignResolver, error) {
+func (r *batchChangesConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.BatchChangeResolver, error) {
 	nodes, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]graphqlbackend.CampaignResolver, 0, len(nodes))
+	resolvers := make([]graphqlbackend.BatchChangeResolver, 0, len(nodes))
 	for _, c := range nodes {
-		resolvers = append(resolvers, &campaignResolver{store: r.store, Campaign: c})
+		resolvers = append(resolvers, &batchChangeResolver{store: r.store, batchChange: c})
 	}
 	return resolvers, nil
 }
 
-func (r *campaignsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+func (r *batchChangesConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	opts := store.CountCampaignsOpts{
 		ChangesetID:      r.opts.ChangesetID,
 		State:            r.opts.State,
@@ -48,7 +48,7 @@ func (r *campaignsConnectionResolver) TotalCount(ctx context.Context) (int32, er
 	return int32(count), err
 }
 
-func (r *campaignsConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *batchChangesConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	_, next, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
@@ -59,9 +59,9 @@ func (r *campaignsConnectionResolver) PageInfo(ctx context.Context) (*graphqluti
 	return graphqlutil.HasNextPage(false), nil
 }
 
-func (r *campaignsConnectionResolver) compute(ctx context.Context) ([]*campaigns.Campaign, int64, error) {
+func (r *batchChangesConnectionResolver) compute(ctx context.Context) ([]*campaigns.Campaign, int64, error) {
 	r.once.Do(func() {
-		r.campaigns, r.next, r.err = r.store.ListCampaigns(ctx, r.opts)
+		r.batchChanges, r.next, r.err = r.store.ListCampaigns(ctx, r.opts)
 	})
-	return r.campaigns, r.next, r.err
+	return r.batchChanges, r.next, r.err
 }

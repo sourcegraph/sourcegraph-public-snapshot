@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
-const TestRawCampaignSpec = `{
+const TestRawBatchSpec = `{
   "name": "my-unique-name",
   "description": "My description",
   "on": [
@@ -29,7 +29,7 @@ const TestRawCampaignSpec = `{
   ],
   "changesetTemplate": {
     "title": "Hello World",
-    "body": "My first campaign!",
+    "body": "My first batch change!",
     "branch": "hello-world",
     "commit": {
       "message": "Append Hello World to all README.md files"
@@ -38,7 +38,7 @@ const TestRawCampaignSpec = `{
   }
 }`
 
-const TestRawCampaignSpecYAML = `
+const TestRawBatchSpecYAML = `
 name: my-unique-name
 description: My description
 'on':
@@ -51,7 +51,7 @@ steps:
     PATH: "/work/foobar:$PATH"
 changesetTemplate:
   title: Hello World
-  body: My first campaign!
+  body: My first batch change!
   branch: hello-world
   commit:
     message: Append Hello World to all README.md files

@@ -3,11 +3,11 @@ import React, { useMemo } from 'react'
 import { Link } from '../../../../../shared/src/components/Link'
 import { CodeSnippet } from '../../../../../branded/src/components/CodeSnippet'
 import { Timestamp } from '../../../components/time/Timestamp'
-import { CampaignFields } from '../../../graphql-operations'
+import { BatchChangeFields } from '../../../graphql-operations'
 
 export interface CampaignSpecTabProps {
-    campaign: Pick<CampaignFields, 'name' | 'createdAt' | 'lastApplier' | 'lastAppliedAt'>
-    originalInput: CampaignFields['currentSpec']['originalInput']
+    campaign: Pick<BatchChangeFields, 'name' | 'createdAt' | 'lastApplier' | 'lastAppliedAt'>
+    originalInput: BatchChangeFields['currentSpec']['originalInput']
 }
 
 /** Reports whether str is a valid JSON document. */

@@ -118,6 +118,8 @@
 // 1528395790_create_gitserver_repos.up.sql (313B)
 // 1528395791_insights_query_runner_jobs_record_time.down.sql (81B)
 // 1528395791_insights_query_runner_jobs_record_time.up.sql (92B)
+// 1528395792_add_user_public_repos.down.sql (57B)
+// 1528395792_add_user_public_repos.up.sql (317B)
 
 package migrations
 
@@ -2546,6 +2548,46 @@ func _1528395791_insights_query_runner_jobs_record_timeUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395792_add_user_public_reposDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x2d\x4e\x2d\x8a\x2f\x28\x4d\xca\xc9\x4c\x8e\x2f\x4a\x2d\xc8\x2f\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x7b\x56\x0c\x79\x39\x00\x00\x00")
+
+func _1528395792_add_user_public_reposDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395792_add_user_public_reposDownSql,
+		"1528395792_add_user_public_repos.down.sql",
+	)
+}
+
+func _1528395792_add_user_public_reposDownSql() (*asset, error) {
+	bytes, err := _1528395792_add_user_public_reposDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395792_add_user_public_repos.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x38, 0x14, 0x37, 0x23, 0x3, 0xc0, 0x9, 0x8, 0xd7, 0xe0, 0x9c, 0xb9, 0x24, 0x2c, 0xc2, 0x79, 0x21, 0xa1, 0xaa, 0x3c, 0x54, 0x7b, 0x45, 0x8d, 0x6a, 0xb, 0xd5, 0x59, 0x72, 0xb7, 0x30, 0x4d}}
+	return a, nil
+}
+
+var __1528395792_add_user_public_reposUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\x90\xc1\x6a\x84\x30\x18\x84\xef\x79\x8a\x39\x2a\xec\x1b\xec\x29\x9b\x1d\x97\xd0\x6c\x42\x63\x84\xf6\x24\xb4\x0d\x25\x50\x5a\x89\x0a\x7d\xfc\x12\xad\xb0\x07\xbd\xce\x7c\xf3\xf1\xf3\x5f\x78\xd3\xf6\x2c\x84\xf2\x94\x81\x08\xf2\x62\x08\xdd\xc0\xba\x00\xbe\xe8\x36\xb4\x98\xc7\x98\xfb\x61\x7e\xfb\x4a\xef\x7d\x8e\xc3\xcf\x88\x4a\x00\x58\xf3\xf4\x81\xf4\x3d\xc5\xcf\x98\x97\x89\xed\x8c\x39\x2d\x6d\x21\xfb\x39\x27\x4c\xf1\x77\xda\xeb\x0e\x97\x9d\xd5\xcf\x1d\xab\x7f\xfd\x69\xa3\xeb\xb5\x6d\x9c\xa7\xbe\x59\x3c\xf1\x15\x1b\x53\xc3\xb3\xa1\xa7\x55\x5c\xcf\x1d\x51\x95\xd4\x59\x5c\x69\x18\x08\x25\x5b\x25\xaf\xdc\x51\x6c\xf6\x47\x45\xc9\x0e\x0c\xa2\x2e\xcf\x72\xf7\xbb\x0e\x67\xf1\x17\x00\x00\xff\xff\xe2\x95\x14\x97\x3d\x01\x00\x00")
+
+func _1528395792_add_user_public_reposUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395792_add_user_public_reposUpSql,
+		"1528395792_add_user_public_repos.up.sql",
+	)
+}
+
+func _1528395792_add_user_public_reposUpSql() (*asset, error) {
+	bytes, err := _1528395792_add_user_public_reposUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395792_add_user_public_repos.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xc7, 0x1e, 0xb5, 0xe5, 0x87, 0xec, 0x3c, 0x48, 0x3c, 0x80, 0x7a, 0xa5, 0xa2, 0xfd, 0x37, 0x3d, 0x55, 0xd3, 0xfb, 0x1, 0x2e, 0xdc, 0x4c, 0x9f, 0x8f, 0xc8, 0x25, 0x96, 0x83, 0x18, 0xc6, 0x27}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2755,6 +2797,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395790_create_gitserver_repos.up.sql":                                               _1528395790_create_gitserver_reposUpSql,
 	"1528395791_insights_query_runner_jobs_record_time.down.sql":                             _1528395791_insights_query_runner_jobs_record_timeDownSql,
 	"1528395791_insights_query_runner_jobs_record_time.up.sql":                               _1528395791_insights_query_runner_jobs_record_timeUpSql,
+	"1528395792_add_user_public_repos.down.sql":                                              _1528395792_add_user_public_reposDownSql,
+	"1528395792_add_user_public_repos.up.sql":                                                _1528395792_add_user_public_reposUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2919,6 +2963,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395790_create_gitserver_repos.up.sql":                                               {_1528395790_create_gitserver_reposUpSql, map[string]*bintree{}},
 	"1528395791_insights_query_runner_jobs_record_time.down.sql":                             {_1528395791_insights_query_runner_jobs_record_timeDownSql, map[string]*bintree{}},
 	"1528395791_insights_query_runner_jobs_record_time.up.sql":                               {_1528395791_insights_query_runner_jobs_record_timeUpSql, map[string]*bintree{}},
+	"1528395792_add_user_public_repos.down.sql":                                              {_1528395792_add_user_public_reposDownSql, map[string]*bintree{}},
+	"1528395792_add_user_public_repos.up.sql":                                                {_1528395792_add_user_public_reposUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

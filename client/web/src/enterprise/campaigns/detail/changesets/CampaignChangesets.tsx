@@ -75,8 +75,8 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                 checkState: changesetFilters.checkState,
                 first: args.first ?? null,
                 after: args.after ?? null,
-                campaign: campaignID,
-                onlyPublishedByThisCampaign: null,
+                batchChange: campaignID,
+                onlyPublishedByThisBatchChange: null,
                 search: changesetFilters.search,
             }).pipe(repeatWhen(notifier => notifier.pipe(delay(5000)))),
         [

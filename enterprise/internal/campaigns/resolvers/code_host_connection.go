@@ -13,6 +13,32 @@ import (
 )
 
 type campaignsCodeHostConnectionResolver struct {
+	graphqlbackend.BatchChangesCodeHostConnectionResolver
+}
+
+var _ graphqlbackend.CampaignsCodeHostConnectionResolver = &campaignsCodeHostConnectionResolver{}
+
+func (c *campaignsCodeHostConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	return c.BatchChangesCodeHostConnectionResolver.TotalCount(ctx)
+}
+
+func (c *campaignsCodeHostConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	return c.BatchChangesCodeHostConnectionResolver.PageInfo(ctx)
+}
+
+func (c *campaignsCodeHostConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.CampaignsCodeHostResolver, error) {
+	batchNodes, err := c.BatchChangesCodeHostConnectionResolver.Nodes(ctx)
+	if err != nil {
+		return nil, err
+	}
+	nodes := make([]graphqlbackend.CampaignsCodeHostResolver, len(batchNodes))
+	for i, ch := range batchNodes {
+		nodes[i] = &campaignsCodeHostResolver{BatchChangesCodeHostResolver: ch}
+	}
+	return nodes, nil
+}
+
+type batchChangesCodeHostConnectionResolver struct {
 	userID                int32
 	onlyWithoutCredential bool
 	opts                  store.ListCodeHostsOpts
@@ -26,9 +52,9 @@ type campaignsCodeHostConnectionResolver struct {
 	chsErr        error
 }
 
-var _ graphqlbackend.CampaignsCodeHostConnectionResolver = &campaignsCodeHostConnectionResolver{}
+var _ graphqlbackend.BatchChangesCodeHostConnectionResolver = &batchChangesCodeHostConnectionResolver{}
 
-func (c *campaignsCodeHostConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+func (c *batchChangesCodeHostConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	chs, _, _, err := c.compute(ctx)
 	if err != nil {
 		return 0, err
@@ -36,7 +62,7 @@ func (c *campaignsCodeHostConnectionResolver) TotalCount(ctx context.Context) (i
 	return int32(len(chs)), err
 }
 
-func (c *campaignsCodeHostConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (c *batchChangesCodeHostConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	chs, _, _, err := c.compute(ctx)
 	if err != nil {
 		return nil, err
@@ -50,26 +76,26 @@ func (c *campaignsCodeHostConnectionResolver) PageInfo(ctx context.Context) (*gr
 	return graphqlutil.HasNextPage(false), nil
 }
 
-func (c *campaignsCodeHostConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.CampaignsCodeHostResolver, error) {
+func (c *batchChangesCodeHostConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.BatchChangesCodeHostResolver, error) {
 	_, page, credsByIDType, err := c.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	nodes := make([]graphqlbackend.CampaignsCodeHostResolver, len(page))
+	nodes := make([]graphqlbackend.BatchChangesCodeHostResolver, len(page))
 	for i, ch := range page {
 		t := idType{
 			externalServiceID:   ch.ExternalServiceID,
 			externalServiceType: ch.ExternalServiceType,
 		}
 		cred := credsByIDType[t]
-		nodes[i] = &campaignsCodeHostResolver{codeHost: ch, credential: cred}
+		nodes[i] = &batchChangesCodeHostResolver{codeHost: ch, credential: cred}
 	}
 
 	return nodes, nil
 }
 
-func (c *campaignsCodeHostConnectionResolver) compute(ctx context.Context) (all, page []*campaigns.CodeHost, credsByIDType map[idType]*database.UserCredential, err error) {
+func (c *batchChangesCodeHostConnectionResolver) compute(ctx context.Context) (all, page []*campaigns.CodeHost, credsByIDType map[idType]*database.UserCredential, err error) {
 	c.once.Do(func() {
 		// Don't pass c.limitOffset here, as we want all code hosts for the totalCount anyways.
 		c.chs, c.chsErr = c.store.ListCodeHosts(ctx, c.opts)
@@ -135,18 +161,18 @@ type idType struct {
 	externalServiceType string
 }
 
-type emptyCampaignsCodeHostConnectionResolver struct{}
+type emptyBatchChangesCodeHostConnectionResolver struct{}
 
-var _ graphqlbackend.CampaignsCodeHostConnectionResolver = &emptyCampaignsCodeHostConnectionResolver{}
+var _ graphqlbackend.BatchChangesCodeHostConnectionResolver = &emptyBatchChangesCodeHostConnectionResolver{}
 
-func (c *emptyCampaignsCodeHostConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+func (c *emptyBatchChangesCodeHostConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	return int32(0), nil
 }
 
-func (c *emptyCampaignsCodeHostConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (c *emptyBatchChangesCodeHostConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	return graphqlutil.HasNextPage(false), nil
 }
 
-func (c emptyCampaignsCodeHostConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.CampaignsCodeHostResolver, error) {
-	return []graphqlbackend.CampaignsCodeHostResolver{}, nil
+func (c emptyBatchChangesCodeHostConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.BatchChangesCodeHostResolver, error) {
+	return []graphqlbackend.BatchChangesCodeHostResolver{}, nil
 }
