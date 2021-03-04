@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 
@@ -16,6 +17,7 @@ import (
 	gitserverproto "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	repoupdaterproto "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 const maxUserPublicRepos = 100
@@ -43,14 +45,14 @@ func (r *schemaResolver) SetUserPublicRepos(ctx context.Context, args struct {
 	for i, repoURI := range args.RepoURIs {
 		i, repoURI := i, repoURI
 		eg.Go(func() error {
-			repoID, err := getRepoID(ctx, repoStore, repoURI)
+			repo, err := getRepoID(ctx, repoStore, repoURI)
 			if err != nil {
 				return errors.Wrapf(err, "getting ID for repo %s", repoURI)
 			}
 			repos[i] = database.UserPublicRepo{
 				UserID:  userID,
-				RepoURI: repoURI,
-				RepoID:  repoID,
+				RepoURI: repo.URI,
+				RepoID:  repo.ID,
 			}
 			return nil
 		})
@@ -69,16 +71,18 @@ func (r *schemaResolver) SetUserPublicRepos(ctx context.Context, args struct {
 // getRepoID attempts to find a repo in the database by URI, returning the ID if it's found. If it's not found
 // it will use RepoLookup on repo-updater to fetch the repo info from a code host, store it in the repos table,
 // enqueue a clone for that repo, and return the repo ID
-func getRepoID(ctx context.Context, repoStore *database.RepoStore, repoURI string) (id api.RepoID, err error) {
+func getRepoID(ctx context.Context, repoStore *database.RepoStore, repoURI string) (repo *types.Repo, err error) {
 	u, err := url.Parse(repoURI)
 	if err != nil {
-		return id, errors.Wrap(err, "Unable to parse repository URL "+repoURI)
-	}
-	if u.Host != "github.com" && u.Host != "gitlab.com" {
-		return id, errors.Errorf("Unable to add non-GitHub.com or GitLab.com repository: " + repoURI)
+		return nil, errors.Wrap(err, "Unable to parse repository URL "+repoURI)
 	}
 
 	var repoName = gitserverproto.NormalizeRepo(api.RepoName(u.Host + u.Path))
+
+	if !strings.HasPrefix(string(repoName), "github.com") && !strings.HasPrefix(string(repoName), "gitlab.com") {
+		return nil, errors.Errorf("Unable to add non-GitHub.com or GitLab.com repository: " + repoURI)
+	}
+
 	// if the repo exists we always want to enqueue an update, so the user can search an up to date version of the repo
 	defer func() {
 		if err != nil {
@@ -91,12 +95,12 @@ func getRepoID(ctx context.Context, repoStore *database.RepoStore, repoURI strin
 	//
 	// note: if the user provides the URL without a scheme (eg just 'github.com/foo/bar')
 	// the host is '', but the path contains the host instead, so this works both ways 😅
-	repo, err := repoStore.GetByName(ctx, repoName)
+	repo, err = repoStore.GetByName(ctx, repoName)
 	if err != nil && !database.IsRepoNotFoundErr(err) {
-		return id, errors.Wrap(err, "Error checking if repo exists already")
+		return nil, errors.Wrap(err, "Error checking if repo exists already")
 	} else if repo != nil {
 		// repo already exists, nice.
-		return repo.ID, nil
+		return repo, nil
 	}
 
 	// the repo doesn't exist yet, let's look it up and enqueue a clone, and store the ID
@@ -105,10 +109,10 @@ func getRepoID(ctx context.Context, repoStore *database.RepoStore, repoURI strin
 		repoupdaterproto.RepoLookupArgs{Repo: repoName},
 	)
 	if err != nil {
-		return id, errors.Wrap(err, "looking up repo on remote host")
+		return nil, errors.Wrap(err, "looking up repo on remote host")
 	}
 	if res.Repo == nil {
-		return id, fmt.Errorf("unable to find repo %s", repoURI)
+		return nil, fmt.Errorf("unable to find repo %s", repoURI)
 	}
 
 	repoName = res.Repo.Name
@@ -118,7 +122,7 @@ func getRepoID(ctx context.Context, repoStore *database.RepoStore, repoURI strin
 	// just look the repo up by name. janky.
 	repo, err = repoStore.GetByName(ctx, repoName)
 	if err != nil {
-		return id, errors.Wrap(err, "couldn't find repo after fetching from code host")
+		return nil, errors.Wrap(err, "couldn't find repo after fetching from code host")
 	}
-	return repo.ID, err
+	return repo, err
 }
