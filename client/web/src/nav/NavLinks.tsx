@@ -12,7 +12,7 @@ import { ThemeProps } from '../../../shared/src/theme'
 import { isErrorLike } from '../../../shared/src/util/errors'
 import { AuthenticatedUser } from '../auth'
 import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/shared'
-import { BatchChangesNavItem } from '../enterprise/campaigns/global/nav/BatchChangesNavItem'
+import { BatchChangesNavItem } from '../enterprise/batches/global/nav/BatchChangesNavItem'
 import { CodeMonitoringNavItem } from '../enterprise/code-monitoring/CodeMonitoringNavItem'
 import { InsightsNavItem } from '../insights/InsightsNavLink'
 import {
