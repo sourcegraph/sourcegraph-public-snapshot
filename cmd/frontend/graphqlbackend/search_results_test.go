@@ -791,37 +791,6 @@ func TestLonger(t *testing.T) {
 	}
 }
 
-func TestRoundStr(t *testing.T) {
-	tests := []struct {
-		name string
-		s    string
-		want string
-	}{
-		{
-			name: "empty",
-			s:    "",
-			want: "",
-		},
-		{
-			name: "simple",
-			s:    "19s",
-			want: "19s",
-		},
-		{
-			name: "decimal",
-			s:    "19.99s",
-			want: "20s",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := roundStr(tt.s); got != tt.want {
-				t.Errorf("roundStr() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestSearchResultsHydration(t *testing.T) {
 	db := new(dbtesting.MockDB)
 

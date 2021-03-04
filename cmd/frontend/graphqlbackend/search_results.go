@@ -33,7 +33,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -954,20 +953,6 @@ func longer(N int, dt time.Duration) time.Duration {
 		return lowest
 	}
 	return dt2
-}
-
-var decimalRx = lazyregexp.New(`\d+\.\d+`)
-
-// roundStr rounds the first number containing a decimal within a string
-func roundStr(s string) string {
-	return decimalRx.ReplaceAllStringFunc(s, func(ns string) string {
-		f, err := strconv.ParseFloat(ns, 64)
-		if err != nil {
-			return s
-		}
-		f = math.Round(f)
-		return strconv.Itoa(int(f))
-	})
 }
 
 type searchResultsStats struct {
