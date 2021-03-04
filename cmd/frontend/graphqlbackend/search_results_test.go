@@ -1008,7 +1008,7 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 					&FileMatchResolver{
 						db: db,
 						FileMatch: result.FileMatch{
-							Symbols: []*result.SearchSymbolResult{
+							Symbols: []*result.SymbolMatch{
 								// 1
 								{},
 								// 2
@@ -1028,7 +1028,7 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 					&FileMatchResolver{
 						db: db,
 						FileMatch: result.FileMatch{
-							Symbols: []*result.SearchSymbolResult{
+							Symbols: []*result.SymbolMatch{
 								// 1
 								{},
 								// 2
@@ -1444,7 +1444,7 @@ func repoResult(db dbutil.DB, url string) *RepositoryResolver {
 	})
 }
 
-func fileResult(db dbutil.DB, uri string, lineMatches []*result.LineMatch, symbolMatches []*result.SearchSymbolResult) *FileMatchResolver {
+func fileResult(db dbutil.DB, uri string, lineMatches []*result.LineMatch, symbolMatches []*result.SymbolMatch) *FileMatchResolver {
 	return &FileMatchResolver{
 		db: db,
 		FileMatch: result.FileMatch{
@@ -1583,7 +1583,7 @@ func TestUnionMerge(t *testing.T) {
 		{
 			left: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
-					fileResult(db, "a", nil, []*result.SearchSymbolResult{
+					fileResult(db, "a", nil, []*result.SymbolMatch{
 						{Symbol: result.Symbol{Name: "a"}},
 						{Symbol: result.Symbol{Name: "b"}},
 					}),
@@ -1591,7 +1591,7 @@ func TestUnionMerge(t *testing.T) {
 			},
 			right: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
-					fileResult(db, "a", nil, []*result.SearchSymbolResult{
+					fileResult(db, "a", nil, []*result.SymbolMatch{
 						{Symbol: result.Symbol{Name: "c"}},
 						{Symbol: result.Symbol{Name: "d"}},
 					}),

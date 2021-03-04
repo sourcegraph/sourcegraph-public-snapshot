@@ -396,7 +396,7 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 				for _, inputRev := range inputRevs {
 					inputRev := inputRev // copy so we can take the pointer
 
-					var symbols []*result.SearchSymbolResult
+					var symbols []*result.SymbolMatch
 					if typ == symbolRequest {
 						symbols = zoektFileMatchToSymbolResults(repoResolver, inputRev, &file)
 					}
@@ -564,14 +564,14 @@ func escape(s string) string {
 	return string(escaped)
 }
 
-func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, file *zoekt.FileMatch) []*result.SearchSymbolResult {
+func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, file *zoekt.FileMatch) []*result.SymbolMatch {
 	// Symbol search returns a resolver so we need to pass in some
 	// extra stuff. This is a sign that we can probably restructure
 	// resolvers to avoid this.
 	baseURI := &gituri.URI{URL: url.URL{Scheme: "git", Host: repo.Name(), RawQuery: url.QueryEscape(inputRev)}}
 	lang := strings.ToLower(file.Language)
 
-	symbols := make([]*result.SearchSymbolResult, 0, len(file.LineMatches))
+	symbols := make([]*result.SymbolMatch, 0, len(file.LineMatches))
 	for _, l := range file.LineMatches {
 		if l.FileName {
 			continue
@@ -582,7 +582,7 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, fi
 				continue
 			}
 
-			symbols = append(symbols, &result.SearchSymbolResult{
+			symbols = append(symbols, &result.SymbolMatch{
 				Symbol: result.Symbol{
 					Name:       m.SymbolInfo.Sym,
 					Kind:       m.SymbolInfo.Kind,
