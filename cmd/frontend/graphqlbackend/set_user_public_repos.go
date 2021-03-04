@@ -5,22 +5,30 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	gitserverproto "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	repoupdaterproto "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 )
+
+const maxUserPublicRepos = 100
 
 func (r *schemaResolver) SetUserPublicRepos(ctx context.Context, args struct {
 	UserID   graphql.ID
 	RepoURIs []string
 }) (*EmptyResponse, error) {
-	if len(args.RepoURIs) > 100 {
-		return nil, errors.Errorf("Too many repository URLs, please specify 25 or fewer")
+	if !envvar.SourcegraphDotComMode() {
+		return nil, errors.Errorf("SetUserPublicRepos is not supported on instances without SOURCEGRAPHDOTCOM_MODE=true")
+	}
+	if len(args.RepoURIs) > maxUserPublicRepos {
+		return nil, errors.Errorf("Too many repository URLs, please specify %v or fewer", maxUserPublicRepos)
 	}
 	var (
 		repoStore = database.Repos(r.db)
@@ -58,7 +66,7 @@ func (r *schemaResolver) SetUserPublicRepos(ctx context.Context, args struct {
 	return &EmptyResponse{}, nil
 }
 
-// getRepoID attempts to find a repo in the database by URI, returning the ID if it's found. if it's not found
+// getRepoID attempts to find a repo in the database by URI, returning the ID if it's found. If it's not found
 // it will use RepoLookup on repo-updater to fetch the repo info from a code host, store it in the repos table,
 // enqueue a clone for that repo, and return the repo ID
 func getRepoID(ctx context.Context, repoStore *database.RepoStore, repoURI string) (id api.RepoID, err error) {
@@ -67,10 +75,10 @@ func getRepoID(ctx context.Context, repoStore *database.RepoStore, repoURI strin
 		return id, errors.Wrap(err, "Unable to parse repository URL "+repoURI)
 	}
 	if u.Host != "github.com" && u.Host != "gitlab.com" {
-		return id, errors.Errorf("Unable to add non-GitHub or GitLab repository: " + repoURI)
+		return id, errors.Errorf("Unable to add non-GitHub.com or GitLab.com repository: " + repoURI)
 	}
 
-	var repoName = api.RepoName(u.Host + u.Path)
+	var repoName = gitserverproto.NormalizeRepo(api.RepoName(u.Host + u.Path))
 	// if the repo exists we always want to enqueue an update, so the user can search an up to date version of the repo
 	defer func() {
 		if err != nil {
@@ -84,7 +92,7 @@ func getRepoID(ctx context.Context, repoStore *database.RepoStore, repoURI strin
 	// note: if the user provides the URL without a scheme (eg just 'github.com/foo/bar')
 	// the host is '', but the path contains the host instead, so this works both ways 😅
 	repo, err := repoStore.GetByName(ctx, repoName)
-	if err != nil && !isRepoNotFoundErr(err) {
+	if err != nil && !database.IsRepoNotFoundErr(err) {
 		return id, errors.Wrap(err, "Error checking if repo exists already")
 	} else if repo != nil {
 		// repo already exists, nice.
@@ -94,7 +102,7 @@ func getRepoID(ctx context.Context, repoStore *database.RepoStore, repoURI strin
 	// the repo doesn't exist yet, let's look it up and enqueue a clone, and store the ID
 	res, err := repoupdater.DefaultClient.RepoLookup(
 		ctx,
-		protocol.RepoLookupArgs{Repo: repoName},
+		repoupdaterproto.RepoLookupArgs{Repo: repoName},
 	)
 	if err != nil {
 		return id, errors.Wrap(err, "looking up repo on remote host")
@@ -103,17 +111,14 @@ func getRepoID(ctx context.Context, repoStore *database.RepoStore, repoURI strin
 		return id, fmt.Errorf("unable to find repo %s", repoURI)
 	}
 
+	repoName = res.Repo.Name
+
 	// it was able to find a repo, but annoyingly doesn't return the repo ID.
 	// getting the repo ID out of RepoLookup is non-trivial, so instead we'll
 	// just look the repo up by name. janky.
-	repo, err = repoStore.GetByName(ctx, res.Repo.Name)
+	repo, err = repoStore.GetByName(ctx, repoName)
 	if err != nil {
 		return id, errors.Wrap(err, "couldn't find repo after fetching from code host")
 	}
 	return repo.ID, err
-}
-
-func isRepoNotFoundErr(err error) bool {
-	_, ok := err.(*database.RepoNotFoundErr)
-	return ok
 }
