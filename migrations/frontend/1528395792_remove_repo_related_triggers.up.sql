@@ -1,0 +1,15 @@
+BEGIN;
+
+DROP TRIGGER IF EXISTS trig_delete_external_service_ref_on_external_service_repos ON external_services;
+DROP FUNCTION IF EXISTS delete_external_service_ref_on_external_service_repos;
+
+DROP TRIGGER IF EXISTS trig_soft_delete_orphan_repo_by_external_service_repo ON external_service_repos;
+DROP FUNCTION IF EXISTS soft_delete_orphan_repo_by_external_service_repos;
+
+DROP TRIGGER IF EXISTS trig_delete_repo_ref_on_external_service_repos ON repo;
+DROP FUNCTION IF EXISTS delete_repo_ref_on_external_service_repos;
+
+DROP TRIGGER IF EXISTS trig_soft_delete_user_reference_on_external_service ON users;
+DROP FUNCTION IF EXISTS soft_delete_user_reference_on_external_service;
+
+COMMIT;
