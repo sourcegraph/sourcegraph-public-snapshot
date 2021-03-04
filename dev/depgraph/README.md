@@ -8,7 +8,7 @@ Run `go build` in this directory.
 
 ## Running
 
-Run `./dev/depgraph/depgraph {subcommand}` to analyze the Sourcegraph package dependency graph. The analyzed package dependency graph will be cached in a file `depgraph.cache`. Remove this file to trigger a fresh package analysis.
+Run `depgraph {subcommand}` somewhere inside the sourcegraph/sourcegraph repository to analyze the Sourcegraph package dependency graph. The analyzed package dependency graph will be cached in a file `depgraph.cache`.
 
 This process is pretty slow - someone please fix it :)
 
@@ -18,7 +18,7 @@ The following commands are available
 
 #### clear-cache
 
-Remove the cache file.
+Remove the cache file so that the next command will refresh the cache.
 
 #### lint
 
