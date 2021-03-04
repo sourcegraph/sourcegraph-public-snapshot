@@ -325,7 +325,7 @@ func (h *historicalEnqueuer) buildFrame(
 			}
 
 			// Build historical data for this unique timeframe+repo+series.
-			softErr, hardErr := h.buildSeries(ctx, &buildSeriesContext{
+			softErr, hardErr = h.buildSeries(ctx, &buildSeriesContext{
 				from:            from,
 				to:              to,
 				repo:            repo,
