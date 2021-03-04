@@ -120,9 +120,13 @@ func TestRequest(t *testing.T) {
 	}
 	h := s.Handler()
 
+	origRepoCloned := repoCloned
 	repoCloned = func(dir GitDir) bool {
 		return dir == s.dir("github.com/gorilla/mux") || dir == s.dir("my-mux")
 	}
+	defer func() {
+		repoCloned = origRepoCloned
+	}()
 
 	testGitRepoExists = func(ctx context.Context, remoteURL *url.URL) error {
 		if remoteURL.String() == "https://github.com/nicksnyder/go-i18n.git" {
@@ -739,9 +743,9 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 }
 
 func TestSyncRepoState(t *testing.T) {
+	ctx := context.Background()
 	db := dbtesting.GetDB(t)
 	remoteDir := tmpDir(t)
-	ctx := context.Background()
 
 	cmd := func(name string, arg ...string) string {
 		t.Helper()
@@ -753,8 +757,6 @@ func TestSyncRepoState(t *testing.T) {
 	cmd("sh", "-c", "echo hello world > hello.txt")
 	cmd("git", "add", "hello.txt")
 	cmd("git", "commit", "-m", "hello")
-	// Add a bad tag
-	cmd("git", "tag", "HEAD")
 
 	reposDir := tmpDir(t)
 	repoName := api.RepoName("example.com/foo/bar")
