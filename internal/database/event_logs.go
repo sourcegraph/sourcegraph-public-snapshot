@@ -783,7 +783,6 @@ active_repositories_with_upload AS (
 SELECT
 	(SELECT count FROM active_repositories) AS total_repositories,
 	(SELECT count FROM active_repositories_with_upload) AS repositories_with_uploads
-;
 `
 
 // AggregatedCodeIntelEvents calculates AggregatedEvent for each every unique event type related to code intel.
