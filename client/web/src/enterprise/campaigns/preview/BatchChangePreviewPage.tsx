@@ -20,7 +20,7 @@ import { SupersedingCampaignSpecAlert } from '../detail/SupersedingCampaignSpecA
 import { queryChangesetSpecFileDiffs, queryChangesetApplyPreview } from './list/backend'
 import { BatchChangePreviewStatsBar } from './BatchChangePreviewStatsBar'
 import { PageHeader } from '../../../components/PageHeader'
-import { CampaignsIcon } from '../icons'
+import { BatchChangesIcon } from '../icons'
 
 export type PreviewPageAuthenticatedUser = Pick<AuthenticatedUser, 'url' | 'displayName' | 'username' | 'email'>
 
@@ -84,7 +84,7 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
             <PageHeader
                 path={[
                     {
-                        icon: CampaignsIcon,
+                        icon: BatchChangesIcon,
                         to: '/batch-changes',
                     },
                     { to: `${spec.namespace.url}/batch-changes`, text: spec.namespace.namespaceName },

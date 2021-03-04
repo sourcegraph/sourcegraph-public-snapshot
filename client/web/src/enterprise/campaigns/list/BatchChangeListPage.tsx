@@ -19,7 +19,7 @@ import {
 import PlusIcon from 'mdi-react/PlusIcon'
 import { Link } from '../../../../../shared/src/components/Link'
 import { PageHeader } from '../../../components/PageHeader'
-import { CampaignsIcon } from '../icons'
+import { BatchChangesIcon } from '../icons'
 import { BatchChangesListEmpty } from './BatchChangesListEmpty'
 import { BatchChangesListIntro } from './BatchChangesListIntro'
 import { filter, map, tap, withLatestFrom } from 'rxjs/operators'
@@ -119,7 +119,7 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
     return (
         <>
             <PageHeader
-                path={[{ icon: CampaignsIcon, text: 'Batch changes' }]}
+                path={[{ icon: BatchChangesIcon, text: 'Batch changes' }]}
                 className="test-batches-list-page mb-3"
                 actions={<NewBatchChangeButton location={location} />}
                 byline="Run custom code over hundreds of repositories and manage the resulting changesets"

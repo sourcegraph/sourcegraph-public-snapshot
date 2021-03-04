@@ -9,7 +9,7 @@ import {
     Scalars,
     UserBatchChangesCodeHostsVariables,
 } from '../../../graphql-operations'
-import { CampaignsIcon } from '../icons'
+import { BatchChangesIcon } from '../icons'
 import { queryUserBatchChangesCodeHosts as _queryUserBatchChangesCodeHosts } from './backend'
 import { CodeHostConnectionNode, CodeHostConnectionNodeProps } from './CodeHostConnectionNode'
 
@@ -39,7 +39,7 @@ export const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsPro
     )
     return (
         <>
-            <PageHeader path={[{ icon: CampaignsIcon, text: 'Batch changes' }]} className="mb-3" />
+            <PageHeader path={[{ icon: BatchChangesIcon, text: 'Batch changes' }]} className="mb-3" />
             <h2>Code host tokens</h2>
             <p>Add authentication tokens to enable batch changes changeset creation on your code hosts.</p>
             <FilteredConnection<BatchChangesCodeHostFields, Omit<CodeHostConnectionNodeProps, 'node'>>

@@ -1,11 +1,11 @@
 import { NamespaceAreaNavItem } from '../../namespaces/NamespaceArea'
-import { CampaignsIconNamespaceNav } from '../campaigns/icons'
+import { BatchChangesIconNamespaceNav } from '../campaigns/icons'
 
 export const enterpriseNamespaceAreaHeaderNavItems: readonly NamespaceAreaNavItem[] = [
     {
         to: '/batch-changes',
         label: 'Batch changes',
-        icon: CampaignsIconNamespaceNav,
+        icon: BatchChangesIconNamespaceNav,
         condition: ({ isSourcegraphDotCom }: { isSourcegraphDotCom: boolean }): boolean =>
             !isSourcegraphDotCom && window.context.campaignsEnabled,
     },

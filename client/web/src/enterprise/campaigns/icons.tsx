@@ -18,10 +18,10 @@ type Icon = React.FunctionComponent<{
 }>
 
 /**
- * The base campaign icon, which may have its class and viewBox overridden by
+ * The base batch changes icon, which may have its class and viewBox overridden by
  * the exported components.
  */
-const BaseCampaignsIcon: BaseIcon = React.memo(function BaseCampaignsIcon({
+const BaseBatchChangesIcon: BaseIcon = React.memo(function BaseBatchChangesIcon({
     className = '',
     viewBox = '0 0 20 20',
     ...props
@@ -57,25 +57,25 @@ const BaseCampaignsIcon: BaseIcon = React.memo(function BaseCampaignsIcon({
 })
 
 /**
- * The icon to use everywhere to represent a campaign. Square, and by default
+ * The icon to use everywhere to represent a batch change. Square, and by default
  * 20x20. If the icon's left side needs to be flush with the left edge, use
- * {@link CampaignsIconFlushLeft} instead.
+ * {@link BatchChangesIconFlushLeft} instead.
  */
-export const CampaignsIcon: Icon = props => <BaseCampaignsIcon {...props} />
+export const BatchChangesIcon: Icon = props => <BaseBatchChangesIcon {...props} />
 
 /**
- * The same icon as {@link CampaignsIcon}, except the icon has no internal
+ * The same icon as {@link BatchChangesIcon}, except the icon has no internal
  * padding on the left hand side. This is useful when the icon's left edge
  * should be flush with the left edges of other content displayed above and/or
  * below it.
  */
-export const CampaignsIconFlushLeft: Icon = props => <BaseCampaignsIcon {...props} viewBox="2 0 20 20" />
+export const BatchChangesIconFlushLeft: Icon = props => <BaseBatchChangesIcon {...props} viewBox="2 0 20 20" />
 
 /**
- * The base component for the navbar version of the campaigns icon, with
- * different proportions and bounding box.
+ * The base component for the navbar version of the batch changes
+ * icon, with different proportions and bounding box.
  */
-const BaseCampaignsIconNav: BaseIcon = props => (
+const BaseBatchChangesIconNav: BaseIcon = props => (
     <svg width="20" height="20" {...props} fill="currentColor" xmlns="http://www.w3.org/2000/svg">
         <path
             fillRule="evenodd"
@@ -100,10 +100,10 @@ const BaseCampaignsIconNav: BaseIcon = props => (
  * The nav icon with a viewbox set up to align the icon with the other icons on
  * the global navbar.
  */
-export const CampaignsIconNav: Icon = props => <BaseCampaignsIconNav {...props} viewBox="0 -3 38 38" />
+export const BatchChangesIconNav: Icon = props => <BaseBatchChangesIconNav {...props} viewBox="0 -3 38 38" />
 
 /**
  * The nav icon with a viewbox set up to align the icon with the other icons on
  * the namespace navbar.
  */
-export const CampaignsIconNamespaceNav: Icon = props => <BaseCampaignsIconNav {...props} viewBox="0 0 36 36" />
+export const BatchChangesIconNamespaceNav: Icon = props => <BaseBatchChangesIconNav {...props} viewBox="0 0 36 36" />

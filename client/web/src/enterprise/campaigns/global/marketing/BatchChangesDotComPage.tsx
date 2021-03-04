@@ -1,6 +1,6 @@
 import React from 'react'
 import { PrivateCodeCta } from '../../../../search/input/PrivateCodeCta'
-import { CampaignsIcon } from '../../icons'
+import { BatchChangesIcon } from '../../icons'
 import { PageHeader } from '../../../../components/PageHeader'
 
 export interface BatchChangesDotComPageProps {
@@ -10,7 +10,7 @@ export interface BatchChangesDotComPageProps {
 export const BatchChangesDotComPage: React.FunctionComponent<BatchChangesDotComPageProps> = () => (
     <>
         <section className="mb-5">
-            <PageHeader path={[{ icon: CampaignsIcon, text: 'Batch changes' }]} className="mb-3" />
+            <PageHeader path={[{ icon: BatchChangesIcon, text: 'Batch changes' }]} className="mb-3" />
             <h2 className="mb-5">Make and track large-scale changes across all code</h2>
 
             <div className="text-center">

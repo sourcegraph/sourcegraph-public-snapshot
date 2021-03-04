@@ -20,7 +20,7 @@ import { HeroPage } from '../../../components/HeroPage'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { CampaignInfoByline } from '../detail/CampaignInfoByline'
 import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
-import { CampaignsIcon } from '../icons'
+import { BatchChangesIcon } from '../icons'
 import { PageHeader } from '../../../components/PageHeader'
 
 export interface CampaignClosePageProps
@@ -106,7 +106,7 @@ export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> 
             <PageHeader
                 path={[
                     {
-                        icon: CampaignsIcon,
+                        icon: BatchChangesIcon,
                         to: '/campaigns',
                     },
                     { to: `${campaign.namespace.url}/campaigns`, text: campaign.namespace.namespaceName },

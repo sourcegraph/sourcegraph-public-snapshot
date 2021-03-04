@@ -26,7 +26,7 @@ import { CampaignDetailsActionSection } from './CampaignDetailsActionSection'
 import { CampaignInfoByline } from './CampaignInfoByline'
 import { UnpublishedNotice } from './UnpublishedNotice'
 import { SupersedingCampaignSpecAlert } from './SupersedingCampaignSpecAlert'
-import { CampaignsIcon } from '../icons'
+import { BatchChangesIcon } from '../icons'
 import { PageHeader } from '../../../components/PageHeader'
 import { ClosedNotice } from './ClosedNotice'
 
@@ -110,7 +110,7 @@ export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPagePro
             <PageHeader
                 path={[
                     {
-                        icon: CampaignsIcon,
+                        icon: BatchChangesIcon,
                         to: '/campaigns',
                     },
                     { to: `${batchChange.namespace.url}/campaigns`, text: batchChange.namespace.namespaceName },
