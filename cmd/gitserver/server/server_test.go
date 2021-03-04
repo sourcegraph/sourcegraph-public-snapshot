@@ -124,9 +124,7 @@ func TestRequest(t *testing.T) {
 	repoCloned = func(dir GitDir) bool {
 		return dir == s.dir("github.com/gorilla/mux") || dir == s.dir("my-mux")
 	}
-	defer func() {
-		repoCloned = origRepoCloned
-	}()
+	t.Cleanup(func() { repoCloned = origRepoCloned })
 
 	testGitRepoExists = func(ctx context.Context, remoteURL *url.URL) error {
 		if remoteURL.String() == "https://github.com/nicksnyder/go-i18n.git" {
@@ -134,9 +132,7 @@ func TestRequest(t *testing.T) {
 		}
 		return errors.New("not cloneable")
 	}
-	defer func() {
-		testGitRepoExists = nil
-	}()
+	t.Cleanup(func() { testGitRepoExists = nil })
 
 	runCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
 		switch cmd.Args[1] {
@@ -149,7 +145,7 @@ func TestRequest(t *testing.T) {
 		}
 		return 0, nil
 	}
-	defer func() { runCommandMock = nil }()
+	t.Cleanup(func() { runCommandMock = nil })
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
@@ -225,7 +221,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 		}
 		return 0, nil
 	}
-	defer func() { runCommandMock = nil }()
+	t.Cleanup(func() { runCommandMock = nil })
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
@@ -667,7 +663,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		testRepoCorrupter = func(_ context.Context, tmpDir GitDir) {
 			cmd("sh", "-c", fmt.Sprintf("rm %s/HEAD", tmpDir))
 		}
-		defer func() { testRepoCorrupter = nil }()
+		t.Cleanup(func() { testRepoCorrupter = nil })
 		if _, err := s.cloneRepo(ctx, "example.com/foo/bar", nil); err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -718,7 +714,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		testRepoCorrupter = func(_ context.Context, tmpDir GitDir) {
 			cmd("sh", "-c", fmt.Sprintf(": > %s/HEAD", tmpDir))
 		}
-		defer func() { testRepoCorrupter = nil }()
+		t.Cleanup(func() { testRepoCorrupter = nil })
 		if _, err := s.cloneRepo(ctx, "example.com/foo/bar", nil); err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
