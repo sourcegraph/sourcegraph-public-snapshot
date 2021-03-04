@@ -26,6 +26,31 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+// The historical enqueuer takes regular search insights like a search for `errorf` and runs them
+// in the past to find how many results for that query occurred in the past. It does this using
+// live/unindexed searches slowly in the background, by finding an old Git commit closest to the
+// time we're interested in. See the docstring on the historicalEnqueuer struct for an explanation
+// of how that works.
+//
+// There are some major pros/cons of the implementation as it stands today. Pros:
+//
+// 1. It works and is reliable.
+// 2. It is pretty extensively covered by tests.
+// 3. It will not harm the rest of Sourcegraph (e.g. by enqueueing too much work, running too many search queries, etc.)
+//
+// The cons are:
+//
+// 1. It's a huge glorified series of nested for loops, which makes it complex and hard to read and
+//    understand. I spent two full weeks refactoring various parts of it to make it nicer, but it's
+//    really challenging to structure this code in a nice way because the problem and solution we're
+//    fundamentally representing here is complex. i.e., the code is complex because the problem is.
+// 2. The tests are a bit complex/difficult to read. This is a symptom of the algorithmic complexity
+//    at play here. I considered testing individual units of the code more aggressively, but the
+//    reality is that the individual units (e.g. each for loop) is not complex - it is the aggregate
+//    of them that is. If you can find a more clear way to represent this, you are smarter than me.
+//
+// If you're reading this and frustrated or confused, message @slimsag and I'll help you out.
+
 // newInsightHistoricalEnqueuer returns a background goroutine which will periodically find all of the search
 // insights across all user settings, and determine for which dates they do not have data and attempt
 // to backfill them by enqueueing work for executing searches with `before:` and `after:` filter
