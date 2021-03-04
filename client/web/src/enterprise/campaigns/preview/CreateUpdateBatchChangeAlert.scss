@@ -1,5 +1,5 @@
 @include media-breakpoint-down(sm) {
-    .create-update-campaign-alert {
+    .create-update-batch-change-alert {
         &__badge,
         &__copy {
             // Need to overwrite .m-0.

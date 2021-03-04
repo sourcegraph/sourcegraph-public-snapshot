@@ -1,21 +1,21 @@
 import { storiesOf } from '@storybook/react'
 import { boolean } from '@storybook/addon-knobs'
 import React from 'react'
-import { CampaignPreviewPage } from './CampaignPreviewPage'
+import { BatchChangePreviewPage } from './BatchChangePreviewPage'
 import { of, Observable } from 'rxjs'
 import {
     BatchSpecApplyPreviewConnectionFields,
-    CampaignSpecFields,
+    BatchSpecFields,
     ChangesetApplyPreviewFields,
     ExternalServiceKind,
 } from '../../../graphql-operations'
 import { visibleChangesetApplyPreviewNodeStories } from './list/VisibleChangesetApplyPreviewNode.story'
 import { hiddenChangesetApplyPreviewStories } from './list/HiddenChangesetApplyPreviewNode.story'
-import { fetchCampaignSpecById } from './backend'
+import { fetchBatchSpecById } from './backend'
 import { addDays, subDays } from 'date-fns'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
-const { add } = storiesOf('web/campaigns/preview/CampaignPreviewPage', module)
+const { add } = storiesOf('web/batches/preview/BatchChangePreviewPage', module)
     .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
     .addParameters({
         chromatic: {
@@ -28,15 +28,15 @@ const nodes: ChangesetApplyPreviewFields[] = [
     ...Object.values(hiddenChangesetApplyPreviewStories),
 ]
 
-const campaignSpec = (): CampaignSpecFields => ({
-    appliesToCampaign: null,
+const batchSpec = (): BatchSpecFields => ({
+    appliesToBatchChange: null,
     createdAt: subDays(new Date(), 5).toISOString(),
     creator: {
         url: '/users/alice',
         username: 'alice',
     },
     description: {
-        name: 'awesome-campaign',
+        name: 'awesome-batch-change',
         description: 'This is the description',
     },
     diffStat: {
@@ -50,14 +50,14 @@ const campaignSpec = (): CampaignSpecFields => ({
         namespaceName: 'alice',
         url: '/users/alice',
     },
-    supersedingCampaignSpec: boolean('supersedingCampaignSpec', false)
+    supersedingBatchSpec: boolean('supersedingBatchSpec', false)
         ? {
               createdAt: subDays(new Date(), 1).toISOString(),
-              applyURL: '/users/alice/campaigns/apply/newspecid',
+              applyURL: '/users/alice/batch-changes/apply/newspecid',
           }
         : null,
     viewerCanAdminister: boolean('viewerCanAdminister', true),
-    viewerCampaignsCodeHosts: {
+    viewerBatchChangesCodeHosts: {
         totalCount: 0,
         nodes: [],
     },
@@ -80,12 +80,12 @@ const campaignSpec = (): CampaignSpecFields => ({
     },
 })
 
-const fetchCampaignSpecCreate: typeof fetchCampaignSpecById = () => of(campaignSpec())
+const fetchBatchSpecCreate: typeof fetchBatchSpecById = () => of(batchSpec())
 
-const fetchCampaignSpecMissingCredentials: typeof fetchCampaignSpecById = () =>
+const fetchBatchSpecMissingCredentials: typeof fetchBatchSpecById = () =>
     of({
-        ...campaignSpec(),
-        viewerCampaignsCodeHosts: {
+        ...batchSpec(),
+        viewerBatchChangesCodeHosts: {
             totalCount: 2,
             nodes: [
                 {
@@ -100,13 +100,13 @@ const fetchCampaignSpecMissingCredentials: typeof fetchCampaignSpecById = () =>
         },
     })
 
-const fetchCampaignSpecUpdate: typeof fetchCampaignSpecById = () =>
+const fetchBatchSpecUpdate: typeof fetchBatchSpecById = () =>
     of({
-        ...campaignSpec(),
-        appliesToCampaign: {
-            id: 'somecampaign',
-            name: 'awesome-campaign',
-            url: '/users/alice/campaigns/somecampaign',
+        ...batchSpec(),
+        appliesToBatchChange: {
+            id: 'somebatch',
+            name: 'awesome-batch-change',
+            url: '/users/alice/batch-changes/awesome-batch-change',
         },
     })
 
@@ -135,11 +135,11 @@ const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: nul
 add('Create', () => (
     <EnterpriseWebStory>
         {props => (
-            <CampaignPreviewPage
+            <BatchChangePreviewPage
                 {...props}
                 expandChangesetDescriptions={true}
                 batchSpecID="123123"
-                fetchCampaignSpecById={fetchCampaignSpecCreate}
+                fetchBatchSpecById={fetchBatchSpecCreate}
                 queryChangesetApplyPreview={queryChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                 authenticatedUser={{
@@ -156,11 +156,11 @@ add('Create', () => (
 add('Update', () => (
     <EnterpriseWebStory>
         {props => (
-            <CampaignPreviewPage
+            <BatchChangePreviewPage
                 {...props}
                 expandChangesetDescriptions={true}
                 batchSpecID="123123"
-                fetchCampaignSpecById={fetchCampaignSpecUpdate}
+                fetchBatchSpecById={fetchBatchSpecUpdate}
                 queryChangesetApplyPreview={queryChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                 authenticatedUser={{
@@ -177,11 +177,11 @@ add('Update', () => (
 add('Missing credentials', () => (
     <EnterpriseWebStory>
         {props => (
-            <CampaignPreviewPage
+            <BatchChangePreviewPage
                 {...props}
                 expandChangesetDescriptions={true}
                 batchSpecID="123123"
-                fetchCampaignSpecById={fetchCampaignSpecMissingCredentials}
+                fetchBatchSpecById={fetchBatchSpecMissingCredentials}
                 queryChangesetApplyPreview={queryChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                 authenticatedUser={{
@@ -198,11 +198,11 @@ add('Missing credentials', () => (
 add('No changesets', () => (
     <EnterpriseWebStory>
         {props => (
-            <CampaignPreviewPage
+            <BatchChangePreviewPage
                 {...props}
                 expandChangesetDescriptions={true}
                 batchSpecID="123123"
-                fetchCampaignSpecById={fetchCampaignSpecCreate}
+                fetchBatchSpecById={fetchBatchSpecCreate}
                 queryChangesetApplyPreview={queryEmptyChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                 authenticatedUser={{

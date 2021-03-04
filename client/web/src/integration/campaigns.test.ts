@@ -521,11 +521,11 @@ describe('Campaigns', () => {
                 testContext.overrideGraphQL({
                     ...commonWebGraphQlResults,
                     ...mockCommonGraphQLResponses(entityType),
-                    CampaignSpecByID: () => ({
+                    BatchSpecByID: () => ({
                         node: {
-                            __typename: 'CampaignSpec',
+                            __typename: 'BatchSpec',
                             id: 'spec123',
-                            appliesToCampaign: null,
+                            appliesToBatchChange: null,
                             createdAt: subDays(new Date(), 2).toISOString(),
                             creator: {
                                 username: 'alice',
@@ -552,7 +552,7 @@ describe('Campaigns', () => {
                                           namespaceName: 'test-org',
                                           url: '/organizations/test-org',
                                       },
-                            supersedingCampaignSpec: null,
+                            supersedingBatchSpec: null,
                             viewerCanAdminister: true,
                             applyPreview: {
                                 stats: {
@@ -571,7 +571,7 @@ describe('Campaigns', () => {
                                     removed: 3,
                                 },
                             },
-                            viewerCampaignsCodeHosts: {
+                            viewerBatchChangesCodeHosts: {
                                 totalCount: 0,
                                 nodes: [],
                             },
@@ -655,10 +655,10 @@ describe('Campaigns', () => {
                             },
                         },
                     }),
-                    CreateCampaign: () => ({
-                        createCampaign: {
-                            id: 'campaign123',
-                            url: namespaceURL + '/batch-changes/test-campaign',
+                    CreateBatchChange: () => ({
+                        createBatchChange: {
+                            id: 'change123',
+                            url: namespaceURL + '/batch-changes/test-change',
                         },
                     }),
                 })

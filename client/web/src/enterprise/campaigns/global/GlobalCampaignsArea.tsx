@@ -9,7 +9,7 @@ import { AuthenticatedUser } from '../../../auth'
 import { Scalars } from '../../../../../shared/src/graphql-operations'
 import { lazyComponent } from '../../../util/lazyComponent'
 import { BatchChangeListPageProps, NamespaceBatchChangeListPageProps } from '../list/BatchChangeListPage'
-import { CampaignPreviewPageProps } from '../preview/CampaignPreviewPage'
+import { BatchChangePreviewPageProps } from '../preview/BatchChangePreviewPage'
 import { CreateCampaignPageProps } from '../create/CreateCampaignPage'
 import { CampaignDetailsPageProps } from '../detail/CampaignDetailsPage'
 import { CampaignClosePageProps } from '../close/CampaignClosePage'
@@ -24,9 +24,9 @@ const NamespaceBatchChangeListPage = lazyComponent<NamespaceBatchChangeListPageP
     () => import('../list/BatchChangeListPage'),
     'NamespaceBatchChangeListPage'
 )
-const CampaignApplyPage = lazyComponent<CampaignPreviewPageProps, 'CampaignPreviewPage'>(
-    () => import('../preview/CampaignPreviewPage'),
-    'CampaignPreviewPage'
+const CampaignApplyPage = lazyComponent<BatchChangePreviewPageProps, 'BatchChangePreviewPage'>(
+    () => import('../preview/BatchChangePreviewPage'),
+    'BatchChangePreviewPage'
 )
 const CreateCampaignPage = lazyComponent<CreateCampaignPageProps, 'CreateCampaignPage'>(
     () => import('../create/CreateCampaignPage'),

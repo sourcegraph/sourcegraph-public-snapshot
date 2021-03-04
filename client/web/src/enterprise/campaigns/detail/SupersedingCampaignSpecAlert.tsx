@@ -2,12 +2,12 @@ import React from 'react'
 import { Timestamp } from '../../../components/time/Timestamp'
 import CreationIcon from 'mdi-react/CreationIcon'
 import { Link } from '../../../../../shared/src/components/Link'
-import { SupersedingCampaignSpecFields } from '../../../graphql-operations'
+import { SupersedingBatchSpecFields } from '../../../graphql-operations'
 import { parseISO } from 'date-fns'
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
 
 export interface SupersedingCampaignSpecAlertProps {
-    spec: SupersedingCampaignSpecFields | null
+    spec: SupersedingBatchSpecFields | null
 }
 
 export const SupersedingCampaignSpecAlert: React.FunctionComponent<SupersedingCampaignSpecAlertProps> = ({ spec }) => {

@@ -4,34 +4,34 @@ import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { delay, distinctUntilChanged, repeatWhen } from 'rxjs/operators'
 import { isEqual } from 'lodash'
 import { PageTitle } from '../../../components/PageTitle'
-import { fetchCampaignSpecById as _fetchCampaignSpecById } from './backend'
+import { fetchBatchSpecById as _fetchBatchSpecById } from './backend'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { PreviewList } from './list/PreviewList'
 import { ThemeProps } from '../../../../../shared/src/theme'
-import { CreateUpdateCampaignAlert } from './CreateUpdateCampaignAlert'
+import { CreateUpdateBatchChangeAlert } from './CreateUpdateBatchChangeAlert'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { HeroPage } from '../../../components/HeroPage'
 import { Description } from '../Description'
-import { CampaignSpecInfoByline } from './CampaignSpecInfoByline'
+import { BatchSpecInfoByline } from './BatchSpecInfoByline'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { AuthenticatedUser } from '../../../auth'
 import { MissingCredentialsAlert } from './MissingCredentialsAlert'
 import { SupersedingCampaignSpecAlert } from '../detail/SupersedingCampaignSpecAlert'
 import { queryChangesetSpecFileDiffs, queryChangesetApplyPreview } from './list/backend'
-import { CampaignPreviewStatsBar } from './CampaignPreviewStatsBar'
+import { BatchChangePreviewStatsBar } from './BatchChangePreviewStatsBar'
 import { PageHeader } from '../../../components/PageHeader'
 import { CampaignsIcon } from '../icons'
 
 export type PreviewPageAuthenticatedUser = Pick<AuthenticatedUser, 'url' | 'displayName' | 'username' | 'email'>
 
-export interface CampaignPreviewPageProps extends ThemeProps, TelemetryProps {
+export interface BatchChangePreviewPageProps extends ThemeProps, TelemetryProps {
     batchSpecID: string
     history: H.History
     location: H.Location
     authenticatedUser: PreviewPageAuthenticatedUser
 
     /** Used for testing. */
-    fetchCampaignSpecById?: typeof _fetchCampaignSpecById
+    fetchBatchSpecById?: typeof _fetchBatchSpecById
     /** Used for testing. */
     queryChangesetApplyPreview?: typeof queryChangesetApplyPreview
     /** Used for testing. */
@@ -40,14 +40,14 @@ export interface CampaignPreviewPageProps extends ThemeProps, TelemetryProps {
     expandChangesetDescriptions?: boolean
 }
 
-export const CampaignPreviewPage: React.FunctionComponent<CampaignPreviewPageProps> = ({
+export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewPageProps> = ({
     batchSpecID: specID,
     history,
     location,
     authenticatedUser,
     isLightTheme,
     telemetryService,
-    fetchCampaignSpecById = _fetchCampaignSpecById,
+    fetchBatchSpecById = _fetchBatchSpecById,
     queryChangesetApplyPreview,
     queryChangesetSpecFileDiffs,
     expandChangesetDescriptions,
@@ -55,11 +55,11 @@ export const CampaignPreviewPage: React.FunctionComponent<CampaignPreviewPagePro
     const spec = useObservable(
         useMemo(
             () =>
-                fetchCampaignSpecById(specID).pipe(
+                fetchBatchSpecById(specID).pipe(
                     repeatWhen(notifier => notifier.pipe(delay(5000))),
                     distinctUntilChanged((a, b) => isEqual(a, b))
                 ),
-            [specID, fetchCampaignSpecById]
+            [specID, fetchBatchSpecById]
         )
     )
 
@@ -75,34 +75,34 @@ export const CampaignPreviewPage: React.FunctionComponent<CampaignPreviewPagePro
         )
     }
     if (spec === null) {
-        return <HeroPage icon={AlertCircleIcon} title="Campaign spec not found" />
+        return <HeroPage icon={AlertCircleIcon} title="Batch spec not found" />
     }
 
     return (
         <div className="pb-5">
-            <PageTitle title="Apply campaign spec" />
+            <PageTitle title="Apply batch spec" />
             <PageHeader
                 path={[
                     {
                         icon: CampaignsIcon,
-                        to: '/campaigns',
+                        to: '/batch-changes',
                     },
-                    { to: `${spec.namespace.url}/campaigns`, text: spec.namespace.namespaceName },
+                    { to: `${spec.namespace.url}/batch-changes`, text: spec.namespace.namespaceName },
                     { text: spec.description.name },
                 ]}
-                byline={<CampaignSpecInfoByline createdAt={spec.createdAt} creator={spec.creator} />}
+                byline={<BatchSpecInfoByline createdAt={spec.createdAt} creator={spec.creator} />}
                 className="test-campaign-apply-page mb-3"
             />
             <MissingCredentialsAlert
                 authenticatedUser={authenticatedUser}
-                viewerCampaignsCodeHosts={spec.viewerCampaignsCodeHosts}
+                viewerBatchChangesCodeHosts={spec.viewerBatchChangesCodeHosts}
             />
-            <SupersedingCampaignSpecAlert spec={spec.supersedingCampaignSpec} />
-            <CampaignPreviewStatsBar campaignSpec={spec} />
-            <CreateUpdateCampaignAlert
+            <SupersedingCampaignSpecAlert spec={spec.supersedingBatchSpec} />
+            <BatchChangePreviewStatsBar batchSpec={spec} />
+            <CreateUpdateBatchChangeAlert
                 history={history}
                 specID={spec.id}
-                campaign={spec.appliesToCampaign}
+                batchChange={spec.appliesToBatchChange}
                 viewerCanAdminister={spec.viewerCanAdminister}
                 telemetryService={telemetryService}
             />

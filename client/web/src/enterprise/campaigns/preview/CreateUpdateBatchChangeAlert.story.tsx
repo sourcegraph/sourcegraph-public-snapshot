@@ -1,10 +1,10 @@
 import { storiesOf } from '@storybook/react'
 import { boolean } from '@storybook/addon-knobs'
 import React from 'react'
-import { CreateUpdateCampaignAlert } from './CreateUpdateCampaignAlert'
+import { CreateUpdateBatchChangeAlert } from './CreateUpdateBatchChangeAlert'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
-const { add } = storiesOf('web/campaigns/preview/CreateUpdateCampaignAlert', module)
+const { add } = storiesOf('web/batches/preview/CreateUpdateBatchChangeAlert', module)
     .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
     .addParameters({
         chromatic: {
@@ -15,10 +15,10 @@ const { add } = storiesOf('web/campaigns/preview/CreateUpdateCampaignAlert', mod
 add('Create', () => (
     <EnterpriseWebStory>
         {props => (
-            <CreateUpdateCampaignAlert
+            <CreateUpdateBatchChangeAlert
                 {...props}
                 specID="123"
-                campaign={null}
+                batchChange={null}
                 viewerCanAdminister={boolean('viewerCanAdminister', true)}
             />
         )}
@@ -27,10 +27,10 @@ add('Create', () => (
 add('Update', () => (
     <EnterpriseWebStory>
         {props => (
-            <CreateUpdateCampaignAlert
+            <CreateUpdateBatchChangeAlert
                 {...props}
                 specID="123"
-                campaign={{ id: '123', name: 'awesome-campaign', url: 'http://test.test/awesome' }}
+                batchChange={{ id: '123', name: 'awesome-batch-change', url: 'http://test.test/awesome' }}
                 viewerCanAdminister={boolean('viewerCanAdminister', true)}
             />
         )}

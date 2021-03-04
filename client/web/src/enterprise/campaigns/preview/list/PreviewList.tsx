@@ -9,7 +9,7 @@ import { PreviewListHeader } from './PreviewListHeader'
 import { EmptyPreviewListElement } from './EmptyPreviewListElement'
 import { PreviewFilterRow, PreviewFilters } from './PreviewFilterRow'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import { PreviewPageAuthenticatedUser } from '../CampaignPreviewPage'
+import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
 
 interface Props extends ThemeProps {
     batchSpecID: Scalars['ID']

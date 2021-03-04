@@ -23,7 +23,7 @@ import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell
 import { PreviewNodeIndicator } from './PreviewNodeIndicator'
 import classNames from 'classnames'
 import { PersonLink } from '../../../../person/PersonLink'
-import { PreviewPageAuthenticatedUser } from '../CampaignPreviewPage'
+import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
 import { Description } from '../../Description'
 import { GitBranchChangesetDescriptionInfo } from './GitBranchChangesetDescriptionInfo'
 
