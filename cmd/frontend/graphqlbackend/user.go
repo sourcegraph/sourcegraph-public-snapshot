@@ -480,3 +480,25 @@ func (r *UserResolver) Monitors(ctx context.Context, args *ListMonitorsArgs) (Mo
 	}
 	return EnterpriseResolvers.codeMonitorsResolver.Monitors(ctx, r.user.ID, args)
 }
+
+func (r *UserResolver) PublicRepositories(ctx context.Context) ([]*RepositoryResolver, error) {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
+		return nil, err
+	}
+	repos, err := database.UserPublicRepos(r.db).ListByUser(ctx, r.user.ID)
+	if err != nil {
+		return nil, err
+	}
+	var out []*RepositoryResolver
+	for _, repo := range repos {
+		out = append(out, &RepositoryResolver{
+			id:   repo.RepoID,
+			name: api.RepoName(repo.RepoURI),
+			db:   r.db,
+			innerRepo: &types.Repo{
+				ID: repo.RepoID,
+			},
+		})
+	}
+	return out, nil
+}
