@@ -335,6 +335,62 @@ delete_sources AS (
 ),
 `
 
+// DeleteExternalService deletes an external service, its repository associations and any of the
+// corresponding repositories that are no longer associated with any external service.
+func (s *Store) DeleteExternalService(ctx context.Context, id int64) (deletedRepoIDs []api.RepoID, err error) {
+	tr, ctx := s.trace(ctx, "Store.DeleteExternalService")
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+
+		tr.LogFields(
+			otlog.Int64("id", id),
+			otlog.Int("deleted_repos", len(deletedRepoIDs)),
+		)
+
+		s.Metrics.DeleteExternalService.Observe(secs, 1, &err)
+
+		logging.Log(s.Log, "store.delete-external-service", &err,
+			"id", id,
+			"duration_seconds", secs,
+			"deleted_repos", len(deletedRepoIDs),
+		)
+
+		tr.SetError(err)
+		tr.Finish()
+	}(time.Now())
+
+	q := sqlf.Sprintf(deleteExternalServiceQuery, id, id)
+	return deletedRepoIDs, s.QueryRow(ctx, q).Scan(pq.Array(&deletedRepoIDs))
+}
+
+const deleteExternalServiceQuery = `
+WITH deleted_associations AS (
+	DELETE FROM external_service_repos
+	WHERE external_service_id = %d
+	RETURNING repo_id
+),
+
+deleted_repos AS (
+	UPDATE repo FROM deleted_associations
+	SET
+		name = soft_deleted_repository_name(name),
+		deleted_at = transaction_timestamp()
+	WHERE repo.id = deleted.id
+	AND repo.id AND NOT EXISTS (
+		SELECT FROM external_service_repos
+		WHERE repo_id = repo.id
+	)
+	RETURNING repo.id
+)
+
+UPDATE external_services
+FROM deleted_repos
+SET deleted_at = transaction_timestamp()
+WHERE id = %d
+RETURNING array_agg(deleted_repos.id) AS deleted_repos
+`
+
 // SetClonedRepos updates cloned status for all repositories.
 // All repositories whose name is in repoNames will have their cloned column set to true
 // and every other repository will have it set to false.

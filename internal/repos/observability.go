@@ -109,6 +109,7 @@ type StoreMetrics struct {
 	CountNotClonedRepos   *metrics.OperationMetrics
 	CountUserAddedRepos   *metrics.OperationMetrics
 	EnqueueSyncJobs       *metrics.OperationMetrics
+	DeleteExternalService *metrics.OperationMetrics
 }
 
 // MustRegister registers all metrics in StoreMetrics in the given
