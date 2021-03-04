@@ -1473,7 +1473,7 @@ Indexes:
  repo_uri | text    | not null
  repo_id  | integer | not null
 Indexes:
-    "user_public_repos_user_id_repo_uri_key" UNIQUE CONSTRAINT, btree (user_id, repo_uri)
+    "user_public_repos_user_id_repo_id_key" UNIQUE CONSTRAINT, btree (user_id, repo_id)
 Foreign-key constraints:
     "user_public_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     "user_public_repos_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

@@ -57,14 +57,16 @@ func (s *UserPublicRepoStore) SetUserRepos(ctx context.Context, userID int32, re
 	))
 }
 
+// SetUserRepo stores a UserPublicRepo record, if a record already exists for the same user_id & repo_id combo, the
+// repo_uri is updated
 func (s *UserPublicRepoStore) SetUserRepo(ctx context.Context, upr UserPublicRepo) error {
 	return s.store.Exec(ctx, sqlf.Sprintf(
 		`INSERT INTO
 			user_public_repos(user_id, repo_uri, repo_id)
-		VALUES (%v, %v,  %v)
-		ON CONFLICT(user_id, repo_uri) DO UPDATE
+		VALUES (%s, %s,  %s)
+		ON CONFLICT(user_id, repo_id) DO UPDATE
 		SET
-			repo_id = excluded.repo_id`,
+			repo_uri = excluded.repo_uri`,
 		upr.UserID, upr.RepoURI, upr.RepoID,
 	))
 }
