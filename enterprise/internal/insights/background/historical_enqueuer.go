@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -85,8 +86,10 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 		frameLength:      7 * 24 * time.Hour,
 
 		allReposIterator: (&discovery.AllReposIterator{
-			DefaultRepoStore: database.DefaultRepos(workerBaseStore.Handle().DB()),
-			RepoStore:        database.Repos(workerBaseStore.Handle().DB()),
+			DefaultRepoStore:      database.DefaultRepos(workerBaseStore.Handle().DB()),
+			RepoStore:             database.Repos(workerBaseStore.Handle().DB()),
+			Clock:                 time.Now,
+			SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 
 			// If a new repository is added to Sourcegraph, it can take 0-15m for it to be picked
 			// up for backfilling.
