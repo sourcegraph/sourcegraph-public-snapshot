@@ -346,7 +346,8 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
                             // if the lastSyncAt has changed for all hosts then we're done
                             if (result.nodes.every(codeHost => codeHost.lastSyncAt !== syncTimes.get(codeHost.id))) {
-                                onUserRepositoriesUpdate()
+                                const repoCount = result.nodes.reduce((sum, codeHost) => sum + codeHost.repoCount, 0)
+                                onUserRepositoriesUpdate(repoCount)
                                 // push the user back to the repo list page
                                 history.push(routingPrefix + '/repositories')
                                 // cancel the repeatUntil
