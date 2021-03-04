@@ -1,4 +1,4 @@
-package correlation
+package conversion
 
 import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/lsif"

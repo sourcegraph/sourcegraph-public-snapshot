@@ -1,4 +1,4 @@
-package correlation
+package conversion
 
 import (
 	"context"
