@@ -59,11 +59,11 @@ interface SiteAdminAreaProps
 const AuthenticatedSiteAdminArea: React.FunctionComponent<SiteAdminAreaProps> = props => {
     const { pathname } = useLocation()
 
-    const ref = useRef<HTMLDivElement>(null)
+    const reference = useRef<HTMLDivElement>(null)
 
     useLayoutEffect(() => {
-        if (ref.current) {
-            ref.current.scrollIntoView()
+        if (reference.current) {
+            reference.current.scrollIntoView()
         }
     }, [pathname])
 
@@ -86,7 +86,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<SiteAdminAreaProps> = 
     return (
         <Page>
             <PageHeader path={[{ text: 'Site Admin' }]} />
-            <div className="site-admin-area d-flex my-3" ref={ref}>
+            <div className="site-admin-area d-flex my-3" ref={reference}>
                 <SiteAdminSidebar className="sidebar flex-0 mr-3" groups={props.sideBarGroups} />
                 <div className="flex-bounded">
                     <ErrorBoundary location={props.location}>
