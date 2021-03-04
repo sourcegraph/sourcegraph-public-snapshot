@@ -209,7 +209,7 @@ func TestCreateBatchSpec(t *testing.T) {
 					ExpiresAt:     have.ExpiresAt,
 					OriginalInput: rawSpec,
 					ParsedInput:   graphqlbackend.JSONValue{Value: unmarshaled},
-					ApplyURL:      fmt.Sprintf("/users/%s/campaigns/apply/%s", user.Username, have.ID),
+					ApplyURL:      fmt.Sprintf("/users/%s/batch-changes/apply/%s", user.Username, have.ID),
 					Namespace:     apitest.UserOrg{ID: userAPIID, DatabaseID: userID, SiteAdmin: true},
 					Creator:       &apitest.User{ID: userAPIID, DatabaseID: userID, SiteAdmin: true},
 					ChangesetSpecs: apitest.ChangesetSpecConnection{
@@ -610,7 +610,7 @@ func TestMoveBatchChange(t *testing.T) {
 		t.Fatalf("unexpected name (-want +got):\n%s", diff)
 	}
 
-	wantURL := fmt.Sprintf("/users/%s/campaigns/%s", user.Username, newCampaignName)
+	wantURL := fmt.Sprintf("/users/%s/batch-changes/%s", user.Username, newCampaignName)
 	if diff := cmp.Diff(wantURL, haveCampaign.URL); diff != "" {
 		t.Fatalf("unexpected URL (-want +got):\n%s", diff)
 	}
@@ -628,7 +628,7 @@ func TestMoveBatchChange(t *testing.T) {
 	if diff := cmp.Diff(string(orgAPIID), haveCampaign.Namespace.ID); diff != "" {
 		t.Fatalf("unexpected namespace (-want +got):\n%s", diff)
 	}
-	wantURL = fmt.Sprintf("/organizations/%s/campaigns/%s", orgName, newCampaignName)
+	wantURL = fmt.Sprintf("/organizations/%s/batch-changes/%s", orgName, newCampaignName)
 	if diff := cmp.Diff(wantURL, haveCampaign.URL); diff != "" {
 		t.Fatalf("unexpected URL (-want +got):\n%s", diff)
 	}

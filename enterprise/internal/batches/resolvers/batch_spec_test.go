@@ -100,7 +100,7 @@ func TestBatchSpecResolver(t *testing.T) {
 		OriginalInput: spec.RawSpec,
 		ParsedInput:   graphqlbackend.JSONValue{Value: unmarshaled},
 
-		ApplyURL:            fmt.Sprintf("/organizations/%s/campaigns/apply/%s", orgname, apiID),
+		ApplyURL:            fmt.Sprintf("/organizations/%s/batch-changes/apply/%s", orgname, apiID),
 		Namespace:           apitest.UserOrg{ID: orgAPIID, Name: orgname},
 		Creator:             &apitest.User{ID: userAPIID, DatabaseID: userID},
 		ViewerCanAdminister: true,

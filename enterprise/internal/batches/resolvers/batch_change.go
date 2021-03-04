@@ -105,7 +105,7 @@ func (r *batchChangeResolver) URL(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return campaignURL(n, r), nil
+	return batchChangeURL(n, r), nil
 }
 
 func (r *batchChangeResolver) Namespace(ctx context.Context) (graphqlbackend.NamespaceResolver, error) {

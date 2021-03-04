@@ -171,7 +171,7 @@ func (r *batchSpecResolver) ApplyURL(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return campaignsApplyURL(n, r), nil
+	return batchChangesApplyURL(n, r), nil
 }
 
 func (r *batchSpecResolver) CreatedAt() graphqlbackend.DateTime {
