@@ -2,9 +2,9 @@ import 'focus-visible'
 
 import { configureActions } from '@storybook/addon-actions'
 import { withConsole } from '@storybook/addon-console'
-import { setLinkComponent, AnchorLink } from '../client/ui-kit-legacy-shared/src/components/Link'
 import { withDesign } from 'storybook-addon-designs'
 import isChromatic from 'chromatic/isChromatic'
+import { setLinkComponent, AnchorLink } from '../../ui-kit-legacy-shared/src/components/Link'
 import * as themes from './themes'
 
 export const decorators = [withDesign, (storyFn, context) => withConsole()(storyFn)(context)]

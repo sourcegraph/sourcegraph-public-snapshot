@@ -4,12 +4,13 @@ const { DefinePlugin, ProgressPlugin } = require('webpack')
 const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin')
 const TerserPlugin = require('terser-webpack-plugin')
 
-const monacoEditorPaths = [path.resolve(__dirname, '..', 'node_modules', 'monaco-editor')]
+const rootDir = path.resolve(__dirname, '../../..')
+const monacoEditorPaths = [path.resolve(rootDir, 'node_modules', 'monaco-editor')]
 
 const shouldMinify = !!process.env.MINIFY
 
 const config = {
-  stories: ['../client/**/*.story.tsx'],
+  stories: ['../../**/*.story.tsx'],
   addons: ['@storybook/addon-knobs', '@storybook/addon-actions', 'storybook-addon-designs', 'storybook-dark-mode'],
 
   /**
@@ -34,7 +35,7 @@ const config = {
             sourceMap: true,
             terserOptions: {
               compress: {
-                // // Don't inline functions, which causes name collisions with uglify-es:
+                // Don't inline functions, which causes name collisions with uglify-es:
                 // https://github.com/mishoo/UglifyJS2/issues/2842
                 inline: 1,
               },
@@ -56,7 +57,7 @@ const config = {
       test: /\.tsx?$/,
       loader: require.resolve('babel-loader'),
       options: {
-        configFile: path.resolve(__dirname, '..', 'babel.config.js'),
+        configFile: path.resolve(rootDir, 'babel.config.js'),
       },
     })
 
@@ -79,7 +80,7 @@ const config = {
       })
     )
 
-    const storybookDirectory = path.resolve(__dirname, '../node_modules/@storybook')
+    const storybookDirectory = path.resolve(rootDir, 'node_modules/@storybook')
 
     // Put our style rules at the beginning so they're processed by the time it
     // gets to storybook's style rules.
@@ -95,7 +96,7 @@ const config = {
           loader: 'sass-loader',
           options: {
             sassOptions: {
-              includePaths: [path.resolve(__dirname, '..', 'node_modules')],
+              includePaths: [path.resolve(rootDir, 'node_modules')],
             },
           },
         },

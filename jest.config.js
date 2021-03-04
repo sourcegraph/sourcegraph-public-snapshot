@@ -10,6 +10,6 @@ module.exports = {
     'client/ui-kit-legacy-shared/jest.config.js',
     'client/ui-kit-legacy-branded/jest.config.js',
     'client/app-web/jest.config.js',
-    '.storybook/jest.config.js',
+    'client/ui-kit/.storybook/jest.config.js',
   ],
 }

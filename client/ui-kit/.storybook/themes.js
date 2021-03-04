@@ -1,7 +1,7 @@
 import { themes } from '@storybook/theming'
 import openColor from 'open-color'
 // @ts-ignore
-import brandImage from '../ui/assets/img/wildcard-design-system.svg'
+import brandImage from '../../../ui/assets/img/wildcard-design-system.svg'
 
 // Themes use the colors from our webapp.
 
