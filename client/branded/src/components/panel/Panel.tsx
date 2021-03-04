@@ -1,7 +1,7 @@
 import * as H from 'history'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useEffect, useMemo } from 'react'
-import { BehaviorSubject, Observable } from 'rxjs'
+import { BehaviorSubject, from, Observable } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 import { ContributableMenu } from '../../../../shared/src/api/protocol/contribution'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
@@ -23,6 +23,9 @@ import { combineLatestOrDefault } from '../../../../shared/src/util/rxjs/combine
 import { Location } from '@sourcegraph/extension-api-types'
 import { isDefined } from '../../../../shared/src/util/types'
 import { useObservable } from '../../../../shared/src/util/useObservable'
+import { wrapRemoteObservable } from '../../../../shared/src/api/client/api/common'
+import { PanelViewData } from '../../../../shared/src/api/extension/flatExtensionApi'
+import { merge } from 'lodash'
 
 interface Props
     extends ExtensionsControllerProps,
@@ -38,7 +41,7 @@ interface Props
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
-export interface PanelViewWithComponent extends Pick<sourcegraph.PanelView, 'title' | 'content' | 'priority'> {
+export interface PanelViewWithComponent extends PanelViewData {
     /**
      * The location provider whose results to render in the panel view.
      */
@@ -81,7 +84,7 @@ const builtinPanelViewProviders = new BehaviorSubject<
  */
 export function useBuiltinPanelViews(
     builtinPanels: { id: string; provider: Observable<PanelViewWithComponent | null> }[]
-) {
+): void {
     useEffect(() => {
         for (const builtinPanel of builtinPanels) {
             builtinPanelViewProviders.value.set(builtinPanel.id, builtinPanel)
@@ -104,9 +107,7 @@ export function useBuiltinPanelViews(
  * Other components can contribute panel items to the panel with the `useBuildinPanelViews` hook.
  */
 export const Panel = React.memo<Props>(props => {
-    // TODO(tj): subscribe to extension panels as well
-
-    const builtinPanels: (PanelViewWithComponent & { id: string })[] | undefined = useObservable(
+    const builtinPanels: PanelViewWithComponent[] | undefined = useObservable(
         useMemo(
             () =>
                 builtinPanelViewProviders.pipe(
@@ -123,13 +124,55 @@ export const Panel = React.memo<Props>(props => {
         )
     )
 
+    const extensionPanels: PanelViewWithComponent[] | undefined = useObservable(
+        useMemo(
+            () =>
+                from(props.extensionsController.extHostAPI).pipe(
+                    switchMap(extensionHostAPI =>
+                        wrapRemoteObservable(extensionHostAPI.getPanelViews()).pipe(
+                            map(panelViews => ({ panelViews, extensionHostAPI }))
+                        )
+                    ),
+                    map(({ panelViews, extensionHostAPI }) =>
+                        panelViews.map(panelView => {
+                            const locationProviderID = panelView.component?.locationProvider
+                            if (locationProviderID) {
+                                const panelViewWithProvider: PanelViewWithComponent = {
+                                    ...panelView,
+                                    locationProvider: wrapRemoteObservable(
+                                        extensionHostAPI.getActiveCodeEditorPosition()
+                                    ).pipe(
+                                        switchMap(parameters => {
+                                            if (!parameters) {
+                                                return [{ isLoading: false, result: [] }]
+                                            }
+
+                                            return wrapRemoteObservable(
+                                                extensionHostAPI.getLocations(locationProviderID, parameters)
+                                            )
+                                        })
+                                    ),
+                                }
+                                return panelViewWithProvider
+                            }
+                            const panelViewWithoutProvider: PanelViewWithComponent = panelView
+                            return panelViewWithoutProvider
+                        })
+                    )
+                    // TODO: map `component` to location provider. memoize observable by id
+                ),
+            [props.extensionsController]
+        )
+    )
+    console.log({ extensionPanels })
+
     const onDismiss = useCallback(
         () => props.history.push(TabsWithURLViewStatePersistence.urlForTabID(props.location, null)),
-        []
+        [props.history, props.location]
     )
 
-    const panelViews = [...(builtinPanels || [])]
-
+    const panelViews = [...(builtinPanels || []), ...(extensionPanels || [])]
+    console.log({ panelViews })
     const items = panelViews
         ? panelViews
               .map(

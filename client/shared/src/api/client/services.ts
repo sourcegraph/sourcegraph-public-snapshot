@@ -60,11 +60,11 @@ export class Services {
     // Feature provider services
     public readonly textDocumentReferences = new TextDocumentLocationProviderRegistry<ReferenceParameters>()
     public readonly textDocumentLocations = new TextDocumentLocationProviderIDRegistry()
-    public readonly completionItems = new CompletionItemProviderRegistry()
 
-    public readonly linkPreviews = new LinkPreviewProviderRegistry()
     public readonly panelViews = new PanelViewProviderRegistry()
-
     // TODO(tj): refactor this in a separate PR
     public readonly view = createViewService()
+
+    public readonly linkPreviews = new LinkPreviewProviderRegistry()
+    public readonly completionItems = new CompletionItemProviderRegistry()
 }

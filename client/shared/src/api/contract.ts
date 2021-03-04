@@ -8,7 +8,7 @@ import { Contributions, Evaluated, Raw, TextDocumentPositionParameters } from '.
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { HoverMerged } from './client/types/hover'
 import { GraphQLResult } from '../graphql/graphql'
-import { Context, FileDecorationsByPath } from './extension/flatExtensionApi'
+import { Context, FileDecorationsByPath, PanelViewData } from './extension/flatExtensionApi'
 import { ViewerData, ViewerId } from './client/services/viewerService'
 import { ContributionScope } from './client/context/context'
 import { ErrorLike } from '../util/errors'
@@ -101,6 +101,16 @@ export interface FlatExtensionHostAPI {
     getDefinition: (
         parameters: TextDocumentPositionParameters
     ) => ProxySubscribable<MaybeLoadingResult<clientType.Location[]>>
+    getReferences: (
+        parameters: TextDocumentPositionParameters,
+        context: sourcegraph.ReferenceContext
+    ) => ProxySubscribable<MaybeLoadingResult<clientType.Location[]>>
+    getLocations: (
+        id: string,
+        parameters: TextDocumentPositionParameters
+    ) => ProxySubscribable<MaybeLoadingResult<clientType.Location[]>>
+
+    hasReferenceProvidersForDocument: (parameters: TextDocumentPositionParameters) => ProxySubscribable<boolean>
 
     // Tree
     getFileDecorations: (parameters: sourcegraph.FileDecorationContext) => ProxySubscribable<FileDecorationsByPath>
@@ -188,6 +198,9 @@ export interface FlatExtensionHostAPI {
     // Notifications
     getPlainNotifications: () => ProxySubscribable<PlainNotification>
     getProgressNotifications: () => ProxySubscribable<ProgressNotification & ProxyMarked>
+
+    // Views
+    getPanelViews: () => ProxySubscribable<PanelViewData[]>
 
     /**
      * Emits true when the initial batch of extensions have been loaded.

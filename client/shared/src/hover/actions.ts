@@ -95,14 +95,7 @@ export function getHoverActionsContext(
         platformContext: { urlToFile, requestGraphQL },
     }: {
         getDefinition: (parameters: TextDocumentPositionParameters) => Observable<MaybeLoadingResult<Location[]>>
-        extensionsController: {
-            services: {
-                workspace: {
-                    roots: { value: readonly WorkspaceRootWithMetadata[] }
-                }
-                textDocumentReferences: Pick<Services['textDocumentReferences'], 'providersForDocument'>
-            }
-        }
+        extensionsController: Pick<Controller, 'extHostAPI'>
         platformContext: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL'>
     },
     hoverContext: HoveredToken & HoverContext
@@ -113,6 +106,7 @@ export function getHoverActionsContext(
         part: hoverContext.part,
     }
     const definitionURLOrError = getDefinition(parameters).pipe(
+        // TODO(tj): use host workspace
         getDefinitionURL({ urlToFile, requestGraphQL }, extensionsController.services, parameters),
         catchError((error): [MaybeLoadingResult<ErrorLike>] => [{ isLoading: false, result: asError(error) }]),
         share()
@@ -125,9 +119,10 @@ export function getHoverActionsContext(
         // hasReferenceProvider:
         // Only show "Find references" if a reference provider is registered. Unlike definitions, references are
         // not preloaded and here just involve statically constructing a URL, so no need to indicate loading.
-        extensionsController.services.textDocumentReferences
-            .providersForDocument(parameters.textDocument)
-            .pipe(map(providers => providers.length !== 0)),
+
+        from(extensionsController.extHostAPI).pipe(
+            switchMap(extensionHostAPI => extensionHostAPI.hasReferenceProvidersForDocument(parameters))
+        ),
 
         // showFindReferences:
         // If there is no definition, delay showing "Find references" because it is likely that the token is

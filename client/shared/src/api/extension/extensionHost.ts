@@ -146,7 +146,12 @@ function createExtensionAPI(
         workspace,
         commands,
         search,
-        languages: { registerHoverProvider, registerDocumentHighlightProvider, registerDefinitionProvider },
+        languages: {
+            registerHoverProvider,
+            registerDocumentHighlightProvider,
+            registerDefinitionProvider,
+            registerReferenceProvider,
+        },
         graphQL,
         app,
         internal,
@@ -193,7 +198,7 @@ function createExtensionAPI(
                 return app.windows
             },
             registerFileDecorationProvider: app.registerFileDecorationProvider,
-            createPanelView: (id: string) => views.createPanelView(id),
+            createPanelView: app.createPanelView,
             createDecorationType,
             registerViewProvider: (id, provider) => views.registerViewProvider(id, provider),
         },
@@ -221,10 +226,11 @@ function createExtensionAPI(
                 return { unsubscribe: () => undefined }
             },
 
-            registerReferenceProvider: (
-                selector: sourcegraph.DocumentSelector,
-                provider: sourcegraph.ReferenceProvider
-            ) => languageFeatures.registerReferenceProvider(selector, provider),
+            // registerReferenceProvider: (
+            //     selector: sourcegraph.DocumentSelector,
+            //     provider: sourcegraph.ReferenceProvider
+            // ) => languageFeatures.registerReferenceProvider(selector, provider),
+            registerReferenceProvider,
 
             registerLocationProvider: (
                 id: string,

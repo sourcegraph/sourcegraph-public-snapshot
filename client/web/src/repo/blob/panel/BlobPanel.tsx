@@ -72,10 +72,10 @@ export function useBlobPanelViews({
                     )
                 ),
                 map(textDocumentPositionParameters => {
-                    console.log({ textDocumentPositionParameters })
                     if (!textDocumentPositionParameters) {
                         return null
                     }
+                    console.log({ textDocumentPositionParameters })
                     return {
                         title,
                         content: '',
@@ -130,10 +130,6 @@ export function useBlobPanelViews({
         useMemo(
             () => [
                 {
-                    id: 'heyy',
-                    provider: new BehaviorSubject({ id: 'heyy', title: 'heyy', content: 'cool markdown', priority: 1 }),
-                },
-                {
                     id: 'history',
                     provider: panelSubjectChanges.pipe(
                         map(({ repoID, revision, filePath, history, location }) => ({
@@ -171,10 +167,14 @@ export function useBlobPanelViews({
                         'References',
                         180,
                         // TODO(tj): implement extensionHostAPI.getLocations
-                        parameters => extensionsController.services.textDocumentReferences.getLocations(parameters),
-                        {
-                            context: { includeDeclaration: false },
-                        }
+                        parameters =>
+                            from(extensionsController.extHostAPI).pipe(
+                                switchMap(extensionHostAPI =>
+                                    wrapRemoteObservable(
+                                        extensionHostAPI.getReferences(parameters, { includeDeclaration: false })
+                                    )
+                                )
+                            )
                     ),
                 },
             ],

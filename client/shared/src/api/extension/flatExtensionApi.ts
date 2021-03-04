@@ -106,6 +106,9 @@ export interface ExtensionHostState {
     documentHighlightProviders: BehaviorSubject<readonly RegisteredProvider<sourcegraph.DocumentHighlightProvider>[]>
     definitionProviders: BehaviorSubject<readonly RegisteredProvider<sourcegraph.DefinitionProvider>[]>
     referenceProviders: BehaviorSubject<readonly RegisteredProvider<sourcegraph.ReferenceProvider>[]>
+    locationProviders: BehaviorSubject<
+        readonly RegisteredProvider<{ id: string; provider: sourcegraph.LocationProvider }>[]
+    >
 
     // Decorations
     fileDecorationProviders: BehaviorSubject<readonly sourcegraph.FileDecorationProvider[]>
@@ -132,7 +135,7 @@ export interface ExtensionHostState {
     progressNotifications: ReplaySubject<ProgressNotification & ProxyMarked>
 
     // Views
-    panelViews: BehaviorSubject<PanelViewWithComponent[]>
+    panelViews: BehaviorSubject<readonly Observable<PanelViewData>[]>
 }
 
 export interface RegisteredProvider<T> {
@@ -150,11 +153,15 @@ export interface InitResult {
     search: typeof sourcegraph['search']
     languages: Pick<
         typeof sourcegraph['languages'],
-        'registerHoverProvider' | 'registerDocumentHighlightProvider' | 'registerDefinitionProvider'
+        | 'registerHoverProvider'
+        | 'registerDocumentHighlightProvider'
+        | 'registerDefinitionProvider'
+        | 'registerReferenceProvider'
+        | 'registerLocationProvider'
     >
     graphQL: typeof sourcegraph['graphQL']
     internal: Pick<typeof sourcegraph['internal'], 'updateContext'>
-    app: Omit<typeof sourcegraph['app'], 'createDecorationType' | 'createPanelView' | 'registerViewProvider'>
+    app: Omit<typeof sourcegraph['app'], 'createDecorationType' | 'registerViewProvider'>
 }
 
 /** Object of array of file decorations keyed by path relative to repo root uri */
@@ -202,6 +209,11 @@ export interface ContributionsEntry {
     contributions: Contributions | Observable<Contributions | Contributions[]>
 }
 
+/** @internal */
+export interface PanelViewData extends Omit<sourcegraph.PanelView, 'unsubscribe'> {
+    id: string
+}
+
 /**
  * Holds internally ExtState and manages communication with the Client
  * Returns the initialized public extension API pieces ready for consumption and the internal extension host API ready to be exposed to the main thread
@@ -233,6 +245,9 @@ export const initNewExtensionAPI = (
         >([]),
         definitionProviders: new BehaviorSubject<readonly RegisteredProvider<sourcegraph.DefinitionProvider>[]>([]),
         referenceProviders: new BehaviorSubject<readonly RegisteredProvider<sourcegraph.ReferenceProvider>[]>([]),
+        locationProviders: new BehaviorSubject<
+            readonly RegisteredProvider<{ id: string; provider: sourcegraph.LocationProvider }>[]
+        >([]),
 
         fileDecorationProviders: new BehaviorSubject<readonly sourcegraph.FileDecorationProvider[]>([]),
 
@@ -265,6 +280,8 @@ export const initNewExtensionAPI = (
         // create one "notification manager" instance.
         plainNotifications: new ReplaySubject<PlainNotification>(3),
         progressNotifications: new ReplaySubject<ProgressNotification & ProxyMarked>(3),
+
+        panelViews: new BehaviorSubject<readonly Observable<PanelViewData>[]>([]),
     }
 
     const getTextDocument = (uri: string): ExtensionDocument => {
@@ -362,12 +379,8 @@ export const initNewExtensionAPI = (
 
         // Language
         getHover: (textParameters: TextDocumentPositionParameters) => {
-            console.log('asking for hover host side', { ms: Date.now() })
-            // const document = textDocuments.get(textParameters.textDocument.uri)
-            console.log({ currStateDocs: state.textDocuments })
             const document = getTextDocument(textParameters.textDocument.uri)
             const position = toPosition(textParameters.position)
-            console.log({ hoverProviders: state.hoverProviders })
 
             return proxySubscribable(
                 callProviders(
@@ -379,7 +392,6 @@ export const initNewExtensionAPI = (
             )
         },
         getDocumentHighlights: (textParameters: TextDocumentPositionParameters) => {
-            // const document = textDocuments.get(textParameters.textDocument.uri)
             const document = getTextDocument(textParameters.textDocument.uri)
             const position = toPosition(textParameters.position)
 
@@ -393,7 +405,6 @@ export const initNewExtensionAPI = (
             )
         },
         getDefinition: (textParameters: TextDocumentPositionParameters) => {
-            // const document = textDocuments.get(textParameters.textDocument.uri)
             const document = getTextDocument(textParameters.textDocument.uri)
             const position = toPosition(textParameters.position)
 
@@ -402,6 +413,47 @@ export const initNewExtensionAPI = (
                     state.definitionProviders,
                     providers => providersForDocument(document, providers, ({ selector }) => selector),
                     ({ provider }) => provider.provideDefinition(document, position),
+                    results => mergeProviderResults(results).map(fromLocation)
+                )
+            )
+        },
+        getReferences: (textParameters: TextDocumentPositionParameters, context: sourcegraph.ReferenceContext) => {
+            const document = getTextDocument(textParameters.textDocument.uri)
+            const position = toPosition(textParameters.position)
+
+            return proxySubscribable(
+                callProviders(
+                    state.referenceProviders,
+                    providers => providersForDocument(document, providers, ({ selector }) => selector),
+                    ({ provider }) => provider.provideReferences(document, position, context),
+                    results => mergeProviderResults(results).map(fromLocation)
+                )
+            )
+        },
+        hasReferenceProvidersForDocument: (textParameters: TextDocumentPositionParameters) => {
+            const document = getTextDocument(textParameters.textDocument.uri)
+
+            return proxySubscribable(
+                state.referenceProviders.pipe(
+                    map(providers => providersForDocument(document, providers, ({ selector }) => selector).length !== 0)
+                )
+            )
+        },
+
+        getLocations: (id: string, textParameters: TextDocumentPositionParameters) => {
+            const document = getTextDocument(textParameters.textDocument.uri)
+            const position = toPosition(textParameters.position)
+
+            return proxySubscribable(
+                callProviders(
+                    state.locationProviders,
+                    providers =>
+                        providersForDocument(
+                            document,
+                            providers.filter(({ provider }) => id === provider.id),
+                            ({ selector }) => selector
+                        ),
+                    ({ provider }) => provider.provider.provideLocations(document, position),
                     results => mergeProviderResults(results).map(fromLocation)
                 )
             )
@@ -520,7 +572,7 @@ export const initNewExtensionAPI = (
                         }
                         return {
                             textDocument: { uri: activeViewer.resource },
-                            position: sel.start,
+                            position: { line: sel.start.line, character: sel.start.character },
                         }
                     })
                 )
@@ -589,6 +641,12 @@ export const initNewExtensionAPI = (
         // Notifications
         getPlainNotifications: () => proxySubscribable(state.plainNotifications.asObservable()),
         getProgressNotifications: () => proxySubscribable(state.progressNotifications.asObservable()),
+
+        // Views
+        getPanelViews: () =>
+            // Don't need `combineLatestOrDefault` here since each panel view
+            // is a BehaviorSubject, and therefore guaranteed to emit
+            proxySubscribable(state.panelViews.pipe(switchMap(panelViews => combineLatest([...panelViews])))),
 
         getActiveExtensions: () => proxySubscribable(activeExtensions),
     }
@@ -711,13 +769,49 @@ export const initNewExtensionAPI = (
             addWithRollback(state.fileDecorationProviders, provider),
         createPanelView: id => {
             console.log('creating panel view')
-            return {
+
+            const panelViewData = new BehaviorSubject<PanelViewData>({
+                id,
                 title: '',
                 content: '',
                 component: null,
                 priority: 0,
-                unsubscribe: () => {},
+            })
+
+            const panelView: sourcegraph.PanelView = {
+                get title() {
+                    return panelViewData.value.title
+                },
+                set title(title: string) {
+                    panelViewData.next({ ...panelViewData.value, title })
+                },
+                get content() {
+                    return panelViewData.value.content
+                },
+                set content(content: string) {
+                    panelViewData.next({ ...panelViewData.value, content })
+                },
+                get component() {
+                    return panelViewData.value.component
+                },
+                set component(component: { locationProvider: string } | null) {
+                    panelViewData.next({ ...panelViewData.value, component })
+                },
+                get priority() {
+                    return panelViewData.value.priority
+                },
+                set priority(priority: number) {
+                    panelViewData.next({ ...panelViewData.value, priority })
+                },
+                unsubscribe: () => {
+                    subscription.unsubscribe()
+                },
             }
+
+            // batch updates from same task
+            const subscription = addWithRollback(state.panelViews, panelViewData.pipe(debounceTime(0)))
+
+            return panelView
         },
     }
 
@@ -741,11 +835,19 @@ export const initNewExtensionAPI = (
         selector: sourcegraph.DocumentSelector,
         provider: sourcegraph.DocumentHighlightProvider
     ): sourcegraph.Unsubscribable => addWithRollback(state.documentHighlightProviders, { selector, provider })
-    // definition
     const registerDefinitionProvider = (
         selector: sourcegraph.DocumentSelector,
         provider: sourcegraph.DefinitionProvider
     ): sourcegraph.Unsubscribable => addWithRollback(state.definitionProviders, { selector, provider })
+    const registerReferenceProvider = (
+        selector: sourcegraph.DocumentSelector,
+        provider: sourcegraph.ReferenceProvider
+    ): sourcegraph.Unsubscribable => addWithRollback(state.referenceProviders, { selector, provider })
+    const registerLocationProvider = (
+        id: string,
+        selector: sourcegraph.DocumentSelector,
+        provider: sourcegraph.LocationProvider
+    ): sourcegraph.Unsubscribable => addWithRollback(state.locationProviders, { selector, provider })
 
     // GraphQL
     const graphQL: typeof sourcegraph['graphQL'] = {
@@ -885,7 +987,7 @@ export const initNewExtensionAPI = (
                 previouslyActivatedExtensions.add(id)
             }
 
-            if (contributionsToRemove.length) {
+            if (contributionsToRemove.length > 0) {
                 state.contributions.next(
                     state.contributions.value.filter(contributions => !contributionsToRemove.includes(contributions))
                 )
@@ -909,6 +1011,8 @@ export const initNewExtensionAPI = (
             registerHoverProvider,
             registerDocumentHighlightProvider,
             registerDefinitionProvider,
+            registerReferenceProvider,
+            registerLocationProvider,
         },
         app,
         graphQL,
