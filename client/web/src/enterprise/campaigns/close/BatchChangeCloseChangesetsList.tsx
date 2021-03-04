@@ -24,12 +24,15 @@ import {
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
 } from '../detail/backend'
 import { ErrorLike } from '../../../../../shared/src/util/errors'
-import { CampaignCloseHeaderWillCloseChangesets, CampaignCloseHeaderWillKeepChangesets } from './CampaignCloseHeader'
-import { CampaignCloseChangesetsListEmptyElement } from './CampaignCloseChangesetsListEmptyElement'
+import {
+    BatchChangeCloseHeaderWillCloseChangesets,
+    BatchChangeCloseHeaderWillKeepChangesets,
+} from './BatchChangeCloseHeader'
+import { CloseChangesetsListEmptyElement } from './CloseChangesetsListEmptyElement'
 import { ChangesetState } from '../../../../../shared/src/graphql-operations'
 
 interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
-    campaignID: Scalars['ID']
+    batchChangeID: Scalars['ID']
     viewerCanAdminister: boolean
     history: H.History
     location: H.Location
@@ -45,10 +48,10 @@ interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, Extens
 }
 
 /**
- * A list of a campaign's changesets that may be closed.
+ * A list of a batch change's changesets that may be closed.
  */
-export const CampaignCloseChangesetsList: React.FunctionComponent<Props> = ({
-    campaignID,
+export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
+    batchChangeID,
     viewerCanAdminister,
     history,
     location,
@@ -65,18 +68,18 @@ export const CampaignCloseChangesetsList: React.FunctionComponent<Props> = ({
         (args: FilteredConnectionQueryArguments) =>
             queryChangesets({
                 // TODO: This doesn't account for draft changesets. Ideally, this would
-                // use the delta API and apply an empty campaign spec, but then changesets
+                // use the delta API and apply an empty batch spec, but then changesets
                 // would currently be lost.
                 state: ChangesetState.OPEN,
                 checkState: null,
                 reviewState: null,
                 first: args.first ?? null,
                 after: args.after ?? null,
-                batchChange: campaignID,
+                batchChange: batchChangeID,
                 onlyPublishedByThisBatchChange: true,
                 search: null,
             }).pipe(repeatWhen(notifier => notifier.pipe(delay(5000)))),
-        [campaignID, queryChangesets]
+        [batchChangeID, queryChangesets]
     )
 
     const containerElements = useMemo(() => new Subject<HTMLElement | null>(), [])
@@ -160,13 +163,13 @@ export const CampaignCloseChangesetsList: React.FunctionComponent<Props> = ({
                 location={location}
                 useURLQuery={true}
                 listComponent="div"
-                listClassName="campaign-close-changesets-list__grid mb-3"
+                listClassName="batch-change-close-changesets-list__grid mb-3"
                 headComponent={
-                    willClose ? CampaignCloseHeaderWillCloseChangesets : CampaignCloseHeaderWillKeepChangesets
+                    willClose ? BatchChangeCloseHeaderWillCloseChangesets : BatchChangeCloseHeaderWillKeepChangesets
                 }
                 noSummaryIfAllNodesVisible={true}
                 onUpdate={onUpdate}
-                emptyElement={<CampaignCloseChangesetsListEmptyElement />}
+                emptyElement={<CloseChangesetsListEmptyElement />}
             />
             {hoverState?.hoverOverlayProps && (
                 <WebHoverOverlay

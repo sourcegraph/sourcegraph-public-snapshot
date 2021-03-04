@@ -1,7 +1,7 @@
 import React from 'react'
 import { storiesOf } from '@storybook/react'
 import { boolean } from '@storybook/addon-knobs'
-import { CampaignClosePage } from './CampaignClosePage'
+import { BatchChangeClosePage } from './BatchChangeClosePage'
 import {
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs,
@@ -19,7 +19,7 @@ import {
 import { useMemo, useCallback } from '@storybook/addons'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
-const { add } = storiesOf('web/campaigns/close/CampaignClosePage', module)
+const { add } = storiesOf('web/batches/close/BatchChangeClosePage', module)
     .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
     .addParameters({
         chromatic: {
@@ -46,7 +46,7 @@ const batchChangeDefaults: BatchChangeFields = {
         username: 'alice',
     },
     id: 'specid',
-    url: '/users/alice/campaigns/specid',
+    url: '/users/alice/batch-changes/specid',
     namespace: {
         namespaceName: 'alice',
         url: '/users/alice',
@@ -54,8 +54,8 @@ const batchChangeDefaults: BatchChangeFields = {
     diffStat: { added: 1000, changed: 2000, deleted: 1000 },
     viewerCanAdminister: true,
     closedAt: null,
-    description: '## What this campaign does\n\nTruly awesome things for example.',
-    name: 'awesome-campaign',
+    description: '## What this batch change does\n\nTruly awesome things for example.',
+    name: 'awesome-batch-change',
     updatedAt: subDays(now, 5).toISOString(),
     lastAppliedAt: subDays(now, 5).toISOString(),
     lastApplier: {
@@ -63,7 +63,7 @@ const batchChangeDefaults: BatchChangeFields = {
         username: 'bob',
     },
     currentSpec: {
-        originalInput: 'name: awesome-campaign\ndescription: somestring',
+        originalInput: 'name: awesome-batch-change\ndescription: somestring',
         supersedingBatchSpec: null,
     },
 }
@@ -211,7 +211,7 @@ add('Overview', () => {
     return (
         <EnterpriseWebStory>
             {props => (
-                <CampaignClosePage
+                <BatchChangeClosePage
                     {...props}
                     queryChangesets={queryChangesets}
                     queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
@@ -244,7 +244,7 @@ add('No open changesets', () => {
     return (
         <EnterpriseWebStory>
             {props => (
-                <CampaignClosePage
+                <BatchChangeClosePage
                     {...props}
                     queryChangesets={queryEmptyChangesets}
                     queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}

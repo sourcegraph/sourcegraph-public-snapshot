@@ -1,19 +1,19 @@
 import React, { useState, useMemo, useCallback } from 'react'
 import * as H from 'history'
 import { PageTitle } from '../../../components/PageTitle'
-import { CampaignCloseAlert } from './CampaignCloseAlert'
+import { BatchChangeCloseAlert } from './BatchChangeCloseAlert'
 import { BatchChangeChangesetsResult, BatchChangeFields, Scalars } from '../../../graphql-operations'
 import {
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
     queryChangesets as _queryChangesets,
-    fetchBatchChangeByNamespace as _fetchCampaignByNamespace,
+    fetchBatchChangeByNamespace as _fetchBatchChangeByNamespace,
 } from '../detail/backend'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
-import { closeCampaign as _closeCampaign } from './backend'
-import { CampaignCloseChangesetsList } from './CampaignCloseChangesetsList'
+import { closeBatchChange as _closeBatchChange } from './backend'
+import { BatchChangeCloseChangesetsList } from './BatchChangeCloseChangesetsList'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { HeroPage } from '../../../components/HeroPage'
@@ -23,7 +23,7 @@ import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { BatchChangesIcon } from '../icons'
 import { PageHeader } from '../../../components/PageHeader'
 
-export interface CampaignClosePageProps
+export interface BatchChangeClosePageProps
     extends ThemeProps,
         TelemetryProps,
         PlatformContextProps,
@@ -40,35 +40,35 @@ export interface CampaignClosePageProps
     location: H.Location
 
     /** For testing only. */
-    fetchBatchChangeByNamespace?: typeof _fetchCampaignByNamespace
+    fetchBatchChangeByNamespace?: typeof _fetchBatchChangeByNamespace
     /** For testing only. */
     queryChangesets?: typeof _queryChangesets
     /** For testing only. */
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
     /** For testing only. */
-    closeCampaign?: typeof _closeCampaign
+    closeBatchChange?: typeof _closeBatchChange
 }
 
-export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> = ({
+export const BatchChangeClosePage: React.FunctionComponent<BatchChangeClosePageProps> = ({
     namespaceID,
-    batchChangeName: campaignName,
+    batchChangeName,
     history,
     location,
     extensionsController,
     isLightTheme,
     platformContext,
     telemetryService,
-    fetchBatchChangeByNamespace: fetchCampaignByNamespace = _fetchCampaignByNamespace,
+    fetchBatchChangeByNamespace = _fetchBatchChangeByNamespace,
     queryChangesets,
     queryExternalChangesetWithFileDiffs,
-    closeCampaign,
+    closeBatchChange,
 }) => {
     const [closeChangesets, setCloseChangesets] = useState<boolean>(false)
-    const campaign = useObservable(
-        useMemo(() => fetchCampaignByNamespace(namespaceID, campaignName), [
+    const batchChange = useObservable(
+        useMemo(() => fetchBatchChangeByNamespace(namespaceID, batchChangeName), [
             namespaceID,
-            campaignName,
-            fetchCampaignByNamespace,
+            batchChangeName,
+            fetchBatchChangeByNamespace,
         ])
     )
 
@@ -87,7 +87,7 @@ export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> 
     )
 
     // Is loading.
-    if (campaign === undefined) {
+    if (batchChange === undefined) {
         return (
             <div className="text-center">
                 <LoadingSpinner className="icon-inline mx-auto my-4" />
@@ -95,9 +95,9 @@ export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> 
         )
     }
 
-    // Campaign not found.
-    if (campaign === null) {
-        return <HeroPage icon={AlertCircleIcon} title="Campaign not found" />
+    // Batch change not found.
+    if (batchChange === null) {
+        return <HeroPage icon={AlertCircleIcon} title="Batch change not found" />
     }
 
     return (
@@ -107,38 +107,38 @@ export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> 
                 path={[
                     {
                         icon: BatchChangesIcon,
-                        to: '/campaigns',
+                        to: '/batch-changes',
                     },
-                    { to: `${campaign.namespace.url}/campaigns`, text: campaign.namespace.namespaceName },
-                    { text: campaign.name },
+                    { to: `${batchChange.namespace.url}/batch-changes`, text: batchChange.namespace.namespaceName },
+                    { text: batchChange.name },
                 ]}
                 byline={
                     <BatchChangeInfoByline
-                        createdAt={campaign.createdAt}
-                        initialApplier={campaign.initialApplier}
-                        lastAppliedAt={campaign.lastAppliedAt}
-                        lastApplier={campaign.lastApplier}
+                        createdAt={batchChange.createdAt}
+                        initialApplier={batchChange.initialApplier}
+                        lastAppliedAt={batchChange.lastAppliedAt}
+                        lastApplier={batchChange.lastApplier}
                     />
                 }
-                className="test-campaign-close-page mb-3"
+                className="test-batch-change-close-page mb-3"
             />
             {totalCount !== undefined && (
-                <CampaignCloseAlert
-                    campaignID={campaign.id}
-                    campaignURL={campaign.url}
+                <BatchChangeCloseAlert
+                    batchChangeID={batchChange.id}
+                    batchChangeURL={batchChange.url}
                     closeChangesets={closeChangesets}
                     setCloseChangesets={setCloseChangesets}
                     history={history}
-                    closeCampaign={closeCampaign}
-                    viewerCanAdminister={campaign.viewerCanAdminister}
+                    closeBatchChange={closeBatchChange}
+                    viewerCanAdminister={batchChange.viewerCanAdminister}
                     totalCount={totalCount}
                 />
             )}
-            <CampaignCloseChangesetsList
-                campaignID={campaign.id}
+            <BatchChangeCloseChangesetsList
+                batchChangeID={batchChange.id}
                 history={history}
                 location={location}
-                viewerCanAdminister={campaign.viewerCanAdminister}
+                viewerCanAdminister={batchChange.viewerCanAdminister}
                 extensionsController={extensionsController}
                 isLightTheme={isLightTheme}
                 platformContext={platformContext}

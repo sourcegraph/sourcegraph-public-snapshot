@@ -442,28 +442,28 @@ describe('Campaigns', () => {
 
                 await driver.page.goto(driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-campaign')
                 // View overview page.
-                await driver.page.waitForSelector('.test-campaign-details-page')
+                await driver.page.waitForSelector('.test-batch-change-details-page')
 
                 // Expand one changeset.
-                await driver.page.click('.test-campaigns-expand-changeset')
+                await driver.page.click('.test-batches-expand-changeset')
                 // Expect one diff to be rendered.
                 await driver.page.waitForSelector('.test-file-diff-node')
 
                 // Switch to view burndown chart.
-                await driver.page.click('.test-campaigns-chart-tab')
-                await driver.page.waitForSelector('.test-campaigns-chart')
+                await driver.page.click('.test-batches-chart-tab')
+                await driver.page.waitForSelector('.test-batches-chart')
 
                 // Switch to view spec file.
-                await driver.page.click('.test-campaigns-spec-tab')
-                await driver.page.waitForSelector('.test-campaigns-spec')
+                await driver.page.click('.test-batches-spec-tab')
+                await driver.page.waitForSelector('.test-batches-spec')
 
                 // Go to close page via button.
-                await Promise.all([driver.page.waitForNavigation(), driver.page.click('.test-campaigns-close-btn')])
+                await Promise.all([driver.page.waitForNavigation(), driver.page.click('.test-batches-close-btn')])
                 assert.strictEqual(
                     await driver.page.evaluate(() => window.location.href),
                     testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-campaign/close'
                 )
-                await driver.page.waitForSelector('.test-campaign-close-page')
+                await driver.page.waitForSelector('.test-batch-change-close-page')
                 // Change overrides to make campaign appear closed.
                 testContext.overrideGraphQL({
                     ...commonWebGraphQlResults,
@@ -480,11 +480,8 @@ describe('Campaigns', () => {
                 })
 
                 // Return to details page.
-                await Promise.all([
-                    driver.page.waitForNavigation(),
-                    driver.page.click('.test-campaigns-close-abort-btn'),
-                ])
-                await driver.page.waitForSelector('.test-campaign-details-page')
+                await Promise.all([driver.page.waitForNavigation(), driver.page.click('.test-batches-close-abort-btn')])
+                await driver.page.waitForSelector('.test-batch-change-details-page')
                 assert.strictEqual(
                     await driver.page.evaluate(() => window.location.href),
                     testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-campaign'
@@ -494,7 +491,7 @@ describe('Campaigns', () => {
                 await Promise.all([
                     driver.page.waitForNavigation(),
                     driver.acceptNextDialog(),
-                    driver.page.click('.test-campaigns-delete-btn'),
+                    driver.page.click('.test-batches-delete-btn'),
                 ])
                 assert.strictEqual(
                     await driver.page.evaluate(() => window.location.href),
@@ -505,11 +502,11 @@ describe('Campaigns', () => {
                 await driver.page.goto(
                     driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-campaign?tab=chart'
                 )
-                await driver.page.waitForSelector('.test-campaigns-chart')
+                await driver.page.waitForSelector('.test-batches-chart')
                 await driver.page.goto(
                     driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-campaign?tab=spec'
                 )
-                await driver.page.waitForSelector('.test-campaigns-spec')
+                await driver.page.waitForSelector('.test-batches-spec')
             })
         }
     })
@@ -665,10 +662,10 @@ describe('Campaigns', () => {
 
                 await driver.page.goto(driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/apply/spec123')
                 // View overview page.
-                await driver.page.waitForSelector('.test-campaign-apply-page')
+                await driver.page.waitForSelector('.test-batch-change-apply-page')
 
                 // Expand one changeset.
-                await driver.page.click('.test-campaigns-expand-preview')
+                await driver.page.click('.test-batches-expand-preview')
                 // Expect one diff to be rendered.
                 await driver.page.waitForSelector('.test-file-diff-node')
 
@@ -676,7 +673,7 @@ describe('Campaigns', () => {
                 await Promise.all([
                     driver.page.waitForNavigation(),
                     driver.acceptNextDialog(),
-                    driver.page.click('.test-campaigns-confirm-apply-btn'),
+                    driver.page.click('.test-batches-confirm-apply-btn'),
                 ])
                 // Expect to be back at campaign overview page.
                 assert.strictEqual(
@@ -695,8 +692,8 @@ describe('Campaigns', () => {
                     ...mockCommonGraphQLResponses(entityType),
                     BatchChangeChangesets,
                     ExternalChangesetFileDiffs,
-                    CloseCampaign: () => ({
-                        closeCampaign: {
+                    CloseBatchChange: () => ({
+                        closeBatchChange: {
                             id: 'campaign123',
                         },
                     }),
@@ -705,22 +702,22 @@ describe('Campaigns', () => {
 
                 await driver.page.goto(driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-campaign/close')
                 // View overview page.
-                await driver.page.waitForSelector('.test-campaign-close-page')
+                await driver.page.waitForSelector('.test-batch-change-close-page')
 
                 // Check close changesets box.
-                assert.strictEqual(await driver.page.$('.test-campaigns-close-willclose-header'), null)
-                await driver.page.click('.test-campaigns-close-changesets-checkbox')
-                await driver.page.waitForSelector('.test-campaigns-close-willclose-header')
+                assert.strictEqual(await driver.page.$('.test-batches-close-willclose-header'), null)
+                await driver.page.click('.test-batches-close-changesets-checkbox')
+                await driver.page.waitForSelector('.test-batches-close-willclose-header')
 
                 // Expand one changeset.
-                await driver.page.click('.test-campaigns-expand-changeset')
+                await driver.page.click('.test-batches-expand-changeset')
                 // Expect one diff to be rendered.
                 await driver.page.waitForSelector('.test-file-diff-node')
 
                 // Close campaign.
                 await Promise.all([
                     driver.page.waitForNavigation(),
-                    driver.page.click('.test-campaigns-confirm-close-btn'),
+                    driver.page.click('.test-batches-confirm-close-btn'),
                 ])
                 // Expect to be back at campaign overview page.
                 assert.strictEqual(

@@ -65,7 +65,7 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
                     <button
                         type="button"
                         className={classNames(
-                            'btn btn-primary test-campaigns-confirm-apply-btn text-nowrap',
+                            'btn btn-primary test-batches-confirm-apply-btn text-nowrap',
                             isLoading === true || (!viewerCanAdminister && 'disabled')
                         )}
                         onClick={onApply}

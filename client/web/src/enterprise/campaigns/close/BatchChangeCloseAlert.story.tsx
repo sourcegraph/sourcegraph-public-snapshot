@@ -1,11 +1,11 @@
 import { storiesOf } from '@storybook/react'
 import { boolean } from '@storybook/addon-knobs'
 import React from 'react'
-import { CampaignCloseAlert } from './CampaignCloseAlert'
+import { BatchChangeCloseAlert } from './BatchChangeCloseAlert'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 import { useState } from '@storybook/addons'
 
-const { add } = storiesOf('web/campaigns/close/CampaignCloseAlert', module)
+const { add } = storiesOf('web/batches/close/BatchChangeCloseAlert', module)
     .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
     .addParameters({
         chromatic: {
@@ -18,15 +18,15 @@ add('Has open changesets', () => {
     return (
         <EnterpriseWebStory>
             {props => (
-                <CampaignCloseAlert
+                <BatchChangeCloseAlert
                     {...props}
-                    campaignID="campaign123"
-                    campaignURL="/users/john/campaigns/campaign123"
+                    batchChangeID="change123"
+                    batchChangeURL="/users/john/batch-changes/change123"
                     totalCount={10}
                     closeChangesets={closeChangesets}
                     setCloseChangesets={setCloseChangesets}
                     viewerCanAdminister={boolean('viewerCanAdminister', true)}
-                    closeCampaign={() => Promise.resolve()}
+                    closeBatchChange={() => Promise.resolve()}
                 />
             )}
         </EnterpriseWebStory>
@@ -37,15 +37,15 @@ add('No open changesets', () => {
     return (
         <EnterpriseWebStory>
             {props => (
-                <CampaignCloseAlert
+                <BatchChangeCloseAlert
                     {...props}
-                    campaignID="campaign123"
-                    campaignURL="/users/john/campaigns/campaign123"
+                    batchChangeID="change123"
+                    batchChangeURL="/users/john/batch-changes/change123"
                     totalCount={0}
                     closeChangesets={closeChangesets}
                     setCloseChangesets={setCloseChangesets}
                     viewerCanAdminister={boolean('viewerCanAdminister', true)}
-                    closeCampaign={() => Promise.resolve()}
+                    closeBatchChange={() => Promise.resolve()}
                 />
             )}
         </EnterpriseWebStory>

@@ -1,14 +1,14 @@
 import React, { useCallback, useState } from 'react'
 import * as H from 'history'
-import { closeCampaign as _closeCampaign } from './backend'
+import { closeBatchChange as _closeBatchChange } from './backend'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { isErrorLike, asError } from '../../../../../shared/src/util/errors'
 import { ErrorAlert } from '../../../components/alerts'
 import { Scalars } from '../../../graphql-operations'
 
-export interface CampaignCloseAlertProps {
-    campaignID: Scalars['ID']
-    campaignURL: string
+export interface BatchChangeCloseAlertProps {
+    batchChangeID: Scalars['ID']
+    batchChangeURL: string
     closeChangesets: boolean
     viewerCanAdminister: boolean
     totalCount: number
@@ -16,18 +16,18 @@ export interface CampaignCloseAlertProps {
     history: H.History
 
     /** For testing only. */
-    closeCampaign?: typeof _closeCampaign
+    closeBatchChange?: typeof _closeBatchChange
 }
 
-export const CampaignCloseAlert: React.FunctionComponent<CampaignCloseAlertProps> = ({
-    campaignID,
-    campaignURL,
+export const BatchChangeCloseAlert: React.FunctionComponent<BatchChangeCloseAlertProps> = ({
+    batchChangeID,
+    batchChangeURL,
     closeChangesets,
     totalCount,
     setCloseChangesets,
     viewerCanAdminister,
     history,
-    closeCampaign = _closeCampaign,
+    closeBatchChange = _closeBatchChange,
 }) => {
     const onChangeCloseChangesets = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
         event => {
@@ -36,25 +36,25 @@ export const CampaignCloseAlert: React.FunctionComponent<CampaignCloseAlertProps
         [setCloseChangesets]
     )
     const onCancel = useCallback<React.MouseEventHandler>(() => {
-        history.push(campaignURL)
-    }, [history, campaignURL])
+        history.push(batchChangeURL)
+    }, [history, batchChangeURL])
     const [isClosing, setIsClosing] = useState<boolean | Error>(false)
     const onClose = useCallback<React.MouseEventHandler>(async () => {
         setIsClosing(true)
         try {
-            await closeCampaign({ campaign: campaignID, closeChangesets })
-            history.push(campaignURL)
+            await closeBatchChange({ batchChange: batchChangeID, closeChangesets })
+            history.push(batchChangeURL)
         } catch (error) {
             setIsClosing(asError(error))
         }
-    }, [history, closeChangesets, closeCampaign, campaignID, campaignURL])
+    }, [history, closeChangesets, closeBatchChange, batchChangeID, batchChangeURL])
     return (
         <>
             <div className="card mb-3">
                 <div className="card-body p-3">
                     <p>
                         <strong>
-                            After closing this campaign, it will be read-only and no new campaign specs can be applied.
+                            After closing this batch change, it will be read-only and no new batch specs can be applied.
                         </strong>
                     </p>
                     {totalCount > 0 && (
@@ -66,7 +66,7 @@ export const CampaignCloseAlert: React.FunctionComponent<CampaignCloseAlertProps
                                     type="checkbox"
                                     checked={closeChangesets}
                                     onChange={onChangeCloseChangesets}
-                                    className="test-campaigns-close-changesets-checkbox form-check-input"
+                                    className="test-batches-close-changesets-checkbox form-check-input"
                                     disabled={isClosing === true || !viewerCanAdminister}
                                 />
                                 <label className="form-check-label" htmlFor="closeChangesets">
@@ -75,11 +75,11 @@ export const CampaignCloseAlert: React.FunctionComponent<CampaignCloseAlertProps
                             </div>
                             {!viewerCanAdminister && (
                                 <p className="text-warning">
-                                    You don't have permission to close this campaign. See{' '}
+                                    You don't have permission to close this batch change. See{' '}
                                     <a href="https://docs.sourcegraph.com/campaigns/explanations/permissions_in_campaigns">
-                                        Permissions in campaigns
+                                        Permissions in batch changes
                                     </a>{' '}
-                                    for more information about the campaigns permission model.
+                                    for more information about the batch changes permission model.
                                 </p>
                             )}
                         </>
@@ -87,7 +87,7 @@ export const CampaignCloseAlert: React.FunctionComponent<CampaignCloseAlertProps
                     <div className="d-flex justify-content-end">
                         <button
                             type="button"
-                            className="btn btn-secondary mr-3 test-campaigns-close-abort-btn"
+                            className="btn btn-secondary mr-3 test-batches-close-abort-btn"
                             onClick={onCancel}
                             disabled={isClosing === true || !viewerCanAdminister}
                         >
@@ -95,11 +95,11 @@ export const CampaignCloseAlert: React.FunctionComponent<CampaignCloseAlertProps
                         </button>
                         <button
                             type="button"
-                            className="btn btn-danger test-campaigns-confirm-close-btn"
+                            className="btn btn-danger test-batches-confirm-close-btn"
                             onClick={onClose}
                             disabled={isClosing === true || !viewerCanAdminister}
                         >
-                            {isClosing === true && <LoadingSpinner className="icon-inline" />} Close campaign
+                            {isClosing === true && <LoadingSpinner className="icon-inline" />} Close batch change
                         </button>
                     </div>
                 </div>

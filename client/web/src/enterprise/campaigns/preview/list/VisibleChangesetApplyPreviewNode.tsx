@@ -62,7 +62,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
         <>
             <button
                 type="button"
-                className="btn btn-icon test-campaigns-expand-preview d-none d-sm-block mx-1"
+                className="btn btn-icon test-batches-expand-preview d-none d-sm-block mx-1"
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
@@ -117,7 +117,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                 type="button"
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
-                className="visible-changeset-apply-preview-node__show-details btn btn-outline-secondary d-block d-sm-none test-campaigns-expand-preview"
+                className="visible-changeset-apply-preview-node__show-details btn btn-outline-secondary d-block d-sm-none test-batches-expand-preview"
             >
                 {isExpanded ? (
                     <ChevronDownIcon className="icon-inline" aria-label="Close section" />
