@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater/authz"
 	frontendAuthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches"
 	codemonitorsBackground "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	insightsBackground "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
@@ -51,7 +51,7 @@ func enterpriseInit(
 	codemonitorsBackground.StartBackgroundJobs(ctx, db)
 	insightsBackground.StartBackgroundJobs(ctx, db)
 
-	campaigns.InitBackgroundJobs(ctx, db, cf, server)
+	batches.InitBackgroundJobs(ctx, db, cf, server)
 
 	// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB.ExternalServices for now.
 	dbconn.Global = db
