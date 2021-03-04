@@ -10,7 +10,7 @@ export const hints: Partial<Record<ExternalServiceKind, React.ReactFragment>> = 
             </Link>
             <span className="text-muted">
                 {' '}
-                on <b>GitHub.com</b> with <code>repo</code> scope.
+                on <b>GitHub.com</b> with <code className="add-user-code-hosts-page__code--inline">repo</code> scope.
             </span>
         </small>
     ),
@@ -21,8 +21,9 @@ export const hints: Partial<Record<ExternalServiceKind, React.ReactFragment>> = 
             </Link>
             <span className="text-muted">
                 {' '}
-                on <b>GitLab.com</b> with <code>read_user</code>, <code>read_api</code>, and{' '}
-                <code>read_repository</code> scope.
+                on <b>GitLab.com</b> with <code className="add-user-code-hosts-page__code--inline">read_user</code>,{' '}
+                <code className="add-user-code-hosts-page__code--inline">read_api</code>, and{' '}
+                <code className="add-user-code-hosts-page__code--inline">read_repository</code> scope.
             </span>
         </small>
     ),

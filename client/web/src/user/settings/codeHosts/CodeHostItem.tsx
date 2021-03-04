@@ -89,14 +89,14 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                 {service?.id ? (
                     <button
                         type="button"
-                        className="btn btn-link text-danger px-0 shadow-none"
+                        className="btn btn-link btn-sm text-danger px-0 shadow-none"
                         onClick={toggleRemoveConnectionModal}
                     >
                         Remove
                     </button>
                 ) : (
                     <ButtonDropdown isOpen={dropdownOpen} toggle={toggleDropdown} direction="down" right={true}>
-                        <DropdownToggle color="outline-secondary" caret={true}>
+                        <DropdownToggle className="btn-sm" color="outline-secondary" caret={true}>
                             Connect
                         </DropdownToggle>
                         <DropdownMenu right={true}>
