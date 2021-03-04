@@ -447,7 +447,7 @@ func (r *NodeResolver) ToCampaignSpec() (BatchSpecResolver, bool) {
 
 func (r *NodeResolver) ToBatchChange() (BatchChangeResolver, bool) {
 	n, ok := r.Node.(BatchChangeResolver)
-	return n, ok
+	return n, n.ActAsCampaign()
 }
 
 func (r *NodeResolver) ToBatchSpec() (BatchSpecResolver, bool) {
