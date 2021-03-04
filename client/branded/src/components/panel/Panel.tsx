@@ -1,13 +1,9 @@
 import * as H from 'history'
 import CloseIcon from 'mdi-react/CloseIcon'
-import * as React from 'react'
-import { Observable, Subscription } from 'rxjs'
-import { map, tap } from 'rxjs/operators'
-import {
-    PanelViewWithComponent,
-    PanelViewProviderRegistrationOptions,
-} from '../../../../shared/src/api/client/services/panelViews'
-import { ContributableMenu, ContributableViewContainer } from '../../../../shared/src/api/protocol/contribution'
+import React, { useCallback, useEffect, useMemo } from 'react'
+import { BehaviorSubject, Observable } from 'rxjs'
+import { map, switchMap } from 'rxjs/operators'
+import { ContributableMenu } from '../../../../shared/src/api/protocol/contribution'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { ActionsNavItems } from '../../../../shared/src/actions/ActionsNavItems'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
@@ -21,6 +17,12 @@ import { EmptyPanelView } from './views/EmptyPanelView'
 import { PanelView } from './views/PanelView'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { VersionContextProps } from '../../../../shared/src/search/util'
+import * as sourcegraph from 'sourcegraph'
+import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import { combineLatestOrDefault } from '../../../../shared/src/util/rxjs/combineLatestOrDefault'
+import { Location } from '@sourcegraph/extension-api-types'
+import { isDefined } from '../../../../shared/src/util/types'
+import { useObservable } from '../../../../shared/src/util/useObservable'
 
 interface Props
     extends ExtensionsControllerProps,
@@ -36,9 +38,16 @@ interface Props
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
-interface State {
-    /** Panel views contributed by extensions. */
-    panelViews?: (PanelViewWithComponent & Pick<PanelViewProviderRegistrationOptions, 'id'>)[] | null
+export interface PanelViewWithComponent extends Pick<sourcegraph.PanelView, 'title' | 'content' | 'priority'> {
+    /**
+     * The location provider whose results to render in the panel view.
+     */
+    locationProvider?: Observable<MaybeLoadingResult<Location[]>>
+
+    /**
+     * The React element to render in the panel view.
+     */
+    reactElement?: React.ReactFragment
 }
 
 /**
@@ -62,105 +71,131 @@ interface PanelItem extends Tab<string> {
     hasLocations?: boolean
 }
 
+const builtinPanelViewProviders = new BehaviorSubject<
+    Map<string, { id: string; provider: Observable<PanelViewWithComponent | null> }>
+>(new Map())
+
+/**
+ * React hook to add panel views from other components (panel views are typically
+ * contributed by Sourcegraph extensions)
+ */
+export function useBuiltinPanelViews(
+    builtinPanels: { id: string; provider: Observable<PanelViewWithComponent | null> }[]
+) {
+    useEffect(() => {
+        for (const builtinPanel of builtinPanels) {
+            builtinPanelViewProviders.value.set(builtinPanel.id, builtinPanel)
+        }
+        builtinPanelViewProviders.next(new Map([...builtinPanelViewProviders.value]))
+
+        return () => {
+            for (const builtinPanel of builtinPanels) {
+                builtinPanelViewProviders.value.delete(builtinPanel.id)
+            }
+            builtinPanelViewProviders.next(new Map([...builtinPanelViewProviders.value]))
+        }
+    }, [builtinPanels])
+}
+
 /**
  * The panel, which is a tabbed component with contextual information. Components rendering the panel should
  * generally use ResizablePanel, not Panel.
  *
- * Other components can contribute panel items to the panel.
+ * Other components can contribute panel items to the panel with the `useBuildinPanelViews` hook.
  */
-class Panel extends React.PureComponent<Props, State> {
-    public state: State = {}
+export const Panel = React.memo<Props>(props => {
+    // TODO(tj): subscribe to extension panels as well
 
-    private subscriptions = new Subscription()
-
-    public componentDidMount(): void {
-        this.subscriptions.add(
-            this.props.extensionsController.services.panelViews
-                .getPanelViews(ContributableViewContainer.Panel)
-                .pipe(
-                    map(panelViews => ({ panelViews })),
-                    tap(stuff => console.log({ stuff }))
-                )
-                .subscribe(stateUpdate => this.setState(stateUpdate))
+    const builtinPanels: (PanelViewWithComponent & { id: string })[] | undefined = useObservable(
+        useMemo(
+            () =>
+                builtinPanelViewProviders.pipe(
+                    switchMap(providers =>
+                        combineLatestOrDefault(
+                            [...providers].map(([id, { provider }]) =>
+                                provider.pipe(map(view => (view ? { ...view, id } : null)))
+                            )
+                        )
+                    ),
+                    map(views => views.filter(isDefined))
+                ),
+            []
         )
-    }
+    )
 
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
+    const onDismiss = useCallback(
+        () => props.history.push(TabsWithURLViewStatePersistence.urlForTabID(props.location, null)),
+        []
+    )
 
-    public render(): JSX.Element | null {
-        const items = this.state.panelViews
-            ? this.state.panelViews
-                  .map(
-                      (panelView): PanelItem => ({
-                          label: panelView.title,
-                          id: panelView.id,
-                          priority: panelView.priority,
-                          element: <PanelView {...this.props} panelView={panelView} />,
-                          hasLocations: !!panelView.locationProvider,
-                      })
-                  )
-                  .sort(byPriority)
-            : []
+    const panelViews = [...(builtinPanels || [])]
 
-        const hasTabs = items.length > 0
-        const activePanelViewID = TabsWithURLViewStatePersistence.readFromURL(this.props.location, items)
-        const activePanelView = items.find(item => item.id === activePanelViewID)
-        return (
-            <div className="panel">
-                {hasTabs ? (
-                    <TabsWithURLViewStatePersistence
-                        tabs={items}
-                        tabBarEndFragment={
-                            <>
-                                <Spacer />
-                                <ActionsNavItems
-                                    {...this.props}
-                                    // TODO remove references to Bootstrap from shared, get class name from prop
-                                    // This is okay for now because the Panel is currently only used in the webapp
-                                    listClass="nav panel__actions"
-                                    actionItemClass="nav-link mw-100 panel__action"
-                                    actionItemIconClass="icon-inline"
-                                    menu={ContributableMenu.PanelToolbar}
-                                    scope={
-                                        activePanelView !== undefined
-                                            ? {
-                                                  type: 'panelView',
-                                                  id: activePanelView.id,
-                                                  hasLocations: Boolean(activePanelView.hasLocations),
-                                              }
-                                            : undefined
-                                    }
-                                    wrapInList={true}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={this.onDismiss}
-                                    className="btn btn-icon tab-bar__end-fragment-other-element panel__dismiss"
-                                    data-tooltip="Close"
-                                >
-                                    <CloseIcon className="icon-inline" />
-                                </button>
-                            </>
-                        }
-                        className="panel__tabs"
-                        tabBarClassName="panel__tab-bar"
-                        tabClassName="tab-bar__tab--h5like"
-                        location={this.props.location}
-                    >
-                        {items?.map(({ id, element }) => React.cloneElement(element, { key: id }))}
-                    </TabsWithURLViewStatePersistence>
-                ) : (
-                    <EmptyPanelView />
-                )}
-            </div>
-        )
-    }
-
-    private onDismiss = (): void =>
-        this.props.history.push(TabsWithURLViewStatePersistence.urlForTabID(this.props.location, null))
-}
+    const items = panelViews
+        ? panelViews
+              .map(
+                  (panelView): PanelItem => ({
+                      label: panelView.title,
+                      id: panelView.id,
+                      priority: panelView.priority,
+                      element: <PanelView {...props} panelView={panelView} />,
+                      hasLocations: !!panelView.locationProvider,
+                  })
+              )
+              .sort(byPriority)
+        : []
+    const hasTabs = items.length > 0
+    const activePanelViewID = TabsWithURLViewStatePersistence.readFromURL(props.location, items)
+    const activePanelView = items.find(item => item.id === activePanelViewID)
+    return (
+        <div className="panel">
+            {hasTabs ? (
+                <TabsWithURLViewStatePersistence
+                    tabs={items}
+                    tabBarEndFragment={
+                        <>
+                            <Spacer />
+                            <ActionsNavItems
+                                {...props}
+                                // TODO remove references to Bootstrap from shared, get class name from prop
+                                // This is okay for now because the Panel is currently only used in the webapp
+                                listClass="nav panel__actions"
+                                actionItemClass="nav-link mw-100 panel__action"
+                                actionItemIconClass="icon-inline"
+                                menu={ContributableMenu.PanelToolbar}
+                                scope={
+                                    activePanelView !== undefined
+                                        ? {
+                                              type: 'panelView',
+                                              id: activePanelView.id,
+                                              hasLocations: Boolean(activePanelView.hasLocations),
+                                          }
+                                        : undefined
+                                }
+                                wrapInList={true}
+                            />
+                            <button
+                                type="button"
+                                onClick={onDismiss}
+                                className="btn btn-icon tab-bar__end-fragment-other-element panel__dismiss"
+                                data-tooltip="Close"
+                            >
+                                <CloseIcon className="icon-inline" />
+                            </button>
+                        </>
+                    }
+                    className="panel__tabs"
+                    tabBarClassName="panel__tab-bar"
+                    tabClassName="tab-bar__tab--h5like"
+                    location={props.location}
+                >
+                    {items?.map(({ id, element }) => React.cloneElement(element, { key: id }))}
+                </TabsWithURLViewStatePersistence>
+            ) : (
+                <EmptyPanelView />
+            )}
+        </div>
+    )
+})
 
 function byPriority(a: { priority: number }, b: { priority: number }): number {
     return b.priority - a.priority

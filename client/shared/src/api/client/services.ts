@@ -34,12 +34,6 @@ export class Services {
         } else {
             this.extensions = new ExtensionsService(platformContext, this.model)
         }
-
-        // debugging
-        // TODO(tj): remove after full refactor complete
-        this.panelViews
-            .getPanelViews(ContributableViewContainer.Panel)
-            .subscribe(panels => console.log('registered panel views', panels))
     }
 
     // TEMP MIGRATION CHECKLIST
@@ -61,15 +55,16 @@ export class Services {
         this.platformContext.settings,
         this.context.data
     )
-
-    public readonly view = createViewService()
+    public readonly textDocumentDecoration = new TextDocumentDecorationProviderRegistry()
 
     // Feature provider services
     public readonly textDocumentReferences = new TextDocumentLocationProviderRegistry<ReferenceParameters>()
     public readonly textDocumentLocations = new TextDocumentLocationProviderIDRegistry()
-    public readonly textDocumentDecoration = new TextDocumentDecorationProviderRegistry()
+    public readonly completionItems = new CompletionItemProviderRegistry()
 
     public readonly linkPreviews = new LinkPreviewProviderRegistry()
     public readonly panelViews = new PanelViewProviderRegistry()
-    public readonly completionItems = new CompletionItemProviderRegistry()
+
+    // TODO(tj): refactor this in a separate PR
+    public readonly view = createViewService()
 }

@@ -84,6 +84,7 @@ import { checkOk } from '../../backend/fetch'
 import { memoizeObservable } from '../../util/memoizeObservable'
 import { ExecutableExtension } from '../client/services/extensionsService'
 import { areExtensionsSame } from '../../extensions/extensions'
+import { PanelViewWithComponent } from '../client/services/panelViews'
 
 /**
  * Holds the entire state exposed to the extension host
@@ -100,10 +101,11 @@ export interface ExtensionHostState {
     // Search
     queryTransformers: BehaviorSubject<readonly sourcegraph.QueryTransformer[]>
 
-    // Lang
+    // Language features
     hoverProviders: BehaviorSubject<readonly RegisteredProvider<sourcegraph.HoverProvider>[]>
     documentHighlightProviders: BehaviorSubject<readonly RegisteredProvider<sourcegraph.DocumentHighlightProvider>[]>
     definitionProviders: BehaviorSubject<readonly RegisteredProvider<sourcegraph.DefinitionProvider>[]>
+    referenceProviders: BehaviorSubject<readonly RegisteredProvider<sourcegraph.ReferenceProvider>[]>
 
     // Decorations
     fileDecorationProviders: BehaviorSubject<readonly sourcegraph.FileDecorationProvider[]>
@@ -117,18 +119,20 @@ export interface ExtensionHostState {
     lastViewerId: number
     openedTextDocuments: Subject<ExtensionDocument>
     activeLanguages: BehaviorSubject<ReadonlySet<string>>
-    /** TODO(tj): URI? */
     modelReferences: ReferenceCounter<string>
     languageReferences: ReferenceCounter<string>
     /** Mutable map of URIs to text documents */
     textDocuments: Map<string, ExtensionDocument>
 
     /** Mutable map of viewer ID to viewer. */
-    viewComponents: Map<string, ExtensionViewer> // TODO(tj): ext dir viewer
+    viewComponents: Map<string, ExtensionViewer>
     activeViewComponentChanges: BehaviorSubject<ExtensionViewer | undefined>
 
     plainNotifications: ReplaySubject<PlainNotification>
     progressNotifications: ReplaySubject<ProgressNotification & ProxyMarked>
+
+    // Views
+    panelViews: BehaviorSubject<PanelViewWithComponent[]>
 }
 
 export interface RegisteredProvider<T> {
@@ -228,6 +232,8 @@ export const initNewExtensionAPI = (
             readonly RegisteredProvider<sourcegraph.DocumentHighlightProvider>[]
         >([]),
         definitionProviders: new BehaviorSubject<readonly RegisteredProvider<sourcegraph.DefinitionProvider>[]>([]),
+        referenceProviders: new BehaviorSubject<readonly RegisteredProvider<sourcegraph.ReferenceProvider>[]>([]),
+
         fileDecorationProviders: new BehaviorSubject<readonly sourcegraph.FileDecorationProvider[]>([]),
 
         context: new BehaviorSubject<Context>({
@@ -487,10 +493,9 @@ export const initNewExtensionAPI = (
             if (state.languageReferences.increment(textDocumentData.languageId)) {
                 state.activeLanguages.next(new Set<string>(state.languageReferences.keys()))
             }
-            console.log({ textDocumentData, docs: state.textDocuments })
         },
 
-        // TODO(tj): for panel view location provider arguments
+        // For panel view location provider arguments
         getActiveCodeEditorPosition: () =>
             proxySubscribable(
                 state.activeViewComponentChanges.pipe(
@@ -692,7 +697,7 @@ export const initNewExtensionAPI = (
 
     const app: Pick<
         typeof sourcegraph['app'],
-        'activeWindow' | 'activeWindowChanges' | 'windows' | 'registerFileDecorationProvider'
+        'activeWindow' | 'activeWindowChanges' | 'windows' | 'registerFileDecorationProvider' | 'createPanelView'
     > = {
         // deprecated, add simple window getter
         get activeWindow() {
@@ -704,6 +709,16 @@ export const initNewExtensionAPI = (
         },
         registerFileDecorationProvider: (provider: sourcegraph.FileDecorationProvider): sourcegraph.Unsubscribable =>
             addWithRollback(state.fileDecorationProviders, provider),
+        createPanelView: id => {
+            console.log('creating panel view')
+            return {
+                title: '',
+                content: '',
+                component: null,
+                priority: 0,
+                unsubscribe: () => {},
+            }
+        },
     }
 
     // Commands
@@ -758,9 +773,6 @@ export const initNewExtensionAPI = (
     }
 
     state.contributions.subscribe(entries => console.log('exthostcontributions', entries))
-
-    // expose activeExtensions to main for global debug, but also subscribe to it to
-    // determine which extensions to activate
 
     const getScriptURLs = memoizeObservable(
         () =>

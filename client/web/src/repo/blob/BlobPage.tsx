@@ -27,7 +27,7 @@ import { ToggleHistoryPanel } from './actions/ToggleHistoryPanel'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { Blob, BlobInfo } from './Blob'
-import { BlobPanel } from './panel/BlobPanel'
+import { useBlobPanelViews } from './panel/BlobPanel'
 import { GoToRawAction } from './GoToRawAction'
 import { RenderedFile } from './RenderedFile'
 import { ThemeProps } from '../../../../shared/src/theme'
@@ -211,7 +211,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
         props.extensionsController.services.viewer,
     ])
 
-    // TODO(tj): useBlobPanelViews
+    useBlobPanelViews(props)
 
     // If url explicitly asks for a certain rendering mode, renderMode is set to that mode, else it checks:
     // - If file contains richHTML and url does not include a line number: We render in richHTML.
@@ -253,14 +253,6 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                     <GoToRawAction key="raw-action" repoName={repoName} revision={props.revision} filePath={filePath} />
                 }
                 repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-            />
-            <BlobPanel
-                {...props}
-                position={
-                    lprToRange(parseHash(props.location.hash))
-                        ? lprToRange(parseHash(props.location.hash))!.start
-                        : undefined
-                }
             />
         </>
     )

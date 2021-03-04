@@ -1,10 +1,6 @@
 import * as H from 'history'
 import React from 'react'
 import { Observable } from 'rxjs'
-import {
-    PanelViewWithComponent,
-    PanelViewProviderRegistrationOptions,
-} from '../../../../../shared/src/api/client/services/panelViews'
 import { FetchFileParameters } from '../../../../../shared/src/components/CodeExcerpt'
 import { Markdown } from '../../../../../shared/src/components/Markdown'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
@@ -13,9 +9,10 @@ import { renderMarkdown } from '../../../../../shared/src/util/markdown'
 import { EmptyPanelView } from './EmptyPanelView'
 import { HierarchicalLocationsView } from './HierarchicalLocationsView'
 import { VersionContextProps } from '../../../../../shared/src/search/util'
+import { PanelViewWithComponent } from '../Panel'
 
 interface Props extends ExtensionsControllerProps, SettingsCascadeProps, VersionContextProps {
-    panelView: PanelViewWithComponent & Pick<PanelViewProviderRegistrationOptions, 'id'>
+    panelView: PanelViewWithComponent
     repoName?: string
     history: H.History
     location: H.Location
@@ -23,40 +20,33 @@ interface Props extends ExtensionsControllerProps, SettingsCascadeProps, Version
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
-interface State {}
-
 /**
  * A panel view contributed by an extension using {@link sourcegraph.app.createPanelView}.
  */
-export class PanelView extends React.PureComponent<Props, State> {
-    public render(): JSX.Element | null {
-        return (
-            <div className="panel__tabs-content panel__tabs-content--scroll">
-                {this.props.panelView.content && (
-                    <div className="px-2 pt-2">
-                        <Markdown
-                            dangerousInnerHTML={renderMarkdown(this.props.panelView.content)}
-                            history={this.props.history}
-                        />
-                    </div>
-                )}
-                {this.props.panelView.reactElement}
-                {this.props.panelView.locationProvider && this.props.repoName && (
-                    <HierarchicalLocationsView
-                        location={this.props.location}
-                        locations={this.props.panelView.locationProvider}
-                        defaultGroup={this.props.repoName}
-                        isLightTheme={this.props.isLightTheme}
-                        fetchHighlightedFileLineRanges={this.props.fetchHighlightedFileLineRanges}
-                        extensionsController={this.props.extensionsController}
-                        settingsCascade={this.props.settingsCascade}
-                        versionContext={this.props.versionContext}
-                    />
-                )}
-                {!this.props.panelView.content &&
-                    !this.props.panelView.reactElement &&
-                    !this.props.panelView.locationProvider && <EmptyPanelView className="mt-3" />}
-            </div>
-        )
-    }
-}
+export const PanelView = React.memo<Props>(props => {
+    return (
+        <div className="panel__tabs-content panel__tabs-content--scroll">
+            {props.panelView.content && (
+                <div className="px-2 pt-2">
+                    <Markdown dangerousInnerHTML={renderMarkdown(props.panelView.content)} history={props.history} />
+                </div>
+            )}
+            {props.panelView.reactElement}
+            {props.panelView.locationProvider && props.repoName && (
+                <HierarchicalLocationsView
+                    location={props.location}
+                    locations={props.panelView.locationProvider}
+                    defaultGroup={props.repoName}
+                    isLightTheme={props.isLightTheme}
+                    fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
+                    extensionsController={props.extensionsController}
+                    settingsCascade={props.settingsCascade}
+                    versionContext={props.versionContext}
+                />
+            )}
+            {!props.panelView.content && !props.panelView.reactElement && !props.panelView.locationProvider && (
+                <EmptyPanelView className="mt-3" />
+            )}
+        </div>
+    )
+})

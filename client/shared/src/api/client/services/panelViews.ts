@@ -1,7 +1,7 @@
 import { Location } from '@sourcegraph/extension-api-types'
 import React from 'react'
 import { Observable } from 'rxjs'
-import { catchError, map, switchMap } from 'rxjs/operators'
+import { catchError, map, switchMap, tap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { ContributableViewContainer } from '../../protocol'
@@ -99,7 +99,10 @@ export function getPanelViews(
                             })
                         )
                     )
-            ).pipe(map(entries => entries.filter(isDefined)))
+            ).pipe(
+                tap(panelEntriesFromProvider => console.log({ panelEntriesFromProvider })),
+                map(entries => entries.filter(isDefined))
+            )
         )
     )
 }
@@ -107,5 +110,8 @@ export function getPanelViews(
 function addRegistrationOptions(
     entry: Entry<PanelViewProviderRegistrationOptions, Observable<PanelViewWithComponent | null>>
 ): Observable<(PanelViewWithComponent & PanelViewProviderRegistrationOptions) | null> {
-    return entry.provider.pipe(map(view => view && { ...view, ...entry.registrationOptions }))
+    return entry.provider.pipe(
+        map(view => view && { ...view, ...entry.registrationOptions }),
+        tap(view => console.log('provider emit panelEntriesFromProvider', { view }))
+    )
 }
