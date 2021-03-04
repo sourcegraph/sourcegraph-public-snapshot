@@ -38,7 +38,7 @@ export const enterpriseUserSettingsAreaRoutes: readonly UserSettingsAreaRoute[] 
         path: '/batch-changes',
         exact: true,
         render: lazyComponent(
-            () => import('../../campaigns/settings/BatchChangesSettingsArea'),
+            () => import('../../batches/settings/BatchChangesSettingsArea'),
             'BatchChangesSettingsArea'
         ),
         condition: ({ isSourcegraphDotCom, user: { viewerCanAdminister } }) =>
