@@ -715,6 +715,12 @@ type Mutation {
     should be applied in reverse prior to downgrading the instance.
     """
     SetMigrationDirection(id: ID!, applyReverse: Boolean!): EmptyResponse!
+
+    """
+    SetUserPublicRepos sets the list of public repos for a user's search context, ensuring those repos
+    exist and are cloned
+    """
+    SetUserPublicRepos(userId: ID!, repoURIs: [String!]!): EmptyResponse!
 }
 
 """
