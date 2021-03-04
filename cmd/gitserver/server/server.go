@@ -289,7 +289,8 @@ func (s *Server) Janitor(interval time.Duration) {
 // run in a background goroutine.
 func (s *Server) SyncRepoState(db dbutil.DB, interval time.Duration, batchSize int, perSecond int) {
 	for {
-		s.syncRepoState(db, batchSize, perSecond)
+		addrs := conf.Get().ServiceConnections.GitServers
+		s.syncRepoState(db, addrs, batchSize, perSecond)
 		time.Sleep(interval)
 	}
 }
@@ -304,10 +305,9 @@ var repoStateUpsertCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "Incremented each time we upsert repo state in the database",
 }, []string{"success"})
 
-func (s *Server) syncRepoState(db dbutil.DB, batchSize int, perSecond int) {
+func (s *Server) syncRepoState(db dbutil.DB, addrs []string, batchSize int, perSecond int) {
 	ctx := context.Background()
 	store := database.GitserverRepos(db)
-	addrs := conf.Get().ServiceConnections.GitServers
 
 	// The rate limit should be enforced across all instances
 	perSecond = perSecond / len(addrs)

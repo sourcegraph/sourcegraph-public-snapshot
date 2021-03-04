@@ -21,7 +21,10 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
@@ -731,6 +734,88 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 			t.Fatal("expected a reconstituted HEAD, but the file is empty")
 		}
 	})
+}
+
+func TestSyncRepoState(t *testing.T) {
+	db := dbtesting.GetDB(t)
+	remote := tmpDir(t)
+	ctx := context.Background()
+
+	repo := remote
+	cmd := func(name string, arg ...string) string {
+		t.Helper()
+		return runCmd(t, repo, name, arg...)
+	}
+
+	// Setup a repo with a commit so we can see if we can clone it.
+	cmd("git", "init", ".")
+	cmd("sh", "-c", "echo hello world > hello.txt")
+	cmd("git", "add", "hello.txt")
+	cmd("git", "commit", "-m", "hello")
+	// Add a bad tag
+	cmd("git", "tag", "HEAD")
+
+	reposDir := tmpDir(t)
+	repoName := api.RepoName("example.com/foo/bar")
+
+	s := &Server{
+		ReposDir:         reposDir,
+		GetRemoteURLFunc: staticGetRemoteURL(remote),
+		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
+			return &GitRepoSyncer{}, nil
+		},
+		Hostname:         "test",
+		ctx:              ctx,
+		locker:           &RepositoryLocker{},
+		cloneLimiter:     mutablelimiter.New(1),
+		cloneableLimiter: mutablelimiter.New(1),
+	}
+
+	_, err := s.cloneRepo(ctx, repoName, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Wait until the clone is done. Please do not use this code snippet
+	// outside of a test. We only know this works since our test only starts
+	// one clone and will have nothing else attempt to lock.
+	dst := s.dir(repoName)
+	for i := 0; i < 1000; i++ {
+		_, cloning := s.locker.Status(dst)
+		if !cloning {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	dbRepo := &types.Repo{
+		Name:        repoName,
+		URI:         string(repoName),
+		Description: "Test",
+	}
+
+	// Insert the repo into our database
+	err = database.Repos(db).Create(ctx, dbRepo)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = database.GitserverRepos(db).GetByID(ctx, dbRepo.ID)
+	if err == nil {
+		// GitserverRepo should not exist
+		t.Fatal("Expected an error")
+	}
+
+	s.syncRepoState(db, []string{"test"}, 10, 10)
+
+	gr, err := database.GitserverRepos(db).GetByID(ctx, dbRepo.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if gr.CloneStatus != types.CloneStatusCloned {
+		t.Fatalf("Want %v, got %v", types.CloneStatusCloned, gr.CloneStatus)
+	}
 }
 
 func TestMain(m *testing.M) {
