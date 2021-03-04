@@ -828,7 +828,9 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 		"credential":          "SOSECRET",
 	}
 
-	var response struct{ CreateBatchChangesCredential apitest.CampaignsCredential }
+	var response struct {
+		CreateBatchChangesCredential apitest.BatchChangesCredential
+	}
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
 	// First time it should work, because no credential exists

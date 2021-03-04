@@ -57,7 +57,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 	}
 
 	userAPIID := string(graphqlbackend.MarshalUserID(userID))
-	nodes := []apitest.CampaignsCodeHost{
+	nodes := []apitest.BatchChangesCodeHost{
 		{
 			ExternalServiceURL:  bbsRepo.ExternalRepo.ServiceID,
 			ExternalServiceKind: extsvc.TypeToKind(bbsRepo.ExternalRepo.ServiceType),
@@ -65,7 +65,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 		{
 			ExternalServiceURL:  ghRepo.ExternalRepo.ServiceID,
 			ExternalServiceKind: extsvc.TypeToKind(ghRepo.ExternalRepo.ServiceType),
-			Credential: apitest.CampaignsCredential{
+			Credential: apitest.BatchChangesCredential{
 				ID:                  string(marshalBatchChangesCredentialID(cred.ID)),
 				ExternalServiceKind: extsvc.TypeToKind(cred.ExternalServiceType),
 				ExternalServiceURL:  cred.ExternalServiceID,
@@ -83,7 +83,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 		wantHasNextPage bool
 		wantEndCursor   string
 		wantTotalCount  int
-		wantNodes       []apitest.CampaignsCodeHost
+		wantNodes       []apitest.BatchChangesCodeHost
 	}{
 		{firstParam: 1, wantHasNextPage: true, wantEndCursor: "1", wantTotalCount: 3, wantNodes: nodes[:1]},
 		{firstParam: 2, wantHasNextPage: true, wantEndCursor: "2", wantTotalCount: 3, wantNodes: nodes[:2]},

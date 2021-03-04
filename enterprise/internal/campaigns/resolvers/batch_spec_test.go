@@ -136,11 +136,11 @@ func TestBatchSpecResolver(t *testing.T) {
 
 		AllCodeHosts: apitest.BatchChangesCodeHostsConnection{
 			TotalCount: 1,
-			Nodes:      []apitest.CampaignsCodeHost{{ExternalServiceKind: extsvc.KindGitHub, ExternalServiceURL: "https://github.com/"}},
+			Nodes:      []apitest.BatchChangesCodeHost{{ExternalServiceKind: extsvc.KindGitHub, ExternalServiceURL: "https://github.com/"}},
 		},
 		OnlyWithoutCredential: apitest.BatchChangesCodeHostsConnection{
 			TotalCount: 1,
-			Nodes:      []apitest.CampaignsCodeHost{{ExternalServiceKind: extsvc.KindGitHub, ExternalServiceURL: "https://github.com/"}},
+			Nodes:      []apitest.BatchChangesCodeHost{{ExternalServiceKind: extsvc.KindGitHub, ExternalServiceURL: "https://github.com/"}},
 		},
 	}
 
@@ -219,7 +219,7 @@ func TestBatchSpecResolver(t *testing.T) {
 		want.Creator = nil
 		// Expect all set for admin user.
 		want.OnlyWithoutCredential = apitest.BatchChangesCodeHostsConnection{
-			Nodes: []apitest.CampaignsCodeHost{},
+			Nodes: []apitest.BatchChangesCodeHost{},
 		}
 		// Expect no superseding campaign spec, since this request is run as a
 		// different user.
@@ -243,7 +243,7 @@ func TestBatchSpecResolver(t *testing.T) {
 		want.Creator = nil
 		// Expect all set for admin user.
 		want.OnlyWithoutCredential = apitest.BatchChangesCodeHostsConnection{
-			Nodes: []apitest.CampaignsCodeHost{},
+			Nodes: []apitest.BatchChangesCodeHost{},
 		}
 
 		if diff := cmp.Diff(want, response.Node); diff != "" {

@@ -320,7 +320,7 @@ type Person struct {
 	User  *User
 }
 
-type CampaignsCredential struct {
+type BatchChangesCredential struct {
 	ID                  string
 	ExternalServiceKind string
 	ExternalServiceURL  string
@@ -333,12 +333,12 @@ type EmptyResponse struct {
 
 type BatchChangesCodeHostsConnection struct {
 	PageInfo   PageInfo
-	Nodes      []CampaignsCodeHost
+	Nodes      []BatchChangesCodeHost
 	TotalCount int
 }
 
-type CampaignsCodeHost struct {
+type BatchChangesCodeHost struct {
 	ExternalServiceKind string
 	ExternalServiceURL  string
-	Credential          CampaignsCredential
+	Credential          BatchChangesCredential
 }

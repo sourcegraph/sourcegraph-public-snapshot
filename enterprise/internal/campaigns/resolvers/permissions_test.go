@@ -350,7 +350,9 @@ func TestPermissionLevels(t *testing.T) {
 					}
 					graphqlID := string(marshalBatchChangesCredentialID(cred.ID))
 
-					var res struct{ Node apitest.CampaignsCredential }
+					var res struct {
+						Node apitest.BatchChangesCredential
+					}
 
 					input := map[string]interface{}{"id": graphqlID}
 					queryCodeHosts := `
@@ -416,7 +418,9 @@ func TestPermissionLevels(t *testing.T) {
 						t.Fatal(err)
 					}
 
-					var res struct{ Node apitest.CampaignsCredential }
+					var res struct {
+						Node apitest.BatchChangesCredential
+					}
 
 					input := map[string]interface{}{
 						"batchChangesCredential": marshalBatchChangesCredentialID(cred.ID),
