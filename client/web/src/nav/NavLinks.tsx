@@ -12,7 +12,7 @@ import { ThemeProps } from '../../../shared/src/theme'
 import { isErrorLike } from '../../../shared/src/util/errors'
 import { AuthenticatedUser } from '../auth'
 import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/shared'
-import { CampaignsNavItem } from '../enterprise/campaigns/global/nav/CampaignsNavItem'
+import { BatchChangesNavItem } from '../enterprise/campaigns/global/nav/BatchChangesNavItem'
 import { CodeMonitoringNavItem } from '../enterprise/code-monitoring/CodeMonitoringNavItem'
 import { InsightsNavItem } from '../insights/InsightsNavLink'
 import {
@@ -92,7 +92,7 @@ const getMinimizableNavItems = (props: Props): JSX.Element[] => {
     return getReactElements([
         codeInsights && <InsightsNavItem />,
         codeMonitoring && <CodeMonitoringNavItem />,
-        showCampaigns && <CampaignsNavItem />,
+        showCampaigns && <BatchChangesNavItem />,
     ])
 }
 

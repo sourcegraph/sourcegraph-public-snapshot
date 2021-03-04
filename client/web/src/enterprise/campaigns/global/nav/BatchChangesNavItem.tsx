@@ -8,12 +8,12 @@ interface Props {
 }
 
 /**
- * An item in {@link GlobalNavbar} that links to the campaigns area.
+ * An item in {@link GlobalNavbar} that links to the batch changes area.
  */
-export const CampaignsNavItem: React.FunctionComponent<Props> = ({ className }) => (
+export const BatchChangesNavItem: React.FunctionComponent<Props> = ({ className }) => (
     <LinkWithIcon
-        to="/campaigns"
-        text="Campaigns"
+        to="/batch-changes"
+        text="Batch changes"
         icon={CampaignsIconNav}
         className={classNames('nav-link btn btn-link text-decoration-none', className)}
         activeClassName="active"

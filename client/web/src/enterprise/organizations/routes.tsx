@@ -3,12 +3,12 @@ import { OrgAreaRoute } from '../../org/area/OrgArea'
 import { orgAreaRoutes } from '../../org/area/routes'
 import { enterpriseNamespaceAreaRoutes } from '../namespaces/routes'
 import { lazyComponent } from '../../util/lazyComponent'
-import { NamespaceCampaignsAreaProps } from '../campaigns/global/GlobalCampaignsArea'
+import { NamespaceBatchChangesAreaProps } from '../campaigns/global/GlobalBatchChangesArea'
 import { Redirect } from 'react-router'
 
-const NamespaceCampaignsArea = lazyComponent<NamespaceCampaignsAreaProps, 'NamespaceCampaignsArea'>(
-    () => import('../campaigns/global/GlobalCampaignsArea'),
-    'NamespaceCampaignsArea'
+const NamespaceBatchChangesArea = lazyComponent<NamespaceBatchChangesAreaProps, 'NamespaceBatchChangesArea'>(
+    () => import('../campaigns/global/GlobalBatchChangesArea'),
+    'NamespaceBatchChangesArea'
 )
 
 export const enterpriseOrganizationAreaRoutes: readonly OrgAreaRoute[] = [
@@ -20,7 +20,7 @@ export const enterpriseOrganizationAreaRoutes: readonly OrgAreaRoute[] = [
     },
     {
         path: '/batch-changes',
-        render: props => <NamespaceCampaignsArea {...props} namespaceID={props.org.id} />,
+        render: props => <NamespaceBatchChangesArea {...props} namespaceID={props.org.id} />,
         condition: props => !props.isSourcegraphDotCom && window.context.campaignsEnabled,
     },
 ]

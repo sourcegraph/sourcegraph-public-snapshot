@@ -13,7 +13,7 @@ import { BatchChangePreviewPageProps } from '../preview/BatchChangePreviewPage'
 import { CreateCampaignPageProps } from '../create/CreateCampaignPage'
 import { CampaignDetailsPageProps } from '../detail/CampaignDetailsPage'
 import { CampaignClosePageProps } from '../close/CampaignClosePage'
-import { CampaignsDotComPageProps } from './marketing/CampaignsDotComPage'
+import { BatchChangesDotComPageProps } from './marketing/BatchChangesDotComPage'
 import { Page } from '../../../components/Page'
 
 const BatchChangeListPage = lazyComponent<BatchChangeListPageProps, 'BatchChangeListPage'>(
@@ -24,7 +24,7 @@ const NamespaceBatchChangeListPage = lazyComponent<NamespaceBatchChangeListPageP
     () => import('../list/BatchChangeListPage'),
     'NamespaceBatchChangeListPage'
 )
-const CampaignApplyPage = lazyComponent<BatchChangePreviewPageProps, 'BatchChangePreviewPage'>(
+const BatchChangePreviewPage = lazyComponent<BatchChangePreviewPageProps, 'BatchChangePreviewPage'>(
     () => import('../preview/BatchChangePreviewPage'),
     'BatchChangePreviewPage'
 )
@@ -40,9 +40,9 @@ const CampaignClosePage = lazyComponent<CampaignClosePageProps, 'CampaignClosePa
     () => import('../close/CampaignClosePage'),
     'CampaignClosePage'
 )
-const CampaignsDotComPage = lazyComponent<CampaignsDotComPageProps, 'CampaignsDotComPage'>(
-    () => import('./marketing/CampaignsDotComPage'),
-    'CampaignsDotComPage'
+const BatchChangesDotComPage = lazyComponent<BatchChangesDotComPageProps, 'BatchChangesDotComPage'>(
+    () => import('./marketing/BatchChangesDotComPage'),
+    'BatchChangesDotComPage'
 )
 
 interface Props
@@ -56,24 +56,24 @@ interface Props
 }
 
 /**
- * The global campaigns area.
+ * The global batch changes area.
  */
-export const GlobalCampaignsArea: React.FunctionComponent<Props> = props => {
+export const GlobalBatchChangesArea: React.FunctionComponent<Props> = props => {
     if (props.isSourcegraphDotCom) {
         return (
             <Page>
-                <CampaignsDotComPage />
+                <BatchChangesDotComPage />
             </Page>
         )
     }
-    return <AuthenticatedCampaignsArea {...props} />
+    return <AuthenticatedBatchChangesArea {...props} />
 }
 
 interface AuthenticatedProps extends Props {
     authenticatedUser: AuthenticatedUser
 }
 
-export const AuthenticatedCampaignsArea = withAuthenticatedUser<AuthenticatedProps>(({ match, ...outerProps }) => (
+export const AuthenticatedBatchChangesArea = withAuthenticatedUser<AuthenticatedProps>(({ match, ...outerProps }) => (
     <Page>
         {/* eslint-disable react/jsx-no-bind */}
         <Switch>
@@ -88,12 +88,12 @@ export const AuthenticatedCampaignsArea = withAuthenticatedUser<AuthenticatedPro
     </Page>
 ))
 
-export interface NamespaceCampaignsAreaProps extends Props {
+export interface NamespaceBatchChangesAreaProps extends Props {
     namespaceID: Scalars['ID']
 }
 
-export const NamespaceCampaignsArea = withAuthenticatedUser<
-    NamespaceCampaignsAreaProps & { authenticatedUser: AuthenticatedUser }
+export const NamespaceBatchChangesArea = withAuthenticatedUser<
+    NamespaceBatchChangesAreaProps & { authenticatedUser: AuthenticatedUser }
 >(({ match, namespaceID, ...outerProps }) => (
     <Page>
         {/* eslint-disable react/jsx-no-bind */}
@@ -101,7 +101,7 @@ export const NamespaceCampaignsArea = withAuthenticatedUser<
             <Route
                 path={`${match.url}/apply/:specID`}
                 render={({ match, ...props }: RouteComponentProps<{ specID: string }>) => (
-                    <CampaignApplyPage {...outerProps} {...props} batchSpecID={match.params.specID} />
+                    <BatchChangePreviewPage {...outerProps} {...props} batchSpecID={match.params.specID} />
                 )}
             />
             <Route path={`${match.url}/create`} render={props => <CreateCampaignPage {...outerProps} {...props} />} />

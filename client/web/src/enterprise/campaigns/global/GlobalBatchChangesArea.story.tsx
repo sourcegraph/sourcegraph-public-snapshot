@@ -1,12 +1,12 @@
 import { storiesOf } from '@storybook/react'
 import { boolean } from '@storybook/addon-knobs'
 import React from 'react'
-import { GlobalCampaignsArea } from './GlobalCampaignsArea'
+import { GlobalBatchChangesArea } from './GlobalBatchChangesArea'
 import { AuthenticatedUser } from '../../../auth'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
-const { add } = storiesOf('web/campaigns/GlobalCampaignsArea', module).addDecorator(story => (
+const { add } = storiesOf('web/batches/GlobalBatchChangesArea', module).addDecorator(story => (
     <React.Suspense fallback={<LoadingSpinner />}>
         <div className="p-3 container">{story()}</div>
     </React.Suspense>
@@ -15,7 +15,7 @@ const { add } = storiesOf('web/campaigns/GlobalCampaignsArea', module).addDecora
 add('Dotcom', () => (
     <EnterpriseWebStory>
         {props => (
-            <GlobalCampaignsArea
+            <GlobalBatchChangesArea
                 {...props}
                 isSourcegraphDotCom={true}
                 platformContext={undefined as any}
@@ -23,7 +23,7 @@ add('Dotcom', () => (
                 authenticatedUser={
                     boolean('isAuthenticated', false) ? ({ username: 'alice' } as AuthenticatedUser) : null
                 }
-                match={{ isExact: true, path: '/campaigns', url: 'http://test.test/campaigns', params: {} }}
+                match={{ isExact: true, path: '/batch-changes', url: 'http://test.test/batch-changes', params: {} }}
             />
         )}
     </EnterpriseWebStory>
