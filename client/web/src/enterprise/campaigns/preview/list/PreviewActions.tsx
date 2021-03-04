@@ -109,7 +109,7 @@ export const PreviewActionImport: React.FunctionComponent<{ label?: string; clas
     <div className={classNames(className, iconClassNames)}>
         <ImportIcon
             className="icon-inline mr-1"
-            data-tooltip="This changeset will be imported and tracked in this campaign"
+            data-tooltip="This changeset will be imported and tracked in this batch change"
         />
         <span>{label}</span>
     </div>
@@ -133,7 +133,7 @@ export const PreviewActionDetach: React.FunctionComponent<{ label?: string; clas
     <div className={classNames(className, iconClassNames)}>
         <TrashIcon
             className="text-danger mr-1 icon-inline"
-            data-tooltip="This changeset will be removed from the campaign"
+            data-tooltip="This changeset will be removed from the batch change"
         />
         <span>{label}</span>
     </div>

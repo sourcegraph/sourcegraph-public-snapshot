@@ -25,7 +25,7 @@ import { CampaignsIcon } from '../icons'
 export type PreviewPageAuthenticatedUser = Pick<AuthenticatedUser, 'url' | 'displayName' | 'username' | 'email'>
 
 export interface CampaignPreviewPageProps extends ThemeProps, TelemetryProps {
-    campaignSpecID: string
+    batchSpecID: string
     history: H.History
     location: H.Location
     authenticatedUser: PreviewPageAuthenticatedUser
@@ -41,7 +41,7 @@ export interface CampaignPreviewPageProps extends ThemeProps, TelemetryProps {
 }
 
 export const CampaignPreviewPage: React.FunctionComponent<CampaignPreviewPageProps> = ({
-    campaignSpecID: specID,
+    batchSpecID: specID,
     history,
     location,
     authenticatedUser,
@@ -108,7 +108,7 @@ export const CampaignPreviewPage: React.FunctionComponent<CampaignPreviewPagePro
             />
             <Description history={history} description={spec.description.description} />
             <PreviewList
-                campaignSpecID={specID}
+                batchSpecID={specID}
                 history={history}
                 location={location}
                 authenticatedUser={authenticatedUser}

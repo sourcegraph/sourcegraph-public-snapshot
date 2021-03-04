@@ -3,9 +3,9 @@ import { gql, dataOrThrowErrors } from '../../../../../../shared/src/graphql/gra
 import {
     ChangesetSpecFileDiffsVariables,
     ChangesetSpecFileDiffsResult,
-    CampaignSpecApplyPreviewConnectionFields,
-    CampaignSpecApplyPreviewResult,
-    CampaignSpecApplyPreviewVariables,
+    BatchSpecApplyPreviewConnectionFields,
+    BatchSpecApplyPreviewResult,
+    BatchSpecApplyPreviewVariables,
     ChangesetSpecFileDiffConnectionFields,
 } from '../../../../graphql-operations'
 import { Observable } from 'rxjs'
@@ -75,8 +75,8 @@ const changesetSpecFieldsFragment = gql`
     ${diffStatFields}
 `
 
-const campaignSpecApplyPreviewConnectionFieldsFragment = gql`
-    fragment CampaignSpecApplyPreviewConnectionFields on ChangesetApplyPreviewConnection {
+const batchSpecApplyPreviewConnectionFieldsFragment = gql`
+    fragment BatchSpecApplyPreviewConnectionFields on ChangesetApplyPreviewConnection {
         totalCount
         pageInfo {
             endCursor
@@ -205,26 +205,26 @@ const campaignSpecApplyPreviewConnectionFieldsFragment = gql`
 `
 
 export const queryChangesetApplyPreview = ({
-    campaignSpec,
+    batchSpec,
     first,
     after,
     search,
     currentState,
     action,
-}: CampaignSpecApplyPreviewVariables): Observable<CampaignSpecApplyPreviewConnectionFields> =>
-    requestGraphQL<CampaignSpecApplyPreviewResult, CampaignSpecApplyPreviewVariables>(
+}: BatchSpecApplyPreviewVariables): Observable<BatchSpecApplyPreviewConnectionFields> =>
+    requestGraphQL<BatchSpecApplyPreviewResult, BatchSpecApplyPreviewVariables>(
         gql`
-            query CampaignSpecApplyPreview(
-                $campaignSpec: ID!
+            query BatchSpecApplyPreview(
+                $batchSpec: ID!
                 $first: Int
                 $after: String
                 $search: String
                 $currentState: ChangesetState
                 $action: ChangesetSpecOperation
             ) {
-                node(id: $campaignSpec) {
+                node(id: $batchSpec) {
                     __typename
-                    ... on CampaignSpec {
+                    ... on BatchSpec {
                         applyPreview(
                             first: $first
                             after: $after
@@ -232,23 +232,23 @@ export const queryChangesetApplyPreview = ({
                             currentState: $currentState
                             action: $action
                         ) {
-                            ...CampaignSpecApplyPreviewConnectionFields
+                            ...BatchSpecApplyPreviewConnectionFields
                         }
                     }
                 }
             }
 
-            ${campaignSpecApplyPreviewConnectionFieldsFragment}
+            ${batchSpecApplyPreviewConnectionFieldsFragment}
         `,
-        { campaignSpec, first, after, search, currentState, action }
+        { batchSpec, first, after, search, currentState, action }
     ).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {
             if (!node) {
-                throw new Error(`CampaignSpec with ID ${campaignSpec} does not exist`)
+                throw new Error(`BatchSpec with ID ${batchSpec} does not exist`)
             }
-            if (node.__typename !== 'CampaignSpec') {
-                throw new Error(`The given ID is a ${node.__typename}, not a CampaignSpec`)
+            if (node.__typename !== 'BatchSpec') {
+                throw new Error(`The given ID is a ${node.__typename}, not a BatchSpec`)
             }
             return node.applyPreview
         })

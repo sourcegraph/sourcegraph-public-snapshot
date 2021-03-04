@@ -4,7 +4,7 @@ import React from 'react'
 import { CampaignPreviewPage } from './CampaignPreviewPage'
 import { of, Observable } from 'rxjs'
 import {
-    CampaignSpecApplyPreviewConnectionFields,
+    BatchSpecApplyPreviewConnectionFields,
     CampaignSpecFields,
     ChangesetApplyPreviewFields,
     ExternalServiceKind,
@@ -110,7 +110,7 @@ const fetchCampaignSpecUpdate: typeof fetchCampaignSpecById = () =>
         },
     })
 
-const queryChangesetApplyPreview = (): Observable<CampaignSpecApplyPreviewConnectionFields> =>
+const queryChangesetApplyPreview = (): Observable<BatchSpecApplyPreviewConnectionFields> =>
     of({
         pageInfo: {
             endCursor: null,
@@ -120,7 +120,7 @@ const queryChangesetApplyPreview = (): Observable<CampaignSpecApplyPreviewConnec
         nodes,
     })
 
-const queryEmptyChangesetApplyPreview = (): Observable<CampaignSpecApplyPreviewConnectionFields> =>
+const queryEmptyChangesetApplyPreview = (): Observable<BatchSpecApplyPreviewConnectionFields> =>
     of({
         pageInfo: {
             endCursor: null,
@@ -138,7 +138,7 @@ add('Create', () => (
             <CampaignPreviewPage
                 {...props}
                 expandChangesetDescriptions={true}
-                campaignSpecID="123123"
+                batchSpecID="123123"
                 fetchCampaignSpecById={fetchCampaignSpecCreate}
                 queryChangesetApplyPreview={queryChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
@@ -159,7 +159,7 @@ add('Update', () => (
             <CampaignPreviewPage
                 {...props}
                 expandChangesetDescriptions={true}
-                campaignSpecID="123123"
+                batchSpecID="123123"
                 fetchCampaignSpecById={fetchCampaignSpecUpdate}
                 queryChangesetApplyPreview={queryChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
@@ -180,7 +180,7 @@ add('Missing credentials', () => (
             <CampaignPreviewPage
                 {...props}
                 expandChangesetDescriptions={true}
-                campaignSpecID="123123"
+                batchSpecID="123123"
                 fetchCampaignSpecById={fetchCampaignSpecMissingCredentials}
                 queryChangesetApplyPreview={queryChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
@@ -201,7 +201,7 @@ add('No changesets', () => (
             <CampaignPreviewPage
                 {...props}
                 expandChangesetDescriptions={true}
-                campaignSpecID="123123"
+                batchSpecID="123123"
                 fetchCampaignSpecById={fetchCampaignSpecCreate}
                 queryChangesetApplyPreview={queryEmptyChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}

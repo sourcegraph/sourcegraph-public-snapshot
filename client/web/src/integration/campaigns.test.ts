@@ -577,9 +577,9 @@ describe('Campaigns', () => {
                             },
                         },
                     }),
-                    CampaignSpecApplyPreview: () => ({
+                    BatchSpecApplyPreview: () => ({
                         node: {
-                            __typename: 'CampaignSpec',
+                            __typename: 'BatchSpec',
                             applyPreview: {
                                 nodes: [
                                     {

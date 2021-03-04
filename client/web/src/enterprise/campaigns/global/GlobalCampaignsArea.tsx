@@ -101,7 +101,7 @@ export const NamespaceCampaignsArea = withAuthenticatedUser<
             <Route
                 path={`${match.url}/apply/:specID`}
                 render={({ match, ...props }: RouteComponentProps<{ specID: string }>) => (
-                    <CampaignApplyPage {...outerProps} {...props} campaignSpecID={match.params.specID} />
+                    <CampaignApplyPage {...outerProps} {...props} batchSpecID={match.params.specID} />
                 )}
             />
             <Route path={`${match.url}/create`} render={props => <CreateCampaignPage {...outerProps} {...props} />} />

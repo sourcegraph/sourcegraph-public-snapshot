@@ -174,7 +174,7 @@ const ExpandedSection: React.FunctionComponent<
         return (
             <div className="alert alert-info mb-0">
                 When run, the changeset <strong>{node.targets.changeset.title}</strong> in repo{' '}
-                <strong>{node.targets.changeset.repository.name}</strong> will be removed from this campaign.
+                <strong>{node.targets.changeset.repository.name}</strong> will be removed from this batch change.
             </div>
         )
     }
