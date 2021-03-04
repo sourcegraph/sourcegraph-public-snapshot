@@ -81,6 +81,7 @@ const config = {
     )
 
     const storybookDirectory = path.resolve(rootDir, 'node_modules/@storybook')
+    config.resolve.modules.push('src')
 
     // Put our style rules at the beginning so they're processed by the time it
     // gets to storybook's style rules.
