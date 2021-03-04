@@ -2,12 +2,26 @@ package result
 
 import (
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
-	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 )
+
+// Symbol is a code symbol.
+type Symbol struct {
+	Name       string
+	Path       string
+	Line       int
+	Kind       string
+	Language   string
+	Parent     string
+	ParentKind string
+	Signature  string
+	Pattern    string
+
+	FileLimited bool
+}
 
 // SearchSymbolResult is a result from symbol search.
 type SearchSymbolResult struct {
-	Symbol  protocol.Symbol
+	Symbol  Symbol
 	BaseURI *gituri.URI
 	Lang    string
 }

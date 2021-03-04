@@ -1,6 +1,9 @@
 package protocol
 
-import "github.com/sourcegraph/sourcegraph/internal/api"
+import (
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
+)
 
 // SearchArgs are the arguments to perform a search on the symbols service.
 type SearchArgs struct {
@@ -39,20 +42,5 @@ type SearchArgs struct {
 
 // SearchResult is the result of a search on the symbols service.
 type SearchResult struct {
-	Symbols []Symbol // code symbols
-}
-
-// Symbol is a code symbol.
-type Symbol struct {
-	Name       string
-	Path       string
-	Line       int
-	Kind       string
-	Language   string
-	Parent     string
-	ParentKind string
-	Signature  string
-	Pattern    string
-
-	FileLimited bool
+	Symbols []result.Symbol // code symbols
 }

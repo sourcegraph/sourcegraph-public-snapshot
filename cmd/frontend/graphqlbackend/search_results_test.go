@@ -27,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -1616,16 +1615,16 @@ func TestUnionMerge(t *testing.T) {
 			left: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
 					fileResult(db, "a", nil, []*result.SearchSymbolResult{
-						{Symbol: protocol.Symbol{Name: "a"}},
-						{Symbol: protocol.Symbol{Name: "b"}},
+						{Symbol: result.Symbol{Name: "a"}},
+						{Symbol: result.Symbol{Name: "b"}},
 					}),
 				},
 			},
 			right: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
 					fileResult(db, "a", nil, []*result.SearchSymbolResult{
-						{Symbol: protocol.Symbol{Name: "c"}},
-						{Symbol: protocol.Symbol{Name: "d"}},
+						{Symbol: result.Symbol{Name: "c"}},
+						{Symbol: result.Symbol{Name: "d"}},
 					}),
 				},
 			},
