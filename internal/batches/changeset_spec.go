@@ -6,8 +6,9 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	jsonutil "github.com/sourcegraph/campaignutils/json"
 	"github.com/sourcegraph/go-diff/diff"
+
+	jsonutil "github.com/sourcegraph/sourcegraph/enterprise/lib/batches/json"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/schema"
