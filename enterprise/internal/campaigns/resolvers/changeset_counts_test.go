@@ -186,12 +186,12 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	}
 
 	input := map[string]interface{}{
-		"campaign": string(marshalCampaignID(campaign.ID)),
-		"from":     start,
-		"to":       end,
+		"batchChange": string(marshalBatchChangeID(campaign.ID)),
+		"from":        start,
+		"to":          end,
 	}
 
-	var response struct{ Node apitest.Campaign }
+	var response struct{ Node apitest.BatchChange }
 
 	apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryChangesetCountsConnection)
 
@@ -210,9 +210,9 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 }
 
 const queryChangesetCountsConnection = `
-query($campaign: ID!, $from: DateTime!, $to: DateTime!) {
-  node(id: $campaign) {
-    ... on Campaign {
+query($batchChange: ID!, $from: DateTime!, $to: DateTime!) {
+  node(id: $batchChange) {
+    ... on BatchChange {
 	  changesetCountsOverTime(from: $from, to: $to) {
         date
         total

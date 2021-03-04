@@ -114,7 +114,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	campaignAPIID := string(marshalCampaignID(campaign.ID))
+	campaignAPIID := string(marshalBatchChangeID(campaign.ID))
 	nodes := []apitest.Changeset{
 		{
 			Typename:   "ExternalChangeset",
@@ -158,11 +158,11 @@ func TestChangesetConnectionResolver(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(fmt.Sprintf("Unsafe opts %t, first %d", tc.useUnsafeOpts, tc.firstParam), func(t *testing.T) {
-			input := map[string]interface{}{"campaign": campaignAPIID, "first": int64(tc.firstParam)}
+			input := map[string]interface{}{"batchChange": campaignAPIID, "first": int64(tc.firstParam)}
 			if tc.useUnsafeOpts {
 				input["reviewState"] = campaigns.ChangesetReviewStatePending
 			}
-			var response struct{ Node apitest.Campaign }
+			var response struct{ Node apitest.BatchChange }
 			apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryChangesetConnection)
 
 			var wantEndCursor *string
@@ -187,13 +187,13 @@ func TestChangesetConnectionResolver(t *testing.T) {
 
 	var endCursor *string
 	for i := range nodes {
-		input := map[string]interface{}{"campaign": campaignAPIID, "first": 1}
+		input := map[string]interface{}{"batchChange": campaignAPIID, "first": 1}
 		if endCursor != nil {
 			input["after"] = *endCursor
 		}
 		wantHasNextPage := i != len(nodes)-1
 
-		var response struct{ Node apitest.Campaign }
+		var response struct{ Node apitest.BatchChange }
 		apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryChangesetConnection)
 
 		changesets := response.Node.Changesets
@@ -217,9 +217,9 @@ func TestChangesetConnectionResolver(t *testing.T) {
 }
 
 const queryChangesetConnection = `
-query($campaign: ID!, $first: Int, $after: String, $reviewState: ChangesetReviewState){
-  node(id: $campaign) {
-    ... on Campaign {
+query($batchChange: ID!, $first: Int, $after: String, $reviewState: ChangesetReviewState){
+  node(id: $batchChange) {
+    ... on BatchChange {
       changesets(first: $first, after: $after, reviewState: $reviewState) {
         totalCount
         nodes {

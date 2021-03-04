@@ -21,6 +21,11 @@ func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, clock ct.Clo
 
 	repo := ct.TestRepo(t, es, extsvc.KindGitHub)
 	otherRepo := ct.TestRepo(t, es, extsvc.KindGitHub)
+
+	gh, _ := ct.CreateGitHubSSHTestRepos(t, ctx, s.DB(), 1)
+	bbs, _ := ct.CreateBbsSSHTestRepos(t, ctx, s.DB(), 1)
+	sshRepos := []*types.Repo{gh[0], bbs[0]}
+
 	gitlabRepo := ct.TestRepo(t, es, extsvc.KindGitLab)
 	bitbucketRepo := ct.TestRepo(t, es, extsvc.KindBitbucketServer)
 	awsRepo := ct.TestRepo(t, es, extsvc.KindAWSCodeCommit)
@@ -43,10 +48,12 @@ func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, clock ct.Clo
 				{
 					ExternalServiceType: extsvc.TypeBitbucketServer,
 					ExternalServiceID:   "https://bitbucketserver.com/",
+					RequiresSSH:         true,
 				},
 				{
 					ExternalServiceType: extsvc.TypeGitHub,
 					ExternalServiceID:   "https://github.com/",
+					RequiresSSH:         true,
 				},
 				{
 					ExternalServiceType: extsvc.TypeGitLab,
@@ -76,7 +83,7 @@ func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, clock ct.Clo
 	})
 
 	t.Run("GetExternalServiceID", func(t *testing.T) {
-		for _, repo := range []*types.Repo{repo, otherRepo, gitlabRepo, bitbucketRepo} {
+		for _, repo := range []*types.Repo{repo, otherRepo, gitlabRepo, bitbucketRepo, sshRepos[0], sshRepos[1]} {
 			id, err := s.GetExternalServiceID(ctx, GetExternalServiceIDOpts{
 				ExternalServiceType: repo.ExternalRepo.ServiceType,
 				ExternalServiceID:   repo.ExternalRepo.ServiceID,

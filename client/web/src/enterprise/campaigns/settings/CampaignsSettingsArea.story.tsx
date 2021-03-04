@@ -5,7 +5,7 @@ import { ExternalServiceKind } from '../../../graphql-operations'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 import { CampaignsSettingsArea } from './CampaignsSettingsArea'
 
-const { add } = storiesOf('web/campaigns/CampaignsSettingsArea', module).addDecorator(story => (
+const { add } = storiesOf('web/campaigns/settings/CampaignsSettingsArea', module).addDecorator(story => (
     <div className="p-3 container web-content">{story()}</div>
 ))
 
@@ -27,16 +27,19 @@ add('Overview', () => (
                                 credential: null,
                                 externalServiceKind: ExternalServiceKind.GITHUB,
                                 externalServiceURL: 'https://github.com/',
+                                requiresSSH: false,
                             },
                             {
                                 credential: null,
                                 externalServiceKind: ExternalServiceKind.GITLAB,
                                 externalServiceURL: 'https://gitlab.com/',
+                                requiresSSH: false,
                             },
                             {
                                 credential: null,
                                 externalServiceKind: ExternalServiceKind.BITBUCKETSERVER,
                                 externalServiceURL: 'https://bitbucket.sgdev.org/',
+                                requiresSSH: true,
                             },
                         ],
                     })
@@ -64,25 +67,34 @@ add('Config added', () => (
                                 credential: {
                                     id: '123',
                                     createdAt: new Date().toISOString(),
+                                    sshPublicKey:
+                                        'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
                                 },
                                 externalServiceKind: ExternalServiceKind.GITHUB,
                                 externalServiceURL: 'https://github.com/',
+                                requiresSSH: false,
                             },
                             {
                                 credential: {
                                     id: '123',
                                     createdAt: new Date().toISOString(),
+                                    sshPublicKey:
+                                        'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
                                 },
                                 externalServiceKind: ExternalServiceKind.GITLAB,
                                 externalServiceURL: 'https://gitlab.com/',
+                                requiresSSH: false,
                             },
                             {
                                 credential: {
                                     id: '123',
                                     createdAt: new Date().toISOString(),
+                                    sshPublicKey:
+                                        'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
                                 },
                                 externalServiceKind: ExternalServiceKind.BITBUCKETSERVER,
                                 externalServiceURL: 'https://bitbucket.sgdev.org/',
+                                requiresSSH: true,
                             },
                         ],
                     })

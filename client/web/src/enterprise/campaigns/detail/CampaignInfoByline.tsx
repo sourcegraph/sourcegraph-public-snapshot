@@ -1,9 +1,9 @@
 import React from 'react'
-import { CampaignFields } from '../../../graphql-operations'
+import { BatchChangeFields } from '../../../graphql-operations'
 import { Link } from '../../../../../shared/src/components/Link'
 import { Timestamp } from '../../../components/time/Timestamp'
 
-interface Props extends Pick<CampaignFields, 'createdAt' | 'initialApplier' | 'lastAppliedAt' | 'lastApplier'> {}
+interface Props extends Pick<BatchChangeFields, 'createdAt' | 'initialApplier' | 'lastAppliedAt' | 'lastApplier'> {}
 
 /**
  * The created/updated byline in the campaign header.

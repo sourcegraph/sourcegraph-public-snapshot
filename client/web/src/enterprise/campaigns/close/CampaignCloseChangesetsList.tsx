@@ -4,7 +4,7 @@ import { ThemeProps } from '../../../../../shared/src/theme'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
-import { Scalars, ChangesetFields, CampaignChangesetsResult } from '../../../graphql-operations'
+import { Scalars, ChangesetFields, BatchChangeChangesetsResult } from '../../../graphql-operations'
 import { Subject } from 'rxjs'
 import { FilteredConnectionQueryArguments, FilteredConnection } from '../../../components/FilteredConnection'
 import { repeatWhen, withLatestFrom, filter, map, delay } from 'rxjs/operators'
@@ -35,7 +35,7 @@ interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, Extens
     location: H.Location
     willClose: boolean
     onUpdate?: (
-        connection?: (CampaignChangesetsResult['node'] & { __typename: 'Campaign' })['changesets'] | ErrorLike
+        connection?: (BatchChangeChangesetsResult['node'] & { __typename: 'BatchChange' })['changesets'] | ErrorLike
     ) => void
 
     /** For testing only. */
@@ -72,8 +72,8 @@ export const CampaignCloseChangesetsList: React.FunctionComponent<Props> = ({
                 reviewState: null,
                 first: args.first ?? null,
                 after: args.after ?? null,
-                campaign: campaignID,
-                onlyPublishedByThisCampaign: true,
+                batchChange: campaignID,
+                onlyPublishedByThisBatchChange: true,
                 search: null,
             }).pipe(repeatWhen(notifier => notifier.pipe(delay(5000)))),
         [campaignID, queryChangesets]
@@ -138,7 +138,7 @@ export const CampaignCloseChangesetsList: React.FunctionComponent<Props> = ({
             <FilteredConnection<
                 ChangesetFields,
                 Omit<ChangesetCloseNodeProps, 'node'>,
-                (CampaignChangesetsResult['node'] & { __typename: 'Campaign' })['changesets']
+                (BatchChangeChangesetsResult['node'] & { __typename: 'BatchChange' })['changesets']
             >
                 className="mt-2"
                 nodeComponent={ChangesetCloseNode}

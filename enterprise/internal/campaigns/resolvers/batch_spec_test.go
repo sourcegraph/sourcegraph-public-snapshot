@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
-func TestCampaignSpecResolver(t *testing.T) {
+func TestBatchSpecResolver(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -44,7 +44,7 @@ func TestCampaignSpecResolver(t *testing.T) {
 	adminID := ct.CreateTestUser(t, db, true).ID
 	orgID := ct.InsertTestOrg(t, db, orgname)
 
-	spec, err := campaigns.NewCampaignSpecFromRaw(ct.TestRawCampaignSpec)
+	spec, err := campaigns.NewCampaignSpecFromRaw(ct.TestRawBatchSpec)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,7 +83,7 @@ func TestCampaignSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	apiID := string(marshalCampaignSpecRandID(spec.RandID))
+	apiID := string(marshalBatchSpecRandID(spec.RandID))
 	userAPIID := string(graphqlbackend.MarshalUserID(userID))
 	orgAPIID := string(graphqlbackend.MarshalOrgID(orgID))
 
@@ -93,8 +93,8 @@ func TestCampaignSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := apitest.CampaignSpec{
-		Typename: "CampaignSpec",
+	want := apitest.BatchSpec{
+		Typename: "BatchSpec",
 		ID:       apiID,
 
 		OriginalInput: spec.RawSpec,
@@ -130,24 +130,24 @@ func TestCampaignSpecResolver(t *testing.T) {
 			Deleted: changesetSpec.DiffStatDeleted,
 		},
 
-		AppliesToCampaign: apitest.Campaign{
-			ID: string(marshalCampaignID(matchingCampaign.ID)),
+		AppliesToBatchChange: apitest.BatchChange{
+			ID: string(marshalBatchChangeID(matchingCampaign.ID)),
 		},
 
-		AllCodeHosts: apitest.CampaignsCodeHostsConnection{
+		AllCodeHosts: apitest.BatchChangesCodeHostsConnection{
 			TotalCount: 1,
-			Nodes:      []apitest.CampaignsCodeHost{{ExternalServiceKind: extsvc.KindGitHub, ExternalServiceURL: "https://github.com/"}},
+			Nodes:      []apitest.BatchChangesCodeHost{{ExternalServiceKind: extsvc.KindGitHub, ExternalServiceURL: "https://github.com/"}},
 		},
-		OnlyWithoutCredential: apitest.CampaignsCodeHostsConnection{
+		OnlyWithoutCredential: apitest.BatchChangesCodeHostsConnection{
 			TotalCount: 1,
-			Nodes:      []apitest.CampaignsCodeHost{{ExternalServiceKind: extsvc.KindGitHub, ExternalServiceURL: "https://github.com/"}},
+			Nodes:      []apitest.BatchChangesCodeHost{{ExternalServiceKind: extsvc.KindGitHub, ExternalServiceURL: "https://github.com/"}},
 		},
 	}
 
-	input := map[string]interface{}{"campaignSpec": apiID}
+	input := map[string]interface{}{"batchSpec": apiID}
 	{
-		var response struct{ Node apitest.CampaignSpec }
-		apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryCampaignSpecNode)
+		var response struct{ Node apitest.BatchSpec }
+		apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryBatchSpecNode)
 
 		if diff := cmp.Diff(want, response.Node); diff != "" {
 			t.Fatalf("unexpected response (-want +got):\n%s", diff)
@@ -156,7 +156,7 @@ func TestCampaignSpecResolver(t *testing.T) {
 
 	// Now create an updated changeset spec and check that we get a superseding
 	// campaign spec.
-	sup, err := campaigns.NewCampaignSpecFromRaw(ct.TestRawCampaignSpec)
+	sup, err := campaigns.NewCampaignSpecFromRaw(ct.TestRawBatchSpec)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -167,15 +167,15 @@ func TestCampaignSpecResolver(t *testing.T) {
 	}
 
 	{
-		var response struct{ Node apitest.CampaignSpec }
+		var response struct{ Node apitest.BatchSpec }
 
 		// Note that we have to execute as the actual user, since a superseding
 		// spec isn't returned for an admin.
-		apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryCampaignSpecNode)
+		apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryBatchSpecNode)
 
-		// Expect an ID on the superseding campaign spec.
-		want.SupersedingCampaignSpec = &apitest.CampaignSpec{
-			ID: string(marshalCampaignSpecRandID(sup.RandID)),
+		// Expect an ID on the superseding batch spec.
+		want.SupersedingBatchSpec = &apitest.BatchSpec{
+			ID: string(marshalBatchSpecRandID(sup.RandID)),
 		}
 
 		if diff := cmp.Diff(want, response.Node); diff != "" {
@@ -191,15 +191,15 @@ func TestCampaignSpecResolver(t *testing.T) {
 	}
 
 	{
-		var response struct{ Node apitest.CampaignSpec }
+		var response struct{ Node apitest.BatchSpec }
 
 		// Note that we have to execute as the actual user, since a superseding
 		// spec isn't returned for an admin.
-		apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryCampaignSpecNode)
+		apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryBatchSpecNode)
 
-		// Expect no superseding campaign spec, since this request is run as a
+		// Expect no superseding batch spec, since this request is run as a
 		// different user.
-		want.SupersedingCampaignSpec = nil
+		want.SupersedingBatchSpec = nil
 
 		if diff := cmp.Diff(want, response.Node); diff != "" {
 			t.Fatalf("unexpected response (-want +got):\n%s", diff)
@@ -212,18 +212,18 @@ func TestCampaignSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 	{
-		var response struct{ Node apitest.CampaignSpec }
-		apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(adminID)), t, s, input, &response, queryCampaignSpecNode)
+		var response struct{ Node apitest.BatchSpec }
+		apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(adminID)), t, s, input, &response, queryBatchSpecNode)
 
 		// Expect creator to not be returned anymore.
 		want.Creator = nil
 		// Expect all set for admin user.
-		want.OnlyWithoutCredential = apitest.CampaignsCodeHostsConnection{
-			Nodes: []apitest.CampaignsCodeHost{},
+		want.OnlyWithoutCredential = apitest.BatchChangesCodeHostsConnection{
+			Nodes: []apitest.BatchChangesCodeHost{},
 		}
 		// Expect no superseding campaign spec, since this request is run as a
 		// different user.
-		want.SupersedingCampaignSpec = nil
+		want.SupersedingBatchSpec = nil
 
 		if diff := cmp.Diff(want, response.Node); diff != "" {
 			t.Fatalf("unexpected response (-want +got):\n%s", diff)
@@ -236,14 +236,14 @@ func TestCampaignSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 	{
-		var response struct{ Node apitest.CampaignSpec }
-		apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(adminID)), t, s, input, &response, queryCampaignSpecNode)
+		var response struct{ Node apitest.BatchSpec }
+		apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(adminID)), t, s, input, &response, queryBatchSpecNode)
 
 		// Expect creator to not be returned anymore.
 		want.Creator = nil
 		// Expect all set for admin user.
-		want.OnlyWithoutCredential = apitest.CampaignsCodeHostsConnection{
-			Nodes: []apitest.CampaignsCodeHost{},
+		want.OnlyWithoutCredential = apitest.BatchChangesCodeHostsConnection{
+			Nodes: []apitest.BatchChangesCodeHost{},
 		}
 
 		if diff := cmp.Diff(want, response.Node); diff != "" {
@@ -252,15 +252,15 @@ func TestCampaignSpecResolver(t *testing.T) {
 	}
 }
 
-const queryCampaignSpecNode = `
+const queryBatchSpecNode = `
 fragment u on User { id, databaseID, siteAdmin }
 fragment o on Org  { id, name }
 
-query($campaignSpec: ID!) {
-  node(id: $campaignSpec) {
+query($batchSpec: ID!) {
+  node(id: $batchSpec) {
     __typename
 
-    ... on CampaignSpec {
+    ... on BatchSpec {
       id
       originalInput
       parsedInput
@@ -279,11 +279,10 @@ query($campaignSpec: ID!) {
 
       diffStat { added, deleted, changed }
 
-	  appliesToCampaign { id }
+	  appliesToBatchChange { id }
+	  supersedingBatchSpec { id }
 
-	  supersedingCampaignSpec { id }
-
-	  allCodeHosts: viewerCampaignsCodeHosts {
+	  allCodeHosts: viewerBatchChangesCodeHosts {
 		totalCount
 		  nodes {
 			  externalServiceKind
@@ -291,7 +290,7 @@ query($campaignSpec: ID!) {
 		  }
 	  }
 
-	  onlyWithoutCredential: viewerCampaignsCodeHosts(onlyWithoutCredential: true) {
+	  onlyWithoutCredential: viewerBatchChangesCodeHosts(onlyWithoutCredential: true) {
 		  totalCount
 		  nodes {
 			  externalServiceKind
