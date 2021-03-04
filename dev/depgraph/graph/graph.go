@@ -65,7 +65,7 @@ func Load() (*DependencyGraph, error) {
 // listPackages lists all packages under sourcegraph/sourcegraph. This assumes that the
 // binary is being run from the root of the repository.
 func listPackages() ([]string, error) {
-	out, err := runGo("list", RootPackage+"/...")
+	out, err := runGo("list", "./...")
 	if err != nil {
 		return nil, err
 	}

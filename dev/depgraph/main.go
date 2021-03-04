@@ -20,6 +20,10 @@ var commands = map[string]func(*graph.DependencyGraph) error{
 }
 
 func mainErr() error {
+	if len(os.Args) > 1 && os.Args[1] == "clear-cache" {
+		return clearCache()
+	}
+
 	graph, err := loadDependencyGraph()
 	if err != nil {
 		return err

@@ -5,11 +5,11 @@ import (
 	"encoding/gob"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/sourcegraph/sourcegraph/dev/depgraph/graph"
+	"github.com/sourcegraph/sourcegraph/dev/depgraph/root"
 )
-
-const cacheFile = "depgraph.cache"
 
 // loadDependencyGraph reads a cached dependency graph or recalculates one if no cache file
 // is present. If a new dependency graph is loaded it will be re-serialized to the cache file.
@@ -29,6 +29,11 @@ func loadDependencyGraph() (*graph.DependencyGraph, error) {
 // loadDependencyGraphFromCache reads the cache file (if it exists) and decodes a dependency
 // graph from it. If no cache file exists, a nil graph is returned.
 func loadDependencyGraphFromCache() (graph *graph.DependencyGraph, _ error) {
+	cacheFile, err := cacheFile()
+	if err != nil {
+		return nil, err
+	}
+
 	contents, err := ioutil.ReadFile(cacheFile)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -52,5 +57,36 @@ func writeDependencyGraphCache(graph *graph.DependencyGraph) error {
 		return err
 	}
 
+	cacheFile, err := cacheFile()
+	if err != nil {
+		return err
+	}
+
 	return ioutil.WriteFile(cacheFile, buffer.Bytes(), os.ModePerm)
+}
+
+// clearCache removes the cache file, if it exists.
+func clearCache() error {
+	cacheFile, err := cacheFile()
+	if err != nil {
+		return err
+	}
+
+	if err := os.Remove(cacheFile); !os.IsNotExist(err) {
+		return err
+	}
+
+	return nil
+}
+
+const cacheFileName = "depgraph.cache"
+
+// cacheFile returns the absolute path to the cache file.
+func cacheFile() (string, error) {
+	root, err := root.RepositoryRoot()
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(root, cacheFileName), nil
 }
