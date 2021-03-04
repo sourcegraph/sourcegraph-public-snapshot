@@ -1,17 +1,17 @@
-import { CloseCampaignResult, CloseCampaignVariables } from '../../../graphql-operations'
+import { CloseBatchChangeResult, CloseBatchChangeVariables } from '../../../graphql-operations'
 import { gql, dataOrThrowErrors } from '../../../../../shared/src/graphql/graphql'
 import { requestGraphQL } from '../../../backend/graphql'
 
-export async function closeCampaign({ campaign, closeChangesets }: CloseCampaignVariables): Promise<void> {
-    const result = await requestGraphQL<CloseCampaignResult, CloseCampaignVariables>(
+export async function closeBatchChange({ batchChange, closeChangesets }: CloseBatchChangeVariables): Promise<void> {
+    const result = await requestGraphQL<CloseBatchChangeResult, CloseBatchChangeVariables>(
         gql`
-            mutation CloseCampaign($campaign: ID!, $closeChangesets: Boolean) {
-                closeCampaign(campaign: $campaign, closeChangesets: $closeChangesets) {
+            mutation CloseBatchChange($batchChange: ID!, $closeChangesets: Boolean) {
+                closeBatchChange(batchChange: $batchChange, closeChangesets: $closeChangesets) {
                     id
                 }
             }
         `,
-        { campaign, closeChangesets }
+        { batchChange, closeChangesets }
     ).toPromise()
     dataOrThrowErrors(result)
 }

@@ -5,7 +5,7 @@ import { HiddenChangesetApplyPreviewNode } from './HiddenChangesetApplyPreviewNo
 import { VisibleChangesetApplyPreviewNode } from './VisibleChangesetApplyPreviewNode'
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import { queryChangesetSpecFileDiffs } from './backend'
-import { PreviewPageAuthenticatedUser } from '../CampaignPreviewPage'
+import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
 
 export interface ChangesetApplyPreviewNodeProps extends ThemeProps {
     node: ChangesetApplyPreviewFields

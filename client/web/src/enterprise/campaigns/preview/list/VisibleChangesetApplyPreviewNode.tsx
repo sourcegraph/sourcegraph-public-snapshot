@@ -23,7 +23,7 @@ import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell
 import { PreviewNodeIndicator } from './PreviewNodeIndicator'
 import classNames from 'classnames'
 import { PersonLink } from '../../../../person/PersonLink'
-import { PreviewPageAuthenticatedUser } from '../CampaignPreviewPage'
+import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
 import { Description } from '../../Description'
 import { GitBranchChangesetDescriptionInfo } from './GitBranchChangesetDescriptionInfo'
 
@@ -62,7 +62,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
         <>
             <button
                 type="button"
-                className="btn btn-icon test-campaigns-expand-preview d-none d-sm-block mx-1"
+                className="btn btn-icon test-batches-expand-preview d-none d-sm-block mx-1"
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
@@ -117,7 +117,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                 type="button"
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
-                className="visible-changeset-apply-preview-node__show-details btn btn-outline-secondary d-block d-sm-none test-campaigns-expand-preview"
+                className="visible-changeset-apply-preview-node__show-details btn btn-outline-secondary d-block d-sm-none test-batches-expand-preview"
             >
                 {isExpanded ? (
                     <ChevronDownIcon className="icon-inline" aria-label="Close section" />
@@ -174,7 +174,7 @@ const ExpandedSection: React.FunctionComponent<
         return (
             <div className="alert alert-info mb-0">
                 When run, the changeset <strong>{node.targets.changeset.title}</strong> in repo{' '}
-                <strong>{node.targets.changeset.repository.name}</strong> will be removed from this campaign.
+                <strong>{node.targets.changeset.repository.name}</strong> will be removed from this batch change.
             </div>
         )
     }

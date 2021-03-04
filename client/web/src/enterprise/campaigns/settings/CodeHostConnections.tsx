@@ -4,48 +4,50 @@ import { Observable, Subject } from 'rxjs'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageHeader } from '../../../components/PageHeader'
 import {
-    CampaignsCodeHostFields,
-    CampaignsCodeHostsFields,
+    BatchChangesCodeHostFields,
+    BatchChangesCodeHostsFields,
     Scalars,
-    UserCampaignsCodeHostsVariables,
+    UserBatchChangesCodeHostsVariables,
 } from '../../../graphql-operations'
-import { CampaignsIcon } from '../icons'
-import { queryUserCampaignsCodeHosts as _queryUserCampaignsCodeHosts } from './backend'
+import { BatchChangesIcon } from '../icons'
+import { queryUserBatchChangesCodeHosts as _queryUserBatchChangesCodeHosts } from './backend'
 import { CodeHostConnectionNode, CodeHostConnectionNodeProps } from './CodeHostConnectionNode'
 
 export interface CodeHostConnectionsProps extends Pick<RouteComponentProps, 'history' | 'location'> {
     userID: Scalars['ID']
-    queryUserCampaignsCodeHosts?: typeof _queryUserCampaignsCodeHosts
+    queryUserBatchChangesCodeHosts?: typeof _queryUserBatchChangesCodeHosts
 }
 
 export const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsProps> = ({
     userID,
     history,
     location,
-    queryUserCampaignsCodeHosts = _queryUserCampaignsCodeHosts,
+    queryUserBatchChangesCodeHosts = _queryUserBatchChangesCodeHosts,
 }) => {
     // Subject to fire a reload of the list.
     const updateList = useMemo(() => new Subject<void>(), [])
-    const query = useCallback<(args: Partial<UserCampaignsCodeHostsVariables>) => Observable<CampaignsCodeHostsFields>>(
+    const query = useCallback<
+        (args: Partial<UserBatchChangesCodeHostsVariables>) => Observable<BatchChangesCodeHostsFields>
+    >(
         args =>
-            queryUserCampaignsCodeHosts({
+            queryUserBatchChangesCodeHosts({
                 user: userID,
                 first: args.first ?? null,
                 after: args.after ?? null,
             }),
-        [queryUserCampaignsCodeHosts, userID]
+        [queryUserBatchChangesCodeHosts, userID]
     )
     return (
         <>
-            <PageHeader path={[{ icon: CampaignsIcon, text: 'Campaigns' }]} className="mb-3" />
+            <PageHeader path={[{ icon: BatchChangesIcon, text: 'Batch changes' }]} className="mb-3" />
             <h2>Code host tokens</h2>
-            <p>Add authentication tokens to enable campaigns changeset creation on your code hosts.</p>
-            <FilteredConnection<CampaignsCodeHostFields, Omit<CodeHostConnectionNodeProps, 'node'>>
+            <p>Add authentication tokens to enable batch changes changeset creation on your code hosts.</p>
+            <FilteredConnection<BatchChangesCodeHostFields, Omit<CodeHostConnectionNodeProps, 'node'>>
                 history={history}
                 location={location}
                 useURLQuery={false}
                 nodeComponent={CodeHostConnectionNode}
-                nodeComponentProps={{ userID, history, updateList }}
+                nodeComponentProps={{ userID, updateList }}
                 queryConnection={query}
                 hideSearch={true}
                 defaultFirst={15}

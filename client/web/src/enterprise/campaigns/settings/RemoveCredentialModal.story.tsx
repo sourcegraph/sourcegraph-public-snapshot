@@ -5,7 +5,7 @@ import { ExternalServiceKind } from '../../../../../shared/src/graphql-operation
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 import { RemoveCredentialModal } from './RemoveCredentialModal'
 
-const { add } = storiesOf('web/campaigns/settings/RemoveCredentialModal', module)
+const { add } = storiesOf('web/batches/settings/RemoveCredentialModal', module)
     .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
     .addParameters({
         chromatic: {

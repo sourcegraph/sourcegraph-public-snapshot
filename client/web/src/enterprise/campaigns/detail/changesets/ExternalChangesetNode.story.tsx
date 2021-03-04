@@ -12,8 +12,8 @@ import {
 import { of } from 'rxjs'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
-const { add } = storiesOf('web/campaigns/ExternalChangesetNode', module).addDecorator(story => (
-    <div className="p-3 container web-content campaign-changesets__grid">{story()}</div>
+const { add } = storiesOf('web/batches/ExternalChangesetNode', module).addDecorator(story => (
+    <div className="p-3 container web-content batch-change-changesets__grid">{story()}</div>
 ))
 
 add('All states', () => {

@@ -17,13 +17,13 @@ import {
     ChangesetCountsOverTimeVariables,
     ChangesetCountsOverTimeFields,
     ChangesetCountsOverTimeResult,
-    DeleteCampaignResult,
-    DeleteCampaignVariables,
+    DeleteBatchChangeResult,
     ChangesetDiffResult,
     ChangesetDiffVariables,
     ReenqueueChangesetVariables,
     ReenqueueChangesetResult,
     ChangesetFields,
+    DeleteBatchChangeVariables,
 } from '../../../graphql-operations'
 import { requestGraphQL } from '../../../backend/graphql'
 
@@ -447,16 +447,16 @@ export const queryChangesetCountsOverTime = ({
         })
     )
 
-export async function deleteCampaign(campaign: Scalars['ID']): Promise<void> {
-    const result = await requestGraphQL<DeleteCampaignResult, DeleteCampaignVariables>(
+export async function deleteBatchChange(batchChange: Scalars['ID']): Promise<void> {
+    const result = await requestGraphQL<DeleteBatchChangeResult, DeleteBatchChangeVariables>(
         gql`
-            mutation DeleteCampaign($campaign: ID!) {
-                deleteCampaign(campaign: $campaign) {
+            mutation DeleteBatchChange($batchChange: ID!) {
+                deleteBatchChange(batchChange: $batchChange) {
                     alwaysNil
                 }
             }
         `,
-        { campaign }
+        { batchChange }
     ).toPromise()
     dataOrThrowErrors(result)
 }

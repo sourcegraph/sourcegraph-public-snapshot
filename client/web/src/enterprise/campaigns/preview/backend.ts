@@ -2,20 +2,20 @@ import { diffStatFields } from '../../../backend/diff'
 import { gql, dataOrThrowErrors } from '../../../../../shared/src/graphql/graphql'
 import {
     Scalars,
-    CampaignSpecFields,
-    CampaignSpecByIDVariables,
-    CampaignSpecByIDResult,
-    CreateCampaignVariables,
-    CreateCampaignResult,
-    ApplyCampaignResult,
-    ApplyCampaignVariables,
+    CreateBatchChangeVariables,
+    CreateBatchChangeResult,
+    ApplyBatchChangeResult,
+    ApplyBatchChangeVariables,
+    BatchSpecByIDResult,
+    BatchSpecByIDVariables,
+    BatchSpecFields,
 } from '../../../graphql-operations'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { requestGraphQL } from '../../../backend/graphql'
 
-export const viewerCampaignsCodeHostsFragment = gql`
-    fragment ViewerCampaignsCodeHostsFields on CampaignsCodeHostConnection {
+export const viewerBatchChangesCodeHostsFragment = gql`
+    fragment ViewerBatchChangesCodeHostsFields on BatchChangesCodeHostConnection {
         totalCount
         nodes {
             externalServiceURL
@@ -24,21 +24,21 @@ export const viewerCampaignsCodeHostsFragment = gql`
     }
 `
 
-const supersedingCampaignSpecFragment = gql`
-    fragment SupersedingCampaignSpecFields on CampaignSpec {
+const supersedingBatchSpecFragment = gql`
+    fragment SupersedingBatchSpecFields on BatchSpec {
         createdAt
         applyURL
     }
 `
 
-export const campaignSpecFragment = gql`
-    fragment CampaignSpecFields on CampaignSpec {
+export const batchSpecFragment = gql`
+    fragment BatchSpecFields on BatchSpec {
         id
         description {
             name
             description
         }
-        appliesToCampaign {
+        appliesToBatchChange {
             id
             name
             url
@@ -74,85 +74,85 @@ export const campaignSpecFragment = gql`
                 removed
             }
         }
-        supersedingCampaignSpec {
-            ...SupersedingCampaignSpecFields
+        supersedingBatchSpec {
+            ...SupersedingBatchSpecFields
         }
-        viewerCampaignsCodeHosts(onlyWithoutCredential: true) {
-            ...ViewerCampaignsCodeHostsFields
+        viewerBatchChangesCodeHosts(onlyWithoutCredential: true) {
+            ...ViewerBatchChangesCodeHostsFields
         }
     }
 
-    ${viewerCampaignsCodeHostsFragment}
+    ${viewerBatchChangesCodeHostsFragment}
 
     ${diffStatFields}
 
-    ${supersedingCampaignSpecFragment}
+    ${supersedingBatchSpecFragment}
 `
 
-export const fetchCampaignSpecById = (campaignSpec: Scalars['ID']): Observable<CampaignSpecFields | null> =>
-    requestGraphQL<CampaignSpecByIDResult, CampaignSpecByIDVariables>(
+export const fetchBatchSpecById = (batchSpec: Scalars['ID']): Observable<BatchSpecFields | null> =>
+    requestGraphQL<BatchSpecByIDResult, BatchSpecByIDVariables>(
         gql`
-            query CampaignSpecByID($campaignSpec: ID!) {
-                node(id: $campaignSpec) {
+            query BatchSpecByID($batchSpec: ID!) {
+                node(id: $batchSpec) {
                     __typename
-                    ... on CampaignSpec {
-                        ...CampaignSpecFields
+                    ... on BatchSpec {
+                        ...BatchSpecFields
                     }
                 }
             }
-            ${campaignSpecFragment}
+            ${batchSpecFragment}
         `,
-        { campaignSpec }
+        { batchSpec }
     ).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {
             if (!node) {
                 return null
             }
-            if (node.__typename !== 'CampaignSpec') {
-                throw new Error(`The given ID is a ${node.__typename}, not a CampaignSpec`)
+            if (node.__typename !== 'BatchSpec') {
+                throw new Error(`The given ID is a ${node.__typename}, not a BatchSpec`)
             }
             return node
         })
     )
 
-export const createCampaign = ({
-    campaignSpec,
-}: CreateCampaignVariables): Promise<CreateCampaignResult['createCampaign']> =>
-    requestGraphQL<CreateCampaignResult, CreateCampaignVariables>(
+export const createBatchChange = ({
+    batchSpec,
+}: CreateBatchChangeVariables): Promise<CreateBatchChangeResult['createBatchChange']> =>
+    requestGraphQL<CreateBatchChangeResult, CreateBatchChangeVariables>(
         gql`
-            mutation CreateCampaign($campaignSpec: ID!) {
-                createCampaign(campaignSpec: $campaignSpec) {
+            mutation CreateBatchChange($batchSpec: ID!) {
+                createBatchChange(batchSpec: $batchSpec) {
                     id
                     url
                 }
             }
         `,
-        { campaignSpec }
+        { batchSpec }
     )
         .pipe(
             map(dataOrThrowErrors),
-            map(data => data.createCampaign)
+            map(data => data.createBatchChange)
         )
         .toPromise()
 
-export const applyCampaign = ({
-    campaignSpec,
-    campaign,
-}: ApplyCampaignVariables): Promise<ApplyCampaignResult['applyCampaign']> =>
-    requestGraphQL<ApplyCampaignResult, ApplyCampaignVariables>(
+export const applyBatchChange = ({
+    batchSpec,
+    batchChange,
+}: ApplyBatchChangeVariables): Promise<ApplyBatchChangeResult['applyBatchChange']> =>
+    requestGraphQL<ApplyBatchChangeResult, ApplyBatchChangeVariables>(
         gql`
-            mutation ApplyCampaign($campaignSpec: ID!, $campaign: ID!) {
-                applyCampaign(campaignSpec: $campaignSpec, ensureCampaign: $campaign) {
+            mutation ApplyBatchChange($batchSpec: ID!, $batchChange: ID!) {
+                applyBatchChange(batchSpec: $batchSpec, ensureBatchChange: $batchChange) {
                     id
                     url
                 }
             }
         `,
-        { campaignSpec, campaign }
+        { batchSpec, batchChange }
     )
         .pipe(
             map(dataOrThrowErrors),
-            map(data => data.applyCampaign)
+            map(data => data.applyBatchChange)
         )
         .toPromise()

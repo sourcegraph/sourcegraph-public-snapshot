@@ -3,7 +3,7 @@ import React from 'react'
 export const EmptyChangesetListElement: React.FunctionComponent<{}> = () => (
     <div className="col-md-8 offset-md-2 col-sm-12 card mt-5">
         <div className="card-body p-5 empty-changeset-list-element__body">
-            <h2 className="text-center mb-4">This campaign does not contain changesets</h2>
+            <h2 className="text-center mb-4">This batch change does not contain changesets</h2>
             <p>This can occur for several reasons:</p>
             <p>
                 <strong>

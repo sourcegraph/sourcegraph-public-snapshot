@@ -1,11 +1,10 @@
 import React, { useCallback, useState } from 'react'
-import * as H from 'history'
 import Dialog from '@reach/dialog'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Form } from '../../../../../branded/src/components/Form'
 import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
 import { ErrorAlert } from '../../../components/alerts'
-import { createCampaignsCredential as _createCampaignsCredential } from './backend'
+import { createBatchChangesCredential as _createBatchChangesCredential } from './backend'
 import { ExternalServiceKind, Scalars } from '../../../graphql-operations'
 import classNames from 'classnames'
 import { CodeHostSshPublicKey } from './CodeHostSshPublicKey'
@@ -14,14 +13,13 @@ import { ModalHeader } from './ModalHeader'
 export interface AddCredentialModalProps {
     onCancel: () => void
     afterCreate: () => void
-    history: H.History
     userID: Scalars['ID']
     externalServiceKind: ExternalServiceKind
     externalServiceURL: string
     requiresSSH: boolean
 
     /** For testing only. */
-    createCampaignsCredential?: typeof _createCampaignsCredential
+    createBatchChangesCredential?: typeof _createBatchChangesCredential
     /** For testing only. */
     initialStep?: Step
 }
@@ -30,7 +28,7 @@ const helpTexts: Record<ExternalServiceKind, JSX.Element> = {
     [ExternalServiceKind.GITHUB]: (
         <>
             <a
-                href="https://docs.sourcegraph.com/campaigns/quickstart#configure-code-host-connections"
+                href="https://docs.sourcegraph.com/batch_changes/quickstart#configure-code-host-connections"
                 rel="noreferrer noopener"
                 target="_blank"
             >
@@ -43,7 +41,7 @@ const helpTexts: Record<ExternalServiceKind, JSX.Element> = {
     [ExternalServiceKind.GITLAB]: (
         <>
             <a
-                href="https://docs.sourcegraph.com/campaigns/quickstart#configure-code-host-connections"
+                href="https://docs.sourcegraph.com/batch_changes/quickstart#configure-code-host-connections"
                 rel="noreferrer noopener"
                 target="_blank"
             >
@@ -55,7 +53,7 @@ const helpTexts: Record<ExternalServiceKind, JSX.Element> = {
     [ExternalServiceKind.BITBUCKETSERVER]: (
         <>
             <a
-                href="https://docs.sourcegraph.com/campaigns/quickstart#configure-code-host-connections"
+                href="https://docs.sourcegraph.com/batch_changes/quickstart#configure-code-host-connections"
                 rel="noreferrer noopener"
                 target="_blank"
             >
@@ -79,12 +77,11 @@ type Step = 'add-token' | 'get-ssh-key'
 export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps> = ({
     onCancel,
     afterCreate,
-    history,
     userID,
     externalServiceKind,
     externalServiceURL,
     requiresSSH,
-    createCampaignsCredential = _createCampaignsCredential,
+    createBatchChangesCredential = _createBatchChangesCredential,
     initialStep = 'add-token',
 }) => {
     const labelId = 'addCredential'
@@ -102,7 +99,7 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
             event.preventDefault()
             setIsLoading(true)
             try {
-                const createdCredential = await createCampaignsCredential({
+                const createdCredential = await createBatchChangesCredential({
                     user: userID,
                     credential,
                     externalServiceKind,
@@ -125,7 +122,7 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
             externalServiceKind,
             externalServiceURL,
             requiresSSH,
-            createCampaignsCredential,
+            createBatchChangesCredential,
         ]
     )
 
@@ -205,8 +202,8 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
                 {step === 'get-ssh-key' && (
                     <>
                         <p>
-                            An SSH key has been generated for your campaigns code host connection. Copy the public key
-                            below and enter it on your code host.
+                            An SSH key has been generated for your batch changes code host connection. Copy the public
+                            key below and enter it on your code host.
                         </p>
                         <CodeHostSshPublicKey externalServiceKind={externalServiceKind} sshPublicKey={sshPublicKey!} />
                         <div className="d-flex justify-content-end">

@@ -9,10 +9,10 @@ import { PreviewListHeader } from './PreviewListHeader'
 import { EmptyPreviewListElement } from './EmptyPreviewListElement'
 import { PreviewFilterRow, PreviewFilters } from './PreviewFilterRow'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import { PreviewPageAuthenticatedUser } from '../CampaignPreviewPage'
+import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
 
 interface Props extends ThemeProps {
-    campaignSpecID: Scalars['ID']
+    batchSpecID: Scalars['ID']
     history: H.History
     location: H.Location
     authenticatedUser: PreviewPageAuthenticatedUser
@@ -26,10 +26,10 @@ interface Props extends ThemeProps {
 }
 
 /**
- * A list of a campaign spec's preview nodes.
+ * A list of a batch spec's preview nodes.
  */
 export const PreviewList: React.FunctionComponent<Props> = ({
-    campaignSpecID,
+    batchSpecID,
     history,
     location,
     authenticatedUser,
@@ -50,12 +50,12 @@ export const PreviewList: React.FunctionComponent<Props> = ({
             queryChangesetApplyPreview({
                 first: args.first ?? null,
                 after: args.after ?? null,
-                campaignSpec: campaignSpecID,
+                batchSpec: batchSpecID,
                 search: filters.search,
                 currentState: filters.currentState,
                 action: filters.action,
             }),
-        [campaignSpecID, filters.search, filters.currentState, filters.action, queryChangesetApplyPreview]
+        [batchSpecID, filters.search, filters.currentState, filters.action, queryChangesetApplyPreview]
     )
 
     return (

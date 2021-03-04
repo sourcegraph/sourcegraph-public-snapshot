@@ -54,7 +54,7 @@ export const ExternalChangesetCloseNode: React.FunctionComponent<ExternalChanges
         <>
             <button
                 type="button"
-                className="btn btn-icon test-campaigns-expand-changeset d-none d-sm-block"
+                className="btn btn-icon test-batches-expand-changeset d-none d-sm-block"
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
@@ -93,7 +93,7 @@ export const ExternalChangesetCloseNode: React.FunctionComponent<ExternalChanges
                 type="button"
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
-                className="external-changeset-close-node__show-details btn btn-outline-secondary d-block d-sm-none test-campaigns-expand-changeset"
+                className="external-changeset-close-node__show-details btn btn-outline-secondary d-block d-sm-none test-batches-expand-changeset"
             >
                 {isExpanded ? (
                     <ChevronDownIcon className="icon-inline" aria-label="Close section" />

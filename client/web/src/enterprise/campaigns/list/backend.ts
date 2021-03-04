@@ -2,17 +2,17 @@ import { map } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import { Observable } from 'rxjs'
 import {
-    CampaignsVariables,
-    CampaignsResult,
-    CampaignsByNamespaceResult,
-    CampaignsByNamespaceVariables,
-    AreCampaignsLicensedResult,
-    AreCampaignsLicensedVariables,
+    BatchChangesVariables,
+    BatchChangesResult,
+    BatchChangesByNamespaceResult,
+    BatchChangesByNamespaceVariables,
+    AreBatchChangesLicensedResult,
+    AreBatchChangesLicensedVariables,
 } from '../../../graphql-operations'
 import { requestGraphQL } from '../../../backend/graphql'
 
-const ListCampaignFragment = gql`
-    fragment ListCampaign on Campaign {
+const listBatchChangeFragment = gql`
+    fragment ListBatchChange on BatchChange {
         id
         url
         name
@@ -31,23 +31,23 @@ const ListCampaignFragment = gql`
     }
 `
 
-export interface ListCampaignsResult {
-    campaigns: CampaignsResult['campaigns']
+export interface ListBatchChangesResult {
+    batchChanges: BatchChangesResult['batchChanges']
     totalCount: number
 }
 
-export const queryCampaigns = ({
+export const queryBatchChanges = ({
     first,
     after,
     state,
     viewerCanAdminister,
-}: Partial<CampaignsVariables>): Observable<ListCampaignsResult> =>
-    requestGraphQL<CampaignsResult, CampaignsVariables>(
+}: Partial<BatchChangesVariables>): Observable<ListBatchChangesResult> =>
+    requestGraphQL<BatchChangesResult, BatchChangesVariables>(
         gql`
-            query Campaigns($first: Int, $after: String, $state: CampaignState, $viewerCanAdminister: Boolean) {
-                campaigns(first: $first, after: $after, state: $state, viewerCanAdminister: $viewerCanAdminister) {
+            query BatchChanges($first: Int, $after: String, $state: BatchChangeState, $viewerCanAdminister: Boolean) {
+                batchChanges(first: $first, after: $after, state: $state, viewerCanAdminister: $viewerCanAdminister) {
                     nodes {
-                        ...ListCampaign
+                        ...ListBatchChange
                     }
                     pageInfo {
                         endCursor
@@ -55,12 +55,12 @@ export const queryCampaigns = ({
                     }
                     totalCount
                 }
-                allCampaigns: campaigns(first: 0) {
+                allBatchChanges: batchChanges(first: 0) {
                     totalCount
                 }
             }
 
-            ${ListCampaignFragment}
+            ${listBatchChangeFragment}
         `,
         {
             first: first ?? null,
@@ -71,61 +71,61 @@ export const queryCampaigns = ({
     ).pipe(
         map(dataOrThrowErrors),
         map(data => ({
-            campaigns: data.campaigns,
-            totalCount: data.allCampaigns.totalCount,
+            batchChanges: data.batchChanges,
+            totalCount: data.allBatchChanges.totalCount,
         }))
     )
 
-export const queryCampaignsByNamespace = ({
+export const queryBatchChangesByNamespace = ({
     namespaceID,
     first,
     after,
     state,
     viewerCanAdminister,
-}: CampaignsByNamespaceVariables): Observable<ListCampaignsResult> =>
-    requestGraphQL<CampaignsByNamespaceResult, CampaignsByNamespaceVariables>(
+}: BatchChangesByNamespaceVariables): Observable<ListBatchChangesResult> =>
+    requestGraphQL<BatchChangesByNamespaceResult, BatchChangesByNamespaceVariables>(
         gql`
-            query CampaignsByNamespace(
+            query BatchChangesByNamespace(
                 $namespaceID: ID!
                 $first: Int
                 $after: String
-                $state: CampaignState
+                $state: BatchChangeState
                 $viewerCanAdminister: Boolean
             ) {
                 node(id: $namespaceID) {
                     __typename
                     ... on User {
-                        campaigns(
+                        batchChanges(
                             first: $first
                             after: $after
                             state: $state
                             viewerCanAdminister: $viewerCanAdminister
                         ) {
-                            ...CampaignsFields
+                            ...BatchChangesFields
                         }
-                        allCampaigns: campaigns(first: 0) {
+                        allBatchChanges: batchChanges(first: 0) {
                             totalCount
                         }
                     }
                     ... on Org {
-                        campaigns(
+                        batchChanges(
                             first: $first
                             after: $after
                             state: $state
                             viewerCanAdminister: $viewerCanAdminister
                         ) {
-                            ...CampaignsFields
+                            ...BatchChangesFields
                         }
-                        allCampaigns: campaigns(first: 0) {
+                        allBatchChanges: batchChanges(first: 0) {
                             totalCount
                         }
                     }
                 }
             }
 
-            fragment CampaignsFields on CampaignConnection {
+            fragment BatchChangesFields on BatchChangeConnection {
                 nodes {
-                    ...ListCampaign
+                    ...ListBatchChange
                 }
                 pageInfo {
                     endCursor
@@ -134,7 +134,7 @@ export const queryCampaignsByNamespace = ({
                 totalCount
             }
 
-            ${ListCampaignFragment}
+            ${listBatchChangeFragment}
         `,
         { first, after, state, viewerCanAdminister, namespaceID }
     ).pipe(
@@ -148,16 +148,16 @@ export const queryCampaignsByNamespace = ({
                 throw new Error(`Requested node is a ${data.node.__typename}, not a User or Org`)
             }
             return {
-                campaigns: data.node.campaigns,
-                totalCount: data.node.allCampaigns.totalCount,
+                batchChanges: data.node.batchChanges,
+                totalCount: data.node.allBatchChanges.totalCount,
             }
         })
     )
 
-export function areCampaignsLicensed(): Observable<boolean> {
-    return requestGraphQL<AreCampaignsLicensedResult, AreCampaignsLicensedVariables>(
+export function areBatchChangesLicensed(): Observable<boolean> {
+    return requestGraphQL<AreBatchChangesLicensedResult, AreBatchChangesLicensedVariables>(
         gql`
-            query AreCampaignsLicensed {
+            query AreBatchChangesLicensed {
                 enterpriseLicenseHasFeature(feature: "campaigns")
             }
         `

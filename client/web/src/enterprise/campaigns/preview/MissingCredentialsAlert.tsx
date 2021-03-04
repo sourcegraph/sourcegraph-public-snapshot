@@ -3,18 +3,18 @@ import { Link } from '../../../../../shared/src/components/Link'
 import { pluralize } from '../../../../../shared/src/util/strings'
 import { AuthenticatedUser } from '../../../auth'
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
-import { ViewerCampaignsCodeHostsFields } from '../../../graphql-operations'
+import { ViewerBatchChangesCodeHostsFields } from '../../../graphql-operations'
 
 export interface MissingCredentialsAlertProps {
-    viewerCampaignsCodeHosts: ViewerCampaignsCodeHostsFields
+    viewerBatchChangesCodeHosts: ViewerBatchChangesCodeHostsFields
     authenticatedUser: Pick<AuthenticatedUser, 'url'>
 }
 
 export const MissingCredentialsAlert: React.FunctionComponent<MissingCredentialsAlertProps> = ({
-    viewerCampaignsCodeHosts,
+    viewerBatchChangesCodeHosts,
     authenticatedUser,
 }) => {
-    if (viewerCampaignsCodeHosts.totalCount === 0) {
+    if (viewerBatchChangesCodeHosts.totalCount === 0) {
         return <></>
     }
     return (
@@ -22,18 +22,18 @@ export const MissingCredentialsAlert: React.FunctionComponent<MissingCredentials
             <p>
                 <strong>
                     You don't have credentials configured for{' '}
-                    {pluralize('this code host', viewerCampaignsCodeHosts.totalCount, 'these code hosts')}
+                    {pluralize('this code host', viewerBatchChangesCodeHosts.totalCount, 'these code hosts')}
                 </strong>
             </p>
             <ul>
-                {viewerCampaignsCodeHosts.nodes.map(node => (
+                {viewerBatchChangesCodeHosts.nodes.map(node => (
                     <MissingCodeHost {...node} key={node.externalServiceKind + node.externalServiceURL} />
                 ))}
             </ul>
             <p className="mb-0">
                 Credentials are required to publish changesets on code hosts. Configure them in your{' '}
-                <Link to={`${authenticatedUser.url}/settings/campaigns`} target="_blank" rel="noopener">
-                    campaigns user settings
+                <Link to={`${authenticatedUser.url}/settings/batch-changes`} target="_blank" rel="noopener">
+                    batch changes user settings
                 </Link>{' '}
                 to apply this spec.
             </p>
@@ -41,7 +41,7 @@ export const MissingCredentialsAlert: React.FunctionComponent<MissingCredentials
     )
 }
 
-const MissingCodeHost: React.FunctionComponent<ViewerCampaignsCodeHostsFields['nodes'][0]> = ({
+const MissingCodeHost: React.FunctionComponent<ViewerBatchChangesCodeHostsFields['nodes'][0]> = ({
     externalServiceKind,
     externalServiceURL,
 }) => {

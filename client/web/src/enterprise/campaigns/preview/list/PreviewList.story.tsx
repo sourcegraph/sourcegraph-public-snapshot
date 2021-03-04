@@ -2,12 +2,12 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { PreviewList } from './PreviewList'
 import { of, Observable } from 'rxjs'
-import { CampaignSpecApplyPreviewConnectionFields, ChangesetApplyPreviewFields } from '../../../../graphql-operations'
+import { BatchSpecApplyPreviewConnectionFields, ChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { visibleChangesetApplyPreviewNodeStories } from './VisibleChangesetApplyPreviewNode.story'
 import { hiddenChangesetApplyPreviewStories } from './HiddenChangesetApplyPreviewNode.story'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
-const { add } = storiesOf('web/campaigns/preview/PreviewList', module)
+const { add } = storiesOf('web/batches/preview/PreviewList', module)
     .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
     .addParameters({
         chromatic: {
@@ -20,7 +20,7 @@ const nodes: ChangesetApplyPreviewFields[] = [
     ...Object.values(hiddenChangesetApplyPreviewStories),
 ]
 
-const queryChangesetApplyPreview = (): Observable<CampaignSpecApplyPreviewConnectionFields> =>
+const queryChangesetApplyPreview = (): Observable<BatchSpecApplyPreviewConnectionFields> =>
     of({
         pageInfo: {
             endCursor: null,
@@ -37,7 +37,7 @@ add('List view', () => (
         {props => (
             <PreviewList
                 {...props}
-                campaignSpecID="123123"
+                batchSpecID="123123"
                 authenticatedUser={{
                     url: '/users/alice',
                     displayName: 'Alice',

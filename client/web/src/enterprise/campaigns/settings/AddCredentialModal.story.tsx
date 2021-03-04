@@ -3,11 +3,11 @@ import { useCallback } from '@storybook/addons'
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 import React from 'react'
-import { CampaignsCredentialFields, ExternalServiceKind } from '../../../graphql-operations'
+import { BatchChangesCredentialFields, ExternalServiceKind } from '../../../graphql-operations'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 import { AddCredentialModal } from './AddCredentialModal'
 
-const { add } = storiesOf('web/campaigns/settings/AddCredentialModal', module)
+const { add } = storiesOf('web/batches/settings/AddCredentialModal', module)
     .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
     .addParameters({
         chromatic: {
@@ -17,8 +17,8 @@ const { add } = storiesOf('web/campaigns/settings/AddCredentialModal', module)
     })
 
 add('Requires SSH - step 1', () => {
-    const createCampaignsCredential = useCallback(
-        (): Promise<CampaignsCredentialFields> =>
+    const createBatchChangesCredential = useCallback(
+        (): Promise<BatchChangesCredentialFields> =>
             Promise.resolve({
                 id: '123',
                 createdAt: new Date().toISOString(),
@@ -42,7 +42,7 @@ add('Requires SSH - step 1', () => {
                     requiresSSH={true}
                     afterCreate={noop}
                     onCancel={noop}
-                    createCampaignsCredential={createCampaignsCredential}
+                    createBatchChangesCredential={createBatchChangesCredential}
                 />
             )}
         </EnterpriseWebStory>
