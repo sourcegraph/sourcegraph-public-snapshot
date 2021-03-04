@@ -85,6 +85,38 @@ type RepoStore interface {
 	GetByName(ctx context.Context, name api.RepoName) (*types.Repo, error)
 }
 
+// historicalEnqueuer effectively enqueues jobs that generate historical data for insights. Right
+// now, it only supports search insights. It does this by adjusting the user's search query to be
+// for a specific repo and commit like `repo:<repo>@<commit>`, where `<repo>` is every repository
+// on Sourcegraph (one search per) and `<commit>` is a Git commit closest in time to the historical
+// point in time we're trying to generate data for. A lot of effort is placed into doing the work
+// slowly, linearly, and consistently over time without harming any other part of Sourcegraph
+// (including the search API, by performing searches slowly and on single repositories at a time
+// only.)
+//
+// It works roughly like this:
+//
+// * For every timeframe we want to backfill (e.g. 1 point every week for the past 52 weeks):
+//   * For every repository on Sourcegraph (a subset on Sourcegraph.com):
+//     * Consider yielding/sleeping.
+//     * Find the oldest commit in the repository.
+//       * For every unique search insight series (i.e. search query):
+//         * Consider yielding/sleeping.
+//         * If the series has data for this timeframe+repo already, nothing to do.
+//         * If the timeframe we're generating data for is before the oldest commit in the repo, record a zero value.
+//         * Else, locate the commit nearest to the point in time we're trying to get data for and
+//           enqueue a queryrunner job to search that repository commit - recording historical data
+//           for it.
+//
+// As you can no doubt see, there is much complexity and potential room for duplicative API calls
+// here (e.g. "for every timeframe we list every repository"). For this exact reason, we do two
+// things:
+//
+// 1. Cache duplicative calls to prevent performing heavy operations multiple times.
+// 2. Lift heavy operations to the layer/loop one level higher, when it is sane to do so.
+// 3. Ensure we perform work slowly, linearly, and with yielding/sleeping between any substantial
+//    work being performed.
+//
 type historicalEnqueuer struct {
 	// Required fields used for mocking in tests.
 	now                   func() time.Time
