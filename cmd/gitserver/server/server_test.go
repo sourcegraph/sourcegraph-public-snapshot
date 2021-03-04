@@ -323,6 +323,7 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_packed_refs(b *testing.B) {
 
 	// Exclude cleanup (defers)
 	b.StopTimer()
+	// NOOP
 }
 
 func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_unpacked_refs(b *testing.B) {
