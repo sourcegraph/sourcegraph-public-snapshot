@@ -487,7 +487,7 @@ func TestCloneRepo(t *testing.T) {
 	// Wait until the clone is done. Please do not use this code snippet
 	// outside of a test. We only know this works since our test only starts
 	// one clone and will have nothing else attempt to lock.
-	dst := s.dir(api.RepoName("example.com/foo/bar"))
+	dst := s.dir("example.com/foo/bar")
 	for i := 0; i < 1000; i++ {
 		_, cloning := s.locker.Status(dst)
 		if !cloning {
@@ -663,6 +663,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		testRepoCorrupter = func(_ context.Context, tmpDir GitDir) {
 			cmd("sh", "-c", fmt.Sprintf("rm %s/HEAD", tmpDir))
 		}
+		defer func() { testRepoCorrupter = nil }()
 		if _, err := s.cloneRepo(ctx, "example.com/foo/bar", nil); err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -713,11 +714,12 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		testRepoCorrupter = func(_ context.Context, tmpDir GitDir) {
 			cmd("sh", "-c", fmt.Sprintf(": > %s/HEAD", tmpDir))
 		}
+		defer func() { testRepoCorrupter = nil }()
 		if _, err := s.cloneRepo(ctx, "example.com/foo/bar", nil); err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
-		dst := s.dir(api.RepoName("example.com/foo/bar"))
+		dst := s.dir("example.com/foo/bar")
 		for i := 0; i < 1000; i++ {
 			_, cloning := s.locker.Status(dst)
 			if !cloning {
@@ -738,13 +740,12 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 
 func TestSyncRepoState(t *testing.T) {
 	db := dbtesting.GetDB(t)
-	remote := tmpDir(t)
+	remoteDir := tmpDir(t)
 	ctx := context.Background()
 
-	repo := remote
 	cmd := func(name string, arg ...string) string {
 		t.Helper()
-		return runCmd(t, repo, name, arg...)
+		return runCmd(t, remoteDir, name, arg...)
 	}
 
 	// Setup a repo with a commit so we can see if we can clone it.
@@ -757,35 +758,24 @@ func TestSyncRepoState(t *testing.T) {
 
 	reposDir := tmpDir(t)
 	repoName := api.RepoName("example.com/foo/bar")
+	hostname := "test"
 
 	s := &Server{
 		ReposDir:         reposDir,
-		GetRemoteURLFunc: staticGetRemoteURL(remote),
+		GetRemoteURLFunc: staticGetRemoteURL(remoteDir),
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
 			return &GitRepoSyncer{}, nil
 		},
-		Hostname:         "test",
+		Hostname:         hostname,
 		ctx:              ctx,
 		locker:           &RepositoryLocker{},
 		cloneLimiter:     mutablelimiter.New(1),
 		cloneableLimiter: mutablelimiter.New(1),
 	}
 
-	_, err := s.cloneRepo(ctx, repoName, nil)
+	_, err := s.cloneRepo(ctx, repoName, &cloneOptions{Block: true})
 	if err != nil {
 		t.Fatal(err)
-	}
-
-	// Wait until the clone is done. Please do not use this code snippet
-	// outside of a test. We only know this works since our test only starts
-	// one clone and will have nothing else attempt to lock.
-	dst := s.dir(repoName)
-	for i := 0; i < 1000; i++ {
-		_, cloning := s.locker.Status(dst)
-		if !cloning {
-			break
-		}
-		time.Sleep(10 * time.Millisecond)
 	}
 
 	dbRepo := &types.Repo{
@@ -806,7 +796,7 @@ func TestSyncRepoState(t *testing.T) {
 		t.Fatal("Expected an error")
 	}
 
-	s.syncRepoState(db, []string{"test"}, 10, 10)
+	s.syncRepoState(db, []string{hostname}, 10, 10)
 
 	gr, err := database.GitserverRepos(db).GetByID(ctx, dbRepo.ID)
 	if err != nil {
