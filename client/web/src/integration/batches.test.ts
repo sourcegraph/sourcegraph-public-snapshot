@@ -27,10 +27,10 @@ import {
     SharedGraphQlOperations,
 } from '../../../shared/src/graphql-operations'
 
-const campaignListNode: ListBatchChange = {
-    id: 'campaign123',
-    url: '/users/alice/batch-changes/test-campaign',
-    name: 'test-campaign',
+const batchChangeListNode: ListBatchChange = {
+    id: 'batch123',
+    url: '/users/alice/batch-changes/test-batch-change',
+    name: 'test-batch-change',
     createdAt: subDays(new Date(), 5).toISOString(),
     changesetsStats: { closed: 4, merged: 10, open: 5 },
     closedAt: null,
@@ -216,7 +216,7 @@ const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => Batc
 
 function mockCommonGraphQLResponses(
     entityType: 'user' | 'org',
-    campaignOverrides?: Partial<NonNullable<BatchChangeByNamespaceResult['batchChange']>>
+    batchesOverrides?: Partial<NonNullable<BatchChangeByNamespaceResult['batchChange']>>
 ): Partial<WebGraphQlOperations & SharedGraphQlOperations> {
     const namespaceURL = entityType === 'user' ? '/users/alice' : '/organizations/test-org'
     return {
@@ -257,7 +257,7 @@ function mockCommonGraphQLResponses(
         BatchChangeByNamespace: () => ({
             batchChange: {
                 __typename: 'BatchChange',
-                id: 'campaign123',
+                id: 'change123',
                 changesetsStats: { closed: 2, deleted: 1, merged: 3, open: 8, total: 19, unpublished: 3, draft: 2 },
                 closedAt: null,
                 createdAt: subDays(new Date(), 5).toISOString(),
@@ -267,13 +267,13 @@ function mockCommonGraphQLResponses(
                     url: '/users/alice',
                     username: 'alice',
                 },
-                name: 'test-campaign',
+                name: 'test-batch-change',
                 namespace: {
                     namespaceName: entityType === 'user' ? 'alice' : 'test-org',
                     url: namespaceURL,
                 },
                 diffStat: { added: 1000, changed: 2000, deleted: 1000 },
-                url: `${namespaceURL}/batch-changes/test-campaign`,
+                url: `${namespaceURL}/batch-changes/test-batch-change`,
                 viewerCanAdminister: true,
                 lastAppliedAt: subDays(new Date(), 5).toISOString(),
                 lastApplier: {
@@ -281,10 +281,10 @@ function mockCommonGraphQLResponses(
                     username: 'bob',
                 },
                 currentSpec: {
-                    originalInput: 'name: awesome-campaign\ndescription: somesttring',
+                    originalInput: 'name: awesome-batch-change\ndescription: somesttring',
                     supersedingBatchSpec: null,
                 },
-                ...campaignOverrides,
+                ...batchesOverrides,
             },
         }),
         BatchChangesByNamespace: () =>
@@ -293,7 +293,7 @@ function mockCommonGraphQLResponses(
                       node: {
                           __typename: 'User',
                           batchChanges: {
-                              nodes: [campaignListNode],
+                              nodes: [batchChangeListNode],
                               pageInfo: {
                                   endCursor: null,
                                   hasNextPage: false,
@@ -311,8 +311,8 @@ function mockCommonGraphQLResponses(
                           batchChanges: {
                               nodes: [
                                   {
-                                      ...campaignListNode,
-                                      url: '/organizations/test-org/batch-changes/test-campaign',
+                                      ...batchChangeListNode,
+                                      url: '/organizations/test-org/batch-changes/test-batch-change',
                                       namespace: {
                                           namespaceName: 'test-org',
                                           url: '/organizations/test-org',
@@ -333,7 +333,7 @@ function mockCommonGraphQLResponses(
     }
 }
 
-describe('Campaigns', () => {
+describe('Batches', () => {
     let driver: Driver
     before(async () => {
         driver = await createDriverForTest()
@@ -350,20 +350,20 @@ describe('Campaigns', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
-    const campaignLicenseGraphQlResults = {
+    const batchChangeLicenseGraphQlResults = {
         AreBatchChangesLicensed: () => ({
             enterpriseLicenseHasFeature: true,
         }),
     }
 
-    describe('Campaigns list', () => {
-        it('lists global campaigns', async () => {
+    describe('Batch changes list', () => {
+        it('lists global batch changes', async () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
-                ...campaignLicenseGraphQlResults,
+                ...batchChangeLicenseGraphQlResults,
                 BatchChanges: () => ({
                     batchChanges: {
-                        nodes: [campaignListNode],
+                        nodes: [batchChangeListNode],
                         pageInfo: {
                             endCursor: null,
                             hasNextPage: false,
@@ -387,14 +387,14 @@ describe('Campaigns', () => {
             )
             assert.strictEqual(
                 await driver.page.evaluate(() => document.querySelector<HTMLAnchorElement>('.test-batches-link')?.href),
-                testContext.driver.sourcegraphBaseUrl + '/users/alice/batch-changes/test-campaign'
+                testContext.driver.sourcegraphBaseUrl + '/users/alice/batch-changes/test-batch-change'
             )
         })
 
-        it('lists user campaigns', async () => {
+        it('lists user batch changes', async () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
-                ...campaignLicenseGraphQlResults,
+                ...batchChangeLicenseGraphQlResults,
                 ...mockCommonGraphQLResponses('user'),
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/users/alice/batch-changes')
@@ -403,15 +403,15 @@ describe('Campaigns', () => {
             await driver.page.waitForSelector('.test-batches-link')
             assert.strictEqual(
                 await driver.page.evaluate(() => document.querySelector<HTMLAnchorElement>('.test-batches-link')?.href),
-                testContext.driver.sourcegraphBaseUrl + '/users/alice/batch-changes/test-campaign'
+                testContext.driver.sourcegraphBaseUrl + '/users/alice/batch-changes/test-batch-change'
             )
             assert.strictEqual(await driver.page.$('.test-batches-namespace-link'), null)
         })
 
-        it('lists org campaigns', async () => {
+        it('lists org batch changes', async () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
-                ...campaignLicenseGraphQlResults,
+                ...batchChangeLicenseGraphQlResults,
                 ...mockCommonGraphQLResponses('org'),
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/batch-changes')
@@ -421,18 +421,18 @@ describe('Campaigns', () => {
             await driver.page.waitForSelector('.test-batches-link')
             assert.strictEqual(
                 await driver.page.evaluate(() => document.querySelector<HTMLAnchorElement>('.test-batches-link')?.href),
-                testContext.driver.sourcegraphBaseUrl + '/organizations/test-org/batch-changes/test-campaign'
+                testContext.driver.sourcegraphBaseUrl + '/organizations/test-org/batch-changes/test-batch-change'
             )
             assert.strictEqual(await driver.page.$('.test-batches-namespace-link'), null)
         })
     })
 
-    describe('Campaign details', () => {
+    describe('Batch changes details', () => {
         for (const entityType of ['user', 'org'] as const) {
-            it(`displays a single campaign for ${entityType}`, async () => {
+            it(`displays a single batch change for ${entityType}`, async () => {
                 testContext.overrideGraphQL({
                     ...commonWebGraphQlResults,
-                    ...campaignLicenseGraphQlResults,
+                    ...batchChangeLicenseGraphQlResults,
                     ...mockCommonGraphQLResponses(entityType),
                     BatchChangeChangesets,
                     ChangesetCountsOverTime,
@@ -440,7 +440,7 @@ describe('Campaigns', () => {
                 })
                 const namespaceURL = entityType === 'user' ? '/users/alice' : '/organizations/test-org'
 
-                await driver.page.goto(driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-campaign')
+                await driver.page.goto(driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change')
                 // View overview page.
                 await driver.page.waitForSelector('.test-batch-change-details-page')
 
@@ -461,13 +461,13 @@ describe('Campaigns', () => {
                 await Promise.all([driver.page.waitForNavigation(), driver.page.click('.test-batches-close-btn')])
                 assert.strictEqual(
                     await driver.page.evaluate(() => window.location.href),
-                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-campaign/close'
+                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change/close'
                 )
                 await driver.page.waitForSelector('.test-batch-change-close-page')
-                // Change overrides to make campaign appear closed.
+                // Change overrides to make batch change appear closed.
                 testContext.overrideGraphQL({
                     ...commonWebGraphQlResults,
-                    ...campaignLicenseGraphQlResults,
+                    ...batchChangeLicenseGraphQlResults,
                     ...mockCommonGraphQLResponses(entityType, { closedAt: subDays(new Date(), 1).toISOString() }),
                     BatchChangeChangesets,
                     ChangesetCountsOverTime,
@@ -484,10 +484,10 @@ describe('Campaigns', () => {
                 await driver.page.waitForSelector('.test-batch-change-details-page')
                 assert.strictEqual(
                     await driver.page.evaluate(() => window.location.href),
-                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-campaign'
+                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change'
                 )
 
-                // Delete the closed campaign.
+                // Delete the closed batch change.
                 await Promise.all([
                     driver.page.waitForNavigation(),
                     driver.acceptNextDialog(),
@@ -500,24 +500,25 @@ describe('Campaigns', () => {
 
                 // Test read tab from location.
                 await driver.page.goto(
-                    driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-campaign?tab=chart'
+                    driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change?tab=chart'
                 )
                 await driver.page.waitForSelector('.test-batches-chart')
                 await driver.page.goto(
-                    driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-campaign?tab=spec'
+                    driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change?tab=spec'
                 )
                 await driver.page.waitForSelector('.test-batches-spec')
             })
         }
     })
 
-    describe('Campaign spec preview', () => {
+    describe('Batch spec preview', () => {
         for (const entityType of ['user', 'org'] as const) {
-            it(`displays a preview of a campaign spec in ${entityType} namespace`, async () => {
+            it(`displays a preview of a batch spec in ${entityType} namespace`, async () => {
                 const namespaceURL = entityType === 'user' ? '/users/alice' : '/organizations/test-org'
                 testContext.overrideGraphQL({
                     ...commonWebGraphQlResults,
                     ...mockCommonGraphQLResponses(entityType),
+                    BatchChangeChangesets,
                     BatchSpecByID: () => ({
                         node: {
                             __typename: 'BatchSpec',
@@ -530,8 +531,8 @@ describe('Campaigns', () => {
                                 avatarURL: null,
                             },
                             description: {
-                                name: 'test-campaign',
-                                description: '### Very great campaign',
+                                name: 'test-batch-change',
+                                description: '### Very great batch change',
                             },
                             diffStat: {
                                 added: 1000,
@@ -655,7 +656,7 @@ describe('Campaigns', () => {
                     CreateBatchChange: () => ({
                         createBatchChange: {
                             id: 'change123',
-                            url: namespaceURL + '/batch-changes/test-change',
+                            url: namespaceURL + '/batch-changes/test-batch-change',
                         },
                     }),
                 })
@@ -669,24 +670,24 @@ describe('Campaigns', () => {
                 // Expect one diff to be rendered.
                 await driver.page.waitForSelector('.test-file-diff-node')
 
-                // Apply campaign.
+                // Apply batch change.
                 await Promise.all([
                     driver.page.waitForNavigation(),
                     driver.acceptNextDialog(),
                     driver.page.click('.test-batches-confirm-apply-btn'),
                 ])
-                // Expect to be back at campaign overview page.
+                // Expect to be back at batch change overview page.
                 assert.strictEqual(
                     await driver.page.evaluate(() => window.location.href),
-                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-campaign'
+                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change'
                 )
             })
         }
     })
 
-    describe('Campaign close preview', () => {
+    describe('Batch change close preview', () => {
         for (const entityType of ['user', 'org'] as const) {
-            it(`displays a preview for closing a campaign in ${entityType} namespace`, async () => {
+            it(`displays a preview for closing a batch change in ${entityType} namespace`, async () => {
                 testContext.overrideGraphQL({
                     ...commonWebGraphQlResults,
                     ...mockCommonGraphQLResponses(entityType),
@@ -694,13 +695,15 @@ describe('Campaigns', () => {
                     ExternalChangesetFileDiffs,
                     CloseBatchChange: () => ({
                         closeBatchChange: {
-                            id: 'campaign123',
+                            id: 'batch123',
                         },
                     }),
                 })
                 const namespaceURL = entityType === 'user' ? '/users/alice' : '/organizations/test-org'
 
-                await driver.page.goto(driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-campaign/close')
+                await driver.page.goto(
+                    driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change/close'
+                )
                 // View overview page.
                 await driver.page.waitForSelector('.test-batch-change-close-page')
 
@@ -714,21 +717,21 @@ describe('Campaigns', () => {
                 // Expect one diff to be rendered.
                 await driver.page.waitForSelector('.test-file-diff-node')
 
-                // Close campaign.
+                // Close batch change.
                 await Promise.all([
                     driver.page.waitForNavigation(),
                     driver.page.click('.test-batches-confirm-close-btn'),
                 ])
-                // Expect to be back at campaign overview page.
+                // Expect to be back at the batch change overview page.
                 assert.strictEqual(
                     await driver.page.evaluate(() => window.location.href),
-                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-campaign'
+                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change'
                 )
             })
         }
     })
 
-    describe('Campaigns code host token', () => {
+    describe('Code host token', () => {
         it('allows to add a token for a code host', async () => {
             let isCreated = false
             testContext.overrideGraphQL({

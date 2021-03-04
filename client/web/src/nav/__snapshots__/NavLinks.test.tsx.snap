@@ -19,8 +19,8 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
   >
     <a
       class="d-flex align-items-center nav-link btn btn-link text-decoration-none"
-      data-testid="campaigns"
-      href="/campaigns"
+      data-testid="batch-changes"
+      href="/batch-changes"
     >
       <svg
         class="icon-inline mr-1"
@@ -52,7 +52,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
       <span
         class="inline-block"
       >
-        Campaigns
+        Batch changes
       </span>
     </a>
   </li>
@@ -105,8 +105,8 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
         >
           <a
             class="d-flex align-items-center nav-link btn btn-link text-decoration-none"
-            data-testid="campaigns"
-            href="/campaigns"
+            data-testid="batch-changes"
+            href="/batch-changes"
           >
             <svg
               class="icon-inline mr-1"
@@ -138,7 +138,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
             <span
               class="inline-block"
             >
-              Campaigns
+              Batch changes
             </span>
           </a>
         </button>
@@ -737,8 +737,8 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
   >
     <a
       class="d-flex align-items-center nav-link btn btn-link text-decoration-none"
-      data-testid="campaigns"
-      href="/campaigns"
+      data-testid="batch-changes"
+      href="/batch-changes"
     >
       <svg
         class="icon-inline mr-1"
@@ -770,7 +770,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
       <span
         class="inline-block"
       >
-        Campaigns
+        Batch changes
       </span>
     </a>
   </li>
@@ -823,8 +823,8 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
         >
           <a
             class="d-flex align-items-center nav-link btn btn-link text-decoration-none"
-            data-testid="campaigns"
-            href="/campaigns"
+            data-testid="batch-changes"
+            href="/batch-changes"
           >
             <svg
               class="icon-inline mr-1"
@@ -856,7 +856,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
             <span
               class="inline-block"
             >
-              Campaigns
+              Batch changes
             </span>
           </a>
         </button>
@@ -1465,8 +1465,8 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
   >
     <a
       class="d-flex align-items-center nav-link btn btn-link text-decoration-none"
-      data-testid="campaigns"
-      href="/campaigns"
+      data-testid="batch-changes"
+      href="/batch-changes"
     >
       <svg
         class="icon-inline mr-1"
@@ -1498,7 +1498,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
       <span
         class="inline-block"
       >
-        Campaigns
+        Batch changes
       </span>
     </a>
   </li>
@@ -1551,8 +1551,8 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
         >
           <a
             class="d-flex align-items-center nav-link btn btn-link text-decoration-none"
-            data-testid="campaigns"
-            href="/campaigns"
+            data-testid="batch-changes"
+            href="/batch-changes"
           >
             <svg
               class="icon-inline mr-1"
@@ -1584,7 +1584,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
             <span
               class="inline-block"
             >
-              Campaigns
+              Batch changes
             </span>
           </a>
         </button>
@@ -2164,8 +2164,8 @@ exports[`NavLinks authed self-hosted /search 1`] = `
   >
     <a
       class="d-flex align-items-center nav-link btn btn-link text-decoration-none"
-      data-testid="campaigns"
-      href="/campaigns"
+      data-testid="batch-changes"
+      href="/batch-changes"
     >
       <svg
         class="icon-inline mr-1"
@@ -2197,7 +2197,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
       <span
         class="inline-block"
       >
-        Campaigns
+        Batch changes
       </span>
     </a>
   </li>
@@ -2250,8 +2250,8 @@ exports[`NavLinks authed self-hosted /search 1`] = `
         >
           <a
             class="d-flex align-items-center nav-link btn btn-link text-decoration-none"
-            data-testid="campaigns"
-            href="/campaigns"
+            data-testid="batch-changes"
+            href="/batch-changes"
           >
             <svg
               class="icon-inline mr-1"
@@ -2283,7 +2283,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
             <span
               class="inline-block"
             >
-              Campaigns
+              Batch changes
             </span>
           </a>
         </button>
@@ -2873,8 +2873,8 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
   >
     <a
       class="d-flex align-items-center nav-link btn btn-link text-decoration-none"
-      data-testid="campaigns"
-      href="/campaigns"
+      data-testid="batch-changes"
+      href="/batch-changes"
     >
       <svg
         class="icon-inline mr-1"
@@ -2906,7 +2906,7 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
       <span
         class="inline-block"
       >
-        Campaigns
+        Batch changes
       </span>
     </a>
   </li>
@@ -2959,8 +2959,8 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
         >
           <a
             class="d-flex align-items-center nav-link btn btn-link text-decoration-none"
-            data-testid="campaigns"
-            href="/campaigns"
+            data-testid="batch-changes"
+            href="/batch-changes"
           >
             <svg
               class="icon-inline mr-1"
@@ -2992,7 +2992,7 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
             <span
               class="inline-block"
             >
-              Campaigns
+              Batch changes
             </span>
           </a>
         </button>
@@ -3149,8 +3149,8 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
   >
     <a
       class="d-flex align-items-center nav-link btn btn-link text-decoration-none"
-      data-testid="campaigns"
-      href="/campaigns"
+      data-testid="batch-changes"
+      href="/batch-changes"
     >
       <svg
         class="icon-inline mr-1"
@@ -3182,7 +3182,7 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
       <span
         class="inline-block"
       >
-        Campaigns
+        Batch changes
       </span>
     </a>
   </li>
@@ -3235,8 +3235,8 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
         >
           <a
             class="d-flex align-items-center nav-link btn btn-link text-decoration-none"
-            data-testid="campaigns"
-            href="/campaigns"
+            data-testid="batch-changes"
+            href="/batch-changes"
           >
             <svg
               class="icon-inline mr-1"
@@ -3268,7 +3268,7 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
             <span
               class="inline-block"
             >
-              Campaigns
+              Batch changes
             </span>
           </a>
         </button>
@@ -3435,8 +3435,8 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
   >
     <a
       class="d-flex align-items-center nav-link btn btn-link text-decoration-none"
-      data-testid="campaigns"
-      href="/campaigns"
+      data-testid="batch-changes"
+      href="/batch-changes"
     >
       <svg
         class="icon-inline mr-1"
@@ -3468,7 +3468,7 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
       <span
         class="inline-block"
       >
-        Campaigns
+        Batch changes
       </span>
     </a>
   </li>
@@ -3521,8 +3521,8 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
         >
           <a
             class="d-flex align-items-center nav-link btn btn-link text-decoration-none"
-            data-testid="campaigns"
-            href="/campaigns"
+            data-testid="batch-changes"
+            href="/batch-changes"
           >
             <svg
               class="icon-inline mr-1"
@@ -3554,7 +3554,7 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
             <span
               class="inline-block"
             >
-              Campaigns
+              Batch changes
             </span>
           </a>
         </button>
@@ -3668,8 +3668,8 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
   >
     <a
       class="d-flex align-items-center nav-link btn btn-link text-decoration-none"
-      data-testid="campaigns"
-      href="/campaigns"
+      data-testid="batch-changes"
+      href="/batch-changes"
     >
       <svg
         class="icon-inline mr-1"
@@ -3701,7 +3701,7 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
       <span
         class="inline-block"
       >
-        Campaigns
+        Batch changes
       </span>
     </a>
   </li>
@@ -3754,8 +3754,8 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
         >
           <a
             class="d-flex align-items-center nav-link btn btn-link text-decoration-none"
-            data-testid="campaigns"
-            href="/campaigns"
+            data-testid="batch-changes"
+            href="/batch-changes"
           >
             <svg
               class="icon-inline mr-1"
@@ -3787,7 +3787,7 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
             <span
               class="inline-block"
             >
-              Campaigns
+              Batch changes
             </span>
           </a>
         </button>

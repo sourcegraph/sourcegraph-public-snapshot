@@ -22,7 +22,7 @@ export const enterpriseUserSettingsSideBarItems: UserSettingsSidebarItems = {
             to: '/batch-changes',
             label: 'Batch changes',
             condition: ({ isSourcegraphDotCom, user: { viewerCanAdminister } }) =>
-                !isSourcegraphDotCom && window.context.campaignsEnabled && viewerCanAdminister,
+                !isSourcegraphDotCom && window.context.batchChangesEnabled && viewerCanAdminister,
         },
         ...userSettingsSideBarItems.account.slice(2),
         {

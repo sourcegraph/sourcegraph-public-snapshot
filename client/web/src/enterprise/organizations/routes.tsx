@@ -21,6 +21,6 @@ export const enterpriseOrganizationAreaRoutes: readonly OrgAreaRoute[] = [
     {
         path: '/batch-changes',
         render: props => <NamespaceBatchChangesArea {...props} namespaceID={props.org.id} />,
-        condition: props => !props.isSourcegraphDotCom && window.context.campaignsEnabled,
+        condition: props => !props.isSourcegraphDotCom && window.context.batchChangesEnabled,
     },
 ]

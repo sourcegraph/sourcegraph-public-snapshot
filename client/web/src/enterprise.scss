@@ -12,9 +12,9 @@
 @import './enterprise/campaigns/preview/list/VisibleChangesetApplyPreviewNode';
 @import './enterprise/campaigns/preview/CreateUpdateBatchChangeAlert';
 @import './enterprise/campaigns/preview/BatchChangePreviewStatsBar';
-@import './enterprise/campaigns/close/CampaignCloseChangesetsList';
-@import './enterprise/campaigns/close/CampaignCloseChangesetsListEmptyElement';
-@import './enterprise/campaigns/close/CampaignCloseHeader';
+@import './enterprise/campaigns/close/BatchChangeCloseChangesetsList';
+@import './enterprise/campaigns/close/CloseChangesetsListEmptyElement';
+@import './enterprise/campaigns/close/BatchChangeCloseHeader';
 @import './enterprise/campaigns/close/ChangesetCloseAction';
 @import './enterprise/campaigns/close/ChangesetCloseNode';
 @import './enterprise/campaigns/close/HiddenExternalChangesetCloseNode';

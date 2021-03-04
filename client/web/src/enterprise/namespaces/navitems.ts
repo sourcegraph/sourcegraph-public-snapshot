@@ -7,6 +7,6 @@ export const enterpriseNamespaceAreaHeaderNavItems: readonly NamespaceAreaNavIte
         label: 'Batch changes',
         icon: BatchChangesIconNamespaceNav,
         condition: ({ isSourcegraphDotCom }: { isSourcegraphDotCom: boolean }): boolean =>
-            !isSourcegraphDotCom && window.context.campaignsEnabled,
+            !isSourcegraphDotCom && window.context.batchChangesEnabled,
     },
 ]

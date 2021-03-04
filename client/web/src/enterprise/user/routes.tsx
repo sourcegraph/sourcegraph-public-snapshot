@@ -33,6 +33,6 @@ export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
     {
         path: '/batch-changes',
         render: props => <NamespaceBatchChangesArea {...props} namespaceID={props.user.id} />,
-        condition: props => !props.isSourcegraphDotCom && window.context.campaignsEnabled,
+        condition: props => !props.isSourcegraphDotCom && window.context.batchChangesEnabled,
     },
 ]

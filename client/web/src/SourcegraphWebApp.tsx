@@ -101,7 +101,7 @@ export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
     routes: readonly LayoutRouteProps<any>[]
-    showCampaigns: boolean
+    showBatchChanges: boolean
 }
 
 interface SourcegraphWebAppState extends SettingsCascadeProps {
@@ -451,7 +451,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     authenticatedUser={authenticatedUser}
                                     viewerSubject={this.state.viewerSubject}
                                     settingsCascade={this.state.settingsCascade}
-                                    showCampaigns={this.props.showCampaigns}
+                                    showBatchChanges={this.props.showBatchChanges}
                                     // Theme
                                     isLightTheme={this.isLightTheme()}
                                     themePreference={this.state.themePreference}

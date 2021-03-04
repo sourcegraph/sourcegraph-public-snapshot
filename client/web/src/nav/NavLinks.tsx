@@ -44,7 +44,7 @@ interface Props
     history: H.History
     authenticatedUser: AuthenticatedUser | null
     showDotComMarketing: boolean
-    showCampaigns: boolean
+    showBatchChanges: boolean
     isSourcegraphDotCom: boolean
     minimalNavLinks?: boolean
     routes: readonly LayoutRouteProps<{}>[]
@@ -84,7 +84,7 @@ const getAnonymousUserNavItems = (props: Props): JSX.Element[] => {
 }
 
 const getMinimizableNavItems = (props: Props): JSX.Element[] => {
-    const { showCampaigns, settingsCascade } = props
+    const { showBatchChanges, settingsCascade } = props
 
     const settings = !isErrorLike(settingsCascade.final) ? settingsCascade.final : null
     const { codeInsights, codeMonitoring } = settings?.experimentalFeatures || {}
@@ -92,7 +92,7 @@ const getMinimizableNavItems = (props: Props): JSX.Element[] => {
     return getReactElements([
         codeInsights && <InsightsNavItem />,
         codeMonitoring && <CodeMonitoringNavItem />,
-        showCampaigns && <BatchChangesNavItem />,
+        showBatchChanges && <BatchChangesNavItem />,
     ])
 }
 
