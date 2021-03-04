@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
-export const CampaignStateBadge: React.FunctionComponent<{ isClosed: boolean; className?: string }> = ({
+export const BatchChangeStateBadge: React.FunctionComponent<{ isClosed: boolean; className?: string }> = ({
     isClosed,
     className,
 }) => {

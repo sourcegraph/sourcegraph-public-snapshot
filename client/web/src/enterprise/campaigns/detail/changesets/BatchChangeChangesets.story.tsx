@@ -1,7 +1,7 @@
 import { storiesOf } from '@storybook/react'
 import { boolean } from '@storybook/addon-knobs'
 import React from 'react'
-import { CampaignChangesets } from './CampaignChangesets'
+import { BatchChangeChangesets } from './BatchChangeChangesets'
 import { addHours } from 'date-fns'
 import { of } from 'rxjs'
 import {
@@ -14,7 +14,7 @@ import {
 import { queryExternalChangesetWithFileDiffs } from '../backend'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
-const { add } = storiesOf('web/campaigns/CampaignChangesets', module).addDecorator(story => (
+const { add } = storiesOf('web/batches/BatchChangeChangesets', module).addDecorator(story => (
     <div className="p-3 container web-content">{story()}</div>
 ))
 
@@ -102,13 +102,13 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
 add('List of changesets', () => (
     <EnterpriseWebStory>
         {props => (
-            <CampaignChangesets
+            <BatchChangeChangesets
                 {...props}
                 queryChangesets={queryChangesets}
                 queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
                 extensionsController={undefined as any}
                 platformContext={undefined as any}
-                campaignID="campaignid"
+                batchChangeID="batchid"
                 viewerCanAdminister={boolean('viewerCanAdminister', true)}
             />
         )}
@@ -118,13 +118,13 @@ add('List of changesets', () => (
 add('List of expanded changesets', () => (
     <EnterpriseWebStory>
         {props => (
-            <CampaignChangesets
+            <BatchChangeChangesets
                 {...props}
                 queryChangesets={queryChangesets}
                 queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
                 extensionsController={undefined as any}
                 platformContext={undefined as any}
-                campaignID="campaignid"
+                batchChangeID="batchid"
                 viewerCanAdminister={boolean('viewerCanAdminister', true)}
                 expandByDefault={true}
             />

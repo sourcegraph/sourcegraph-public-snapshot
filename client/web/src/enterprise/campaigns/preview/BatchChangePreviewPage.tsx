@@ -16,7 +16,7 @@ import { BatchSpecInfoByline } from './BatchSpecInfoByline'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { AuthenticatedUser } from '../../../auth'
 import { MissingCredentialsAlert } from './MissingCredentialsAlert'
-import { SupersedingCampaignSpecAlert } from '../detail/SupersedingCampaignSpecAlert'
+import { SupersedingBatchSpecAlert } from '../detail/SupersedingBatchSpecAlert'
 import { queryChangesetSpecFileDiffs, queryChangesetApplyPreview } from './list/backend'
 import { BatchChangePreviewStatsBar } from './BatchChangePreviewStatsBar'
 import { PageHeader } from '../../../components/PageHeader'
@@ -97,7 +97,7 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
                 authenticatedUser={authenticatedUser}
                 viewerBatchChangesCodeHosts={spec.viewerBatchChangesCodeHosts}
             />
-            <SupersedingCampaignSpecAlert spec={spec.supersedingBatchSpec} />
+            <SupersedingBatchSpecAlert spec={spec.supersedingBatchSpec} />
             <BatchChangePreviewStatsBar batchSpec={spec} />
             <CreateUpdateBatchChangeAlert
                 history={history}

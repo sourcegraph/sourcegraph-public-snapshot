@@ -5,7 +5,7 @@ import { ChangesetReviewState } from '../../../../graphql-operations'
 import { capitalize } from 'lodash'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
-const { add } = storiesOf('web/campaigns/ChangesetReviewStatusCell', module).addDecorator(story => (
+const { add } = storiesOf('web/batches/ChangesetReviewStatusCell', module).addDecorator(story => (
     <div className="p-3 container web-content">{story()}</div>
 ))
 

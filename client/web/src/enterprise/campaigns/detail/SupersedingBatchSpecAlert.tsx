@@ -6,11 +6,11 @@ import { SupersedingBatchSpecFields } from '../../../graphql-operations'
 import { parseISO } from 'date-fns'
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
 
-export interface SupersedingCampaignSpecAlertProps {
+export interface SupersedingBatchSpecAlertProps {
     spec: SupersedingBatchSpecFields | null
 }
 
-export const SupersedingCampaignSpecAlert: React.FunctionComponent<SupersedingCampaignSpecAlertProps> = ({ spec }) => {
+export const SupersedingBatchSpecAlert: React.FunctionComponent<SupersedingBatchSpecAlertProps> = ({ spec }) => {
     if (!spec) {
         return <></>
     }
@@ -26,7 +26,7 @@ export const SupersedingCampaignSpecAlert: React.FunctionComponent<SupersedingCa
                     <CreationIcon className="icon icon-inline mr-2" />
                 </div>
                 <div className="flex-grow-1">
-                    A <Link to={applyURL}>modified campaign spec</Link> was uploaded but not applied{' '}
+                    A <Link to={applyURL}>modified batch spec</Link> was uploaded but not applied{' '}
                     <Timestamp date={createdAt} />.
                 </div>
             </div>

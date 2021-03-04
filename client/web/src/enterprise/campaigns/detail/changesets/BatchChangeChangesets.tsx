@@ -23,13 +23,13 @@ import { property, isDefined } from '../../../../../../shared/src/util/types'
 import { useObservable } from '../../../../../../shared/src/util/useObservable'
 import { ChangesetFields, Scalars } from '../../../../graphql-operations'
 import { getLSPTextDocumentPositionParameters } from '../../utils'
-import { CampaignChangesetsHeader } from './CampaignChangesetsHeader'
+import { BatchChangeChangesetsHeader } from './BatchChangeChangesetsHeader'
 import { ChangesetFilters, ChangesetFilterRow } from './ChangesetFilterRow'
 import { EmptyChangesetListElement } from './EmptyChangesetListElement'
 import { EmptyChangesetSearchElement } from './EmptyChangesetSearchElement'
 
 interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
-    campaignID: Scalars['ID']
+    batchChangeID: Scalars['ID']
     viewerCanAdminister: boolean
     history: H.History
     location: H.Location
@@ -45,10 +45,10 @@ interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, Extens
 }
 
 /**
- * A list of a campaign's changesets.
+ * A list of a batch change's changesets.
  */
-export const CampaignChangesets: React.FunctionComponent<Props> = ({
-    campaignID,
+export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
+    batchChangeID,
     viewerCanAdminister,
     history,
     location,
@@ -75,12 +75,12 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                 checkState: changesetFilters.checkState,
                 first: args.first ?? null,
                 after: args.after ?? null,
-                batchChange: campaignID,
+                batchChange: batchChangeID,
                 onlyPublishedByThisBatchChange: null,
                 search: changesetFilters.search,
             }).pipe(repeatWhen(notifier => notifier.pipe(delay(5000)))),
         [
-            campaignID,
+            batchChangeID,
             changesetFilters.state,
             changesetFilters.reviewState,
             changesetFilters.checkState,
@@ -170,8 +170,8 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                     location={location}
                     useURLQuery={true}
                     listComponent="div"
-                    listClassName="campaign-changesets__grid mb-3"
-                    headComponent={CampaignChangesetsHeader}
+                    listClassName="batch-change-changesets__grid mb-3"
+                    headComponent={BatchChangeChangesetsHeader}
                     // Only show the empty element, if no filters are selected.
                     emptyElement={
                         filtersSelected(changesetFilters) ? (

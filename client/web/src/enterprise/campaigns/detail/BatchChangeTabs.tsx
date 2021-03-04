@@ -13,14 +13,18 @@ import {
 import classNames from 'classnames'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import ChartLineVariantIcon from 'mdi-react/ChartLineVariantIcon'
-import { CampaignBurndownChart } from './BurndownChart'
-import { CampaignChangesets } from './changesets/CampaignChangesets'
+import { BatchChangeBurndownChart } from './BatchChangeBurndownChart'
+import { BatchChangeChangesets } from './changesets/BatchChangeChangesets'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
-import { CampaignSpecTab } from './CampaignSpecTab'
+import { BatchSpecTab } from './BatchSpecTab'
 
 type SelectedTab = 'changesets' | 'chart' | 'spec'
 
-export interface CampaignTabsProps extends ExtensionsControllerProps, ThemeProps, PlatformContextProps, TelemetryProps {
+export interface BatchChangeTabsProps
+    extends ExtensionsControllerProps,
+        ThemeProps,
+        PlatformContextProps,
+        TelemetryProps {
     batchChange: BatchChangeFields
     history: H.History
     location: H.Location
@@ -32,14 +36,14 @@ export interface CampaignTabsProps extends ExtensionsControllerProps, ThemeProps
     queryChangesetCountsOverTime?: typeof _queryChangesetCountsOverTime
 }
 
-export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
+export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
     extensionsController,
     history,
     isLightTheme,
     location,
     platformContext,
     telemetryService,
-    batchChange: campaign,
+    batchChange,
     queryChangesets,
     queryChangesetCountsOverTime,
     queryExternalChangesetWithFileDiffs,
@@ -103,7 +107,7 @@ export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
                             <SourceBranchIcon className="icon-inline text-muted mr-1" /> Changesets
                         </a>
                     </li>
-                    <li className="nav-item test-campaigns-chart-tab">
+                    <li className="nav-item test-batches-chart-tab">
                         <a
                             href=""
                             onClick={onSelectChart}
@@ -112,7 +116,7 @@ export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
                             <ChartLineVariantIcon className="icon-inline text-muted mr-1" /> Burndown chart
                         </a>
                     </li>
-                    <li className="nav-item test-campaigns-spec-tab">
+                    <li className="nav-item test-batches-spec-tab">
                         <a
                             href=""
                             onClick={onSelectSpec}
@@ -124,16 +128,16 @@ export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
                 </ul>
             </div>
             {selectedTab === 'chart' && (
-                <CampaignBurndownChart
-                    campaignID={campaign.id}
+                <BatchChangeBurndownChart
+                    batchChangeID={batchChange.id}
                     queryChangesetCountsOverTime={queryChangesetCountsOverTime}
                     history={history}
                 />
             )}
             {selectedTab === 'changesets' && (
-                <CampaignChangesets
-                    campaignID={campaign.id}
-                    viewerCanAdminister={campaign.viewerCanAdminister}
+                <BatchChangeChangesets
+                    batchChangeID={batchChange.id}
+                    viewerCanAdminister={batchChange.viewerCanAdminister}
                     history={history}
                     location={location}
                     isLightTheme={isLightTheme}
@@ -145,7 +149,7 @@ export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
                 />
             )}
             {selectedTab === 'spec' && (
-                <CampaignSpecTab campaign={campaign} originalInput={campaign.currentSpec.originalInput} />
+                <BatchSpecTab batchChange={batchChange} originalInput={batchChange.currentSpec.originalInput} />
             )}
         </>
     )

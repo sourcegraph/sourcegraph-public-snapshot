@@ -11,7 +11,7 @@ import { lazyComponent } from '../../../util/lazyComponent'
 import { BatchChangeListPageProps, NamespaceBatchChangeListPageProps } from '../list/BatchChangeListPage'
 import { BatchChangePreviewPageProps } from '../preview/BatchChangePreviewPage'
 import { CreateCampaignPageProps } from '../create/CreateCampaignPage'
-import { CampaignDetailsPageProps } from '../detail/CampaignDetailsPage'
+import { BatchChangeDetailsPageProps } from '../detail/BatchChangeDetailsPage'
 import { CampaignClosePageProps } from '../close/CampaignClosePage'
 import { BatchChangesDotComPageProps } from './marketing/BatchChangesDotComPage'
 import { Page } from '../../../components/Page'
@@ -32,9 +32,9 @@ const CreateCampaignPage = lazyComponent<CreateCampaignPageProps, 'CreateCampaig
     () => import('../create/CreateCampaignPage'),
     'CreateCampaignPage'
 )
-const CampaignDetailsPage = lazyComponent<CampaignDetailsPageProps, 'CampaignDetailsPage'>(
-    () => import('../detail/CampaignDetailsPage'),
-    'CampaignDetailsPage'
+const BatchChangeDetailsPage = lazyComponent<BatchChangeDetailsPageProps, 'BatchChangeDetailsPage'>(
+    () => import('../detail/BatchChangeDetailsPage'),
+    'BatchChangeDetailsPage'
 )
 const CampaignClosePage = lazyComponent<CampaignClosePageProps, 'CampaignClosePage'>(
     () => import('../close/CampaignClosePage'),
@@ -119,7 +119,7 @@ export const NamespaceBatchChangesArea = withAuthenticatedUser<
             <Route
                 path={`${match.url}/:batchChangeName`}
                 render={({ match, ...props }: RouteComponentProps<{ batchChangeName: string }>) => (
-                    <CampaignDetailsPage
+                    <BatchChangeDetailsPage
                         {...outerProps}
                         {...props}
                         namespaceID={namespaceID}

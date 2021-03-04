@@ -5,11 +5,11 @@ import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import { isEqual } from 'lodash'
 import {
-    fetchBatchChangeByNamespace as _fetchCampaignByNamespace,
+    fetchBatchChangeByNamespace as _fetchBatchChangeByNamespace,
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
     queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
-    deleteCampaign as _deleteCampaign,
+    deleteBatchChange as _deleteBatchChange,
 } from './backend'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import * as H from 'history'
@@ -20,17 +20,17 @@ import { PlatformContextProps } from '../../../../../shared/src/platform/context
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { BatchChangeFields, Scalars } from '../../../graphql-operations'
 import { Description } from '../Description'
-import { CampaignStatsCard } from './CampaignStatsCard'
-import { CampaignTabs } from './CampaignTabs'
-import { CampaignDetailsActionSection } from './CampaignDetailsActionSection'
-import { CampaignInfoByline } from './CampaignInfoByline'
+import { BatchChangeStatsCard } from './BatchChangeStatsCard'
+import { BatchChangeTabs } from './BatchChangeTabs'
+import { BatchChangeDetailsActionSection } from './BatchChangeDetailsActionSection'
+import { BatchChangeInfoByline } from './BatchChangeInfoByline'
 import { UnpublishedNotice } from './UnpublishedNotice'
-import { SupersedingCampaignSpecAlert } from './SupersedingCampaignSpecAlert'
+import { SupersedingBatchSpecAlert } from './SupersedingBatchSpecAlert'
 import { BatchChangesIcon } from '../icons'
 import { PageHeader } from '../../../components/PageHeader'
 import { ClosedNotice } from './ClosedNotice'
 
-export interface CampaignDetailsPageProps
+export interface BatchChangeDetailsPageProps
     extends ThemeProps,
         ExtensionsControllerProps,
         PlatformContextProps,
@@ -47,7 +47,7 @@ export interface CampaignDetailsPageProps
     location: H.Location
 
     /** For testing only. */
-    fetchBatchChangeByNamespace?: typeof _fetchCampaignByNamespace
+    fetchBatchChangeByNamespace?: typeof _fetchBatchChangeByNamespace
     /** For testing only. */
     queryChangesets?: typeof _queryChangesets
     /** For testing only. */
@@ -55,13 +55,13 @@ export interface CampaignDetailsPageProps
     /** For testing only. */
     queryChangesetCountsOverTime?: typeof _queryChangesetCountsOverTime
     /** For testing only. */
-    deleteCampaign?: typeof _deleteCampaign
+    deleteBatchChange?: typeof _deleteBatchChange
 }
 
 /**
- * The area for a single campaign.
+ * The area for a single batch change.
  */
-export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPageProps> = ({
+export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsPageProps> = ({
     namespaceID,
     batchChangeName,
     history,
@@ -70,11 +70,11 @@ export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPagePro
     extensionsController,
     platformContext,
     telemetryService,
-    fetchBatchChangeByNamespace: fetchBatchChangeByNamespace = _fetchCampaignByNamespace,
+    fetchBatchChangeByNamespace: fetchBatchChangeByNamespace = _fetchBatchChangeByNamespace,
     queryChangesets,
     queryExternalChangesetWithFileDiffs,
     queryChangesetCountsOverTime,
-    deleteCampaign,
+    deleteBatchChange,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('CampaignDetailsPagePage')
@@ -99,9 +99,9 @@ export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPagePro
             </div>
         )
     }
-    // Campaign was not found
+    // Batch change was not found.
     if (batchChange === null) {
-        return <HeroPage icon={AlertCircleIcon} title="Campaign not found" />
+        return <HeroPage icon={AlertCircleIcon} title="Batch change not found" />
     }
 
     return (
@@ -111,13 +111,13 @@ export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPagePro
                 path={[
                     {
                         icon: BatchChangesIcon,
-                        to: '/campaigns',
+                        to: '/batch-changes',
                     },
-                    { to: `${batchChange.namespace.url}/campaigns`, text: batchChange.namespace.namespaceName },
+                    { to: `${batchChange.namespace.url}/batch-changes`, text: batchChange.namespace.namespaceName },
                     { text: batchChange.name },
                 ]}
                 byline={
-                    <CampaignInfoByline
+                    <BatchChangeInfoByline
                         createdAt={batchChange.createdAt}
                         initialApplier={batchChange.initialApplier}
                         lastAppliedAt={batchChange.lastAppliedAt}
@@ -125,31 +125,31 @@ export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPagePro
                     />
                 }
                 actions={
-                    <CampaignDetailsActionSection
-                        campaignID={batchChange.id}
-                        campaignClosed={!!batchChange.closedAt}
-                        deleteCampaign={deleteCampaign}
-                        campaignNamespaceURL={batchChange.namespace.url}
+                    <BatchChangeDetailsActionSection
+                        batchChangeID={batchChange.id}
+                        batchChangeClosed={!!batchChange.closedAt}
+                        deleteBatchChange={deleteBatchChange}
+                        batchChangeNamespaceURL={batchChange.namespace.url}
                         history={history}
                     />
                 }
-                className="test-campaign-details-page mb-3"
+                className="test-batch-change-details-page mb-3"
             />
-            <SupersedingCampaignSpecAlert spec={batchChange.currentSpec.supersedingBatchSpec} />
+            <SupersedingBatchSpecAlert spec={batchChange.currentSpec.supersedingBatchSpec} />
             <ClosedNotice closedAt={batchChange.closedAt} className="mb-3" />
             <UnpublishedNotice
                 unpublished={batchChange.changesetsStats.unpublished}
                 total={batchChange.changesetsStats.total}
                 className="mb-3"
             />
-            <CampaignStatsCard
+            <BatchChangeStatsCard
                 closedAt={batchChange.closedAt}
                 stats={batchChange.changesetsStats}
                 diff={batchChange.diffStat}
                 className="mb-3"
             />
             <Description history={history} description={batchChange.description} />
-            <CampaignTabs
+            <BatchChangeTabs
                 batchChange={batchChange}
                 extensionsController={extensionsController}
                 history={history}

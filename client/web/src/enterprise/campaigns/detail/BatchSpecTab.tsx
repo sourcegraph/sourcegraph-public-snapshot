@@ -5,8 +5,8 @@ import { CodeSnippet } from '../../../../../branded/src/components/CodeSnippet'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { BatchChangeFields } from '../../../graphql-operations'
 
-export interface CampaignSpecTabProps {
-    campaign: Pick<BatchChangeFields, 'name' | 'createdAt' | 'lastApplier' | 'lastAppliedAt'>
+export interface BatchSpecTabProps {
+    batchChange: Pick<BatchChangeFields, 'name' | 'createdAt' | 'lastApplier' | 'lastAppliedAt'>
     originalInput: BatchChangeFields['currentSpec']['originalInput']
 }
 
@@ -20,8 +20,8 @@ const isJSON = (string: string): boolean => {
     }
 }
 
-export const CampaignSpecTab: React.FunctionComponent<CampaignSpecTabProps> = ({
-    campaign: { name: campaignName, createdAt, lastApplier, lastAppliedAt },
+export const BatchSpecTab: React.FunctionComponent<BatchSpecTabProps> = ({
+    batchChange: { name: batchChangeName, createdAt, lastApplier, lastAppliedAt },
     originalInput,
 }) => {
     const downloadUrl = useMemo(() => 'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput), [
@@ -39,18 +39,18 @@ export const CampaignSpecTab: React.FunctionComponent<CampaignSpecTabProps> = ({
 
     return (
         <>
-            <div className="d-flex flex-wrap justify-content-between align-items-baseline mb-2 test-campaigns-spec">
-                <p className="mb-2 campaign-spec-tab__header-col">
+            <div className="d-flex flex-wrap justify-content-between align-items-baseline mb-2 test-batches-spec">
+                <p className="mb-2 batch-spec-tab__header-col">
                     {lastApplier ? <Link to={lastApplier.url}>{lastApplier.username}</Link> : 'A deleted user'}{' '}
-                    {createdAt === lastAppliedAt ? 'created' : 'updated'} this campaign{' '}
-                    <Timestamp date={lastAppliedAt} /> by applying the following campaign spec:
+                    {createdAt === lastAppliedAt ? 'created' : 'updated'} this batch change{' '}
+                    <Timestamp date={lastAppliedAt} /> by applying the following batch spec:
                 </p>
-                <div className="campaign-spec-tab__header-col">
+                <div className="batch-spec-tab__header-col">
                     <a
-                        download={`${campaignName}.campaign.yaml`}
+                        download={`${batchChangeName}.batch.yaml`}
                         href={downloadUrl}
                         className="text-right btn btn-secondary text-nowrap"
-                        data-tooltip={`Download ${campaignName}.campaign.yaml`}
+                        data-tooltip={`Download ${batchChangeName}.batch.yaml`}
                     >
                         <FileDownloadIcon className="icon-inline" /> Download YAML
                     </a>

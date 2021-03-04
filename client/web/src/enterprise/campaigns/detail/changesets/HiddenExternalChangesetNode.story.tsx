@@ -5,8 +5,8 @@ import { addHours } from 'date-fns'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 import { ChangesetState } from '../../../../graphql-operations'
 
-const { add } = storiesOf('web/campaigns/HiddenExternalChangesetNode', module).addDecorator(story => (
-    <div className="p-3 container web-content campaign-changesets__grid">{story()}</div>
+const { add } = storiesOf('web/batches/HiddenExternalChangesetNode', module).addDecorator(story => (
+    <div className="p-3 container web-content batch-change-changesets__grid">{story()}</div>
 ))
 
 add('All states', () => {

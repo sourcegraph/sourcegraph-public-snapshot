@@ -472,8 +472,8 @@ describe('Campaigns', () => {
                     BatchChangeChangesets,
                     ChangesetCountsOverTime,
                     ExternalChangesetFileDiffs,
-                    DeleteCampaign: () => ({
-                        deleteCampaign: {
+                    DeleteBatchChange: () => ({
+                        deleteBatchChange: {
                             alwaysNil: null,
                         },
                     }),

@@ -70,7 +70,7 @@ export const DownloadDiffButton: React.FunctionComponent<DownloadDiffButtonProps
             type="button"
             className="btn btn-link mb-1"
             aria-label="Download generated diff"
-            data-tooltip="This is the changeset diff created when src campaign preview|apply executed the campaign"
+            data-tooltip="This is the changeset diff created when src batch preview|apply executed the batch change"
             onClick={loadDiff}
             disabled={state === DownloadState.LOADING}
         >

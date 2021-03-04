@@ -1,16 +1,16 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
-import { CampaignStatsCard } from './CampaignStatsCard'
+import { BatchChangeStatsCard } from './BatchChangeStatsCard'
 
-const { add } = storiesOf('web/campaigns/CampaignStatsCard', module).addDecorator(story => (
+const { add } = storiesOf('web/batches/BatchChangeStatsCard', module).addDecorator(story => (
     <div className="p-3 container web-content">{story()}</div>
 ))
 
 add('All states', () => (
     <EnterpriseWebStory>
         {props => (
-            <CampaignStatsCard
+            <BatchChangeStatsCard
                 {...props}
                 stats={{
                     closed: 10,
@@ -27,10 +27,10 @@ add('All states', () => (
         )}
     </EnterpriseWebStory>
 ))
-add('Campaign closed', () => (
+add('Batch change closed', () => (
     <EnterpriseWebStory>
         {props => (
-            <CampaignStatsCard
+            <BatchChangeStatsCard
                 {...props}
                 stats={{
                     closed: 10,
@@ -47,10 +47,10 @@ add('Campaign closed', () => (
         )}
     </EnterpriseWebStory>
 ))
-add('Campaign done', () => (
+add('Batch change done', () => (
     <EnterpriseWebStory>
         {props => (
-            <CampaignStatsCard
+            <BatchChangeStatsCard
                 {...props}
                 stats={{
                     deleted: 10,

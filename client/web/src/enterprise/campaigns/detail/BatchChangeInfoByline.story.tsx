@@ -1,10 +1,10 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import { CampaignInfoByline } from './CampaignInfoByline'
+import { BatchChangeInfoByline } from './BatchChangeInfoByline'
 import { subDays } from 'date-fns'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
-const { add } = storiesOf('web/campaigns/CampaignInfoByline', module).addDecorator(story => (
+const { add } = storiesOf('web/batches/BatchChangeInfoByline', module).addDecorator(story => (
     <div className="p-3 container web-content">{story()}</div>
 ))
 
@@ -13,7 +13,7 @@ const THREE_DAYS_AGO = subDays(new Date(), 3).toISOString()
 add('Never updated', () => (
     <EnterpriseWebStory>
         {props => (
-            <CampaignInfoByline
+            <BatchChangeInfoByline
                 {...props}
                 createdAt={THREE_DAYS_AGO}
                 initialApplier={{ url: 'http://test.test/alice', username: 'alice' }}
@@ -27,7 +27,7 @@ add('Never updated', () => (
 add('Updated (same user)', () => (
     <EnterpriseWebStory>
         {props => (
-            <CampaignInfoByline
+            <BatchChangeInfoByline
                 {...props}
                 createdAt={THREE_DAYS_AGO}
                 initialApplier={{ url: 'http://test.test/alice', username: 'alice' }}
@@ -41,7 +41,7 @@ add('Updated (same user)', () => (
 add('Updated (different users)', () => (
     <EnterpriseWebStory>
         {props => (
-            <CampaignInfoByline
+            <BatchChangeInfoByline
                 {...props}
                 createdAt={THREE_DAYS_AGO}
                 initialApplier={{ url: 'http://test.test/alice', username: 'alice' }}

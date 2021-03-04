@@ -1,7 +1,7 @@
 import { storiesOf } from '@storybook/react'
 import { boolean } from '@storybook/addon-knobs'
 import React from 'react'
-import { CampaignDetailsPage } from './CampaignDetailsPage'
+import { BatchChangeDetailsPage } from './BatchChangeDetailsPage'
 import { of } from 'rxjs'
 import {
     BatchChangeFields,
@@ -20,7 +20,7 @@ import { subDays } from 'date-fns'
 import { useMemo, useCallback } from '@storybook/addons'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
-const { add } = storiesOf('web/campaigns/details/CampaignDetailsPage', module)
+const { add } = storiesOf('web/batches/details/BatchChangeDetailsPage', module)
     .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
     .addParameters({
         chromatic: {
@@ -47,15 +47,15 @@ const batchChangeDefaults: BatchChangeFields = {
         username: 'alice',
     },
     id: 'specid',
-    url: '/users/alice/campaigns/awesome-campaign',
+    url: '/users/alice/batch-changes/awesome-batch-change',
     namespace: {
         namespaceName: 'alice',
         url: '/users/alice',
     },
     viewerCanAdminister: true,
     closedAt: null,
-    description: '## What this campaign does\n\nTruly awesome things for example.',
-    name: 'awesome-campaign',
+    description: '## What this batch change does\n\nTruly awesome things for example.',
+    name: 'awesome-batch-changes',
     updatedAt: subDays(now, 5).toISOString(),
     lastAppliedAt: subDays(now, 5).toISOString(),
     lastApplier: {
@@ -63,7 +63,7 @@ const batchChangeDefaults: BatchChangeFields = {
         username: 'bob',
     },
     currentSpec: {
-        originalInput: 'name: awesome-campaign\ndescription: somestring',
+        originalInput: 'name: awesome-batch-changes\ndescription: somestring',
         supersedingBatchSpec: null,
     },
     diffStat: { added: 1000, changed: 2000, deleted: 1000 },
@@ -271,18 +271,18 @@ const queryChangesetCountsOverTime: typeof _queryChangesetCountsOverTime = () =>
         },
     ])
 
-const deleteCampaign = () => Promise.resolve(undefined)
+const deleteBatchChange = () => Promise.resolve(undefined)
 
-const stories: Record<string, { url: string; supersededCampaignSpec?: boolean }> = {
-    Overview: { url: '/users/alice/campaigns/awesome-campaign' },
-    'Burndown chart': { url: '/users/alice/campaigns/awesome-campaign?tab=chart' },
-    'Spec file': { url: '/users/alice/campaigns/awesome-campaign?tab=spec' },
-    'Superseded campaign': { url: '/users/alice/campaigns/awesome-campaign', supersededCampaignSpec: true },
+const stories: Record<string, { url: string; supersededBatchSpec?: boolean }> = {
+    Overview: { url: '/users/alice/batch-changes/awesome-batch-change' },
+    'Burndown chart': { url: '/users/alice/batch-changes/awesome-batch-change?tab=chart' },
+    'Spec file': { url: '/users/alice/batch-changes/awesome-batch-change?tab=spec' },
+    'Superseded batch-spec': { url: '/users/alice/batch-changes/awesome-batch-change', supersededBatchSpec: true },
 }
 
-for (const [name, { url, supersededCampaignSpec }] of Object.entries(stories)) {
+for (const [name, { url, supersededBatchSpec }] of Object.entries(stories)) {
     add(name, () => {
-        const supersedingBatchSpec = boolean('supersedingBatchSpec', !!supersededCampaignSpec)
+        const supersedingBatchSpec = boolean('supersedingBatchSpec', !!supersededBatchSpec)
         const viewerCanAdminister = boolean('viewerCanAdminister', true)
         const isClosed = boolean('isClosed', false)
         const batchChange: BatchChangeFields = useMemo(
@@ -293,7 +293,7 @@ for (const [name, { url, supersededCampaignSpec }] of Object.entries(stories)) {
                     supersedingBatchSpec: supersedingBatchSpec
                         ? {
                               createdAt: subDays(new Date(), 1).toISOString(),
-                              applyURL: '/users/alice/campaigns/apply/newspecid',
+                              applyURL: '/users/alice/batch-changes/apply/newspecid',
                           }
                         : null,
                 },
@@ -307,15 +307,15 @@ for (const [name, { url, supersededCampaignSpec }] of Object.entries(stories)) {
         return (
             <EnterpriseWebStory initialEntries={[url]}>
                 {props => (
-                    <CampaignDetailsPage
+                    <BatchChangeDetailsPage
                         {...props}
                         namespaceID="namespace123"
-                        batchChangeName="awesome-campaign"
+                        batchChangeName="awesome-batch-change"
                         fetchBatchChangeByNamespace={fetchBatchChange}
                         queryChangesets={queryChangesets}
                         queryChangesetCountsOverTime={queryChangesetCountsOverTime}
                         queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
-                        deleteCampaign={deleteCampaign}
+                        deleteBatchChange={deleteBatchChange}
                         extensionsController={{} as any}
                         platformContext={{} as any}
                     />
@@ -345,15 +345,15 @@ add('Empty changesets', () => {
     return (
         <EnterpriseWebStory>
             {props => (
-                <CampaignDetailsPage
+                <BatchChangeDetailsPage
                     {...props}
                     namespaceID="namespace123"
-                    batchChangeName="awesome-campaign"
+                    batchChangeName="awesome-batch-change"
                     fetchBatchChangeByNamespace={fetchBatchChange}
                     queryChangesets={queryEmptyChangesets}
                     queryChangesetCountsOverTime={queryChangesetCountsOverTime}
                     queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
-                    deleteCampaign={deleteCampaign}
+                    deleteBatchChange={deleteBatchChange}
                     extensionsController={{} as any}
                     platformContext={{} as any}
                 />

@@ -17,7 +17,7 @@ import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { queryChangesetCountsOverTime as _queryChangesetCountsOverTime } from './backend'
 
 interface Props {
-    campaignID: Scalars['ID']
+    batchChangeID: Scalars['ID']
     history: H.History
     width?: string | number
 
@@ -71,10 +71,10 @@ const tooltipItemSorter = ({ dataKey }: TooltipPayload): number =>
     states[dataKey as keyof DisplayableChangesetCounts].sortOrder
 
 /**
- * A burndown chart showing progress of the campaigns changesets.
+ * A burndown chart showing progress of the batch change's changesets.
  */
-export const CampaignBurndownChart: React.FunctionComponent<Props> = ({
-    campaignID: batchChangeID,
+export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
+    batchChangeID,
     queryChangesetCountsOverTime = _queryChangesetCountsOverTime,
     width = '100%',
 }) => {
@@ -100,7 +100,8 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({
                 <div className="card-body p-5">
                     <h2 className="text-center mb-4">The burndown chart requires 2 days of data</h2>
                     <p>
-                        Come back in a few days and we'll be able to show you data on how your campaign is progressing!
+                        Come back in a few days and we'll be able to show you data on how your batch change is
+                        progressing!
                     </p>
                 </div>
             </div>
@@ -118,7 +119,7 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({
         )
     }
     return (
-        <ResponsiveContainer width={width} height={300} className="test-campaigns-chart">
+        <ResponsiveContainer width={width} height={300} className="test-batches-chart">
             <ComposedChart
                 data={changesetCountsOverTime.map(snapshot => ({ ...snapshot, date: Date.parse(snapshot.date) }))}
             >

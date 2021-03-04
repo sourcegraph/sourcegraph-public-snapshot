@@ -18,7 +18,7 @@ import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { HeroPage } from '../../../components/HeroPage'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import { CampaignInfoByline } from '../detail/CampaignInfoByline'
+import { BatchChangeInfoByline } from '../detail/BatchChangeInfoByline'
 import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { BatchChangesIcon } from '../icons'
 import { PageHeader } from '../../../components/PageHeader'
@@ -113,7 +113,7 @@ export const CampaignClosePage: React.FunctionComponent<CampaignClosePageProps> 
                     { text: campaign.name },
                 ]}
                 byline={
-                    <CampaignInfoByline
+                    <BatchChangeInfoByline
                         createdAt={campaign.createdAt}
                         initialApplier={campaign.initialApplier}
                         lastAppliedAt={campaign.lastAppliedAt}

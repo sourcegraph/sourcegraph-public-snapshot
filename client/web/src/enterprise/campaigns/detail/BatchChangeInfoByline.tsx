@@ -6,9 +6,9 @@ import { Timestamp } from '../../../components/time/Timestamp'
 interface Props extends Pick<BatchChangeFields, 'createdAt' | 'initialApplier' | 'lastAppliedAt' | 'lastApplier'> {}
 
 /**
- * The created/updated byline in the campaign header.
+ * The created/updated byline in the batch change header.
  */
-export const CampaignInfoByline: React.FunctionComponent<Props> = ({
+export const BatchChangeInfoByline: React.FunctionComponent<Props> = ({
     createdAt,
     initialApplier,
     lastAppliedAt,

@@ -1,20 +1,20 @@
 import { storiesOf } from '@storybook/react'
 import { select } from '@storybook/addon-knobs'
 import React from 'react'
-import { CampaignBurndownChart } from './BurndownChart'
+import { BatchChangeBurndownChart } from './BatchChangeBurndownChart'
 import { of } from 'rxjs'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
-const { add } = storiesOf('web/campaigns/BurndownChart', module).addDecorator(story => (
+const { add } = storiesOf('web/batches/BurndownChart', module).addDecorator(story => (
     <div className="p-3 container web-content">{story()}</div>
 ))
 
 add('All states', () => (
     <EnterpriseWebStory>
         {props => (
-            <CampaignBurndownChart
+            <BatchChangeBurndownChart
                 {...props}
-                campaignID="123"
+                batchChangeID="123"
                 queryChangesetCountsOverTime={() =>
                     of(
                         [
@@ -148,6 +148,8 @@ add('All states', () => (
 
 add('No data', () => (
     <EnterpriseWebStory>
-        {props => <CampaignBurndownChart {...props} campaignID="123" queryChangesetCountsOverTime={() => of([])} />}
+        {props => (
+            <BatchChangeBurndownChart {...props} batchChangeID="123" queryChangesetCountsOverTime={() => of([])} />
+        )}
     </EnterpriseWebStory>
 ))
