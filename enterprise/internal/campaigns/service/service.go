@@ -288,6 +288,9 @@ func (s *Service) MoveCampaign(ctx context.Context, opts MoveCampaignOpts) (camp
 	return campaign, tx.UpdateCampaign(ctx, campaign)
 }
 
+// TODO(campaigns-deprecation): this needs to be renamed, but cast to
+// "EnsureCampaignFailed" if the applycampaign mutation was used.
+//
 // ErrEnsureCampaignFailed is returned by ApplyCampaign when a ensureCampaignID
 // is provided but a campaign with the name specified the campaignSpec exists
 // in the given namespace but has a different ID.

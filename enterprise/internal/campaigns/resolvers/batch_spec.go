@@ -20,18 +20,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
-func marshalCampaignSpecRandID(id string) graphql.ID {
-	return relay.MarshalID("CampaignSpec", id)
+func marshalBatchSpecRandID(id string) graphql.ID {
+	return relay.MarshalID("BatchSpec", id)
 }
 
-func unmarshalCampaignSpecID(id graphql.ID) (campaignSpecRandID string, err error) {
+func unmarshalBatchSpecID(id graphql.ID) (campaignSpecRandID string, err error) {
 	err = relay.UnmarshalSpec(id, &campaignSpecRandID)
 	return
 }
 
-var _ graphqlbackend.CampaignSpecResolver = &campaignSpecResolver{}
+var _ graphqlbackend.BatchSpecResolver = &batchSpecResolver{}
 
-type campaignSpecResolver struct {
+type batchSpecResolver struct {
 	store *store.Store
 
 	campaignSpec       *campaigns.CampaignSpec
@@ -41,23 +41,30 @@ type campaignSpecResolver struct {
 	namespaceOnce sync.Once
 	namespace     *graphqlbackend.NamespaceResolver
 	namespaceErr  error
+
+	// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
+	shouldActAsCampaignSpec bool
 }
 
-func (r *campaignSpecResolver) ID() graphql.ID {
+func (r *batchSpecResolver) ActAsCampaignSpec() bool {
+	return r.shouldActAsCampaignSpec
+}
+
+func (r *batchSpecResolver) ID() graphql.ID {
 	// 🚨 SECURITY: This needs to be the RandID! We can't expose the
 	// sequential, guessable ID.
-	return marshalCampaignSpecRandID(r.campaignSpec.RandID)
+	return marshalBatchSpecRandID(r.campaignSpec.RandID)
 }
 
-func (r *campaignSpecResolver) OriginalInput() (string, error) {
+func (r *batchSpecResolver) OriginalInput() (string, error) {
 	return r.campaignSpec.RawSpec, nil
 }
 
-func (r *campaignSpecResolver) ParsedInput() (graphqlbackend.JSONValue, error) {
+func (r *batchSpecResolver) ParsedInput() (graphqlbackend.JSONValue, error) {
 	return graphqlbackend.JSONValue{Value: r.campaignSpec.Spec}, nil
 }
 
-func (r *campaignSpecResolver) ChangesetSpecs(ctx context.Context, args *graphqlbackend.ChangesetSpecsConnectionArgs) (graphqlbackend.ChangesetSpecConnectionResolver, error) {
+func (r *batchSpecResolver) ChangesetSpecs(ctx context.Context, args *graphqlbackend.ChangesetSpecsConnectionArgs) (graphqlbackend.ChangesetSpecConnectionResolver, error) {
 	opts := store.ListChangesetSpecsOpts{}
 	if err := validateFirstParamDefaults(args.First); err != nil {
 		return nil, err
@@ -78,7 +85,7 @@ func (r *campaignSpecResolver) ChangesetSpecs(ctx context.Context, args *graphql
 	}, nil
 }
 
-func (r *campaignSpecResolver) ApplyPreview(ctx context.Context, args *graphqlbackend.ChangesetApplyPreviewConnectionArgs) (graphqlbackend.ChangesetApplyPreviewConnectionResolver, error) {
+func (r *batchSpecResolver) ApplyPreview(ctx context.Context, args *graphqlbackend.ChangesetApplyPreviewConnectionArgs) (graphqlbackend.ChangesetApplyPreviewConnectionResolver, error) {
 	if err := validateFirstParamDefaults(args.First); err != nil {
 		return nil, err
 	}
@@ -111,14 +118,14 @@ func (r *campaignSpecResolver) ApplyPreview(ctx context.Context, args *graphqlba
 	}, nil
 }
 
-func (r *campaignSpecResolver) Description() graphqlbackend.CampaignDescriptionResolver {
+func (r *batchSpecResolver) Description() graphqlbackend.CampaignDescriptionResolver {
 	return &campaignDescriptionResolver{
 		name:        r.campaignSpec.Spec.Name,
 		description: r.campaignSpec.Spec.Description,
 	}
 }
 
-func (r *campaignSpecResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
+func (r *batchSpecResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
 	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DB(), r.campaignSpec.UserID)
 	if errcode.IsNotFound(err) {
 		return nil, nil
@@ -126,11 +133,11 @@ func (r *campaignSpecResolver) Creator(ctx context.Context) (*graphqlbackend.Use
 	return user, err
 }
 
-func (r *campaignSpecResolver) Namespace(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {
+func (r *batchSpecResolver) Namespace(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {
 	return r.computeNamespace(ctx)
 }
 
-func (r *campaignSpecResolver) computeNamespace(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {
+func (r *batchSpecResolver) computeNamespace(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {
 	r.namespaceOnce.Do(func() {
 		if r.preloadedNamespace != nil {
 			r.namespace = r.preloadedNamespace
@@ -159,7 +166,7 @@ func (r *campaignSpecResolver) computeNamespace(ctx context.Context) (*graphqlba
 	return r.namespace, r.namespaceErr
 }
 
-func (r *campaignSpecResolver) ApplyURL(ctx context.Context) (string, error) {
+func (r *batchSpecResolver) ApplyURL(ctx context.Context) (string, error) {
 	n, err := r.computeNamespace(ctx)
 	if err != nil {
 		return "", err
@@ -167,15 +174,15 @@ func (r *campaignSpecResolver) ApplyURL(ctx context.Context) (string, error) {
 	return campaignsApplyURL(n, r), nil
 }
 
-func (r *campaignSpecResolver) CreatedAt() graphqlbackend.DateTime {
+func (r *batchSpecResolver) CreatedAt() graphqlbackend.DateTime {
 	return graphqlbackend.DateTime{Time: r.campaignSpec.CreatedAt}
 }
 
-func (r *campaignSpecResolver) ExpiresAt() *graphqlbackend.DateTime {
+func (r *batchSpecResolver) ExpiresAt() *graphqlbackend.DateTime {
 	return &graphqlbackend.DateTime{Time: r.campaignSpec.ExpiresAt()}
 }
 
-func (r *campaignSpecResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
+func (r *batchSpecResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	return checkSiteAdminOrSameUser(ctx, r.campaignSpec.UserID)
 }
 
@@ -191,7 +198,7 @@ func (r *campaignDescriptionResolver) Description() string {
 	return r.description
 }
 
-func (r *campaignSpecResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
+func (r *batchSpecResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
 	specsConnection := &changesetSpecConnectionResolver{
 		store:          r.store,
 		campaignSpecID: r.campaignSpec.ID,
@@ -223,23 +230,31 @@ func (r *campaignSpecResolver) DiffStat(ctx context.Context) (*graphqlbackend.Di
 	return totalStat, nil
 }
 
-func (r *campaignSpecResolver) AppliesToCampaign(ctx context.Context) (graphqlbackend.CampaignResolver, error) {
+func (r *batchSpecResolver) AppliesToCampaign(ctx context.Context) (graphqlbackend.BatchChangeResolver, error) {
+	return r.AppliesToBatchChange(ctx)
+}
+
+func (r *batchSpecResolver) AppliesToBatchChange(ctx context.Context) (graphqlbackend.BatchChangeResolver, error) {
 	svc := service.New(r.store)
-	campaign, err := svc.GetCampaignMatchingCampaignSpec(ctx, r.campaignSpec)
+	batchChange, err := svc.GetCampaignMatchingCampaignSpec(ctx, r.campaignSpec)
 	if err != nil {
 		return nil, err
 	}
-	if campaign == nil {
+	if batchChange == nil {
 		return nil, nil
 	}
 
-	return &campaignResolver{
-		store:    r.store,
-		Campaign: campaign,
+	return &batchChangeResolver{
+		store:       r.store,
+		batchChange: batchChange,
 	}, nil
 }
 
-func (r *campaignSpecResolver) SupersedingCampaignSpec(ctx context.Context) (graphqlbackend.CampaignSpecResolver, error) {
+func (r *batchSpecResolver) SupersedingCampaignSpec(ctx context.Context) (graphqlbackend.BatchSpecResolver, error) {
+	return r.SupersedingBatchSpec(ctx)
+}
+
+func (r *batchSpecResolver) SupersedingBatchSpec(ctx context.Context) (graphqlbackend.BatchSpecResolver, error) {
 	namespace, err := r.computeNamespace(ctx)
 	if err != nil {
 		return nil, err
@@ -263,7 +278,7 @@ func (r *campaignSpecResolver) SupersedingCampaignSpec(ctx context.Context) (gra
 	}
 
 	// Create our new resolver, reusing as many fields as we can from this one.
-	resolver := &campaignSpecResolver{
+	resolver := &batchSpecResolver{
 		store:              r.store,
 		campaignSpec:       newest,
 		preloadedNamespace: namespace,
@@ -272,7 +287,20 @@ func (r *campaignSpecResolver) SupersedingCampaignSpec(ctx context.Context) (gra
 	return resolver, nil
 }
 
-func (r *campaignSpecResolver) ViewerCampaignsCodeHosts(ctx context.Context, args *graphqlbackend.ListViewerCampaignsCodeHostsArgs) (graphqlbackend.CampaignsCodeHostConnectionResolver, error) {
+// TODO(campaigns-deprecation): Remove when campaigns are fully removed
+func (r *batchSpecResolver) ViewerCampaignsCodeHosts(ctx context.Context, args *graphqlbackend.ListViewerCampaignsCodeHostsArgs) (graphqlbackend.CampaignsCodeHostConnectionResolver, error) {
+	res, err := r.ViewerBatchChangesCodeHosts(ctx, &graphqlbackend.ListViewerBatchChangesCodeHostsArgs{
+		First:                 args.First,
+		After:                 args.After,
+		OnlyWithoutCredential: args.OnlyWithoutCredential,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &campaignsCodeHostConnectionResolver{BatchChangesCodeHostConnectionResolver: res}, nil
+}
+
+func (r *batchSpecResolver) ViewerBatchChangesCodeHosts(ctx context.Context, args *graphqlbackend.ListViewerBatchChangesCodeHostsArgs) (graphqlbackend.BatchChangesCodeHostConnectionResolver, error) {
 	actor := actor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
 		return nil, backend.ErrNotAuthenticated
@@ -282,7 +310,7 @@ func (r *campaignSpecResolver) ViewerCampaignsCodeHosts(ctx context.Context, arg
 	if args.OnlyWithoutCredential {
 		if authErr := backend.CheckCurrentUserIsSiteAdmin(ctx); authErr == nil {
 			// For site-admins never return anything
-			return &emptyCampaignsCodeHostConnectionResolver{}, nil
+			return &emptyBatchChangesCodeHostConnectionResolver{}, nil
 		} else if authErr != nil && authErr != backend.ErrMustBeSiteAdmin {
 			return nil, authErr
 		}
@@ -301,7 +329,7 @@ func (r *campaignSpecResolver) ViewerCampaignsCodeHosts(ctx context.Context, arg
 		}
 	}
 
-	return &campaignsCodeHostConnectionResolver{
+	return &batchChangesCodeHostConnectionResolver{
 		userID:                actor.UID,
 		onlyWithoutCredential: args.OnlyWithoutCredential,
 		store:                 r.store,

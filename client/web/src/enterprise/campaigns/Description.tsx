@@ -2,10 +2,10 @@ import * as H from 'history'
 import React from 'react'
 import { Markdown } from '../../../../shared/src/components/Markdown'
 import { renderMarkdown } from '../../../../shared/src/util/markdown'
-import { CampaignFields } from '../../graphql-operations'
+import { BatchChangeFields } from '../../graphql-operations'
 import classNames from 'classnames'
 
-interface DescriptionProps extends Pick<CampaignFields, 'description'> {
+interface DescriptionProps extends Pick<BatchChangeFields, 'description'> {
     history: H.History
     className?: string
 }

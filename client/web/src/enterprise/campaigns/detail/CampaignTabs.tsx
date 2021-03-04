@@ -4,7 +4,7 @@ import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
-import { CampaignFields } from '../../../graphql-operations'
+import { BatchChangeFields } from '../../../graphql-operations'
 import {
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
@@ -21,7 +21,7 @@ import { CampaignSpecTab } from './CampaignSpecTab'
 type SelectedTab = 'changesets' | 'chart' | 'spec'
 
 export interface CampaignTabsProps extends ExtensionsControllerProps, ThemeProps, PlatformContextProps, TelemetryProps {
-    campaign: CampaignFields
+    batchChange: BatchChangeFields
     history: H.History
     location: H.Location
     /** For testing only. */
@@ -39,7 +39,7 @@ export const CampaignTabs: React.FunctionComponent<CampaignTabsProps> = ({
     location,
     platformContext,
     telemetryService,
-    campaign,
+    batchChange: campaign,
     queryChangesets,
     queryChangesetCountsOverTime,
     queryExternalChangesetWithFileDiffs,

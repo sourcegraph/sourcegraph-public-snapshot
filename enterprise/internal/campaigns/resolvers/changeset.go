@@ -162,7 +162,11 @@ func (r *changesetResolver) Repository(ctx context.Context) *graphqlbackend.Repo
 	return r.repoResolver
 }
 
-func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignsArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
+func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.ListBatchChangesArgs) (graphqlbackend.BatchChangesConnectionResolver, error) {
+	return r.BatchChanges(ctx, args)
+}
+
+func (r *changesetResolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBatchChangesArgs) (graphqlbackend.BatchChangesConnectionResolver, error) {
 	opts := store.ListCampaignsOpts{
 		ChangesetID: r.changeset.ID,
 	}
@@ -196,7 +200,7 @@ func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.
 		}
 	}
 
-	return &campaignsConnectionResolver{store: r.store, opts: opts}, nil
+	return &batchChangesConnectionResolver{store: r.store, opts: opts}, nil
 }
 
 func (r *changesetResolver) CreatedAt() graphqlbackend.DateTime {

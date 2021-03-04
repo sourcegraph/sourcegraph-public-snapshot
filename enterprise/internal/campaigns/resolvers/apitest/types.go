@@ -52,15 +52,15 @@ type User struct {
 	DatabaseID int32
 	SiteAdmin  bool
 
-	Campaigns          CampaignConnection
-	CampaignsCodeHosts CampaignsCodeHostsConnection
+	BatchChanges          BatchChangeConnection
+	BatchChangesCodeHosts BatchChangesCodeHostsConnection
 }
 
 type Org struct {
 	ID   string
 	Name string
 
-	Campaigns CampaignConnection
+	BatchChanges BatchChangeConnection
 }
 
 type UserOrg struct {
@@ -70,7 +70,7 @@ type UserOrg struct {
 	Name       string
 }
 
-type Campaign struct {
+type BatchChange struct {
 	ID                      string
 	Name                    string
 	Description             string
@@ -90,8 +90,8 @@ type Campaign struct {
 	DiffStat                DiffStat
 }
 
-type CampaignConnection struct {
-	Nodes      []Campaign
+type BatchChangeConnection struct {
+	Nodes      []BatchChange
 	TotalCount int
 	PageInfo   PageInfo
 }
@@ -120,22 +120,22 @@ type ExternalURL struct {
 }
 
 type Changeset struct {
-	Typename    string `json:"__typename"`
-	ID          string
-	Repository  Repository
-	Campaigns   CampaignConnection
-	CreatedAt   string
-	UpdatedAt   string
-	NextSyncAt  string
-	Title       string
-	Body        string
-	Error       string
-	State       string
-	ExternalID  string
-	ExternalURL ExternalURL
-	ReviewState string
-	CheckState  string
-	Events      ChangesetEventConnection
+	Typename     string `json:"__typename"`
+	ID           string
+	Repository   Repository
+	BatchChanges BatchChangeConnection
+	CreatedAt    string
+	UpdatedAt    string
+	NextSyncAt   string
+	Title        string
+	Body         string
+	Error        string
+	State        string
+	ExternalID   string
+	ExternalURL  ExternalURL
+	ReviewState  string
+	CheckState   string
+	Events       ChangesetEventConnection
 
 	Diff Comparison
 
@@ -183,7 +183,7 @@ type ChangesetCounts struct {
 	OpenPending          int32
 }
 
-type CampaignSpec struct {
+type BatchSpec struct {
 	Typename string `json:"__typename"`
 	ID       string
 
@@ -202,18 +202,17 @@ type CampaignSpec struct {
 
 	DiffStat DiffStat
 
-	AppliesToCampaign Campaign
-
-	ViewerCampaignsCodeHosts CampaignsCodeHostsConnection
 	// Alias for the above.
-	AllCodeHosts CampaignsCodeHostsConnection
+	AllCodeHosts BatchChangesCodeHostsConnection
 	// Alias for the above.
-	OnlyWithoutCredential CampaignsCodeHostsConnection
+	OnlyWithoutCredential BatchChangesCodeHostsConnection
 
 	CreatedAt graphqlbackend.DateTime
 	ExpiresAt *graphqlbackend.DateTime
 
-	SupersedingCampaignSpec *CampaignSpec
+	// NEW
+	SupersedingBatchSpec *BatchSpec
+	AppliesToBatchChange BatchChange
 }
 
 // ChangesetSpecDelta is the delta between two ChangesetSpecs describing the same Changeset.
@@ -321,7 +320,7 @@ type Person struct {
 	User  *User
 }
 
-type CampaignsCredential struct {
+type BatchChangesCredential struct {
 	ID                  string
 	ExternalServiceKind string
 	ExternalServiceURL  string
@@ -332,14 +331,14 @@ type EmptyResponse struct {
 	AlwaysNil string
 }
 
-type CampaignsCodeHostsConnection struct {
+type BatchChangesCodeHostsConnection struct {
 	PageInfo   PageInfo
-	Nodes      []CampaignsCodeHost
+	Nodes      []BatchChangesCodeHost
 	TotalCount int
 }
 
-type CampaignsCodeHost struct {
+type BatchChangesCodeHost struct {
 	ExternalServiceKind string
 	ExternalServiceURL  string
-	Credential          CampaignsCredential
+	Credential          BatchChangesCredential
 }

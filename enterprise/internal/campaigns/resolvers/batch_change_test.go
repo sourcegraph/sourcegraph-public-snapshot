@@ -19,7 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
-func TestCampaignResolver(t *testing.T) {
+func TestBatchChangeResolver(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -36,7 +36,7 @@ func TestCampaignResolver(t *testing.T) {
 	cstore := store.NewWithClock(db, clock)
 
 	campaignSpec := &campaigns.CampaignSpec{
-		RawSpec:        ct.TestRawCampaignSpec,
+		RawSpec:        ct.TestRawBatchSpec,
 		UserID:         userID,
 		NamespaceOrgID: orgID,
 	}
@@ -62,10 +62,10 @@ func TestCampaignResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	campaignAPIID := string(marshalCampaignID(campaign.ID))
+	campaignAPIID := string(marshalBatchChangeID(campaign.ID))
 	namespaceAPIID := string(graphqlbackend.MarshalOrgID(orgID))
 	apiUser := &apitest.User{DatabaseID: userID, SiteAdmin: true}
-	wantCampaign := apitest.Campaign{
+	wantCampaign := apitest.BatchChange{
 		ID:             campaignAPIID,
 		Name:           campaign.Name,
 		Description:    campaign.Description,
@@ -81,27 +81,27 @@ func TestCampaignResolver(t *testing.T) {
 		ClosedAt: "",
 	}
 
-	input := map[string]interface{}{"campaign": campaignAPIID}
+	input := map[string]interface{}{"batchChange": campaignAPIID}
 	{
-		var response struct{ Node apitest.Campaign }
-		apitest.MustExec(ctx, t, s, input, &response, queryCampaign)
+		var response struct{ Node apitest.BatchChange }
+		apitest.MustExec(ctx, t, s, input, &response, queryBatchChange)
 
 		if diff := cmp.Diff(wantCampaign, response.Node); diff != "" {
-			t.Fatalf("wrong campaign response (-want +got):\n%s", diff)
+			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
 		}
 	}
 	// Test resolver by namespace and name
 	byNameInput := map[string]interface{}{"name": campaign.Name, "namespace": namespaceAPIID}
 	{
-		var response struct{ Campaign apitest.Campaign }
-		apitest.MustExec(ctx, t, s, byNameInput, &response, queryCampaignByName)
+		var response struct{ BatchChange apitest.BatchChange }
+		apitest.MustExec(ctx, t, s, byNameInput, &response, queryBatchChangeByName)
 
-		if diff := cmp.Diff(wantCampaign, response.Campaign); diff != "" {
-			t.Fatalf("wrong campaign response (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wantCampaign, response.BatchChange); diff != "" {
+			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
 		}
 	}
 
-	// Now soft-delete the user and check we can still access the campaign in the org namespace.
+	// Now soft-delete the user and check we can still access the batch change in the org namespace.
 	err = database.UsersWith(cstore).Delete(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
@@ -112,36 +112,36 @@ func TestCampaignResolver(t *testing.T) {
 	wantCampaign.SpecCreator = nil
 
 	{
-		var response struct{ Node apitest.Campaign }
-		apitest.MustExec(ctx, t, s, input, &response, queryCampaign)
+		var response struct{ Node apitest.BatchChange }
+		apitest.MustExec(ctx, t, s, input, &response, queryBatchChange)
 
 		if diff := cmp.Diff(wantCampaign, response.Node); diff != "" {
-			t.Fatalf("wrong campaign response (-want +got):\n%s", diff)
+			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
 		}
 	}
 
-	// Now hard-delete the user and check we can still access the campaign in the org namespace.
+	// Now hard-delete the user and check we can still access the batch change in the org namespace.
 	err = database.UsersWith(cstore).HardDelete(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}
 	{
-		var response struct{ Node apitest.Campaign }
-		apitest.MustExec(ctx, t, s, input, &response, queryCampaign)
+		var response struct{ Node apitest.BatchChange }
+		apitest.MustExec(ctx, t, s, input, &response, queryBatchChange)
 
 		if diff := cmp.Diff(wantCampaign, response.Node); diff != "" {
-			t.Fatalf("wrong campaign response (-want +got):\n%s", diff)
+			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
 		}
 	}
 }
 
-const queryCampaign = `
+const queryBatchChange = `
 fragment u on User { databaseID, siteAdmin }
 fragment o on Org  { id, name }
 
-query($campaign: ID!){
-  node(id: $campaign) {
-    ... on Campaign {
+query($batchChange: ID!){
+  node(id: $batchChange) {
+    ... on BatchChange {
       id, name, description
       initialApplier { ...u }
       lastApplier    { ...u }
@@ -159,12 +159,12 @@ query($campaign: ID!){
   }
 }
 `
-const queryCampaignByName = `
+const queryBatchChangeByName = `
 fragment u on User { databaseID, siteAdmin }
 fragment o on Org  { id, name }
 
 query($namespace: ID!, $name: String!){
-  campaign(namespace: $namespace, name: $name) {
+  batchChange(namespace: $namespace, name: $name) {
     id, name, description
     initialApplier { ...u }
     lastApplier    { ...u }

@@ -106,24 +106,24 @@ export const NamespaceCampaignsArea = withAuthenticatedUser<
             />
             <Route path={`${match.url}/create`} render={props => <CreateCampaignPage {...outerProps} {...props} />} />
             <Route
-                path={`${match.url}/:campaignName/close`}
-                render={({ match, ...props }: RouteComponentProps<{ campaignName: string }>) => (
+                path={`${match.url}/:batchChangeName/close`}
+                render={({ match, ...props }: RouteComponentProps<{ batchChangeName: string }>) => (
                     <CampaignClosePage
                         {...outerProps}
                         {...props}
                         namespaceID={namespaceID}
-                        campaignName={match.params.campaignName}
+                        batchChangeName={match.params.batchChangeName}
                     />
                 )}
             />
             <Route
-                path={`${match.url}/:campaignName`}
-                render={({ match, ...props }: RouteComponentProps<{ campaignName: string }>) => (
+                path={`${match.url}/:batchChangeName`}
+                render={({ match, ...props }: RouteComponentProps<{ batchChangeName: string }>) => (
                     <CampaignDetailsPage
                         {...outerProps}
                         {...props}
                         namespaceID={namespaceID}
-                        campaignName={match.params.campaignName}
+                        batchChangeName={match.params.batchChangeName}
                     />
                 )}
             />

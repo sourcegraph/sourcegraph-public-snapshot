@@ -1,10 +1,10 @@
 import React from 'react'
 import classNames from 'classnames'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
-import { CampaignFields } from '../../../graphql-operations'
+import { BatchChangeFields } from '../../../graphql-operations'
 
 interface ClosedNoticeProps {
-    closedAt: CampaignFields['closedAt']
+    closedAt: BatchChangeFields['closedAt']
     className?: string
 }
 

@@ -385,7 +385,7 @@ func TestService(t *testing.T) {
 		t.Run("success", func(t *testing.T) {
 			opts := CreateCampaignSpecOpts{
 				NamespaceUserID:      admin.ID,
-				RawSpec:              ct.TestRawCampaignSpec,
+				RawSpec:              ct.TestRawBatchSpec,
 				ChangesetSpecRandIDs: changesetSpecRandIDs,
 			}
 
@@ -426,7 +426,7 @@ func TestService(t *testing.T) {
 		t.Run("success with YAML raw spec", func(t *testing.T) {
 			opts := CreateCampaignSpecOpts{
 				NamespaceUserID: admin.ID,
-				RawSpec:         ct.TestRawCampaignSpecYAML,
+				RawSpec:         ct.TestRawBatchSpecYAML,
 			}
 
 			spec, err := svc.CreateCampaignSpec(adminCtx, opts)
@@ -439,7 +439,7 @@ func TestService(t *testing.T) {
 			}
 
 			var wantFields campaigns.CampaignSpecFields
-			if err := json.Unmarshal([]byte(ct.TestRawCampaignSpec), &wantFields); err != nil {
+			if err := json.Unmarshal([]byte(ct.TestRawBatchSpec), &wantFields); err != nil {
 				t.Fatal(err)
 			}
 
@@ -453,7 +453,7 @@ func TestService(t *testing.T) {
 
 			opts := CreateCampaignSpecOpts{
 				NamespaceUserID:      user.ID,
-				RawSpec:              ct.TestRawCampaignSpec,
+				RawSpec:              ct.TestRawBatchSpec,
 				ChangesetSpecRandIDs: changesetSpecRandIDs,
 			}
 
@@ -466,7 +466,7 @@ func TestService(t *testing.T) {
 			containsInvalidID := []string{changesetSpecRandIDs[0], "foobar"}
 			opts := CreateCampaignSpecOpts{
 				NamespaceUserID:      admin.ID,
-				RawSpec:              ct.TestRawCampaignSpec,
+				RawSpec:              ct.TestRawBatchSpec,
 				ChangesetSpecRandIDs: containsInvalidID,
 			}
 
@@ -480,7 +480,7 @@ func TestService(t *testing.T) {
 
 			opts := CreateCampaignSpecOpts{
 				NamespaceUserID: admin.ID,
-				RawSpec:         ct.TestRawCampaignSpecYAML,
+				RawSpec:         ct.TestRawBatchSpecYAML,
 			}
 
 			_, err := svc.CreateCampaignSpec(userCtx, opts)
@@ -504,7 +504,7 @@ func TestService(t *testing.T) {
 
 			opts := CreateCampaignSpecOpts{
 				NamespaceOrgID:       orgID,
-				RawSpec:              ct.TestRawCampaignSpec,
+				RawSpec:              ct.TestRawBatchSpec,
 				ChangesetSpecRandIDs: changesetSpecRandIDs,
 			}
 
@@ -532,7 +532,7 @@ func TestService(t *testing.T) {
 			// without accidently attaching the existing ChangesetSpecs.
 			opts := CreateCampaignSpecOpts{
 				NamespaceUserID:      admin.ID,
-				RawSpec:              ct.TestRawCampaignSpec,
+				RawSpec:              ct.TestRawBatchSpec,
 				ChangesetSpecRandIDs: []string{},
 			}
 

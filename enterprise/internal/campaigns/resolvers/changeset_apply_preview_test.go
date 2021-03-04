@@ -102,10 +102,10 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	apiID := string(marshalCampaignSpecRandID(campaignSpec.RandID))
+	apiID := string(marshalBatchSpecRandID(campaignSpec.RandID))
 
-	input := map[string]interface{}{"campaignSpec": apiID}
-	var response struct{ Node apitest.CampaignSpec }
+	input := map[string]interface{}{"batchSpec": apiID}
+	var response struct{ Node apitest.BatchSpec }
 	apitest.MustExec(ctx, t, s, input, &response, queryChangesetApplyPreview)
 
 	haveApplyPreview := response.Node.ApplyPreview.Nodes
@@ -144,10 +144,10 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 }
 
 const queryChangesetApplyPreview = `
-query ($campaignSpec: ID!) {
-    node(id: $campaignSpec) {
+query ($batchSpec: ID!) {
+    node(id: $batchSpec) {
       __typename
-      ... on CampaignSpec {
+      ... on BatchSpec {
         id
         applyPreview {
           totalCount
