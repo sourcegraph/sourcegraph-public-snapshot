@@ -27,7 +27,7 @@ const getWarningMessage = (codeHostName: string, repoCount: number | undefined):
 
     const { verb, adjective, repoNoun } = repoCount > 1 ? config.multiple : config.single
 
-    return `There ${verb} ${repoCount} ${repoNoun} synced to Sourcegraph from ${codeHostName}. If the connection with ${codeHostName}.com is removed, ${adjective} will no longer be synced with Sourcegraph.`
+    return `There ${verb} ${repoCount} ${repoNoun} synced to Sourcegraph from ${codeHostName}.com. If the connection with ${codeHostName}.com is removed, ${adjective} will no longer be synced with Sourcegraph.`
 }
 
 export const RemoveCodeHostConnectionModal: React.FunctionComponent<{

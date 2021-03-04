@@ -17,9 +17,9 @@ import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../.
 import { eventLogger } from '../../../tracking/eventLogger'
 import { SourcegraphContext } from '../../../jscontext'
 
-type AuthProvider = SourcegraphContext['authProviders'][0]
-type ServiceType = AuthProvider['serviceType']
-type AuthProvidersByType = Partial<Record<ServiceType, AuthProvider>>
+// type AuthProvider = SourcegraphContext['authProviders'][0]
+// type ServiceType = AuthProvider['serviceType']
+// type AuthProvidersByType = Partial<Record<ServiceType, AuthProvider>>
 
 export interface UserAddCodeHostsPageProps extends RouteComponentProps {
     userID: Scalars['ID']
@@ -40,14 +40,10 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     codeHostExternalServices,
     history,
     routingPrefix,
-    context,
+    /* context */
 }) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
-
-    const [isUpdateModalOpen, setIssUpdateModalOpen] = useState(false)
-    const toggleUpdateModal = useCallback(() => {
-        setIssUpdateModalOpen(!isUpdateModalOpen)
-    }, [isUpdateModalOpen])
+    const [showAddReposFor, setShowAddReposFor] = useState('')
 
     const fetchExternalServices = useCallback(async () => {
         setStatusOrError('loading')
@@ -64,6 +60,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             return accumulator
         }, {})
 
+        setShowAddReposFor('')
         setStatusOrError(services)
     }, [userID])
 
@@ -77,37 +74,38 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         })
     }, [fetchExternalServices])
 
-    const handleServiceUpsert = useCallback(
+    useEffect(() => {}, [statusOrError])
+
+    const addNewService = useCallback(
         (service: ListExternalServiceFields): void => {
             if (isServicesByKind(statusOrError)) {
                 setStatusOrError({ ...statusOrError, [service.kind]: service })
+                // display "Add repos" banner only if we just added a connection
+                // and there were no errors or warnings
+                if (!service.lastSyncError && !service.warning) {
+                    setShowAddReposFor(service.displayName)
+                }
             }
         },
         [statusOrError]
     )
 
+    const handleError = useCallback((error: ErrorLike): void => {
+        // reset 'add your repositories banner', we only want one banner at the
+        // time and errors will have it's own
+        setShowAddReposFor('')
+        setStatusOrError(error)
+    }, [])
+
     const getServiceWarningFragment = ({ id, displayName }: ListExternalServiceFields): React.ReactFragment => (
         <div className="alert alert-danger my-4" key={id}>
             <strong className="align-middle">Could not connect to {displayName}.</strong>
-            <span className="align-middle"> Please </span>
-            <button type="button" className="btn btn-link text-primary p-0" onClick={toggleUpdateModal}>
-                update your access token
-            </button>{' '}
-            <span className="align-middle">to restore the connection.</span>
+            <span className="align-middle">
+                {' '}
+                Please remove {displayName} code host connection and try another token to restore the connection.
+            </span>
         </div>
     )
-
-    const authProvidersByType = context.authProviders.reduce((accumulator: AuthProvidersByType, provider) => {
-        accumulator[provider.serviceType] = provider
-        return accumulator
-    }, {})
-
-    const sendOAuthRequest = (kind: ExternalServiceKind): void => {
-        const lowerCaseKind = kind.toLocaleLowerCase()
-        const authProvider = authProvidersByType[lowerCaseKind]
-        debugger
-        window.location.assign(`${authProvider.authenticationURL as string}&redirect=${window.location.href}`)
-    }
 
     const codeHostOAuthButtons = isServicesByKind(statusOrError)
         ? Object.values(codeHostExternalServices).reduce(
@@ -115,7 +113,6 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                   if (!statusOrError[kind]) {
                       accumulator.push(
                           <button
-                              onClick={() => sendOAuthRequest(kind)}
                               key={kind}
                               type="button"
                               className={`btn mr-2 ${kind === 'GITLAB' ? 'btn-gitlab' : 'btn-dark'}`}
@@ -147,6 +144,15 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 </p>
             </div>
 
+            {showAddReposFor && (
+                <div className="alert alert-success mb-4" role="alert">
+                    Connected with {showAddReposFor}. Next,{' '}
+                    <Link className="text-primary" to={`${routingPrefix}/repositories`}>
+                        <b>add your repositories →</b>
+                    </Link>
+                </div>
+            )}
+
             {/* display external service errors */}
             {isServicesByKind(statusOrError) &&
                 Object.values(statusOrError)
@@ -155,10 +161,12 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                     // the sync. We want to display an alert for both.
                     .filter(service => service.warning || service.lastSyncError)
                     .map(getServiceWarningFragment)}
+
             {/* display other errors */}
             {isErrorLike(statusOrError) && (
                 <ErrorAlert error={statusOrError} history={history} prefix="Code host action error" icon={false} />
             )}
+
             {codeHostExternalServices && isServicesByKind(statusOrError) ? (
                 <>
                     {codeHostOAuthButtons.length > 0 && (
@@ -169,7 +177,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                 <div className="row">
                                     <span className="text-muted">
                                         Learn more about{' '}
-                                        <Link className="text-primary" to="/tbd">
+                                        <Link className="text-primary" to="/will-be-added-soon">
                                             code host connections
                                         </Link>
                                     </span>
@@ -187,11 +195,9 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                     kind={kind}
                                     name={defaultDisplayName}
                                     icon={icon}
-                                    isUpdateModalOpen={isUpdateModalOpen}
-                                    toggleUpdateModal={toggleUpdateModal}
-                                    onDidUpsert={handleServiceUpsert}
+                                    onDidAdd={addNewService}
                                     onDidRemove={fetchExternalServices}
-                                    onDidError={setStatusOrError}
+                                    onDidError={handleError}
                                 />
                             </li>
                         ))}

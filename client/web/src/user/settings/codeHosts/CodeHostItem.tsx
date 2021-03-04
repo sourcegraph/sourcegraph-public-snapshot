@@ -7,7 +7,6 @@ import { CircleDashedIcon } from '../../../components/CircleDashedIcon'
 
 import { AddCodeHostConnectionModal } from './AddCodeHostConnectionModal'
 import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
-import { UpdateCodeHostConnectionModal } from './UpdateCodeHostConnectionModal'
 import { hints } from './modalHints'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 import { ErrorLike } from '../../../../../shared/src/util/errors'
@@ -17,12 +16,10 @@ interface CodeHostItemProps {
     kind: ExternalServiceKind
     name: string
     icon: React.ComponentType<{ className?: string }>
-    isUpdateModalOpen: boolean
-    toggleUpdateModal: () => void
     // optional service object fields when the code host connection is active
     service?: ListExternalServiceFields
 
-    onDidUpsert: (service: ListExternalServiceFields) => void
+    onDidAdd: (service: ListExternalServiceFields) => void
     onDidRemove: () => void
     onDidError: (error: ErrorLike) => void
 }
@@ -33,9 +30,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     kind,
     name,
     icon: Icon,
-    isUpdateModalOpen,
-    toggleUpdateModal,
-    onDidUpsert,
+    onDidAdd,
     onDidRemove,
     onDidError,
 }) => {
@@ -61,7 +56,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                     kind={kind}
                     name={name}
                     hintFragment={hints[kind]}
-                    onDidAdd={onDidUpsert}
+                    onDidAdd={onDidAdd}
                     onDidCancel={toggleAddConnectionModal}
                     onDidError={onDidError}
                 />
@@ -74,18 +69,6 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                     repoCount={service.repoCount}
                     onDidRemove={onDidRemove}
                     onDidCancel={toggleRemoveConnectionModal}
-                    onDidError={onDidError}
-                />
-            )}
-            {service && isUpdateModalOpen && (
-                <UpdateCodeHostConnectionModal
-                    serviceId={service.id}
-                    serviceConfig={service.config}
-                    name={service.displayName}
-                    kind={kind}
-                    hintFragment={hints[kind]}
-                    onDidCancel={toggleUpdateModal}
-                    onDidUpdate={onDidUpsert}
                     onDidError={onDidError}
                 />
             )}
@@ -112,9 +95,11 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                         Remove
                     </button>
                 ) : (
-                    <ButtonDropdown isOpen={dropdownOpen} toggle={toggleDropdown} direction="down">
-                        <DropdownToggle caret={true}>Connect</DropdownToggle>
-                        <DropdownMenu>
+                    <ButtonDropdown isOpen={dropdownOpen} toggle={toggleDropdown} direction="down" right={true}>
+                        <DropdownToggle color="outline-secondary" caret={true}>
+                            Connect
+                        </DropdownToggle>
+                        <DropdownMenu right={true}>
                             <DropdownItem>Connect with {name} </DropdownItem>
                             <DropdownItem onClick={toggleAddConnectionModal}>Connect with access token</DropdownItem>
                         </DropdownMenu>
@@ -124,17 +109,3 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
         </div>
     )
 }
-
-{
-    /* <button
-                            type="button"
-                            className="btn btn-link text-primary px-0 mr-2 shadow-none"
-                            onClick={toggleUpdateModal}
-                        >
-                            Edit
-                        </button> */
-}
-
-//     <button type="button" className="btn btn-success shadow-none" onClick={toggleAddConnectionModal}>
-//     Connect
-// </button>

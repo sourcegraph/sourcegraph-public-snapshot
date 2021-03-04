@@ -1,22 +1,4 @@
-.add-user-code-hosts-page {
-    &__icon--inside {
-        position: absolute;
-        right: 0.25rem;
-        top: 0.5rem;
-    }
-    &__icon--dashed {
-        color: var(--border-color);
-    }
-    &__btn--gitlab {
-        background-color: #6e49cb;
-        color: $white;
-        &:hover {
-            color: $white;
-            background-color: #583aa2;
-        }
-    }
-}
-
+// TODO: move to shared styles
 $gitlab: #6e49cb;
 
 .btn-gitlab {
@@ -29,4 +11,15 @@ $gitlab: #6e49cb;
         darken($gitlab, 30%)
     );
     color: $white;
+}
+
+.add-user-code-hosts-page {
+    &__icon--inside {
+        position: absolute;
+        right: 0.25rem;
+        top: 0.5rem;
+    }
+    &__icon--dashed {
+        color: var(--border-color);
+    }
 }
