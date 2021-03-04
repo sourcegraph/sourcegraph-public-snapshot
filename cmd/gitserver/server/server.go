@@ -146,6 +146,9 @@ type Server struct {
 	// ctx is the context we use for all background jobs. It is done when the
 	// server is stopped. Do not directly call this, rather call
 	// Server.context()
+	//
+	// TODO: This is an antipattern, see https://blog.golang.org/context-and-structs
+	//       Also, it only appears to be set when we start the handler
 	ctx      context.Context
 	cancel   context.CancelFunc // used to shutdown background jobs
 	cancelMu sync.Mutex         // protects canceled
