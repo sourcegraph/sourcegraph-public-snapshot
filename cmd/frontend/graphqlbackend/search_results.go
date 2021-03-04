@@ -894,7 +894,7 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 		}
 	}
 	if srr != nil {
-		r.sortResults(ctx, srr.SearchResults)
+		r.sortResults(srr.SearchResults)
 	}
 	// copy userSettings from searchResolver to SearchResultsResolver
 	if srr != nil {
@@ -1822,7 +1822,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	tr.LazyPrintf("results=%d %s", len(results), &common)
 
-	r.sortResults(ctx, results)
+	r.sortResults(results)
 
 	resultsResolver := SearchResultsResolver{
 		db:            r.db,
@@ -1955,7 +1955,7 @@ func (r *searchResolver) selectResults(results []SearchResultResolver) []SearchR
 	return dedup.Results()
 }
 
-func (r *searchResolver) sortResults(ctx context.Context, results []SearchResultResolver) {
+func (r *searchResolver) sortResults(results []SearchResultResolver) {
 	var exactPatterns map[string]struct{}
 	if getBoolPtr(r.UserSettings.SearchGlobbing, false) {
 		exactPatterns = r.getExactFilePatterns()
