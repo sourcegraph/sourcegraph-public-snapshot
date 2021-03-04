@@ -496,7 +496,7 @@ func TestPermissionLevels(t *testing.T) {
 					node(id: %q) {
 						id
 						... on ExternalChangeset {
-							campaigns(viewerCanAdminister: %t) { totalCount, nodes { id } }
+							batchChanges(viewerCanAdminister: %t) { totalCount, nodes { id } }
 						}
 					}
 					}`, tc.viewerCanAdminister, marshalChangesetID(changeset.ID), tc.viewerCanAdminister)
@@ -505,7 +505,7 @@ func TestPermissionLevels(t *testing.T) {
 						Node         apitest.Changeset
 					}
 					apitest.MustExec(actorCtx, t, s, nil, &res, query)
-					for _, conn := range []apitest.BatchChangeConnection{res.BatchChanges, res.Node.Campaigns} {
+					for _, conn := range []apitest.BatchChangeConnection{res.BatchChanges, res.Node.BatchChanges} {
 						if have, want := conn.TotalCount, len(tc.wantCampaigns); have != want {
 							t.Fatalf("wrong count of campaigns returned, want=%d have=%d", want, have)
 						}
@@ -1088,7 +1088,7 @@ func testChangesetResponse(t *testing.T, s *graphql.Schema, ctx context.Context,
 		t.Fatalf("changeset has wrong state. want=%q, have=%q", want, have)
 	}
 
-	if have, want := res.Node.Campaigns.TotalCount, 1; have != want {
+	if have, want := res.Node.BatchChanges.TotalCount, 1; have != want {
 		t.Fatalf("changeset has wrong campaigns totalcount. want=%d, have=%d", want, have)
 	}
 
@@ -1117,7 +1117,7 @@ query {
 	  createdAt
 	  updatedAt
 	  nextSyncAt
-	  campaigns {
+	  batchChanges {
 	    totalCount
 	  }
     }
@@ -1128,7 +1128,7 @@ query {
 	  createdAt
 	  updatedAt
 	  nextSyncAt
-	  campaigns {
+	  batchChanges {
 	    totalCount
 	  }
 

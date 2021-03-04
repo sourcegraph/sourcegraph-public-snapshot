@@ -52,7 +52,7 @@ type User struct {
 	DatabaseID int32
 	SiteAdmin  bool
 
-	Campaigns             BatchChangeConnection
+	BatchChanges          BatchChangeConnection
 	BatchChangesCodeHosts BatchChangesCodeHostsConnection
 }
 
@@ -60,7 +60,7 @@ type Org struct {
 	ID   string
 	Name string
 
-	Campaigns BatchChangeConnection
+	BatchChanges BatchChangeConnection
 }
 
 type UserOrg struct {
@@ -120,22 +120,22 @@ type ExternalURL struct {
 }
 
 type Changeset struct {
-	Typename    string `json:"__typename"`
-	ID          string
-	Repository  Repository
-	Campaigns   BatchChangeConnection
-	CreatedAt   string
-	UpdatedAt   string
-	NextSyncAt  string
-	Title       string
-	Body        string
-	Error       string
-	State       string
-	ExternalID  string
-	ExternalURL ExternalURL
-	ReviewState string
-	CheckState  string
-	Events      ChangesetEventConnection
+	Typename     string `json:"__typename"`
+	ID           string
+	Repository   Repository
+	BatchChanges BatchChangeConnection
+	CreatedAt    string
+	UpdatedAt    string
+	NextSyncAt   string
+	Title        string
+	Body         string
+	Error        string
+	State        string
+	ExternalID   string
+	ExternalURL  ExternalURL
+	ReviewState  string
+	CheckState   string
+	Events       ChangesetEventConnection
 
 	Diff Comparison
 
@@ -210,9 +210,6 @@ type BatchSpec struct {
 	CreatedAt graphqlbackend.DateTime
 	ExpiresAt *graphqlbackend.DateTime
 
-	// DEPRECATED
-	SupersedingCampaignSpec *BatchSpec
-	AppliesToCampaign       BatchChange
 	// NEW
 	SupersedingBatchSpec *BatchSpec
 	AppliesToBatchChange BatchChange

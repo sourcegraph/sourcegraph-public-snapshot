@@ -223,7 +223,7 @@ func TestBatchSpecResolver(t *testing.T) {
 		}
 		// Expect no superseding campaign spec, since this request is run as a
 		// different user.
-		want.SupersedingCampaignSpec = nil
+		want.SupersedingBatchSpec = nil
 
 		if diff := cmp.Diff(want, response.Node); diff != "" {
 			t.Fatalf("unexpected response (-want +got):\n%s", diff)

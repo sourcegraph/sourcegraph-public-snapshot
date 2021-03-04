@@ -163,6 +163,10 @@ func (r *changesetResolver) Repository(ctx context.Context) *graphqlbackend.Repo
 }
 
 func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.ListBatchChangesArgs) (graphqlbackend.BatchChangesConnectionResolver, error) {
+	return r.BatchChanges(ctx, args)
+}
+
+func (r *changesetResolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBatchChangesArgs) (graphqlbackend.BatchChangesConnectionResolver, error) {
 	opts := store.ListCampaignsOpts{
 		ChangesetID: r.changeset.ID,
 	}

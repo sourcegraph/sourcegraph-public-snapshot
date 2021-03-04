@@ -232,7 +232,7 @@ func TestBatchChangesListing(t *testing.T) {
 
 		want := apitest.User{
 			ID: userAPIID,
-			Campaigns: apitest.BatchChangeConnection{
+			BatchChanges: apitest.BatchChangeConnection{
 				TotalCount: 1,
 				Nodes: []apitest.BatchChange{
 					{ID: string(marshalBatchChangeID(campaign.ID))},
@@ -265,7 +265,7 @@ func TestBatchChangesListing(t *testing.T) {
 
 		want := apitest.Org{
 			ID: orgAPIID,
-			Campaigns: apitest.BatchChangeConnection{
+			BatchChanges: apitest.BatchChangeConnection{
 				TotalCount: 1,
 				Nodes: []apitest.BatchChange{
 					{ID: string(marshalBatchChangeID(campaign.ID))},
@@ -284,7 +284,7 @@ query($node: ID!) {
   node(id: $node) {
     ... on User {
       id
-      campaigns {
+      batchChanges {
         totalCount
         nodes {
           id
@@ -294,7 +294,7 @@ query($node: ID!) {
 
     ... on Org {
       id
-      campaigns {
+      batchChanges {
         totalCount
         nodes {
           id

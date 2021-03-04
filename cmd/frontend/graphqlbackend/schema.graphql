@@ -8213,6 +8213,29 @@ interface Changeset {
         """
         viewerCanAdminister: Boolean
     ): CampaignConnection!
+        @deprecated(reason: "campaigns have been renamed to batch changes. Use batchChanges instead.")
+
+    """
+    The batch changes that contain this changeset.
+    """
+    batchChanges(
+        """
+        Returns the first n batch changes from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Only return batch changes in this state.
+        """
+        state: BatchChangeState
+        """
+        Only include batch changes that the viewer can administer.
+        """
+        viewerCanAdminister: Boolean
+    ): BatchChangeConnection!
 
     """
     The publication state of the changeset.
@@ -8283,6 +8306,29 @@ type HiddenExternalChangeset implements Node & Changeset {
         """
         viewerCanAdminister: Boolean
     ): CampaignConnection!
+        @deprecated(reason: "campaigns have been renamed to batch changes. Use batchChanges instead.")
+
+    """
+    The batch changes that contain this changeset.
+    """
+    batchChanges(
+        """
+        Returns the first n batch changes from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Only return batch changes in this state.
+        """
+        state: BatchChangeState
+        """
+        Only include batch changes that the viewer can administer.
+        """
+        viewerCanAdminister: Boolean
+    ): BatchChangeConnection!
 
     """
     The publication state of the changeset.
@@ -8364,6 +8410,29 @@ type ExternalChangeset implements Node & Changeset {
         """
         viewerCanAdminister: Boolean
     ): CampaignConnection!
+        @deprecated(reason: "campaigns have been renamed to batch changes. Use batchChanges instead.")
+
+    """
+    The batch changes that contain this changeset.
+    """
+    batchChanges(
+        """
+        Returns the first n batch changes from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Only return batch changes in this state.
+        """
+        state: BatchChangeState
+        """
+        Only include batch changes that the viewer can administer.
+        """
+        viewerCanAdminister: Boolean
+    ): BatchChangeConnection!
 
     """
     The events belonging to this changeset.
@@ -9548,11 +9617,13 @@ extend type Mutation {
         """
         credential: String!
     ): CampaignsCredential!
+        @deprecated(reason: "campaigns have been renamed to batch changes. Use batchChanges instead.")
 
     """
     Hard-deletes a given campaigns credential.
     """
     deleteCampaignsCredential(campaignsCredential: ID!): EmptyResponse!
+        @deprecated(reason: "campaigns have been renamed to batch changes. Use batchChanges instead.")
 }
 
 extend type Org {
@@ -9577,6 +9648,7 @@ extend type Org {
         """
         viewerCanAdminister: Boolean
     ): CampaignConnection!
+        @deprecated(reason: "campaigns have been renamed to batch changes. Use batchChanges instead.")
 }
 
 extend type User {
@@ -9601,6 +9673,7 @@ extend type User {
         """
         viewerCanAdminister: Boolean
     ): CampaignConnection!
+        @deprecated(reason: "campaigns have been renamed to batch changes. Use batchChanges instead.")
 
     """
     Returns a connection of configured external services accessible by this user, for usage with campaigns.
@@ -9617,6 +9690,7 @@ extend type User {
         """
         after: String
     ): CampaignsCodeHostConnection!
+        @deprecated(reason: "campaigns have been renamed to batch changes. Use batchChanges instead.")
 }
 
 extend type Query {
@@ -9705,7 +9779,7 @@ extend type Mutation {
         Changeset specs that were locally computed and then uploaded using createChangesetSpec.
         """
         changesetSpecs: [ID!]!
-    ): BatchSpec! @deprecated(reason: "campaigns have been renamed to batch changes. Use createBatchSpec instead.")
+    ): BatchSpec!
 
     """
     Create or update a batch change from a batch spec and locally computed changeset specs. If no
@@ -9808,7 +9882,7 @@ extend type Query {
         Only include batch changes that the viewer can administer.
         """
         viewerCanAdminister: Boolean
-    ): CampaignConnection!
+    ): BatchChangeConnection!
     """
     Looks up a batch change by namespace and campaign name.
     """
@@ -9984,7 +10058,7 @@ type BatchChange implements Node {
     """
     The current change spec this change reflects.
     """
-    currentSpec: CampaignSpec!
+    currentSpec: BatchSpec!
 }
 
 """
@@ -10014,9 +10088,9 @@ type BatchSpec implements Node {
     parsedInput: JSONValue!
 
     """
-    The CampaignDescription that describes this campaign.
+    The BatchChangeDescription that describes this batch change.
     """
-    description: CampaignDescription!
+    description: BatchChangeDescription!
 
     """
     Generates a preview what operations would be performed if the batch spec would be applied.
@@ -10211,7 +10285,7 @@ type BatchChangesCodeHostConnection {
     """
     A list of code hosts.
     """
-    nodes: [CampaignsCodeHost!]!
+    nodes: [BatchChangesCodeHost!]!
 
     """
     The total number of configured external services in the connection.
@@ -10287,4 +10361,19 @@ The state of the batch change.
 enum BatchChangeState {
     OPEN
     CLOSED
+}
+
+"""
+A BatchChangeDescription describes a batch change.
+"""
+type BatchChangeDescription {
+    """
+    The name as parsed from the input.
+    """
+    name: String!
+
+    """
+    The description as parsed from the input.
+    """
+    description: String!
 }
