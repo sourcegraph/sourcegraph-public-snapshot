@@ -64,7 +64,7 @@ const batchChangeDefaults: BatchChangeFields = {
     },
     currentSpec: {
         originalInput: 'name: awesome-campaign\ndescription: somestring',
-        supersedingCampaignSpec: null,
+        supersedingBatchSpec: null,
     },
     diffStat: { added: 1000, changed: 2000, deleted: 1000 },
 }
@@ -282,7 +282,7 @@ const stories: Record<string, { url: string; supersededCampaignSpec?: boolean }>
 
 for (const [name, { url, supersededCampaignSpec }] of Object.entries(stories)) {
     add(name, () => {
-        const supersedingCampaignSpec = boolean('supersedingCampaignSpec', !!supersededCampaignSpec)
+        const supersedingBatchSpec = boolean('supersedingBatchSpec', !!supersededCampaignSpec)
         const viewerCanAdminister = boolean('viewerCanAdminister', true)
         const isClosed = boolean('isClosed', false)
         const batchChange: BatchChangeFields = useMemo(
@@ -290,7 +290,7 @@ for (const [name, { url, supersededCampaignSpec }] of Object.entries(stories)) {
                 ...batchChangeDefaults,
                 currentSpec: {
                     originalInput: batchChangeDefaults.currentSpec.originalInput,
-                    supersedingCampaignSpec: supersedingCampaignSpec
+                    supersedingBatchSpec: supersedingBatchSpec
                         ? {
                               createdAt: subDays(new Date(), 1).toISOString(),
                               applyURL: '/users/alice/campaigns/apply/newspecid',
@@ -300,7 +300,7 @@ for (const [name, { url, supersededCampaignSpec }] of Object.entries(stories)) {
                 viewerCanAdminister,
                 closedAt: isClosed ? subDays(now, 1).toISOString() : null,
             }),
-            [supersedingCampaignSpec, viewerCanAdminister, isClosed]
+            [supersedingBatchSpec, viewerCanAdminister, isClosed]
         )
 
         const fetchBatchChange: typeof fetchBatchChangeByNamespace = useCallback(() => of(batchChange), [batchChange])

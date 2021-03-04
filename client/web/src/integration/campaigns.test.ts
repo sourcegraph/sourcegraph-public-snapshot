@@ -282,7 +282,7 @@ function mockCommonGraphQLResponses(
                 },
                 currentSpec: {
                     originalInput: 'name: awesome-campaign\ndescription: somesttring',
-                    supersedingCampaignSpec: null,
+                    supersedingBatchSpec: null,
                 },
                 ...campaignOverrides,
             },

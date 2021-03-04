@@ -135,7 +135,7 @@ export const CampaignDetailsPage: React.FunctionComponent<CampaignDetailsPagePro
                 }
                 className="test-campaign-details-page mb-3"
             />
-            <SupersedingCampaignSpecAlert spec={batchChange.currentSpec.supersedingCampaignSpec} />
+            <SupersedingCampaignSpecAlert spec={batchChange.currentSpec.supersedingBatchSpec} />
             <ClosedNotice closedAt={batchChange.closedAt} className="mb-3" />
             <UnpublishedNotice
                 unpublished={batchChange.changesetsStats.unpublished}

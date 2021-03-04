@@ -64,7 +64,7 @@ const batchChangeDefaults: BatchChangeFields = {
     },
     currentSpec: {
         originalInput: 'name: awesome-campaign\ndescription: somestring',
-        supersedingCampaignSpec: null,
+        supersedingBatchSpec: null,
     },
 }
 

@@ -77,7 +77,7 @@ const batchChangeFragment = gql`
 
         currentSpec {
             originalInput
-            supersedingCampaignSpec {
+            supersedingBatchSpec {
                 createdAt
                 applyURL
             }
