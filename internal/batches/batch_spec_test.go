@@ -7,7 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestCampaignSpecUnmarshalValidate(t *testing.T) {
+func TestBatchSpecUnmarshalValidate(t *testing.T) {
 	tests := []struct {
 		name    string
 		rawSpec string
@@ -98,7 +98,7 @@ changesetTemplate:
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			spec := &CampaignSpec{RawSpec: tc.rawSpec}
+			spec := &BatchSpec{RawSpec: tc.rawSpec}
 			haveErr := fmt.Sprintf("%v", spec.UnmarshalValidate())
 			if haveErr == "<nil>" {
 				haveErr = ""

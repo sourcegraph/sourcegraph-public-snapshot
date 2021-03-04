@@ -40,7 +40,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 	}
 	ct.MockRepoPermissions(t, db, userID, repo.ID)
 
-	spec := &batches.CampaignSpec{
+	spec := &batches.BatchSpec{
 		NamespaceUserID: userID,
 		UserID:          userID,
 	}
@@ -48,7 +48,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	campaign := &batches.Campaign{
+	campaign := &batches.BatchChange{
 		Name:             "my-unique-name",
 		NamespaceUserID:  userID,
 		InitialApplierID: userID,

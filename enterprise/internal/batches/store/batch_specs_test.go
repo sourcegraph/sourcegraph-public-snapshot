@@ -12,12 +12,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/batches"
 )
 
-func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	campaignSpecs := make([]*batches.CampaignSpec, 0, 3)
+func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+	campaignSpecs := make([]*batches.BatchSpec, 0, 3)
 
 	t.Run("Create", func(t *testing.T) {
 		for i := 0; i < cap(campaignSpecs); i++ {
-			c := &batches.CampaignSpec{
+			c := &batches.BatchSpec{
 				RawSpec: `{"name": "Foobar", "description": "My description"}`,
 				Spec: batches.CampaignSpecFields{
 					Name:        "Foobar",
@@ -303,7 +303,7 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, clock c
 		}
 
 		for _, tc := range tests {
-			campaignSpec := &batches.CampaignSpec{
+			campaignSpec := &batches.BatchSpec{
 				UserID:          1,
 				NamespaceUserID: 1,
 				CreatedAt:       tc.createdAt,
@@ -314,7 +314,7 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, clock c
 			}
 
 			if tc.hasCampaign {
-				campaign := &batches.Campaign{
+				campaign := &batches.BatchChange{
 					Name:             "not-blank",
 					InitialApplierID: 1,
 					NamespaceUserID:  1,

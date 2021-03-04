@@ -74,7 +74,7 @@ func TestPermissionLevels(t *testing.T) {
 	createCampaign := func(t *testing.T, s *store.Store, name string, userID int32, campaignSpecID int64) (campaignID int64) {
 		t.Helper()
 
-		c := &batches.Campaign{
+		c := &batches.BatchChange{
 			Name:             name,
 			InitialApplierID: userID,
 			NamespaceUserID:  userID,
@@ -92,7 +92,7 @@ func TestPermissionLevels(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		cs := &batches.CampaignSpec{UserID: userID, NamespaceUserID: userID}
+		cs := &batches.BatchSpec{UserID: userID, NamespaceUserID: userID}
 		if err := s.CreateCampaignSpec(ctx, cs); err != nil {
 			t.Fatal(err)
 		}
@@ -103,7 +103,7 @@ func TestPermissionLevels(t *testing.T) {
 	createCampaignSpec := func(t *testing.T, s *store.Store, userID int32) (randID string, id int64) {
 		t.Helper()
 
-		cs := &batches.CampaignSpec{UserID: userID, NamespaceUserID: userID}
+		cs := &batches.BatchSpec{UserID: userID, NamespaceUserID: userID}
 		if err := s.CreateCampaignSpec(ctx, cs); err != nil {
 			t.Fatal(err)
 		}
@@ -824,7 +824,7 @@ func TestRepositoryPermissions(t *testing.T) {
 			changesets = append(changesets, c)
 		}
 
-		spec := &batches.CampaignSpec{
+		spec := &batches.BatchSpec{
 			NamespaceUserID: userID,
 			UserID:          userID,
 		}
@@ -832,7 +832,7 @@ func TestRepositoryPermissions(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		campaign := &batches.Campaign{
+		campaign := &batches.BatchChange{
 			Name:             "my campaign",
 			InitialApplierID: userID,
 			NamespaceUserID:  userID,
@@ -928,7 +928,7 @@ func TestRepositoryPermissions(t *testing.T) {
 	})
 
 	t.Run("CampaignSpec and changesetSpecs", func(t *testing.T) {
-		campaignSpec := &batches.CampaignSpec{
+		campaignSpec := &batches.BatchSpec{
 			UserID:          userID,
 			NamespaceUserID: userID,
 			Spec:            batches.CampaignSpecFields{Name: "campaign-spec-and-changeset-specs"},

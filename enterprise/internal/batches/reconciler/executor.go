@@ -631,10 +631,10 @@ func setBasicAuth(u *url.URL, extSvcType, username, password string) error {
 }
 
 type getCampaigner interface {
-	GetCampaign(ctx context.Context, opts store.GetCampaignOpts) (*batches.Campaign, error)
+	GetCampaign(ctx context.Context, opts store.GetCampaignOpts) (*batches.BatchChange, error)
 }
 
-func loadCampaign(ctx context.Context, tx getCampaigner, id int64) (*batches.Campaign, error) {
+func loadCampaign(ctx context.Context, tx getCampaigner, id int64) (*batches.BatchChange, error) {
 	if id == 0 {
 		return nil, errors.New("changeset has no owning campaign")
 	}
@@ -684,7 +684,7 @@ var internalClient interface {
 	ExternalURL(context.Context) (string, error)
 } = api.InternalClient
 
-func campaignURL(ctx context.Context, ns *database.Namespace, c *batches.Campaign) (string, error) {
+func campaignURL(ctx context.Context, ns *database.Namespace, c *batches.BatchChange) (string, error) {
 	// To build the absolute URL, we need to know where Sourcegraph is!
 	extStr, err := internalClient.ExternalURL(ctx)
 	if err != nil {

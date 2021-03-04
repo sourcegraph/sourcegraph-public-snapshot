@@ -1050,17 +1050,17 @@ func (r *Resolver) DeleteBatchChangesCredential(ctx context.Context, args *graph
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-func parseCampaignState(s *string) (batches.CampaignState, error) {
+func parseCampaignState(s *string) (batches.BatchChangeState, error) {
 	if s == nil {
-		return batches.CampaignStateAny, nil
+		return batches.BatchChangeStateAny, nil
 	}
 	switch *s {
 	case "OPEN":
-		return batches.CampaignStateOpen, nil
+		return batches.BatchChangeStateOpen, nil
 	case "CLOSED":
-		return batches.CampaignStateClosed, nil
+		return batches.BatchChangeStateClosed, nil
 	default:
-		return batches.CampaignStateAny, fmt.Errorf("unknown state %q", *s)
+		return batches.BatchChangeStateAny, fmt.Errorf("unknown state %q", *s)
 	}
 }
 

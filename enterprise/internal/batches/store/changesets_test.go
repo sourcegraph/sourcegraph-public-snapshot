@@ -1283,7 +1283,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 
 	// We need campaigns attached to each changeset
 	for _, cs := range changesets {
-		c := &batches.Campaign{
+		c := &batches.BatchChange{
 			Name:           "ListChangesetSyncData test",
 			NamespaceOrgID: 23,
 			LastApplierID:  1,

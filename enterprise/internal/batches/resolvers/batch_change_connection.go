@@ -19,7 +19,7 @@ type batchChangesConnectionResolver struct {
 
 	// cache results because they are used by multiple fields
 	once         sync.Once
-	batchChanges []*batches.Campaign
+	batchChanges []*batches.BatchChange
 	next         int64
 	err          error
 }
@@ -59,7 +59,7 @@ func (r *batchChangesConnectionResolver) PageInfo(ctx context.Context) (*graphql
 	return graphqlutil.HasNextPage(false), nil
 }
 
-func (r *batchChangesConnectionResolver) compute(ctx context.Context) ([]*batches.Campaign, int64, error) {
+func (r *batchChangesConnectionResolver) compute(ctx context.Context) ([]*batches.BatchChange, int64, error) {
 	r.once.Do(func() {
 		r.batchChanges, r.next, r.err = r.store.ListCampaigns(ctx, r.opts)
 	})

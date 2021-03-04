@@ -153,7 +153,7 @@ func TestChangesetResolver(t *testing.T) {
 		ReconcilerState:     batches.ReconcilerStateQueued,
 	})
 
-	spec := &batches.CampaignSpec{
+	spec := &batches.BatchSpec{
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
@@ -161,7 +161,7 @@ func TestChangesetResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	campaign := &batches.Campaign{
+	campaign := &batches.BatchChange{
 		Name:             "my-unique-name",
 		NamespaceUserID:  userID,
 		InitialApplierID: userID,

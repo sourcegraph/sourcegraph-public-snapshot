@@ -21,7 +21,7 @@ type changesetApplyPreviewResolver struct {
 
 	mapping           *store.RewirerMapping
 	preloadedNextSync time.Time
-	preloadedCampaign *batches.Campaign
+	preloadedCampaign *batches.BatchChange
 	campaignSpecID    int64
 }
 
@@ -133,7 +133,7 @@ type visibleChangesetApplyPreviewResolver struct {
 
 	mapping           *store.RewirerMapping
 	preloadedNextSync time.Time
-	preloadedCampaign *batches.Campaign
+	preloadedCampaign *batches.BatchChange
 	campaignSpecID    int64
 
 	planOnce sync.Once
@@ -141,7 +141,7 @@ type visibleChangesetApplyPreviewResolver struct {
 	planErr  error
 
 	campaignOnce sync.Once
-	campaign     *batches.Campaign
+	campaign     *batches.BatchChange
 	campaignErr  error
 }
 
@@ -256,7 +256,7 @@ func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) 
 	return r.plan, r.planErr
 }
 
-func (r *visibleChangesetApplyPreviewResolver) computeCampaign(ctx context.Context) (*batches.Campaign, error) {
+func (r *visibleChangesetApplyPreviewResolver) computeCampaign(ctx context.Context) (*batches.BatchChange, error) {
 	r.campaignOnce.Do(func() {
 		if r.preloadedCampaign != nil {
 			r.campaign = r.preloadedCampaign

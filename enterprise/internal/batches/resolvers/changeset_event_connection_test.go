@@ -42,7 +42,7 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	spec := &batches.CampaignSpec{
+	spec := &batches.BatchSpec{
 		NamespaceUserID: userID,
 		UserID:          userID,
 	}
@@ -50,7 +50,7 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	campaign := &batches.Campaign{
+	campaign := &batches.BatchChange{
 		Name:             "my-unique-name",
 		NamespaceUserID:  userID,
 		InitialApplierID: userID,

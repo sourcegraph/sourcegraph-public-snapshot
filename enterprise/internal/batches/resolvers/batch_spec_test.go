@@ -66,7 +66,7 @@ func TestBatchSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	matchingCampaign := &batches.Campaign{
+	matchingCampaign := &batches.BatchChange{
 		Name:             spec.Spec.Name,
 		NamespaceOrgID:   orgID,
 		InitialApplierID: userID,

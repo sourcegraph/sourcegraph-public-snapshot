@@ -17,10 +17,10 @@ func (e mockMissingErr) Error() string {
 }
 
 type FakeStore struct {
-	GetCampaignMock func(context.Context, store.GetCampaignOpts) (*batches.Campaign, error)
+	GetCampaignMock func(context.Context, store.GetCampaignOpts) (*batches.BatchChange, error)
 }
 
-func (fs *FakeStore) GetCampaign(ctx context.Context, opts store.GetCampaignOpts) (*batches.Campaign, error) {
+func (fs *FakeStore) GetCampaign(ctx context.Context, opts store.GetCampaignOpts) (*batches.BatchChange, error) {
 	if fs.GetCampaignMock != nil {
 		return fs.GetCampaignMock(ctx, opts)
 	}

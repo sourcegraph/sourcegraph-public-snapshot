@@ -34,7 +34,7 @@ var _ graphqlbackend.BatchSpecResolver = &batchSpecResolver{}
 type batchSpecResolver struct {
 	store *store.Store
 
-	campaignSpec       *batches.CampaignSpec
+	campaignSpec       *batches.BatchSpec
 	preloadedNamespace *graphqlbackend.NamespaceResolver
 
 	// We cache the namespace on the resolver, since it's accessed more than once.

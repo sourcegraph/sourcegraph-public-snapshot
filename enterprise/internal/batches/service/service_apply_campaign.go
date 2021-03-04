@@ -40,7 +40,7 @@ func (o ApplyCampaignOpts) String() string {
 }
 
 // ApplyCampaign creates the CampaignSpec.
-func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (campaign *batches.Campaign, err error) {
+func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (campaign *batches.BatchChange, err error) {
 	tr, ctx := trace.New(ctx, "Service.ApplyCampaign", opts.String())
 	defer func() {
 		tr.SetError(err)
@@ -140,13 +140,13 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	return campaign, nil
 }
 
-func (s *Service) ReconcileCampaign(ctx context.Context, campaignSpec *batches.CampaignSpec) (campaign *batches.Campaign, previousSpecID int64, err error) {
+func (s *Service) ReconcileCampaign(ctx context.Context, campaignSpec *batches.BatchSpec) (campaign *batches.BatchChange, previousSpecID int64, err error) {
 	campaign, err = s.GetCampaignMatchingCampaignSpec(ctx, campaignSpec)
 	if err != nil {
 		return nil, 0, err
 	}
 	if campaign == nil {
-		campaign = &batches.Campaign{}
+		campaign = &batches.BatchChange{}
 	} else {
 		previousSpecID = campaign.CampaignSpecID
 	}

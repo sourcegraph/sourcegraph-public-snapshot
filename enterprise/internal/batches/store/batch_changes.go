@@ -48,7 +48,7 @@ var campaignInsertColumns = []*sqlf.Query{
 }
 
 // CreateCampaign creates the given Campaign.
-func (s *Store) CreateCampaign(ctx context.Context, c *batches.Campaign) error {
+func (s *Store) CreateCampaign(ctx context.Context, c *batches.BatchChange) error {
 	q := s.createCampaignQuery(c)
 
 	return s.query(ctx, q, func(sc scanner) (err error) {
@@ -63,7 +63,7 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING %s
 `
 
-func (s *Store) createCampaignQuery(c *batches.Campaign) *sqlf.Query {
+func (s *Store) createCampaignQuery(c *batches.BatchChange) *sqlf.Query {
 	if c.CreatedAt.IsZero() {
 		c.CreatedAt = s.now()
 	}
@@ -91,7 +91,7 @@ func (s *Store) createCampaignQuery(c *batches.Campaign) *sqlf.Query {
 }
 
 // UpdateCampaign updates the given Campaign.
-func (s *Store) UpdateCampaign(ctx context.Context, c *batches.Campaign) error {
+func (s *Store) UpdateCampaign(ctx context.Context, c *batches.BatchChange) error {
 	q := s.updateCampaignQuery(c)
 
 	return s.query(ctx, q, func(sc scanner) (err error) { return scanCampaign(c, sc) })
@@ -105,7 +105,7 @@ WHERE id = %s
 RETURNING %s
 `
 
-func (s *Store) updateCampaignQuery(c *batches.Campaign) *sqlf.Query {
+func (s *Store) updateCampaignQuery(c *batches.BatchChange) *sqlf.Query {
 	c.UpdatedAt = s.now()
 
 	return sqlf.Sprintf(
@@ -141,7 +141,7 @@ DELETE FROM campaigns WHERE id = %s
 // counting batches.
 type CountCampaignsOpts struct {
 	ChangesetID int64
-	State       batches.CampaignState
+	State       batches.BatchChangeState
 
 	InitialApplierID int32
 
@@ -178,9 +178,9 @@ func countCampaignsQuery(opts *CountCampaignsOpts) *sqlf.Query {
 	}
 
 	switch opts.State {
-	case batches.CampaignStateOpen:
+	case batches.BatchChangeStateOpen:
 		preds = append(preds, sqlf.Sprintf("campaigns.closed_at IS NULL"))
-	case batches.CampaignStateClosed:
+	case batches.BatchChangeStateClosed:
 		preds = append(preds, sqlf.Sprintf("campaigns.closed_at IS NOT NULL"))
 	}
 
@@ -215,10 +215,10 @@ type GetCampaignOpts struct {
 }
 
 // GetCampaign gets a campaign matching the given options.
-func (s *Store) GetCampaign(ctx context.Context, opts GetCampaignOpts) (*batches.Campaign, error) {
+func (s *Store) GetCampaign(ctx context.Context, opts GetCampaignOpts) (*batches.BatchChange, error) {
 	q := getCampaignQuery(&opts)
 
-	var c batches.Campaign
+	var c batches.BatchChange
 	err := s.query(ctx, q, func(sc scanner) error {
 		return scanCampaign(&c, sc)
 	})
@@ -326,7 +326,7 @@ type ListCampaignsOpts struct {
 	LimitOpts
 	ChangesetID int64
 	Cursor      int64
-	State       batches.CampaignState
+	State       batches.BatchChangeState
 
 	InitialApplierID int32
 
@@ -335,12 +335,12 @@ type ListCampaignsOpts struct {
 }
 
 // ListCampaigns lists Campaigns with the given filters.
-func (s *Store) ListCampaigns(ctx context.Context, opts ListCampaignsOpts) (cs []*batches.Campaign, next int64, err error) {
+func (s *Store) ListCampaigns(ctx context.Context, opts ListCampaignsOpts) (cs []*batches.BatchChange, next int64, err error) {
 	q := listCampaignsQuery(&opts)
 
-	cs = make([]*batches.Campaign, 0, opts.DBLimit())
+	cs = make([]*batches.BatchChange, 0, opts.DBLimit())
 	err = s.query(ctx, q, func(sc scanner) error {
-		var c batches.Campaign
+		var c batches.BatchChange
 		if err := scanCampaign(&c, sc); err != nil {
 			return err
 		}
@@ -384,9 +384,9 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 	}
 
 	switch opts.State {
-	case batches.CampaignStateOpen:
+	case batches.BatchChangeStateOpen:
 		preds = append(preds, sqlf.Sprintf("campaigns.closed_at IS NULL"))
-	case batches.CampaignStateClosed:
+	case batches.BatchChangeStateClosed:
 		preds = append(preds, sqlf.Sprintf("campaigns.closed_at IS NOT NULL"))
 	}
 
@@ -414,7 +414,7 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 	)
 }
 
-func scanCampaign(c *batches.Campaign, s scanner) error {
+func scanCampaign(c *batches.BatchChange, s scanner) error {
 	return s.Scan(
 		&c.ID,
 		&c.Name,

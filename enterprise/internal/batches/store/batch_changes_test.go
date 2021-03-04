@@ -18,11 +18,11 @@ import (
 )
 
 func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	cs := make([]*batches.Campaign, 0, 3)
+	cs := make([]*batches.BatchChange, 0, 3)
 
 	t.Run("Create", func(t *testing.T) {
 		for i := 0; i < cap(cs); i++ {
-			c := &batches.Campaign{
+			c := &batches.BatchChange{
 				Name:        fmt.Sprintf("test-campaign-%d", i),
 				Description: "All the Javascripts are belong to us",
 
@@ -195,7 +195,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 		})
 
 		// The campaigns store returns the campaigns in reversed order.
-		reversedCampaigns := make([]*batches.Campaign, len(cs))
+		reversedCampaigns := make([]*batches.BatchChange, len(cs))
 		for i, c := range cs {
 			reversedCampaigns[len(cs)-i-1] = c
 		}
@@ -251,22 +251,22 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 
 		filterTests := []struct {
 			name  string
-			state batches.CampaignState
-			want  []*batches.Campaign
+			state batches.BatchChangeState
+			want  []*batches.BatchChange
 		}{
 			{
 				name:  "Any",
-				state: batches.CampaignStateAny,
+				state: batches.BatchChangeStateAny,
 				want:  reversedCampaigns,
 			},
 			{
 				name:  "Closed",
-				state: batches.CampaignStateClosed,
+				state: batches.BatchChangeStateClosed,
 				want:  reversedCampaigns[:len(reversedCampaigns)-1],
 			},
 			{
 				name:  "Open",
-				state: batches.CampaignStateOpen,
+				state: batches.BatchChangeStateOpen,
 				want:  cs[0:1],
 			},
 		}
@@ -550,7 +550,7 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 		// Set up two campaigns and specs: one in the user's namespace (which
 		// should be deleted when the user is hard deleted), and one that is
 		// merely created by the user (which should remain).
-		ownedSpec := &batches.CampaignSpec{
+		ownedSpec := &batches.BatchSpec{
 			NamespaceUserID: user.ID,
 			UserID:          user.ID,
 		}
@@ -558,7 +558,7 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 			t.Fatal(err)
 		}
 
-		unownedSpec := &batches.CampaignSpec{
+		unownedSpec := &batches.BatchSpec{
 			NamespaceOrgID: orgID,
 			UserID:         user.ID,
 		}
@@ -566,7 +566,7 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 			t.Fatal(err)
 		}
 
-		ownedCampaign := &batches.Campaign{
+		ownedCampaign := &batches.BatchChange{
 			Name:             "owned",
 			NamespaceUserID:  user.ID,
 			InitialApplierID: user.ID,
@@ -578,7 +578,7 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 			t.Fatal(err)
 		}
 
-		unownedCampaign := &batches.Campaign{
+		unownedCampaign := &batches.BatchChange{
 			Name:             "unowned",
 			NamespaceOrgID:   orgID,
 			InitialApplierID: user.ID,

@@ -38,14 +38,14 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	spec1 := &batches.CampaignSpec{
+	spec1 := &batches.BatchSpec{
 		NamespaceUserID: userID,
 		UserID:          userID,
 	}
 	if err := cstore.CreateCampaignSpec(ctx, spec1); err != nil {
 		t.Fatal(err)
 	}
-	spec2 := &batches.CampaignSpec{
+	spec2 := &batches.BatchSpec{
 		NamespaceUserID: userID,
 		UserID:          userID,
 	}
@@ -53,7 +53,7 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	campaign1 := &batches.Campaign{
+	campaign1 := &batches.BatchChange{
 		Name:             "my-unique-name",
 		NamespaceUserID:  userID,
 		InitialApplierID: userID,
@@ -64,7 +64,7 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 	if err := cstore.CreateCampaign(ctx, campaign1); err != nil {
 		t.Fatal(err)
 	}
-	campaign2 := &batches.Campaign{
+	campaign2 := &batches.BatchChange{
 		Name:             "my-other-unique-name",
 		NamespaceUserID:  userID,
 		InitialApplierID: userID,
@@ -192,7 +192,7 @@ func TestBatchChangesListing(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	createCampaignSpec := func(t *testing.T, spec *batches.CampaignSpec) {
+	createCampaignSpec := func(t *testing.T, spec *batches.BatchSpec) {
 		t.Helper()
 
 		spec.UserID = userID
@@ -202,7 +202,7 @@ func TestBatchChangesListing(t *testing.T) {
 		}
 	}
 
-	createCampaign := func(t *testing.T, c *batches.Campaign) {
+	createCampaign := func(t *testing.T, c *batches.BatchChange) {
 		t.Helper()
 
 		c.Name = "n"
@@ -213,10 +213,10 @@ func TestBatchChangesListing(t *testing.T) {
 	}
 
 	t.Run("listing a users batch changes", func(t *testing.T) {
-		spec := &batches.CampaignSpec{}
+		spec := &batches.BatchSpec{}
 		createCampaignSpec(t, spec)
 
-		campaign := &batches.Campaign{
+		campaign := &batches.BatchChange{
 			NamespaceUserID: userID,
 			CampaignSpecID:  spec.ID,
 			LastApplierID:   userID,
@@ -246,10 +246,10 @@ func TestBatchChangesListing(t *testing.T) {
 	})
 
 	t.Run("listing an orgs campaigns", func(t *testing.T) {
-		spec := &batches.CampaignSpec{}
+		spec := &batches.BatchSpec{}
 		createCampaignSpec(t, spec)
 
-		campaign := &batches.Campaign{
+		campaign := &batches.BatchChange{
 			NamespaceOrgID: orgID,
 			CampaignSpecID: spec.ID,
 			LastApplierID:  userID,

@@ -399,8 +399,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			// Create necessary associations.
-			campaignSpec := ct.CreateCampaignSpec(t, ctx, cstore, "executor-test-campaign", admin.ID)
-			campaign := ct.CreateCampaign(t, ctx, cstore, "executor-test-campaign", admin.ID, campaignSpec.ID)
+			campaignSpec := ct.CreateBatchSpec(t, ctx, cstore, "executor-test-campaign", admin.ID)
+			campaign := ct.CreateBatchChange(t, ctx, cstore, "executor-test-campaign", admin.ID, campaignSpec.ID)
 
 			// Create the changesetSpec with associations wired up correctly.
 			var changesetSpec *batches.ChangesetSpec
@@ -598,9 +598,9 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 	rs, _ := ct.CreateTestRepos(t, ctx, db, 1)
 	repo := rs[0]
 
-	campaignSpec := ct.CreateCampaignSpec(t, ctx, cstore, "reconciler-test-campaign", admin.ID)
-	adminCampaign := ct.CreateCampaign(t, ctx, cstore, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
-	userCampaign := ct.CreateCampaign(t, ctx, cstore, "reconciler-test-campaign", user.ID, campaignSpec.ID)
+	campaignSpec := ct.CreateBatchSpec(t, ctx, cstore, "reconciler-test-campaign", admin.ID)
+	adminCampaign := ct.CreateBatchChange(t, ctx, cstore, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
+	userCampaign := ct.CreateBatchChange(t, ctx, cstore, "reconciler-test-campaign", user.ID, campaignSpec.ID)
 
 	t.Run("imported changeset uses global token", func(t *testing.T) {
 		a, err := (&executor{
@@ -873,8 +873,8 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 				defer func() { cstore.UserCredentials().Delete(ctx, cred.ID) }()
 			}
 
-			campaignSpec := ct.CreateCampaignSpec(t, ctx, cstore, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID)
-			campaign := ct.CreateCampaign(t, ctx, cstore, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID, campaignSpec.ID)
+			campaignSpec := ct.CreateBatchSpec(t, ctx, cstore, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID)
+			campaign := ct.CreateBatchChange(t, ctx, cstore, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID, campaignSpec.ID)
 
 			plan.Changeset = &batches.Changeset{
 				OwnedByCampaignID: campaign.ID,
@@ -923,8 +923,8 @@ func TestDecorateChangesetBody(t *testing.T) {
 	defer func() { internalClient = api.InternalClient }()
 
 	fs := &FakeStore{
-		GetCampaignMock: func(ctx context.Context, opts store.GetCampaignOpts) (*batches.Campaign, error) {
-			return &batches.Campaign{ID: 1234, Name: "reconciler-test-campaign"}, nil
+		GetCampaignMock: func(ctx context.Context, opts store.GetCampaignOpts) (*batches.BatchChange, error) {
+			return &batches.BatchChange{ID: 1234, Name: "reconciler-test-campaign"}, nil
 		},
 	}
 
@@ -966,7 +966,7 @@ func TestCampaignURL(t *testing.T) {
 		url, err := campaignURL(
 			ctx,
 			&database.Namespace{Name: "foo", Organization: 123},
-			&batches.Campaign{Name: "bar"},
+			&batches.BatchChange{Name: "bar"},
 		)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)

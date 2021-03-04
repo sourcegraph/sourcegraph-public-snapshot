@@ -21,7 +21,7 @@ func TestIntegration(t *testing.T) {
 		t.Run("ChangesetEvents", storeTest(db, testStoreChangesetEvents))
 		t.Run("ListChangesetSyncData", storeTest(db, testStoreListChangesetSyncData))
 		t.Run("ListChangesetsTextSearch", storeTest(db, testStoreListChangesetsTextSearch))
-		t.Run("CampaignSpecs", storeTest(db, testStoreCampaignSpecs))
+		t.Run("CampaignSpecs", storeTest(db, testStoreBatchSpecs))
 		t.Run("ChangesetSpecs", storeTest(db, testStoreChangesetSpecs))
 		t.Run("ChangesetSpecsCurrentState", storeTest(db, testStoreChangesetSpecsCurrentState))
 		t.Run("ChangesetSpecsCurrentStateAndTextSearch", storeTest(db, testStoreChangesetSpecsCurrentStateAndTextSearch))

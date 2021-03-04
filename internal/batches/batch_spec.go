@@ -10,13 +10,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func NewCampaignSpecFromRaw(rawSpec string) (*CampaignSpec, error) {
-	c := &CampaignSpec{RawSpec: rawSpec}
+func NewCampaignSpecFromRaw(rawSpec string) (*BatchSpec, error) {
+	c := &BatchSpec{RawSpec: rawSpec}
 
 	return c, c.UnmarshalValidate()
 }
 
-type CampaignSpec struct {
+type BatchSpec struct {
 	ID     int64
 	RandID string
 
@@ -33,14 +33,14 @@ type CampaignSpec struct {
 }
 
 // Clone returns a clone of a CampaignSpec.
-func (cs *CampaignSpec) Clone() *CampaignSpec {
+func (cs *BatchSpec) Clone() *BatchSpec {
 	cc := *cs
 	return &cc
 }
 
 // UnmarshalValidate unmarshals the RawSpec into Spec and validates it against
 // the CampaignSpec schema and does additional semantic validation.
-func (cs *CampaignSpec) UnmarshalValidate() error {
+func (cs *BatchSpec) UnmarshalValidate() error {
 	return yaml.UnmarshalValidate(schema.CampaignSpecSchemaJSON, []byte(cs.RawSpec), &cs.Spec)
 }
 
@@ -50,7 +50,7 @@ const CampaignSpecTTL = 7 * 24 * time.Hour
 
 // ExpiresAt returns the time when the CampaignSpec will be deleted if not
 // applied.
-func (cs *CampaignSpec) ExpiresAt() time.Time {
+func (cs *BatchSpec) ExpiresAt() time.Time {
 	return cs.CreatedAt.Add(CampaignSpecTTL)
 }
 

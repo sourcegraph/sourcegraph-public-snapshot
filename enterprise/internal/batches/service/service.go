@@ -60,7 +60,7 @@ type CreateCampaignSpecOpts struct {
 }
 
 // CreateCampaignSpec creates the CampaignSpec.
-func (s *Service) CreateCampaignSpec(ctx context.Context, opts CreateCampaignSpecOpts) (spec *batches.CampaignSpec, err error) {
+func (s *Service) CreateCampaignSpec(ctx context.Context, opts CreateCampaignSpecOpts) (spec *batches.BatchSpec, err error) {
 	actor := actor.FromContext(ctx)
 	tr, ctx := trace.New(ctx, "Service.CreateCampaignSpec", fmt.Sprintf("Actor %s", actor))
 	defer func() {
@@ -184,7 +184,7 @@ func (e *changesetSpecNotFoundErr) NotFound() bool { return true }
 // applies to, if that Campaign already exists.
 // If it doesn't exist yet, both return values are nil.
 // It accepts a *store.Store so that it can be used inside a transaction.
-func (s *Service) GetCampaignMatchingCampaignSpec(ctx context.Context, spec *batches.CampaignSpec) (*batches.Campaign, error) {
+func (s *Service) GetCampaignMatchingCampaignSpec(ctx context.Context, spec *batches.BatchSpec) (*batches.BatchChange, error) {
 	opts := store.GetCampaignOpts{
 		Name:            spec.Spec.Name,
 		NamespaceUserID: spec.NamespaceUserID,
@@ -203,7 +203,7 @@ func (s *Service) GetCampaignMatchingCampaignSpec(ctx context.Context, spec *bat
 
 // GetNewestCampaignSpec returns the newest campaign spec that matches the given
 // spec's namespace and name and is owned by the given user, or nil if none is found.
-func (s *Service) GetNewestCampaignSpec(ctx context.Context, tx *store.Store, spec *batches.CampaignSpec, userID int32) (*batches.CampaignSpec, error) {
+func (s *Service) GetNewestCampaignSpec(ctx context.Context, tx *store.Store, spec *batches.BatchSpec, userID int32) (*batches.BatchSpec, error) {
 	opts := store.GetNewestCampaignSpecOpts{
 		UserID:          userID,
 		NamespaceUserID: spec.NamespaceUserID,
@@ -243,7 +243,7 @@ func (o MoveCampaignOpts) String() string {
 
 // MoveCampaign moves the campaign from one namespace to another and/or renames
 // the campaign.
-func (s *Service) MoveCampaign(ctx context.Context, opts MoveCampaignOpts) (campaign *batches.Campaign, err error) {
+func (s *Service) MoveCampaign(ctx context.Context, opts MoveCampaignOpts) (campaign *batches.BatchChange, err error) {
 	tr, ctx := trace.New(ctx, "Service.MoveCampaign", opts.String())
 	defer func() {
 		tr.SetError(err)
@@ -297,7 +297,7 @@ func (s *Service) MoveCampaign(ctx context.Context, opts MoveCampaignOpts) (camp
 var ErrEnsureCampaignFailed = errors.New("a campaign in the given namespace and with the given name exists but does not match the given ID")
 
 // CloseCampaign closes the Campaign with the given ID if it has not been closed yet.
-func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets bool) (campaign *batches.Campaign, err error) {
+func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets bool) (campaign *batches.BatchChange, err error) {
 	traceTitle := fmt.Sprintf("campaign: %d, closeChangesets: %t", id, closeChangesets)
 	tr, ctx := trace.New(ctx, "service.CloseCampaign", traceTitle)
 	defer func() {

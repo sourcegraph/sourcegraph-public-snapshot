@@ -32,7 +32,7 @@ func TestChangesetApplyPreviewConnectionResolver(t *testing.T) {
 
 	cstore := store.New(db)
 
-	campaignSpec := &batches.CampaignSpec{
+	campaignSpec := &batches.BatchSpec{
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
@@ -396,7 +396,7 @@ func TestRewirerMappings(t *testing.T) {
 
 		s := &store.Store{}
 		rmf := newRewirerMappingsFacade(s, 1)
-		rmf.campaign = &batches.Campaign{}
+		rmf.campaign = &batches.BatchChange{}
 
 		mapping := &store.RewirerMapping{}
 

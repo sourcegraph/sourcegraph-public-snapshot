@@ -2,17 +2,17 @@ package batches
 
 import "time"
 
-// CampaignState defines the possible states of a Campaign
-type CampaignState string
+// BatchChangeState defines the possible states of a Campaign
+type BatchChangeState string
 
 const (
-	CampaignStateAny    CampaignState = "ANY"
-	CampaignStateOpen   CampaignState = "OPEN"
-	CampaignStateClosed CampaignState = "CLOSED"
+	BatchChangeStateAny    BatchChangeState = "ANY"
+	BatchChangeStateOpen   BatchChangeState = "OPEN"
+	BatchChangeStateClosed BatchChangeState = "CLOSED"
 )
 
-// A Campaign of changesets over multiple Repos over time.
-type Campaign struct {
+// A BatchChange of changesets over multiple Repos over time.
+type BatchChange struct {
 	ID          int64
 	Name        string
 	Description string
@@ -33,10 +33,10 @@ type Campaign struct {
 }
 
 // Clone returns a clone of a Campaign.
-func (c *Campaign) Clone() *Campaign {
+func (c *BatchChange) Clone() *BatchChange {
 	cc := *c
 	return &cc
 }
 
 // Closed returns true when the ClosedAt timestamp has been set.
-func (c *Campaign) Closed() bool { return !c.ClosedAt.IsZero() }
+func (c *BatchChange) Closed() bool { return !c.ClosedAt.IsZero() }

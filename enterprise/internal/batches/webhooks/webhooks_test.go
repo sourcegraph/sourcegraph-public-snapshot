@@ -91,7 +91,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 
 		s := store.NewWithClock(db, clock)
 
-		spec := &batches.CampaignSpec{
+		spec := &batches.BatchSpec{
 			NamespaceUserID: userID,
 			UserID:          userID,
 		}
@@ -99,7 +99,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		campaign := &batches.Campaign{
+		campaign := &batches.BatchChange{
 			Name:             "Test campaign",
 			Description:      "Testing THE WEBHOOKS",
 			InitialApplierID: userID,
@@ -270,7 +270,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 
 		s := store.NewWithClock(db, clock)
 
-		spec := &batches.CampaignSpec{
+		spec := &batches.BatchSpec{
 			NamespaceUserID: userID,
 			UserID:          userID,
 		}
@@ -278,7 +278,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		campaign := &batches.Campaign{
+		campaign := &batches.BatchChange{
 			Name:             "Test campaign",
 			Description:      "Testing THE WEBHOOKS",
 			InitialApplierID: userID,

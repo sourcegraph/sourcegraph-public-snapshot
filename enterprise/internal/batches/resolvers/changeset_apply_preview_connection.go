@@ -245,7 +245,7 @@ type rewirerMappingsFacade struct {
 	store          *store.Store
 
 	// This field is set when ReconcileCampaign is called.
-	campaign *batches.Campaign
+	campaign *batches.BatchChange
 
 	// Cache of filtered pages.
 	pagesMu sync.Mutex

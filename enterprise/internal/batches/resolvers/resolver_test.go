@@ -354,7 +354,7 @@ func TestApplyBatchChange(t *testing.T) {
 
 	repoAPIID := graphqlbackend.MarshalRepositoryID(repo.ID)
 
-	campaignSpec := &batches.CampaignSpec{
+	campaignSpec := &batches.BatchSpec{
 		RawSpec: ct.TestRawBatchSpec,
 		Spec: batches.CampaignSpecFields{
 			Name:        "my-campaign",
@@ -500,7 +500,7 @@ func TestCreateBatchChange(t *testing.T) {
 
 	cstore := store.New(db)
 
-	campaignSpec := &batches.CampaignSpec{
+	campaignSpec := &batches.BatchSpec{
 		RawSpec: ct.TestRawBatchSpec,
 		Spec: batches.CampaignSpecFields{
 			Name:        "my-campaign",
@@ -566,7 +566,7 @@ func TestMoveBatchChange(t *testing.T) {
 
 	cstore := store.New(db)
 
-	campaignSpec := &batches.CampaignSpec{
+	campaignSpec := &batches.BatchSpec{
 		RawSpec:         ct.TestRawBatchSpec,
 		UserID:          userID,
 		NamespaceUserID: userID,
@@ -575,7 +575,7 @@ func TestMoveBatchChange(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	campaign := &batches.Campaign{
+	campaign := &batches.BatchChange{
 		CampaignSpecID:   campaignSpec.ID,
 		Name:             "old-name",
 		InitialApplierID: userID,

@@ -7,14 +7,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/batches"
 )
 
-type CreateCampaignSpecer interface {
-	CreateCampaignSpec(ctx context.Context, campaignSpec *batches.CampaignSpec) error
+type CreateBatchSpecer interface {
+	CreateCampaignSpec(ctx context.Context, campaignSpec *batches.BatchSpec) error
 }
 
-func CreateCampaignSpec(t *testing.T, ctx context.Context, store CreateCampaignSpecer, name string, userID int32) *batches.CampaignSpec {
+func CreateBatchSpec(t *testing.T, ctx context.Context, store CreateBatchSpecer, name string, userID int32) *batches.BatchSpec {
 	t.Helper()
 
-	s := &batches.CampaignSpec{
+	s := &batches.BatchSpec{
 		UserID:          userID,
 		NamespaceUserID: userID,
 		Spec: batches.CampaignSpecFields{

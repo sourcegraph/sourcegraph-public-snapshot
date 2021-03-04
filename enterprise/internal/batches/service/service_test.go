@@ -43,7 +43,7 @@ func TestServicePermissionLevels(t *testing.T) {
 
 	rs, _ := ct.CreateTestRepos(t, ctx, db, 1)
 
-	createTestData := func(t *testing.T, s *store.Store, svc *Service, author int32) (*batches.Campaign, *batches.Changeset, *batches.CampaignSpec) {
+	createTestData := func(t *testing.T, s *store.Store, svc *Service, author int32) (*batches.BatchChange, *batches.Changeset, *batches.BatchSpec) {
 		spec := testCampaignSpec(author)
 		if err := s.CreateCampaignSpec(ctx, spec); err != nil {
 			t.Fatal(err)
@@ -207,7 +207,7 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CloseCampaign", func(t *testing.T) {
-		createCampaign := func(t *testing.T) *batches.Campaign {
+		createCampaign := func(t *testing.T) *batches.BatchChange {
 			t.Helper()
 
 			spec := testCampaignSpec(admin.ID)
@@ -224,7 +224,7 @@ func TestService(t *testing.T) {
 
 		adminCtx := actor.WithActor(context.Background(), actor.FromUser(admin.ID))
 
-		closeConfirm := func(t *testing.T, c *batches.Campaign, closeChangesets bool) {
+		closeConfirm := func(t *testing.T, c *batches.BatchChange, closeChangesets bool) {
 			t.Helper()
 
 			closedCampaign, err := svc.CloseCampaign(adminCtx, c.ID, closeChangesets)
@@ -610,10 +610,10 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("MoveCampaign", func(t *testing.T) {
-		createCampaign := func(t *testing.T, name string, authorID, userID, orgID int32) *batches.Campaign {
+		createCampaign := func(t *testing.T, name string, authorID, userID, orgID int32) *batches.BatchChange {
 			t.Helper()
 
-			spec := &batches.CampaignSpec{
+			spec := &batches.BatchSpec{
 				UserID:          authorID,
 				NamespaceUserID: userID,
 				NamespaceOrgID:  orgID,
@@ -623,7 +623,7 @@ func TestService(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			c := &batches.Campaign{
+			c := &batches.BatchChange{
 				InitialApplierID: authorID,
 				NamespaceUserID:  userID,
 				NamespaceOrgID:   orgID,
@@ -724,7 +724,7 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("GetCampaignMatchingCampaignSpec", func(t *testing.T) {
-		campaignSpec := ct.CreateCampaignSpec(t, ctx, s, "matching-campaign-spec", admin.ID)
+		campaignSpec := ct.CreateBatchSpec(t, ctx, s, "matching-campaign-spec", admin.ID)
 
 		haveCampaign, err := svc.GetCampaignMatchingCampaignSpec(ctx, campaignSpec)
 		if err != nil {
@@ -734,7 +734,7 @@ func TestService(t *testing.T) {
 			t.Fatalf("expected campaign to be nil, but is not: %+v\n", haveCampaign)
 		}
 
-		matchingCampaign := &batches.Campaign{
+		matchingCampaign := &batches.BatchChange{
 			Name:             campaignSpec.Spec.Name,
 			Description:      campaignSpec.Spec.Description,
 			InitialApplierID: admin.ID,
@@ -762,10 +762,10 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("GetNewestCampaignSpec", func(t *testing.T) {
-		older := ct.CreateCampaignSpec(t, ctx, s, "superseding", user.ID)
-		newer := ct.CreateCampaignSpec(t, ctx, s, "superseding", user.ID)
+		older := ct.CreateBatchSpec(t, ctx, s, "superseding", user.ID)
+		newer := ct.CreateBatchSpec(t, ctx, s, "superseding", user.ID)
 
-		for name, in := range map[string]*batches.CampaignSpec{
+		for name, in := range map[string]*batches.BatchSpec{
 			"older": older,
 			"newer": newer,
 		} {
@@ -823,8 +823,8 @@ func TestService(t *testing.T) {
 	})
 }
 
-func testCampaign(user int32, spec *batches.CampaignSpec) *batches.Campaign {
-	c := &batches.Campaign{
+func testCampaign(user int32, spec *batches.BatchSpec) *batches.BatchChange {
+	c := &batches.BatchChange{
 		Name:             "test-campaign",
 		InitialApplierID: user,
 		NamespaceUserID:  user,
@@ -836,8 +836,8 @@ func testCampaign(user int32, spec *batches.CampaignSpec) *batches.Campaign {
 	return c
 }
 
-func testCampaignSpec(user int32) *batches.CampaignSpec {
-	return &batches.CampaignSpec{
+func testCampaignSpec(user int32) *batches.BatchSpec {
+	return &batches.BatchSpec{
 		UserID:          user,
 		NamespaceUserID: user,
 	}

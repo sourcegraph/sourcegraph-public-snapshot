@@ -43,7 +43,7 @@ var campaignSpecInsertColumns = []*sqlf.Query{
 const campaignSpecInsertColsFmt = `(%s, %s, %s, %s, %s, %s, %s, %s)`
 
 // CreateCampaignSpec creates the given CampaignSpec.
-func (s *Store) CreateCampaignSpec(ctx context.Context, c *batches.CampaignSpec) error {
+func (s *Store) CreateCampaignSpec(ctx context.Context, c *batches.BatchSpec) error {
 	q, err := s.createCampaignSpecQuery(c)
 	if err != nil {
 		return err
@@ -57,7 +57,7 @@ INSERT INTO campaign_specs (%s)
 VALUES ` + campaignSpecInsertColsFmt + `
 RETURNING %s`
 
-func (s *Store) createCampaignSpecQuery(c *batches.CampaignSpec) (*sqlf.Query, error) {
+func (s *Store) createCampaignSpecQuery(c *batches.BatchSpec) (*sqlf.Query, error) {
 	spec, err := jsonbColumn(c.Spec)
 	if err != nil {
 		return nil, err
@@ -93,7 +93,7 @@ func (s *Store) createCampaignSpecQuery(c *batches.CampaignSpec) (*sqlf.Query, e
 }
 
 // UpdateCampaignSpec updates the given CampaignSpec.
-func (s *Store) UpdateCampaignSpec(ctx context.Context, c *batches.CampaignSpec) error {
+func (s *Store) UpdateCampaignSpec(ctx context.Context, c *batches.BatchSpec) error {
 	q, err := s.updateCampaignSpecQuery(c)
 	if err != nil {
 		return err
@@ -111,7 +111,7 @@ SET (%s) = ` + campaignSpecInsertColsFmt + `
 WHERE id = %s
 RETURNING %s`
 
-func (s *Store) updateCampaignSpecQuery(c *batches.CampaignSpec) (*sqlf.Query, error) {
+func (s *Store) updateCampaignSpecQuery(c *batches.BatchSpec) (*sqlf.Query, error) {
 	spec, err := jsonbColumn(c.Spec)
 	if err != nil {
 		return nil, err
@@ -163,10 +163,10 @@ type GetCampaignSpecOpts struct {
 }
 
 // GetCampaignSpec gets a code mod matching the given options.
-func (s *Store) GetCampaignSpec(ctx context.Context, opts GetCampaignSpecOpts) (*batches.CampaignSpec, error) {
+func (s *Store) GetCampaignSpec(ctx context.Context, opts GetCampaignSpecOpts) (*batches.BatchSpec, error) {
 	q := getCampaignSpecQuery(&opts)
 
-	var c batches.CampaignSpec
+	var c batches.BatchSpec
 	err := s.query(ctx, q, func(sc scanner) (err error) {
 		return scanCampaignSpec(&c, sc)
 	})
@@ -221,10 +221,10 @@ type GetNewestCampaignSpecOpts struct {
 
 // GetNewestCampaignSpec returns the newest campaign spec that matches the given
 // options.
-func (s *Store) GetNewestCampaignSpec(ctx context.Context, opts GetNewestCampaignSpecOpts) (*batches.CampaignSpec, error) {
+func (s *Store) GetNewestCampaignSpec(ctx context.Context, opts GetNewestCampaignSpecOpts) (*batches.BatchSpec, error) {
 	q := getNewestCampaignSpecQuery(&opts)
 
-	var c batches.CampaignSpec
+	var c batches.BatchSpec
 	err := s.query(ctx, q, func(sc scanner) (err error) {
 		return scanCampaignSpec(&c, sc)
 	})
@@ -282,12 +282,12 @@ type ListCampaignSpecsOpts struct {
 }
 
 // ListCampaignSpecs lists CampaignSpecs with the given filters.
-func (s *Store) ListCampaignSpecs(ctx context.Context, opts ListCampaignSpecsOpts) (cs []*batches.CampaignSpec, next int64, err error) {
+func (s *Store) ListCampaignSpecs(ctx context.Context, opts ListCampaignSpecsOpts) (cs []*batches.BatchSpec, next int64, err error) {
 	q := listCampaignSpecsQuery(&opts)
 
-	cs = make([]*batches.CampaignSpec, 0, opts.DBLimit())
+	cs = make([]*batches.BatchSpec, 0, opts.DBLimit())
 	err = s.query(ctx, q, func(sc scanner) error {
-		var c batches.CampaignSpec
+		var c batches.BatchSpec
 		if err := scanCampaignSpec(&c, sc); err != nil {
 			return err
 		}
@@ -346,7 +346,7 @@ AND NOT EXISTS (
 );
 `
 
-func scanCampaignSpec(c *batches.CampaignSpec, s scanner) error {
+func scanCampaignSpec(c *batches.BatchSpec, s scanner) error {
 	var spec json.RawMessage
 
 	err := s.Scan(

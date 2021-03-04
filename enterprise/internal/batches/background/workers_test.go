@@ -31,8 +31,8 @@ func TestWorkerView(t *testing.T) {
 	cstore := store.NewWithClock(db, clock)
 
 	user := ct.CreateTestUser(t, db, true)
-	spec := ct.CreateCampaignSpec(t, ctx, cstore, "test-campaign", user.ID)
-	campaign := ct.CreateCampaign(t, ctx, cstore, "test-campaign", user.ID, spec.ID)
+	spec := ct.CreateBatchSpec(t, ctx, cstore, "test-campaign", user.ID)
+	campaign := ct.CreateBatchChange(t, ctx, cstore, "test-campaign", user.ID, spec.ID)
 	repos, _ := ct.CreateTestRepos(t, ctx, cstore.DB(), 2)
 	repo := repos[0]
 	deletedRepo := repos[1]
@@ -71,7 +71,7 @@ func TestWorkerView(t *testing.T) {
 		if err := database.UsersWith(cstore).Delete(ctx, deletedUser.ID); err != nil {
 			t.Fatal(err)
 		}
-		userCampaign := ct.CreateCampaign(t, ctx, cstore, "test-user-namespace", deletedUser.ID, spec.ID)
+		userCampaign := ct.CreateBatchChange(t, ctx, cstore, "test-user-namespace", deletedUser.ID, spec.ID)
 		c := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 			Repo:            repo.ID,
 			Campaign:        userCampaign.ID,
@@ -89,7 +89,7 @@ func TestWorkerView(t *testing.T) {
 		if err := database.OrgsWith(cstore).Delete(ctx, orgID); err != nil {
 			t.Fatal(err)
 		}
-		orgCampaign := ct.BuildCampaign(cstore, "test-user-namespace", 0, spec.ID)
+		orgCampaign := ct.BuildBatchChange(cstore, "test-user-namespace", 0, spec.ID)
 		orgCampaign.NamespaceOrgID = orgID
 		if err := cstore.CreateCampaign(ctx, orgCampaign); err != nil {
 			t.Fatal(err)
@@ -111,7 +111,7 @@ func TestWorkerView(t *testing.T) {
 		if err := database.UsersWith(cstore).Delete(ctx, deletedUser.ID); err != nil {
 			t.Fatal(err)
 		}
-		userCampaign := ct.CreateCampaign(t, ctx, cstore, "test-user-namespace", deletedUser.ID, spec.ID)
+		userCampaign := ct.CreateBatchChange(t, ctx, cstore, "test-user-namespace", deletedUser.ID, spec.ID)
 		c := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 			Repo:            repo.ID,
 			Campaign:        userCampaign.ID,

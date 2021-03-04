@@ -21,7 +21,7 @@ var _ graphqlbackend.BatchChangeResolver = &batchChangeResolver{}
 type batchChangeResolver struct {
 	store *store.Store
 
-	batchChange *batches.Campaign
+	batchChange *batches.BatchChange
 
 	// Cache the namespace on the resolver, since it's accessed more than once.
 	namespaceOnce sync.Once

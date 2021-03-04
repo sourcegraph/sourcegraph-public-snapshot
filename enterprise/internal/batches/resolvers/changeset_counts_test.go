@@ -119,7 +119,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 
 	cstore := store.New(db)
 
-	spec := &batches.CampaignSpec{
+	spec := &batches.BatchSpec{
 		NamespaceUserID: userID,
 		UserID:          userID,
 	}
@@ -127,7 +127,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	campaign := &batches.Campaign{
+	campaign := &batches.BatchChange{
 		Name:             "Test campaign",
 		Description:      "Testing changeset counts",
 		InitialApplierID: userID,
