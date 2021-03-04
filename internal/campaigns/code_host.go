@@ -6,6 +6,7 @@ import "github.com/sourcegraph/sourcegraph/internal/extsvc"
 type CodeHost struct {
 	ExternalServiceType string
 	ExternalServiceID   string
+	RequiresSSH         bool
 }
 
 // IsSupported returns true, when this code host is supported by

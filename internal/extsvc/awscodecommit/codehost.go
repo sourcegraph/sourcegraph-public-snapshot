@@ -2,6 +2,7 @@ package awscodecommit
 
 import (
 	"github.com/aws/aws-sdk-go-v2/aws/endpoints"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )

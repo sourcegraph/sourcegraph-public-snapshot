@@ -556,7 +556,7 @@ func intersectMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 	rightFileMatches := make(map[string]*FileMatchResolver)
 	for _, r := range right.SearchResults {
 		if fileMatch, ok := r.ToFileMatch(); ok {
-			rightFileMatches[fileMatch.uri] = fileMatch
+			rightFileMatches[fileMatch.URI] = fileMatch
 		}
 	}
 
@@ -567,7 +567,7 @@ func intersectMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 			continue
 		}
 
-		rightFileMatch := rightFileMatches[leftFileMatch.uri]
+		rightFileMatch := rightFileMatches[leftFileMatch.URI]
 		if rightFileMatch == nil {
 			continue
 		}
@@ -745,14 +745,10 @@ func (r *searchResolver) evaluateOr(ctx context.Context, scopeParameters []query
 		return nil, nil
 	}
 
-	var countStr string
 	wantCount := defaultMaxSearchResults
-	query.VisitField(scopeParameters, "count", func(value string, _ bool, _ query.Annotation) {
-		countStr = value
+	query.VisitField(scopeParameters, query.FieldCount, func(value string, _ bool, _ query.Annotation) {
+		wantCount, _ = strconv.Atoi(value) // Invariant: count is validated.
 	})
-	if countStr != "" {
-		wantCount, _ = strconv.Atoi(countStr) // Invariant: count is validated.
-	}
 
 	result, err := r.evaluatePatternExpression(ctx, scopeParameters, operands[0])
 	if err != nil {
@@ -790,17 +786,12 @@ func (r *searchResolver) evaluateOperator(ctx context.Context, scopeParameters [
 	if len(operator.Operands) == 0 {
 		return nil, nil
 	}
-	var result *SearchResultsResolver
-	var err error
+
 	if operator.Kind == query.And {
-		result, err = r.evaluateAndStream(ctx, scopeParameters, operator.Operands)
+		return r.evaluateAndStream(ctx, scopeParameters, operator.Operands)
 	} else {
-		result, err = r.evaluateOr(ctx, scopeParameters, operator.Operands)
+		return r.evaluateOr(ctx, scopeParameters, operator.Operands)
 	}
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
 }
 
 // setQuery sets a new query in the search resolver, for potentially repeated
@@ -856,16 +847,16 @@ func (r *searchResolver) evaluate(ctx context.Context, q query.Q) (*SearchResult
 // resolved.
 func invalidateRepoCache(q []query.Node) bool {
 	var seenRepo, seenRevision, seenRepoGroup, seenContext int
-	query.VisitField(q, "repo", func(_ string, _ bool, _ query.Annotation) {
+	query.VisitField(q, query.FieldRepo, func(_ string, _ bool, _ query.Annotation) {
 		seenRepo += 1
 	})
-	query.VisitField(q, "rev", func(_ string, _ bool, _ query.Annotation) {
+	query.VisitField(q, query.FieldRev, func(_ string, _ bool, _ query.Annotation) {
 		seenRevision += 1
 	})
-	query.VisitField(q, "repogroup", func(_ string, _ bool, _ query.Annotation) {
+	query.VisitField(q, query.FieldRepoGroup, func(_ string, _ bool, _ query.Annotation) {
 		seenRepoGroup += 1
 	})
-	query.VisitField(q, "context", func(_ string, _ bool, _ query.Annotation) {
+	query.VisitField(q, query.FieldContext, func(_ string, _ bool, _ query.Annotation) {
 		seenContext += 1
 	})
 	return seenRepo+seenRepoGroup > 1 || seenRevision > 1 || seenContext > 1
@@ -877,14 +868,10 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	var countStr string
 	wantCount := defaultMaxSearchResults
-	query.VisitField(r.Query, "count", func(value string, _ bool, _ query.Annotation) {
-		countStr = value
+	query.VisitField(r.Query, query.FieldCount, func(value string, _ bool, _ query.Annotation) {
+		wantCount, _ = strconv.Atoi(value)
 	})
-	if countStr != "" {
-		wantCount, _ = strconv.Atoi(countStr) // Invariant: count is validated.
-	}
 
 	if invalidateRepoCache(r.Query) {
 		r.invalidateRepoCache = true

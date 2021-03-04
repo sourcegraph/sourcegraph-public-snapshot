@@ -752,7 +752,14 @@ describe('Campaigns', () => {
                                 {
                                     externalServiceKind: ExternalServiceKind.GITHUB,
                                     externalServiceURL: 'https://github.com/',
-                                    credential: isCreated ? { id: '123', createdAt: new Date().toISOString() } : null,
+                                    credential: isCreated
+                                        ? {
+                                              id: '123',
+                                              createdAt: new Date().toISOString(),
+                                              sshPublicKey: 'ssh-rsa randorandorandorando',
+                                          }
+                                        : null,
+                                    requiresSSH: false,
                                 },
                             ],
                         },
@@ -764,6 +771,7 @@ describe('Campaigns', () => {
                         createCampaignsCredential: {
                             id: '123',
                             createdAt: new Date().toISOString(),
+                            sshPublicKey: 'ssh-rsa randorandorandorando',
                         },
                     }
                 },

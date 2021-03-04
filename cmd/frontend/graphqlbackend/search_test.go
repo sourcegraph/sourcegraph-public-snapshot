@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -251,7 +252,7 @@ func testStringResult(result SearchSuggestionResolver) string {
 	case languageSuggestionResolver:
 		name = "lang:" + r.lang.name
 	case symbolSuggestionResolver:
-		name = "symbol:" + r.symbol.symbol.Name
+		name = "symbol:" + r.symbol.Symbol.Name
 	default:
 		panic("never here")
 	}
@@ -558,12 +559,12 @@ func mkFileMatch(db dbutil.DB, repo *types.RepoName, path string, lineNumbers ..
 			Name: "repo",
 		}
 	}
-	var lines []*LineMatch
+	var lines []*result.LineMatch
 	for _, n := range lineNumbers {
-		lines = append(lines, &LineMatch{LineNumber: n})
+		lines = append(lines, &result.LineMatch{LineNumber: n})
 	}
-	return mkFileMatchResolver(db, FileMatch{
-		uri:         fileMatchURI(repo.Name, "", path),
+	return mkFileMatchResolver(db, result.FileMatch{
+		URI:         fileMatchURI(repo.Name, "", path),
 		Path:        path,
 		LineMatches: lines,
 		Repo:        repo,

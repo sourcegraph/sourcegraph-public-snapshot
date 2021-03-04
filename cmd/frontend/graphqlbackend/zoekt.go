@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
@@ -327,7 +328,9 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 			})
 		}
 
-		return args.Zoekt.Client.StreamSearch(ctx, finalQuery, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
+		// The buffered backend.ZoektStreamFunc allows us to consume events from Zoekt
+		// while we wait for repo resolution.
+		bufSender, cleanup := bufferedSender(30, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
 
 			mu.Lock()
 			foundResults = foundResults || event.FileCount != 0 || event.MatchCount != 0
@@ -386,7 +389,7 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 					repoResolvers[repo.Name] = repoResolver
 				}
 
-				var lines []*LineMatch
+				var lines []*result.LineMatch
 				if typ != symbolRequest {
 					lines = zoektFileMatchToLineMatches(maxLineFragmentMatches, &file)
 				}
@@ -394,17 +397,17 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 				for _, inputRev := range inputRevs {
 					inputRev := inputRev // copy so we can take the pointer
 
-					var symbols []*SearchSymbolResult
+					var symbols []*result.SearchSymbolResult
 					if typ == symbolRequest {
 						symbols = zoektFileMatchToSymbolResults(repoResolver, inputRev, &file)
 					}
 					fm := &FileMatchResolver{
 						db: db,
-						FileMatch: FileMatch{
+						FileMatch: result.FileMatch{
 							Path:        file.FileName,
 							LineMatches: lines,
 							LimitHit:    fileLimitHit,
-							uri:         fileMatchURI(repo.Name, inputRev, file.FileName),
+							URI:         fileMatchURI(repo.Name, inputRev, file.FileName),
 							Symbols:     symbols,
 							Repo:        repo,
 							CommitID:    api.CommitID(file.Version),
@@ -424,6 +427,9 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 				},
 			})
 		}))
+		defer cleanup()
+
+		return args.Zoekt.Client.StreamSearch(ctx, finalQuery, &searchOpts, bufSender)
 	})
 
 	if err := g.Wait(); err != nil {
@@ -443,6 +449,30 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 		return nil
 	}
 	return nil
+}
+
+// bufferedSender returns a buffered Sender with capacity cap, and a cleanup
+// function which blocks until the buffer is drained. The cleanup function may
+// only be called once. For cap=0, bufferedSender returns the input sender.
+func bufferedSender(cap int, sender zoekt.Sender) (zoekt.Sender, func()) {
+	if cap == 0 {
+		return sender, func() {}
+	}
+	buf := make(chan *zoekt.SearchResult, cap-1)
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for e := range buf {
+			sender.Send(e)
+		}
+	}()
+	cleanup := func() {
+		close(buf)
+		<-done
+	}
+	return backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
+		buf <- event
+	}), cleanup
 }
 
 // zoektSearchReposOnly is used when select:repo is set, in which case we can ask zoekt
@@ -476,8 +506,8 @@ func zoektSearchReposOnly(ctx context.Context, client zoekt.Streamer, query zoek
 	return nil
 }
 
-func zoektFileMatchToLineMatches(maxLineFragmentMatches int, file *zoekt.FileMatch) []*LineMatch {
-	lines := make([]*LineMatch, 0, len(file.LineMatches))
+func zoektFileMatchToLineMatches(maxLineFragmentMatches int, file *zoekt.FileMatch) []*result.LineMatch {
+	lines := make([]*result.LineMatch, 0, len(file.LineMatches))
 
 	for _, l := range file.LineMatches {
 		if l.FileName {
@@ -493,7 +523,7 @@ func zoektFileMatchToLineMatches(maxLineFragmentMatches int, file *zoekt.FileMat
 			length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
 			offsets[k] = [2]int32{int32(offset), int32(length)}
 		}
-		lines = append(lines, &LineMatch{
+		lines = append(lines, &result.LineMatch{
 			Preview:          string(l.Line),
 			LineNumber:       int32(l.LineNumber - 1),
 			OffsetAndLengths: offsets,
@@ -535,14 +565,14 @@ func escape(s string) string {
 	return string(escaped)
 }
 
-func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, file *zoekt.FileMatch) []*SearchSymbolResult {
+func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, file *zoekt.FileMatch) []*result.SearchSymbolResult {
 	// Symbol search returns a resolver so we need to pass in some
 	// extra stuff. This is a sign that we can probably restructure
 	// resolvers to avoid this.
 	baseURI := &gituri.URI{URL: url.URL{Scheme: "git", Host: repo.Name(), RawQuery: url.QueryEscape(inputRev)}}
 	lang := strings.ToLower(file.Language)
 
-	symbols := make([]*SearchSymbolResult, 0, len(file.LineMatches))
+	symbols := make([]*result.SearchSymbolResult, 0, len(file.LineMatches))
 	for _, l := range file.LineMatches {
 		if l.FileName {
 			continue
@@ -553,8 +583,8 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, fi
 				continue
 			}
 
-			symbols = append(symbols, &SearchSymbolResult{
-				symbol: protocol.Symbol{
+			symbols = append(symbols, &result.SearchSymbolResult{
+				Symbol: protocol.Symbol{
 					Name:       m.SymbolInfo.Sym,
 					Kind:       m.SymbolInfo.Kind,
 					Parent:     m.SymbolInfo.Parent,
@@ -567,8 +597,8 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, fi
 					// It must escape `/` or `\` in the line.
 					Pattern: fmt.Sprintf("/^%s$/", escape(string(l.Line))),
 				},
-				lang:    lang,
-				baseURI: baseURI,
+				Lang:    lang,
+				BaseURI: baseURI,
 			})
 		}
 	}

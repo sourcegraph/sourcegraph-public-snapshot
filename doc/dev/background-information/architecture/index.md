@@ -69,7 +69,7 @@ Sample use cases for this are for tracking migrations, usage of libraries across
 
 Code insights are currently feature-flagged - set `"experimentalFeatures": { "codeInsights": true }` in your user settings to enable them.
 
-Code insights currently work through [**extensions**](#sourcegraph-extension-aPI).
+Code insights currently work through [**extensions**](#sourcegraph-extension-api).
 A code insight extension can register a _view provider_ that contributes a graph to either the repository/directory page, the [search homepage](https://sourcegraph.com/search), or the [global "Insights" dashboard](https://sourcegraph.com/insights) reachable from the navbar.
 It is called on-demand on the client (the browser) to return the data needed for the chart.
 _How_ that extension produces the data is up to the extension - it can run search queries, query code intelligence data or analyze Git data using the Sourcegraph GraphQL API, or it can query an external service using its public API, e.g. Codecov.

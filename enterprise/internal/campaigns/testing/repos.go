@@ -151,7 +151,38 @@ func CreateBbsTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int
 	return createBbsRepos(t, ctx, db, ext, count, "https://bbs-user:bbs-token@bitbucket.sourcegraph.com/scm")
 }
 
-func CreateBbsSSHTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*types.Repo, *types.ExternalService) {
+func CreateGitHubSSHTestRepos(t *testing.T, ctx context.Context, db dbutil.DB, count int) ([]*types.Repo, *types.ExternalService) {
+	t.Helper()
+
+	ext := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GitHub SSH",
+		Config: MarshalJSON(t, &schema.GitHubConnection{
+			Url:        "https://github.com",
+			Token:      "SECRETTOKEN",
+			GitURLType: "ssh",
+		}),
+	}
+
+	var rs []*types.Repo
+	for i := 0; i < count; i++ {
+		r := TestRepo(t, database.ExternalServices(db), extsvc.KindGitHub)
+		r.Sources = map[string]*types.SourceInfo{ext.URN(): {
+			ID:       ext.URN(),
+			CloneURL: "git@github.com:" + string(r.Name) + ".git",
+		}}
+
+		rs = append(rs, r)
+	}
+
+	err := database.Repos(db).Create(ctx, rs...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return rs, nil
+}
+
+func CreateBbsSSHTestRepos(t *testing.T, ctx context.Context, db dbutil.DB, count int) ([]*types.Repo, *types.ExternalService) {
 	t.Helper()
 
 	ext := &types.ExternalService{
@@ -167,7 +198,7 @@ func CreateBbsSSHTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count 
 	return createBbsRepos(t, ctx, db, ext, count, "ssh://git@bitbucket.sgdev.org:7999")
 }
 
-func createBbsRepos(t *testing.T, ctx context.Context, db *sql.DB, ext *types.ExternalService, count int, cloneBaseURL string) ([]*types.Repo, *types.ExternalService) {
+func createBbsRepos(t *testing.T, ctx context.Context, db dbutil.DB, ext *types.ExternalService, count int, cloneBaseURL string) ([]*types.Repo, *types.ExternalService) {
 
 	t.Helper()
 

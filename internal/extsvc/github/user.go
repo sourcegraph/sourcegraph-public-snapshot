@@ -5,8 +5,9 @@ import (
 	"fmt"
 
 	"github.com/google/go-github/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"golang.org/x/oauth2"
+
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 func GetExternalAccountData(data *extsvc.AccountData) (usr *github.User, tok *oauth2.Token, err error) {

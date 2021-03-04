@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	jsoniter "github.com/json-iterator/go"
+
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 )
 

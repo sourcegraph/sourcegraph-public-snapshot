@@ -1,4 +1,4 @@
-package search
+package http
 
 import (
 	"encoding/json"
@@ -6,25 +6,23 @@ import (
 	"io"
 	"net/http"
 	"time"
-
-	otlog "github.com/opentracing/opentracing-go/log"
 )
 
-type eventStreamWriterStat struct {
+type WriterStat struct {
 	Event    string
 	Bytes    int
 	Duration time.Duration
 	Error    error
 }
 
-type eventStreamWriter struct {
+type Writer struct {
 	w     io.Writer
 	flush func()
 
-	StatHook func(eventStreamWriterStat)
+	StatHook func(WriterStat)
 }
 
-func newEventStreamWriter(w http.ResponseWriter) (*eventStreamWriter, error) {
+func NewWriter(w http.ResponseWriter) (*Writer, error) {
 	flusher, ok := w.(http.Flusher)
 	if !ok {
 		return nil, errors.New("http flushing not supported")
@@ -40,13 +38,24 @@ func newEventStreamWriter(w http.ResponseWriter) (*eventStreamWriter, error) {
 	// full time a search takes to complete.
 	w.Header().Set("X-Accel-Buffering", "no")
 
-	return &eventStreamWriter{
+	return &Writer{
 		w:     w,
 		flush: flusher.Flush,
 	}, nil
 }
 
-func (e *eventStreamWriter) Event(event string, data interface{}) (err error) {
+// Event writes event with data json marshalled.
+func (e *Writer) Event(event string, data interface{}) error {
+	encoded, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	return e.EventBytes(event, encoded)
+}
+
+// EventBytes writes dataLine as an event. dataLine is not allowed to contain
+// a newline.
+func (e *Writer) EventBytes(event string, dataLine []byte) (err error) {
 	// write is a helper to avoid error handling. Additionally it counts the
 	// number of bytes written.
 	start := time.Now()
@@ -62,7 +71,7 @@ func (e *eventStreamWriter) Event(event string, data interface{}) (err error) {
 
 	defer func() {
 		if hook := e.StatHook; hook != nil {
-			hook(eventStreamWriterStat{
+			hook(WriterStat{
 				Event:    event,
 				Bytes:    bytes,
 				Duration: time.Since(start),
@@ -70,11 +79,6 @@ func (e *eventStreamWriter) Event(event string, data interface{}) (err error) {
 			})
 		}
 	}()
-
-	encoded, err := json.Marshal(data)
-	if err != nil {
-		return err
-	}
 
 	if event != "" {
 		// event: $event\n
@@ -85,25 +89,10 @@ func (e *eventStreamWriter) Event(event string, data interface{}) (err error) {
 
 	// data: json($data)\n\n
 	write([]byte("data: "))
-	write(encoded)
+	write(dataLine)
 	write([]byte("\n\n"))
 
 	e.flush()
 
 	return err
-}
-
-// eventStreamOTHook returns a StatHook which logs to log.
-func eventStreamOTHook(log func(...otlog.Field)) func(eventStreamWriterStat) {
-	return func(stat eventStreamWriterStat) {
-		fields := []otlog.Field{
-			otlog.String("event", stat.Event),
-			otlog.Int("bytes", stat.Bytes),
-			otlog.Int64("duration_ms", stat.Duration.Milliseconds()),
-		}
-		if stat.Error != nil {
-			fields = append(fields, otlog.Error(stat.Error))
-		}
-		log(fields...)
-	}
 }

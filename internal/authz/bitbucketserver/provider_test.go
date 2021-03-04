@@ -197,7 +197,7 @@ func testProviderFetchUserPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 
 				tc.err = strings.ReplaceAll(tc.err, "${INSTANCEURL}", cli.URL.String())
 
-				ids, err := p.FetchUserPerms(tc.ctx, tc.acct)
+				ids, _, err := p.FetchUserPerms(tc.ctx, tc.acct)
 
 				if have, want := fmt.Sprint(err), tc.err; have != want {
 					t.Errorf("error:\nhave: %q\nwant: %q", have, want)

@@ -104,7 +104,7 @@ export const CampaignCloseAlert: React.FunctionComponent<CampaignCloseAlertProps
                     </div>
                 </div>
             </div>
-            {isErrorLike(isClosing) && <ErrorAlert error={isClosing} history={history} />}
+            {isErrorLike(isClosing) && <ErrorAlert error={isClosing} />}
         </>
     )
 }

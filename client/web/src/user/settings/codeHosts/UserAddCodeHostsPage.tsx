@@ -1,8 +1,5 @@
 import React, { useCallback, useState, useEffect } from 'react'
-import { RouteComponentProps } from 'react-router'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-
-import * as H from 'history'
 
 import { CodeHostItem } from './CodeHostItem'
 import { PageTitle } from '../../../components/PageTitle'
@@ -21,10 +18,9 @@ import { SourcegraphContext } from '../../../jscontext'
 // type ServiceType = AuthProvider['serviceType']
 // type AuthProvidersByType = Partial<Record<ServiceType, AuthProvider>>
 
-export interface UserAddCodeHostsPageProps extends RouteComponentProps {
+export interface UserAddCodeHostsPageProps {
     userID: Scalars['ID']
     codeHostExternalServices: Record<string, AddExternalServiceOptions>
-    history: H.History
     routingPrefix: string
     context: Pick<SourcegraphContext, 'authProviders'>
 }
@@ -38,7 +34,6 @@ const isServicesByKind = (status: Status): status is ServicesByKind =>
 export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageProps> = ({
     userID,
     codeHostExternalServices,
-    history,
     routingPrefix,
     /* context */
 }) => {
@@ -164,7 +159,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
             {/* display other errors */}
             {isErrorLike(statusOrError) && (
-                <ErrorAlert error={statusOrError} history={history} prefix="Code host action error" icon={false} />
+                <ErrorAlert error={statusOrError} prefix="Code host action error" icon={false} />
             )}
 
             {codeHostExternalServices && isServicesByKind(statusOrError) ? (

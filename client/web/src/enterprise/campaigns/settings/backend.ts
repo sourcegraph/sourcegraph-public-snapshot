@@ -4,6 +4,7 @@ import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphq
 import { requestGraphQL } from '../../../backend/graphql'
 import {
     CampaignsCodeHostsFields,
+    CampaignsCredentialFields,
     CreateCampaignsCredentialResult,
     CreateCampaignsCredentialVariables,
     DeleteCampaignsCredentialResult,
@@ -17,10 +18,13 @@ export const campaignsCredentialFieldsFragment = gql`
     fragment CampaignsCredentialFields on CampaignsCredential {
         id
         createdAt
+        sshPublicKey
     }
 `
 
-export function createCampaignsCredential(args: CreateCampaignsCredentialVariables): Promise<void> {
+export function createCampaignsCredential(
+    args: CreateCampaignsCredentialVariables
+): Promise<CampaignsCredentialFields> {
     return requestGraphQL<CreateCampaignsCredentialResult, CreateCampaignsCredentialVariables>(
         gql`
             mutation CreateCampaignsCredential(
@@ -43,7 +47,10 @@ export function createCampaignsCredential(args: CreateCampaignsCredentialVariabl
         `,
         args
     )
-        .pipe(map(dataOrThrowErrors), mapTo(undefined))
+        .pipe(
+            map(dataOrThrowErrors),
+            map(data => data.createCampaignsCredential)
+        )
         .toPromise()
 }
 
@@ -94,6 +101,7 @@ export const queryUserCampaignsCodeHosts = ({
             fragment CampaignsCodeHostFields on CampaignsCodeHost {
                 externalServiceKind
                 externalServiceURL
+                requiresSSH
                 credential {
                     ...CampaignsCredentialFields
                 }

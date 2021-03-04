@@ -10,6 +10,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/sourcegraph/go-diff/diff"
+
 	"github.com/sourcegraph/sourcegraph/internal/pathmatch"
 )
 

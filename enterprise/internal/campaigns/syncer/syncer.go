@@ -224,7 +224,6 @@ type changesetSyncer struct {
 
 	// Replaceable for testing
 	syncFunc func(ctx context.Context, id int64) error
-	clock    func() time.Time
 
 	// cancel should be called to stop this syncer
 	cancel context.CancelFunc
@@ -276,6 +275,7 @@ type SyncStore interface {
 	UpsertChangesetEvents(ctx context.Context, cs ...*campaigns.ChangesetEvent) error
 	Transact(context.Context) (*store.Store, error)
 	Repos() *database.RepoStore
+	Clock() func() time.Time
 }
 
 // Run will start the process of changeset syncing. It is long running
@@ -288,9 +288,6 @@ func (s *changesetSyncer) Run(ctx context.Context) {
 	}
 	if s.syncFunc == nil {
 		s.syncFunc = s.SyncChangeset
-	}
-	if s.clock == nil {
-		s.clock = time.Now
 	}
 	s.queue = newChangesetPriorityQueue()
 	// How often to refresh the schedule
@@ -333,10 +330,10 @@ func (s *changesetSyncer) Run(ctx context.Context) {
 			if timer != nil {
 				timer.Stop()
 			}
-			start := s.clock()
+			start := s.syncStore.Clock()()
 			schedule, err := s.computeSchedule(ctx)
 			labelValues := []string{s.codeHostURL, strconv.FormatBool(err == nil)}
-			syncerMetrics.computeScheduleDuration.WithLabelValues(labelValues...).Observe(s.clock().Sub(start).Seconds())
+			syncerMetrics.computeScheduleDuration.WithLabelValues(labelValues...).Observe(s.syncStore.Clock()().Sub(start).Seconds())
 			if err != nil {
 				log15.Error("Computing queue", "err", err)
 				continue
@@ -344,7 +341,7 @@ func (s *changesetSyncer) Run(ctx context.Context) {
 			syncerMetrics.scheduleSize.WithLabelValues(s.codeHostURL).Set(float64(len(schedule)))
 			s.queue.Upsert(schedule...)
 			var behindSchedule int
-			now := s.clock()
+			now := s.syncStore.Clock()()
 			for _, ss := range schedule {
 				if ss.nextSync.Before(now) {
 					behindSchedule++
@@ -352,10 +349,10 @@ func (s *changesetSyncer) Run(ctx context.Context) {
 			}
 			syncerMetrics.behindSchedule.WithLabelValues(s.codeHostURL).Set(float64(behindSchedule))
 		case <-timerChan:
-			start := s.clock()
+			start := s.syncStore.Clock()()
 			err := s.syncFunc(ctx, next.changesetID)
 			labelValues := []string{s.codeHostURL, strconv.FormatBool(err == nil)}
-			syncerMetrics.syncDuration.WithLabelValues(labelValues...).Observe(s.clock().Sub(start).Seconds())
+			syncerMetrics.syncDuration.WithLabelValues(labelValues...).Observe(s.syncStore.Clock()().Sub(start).Seconds())
 			syncerMetrics.syncs.WithLabelValues(labelValues...).Add(1)
 
 			if err != nil {
@@ -398,7 +395,7 @@ func (s *changesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync,
 
 	ss := make([]scheduledSync, len(syncData))
 	for i := range syncData {
-		nextSync := NextSync(s.clock, syncData[i])
+		nextSync := NextSync(s.syncStore.Clock(), syncData[i])
 
 		ss[i] = scheduledSync{
 			changesetID: syncData[i].ChangesetID,

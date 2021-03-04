@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/campaignutils/env"
 	"github.com/sourcegraph/campaignutils/overridable"
 	"github.com/sourcegraph/campaignutils/yaml"
+
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

@@ -771,7 +771,7 @@ func (s *Server) handleP4Exec(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Make sure the subcommand is explicitly allowed
-	allowlist := []string{"protects", "groups", "users"}
+	allowlist := []string{"protects", "groups", "users", "group"}
 	allowed := false
 	for _, arg := range allowlist {
 		if req.Args[0] == arg {
@@ -1434,8 +1434,6 @@ func setHEAD(ctx context.Context, dir GitDir, syncer VCSSyncer, repo api.RepoNam
 			headBranch = branch
 		}
 	}
-
-	log15.Info("Setting HEAD to", "HEAD", headBranch)
 
 	// set HEAD
 	cmd = exec.CommandContext(ctx, "git", "symbolic-ref", "HEAD", "refs/heads/"+headBranch)

@@ -12,8 +12,9 @@ import (
 	"time"
 
 	"github.com/machinebox/graphql"
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"golang.org/x/oauth2"
+
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
 var (

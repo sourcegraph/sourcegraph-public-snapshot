@@ -16,8 +16,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"golang.org/x/crypto/ssh"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 )
 
 type noopPublicKey struct{}

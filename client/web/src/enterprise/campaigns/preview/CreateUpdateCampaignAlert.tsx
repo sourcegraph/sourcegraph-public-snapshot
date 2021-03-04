@@ -78,7 +78,7 @@ export const CreateUpdateCampaignAlert: React.FunctionComponent<CreateUpdateCamp
                     </button>
                 </div>
             </div>
-            {isErrorLike(isLoading) && <ErrorAlert error={isLoading} history={history} />}
+            {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
         </>
     )
 }

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/shurcooL/httpgzip"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"

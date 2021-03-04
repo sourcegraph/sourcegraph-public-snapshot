@@ -145,15 +145,14 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                                     node={node}
                                     setNode={setNode}
                                     viewerCanAdminister={viewerCanAdminister}
-                                    history={history}
                                 />
                             )}
                             {node.currentSpec?.type === ChangesetSpecType.BRANCH && (
                                 <DownloadDiffButton changesetID={node.id} />
                             )}
                         </div>
-                        {node.syncerError && <SyncerError syncerError={node.syncerError} history={history} />}
-                        <ChangesetError node={node} history={history} />
+                        {node.syncerError && <SyncerError syncerError={node.syncerError} />}
+                        <ChangesetError node={node} />
                         <ChangesetFileDiff
                             changesetID={node.id}
                             isLightTheme={isLightTheme}
@@ -172,16 +171,13 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
     )
 }
 
-const SyncerError: React.FunctionComponent<{ syncerError: string; history: H.History }> = ({
-    syncerError,
-    history,
-}) => (
+const SyncerError: React.FunctionComponent<{ syncerError: string }> = ({ syncerError }) => (
     <div className="alert alert-danger" role="alert">
         <h4 className="alert-heading">
             <AlertCircleIcon className="icon icon-inline" /> Encountered error during last attempt to sync changeset
             data from code host
         </h4>
-        <ErrorMessage error={syncerError} history={history} />
+        <ErrorMessage error={syncerError} />
         <hr className="my-2" />
         <p className="mb-0">
             <small>This might be an ephemeral error that resolves itself at the next sync.</small>
@@ -191,8 +187,7 @@ const SyncerError: React.FunctionComponent<{ syncerError: string; history: H.His
 
 const ChangesetError: React.FunctionComponent<{
     node: ExternalChangesetFields
-    history: H.History
-}> = ({ node, history }) => {
+}> = ({ node }) => {
     if (!node.error) {
         return null
     }
@@ -202,7 +197,7 @@ const ChangesetError: React.FunctionComponent<{
             <h4 className="alert-heading">
                 <AlertCircleIcon className="icon icon-inline" /> Failed to run operations on changeset
             </h4>
-            <ErrorMessage error={node.error} history={history} />
+            <ErrorMessage error={node.error} />
         </div>
     )
 }
@@ -211,8 +206,7 @@ const RetryChangesetButton: React.FunctionComponent<{
     node: ExternalChangesetFields
     setNode: (node: ExternalChangesetFields) => void
     viewerCanAdminister: boolean
-    history: H.History
-}> = ({ node, setNode, history }) => {
+}> = ({ node, setNode }) => {
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
     const onRetry = useCallback(async () => {
         setIsLoading(true)
@@ -229,9 +223,7 @@ const RetryChangesetButton: React.FunctionComponent<{
     }, [node.id, setNode])
     return (
         <>
-            {isErrorLike(isLoading) && (
-                <ErrorAlert error={isLoading} prefix="Error re-enqueueing changeset" history={history} />
-            )}
+            {isErrorLike(isLoading) && <ErrorAlert error={isLoading} prefix="Error re-enqueueing changeset" />}
             <button className="btn btn-link mb-1" type="button" onClick={onRetry} disabled={isLoading === true}>
                 <SyncIcon
                     className={classNames(
