@@ -1,9 +1,6 @@
 {
   "extends": "./tsconfig.json",
   "references": [
-    { "path": "client/ui-kit-legacy-shared" },
-    { "path": "client/ui-kit-legacy-shared/src/testing" },
-    { "path": "client/ui-kit-legacy-branded" },
     { "path": "client/app-web" },
     { "path": "client/app-web/src/end-to-end" },
     { "path": "client/app-web/src/regression" },
@@ -12,6 +9,10 @@
     { "path": "client/browser-extension/src/end-to-end" },
     { "path": "client/extension-api" },
     { "path": "client/extension-api-types" },
+    { "path": "client/ui-kit" },
+    { "path": "client/ui-kit-legacy-shared" },
+    { "path": "client/ui-kit-legacy-shared/src/testing" },
+    { "path": "client/ui-kit-legacy-branded" },
     { "path": "dev/release" },
     { "path": "schema" },
   ],
