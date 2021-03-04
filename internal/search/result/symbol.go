@@ -19,6 +19,9 @@ type Symbol struct {
 	FileLimited bool
 }
 
+// Symbols is the result of a search on the symbols service.
+type Symbols = []Symbol
+
 // SearchSymbolResult is a result from symbol search.
 type SearchSymbolResult struct {
 	Symbol  Symbol

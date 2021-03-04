@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
 	symbolsclient "github.com/sourcegraph/sourcegraph/internal/symbols"
-	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 )
 
 func init() {
@@ -88,47 +87,47 @@ func TestService(t *testing.T) {
 
 	tests := map[string]struct {
 		args search.SymbolsParameters
-		want protocol.SearchResult
+		want result.Symbols
 	}{
 		"simple": {
 			args: search.SymbolsParameters{First: 10},
-			want: protocol.SearchResult{Symbols: []result.Symbol{x, y}},
+			want: []result.Symbol{x, y},
 		},
 		"onematch": {
 			args: search.SymbolsParameters{Query: "x", First: 10},
-			want: protocol.SearchResult{Symbols: []result.Symbol{x}},
+			want: []result.Symbol{x},
 		},
 		"nomatches": {
 			args: search.SymbolsParameters{Query: "foo", First: 10},
-			want: protocol.SearchResult{},
+			want: nil,
 		},
 		"caseinsensitiveexactmatch": {
 			args: search.SymbolsParameters{Query: "^X$", First: 10},
-			want: protocol.SearchResult{Symbols: []result.Symbol{x}},
+			want: []result.Symbol{x},
 		},
 		"casesensitiveexactmatch": {
 			args: search.SymbolsParameters{Query: "^x$", IsCaseSensitive: true, First: 10},
-			want: protocol.SearchResult{Symbols: []result.Symbol{x}},
+			want: []result.Symbol{x},
 		},
 		"casesensitivenoexactmatch": {
 			args: search.SymbolsParameters{Query: "^X$", IsCaseSensitive: true, First: 10},
-			want: protocol.SearchResult{},
+			want: nil,
 		},
 		"caseinsensitiveexactpathmatch": {
 			args: search.SymbolsParameters{IncludePatterns: []string{"^A.js$"}, First: 10},
-			want: protocol.SearchResult{Symbols: []result.Symbol{x, y}},
+			want: []result.Symbol{x, y},
 		},
 		"casesensitiveexactpathmatch": {
 			args: search.SymbolsParameters{IncludePatterns: []string{"^a.js$"}, IsCaseSensitive: true, First: 10},
-			want: protocol.SearchResult{Symbols: []result.Symbol{x, y}},
+			want: []result.Symbol{x, y},
 		},
 		"casesensitivenoexactpathmatch": {
 			args: search.SymbolsParameters{IncludePatterns: []string{"^A.js$"}, IsCaseSensitive: true, First: 10},
-			want: protocol.SearchResult{},
+			want: nil,
 		},
 		"exclude": {
 			args: search.SymbolsParameters{ExcludePattern: "a.js", IsCaseSensitive: true, First: 10},
-			want: protocol.SearchResult{},
+			want: nil,
 		},
 	}
 	for label, test := range tests {
@@ -137,8 +136,11 @@ func TestService(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !reflect.DeepEqual(*result, test.want) {
+			if result != nil && !reflect.DeepEqual(*result, test.want) {
 				t.Errorf("got %+v, want %+v", *result, test.want)
+			}
+			if result == nil && test.want != nil {
+				t.Errorf("got nil, want %+v", test.want)
 			}
 		})
 	}

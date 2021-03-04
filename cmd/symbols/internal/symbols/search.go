@@ -50,7 +50,8 @@ func (s *Service) handleSearch(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Service) search(ctx context.Context, args protocol.SearchArgs) (result *protocol.SearchResult, err error) {
+func (s *Service) search(ctx context.Context, args protocol.SearchArgs) (*result.Symbols, error) {
+	var err error
 	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 
@@ -87,13 +88,11 @@ func (s *Service) search(ctx context.Context, args protocol.SearchArgs) (result 
 	}
 	defer db.Close()
 
-	result = &protocol.SearchResult{}
-	res, err := filterSymbols(ctx, db, args)
+	result, err := filterSymbols(ctx, db, args)
 	if err != nil {
 		return nil, err
 	}
-	result.Symbols = res
-	return result, nil
+	return &result, nil
 }
 
 // getDBFile returns the path to the sqlite3 database for the repo@commit
