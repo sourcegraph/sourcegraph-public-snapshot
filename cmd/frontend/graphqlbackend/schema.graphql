@@ -8022,11 +8022,11 @@ type ChangesetCounts {
 }
 
 """
-A list of campaigns.
+A list of batches.
 """
 type CampaignConnection {
     """
-    A list of campaigns.
+    A list of batches.
     """
     nodes: [Campaign!]!
 
@@ -8673,7 +8673,7 @@ type CampaignsCodeHostConnection {
 }
 
 """
-A code host usable with campaigns. This service is accessible by the user it belongs to.
+A code host usable with batches. This service is accessible by the user it belongs to.
 """
 type CampaignsCodeHost {
     """
@@ -8775,7 +8775,7 @@ enum ChangesetSpecOperation {
     """
     SLEEP
     """
-    The changeset is removed from some of the associated campaigns.
+    The changeset is removed from some of the associated batches.
     """
     DETACH
 }
@@ -9274,7 +9274,7 @@ type ChangesetApplyPreviewConnectionStats {
     """
     sleep: Int!
     """
-    The changeset is removed from some of the associated campaigns.
+    The changeset is removed from some of the associated batches.
     """
     detach: Int!
 
@@ -9676,8 +9676,8 @@ extend type User {
         @deprecated(reason: "campaigns have been renamed to batch changes. Use batchChanges instead.")
 
     """
-    Returns a connection of configured external services accessible by this user, for usage with campaigns.
-    These are all code hosts configured on the Sourcegraph instance that are supported by campaigns. They are
+    Returns a connection of configured external services accessible by this user, for usage with batches.
+    These are all code hosts configured on the Sourcegraph instance that are supported by batches. They are
     connected to CampaignCredential resources, if one has been created for the code host connection before.
     """
     campaignsCodeHosts(
@@ -9695,7 +9695,7 @@ extend type User {
 
 extend type Query {
     """
-    A list of campaigns.
+    A list of batches.
     """
     campaigns(
         """
