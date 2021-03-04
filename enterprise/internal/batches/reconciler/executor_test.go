@@ -935,7 +935,7 @@ func TestDecorateChangesetBody(t *testing.T) {
 	if err := decorateChangesetBody(context.Background(), fs, database.Namespaces(new(dbtesting.MockDB)), rcs); err != nil {
 		t.Errorf("unexpected non-nil error: %v", err)
 	}
-	if want := body + "\n\n[_Created by Sourcegraph campaign `my-user/reconciler-test-campaign`._](https://sourcegraph.test/users/my-user/campaigns/reconciler-test-campaign)"; rcs.Body != want {
+	if want := body + "\n\n[_Created by Sourcegraph campaign `my-user/reconciler-test-campaign`._](https://sourcegraph.test/users/my-user/batch-changes/reconciler-test-campaign)"; rcs.Body != want {
 		t.Errorf("repos.Changeset body unexpectedly changed:\nhave=%q\nwant=%q", rcs.Body, want)
 	}
 }
@@ -971,7 +971,7 @@ func TestCampaignURL(t *testing.T) {
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
-		if want := "https://sourcegraph.test/organizations/foo/campaigns/bar"; url != want {
+		if want := "https://sourcegraph.test/organizations/foo/batch-changes/bar"; url != want {
 			t.Errorf("unexpected URL: have=%q want=%q", url, want)
 		}
 	})

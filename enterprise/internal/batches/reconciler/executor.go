@@ -700,7 +700,7 @@ func campaignURL(ctx context.Context, ns *database.Namespace, c *batches.Campaig
 	// (Refactoring the resolver to use the same function is difficult due to
 	// the different querying and caching behaviour in GraphQL resolvers, so we
 	// simply replicate the logic here.)
-	u := extURL.ResolveReference(&url.URL{Path: namespaceURL(ns) + "/campaigns/" + c.Name})
+	u := extURL.ResolveReference(&url.URL{Path: namespaceURL(ns) + "/batch-changes/" + c.Name})
 
 	return u.String(), nil
 }

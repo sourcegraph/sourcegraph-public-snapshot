@@ -74,7 +74,7 @@ func TestBatchChangeResolver(t *testing.T) {
 		LastApplier:    apiUser,
 		SpecCreator:    apiUser,
 		LastAppliedAt:  marshalDateTime(t, now),
-		URL:            fmt.Sprintf("/organizations/%s/campaigns/%s", orgName, campaign.Name),
+		URL:            fmt.Sprintf("/organizations/%s/batch-changes/%s", orgName, campaign.Name),
 		CreatedAt:      marshalDateTime(t, now),
 		UpdatedAt:      marshalDateTime(t, now),
 		// Not closed.
