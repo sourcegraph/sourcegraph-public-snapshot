@@ -10,7 +10,7 @@ import { Scalars } from '../../../../../shared/src/graphql-operations'
 import { lazyComponent } from '../../../util/lazyComponent'
 import { BatchChangeListPageProps, NamespaceBatchChangeListPageProps } from '../list/BatchChangeListPage'
 import { BatchChangePreviewPageProps } from '../preview/BatchChangePreviewPage'
-import { CreateCampaignPageProps } from '../create/CreateCampaignPage'
+import { CreateBatchChangePageProps } from '../create/CreateBatchChangePage'
 import { BatchChangeDetailsPageProps } from '../detail/BatchChangeDetailsPage'
 import { CampaignClosePageProps } from '../close/CampaignClosePage'
 import { BatchChangesDotComPageProps } from './marketing/BatchChangesDotComPage'
@@ -28,9 +28,9 @@ const BatchChangePreviewPage = lazyComponent<BatchChangePreviewPageProps, 'Batch
     () => import('../preview/BatchChangePreviewPage'),
     'BatchChangePreviewPage'
 )
-const CreateCampaignPage = lazyComponent<CreateCampaignPageProps, 'CreateCampaignPage'>(
-    () => import('../create/CreateCampaignPage'),
-    'CreateCampaignPage'
+const CreateBatchChangePage = lazyComponent<CreateBatchChangePageProps, 'CreateBatchChangePage'>(
+    () => import('../create/CreateBatchChangePage'),
+    'CreateBatchChangePage'
 )
 const BatchChangeDetailsPage = lazyComponent<BatchChangeDetailsPageProps, 'BatchChangeDetailsPage'>(
     () => import('../detail/BatchChangeDetailsPage'),
@@ -80,7 +80,7 @@ export const AuthenticatedBatchChangesArea = withAuthenticatedUser<Authenticated
             <Route render={props => <BatchChangeListPage {...outerProps} {...props} />} path={match.url} exact={true} />
             <Route
                 path={`${match.url}/create`}
-                render={props => <CreateCampaignPage {...outerProps} {...props} />}
+                render={props => <CreateBatchChangePage {...outerProps} {...props} />}
                 exact={true}
             />
         </Switch>
@@ -104,7 +104,10 @@ export const NamespaceBatchChangesArea = withAuthenticatedUser<
                     <BatchChangePreviewPage {...outerProps} {...props} batchSpecID={match.params.specID} />
                 )}
             />
-            <Route path={`${match.url}/create`} render={props => <CreateCampaignPage {...outerProps} {...props} />} />
+            <Route
+                path={`${match.url}/create`}
+                render={props => <CreateBatchChangePage {...outerProps} {...props} />}
+            />
             <Route
                 path={`${match.url}/:batchChangeName/close`}
                 render={({ match, ...props }: RouteComponentProps<{ batchChangeName: string }>) => (

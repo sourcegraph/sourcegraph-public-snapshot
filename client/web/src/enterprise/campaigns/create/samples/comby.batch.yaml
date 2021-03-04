@@ -1,6 +1,6 @@
 name: sprintf-to-itoa
 description: |
-  This campaign uses [Comby](https://comby.dev) to replace `fmt.Sprintf` calls
+  This batch change uses [Comby](https://comby.dev) to replace `fmt.Sprintf` calls
   in Go code with the equivalent but clearer `strconv.Iota` call.
 
 # Find all repositories that contain the `fmt.Sprintf` statement using structural search
@@ -18,8 +18,8 @@ steps:
 # Describe the changeset (e.g., GitHub pull request) you want for each repository.
 changesetTemplate:
   title: Replace equivalent fmt.Sprintf calls with strconv.Itoa
-  body: This campaign replaces `fmt.Sprintf("%d", integer)` calls with semantically equivalent `strconv.Itoa` calls
-  branch: campaigns/sprintf-to-itoa # Push the commit to this branch.
+  body: This batch change replaces `fmt.Sprintf("%d", integer)` calls with semantically equivalent `strconv.Itoa` calls
+  branch: batches/sprintf-to-itoa # Push the commit to this branch.
   commit:
     message: Replacing fmt.Sprintf with strconv.Iota
   published: false

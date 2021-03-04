@@ -1,5 +1,5 @@
 name: update-log15-import
-description: This campaign updates Go import paths for the `log15` package from `gopkg.in/inconshreveable/log15.v2` to `github.com/inconshreveable/log15` using [Comby](https://comby.dev/)
+description: This batch change updates Go import paths for the `log15` package from `gopkg.in/inconshreveable/log15.v2` to `github.com/inconshreveable/log15` using [Comby](https://comby.dev/)
 
 # Find all repositories that contain the import we want to change.
 on:
@@ -18,7 +18,7 @@ steps:
 changesetTemplate:
   title: Update import path for log15 package to use GitHub
   body: Updates Go import paths for the `log15` package from `gopkg.in/inconshreveable/log15.v2` to `github.com/inconshreveable/log15` using [Comby](https://comby.dev/)
-  branch: campaigns/update-log15-import # Push the commit to this branch.
+  branch: batches/update-log15-import # Push the commit to this branch.
   commit:
     message: Fix import path for log15 package
   published: false

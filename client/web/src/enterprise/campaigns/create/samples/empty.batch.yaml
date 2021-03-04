@@ -13,7 +13,7 @@ steps:
 # Describe the changeset (e.g., GitHub pull request) you want for each repository.
 changesetTemplate:
   title: Hello World
-  body: My first campaign!
+  body: My first batch change!
   branch: hello-world # Push the commit to this branch.
   commit:
     message: Append Hello World to all README.md files
