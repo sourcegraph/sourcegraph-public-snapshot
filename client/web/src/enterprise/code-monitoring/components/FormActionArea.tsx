@@ -222,12 +222,14 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                             <span className="text-muted test-existing-action-email">{authenticatedUser.email}</span>
                         </div>
                         <div className="d-flex align-items-center">
-                            <Toggle
-                                title="Enabled"
-                                value={emailNotificationEnabled}
-                                onToggle={toggleEmailNotificationEnabled}
-                                className="mr-3"
-                            />
+                            <div>
+                                <Toggle
+                                    title="Enabled"
+                                    value={emailNotificationEnabled}
+                                    onToggle={toggleEmailNotificationEnabled}
+                                    className="mr-3"
+                                />
+                            </div>
                             <button type="button" className="btn btn-link p-0 text-left test-edit-action">
                                 Edit
                             </button>
