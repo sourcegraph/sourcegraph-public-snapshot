@@ -88,10 +88,6 @@
 /dev/architecture/search-pagination      /dev/background-information/architecture/search-pagination 308
 /dev/architecture/architecture.dot	/dev/background-information/architecture/architecture.dot 308
 /dev/architecture/architecture.svg	/dev/background-information/architecture/architecture.svg 308
-/dev/campaigns_database_layout.dot	/dev/background-information/campaigns/campaigns_database_layout.dot 308
-/dev/campaigns_database_layout.svg	/dev/background-information/campaigns/campaigns_database_layout.svg 308
-/dev/campaigns_design 	            /dev/background-information/campaigns/campaigns_design  308
-/dev/campaigns_development 	        /dev/background-information/campaigns/index  308
 /dev/codeintel/architecture 	    /dev/background-information/codeintel/architecture 308
 /dev/codeintel/deployment 	        /dev/background-information/codeintel/deployment 308
 /dev/codeintel/diagrams/architecture.dot	/dev/background-information/codeintel/diagrams/architecture.dot 308
@@ -169,13 +165,37 @@
 /user/quick_links   /user/personalization/quick_links 308
 /user/themes    /user/personalization/themes 308
 
-/user/automation    /user/campaigns 308
-/user/campaigns/examples    /campaigns/tutorials 308
-/user/campaigns/managing_access /campaigns/explanations/permissions_in_campaigns 308
-/dev/automation_development /dev/background-information/campaigns/index 308
-/campaigns/campaign_spec_yaml_reference /campaigns/references/campaign_spec_yaml_reference 308
-
 /user/search /code_search 308
-/user/campaigns /campaigns 308
 /user/code_intelligence /code_intelligence 308
 /user /getting-started 308
+
+
+/user/automation                         /batch_changes 308
+/user/campaigns                          /batch_changes 308
+/user/campaigns/examples                 /batch_changes/tutorials 308
+/user/campaigns/managing_access          /batch_changes/explanations/permissions_in_batch_changes 308
+/dev/campaigns_database_layout.dot	     /dev/background-information/batch_changes/batch_changes_database_layout.dot 308
+/dev/campaigns_database_layout.svg	     /dev/background-information/batch_changes/batch_changes_database_layout.svg 308
+/dev/campaigns_design 	                 /dev/background-information/batch_changes/batch_changes_design  308
+/dev/campaigns_development 	             /dev/background-information/batch_changes/index  308
+/dev/automation_development              /dev/background-information/batch_changes/index 308
+/campaigns/campaign_spec_yaml_reference /campaigns/references/batch_spec_yaml_reference 308
+
+
+/dev/background-information/campaigns/campaigns_database_layout.svg /dev/background-information/batch_changes/batch_changes_database_layout.svg 308
+/dev/background-information/campaigns/campaigns_database_layout.dot /dev/background-information/batch_changes/batch_changes_database_layout.dot 308
+
+/campaigns/explanations/reexecuting_campaign_specs_multiple_times /batch_changes/explanations/reexecuting_batch_specs_multiple_times 308
+/campaigns/explanations/introduction_to_campaigns /batch_changes/explanations/introduction_to_batch_changes 308
+/campaigns/explanations/permissions_in_campaigns /batch_changes/explanations/permissions_in_batch_changes 308
+/campaigns/explanations/how_src_executes_a_campaign_spec /batch_changes/explanations/how_src_executes_a_batch_spec 308
+/campaigns/explanations/campaigns_design /batch_changes/explanations/batch_changes_design 308
+/campaigns/references/campaign_spec_yaml_reference /batch_changes/references/batch_spec_yaml_reference 308
+/campaigns/references/campaign_spec_templating /batch_changes/references/batch_spec_templating 308
+/campaigns/how-tos/updating_a_campaign /batch_changes/how-tos/updating_a_batch_change 308
+/campaigns/how-tos/closing_or_deleting_a_campaign /batch_changes/how-tos/closing_or_deleting_a_batch_change 308
+/campaigns/how-tos/creating_a_campaign /batch_changes/how-tos/creating_a_batch_change 308
+/campaigns/how-tos/viewing_campaigns /batch_changes/how-tos/viewing_batch_changes 308
+/campaigns/campaigns-icon.svg /batch_changes/batch-changes-icon.svg 308
+
+/campaigns /batch_changes 308

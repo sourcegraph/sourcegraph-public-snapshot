@@ -50,16 +50,16 @@ If you want to learn more about code intelligence:
 
 Campaigns create and manage large scale code changes across projects, repositories, and code hosts.
 
-To create a campaign, users write a [campaign spec](../../../campaigns/references/campaign_spec_yaml_reference.md), which is a YAML file that specifies the changes that should be performed, and the repositories that they should be performed upon — either through a Sourcegraph search, or by declaring them directly. This spec is then executed by [src-cli](#src-cli) on the user's machine (or in CI, or some other environment controlled by the user), which results in [changeset specs](../../../campaigns/explanations/introduction_to_campaigns.md#changeset-spec) that are sent to Sourcegraph. These changeset specs are then applied by Sourcegraph to create one or more changesets per repository. (A changeset is a pull request or merge request, depending on the code host.)
+To create a campaign, users write a [campaign spec](../../../batch_changes/references/batch_spec_yaml_reference.md), which is a YAML file that specifies the changes that should be performed, and the repositories that they should be performed upon — either through a Sourcegraph search, or by declaring them directly. This spec is then executed by [src-cli](#src-cli) on the user's machine (or in CI, or some other environment controlled by the user), which results in [changeset specs](../../../batch_changes/explanations/introduction_to_batch_changes.md#changeset-spec) that are sent to Sourcegraph. These changeset specs are then applied by Sourcegraph to create one or more changesets per repository. (A changeset is a pull request or merge request, depending on the code host.)
 
 Once created, changesets are monitored by Sourcegraph, and their current review and CI status can be viewed on the campaign's page, providing a single pane of glass view of all the changesets created as part of the campaign. The campaign can be updated at any time by re-applying the original campaign spec: this will transparently add or remove changesets in repositories that now match or don't match the original search as needed.
 
 If you want to learn more about campaigns:
 
-- [Campaign product documentation](../../../campaigns/index.md)
-- [Campaign design principles](../../../campaigns/explanations/campaigns_design.md)
-- [Campaign developer documentation](../campaigns/index.md)
-- [How `src` executes a campaign spec](../../../campaigns/explanations/how_src_executes_a_campaign_spec.md)
+- [Campaign product documentation](../../../batch_changes/index.md)
+- [Campaign design principles](../../../batch_changes/explanations/batch_changes_design.md)
+- [Campaign developer documentation](../batch_changes/index.md)
+- [How `src` executes a campaign spec](../../../batch_changes/explanations/how_src_executes_a_batch_spec.md)
 
 ## Code insights
 
@@ -146,7 +146,7 @@ If you want to learn more about our extension API:
 
 src-cli, or `src`, is a command line tool that users can run locally to interact with Sourcegraph.
 
-src-cli is written in Go, and distributed as a standalone binary for Windows, macOS, and Linux. Its features include [running searches](../../../cli/references/search.md), managing Sourcegraph, and [executing campaigns](../../../campaigns/quickstart.md#create-the-campaign). src-cli is an integral part of the [campaigns product](#campaigns).
+src-cli is written in Go, and distributed as a standalone binary for Windows, macOS, and Linux. Its features include [running searches](../../../cli/references/search.md), managing Sourcegraph, and [executing campaigns](../../../batch_changes/quickstart.md#create-the-campaign). src-cli is an integral part of the [campaigns product](#campaigns).
 
 Note that src-cli is not contained within the Sourcegraph monorepo, and has its own release cadence.
 
