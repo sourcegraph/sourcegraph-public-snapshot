@@ -330,7 +330,6 @@ func (s *Server) syncRepoState(db dbutil.DB, batchSize int) {
 		// Ensure we're only dealing with repos we are responsible for
 		if addr := gitserver.AddrForRepo(repo.Name, addrs); addr != s.Hostname {
 			repoSyncStateCounter.WithLabelValues("other_shard").Inc()
-			// Ensure we're only dealing with repos we are responsible for
 			return nil
 		}
 		repoSyncStateCounter.WithLabelValues("this_shard").Inc()
