@@ -99,7 +99,7 @@ func TestCreateBatchSpec(t *testing.T) {
 	repoStore := database.ReposWith(cstore)
 	esStore := database.ExternalServicesWith(cstore)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/create-campaign-spec-test", newGitHubExternalService(t, esStore))
+	repo := newGitHubTestRepo("github.com/sourcegraph/create-batch-spec-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
@@ -126,7 +126,7 @@ func TestCreateBatchSpec(t *testing.T) {
 	}
 
 	userAPIID := string(graphqlbackend.MarshalUserID(userID))
-	rawSpec := ct.TestRawCampaignSpec
+	rawSpec := ct.TestRawBatchSpec
 
 	for name, tc := range map[string]struct {
 		changesetSpecs []*campaigns.ChangesetSpec
@@ -355,7 +355,7 @@ func TestApplyBatchChange(t *testing.T) {
 	repoAPIID := graphqlbackend.MarshalRepositoryID(repo.ID)
 
 	campaignSpec := &campaigns.CampaignSpec{
-		RawSpec: ct.TestRawCampaignSpec,
+		RawSpec: ct.TestRawBatchSpec,
 		Spec: campaigns.CampaignSpecFields{
 			Name:        "my-campaign",
 			Description: "My description",
@@ -488,7 +488,7 @@ mutation($batchSpec: ID!, $ensureBatchChange: ID){
 }
 `
 
-func TestCreateCampaign(t *testing.T) {
+func TestCreateBatchChange(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -501,7 +501,7 @@ func TestCreateCampaign(t *testing.T) {
 	cstore := store.New(db)
 
 	campaignSpec := &campaigns.CampaignSpec{
-		RawSpec: ct.TestRawCampaignSpec,
+		RawSpec: ct.TestRawBatchSpec,
 		Spec: campaigns.CampaignSpecFields{
 			Name:        "my-campaign",
 			Description: "My description",
@@ -520,21 +520,21 @@ func TestCreateCampaign(t *testing.T) {
 	}
 
 	input := map[string]interface{}{
-		"campaignSpec": string(marshalBatchSpecRandID(campaignSpec.RandID)),
+		"batchSpec": string(marshalBatchSpecRandID(campaignSpec.RandID)),
 	}
 
-	var response struct{ CreateCampaign apitest.BatchChange }
+	var response struct{ CreateBatchChange apitest.BatchChange }
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
 	// First time it should work, because no campaign exists
-	apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateCampaign)
+	apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateBatchChange)
 
-	if response.CreateCampaign.ID == "" {
+	if response.CreateBatchChange.ID == "" {
 		t.Fatalf("expected campaign to be created, but was not")
 	}
 
 	// Second time it should fail
-	errors := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateCampaign)
+	errors := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateBatchChange)
 
 	if len(errors) != 1 {
 		t.Fatalf("expected single errors, but got none")
@@ -544,9 +544,9 @@ func TestCreateCampaign(t *testing.T) {
 	}
 }
 
-const mutationCreateCampaign = `
-mutation($campaignSpec: ID!){
-  createCampaign(campaignSpec: $campaignSpec) { id }
+const mutationCreateBatchChange = `
+mutation($batchSpec: ID!){
+  createBatchChange(batchSpec: $batchSpec) { id }
 }
 `
 
@@ -561,13 +561,13 @@ func TestMoveBatchChange(t *testing.T) {
 	user := ct.CreateTestUser(t, db, true)
 	userID := user.ID
 
-	orgName := "move-campaign-test"
+	orgName := "move-batch-change-test"
 	orgID := ct.InsertTestOrg(t, db, orgName)
 
 	cstore := store.New(db)
 
 	campaignSpec := &campaigns.CampaignSpec{
-		RawSpec:         ct.TestRawCampaignSpec,
+		RawSpec:         ct.TestRawBatchSpec,
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}

@@ -36,7 +36,7 @@ func TestBatchChangeResolver(t *testing.T) {
 	cstore := store.NewWithClock(db, clock)
 
 	campaignSpec := &campaigns.CampaignSpec{
-		RawSpec:        ct.TestRawCampaignSpec,
+		RawSpec:        ct.TestRawBatchSpec,
 		UserID:         userID,
 		NamespaceOrgID: orgID,
 	}

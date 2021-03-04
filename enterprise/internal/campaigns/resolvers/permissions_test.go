@@ -855,7 +855,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		userCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
 		input := map[string]interface{}{
-			"campaign": string(marshalBatchChangeID(campaign.ID)),
+			"batchChange": string(marshalBatchChangeID(campaign.ID)),
 		}
 		testCampaignResponse(t, s, userCtx, input, wantCampaignResponse{
 			changesetTypes:  map[string]int{"ExternalChangeset": 2},
@@ -908,8 +908,8 @@ func TestRepositoryPermissions(t *testing.T) {
 		// should not be returned, since that would leak information about the
 		// hidden changesets.
 		input = map[string]interface{}{
-			"campaign":   string(marshalBatchChangeID(campaign.ID)),
-			"checkState": string(campaigns.ChangesetCheckStatePassed),
+			"batchChange": string(marshalBatchChangeID(campaign.ID)),
+			"checkState":  string(campaigns.ChangesetCheckStatePassed),
 		}
 		wantCheckStateResponse := want
 		wantCheckStateResponse.changesetsCount = 1
@@ -920,7 +920,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		testCampaignResponse(t, s, userCtx, input, wantCheckStateResponse)
 
 		input = map[string]interface{}{
-			"campaign":    string(marshalBatchChangeID(campaign.ID)),
+			"batchChange":    string(marshalBatchChangeID(campaign.ID)),
 			"reviewState": string(campaigns.ChangesetReviewStateChangesRequested),
 		}
 		wantReviewStateResponse := wantCheckStateResponse
@@ -1015,10 +1015,10 @@ func testCampaignResponse(t *testing.T, s *graphql.Schema, ctx context.Context, 
 	t.Helper()
 
 	var response struct{ Node apitest.BatchChange }
-	apitest.MustExec(ctx, t, s, in, &response, queryCampaignPermLevels)
+	apitest.MustExec(ctx, t, s, in, &response, queryBatchChangePermLevels)
 
-	if have, want := response.Node.ID, in["campaign"]; have != want {
-		t.Fatalf("campaign id is wrong. have %q, want %q", have, want)
+	if have, want := response.Node.ID, in["batchChange"]; have != want {
+		t.Fatalf("batch change id is wrong. have %q, want %q", have, want)
 	}
 
 	if diff := cmp.Diff(w.changesetsCount, response.Node.Changesets.TotalCount); diff != "" {
@@ -1038,13 +1038,13 @@ func testCampaignResponse(t *testing.T, s *graphql.Schema, ctx context.Context, 
 	}
 
 	if diff := cmp.Diff(w.campaignDiffStat, response.Node.DiffStat); diff != "" {
-		t.Fatalf("unexpected campaign diff stat (-want +got):\n%s", diff)
+		t.Fatalf("unexpected batch change diff stat (-want +got):\n%s", diff)
 	}
 }
 
-const queryCampaignPermLevels = `
-query($campaign: ID!, $reviewState: ChangesetReviewState, $checkState: ChangesetCheckState) {
-  node(id: $campaign) {
+const queryBatchChangePermLevels = `
+query($batchChange: ID!, $reviewState: ChangesetReviewState, $checkState: ChangesetCheckState) {
+  node(id: $batchChange) {
     ... on BatchChange {
 	  id
 

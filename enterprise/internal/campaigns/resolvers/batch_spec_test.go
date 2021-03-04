@@ -44,7 +44,7 @@ func TestBatchSpecResolver(t *testing.T) {
 	adminID := ct.CreateTestUser(t, db, true).ID
 	orgID := ct.InsertTestOrg(t, db, orgname)
 
-	spec, err := campaigns.NewCampaignSpecFromRaw(ct.TestRawCampaignSpec)
+	spec, err := campaigns.NewCampaignSpecFromRaw(ct.TestRawBatchSpec)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -156,7 +156,7 @@ func TestBatchSpecResolver(t *testing.T) {
 
 	// Now create an updated changeset spec and check that we get a superseding
 	// campaign spec.
-	sup, err := campaigns.NewCampaignSpecFromRaw(ct.TestRawCampaignSpec)
+	sup, err := campaigns.NewCampaignSpecFromRaw(ct.TestRawBatchSpec)
 	if err != nil {
 		t.Fatal(err)
 	}
