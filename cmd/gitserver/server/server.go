@@ -30,6 +30,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -289,17 +290,30 @@ func (s *Server) SyncRepoState(interval time.Duration, db dbutil.DB) {
 	}
 }
 
+var repoSyncStateCounter = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "src_repo_sync_state_counter",
+	Help: "Incremented each time we check the state of repo",
+}, []string{"type"})
+
+var repoStateUpsertCounter = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "src_repo_sync_state_upsert_counter",
+	Help: "Incremented each time we upsert repo state in the database",
+}, []string{"success"})
+
 func (s *Server) syncRepoState(db dbutil.DB) {
-	// TODO: Instrumentation
 	ctx := context.Background()
 	store := database.GitserverRepos(db)
 	addrs := conf.Get().ServiceConnections.GitServers
 
 	err := store.IterateRepoGitserverStatus(ctx, func(repo types.RepoGitserverStatus) error {
+		repoSyncStateCounter.WithLabelValues("check").Inc()
 		// Ensure we're only dealing with repos we are responsible for
 		if addr := gitserver.AddrForRepo(repo.Name, addrs); addr != s.Hostname {
+			repoSyncStateCounter.WithLabelValues("other_shard").Inc()
+			// Ensure we're only dealing with repos we are responsible for
 			return nil
 		}
+		repoSyncStateCounter.WithLabelValues("this_shard").Inc()
 
 		dir := s.dir(repo.Name)
 		cloned := repoCloned(dir)
@@ -327,9 +341,11 @@ func (s *Server) syncRepoState(db dbutil.DB) {
 		}
 
 		if err := store.Upsert(ctx, *repo.GitserverRepo); err != nil {
+			repoStateUpsertCounter.WithLabelValues("false").Inc()
 			log15.Error("Upserting GitserverRepo", "error", err)
 			return nil
 		}
+		repoStateUpsertCounter.WithLabelValues("true").Inc()
 
 		return nil
 	})
