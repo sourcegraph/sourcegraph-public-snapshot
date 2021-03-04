@@ -720,7 +720,7 @@ type Mutation {
     SetUserPublicRepos sets the list of public repos for a user's search context, ensuring those repos
     exist and are cloned
     """
-    SetUserPublicRepos(userId: ID!, repoURIs: [String!]!): EmptyResponse!
+    SetUserPublicRepos(userID: ID!, repoURIs: [String!]!): EmptyResponse!
 }
 
 """
@@ -5285,6 +5285,11 @@ type User implements Node & SettingsSubject & Namespace {
         """
         externalServiceID: ID
     ): RepositoryConnection!
+
+    """
+    publicRepositories returns the repos listed in user_public_repos for this user
+    """
+    publicRepositories: [Repository!]!
 }
 
 """
