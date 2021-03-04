@@ -1,12 +1,12 @@
 import Dialog from '@reach/dialog'
 import React from 'react'
-import { CampaignsCodeHostFields, CampaignsCredentialFields } from '../../../graphql-operations'
+import { BatchChangesCodeHostFields, BatchChangesCredentialFields } from '../../../graphql-operations'
 import { CodeHostSshPublicKey } from './CodeHostSshPublicKey'
 import { ModalHeader } from './ModalHeader'
 
 interface ViewCredentialModalProps {
-    codeHost: CampaignsCodeHostFields
-    credential: CampaignsCredentialFields
+    codeHost: BatchChangesCodeHostFields
+    credential: BatchChangesCredentialFields
 
     onClose: () => void
 }

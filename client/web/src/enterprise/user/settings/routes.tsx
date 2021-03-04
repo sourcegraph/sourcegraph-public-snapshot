@@ -1,3 +1,5 @@
+import * as React from 'react'
+import { Redirect } from 'react-router'
 import { userSettingsAreaRoutes } from '../../../user/settings/routes'
 import { UserSettingsAreaRoute } from '../../../user/settings/UserSettingsArea'
 import { lazyComponent } from '../../../util/lazyComponent'
@@ -30,7 +32,15 @@ export const enterpriseUserSettingsAreaRoutes: readonly UserSettingsAreaRoute[] 
     {
         path: '/campaigns',
         exact: true,
-        render: lazyComponent(() => import('../../campaigns/settings/CampaignsSettingsArea'), 'CampaignsSettingsArea'),
+        render: ({ match }) => <Redirect to={match.path.replace('/campaigns', '/batch-changes')} />,
+    },
+    {
+        path: '/batch-changes',
+        exact: true,
+        render: lazyComponent(
+            () => import('../../campaigns/settings/BatchChangesSettingsArea'),
+            'BatchChangesSettingsArea'
+        ),
         condition: ({ isSourcegraphDotCom, user: { viewerCanAdminister } }) =>
             !isSourcegraphDotCom && window.context.campaignsEnabled && viewerCanAdminister,
     },

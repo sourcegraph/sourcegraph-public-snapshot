@@ -3,19 +3,19 @@ import React from 'react'
 import { of } from 'rxjs'
 import { ExternalServiceKind } from '../../../graphql-operations'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
-import { CampaignsSettingsArea } from './CampaignsSettingsArea'
+import { BatchChangesSettingsArea } from './BatchChangesSettingsArea'
 
-const { add } = storiesOf('web/campaigns/settings/CampaignsSettingsArea', module).addDecorator(story => (
+const { add } = storiesOf('web/batches/settings/BatchChangesSettingsArea', module).addDecorator(story => (
     <div className="p-3 container web-content">{story()}</div>
 ))
 
 add('Overview', () => (
     <EnterpriseWebStory>
         {props => (
-            <CampaignsSettingsArea
+            <BatchChangesSettingsArea
                 {...props}
                 user={{ id: 'user-id-1' }}
-                queryUserCampaignsCodeHosts={() =>
+                queryUserBatchChangesCodeHosts={() =>
                     of({
                         totalCount: 3,
                         pageInfo: {
@@ -52,10 +52,10 @@ add('Overview', () => (
 add('Config added', () => (
     <EnterpriseWebStory>
         {props => (
-            <CampaignsSettingsArea
+            <BatchChangesSettingsArea
                 {...props}
                 user={{ id: 'user-id-2' }}
-                queryUserCampaignsCodeHosts={() =>
+                queryUserBatchChangesCodeHosts={() =>
                     of({
                         totalCount: 3,
                         pageInfo: {

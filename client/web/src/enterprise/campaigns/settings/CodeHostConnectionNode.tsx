@@ -1,18 +1,16 @@
 import React, { useCallback, useState } from 'react'
-import * as H from 'history'
 import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
 import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
-import { CampaignsCodeHostFields, Scalars } from '../../../graphql-operations'
+import { BatchChangesCodeHostFields, Scalars } from '../../../graphql-operations'
 import { AddCredentialModal } from './AddCredentialModal'
 import { RemoveCredentialModal } from './RemoveCredentialModal'
 import { Subject } from 'rxjs'
 import { ViewCredentialModal } from './ViewCredentialModal'
 
 export interface CodeHostConnectionNodeProps {
-    node: CampaignsCodeHostFields
+    node: BatchChangesCodeHostFields
     userID: Scalars['ID']
-    history: H.History
     updateList: Subject<void>
 }
 
@@ -21,7 +19,6 @@ type OpenModal = 'add' | 'view' | 'delete'
 export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionNodeProps> = ({
     node,
     userID,
-    history,
     updateList,
 }) => {
     const Icon = defaultExternalServices[node.externalServiceKind].icon
@@ -111,7 +108,6 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                 <AddCredentialModal
                     onCancel={closeModal}
                     afterCreate={afterAction}
-                    history={history}
                     userID={userID}
                     externalServiceKind={node.externalServiceKind}
                     externalServiceURL={node.externalServiceURL}

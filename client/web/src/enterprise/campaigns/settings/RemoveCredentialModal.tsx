@@ -3,14 +3,14 @@ import Dialog from '@reach/dialog'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
 import { ErrorAlert } from '../../../components/alerts'
-import { deleteCampaignsCredential } from './backend'
-import { CampaignsCodeHostFields, CampaignsCredentialFields } from '../../../graphql-operations'
+import { deleteBatchChangesCredential } from './backend'
+import { BatchChangesCodeHostFields, BatchChangesCredentialFields } from '../../../graphql-operations'
 import { CodeHostSshPublicKey } from './CodeHostSshPublicKey'
 import { ModalHeader } from './ModalHeader'
 
 export interface RemoveCredentialModalProps {
-    codeHost: CampaignsCodeHostFields
-    credential: CampaignsCredentialFields
+    codeHost: BatchChangesCodeHostFields
+    credential: BatchChangesCredentialFields
 
     onCancel: () => void
     afterDelete: () => void
@@ -27,7 +27,7 @@ export const RemoveCredentialModal: React.FunctionComponent<RemoveCredentialModa
     const onDelete = useCallback<React.MouseEventHandler>(async () => {
         setIsLoading(true)
         try {
-            await deleteCampaignsCredential(credential.id)
+            await deleteBatchChangesCredential(credential.id)
             afterDelete()
         } catch (error) {
             setIsLoading(asError(error))

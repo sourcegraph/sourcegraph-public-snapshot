@@ -1,11 +1,11 @@
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 import React from 'react'
-import { CampaignsCredentialFields, ExternalServiceKind } from '../../../graphql-operations'
+import { BatchChangesCredentialFields, ExternalServiceKind } from '../../../graphql-operations'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 import { ViewCredentialModal } from './ViewCredentialModal'
 
-const { add } = storiesOf('web/campaigns/settings/ViewCredentialModal', module)
+const { add } = storiesOf('web/batches/settings/ViewCredentialModal', module)
     .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
     .addParameters({
         chromatic: {
@@ -14,7 +14,7 @@ const { add } = storiesOf('web/campaigns/settings/ViewCredentialModal', module)
         },
     })
 
-const credential: CampaignsCredentialFields = {
+const credential: BatchChangesCredentialFields = {
     id: '123',
     createdAt: new Date().toISOString(),
     sshPublicKey:

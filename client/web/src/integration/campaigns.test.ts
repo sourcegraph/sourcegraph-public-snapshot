@@ -739,10 +739,10 @@ describe('Campaigns', () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
                 ...mockCommonGraphQLResponses('user'),
-                UserCampaignsCodeHosts: () => ({
+                UserBatchChangesCodeHosts: () => ({
                     node: {
                         __typename: 'User',
-                        campaignsCodeHosts: {
+                        batchChangesCodeHosts: {
                             totalCount: 1,
                             pageInfo: {
                                 endCursor: null,
@@ -765,29 +765,29 @@ describe('Campaigns', () => {
                         },
                     },
                 }),
-                CreateCampaignsCredential: () => {
+                CreateBatchChangesCredential: () => {
                     isCreated = true
                     return {
-                        createCampaignsCredential: {
+                        createBatchChangesCredential: {
                             id: '123',
                             createdAt: new Date().toISOString(),
                             sshPublicKey: 'ssh-rsa randorandorandorando',
                         },
                     }
                 },
-                DeleteCampaignsCredential: () => {
+                DeleteBatchChangesCredential: () => {
                     isCreated = false
                     return {
-                        deleteCampaignsCredential: {
+                        deleteBatchChangesCredential: {
                             alwaysNil: null,
                         },
                     }
                 },
             })
 
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/users/alice/settings/campaigns')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/users/alice/settings/batch-changes')
             // View settings page.
-            await driver.page.waitForSelector('.test-campaigns-settings-page')
+            await driver.page.waitForSelector('.test-batches-settings-page')
             // Wait for list to load.
             await driver.page.waitForSelector('.test-code-host-connection-node')
             // Check no credential is configured.
