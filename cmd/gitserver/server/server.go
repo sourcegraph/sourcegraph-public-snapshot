@@ -31,6 +31,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -286,9 +287,9 @@ func (s *Server) Janitor(interval time.Duration) {
 
 // SyncRepoState syncs state on disk to the database for all repos and is expected to
 // run in a background goroutine.
-func (s *Server) SyncRepoState(db dbutil.DB, interval time.Duration, batchSize int) {
+func (s *Server) SyncRepoState(db dbutil.DB, interval time.Duration, batchSize int, perSecond int) {
 	for {
-		s.syncRepoState(db, batchSize)
+		s.syncRepoState(db, batchSize, perSecond)
 		time.Sleep(interval)
 	}
 }
@@ -303,10 +304,24 @@ var repoStateUpsertCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "Incremented each time we upsert repo state in the database",
 }, []string{"success"})
 
-func (s *Server) syncRepoState(db dbutil.DB, batchSize int) {
+func (s *Server) syncRepoState(db dbutil.DB, batchSize int, perSecond int) {
 	ctx := context.Background()
 	store := database.GitserverRepos(db)
 	addrs := conf.Get().ServiceConnections.GitServers
+
+	// The rate limit should be enforced across all instances
+	perSecond = perSecond / len(addrs)
+	if perSecond < 0 {
+		perSecond = 1
+	}
+	limiter := rate.NewLimiter(rate.Limit(perSecond), perSecond)
+
+	// The rate limiter doesn't allow writes that are larger than the burst size
+	// which we've set to perSecond.
+	if batchSize > perSecond {
+		batchSize = perSecond
+	}
+
 	batch := make([]types.GitserverRepo, 0, batchSize)
 
 	writeBatch := func() {
@@ -317,6 +332,12 @@ func (s *Server) syncRepoState(db dbutil.DB, batchSize int) {
 		defer func() {
 			batch = batch[0:0]
 		}()
+		err := limiter.WaitN(ctx, len(batch))
+		if err != nil {
+			log15.Error("Waiting for rate limiter", "error", err)
+			return
+		}
+
 		if err := store.Upsert(ctx, batch...); err != nil {
 			repoStateUpsertCounter.WithLabelValues("false").Add(float64(len(batch)))
 			log15.Error("Upserting GitserverRepo", "error", err)
