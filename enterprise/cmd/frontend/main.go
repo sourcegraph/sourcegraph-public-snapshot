@@ -39,7 +39,7 @@ var initFunctions = map[string]func(ctx context.Context, db dbutil.DB, outOfBand
 	"executor":     executor.Init,
 	"codeintel":    codeintel.Init,
 	"insights":     insights.Init,
-	"campaigns":    campaigns.InitFrontend,
+	"campaigns":    batches.InitFrontend,
 	"codemonitors": codemonitors.Init,
 }
 
