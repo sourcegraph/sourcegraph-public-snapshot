@@ -26,6 +26,8 @@ type NewCodeIntelUsageStatistics struct {
 	PreciseCrossRepositoryWAUs     *int32
 	SearchBasedCrossRepositoryWAUs *int32
 	EventSummaries                 []CodeIntelEventSummary
+	NumRepositoriesWithUpload      *int32
+	NumRepositoriesWithoutUpload   *int32
 }
 
 type CodeIntelEventSummary struct {
