@@ -920,7 +920,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		testCampaignResponse(t, s, userCtx, input, wantCheckStateResponse)
 
 		input = map[string]interface{}{
-			"batchChange":    string(marshalBatchChangeID(campaign.ID)),
+			"batchChange": string(marshalBatchChangeID(campaign.ID)),
 			"reviewState": string(campaigns.ChangesetReviewStateChangesRequested),
 		}
 		wantReviewStateResponse := wantCheckStateResponse
