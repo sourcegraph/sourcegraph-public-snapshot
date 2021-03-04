@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/depgraph/graph"
 )
 
-const cacheFile = "dep-cache.temp"
+const cacheFile = "depgraph.cache"
 
 // loadDependencyGraph reads a cached dependency graph or recalculates one if no cache file
 // is present. If a new dependency graph is loaded it will be re-serialized to the cache file.
