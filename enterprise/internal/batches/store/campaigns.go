@@ -16,18 +16,18 @@ import (
 // campaignColumns are used by the campaign related Store methods to insert,
 // update and query batches.
 var campaignColumns = []*sqlf.Query{
-	sqlf.Sprintf("batches.id"),
-	sqlf.Sprintf("batches.name"),
-	sqlf.Sprintf("batches.description"),
-	sqlf.Sprintf("batches.initial_applier_id"),
-	sqlf.Sprintf("batches.last_applier_id"),
-	sqlf.Sprintf("batches.last_applied_at"),
-	sqlf.Sprintf("batches.namespace_user_id"),
-	sqlf.Sprintf("batches.namespace_org_id"),
-	sqlf.Sprintf("batches.created_at"),
-	sqlf.Sprintf("batches.updated_at"),
-	sqlf.Sprintf("batches.closed_at"),
-	sqlf.Sprintf("batches.campaign_spec_id"),
+	sqlf.Sprintf("campaigns.id"),
+	sqlf.Sprintf("campaigns.name"),
+	sqlf.Sprintf("campaigns.description"),
+	sqlf.Sprintf("campaigns.initial_applier_id"),
+	sqlf.Sprintf("campaigns.last_applier_id"),
+	sqlf.Sprintf("campaigns.last_applied_at"),
+	sqlf.Sprintf("campaigns.namespace_user_id"),
+	sqlf.Sprintf("campaigns.namespace_org_id"),
+	sqlf.Sprintf("campaigns.created_at"),
+	sqlf.Sprintf("campaigns.updated_at"),
+	sqlf.Sprintf("campaigns.closed_at"),
+	sqlf.Sprintf("campaigns.campaign_spec_id"),
 }
 
 // campaignInsertColumns is the list of campaign columns that are modified in
@@ -156,7 +156,7 @@ func (s *Store) CountCampaigns(ctx context.Context, opts CountCampaignsOpts) (in
 
 var countCampaignsQueryFmtstr = `
 -- source: enterprise/internal/batches/store.go:CountCampaigns
-SELECT COUNT(batches.id)
+SELECT COUNT(campaigns.id)
 FROM campaigns
 %s
 WHERE %s
@@ -164,8 +164,8 @@ WHERE %s
 
 func countCampaignsQuery(opts *CountCampaignsOpts) *sqlf.Query {
 	joins := []*sqlf.Query{
-		sqlf.Sprintf("LEFT JOIN users namespace_user ON batches.namespace_user_id = namespace_user.id"),
-		sqlf.Sprintf("LEFT JOIN orgs namespace_org ON batches.namespace_org_id = namespace_org.id"),
+		sqlf.Sprintf("LEFT JOIN users namespace_user ON campaigns.namespace_user_id = namespace_user.id"),
+		sqlf.Sprintf("LEFT JOIN orgs namespace_org ON campaigns.namespace_org_id = namespace_org.id"),
 	}
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("namespace_user.deleted_at IS NULL"),
@@ -173,27 +173,27 @@ func countCampaignsQuery(opts *CountCampaignsOpts) *sqlf.Query {
 	}
 
 	if opts.ChangesetID != 0 {
-		joins = append(joins, sqlf.Sprintf("INNER JOIN changesets ON changesets.campaign_ids ? batches.id::TEXT"))
+		joins = append(joins, sqlf.Sprintf("INNER JOIN changesets ON changesets.campaign_ids ? campaigns.id::TEXT"))
 		preds = append(preds, sqlf.Sprintf("changesets.id = %s", opts.ChangesetID))
 	}
 
 	switch opts.State {
 	case batches.CampaignStateOpen:
-		preds = append(preds, sqlf.Sprintf("batches.closed_at IS NULL"))
+		preds = append(preds, sqlf.Sprintf("campaigns.closed_at IS NULL"))
 	case batches.CampaignStateClosed:
-		preds = append(preds, sqlf.Sprintf("batches.closed_at IS NOT NULL"))
+		preds = append(preds, sqlf.Sprintf("campaigns.closed_at IS NOT NULL"))
 	}
 
 	if opts.InitialApplierID != 0 {
-		preds = append(preds, sqlf.Sprintf("batches.initial_applier_id = %d", opts.InitialApplierID))
+		preds = append(preds, sqlf.Sprintf("campaigns.initial_applier_id = %d", opts.InitialApplierID))
 	}
 
 	if opts.NamespaceUserID != 0 {
-		preds = append(preds, sqlf.Sprintf("batches.namespace_user_id = %s", opts.NamespaceUserID))
+		preds = append(preds, sqlf.Sprintf("campaigns.namespace_user_id = %s", opts.NamespaceUserID))
 	}
 
 	if opts.NamespaceOrgID != 0 {
-		preds = append(preds, sqlf.Sprintf("batches.namespace_org_id = %s", opts.NamespaceOrgID))
+		preds = append(preds, sqlf.Sprintf("campaigns.namespace_org_id = %s", opts.NamespaceOrgID))
 	}
 
 	if len(preds) == 0 {
@@ -236,8 +236,8 @@ func (s *Store) GetCampaign(ctx context.Context, opts GetCampaignOpts) (*batches
 var getCampaignsQueryFmtstr = `
 -- source: enterprise/internal/batches/store.go:GetCampaign
 SELECT %s FROM campaigns
-LEFT JOIN users namespace_user ON batches.namespace_user_id = namespace_user.id
-LEFT JOIN orgs  namespace_org  ON batches.namespace_org_id = namespace_org.id
+LEFT JOIN users namespace_user ON campaigns.namespace_user_id = namespace_user.id
+LEFT JOIN orgs  namespace_org  ON campaigns.namespace_org_id = namespace_org.id
 WHERE %s
 LIMIT 1
 `
@@ -248,23 +248,23 @@ func getCampaignQuery(opts *GetCampaignOpts) *sqlf.Query {
 		sqlf.Sprintf("namespace_org.deleted_at IS NULL"),
 	}
 	if opts.ID != 0 {
-		preds = append(preds, sqlf.Sprintf("batches.id = %s", opts.ID))
+		preds = append(preds, sqlf.Sprintf("campaigns.id = %s", opts.ID))
 	}
 
 	if opts.CampaignSpecID != 0 {
-		preds = append(preds, sqlf.Sprintf("batches.campaign_spec_id = %s", opts.CampaignSpecID))
+		preds = append(preds, sqlf.Sprintf("campaigns.campaign_spec_id = %s", opts.CampaignSpecID))
 	}
 
 	if opts.NamespaceUserID != 0 {
-		preds = append(preds, sqlf.Sprintf("batches.namespace_user_id = %s", opts.NamespaceUserID))
+		preds = append(preds, sqlf.Sprintf("campaigns.namespace_user_id = %s", opts.NamespaceUserID))
 	}
 
 	if opts.NamespaceOrgID != 0 {
-		preds = append(preds, sqlf.Sprintf("batches.namespace_org_id = %s", opts.NamespaceOrgID))
+		preds = append(preds, sqlf.Sprintf("campaigns.namespace_org_id = %s", opts.NamespaceOrgID))
 	}
 
 	if opts.Name != "" {
-		preds = append(preds, sqlf.Sprintf("batches.name = %s", opts.Name))
+		preds = append(preds, sqlf.Sprintf("campaigns.name = %s", opts.Name))
 	}
 
 	if len(preds) == 0 {
@@ -366,8 +366,8 @@ ORDER BY id DESC
 
 func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 	joins := []*sqlf.Query{
-		sqlf.Sprintf("LEFT JOIN users namespace_user ON batches.namespace_user_id = namespace_user.id"),
-		sqlf.Sprintf("LEFT JOIN orgs namespace_org ON batches.namespace_org_id = namespace_org.id"),
+		sqlf.Sprintf("LEFT JOIN users namespace_user ON campaigns.namespace_user_id = namespace_user.id"),
+		sqlf.Sprintf("LEFT JOIN orgs namespace_org ON campaigns.namespace_org_id = namespace_org.id"),
 	}
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("namespace_user.deleted_at IS NULL"),
@@ -375,31 +375,31 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 	}
 
 	if opts.Cursor != 0 {
-		preds = append(preds, sqlf.Sprintf("batches.id <= %s", opts.Cursor))
+		preds = append(preds, sqlf.Sprintf("campaigns.id <= %s", opts.Cursor))
 	}
 
 	if opts.ChangesetID != 0 {
-		joins = append(joins, sqlf.Sprintf("INNER JOIN changesets ON changesets.campaign_ids ? batches.id::TEXT"))
+		joins = append(joins, sqlf.Sprintf("INNER JOIN changesets ON changesets.campaign_ids ? campaigns.id::TEXT"))
 		preds = append(preds, sqlf.Sprintf("changesets.id = %s", opts.ChangesetID))
 	}
 
 	switch opts.State {
 	case batches.CampaignStateOpen:
-		preds = append(preds, sqlf.Sprintf("batches.closed_at IS NULL"))
+		preds = append(preds, sqlf.Sprintf("campaigns.closed_at IS NULL"))
 	case batches.CampaignStateClosed:
-		preds = append(preds, sqlf.Sprintf("batches.closed_at IS NOT NULL"))
+		preds = append(preds, sqlf.Sprintf("campaigns.closed_at IS NOT NULL"))
 	}
 
 	if opts.InitialApplierID != 0 {
-		preds = append(preds, sqlf.Sprintf("batches.initial_applier_id = %d", opts.InitialApplierID))
+		preds = append(preds, sqlf.Sprintf("campaigns.initial_applier_id = %d", opts.InitialApplierID))
 	}
 
 	if opts.NamespaceUserID != 0 {
-		preds = append(preds, sqlf.Sprintf("batches.namespace_user_id = %s", opts.NamespaceUserID))
+		preds = append(preds, sqlf.Sprintf("campaigns.namespace_user_id = %s", opts.NamespaceUserID))
 	}
 
 	if opts.NamespaceOrgID != 0 {
-		preds = append(preds, sqlf.Sprintf("batches.namespace_org_id = %s", opts.NamespaceOrgID))
+		preds = append(preds, sqlf.Sprintf("campaigns.namespace_org_id = %s", opts.NamespaceOrgID))
 	}
 
 	if len(preds) == 0 {

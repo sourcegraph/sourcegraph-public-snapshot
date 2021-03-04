@@ -378,7 +378,7 @@ SELECT changesets.id,
 	r.external_service_id
 FROM changesets
 LEFT JOIN changeset_events ce ON changesets.id = ce.changeset_id
-JOIN campaigns ON changesets.campaign_ids ? batches.id::TEXT
+JOIN campaigns ON changesets.campaign_ids ? campaigns.id::TEXT
 JOIN repo r ON changesets.repo_id = r.id
 WHERE %s
 GROUP BY changesets.id, r.id
@@ -387,7 +387,7 @@ ORDER BY changesets.id ASC
 
 func listChangesetSyncDataQuery(opts ListChangesetSyncDataOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
-		sqlf.Sprintf("batches.closed_at IS NULL"),
+		sqlf.Sprintf("campaigns.closed_at IS NULL"),
 		sqlf.Sprintf("r.deleted_at IS NULL"),
 		sqlf.Sprintf("changesets.publication_state = %s", batches.ChangesetPublicationStatePublished),
 		sqlf.Sprintf("changesets.reconciler_state = %s", batches.ReconcilerStateCompleted.ToDB()),
