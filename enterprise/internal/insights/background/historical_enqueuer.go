@@ -51,6 +51,8 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 			_, err := queryrunner.EnqueueJob(ctx, workerBaseStore, job)
 			return err
 		},
+		gitFirstEverCommit:   git.FirstEverCommit,
+		gitFindNearestCommit: git.FindNearestCommit,
 
 		// Fill the last 52 weeks of data, recording 1 point per week.
 		//
@@ -77,9 +79,9 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 	), operation)
 }
 
-// RepoStore is a subset of the API exposed by the database.Repos() store.
+// RepoStore is a subset of the API exposed by the database.Repos() store (only the subset used by
+// historicalEnqueuer.)
 type RepoStore interface {
-	List(ctx context.Context, opt database.ReposListOptions) (results []*types.Repo, err error)
 	GetByName(ctx context.Context, name api.RepoName) (*types.Repo, error)
 }
 
@@ -91,6 +93,8 @@ type historicalEnqueuer struct {
 	insightsStore         store.Interface
 	repoStore             RepoStore
 	enqueueQueryRunnerJob func(ctx context.Context, job *queryrunner.Job) error
+	gitFirstEverCommit    func(ctx context.Context, repoName api.RepoName) (*git.Commit, error)
+	gitFindNearestCommit  func(ctx context.Context, repoName api.RepoName, revSpec string, target time.Time) (*git.Commit, error)
 
 	// framesToBackfill describes the number of historical timeframes to backfill data for.
 	framesToBackfill int
@@ -116,8 +120,9 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 	// Deduplicate series that may be unique (e.g. different name/description) but do not have
 	// unique data (i.e. use the same exact search query or webhook URL.)
 	var (
-		uniqueSeries = map[string]*schema.InsightSeries{}
-		multi        error
+		uniqueSeries    = map[string]*schema.InsightSeries{}
+		sortedSeriesIDs []string
+		multi           error
 	)
 	for _, insight := range insights {
 		for _, series := range insight.Series {
@@ -131,9 +136,10 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 				continue
 			}
 			uniqueSeries[seriesID] = series
+			sortedSeriesIDs = append(sortedSeriesIDs, seriesID)
 		}
 	}
-	if err := h.buildFrames(ctx, uniqueSeries); err != nil {
+	if err := h.buildFrames(ctx, uniqueSeries, sortedSeriesIDs); err != nil {
 		return multierror.Append(multi, err)
 	}
 	return nil
@@ -146,7 +152,7 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 // It is only called if there is at least one insights series defined.
 //
 // It will return instantly if there are no unique series.
-func (h *historicalEnqueuer) buildFrames(ctx context.Context, uniqueSeries map[string]*schema.InsightSeries) error {
+func (h *historicalEnqueuer) buildFrames(ctx context.Context, uniqueSeries map[string]*schema.InsightSeries, sortedSeriesIDs []string) error {
 	if len(uniqueSeries) == 0 {
 		return nil // nothing to do.
 	}
@@ -180,7 +186,7 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, uniqueSeries map[s
 		}
 
 		// Build historical data for this timeframe.
-		softErr, hardErr := h.buildFrame(ctx, uniqueSeries, from, to, haveDataForRepo)
+		softErr, hardErr := h.buildFrame(ctx, uniqueSeries, sortedSeriesIDs, from, to, haveDataForRepo)
 		if softErr != nil {
 			multi = multierror.Append(multi, softErr)
 			continue
@@ -207,6 +213,7 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, uniqueSeries map[s
 func (h *historicalEnqueuer) buildFrame(
 	ctx context.Context,
 	uniqueSeries map[string]*schema.InsightSeries,
+	sortedSeriesIDs []string,
 	from time.Time,
 	to time.Time,
 	haveDataForRepo func(seriesID string, id api.RepoID, from, to time.Time) bool,
@@ -220,7 +227,7 @@ func (h *historicalEnqueuer) buildFrame(
 	//
 	lastIteration := h.now()
 	yield := func() {
-		if diff := h.since(lastIteration); diff < 100*time.Millisecond {
+		if diff := h.timeSince(lastIteration); diff < 100*time.Millisecond {
 			h.sleep(diff)
 			lastIteration = h.now()
 		}
@@ -237,7 +244,7 @@ func (h *historicalEnqueuer) buildFrame(
 		}
 
 		// Find the first commit made to the repository on the default branch.
-		firstHEADCommit, err := git.FirstEverCommit(ctx, api.RepoName(repoName))
+		firstHEADCommit, err := h.gitFirstEverCommit(ctx, api.RepoName(repoName))
 		if err != nil {
 			if gitserver.IsRevisionNotFound(err) || vcs.IsRepoNotExist(err) {
 				return nil // no error - repo may not be cloned yet (or not even pushed to code host yet)
@@ -251,7 +258,8 @@ func (h *historicalEnqueuer) buildFrame(
 		}
 
 		// For every series that we want to potentially gather historical data for, try.
-		for seriesID, series := range uniqueSeries {
+		for _, seriesID := range sortedSeriesIDs {
+			series := uniqueSeries[seriesID]
 			yield()
 
 			// If we already have data for this frame+repo+series, then there's nothing to do.
@@ -363,7 +371,7 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 	//
 	// We do the 2nd, and start by trying to locate the commit nearest to the middle of the
 	// timeframe we're trying to fill in historical data for.
-	nearestCommit, err := git.FindNearestCommit(ctx, bctx.repo.Name, "HEAD", frameMidpoint)
+	nearestCommit, err := h.gitFindNearestCommit(ctx, bctx.repo.Name, "HEAD", frameMidpoint)
 	if err != nil {
 		if gitserver.IsRevisionNotFound(err) || vcs.IsRepoNotExist(err) {
 			return // no error - repo may not be cloned yet (or not even pushed to code host yet)
