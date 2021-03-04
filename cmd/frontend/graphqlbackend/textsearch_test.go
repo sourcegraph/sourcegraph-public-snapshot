@@ -417,7 +417,7 @@ func TestFileMatch_Limit(t *testing.T) {
 			// SearchSymbolResult fails to generate due to private fields. So
 			// we just generate a slice of ints and use its length. This is
 			// fine for limit which only looks at the slice and not in it.
-			Symbols: make([]*result.SearchSymbolResult, len(symbols)),
+			Symbols: make([]*result.SymbolMatch, len(symbols)),
 		}
 		// We don't use *LineMatch as args since quick can generate nil.
 		for _, lm := range lineMatches {
@@ -479,7 +479,7 @@ func TestFileMatch_Limit(t *testing.T) {
 func TestSelect(t *testing.T) {
 	data := FileMatchResolver{
 		FileMatch: result.FileMatch{
-			Symbols: []*result.SearchSymbolResult{
+			Symbols: []*result.SymbolMatch{
 				{Symbol: result.Symbol{Name: "a()", Kind: "func"}},
 				{Symbol: result.Symbol{Name: "b()", Kind: "function"}},
 				{Symbol: result.Symbol{Name: "var c", Kind: "variable"}},

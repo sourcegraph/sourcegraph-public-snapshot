@@ -189,7 +189,7 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 	fileMatches := make([]*FileMatchResolver, 0)
 
 	for _, symbol := range symbols {
-		symbolRes := &result.SearchSymbolResult{
+		symbolRes := &result.SymbolMatch{
 			Symbol:  symbol,
 			BaseURI: baseURI,
 			Lang:    strings.ToLower(symbol.Language),
@@ -202,7 +202,7 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 				db: db,
 				FileMatch: result.FileMatch{
 					Path:     symbolRes.Symbol.Path,
-					Symbols:  []*result.SearchSymbolResult{symbolRes},
+					Symbols:  []*result.SymbolMatch{symbolRes},
 					URI:      uri,
 					Repo:     repoRevs.Repo,
 					CommitID: commitID,

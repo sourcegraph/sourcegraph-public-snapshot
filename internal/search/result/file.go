@@ -10,10 +10,10 @@ type FileMatch struct {
 	LineMatches []*LineMatch
 	LimitHit    bool
 
-	Symbols  []*SearchSymbolResult `json:"-"`
-	URI      string                `json:"-"`
-	Repo     *types.RepoName       `json:"-"`
-	CommitID api.CommitID          `json:"-"`
+	Symbols  []*SymbolMatch  `json:"-"`
+	URI      string          `json:"-"`
+	Repo     *types.RepoName `json:"-"`
+	CommitID api.CommitID    `json:"-"`
 
 	// InputRev is the Git revspec that the user originally requested to search. It is used to
 	// preserve the original revision specifier from the user instead of navigating them to the

@@ -22,13 +22,13 @@ type Symbol struct {
 // Symbols is the result of a search on the symbols service.
 type Symbols = []Symbol
 
-// SearchSymbolResult is a result from symbol search.
-type SearchSymbolResult struct {
+// SymbolMatch is a symbol search result decorated with extra metadata in the frontend.
+type SymbolMatch struct {
 	Symbol  Symbol
 	BaseURI *gituri.URI
 	Lang    string
 }
 
-func (s *SearchSymbolResult) URI() *gituri.URI {
+func (s *SymbolMatch) URI() *gituri.URI {
 	return s.BaseURI.WithFilePath(s.Symbol.Path)
 }
