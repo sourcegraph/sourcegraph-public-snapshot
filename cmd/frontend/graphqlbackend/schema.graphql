@@ -9899,7 +9899,7 @@ extend type Query {
 }
 
 """
-The state of the batch change
+The state of the batch change.
 """
 enum BatchChangeState {
     OPEN
@@ -10353,14 +10353,6 @@ type BatchChangesCredential implements Node {
     The date and time this token has been created at.
     """
     createdAt: DateTime!
-}
-
-"""
-The state of the batch change.
-"""
-enum BatchChangeState {
-    OPEN
-    CLOSED
 }
 
 """
