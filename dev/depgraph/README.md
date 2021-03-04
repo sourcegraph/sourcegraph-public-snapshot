@@ -16,7 +16,7 @@ The following commands are available
 
 #### lint
 
-Usage: `./dev/depgraph/depgraph lint [pass...]
+Usage: `./dev/depgraph/depgraph lint [pass...]`
 
 This command ensures the following lint passes. Violations of the lint rules will be displayed on standard out, but the utility does not currently exit with a non-zero status.
 
