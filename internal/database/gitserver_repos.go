@@ -39,15 +39,22 @@ func (s *GitserverRepoStore) Transact(ctx context.Context) (*GitserverRepoStore,
 }
 
 // Upsert adds a row representing the GitServer status of a repo
-func (s *GitserverRepoStore) Upsert(ctx context.Context, gr types.GitserverRepo) error {
+func (s *GitserverRepoStore) Upsert(ctx context.Context, repos ...types.GitserverRepo) error {
+	values := make([]*sqlf.Query, 0, len(repos))
+	for _, gr := range repos {
+		values = append(values, sqlf.Sprintf(
+			"(%s,%s,%s,%s,%s,now())",
+			gr.RepoID, gr.CloneStatus, dbutil.NewNullString(gr.ShardID), dbutil.NewNullInt64(gr.LastExternalService), dbutil.NewNullString(gr.LastError),
+		))
+	}
 	err := s.Exec(ctx, sqlf.Sprintf(`
 INSERT INTO 
     gitserver_repos(repo_id, clone_status, shard_id, last_external_service, last_error, updated_at) 
-    VALUES (%s,%s,%s,%s,%s,now())
+    VALUES %s
     ON CONFLICT (repo_id) DO UPDATE
     SET (clone_status, shard_id, last_external_service, last_error, updated_at) =
         (EXCLUDED.clone_status, EXCLUDED.shard_id, EXCLUDED.last_external_service, EXCLUDED.last_error, now())
-`, gr.RepoID, gr.CloneStatus, dbutil.NewNullString(gr.ShardID), dbutil.NewNullInt64(gr.LastExternalService), dbutil.NewNullString(gr.LastError)))
+`, sqlf.Join(values, ",")))
 
 	return errors.Wrap(err, "creating GitserverRepo")
 }
