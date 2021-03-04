@@ -869,12 +869,6 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 		tr.Finish()
 	}()
 
-	var sp *filter.SelectPath
-	query.VisitField(r.Query, query.FieldSelect, func(value string, _ bool, _ query.Annotation) {
-		v, _ := filter.SelectPathFromString(value)
-		sp = &v
-	})
-
 	wantCount := defaultMaxSearchResults
 	query.VisitField(r.Query, query.FieldCount, func(value string, _ bool, _ query.Annotation) {
 		wantCount, _ = strconv.Atoi(value)
@@ -883,6 +877,7 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 	if invalidateRepoCache(r.Query) {
 		r.invalidateRepoCache = true
 	}
+
 	for _, disjunct := range query.Dnf(r.Query) {
 		disjunct = query.ConcatRevFilters(disjunct)
 		newResult, err := r.evaluate(ctx, disjunct)
@@ -891,17 +886,15 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 			return nil, err
 		}
 		if newResult != nil {
-			if sp != nil {
-				newResult.SearchResults = selectResults(newResult.SearchResults, *sp)
-			}
+			newResult.SearchResults = selectResults(newResult.SearchResults, r.Query)
 			srr = union(srr, newResult)
 			if len(srr.SearchResults) > wantCount {
 				srr.SearchResults = srr.SearchResults[:wantCount]
 				break
 			}
-
 		}
 	}
+
 	if srr != nil {
 		r.sortResults(ctx, srr.SearchResults)
 	}
@@ -1935,7 +1928,13 @@ func compareSearchResults(left, right SearchResultResolver, exactFilePatterns ma
 	return arepo < brepo
 }
 
-func selectResults(results []SearchResultResolver, sp filter.SelectPath) []SearchResultResolver {
+func selectResults(results []SearchResultResolver, q query.Q) []SearchResultResolver {
+	v, _ := q.StringValue(query.FieldSelect)
+	if v == "" {
+		return results
+	}
+	sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
+
 	dedup := NewDeduper()
 	for _, result := range results {
 		var current SearchResultResolver
