@@ -70,11 +70,20 @@ func getRepoID(ctx context.Context, repoStore *database.RepoStore, repoURI strin
 		return id, errors.Errorf("Unable to add non-GitHub or GitLab repository: " + repoURI)
 	}
 
+	var repoName = api.RepoName(u.Host + u.Path)
+	// if the repo exists we always want to enqueue an update, so the user can search an up to date version of the repo
+	defer func() {
+		if err != nil {
+			return
+		}
+		_, err = repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, repoName)
+	}()
+
 	// the repo may already exist, try looking it up by name (host + path)
 	//
 	// note: if the user provides the URL without a scheme (eg just 'github.com/foo/bar')
 	// the host is '', but the path contains the host instead, so this works both ways 😅
-	repo, err := repoStore.GetByName(ctx, api.RepoName(u.Host+u.Path))
+	repo, err := repoStore.GetByName(ctx, repoName)
 	if err != nil && !isRepoNotFoundErr(err) {
 		return id, errors.Wrap(err, "Error checking if repo exists already")
 	} else if repo != nil {
@@ -85,7 +94,7 @@ func getRepoID(ctx context.Context, repoStore *database.RepoStore, repoURI strin
 	// the repo doesn't exist yet, let's look it up and enqueue a clone, and store the ID
 	res, err := repoupdater.DefaultClient.RepoLookup(
 		ctx,
-		protocol.RepoLookupArgs{Repo: api.RepoName(u.Host + u.Path)},
+		protocol.RepoLookupArgs{Repo: repoName},
 	)
 	if err != nil {
 		return id, errors.Wrap(err, "looking up repo on remote host")
@@ -101,11 +110,7 @@ func getRepoID(ctx context.Context, repoStore *database.RepoStore, repoURI strin
 	if err != nil {
 		return id, errors.Wrap(err, "couldn't find repo after fetching from code host")
 	}
-	_, err = repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, res.Repo.Name)
-	if err != nil {
-		return id, errors.Wrap(err, "enqueueing clone for repo")
-	}
-	return repo.ID, nil
+	return repo.ID, err
 }
 
 func isRepoNotFoundErr(err error) bool {
