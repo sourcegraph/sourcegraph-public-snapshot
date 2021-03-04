@@ -28,6 +28,10 @@ export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
     },
     {
         path: '/campaigns',
+        render: ({ location }) => <Redirect to={location.pathname.replace('/campaigns', '/batch-changes')} />,
+    },
+    {
+        path: '/batch-changes',
         render: props => <NamespaceCampaignsArea {...props} namespaceID={props.user.id} />,
         condition: props => !props.isSourcegraphDotCom && window.context.campaignsEnabled,
     },

@@ -1,12 +1,12 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import { CampaignListPage } from './CampaignListPage'
+import { BatchChangeListPage } from './BatchChangeListPage'
 import { nodes } from './testData'
 import { of } from 'rxjs'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 import { useCallback } from '@storybook/addons'
 
-const { add } = storiesOf('web/campaigns/CampaignListPage', module)
+const { add } = storiesOf('web/batches/BatchChangeListPage', module)
     .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
     .addParameters({
         chromatic: {
@@ -14,9 +14,9 @@ const { add } = storiesOf('web/campaigns/CampaignListPage', module)
         },
     })
 
-const queryCampaigns = () =>
+const queryBatchChanges = () =>
     of({
-        campaigns: {
+        batchChanges: {
             totalCount: Object.values(nodes).length,
             nodes: Object.values(nodes),
             pageInfo: { endCursor: null, hasNextPage: false },
@@ -24,14 +24,18 @@ const queryCampaigns = () =>
         totalCount: Object.values(nodes).length,
     })
 
-const campaignsNotLicensed = () => of(false)
+const batchChangesNotLicensed = () => of(false)
 
-const campaignsLicensed = () => of(true)
+const batchChangesLicensed = () => of(true)
 
-add('List of campaigns', () => (
+add('List of batch changes', () => (
     <EnterpriseWebStory>
         {props => (
-            <CampaignListPage {...props} queryCampaigns={queryCampaigns} areCampaignsLicensed={campaignsLicensed} />
+            <BatchChangeListPage
+                {...props}
+                queryBatchChanges={queryBatchChanges}
+                areBatchChangesLicensed={batchChangesLicensed}
+            />
         )}
     </EnterpriseWebStory>
 ))
@@ -39,16 +43,20 @@ add('List of campaigns', () => (
 add('Licensing not enforced', () => (
     <EnterpriseWebStory>
         {props => (
-            <CampaignListPage {...props} queryCampaigns={queryCampaigns} areCampaignsLicensed={campaignsNotLicensed} />
+            <BatchChangeListPage
+                {...props}
+                queryBatchChanges={queryBatchChanges}
+                areBatchChangesLicensed={batchChangesNotLicensed}
+            />
         )}
     </EnterpriseWebStory>
 ))
 
-add('No campaigns', () => {
-    const queryCampaigns = useCallback(
+add('No batch changes', () => {
+    const queryBatchChanges = useCallback(
         () =>
             of({
-                campaigns: {
+                batchChanges: {
                     totalCount: 0,
                     nodes: [],
                     pageInfo: {
@@ -63,17 +71,21 @@ add('No campaigns', () => {
     return (
         <EnterpriseWebStory>
             {props => (
-                <CampaignListPage {...props} queryCampaigns={queryCampaigns} areCampaignsLicensed={campaignsLicensed} />
+                <BatchChangeListPage
+                    {...props}
+                    queryBatchChanges={queryBatchChanges}
+                    areBatchChangesLicensed={batchChangesLicensed}
+                />
             )}
         </EnterpriseWebStory>
     )
 })
 
-add('All campaigns tab empty', () => {
-    const queryCampaigns = useCallback(
+add('All batch changes tab empty', () => {
+    const queryBatchChanges = useCallback(
         () =>
             of({
-                campaigns: {
+                batchChanges: {
                     totalCount: 0,
                     nodes: [],
                     pageInfo: {
@@ -88,11 +100,11 @@ add('All campaigns tab empty', () => {
     return (
         <EnterpriseWebStory>
             {props => (
-                <CampaignListPage
+                <BatchChangeListPage
                     {...props}
-                    queryCampaigns={queryCampaigns}
-                    areCampaignsLicensed={campaignsLicensed}
-                    openTab="campaigns"
+                    queryBatchChanges={queryBatchChanges}
+                    areBatchChangesLicensed={batchChangesLicensed}
+                    openTab="batchChanges"
                 />
             )}
         </EnterpriseWebStory>

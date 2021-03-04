@@ -1,13 +1,13 @@
 import { subDays } from 'date-fns'
-import { ListCampaign } from '../../../graphql-operations'
+import { ListBatchChange } from '../../../graphql-operations'
 
 export const now = new Date()
 
-export const nodes: Record<string, ListCampaign> = {
-    'Open campaign': {
+export const nodes: Record<string, ListBatchChange> = {
+    'Open batch change': {
         id: 'test',
-        url: '/users/alice/campaigns/test',
-        name: 'Awesome campaign',
+        url: '/users/alice/batch-change/test',
+        name: 'Awesome batch',
         description: `# What this does
 
 This is my thorough explanation. And it can also get very long, in that case the UI doesn't break though, which is good. And one more line to finally be longer than the viewport.`,
@@ -25,8 +25,8 @@ This is my thorough explanation. And it can also get very long, in that case the
     },
     'No description': {
         id: 'test2',
-        url: '/users/alice/campaigns/test2',
-        name: 'Awesome campaign',
+        url: '/users/alice/batch-changes/test2',
+        name: 'Awesome batch',
         description: null,
         createdAt: subDays(now, 5).toISOString(),
         closedAt: null,
@@ -40,11 +40,11 @@ This is my thorough explanation. And it can also get very long, in that case the
             url: '/users/alice',
         },
     },
-    'Closed campaign': {
+    'Closed batch change': {
         id: 'test3',
-        url: '/users/alice/campaigns/test3',
-        name: 'Awesome campaign',
-        description: `# My campaign
+        url: '/users/alice/batch-changes/test3',
+        name: 'Awesome batch',
+        description: `# My batch
 
         This is my thorough explanation.`,
         createdAt: subDays(now, 5).toISOString(),

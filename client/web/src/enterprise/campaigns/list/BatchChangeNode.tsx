@@ -5,15 +5,15 @@ import { Link } from '../../../../../shared/src/components/Link'
 import classNames from 'classnames'
 import * as H from 'history'
 import { Timestamp } from '../../../components/time/Timestamp'
-import { ListCampaign } from '../../../graphql-operations'
+import { ListBatchChange } from '../../../graphql-operations'
 import {
     ChangesetStatusOpen,
     ChangesetStatusClosed,
     ChangesetStatusMerged,
 } from '../detail/changesets/ChangesetStatusCell'
 
-export interface CampaignNodeProps {
-    node: ListCampaign
+export interface BatchChangeNodeProps {
+    node: ListBatchChange
     /** Used for testing purposes. Sets the current date */
     now?: () => Date
     history: H.History
@@ -21,33 +21,33 @@ export interface CampaignNodeProps {
 }
 
 /**
- * An item in the list of campaigns.
+ * An item in the list of batch changes.
  */
-export const CampaignNode: React.FunctionComponent<CampaignNodeProps> = ({
+export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
     node,
     history,
     now = () => new Date(),
     displayNamespace,
 }) => (
     <>
-        <span className="campaign-node__separator" />
-        {!node.closedAt && <span className="campaign-node__badge badge badge-success text-uppercase">Open</span>}
-        {node.closedAt && <span className="campaign-node__badge badge badge-danger text-uppercase">Closed</span>}
-        <div className="campaign-node__content">
+        <span className="batch-change-node__separator" />
+        {!node.closedAt && <span className="batch-change-node__badge badge badge-success text-uppercase">Open</span>}
+        {node.closedAt && <span className="batch-change-node__badge badge badge-danger text-uppercase">Closed</span>}
+        <div className="batch-change-node__content">
             <div className="m-0 d-md-flex d-block align-items-baseline">
-                <h3 className="m-0 d-md-inline-block d-block campaign-node__title">
+                <h3 className="m-0 d-md-inline-block d-block batch-change-node__title">
                     {displayNamespace && (
                         <div className="d-md-inline-block d-block">
                             <Link
-                                className="text-muted test-campaign-namespace-link"
-                                to={`${node.namespace.url}/campaigns`}
+                                className="text-muted test-batches-namespace-link"
+                                to={`${node.namespace.url}/batch-changes`}
                             >
                                 {node.namespace.namespaceName}
                             </Link>
                             <span className="text-muted d-inline-block mx-1">/</span>
                         </div>
                     )}
-                    <Link className="test-campaign-link mr-2" to={node.url}>
+                    <Link className="test-batches-link mr-2" to={node.url}>
                         {node.name}
                     </Link>
                 </h3>

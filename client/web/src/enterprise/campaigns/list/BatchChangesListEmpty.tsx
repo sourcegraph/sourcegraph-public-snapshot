@@ -1,13 +1,13 @@
 import React from 'react'
 
-export interface CampaignsListEmptyProps {
+export interface BatchChangesListEmptyProps {
     // Nothing for now.
 }
 
-export const CampaignsListEmpty: React.FunctionComponent<CampaignsListEmptyProps> = () => (
+export const BatchChangesListEmpty: React.FunctionComponent<BatchChangesListEmptyProps> = () => (
     <div className="web-content">
-        <h2 className="mb-4">Get started with campaigns</h2>
-        <h3 className="mb-3">Tutorials to help with your first campaign</h3>
+        <h2 className="mb-4">Get started with batch changes</h2>
+        <h3 className="mb-3">Tutorials to help with your first batch change</h3>
         <div className="row">
             <div className="col-12 col-md-6 mb-2">
                 <div className="card h-100 p-2">
@@ -69,18 +69,18 @@ export const CampaignsListEmpty: React.FunctionComponent<CampaignsListEmptyProps
                 <p>
                     <strong>Quickstart</strong>
                 </p>
-                <p>Create your first Sourcegraph campaign in 10 minutes or less.</p>
+                <p>Create your first Sourcegraph batch change in 10 minutes or less.</p>
                 <a href="https://docs.sourcegraph.com/campaigns/quickstart" rel="noopener">
-                    Campaigns quickstart
+                    Batch changes quickstart
                 </a>
             </div>
             <div className="col-12 col-md-4 mb-3">
                 <p>
                     <strong>Introduction</strong>
                 </p>
-                <p>Learn how campaigns enables large-scale code changes across many repositories and code hosts.</p>
+                <p>Learn how batch changes enables large-scale code changes across many repositories and code hosts.</p>
                 <a href="https://docs.sourcegraph.com/campaigns/explanations/introduction_to_campaigns" rel="noopener">
-                    Introduction to campaigns
+                    Introduction to batch changes
                 </a>
             </div>
             <div className="col-12 col-md-4 mb-3">
@@ -93,7 +93,7 @@ export const CampaignsListEmpty: React.FunctionComponent<CampaignsListEmptyProps
                         href="https://docs.sourcegraph.com/campaigns/references/campaign_spec_yaml_reference"
                         rel="noopener"
                     >
-                        campaign spec YAML reference
+                        batch spec YAML reference
                     </a>
                     , learn about its powerful{' '}
                     <a href="https://docs.sourcegraph.com/campaigns/references/campaign_spec_templating">
@@ -108,13 +108,13 @@ export const CampaignsListEmpty: React.FunctionComponent<CampaignsListEmptyProps
                     </a>{' '}
                     and more in the{' '}
                     <a href="https://docs.sourcegraph.com/campaigns" rel="noopener">
-                        campaigns documentation
+                        batch changes documentation
                     </a>
                     .
                 </p>
             </div>
         </div>
-        <h2>Campaigns demo</h2>
+        <h2>Batch changes demo</h2>
         <p className="text-muted">
             This demo shows how to refactor code and manage changesets across many repositories and multiple code hosts.
         </p>

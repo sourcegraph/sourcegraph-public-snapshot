@@ -8,7 +8,7 @@ import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetrySer
 import { AuthenticatedUser } from '../../../auth'
 import { Scalars } from '../../../../../shared/src/graphql-operations'
 import { lazyComponent } from '../../../util/lazyComponent'
-import { CampaignListPageProps, NamespaceCampaignListPageProps } from '../list/CampaignListPage'
+import { BatchChangeListPageProps, NamespaceBatchChangeListPageProps } from '../list/BatchChangeListPage'
 import { CampaignPreviewPageProps } from '../preview/CampaignPreviewPage'
 import { CreateCampaignPageProps } from '../create/CreateCampaignPage'
 import { CampaignDetailsPageProps } from '../detail/CampaignDetailsPage'
@@ -16,13 +16,13 @@ import { CampaignClosePageProps } from '../close/CampaignClosePage'
 import { CampaignsDotComPageProps } from './marketing/CampaignsDotComPage'
 import { Page } from '../../../components/Page'
 
-const CampaignListPage = lazyComponent<CampaignListPageProps, 'CampaignListPage'>(
-    () => import('../list/CampaignListPage'),
-    'CampaignListPage'
+const BatchChangeListPage = lazyComponent<BatchChangeListPageProps, 'BatchChangeListPage'>(
+    () => import('../list/BatchChangeListPage'),
+    'BatchChangeListPage'
 )
-const NamespaceCampaignListPage = lazyComponent<NamespaceCampaignListPageProps, 'NamespaceCampaignListPage'>(
-    () => import('../list/CampaignListPage'),
-    'NamespaceCampaignListPage'
+const NamespaceBatchChangeListPage = lazyComponent<NamespaceBatchChangeListPageProps, 'NamespaceBatchChangeListPage'>(
+    () => import('../list/BatchChangeListPage'),
+    'NamespaceBatchChangeListPage'
 )
 const CampaignApplyPage = lazyComponent<CampaignPreviewPageProps, 'CampaignPreviewPage'>(
     () => import('../preview/CampaignPreviewPage'),
@@ -77,7 +77,7 @@ export const AuthenticatedCampaignsArea = withAuthenticatedUser<AuthenticatedPro
     <Page>
         {/* eslint-disable react/jsx-no-bind */}
         <Switch>
-            <Route render={props => <CampaignListPage {...outerProps} {...props} />} path={match.url} exact={true} />
+            <Route render={props => <BatchChangeListPage {...outerProps} {...props} />} path={match.url} exact={true} />
             <Route
                 path={`${match.url}/create`}
                 render={props => <CreateCampaignPage {...outerProps} {...props} />}
@@ -129,7 +129,7 @@ export const NamespaceCampaignsArea = withAuthenticatedUser<
             />
             <Route
                 path={match.url}
-                render={props => <NamespaceCampaignListPage {...props} {...outerProps} namespaceID={namespaceID} />}
+                render={props => <NamespaceBatchChangeListPage {...props} {...outerProps} namespaceID={namespaceID} />}
                 exact={true}
             />
         </Switch>

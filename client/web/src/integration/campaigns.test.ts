@@ -15,7 +15,7 @@ import {
     ExternalChangesetFileDiffsFields,
     DiffHunkLineType,
     ChangesetSpecType,
-    ListCampaign,
+    ListBatchChange,
     BatchChangeByNamespaceResult,
     BatchChangeChangesetsVariables,
     BatchChangeChangesetsResult,
@@ -27,9 +27,9 @@ import {
     SharedGraphQlOperations,
 } from '../../../shared/src/graphql-operations'
 
-const campaignListNode: ListCampaign = {
+const campaignListNode: ListBatchChange = {
     id: 'campaign123',
-    url: '/users/alice/campaigns/test-campaign',
+    url: '/users/alice/batch-changes/test-campaign',
     name: 'test-campaign',
     createdAt: subDays(new Date(), 5).toISOString(),
     changesetsStats: { closed: 4, merged: 10, open: 5 },
@@ -273,7 +273,7 @@ function mockCommonGraphQLResponses(
                     url: namespaceURL,
                 },
                 diffStat: { added: 1000, changed: 2000, deleted: 1000 },
-                url: `${namespaceURL}/campaigns/test-campaign`,
+                url: `${namespaceURL}/batch-changes/test-campaign`,
                 viewerCanAdminister: true,
                 lastAppliedAt: subDays(new Date(), 5).toISOString(),
                 lastApplier: {
@@ -287,12 +287,12 @@ function mockCommonGraphQLResponses(
                 ...campaignOverrides,
             },
         }),
-        CampaignsByNamespace: () =>
+        BatchChangesByNamespace: () =>
             entityType === 'user'
                 ? {
                       node: {
                           __typename: 'User',
-                          campaigns: {
+                          batchChanges: {
                               nodes: [campaignListNode],
                               pageInfo: {
                                   endCursor: null,
@@ -300,7 +300,7 @@ function mockCommonGraphQLResponses(
                               },
                               totalCount: 1,
                           },
-                          allCampaigns: {
+                          allBatchChanges: {
                               totalCount: 1,
                           },
                       },
@@ -308,11 +308,11 @@ function mockCommonGraphQLResponses(
                 : {
                       node: {
                           __typename: 'Org',
-                          campaigns: {
+                          batchChanges: {
                               nodes: [
                                   {
                                       ...campaignListNode,
-                                      url: '/organizations/test-org/campaigns/test-campaign',
+                                      url: '/organizations/test-org/batch-changes/test-campaign',
                                       namespace: {
                                           namespaceName: 'test-org',
                                           url: '/organizations/test-org',
@@ -325,7 +325,7 @@ function mockCommonGraphQLResponses(
                               },
                               totalCount: 1,
                           },
-                          allCampaigns: {
+                          allBatchChanges: {
                               totalCount: 1,
                           },
                       },
@@ -351,7 +351,7 @@ describe('Campaigns', () => {
     afterEach(() => testContext?.dispose())
 
     const campaignLicenseGraphQlResults = {
-        AreCampaignsLicensed: () => ({
+        AreBatchChangesLicensed: () => ({
             enterpriseLicenseHasFeature: true,
         }),
     }
@@ -361,8 +361,8 @@ describe('Campaigns', () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
                 ...campaignLicenseGraphQlResults,
-                Campaigns: () => ({
-                    campaigns: {
+                BatchChanges: () => ({
+                    batchChanges: {
                         nodes: [campaignListNode],
                         pageInfo: {
                             endCursor: null,
@@ -370,26 +370,24 @@ describe('Campaigns', () => {
                         },
                         totalCount: 1,
                     },
-                    allCampaigns: {
+                    allBatchChanges: {
                         totalCount: 1,
                     },
                 }),
             })
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/campaigns')
-            await driver.page.waitForSelector('.test-campaign-list-page')
-            await driver.page.waitForSelector('.test-campaign-namespace-link')
-            await driver.page.waitForSelector('.test-campaign-link')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/batch-changes')
+            await driver.page.waitForSelector('.test-batches-list-page')
+            await driver.page.waitForSelector('.test-batches-namespace-link')
+            await driver.page.waitForSelector('.test-batches-link')
             assert.strictEqual(
                 await driver.page.evaluate(
-                    () => document.querySelector<HTMLAnchorElement>('.test-campaign-namespace-link')?.href
+                    () => document.querySelector<HTMLAnchorElement>('.test-batches-namespace-link')?.href
                 ),
-                testContext.driver.sourcegraphBaseUrl + '/users/alice/campaigns'
+                testContext.driver.sourcegraphBaseUrl + '/users/alice/batch-changes'
             )
             assert.strictEqual(
-                await driver.page.evaluate(
-                    () => document.querySelector<HTMLAnchorElement>('.test-campaign-link')?.href
-                ),
-                testContext.driver.sourcegraphBaseUrl + '/users/alice/campaigns/test-campaign'
+                await driver.page.evaluate(() => document.querySelector<HTMLAnchorElement>('.test-batches-link')?.href),
+                testContext.driver.sourcegraphBaseUrl + '/users/alice/batch-changes/test-campaign'
             )
         })
 
@@ -399,17 +397,15 @@ describe('Campaigns', () => {
                 ...campaignLicenseGraphQlResults,
                 ...mockCommonGraphQLResponses('user'),
             })
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/users/alice/campaigns')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/users/alice/batch-changes')
 
-            await driver.page.waitForSelector('.test-campaign-list-page')
-            await driver.page.waitForSelector('.test-campaign-link')
+            await driver.page.waitForSelector('.test-batches-list-page')
+            await driver.page.waitForSelector('.test-batches-link')
             assert.strictEqual(
-                await driver.page.evaluate(
-                    () => document.querySelector<HTMLAnchorElement>('.test-campaign-link')?.href
-                ),
-                testContext.driver.sourcegraphBaseUrl + '/users/alice/campaigns/test-campaign'
+                await driver.page.evaluate(() => document.querySelector<HTMLAnchorElement>('.test-batches-link')?.href),
+                testContext.driver.sourcegraphBaseUrl + '/users/alice/batch-changes/test-campaign'
             )
-            assert.strictEqual(await driver.page.$('.test-campaign-namespace-link'), null)
+            assert.strictEqual(await driver.page.$('.test-batches-namespace-link'), null)
         })
 
         it('lists org campaigns', async () => {
@@ -418,18 +414,16 @@ describe('Campaigns', () => {
                 ...campaignLicenseGraphQlResults,
                 ...mockCommonGraphQLResponses('org'),
             })
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/campaigns')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/batch-changes')
 
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/organizations/test-org/campaigns')
-            await driver.page.waitForSelector('.test-campaign-list-page')
-            await driver.page.waitForSelector('.test-campaign-link')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/organizations/test-org/batch-changes')
+            await driver.page.waitForSelector('.test-batches-list-page')
+            await driver.page.waitForSelector('.test-batches-link')
             assert.strictEqual(
-                await driver.page.evaluate(
-                    () => document.querySelector<HTMLAnchorElement>('.test-campaign-link')?.href
-                ),
-                testContext.driver.sourcegraphBaseUrl + '/organizations/test-org/campaigns/test-campaign'
+                await driver.page.evaluate(() => document.querySelector<HTMLAnchorElement>('.test-batches-link')?.href),
+                testContext.driver.sourcegraphBaseUrl + '/organizations/test-org/batch-changes/test-campaign'
             )
-            assert.strictEqual(await driver.page.$('.test-campaign-namespace-link'), null)
+            assert.strictEqual(await driver.page.$('.test-batches-namespace-link'), null)
         })
     })
 
@@ -446,7 +440,7 @@ describe('Campaigns', () => {
                 })
                 const namespaceURL = entityType === 'user' ? '/users/alice' : '/organizations/test-org'
 
-                await driver.page.goto(driver.sourcegraphBaseUrl + namespaceURL + '/campaigns/test-campaign')
+                await driver.page.goto(driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-campaign')
                 // View overview page.
                 await driver.page.waitForSelector('.test-campaign-details-page')
 
@@ -467,7 +461,7 @@ describe('Campaigns', () => {
                 await Promise.all([driver.page.waitForNavigation(), driver.page.click('.test-campaigns-close-btn')])
                 assert.strictEqual(
                     await driver.page.evaluate(() => window.location.href),
-                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/campaigns/test-campaign/close'
+                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-campaign/close'
                 )
                 await driver.page.waitForSelector('.test-campaign-close-page')
                 // Change overrides to make campaign appear closed.
@@ -493,7 +487,7 @@ describe('Campaigns', () => {
                 await driver.page.waitForSelector('.test-campaign-details-page')
                 assert.strictEqual(
                     await driver.page.evaluate(() => window.location.href),
-                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/campaigns/test-campaign'
+                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-campaign'
                 )
 
                 // Delete the closed campaign.
@@ -504,13 +498,17 @@ describe('Campaigns', () => {
                 ])
                 assert.strictEqual(
                     await driver.page.evaluate(() => window.location.href),
-                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/campaigns'
+                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes'
                 )
 
                 // Test read tab from location.
-                await driver.page.goto(driver.sourcegraphBaseUrl + namespaceURL + '/campaigns/test-campaign?tab=chart')
+                await driver.page.goto(
+                    driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-campaign?tab=chart'
+                )
                 await driver.page.waitForSelector('.test-campaigns-chart')
-                await driver.page.goto(driver.sourcegraphBaseUrl + namespaceURL + '/campaigns/test-campaign?tab=spec')
+                await driver.page.goto(
+                    driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-campaign?tab=spec'
+                )
                 await driver.page.waitForSelector('.test-campaigns-spec')
             })
         }
@@ -660,12 +658,12 @@ describe('Campaigns', () => {
                     CreateCampaign: () => ({
                         createCampaign: {
                             id: 'campaign123',
-                            url: namespaceURL + '/campaigns/test-campaign',
+                            url: namespaceURL + '/batch-changes/test-campaign',
                         },
                     }),
                 })
 
-                await driver.page.goto(driver.sourcegraphBaseUrl + namespaceURL + '/campaigns/apply/spec123')
+                await driver.page.goto(driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/apply/spec123')
                 // View overview page.
                 await driver.page.waitForSelector('.test-campaign-apply-page')
 
@@ -683,7 +681,7 @@ describe('Campaigns', () => {
                 // Expect to be back at campaign overview page.
                 assert.strictEqual(
                     await driver.page.evaluate(() => window.location.href),
-                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/campaigns/test-campaign'
+                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-campaign'
                 )
             })
         }
@@ -705,7 +703,7 @@ describe('Campaigns', () => {
                 })
                 const namespaceURL = entityType === 'user' ? '/users/alice' : '/organizations/test-org'
 
-                await driver.page.goto(driver.sourcegraphBaseUrl + namespaceURL + '/campaigns/test-campaign/close')
+                await driver.page.goto(driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-campaign/close')
                 // View overview page.
                 await driver.page.waitForSelector('.test-campaign-close-page')
 
@@ -727,7 +725,7 @@ describe('Campaigns', () => {
                 // Expect to be back at campaign overview page.
                 assert.strictEqual(
                     await driver.page.evaluate(() => window.location.href),
-                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/campaigns/test-campaign'
+                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-campaign'
                 )
             })
         }
