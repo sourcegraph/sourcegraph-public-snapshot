@@ -22,6 +22,7 @@
     "build-web": "yarn workspace @sourcegraph/app-web run build",
     "watch-web": "yarn workspace @sourcegraph/app-web run watch",
     "storybook": "yarn workspace @sourcegraph/ui-kit run storybook",
+    "build-storybook": "yarn workspace @sourcegraph/ui-kit build-storybook",
     "generate": "gulp generate",
     "watch-generate": "gulp watchGenerate",
     "test": "jest --testPathIgnorePatterns end-to-end regression integration storybook",
