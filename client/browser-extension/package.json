@@ -46,7 +46,7 @@
       "path": "./build/dist/css/style.bundle.css"
     },
     {
-      "path": "./build/dist/css/ui-kit-legacy-branded-style.bundle.css"
+      "path": "./build/dist/css/branded-style.bundle.css"
     }
   ]
 }
