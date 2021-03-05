@@ -1,6 +1,8 @@
-import { Observable } from 'rxjs'
+import { Observable, from } from 'rxjs'
 import { GraphQLResult, requestGraphQLCommon } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { client } from '../client'
+import { gql } from 'graphql-tag'
 
 const getHeaders = (): { [header: string]: string } => ({
     ...window.context.xhrHeaders,
@@ -27,6 +29,18 @@ export const requestGraphQL = <TResult, TVariables = object>(
         variables,
         headers: getHeaders(),
     })
+
+export const requestGraphQLApollo = <TResult, TVariables = object>(
+    request: string,
+    variables?: TVariables
+): Observable<GraphQLResult<TResult>> => {
+    const query = gql`
+        ${request}
+    `
+    const observable = client.watchQuery<GraphQLResult<TResult>>({ query, variables })
+    // Temp hack to get Apollo observables in RxJS
+    return from(observable) as Observable<GraphQLResult<TResult>>
+}
 
 /**
  * Does a GraphQL query to the Sourcegraph GraphQL API running under `/.api/graphql`

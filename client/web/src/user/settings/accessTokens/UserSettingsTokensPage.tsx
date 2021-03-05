@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom'
 import { Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
-import { requestGraphQL } from '../../../backend/graphql'
+import { requestGraphQL, requestGraphQLApollo } from '../../../backend/graphql'
 import { PageTitle } from '../../../components/PageTitle'
 import { accessTokenFragment, AccessTokenNode, AccessTokenNodeProps } from '../../../settings/tokens/AccessTokenNode'
 import { FilteredConnection } from '../../../components/FilteredConnection'
@@ -104,12 +104,13 @@ export const UserSettingsTokensPage: React.FunctionComponent<Props> = ({
 }
 
 const queryAccessTokens = (variables: AccessTokensVariables): Observable<AccessTokensConnectionFields> =>
-    requestGraphQL<AccessTokensResult, AccessTokensVariables>(
+    requestGraphQLApollo<AccessTokensResult, AccessTokensVariables>(
         gql`
             query AccessTokens($user: ID!, $first: Int) {
                 node(id: $user) {
                     __typename
                     ... on User {
+                        id
                         accessTokens(first: $first) {
                             ...AccessTokensConnectionFields
                         }
@@ -125,7 +126,19 @@ const queryAccessTokens = (variables: AccessTokensVariables): Observable<AccessT
                     hasNextPage
                 }
             }
-            ${accessTokenFragment}
+            fragment AccessTokenFields on AccessToken {
+                id
+                scopes
+                note
+                createdAt
+                lastUsedAt
+                subject {
+                    username
+                }
+                creator {
+                    username
+                }
+            }
         `,
         variables
     ).pipe(

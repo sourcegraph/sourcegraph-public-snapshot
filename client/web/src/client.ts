@@ -14,4 +14,5 @@ export const client = new ApolloClient({
             'X-Sourcegraph-Should-Trace': new URLSearchParams(window.location.search).get('trace') || 'false',
         },
     }),
+    connectToDevTools: true,
 })

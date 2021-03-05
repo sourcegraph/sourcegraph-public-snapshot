@@ -19,8 +19,8 @@ import {
 import { ExternalAccountsSignIn } from './ExternalAccountsSignIn'
 import { Link } from '../../../../../shared/src/components/Link'
 import { SourcegraphContext } from '../../../jscontext'
-import { gql, dataOrThrowErrors } from '../../../../../shared/src/graphql/graphql'
-import { requestGraphQL } from '../../../backend/graphql'
+import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
+import { requestGraphQLApollo } from '../../../backend/graphql'
 import { ErrorLike, asError } from '../../../../../shared/src/util/errors'
 
 // pick only the fields we need
@@ -58,10 +58,11 @@ interface State {
 
 const fetchUserExternalAccountsByType = async (username: string): Promise<MinExternalAccount[]> => {
     const result = dataOrThrowErrors(
-        await requestGraphQL<UserExternalAccountsResult, MinExternalAccountsVariables>(
+        await requestGraphQLApollo<UserExternalAccountsResult, MinExternalAccountsVariables>(
             gql`
                 query MinExternalAccounts($username: String!) {
                     user(username: $username) {
+                        id
                         externalAccounts {
                             nodes {
                                 id

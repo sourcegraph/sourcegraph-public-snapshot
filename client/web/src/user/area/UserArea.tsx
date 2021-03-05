@@ -23,7 +23,7 @@ import { AuthenticatedUser } from '../../auth'
 import { UserAreaUserFields, UserAreaResult, UserAreaVariables } from '../../graphql-operations'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { useObservable } from '../../../../shared/src/util/useObservable'
-import { requestGraphQL } from '../../backend/graphql'
+import { requestGraphQLApollo } from '../../backend/graphql'
 import { Page } from '../../components/Page'
 import { UserRepositoriesUpdateProps } from '../../util'
 
@@ -61,7 +61,7 @@ export const UserAreaGQLFragment = gql`
 `
 
 const fetchUser = (args: UserAreaVariables): Observable<UserAreaUserFields> =>
-    requestGraphQL<UserAreaResult, UserAreaVariables>(
+    requestGraphQLApollo<UserAreaResult, UserAreaVariables>(
         gql`
             query UserArea($username: String!, $siteAdmin: Boolean!) {
                 user(username: $username) {

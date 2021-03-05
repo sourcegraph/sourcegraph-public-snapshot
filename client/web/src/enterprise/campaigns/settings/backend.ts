@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs'
 import { map, mapTo } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
-import { requestGraphQL } from '../../../backend/graphql'
+import { requestGraphQL, requestGraphQLApollo } from '../../../backend/graphql'
 import {
     CampaignsCodeHostsFields,
     CreateCampaignsCredentialResult,
@@ -67,12 +67,13 @@ export const queryUserCampaignsCodeHosts = ({
     first,
     after,
 }: UserCampaignsCodeHostsVariables): Observable<CampaignsCodeHostsFields> =>
-    requestGraphQL<UserCampaignsCodeHostsResult, UserCampaignsCodeHostsVariables>(
+    requestGraphQLApollo<UserCampaignsCodeHostsResult, UserCampaignsCodeHostsVariables>(
         gql`
             query UserCampaignsCodeHosts($user: ID!, $first: Int, $after: String) {
                 node(id: $user) {
                     __typename
                     ... on User {
+                        id
                         campaignsCodeHosts(first: $first, after: $after) {
                             ...CampaignsCodeHostsFields
                         }

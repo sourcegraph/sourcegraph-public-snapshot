@@ -26,6 +26,7 @@ export const FETCH_USER_EMAILS = gql`
     query UserEmails($user: ID!) {
         node(id: $user) {
             ... on User {
+                id
                 emails {
                     email
                     isPrimary
