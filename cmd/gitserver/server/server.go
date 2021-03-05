@@ -137,8 +137,7 @@ type Server struct {
 	GetVCSSyncer func(context.Context, api.RepoName) (VCSSyncer, error)
 
 	// Hostname is how we identify this instance of gitserver. Generally it is the
-	// actual hostname can also be overridden by the NODE_NAME or HOSTNAME
-	// environment variables.
+	// actual hostname can also be overridden by the HOSTNAME environment variables.
 	Hostname string
 
 	// skipCloneForTests is set by tests to avoid clones.
@@ -292,6 +291,19 @@ func (s *Server) SyncRepoState(db dbutil.DB, interval time.Duration, batchSize, 
 		}
 		time.Sleep(interval)
 	}
+}
+
+// Hostname checks whether the hostname matches the given address.
+// If we don't find an exact match, we look at the initial prefix.
+func (s *Server) HostnameMatch(addr string) bool {
+	if addr == s.Hostname {
+		return true
+	}
+	n := strings.Index(addr, ".")
+	if n == -1 {
+		return false
+	}
+	return addr[:n] == s.Hostname
 }
 
 var repoSyncStateCounter = promauto.NewCounterVec(prometheus.CounterOpts{

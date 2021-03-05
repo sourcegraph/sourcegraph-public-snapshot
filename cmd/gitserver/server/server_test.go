@@ -738,6 +738,50 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 	})
 }
 
+func TestHostnameMatch(t *testing.T) {
+	testCases := []struct {
+		hostname    string
+		addr        string
+		shouldMatch bool
+	}{
+		{
+			hostname:    "gitserver-1",
+			addr:        "gitserver-1",
+			shouldMatch: true,
+		},
+		{
+			hostname:    "gitserver-1",
+			addr:        "gitserver-1.gitserver:3178",
+			shouldMatch: true,
+		},
+		{
+			hostname:    "gitserver-1",
+			addr:        "gitserver-10.gitserver:3178",
+			shouldMatch: false,
+		},
+		{
+			hostname:    "gitserver-1",
+			addr:        "gitserver-10",
+			shouldMatch: false,
+		},
+		{
+			hostname:    "gitserver-10",
+			addr:        "",
+			shouldMatch: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run("", func(t *testing.T) {
+			s := Server{Hostname: tc.hostname}
+			have := s.HostnameMatch(tc.addr)
+			if have != tc.shouldMatch {
+				t.Fatalf("Want %v, got %v", tc.shouldMatch, have)
+			}
+		})
+	}
+}
+
 func TestSyncRepoState(t *testing.T) {
 	ctx := context.Background()
 	db := dbtesting.GetDB(t)
