@@ -739,7 +739,6 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 }
 
 func TestSyncRepoState(t *testing.T) {
-	t.Skip()
 	ctx := context.Background()
 	db := dbtesting.GetDB(t)
 	remoteDir := tmpDir(t)
@@ -795,7 +794,10 @@ func TestSyncRepoState(t *testing.T) {
 		t.Fatal("Expected an error")
 	}
 
-	s.syncRepoState(db, []string{hostname}, 10, 10)
+	err = s.syncRepoState(db, []string{hostname}, 10, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	gr, err := database.GitserverRepos(db).GetByID(ctx, dbRepo.ID)
 	if err != nil {
