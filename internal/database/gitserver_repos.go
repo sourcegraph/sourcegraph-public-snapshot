@@ -78,7 +78,7 @@ SELECT repo.id,
        gr.updated_at
 FROM repo 
     LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id
-ORDER BY repo.id ASC
+    WHERE repo.deleted_at IS NULL
 `
 
 	rows, err := s.Query(ctx, sqlf.Sprintf(q))

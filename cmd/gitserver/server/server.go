@@ -290,7 +290,9 @@ func (s *Server) Janitor(interval time.Duration) {
 func (s *Server) SyncRepoState(db dbutil.DB, interval time.Duration, batchSize, perSecond int) {
 	for {
 		addrs := conf.Get().ServiceConnections.GitServers
-		s.syncRepoState(db, addrs, batchSize, perSecond)
+		if err := s.syncRepoState(db, addrs, batchSize, perSecond); err != nil {
+			log15.Error("Syncing repo state", "error ", err)
+		}
 		time.Sleep(interval)
 	}
 }
@@ -305,7 +307,7 @@ var repoStateUpsertCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "Incremented each time we upsert repo state in the database",
 }, []string{"success"})
 
-func (s *Server) syncRepoState(db dbutil.DB, addrs []string, batchSize, perSecond int) {
+func (s *Server) syncRepoState(db dbutil.DB, addrs []string, batchSize, perSecond int) error {
 	ctx := context.Background()
 	store := database.GitserverRepos(db)
 
@@ -392,9 +394,7 @@ func (s *Server) syncRepoState(db dbutil.DB, addrs []string, batchSize, perSecon
 	// Attempt final write
 	writeBatch()
 
-	if err != nil {
-		log15.Error("Iterating over GitserverRepoState", "error", err)
-	}
+	return err
 }
 
 // Stop cancels the running background jobs and returns when done.
