@@ -969,8 +969,8 @@ func testSearchClient(t *testing.T, client searchClient) {
 				}
 
 				count := countResults(results)
-				if !cmp.Equal(count, test.counts) {
-					t.Fatalf(cmp.Diff(test.counts, count))
+				if diff := cmp.Diff(test.counts, count); diff != "" {
+					t.Fatalf("mismatch (-want +got):\n%s", diff)
 				}
 			})
 		}

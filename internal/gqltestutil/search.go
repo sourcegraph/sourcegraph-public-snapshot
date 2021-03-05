@@ -549,6 +549,11 @@ func (s *SearchStreamClient) SearchFiles(query string) (*SearchFileResults, erro
 					r.RevSpec.Expr = v.Branches[0]
 					results.Results = append(results.Results, &r)
 
+				case *streamhttp.EventCommitMatch:
+					// The tests don't actually look at the value. We need to
+					// update this client to be more generic, but this will do
+					// for now.
+					results.Results = append(results.Results, &SearchFileResult{})
 				}
 			}
 		},
@@ -586,9 +591,23 @@ func (s *SearchStreamClient) SearchAll(query string) ([]*AnyResult, error) {
 						lms[i].OffsetAndLengths = v.LineMatches[i].OffsetAndLengths
 					}
 					results = append(results, FileResult{
-						File:       struct{ Path string }{Path: v.Path},
-						Repository: RepositoryResult{Name: v.Repository},
+						File:        struct{ Path string }{Path: v.Path},
+						Repository:  RepositoryResult{Name: v.Repository},
+						LineMatches: lms,
 					})
+
+				case *streamhttp.EventSymbolMatch:
+					var r FileResult
+					r.File.Path = v.Path
+					r.Repository.Name = v.Repository
+					r.Symbols = make([]interface{}, len(v.Symbols))
+					results = append(results, &r)
+
+				case *streamhttp.EventCommitMatch:
+					// The tests don't actually look at the value. We need to
+					// update this client to be more generic, but this will do
+					// for now.
+					results = append(results, CommitResult{URL: v.URL})
 				}
 			}
 		},
