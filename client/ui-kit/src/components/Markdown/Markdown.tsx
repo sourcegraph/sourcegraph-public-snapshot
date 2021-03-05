@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react'
 import classNames from 'classnames'
 import { History } from 'history'
-import { createLinkClickHandler } from 'utils/linkClickHandler'
+import { createLinkClickHandler } from '../../utils/linkClickHandler'
 
-interface Props {
+export interface Props {
     wrapper?: 'div' | 'span'
     dangerousInnerHTML: string
     history: History

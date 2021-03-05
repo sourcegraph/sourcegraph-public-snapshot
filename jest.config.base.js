@@ -44,6 +44,7 @@ const config = {
     // https://github.com/Microsoft/monaco-editor/issues/996
     '^monaco-editor': 'monaco-editor/esm/vs/editor/editor.main.js',
   },
+  modulePaths: ['node_modules', '<rootDir>/src'],
 
   // By default, don't clutter `yarn test --watch` output with the full coverage table. To see it, use the
   // `--coverageReporters text` jest option.

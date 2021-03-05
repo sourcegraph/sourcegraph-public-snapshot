@@ -10,7 +10,7 @@ const monacoEditorPaths = [path.resolve(rootDir, 'node_modules', 'monaco-editor'
 const shouldMinify = !!process.env.MINIFY
 
 const config = {
-  stories: ['../../**/*.story.tsx'],
+  stories: ['../src/**/*.story.tsx', '../../**/*.story.tsx'],
   addons: ['@storybook/addon-knobs', '@storybook/addon-actions', 'storybook-addon-designs', 'storybook-dark-mode'],
 
   /**

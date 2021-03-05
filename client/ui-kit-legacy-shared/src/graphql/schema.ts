@@ -103,13 +103,13 @@ export type Node =
     | IProductSubscription
     | IProductLicense
     | ICampaign
+    | ICampaignsCredential
+    | ICampaignSpec
     | IHiddenExternalChangeset
     | IExternalChangeset
     | IChangesetEvent
-    | ICampaignsCredential
     | IHiddenChangesetSpec
     | IVisibleChangesetSpec
-    | ICampaignSpec
     | IBatchChange
     | IBatchSpec
     | IBatchChangesCredential
@@ -637,23 +637,6 @@ export interface IMutation {
     deleteCampaign: IEmptyResponse | null
 
     /**
-     * Upload a changeset spec that will be used in a future update to a campaign. The changeset spec
-     * is stored and can be referenced by its ID in the applyCampaign mutation. Just uploading the
-     * changeset spec does not result in changes to the campaign or any of its changesets; you need
-     * to call applyCampaign to use it.
-     *
-     * You can use this mutation to upload large changeset specs (e.g., containing large diffs) in
-     * individual HTTP requests. Then, in the eventual applyCampaign call, you just refer to the
-     * changeset specs by their IDs. This lets you avoid problems when updating large campaigns where
-     * a large HTTP request body (e.g., with many large diffs in the changeset specs) would be
-     * rejected by the web server/proxy or would be very slow.
-     *
-     * The returned ChangesetSpec is immutable and expires after a certain period of time (if not
-     * used in a call to applyCampaign), which can be queried on ChangesetSpec.expiresAt.
-     */
-    createChangesetSpec: ChangesetSpec
-
-    /**
      * Create a campaign spec that will be used to create a campaign (with the createCampaign
      * mutation), or to update a campaign (with the applyCampaign mutation).
      *
@@ -667,6 +650,37 @@ export interface IMutation {
     createCampaignSpec: ICampaignSpec
 
     /**
+     * Create a new credential for the given user for the given code host.
+     * If another token for that code host already exists, an error with the error code
+     * ErrDuplicateCredential is returned.
+     * @deprecated "campaigns have been renamed to batch changes. Use createBatchChangesCredential instead."
+     */
+    createCampaignsCredential: ICampaignsCredential
+
+    /**
+     * Hard-deletes a given campaigns credential.
+     * @deprecated "campaigns have been renamed to batch changes. Use deleteBatchChangesCredential instead."
+     */
+    deleteCampaignsCredential: IEmptyResponse
+
+    /**
+     * Upload a changeset spec that will be used in a future update to a batch change. The changeset spec
+     * is stored and can be referenced by its ID in the applyBatchChange mutation. Just uploading the
+     * changeset spec does not result in changes to the batch change or any of its changesets; you need
+     * to call applyBatchChange to use it.
+     *
+     * You can use this mutation to upload large changeset specs (e.g., containing large diffs) in
+     * individual HTTP requests. Then, in the eventual applyBatchChange call, you just refer to the
+     * changeset specs by their IDs. This lets you avoid problems when updating large batch changes where
+     * a large HTTP request body (e.g., with many large diffs in the changeset specs) would be
+     * rejected by the web server/proxy or would be very slow.
+     *
+     * The returned ChangesetSpec is immutable and expires after a certain period of time (if not
+     * used in a call to applyBatchChange), which can be queried on ChangesetSpec.expiresAt.
+     */
+    createChangesetSpec: ChangesetSpec
+
+    /**
      * Enqueue the given changeset for high-priority syncing.
      */
     syncChangeset: IEmptyResponse
@@ -677,20 +691,6 @@ export interface IMutation {
     reenqueueChangeset: Changeset
 
     /**
-     * Create a new credential for the given user for the given code host.
-     * If another token for that code host already exists, an error with the error code
-     * ErrDuplicateCredential is returned.
-     * @deprecated "campaigns have been renamed to batch changes. Use batchChanges instead."
-     */
-    createCampaignsCredential: ICampaignsCredential
-
-    /**
-     * Hard-deletes a given campaigns credential.
-     * @deprecated "campaigns have been renamed to batch changes. Use batchChanges instead."
-     */
-    deleteCampaignsCredential: IEmptyResponse
-
-    /**
      * Create a batch change from a batch spec and locally computed changeset specs. The newly created
      * batch change is returned.
      * If a batch change in the same namespace with the same name already exists,
@@ -699,13 +699,13 @@ export interface IMutation {
     createBatchChange: IBatchChange
 
     /**
-     * Create a batch spec that will be used to create a campaign (with the createCampaign
-     * mutation), or to update a campaign (with the applyCampaign mutation).
+     * Create a batch spec that will be used to create a batch change (with the createBatchChange
+     * mutation), or to update an existing batch change (with the applyBatchChange mutation).
      *
      * The returned BatchSpec is immutable and expires after a certain period of time (if not used
-     * in a call to applyCampaign), which can be queried on BatchSpec.expiresAt.
+     * in a call to applyBatchChange), which can be queried on BatchSpec.expiresAt.
      *
-     * If campaigns are unlicensed and the number of changesetSpecIDs is higher than what's allowed in
+     * If batch changes are unlicensed and the number of changesetSpecIDs is higher than what's allowed in
      * the free tier, an error with the error code ErrCampaignsUnlicensed is returned.
      */
     createBatchSpec: IBatchSpec
@@ -1285,15 +1285,6 @@ export interface IDeleteCampaignOnMutationArguments {
     campaign: ID
 }
 
-export interface ICreateChangesetSpecOnMutationArguments {
-    /**
-     * The raw changeset spec (as JSON). See
-     * https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/schema/changeset_spec.schema.json
-     * for the JSON Schema that describes the structure of this input.
-     */
-    changesetSpec: string
-}
-
 export interface ICreateCampaignSpecOnMutationArguments {
     /**
      * The namespace (either a user or organization). A campaign spec can only be applied to (or
@@ -1312,14 +1303,6 @@ export interface ICreateCampaignSpecOnMutationArguments {
      * Changeset specs that were locally computed and then uploaded using createChangesetSpec.
      */
     changesetSpecs: ID[]
-}
-
-export interface ISyncChangesetOnMutationArguments {
-    changeset: ID
-}
-
-export interface IReenqueueChangesetOnMutationArguments {
-    changeset: ID
 }
 
 export interface ICreateCampaignsCredentialOnMutationArguments {
@@ -1348,6 +1331,23 @@ export interface IDeleteCampaignsCredentialOnMutationArguments {
     campaignsCredential: ID
 }
 
+export interface ICreateChangesetSpecOnMutationArguments {
+    /**
+     * The raw changeset spec (as JSON). See
+     * https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/schema/changeset_spec.schema.json
+     * for the JSON Schema that describes the structure of this input.
+     */
+    changesetSpec: string
+}
+
+export interface ISyncChangesetOnMutationArguments {
+    changeset: ID
+}
+
+export interface IReenqueueChangesetOnMutationArguments {
+    changeset: ID
+}
+
 export interface ICreateBatchChangeOnMutationArguments {
     /**
      * The batch spec that describes the desired state of the batch change.
@@ -1358,7 +1358,7 @@ export interface ICreateBatchChangeOnMutationArguments {
 export interface ICreateBatchSpecOnMutationArguments {
     /**
      * The namespace (either a user or organization). A batch spec can only be applied to (or
-     * used to create) campaigns in this namespace.
+     * used to create) batch changes in this namespace.
      */
     namespace: ID
 
@@ -2112,7 +2112,7 @@ export interface IQuery {
     batchChanges: IBatchChangeConnection
 
     /**
-     * Looks up a batch change by namespace and campaign name.
+     * Looks up a batch change by namespace and name.
      */
     batchChange: IBatchChange | null
 }
@@ -7035,7 +7035,7 @@ export interface IUser {
      * Returns a connection of configured external services accessible by this user, for usage with campaigns.
      * These are all code hosts configured on the Sourcegraph instance that are supported by campaigns. They are
      * connected to CampaignCredential resources, if one has been created for the code host connection before.
-     * @deprecated "campaigns have been renamed to batch changes. Use batchChanges instead."
+     * @deprecated "campaigns have been renamed to batch changes. Use batchChangesCodeHosts instead."
      */
     campaignsCodeHosts: ICampaignsCodeHostConnection
 
@@ -10267,7 +10267,7 @@ export interface ICodeHostRepository {
 }
 
 /**
- * The state of the campaign
+ * The state of the campaign.
  */
 export enum CampaignState {
     OPEN = 'OPEN',
@@ -10425,6 +10425,284 @@ export interface IChangesetCountsOverTimeOnCampaignArguments {
 }
 
 /**
+ * A list of campaigns.
+ */
+export interface ICampaignConnection {
+    __typename: 'CampaignConnection'
+
+    /**
+     * A list of campaigns.
+     */
+    nodes: ICampaign[]
+
+    /**
+     * The total number of campaigns in the connection.
+     */
+    totalCount: number
+
+    /**
+     * Pagination information.
+     */
+    pageInfo: IPageInfo
+}
+
+/**
+ * A connection of all code hosts usable with campaigns and accessible by the user
+ * this is requested on.
+ */
+export interface ICampaignsCodeHostConnection {
+    __typename: 'CampaignsCodeHostConnection'
+
+    /**
+     * A list of code hosts.
+     */
+    nodes: ICampaignsCodeHost[]
+
+    /**
+     * The total number of configured external services in the connection.
+     */
+    totalCount: number
+
+    /**
+     * Pagination information.
+     */
+    pageInfo: IPageInfo
+}
+
+/**
+ * A code host usable with campaigns. This service is accessible by the user it belongs to.
+ */
+export interface ICampaignsCodeHost {
+    __typename: 'CampaignsCodeHost'
+
+    /**
+     * The kind of external service.
+     */
+    externalServiceKind: ExternalServiceKind
+
+    /**
+     * The URL of the external service.
+     */
+    externalServiceURL: string
+
+    /**
+     * The configured credential, if any.
+     */
+    credential: ICampaignsCredential | null
+
+    /**
+     * If true, some of the repositories on this code host require
+     * an SSH key to be configured.
+     */
+    requiresSSH: boolean
+}
+
+/**
+ * A user token configured for campaigns use on the specified code host.
+ */
+export interface ICampaignsCredential {
+    __typename: 'CampaignsCredential'
+
+    /**
+     * A globally unique identifier.
+     */
+    id: ID
+
+    /**
+     * The kind of external service.
+     */
+    externalServiceKind: ExternalServiceKind
+
+    /**
+     * The URL of the external service.
+     */
+    externalServiceURL: string
+
+    /**
+     * The public key to use on the external service for SSH keypair authentication.
+     * Not set if the credential doesn't support SSH access.
+     */
+    sshPublicKey: string | null
+
+    /**
+     * The date and time this token has been created at.
+     */
+    createdAt: DateTime
+}
+
+/**
+ * A CampaignDescription describes a campaign.
+ */
+export interface ICampaignDescription {
+    __typename: 'CampaignDescription'
+
+    /**
+     * The name as parsed from the input.
+     */
+    name: string
+
+    /**
+     * The description as parsed from the input.
+     */
+    description: string
+}
+
+/**
+ * A campaign spec is an immutable description of the desired state of a campaign. To create a
+ * campaign spec, use the createCampaignSpec mutation.
+ */
+export interface ICampaignSpec {
+    __typename: 'CampaignSpec'
+
+    /**
+     * The unique ID for a campaign spec.
+     *
+     * The ID is unguessable (i.e., long and randomly generated, not sequential).
+     * Consider a campaign to fix a security vulnerability: the campaign author may prefer
+     * to prepare the campaign, including the description in private so that the window
+     * between revealing the problem and merging the fixes is as short as possible.
+     */
+    id: ID
+
+    /**
+     * The original YAML or JSON input that was used to create this campaign spec.
+     */
+    originalInput: string
+
+    /**
+     * The parsed JSON value of the original input. If the original input was YAML, the YAML is
+     * converted to the equivalent JSON.
+     */
+    parsedInput: any
+
+    /**
+     * The CampaignDescription that describes this campaign.
+     */
+    description: ICampaignDescription
+
+    /**
+     * Generates a preview what operations would be performed if the campaign spec would be applied.
+     * This preview is not a guarantee, since the state of the changesets can change between the time
+     * the preview is generated and when the campaign spec is applied.
+     */
+    applyPreview: IChangesetApplyPreviewConnection
+
+    /**
+     * The specs for changesets associated with this campaign.
+     */
+    changesetSpecs: IChangesetSpecConnection
+
+    /**
+     * The user who created this campaign spec (or null if the user no longer exists).
+     */
+    creator: IUser | null
+
+    /**
+     * The date when this campaign spec was created.
+     */
+    createdAt: DateTime
+
+    /**
+     * The namespace (either a user or organization) of the campaign spec.
+     */
+    namespace: Namespace
+
+    /**
+     * The date, if any, when this campaign spec expires and is automatically purged. A campaign spec
+     * never expires if it has been applied.
+     */
+    expiresAt: DateTime | null
+
+    /**
+     * The URL of a web page that allows applying this campaign spec and
+     * displays a preview of which changesets will be created by applying it.
+     */
+    applyURL: string
+
+    /**
+     * When true, the viewing user can apply this spec.
+     */
+    viewerCanAdminister: boolean
+
+    /**
+     * The diff stat for all the changeset specs in the campaign spec.
+     */
+    diffStat: IDiffStat
+
+    /**
+     * The campaign this spec will update when applied. If it's null, the
+     * campaign doesn't yet exist.
+     */
+    appliesToCampaign: ICampaign | null
+
+    /**
+     * The newest version of this campaign spec, as identified by its namespace
+     * and name. If this is the newest version, this field will be null.
+     */
+    supersedingCampaignSpec: ICampaignSpec | null
+
+    /**
+     * The code host connections required for applying this spec. Includes the credentials of the current user.
+     */
+    viewerCampaignsCodeHosts: ICampaignsCodeHostConnection
+}
+
+export interface IApplyPreviewOnCampaignSpecArguments {
+    /**
+     * Returns the first n entries from the list.
+     * @default 50
+     */
+    first?: number | null
+
+    /**
+     * Opaque pagination cursor.
+     */
+    after?: string | null
+
+    /**
+     * Search for changesets matching this query. Queries may include quoted substrings to match phrases, and words may be preceded by - to negate them.
+     */
+    search?: string | null
+
+    /**
+     * Search for changesets that are currently in this state.
+     */
+    currentState?: ChangesetState | null
+
+    /**
+     * Search for changesets that will have the given action performed.
+     */
+    action?: ChangesetSpecOperation | null
+}
+
+export interface IChangesetSpecsOnCampaignSpecArguments {
+    /**
+     * @default 50
+     */
+    first?: number | null
+    after?: string | null
+}
+
+export interface IViewerCampaignsCodeHostsOnCampaignSpecArguments {
+    /**
+     * Returns the first n code hosts from the list.
+     * @default 50
+     */
+    first?: number | null
+
+    /**
+     * Opaque pagination cursor.
+     */
+    after?: string | null
+
+    /**
+     * Only returns the code hosts for which the viewer doesn't have credentials.
+     * @default false
+     */
+    onlyWithoutCredential?: boolean | null
+}
+
+/**
  * The counts of changesets in certain states at a specific point in time.
  */
 export interface IChangesetCounts {
@@ -10474,28 +10752,6 @@ export interface IChangesetCounts {
      * The number of changesets that are both open and are pending review.
      */
     openPending: number
-}
-
-/**
- * A list of campaigns.
- */
-export interface ICampaignConnection {
-    __typename: 'CampaignConnection'
-
-    /**
-     * A list of campaigns.
-     */
-    nodes: ICampaign[]
-
-    /**
-     * The total number of campaigns in the connection.
-     */
-    totalCount: number
-
-    /**
-     * Pagination information.
-     */
-    pageInfo: IPageInfo
 }
 
 /**
@@ -11072,7 +11328,7 @@ export interface IEventsOnExternalChangesetArguments {
 }
 
 /**
- * Used in the campaign page for the overview component.
+ * Used in the batch change page for the overview component.
  */
 export interface IChangesetsStats {
     __typename: 'ChangesetsStats'
@@ -11195,90 +11451,6 @@ export interface IChangesetEventConnection {
 }
 
 /**
- * A connection of all code hosts usable with campaigns and accessible by the user
- * this is requested on.
- */
-export interface ICampaignsCodeHostConnection {
-    __typename: 'CampaignsCodeHostConnection'
-
-    /**
-     * A list of code hosts.
-     */
-    nodes: ICampaignsCodeHost[]
-
-    /**
-     * The total number of configured external services in the connection.
-     */
-    totalCount: number
-
-    /**
-     * Pagination information.
-     */
-    pageInfo: IPageInfo
-}
-
-/**
- * A code host usable with campaigns. This service is accessible by the user it belongs to.
- */
-export interface ICampaignsCodeHost {
-    __typename: 'CampaignsCodeHost'
-
-    /**
-     * The kind of external service.
-     */
-    externalServiceKind: ExternalServiceKind
-
-    /**
-     * The URL of the external service.
-     */
-    externalServiceURL: string
-
-    /**
-     * The configured credential, if any.
-     */
-    credential: ICampaignsCredential | null
-
-    /**
-     * If true, some of the repositories on this code host require
-     * an SSH key to be configured.
-     */
-    requiresSSH: boolean
-}
-
-/**
- * A user token configured for campaigns use on the specified code host.
- */
-export interface ICampaignsCredential {
-    __typename: 'CampaignsCredential'
-
-    /**
-     * A globally unique identifier.
-     */
-    id: ID
-
-    /**
-     * The kind of external service.
-     */
-    externalServiceKind: ExternalServiceKind
-
-    /**
-     * The URL of the external service.
-     */
-    externalServiceURL: string
-
-    /**
-     * The public key to use on the external service for SSH keypair authentication.
-     * Not set if the credential doesn't support SSH access.
-     */
-    sshPublicKey: string | null
-
-    /**
-     * The date and time this token has been created at.
-     */
-    createdAt: DateTime
-}
-
-/**
  * This enum declares all operations supported by the reconciler.
  */
 export enum ChangesetSpecOperation {
@@ -11334,7 +11506,7 @@ export enum ChangesetSpecOperation {
     SLEEP = 'SLEEP',
 
     /**
-     * The changeset is removed from some of the associated campaigns.
+     * The changeset is removed from some of the associated batch changes.
      */
     DETACH = 'DETACH',
 }
@@ -11402,13 +11574,13 @@ export enum ChangesetSpecType {
 }
 
 /**
- * A changeset spec is an immutable description of the desired state of a changeset in a campaign. To
+ * A changeset spec is an immutable description of the desired state of a changeset in a batch change. To
  * create a changeset spec, use the createChangesetSpec mutation.
  */
 export type ChangesetSpec = IHiddenChangesetSpec | IVisibleChangesetSpec
 
 /**
- * A changeset spec is an immutable description of the desired state of a changeset in a campaign. To
+ * A changeset spec is an immutable description of the desired state of a changeset in a batch change. To
  * create a changeset spec, use the createChangesetSpec mutation.
  */
 export interface IChangesetSpec {
@@ -11420,8 +11592,8 @@ export interface IChangesetSpec {
      * The ID is unguessable (i.e., long and randomly generated, not sequential). This is important
      * even though repository permissions also apply to viewers of changeset specs, because being
      * allowed to view a repository should not entitle a person to view all not-yet-published
-     * changesets for that repository. Consider a campaign to fix a security vulnerability: the
-     * campaign author may prefer to prepare all of the changesets in private so that the window
+     * changesets for that repository. Consider a batch change to fix a security vulnerability: the
+     * batch change author may prefer to prepare all of the changesets in private so that the window
      * between revealing the problem and merging the fixes is as short as possible.
      */
     id: ID
@@ -11433,13 +11605,13 @@ export interface IChangesetSpec {
 
     /**
      * The date, if any, when this changeset spec expires and is automatically purged. A changeset
-     * spec never expires (and this field is null) if its campaign spec has been applied.
+     * spec never expires (and this field is null) if its batch spec has been applied.
      */
     expiresAt: DateTime | null
 }
 
 /**
- * A changeset spec is an immutable description of the desired state of a changeset in a campaign. To
+ * A changeset spec is an immutable description of the desired state of a changeset in a batch change. To
  * create a changeset spec, use the createChangesetSpec mutation.
  */
 export interface IHiddenChangesetSpec {
@@ -11451,8 +11623,8 @@ export interface IHiddenChangesetSpec {
      * The ID is unguessable (i.e., long and randomly generated, not sequential). This is important
      * even though repository permissions also apply to viewers of changeset specs, because being
      * allowed to view a repository should not entitle a person to view all not-yet-published
-     * changesets for that repository. Consider a campaign to fix a security vulnerability: the
-     * campaign author may prefer to prepare all of the changesets in private so that the window
+     * changesets for that repository. Consider a batch change to fix a security vulnerability: the
+     * batch change author may prefer to prepare all of the changesets in private so that the window
      * between revealing the problem and merging the fixes is as short as possible.
      */
     id: ID
@@ -11464,13 +11636,13 @@ export interface IHiddenChangesetSpec {
 
     /**
      * The date, if any, when this changeset spec expires and is automatically purged. A changeset
-     * spec never expires (and this field is null) if its campaign spec has been applied.
+     * spec never expires (and this field is null) if its batch spec has been applied.
      */
     expiresAt: DateTime | null
 }
 
 /**
- * A changeset spec is an immutable description of the desired state of a changeset in a campaign. To
+ * A changeset spec is an immutable description of the desired state of a changeset in a batch change. To
  * create a changeset spec, use the createChangesetSpec mutation.
  */
 export interface IVisibleChangesetSpec {
@@ -11482,8 +11654,8 @@ export interface IVisibleChangesetSpec {
      * The ID is unguessable (i.e., long and randomly generated, not sequential). This is important
      * even though repository permissions also apply to viewers of changeset specs, because being
      * allowed to view a repository should not entitle a person to view all not-yet-published
-     * changesets for that repository. Consider a campaign to fix a security vulnerability: the
-     * campaign author may prefer to prepare all of the changesets in private so that the window
+     * changesets for that repository. Consider a batch change to fix a security vulnerability: the
+     * batch change author may prefer to prepare all of the changesets in private so that the window
      * between revealing the problem and merging the fixes is as short as possible.
      */
     id: ID
@@ -11500,7 +11672,7 @@ export interface IVisibleChangesetSpec {
 
     /**
      * The date, if any, when this changeset spec expires and is automatically purged. A changeset
-     * spec never expires (and this field is null) if its campaign spec has been applied.
+     * spec never expires (and this field is null) if its batch spec has been applied.
      */
     expiresAt: DateTime | null
 }
@@ -11512,7 +11684,7 @@ export type ChangesetDescription = IExistingChangesetReference | IGitBranchChang
 
 /**
  * A reference to a changeset that already exists on a code host (and was not created by the
- * campaign).
+ * batch change).
  */
 export interface IExistingChangesetReference {
     __typename: 'ExistingChangesetReference'
@@ -11676,7 +11848,7 @@ export interface IChangesetSpecConnection {
 }
 
 /**
- * A preview for which actions applyCampaign would result in when called at the point of time this preview was created at.
+ * A preview for which actions applyBatchChange would result in when called at the point of time this preview was created at.
  */
 export type ChangesetApplyPreview = IVisibleChangesetApplyPreview | IHiddenChangesetApplyPreview
 
@@ -11719,7 +11891,7 @@ export interface IVisibleApplyPreviewTargetsUpdate {
 
 /**
  * A preview entry where no changeset spec exists for the changeset currently in
- * the target campaign.
+ * the target batch change.
  */
 export interface IVisibleApplyPreviewTargetsDetach {
     __typename: 'VisibleApplyPreviewTargetsDetach'
@@ -11769,7 +11941,7 @@ export interface IHiddenApplyPreviewTargetsUpdate {
 
 /**
  * A preview entry where no changeset spec exists for the changeset currently in
- * the target campaign.
+ * the target batch change.
  */
 export interface IHiddenApplyPreviewTargetsDetach {
     __typename: 'HiddenApplyPreviewTargetsDetach'
@@ -11781,7 +11953,7 @@ export interface IHiddenApplyPreviewTargetsDetach {
 }
 
 /**
- * One preview entry in the list of all previews against a campaign spec. Each mapping
+ * One preview entry in the list of all previews against a batch spec. Each mapping
  * between changeset specs and current changesets yields one of these. It describes
  * which operations are taken against which changeset spec and changeset to ensure the
  * desired state is met.
@@ -11807,7 +11979,7 @@ export interface IHiddenChangesetApplyPreview {
 }
 
 /**
- * One preview entry in the list of all previews against a campaign spec. Each mapping
+ * One preview entry in the list of all previews against a batch spec. Each mapping
  * between changeset specs and current changesets yields one of these. It describes
  * which operations are taken against which changeset spec and changeset to ensure the
  * desired state is met.
@@ -11890,22 +12062,22 @@ export interface IChangesetApplyPreviewConnectionStats {
     sleep: number
 
     /**
-     * The changeset is removed from some of the associated campaigns.
+     * The changeset is removed from some of the associated batch changes.
      */
     detach: number
 
     /**
-     * The amount of changesets that are added to the campaign in this operation.
+     * The amount of changesets that are added to the batch change in this operation.
      */
     added: number
 
     /**
-     * The amount of changesets that are already attached to the campaign and modified in this operation.
+     * The amount of changesets that are already attached to the batch change and modified in this operation.
      */
     modified: number
 
     /**
-     * The amount of changesets that are disassociated from the campaign in this operation.
+     * The amount of changesets that are disassociated from the batch change in this operation.
      */
     removed: number
 }
@@ -11935,178 +12107,6 @@ export interface IChangesetApplyPreviewConnection {
      * Stats on the elements in this connnection. Does not respect pagination parameters.
      */
     stats: IChangesetApplyPreviewConnectionStats
-}
-
-/**
- * A CampaignDescription describes a campaign.
- */
-export interface ICampaignDescription {
-    __typename: 'CampaignDescription'
-
-    /**
-     * The name as parsed from the input.
-     */
-    name: string
-
-    /**
-     * The description as parsed from the input.
-     */
-    description: string
-}
-
-/**
- * A campaign spec is an immutable description of the desired state of a campaign. To create a
- * campaign spec, use the createCampaignSpec mutation.
- */
-export interface ICampaignSpec {
-    __typename: 'CampaignSpec'
-
-    /**
-     * The unique ID for a campaign spec.
-     *
-     * The ID is unguessable (i.e., long and randomly generated, not sequential).
-     * Consider a campaign to fix a security vulnerability: the campaign author may prefer
-     * to prepare the campaign, including the description in private so that the window
-     * between revealing the problem and merging the fixes is as short as possible.
-     */
-    id: ID
-
-    /**
-     * The original YAML or JSON input that was used to create this campaign spec.
-     */
-    originalInput: string
-
-    /**
-     * The parsed JSON value of the original input. If the original input was YAML, the YAML is
-     * converted to the equivalent JSON.
-     */
-    parsedInput: any
-
-    /**
-     * The CampaignDescription that describes this campaign.
-     */
-    description: ICampaignDescription
-
-    /**
-     * Generates a preview what operations would be performed if the campaign spec would be applied.
-     * This preview is not a guarantee, since the state of the changesets can change between the time
-     * the preview is generated and when the campaign spec is applied.
-     */
-    applyPreview: IChangesetApplyPreviewConnection
-
-    /**
-     * The specs for changesets associated with this campaign.
-     */
-    changesetSpecs: IChangesetSpecConnection
-
-    /**
-     * The user who created this campaign spec (or null if the user no longer exists).
-     */
-    creator: IUser | null
-
-    /**
-     * The date when this campaign spec was created.
-     */
-    createdAt: DateTime
-
-    /**
-     * The namespace (either a user or organization) of the campaign spec.
-     */
-    namespace: Namespace
-
-    /**
-     * The date, if any, when this campaign spec expires and is automatically purged. A campaign spec
-     * never expires if it has been applied.
-     */
-    expiresAt: DateTime | null
-
-    /**
-     * The URL of a web page that allows applying this campaign spec and
-     * displays a preview of which changesets will be created by applying it.
-     */
-    applyURL: string
-
-    /**
-     * When true, the viewing user can apply this spec.
-     */
-    viewerCanAdminister: boolean
-
-    /**
-     * The diff stat for all the changeset specs in the campaign spec.
-     */
-    diffStat: IDiffStat
-
-    /**
-     * The campaign this spec will update when applied. If it's null, the
-     * campaign doesn't yet exist.
-     */
-    appliesToCampaign: ICampaign | null
-
-    /**
-     * The newest version of this campaign spec, as identified by its namespace
-     * and name. If this is the newest version, this field will be null.
-     */
-    supersedingCampaignSpec: ICampaignSpec | null
-
-    /**
-     * The code host connections required for applying this spec. Includes the credentials of the current user.
-     */
-    viewerCampaignsCodeHosts: ICampaignsCodeHostConnection
-}
-
-export interface IApplyPreviewOnCampaignSpecArguments {
-    /**
-     * Returns the first n entries from the list.
-     * @default 50
-     */
-    first?: number | null
-
-    /**
-     * Opaque pagination cursor.
-     */
-    after?: string | null
-
-    /**
-     * Search for changesets matching this query. Queries may include quoted substrings to match phrases, and words may be preceded by - to negate them.
-     */
-    search?: string | null
-
-    /**
-     * Search for changesets that are currently in this state.
-     */
-    currentState?: ChangesetState | null
-
-    /**
-     * Search for changesets that will have the given action performed.
-     */
-    action?: ChangesetSpecOperation | null
-}
-
-export interface IChangesetSpecsOnCampaignSpecArguments {
-    /**
-     * @default 50
-     */
-    first?: number | null
-    after?: string | null
-}
-
-export interface IViewerCampaignsCodeHostsOnCampaignSpecArguments {
-    /**
-     * Returns the first n code hosts from the list.
-     * @default 50
-     */
-    first?: number | null
-
-    /**
-     * Opaque pagination cursor.
-     */
-    after?: string | null
-
-    /**
-     * Only returns the code hosts for which the viewer doesn't have credentials.
-     * @default false
-     */
-    onlyWithoutCredential?: boolean | null
 }
 
 /**
@@ -12268,7 +12268,7 @@ export interface IChangesetCountsOverTimeOnBatchChangeArguments {
 }
 
 /**
- * A batch spec is an immutable description of the desired state of a campaign. To create a
+ * A batch spec is an immutable description of the desired state of a batch change. To create a
  * batch spec, use the createBatchSpec mutation.
  */
 export interface IBatchSpec {
@@ -12278,8 +12278,8 @@ export interface IBatchSpec {
      * The unique ID for a batch spec.
      *
      * The ID is unguessable (i.e., long and randomly generated, not sequential).
-     * Consider a campaign to fix a security vulnerability: the campaign author may prefer
-     * to prepare the campaign, including the description in private so that the window
+     * Consider a batch change to fix a security vulnerability: the batch change author may prefer
+     * to prepare the batch change, including the description in private so that the window
      * between revealing the problem and merging the fixes is as short as possible.
      */
     id: ID
@@ -12308,7 +12308,7 @@ export interface IBatchSpec {
     applyPreview: IChangesetApplyPreviewConnection
 
     /**
-     * The specs for changesets associated with this campaign.
+     * The specs for changesets associated with this batch spec.
      */
     changesetSpecs: IChangesetSpecConnection
 
@@ -12350,8 +12350,8 @@ export interface IBatchSpec {
     diffStat: IDiffStat
 
     /**
-     * The campaign this spec will update when applied. If it's null, the
-     * campaign doesn't yet exist.
+     * The batch change this spec will update when applied. If it's null, the
+     * batch change doesn't yet exist.
      */
     appliesToBatchChange: IBatchChange | null
 

@@ -88,14 +88,14 @@ func alertForTimeout(db dbutil.DB, usedTime time.Duration, suggestTime time.Dura
 			db:             db,
 			prometheusType: "timed_out",
 			title:          "Timed out while searching",
-			description:    fmt.Sprintf("We weren't able to find any results in %s. Try adding timeout: with a higher value.", roundStr(usedTime.String())),
+			description:    fmt.Sprintf("We weren't able to find any results in %s. Try adding timeout: with a higher value.", usedTime.Round(time.Second)),
 		}
 	}
 	return &searchAlert{
 		db:             db,
 		prometheusType: "timed_out",
 		title:          "Timed out while searching",
-		description:    fmt.Sprintf("We weren't able to find any results in %s.", roundStr(usedTime.String())),
+		description:    fmt.Sprintf("We weren't able to find any results in %s.", usedTime.Round(time.Second)),
 		proposedQueries: []*searchQueryDescription{
 			{
 				description: "query with longer timeout",
