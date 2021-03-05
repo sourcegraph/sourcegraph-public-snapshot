@@ -221,7 +221,7 @@ func (r *Resolver) BatchSpecByID(ctx context.Context, id graphql.ID) (graphqlbac
 		return nil, err
 	}
 
-	return &batchSpecResolver{store: r.store, campaignSpec: campaignSpec}, nil
+	return &batchSpecResolver{store: r.store, batchSpec: campaignSpec}, nil
 }
 
 func (r *Resolver) ChangesetSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetSpecResolver, error) {
@@ -450,8 +450,8 @@ func (r *Resolver) CreateBatchSpec(ctx context.Context, args *graphqlbackend.Cre
 	}
 
 	specResolver := &batchSpecResolver{
-		store:        r.store,
-		campaignSpec: campaignSpec,
+		store:     r.store,
+		batchSpec: campaignSpec,
 	}
 
 	return specResolver, nil

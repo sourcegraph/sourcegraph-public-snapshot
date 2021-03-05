@@ -10,15 +10,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
-func Routines(ctx context.Context, campaignsStore *store.Store, cf *httpcli.Factory) []goroutine.BackgroundRoutine {
+func Routines(ctx context.Context, batchesStore *store.Store, cf *httpcli.Factory) []goroutine.BackgroundRoutine {
 	sourcer := repos.NewSourcer(cf)
 
 	metrics := newMetrics()
 
 	routines := []goroutine.BackgroundRoutine{
-		newWorker(ctx, campaignsStore, gitserver.DefaultClient, sourcer, metrics),
-		newWorkerResetter(campaignsStore, metrics),
-		newSpecExpireWorker(ctx, campaignsStore),
+		newWorker(ctx, batchesStore, gitserver.DefaultClient, sourcer, metrics),
+		newWorkerResetter(batchesStore, metrics),
+		newSpecExpireWorker(ctx, batchesStore),
 	}
 	return routines
 }

@@ -190,14 +190,14 @@ func (e *executor) loadAuthenticator(ctx context.Context) (auth.Authenticator, e
 	// If the changeset is owned by a campaign, we want to reconcile using
 	// the user's credentials, which means we need to know which user last
 	// applied the owning campaign. Let's go find out.
-	campaign, err := loadCampaign(ctx, e.tx, e.ch.OwnedByCampaignID)
+	batchChange, err := loadBatchChange(ctx, e.tx, e.ch.OwnedByCampaignID)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to load owning campaign")
+		return nil, errors.Wrap(err, "failed to load owning batch change")
 	}
 
 	cred, err := e.tx.UserCredentials().GetByScope(ctx, database.UserCredentialScope{
 		Domain:              database.UserCredentialDomainCampaigns,
-		UserID:              campaign.LastApplierID,
+		UserID:              batchChange.LastApplierID,
 		ExternalServiceType: e.repo.ExternalRepo.ServiceType,
 		ExternalServiceID:   e.repo.ExternalRepo.ServiceID,
 	})
@@ -207,9 +207,9 @@ func (e *executor) loadAuthenticator(ctx context.Context) (auth.Authenticator, e
 			// we can use the nil return from loadUserCredential() to fall
 			// back to the global credentials used for the code host. If
 			// not, then we need to error out.
-			user, err := database.UsersWith(e.tx).GetByID(ctx, campaign.LastApplierID)
+			user, err := database.UsersWith(e.tx).GetByID(ctx, batchChange.LastApplierID)
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to load user applying the campaign")
+				return nil, errors.Wrap(err, "failed to load user applying the batch change")
 			}
 
 			if user.SiteAdmin {
@@ -634,7 +634,7 @@ type getBatchChanger interface {
 	GetBatchChange(ctx context.Context, opts store.CountBatchChangeOpts) (*batches.BatchChange, error)
 }
 
-func loadCampaign(ctx context.Context, tx getBatchChanger, id int64) (*batches.BatchChange, error) {
+func loadBatchChange(ctx context.Context, tx getBatchChanger, id int64) (*batches.BatchChange, error) {
 	if id == 0 {
 		return nil, errors.New("changeset has no owning campaign")
 	}
@@ -654,7 +654,7 @@ type getNamespacer interface {
 }
 
 func decorateChangesetBody(ctx context.Context, tx getBatchChanger, nsStore getNamespacer, cs *repos.Changeset) error {
-	campaign, err := loadCampaign(ctx, tx, cs.OwnedByCampaignID)
+	campaign, err := loadBatchChange(ctx, tx, cs.OwnedByCampaignID)
 	if err != nil {
 		return errors.Wrap(err, "failed to load campaign")
 	}

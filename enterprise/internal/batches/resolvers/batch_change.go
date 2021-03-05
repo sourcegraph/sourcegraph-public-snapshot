@@ -247,5 +247,5 @@ func (r *batchChangeResolver) CurrentSpec(ctx context.Context) (graphqlbackend.B
 		return nil, err
 	}
 
-	return &batchSpecResolver{store: r.store, campaignSpec: campaignSpec}, nil
+	return &batchSpecResolver{store: r.store, batchSpec: campaignSpec}, nil
 }

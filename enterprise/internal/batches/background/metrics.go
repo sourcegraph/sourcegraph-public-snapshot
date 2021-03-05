@@ -10,14 +10,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
-type campaignsMetrics struct {
+type batchChangesMetrics struct {
 	workerMetrics workerutil.WorkerMetrics
 	resets        prometheus.Counter
 	resetFailures prometheus.Counter
 	errors        prometheus.Counter
 }
 
-func newMetrics() campaignsMetrics {
+func newMetrics() batchChangesMetrics {
 	observationContext := &observation.Context{
 		Logger:     log15.Root(),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
@@ -42,7 +42,7 @@ func newMetrics() campaignsMetrics {
 	})
 	observationContext.Registerer.MustRegister(errors)
 
-	return campaignsMetrics{
+	return batchChangesMetrics{
 		workerMetrics: workerutil.NewMetrics(observationContext, "campaigns_reconciler", nil),
 		resets:        resets,
 		resetFailures: resetFailures,

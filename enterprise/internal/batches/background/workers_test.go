@@ -31,8 +31,8 @@ func TestWorkerView(t *testing.T) {
 	cstore := store.NewWithClock(db, clock)
 
 	user := ct.CreateTestUser(t, db, true)
-	spec := ct.CreateBatchSpec(t, ctx, cstore, "test-campaign", user.ID)
-	campaign := ct.CreateBatchChange(t, ctx, cstore, "test-campaign", user.ID, spec.ID)
+	spec := ct.CreateBatchSpec(t, ctx, cstore, "test-batch-change", user.ID)
+	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test-batch-change", user.ID, spec.ID)
 	repos, _ := ct.CreateTestRepos(t, ctx, cstore.DB(), 2)
 	repo := repos[0]
 	deletedRepo := repos[1]
@@ -43,7 +43,7 @@ func TestWorkerView(t *testing.T) {
 	t.Run("Queued changeset", func(t *testing.T) {
 		c := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 			Repo:            repo.ID,
-			Campaign:        campaign.ID,
+			Campaign:        batchChange.ID,
 			ReconcilerState: batches.ReconcilerStateQueued,
 		})
 		t.Cleanup(func() {
@@ -118,7 +118,7 @@ func TestWorkerView(t *testing.T) {
 			ReconcilerState: batches.ReconcilerStateQueued,
 		})
 		// Attach second campaign
-		c.Attach(campaign.ID)
+		c.Attach(batchChange.ID)
 		if err := cstore.UpdateChangeset(ctx, c); err != nil {
 			t.Fatal(err)
 		}
@@ -132,7 +132,7 @@ func TestWorkerView(t *testing.T) {
 	t.Run("In deleted repo", func(t *testing.T) {
 		c := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 			Repo:            deletedRepo.ID,
-			Campaign:        campaign.ID,
+			Campaign:        batchChange.ID,
 			ReconcilerState: batches.ReconcilerStateQueued,
 		})
 		t.Cleanup(func() {

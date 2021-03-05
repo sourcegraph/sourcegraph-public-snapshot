@@ -399,8 +399,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			// Create necessary associations.
-			campaignSpec := ct.CreateBatchSpec(t, ctx, cstore, "executor-test-campaign", admin.ID)
-			campaign := ct.CreateBatchChange(t, ctx, cstore, "executor-test-campaign", admin.ID, campaignSpec.ID)
+			batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "executor-test-batch-change", admin.ID)
+			batchChange := ct.CreateBatchChange(t, ctx, cstore, "executor-test-batch-change", admin.ID, batchSpec.ID)
 
 			// Create the changesetSpec with associations wired up correctly.
 			var changesetSpec *batches.ChangesetSpec
@@ -410,15 +410,15 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				specOpts := ct.TestSpecOpts{}
 				specOpts.User = admin.ID
 				specOpts.Repo = rs[0].ID
-				specOpts.CampaignSpec = campaignSpec.ID
+				specOpts.CampaignSpec = batchSpec.ID
 				changesetSpec = ct.CreateChangesetSpec(t, ctx, cstore, specOpts)
 			}
 
 			// Create the changeset with correct associations.
 			changesetOpts := tc.changeset
 			changesetOpts.Repo = rs[0].ID
-			changesetOpts.Campaigns = []batches.BatchChangeAssoc{{CampaignID: campaign.ID}}
-			changesetOpts.OwnedByCampaign = campaign.ID
+			changesetOpts.Campaigns = []batches.BatchChangeAssoc{{CampaignID: batchChange.ID}}
+			changesetOpts.OwnedByCampaign = batchChange.ID
 			if changesetSpec != nil {
 				changesetOpts.CurrentSpec = changesetSpec.ID
 			}
@@ -512,7 +512,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			assertions := tc.wantChangeset
 			assertions.Repo = rs[0].ID
 			assertions.OwnedByCampaign = changesetOpts.OwnedByCampaign
-			assertions.AttachedTo = []int64{campaign.ID}
+			assertions.AttachedTo = []int64{batchChange.ID}
 			if changesetSpec != nil {
 				assertions.CurrentSpec = changesetSpec.ID
 			}
