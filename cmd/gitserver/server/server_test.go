@@ -739,6 +739,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 }
 
 func TestSyncRepoState(t *testing.T) {
+	t.Skip()
 	ctx := context.Background()
 	db := dbtesting.GetDB(t)
 	remoteDir := tmpDir(t)
