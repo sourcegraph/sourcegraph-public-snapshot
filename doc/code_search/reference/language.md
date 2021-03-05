@@ -1266,7 +1266,7 @@ both private and public repositories.
 </div>
 
 Set whether the pattern should run a literal search, regular expression search,
-or a structural search pattern. This parameter is available as a commannd-line and
+or a structural search pattern. This parameter is available as a command-line and
 accessibility option, and synonymous with the visual [search pattern](#search-pattern) toggles.
 in [search pattern](#search-pattern).
 
