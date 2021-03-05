@@ -56,16 +56,22 @@ func importsOfPackages(pkgs []string) (map[string][]string, error) {
 // importsOfPackage returns an ordered list of packages imported by the given package.
 // This includes only packages that are defined within the sourcegraph/sourcegraph repo.
 func importsOfPackage(pkg string) ([]string, error) {
-	out, err := runGo("list", "-f", `{{ join .Imports "\n" }}{{ join .TestImports "\n" }}`, RootPackage+"/"+pkg)
-	if err != nil {
-		return nil, err
+	importTemplates := []string{
+		`{{ join .Imports "\n" }}`,
+		`{{ join .TestImports "\n" }}`,
 	}
-	lines := strings.Split(out, "\n")
 
-	pkgMap := make(map[string]struct{}, len(lines))
-	for _, pkg := range lines {
-		if strings.HasPrefix(pkg, RootPackage) {
-			pkgMap[pkg] = struct{}{}
+	pkgMap := map[string]struct{}{}
+	for _, template := range importTemplates {
+		out, err := runGo("list", "-f", template, RootPackage+"/"+pkg)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, pkg := range strings.Split(out, "\n") {
+			if strings.HasPrefix(pkg, RootPackage) {
+				pkgMap[pkg] = struct{}{}
+			}
 		}
 	}
 
