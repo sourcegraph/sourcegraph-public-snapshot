@@ -1,6 +1,10 @@
 package graph
 
 import (
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 )
@@ -18,18 +22,20 @@ type DependencyGraph struct {
 	Dependents map[string][]string
 }
 
-// Load returns a dependency graph constructed by running `go list` to get an initial
-// set of packages, then running `go list` on each package to get a list of its imports.
+// Load returns a dependency graph constructed by walking the source tree of the
+// sg/sg repository and parsing the imports out of all file with a .go extension.
 func Load() (*DependencyGraph, error) {
-	pkgs, err := listPackages()
+	root, err := findRoot()
 	if err != nil {
 		return nil, err
 	}
-	for i, pkg := range pkgs {
-		pkgs[i] = trimPackage(pkg)
+
+	packageMap, err := listPackages(root)
+	if err != nil {
+		return nil, err
 	}
 
-	imports, err := importsOfPackages(pkgs)
+	imports, err := parseImports(root, packageMap)
 	if err != nil {
 		return nil, err
 	}
@@ -62,13 +68,32 @@ func Load() (*DependencyGraph, error) {
 	}, nil
 }
 
-// listPackages lists all packages under sourcegraph/sourcegraph. This assumes that the
-// binary is being run from the root of the repository.
-func listPackages() ([]string, error) {
-	out, err := runGo("list", "./...")
+// findRoot finds root path of the sourcegraph/sourcegraph repository from
+// the current working directory. Is it an error to run this binary outside
+// of the repository.
+func findRoot() (string, error) {
+	wd, err := os.Getwd()
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	return strings.Split(out, "\n"), nil
+	for {
+		contents, err := ioutil.ReadFile(filepath.Join(wd, "go.mod"))
+		if err == nil {
+			for _, line := range strings.Split(string(contents), "\n") {
+				if line == "module github.com/sourcegraph/sourcegraph" {
+					return wd, nil
+				}
+			}
+		} else if !os.IsNotExist(err) {
+			return "", err
+		}
+
+		if parent := filepath.Dir(wd); parent != wd {
+			wd = parent
+			continue
+		}
+
+		return "", fmt.Errorf("not running inside sourcegraph/sourcegraph")
+	}
 }

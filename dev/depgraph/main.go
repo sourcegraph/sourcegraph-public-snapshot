@@ -20,18 +20,14 @@ var commands = map[string]func(*graph.DependencyGraph) error{
 }
 
 func mainErr() error {
-	if len(os.Args) > 1 && os.Args[1] == "clear-cache" {
-		return clearCache()
-	}
-
-	graph, err := loadDependencyGraph()
-	if err != nil {
-		return err
-	}
-
 	if len(os.Args) < 2 {
 		fmt.Printf("No command supplied.\n")
 		return nil
+	}
+
+	graph, err := graph.Load()
+	if err != nil {
+		return err
 	}
 
 	if command, ok := commands[os.Args[1]]; ok {
