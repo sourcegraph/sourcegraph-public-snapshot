@@ -137,7 +137,7 @@ type Server struct {
 	GetVCSSyncer func(context.Context, api.RepoName) (VCSSyncer, error)
 
 	// Hostname is how we identify this instance of gitserver. Generally it is the
-	// actual hostname can also be overridden by the HOSTNAME environment variable.
+	// actual hostname but can also be overridden by the HOSTNAME environment variable.
 	Hostname string
 
 	// skipCloneForTests is set by tests to avoid clones.
