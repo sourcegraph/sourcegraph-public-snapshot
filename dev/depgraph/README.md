@@ -28,7 +28,7 @@ This command ensures the following lint passes. Violations of the lint rules wil
 
 - **NoDeadPackages**: Report packages with no users (except for cmd roots)
 - **NoReachingIntoCommands**: Report packages that import from a command they are not a part of
-- **NoSingleDependents**: Report packages that are imported by only one unrelated dependent
+- **NoBinarySpecificSharedCode**: Report shared packages that are imported by a single command
 
 #### trace
 

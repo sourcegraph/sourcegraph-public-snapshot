@@ -1,15 +1,17 @@
 package lints
 
 import (
+	"fmt"
+
 	"github.com/sourcegraph/sourcegraph/dev/depgraph/graph"
 )
 
 type Lint func(graph *graph.DependencyGraph) error
 
 var lintsByName = map[string]Lint{
-	"NoDeadPackages":         NoDeadPackages,
-	"NoReachingIntoCommands": NoReachingIntoCommands,
-	"NoSingleDependents":     NoSingleDependents,
+	"NoDeadPackages":             NoDeadPackages,
+	"NoReachingIntoCommands":     NoReachingIntoCommands,
+	"NoBinarySpecificSharedCode": NoBinarySpecificSharedCode,
 }
 
 var DefaultLints []string
@@ -23,7 +25,12 @@ func init() {
 func Run(graph *graph.DependencyGraph, names []string) error {
 	lints := make([]Lint, 0, len(names))
 	for _, name := range names {
-		lints = append(lints, lintsByName[name])
+		lint, ok := lintsByName[name]
+		if !ok {
+			return fmt.Errorf("unknown lint '%s'", name)
+		}
+
+		lints = append(lints, lint)
 	}
 
 	var errors []lintError
