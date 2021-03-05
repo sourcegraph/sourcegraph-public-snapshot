@@ -101,9 +101,9 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *batches.Changes
 		return nil, err
 	}
 
-	assocsAsMap := make(map[int64]batches.BatchChangeAssoc, len(c.Campaigns))
-	for _, assoc := range c.Campaigns {
-		assocsAsMap[assoc.CampaignID] = assoc
+	assocsAsMap := make(map[int64]batches.BatchChangeAssoc, len(c.BatchChanges))
+	for _, assoc := range c.BatchChanges {
+		assocsAsMap[assoc.BatchChangeID] = assoc
 	}
 
 	campaigns, err := json.Marshal(assocsAsMap)
@@ -135,7 +135,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *batches.Changes
 		c.DiffStatChanged,
 		c.DiffStatDeleted,
 		syncState,
-		nullInt64Column(c.OwnedByCampaignID),
+		nullInt64Column(c.OwnedByBatchChangeID),
 		nullInt64Column(c.CurrentSpecID),
 		nullInt64Column(c.PreviousSpecID),
 		c.PublicationState,
@@ -720,7 +720,7 @@ func (n *jsonCampaignChangesetSet) Scan(value interface{}) error {
 	}
 
 	for id, assoc := range m {
-		*n.Assocs = append(*n.Assocs, batches.BatchChangeAssoc{CampaignID: id, Detach: assoc.Detach})
+		*n.Assocs = append(*n.Assocs, batches.BatchChangeAssoc{BatchChangeID: id, Detach: assoc.Detach})
 	}
 
 	return nil
@@ -751,7 +751,7 @@ func scanChangeset(t *batches.Changeset, s scanner) error {
 		&t.CreatedAt,
 		&t.UpdatedAt,
 		&metadata,
-		&jsonCampaignChangesetSet{Assocs: &t.Campaigns},
+		&jsonCampaignChangesetSet{Assocs: &t.BatchChanges},
 		&dbutil.NullString{S: &t.ExternalID},
 		&t.ExternalServiceType,
 		&dbutil.NullString{S: &t.ExternalBranch},
@@ -764,7 +764,7 @@ func scanChangeset(t *batches.Changeset, s scanner) error {
 		&t.DiffStatChanged,
 		&t.DiffStatDeleted,
 		&syncState,
-		&dbutil.NullInt64{N: &t.OwnedByCampaignID},
+		&dbutil.NullInt64{N: &t.OwnedByBatchChangeID},
 		&dbutil.NullInt64{N: &t.CurrentSpecID},
 		&dbutil.NullInt64{N: &t.PreviousSpecID},
 		&t.PublicationState,

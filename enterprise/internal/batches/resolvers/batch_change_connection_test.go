@@ -59,7 +59,7 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 		InitialApplierID: userID,
 		LastApplierID:    userID,
 		LastAppliedAt:    time.Now(),
-		CampaignSpecID:   spec1.ID,
+		BatchSpecID:      spec1.ID,
 	}
 	if err := cstore.CreateBatchChange(ctx, batchChange1); err != nil {
 		t.Fatal(err)
@@ -70,7 +70,7 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 		InitialApplierID: userID,
 		LastApplierID:    userID,
 		LastAppliedAt:    time.Now(),
-		CampaignSpecID:   spec2.ID,
+		BatchSpecID:      spec2.ID,
 	}
 	if err := cstore.CreateBatchChange(ctx, batchChange2); err != nil {
 		t.Fatal(err)
@@ -218,7 +218,7 @@ func TestBatchChangesListing(t *testing.T) {
 
 		batchChange := &batches.BatchChange{
 			NamespaceUserID: userID,
-			CampaignSpecID:  spec.ID,
+			BatchSpecID:     spec.ID,
 			LastApplierID:   userID,
 			LastAppliedAt:   time.Now(),
 		}
@@ -251,7 +251,7 @@ func TestBatchChangesListing(t *testing.T) {
 
 		batchChange := &batches.BatchChange{
 			NamespaceOrgID: orgID,
-			CampaignSpecID: spec.ID,
+			BatchSpecID:    spec.ID,
 			LastApplierID:  userID,
 			LastAppliedAt:  time.Now(),
 		}

@@ -576,7 +576,7 @@ func TestMoveBatchChange(t *testing.T) {
 	}
 
 	campaign := &batches.BatchChange{
-		CampaignSpecID:   campaignSpec.ID,
+		BatchSpecID:      campaignSpec.ID,
 		Name:             "old-name",
 		InitialApplierID: userID,
 		LastApplierID:    userID,

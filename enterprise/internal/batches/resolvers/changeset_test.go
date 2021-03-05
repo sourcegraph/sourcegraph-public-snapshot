@@ -165,7 +165,7 @@ func TestChangesetResolver(t *testing.T) {
 		Name:             "my-unique-name",
 		NamespaceUserID:  userID,
 		InitialApplierID: userID,
-		CampaignSpecID:   spec.ID,
+		BatchSpecID:      spec.ID,
 		LastApplierID:    userID,
 		LastAppliedAt:    time.Now(),
 	}

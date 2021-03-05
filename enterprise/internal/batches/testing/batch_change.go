@@ -19,7 +19,7 @@ func BuildBatchChange(store CreateCampaigner, name string, userID int32, spec in
 		LastApplierID:    userID,
 		LastAppliedAt:    store.Clock()(),
 		NamespaceUserID:  userID,
-		CampaignSpecID:   spec,
+		BatchSpecID:      spec,
 		Name:             name,
 		Description:      "campaign description",
 	}

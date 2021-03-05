@@ -61,7 +61,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				LastApplierID:    admin.ID,
 				LastAppliedAt:    now,
 				NamespaceUserID:  campaignSpec.NamespaceUserID,
-				CampaignSpecID:   campaignSpec.ID,
+				BatchSpecID:      campaignSpec.ID,
 
 				// Ignore these fields
 				ID:        campaign.ID,
@@ -986,7 +986,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				assertions.PreviousSpec = spec1.ID
 				c = ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
-				if len(c.Campaigns) != 1 {
+				if len(c.BatchChanges) != 1 {
 					t.Fatal("Expected changeset to be still attached to campaign, but wasn't")
 				}
 

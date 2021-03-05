@@ -630,7 +630,7 @@ func TestService(t *testing.T) {
 				Name:             name,
 				LastApplierID:    authorID,
 				LastAppliedAt:    time.Now(),
-				CampaignSpecID:   spec.ID,
+				BatchSpecID:      spec.ID,
 			}
 
 			if err := s.CreateBatchChange(ctx, c); err != nil {
@@ -740,7 +740,7 @@ func TestService(t *testing.T) {
 			InitialApplierID: admin.ID,
 			NamespaceOrgID:   campaignSpec.NamespaceOrgID,
 			NamespaceUserID:  campaignSpec.NamespaceUserID,
-			CampaignSpecID:   campaignSpec.ID,
+			BatchSpecID:      campaignSpec.ID,
 			LastApplierID:    admin.ID,
 			LastAppliedAt:    time.Now(),
 		}
@@ -828,7 +828,7 @@ func testCampaign(user int32, spec *batches.BatchSpec) *batches.BatchChange {
 		Name:             "test-campaign",
 		InitialApplierID: user,
 		NamespaceUserID:  user,
-		CampaignSpecID:   spec.ID,
+		BatchSpecID:      spec.ID,
 		LastApplierID:    user,
 		LastAppliedAt:    time.Now(),
 	}
@@ -853,7 +853,7 @@ func testChangeset(repoID api.RepoID, campaign int64, extState batches.Changeset
 	}
 
 	if campaign != 0 {
-		changeset.Campaigns = []batches.BatchChangeAssoc{{CampaignID: campaign}}
+		changeset.BatchChanges = []batches.BatchChangeAssoc{{BatchChangeID: campaign}}
 	}
 
 	return changeset

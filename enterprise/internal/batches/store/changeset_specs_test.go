@@ -420,7 +420,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 				if tc.campaignSpecApplied {
 					campaign := &batches.BatchChange{
 						Name:             fmt.Sprintf("campaign for spec %d", campaignSpec.ID),
-						CampaignSpecID:   campaignSpec.ID,
+						BatchSpecID:      campaignSpec.ID,
 						InitialApplierID: campaignSpec.UserID,
 						NamespaceUserID:  campaignSpec.NamespaceUserID,
 						LastApplierID:    campaignSpec.UserID,

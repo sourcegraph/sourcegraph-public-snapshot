@@ -109,7 +109,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 			// Create the changeset with correct associations.
 			changesetOpts := tc.changeset
 			changesetOpts.Repo = rs[0].ID
-			changesetOpts.Campaigns = []batches.BatchChangeAssoc{{CampaignID: batchChange.ID}}
+			changesetOpts.Campaigns = []batches.BatchChangeAssoc{{BatchChangeID: batchChange.ID}}
 			changesetOpts.OwnedByCampaign = batchChange.ID
 			if changesetSpec != nil {
 				changesetOpts.CurrentSpec = changesetSpec.ID

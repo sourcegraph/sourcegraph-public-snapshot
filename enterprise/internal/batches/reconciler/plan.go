@@ -113,10 +113,10 @@ func DeterminePlan(previousSpec, currentSpec *batches.ChangesetSpec, ch *batches
 	wantDetach := false
 	isStillAttached := false
 	wantDetachFromOwnerBatchChange := false
-	for _, assoc := range ch.Campaigns {
+	for _, assoc := range ch.BatchChanges {
 		if assoc.Detach {
 			wantDetach = true
-			if assoc.CampaignID == ch.OwnedByCampaignID {
+			if assoc.BatchChangeID == ch.OwnedByBatchChangeID {
 				wantDetachFromOwnerBatchChange = true
 			}
 		} else {
@@ -225,7 +225,7 @@ func reopenAfterDetach(ch *batches.Changeset) bool {
 	}
 
 	// Sanity check: if it's not owned by a batch change, it's simply being tracked.
-	if ch.OwnedByCampaignID == 0 {
+	if ch.OwnedByBatchChangeID == 0 {
 		return false
 	}
 	// Sanity check 2: if it's marked as to-be-closed, then we don't reopen it.
@@ -236,7 +236,7 @@ func reopenAfterDetach(ch *batches.Changeset) bool {
 	// At this point the changeset is closed and not marked as to-be-closed.
 
 	// TODO: What if somebody closed the changeset on purpose on the codehost?
-	return ch.AttachedTo(ch.OwnedByCampaignID)
+	return ch.AttachedTo(ch.OwnedByBatchChangeID)
 }
 
 func compareChangesetSpecs(previous, current *batches.ChangesetSpec) (*ChangesetSpecDelta, error) {

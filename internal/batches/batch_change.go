@@ -17,7 +17,7 @@ type BatchChange struct {
 	Name        string
 	Description string
 
-	CampaignSpecID int64
+	BatchSpecID int64
 
 	InitialApplierID int32
 	LastApplierID    int32
@@ -32,7 +32,7 @@ type BatchChange struct {
 	UpdatedAt time.Time
 }
 
-// Clone returns a clone of a Campaign.
+// Clone returns a clone of a BatchChange.
 func (c *BatchChange) Clone() *BatchChange {
 	cc := *c
 	return &cc

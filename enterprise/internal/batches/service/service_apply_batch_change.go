@@ -121,7 +121,7 @@ func (s *Service) ApplyBatchChange(ctx context.Context, opts ApplyBatchChangeOpt
 
 	// Load the mapping between ChangesetSpecs and existing Changesets in the target batch spec.
 	mappings, err := tx.GetRewirerMappings(ctx, store.GetRewirerMappingsOpts{
-		CampaignSpecID: batchChange.CampaignSpecID,
+		CampaignSpecID: batchChange.BatchSpecID,
 		CampaignID:     batchChange.ID,
 	})
 	if err != nil {
@@ -155,10 +155,10 @@ func (s *Service) ReconcileBatchChange(ctx context.Context, batchSpec *batches.B
 	if batchChange == nil {
 		batchChange = &batches.BatchChange{}
 	} else {
-		previousSpecID = batchChange.CampaignSpecID
+		previousSpecID = batchChange.BatchSpecID
 	}
 	// Populate the batch change with the values from the batch spec.
-	batchChange.CampaignSpecID = batchSpec.ID
+	batchChange.BatchSpecID = batchSpec.ID
 	batchChange.NamespaceOrgID = batchSpec.NamespaceOrgID
 	batchChange.NamespaceUserID = batchSpec.NamespaceUserID
 	batchChange.Name = batchSpec.Spec.Name

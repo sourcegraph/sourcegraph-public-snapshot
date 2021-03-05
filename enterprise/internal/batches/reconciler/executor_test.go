@@ -417,7 +417,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			// Create the changeset with correct associations.
 			changesetOpts := tc.changeset
 			changesetOpts.Repo = rs[0].ID
-			changesetOpts.Campaigns = []batches.BatchChangeAssoc{{CampaignID: batchChange.ID}}
+			changesetOpts.Campaigns = []batches.BatchChangeAssoc{{BatchChangeID: batchChange.ID}}
 			changesetOpts.OwnedByCampaign = batchChange.ID
 			if changesetSpec != nil {
 				changesetOpts.CurrentSpec = changesetSpec.ID
@@ -605,7 +605,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 	t.Run("imported changeset uses global token", func(t *testing.T) {
 		a, err := (&executor{
 			ch: &batches.Changeset{
-				OwnedByCampaignID: 0,
+				OwnedByBatchChangeID: 0,
 			},
 		}).loadAuthenticator(ctx)
 		if err != nil {
@@ -619,7 +619,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 	t.Run("owned by missing campaign", func(t *testing.T) {
 		_, err := (&executor{
 			ch: &batches.Changeset{
-				OwnedByCampaignID: 1234,
+				OwnedByBatchChangeID: 1234,
 			},
 			tx: cstore,
 		}).loadAuthenticator(ctx)
@@ -631,7 +631,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 	t.Run("owned by admin user without credential", func(t *testing.T) {
 		a, err := (&executor{
 			ch: &batches.Changeset{
-				OwnedByCampaignID: adminCampaign.ID,
+				OwnedByBatchChangeID: adminCampaign.ID,
 			},
 			repo: repo,
 			tx:   cstore,
@@ -647,7 +647,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 	t.Run("owned by normal user without credential", func(t *testing.T) {
 		_, err := (&executor{
 			ch: &batches.Changeset{
-				OwnedByCampaignID: userCampaign.ID,
+				OwnedByBatchChangeID: userCampaign.ID,
 			},
 			repo: repo,
 			tx:   cstore,
@@ -670,7 +670,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 
 		a, err := (&executor{
 			ch: &batches.Changeset{
-				OwnedByCampaignID: adminCampaign.ID,
+				OwnedByBatchChangeID: adminCampaign.ID,
 			},
 			repo: repo,
 			tx:   cstore,
@@ -696,7 +696,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 
 		a, err := (&executor{
 			ch: &batches.Changeset{
-				OwnedByCampaignID: userCampaign.ID,
+				OwnedByBatchChangeID: userCampaign.ID,
 			},
 			repo: repo,
 			tx:   cstore,
@@ -877,8 +877,8 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			campaign := ct.CreateBatchChange(t, ctx, cstore, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID, campaignSpec.ID)
 
 			plan.Changeset = &batches.Changeset{
-				OwnedByCampaignID: campaign.ID,
-				RepoID:            tt.repo.ID,
+				OwnedByBatchChangeID: campaign.ID,
+				RepoID:               tt.repo.ID,
 			}
 			plan.ChangesetSpec = ct.BuildChangesetSpec(t, ct.TestSpecOpts{
 				HeadRef:    "refs/heads/my-branch",

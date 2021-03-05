@@ -30,8 +30,8 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 				LastAppliedAt:    clock.Now(),
 				LastApplierID:    int32(i) + 99,
 
-				CampaignSpecID: 1742 + int64(i),
-				ClosedAt:       clock.Now(),
+				BatchSpecID: 1742 + int64(i),
+				ClosedAt:    clock.Now(),
 			}
 
 			if i == 0 {
@@ -92,7 +92,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 
 		t.Run("ChangesetID", func(t *testing.T) {
 			changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-				Campaigns: []batches.BatchChangeAssoc{{CampaignID: cs[0].ID}},
+				Campaigns: []batches.BatchChangeAssoc{{BatchChangeID: cs[0].ID}},
 			})
 
 			count, err = s.CountBatchChanges(ctx, CountBatchChangesOpts{ChangesetID: changeset.ID})
@@ -170,7 +170,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 		t.Run("By ChangesetID", func(t *testing.T) {
 			for i := 1; i <= len(cs); i++ {
 				changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-					Campaigns: []batches.BatchChangeAssoc{{CampaignID: cs[i-1].ID}},
+					Campaigns: []batches.BatchChangeAssoc{{BatchChangeID: cs[i-1].ID}},
 				})
 				opts := ListBatchChangesOpts{ChangesetID: changeset.ID}
 
@@ -388,7 +388,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 
 		t.Run("ByCampaignSpecID", func(t *testing.T) {
 			want := cs[0]
-			opts := CountBatchChangeOpts{BatchChangeSpecID: want.CampaignSpecID}
+			opts := CountBatchChangeOpts{BatchChangeSpecID: want.BatchSpecID}
 
 			have, err := s.GetBatchChange(ctx, opts)
 			if err != nil {
@@ -480,7 +480,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 		var testDiffStatCount int32 = 10
 		ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
 			Repo:            repo.ID,
-			Campaigns:       []batches.BatchChangeAssoc{{CampaignID: campaignID}},
+			Campaigns:       []batches.BatchChangeAssoc{{BatchChangeID: campaignID}},
 			DiffStatAdded:   testDiffStatCount,
 			DiffStatChanged: testDiffStatCount,
 			DiffStatDeleted: testDiffStatCount,
@@ -572,7 +572,7 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 			InitialApplierID: user.ID,
 			LastApplierID:    user.ID,
 			LastAppliedAt:    clock.Now(),
-			CampaignSpecID:   ownedSpec.ID,
+			BatchSpecID:      ownedSpec.ID,
 		}
 		if err := s.CreateBatchChange(ctx, ownedCampaign); err != nil {
 			t.Fatal(err)
@@ -584,7 +584,7 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 			InitialApplierID: user.ID,
 			LastApplierID:    user.ID,
 			LastAppliedAt:    clock.Now(),
-			CampaignSpecID:   ownedSpec.ID,
+			BatchSpecID:      ownedSpec.ID,
 		}
 		if err := s.CreateBatchChange(ctx, unownedCampaign); err != nil {
 			t.Fatal(err)

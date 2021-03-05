@@ -80,14 +80,14 @@ func TestPermissionLevels(t *testing.T) {
 			NamespaceUserID:  userID,
 			LastApplierID:    userID,
 			LastAppliedAt:    time.Now(),
-			CampaignSpecID:   campaignSpecID,
+			BatchSpecID:      campaignSpecID,
 		}
 		if err := s.CreateBatchChange(ctx, c); err != nil {
 			t.Fatal(err)
 		}
 
 		// We attach the changeset to the campaign so we can test syncChangeset
-		changeset.Campaigns = append(changeset.Campaigns, batches.BatchChangeAssoc{CampaignID: c.ID})
+		changeset.BatchChanges = append(changeset.BatchChanges, batches.BatchChangeAssoc{BatchChangeID: c.ID})
 		if err := s.UpdateChangeset(ctx, changeset); err != nil {
 			t.Fatal(err)
 		}
@@ -623,7 +623,7 @@ func TestPermissionLevels(t *testing.T) {
 							// matter for the addChangesetsToCampaign mutation,
 							// since that is idempotent and we want to solely
 							// check for auth errors.
-							changeset.Campaigns = []batches.BatchChangeAssoc{{CampaignID: campaignID}}
+							changeset.BatchChanges = []batches.BatchChangeAssoc{{BatchChangeID: campaignID}}
 							if err := cstore.UpdateChangeset(ctx, changeset); err != nil {
 								t.Fatal(err)
 							}
@@ -838,14 +838,14 @@ func TestRepositoryPermissions(t *testing.T) {
 			NamespaceUserID:  userID,
 			LastApplierID:    userID,
 			LastAppliedAt:    time.Now(),
-			CampaignSpecID:   spec.ID,
+			BatchSpecID:      spec.ID,
 		}
 		if err := cstore.CreateBatchChange(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
 		// We attach the two changesets to the campaign
 		for _, c := range changesets {
-			c.Campaigns = []batches.BatchChangeAssoc{{CampaignID: campaign.ID}}
+			c.BatchChanges = []batches.BatchChangeAssoc{{BatchChangeID: campaign.ID}}
 			if err := cstore.UpdateChangeset(ctx, c); err != nil {
 				t.Fatal(err)
 			}

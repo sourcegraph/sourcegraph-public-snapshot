@@ -318,7 +318,7 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 					Name:             "not-blank",
 					InitialApplierID: 1,
 					NamespaceUserID:  1,
-					CampaignSpecID:   campaignSpec.ID,
+					BatchSpecID:      campaignSpec.ID,
 					LastApplierID:    1,
 					LastAppliedAt:    time.Now(),
 				}

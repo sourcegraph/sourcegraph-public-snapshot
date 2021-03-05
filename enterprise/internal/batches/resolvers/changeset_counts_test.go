@@ -134,7 +134,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		NamespaceUserID:  userID,
 		LastApplierID:    userID,
 		LastAppliedAt:    time.Now(),
-		CampaignSpecID:   spec.ID,
+		BatchSpecID:      spec.ID,
 	}
 
 	err = cstore.CreateBatchChange(ctx, campaign)
@@ -147,14 +147,14 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 			RepoID:              githubRepo.ID,
 			ExternalID:          "5834",
 			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
-			Campaigns:           []batches.BatchChangeAssoc{{CampaignID: campaign.ID}},
+			BatchChanges:        []batches.BatchChangeAssoc{{BatchChangeID: campaign.ID}},
 			PublicationState:    batches.ChangesetPublicationStatePublished,
 		},
 		{
 			RepoID:              githubRepo.ID,
 			ExternalID:          "5849",
 			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
-			Campaigns:           []batches.BatchChangeAssoc{{CampaignID: campaign.ID}},
+			BatchChanges:        []batches.BatchChangeAssoc{{BatchChangeID: campaign.ID}},
 			PublicationState:    batches.ChangesetPublicationStatePublished,
 		},
 	}

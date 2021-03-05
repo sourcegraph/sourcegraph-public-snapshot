@@ -181,7 +181,7 @@ func (e *executor) buildChangesetSource(repo *types.Repo, extSvc *types.External
 // doesn't have a credential configured for the code host, or the changeset
 // isn't owned by a campaign).
 func (e *executor) loadAuthenticator(ctx context.Context) (auth.Authenticator, error) {
-	if e.ch.OwnedByCampaignID == 0 {
+	if e.ch.OwnedByBatchChangeID == 0 {
 		// Unowned changesets are imported, and therefore don't need to use a user
 		// credential, since reconciliation isn't a mutating process.
 		return nil, nil
@@ -190,7 +190,7 @@ func (e *executor) loadAuthenticator(ctx context.Context) (auth.Authenticator, e
 	// If the changeset is owned by a campaign, we want to reconcile using
 	// the user's credentials, which means we need to know which user last
 	// applied the owning campaign. Let's go find out.
-	batchChange, err := loadBatchChange(ctx, e.tx, e.ch.OwnedByCampaignID)
+	batchChange, err := loadBatchChange(ctx, e.tx, e.ch.OwnedByBatchChangeID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load owning batch change")
 	}
@@ -369,9 +369,9 @@ func (e *executor) reopenChangeset(ctx context.Context) (err error) {
 }
 
 func (e *executor) detachChangeset() {
-	for _, assoc := range e.ch.Campaigns {
+	for _, assoc := range e.ch.BatchChanges {
 		if assoc.Detach {
-			e.ch.RemoveCampaignID(assoc.CampaignID)
+			e.ch.RemoveBatchChangeID(assoc.BatchChangeID)
 		}
 	}
 }
@@ -654,7 +654,7 @@ type getNamespacer interface {
 }
 
 func decorateChangesetBody(ctx context.Context, tx getBatchChanger, nsStore getNamespacer, cs *repos.Changeset) error {
-	campaign, err := loadBatchChange(ctx, tx, cs.OwnedByCampaignID)
+	campaign, err := loadBatchChange(ctx, tx, cs.OwnedByBatchChangeID)
 	if err != nil {
 		return errors.Wrap(err, "failed to load campaign")
 	}

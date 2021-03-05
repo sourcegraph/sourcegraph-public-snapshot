@@ -85,7 +85,7 @@ func (s *Store) createBatchChangeQuery(c *batches.BatchChange) *sqlf.Query {
 		c.CreatedAt,
 		c.UpdatedAt,
 		nullTimeColumn(c.ClosedAt),
-		c.CampaignSpecID,
+		c.BatchSpecID,
 		sqlf.Join(batchChangeColumns, ", "),
 	)
 }
@@ -121,7 +121,7 @@ func (s *Store) updateBatchChangeQuery(c *batches.BatchChange) *sqlf.Query {
 		c.CreatedAt,
 		c.UpdatedAt,
 		nullTimeColumn(c.ClosedAt),
-		c.CampaignSpecID,
+		c.BatchSpecID,
 		c.ID,
 		sqlf.Join(batchChangeColumns, ", "),
 	)
@@ -427,6 +427,6 @@ func scanBatchChange(c *batches.BatchChange, s scanner) error {
 		&c.CreatedAt,
 		&c.UpdatedAt,
 		&dbutil.NullTime{Time: &c.ClosedAt},
-		&c.CampaignSpecID,
+		&c.BatchSpecID,
 	)
 }

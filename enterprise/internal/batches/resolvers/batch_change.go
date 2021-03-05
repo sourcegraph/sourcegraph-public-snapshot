@@ -84,7 +84,7 @@ func (r *batchChangeResolver) LastAppliedAt() graphqlbackend.DateTime {
 
 func (r *batchChangeResolver) SpecCreator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
 	spec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{
-		ID: r.batchChange.CampaignSpecID,
+		ID: r.batchChange.BatchSpecID,
 	})
 	if err != nil {
 		return nil, err
@@ -241,7 +241,7 @@ func (r *batchChangeResolver) DiffStat(ctx context.Context) (*graphqlbackend.Dif
 }
 
 func (r *batchChangeResolver) CurrentSpec(ctx context.Context) (graphqlbackend.BatchSpecResolver, error) {
-	campaignSpec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: r.batchChange.CampaignSpecID})
+	campaignSpec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: r.batchChange.BatchSpecID})
 	if err != nil {
 		// This spec should always exist, so fail hard on not found errors as well.
 		return nil, err
