@@ -313,7 +313,7 @@ var repoStateUpsertCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 }, []string{"success"})
 
 func (s *Server) syncRepoState(db dbutil.DB, addrs []string, batchSize, perSecond int) error {
-	ctx := context.Background()
+	ctx := s.serverCtx()
 	store := database.GitserverRepos(db)
 
 	// The rate limit should be enforced across all instances
