@@ -269,7 +269,7 @@ func (r *visibleChangesetApplyPreviewResolver) computeCampaign(ctx context.Conte
 			return
 		}
 		// Dry-run reconcile the campaign with the new campaign spec.
-		r.campaign, _, r.campaignErr = svc.ReconcileCampaign(ctx, campaignSpec)
+		r.campaign, _, r.campaignErr = svc.ReconcileBatchChange(ctx, campaignSpec)
 	})
 	return r.campaign, r.campaignErr
 }

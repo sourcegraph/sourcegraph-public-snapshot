@@ -539,7 +539,7 @@ func TestCreateBatchChange(t *testing.T) {
 	if len(errors) != 1 {
 		t.Fatalf("expected single errors, but got none")
 	}
-	if have, want := errors[0].Message, service.ErrMatchingCampaignExists.Error(); have != want {
+	if have, want := errors[0].Message, service.ErrMatchingBatchChangeExists.Error(); have != want {
 		t.Fatalf("wrong error. want=%q, have=%q", want, have)
 	}
 }

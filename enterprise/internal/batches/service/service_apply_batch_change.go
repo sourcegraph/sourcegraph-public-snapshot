@@ -14,41 +14,49 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-// ErrApplyClosedCampaign is returned by ApplyCampaign when the campaign
-// matched by the campaign spec is already closed.
-var ErrApplyClosedCampaign = errors.New("existing campaign matched by campaign spec is closed")
+// ErrApplyClosedBatchChange is returned by ApplyBatchChange when the campaign
+// matched by the batch spec is already closed.
+var ErrApplyClosedBatchChange = errors.New("existing batch change matched by batch spec is closed")
 
-// ErrMatchingCampaignExists is returned by ApplyCampaign if a campaign matching the
+// ErrMatchingBatchChangeExists is returned by ApplyCampaign if a campaign matching the
 // campaign spec already exists and FailIfExists was set.
-var ErrMatchingCampaignExists = errors.New("a campaign matching the given campaign spec already exists")
+var ErrMatchingBatchChangeExists = errors.New("a batch change matching the given batch spec already exists")
 
-type ApplyCampaignOpts struct {
-	CampaignSpecRandID string
-	EnsureCampaignID   int64
+// TODO(campaigns-deprecation): this needs to be renamed, but cast to
+// "EnsureCampaignFailed" if the applycampaign mutation was used.
+//
+// ErrEnsureBatchChangeFailed is returned by AppplyBatchChange when a
+// ensureBatchChangeID is provided but a batch change with the name specified the
+// batchSpec exists in the given namespace but has a different ID.
+var ErrEnsureBatchChangeFailed = errors.New("a batch change in the given namespace and with the given name exists but does not match the given ID")
 
-	// When FailIfCampaignExists is true, ApplyCampaign will fail if a Campaign
+type ApplyBatchChangeOpts struct {
+	BatchSpecRandID     string
+	EnsureBatchChangeID int64
+
+	// When FailIfBatchChangeExists is true, ApplyCampaign will fail if a Campaign
 	// matching the given CampaignSpec already exists.
-	FailIfCampaignExists bool
+	FailIfBatchChangeExists bool
 }
 
-func (o ApplyCampaignOpts) String() string {
+func (o ApplyBatchChangeOpts) String() string {
 	return fmt.Sprintf(
-		"CampaignSpec %s, EnsureCampaignID %d",
-		o.CampaignSpecRandID,
-		o.EnsureCampaignID,
+		"BatchSpec %s, EnsureBatchChangeID %d",
+		o.BatchSpecRandID,
+		o.EnsureBatchChangeID,
 	)
 }
 
-// ApplyCampaign creates the CampaignSpec.
-func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (campaign *batches.BatchChange, err error) {
-	tr, ctx := trace.New(ctx, "Service.ApplyCampaign", opts.String())
+// ApplyBatchChange creates the BatchChange.
+func (s *Service) ApplyBatchChange(ctx context.Context, opts ApplyBatchChangeOpts) (batchChange *batches.BatchChange, err error) {
+	tr, ctx := trace.New(ctx, "Service.ApplyBatchChange", opts.String())
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
 	campaignSpec, err := s.store.GetCampaignSpec(ctx, store.GetCampaignSpecOpts{
-		RandID: opts.CampaignSpecRandID,
+		RandID: opts.BatchSpecRandID,
 	})
 	if err != nil {
 		return nil, err
@@ -60,25 +68,25 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 		return nil, err
 	}
 
-	campaign, previousSpecID, err := s.ReconcileCampaign(ctx, campaignSpec)
+	batchChange, previousSpecID, err := s.ReconcileBatchChange(ctx, campaignSpec)
 	if err != nil {
 		return nil, err
 	}
 
-	if campaign.ID != 0 && opts.FailIfCampaignExists {
-		return nil, ErrMatchingCampaignExists
+	if batchChange.ID != 0 && opts.FailIfBatchChangeExists {
+		return nil, ErrMatchingBatchChangeExists
 	}
 
-	if opts.EnsureCampaignID != 0 && campaign.ID != opts.EnsureCampaignID {
-		return nil, ErrEnsureCampaignFailed
+	if opts.EnsureBatchChangeID != 0 && batchChange.ID != opts.EnsureBatchChangeID {
+		return nil, ErrEnsureBatchChangeFailed
 	}
 
-	if campaign.Closed() {
-		return nil, ErrApplyClosedCampaign
+	if batchChange.Closed() {
+		return nil, ErrApplyClosedBatchChange
 	}
 
 	if previousSpecID == campaignSpec.ID {
-		return campaign, nil
+		return batchChange, nil
 	}
 
 	// Before we write to the database in a transaction, we cancel all
@@ -88,8 +96,8 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	// codehost while we're applying a new campaign spec.
 	// This is blocking, because the changeset rows currently being processed by the
 	// reconciler are locked.
-	if err := s.store.CancelQueuedCampaignChangesets(ctx, campaign.ID); err != nil {
-		return campaign, nil
+	if err := s.store.CancelQueuedCampaignChangesets(ctx, batchChange.ID); err != nil {
+		return batchChange, nil
 	}
 
 	tx, err := s.store.Transact(ctx)
@@ -98,12 +106,12 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	}
 	defer func() { err = tx.Done(err) }()
 
-	if campaign.ID == 0 {
-		if err := tx.CreateCampaign(ctx, campaign); err != nil {
+	if batchChange.ID == 0 {
+		if err := tx.CreateCampaign(ctx, batchChange); err != nil {
 			return nil, err
 		}
 	} else {
-		if err := tx.UpdateCampaign(ctx, campaign); err != nil {
+		if err := tx.UpdateCampaign(ctx, batchChange); err != nil {
 			return nil, err
 		}
 	}
@@ -114,8 +122,8 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 
 	// Load the mapping between ChangesetSpecs and existing Changesets in the target campaign.
 	mappings, err := tx.GetRewirerMappings(ctx, store.GetRewirerMappingsOpts{
-		CampaignSpecID: campaign.CampaignSpecID,
-		CampaignID:     campaign.ID,
+		CampaignSpecID: batchChange.CampaignSpecID,
+		CampaignID:     batchChange.ID,
 	})
 	if err != nil {
 		return nil, err
@@ -125,7 +133,7 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 	}
 
 	// And execute the mapping.
-	changesets, err := rewirer.New(mappings, campaign.ID).Rewire()
+	changesets, err := rewirer.New(mappings, batchChange.ID).Rewire()
 	if err != nil {
 		return nil, err
 	}
@@ -137,11 +145,11 @@ func (s *Service) ApplyCampaign(ctx context.Context, opts ApplyCampaignOpts) (ca
 		}
 	}
 
-	return campaign, nil
+	return batchChange, nil
 }
 
-func (s *Service) ReconcileCampaign(ctx context.Context, campaignSpec *batches.BatchSpec) (campaign *batches.BatchChange, previousSpecID int64, err error) {
-	campaign, err = s.GetCampaignMatchingCampaignSpec(ctx, campaignSpec)
+func (s *Service) ReconcileBatchChange(ctx context.Context, campaignSpec *batches.BatchSpec) (campaign *batches.BatchChange, previousSpecID int64, err error) {
+	campaign, err = s.GetBatchChangeMatchingBatchSpec(ctx, campaignSpec)
 	if err != nil {
 		return nil, 0, err
 	}

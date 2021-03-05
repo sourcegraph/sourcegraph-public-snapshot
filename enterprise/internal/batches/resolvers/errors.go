@@ -12,72 +12,72 @@ func (e ErrIDIsZero) Extensions() map[string]interface{} {
 	return map[string]interface{}{"code": "ErrIDIsZero"}
 }
 
-type ErrCampaignsDisabled struct{}
+type ErrBatchChangesDisabled struct{}
 
-func (e ErrCampaignsDisabled) Error() string {
-	return "campaigns are disabled. Set 'batches.enabled' in the site configuration to enable the feature."
+func (e ErrBatchChangesDisabled) Error() string {
+	return "batch changes are disabled. Set 'campaigns.enabled' in the site configuration to enable the feature."
 }
 
-func (e ErrCampaignsDisabled) Extensions() map[string]interface{} {
-	return map[string]interface{}{"code": "ErrCampaignsDisabled"}
+func (e ErrBatchChangesDisabled) Extensions() map[string]interface{} {
+	return map[string]interface{}{"code": "ErrBatchChangesDisabled"}
 }
 
-type ErrCampaignsDisabledForUser struct{}
+type ErrBatchChangesDisabledForUser struct{}
 
-func (e ErrCampaignsDisabledForUser) Error() string {
-	return "campaigns are disabled for non-site-admin users"
+func (e ErrBatchChangesDisabledForUser) Error() string {
+	return "batch changes are disabled for non-site-admin users"
 }
 
-func (e ErrCampaignsDisabledForUser) Extensions() map[string]interface{} {
-	return map[string]interface{}{"code": "ErrCampaignsDisabledForUser"}
+func (e ErrBatchChangesDisabledForUser) Extensions() map[string]interface{} {
+	return map[string]interface{}{"code": "ErrBatchChangesDisabledForUser"}
 }
 
-// ErrCampaignsUnlicensed wraps an underlying licensing.featureNotActivatedError
+// ErrBatchChangesUnlicensed wraps an underlying licensing.featureNotActivatedError
 // to add an error code.
-type ErrCampaignsUnlicensed struct{ error }
+type ErrBatchChangesUnlicensed struct{ error }
 
-func (e ErrCampaignsUnlicensed) Extensions() map[string]interface{} {
-	return map[string]interface{}{"code": "ErrCampaignsUnlicensed"}
+func (e ErrBatchChangesUnlicensed) Extensions() map[string]interface{} {
+	return map[string]interface{}{"code": "ErrBatchChangesUnlicensed"}
 }
 
-type ErrCampaignsDotCom struct{}
+type ErrBatchChangesDotcom struct{}
 
-func (e ErrCampaignsDotCom) Error() string {
-	return "access to campaigns on Sourcegraph.com is currently not available"
+func (e ErrBatchChangesDotcom) Error() string {
+	return "access to batch changes on Sourcegraph.com is currently not available"
 }
 
-func (e ErrCampaignsDotCom) Extensions() map[string]interface{} {
-	return map[string]interface{}{"code": "ErrCampaignsDotCom"}
+func (e ErrBatchChangesDotcom) Extensions() map[string]interface{} {
+	return map[string]interface{}{"code": "ErrBatchChangesDotCom"}
 }
 
-type ErrEnsureCampaignFailed struct{}
+type ErrEnsureBatchChangeFailed struct{}
 
-func (e ErrEnsureCampaignFailed) Error() string {
-	return "a campaign in the given namespace and with the given name exists but does not match the given ID"
+func (e ErrEnsureBatchChangeFailed) Error() string {
+	return "a batch change in the given namespace and with the given name exists but does not match the given ID"
 }
 
-func (e ErrEnsureCampaignFailed) Extensions() map[string]interface{} {
-	return map[string]interface{}{"code": "ErrEnsureCampaignFailed"}
+func (e ErrEnsureBatchChangeFailed) Extensions() map[string]interface{} {
+	return map[string]interface{}{"code": "ErrEnsureBatchChangeFailed"}
 }
 
-type ErrApplyClosedCampaign struct{}
+type ErrApplyClosedBatchChange struct{}
 
-func (e ErrApplyClosedCampaign) Error() string {
-	return "existing campaign matched by campaign spec is closed"
+func (e ErrApplyClosedBatchChange) Error() string {
+	return "existing batch change matched by batch spec is closed"
 }
 
-func (e ErrApplyClosedCampaign) Extensions() map[string]interface{} {
-	return map[string]interface{}{"code": "ErrApplyClosedCampaign"}
+func (e ErrApplyClosedBatchChange) Extensions() map[string]interface{} {
+	return map[string]interface{}{"code": "ErrApplyClosedBatchChange"}
 }
 
-type ErrMatchingCampaignExists struct{}
+type ErrMatchingBatchChangeExists struct{}
 
-func (e ErrMatchingCampaignExists) Error() string {
-	return "a campaign matching the given campaign spec already exists"
+func (e ErrMatchingBatchChangeExists) Error() string {
+	return "a batch change matching the given batch spec already exists"
 }
 
-func (e ErrMatchingCampaignExists) Extensions() map[string]interface{} {
-	return map[string]interface{}{"code": "ErrMatchingCampaignExists"}
+func (e ErrMatchingBatchChangeExists) Extensions() map[string]interface{} {
+	return map[string]interface{}{"code": "ErrMatchingBatchChangeExists"}
 }
 
 type ErrDuplicateCredential struct{}

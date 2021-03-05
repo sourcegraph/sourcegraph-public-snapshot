@@ -236,7 +236,7 @@ func (r *batchSpecResolver) AppliesToCampaign(ctx context.Context) (graphqlbacke
 
 func (r *batchSpecResolver) AppliesToBatchChange(ctx context.Context) (graphqlbackend.BatchChangeResolver, error) {
 	svc := service.New(r.store)
-	batchChange, err := svc.GetCampaignMatchingCampaignSpec(ctx, r.campaignSpec)
+	batchChange, err := svc.GetBatchChangeMatchingBatchSpec(ctx, r.campaignSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -261,7 +261,7 @@ func (r *batchSpecResolver) SupersedingBatchSpec(ctx context.Context) (graphqlba
 	}
 
 	svc := service.New(r.store)
-	newest, err := svc.GetNewestCampaignSpec(ctx, r.store, r.campaignSpec, actor.FromContext(ctx).UID)
+	newest, err := svc.GetNewestBatchSpec(ctx, r.store, r.campaignSpec, actor.FromContext(ctx).UID)
 	if err != nil {
 		return nil, err
 	}

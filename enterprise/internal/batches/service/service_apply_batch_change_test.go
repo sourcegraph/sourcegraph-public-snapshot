@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
-func TestServiceApplyCampaign(t *testing.T) {
+func TestServiceApplyBatchChange(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -43,8 +43,8 @@ func TestServiceApplyCampaign(t *testing.T) {
 		t.Run("new campaign", func(t *testing.T) {
 			ct.TruncateTables(t, db, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
 			campaignSpec := ct.CreateBatchSpec(t, ctx, store, "campaign1", admin.ID)
-			campaign, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
-				CampaignSpecRandID: campaignSpec.RandID,
+			campaign, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
+				BatchSpecRandID: campaignSpec.RandID,
 			})
 			if err != nil {
 				t.Fatal(err)
@@ -80,8 +80,8 @@ func TestServiceApplyCampaign(t *testing.T) {
 			campaign := ct.CreateBatchChange(t, ctx, store, "campaign2", admin.ID, campaignSpec.ID)
 
 			t.Run("apply same campaignSpec", func(t *testing.T) {
-				campaign2, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
-					CampaignSpecRandID: campaignSpec.RandID,
+				campaign2, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
+					BatchSpecRandID: campaignSpec.RandID,
 				})
 				if err != nil {
 					t.Fatal(err)
@@ -93,19 +93,19 @@ func TestServiceApplyCampaign(t *testing.T) {
 			})
 
 			t.Run("apply same campaignSpec with FailIfExists", func(t *testing.T) {
-				_, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
-					CampaignSpecRandID:   campaignSpec.RandID,
-					FailIfCampaignExists: true,
+				_, err := svc.ApplyBatchChange(ctx, ApplyBatchChangeOpts{
+					BatchSpecRandID:         campaignSpec.RandID,
+					FailIfBatchChangeExists: true,
 				})
-				if err != ErrMatchingCampaignExists {
-					t.Fatalf("unexpected error. want=%s, got=%s", ErrMatchingCampaignExists, err)
+				if err != ErrMatchingBatchChangeExists {
+					t.Fatalf("unexpected error. want=%s, got=%s", ErrMatchingBatchChangeExists, err)
 				}
 			})
 
 			t.Run("apply campaign spec with same name", func(t *testing.T) {
 				campaignSpec2 := ct.CreateBatchSpec(t, ctx, store, "campaign2", admin.ID)
-				campaign2, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
-					CampaignSpecRandID: campaignSpec2.RandID,
+				campaign2, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
+					BatchSpecRandID: campaignSpec2.RandID,
 				})
 				if err != nil {
 					t.Fatal(err)
@@ -129,8 +129,8 @@ func TestServiceApplyCampaign(t *testing.T) {
 				}
 
 				campaignSpec2 := ct.CreateBatchSpec(t, ctx, store, "created-by-user", user.ID)
-				campaign2, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
-					CampaignSpecRandID: campaignSpec2.RandID,
+				campaign2, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
+					BatchSpecRandID: campaignSpec2.RandID,
 				})
 				if err != nil {
 					t.Fatal(err)
@@ -153,8 +153,8 @@ func TestServiceApplyCampaign(t *testing.T) {
 				user2 := ct.CreateTestUser(t, db, false)
 				campaignSpec2 := ct.CreateBatchSpec(t, ctx, store, "campaign2", user2.ID)
 
-				campaign2, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
-					CampaignSpecRandID: campaignSpec2.RandID,
+				campaign2, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
+					BatchSpecRandID: campaignSpec2.RandID,
 				})
 				if err != nil {
 					t.Fatal(err)
@@ -172,9 +172,9 @@ func TestServiceApplyCampaign(t *testing.T) {
 			t.Run("campaign spec with same name and same ensureCampaignID", func(t *testing.T) {
 				campaignSpec2 := ct.CreateBatchSpec(t, ctx, store, "campaign2", admin.ID)
 
-				campaign2, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
-					CampaignSpecRandID: campaignSpec2.RandID,
-					EnsureCampaignID:   campaign.ID,
+				campaign2, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
+					BatchSpecRandID:     campaignSpec2.RandID,
+					EnsureBatchChangeID: campaign.ID,
 				})
 				if err != nil {
 					t.Fatal(err)
@@ -187,11 +187,11 @@ func TestServiceApplyCampaign(t *testing.T) {
 			t.Run("campaign spec with same name but different ensureCampaignID", func(t *testing.T) {
 				campaignSpec2 := ct.CreateBatchSpec(t, ctx, store, "campaign2", admin.ID)
 
-				_, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
-					CampaignSpecRandID: campaignSpec2.RandID,
-					EnsureCampaignID:   campaign.ID + 999,
+				_, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
+					BatchSpecRandID:     campaignSpec2.RandID,
+					EnsureBatchChangeID: campaign.ID + 999,
 				})
-				if err != ErrEnsureCampaignFailed {
+				if err != ErrEnsureBatchChangeFailed {
 					t.Fatalf("wrong error: %s", err)
 				}
 			})
@@ -696,8 +696,8 @@ func TestServiceApplyCampaign(t *testing.T) {
 				HeadRef:      "refs/heads/my-branch",
 			})
 
-			_, err := svc.ApplyCampaign(userCtx, ApplyCampaignOpts{
-				CampaignSpecRandID: campaignSpec.RandID,
+			_, err := svc.ApplyBatchChange(userCtx, ApplyBatchChangeOpts{
+				BatchSpecRandID: campaignSpec.RandID,
 			})
 			if err == nil {
 				t.Fatal("expected error, but got none")
@@ -1114,10 +1114,10 @@ func TestServiceApplyCampaign(t *testing.T) {
 			t.Fatalf("failed to update campaign: %s", err)
 		}
 
-		_, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
-			CampaignSpecRandID: campaignSpec.RandID,
+		_, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
+			BatchSpecRandID: campaignSpec.RandID,
 		})
-		if err != ErrApplyClosedCampaign {
+		if err != ErrApplyClosedBatchChange {
 			t.Fatalf("ApplyCampaign returned unexpected error: %s", err)
 		}
 	})
@@ -1126,8 +1126,8 @@ func TestServiceApplyCampaign(t *testing.T) {
 func applyAndListChangesets(ctx context.Context, t *testing.T, svc *Service, campaignSpecRandID string, wantChangesets int) (*batches.BatchChange, batches.Changesets) {
 	t.Helper()
 
-	campaign, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
-		CampaignSpecRandID: campaignSpecRandID,
+	campaign, err := svc.ApplyBatchChange(ctx, ApplyBatchChangeOpts{
+		BatchSpecRandID: campaignSpecRandID,
 	})
 	if err != nil {
 		t.Fatalf("failed to apply campaign: %s", err)

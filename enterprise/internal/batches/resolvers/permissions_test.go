@@ -652,7 +652,7 @@ func TestPermissionLevels(t *testing.T) {
 								if len(errs) != 1 {
 									t.Fatalf("expected 1 error, but got %d: %s", len(errs), errs)
 								}
-								if !strings.Contains(errs[0].Error(), "campaigns are disabled for non-site-admin users") {
+								if !strings.Contains(errs[0].Error(), "batch changes are disabled for non-site-admin users") {
 									t.Fatalf("wrong error: %s %T", errs[0], errs[0])
 								}
 							} else if tc.wantAuthErr {

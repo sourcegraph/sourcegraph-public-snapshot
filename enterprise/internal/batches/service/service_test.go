@@ -141,21 +141,21 @@ func TestServicePermissionLevels(t *testing.T) {
 			})
 
 			t.Run("DeleteCampaign", func(t *testing.T) {
-				err := svc.DeleteCampaign(currentUserCtx, campaign.ID)
+				err := svc.DeleteBatchChange(currentUserCtx, campaign.ID)
 				tc.assertFunc(t, err)
 			})
 
 			t.Run("MoveCampaign", func(t *testing.T) {
-				_, err := svc.MoveCampaign(currentUserCtx, MoveCampaignOpts{
-					CampaignID: campaign.ID,
-					NewName:    "foobar2",
+				_, err := svc.MoveBatchChange(currentUserCtx, MoveBatchChangeOpts{
+					BatchChangeID: campaign.ID,
+					NewName:       "foobar2",
 				})
 				tc.assertFunc(t, err)
 			})
 
 			t.Run("ApplyCampaign", func(t *testing.T) {
-				_, err := svc.ApplyCampaign(currentUserCtx, ApplyCampaignOpts{
-					CampaignSpecRandID: campaignSpec.RandID,
+				_, err := svc.ApplyBatchChange(currentUserCtx, ApplyBatchChangeOpts{
+					BatchSpecRandID: campaignSpec.RandID,
 				})
 				tc.assertFunc(t, err)
 			})
@@ -196,7 +196,7 @@ func TestService(t *testing.T) {
 		if err := s.CreateCampaign(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
-		if err := svc.DeleteCampaign(ctx, campaign.ID); err != nil {
+		if err := svc.DeleteBatchChange(ctx, campaign.ID); err != nil {
 			t.Fatalf("campaign not deleted: %s", err)
 		}
 
@@ -643,8 +643,8 @@ func TestService(t *testing.T) {
 		t.Run("new name", func(t *testing.T) {
 			campaign := createCampaign(t, "old-name", admin.ID, admin.ID, 0)
 
-			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewName: "new-name"}
-			moved, err := svc.MoveCampaign(ctx, opts)
+			opts := MoveBatchChangeOpts{BatchChangeID: campaign.ID, NewName: "new-name"}
+			moved, err := svc.MoveBatchChange(ctx, opts)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -659,8 +659,8 @@ func TestService(t *testing.T) {
 
 			user2 := ct.CreateTestUser(t, db, false)
 
-			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewNamespaceUserID: user2.ID}
-			moved, err := svc.MoveCampaign(ctx, opts)
+			opts := MoveBatchChangeOpts{BatchChangeID: campaign.ID, NewNamespaceUserID: user2.ID}
+			moved, err := svc.MoveBatchChange(ctx, opts)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -679,10 +679,10 @@ func TestService(t *testing.T) {
 
 			user2 := ct.CreateTestUser(t, db, false)
 
-			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewNamespaceUserID: user2.ID}
+			opts := MoveBatchChangeOpts{BatchChangeID: campaign.ID, NewNamespaceUserID: user2.ID}
 
 			userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
-			_, err := svc.MoveCampaign(userCtx, opts)
+			_, err := svc.MoveBatchChange(userCtx, opts)
 			if !errcode.IsUnauthorized(err) {
 				t.Fatalf("expected unauthorized error but got %s", err)
 			}
@@ -693,8 +693,8 @@ func TestService(t *testing.T) {
 
 			orgID := ct.InsertTestOrg(t, db, "org")
 
-			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewNamespaceOrgID: orgID}
-			moved, err := svc.MoveCampaign(ctx, opts)
+			opts := MoveBatchChangeOpts{BatchChangeID: campaign.ID, NewNamespaceOrgID: orgID}
+			moved, err := svc.MoveBatchChange(ctx, opts)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -713,20 +713,20 @@ func TestService(t *testing.T) {
 
 			orgID := ct.InsertTestOrg(t, db, "org-no-access")
 
-			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewNamespaceOrgID: orgID}
+			opts := MoveBatchChangeOpts{BatchChangeID: campaign.ID, NewNamespaceOrgID: orgID}
 
 			userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
-			_, err := svc.MoveCampaign(userCtx, opts)
+			_, err := svc.MoveBatchChange(userCtx, opts)
 			if have, want := err, backend.ErrNotAnOrgMember; have != want {
 				t.Fatalf("expected %s error but got %s", want, have)
 			}
 		})
 	})
 
-	t.Run("GetCampaignMatchingCampaignSpec", func(t *testing.T) {
+	t.Run("GetBatchChangeMatchingBatchSpec", func(t *testing.T) {
 		campaignSpec := ct.CreateBatchSpec(t, ctx, s, "matching-campaign-spec", admin.ID)
 
-		haveCampaign, err := svc.GetCampaignMatchingCampaignSpec(ctx, campaignSpec)
+		haveCampaign, err := svc.GetBatchChangeMatchingBatchSpec(ctx, campaignSpec)
 		if err != nil {
 			t.Fatalf("unexpected error: %s\n", err)
 		}
@@ -748,7 +748,7 @@ func TestService(t *testing.T) {
 			t.Fatalf("failed to create campaign: %s\n", err)
 		}
 
-		haveCampaign, err = svc.GetCampaignMatchingCampaignSpec(ctx, campaignSpec)
+		haveCampaign, err = svc.GetBatchChangeMatchingBatchSpec(ctx, campaignSpec)
 		if err != nil {
 			t.Fatalf("unexpected error: %s\n", err)
 		}
@@ -770,7 +770,7 @@ func TestService(t *testing.T) {
 			"newer": newer,
 		} {
 			t.Run(name, func(t *testing.T) {
-				have, err := svc.GetNewestCampaignSpec(ctx, s, in, user.ID)
+				have, err := svc.GetNewestBatchSpec(ctx, s, in, user.ID)
 				if err != nil {
 					t.Errorf("unexpected error: %v", err)
 				}
@@ -782,7 +782,7 @@ func TestService(t *testing.T) {
 		}
 
 		t.Run("different user", func(t *testing.T) {
-			have, err := svc.GetNewestCampaignSpec(ctx, s, older, admin.ID)
+			have, err := svc.GetNewestBatchSpec(ctx, s, older, admin.ID)
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
 			}

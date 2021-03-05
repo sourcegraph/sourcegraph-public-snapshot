@@ -274,7 +274,7 @@ func (rmf *rewirerMappingsFacade) compute(ctx context.Context, opts store.GetRew
 		return err
 	}
 	// Dry-run reconcile the campaign with the new campaign spec.
-	if rmf.campaign, _, err = svc.ReconcileCampaign(ctx, campaignSpec); err != nil {
+	if rmf.campaign, _, err = svc.ReconcileBatchChange(ctx, campaignSpec); err != nil {
 		return err
 	}
 
