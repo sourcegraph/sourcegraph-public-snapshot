@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func NewCampaignSpecFromRaw(rawSpec string) (*BatchSpec, error) {
+func NewBatchSpecFromRaw(rawSpec string) (*BatchSpec, error) {
 	c := &BatchSpec{RawSpec: rawSpec}
 
 	return c, c.UnmarshalValidate()

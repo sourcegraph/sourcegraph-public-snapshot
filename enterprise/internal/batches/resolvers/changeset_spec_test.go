@@ -53,7 +53,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 	testRev := api.CommitID("b69072d5f687b31b9f6ae3ceafdc24c259c4b9ec")
 	mockBackendCommits(t, testRev)
 
-	campaignSpec, err := batches.NewCampaignSpecFromRaw(`name: awesome-test`)
+	campaignSpec, err := batches.NewBatchSpecFromRaw(`name: awesome-test`)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -53,7 +53,7 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	campaign1 := &batches.BatchChange{
+	batchChange1 := &batches.BatchChange{
 		Name:             "my-unique-name",
 		NamespaceUserID:  userID,
 		InitialApplierID: userID,
@@ -61,10 +61,10 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 		LastAppliedAt:    time.Now(),
 		CampaignSpecID:   spec1.ID,
 	}
-	if err := cstore.CreateCampaign(ctx, campaign1); err != nil {
+	if err := cstore.CreateCampaign(ctx, batchChange1); err != nil {
 		t.Fatal(err)
 	}
-	campaign2 := &batches.BatchChange{
+	batchChange2 := &batches.BatchChange{
 		Name:             "my-other-unique-name",
 		NamespaceUserID:  userID,
 		InitialApplierID: userID,
@@ -72,7 +72,7 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 		LastAppliedAt:    time.Now(),
 		CampaignSpecID:   spec2.ID,
 	}
-	if err := cstore.CreateCampaign(ctx, campaign2); err != nil {
+	if err := cstore.CreateCampaign(ctx, batchChange2); err != nil {
 		t.Fatal(err)
 	}
 
@@ -81,13 +81,13 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Campaigns are returned in reverse order.
+	// Batch changes are returned in reverse order.
 	nodes := []apitest.BatchChange{
 		{
-			ID: string(marshalBatchChangeID(campaign2.ID)),
+			ID: string(marshalBatchChangeID(batchChange2.ID)),
 		},
 		{
-			ID: string(marshalBatchChangeID(campaign1.ID)),
+			ID: string(marshalBatchChangeID(batchChange1.ID)),
 		},
 	}
 
@@ -106,7 +106,7 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 		t.Run(fmt.Sprintf("first=%d", tc.firstParam), func(t *testing.T) {
 			input := map[string]interface{}{"first": int64(tc.firstParam)}
 			var response struct{ BatchChanges apitest.BatchChangeConnection }
-			apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryCampaignsConnection)
+			apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryBatchChangesConnection)
 
 			wantConnection := apitest.BatchChangeConnection{
 				TotalCount: tc.wantTotalCount,
@@ -134,7 +134,7 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 			wantHasNextPage := i != len(nodes)-1
 
 			var response struct{ BatchChanges apitest.BatchChangeConnection }
-			apitest.MustExec(ctx, t, s, input, &response, queryCampaignsConnection)
+			apitest.MustExec(ctx, t, s, input, &response, queryBatchChangesConnection)
 
 			if diff := cmp.Diff(1, len(response.BatchChanges.Nodes)); diff != "" {
 				t.Fatalf("unexpected number of nodes (-want +got):\n%s", diff)
@@ -156,7 +156,7 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 	})
 }
 
-const queryCampaignsConnection = `
+const queryBatchChangesConnection = `
 query($first: Int, $after: String) {
   batchChanges(first: $first, after: $after) {
     totalCount
@@ -192,7 +192,7 @@ func TestBatchChangesListing(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	createCampaignSpec := func(t *testing.T, spec *batches.BatchSpec) {
+	createBatchSpec := func(t *testing.T, spec *batches.BatchSpec) {
 		t.Helper()
 
 		spec.UserID = userID
@@ -202,7 +202,7 @@ func TestBatchChangesListing(t *testing.T) {
 		}
 	}
 
-	createCampaign := func(t *testing.T, c *batches.BatchChange) {
+	createBatchChange := func(t *testing.T, c *batches.BatchChange) {
 		t.Helper()
 
 		c.Name = "n"
@@ -214,72 +214,72 @@ func TestBatchChangesListing(t *testing.T) {
 
 	t.Run("listing a users batch changes", func(t *testing.T) {
 		spec := &batches.BatchSpec{}
-		createCampaignSpec(t, spec)
+		createBatchSpec(t, spec)
 
-		campaign := &batches.BatchChange{
+		batchChange := &batches.BatchChange{
 			NamespaceUserID: userID,
 			CampaignSpecID:  spec.ID,
 			LastApplierID:   userID,
 			LastAppliedAt:   time.Now(),
 		}
-		createCampaign(t, campaign)
+		createBatchChange(t, batchChange)
 
 		userAPIID := string(graphqlbackend.MarshalUserID(userID))
 		input := map[string]interface{}{"node": userAPIID}
 
 		var response struct{ Node apitest.User }
-		apitest.MustExec(actorCtx, t, s, input, &response, listNamespacesCampaigns)
+		apitest.MustExec(actorCtx, t, s, input, &response, listNamespacesBatchChanges)
 
 		want := apitest.User{
 			ID: userAPIID,
 			BatchChanges: apitest.BatchChangeConnection{
 				TotalCount: 1,
 				Nodes: []apitest.BatchChange{
-					{ID: string(marshalBatchChangeID(campaign.ID))},
+					{ID: string(marshalBatchChangeID(batchChange.ID))},
 				},
 			},
 		}
 
 		if diff := cmp.Diff(want, response.Node); diff != "" {
-			t.Fatalf("wrong campaign response (-want +got):\n%s", diff)
+			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
 		}
 	})
 
-	t.Run("listing an orgs campaigns", func(t *testing.T) {
+	t.Run("listing an orgs batch changes", func(t *testing.T) {
 		spec := &batches.BatchSpec{}
-		createCampaignSpec(t, spec)
+		createBatchSpec(t, spec)
 
-		campaign := &batches.BatchChange{
+		batchChange := &batches.BatchChange{
 			NamespaceOrgID: orgID,
 			CampaignSpecID: spec.ID,
 			LastApplierID:  userID,
 			LastAppliedAt:  time.Now(),
 		}
-		createCampaign(t, campaign)
+		createBatchChange(t, batchChange)
 
 		orgAPIID := string(graphqlbackend.MarshalOrgID(orgID))
 		input := map[string]interface{}{"node": orgAPIID}
 
 		var response struct{ Node apitest.Org }
-		apitest.MustExec(actorCtx, t, s, input, &response, listNamespacesCampaigns)
+		apitest.MustExec(actorCtx, t, s, input, &response, listNamespacesBatchChanges)
 
 		want := apitest.Org{
 			ID: orgAPIID,
 			BatchChanges: apitest.BatchChangeConnection{
 				TotalCount: 1,
 				Nodes: []apitest.BatchChange{
-					{ID: string(marshalBatchChangeID(campaign.ID))},
+					{ID: string(marshalBatchChangeID(batchChange.ID))},
 				},
 			},
 		}
 
 		if diff := cmp.Diff(want, response.Node); diff != "" {
-			t.Fatalf("wrong campaign response (-want +got):\n%s", diff)
+			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
 		}
 	})
 }
 
-const listNamespacesCampaigns = `
+const listNamespacesBatchChanges = `
 query($node: ID!) {
   node(id: $node) {
     ... on User {

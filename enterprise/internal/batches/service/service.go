@@ -68,7 +68,7 @@ func (s *Service) CreateCampaignSpec(ctx context.Context, opts CreateCampaignSpe
 		tr.Finish()
 	}()
 
-	spec, err = batches.NewCampaignSpecFromRaw(opts.RawSpec)
+	spec, err = batches.NewBatchSpecFromRaw(opts.RawSpec)
 	if err != nil {
 		return nil, err
 	}
