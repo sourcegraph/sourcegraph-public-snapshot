@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"time"
 
@@ -37,8 +36,8 @@ import (
 
 var (
 	reposDir        = env.Get("SRC_REPOS_DIR", "/data/repos", "Root dir containing repos.")
-	wantPctFree     = env.Get("SRC_REPOS_DESIRED_PERCENT_FREE", "10", "Target percentage of free space on disk.")
-	janitorInterval = env.Get("SRC_REPOS_JANITOR_INTERVAL", "1m", "Interval between cleanup runs")
+	wantPctFree     = env.MustGetInt("SRC_REPOS_DESIRED_PERCENT_FREE", 10, "Target percentage of free space on disk.")
+	janitorInterval = env.MustGetDuration("SRC_REPOS_JANITOR_INTERVAL", 1*time.Minute, "Interval between cleanup runs")
 	envHostname     = env.Get("HOSTNAME", "", "Hostname override")
 )
 
@@ -61,9 +60,9 @@ func main() {
 		log.Fatalf("failed to create SRC_REPOS_DIR: %s", err)
 	}
 
-	wantPctFree2, err := parsePercent(wantPctFree)
+	wantPctFree2, err := getPercent(wantPctFree)
 	if err != nil {
-		log.Fatalf("parsing $SRC_REPOS_DESIRED_PERCENT_FREE: %v", err)
+		log.Fatalf("SRC_REPOS_DESIRED_PERCENT_FREE is out of range: %v", err)
 	}
 
 	repoStore, externalServiceStore, err := getStores()
@@ -134,14 +133,10 @@ func main() {
 
 	go debugserver.Start()
 
-	janitorInterval2, err := time.ParseDuration(janitorInterval)
-	if err != nil {
-		log.Fatalf("parsing $SRC_REPOS_JANITOR_INTERVAL: %v", err)
-	}
 	go func() {
 		for {
 			gitserver.Janitor()
-			time.Sleep(janitorInterval2)
+			time.Sleep(janitorInterval)
 		}
 	}()
 
@@ -190,11 +185,7 @@ func hostnameBestEffort() string {
 	return h
 }
 
-func parsePercent(s string) (int, error) {
-	p, err := strconv.Atoi(s)
-	if err != nil {
-		return 0, errors.Wrap(err, "converting string to int")
-	}
+func getPercent(p int) (int, error) {
 	if p < 0 {
 		return 0, fmt.Errorf("negative value given for percentage: %d", p)
 	}

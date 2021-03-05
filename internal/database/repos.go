@@ -35,6 +35,11 @@ type RepoNotFoundErr struct {
 	Name api.RepoName
 }
 
+func IsRepoNotFoundErr(err error) bool {
+	_, ok := err.(*RepoNotFoundErr)
+	return ok
+}
+
 func (e *RepoNotFoundErr) Error() string {
 	if e.Name != "" {
 		return fmt.Sprintf("repo not found: name=%q", e.Name)

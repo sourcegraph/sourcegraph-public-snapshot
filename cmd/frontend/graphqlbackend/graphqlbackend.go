@@ -427,9 +427,36 @@ func (r *NodeResolver) ToMonitorTriggerEvent() (MonitorTriggerEventResolver, boo
 	return n, ok
 }
 
-func (r *NodeResolver) ToCampaign() (CampaignResolver, bool) {
-	n, ok := r.Node.(CampaignResolver)
-	return n, ok
+// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
+func (r *NodeResolver) ToCampaign() (BatchChangeResolver, bool) {
+	if n, ok := r.Node.(BatchChangeResolver); ok {
+		return n, n.ActAsCampaign()
+	}
+	return nil, false
+}
+
+// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
+func (r *NodeResolver) ToCampaignSpec() (BatchSpecResolver, bool) {
+	if n, ok := r.Node.(BatchSpecResolver); ok {
+		return n, n.ActAsCampaignSpec()
+	}
+	return nil, false
+}
+
+func (r *NodeResolver) ToBatchChange() (BatchChangeResolver, bool) {
+	if n, ok := r.Node.(BatchChangeResolver); ok {
+		// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
+		return n, !n.ActAsCampaign()
+	}
+	return nil, false
+}
+
+func (r *NodeResolver) ToBatchSpec() (BatchSpecResolver, bool) {
+	if n, ok := r.Node.(BatchSpecResolver); ok {
+		// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
+		return n, !n.ActAsCampaignSpec()
+	}
+	return nil, false
 }
 
 func (r *NodeResolver) ToExternalChangeset() (ExternalChangesetResolver, bool) {
@@ -453,11 +480,6 @@ func (r *NodeResolver) ToChangesetEvent() (ChangesetEventResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToCampaignSpec() (CampaignSpecResolver, bool) {
-	n, ok := r.Node.(CampaignSpecResolver)
-	return n, ok
-}
-
 func (r *NodeResolver) ToHiddenChangesetSpec() (HiddenChangesetSpecResolver, bool) {
 	n, ok := r.Node.(ChangesetSpecResolver)
 	if !ok {
@@ -474,8 +496,14 @@ func (r *NodeResolver) ToVisibleChangesetSpec() (VisibleChangesetSpecResolver, b
 	return n.ToVisibleChangesetSpec()
 }
 
+// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
 func (r *NodeResolver) ToCampaignsCredential() (CampaignsCredentialResolver, bool) {
 	n, ok := r.Node.(CampaignsCredentialResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToBatchChangesCredential() (BatchChangesCredentialResolver, bool) {
+	n, ok := r.Node.(BatchChangesCredentialResolver)
 	return n, ok
 }
 
@@ -619,14 +647,20 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return accessTokenByID(ctx, r.db, id)
 	case "Campaign":
 		return r.CampaignByID(ctx, id)
+	case "BatchChange":
+		return r.BatchChangeByID(ctx, id)
 	case "CampaignSpec":
 		return r.CampaignSpecByID(ctx, id)
+	case "BatchSpec":
+		return r.BatchSpecByID(ctx, id)
 	case "ChangesetSpec":
 		return r.ChangesetSpecByID(ctx, id)
 	case "Changeset":
 		return r.ChangesetByID(ctx, id)
 	case "CampaignsCredential":
 		return r.CampaignsCredentialByID(ctx, id)
+	case "BatchChangesCredential":
+		return r.BatchChangesCredentialByID(ctx, id)
 	case "ProductLicense":
 		if f := ProductLicenseByID; f != nil {
 			return f(ctx, r.db, id)

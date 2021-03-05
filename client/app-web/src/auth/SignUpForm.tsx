@@ -6,7 +6,6 @@ import { enterpriseTrial, signupTerms } from '../util/features'
 import { EmailInput, PasswordInput, UsernameInput } from './SignInSignUpCommon'
 import { ErrorAlert } from '../components/alerts'
 import classNames from 'classnames'
-import * as H from 'history'
 import { OrDivider } from './OrDivider'
 import GithubIcon from 'mdi-react/GithubIcon'
 import { Observable, of } from 'rxjs'
@@ -38,7 +37,6 @@ interface SignUpFormProps {
     doSignUp: (args: SignUpArguments) => Promise<void>
 
     buttonLabel?: string
-    history: H.History
     context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode'>
 }
 
@@ -47,13 +45,7 @@ const preventDefault = (event: React.FormEvent): void => event.preventDefault()
 /**
  * The form for creating an account
  */
-export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
-    doSignUp,
-    history,
-    buttonLabel,
-    className,
-    context,
-}) => {
+export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp, buttonLabel, className, context }) => {
     const [loading, setLoading] = useState(false)
     const [requestedTrial, setRequestedTrial] = useState(false)
     const [error, setError] = useState<Error | null>(null)
@@ -121,7 +113,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
 
     return (
         <>
-            {error && <ErrorAlert className="mt-4 mb-0" error={error} history={history} />}
+            {error && <ErrorAlert className="mt-4 mb-0" error={error} />}
             {/* Using  <form /> to set 'valid' + 'is-invaild' at the input level */}
             {/* eslint-disable-next-line react/forbid-elements */}
             <form

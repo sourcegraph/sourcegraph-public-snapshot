@@ -17,7 +17,7 @@ coverage:
           - enterprise/cmd/frontend/internal/campaigns
           - internal/campaigns
           - enterprise/internal/campaigns
-          - client/app-web/src/enterprise/campaigns
+          - client/app-web/src/enterprise/batches
       search:
         informational: true
         paths:

@@ -80,14 +80,6 @@ export interface IEmptyResponse {
  * An object with an ID.
  */
 export type Node =
-    | ICampaignsCredential
-    | IHiddenChangesetSpec
-    | IVisibleChangesetSpec
-    | ICampaignSpec
-    | ICampaign
-    | IHiddenExternalChangeset
-    | IExternalChangeset
-    | IChangesetEvent
     | IOutOfBandMigration
     | ISavedSearch
     | IMonitor
@@ -110,6 +102,17 @@ export type Node =
     | ILSIFIndex
     | IProductSubscription
     | IProductLicense
+    | ICampaign
+    | IHiddenExternalChangeset
+    | IExternalChangeset
+    | IChangesetEvent
+    | ICampaignsCredential
+    | IHiddenChangesetSpec
+    | IVisibleChangesetSpec
+    | ICampaignSpec
+    | IBatchChange
+    | IBatchSpec
+    | IBatchChangesCredential
 
 /**
  * An object with an ID.
@@ -530,90 +533,6 @@ export interface IMutation {
     scheduleUserPermissionsSync: IEmptyResponse
 
     /**
-     * Create a campaign from a campaign spec and locally computed changeset specs. The newly created
-     * campaign is returned.
-     * If a campaign in the same namespace with the same name already exists, an error with the error code
-     * ErrMatchingCampaignExists is returned.
-     */
-    createCampaign: ICampaign
-
-    /**
-     * Create or update a campaign from a campaign spec and locally computed changeset specs. If no
-     * campaign exists in the namespace with the name given in the campaign spec, a campaign will be
-     * created. Otherwise, the existing campaign will be updated. The campaign is returned.
-     * Closed campaigns cannot be applied to. In that case, an error with the error code ErrApplyClosedCampaign
-     * will be returned.
-     */
-    applyCampaign: ICampaign
-
-    /**
-     * Move a campaign to a different namespace, or rename it in the current namespace.
-     */
-    moveCampaign: ICampaign
-
-    /**
-     * Close a campaign.
-     */
-    closeCampaign: ICampaign
-
-    /**
-     * Delete a campaign. A deleted campaign is completely removed and can't be un-deleted. The
-     * campaign's changesets are kept as-is; to close them, use the closeCampaign mutation first.
-     */
-    deleteCampaign: IEmptyResponse | null
-
-    /**
-     * Upload a changeset spec that will be used in a future update to a campaign. The changeset spec
-     * is stored and can be referenced by its ID in the applyCampaign mutation. Just uploading the
-     * changeset spec does not result in changes to the campaign or any of its changesets; you need
-     * to call applyCampaign to use it.
-     *
-     * You can use this mutation to upload large changeset specs (e.g., containing large diffs) in
-     * individual HTTP requests. Then, in the eventual applyCampaign call, you just refer to the
-     * changeset specs by their IDs. This lets you avoid problems when updating large campaigns where
-     * a large HTTP request body (e.g., with many large diffs in the changeset specs) would be
-     * rejected by the web server/proxy or would be very slow.
-     *
-     * The returned ChangesetSpec is immutable and expires after a certain period of time (if not
-     * used in a call to applyCampaign), which can be queried on ChangesetSpec.expiresAt.
-     */
-    createChangesetSpec: ChangesetSpec
-
-    /**
-     * Create a campaign spec that will be used to create a campaign (with the createCampaign
-     * mutation), or to update a campaign (with the applyCampaign mutation).
-     *
-     * The returned CampaignSpec is immutable and expires after a certain period of time (if not used
-     * in a call to applyCampaign), which can be queried on CampaignSpec.expiresAt.
-     *
-     * If campaigns are unlicensed and the number of changesetSpecIDs is higher than what's allowed in
-     * the free tier, an error with the error code ErrCampaignsUnlicensed is returned.
-     */
-    createCampaignSpec: ICampaignSpec
-
-    /**
-     * Enqueue the given changeset for high-priority syncing.
-     */
-    syncChangeset: IEmptyResponse
-
-    /**
-     * Re-enqueue the changeset for processing by the reconciler. The changeset must be in FAILED state.
-     */
-    reenqueueChangeset: Changeset
-
-    /**
-     * Create a new credential for the given user for the given code host.
-     * If another token for that code host already exists, an error with the error code
-     * ErrDuplicateCredential is returned.
-     */
-    createCampaignsCredential: ICampaignsCredential
-
-    /**
-     * Hard-deletes a given campaigns credential.
-     */
-    deleteCampaignsCredential: IEmptyResponse
-
-    /**
      * OBSERVABILITY
      *
      * Set the status of a test alert of the specified parameters - useful for validating
@@ -672,6 +591,161 @@ export interface IMutation {
      * should be applied in reverse prior to downgrading the instance.
      */
     SetMigrationDirection: IEmptyResponse
+
+    /**
+     * SetUserPublicRepos sets the list of public repos for a user's search context, ensuring those repos
+     * exist and are cloned
+     */
+    SetUserPublicRepos: IEmptyResponse
+
+    /**
+     * Create a campaign from a campaign spec and locally computed changeset specs. The newly created
+     * campaign is returned.
+     * If a campaign in the same namespace with the same name already exists, an error with the error code
+     * ErrMatchingCampaignExists is returned.
+     * @deprecated "campaigns have been renamed to batch changes. Use createBatchChange instead."
+     */
+    createCampaign: ICampaign
+
+    /**
+     * Create or update a campaign from a campaign spec and locally computed changeset specs. If no
+     * campaign exists in the namespace with the name given in the campaign spec, a campaign will be
+     * created. Otherwise, the existing campaign will be updated. The campaign is returned.
+     * Closed campaigns cannot be applied to. In that case, an error with the error code ErrApplyClosedCampaign
+     * will be returned.
+     * @deprecated "campaigns have been renamed to batch changes. Use applyBatchChange instead."
+     */
+    applyCampaign: ICampaign
+
+    /**
+     * Move a campaign to a different namespace, or rename it in the current namespace.
+     * @deprecated "campaigns have been renamed to batch changes. Use moveBatchChange instead."
+     */
+    moveCampaign: ICampaign
+
+    /**
+     * Close a campaign.
+     * @deprecated "campaigns have been renamed to batch changes. Use closeBatchChange instead."
+     */
+    closeCampaign: ICampaign
+
+    /**
+     * Delete a campaign. A deleted campaign is completely removed and can't be un-deleted. The
+     * campaign's changesets are kept as-is; to close them, use the closeCampaign mutation first.
+     * @deprecated "campaigns have been renamed to batch changes. Use deleteBatchChange instead."
+     */
+    deleteCampaign: IEmptyResponse | null
+
+    /**
+     * Upload a changeset spec that will be used in a future update to a campaign. The changeset spec
+     * is stored and can be referenced by its ID in the applyCampaign mutation. Just uploading the
+     * changeset spec does not result in changes to the campaign or any of its changesets; you need
+     * to call applyCampaign to use it.
+     *
+     * You can use this mutation to upload large changeset specs (e.g., containing large diffs) in
+     * individual HTTP requests. Then, in the eventual applyCampaign call, you just refer to the
+     * changeset specs by their IDs. This lets you avoid problems when updating large campaigns where
+     * a large HTTP request body (e.g., with many large diffs in the changeset specs) would be
+     * rejected by the web server/proxy or would be very slow.
+     *
+     * The returned ChangesetSpec is immutable and expires after a certain period of time (if not
+     * used in a call to applyCampaign), which can be queried on ChangesetSpec.expiresAt.
+     */
+    createChangesetSpec: ChangesetSpec
+
+    /**
+     * Create a campaign spec that will be used to create a campaign (with the createCampaign
+     * mutation), or to update a campaign (with the applyCampaign mutation).
+     *
+     * The returned CampaignSpec is immutable and expires after a certain period of time (if not used
+     * in a call to applyCampaign), which can be queried on CampaignSpec.expiresAt.
+     *
+     * If campaigns are unlicensed and the number of changesetSpecIDs is higher than what's allowed in
+     * the free tier, an error with the error code ErrCampaignsUnlicensed is returned.
+     * @deprecated "campaigns have been renamed to batch changes. Use createBatchSpec instead."
+     */
+    createCampaignSpec: ICampaignSpec
+
+    /**
+     * Enqueue the given changeset for high-priority syncing.
+     */
+    syncChangeset: IEmptyResponse
+
+    /**
+     * Re-enqueue the changeset for processing by the reconciler. The changeset must be in FAILED state.
+     */
+    reenqueueChangeset: Changeset
+
+    /**
+     * Create a new credential for the given user for the given code host.
+     * If another token for that code host already exists, an error with the error code
+     * ErrDuplicateCredential is returned.
+     * @deprecated "campaigns have been renamed to batch changes. Use batchChanges instead."
+     */
+    createCampaignsCredential: ICampaignsCredential
+
+    /**
+     * Hard-deletes a given campaigns credential.
+     * @deprecated "campaigns have been renamed to batch changes. Use batchChanges instead."
+     */
+    deleteCampaignsCredential: IEmptyResponse
+
+    /**
+     * Create a batch change from a batch spec and locally computed changeset specs. The newly created
+     * batch change is returned.
+     * If a batch change in the same namespace with the same name already exists,
+     * an error with the error code ErrMatchingBatchChangeExists is returned.
+     */
+    createBatchChange: IBatchChange
+
+    /**
+     * Create a batch spec that will be used to create a campaign (with the createCampaign
+     * mutation), or to update a campaign (with the applyCampaign mutation).
+     *
+     * The returned BatchSpec is immutable and expires after a certain period of time (if not used
+     * in a call to applyCampaign), which can be queried on BatchSpec.expiresAt.
+     *
+     * If campaigns are unlicensed and the number of changesetSpecIDs is higher than what's allowed in
+     * the free tier, an error with the error code ErrCampaignsUnlicensed is returned.
+     */
+    createBatchSpec: IBatchSpec
+
+    /**
+     * Create or update a batch change from a batch spec and locally computed changeset specs. If no
+     * batch change exists in the namespace with the name given in the batch spec, a batch change will be
+     * created. Otherwise, the existing batch change will be updated. The batch change is returned.
+     * Closed batch changes cannot be applied to. In that case, an error with the error code ErrApplyClosedbatch change
+     * will be returned.
+     */
+    applyBatchChange: IBatchChange
+
+    /**
+     * Close a batch change.
+     */
+    closeBatchChange: IBatchChange
+
+    /**
+     * Move a batch change to a different namespace, or rename it in the current namespace.
+     */
+    moveBatchChange: IBatchChange
+
+    /**
+     * Delete a batch change. A deleted batch change is completely removed and can't be un-deleted. The
+     * batch change's changesets are kept as-is; to close them, use the closeBatchChange mutation first.
+     */
+    deleteBatchChange: IEmptyResponse | null
+
+    /**
+     * Create a new credential for the given user for the given code host.
+     * If another token for that code host already exists, an error with the error code
+     * ErrDuplicateCredential is returned.
+     */
+    createBatchChangesCredential: IBatchChangesCredential
+
+    /**
+     * Hard-deletes a given credential.
+     */
+    deleteBatchChangesCredential: IEmptyResponse
 }
 
 export interface IUpdateUserOnMutationArguments {
@@ -1075,6 +1149,97 @@ export interface IScheduleUserPermissionsSyncOnMutationArguments {
     user: ID
 }
 
+export interface ITriggerObservabilityTestAlertOnMutationArguments {
+    /**
+     * Level of alert to test - either warning or critical.
+     */
+    level: string
+}
+
+export interface ICreateCodeMonitorOnMutationArguments {
+    /**
+     * A monitor.
+     */
+    monitor: IMonitorInput
+
+    /**
+     * A trigger.
+     */
+    trigger: IMonitorTriggerInput
+
+    /**
+     * A list of actions.
+     */
+    actions: IMonitorActionInput[]
+}
+
+export interface IToggleCodeMonitorOnMutationArguments {
+    /**
+     * The id of a code monitor.
+     */
+    id: ID
+
+    /**
+     * Whether the code monitor should be enabled or not.
+     */
+    enabled: boolean
+}
+
+export interface IDeleteCodeMonitorOnMutationArguments {
+    /**
+     * The id of a code monitor.
+     */
+    id: ID
+}
+
+export interface IUpdateCodeMonitorOnMutationArguments {
+    /**
+     * The input required to edit a monitor.
+     */
+    monitor: IMonitorEditInput
+
+    /**
+     * The input required to edit the trigger of a monitor. You can only edit triggers that are
+     * associated with the monitor (value of field monitor).
+     */
+    trigger: IMonitorEditTriggerInput
+
+    /**
+     * The input required to edit the actions of a monitor. You can only edit actions that are
+     * associated with the monitor (value of field monitor).
+     */
+    actions: IMonitorEditActionInput[]
+}
+
+export interface ISetExternalServiceReposOnMutationArguments {
+    id: ID
+    repos?: string[] | null
+    allRepos: boolean
+}
+
+export interface IResetTriggerQueryTimestampsOnMutationArguments {
+    /**
+     * The id of the trigger query.
+     */
+    id: ID
+}
+
+export interface ITriggerTestEmailActionOnMutationArguments {
+    namespace: ID
+    description: string
+    email: IMonitorEmailInput
+}
+
+export interface ISetMigrationDirectionOnMutationArguments {
+    id: ID
+    applyReverse: boolean
+}
+
+export interface ISetUserPublicReposOnMutationArguments {
+    userID: ID
+    repoURIs: string[]
+}
+
 export interface ICreateCampaignOnMutationArguments {
     /**
      * The campaign spec that describes the desired state of the campaign.
@@ -1183,993 +1348,95 @@ export interface IDeleteCampaignsCredentialOnMutationArguments {
     campaignsCredential: ID
 }
 
-export interface ITriggerObservabilityTestAlertOnMutationArguments {
+export interface ICreateBatchChangeOnMutationArguments {
     /**
-     * Level of alert to test - either warning or critical.
+     * The batch spec that describes the desired state of the batch change.
      */
-    level: string
+    batchSpec: ID
 }
 
-export interface ICreateCodeMonitorOnMutationArguments {
+export interface ICreateBatchSpecOnMutationArguments {
     /**
-     * A monitor.
+     * The namespace (either a user or organization). A batch spec can only be applied to (or
+     * used to create) campaigns in this namespace.
      */
-    monitor: IMonitorInput
-
-    /**
-     * A trigger.
-     */
-    trigger: IMonitorTriggerInput
-
-    /**
-     * A list of actions.
-     */
-    actions: IMonitorActionInput[]
-}
-
-export interface IToggleCodeMonitorOnMutationArguments {
-    /**
-     * The id of a code monitor.
-     */
-    id: ID
-
-    /**
-     * Whether the code monitor should be enabled or not.
-     */
-    enabled: boolean
-}
-
-export interface IDeleteCodeMonitorOnMutationArguments {
-    /**
-     * The id of a code monitor.
-     */
-    id: ID
-}
-
-export interface IUpdateCodeMonitorOnMutationArguments {
-    /**
-     * The input required to edit a monitor.
-     */
-    monitor: IMonitorEditInput
-
-    /**
-     * The input required to edit the trigger of a monitor. You can only edit triggers that are
-     * associated with the monitor (value of field monitor).
-     */
-    trigger: IMonitorEditTriggerInput
-
-    /**
-     * The input required to edit the actions of a monitor. You can only edit actions that are
-     * associated with the monitor (value of field monitor).
-     */
-    actions: IMonitorEditActionInput[]
-}
-
-export interface ISetExternalServiceReposOnMutationArguments {
-    id: ID
-    repos?: string[] | null
-    allRepos: boolean
-}
-
-export interface IResetTriggerQueryTimestampsOnMutationArguments {
-    /**
-     * The id of the trigger query.
-     */
-    id: ID
-}
-
-export interface ITriggerTestEmailActionOnMutationArguments {
     namespace: ID
-    description: string
-    email: IMonitorEmailInput
+
+    /**
+     * The batch spec as YAML (or the equivalent JSON). See
+     * https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/schema/campaign_spec.schema.json
+     * for the JSON Schema that describes the structure of this input.
+     */
+    batchSpec: string
+
+    /**
+     * Changeset specs that were locally computed and then uploaded using createChangesetSpec.
+     */
+    changesetSpecs: ID[]
 }
 
-export interface ISetMigrationDirectionOnMutationArguments {
-    id: ID
-    applyReverse: boolean
+export interface IApplyBatchChangeOnMutationArguments {
+    /**
+     * The batch spec that describes the new desired state of the batch change.
+     */
+    batchSpec: ID
+
+    /**
+     * If set, return an error if the batch change identified using the namespace and batch changeSpec
+     * parameters does not match the batch change with this ID. This lets callers use a stable ID
+     * that refers to a specific batch change during an edit session (and is not susceptible to
+     * conflicts if the underlying batch change is moved to a different namespace, renamed, or
+     * deleted). The returned error has the error code ErrEnsureBatchChangeFailed.
+     */
+    ensureBatchChange?: ID | null
 }
 
-/**
- * A connection of all code hosts usable with campaigns and accessible by the user
- * this is requested on.
- */
-export interface ICampaignsCodeHostConnection {
-    __typename: 'CampaignsCodeHostConnection'
+export interface ICloseBatchChangeOnMutationArguments {
+    batchChange: ID
 
     /**
-     * A list of code hosts.
-     */
-    nodes: ICampaignsCodeHost[]
-
-    /**
-     * The total number of configured external services in the connection.
-     */
-    totalCount: number
-
-    /**
-     * Pagination information.
-     */
-    pageInfo: IPageInfo
-}
-
-/**
- * A code host usable with campaigns. This service is accessible by the user it belongs to.
- */
-export interface ICampaignsCodeHost {
-    __typename: 'CampaignsCodeHost'
-
-    /**
-     * The kind of external service.
-     */
-    externalServiceKind: ExternalServiceKind
-
-    /**
-     * The URL of the external service.
-     */
-    externalServiceURL: string
-
-    /**
-     * The configured credential, if any.
-     */
-    credential: ICampaignsCredential | null
-}
-
-/**
- * A user token configured for campaigns use on the specified code host.
- */
-export interface ICampaignsCredential {
-    __typename: 'CampaignsCredential'
-
-    /**
-     * A globally unique identifier.
-     */
-    id: ID
-
-    /**
-     * The kind of external service.
-     */
-    externalServiceKind: ExternalServiceKind
-
-    /**
-     * The URL of the external service.
-     */
-    externalServiceURL: string
-
-    /**
-     * The date and time this token has been created at.
-     */
-    createdAt: DateTime
-}
-
-/**
- * This enum declares all operations supported by the reconciler.
- */
-export enum ChangesetSpecOperation {
-    /**
-     * Push a new commit to the code host.
-     */
-    PUSH = 'PUSH',
-
-    /**
-     * Update the existing changeset on the codehost. This is purely the changeset resource on the code host,
-     * not the git commit. For updates to the commit, see 'PUSH'.
-     */
-    UPDATE = 'UPDATE',
-
-    /**
-     * Move the existing changeset out of being a draft.
-     */
-    UNDRAFT = 'UNDRAFT',
-
-    /**
-     * Publish a changeset to the codehost.
-     */
-    PUBLISH = 'PUBLISH',
-
-    /**
-     * Publish a changeset to the codehost as a draft changeset. (Only on supported code hosts).
-     */
-    PUBLISH_DRAFT = 'PUBLISH_DRAFT',
-
-    /**
-     * Sync the changeset with the current state on the codehost.
-     */
-    SYNC = 'SYNC',
-
-    /**
-     * Import an existing changeset from the code host with the ExternalID from the spec.
-     */
-    IMPORT = 'IMPORT',
-
-    /**
-     * Close the changeset on the codehost.
-     */
-    CLOSE = 'CLOSE',
-
-    /**
-     * Reopen the changeset on the codehost.
-     */
-    REOPEN = 'REOPEN',
-
-    /**
-     * Internal operation to get around slow code host updates.
-     */
-    SLEEP = 'SLEEP',
-
-    /**
-     * The changeset is removed from some of the associated campaigns.
-     */
-    DETACH = 'DETACH',
-}
-
-/**
- * Description of the current changeset state vs the changeset spec desired state.
- */
-export interface IChangesetSpecDelta {
-    __typename: 'ChangesetSpecDelta'
-
-    /**
-     * When run, the title of the changeset will be updated.
-     */
-    titleChanged: boolean
-
-    /**
-     * When run, the body of the changeset will be updated.
-     */
-    bodyChanged: boolean
-
-    /**
-     * When run, the changeset will be taken out of draft mode.
-     */
-    undraft: boolean
-
-    /**
-     * When run, the target branch of the changeset will be updated.
-     */
-    baseRefChanged: boolean
-
-    /**
-     * When run, a new commit will be created on the branch of the changeset.
-     */
-    diffChanged: boolean
-
-    /**
-     * When run, a new commit will be created on the branch of the changeset.
-     */
-    commitMessageChanged: boolean
-
-    /**
-     * When run, a new commit in the name of the specified author will be created on the branch of the changeset.
-     */
-    authorNameChanged: boolean
-
-    /**
-     * When run, a new commit in the name of the specified author will be created on the branch of the changeset.
-     */
-    authorEmailChanged: boolean
-}
-
-/**
- * The type of the changeset spec.
- */
-export enum ChangesetSpecType {
-    /**
-     * References an existing changeset on a code host to be imported.
-     */
-    EXISTING = 'EXISTING',
-
-    /**
-     * References a branch and a patch to be applied to create the changeset from.
-     */
-    BRANCH = 'BRANCH',
-}
-
-/**
- * A changeset spec is an immutable description of the desired state of a changeset in a campaign. To
- * create a changeset spec, use the createChangesetSpec mutation.
- */
-export type ChangesetSpec = IHiddenChangesetSpec | IVisibleChangesetSpec
-
-/**
- * A changeset spec is an immutable description of the desired state of a changeset in a campaign. To
- * create a changeset spec, use the createChangesetSpec mutation.
- */
-export interface IChangesetSpec {
-    __typename: 'ChangesetSpec'
-
-    /**
-     * The unique ID for a changeset spec.
-     *
-     * The ID is unguessable (i.e., long and randomly generated, not sequential). This is important
-     * even though repository permissions also apply to viewers of changeset specs, because being
-     * allowed to view a repository should not entitle a person to view all not-yet-published
-     * changesets for that repository. Consider a campaign to fix a security vulnerability: the
-     * campaign author may prefer to prepare all of the changesets in private so that the window
-     * between revealing the problem and merging the fixes is as short as possible.
-     */
-    id: ID
-
-    /**
-     * The type of changeset spec.
-     */
-    type: ChangesetSpecType
-
-    /**
-     * The date, if any, when this changeset spec expires and is automatically purged. A changeset
-     * spec never expires (and this field is null) if its campaign spec has been applied.
-     */
-    expiresAt: DateTime | null
-}
-
-/**
- * A changeset spec is an immutable description of the desired state of a changeset in a campaign. To
- * create a changeset spec, use the createChangesetSpec mutation.
- */
-export interface IHiddenChangesetSpec {
-    __typename: 'HiddenChangesetSpec'
-
-    /**
-     * The unique ID for a changeset spec.
-     *
-     * The ID is unguessable (i.e., long and randomly generated, not sequential). This is important
-     * even though repository permissions also apply to viewers of changeset specs, because being
-     * allowed to view a repository should not entitle a person to view all not-yet-published
-     * changesets for that repository. Consider a campaign to fix a security vulnerability: the
-     * campaign author may prefer to prepare all of the changesets in private so that the window
-     * between revealing the problem and merging the fixes is as short as possible.
-     */
-    id: ID
-
-    /**
-     * The type of changeset spec.
-     */
-    type: ChangesetSpecType
-
-    /**
-     * The date, if any, when this changeset spec expires and is automatically purged. A changeset
-     * spec never expires (and this field is null) if its campaign spec has been applied.
-     */
-    expiresAt: DateTime | null
-}
-
-/**
- * A changeset spec is an immutable description of the desired state of a changeset in a campaign. To
- * create a changeset spec, use the createChangesetSpec mutation.
- */
-export interface IVisibleChangesetSpec {
-    __typename: 'VisibleChangesetSpec'
-
-    /**
-     * The unique ID for a changeset spec.
-     *
-     * The ID is unguessable (i.e., long and randomly generated, not sequential). This is important
-     * even though repository permissions also apply to viewers of changeset specs, because being
-     * allowed to view a repository should not entitle a person to view all not-yet-published
-     * changesets for that repository. Consider a campaign to fix a security vulnerability: the
-     * campaign author may prefer to prepare all of the changesets in private so that the window
-     * between revealing the problem and merging the fixes is as short as possible.
-     */
-    id: ID
-
-    /**
-     * The type of changeset spec.
-     */
-    type: ChangesetSpecType
-
-    /**
-     * The description of the changeset.
-     */
-    description: ChangesetDescription
-
-    /**
-     * The date, if any, when this changeset spec expires and is automatically purged. A changeset
-     * spec never expires (and this field is null) if its campaign spec has been applied.
-     */
-    expiresAt: DateTime | null
-}
-
-/**
- * All possible types of changesets that can be specified in a changeset spec.
- */
-export type ChangesetDescription = IExistingChangesetReference | IGitBranchChangesetDescription
-
-/**
- * A reference to a changeset that already exists on a code host (and was not created by the
- * campaign).
- */
-export interface IExistingChangesetReference {
-    __typename: 'ExistingChangesetReference'
-
-    /**
-     * The repository that contains the existing changeset on the code host.
-     */
-    baseRepository: IRepository
-
-    /**
-     * The ID that uniquely identifies the existing changeset on the code host.
-     *
-     * For GitHub and Bitbucket Server, this is the pull request number (as a string) in the
-     * base repository. For example, "1234" for PR 1234.
-     */
-    externalID: string
-}
-
-/**
- * A description of a changeset that represents the proposal to merge one branch into another.
- * This is used to describe a pull request (on GitHub and Bitbucket Server).
- */
-export interface IGitBranchChangesetDescription {
-    __typename: 'GitBranchChangesetDescription'
-
-    /**
-     * The repository that this changeset spec is proposing to change.
-     */
-    baseRepository: IRepository
-
-    /**
-     * The full name of the Git ref in the base repository that this changeset is based on (and is
-     * proposing to be merged into). This ref must exist on the base repository. For example,
-     * "refs/heads/master" or "refs/heads/main".
-     */
-    baseRef: string
-
-    /**
-     * The base revision this changeset is based on. It is the latest commit in
-     * baseRef at the time when the changeset spec was created.
-     * For example: "4095572721c6234cd72013fd49dff4fb48f0f8a4"
-     */
-    baseRev: string
-
-    /**
-     * The repository that contains the branch with this changeset's changes.
-     *
-     * Fork repositories and cross-repository changesets are not yet supported. Therefore,
-     * headRepository must be equal to baseRepository.
-     */
-    headRepository: IRepository
-
-    /**
-     * The full name of the Git ref that holds the changes proposed by this changeset. This ref will
-     * be created or updated with the commits. For example, "refs/heads/fix-foo" (for
-     * the Git branch "fix-foo").
-     */
-    headRef: string
-
-    /**
-     * The title of the changeset on the code host.
-     *
-     * On Bitbucket Server or GitHub this is the title of the pull request.
-     */
-    title: string
-
-    /**
-     * The body of the changeset on the code host.
-     *
-     * On Bitbucket Server or GitHub this is the body/description of the pull request.
-     */
-    body: string
-
-    /**
-     * The Git commits with the proposed changes. These commits are pushed to the head ref.
-     *
-     * Only 1 commit is supported.
-     */
-    commits: IGitCommitDescription[]
-
-    /**
-     * The total diff of the changeset diff.
-     */
-    diff: IPreviewRepositoryComparison
-
-    /**
-     * The diffstat of this changeset spec. This data is also available
-     * indirectly through the diff field above, but if only the diffStat is
-     * required, this field is cheaper to access.
-     */
-    diffStat: IDiffStat
-
-    /**
-     * Whether or not the changeset described here should be created right after
-     * applying the ChangesetSpec this description belongs to.
-     *
-     * If this is false, the changeset will only be created on Sourcegraph and
-     * can be previewed.
-     *
-     * Another ChangesetSpec with the same description, but "published: true",
-     * can later be applied publish the changeset.
-     */
-    published: any
-}
-
-/**
- * A description of a Git commit.
- */
-export interface IGitCommitDescription {
-    __typename: 'GitCommitDescription'
-
-    /**
-     * The full commit message.
-     */
-    message: string
-
-    /**
-     * The first line of the commit message.
-     */
-    subject: string
-
-    /**
-     * The contents of the commit message after the first line.
-     */
-    body: string | null
-
-    /**
-     * The Git commit author.
-     */
-    author: IPerson
-
-    /**
-     * The commit diff (in unified diff format).
-     *
-     * The filenames must not be prefixed (e.g., with 'a/' and 'b/'). Tip: use 'git diff --no-prefix'
-     * to omit the prefix.
-     */
-    diff: string
-}
-
-/**
- * A list of changeset specs.
- */
-export interface IChangesetSpecConnection {
-    __typename: 'ChangesetSpecConnection'
-
-    /**
-     * The total number of changeset specs in the connection.
-     */
-    totalCount: number
-
-    /**
-     * Pagination information.
-     */
-    pageInfo: IPageInfo
-
-    /**
-     * A list of changeset specs.
-     */
-    nodes: ChangesetSpec[]
-}
-
-/**
- * A preview for which actions applyCampaign would result in when called at the point of time this preview was created at.
- */
-export type ChangesetApplyPreview = IVisibleChangesetApplyPreview | IHiddenChangesetApplyPreview
-
-/**
- * A preview entry to a repository to which the user has access.
- */
-export type VisibleApplyPreviewTargets =
-    | IVisibleApplyPreviewTargetsAttach
-    | IVisibleApplyPreviewTargetsUpdate
-    | IVisibleApplyPreviewTargetsDetach
-
-/**
- * A preview entry where no changeset existed before matching the changeset spec.
- */
-export interface IVisibleApplyPreviewTargetsAttach {
-    __typename: 'VisibleApplyPreviewTargetsAttach'
-
-    /**
-     * The changeset spec from this entry.
-     */
-    changesetSpec: IVisibleChangesetSpec
-}
-
-/**
- * A preview entry where a changeset matches the changeset spec.
- */
-export interface IVisibleApplyPreviewTargetsUpdate {
-    __typename: 'VisibleApplyPreviewTargetsUpdate'
-
-    /**
-     * The changeset spec from this entry.
-     */
-    changesetSpec: IVisibleChangesetSpec
-
-    /**
-     * The changeset from this entry.
-     */
-    changeset: IExternalChangeset
-}
-
-/**
- * A preview entry where no changeset spec exists for the changeset currently in
- * the target campaign.
- */
-export interface IVisibleApplyPreviewTargetsDetach {
-    __typename: 'VisibleApplyPreviewTargetsDetach'
-
-    /**
-     * The changeset from this entry.
-     */
-    changeset: IExternalChangeset
-}
-
-/**
- * A preview entry to a repository to which the user has no access.
- */
-export type HiddenApplyPreviewTargets =
-    | IHiddenApplyPreviewTargetsAttach
-    | IHiddenApplyPreviewTargetsUpdate
-    | IHiddenApplyPreviewTargetsDetach
-
-/**
- * A preview entry where no changeset existed before matching the changeset spec.
- */
-export interface IHiddenApplyPreviewTargetsAttach {
-    __typename: 'HiddenApplyPreviewTargetsAttach'
-
-    /**
-     * The changeset spec from this entry.
-     */
-    changesetSpec: IHiddenChangesetSpec
-}
-
-/**
- * A preview entry where a changeset matches the changeset spec.
- */
-export interface IHiddenApplyPreviewTargetsUpdate {
-    __typename: 'HiddenApplyPreviewTargetsUpdate'
-
-    /**
-     * The changeset spec from this entry.
-     */
-    changesetSpec: IHiddenChangesetSpec
-
-    /**
-     * The changeset from this entry.
-     */
-    changeset: IHiddenExternalChangeset
-}
-
-/**
- * A preview entry where no changeset spec exists for the changeset currently in
- * the target campaign.
- */
-export interface IHiddenApplyPreviewTargetsDetach {
-    __typename: 'HiddenApplyPreviewTargetsDetach'
-
-    /**
-     * The changeset from this entry.
-     */
-    changeset: IHiddenExternalChangeset
-}
-
-/**
- * One preview entry in the list of all previews against a campaign spec. Each mapping
- * between changeset specs and current changesets yields one of these. It describes
- * which operations are taken against which changeset spec and changeset to ensure the
- * desired state is met.
- */
-export interface IHiddenChangesetApplyPreview {
-    __typename: 'HiddenChangesetApplyPreview'
-
-    /**
-     * The operations to take to achieve the desired state.
-     */
-    operations: ChangesetSpecOperation[]
-
-    /**
-     * The delta between the current changeset state and what the new changeset spec
-     * envisions the changeset to look like.
-     */
-    delta: IChangesetSpecDelta
-
-    /**
-     * The target entities in this preview entry.
-     */
-    targets: HiddenApplyPreviewTargets
-}
-
-/**
- * One preview entry in the list of all previews against a campaign spec. Each mapping
- * between changeset specs and current changesets yields one of these. It describes
- * which operations are taken against which changeset spec and changeset to ensure the
- * desired state is met.
- */
-export interface IVisibleChangesetApplyPreview {
-    __typename: 'VisibleChangesetApplyPreview'
-
-    /**
-     * The operations to take to achieve the desired state.
-     */
-    operations: ChangesetSpecOperation[]
-
-    /**
-     * The delta between the current changeset state and what the new changeset spec
-     * envisions the changeset to look like.
-     */
-    delta: IChangesetSpecDelta
-
-    /**
-     * The target entities in this preview entry.
-     */
-    targets: VisibleApplyPreviewTargets
-}
-
-/**
- * Aggregated stats on nodes in this connection.
- */
-export interface IChangesetApplyPreviewConnectionStats {
-    __typename: 'ChangesetApplyPreviewConnectionStats'
-
-    /**
-     * Push a new commit to the code host.
-     */
-    push: number
-
-    /**
-     * Update the existing changeset on the codehost. This is purely the changeset resource on the code host,
-     * not the git commit. For updates to the commit, see 'PUSH'.
-     */
-    update: number
-
-    /**
-     * Move the existing changeset out of being a draft.
-     */
-    undraft: number
-
-    /**
-     * Publish a changeset to the codehost.
-     */
-    publish: number
-
-    /**
-     * Publish a changeset to the codehost as a draft changeset. (Only on supported code hosts).
-     */
-    publishDraft: number
-
-    /**
-     * Sync the changeset with the current state on the codehost.
-     */
-    sync: number
-
-    /**
-     * Import an existing changeset from the code host with the ExternalID from the spec.
-     */
-    import: number
-
-    /**
-     * Close the changeset on the codehost.
-     */
-    close: number
-
-    /**
-     * Reopen the changeset on the codehost.
-     */
-    reopen: number
-
-    /**
-     * Internal operation to get around slow code host updates.
-     */
-    sleep: number
-
-    /**
-     * The changeset is removed from some of the associated campaigns.
-     */
-    detach: number
-
-    /**
-     * The amount of changesets that are added to the campaign in this operation.
-     */
-    added: number
-
-    /**
-     * The amount of changesets that are already attached to the campaign and modified in this operation.
-     */
-    modified: number
-
-    /**
-     * The amount of changesets that are disassociated from the campaign in this operation.
-     */
-    removed: number
-}
-
-/**
- * A list of preview entries.
- */
-export interface IChangesetApplyPreviewConnection {
-    __typename: 'ChangesetApplyPreviewConnection'
-
-    /**
-     * The total number of entries in the connection.
-     */
-    totalCount: number
-
-    /**
-     * Pagination information.
-     */
-    pageInfo: IPageInfo
-
-    /**
-     * A list of preview entries.
-     */
-    nodes: ChangesetApplyPreview[]
-
-    /**
-     * Stats on the elements in this connnection. Does not respect pagination parameters.
-     */
-    stats: IChangesetApplyPreviewConnectionStats
-}
-
-/**
- * A CampaignDescription describes a campaign.
- */
-export interface ICampaignDescription {
-    __typename: 'CampaignDescription'
-
-    /**
-     * The name as parsed from the input.
-     */
-    name: string
-
-    /**
-     * The description as parsed from the input.
-     */
-    description: string
-}
-
-/**
- * A campaign spec is an immutable description of the desired state of a campaign. To create a
- * campaign spec, use the createCampaignSpec mutation.
- */
-export interface ICampaignSpec {
-    __typename: 'CampaignSpec'
-
-    /**
-     * The unique ID for a campaign spec.
-     *
-     * The ID is unguessable (i.e., long and randomly generated, not sequential).
-     * Consider a campaign to fix a security vulnerability: the campaign author may prefer
-     * to prepare the campaign, including the description in private so that the window
-     * between revealing the problem and merging the fixes is as short as possible.
-     */
-    id: ID
-
-    /**
-     * The original YAML or JSON input that was used to create this campaign spec.
-     */
-    originalInput: string
-
-    /**
-     * The parsed JSON value of the original input. If the original input was YAML, the YAML is
-     * converted to the equivalent JSON.
-     */
-    parsedInput: any
-
-    /**
-     * The CampaignDescription that describes this campaign.
-     */
-    description: ICampaignDescription
-
-    /**
-     * Generates a preview what operations would be performed if the campaign spec would be applied.
-     * This preview is not a guarantee, since the state of the changesets can change between the time
-     * the preview is generated and when the campaign spec is applied.
-     */
-    applyPreview: IChangesetApplyPreviewConnection
-
-    /**
-     * The specs for changesets associated with this campaign.
-     */
-    changesetSpecs: IChangesetSpecConnection
-
-    /**
-     * The user who created this campaign spec (or null if the user no longer exists).
-     */
-    creator: IUser | null
-
-    /**
-     * The date when this campaign spec was created.
-     */
-    createdAt: DateTime
-
-    /**
-     * The namespace (either a user or organization) of the campaign spec.
-     */
-    namespace: Namespace
-
-    /**
-     * The date, if any, when this campaign spec expires and is automatically purged. A campaign spec
-     * never expires if it has been applied.
-     */
-    expiresAt: DateTime | null
-
-    /**
-     * The URL of a web page that allows applying this campaign spec and
-     * displays a preview of which changesets will be created by applying it.
-     */
-    applyURL: string
-
-    /**
-     * When true, the viewing user can apply this spec.
-     */
-    viewerCanAdminister: boolean
-
-    /**
-     * The diff stat for all the changeset specs in the campaign spec.
-     */
-    diffStat: IDiffStat
-
-    /**
-     * The campaign this spec will update when applied. If it's null, the
-     * campaign doesn't yet exist.
-     */
-    appliesToCampaign: ICampaign | null
-
-    /**
-     * The newest version of this campaign spec, as identified by its namespace
-     * and name. If this is the newest version, this field will be null.
-     */
-    supersedingCampaignSpec: ICampaignSpec | null
-
-    /**
-     * The code host connections required for applying this spec. Includes the credentials of the current user.
-     */
-    viewerCampaignsCodeHosts: ICampaignsCodeHostConnection
-}
-
-export interface IApplyPreviewOnCampaignSpecArguments {
-    /**
-     * Returns the first n entries from the list.
-     * @default 50
-     */
-    first?: number | null
-
-    /**
-     * Opaque pagination cursor.
-     */
-    after?: string | null
-
-    /**
-     * Search for changesets matching this query. Queries may include quoted substrings to match phrases, and words may be preceded by - to negate them.
-     */
-    search?: string | null
-
-    /**
-     * Search for changesets that are currently in this state.
-     */
-    currentState?: ChangesetState | null
-
-    /**
-     * Search for changesets that will have the given action performed.
-     */
-    action?: ChangesetSpecOperation | null
-}
-
-export interface IChangesetSpecsOnCampaignSpecArguments {
-    /**
-     * @default 50
-     */
-    first?: number | null
-    after?: string | null
-}
-
-export interface IViewerCampaignsCodeHostsOnCampaignSpecArguments {
-    /**
-     * Returns the first n code hosts from the list.
-     * @default 50
-     */
-    first?: number | null
-
-    /**
-     * Opaque pagination cursor.
-     */
-    after?: string | null
-
-    /**
-     * Only returns the code hosts for which the viewer doesn't have credentials.
+     * Whether to close the changesets associated with this batch change on their respective code
+     * hosts. "Close" means the appropriate final state on the code host (e.g., "closed" on
+     * GitHub and "declined" on Bitbucket Server).
      * @default false
      */
-    onlyWithoutCredential?: boolean | null
+    closeChangesets?: boolean | null
+}
+
+export interface IMoveBatchChangeOnMutationArguments {
+    batchChange: ID
+    newName?: string | null
+    newNamespace?: ID | null
+}
+
+export interface IDeleteBatchChangeOnMutationArguments {
+    batchChange: ID
+}
+
+export interface ICreateBatchChangesCredentialOnMutationArguments {
+    /**
+     * The user for which to create the credential.
+     */
+    user: ID
+
+    /**
+     * The kind of external service being configured.
+     */
+    externalServiceKind: ExternalServiceKind
+
+    /**
+     * The URL of the external service being configured.
+     */
+    externalServiceURL: string
+
+    /**
+     * The credential to be stored. This can never be retrieved through the API and will be stored encrypted.
+     */
+    credential: string
+}
+
+export interface IDeleteBatchChangesCredentialOnMutationArguments {
+    batchChangesCredential: ID
 }
 
 /**
@@ -2188,839 +1455,6 @@ export interface IUserPermission {
      * @default "READ"
      */
     permission?: RepositoryPermission | null
-}
-
-/**
- * A campaign is a set of related changes to apply to code across one or more repositories.
- */
-export interface ICampaign {
-    __typename: 'Campaign'
-
-    /**
-     * The unique ID for the campaign.
-     */
-    id: ID
-
-    /**
-     * The namespace where this campaign is defined.
-     */
-    namespace: Namespace
-
-    /**
-     * The name of the campaign.
-     */
-    name: string
-
-    /**
-     * The description (as Markdown).
-     */
-    description: string | null
-
-    /**
-     * The user that created the initial spec. In an org, this will be different from the namespace, or null if the user was deleted.
-     */
-    specCreator: IUser | null
-
-    /**
-     * The user who created the campaign initially by applying the spec for the first time, or null if the user was deleted.
-     */
-    initialApplier: IUser | null
-
-    /**
-     * The user who last updated the campaign by applying a spec to this campaign.
-     * If the campaign hasn't been updated, the lastApplier is the initialApplier, or null if the user was deleted.
-     */
-    lastApplier: IUser | null
-
-    /**
-     * Whether the current user can edit or delete this campaign.
-     */
-    viewerCanAdminister: boolean
-
-    /**
-     * The URL to this campaign.
-     */
-    url: string
-
-    /**
-     * The date and time when the campaign was created.
-     */
-    createdAt: DateTime
-
-    /**
-     * The date and time when the campaign was updated. That can be by applying a spec, or by an internal process.
-     * For reading the time the campaign spec was changed last, see lastAppliedAt.
-     */
-    updatedAt: DateTime
-
-    /**
-     * The date and time when the campaign was last updated with a new spec.
-     */
-    lastAppliedAt: DateTime
-
-    /**
-     * The date and time when the campaign was closed. If set, applying a spec for this campaign will fail with an error.
-     */
-    closedAt: DateTime | null
-
-    /**
-     * Stats on all the changesets that are tracked in this campaign.
-     */
-    changesetsStats: IChangesetsStats
-
-    /**
-     * The changesets in this campaign that already exist on the code host.
-     */
-    changesets: IChangesetConnection
-
-    /**
-     * The changeset counts over time, in 1-day intervals backwards from the point in time given in
-     * the "to" parameter.
-     */
-    changesetCountsOverTime: IChangesetCounts[]
-
-    /**
-     * The diff stat for all the changesets in the campaign.
-     */
-    diffStat: IDiffStat
-
-    /**
-     * The current campaign spec this campaign reflects.
-     */
-    currentSpec: ICampaignSpec
-}
-
-export interface IChangesetsOnCampaignArguments {
-    /**
-     * @default 50
-     */
-    first?: number | null
-
-    /**
-     * Opaque pagination cursor.
-     */
-    after?: string | null
-
-    /**
-     * Only include changesets with the given state.
-     */
-    state?: ChangesetState | null
-
-    /**
-     * Only include changesets with the given review state.
-     */
-    reviewState?: ChangesetReviewState | null
-
-    /**
-     * Only include changesets with the given check state.
-     */
-    checkState?: ChangesetCheckState | null
-
-    /**
-     * Only return changesets that have been published by this campaign. Imported changesets will be omitted.
-     */
-    onlyPublishedByThisCampaign?: boolean | null
-
-    /**
-     * Search for changesets matching this query. Queries may include quoted substrings to match phrases, and words may be preceded by - to negate them.
-     */
-    search?: string | null
-}
-
-export interface IChangesetCountsOverTimeOnCampaignArguments {
-    /**
-     * Only include changeset counts up to this point in time (inclusive). Defaults to Campaign.createdAt.
-     */
-    from?: DateTime | null
-
-    /**
-     * Only include changeset counts up to this point in time (inclusive). Defaults to the
-     * current time.
-     */
-    to?: DateTime | null
-}
-
-/**
- * The counts of changesets in certain states at a specific point in time.
- */
-export interface IChangesetCounts {
-    __typename: 'ChangesetCounts'
-
-    /**
-     * The point in time these counts were recorded.
-     */
-    date: DateTime
-
-    /**
-     * The total number of changesets.
-     */
-    total: number
-
-    /**
-     * The number of merged changesets.
-     */
-    merged: number
-
-    /**
-     * The number of closed changesets.
-     */
-    closed: number
-
-    /**
-     * The number of draft changesets (independent of review state).
-     */
-    draft: number
-
-    /**
-     * The number of open changesets (independent of review state).
-     */
-    open: number
-
-    /**
-     * The number of changesets that are both open and approved.
-     */
-    openApproved: number
-
-    /**
-     * The number of changesets that are both open and have requested changes.
-     */
-    openChangesRequested: number
-
-    /**
-     * The number of changesets that are both open and are pending review.
-     */
-    openPending: number
-}
-
-/**
- * A list of campaigns.
- */
-export interface ICampaignConnection {
-    __typename: 'CampaignConnection'
-
-    /**
-     * A list of campaigns.
-     */
-    nodes: ICampaign[]
-
-    /**
-     * The total number of campaigns in the connection.
-     */
-    totalCount: number
-
-    /**
-     * Pagination information.
-     */
-    pageInfo: IPageInfo
-}
-
-/**
- * The publication state of a changeset on Sourcegraph
- */
-export enum ChangesetPublicationState {
-    /**
-     * The changeset has not yet been created on the code host.
-     */
-    UNPUBLISHED = 'UNPUBLISHED',
-
-    /**
-     * The changeset has been created on the code host.
-     */
-    PUBLISHED = 'PUBLISHED',
-}
-
-/**
- * The reconciler state of a changeset on Sourcegraph
- */
-export enum ChangesetReconcilerState {
-    /**
-     * The changeset is enqueued for the reconciler to process it.
-     */
-    QUEUED = 'QUEUED',
-
-    /**
-     * The changeset reconciler is currently computing the delta between the
-     * If a delta exists, the reconciler tries to update the state of the
-     * changeset on the code host and on Sourcegraph to the desired state.
-     */
-    PROCESSING = 'PROCESSING',
-
-    /**
-     * The changeset reconciler ran into a problem while processing the
-     * changeset and will retry it for a number of retries.
-     */
-    ERRORED = 'ERRORED',
-
-    /**
-     * The changeset reconciler ran into a problem while processing the
-     * changeset that can't be fixed by retrying.
-     */
-    FAILED = 'FAILED',
-
-    /**
-     * The changeset is not enqueued for processing.
-     */
-    COMPLETED = 'COMPLETED',
-}
-
-/**
- * The state of a changeset on the code host on which it's hosted.
- */
-export enum ChangesetExternalState {
-    DRAFT = 'DRAFT',
-    OPEN = 'OPEN',
-    CLOSED = 'CLOSED',
-    MERGED = 'MERGED',
-    DELETED = 'DELETED',
-}
-
-/**
- * The review state of a changeset.
- */
-export enum ChangesetReviewState {
-    APPROVED = 'APPROVED',
-    CHANGES_REQUESTED = 'CHANGES_REQUESTED',
-    PENDING = 'PENDING',
-    COMMENTED = 'COMMENTED',
-    DISMISSED = 'DISMISSED',
-}
-
-/**
- * The state of checks (e.g., for continuous integration) on a changeset.
- */
-export enum ChangesetCheckState {
-    PENDING = 'PENDING',
-    PASSED = 'PASSED',
-    FAILED = 'FAILED',
-}
-
-/**
- * A label attached to a changeset on a code host.
- */
-export interface IChangesetLabel {
-    __typename: 'ChangesetLabel'
-
-    /**
-     * The label's text.
-     */
-    text: string
-
-    /**
-     * The label's color, as a hex color code without the . For example: "93ba13".
-     */
-    color: string
-
-    /**
-     * An optional description of the label.
-     */
-    description: string | null
-}
-
-/**
- * The visual state a changeset is currently in.
- */
-export enum ChangesetState {
-    /**
-     * The changeset has not been marked as to be published.
-     */
-    UNPUBLISHED = 'UNPUBLISHED',
-
-    /**
-     * The changeset reconciler ran into a problem while processing the
-     * changeset that can't be fixed by retrying.
-     */
-    FAILED = 'FAILED',
-
-    /**
-     * The changeset reconciler ran into a problem while processing the
-     * changeset and will retry it for a number of retries.
-     */
-    RETRYING = 'RETRYING',
-
-    /**
-     * The changeset reconciler is currently computing the delta between the
-     * If a delta exists, the reconciler tries to update the state of the
-     * changeset on the code host and on Sourcegraph to the desired state.
-     */
-    PROCESSING = 'PROCESSING',
-
-    /**
-     * The changeset is published, not being reconciled and open on the code host.
-     */
-    OPEN = 'OPEN',
-
-    /**
-     * The changeset is published, not being reconciled and in draft state on the code host.
-     */
-    DRAFT = 'DRAFT',
-
-    /**
-     * The changeset is published, not being reconciled and closed on the code host.
-     */
-    CLOSED = 'CLOSED',
-
-    /**
-     * The changeset is published, not being reconciled and merged on the code host.
-     */
-    MERGED = 'MERGED',
-
-    /**
-     * The changeset is published, not being reconciled and has been deleted on the code host.
-     */
-    DELETED = 'DELETED',
-}
-
-/**
- * A changeset on a codehost.
- */
-export type Changeset = IHiddenExternalChangeset | IExternalChangeset
-
-/**
- * A changeset on a codehost.
- */
-export interface IChangeset {
-    __typename: 'Changeset'
-
-    /**
-     * The unique ID for the changeset.
-     */
-    id: ID
-
-    /**
-     * The campaigns that contain this changeset.
-     */
-    campaigns: ICampaignConnection
-
-    /**
-     * The publication state of the changeset.
-     * @deprecated "Use state instead. This field is deprecated and will be removed in a future release."
-     */
-    publicationState: ChangesetPublicationState
-
-    /**
-     * The reconciler state of the changeset.
-     * @deprecated "Use state instead. This field is deprecated and will be removed in a future release."
-     */
-    reconcilerState: ChangesetReconcilerState
-
-    /**
-     * The external state of the changeset, or null when not yet published to the code host.
-     * @deprecated "Use state instead. This field is deprecated and will be removed in a future release."
-     */
-    externalState: ChangesetExternalState | null
-
-    /**
-     * The state of the changeset.
-     */
-    state: ChangesetState
-
-    /**
-     * The date and time when the changeset was created.
-     */
-    createdAt: DateTime
-
-    /**
-     * The date and time when the changeset was updated.
-     */
-    updatedAt: DateTime
-
-    /**
-     * The date and time when the next changeset sync is scheduled, or null if none is scheduled.
-     */
-    nextSyncAt: DateTime | null
-}
-
-export interface ICampaignsOnChangesetArguments {
-    /**
-     * Returns the first n campaigns from the list.
-     * @default 50
-     */
-    first?: number | null
-
-    /**
-     * Opaque pagination cursor.
-     */
-    after?: string | null
-
-    /**
-     * Only return campaigns in this state.
-     */
-    state?: CampaignState | null
-
-    /**
-     * Only include campaigns that the viewer can administer.
-     */
-    viewerCanAdminister?: boolean | null
-}
-
-/**
- * A changeset on a code host that the user does not have access to.
- */
-export interface IHiddenExternalChangeset {
-    __typename: 'HiddenExternalChangeset'
-
-    /**
-     * The unique ID for the changeset.
-     */
-    id: ID
-
-    /**
-     * The campaigns that contain this changeset.
-     */
-    campaigns: ICampaignConnection
-
-    /**
-     * The publication state of the changeset.
-     * @deprecated "Use state instead. This field is deprecated and will be removed in a future release."
-     */
-    publicationState: ChangesetPublicationState
-
-    /**
-     * The reconciler state of the changeset.
-     * @deprecated "Use state instead. This field is deprecated and will be removed in a future release."
-     */
-    reconcilerState: ChangesetReconcilerState
-
-    /**
-     * The external state of the changeset, or null when not yet published to the code host.
-     * @deprecated "Use state instead. This field is deprecated and will be removed in a future release."
-     */
-    externalState: ChangesetExternalState | null
-
-    /**
-     * The state of the changeset.
-     */
-    state: ChangesetState
-
-    /**
-     * The date and time when the changeset was created.
-     */
-    createdAt: DateTime
-
-    /**
-     * The date and time when the changeset was updated.
-     */
-    updatedAt: DateTime
-
-    /**
-     * The date and time when the next changeset sync is scheduled, or null if none is scheduled.
-     */
-    nextSyncAt: DateTime | null
-}
-
-export interface ICampaignsOnHiddenExternalChangesetArguments {
-    /**
-     * Returns the first n campaigns from the list.
-     * @default 50
-     */
-    first?: number | null
-
-    /**
-     * Opaque pagination cursor.
-     */
-    after?: string | null
-
-    /**
-     * Only return campaigns in this state.
-     */
-    state?: CampaignState | null
-
-    /**
-     * Only include campaigns that the viewer can administer.
-     */
-    viewerCanAdminister?: boolean | null
-}
-
-/**
- * A changeset on a code host (e.g., a pull request on GitHub).
- */
-export interface IExternalChangeset {
-    __typename: 'ExternalChangeset'
-
-    /**
-     * The unique ID for the changeset.
-     */
-    id: ID
-
-    /**
-     * The external ID that uniquely identifies this ExternalChangeset on the
-     * code host. For example, on GitHub this is the pull request number. This is only set once the changeset is published on the code host.
-     */
-    externalID: string | null
-
-    /**
-     * The repository changed by this changeset.
-     */
-    repository: IRepository
-
-    /**
-     * The campaigns that contain this changeset.
-     */
-    campaigns: ICampaignConnection
-
-    /**
-     * The events belonging to this changeset.
-     */
-    events: IChangesetEventConnection
-
-    /**
-     * The date and time when the changeset was created.
-     */
-    createdAt: DateTime
-
-    /**
-     * The date and time when the changeset was updated.
-     */
-    updatedAt: DateTime
-
-    /**
-     * The date and time when the next changeset sync is scheduled, or null if none is scheduled or when the initial sync hasn't happened.
-     */
-    nextSyncAt: DateTime | null
-
-    /**
-     * The title of the changeset, or null if the data hasn't been synced from the code host yet.
-     */
-    title: string | null
-
-    /**
-     * The body of the changeset, or null if the data hasn't been synced from the code host yet.
-     */
-    body: string | null
-
-    /**
-     * The author of the changeset, or null if the data hasn't been synced from the code host yet,
-     * or the changeset has not yet been published.
-     */
-    author: IPerson | null
-
-    /**
-     * The publication state of the changeset.
-     * @deprecated "Use state instead. This field is deprecated and will be removed in a future release."
-     */
-    publicationState: ChangesetPublicationState
-
-    /**
-     * The reconciler state of the changeset.
-     * @deprecated "Use state instead. This field is deprecated and will be removed in a future release."
-     */
-    reconcilerState: ChangesetReconcilerState
-
-    /**
-     * The external state of the changeset, or null when not yet published to the code host.
-     * @deprecated "Use state instead. This field is deprecated and will be removed in a future release."
-     */
-    externalState: ChangesetExternalState | null
-
-    /**
-     * The state of the changeset.
-     */
-    state: ChangesetState
-
-    /**
-     * The labels attached to the changeset on the code host.
-     */
-    labels: IChangesetLabel[]
-
-    /**
-     * The external URL of the changeset on the code host. Not set when changeset state is UNPUBLISHED, externalState is DELETED, or the changeset's data hasn't been synced yet.
-     */
-    externalURL: IExternalLink | null
-
-    /**
-     * The review state of this changeset. This is only set once the changeset is published on the code host.
-     */
-    reviewState: ChangesetReviewState | null
-
-    /**
-     * The diff of this changeset, or null if the changeset is closed (without merging) or is already merged.
-     */
-    diff: RepositoryComparisonInterface | null
-
-    /**
-     * The diffstat of this changeset, or null if the changeset is closed
-     * (without merging) or is already merged. This data is also available
-     * indirectly through the diff field above, but if only the diffStat is
-     * required, this field is cheaper to access.
-     */
-    diffStat: IDiffStat | null
-
-    /**
-     * The state of the checks (e.g., for continuous integration) on this changeset, or null if no
-     * checks have been configured.
-     */
-    checkState: ChangesetCheckState | null
-
-    /**
-     * An error that has occurred when publishing or updating the changeset. This is only set when the changeset state is ERRORED and the viewer can administer this changeset.
-     */
-    error: string | null
-
-    /**
-     * An error that has occured during the last sync of the changeset. Null, if was successful.
-     */
-    syncerError: string | null
-
-    /**
-     * The current changeset spec for this changeset.
-     *
-     * Null if the changeset was only imported.
-     */
-    currentSpec: IVisibleChangesetSpec | null
-}
-
-export interface ICampaignsOnExternalChangesetArguments {
-    /**
-     * Returns the first n campaigns from the list.
-     * @default 50
-     */
-    first?: number | null
-
-    /**
-     * Opaque pagination cursor.
-     */
-    after?: string | null
-
-    /**
-     * Only return campaigns in this state.
-     */
-    state?: CampaignState | null
-
-    /**
-     * Only include campaigns that the viewer can administer.
-     */
-    viewerCanAdminister?: boolean | null
-}
-
-export interface IEventsOnExternalChangesetArguments {
-    /**
-     * @default 50
-     */
-    first?: number | null
-    after?: string | null
-}
-
-/**
- * Used in the campaign page for the overview component.
- */
-export interface IChangesetsStats {
-    __typename: 'ChangesetsStats'
-
-    /**
-     * The count of unpublished changesets.
-     */
-    unpublished: number
-
-    /**
-     * The count of externalState: DRAFT changesets.
-     */
-    draft: number
-
-    /**
-     * The count of externalState: OPEN changesets.
-     */
-    open: number
-
-    /**
-     * The count of externalState: MERGED changesets.
-     */
-    merged: number
-
-    /**
-     * The count of externalState: CLOSED changesets.
-     */
-    closed: number
-
-    /**
-     * The count of externalState: DELETED changesets.
-     */
-    deleted: number
-
-    /**
-     * The count of changesets in retrying state.
-     */
-    retrying: number
-
-    /**
-     * The count of changesets in failed state.
-     */
-    failed: number
-
-    /**
-     * The count of changesets that are currently processing or enqueued to be.
-     */
-    processing: number
-
-    /**
-     * The count of all changesets.
-     */
-    total: number
-}
-
-/**
- * A list of changesets.
- */
-export interface IChangesetConnection {
-    __typename: 'ChangesetConnection'
-
-    /**
-     * A list of changesets.
-     */
-    nodes: Changeset[]
-
-    /**
-     * The total number of changesets in the connection.
-     */
-    totalCount: number
-
-    /**
-     * Pagination information.
-     */
-    pageInfo: IPageInfo
-}
-
-/**
- * A changeset event in a code host (e.g., a comment on a pull request on GitHub).
- */
-export interface IChangesetEvent {
-    __typename: 'ChangesetEvent'
-
-    /**
-     * The unique ID for the changeset event.
-     */
-    id: ID
-
-    /**
-     * The changeset this event belongs to.
-     */
-    changeset: IExternalChangeset
-
-    /**
-     * The date and time when the changeset was created.
-     */
-    createdAt: DateTime
-}
-
-/**
- * A list of changeset events.
- */
-export interface IChangesetEventConnection {
-    __typename: 'ChangesetEventConnection'
-
-    /**
-     * A list of changeset events.
-     */
-    nodes: IChangesetEvent[]
-
-    /**
-     * The total number of changeset events in the connection.
-     */
-    totalCount: number
-
-    /**
-     * Pagination information.
-     */
-    pageInfo: IPageInfo
 }
 
 /**
@@ -3427,14 +1861,6 @@ export interface IHappinessFeedbackSubmissionInput {
 }
 
 /**
- * The state of the campaign
- */
-export enum CampaignState {
-    OPEN = 'OPEN',
-    CLOSED = 'CLOSED',
-}
-
-/**
  * A query.
  */
 export interface IQuery {
@@ -3450,16 +1876,6 @@ export interface IQuery {
      * Looks up a node by ID.
      */
     node: Node | null
-
-    /**
-     * A list of campaigns.
-     */
-    campaigns: ICampaignConnection
-
-    /**
-     * Looks up a campaign by namespace and campaign name.
-     */
-    campaign: ICampaign | null
 
     /**
      * EXPERIMENTAL: Queries code insights
@@ -3677,45 +2093,32 @@ export interface IQuery {
      * Retrieve all registered out-of-band migrations.
      */
     outOfBandMigrations: IOutOfBandMigration[]
+
+    /**
+     * A list of campaigns.
+     * @deprecated "campaigns have been renamed to batch changes. Use batchChanges instead."
+     */
+    campaigns: ICampaignConnection
+
+    /**
+     * Looks up a campaign by namespace and campaign name.
+     * @deprecated "campaigns have been renamed to batch changes. Use batchChange instead."
+     */
+    campaign: ICampaign | null
+
+    /**
+     * A list of batch changes.
+     */
+    batchChanges: IBatchChangeConnection
+
+    /**
+     * Looks up a batch change by namespace and campaign name.
+     */
+    batchChange: IBatchChange | null
 }
 
 export interface INodeOnQueryArguments {
     id: ID
-}
-
-export interface ICampaignsOnQueryArguments {
-    /**
-     * Returns the first n campaigns from the list.
-     * @default 50
-     */
-    first?: number | null
-
-    /**
-     * Opaque pagination cursor.
-     */
-    after?: string | null
-
-    /**
-     * Only return campaigns in this state.
-     */
-    state?: CampaignState | null
-
-    /**
-     * Only include campaigns that the viewer can administer.
-     */
-    viewerCanAdminister?: boolean | null
-}
-
-export interface ICampaignOnQueryArguments {
-    /**
-     * The namespace where the campaign lives.
-     */
-    namespace: ID
-
-    /**
-     * The campaigns name.
-     */
-    name: string
 }
 
 export interface IRepositoryOnQueryArguments {
@@ -4086,6 +2489,76 @@ export interface IAffiliatedRepositoriesOnQueryArguments {
 
 export interface IEnterpriseLicenseHasFeatureOnQueryArguments {
     feature: string
+}
+
+export interface ICampaignsOnQueryArguments {
+    /**
+     * Returns the first n campaigns from the list.
+     * @default 50
+     */
+    first?: number | null
+
+    /**
+     * Opaque pagination cursor.
+     */
+    after?: string | null
+
+    /**
+     * Only return campaigns in this state.
+     */
+    state?: CampaignState | null
+
+    /**
+     * Only include campaigns that the viewer can administer.
+     */
+    viewerCanAdminister?: boolean | null
+}
+
+export interface ICampaignOnQueryArguments {
+    /**
+     * The namespace where the campaign lives.
+     */
+    namespace: ID
+
+    /**
+     * The campaigns name.
+     */
+    name: string
+}
+
+export interface IBatchChangesOnQueryArguments {
+    /**
+     * Returns the first n batch changes from the list.
+     * @default 50
+     */
+    first?: number | null
+
+    /**
+     * Opaque pagination cursor.
+     */
+    after?: string | null
+
+    /**
+     * Only return batch changes in this state.
+     */
+    state?: BatchChangeState | null
+
+    /**
+     * Only include batch changes that the viewer can administer.
+     */
+    viewerCanAdminister?: boolean | null
+}
+
+export interface IBatchChangeOnQueryArguments {
+    /**
+     * The namespace where the batch change lives.
+     */
+    namespace: ID
+
+    /**
+     * The batch changes name.
+     */
+    name: string
 }
 
 /**
@@ -8538,18 +7011,6 @@ export interface IUser {
     permissionsInfo: IPermissionsInfo | null
 
     /**
-     * A list of campaigns applied under this user's namespace.
-     */
-    campaigns: ICampaignConnection
-
-    /**
-     * Returns a connection of configured external services accessible by this user, for usage with campaigns.
-     * These are all code hosts configured on the Sourcegraph instance that are supported by campaigns. They are
-     * connected to CampaignCredential resources, if one has been created for the code host connection before.
-     */
-    campaignsCodeHosts: ICampaignsCodeHostConnection
-
-    /**
      * A list of monitors owned by the user or her organization.
      */
     monitors: IMonitorConnection
@@ -8558,6 +7019,37 @@ export interface IUser {
      * Repositories from external services owned by this user.
      */
     repositories: IRepositoryConnection
+
+    /**
+     * publicRepositories returns the repos listed in user_public_repos for this user
+     */
+    publicRepositories: IRepository[]
+
+    /**
+     * A list of campaigns applied under this user's namespace.
+     * @deprecated "campaigns have been renamed to batch changes. Use batchChanges instead."
+     */
+    campaigns: ICampaignConnection
+
+    /**
+     * Returns a connection of configured external services accessible by this user, for usage with campaigns.
+     * These are all code hosts configured on the Sourcegraph instance that are supported by campaigns. They are
+     * connected to CampaignCredential resources, if one has been created for the code host connection before.
+     * @deprecated "campaigns have been renamed to batch changes. Use batchChanges instead."
+     */
+    campaignsCodeHosts: ICampaignsCodeHostConnection
+
+    /**
+     * A list of batch changes applied under this user's namespace.
+     */
+    batchChanges: IBatchChangeConnection
+
+    /**
+     * Returns a connection of configured external services accessible by this user, for usage with batch changes.
+     * These are all code hosts configured on the Sourcegraph instance that are supported by batch changes. They are
+     * connected to BatchChangesCredential resources, if one has been created for the code host connection before.
+     */
+    batchChangesCodeHosts: IBatchChangesCodeHostConnection
 }
 
 export interface IEventLogsOnUserArguments {
@@ -8584,42 +7076,6 @@ export interface IExternalAccountsOnUserArguments {
      * Returns the first n external accounts from the list.
      */
     first?: number | null
-}
-
-export interface ICampaignsOnUserArguments {
-    /**
-     * Returns the first n campaigns from the list.
-     * @default 50
-     */
-    first?: number | null
-
-    /**
-     * Opaque pagination cursor.
-     */
-    after?: string | null
-
-    /**
-     * Only return campaigns in this state.
-     */
-    state?: CampaignState | null
-
-    /**
-     * Only include campaigns that the viewer can administer.
-     */
-    viewerCanAdminister?: boolean | null
-}
-
-export interface ICampaignsCodeHostsOnUserArguments {
-    /**
-     * Returns the first n code hosts from the list.
-     * @default 50
-     */
-    first?: number | null
-
-    /**
-     * Opaque pagination cursor.
-     */
-    after?: string | null
 }
 
 export interface IMonitorsOnUserArguments {
@@ -8679,6 +7135,78 @@ export interface IRepositoriesOnUserArguments {
      * Only include repositories from this external service.
      */
     externalServiceID?: ID | null
+}
+
+export interface ICampaignsOnUserArguments {
+    /**
+     * Returns the first n campaigns from the list.
+     * @default 50
+     */
+    first?: number | null
+
+    /**
+     * Opaque pagination cursor.
+     */
+    after?: string | null
+
+    /**
+     * Only return campaigns in this state.
+     */
+    state?: CampaignState | null
+
+    /**
+     * Only include campaigns that the viewer can administer.
+     */
+    viewerCanAdminister?: boolean | null
+}
+
+export interface ICampaignsCodeHostsOnUserArguments {
+    /**
+     * Returns the first n code hosts from the list.
+     * @default 50
+     */
+    first?: number | null
+
+    /**
+     * Opaque pagination cursor.
+     */
+    after?: string | null
+}
+
+export interface IBatchChangesOnUserArguments {
+    /**
+     * Returns the first n batch changes from the list.
+     * @default 50
+     */
+    first?: number | null
+
+    /**
+     * Opaque pagination cursor.
+     */
+    after?: string | null
+
+    /**
+     * Only return batch changes in this state.
+     */
+    state?: BatchChangeState | null
+
+    /**
+     * Only include batch changes that the viewer can administer.
+     */
+    viewerCanAdminister?: boolean | null
+}
+
+export interface IBatchChangesCodeHostsOnUserArguments {
+    /**
+     * Returns the first n code hosts from the list.
+     * @default 50
+     */
+    first?: number | null
+
+    /**
+     * Opaque pagination cursor.
+     */
+    after?: string | null
 }
 
 /**
@@ -9087,8 +7615,14 @@ export interface IOrg {
 
     /**
      * A list of campaigns initially applied in this organization.
+     * @deprecated "campaigns have been renamed to batch changes. Use batchChanges instead."
      */
     campaigns: ICampaignConnection
+
+    /**
+     * A list of batch changes initially applied in this organization.
+     */
+    batchChanges: IBatchChangeConnection
 }
 
 export interface ICampaignsOnOrgArguments {
@@ -9110,6 +7644,29 @@ export interface ICampaignsOnOrgArguments {
 
     /**
      * Only include campaigns that the viewer can administer.
+     */
+    viewerCanAdminister?: boolean | null
+}
+
+export interface IBatchChangesOnOrgArguments {
+    /**
+     * Returns the first n batch changes from the list.
+     * @default 50
+     */
+    first?: number | null
+
+    /**
+     * Opaque pagination cursor.
+     */
+    after?: string | null
+
+    /**
+     * Only return batch changes in this state.
+     */
+    state?: BatchChangeState | null
+
+    /**
+     * Only include batch changes that the viewer can administer.
      */
     viewerCanAdminister?: boolean | null
 }
@@ -11707,4 +10264,2283 @@ export interface ICodeHostRepository {
      * Is the repo private
      */
     private: boolean
+}
+
+/**
+ * The state of the campaign
+ */
+export enum CampaignState {
+    OPEN = 'OPEN',
+    CLOSED = 'CLOSED',
+}
+
+/**
+ * A campaign is a set of related changes to apply to code across one or more repositories.
+ */
+export interface ICampaign {
+    __typename: 'Campaign'
+
+    /**
+     * The unique ID for the campaign.
+     */
+    id: ID
+
+    /**
+     * The namespace where this campaign is defined.
+     */
+    namespace: Namespace
+
+    /**
+     * The name of the campaign.
+     */
+    name: string
+
+    /**
+     * The description (as Markdown).
+     */
+    description: string | null
+
+    /**
+     * The user that created the initial spec. In an org, this will be different from the namespace, or null if the user was deleted.
+     */
+    specCreator: IUser | null
+
+    /**
+     * The user who created the campaign initially by applying the spec for the first time, or null if the user was deleted.
+     */
+    initialApplier: IUser | null
+
+    /**
+     * The user who last updated the campaign by applying a spec to this campaign.
+     * If the campaign hasn't been updated, the lastApplier is the initialApplier, or null if the user was deleted.
+     */
+    lastApplier: IUser | null
+
+    /**
+     * Whether the current user can edit or delete this campaign.
+     */
+    viewerCanAdminister: boolean
+
+    /**
+     * The URL to this campaign.
+     */
+    url: string
+
+    /**
+     * The date and time when the campaign was created.
+     */
+    createdAt: DateTime
+
+    /**
+     * The date and time when the campaign was updated. That can be by applying a spec, or by an internal process.
+     * For reading the time the campaign spec was changed last, see lastAppliedAt.
+     */
+    updatedAt: DateTime
+
+    /**
+     * The date and time when the campaign was last updated with a new spec.
+     */
+    lastAppliedAt: DateTime
+
+    /**
+     * The date and time when the campaign was closed. If set, applying a spec for this campaign will fail with an error.
+     */
+    closedAt: DateTime | null
+
+    /**
+     * Stats on all the changesets that are tracked in this campaign.
+     */
+    changesetsStats: IChangesetsStats
+
+    /**
+     * The changesets in this campaign that already exist on the code host.
+     */
+    changesets: IChangesetConnection
+
+    /**
+     * The changeset counts over time, in 1-day intervals backwards from the point in time given in
+     * the "to" parameter.
+     */
+    changesetCountsOverTime: IChangesetCounts[]
+
+    /**
+     * The diff stat for all the changesets in the campaign.
+     */
+    diffStat: IDiffStat
+
+    /**
+     * The current campaign spec this campaign reflects.
+     */
+    currentSpec: ICampaignSpec
+}
+
+export interface IChangesetsOnCampaignArguments {
+    /**
+     * @default 50
+     */
+    first?: number | null
+
+    /**
+     * Opaque pagination cursor.
+     */
+    after?: string | null
+
+    /**
+     * Only include changesets with the given state.
+     */
+    state?: ChangesetState | null
+
+    /**
+     * Only include changesets with the given review state.
+     */
+    reviewState?: ChangesetReviewState | null
+
+    /**
+     * Only include changesets with the given check state.
+     */
+    checkState?: ChangesetCheckState | null
+
+    /**
+     * Only return changesets that have been published by this campaign. Imported changesets will be omitted.
+     */
+    onlyPublishedByThisCampaign?: boolean | null
+
+    /**
+     * Search for changesets matching this query. Queries may include quoted substrings to match phrases, and words may be preceded by - to negate them.
+     */
+    search?: string | null
+}
+
+export interface IChangesetCountsOverTimeOnCampaignArguments {
+    /**
+     * Only include changeset counts up to this point in time (inclusive). Defaults to Campaign.createdAt.
+     */
+    from?: DateTime | null
+
+    /**
+     * Only include changeset counts up to this point in time (inclusive). Defaults to the
+     * current time.
+     */
+    to?: DateTime | null
+}
+
+/**
+ * The counts of changesets in certain states at a specific point in time.
+ */
+export interface IChangesetCounts {
+    __typename: 'ChangesetCounts'
+
+    /**
+     * The point in time these counts were recorded.
+     */
+    date: DateTime
+
+    /**
+     * The total number of changesets.
+     */
+    total: number
+
+    /**
+     * The number of merged changesets.
+     */
+    merged: number
+
+    /**
+     * The number of closed changesets.
+     */
+    closed: number
+
+    /**
+     * The number of draft changesets (independent of review state).
+     */
+    draft: number
+
+    /**
+     * The number of open changesets (independent of review state).
+     */
+    open: number
+
+    /**
+     * The number of changesets that are both open and approved.
+     */
+    openApproved: number
+
+    /**
+     * The number of changesets that are both open and have requested changes.
+     */
+    openChangesRequested: number
+
+    /**
+     * The number of changesets that are both open and are pending review.
+     */
+    openPending: number
+}
+
+/**
+ * A list of campaigns.
+ */
+export interface ICampaignConnection {
+    __typename: 'CampaignConnection'
+
+    /**
+     * A list of campaigns.
+     */
+    nodes: ICampaign[]
+
+    /**
+     * The total number of campaigns in the connection.
+     */
+    totalCount: number
+
+    /**
+     * Pagination information.
+     */
+    pageInfo: IPageInfo
+}
+
+/**
+ * The publication state of a changeset on Sourcegraph
+ */
+export enum ChangesetPublicationState {
+    /**
+     * The changeset has not yet been created on the code host.
+     */
+    UNPUBLISHED = 'UNPUBLISHED',
+
+    /**
+     * The changeset has been created on the code host.
+     */
+    PUBLISHED = 'PUBLISHED',
+}
+
+/**
+ * The reconciler state of a changeset on Sourcegraph
+ */
+export enum ChangesetReconcilerState {
+    /**
+     * The changeset is enqueued for the reconciler to process it.
+     */
+    QUEUED = 'QUEUED',
+
+    /**
+     * The changeset reconciler is currently computing the delta between the
+     * If a delta exists, the reconciler tries to update the state of the
+     * changeset on the code host and on Sourcegraph to the desired state.
+     */
+    PROCESSING = 'PROCESSING',
+
+    /**
+     * The changeset reconciler ran into a problem while processing the
+     * changeset and will retry it for a number of retries.
+     */
+    ERRORED = 'ERRORED',
+
+    /**
+     * The changeset reconciler ran into a problem while processing the
+     * changeset that can't be fixed by retrying.
+     */
+    FAILED = 'FAILED',
+
+    /**
+     * The changeset is not enqueued for processing.
+     */
+    COMPLETED = 'COMPLETED',
+}
+
+/**
+ * The state of a changeset on the code host on which it's hosted.
+ */
+export enum ChangesetExternalState {
+    DRAFT = 'DRAFT',
+    OPEN = 'OPEN',
+    CLOSED = 'CLOSED',
+    MERGED = 'MERGED',
+    DELETED = 'DELETED',
+}
+
+/**
+ * The review state of a changeset.
+ */
+export enum ChangesetReviewState {
+    APPROVED = 'APPROVED',
+    CHANGES_REQUESTED = 'CHANGES_REQUESTED',
+    PENDING = 'PENDING',
+    COMMENTED = 'COMMENTED',
+    DISMISSED = 'DISMISSED',
+}
+
+/**
+ * The state of checks (e.g., for continuous integration) on a changeset.
+ */
+export enum ChangesetCheckState {
+    PENDING = 'PENDING',
+    PASSED = 'PASSED',
+    FAILED = 'FAILED',
+}
+
+/**
+ * A label attached to a changeset on a code host.
+ */
+export interface IChangesetLabel {
+    __typename: 'ChangesetLabel'
+
+    /**
+     * The label's text.
+     */
+    text: string
+
+    /**
+     * The label's color, as a hex color code without the . For example: "93ba13".
+     */
+    color: string
+
+    /**
+     * An optional description of the label.
+     */
+    description: string | null
+}
+
+/**
+ * The visual state a changeset is currently in.
+ */
+export enum ChangesetState {
+    /**
+     * The changeset has not been marked as to be published.
+     */
+    UNPUBLISHED = 'UNPUBLISHED',
+
+    /**
+     * The changeset reconciler ran into a problem while processing the
+     * changeset that can't be fixed by retrying.
+     */
+    FAILED = 'FAILED',
+
+    /**
+     * The changeset reconciler ran into a problem while processing the
+     * changeset and will retry it for a number of retries.
+     */
+    RETRYING = 'RETRYING',
+
+    /**
+     * The changeset reconciler is currently computing the delta between the
+     * If a delta exists, the reconciler tries to update the state of the
+     * changeset on the code host and on Sourcegraph to the desired state.
+     */
+    PROCESSING = 'PROCESSING',
+
+    /**
+     * The changeset is published, not being reconciled and open on the code host.
+     */
+    OPEN = 'OPEN',
+
+    /**
+     * The changeset is published, not being reconciled and in draft state on the code host.
+     */
+    DRAFT = 'DRAFT',
+
+    /**
+     * The changeset is published, not being reconciled and closed on the code host.
+     */
+    CLOSED = 'CLOSED',
+
+    /**
+     * The changeset is published, not being reconciled and merged on the code host.
+     */
+    MERGED = 'MERGED',
+
+    /**
+     * The changeset is published, not being reconciled and has been deleted on the code host.
+     */
+    DELETED = 'DELETED',
+}
+
+/**
+ * A changeset on a codehost.
+ */
+export type Changeset = IHiddenExternalChangeset | IExternalChangeset
+
+/**
+ * A changeset on a codehost.
+ */
+export interface IChangeset {
+    __typename: 'Changeset'
+
+    /**
+     * The unique ID for the changeset.
+     */
+    id: ID
+
+    /**
+     * The campaigns that contain this changeset.
+     * @deprecated "campaigns have been renamed to batch changes. Use batchChanges instead."
+     */
+    campaigns: ICampaignConnection
+
+    /**
+     * The batch changes that contain this changeset.
+     */
+    batchChanges: IBatchChangeConnection
+
+    /**
+     * The publication state of the changeset.
+     * @deprecated "Use state instead. This field is deprecated and will be removed in a future release."
+     */
+    publicationState: ChangesetPublicationState
+
+    /**
+     * The reconciler state of the changeset.
+     * @deprecated "Use state instead. This field is deprecated and will be removed in a future release."
+     */
+    reconcilerState: ChangesetReconcilerState
+
+    /**
+     * The external state of the changeset, or null when not yet published to the code host.
+     * @deprecated "Use state instead. This field is deprecated and will be removed in a future release."
+     */
+    externalState: ChangesetExternalState | null
+
+    /**
+     * The state of the changeset.
+     */
+    state: ChangesetState
+
+    /**
+     * The date and time when the changeset was created.
+     */
+    createdAt: DateTime
+
+    /**
+     * The date and time when the changeset was updated.
+     */
+    updatedAt: DateTime
+
+    /**
+     * The date and time when the next changeset sync is scheduled, or null if none is scheduled.
+     */
+    nextSyncAt: DateTime | null
+}
+
+export interface ICampaignsOnChangesetArguments {
+    /**
+     * Returns the first n campaigns from the list.
+     * @default 50
+     */
+    first?: number | null
+
+    /**
+     * Opaque pagination cursor.
+     */
+    after?: string | null
+
+    /**
+     * Only return campaigns in this state.
+     */
+    state?: CampaignState | null
+
+    /**
+     * Only include campaigns that the viewer can administer.
+     */
+    viewerCanAdminister?: boolean | null
+}
+
+export interface IBatchChangesOnChangesetArguments {
+    /**
+     * Returns the first n batch changes from the list.
+     * @default 50
+     */
+    first?: number | null
+
+    /**
+     * Opaque pagination cursor.
+     */
+    after?: string | null
+
+    /**
+     * Only return batch changes in this state.
+     */
+    state?: BatchChangeState | null
+
+    /**
+     * Only include batch changes that the viewer can administer.
+     */
+    viewerCanAdminister?: boolean | null
+}
+
+/**
+ * A changeset on a code host that the user does not have access to.
+ */
+export interface IHiddenExternalChangeset {
+    __typename: 'HiddenExternalChangeset'
+
+    /**
+     * The unique ID for the changeset.
+     */
+    id: ID
+
+    /**
+     * The campaigns that contain this changeset.
+     * @deprecated "campaigns have been renamed to batch changes. Use batchChanges instead."
+     */
+    campaigns: ICampaignConnection
+
+    /**
+     * The batch changes that contain this changeset.
+     */
+    batchChanges: IBatchChangeConnection
+
+    /**
+     * The publication state of the changeset.
+     * @deprecated "Use state instead. This field is deprecated and will be removed in a future release."
+     */
+    publicationState: ChangesetPublicationState
+
+    /**
+     * The reconciler state of the changeset.
+     * @deprecated "Use state instead. This field is deprecated and will be removed in a future release."
+     */
+    reconcilerState: ChangesetReconcilerState
+
+    /**
+     * The external state of the changeset, or null when not yet published to the code host.
+     * @deprecated "Use state instead. This field is deprecated and will be removed in a future release."
+     */
+    externalState: ChangesetExternalState | null
+
+    /**
+     * The state of the changeset.
+     */
+    state: ChangesetState
+
+    /**
+     * The date and time when the changeset was created.
+     */
+    createdAt: DateTime
+
+    /**
+     * The date and time when the changeset was updated.
+     */
+    updatedAt: DateTime
+
+    /**
+     * The date and time when the next changeset sync is scheduled, or null if none is scheduled.
+     */
+    nextSyncAt: DateTime | null
+}
+
+export interface ICampaignsOnHiddenExternalChangesetArguments {
+    /**
+     * Returns the first n campaigns from the list.
+     * @default 50
+     */
+    first?: number | null
+
+    /**
+     * Opaque pagination cursor.
+     */
+    after?: string | null
+
+    /**
+     * Only return campaigns in this state.
+     */
+    state?: CampaignState | null
+
+    /**
+     * Only include campaigns that the viewer can administer.
+     */
+    viewerCanAdminister?: boolean | null
+}
+
+export interface IBatchChangesOnHiddenExternalChangesetArguments {
+    /**
+     * Returns the first n batch changes from the list.
+     * @default 50
+     */
+    first?: number | null
+
+    /**
+     * Opaque pagination cursor.
+     */
+    after?: string | null
+
+    /**
+     * Only return batch changes in this state.
+     */
+    state?: BatchChangeState | null
+
+    /**
+     * Only include batch changes that the viewer can administer.
+     */
+    viewerCanAdminister?: boolean | null
+}
+
+/**
+ * A changeset on a code host (e.g., a pull request on GitHub).
+ */
+export interface IExternalChangeset {
+    __typename: 'ExternalChangeset'
+
+    /**
+     * The unique ID for the changeset.
+     */
+    id: ID
+
+    /**
+     * The external ID that uniquely identifies this ExternalChangeset on the
+     * code host. For example, on GitHub this is the pull request number. This is only set once the changeset is published on the code host.
+     */
+    externalID: string | null
+
+    /**
+     * The repository changed by this changeset.
+     */
+    repository: IRepository
+
+    /**
+     * The campaigns that contain this changeset.
+     * @deprecated "campaigns have been renamed to batch changes. Use batchChanges instead."
+     */
+    campaigns: ICampaignConnection
+
+    /**
+     * The batch changes that contain this changeset.
+     */
+    batchChanges: IBatchChangeConnection
+
+    /**
+     * The events belonging to this changeset.
+     */
+    events: IChangesetEventConnection
+
+    /**
+     * The date and time when the changeset was created.
+     */
+    createdAt: DateTime
+
+    /**
+     * The date and time when the changeset was updated.
+     */
+    updatedAt: DateTime
+
+    /**
+     * The date and time when the next changeset sync is scheduled, or null if none is scheduled or when the initial sync hasn't happened.
+     */
+    nextSyncAt: DateTime | null
+
+    /**
+     * The title of the changeset, or null if the data hasn't been synced from the code host yet.
+     */
+    title: string | null
+
+    /**
+     * The body of the changeset, or null if the data hasn't been synced from the code host yet.
+     */
+    body: string | null
+
+    /**
+     * The author of the changeset, or null if the data hasn't been synced from the code host yet,
+     * or the changeset has not yet been published.
+     */
+    author: IPerson | null
+
+    /**
+     * The publication state of the changeset.
+     * @deprecated "Use state instead. This field is deprecated and will be removed in a future release."
+     */
+    publicationState: ChangesetPublicationState
+
+    /**
+     * The reconciler state of the changeset.
+     * @deprecated "Use state instead. This field is deprecated and will be removed in a future release."
+     */
+    reconcilerState: ChangesetReconcilerState
+
+    /**
+     * The external state of the changeset, or null when not yet published to the code host.
+     * @deprecated "Use state instead. This field is deprecated and will be removed in a future release."
+     */
+    externalState: ChangesetExternalState | null
+
+    /**
+     * The state of the changeset.
+     */
+    state: ChangesetState
+
+    /**
+     * The labels attached to the changeset on the code host.
+     */
+    labels: IChangesetLabel[]
+
+    /**
+     * The external URL of the changeset on the code host. Not set when changeset state is UNPUBLISHED, externalState is DELETED, or the changeset's data hasn't been synced yet.
+     */
+    externalURL: IExternalLink | null
+
+    /**
+     * The review state of this changeset. This is only set once the changeset is published on the code host.
+     */
+    reviewState: ChangesetReviewState | null
+
+    /**
+     * The diff of this changeset, or null if the changeset is closed (without merging) or is already merged.
+     */
+    diff: RepositoryComparisonInterface | null
+
+    /**
+     * The diffstat of this changeset, or null if the changeset is closed
+     * (without merging) or is already merged. This data is also available
+     * indirectly through the diff field above, but if only the diffStat is
+     * required, this field is cheaper to access.
+     */
+    diffStat: IDiffStat | null
+
+    /**
+     * The state of the checks (e.g., for continuous integration) on this changeset, or null if no
+     * checks have been configured.
+     */
+    checkState: ChangesetCheckState | null
+
+    /**
+     * An error that has occurred when publishing or updating the changeset. This is only set when the changeset state is ERRORED and the viewer can administer this changeset.
+     */
+    error: string | null
+
+    /**
+     * An error that has occured during the last sync of the changeset. Null, if was successful.
+     */
+    syncerError: string | null
+
+    /**
+     * The current changeset spec for this changeset.
+     *
+     * Null if the changeset was only imported.
+     */
+    currentSpec: IVisibleChangesetSpec | null
+}
+
+export interface ICampaignsOnExternalChangesetArguments {
+    /**
+     * Returns the first n campaigns from the list.
+     * @default 50
+     */
+    first?: number | null
+
+    /**
+     * Opaque pagination cursor.
+     */
+    after?: string | null
+
+    /**
+     * Only return campaigns in this state.
+     */
+    state?: CampaignState | null
+
+    /**
+     * Only include campaigns that the viewer can administer.
+     */
+    viewerCanAdminister?: boolean | null
+}
+
+export interface IBatchChangesOnExternalChangesetArguments {
+    /**
+     * Returns the first n batch changes from the list.
+     * @default 50
+     */
+    first?: number | null
+
+    /**
+     * Opaque pagination cursor.
+     */
+    after?: string | null
+
+    /**
+     * Only return batch changes in this state.
+     */
+    state?: BatchChangeState | null
+
+    /**
+     * Only include batch changes that the viewer can administer.
+     */
+    viewerCanAdminister?: boolean | null
+}
+
+export interface IEventsOnExternalChangesetArguments {
+    /**
+     * @default 50
+     */
+    first?: number | null
+    after?: string | null
+}
+
+/**
+ * Used in the campaign page for the overview component.
+ */
+export interface IChangesetsStats {
+    __typename: 'ChangesetsStats'
+
+    /**
+     * The count of unpublished changesets.
+     */
+    unpublished: number
+
+    /**
+     * The count of externalState: DRAFT changesets.
+     */
+    draft: number
+
+    /**
+     * The count of externalState: OPEN changesets.
+     */
+    open: number
+
+    /**
+     * The count of externalState: MERGED changesets.
+     */
+    merged: number
+
+    /**
+     * The count of externalState: CLOSED changesets.
+     */
+    closed: number
+
+    /**
+     * The count of externalState: DELETED changesets.
+     */
+    deleted: number
+
+    /**
+     * The count of changesets in retrying state.
+     */
+    retrying: number
+
+    /**
+     * The count of changesets in failed state.
+     */
+    failed: number
+
+    /**
+     * The count of changesets that are currently processing or enqueued to be.
+     */
+    processing: number
+
+    /**
+     * The count of all changesets.
+     */
+    total: number
+}
+
+/**
+ * A list of changesets.
+ */
+export interface IChangesetConnection {
+    __typename: 'ChangesetConnection'
+
+    /**
+     * A list of changesets.
+     */
+    nodes: Changeset[]
+
+    /**
+     * The total number of changesets in the connection.
+     */
+    totalCount: number
+
+    /**
+     * Pagination information.
+     */
+    pageInfo: IPageInfo
+}
+
+/**
+ * A changeset event in a code host (e.g., a comment on a pull request on GitHub).
+ */
+export interface IChangesetEvent {
+    __typename: 'ChangesetEvent'
+
+    /**
+     * The unique ID for the changeset event.
+     */
+    id: ID
+
+    /**
+     * The changeset this event belongs to.
+     */
+    changeset: IExternalChangeset
+
+    /**
+     * The date and time when the changeset was created.
+     */
+    createdAt: DateTime
+}
+
+/**
+ * A list of changeset events.
+ */
+export interface IChangesetEventConnection {
+    __typename: 'ChangesetEventConnection'
+
+    /**
+     * A list of changeset events.
+     */
+    nodes: IChangesetEvent[]
+
+    /**
+     * The total number of changeset events in the connection.
+     */
+    totalCount: number
+
+    /**
+     * Pagination information.
+     */
+    pageInfo: IPageInfo
+}
+
+/**
+ * A connection of all code hosts usable with campaigns and accessible by the user
+ * this is requested on.
+ */
+export interface ICampaignsCodeHostConnection {
+    __typename: 'CampaignsCodeHostConnection'
+
+    /**
+     * A list of code hosts.
+     */
+    nodes: ICampaignsCodeHost[]
+
+    /**
+     * The total number of configured external services in the connection.
+     */
+    totalCount: number
+
+    /**
+     * Pagination information.
+     */
+    pageInfo: IPageInfo
+}
+
+/**
+ * A code host usable with campaigns. This service is accessible by the user it belongs to.
+ */
+export interface ICampaignsCodeHost {
+    __typename: 'CampaignsCodeHost'
+
+    /**
+     * The kind of external service.
+     */
+    externalServiceKind: ExternalServiceKind
+
+    /**
+     * The URL of the external service.
+     */
+    externalServiceURL: string
+
+    /**
+     * The configured credential, if any.
+     */
+    credential: ICampaignsCredential | null
+
+    /**
+     * If true, some of the repositories on this code host require
+     * an SSH key to be configured.
+     */
+    requiresSSH: boolean
+}
+
+/**
+ * A user token configured for campaigns use on the specified code host.
+ */
+export interface ICampaignsCredential {
+    __typename: 'CampaignsCredential'
+
+    /**
+     * A globally unique identifier.
+     */
+    id: ID
+
+    /**
+     * The kind of external service.
+     */
+    externalServiceKind: ExternalServiceKind
+
+    /**
+     * The URL of the external service.
+     */
+    externalServiceURL: string
+
+    /**
+     * The public key to use on the external service for SSH keypair authentication.
+     * Not set if the credential doesn't support SSH access.
+     */
+    sshPublicKey: string | null
+
+    /**
+     * The date and time this token has been created at.
+     */
+    createdAt: DateTime
+}
+
+/**
+ * This enum declares all operations supported by the reconciler.
+ */
+export enum ChangesetSpecOperation {
+    /**
+     * Push a new commit to the code host.
+     */
+    PUSH = 'PUSH',
+
+    /**
+     * Update the existing changeset on the codehost. This is purely the changeset resource on the code host,
+     * not the git commit. For updates to the commit, see 'PUSH'.
+     */
+    UPDATE = 'UPDATE',
+
+    /**
+     * Move the existing changeset out of being a draft.
+     */
+    UNDRAFT = 'UNDRAFT',
+
+    /**
+     * Publish a changeset to the codehost.
+     */
+    PUBLISH = 'PUBLISH',
+
+    /**
+     * Publish a changeset to the codehost as a draft changeset. (Only on supported code hosts).
+     */
+    PUBLISH_DRAFT = 'PUBLISH_DRAFT',
+
+    /**
+     * Sync the changeset with the current state on the codehost.
+     */
+    SYNC = 'SYNC',
+
+    /**
+     * Import an existing changeset from the code host with the ExternalID from the spec.
+     */
+    IMPORT = 'IMPORT',
+
+    /**
+     * Close the changeset on the codehost.
+     */
+    CLOSE = 'CLOSE',
+
+    /**
+     * Reopen the changeset on the codehost.
+     */
+    REOPEN = 'REOPEN',
+
+    /**
+     * Internal operation to get around slow code host updates.
+     */
+    SLEEP = 'SLEEP',
+
+    /**
+     * The changeset is removed from some of the associated campaigns.
+     */
+    DETACH = 'DETACH',
+}
+
+/**
+ * Description of the current changeset state vs the changeset spec desired state.
+ */
+export interface IChangesetSpecDelta {
+    __typename: 'ChangesetSpecDelta'
+
+    /**
+     * When run, the title of the changeset will be updated.
+     */
+    titleChanged: boolean
+
+    /**
+     * When run, the body of the changeset will be updated.
+     */
+    bodyChanged: boolean
+
+    /**
+     * When run, the changeset will be taken out of draft mode.
+     */
+    undraft: boolean
+
+    /**
+     * When run, the target branch of the changeset will be updated.
+     */
+    baseRefChanged: boolean
+
+    /**
+     * When run, a new commit will be created on the branch of the changeset.
+     */
+    diffChanged: boolean
+
+    /**
+     * When run, a new commit will be created on the branch of the changeset.
+     */
+    commitMessageChanged: boolean
+
+    /**
+     * When run, a new commit in the name of the specified author will be created on the branch of the changeset.
+     */
+    authorNameChanged: boolean
+
+    /**
+     * When run, a new commit in the name of the specified author will be created on the branch of the changeset.
+     */
+    authorEmailChanged: boolean
+}
+
+/**
+ * The type of the changeset spec.
+ */
+export enum ChangesetSpecType {
+    /**
+     * References an existing changeset on a code host to be imported.
+     */
+    EXISTING = 'EXISTING',
+
+    /**
+     * References a branch and a patch to be applied to create the changeset from.
+     */
+    BRANCH = 'BRANCH',
+}
+
+/**
+ * A changeset spec is an immutable description of the desired state of a changeset in a campaign. To
+ * create a changeset spec, use the createChangesetSpec mutation.
+ */
+export type ChangesetSpec = IHiddenChangesetSpec | IVisibleChangesetSpec
+
+/**
+ * A changeset spec is an immutable description of the desired state of a changeset in a campaign. To
+ * create a changeset spec, use the createChangesetSpec mutation.
+ */
+export interface IChangesetSpec {
+    __typename: 'ChangesetSpec'
+
+    /**
+     * The unique ID for a changeset spec.
+     *
+     * The ID is unguessable (i.e., long and randomly generated, not sequential). This is important
+     * even though repository permissions also apply to viewers of changeset specs, because being
+     * allowed to view a repository should not entitle a person to view all not-yet-published
+     * changesets for that repository. Consider a campaign to fix a security vulnerability: the
+     * campaign author may prefer to prepare all of the changesets in private so that the window
+     * between revealing the problem and merging the fixes is as short as possible.
+     */
+    id: ID
+
+    /**
+     * The type of changeset spec.
+     */
+    type: ChangesetSpecType
+
+    /**
+     * The date, if any, when this changeset spec expires and is automatically purged. A changeset
+     * spec never expires (and this field is null) if its campaign spec has been applied.
+     */
+    expiresAt: DateTime | null
+}
+
+/**
+ * A changeset spec is an immutable description of the desired state of a changeset in a campaign. To
+ * create a changeset spec, use the createChangesetSpec mutation.
+ */
+export interface IHiddenChangesetSpec {
+    __typename: 'HiddenChangesetSpec'
+
+    /**
+     * The unique ID for a changeset spec.
+     *
+     * The ID is unguessable (i.e., long and randomly generated, not sequential). This is important
+     * even though repository permissions also apply to viewers of changeset specs, because being
+     * allowed to view a repository should not entitle a person to view all not-yet-published
+     * changesets for that repository. Consider a campaign to fix a security vulnerability: the
+     * campaign author may prefer to prepare all of the changesets in private so that the window
+     * between revealing the problem and merging the fixes is as short as possible.
+     */
+    id: ID
+
+    /**
+     * The type of changeset spec.
+     */
+    type: ChangesetSpecType
+
+    /**
+     * The date, if any, when this changeset spec expires and is automatically purged. A changeset
+     * spec never expires (and this field is null) if its campaign spec has been applied.
+     */
+    expiresAt: DateTime | null
+}
+
+/**
+ * A changeset spec is an immutable description of the desired state of a changeset in a campaign. To
+ * create a changeset spec, use the createChangesetSpec mutation.
+ */
+export interface IVisibleChangesetSpec {
+    __typename: 'VisibleChangesetSpec'
+
+    /**
+     * The unique ID for a changeset spec.
+     *
+     * The ID is unguessable (i.e., long and randomly generated, not sequential). This is important
+     * even though repository permissions also apply to viewers of changeset specs, because being
+     * allowed to view a repository should not entitle a person to view all not-yet-published
+     * changesets for that repository. Consider a campaign to fix a security vulnerability: the
+     * campaign author may prefer to prepare all of the changesets in private so that the window
+     * between revealing the problem and merging the fixes is as short as possible.
+     */
+    id: ID
+
+    /**
+     * The type of changeset spec.
+     */
+    type: ChangesetSpecType
+
+    /**
+     * The description of the changeset.
+     */
+    description: ChangesetDescription
+
+    /**
+     * The date, if any, when this changeset spec expires and is automatically purged. A changeset
+     * spec never expires (and this field is null) if its campaign spec has been applied.
+     */
+    expiresAt: DateTime | null
+}
+
+/**
+ * All possible types of changesets that can be specified in a changeset spec.
+ */
+export type ChangesetDescription = IExistingChangesetReference | IGitBranchChangesetDescription
+
+/**
+ * A reference to a changeset that already exists on a code host (and was not created by the
+ * campaign).
+ */
+export interface IExistingChangesetReference {
+    __typename: 'ExistingChangesetReference'
+
+    /**
+     * The repository that contains the existing changeset on the code host.
+     */
+    baseRepository: IRepository
+
+    /**
+     * The ID that uniquely identifies the existing changeset on the code host.
+     *
+     * For GitHub and Bitbucket Server, this is the pull request number (as a string) in the
+     * base repository. For example, "1234" for PR 1234.
+     */
+    externalID: string
+}
+
+/**
+ * A description of a changeset that represents the proposal to merge one branch into another.
+ * This is used to describe a pull request (on GitHub and Bitbucket Server).
+ */
+export interface IGitBranchChangesetDescription {
+    __typename: 'GitBranchChangesetDescription'
+
+    /**
+     * The repository that this changeset spec is proposing to change.
+     */
+    baseRepository: IRepository
+
+    /**
+     * The full name of the Git ref in the base repository that this changeset is based on (and is
+     * proposing to be merged into). This ref must exist on the base repository. For example,
+     * "refs/heads/master" or "refs/heads/main".
+     */
+    baseRef: string
+
+    /**
+     * The base revision this changeset is based on. It is the latest commit in
+     * baseRef at the time when the changeset spec was created.
+     * For example: "4095572721c6234cd72013fd49dff4fb48f0f8a4"
+     */
+    baseRev: string
+
+    /**
+     * The repository that contains the branch with this changeset's changes.
+     *
+     * Fork repositories and cross-repository changesets are not yet supported. Therefore,
+     * headRepository must be equal to baseRepository.
+     */
+    headRepository: IRepository
+
+    /**
+     * The full name of the Git ref that holds the changes proposed by this changeset. This ref will
+     * be created or updated with the commits. For example, "refs/heads/fix-foo" (for
+     * the Git branch "fix-foo").
+     */
+    headRef: string
+
+    /**
+     * The title of the changeset on the code host.
+     *
+     * On Bitbucket Server or GitHub this is the title of the pull request.
+     */
+    title: string
+
+    /**
+     * The body of the changeset on the code host.
+     *
+     * On Bitbucket Server or GitHub this is the body/description of the pull request.
+     */
+    body: string
+
+    /**
+     * The Git commits with the proposed changes. These commits are pushed to the head ref.
+     *
+     * Only 1 commit is supported.
+     */
+    commits: IGitCommitDescription[]
+
+    /**
+     * The total diff of the changeset diff.
+     */
+    diff: IPreviewRepositoryComparison
+
+    /**
+     * The diffstat of this changeset spec. This data is also available
+     * indirectly through the diff field above, but if only the diffStat is
+     * required, this field is cheaper to access.
+     */
+    diffStat: IDiffStat
+
+    /**
+     * Whether or not the changeset described here should be created right after
+     * applying the ChangesetSpec this description belongs to.
+     *
+     * If this is false, the changeset will only be created on Sourcegraph and
+     * can be previewed.
+     *
+     * Another ChangesetSpec with the same description, but "published: true",
+     * can later be applied publish the changeset.
+     */
+    published: any
+}
+
+/**
+ * A description of a Git commit.
+ */
+export interface IGitCommitDescription {
+    __typename: 'GitCommitDescription'
+
+    /**
+     * The full commit message.
+     */
+    message: string
+
+    /**
+     * The first line of the commit message.
+     */
+    subject: string
+
+    /**
+     * The contents of the commit message after the first line.
+     */
+    body: string | null
+
+    /**
+     * The Git commit author.
+     */
+    author: IPerson
+
+    /**
+     * The commit diff (in unified diff format).
+     *
+     * The filenames must not be prefixed (e.g., with 'a/' and 'b/'). Tip: use 'git diff --no-prefix'
+     * to omit the prefix.
+     */
+    diff: string
+}
+
+/**
+ * A list of changeset specs.
+ */
+export interface IChangesetSpecConnection {
+    __typename: 'ChangesetSpecConnection'
+
+    /**
+     * The total number of changeset specs in the connection.
+     */
+    totalCount: number
+
+    /**
+     * Pagination information.
+     */
+    pageInfo: IPageInfo
+
+    /**
+     * A list of changeset specs.
+     */
+    nodes: ChangesetSpec[]
+}
+
+/**
+ * A preview for which actions applyCampaign would result in when called at the point of time this preview was created at.
+ */
+export type ChangesetApplyPreview = IVisibleChangesetApplyPreview | IHiddenChangesetApplyPreview
+
+/**
+ * A preview entry to a repository to which the user has access.
+ */
+export type VisibleApplyPreviewTargets =
+    | IVisibleApplyPreviewTargetsAttach
+    | IVisibleApplyPreviewTargetsUpdate
+    | IVisibleApplyPreviewTargetsDetach
+
+/**
+ * A preview entry where no changeset existed before matching the changeset spec.
+ */
+export interface IVisibleApplyPreviewTargetsAttach {
+    __typename: 'VisibleApplyPreviewTargetsAttach'
+
+    /**
+     * The changeset spec from this entry.
+     */
+    changesetSpec: IVisibleChangesetSpec
+}
+
+/**
+ * A preview entry where a changeset matches the changeset spec.
+ */
+export interface IVisibleApplyPreviewTargetsUpdate {
+    __typename: 'VisibleApplyPreviewTargetsUpdate'
+
+    /**
+     * The changeset spec from this entry.
+     */
+    changesetSpec: IVisibleChangesetSpec
+
+    /**
+     * The changeset from this entry.
+     */
+    changeset: IExternalChangeset
+}
+
+/**
+ * A preview entry where no changeset spec exists for the changeset currently in
+ * the target campaign.
+ */
+export interface IVisibleApplyPreviewTargetsDetach {
+    __typename: 'VisibleApplyPreviewTargetsDetach'
+
+    /**
+     * The changeset from this entry.
+     */
+    changeset: IExternalChangeset
+}
+
+/**
+ * A preview entry to a repository to which the user has no access.
+ */
+export type HiddenApplyPreviewTargets =
+    | IHiddenApplyPreviewTargetsAttach
+    | IHiddenApplyPreviewTargetsUpdate
+    | IHiddenApplyPreviewTargetsDetach
+
+/**
+ * A preview entry where no changeset existed before matching the changeset spec.
+ */
+export interface IHiddenApplyPreviewTargetsAttach {
+    __typename: 'HiddenApplyPreviewTargetsAttach'
+
+    /**
+     * The changeset spec from this entry.
+     */
+    changesetSpec: IHiddenChangesetSpec
+}
+
+/**
+ * A preview entry where a changeset matches the changeset spec.
+ */
+export interface IHiddenApplyPreviewTargetsUpdate {
+    __typename: 'HiddenApplyPreviewTargetsUpdate'
+
+    /**
+     * The changeset spec from this entry.
+     */
+    changesetSpec: IHiddenChangesetSpec
+
+    /**
+     * The changeset from this entry.
+     */
+    changeset: IHiddenExternalChangeset
+}
+
+/**
+ * A preview entry where no changeset spec exists for the changeset currently in
+ * the target campaign.
+ */
+export interface IHiddenApplyPreviewTargetsDetach {
+    __typename: 'HiddenApplyPreviewTargetsDetach'
+
+    /**
+     * The changeset from this entry.
+     */
+    changeset: IHiddenExternalChangeset
+}
+
+/**
+ * One preview entry in the list of all previews against a campaign spec. Each mapping
+ * between changeset specs and current changesets yields one of these. It describes
+ * which operations are taken against which changeset spec and changeset to ensure the
+ * desired state is met.
+ */
+export interface IHiddenChangesetApplyPreview {
+    __typename: 'HiddenChangesetApplyPreview'
+
+    /**
+     * The operations to take to achieve the desired state.
+     */
+    operations: ChangesetSpecOperation[]
+
+    /**
+     * The delta between the current changeset state and what the new changeset spec
+     * envisions the changeset to look like.
+     */
+    delta: IChangesetSpecDelta
+
+    /**
+     * The target entities in this preview entry.
+     */
+    targets: HiddenApplyPreviewTargets
+}
+
+/**
+ * One preview entry in the list of all previews against a campaign spec. Each mapping
+ * between changeset specs and current changesets yields one of these. It describes
+ * which operations are taken against which changeset spec and changeset to ensure the
+ * desired state is met.
+ */
+export interface IVisibleChangesetApplyPreview {
+    __typename: 'VisibleChangesetApplyPreview'
+
+    /**
+     * The operations to take to achieve the desired state.
+     */
+    operations: ChangesetSpecOperation[]
+
+    /**
+     * The delta between the current changeset state and what the new changeset spec
+     * envisions the changeset to look like.
+     */
+    delta: IChangesetSpecDelta
+
+    /**
+     * The target entities in this preview entry.
+     */
+    targets: VisibleApplyPreviewTargets
+}
+
+/**
+ * Aggregated stats on nodes in this connection.
+ */
+export interface IChangesetApplyPreviewConnectionStats {
+    __typename: 'ChangesetApplyPreviewConnectionStats'
+
+    /**
+     * Push a new commit to the code host.
+     */
+    push: number
+
+    /**
+     * Update the existing changeset on the codehost. This is purely the changeset resource on the code host,
+     * not the git commit. For updates to the commit, see 'PUSH'.
+     */
+    update: number
+
+    /**
+     * Move the existing changeset out of being a draft.
+     */
+    undraft: number
+
+    /**
+     * Publish a changeset to the codehost.
+     */
+    publish: number
+
+    /**
+     * Publish a changeset to the codehost as a draft changeset. (Only on supported code hosts).
+     */
+    publishDraft: number
+
+    /**
+     * Sync the changeset with the current state on the codehost.
+     */
+    sync: number
+
+    /**
+     * Import an existing changeset from the code host with the ExternalID from the spec.
+     */
+    import: number
+
+    /**
+     * Close the changeset on the codehost.
+     */
+    close: number
+
+    /**
+     * Reopen the changeset on the codehost.
+     */
+    reopen: number
+
+    /**
+     * Internal operation to get around slow code host updates.
+     */
+    sleep: number
+
+    /**
+     * The changeset is removed from some of the associated campaigns.
+     */
+    detach: number
+
+    /**
+     * The amount of changesets that are added to the campaign in this operation.
+     */
+    added: number
+
+    /**
+     * The amount of changesets that are already attached to the campaign and modified in this operation.
+     */
+    modified: number
+
+    /**
+     * The amount of changesets that are disassociated from the campaign in this operation.
+     */
+    removed: number
+}
+
+/**
+ * A list of preview entries.
+ */
+export interface IChangesetApplyPreviewConnection {
+    __typename: 'ChangesetApplyPreviewConnection'
+
+    /**
+     * The total number of entries in the connection.
+     */
+    totalCount: number
+
+    /**
+     * Pagination information.
+     */
+    pageInfo: IPageInfo
+
+    /**
+     * A list of preview entries.
+     */
+    nodes: ChangesetApplyPreview[]
+
+    /**
+     * Stats on the elements in this connnection. Does not respect pagination parameters.
+     */
+    stats: IChangesetApplyPreviewConnectionStats
+}
+
+/**
+ * A CampaignDescription describes a campaign.
+ */
+export interface ICampaignDescription {
+    __typename: 'CampaignDescription'
+
+    /**
+     * The name as parsed from the input.
+     */
+    name: string
+
+    /**
+     * The description as parsed from the input.
+     */
+    description: string
+}
+
+/**
+ * A campaign spec is an immutable description of the desired state of a campaign. To create a
+ * campaign spec, use the createCampaignSpec mutation.
+ */
+export interface ICampaignSpec {
+    __typename: 'CampaignSpec'
+
+    /**
+     * The unique ID for a campaign spec.
+     *
+     * The ID is unguessable (i.e., long and randomly generated, not sequential).
+     * Consider a campaign to fix a security vulnerability: the campaign author may prefer
+     * to prepare the campaign, including the description in private so that the window
+     * between revealing the problem and merging the fixes is as short as possible.
+     */
+    id: ID
+
+    /**
+     * The original YAML or JSON input that was used to create this campaign spec.
+     */
+    originalInput: string
+
+    /**
+     * The parsed JSON value of the original input. If the original input was YAML, the YAML is
+     * converted to the equivalent JSON.
+     */
+    parsedInput: any
+
+    /**
+     * The CampaignDescription that describes this campaign.
+     */
+    description: ICampaignDescription
+
+    /**
+     * Generates a preview what operations would be performed if the campaign spec would be applied.
+     * This preview is not a guarantee, since the state of the changesets can change between the time
+     * the preview is generated and when the campaign spec is applied.
+     */
+    applyPreview: IChangesetApplyPreviewConnection
+
+    /**
+     * The specs for changesets associated with this campaign.
+     */
+    changesetSpecs: IChangesetSpecConnection
+
+    /**
+     * The user who created this campaign spec (or null if the user no longer exists).
+     */
+    creator: IUser | null
+
+    /**
+     * The date when this campaign spec was created.
+     */
+    createdAt: DateTime
+
+    /**
+     * The namespace (either a user or organization) of the campaign spec.
+     */
+    namespace: Namespace
+
+    /**
+     * The date, if any, when this campaign spec expires and is automatically purged. A campaign spec
+     * never expires if it has been applied.
+     */
+    expiresAt: DateTime | null
+
+    /**
+     * The URL of a web page that allows applying this campaign spec and
+     * displays a preview of which changesets will be created by applying it.
+     */
+    applyURL: string
+
+    /**
+     * When true, the viewing user can apply this spec.
+     */
+    viewerCanAdminister: boolean
+
+    /**
+     * The diff stat for all the changeset specs in the campaign spec.
+     */
+    diffStat: IDiffStat
+
+    /**
+     * The campaign this spec will update when applied. If it's null, the
+     * campaign doesn't yet exist.
+     */
+    appliesToCampaign: ICampaign | null
+
+    /**
+     * The newest version of this campaign spec, as identified by its namespace
+     * and name. If this is the newest version, this field will be null.
+     */
+    supersedingCampaignSpec: ICampaignSpec | null
+
+    /**
+     * The code host connections required for applying this spec. Includes the credentials of the current user.
+     */
+    viewerCampaignsCodeHosts: ICampaignsCodeHostConnection
+}
+
+export interface IApplyPreviewOnCampaignSpecArguments {
+    /**
+     * Returns the first n entries from the list.
+     * @default 50
+     */
+    first?: number | null
+
+    /**
+     * Opaque pagination cursor.
+     */
+    after?: string | null
+
+    /**
+     * Search for changesets matching this query. Queries may include quoted substrings to match phrases, and words may be preceded by - to negate them.
+     */
+    search?: string | null
+
+    /**
+     * Search for changesets that are currently in this state.
+     */
+    currentState?: ChangesetState | null
+
+    /**
+     * Search for changesets that will have the given action performed.
+     */
+    action?: ChangesetSpecOperation | null
+}
+
+export interface IChangesetSpecsOnCampaignSpecArguments {
+    /**
+     * @default 50
+     */
+    first?: number | null
+    after?: string | null
+}
+
+export interface IViewerCampaignsCodeHostsOnCampaignSpecArguments {
+    /**
+     * Returns the first n code hosts from the list.
+     * @default 50
+     */
+    first?: number | null
+
+    /**
+     * Opaque pagination cursor.
+     */
+    after?: string | null
+
+    /**
+     * Only returns the code hosts for which the viewer doesn't have credentials.
+     * @default false
+     */
+    onlyWithoutCredential?: boolean | null
+}
+
+/**
+ * The state of the batch change.
+ */
+export enum BatchChangeState {
+    OPEN = 'OPEN',
+    CLOSED = 'CLOSED',
+}
+
+/**
+ * A batch change is a set of related changes to apply to code across one or more repositories.
+ */
+export interface IBatchChange {
+    __typename: 'BatchChange'
+
+    /**
+     * The unique ID for the batch change.
+     */
+    id: ID
+
+    /**
+     * The namespace where this batch change is defined.
+     */
+    namespace: Namespace
+
+    /**
+     * The name of the batch change.
+     */
+    name: string
+
+    /**
+     * The description (as Markdown).
+     */
+    description: string | null
+
+    /**
+     * The user that created the initial spec. In an org, this will be different from the namespace, or null if the user was deleted.
+     */
+    specCreator: IUser | null
+
+    /**
+     * The user who created the batch change initially by applying the spec for the first time, or null if the user was deleted.
+     */
+    initialApplier: IUser | null
+
+    /**
+     * The user who last updated the batch change by applying a spec to this batch change.
+     * If the batch change hasn't been updated, the lastApplier is the initialApplier, or null if the user was deleted.
+     */
+    lastApplier: IUser | null
+
+    /**
+     * Whether the current user can edit or delete this batch change.
+     */
+    viewerCanAdminister: boolean
+
+    /**
+     * The URL to this batch change.
+     */
+    url: string
+
+    /**
+     * The date and time when the batch change was created.
+     */
+    createdAt: DateTime
+
+    /**
+     * The date and time when the batch change was updated. That can be by applying a spec, or by an internal process.
+     * For reading the time the batch change spec was changed last, see lastAppliedAt.
+     */
+    updatedAt: DateTime
+
+    /**
+     * The date and time when the batch change was last updated with a new spec.
+     */
+    lastAppliedAt: DateTime
+
+    /**
+     * The date and time when the batch change was closed. If set, applying a spec for this batch change will fail with an error.
+     */
+    closedAt: DateTime | null
+
+    /**
+     * Stats on all the changesets that are tracked in this batch change.
+     */
+    changesetsStats: IChangesetsStats
+
+    /**
+     * The changesets in this batch change that already exist on the code host.
+     */
+    changesets: IChangesetConnection
+
+    /**
+     * The changeset counts over time, in 1-day intervals backwards from the point in time given in
+     * the "to" parameter.
+     */
+    changesetCountsOverTime: IChangesetCounts[]
+
+    /**
+     * The diff stat for all the changesets in the batch change.
+     */
+    diffStat: IDiffStat
+
+    /**
+     * The current change spec this change reflects.
+     */
+    currentSpec: IBatchSpec
+}
+
+export interface IChangesetsOnBatchChangeArguments {
+    /**
+     * @default 50
+     */
+    first?: number | null
+
+    /**
+     * Opaque pagination cursor.
+     */
+    after?: string | null
+
+    /**
+     * Only include changesets with the given state.
+     */
+    state?: ChangesetState | null
+
+    /**
+     * Only include changesets with the given review state.
+     */
+    reviewState?: ChangesetReviewState | null
+
+    /**
+     * Only include changesets with the given check state.
+     */
+    checkState?: ChangesetCheckState | null
+
+    /**
+     * Only return changesets that have been published by this batch change. Imported changesets will be omitted.
+     */
+    onlyPublishedByThisBatchChange?: boolean | null
+
+    /**
+     * Search for changesets matching this query. Queries may include quoted substrings to match phrases, and words may be preceded by - to negate them.
+     */
+    search?: string | null
+}
+
+export interface IChangesetCountsOverTimeOnBatchChangeArguments {
+    /**
+     * Only include changeset counts up to this point in time (inclusive). Defaults to BatchChange.createdAt.
+     */
+    from?: DateTime | null
+
+    /**
+     * Only include changeset counts up to this point in time (inclusive). Defaults to the
+     * current time.
+     */
+    to?: DateTime | null
+}
+
+/**
+ * A batch spec is an immutable description of the desired state of a campaign. To create a
+ * batch spec, use the createBatchSpec mutation.
+ */
+export interface IBatchSpec {
+    __typename: 'BatchSpec'
+
+    /**
+     * The unique ID for a batch spec.
+     *
+     * The ID is unguessable (i.e., long and randomly generated, not sequential).
+     * Consider a campaign to fix a security vulnerability: the campaign author may prefer
+     * to prepare the campaign, including the description in private so that the window
+     * between revealing the problem and merging the fixes is as short as possible.
+     */
+    id: ID
+
+    /**
+     * The original YAML or JSON input that was used to create this batch spec.
+     */
+    originalInput: string
+
+    /**
+     * The parsed JSON value of the original input. If the original input was YAML, the YAML is
+     * converted to the equivalent JSON.
+     */
+    parsedInput: any
+
+    /**
+     * The BatchChangeDescription that describes this batch change.
+     */
+    description: IBatchChangeDescription
+
+    /**
+     * Generates a preview what operations would be performed if the batch spec would be applied.
+     * This preview is not a guarantee, since the state of the changesets can change between the time
+     * the preview is generated and when the batch spec is applied.
+     */
+    applyPreview: IChangesetApplyPreviewConnection
+
+    /**
+     * The specs for changesets associated with this campaign.
+     */
+    changesetSpecs: IChangesetSpecConnection
+
+    /**
+     * The user who created this batch spec (or null if the user no longer exists).
+     */
+    creator: IUser | null
+
+    /**
+     * The date when this batch spec was created.
+     */
+    createdAt: DateTime
+
+    /**
+     * The namespace (either a user or organization) of the batch spec.
+     */
+    namespace: Namespace
+
+    /**
+     * The date, if any, when this batch spec expires and is automatically purged. A batch spec
+     * never expires if it has been applied.
+     */
+    expiresAt: DateTime | null
+
+    /**
+     * The URL of a web page that allows applying this batch spec and
+     * displays a preview of which changesets will be created by applying it.
+     */
+    applyURL: string
+
+    /**
+     * When true, the viewing user can apply this spec.
+     */
+    viewerCanAdminister: boolean
+
+    /**
+     * The diff stat for all the changeset specs in the batch spec.
+     */
+    diffStat: IDiffStat
+
+    /**
+     * The campaign this spec will update when applied. If it's null, the
+     * campaign doesn't yet exist.
+     */
+    appliesToBatchChange: IBatchChange | null
+
+    /**
+     * The newest version of this batch spec, as identified by its namespace
+     * and name. If this is the newest version, this field will be null.
+     */
+    supersedingBatchSpec: IBatchSpec | null
+
+    /**
+     * The code host connections required for applying this spec. Includes the credentials of the current user.
+     */
+    viewerBatchChangesCodeHosts: IBatchChangesCodeHostConnection
+}
+
+export interface IApplyPreviewOnBatchSpecArguments {
+    /**
+     * Returns the first n entries from the list.
+     * @default 50
+     */
+    first?: number | null
+
+    /**
+     * Opaque pagination cursor.
+     */
+    after?: string | null
+
+    /**
+     * Search for changesets matching this query. Queries may include quoted substrings to match phrases, and words may be preceded by - to negate them.
+     */
+    search?: string | null
+
+    /**
+     * Search for changesets that are currently in this state.
+     */
+    currentState?: ChangesetState | null
+
+    /**
+     * Search for changesets that will have the given action performed.
+     */
+    action?: ChangesetSpecOperation | null
+}
+
+export interface IChangesetSpecsOnBatchSpecArguments {
+    /**
+     * @default 50
+     */
+    first?: number | null
+    after?: string | null
+}
+
+export interface IViewerBatchChangesCodeHostsOnBatchSpecArguments {
+    /**
+     * Returns the first n code hosts from the list.
+     * @default 50
+     */
+    first?: number | null
+
+    /**
+     * Opaque pagination cursor.
+     */
+    after?: string | null
+
+    /**
+     * Only returns the code hosts for which the viewer doesn't have credentials.
+     * @default false
+     */
+    onlyWithoutCredential?: boolean | null
+}
+
+/**
+ * A list of batch changes.
+ */
+export interface IBatchChangeConnection {
+    __typename: 'BatchChangeConnection'
+
+    /**
+     * A list of batch changes.
+     */
+    nodes: IBatchChange[]
+
+    /**
+     * The total number of batch changes in the connection.
+     */
+    totalCount: number
+
+    /**
+     * Pagination information.
+     */
+    pageInfo: IPageInfo
+}
+
+/**
+ * A connection of all code hosts usable with batch changes and accessible by the user
+ * this is requested on.
+ */
+export interface IBatchChangesCodeHostConnection {
+    __typename: 'BatchChangesCodeHostConnection'
+
+    /**
+     * A list of code hosts.
+     */
+    nodes: IBatchChangesCodeHost[]
+
+    /**
+     * The total number of configured external services in the connection.
+     */
+    totalCount: number
+
+    /**
+     * Pagination information.
+     */
+    pageInfo: IPageInfo
+}
+
+/**
+ * A code host usable with batch changes. This service is accessible by the user it belongs to.
+ */
+export interface IBatchChangesCodeHost {
+    __typename: 'BatchChangesCodeHost'
+
+    /**
+     * The kind of external service.
+     */
+    externalServiceKind: ExternalServiceKind
+
+    /**
+     * The URL of the external service.
+     */
+    externalServiceURL: string
+
+    /**
+     * The configured credential, if any.
+     */
+    credential: IBatchChangesCredential | null
+
+    /**
+     * If true, some of the repositories on this code host require
+     * an SSH key to be configured.
+     */
+    requiresSSH: boolean
+}
+
+/**
+ * A user token configured for batch changes use on the specified code host.
+ */
+export interface IBatchChangesCredential {
+    __typename: 'BatchChangesCredential'
+
+    /**
+     * A globally unique identifier.
+     */
+    id: ID
+
+    /**
+     * The kind of external service.
+     */
+    externalServiceKind: ExternalServiceKind
+
+    /**
+     * The URL of the external service.
+     */
+    externalServiceURL: string
+
+    /**
+     * The public key to use on the external service for SSH keypair authentication.
+     * Not set if the credential doesn't support SSH access.
+     */
+    sshPublicKey: string | null
+
+    /**
+     * The date and time this token has been created at.
+     */
+    createdAt: DateTime
+}
+
+/**
+ * A BatchChangeDescription describes a batch change.
+ */
+export interface IBatchChangeDescription {
+    __typename: 'BatchChangeDescription'
+
+    /**
+     * The name as parsed from the input.
+     */
+    name: string
+
+    /**
+     * The description as parsed from the input.
+     */
+    description: string
 }
