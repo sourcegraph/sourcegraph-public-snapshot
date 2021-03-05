@@ -293,7 +293,7 @@ func (s *Server) SyncRepoState(db dbutil.DB, interval time.Duration, batchSize, 
 	}
 }
 
-// Hostname checks whether the hostname matches the given address.
+// HostnameMatch checks whether the hostname matches the given address.
 // If we don't find an exact match, we look at the initial prefix.
 func (s *Server) HostnameMatch(addr string) bool {
 	if addr == s.Hostname {
