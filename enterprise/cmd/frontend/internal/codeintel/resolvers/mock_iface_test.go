@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
+	config "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
 	gitserver "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
-	config "github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/autoindex/config"
 )
 
 // MockDBStore is a mock implementation of the DBStore interface (from the

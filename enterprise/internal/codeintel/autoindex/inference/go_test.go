@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/autoindex/config"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
 )
 
 func TestLSIFGoJobRecognizerCanIndex(t *testing.T) {
