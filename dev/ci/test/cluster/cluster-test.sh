@@ -77,7 +77,7 @@ function test_setup() {
 
 function e2e() {
   echo "TEST: Running tests"
-  pushd client/app-web
+  pushd client/web
   echo "$SOURCEGRAPH_BASE_URL"
   yarn run test:regression:core
   yarn run test:regression:config-settings

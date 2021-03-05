@@ -30,13 +30,13 @@ jobs:
       - name: Generate
         run: ./node_modules/.bin/gulp generate
       - name: Generate LSIF data
-        working-directory: client/app-web/
+        working-directory: client/web/
         run: lsif-tsc -p .
       - name: Upload LSIF data to .com
-        working-directory: client/app-web/
+        working-directory: client/web/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
       - name: Upload LSIF data to dogfood
-        working-directory: client/app-web/
+        working-directory: client/web/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
         env:
           SRC_ENDPOINT: https://k8s.sgdev.org/
@@ -128,13 +128,13 @@ jobs:
       - name: Build TypeScript
         run: yarn run --ignore-engines build-ts
       - name: Generate LSIF data
-        working-directory: client/app-web/
+        working-directory: client/web/
         run: yarn eslint -f lsif -o dump.lsif
       - name: Upload LSIF data to .com
-        working-directory: client/app-web/
+        working-directory: client/web/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
       - name: Upload LSIF data to dogfood
-        working-directory: client/app-web/
+        working-directory: client/web/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
         env:
           SRC_ENDPOINT: https://k8s.sgdev.org/

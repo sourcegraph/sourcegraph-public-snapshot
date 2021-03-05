@@ -94,7 +94,7 @@
       "label": "eslint:web",
       "type": "npm",
       "script": "eslint",
-      "path": "client/app-web/",
+      "path": "client/web/",
       "problemMatcher": ["$eslint-stylish"],
     },
     {

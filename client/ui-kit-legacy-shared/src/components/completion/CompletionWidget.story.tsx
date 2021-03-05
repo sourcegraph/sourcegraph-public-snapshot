@@ -4,7 +4,7 @@ import { storiesOf } from '@storybook/react'
 import React, { useState } from 'react'
 import { CompletionList } from 'sourcegraph'
 import { CompletionWidget, CompletionWidgetProps } from './CompletionWidget'
-import webStyles from '../../../../app-web/src/main.scss'
+import webStyles from '../../../../web/src/main.scss'
 
 const onSelectItem = () => action('onSelectItem')
 

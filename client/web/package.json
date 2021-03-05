@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "@sourcegraph/app-web",
+  "name": "@sourcegraph/web",
   "version": "1.10.1",
   "description": "The Sourcegraph web app",
   "license": "MIT",

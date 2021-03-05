@@ -17,7 +17,7 @@ Here are the best arguments for using a code search tool on a monorepo, from mon
 
 **Scenario:** You're deep in flow, but then a team member asks you a question about how some other code works, or something like that.
 
-- 🤬 Using your editor's search, you can find the answer. But then how do you share that with your team member? Screenshot your editor? Type out "see lines 38-40 of `client/app-web/src/user/account/AccountForm.tsx` …"?
+- 🤬 Using your editor's search, you can find the answer. But then how do you share that with your team member? Screenshot your editor? Type out "see lines 38-40 of `client/web/src/user/account/AccountForm.tsx` …"?
 - 😊 With a code search tool, you'd just copy the URL and paste it to the other person. They can visit the link and see what you mean instantly.
 
 **Another scenario:** You're coding and come across a bug that, upon a quick search in your editor, is present in dozens of files (such as a typo, function misuse, etc.).

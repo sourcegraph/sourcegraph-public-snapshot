@@ -1,10 +1,10 @@
 {
   "extends": "./tsconfig.json",
   "references": [
-    { "path": "client/app-web" },
-    { "path": "client/app-web/src/end-to-end" },
-    { "path": "client/app-web/src/regression" },
-    { "path": "client/app-web/src/integration" },
+    { "path": "client/web" },
+    { "path": "client/web/src/end-to-end" },
+    { "path": "client/web/src/regression" },
+    { "path": "client/web/src/integration" },
     { "path": "client/browser-extension" },
     { "path": "client/browser-extension/src/end-to-end" },
     { "path": "client/extension-api" },

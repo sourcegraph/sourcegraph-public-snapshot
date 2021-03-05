@@ -28,7 +28,7 @@ async function main(): Promise<void> {
     project.addSourceFilesFromTsConfig(path.resolve(repoRoot, 'web/tsconfig.json'))
     project.addSourceFilesFromTsConfig(path.resolve(repoRoot, 'shared/tsconfig.json'))
     project.addSourceFilesAtPaths([
-        path.resolve(repoRoot, 'client/app-web/src/**/*.d.ts'),
+        path.resolve(repoRoot, 'client/web/src/**/*.d.ts'),
         path.resolve(repoRoot, 'client/ui-kit-legacy-shared/src/**/*.d.ts'),
         path.resolve(repoRoot, 'client/browser-extension/src/**/*.d.ts'),
     ])

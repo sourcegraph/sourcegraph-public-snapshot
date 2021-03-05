@@ -5,7 +5,7 @@ const path = require('path')
 
 const ROOT_FOLDER = path.resolve(__dirname, '../../../')
 
-const WEB_FOLDER = path.resolve(ROOT_FOLDER, './client/app-web')
+const WEB_FOLDER = path.resolve(ROOT_FOLDER, './client/web')
 const BROWSER_FOLDER = path.resolve(ROOT_FOLDER, './client/browser-extension')
 const SHARED_FOLDER = path.resolve(ROOT_FOLDER, './client/ui-kit-legacy-shared')
 const SCHEMA_PATH = path.join(ROOT_FOLDER, './cmd/frontend/graphqlbackend/schema.graphql')

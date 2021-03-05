@@ -11,7 +11,7 @@ parallel_run() {
 export ARGS=$*
 
 DIRS=(
-  client/app-web
+  client/web
   client/ui-kit
   client/ui-kit-legacy-shared
   client/ui-kit-legacy-branded
