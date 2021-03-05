@@ -13,9 +13,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-// campaignColumns are used by the campaign related Store methods to insert,
+// batchChangeColumns are used by the batch change related Store methods to insert,
 // update and query batches.
-var campaignColumns = []*sqlf.Query{
+var batchChangeColumns = []*sqlf.Query{
 	sqlf.Sprintf("campaigns.id"),
 	sqlf.Sprintf("campaigns.name"),
 	sqlf.Sprintf("campaigns.description"),
@@ -30,10 +30,10 @@ var campaignColumns = []*sqlf.Query{
 	sqlf.Sprintf("campaigns.campaign_spec_id"),
 }
 
-// campaignInsertColumns is the list of campaign columns that are modified in
-// CreateCampaign and UpdateCampaign.
+// batchChangeInsertColumns is the list of batch changes columns that are
+// modified in CreateBatchChange and UpdateBatchChange.
 // update and query batches.
-var campaignInsertColumns = []*sqlf.Query{
+var batchChangeInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("name"),
 	sqlf.Sprintf("description"),
 	sqlf.Sprintf("initial_applier_id"),
@@ -47,23 +47,23 @@ var campaignInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("campaign_spec_id"),
 }
 
-// CreateCampaign creates the given Campaign.
-func (s *Store) CreateCampaign(ctx context.Context, c *batches.Campaign) error {
-	q := s.createCampaignQuery(c)
+// CreateBatchChange creates the given batch change.
+func (s *Store) CreateBatchChange(ctx context.Context, c *batches.BatchChange) error {
+	q := s.createBatchChangeQuery(c)
 
 	return s.query(ctx, q, func(sc scanner) (err error) {
-		return scanCampaign(c, sc)
+		return scanBatchChange(c, sc)
 	})
 }
 
-var createCampaignQueryFmtstr = `
--- source: enterprise/internal/batches/store.go:CreateCampaign
+var createBatchChangeQueryFmtstr = `
+-- source: enterprise/internal/batches/store.go:CreateBatchChange
 INSERT INTO campaigns (%s)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING %s
 `
 
-func (s *Store) createCampaignQuery(c *batches.Campaign) *sqlf.Query {
+func (s *Store) createBatchChangeQuery(c *batches.BatchChange) *sqlf.Query {
 	if c.CreatedAt.IsZero() {
 		c.CreatedAt = s.now()
 	}
@@ -73,8 +73,8 @@ func (s *Store) createCampaignQuery(c *batches.Campaign) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf(
-		createCampaignQueryFmtstr,
-		sqlf.Join(campaignInsertColumns, ", "),
+		createBatchChangeQueryFmtstr,
+		sqlf.Join(batchChangeInsertColumns, ", "),
 		c.Name,
 		c.Description,
 		nullInt32Column(c.InitialApplierID),
@@ -85,32 +85,32 @@ func (s *Store) createCampaignQuery(c *batches.Campaign) *sqlf.Query {
 		c.CreatedAt,
 		c.UpdatedAt,
 		nullTimeColumn(c.ClosedAt),
-		c.CampaignSpecID,
-		sqlf.Join(campaignColumns, ", "),
+		c.BatchSpecID,
+		sqlf.Join(batchChangeColumns, ", "),
 	)
 }
 
-// UpdateCampaign updates the given Campaign.
-func (s *Store) UpdateCampaign(ctx context.Context, c *batches.Campaign) error {
-	q := s.updateCampaignQuery(c)
+// UpdateBatchChange updates the given bach change.
+func (s *Store) UpdateBatchChange(ctx context.Context, c *batches.BatchChange) error {
+	q := s.updateBatchChangeQuery(c)
 
-	return s.query(ctx, q, func(sc scanner) (err error) { return scanCampaign(c, sc) })
+	return s.query(ctx, q, func(sc scanner) (err error) { return scanBatchChange(c, sc) })
 }
 
-var updateCampaignQueryFmtstr = `
--- source: enterprise/internal/batches/store.go:UpdateCampaign
+var updateBatchChangeQueryFmtstr = `
+-- source: enterprise/internal/batches/store.go:UpdateBatchChange
 UPDATE campaigns
 SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING %s
 `
 
-func (s *Store) updateCampaignQuery(c *batches.Campaign) *sqlf.Query {
+func (s *Store) updateBatchChangeQuery(c *batches.BatchChange) *sqlf.Query {
 	c.UpdatedAt = s.now()
 
 	return sqlf.Sprintf(
-		updateCampaignQueryFmtstr,
-		sqlf.Join(campaignInsertColumns, ", "),
+		updateBatchChangeQueryFmtstr,
+		sqlf.Join(batchChangeInsertColumns, ", "),
 		c.Name,
 		c.Description,
 		nullInt32Column(c.InitialApplierID),
@@ -121,27 +121,27 @@ func (s *Store) updateCampaignQuery(c *batches.Campaign) *sqlf.Query {
 		c.CreatedAt,
 		c.UpdatedAt,
 		nullTimeColumn(c.ClosedAt),
-		c.CampaignSpecID,
+		c.BatchSpecID,
 		c.ID,
-		sqlf.Join(campaignColumns, ", "),
+		sqlf.Join(batchChangeColumns, ", "),
 	)
 }
 
-// DeleteCampaign deletes the Campaign with the given ID.
-func (s *Store) DeleteCampaign(ctx context.Context, id int64) error {
-	return s.Store.Exec(ctx, sqlf.Sprintf(deleteCampaignQueryFmtstr, id))
+// DeleteBatchChange deletes the batch change with the given ID.
+func (s *Store) DeleteBatchChange(ctx context.Context, id int64) error {
+	return s.Store.Exec(ctx, sqlf.Sprintf(deleteBatchChangeQueryFmtstr, id))
 }
 
-var deleteCampaignQueryFmtstr = `
--- source: enterprise/internal/batches/store.go:DeleteCampaign
+var deleteBatchChangeQueryFmtstr = `
+-- source: enterprise/internal/batches/store.go:DeleteBatchChange
 DELETE FROM campaigns WHERE id = %s
 `
 
-// CountCampaignsOpts captures the query options needed for
+// CountBatchChangesOpts captures the query options needed for
 // counting batches.
-type CountCampaignsOpts struct {
+type CountBatchChangesOpts struct {
 	ChangesetID int64
-	State       batches.CampaignState
+	State       batches.BatchChangeState
 
 	InitialApplierID int32
 
@@ -149,20 +149,20 @@ type CountCampaignsOpts struct {
 	NamespaceOrgID  int32
 }
 
-// CountCampaigns returns the number of campaigns in the database.
-func (s *Store) CountCampaigns(ctx context.Context, opts CountCampaignsOpts) (int, error) {
-	return s.queryCount(ctx, countCampaignsQuery(&opts))
+// CountBatchChanges returns the number of batch changes in the database.
+func (s *Store) CountBatchChanges(ctx context.Context, opts CountBatchChangesOpts) (int, error) {
+	return s.queryCount(ctx, countBatchChangesQuery(&opts))
 }
 
-var countCampaignsQueryFmtstr = `
--- source: enterprise/internal/batches/store.go:CountCampaigns
+var countBatchChangesQueryFmtstr = `
+-- source: enterprise/internal/batches/store.go:CountBatchChanges
 SELECT COUNT(campaigns.id)
 FROM campaigns
 %s
 WHERE %s
 `
 
-func countCampaignsQuery(opts *CountCampaignsOpts) *sqlf.Query {
+func countBatchChangesQuery(opts *CountBatchChangesOpts) *sqlf.Query {
 	joins := []*sqlf.Query{
 		sqlf.Sprintf("LEFT JOIN users namespace_user ON campaigns.namespace_user_id = namespace_user.id"),
 		sqlf.Sprintf("LEFT JOIN orgs namespace_org ON campaigns.namespace_org_id = namespace_org.id"),
@@ -178,9 +178,9 @@ func countCampaignsQuery(opts *CountCampaignsOpts) *sqlf.Query {
 	}
 
 	switch opts.State {
-	case batches.CampaignStateOpen:
+	case batches.BatchChangeStateOpen:
 		preds = append(preds, sqlf.Sprintf("campaigns.closed_at IS NULL"))
-	case batches.CampaignStateClosed:
+	case batches.BatchChangeStateClosed:
 		preds = append(preds, sqlf.Sprintf("campaigns.closed_at IS NOT NULL"))
 	}
 
@@ -200,27 +200,27 @@ func countCampaignsQuery(opts *CountCampaignsOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
-	return sqlf.Sprintf(countCampaignsQueryFmtstr, sqlf.Join(joins, "\n"), sqlf.Join(preds, "\n AND "))
+	return sqlf.Sprintf(countBatchChangesQueryFmtstr, sqlf.Join(joins, "\n"), sqlf.Join(preds, "\n AND "))
 }
 
-// GetCampaignOpts captures the query options needed for getting a Campaign
-type GetCampaignOpts struct {
+// CountBatchChangeOpts captures the query options needed for getting a batch change
+type CountBatchChangeOpts struct {
 	ID int64
 
 	NamespaceUserID int32
 	NamespaceOrgID  int32
 
-	CampaignSpecID int64
-	Name           string
+	BatchChangeSpecID int64
+	Name              string
 }
 
-// GetCampaign gets a campaign matching the given options.
-func (s *Store) GetCampaign(ctx context.Context, opts GetCampaignOpts) (*batches.Campaign, error) {
-	q := getCampaignQuery(&opts)
+// GetBatchChange gets a batch change matching the given options.
+func (s *Store) GetBatchChange(ctx context.Context, opts CountBatchChangeOpts) (*batches.BatchChange, error) {
+	q := getBatchChangeQuery(&opts)
 
-	var c batches.Campaign
+	var c batches.BatchChange
 	err := s.query(ctx, q, func(sc scanner) error {
-		return scanCampaign(&c, sc)
+		return scanBatchChange(&c, sc)
 	})
 	if err != nil {
 		return nil, err
@@ -233,8 +233,8 @@ func (s *Store) GetCampaign(ctx context.Context, opts GetCampaignOpts) (*batches
 	return &c, nil
 }
 
-var getCampaignsQueryFmtstr = `
--- source: enterprise/internal/batches/store.go:GetCampaign
+var getBatchChangesQueryFmtstr = `
+-- source: enterprise/internal/batches/store.go:GetBatchChange
 SELECT %s FROM campaigns
 LEFT JOIN users namespace_user ON campaigns.namespace_user_id = namespace_user.id
 LEFT JOIN orgs  namespace_org  ON campaigns.namespace_org_id = namespace_org.id
@@ -242,7 +242,7 @@ WHERE %s
 LIMIT 1
 `
 
-func getCampaignQuery(opts *GetCampaignOpts) *sqlf.Query {
+func getBatchChangeQuery(opts *CountBatchChangeOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("namespace_user.deleted_at IS NULL"),
 		sqlf.Sprintf("namespace_org.deleted_at IS NULL"),
@@ -251,8 +251,8 @@ func getCampaignQuery(opts *GetCampaignOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("campaigns.id = %s", opts.ID))
 	}
 
-	if opts.CampaignSpecID != 0 {
-		preds = append(preds, sqlf.Sprintf("campaigns.campaign_spec_id = %s", opts.CampaignSpecID))
+	if opts.BatchChangeSpecID != 0 {
+		preds = append(preds, sqlf.Sprintf("campaigns.campaign_spec_id = %s", opts.BatchChangeSpecID))
 	}
 
 	if opts.NamespaceUserID != 0 {
@@ -272,22 +272,22 @@ func getCampaignQuery(opts *GetCampaignOpts) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf(
-		getCampaignsQueryFmtstr,
-		sqlf.Join(campaignColumns, ", "),
+		getBatchChangesQueryFmtstr,
+		sqlf.Join(batchChangeColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
 
-type GetCampaignDiffStatOpts struct {
+type GetBatchChangeDiffStatOpts struct {
 	CampaignID int64
 }
 
-func (s *Store) GetCampaignDiffStat(ctx context.Context, opts GetCampaignDiffStatOpts) (*diff.Stat, error) {
+func (s *Store) GetBatchChangeDiffStat(ctx context.Context, opts GetBatchChangeDiffStatOpts) (*diff.Stat, error) {
 	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
 	if err != nil {
-		return nil, errors.Wrap(err, "GetCampaignDiffStat generating authz query conds")
+		return nil, errors.Wrap(err, "GetBatchChangeDiffStat generating authz query conds")
 	}
-	q := getCampaignDiffStatQuery(opts, authzConds)
+	q := getBatchChangeDiffStatQuery(opts, authzConds)
 
 	var diffStat diff.Stat
 	err = s.query(ctx, q, func(sc scanner) error {
@@ -300,8 +300,8 @@ func (s *Store) GetCampaignDiffStat(ctx context.Context, opts GetCampaignDiffSta
 	return &diffStat, nil
 }
 
-var getCampaignDiffStatQueryFmtstr = `
--- source: enterprise/internal/batches/store.go:GetCampaignDiffStat
+var getBatchChangeDiffStatQueryFmtstr = `
+-- source: enterprise/internal/batches/store.go:GetBatchChangeDiffStat
 SELECT
 	COALESCE(SUM(diff_stat_added), 0) AS added,
 	COALESCE(SUM(diff_stat_changed), 0) AS changed,
@@ -316,17 +316,17 @@ WHERE
 	%s
 `
 
-func getCampaignDiffStatQuery(opts GetCampaignDiffStatOpts, authzConds *sqlf.Query) *sqlf.Query {
-	return sqlf.Sprintf(getCampaignDiffStatQueryFmtstr, strconv.Itoa(int(opts.CampaignID)), authzConds)
+func getBatchChangeDiffStatQuery(opts GetBatchChangeDiffStatOpts, authzConds *sqlf.Query) *sqlf.Query {
+	return sqlf.Sprintf(getBatchChangeDiffStatQueryFmtstr, strconv.Itoa(int(opts.CampaignID)), authzConds)
 }
 
-// ListCampaignsOpts captures the query options needed for
+// ListBatchChangesOpts captures the query options needed for
 // listing batches.
-type ListCampaignsOpts struct {
+type ListBatchChangesOpts struct {
 	LimitOpts
 	ChangesetID int64
 	Cursor      int64
-	State       batches.CampaignState
+	State       batches.BatchChangeState
 
 	InitialApplierID int32
 
@@ -334,14 +334,14 @@ type ListCampaignsOpts struct {
 	NamespaceOrgID  int32
 }
 
-// ListCampaigns lists Campaigns with the given filters.
-func (s *Store) ListCampaigns(ctx context.Context, opts ListCampaignsOpts) (cs []*batches.Campaign, next int64, err error) {
-	q := listCampaignsQuery(&opts)
+// ListBatchChanges lists batch changes with the given filters.
+func (s *Store) ListBatchChanges(ctx context.Context, opts ListBatchChangesOpts) (cs []*batches.BatchChange, next int64, err error) {
+	q := listBatchChangesQuery(&opts)
 
-	cs = make([]*batches.Campaign, 0, opts.DBLimit())
+	cs = make([]*batches.BatchChange, 0, opts.DBLimit())
 	err = s.query(ctx, q, func(sc scanner) error {
-		var c batches.Campaign
-		if err := scanCampaign(&c, sc); err != nil {
+		var c batches.BatchChange
+		if err := scanBatchChange(&c, sc); err != nil {
 			return err
 		}
 		cs = append(cs, &c)
@@ -356,7 +356,7 @@ func (s *Store) ListCampaigns(ctx context.Context, opts ListCampaignsOpts) (cs [
 	return cs, next, err
 }
 
-var listCampaignsQueryFmtstr = `
+var listBatchChangesQueryFmtstr = `
 -- source: enterprise/internal/batches/store.go:ListCampaigns
 SELECT %s FROM campaigns
 %s
@@ -364,7 +364,7 @@ WHERE %s
 ORDER BY id DESC
 `
 
-func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
+func listBatchChangesQuery(opts *ListBatchChangesOpts) *sqlf.Query {
 	joins := []*sqlf.Query{
 		sqlf.Sprintf("LEFT JOIN users namespace_user ON campaigns.namespace_user_id = namespace_user.id"),
 		sqlf.Sprintf("LEFT JOIN orgs namespace_org ON campaigns.namespace_org_id = namespace_org.id"),
@@ -384,9 +384,9 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 	}
 
 	switch opts.State {
-	case batches.CampaignStateOpen:
+	case batches.BatchChangeStateOpen:
 		preds = append(preds, sqlf.Sprintf("campaigns.closed_at IS NULL"))
-	case batches.CampaignStateClosed:
+	case batches.BatchChangeStateClosed:
 		preds = append(preds, sqlf.Sprintf("campaigns.closed_at IS NOT NULL"))
 	}
 
@@ -407,14 +407,14 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf(
-		listCampaignsQueryFmtstr+opts.LimitOpts.ToDB(),
-		sqlf.Join(campaignColumns, ", "),
+		listBatchChangesQueryFmtstr+opts.LimitOpts.ToDB(),
+		sqlf.Join(batchChangeColumns, ", "),
 		sqlf.Join(joins, "\n"),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
 
-func scanCampaign(c *batches.Campaign, s scanner) error {
+func scanBatchChange(c *batches.BatchChange, s scanner) error {
 	return s.Scan(
 		&c.ID,
 		&c.Name,
@@ -427,6 +427,6 @@ func scanCampaign(c *batches.Campaign, s scanner) error {
 		&c.CreatedAt,
 		&c.UpdatedAt,
 		&dbutil.NullTime{Time: &c.ClosedAt},
-		&c.CampaignSpecID,
+		&c.BatchSpecID,
 	)
 }

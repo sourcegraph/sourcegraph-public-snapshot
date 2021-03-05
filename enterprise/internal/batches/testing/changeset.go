@@ -19,7 +19,7 @@ type TestChangesetOpts struct {
 	Campaign     int64
 	CurrentSpec  int64
 	PreviousSpec int64
-	Campaigns    []batches.CampaignAssoc
+	Campaigns    []batches.BatchChangeAssoc
 
 	ExternalServiceType string
 	ExternalID          string
@@ -75,7 +75,7 @@ func BuildChangeset(opts TestChangesetOpts) *batches.Changeset {
 		RepoID:         opts.Repo,
 		CurrentSpecID:  opts.CurrentSpec,
 		PreviousSpecID: opts.PreviousSpec,
-		Campaigns:      opts.Campaigns,
+		BatchChanges:   opts.Campaigns,
 
 		ExternalServiceType: opts.ExternalServiceType,
 		ExternalID:          opts.ExternalID,
@@ -85,7 +85,7 @@ func BuildChangeset(opts TestChangesetOpts) *batches.Changeset {
 
 		PublicationState: opts.PublicationState,
 
-		OwnedByCampaignID: opts.OwnedByCampaign,
+		OwnedByBatchChangeID: opts.OwnedByCampaign,
 
 		Closing: opts.Closing,
 
@@ -104,7 +104,7 @@ func BuildChangeset(opts TestChangesetOpts) *batches.Changeset {
 	}
 
 	if opts.Campaign != 0 {
-		changeset.Campaigns = []batches.CampaignAssoc{{CampaignID: opts.Campaign}}
+		changeset.BatchChanges = []batches.BatchChangeAssoc{{BatchChangeID: opts.Campaign}}
 	}
 
 	if opts.DiffStatAdded > 0 || opts.DiffStatChanged > 0 || opts.DiffStatDeleted > 0 {
@@ -160,7 +160,7 @@ func AssertChangeset(t *testing.T, c *batches.Changeset, a ChangesetAssertions) 
 		t.Fatalf("changeset PreviousSpecID wrong. want=%d, have=%d", want, have)
 	}
 
-	if have, want := c.OwnedByCampaignID, a.OwnedByCampaign; have != want {
+	if have, want := c.OwnedByBatchChangeID, a.OwnedByCampaign; have != want {
 		t.Fatalf("changeset OwnedByCampaignID wrong. want=%d, have=%d", want, have)
 	}
 
@@ -197,9 +197,9 @@ func AssertChangeset(t *testing.T, c *batches.Changeset, a ChangesetAssertions) 
 	}
 
 	toDetach := []int64{}
-	for _, assoc := range c.Campaigns {
+	for _, assoc := range c.BatchChanges {
 		if assoc.Detach {
-			toDetach = append(toDetach, assoc.CampaignID)
+			toDetach = append(toDetach, assoc.BatchChangeID)
 		}
 	}
 	if a.DetachFrom == nil {
@@ -212,9 +212,9 @@ func AssertChangeset(t *testing.T, c *batches.Changeset, a ChangesetAssertions) 
 	}
 
 	attachedTo := []int64{}
-	for _, assoc := range c.Campaigns {
+	for _, assoc := range c.BatchChanges {
 		if !assoc.Detach {
-			attachedTo = append(attachedTo, assoc.CampaignID)
+			attachedTo = append(attachedTo, assoc.BatchChangeID)
 		}
 	}
 	if a.AttachedTo == nil {
@@ -336,14 +336,14 @@ func SetChangesetClosed(t *testing.T, ctx context.Context, s UpdateChangeseter, 
 	c.Closing = false
 	c.ExternalState = batches.ChangesetExternalStateClosed
 
-	assocs := make([]batches.CampaignAssoc, 0)
-	for _, assoc := range c.Campaigns {
+	assocs := make([]batches.BatchChangeAssoc, 0)
+	for _, assoc := range c.BatchChanges {
 		if !assoc.Detach {
 			assocs = append(assocs, assoc)
 		}
 	}
 
-	c.Campaigns = assocs
+	c.BatchChanges = assocs
 
 	if err := s.UpdateChangeset(ctx, c); err != nil {
 		t.Fatalf("failed to update changeset: %s", err)

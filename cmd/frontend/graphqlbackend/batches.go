@@ -197,7 +197,7 @@ type ListViewerBatchChangesCodeHostsArgs struct {
 	OnlyWithoutCredential bool
 }
 
-type CampaignsResolver interface {
+type BatchChangesResolver interface {
 	//
 	// MUTATIONS
 	//
@@ -618,156 +618,156 @@ type ChangesetCountsResolver interface {
 	OpenPending() int32
 }
 
-var campaignsOnlyInEnterprise = errors.New("campaigns and changesets are only available in enterprise")
+var batchChangesOnlyInEnterprise = errors.New("batch changes are only available in enterprise")
 
-type defaultCampaignsResolver struct{}
+type defaultBatchChangesResolver struct{}
 
-var DefaultCampaignsResolver CampaignsResolver = defaultCampaignsResolver{}
+var DefaultBatchChangesResolver BatchChangesResolver = defaultBatchChangesResolver{}
 
 // Mutations
 // TODO(campaigns-deprecation):
-func (defaultCampaignsResolver) CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (BatchChangeResolver, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (BatchChangeResolver, error) {
+	return nil, batchChangesOnlyInEnterprise
 }
 
 // TODO(campaigns-deprecation):
-func (defaultCampaignsResolver) CreateCampaignSpec(ctx context.Context, args *CreateCampaignSpecArgs) (BatchSpecResolver, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) CreateCampaignSpec(ctx context.Context, args *CreateCampaignSpecArgs) (BatchSpecResolver, error) {
+	return nil, batchChangesOnlyInEnterprise
 }
 
 // TODO(campaigns-deprecation):
-func (defaultCampaignsResolver) ApplyCampaign(ctx context.Context, args *ApplyCampaignArgs) (BatchChangeResolver, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) ApplyCampaign(ctx context.Context, args *ApplyCampaignArgs) (BatchChangeResolver, error) {
+	return nil, batchChangesOnlyInEnterprise
 }
 
 // TODO(campaigns-deprecation):
-func (defaultCampaignsResolver) CloseCampaign(ctx context.Context, args *CloseCampaignArgs) (BatchChangeResolver, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) CloseCampaign(ctx context.Context, args *CloseCampaignArgs) (BatchChangeResolver, error) {
+	return nil, batchChangesOnlyInEnterprise
 }
 
 // TODO(campaigns-deprecation):
-func (defaultCampaignsResolver) MoveCampaign(ctx context.Context, args *MoveCampaignArgs) (BatchChangeResolver, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) MoveCampaign(ctx context.Context, args *MoveCampaignArgs) (BatchChangeResolver, error) {
+	return nil, batchChangesOnlyInEnterprise
 }
 
 // TODO(campaigns-deprecation):
-func (defaultCampaignsResolver) DeleteCampaign(ctx context.Context, args *DeleteCampaignArgs) (*EmptyResponse, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) DeleteCampaign(ctx context.Context, args *DeleteCampaignArgs) (*EmptyResponse, error) {
+	return nil, batchChangesOnlyInEnterprise
 }
 
 // TODO(campaigns-deprecation)
-func (defaultCampaignsResolver) CreateCampaignsCredential(ctx context.Context, args *CreateCampaignsCredentialArgs) (CampaignsCredentialResolver, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) CreateCampaignsCredential(ctx context.Context, args *CreateCampaignsCredentialArgs) (CampaignsCredentialResolver, error) {
+	return nil, batchChangesOnlyInEnterprise
 }
 
 // TODO(campaigns-deprecation)
-func (defaultCampaignsResolver) DeleteCampaignsCredential(ctx context.Context, args *DeleteCampaignsCredentialArgs) (*EmptyResponse, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) DeleteCampaignsCredential(ctx context.Context, args *DeleteCampaignsCredentialArgs) (*EmptyResponse, error) {
+	return nil, batchChangesOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) CreateBatchChange(ctx context.Context, args *CreateBatchChangeArgs) (BatchChangeResolver, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) CreateBatchChange(ctx context.Context, args *CreateBatchChangeArgs) (BatchChangeResolver, error) {
+	return nil, batchChangesOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) CreateBatchSpec(ctx context.Context, args *CreateBatchSpecArgs) (BatchSpecResolver, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) CreateBatchSpec(ctx context.Context, args *CreateBatchSpecArgs) (BatchSpecResolver, error) {
+	return nil, batchChangesOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) ApplyBatchChange(ctx context.Context, args *ApplyBatchChangeArgs) (BatchChangeResolver, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) ApplyBatchChange(ctx context.Context, args *ApplyBatchChangeArgs) (BatchChangeResolver, error) {
+	return nil, batchChangesOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) CreateChangesetSpec(ctx context.Context, args *CreateChangesetSpecArgs) (ChangesetSpecResolver, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) CreateChangesetSpec(ctx context.Context, args *CreateChangesetSpecArgs) (ChangesetSpecResolver, error) {
+	return nil, batchChangesOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) CloseBatchChange(ctx context.Context, args *CloseBatchChangeArgs) (BatchChangeResolver, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) CloseBatchChange(ctx context.Context, args *CloseBatchChangeArgs) (BatchChangeResolver, error) {
+	return nil, batchChangesOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) MoveBatchChange(ctx context.Context, args *MoveBatchChangeArgs) (BatchChangeResolver, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) MoveBatchChange(ctx context.Context, args *MoveBatchChangeArgs) (BatchChangeResolver, error) {
+	return nil, batchChangesOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) DeleteBatchChange(ctx context.Context, args *DeleteBatchChangeArgs) (*EmptyResponse, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) DeleteBatchChange(ctx context.Context, args *DeleteBatchChangeArgs) (*EmptyResponse, error) {
+	return nil, batchChangesOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error) {
+	return nil, batchChangesOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) ReenqueueChangeset(ctx context.Context, args *ReenqueueChangesetArgs) (ChangesetResolver, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) ReenqueueChangeset(ctx context.Context, args *ReenqueueChangesetArgs) (ChangesetResolver, error) {
+	return nil, batchChangesOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) CreateBatchChangesCredential(ctx context.Context, args *CreateBatchChangesCredentialArgs) (BatchChangesCredentialResolver, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) CreateBatchChangesCredential(ctx context.Context, args *CreateBatchChangesCredentialArgs) (BatchChangesCredentialResolver, error) {
+	return nil, batchChangesOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) DeleteBatchChangesCredential(ctx context.Context, args *DeleteBatchChangesCredentialArgs) (*EmptyResponse, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) DeleteBatchChangesCredential(ctx context.Context, args *DeleteBatchChangesCredentialArgs) (*EmptyResponse, error) {
+	return nil, batchChangesOnlyInEnterprise
 }
 
 // Queries
 // TODO(campaigns-deprecation)
-func (defaultCampaignsResolver) Campaigns(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) Campaigns(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
+	return nil, batchChangesOnlyInEnterprise
 }
 
 // TODO(campaigns-deprecation)
-func (defaultCampaignsResolver) Campaign(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) Campaign(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error) {
+	return nil, batchChangesOnlyInEnterprise
 }
 
 // TODO(campaigns-deprecation)
-func (defaultCampaignsResolver) CampaignSpecByID(ctx context.Context, id graphql.ID) (BatchSpecResolver, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) CampaignSpecByID(ctx context.Context, id graphql.ID) (BatchSpecResolver, error) {
+	return nil, batchChangesOnlyInEnterprise
 }
 
 // TODO(campaigns-deprecation)
-func (defaultCampaignsResolver) CampaignByID(ctx context.Context, id graphql.ID) (BatchChangeResolver, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) CampaignByID(ctx context.Context, id graphql.ID) (BatchChangeResolver, error) {
+	return nil, batchChangesOnlyInEnterprise
 }
 
 // TODO(campaigns-deprecation)
-func (defaultCampaignsResolver) CampaignsCredentialByID(ctx context.Context, id graphql.ID) (CampaignsCredentialResolver, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) CampaignsCredentialByID(ctx context.Context, id graphql.ID) (CampaignsCredentialResolver, error) {
+	return nil, batchChangesOnlyInEnterprise
 }
 
 // TODO(campaigns-deprecation)
-func (defaultCampaignsResolver) CampaignsCodeHosts(ctx context.Context, args *ListCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) CampaignsCodeHosts(ctx context.Context, args *ListCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error) {
+	return nil, batchChangesOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) BatchChangeByID(ctx context.Context, id graphql.ID) (BatchChangeResolver, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) BatchChangeByID(ctx context.Context, id graphql.ID) (BatchChangeResolver, error) {
+	return nil, batchChangesOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) BatchChange(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) BatchChange(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error) {
+	return nil, batchChangesOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
+	return nil, batchChangesOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) BatchSpecByID(ctx context.Context, id graphql.ID) (BatchSpecResolver, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) BatchSpecByID(ctx context.Context, id graphql.ID) (BatchSpecResolver, error) {
+	return nil, batchChangesOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) ChangesetByID(ctx context.Context, id graphql.ID) (ChangesetResolver, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) ChangesetByID(ctx context.Context, id graphql.ID) (ChangesetResolver, error) {
+	return nil, batchChangesOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) ChangesetSpecByID(ctx context.Context, id graphql.ID) (ChangesetSpecResolver, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) ChangesetSpecByID(ctx context.Context, id graphql.ID) (ChangesetSpecResolver, error) {
+	return nil, batchChangesOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) BatchChangesCredentialByID(ctx context.Context, id graphql.ID) (BatchChangesCredentialResolver, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) BatchChangesCredentialByID(ctx context.Context, id graphql.ID) (BatchChangesCredentialResolver, error) {
+	return nil, batchChangesOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error) {
-	return nil, campaignsOnlyInEnterprise
+func (defaultBatchChangesResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error) {
+	return nil, batchChangesOnlyInEnterprise
 }

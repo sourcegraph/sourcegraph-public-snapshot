@@ -399,8 +399,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			// Create necessary associations.
-			campaignSpec := ct.CreateCampaignSpec(t, ctx, cstore, "executor-test-campaign", admin.ID)
-			campaign := ct.CreateCampaign(t, ctx, cstore, "executor-test-campaign", admin.ID, campaignSpec.ID)
+			batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "executor-test-batch-change", admin.ID)
+			batchChange := ct.CreateBatchChange(t, ctx, cstore, "executor-test-batch-change", admin.ID, batchSpec.ID)
 
 			// Create the changesetSpec with associations wired up correctly.
 			var changesetSpec *batches.ChangesetSpec
@@ -410,15 +410,15 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				specOpts := ct.TestSpecOpts{}
 				specOpts.User = admin.ID
 				specOpts.Repo = rs[0].ID
-				specOpts.CampaignSpec = campaignSpec.ID
+				specOpts.CampaignSpec = batchSpec.ID
 				changesetSpec = ct.CreateChangesetSpec(t, ctx, cstore, specOpts)
 			}
 
 			// Create the changeset with correct associations.
 			changesetOpts := tc.changeset
 			changesetOpts.Repo = rs[0].ID
-			changesetOpts.Campaigns = []batches.CampaignAssoc{{CampaignID: campaign.ID}}
-			changesetOpts.OwnedByCampaign = campaign.ID
+			changesetOpts.Campaigns = []batches.BatchChangeAssoc{{BatchChangeID: batchChange.ID}}
+			changesetOpts.OwnedByCampaign = batchChange.ID
 			if changesetSpec != nil {
 				changesetOpts.CurrentSpec = changesetSpec.ID
 			}
@@ -512,7 +512,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			assertions := tc.wantChangeset
 			assertions.Repo = rs[0].ID
 			assertions.OwnedByCampaign = changesetOpts.OwnedByCampaign
-			assertions.AttachedTo = []int64{campaign.ID}
+			assertions.AttachedTo = []int64{batchChange.ID}
 			if changesetSpec != nil {
 				assertions.CurrentSpec = changesetSpec.ID
 			}
@@ -598,14 +598,14 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 	rs, _ := ct.CreateTestRepos(t, ctx, db, 1)
 	repo := rs[0]
 
-	campaignSpec := ct.CreateCampaignSpec(t, ctx, cstore, "reconciler-test-campaign", admin.ID)
-	adminCampaign := ct.CreateCampaign(t, ctx, cstore, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
-	userCampaign := ct.CreateCampaign(t, ctx, cstore, "reconciler-test-campaign", user.ID, campaignSpec.ID)
+	campaignSpec := ct.CreateBatchSpec(t, ctx, cstore, "reconciler-test-campaign", admin.ID)
+	adminCampaign := ct.CreateBatchChange(t, ctx, cstore, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
+	userCampaign := ct.CreateBatchChange(t, ctx, cstore, "reconciler-test-campaign", user.ID, campaignSpec.ID)
 
 	t.Run("imported changeset uses global token", func(t *testing.T) {
 		a, err := (&executor{
 			ch: &batches.Changeset{
-				OwnedByCampaignID: 0,
+				OwnedByBatchChangeID: 0,
 			},
 		}).loadAuthenticator(ctx)
 		if err != nil {
@@ -619,7 +619,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 	t.Run("owned by missing campaign", func(t *testing.T) {
 		_, err := (&executor{
 			ch: &batches.Changeset{
-				OwnedByCampaignID: 1234,
+				OwnedByBatchChangeID: 1234,
 			},
 			tx: cstore,
 		}).loadAuthenticator(ctx)
@@ -631,7 +631,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 	t.Run("owned by admin user without credential", func(t *testing.T) {
 		a, err := (&executor{
 			ch: &batches.Changeset{
-				OwnedByCampaignID: adminCampaign.ID,
+				OwnedByBatchChangeID: adminCampaign.ID,
 			},
 			repo: repo,
 			tx:   cstore,
@@ -647,7 +647,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 	t.Run("owned by normal user without credential", func(t *testing.T) {
 		_, err := (&executor{
 			ch: &batches.Changeset{
-				OwnedByCampaignID: userCampaign.ID,
+				OwnedByBatchChangeID: userCampaign.ID,
 			},
 			repo: repo,
 			tx:   cstore,
@@ -670,7 +670,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 
 		a, err := (&executor{
 			ch: &batches.Changeset{
-				OwnedByCampaignID: adminCampaign.ID,
+				OwnedByBatchChangeID: adminCampaign.ID,
 			},
 			repo: repo,
 			tx:   cstore,
@@ -696,7 +696,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 
 		a, err := (&executor{
 			ch: &batches.Changeset{
-				OwnedByCampaignID: userCampaign.ID,
+				OwnedByBatchChangeID: userCampaign.ID,
 			},
 			repo: repo,
 			tx:   cstore,
@@ -873,12 +873,12 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 				defer func() { cstore.UserCredentials().Delete(ctx, cred.ID) }()
 			}
 
-			campaignSpec := ct.CreateCampaignSpec(t, ctx, cstore, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID)
-			campaign := ct.CreateCampaign(t, ctx, cstore, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID, campaignSpec.ID)
+			campaignSpec := ct.CreateBatchSpec(t, ctx, cstore, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID)
+			campaign := ct.CreateBatchChange(t, ctx, cstore, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID, campaignSpec.ID)
 
 			plan.Changeset = &batches.Changeset{
-				OwnedByCampaignID: campaign.ID,
-				RepoID:            tt.repo.ID,
+				OwnedByBatchChangeID: campaign.ID,
+				RepoID:               tt.repo.ID,
 			}
 			plan.ChangesetSpec = ct.BuildChangesetSpec(t, ct.TestSpecOpts{
 				HeadRef:    "refs/heads/my-branch",
@@ -923,8 +923,8 @@ func TestDecorateChangesetBody(t *testing.T) {
 	defer func() { internalClient = api.InternalClient }()
 
 	fs := &FakeStore{
-		GetCampaignMock: func(ctx context.Context, opts store.GetCampaignOpts) (*batches.Campaign, error) {
-			return &batches.Campaign{ID: 1234, Name: "reconciler-test-campaign"}, nil
+		GetBatchChangeMock: func(ctx context.Context, opts store.CountBatchChangeOpts) (*batches.BatchChange, error) {
+			return &batches.BatchChange{ID: 1234, Name: "reconciler-test-campaign"}, nil
 		},
 	}
 
@@ -966,7 +966,7 @@ func TestCampaignURL(t *testing.T) {
 		url, err := campaignURL(
 			ctx,
 			&database.Namespace{Name: "foo", Organization: 123},
-			&batches.Campaign{Name: "bar"},
+			&batches.BatchChange{Name: "bar"},
 		)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)

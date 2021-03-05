@@ -31,17 +31,17 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 	cstore := store.New(db)
 
 	// Create a campaign spec for the target campaign.
-	oldCampaignSpec := &batches.CampaignSpec{
+	oldCampaignSpec := &batches.BatchSpec{
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
-	if err := cstore.CreateCampaignSpec(ctx, oldCampaignSpec); err != nil {
+	if err := cstore.CreateBatchSpec(ctx, oldCampaignSpec); err != nil {
 		t.Fatal(err)
 	}
 	// Create a campaign and create a new spec targetting the same campaign again.
 	campaignName := "test-apply-preview-resolver"
-	campaign := ct.CreateCampaign(t, ctx, cstore, campaignName, userID, oldCampaignSpec.ID)
-	campaignSpec := ct.CreateCampaignSpec(t, ctx, cstore, campaignName, userID)
+	campaign := ct.CreateBatchChange(t, ctx, cstore, campaignName, userID, oldCampaignSpec.ID)
+	campaignSpec := ct.CreateBatchSpec(t, ctx, cstore, campaignName, userID)
 
 	esStore := database.ExternalServicesWith(cstore)
 	repoStore := database.ReposWith(cstore)

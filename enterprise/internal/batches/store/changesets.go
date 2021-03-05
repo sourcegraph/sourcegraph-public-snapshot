@@ -101,9 +101,9 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *batches.Changes
 		return nil, err
 	}
 
-	assocsAsMap := make(map[int64]batches.CampaignAssoc, len(c.Campaigns))
-	for _, assoc := range c.Campaigns {
-		assocsAsMap[assoc.CampaignID] = assoc
+	assocsAsMap := make(map[int64]batches.BatchChangeAssoc, len(c.BatchChanges))
+	for _, assoc := range c.BatchChanges {
+		assocsAsMap[assoc.BatchChangeID] = assoc
 	}
 
 	campaigns, err := json.Marshal(assocsAsMap)
@@ -135,7 +135,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *batches.Changes
 		c.DiffStatChanged,
 		c.DiffStatDeleted,
 		syncState,
-		nullInt64Column(c.OwnedByCampaignID),
+		nullInt64Column(c.OwnedByBatchChangeID),
 		nullInt64Column(c.CurrentSpecID),
 		nullInt64Column(c.PreviousSpecID),
 		c.PublicationState,
@@ -341,7 +341,7 @@ type ListChangesetSyncDataOpts struct {
 }
 
 // ListChangesetSyncData returns sync data on all non-externally-deleted changesets
-// that are part of at least one open campaign.
+// that are part of at least one open batch change.
 func (s *Store) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyncDataOpts) ([]*batches.ChangesetSyncData, error) {
 	q := listChangesetSyncDataQuery(opts)
 	results := make([]*batches.ChangesetSyncData, 0)
@@ -590,26 +590,26 @@ func (s *Store) GetChangesetExternalIDs(ctx context.Context, spec api.ExternalRe
 }
 
 // CanceledChangesetFailureMessage is set on changesets as the FailureMessage
-// by CancelQueuedCampaignChangesets which is called at the beginning of
-// ApplyCampaign to stop enqueued changesets being processed while we're
-// applying the new campaign spec.
+// by CancelQueuedBatchChangeChangesets which is called at the beginning of
+// ApplyBatchChange to stop enqueued changesets being processed while we're
+// applying the new batch spec.
 var CanceledChangesetFailureMessage = "Canceled"
 
-func (s *Store) CancelQueuedCampaignChangesets(ctx context.Context, campaignID int64) error {
+func (s *Store) CancelQueuedBatchChangeChangesets(ctx context.Context, campaignID int64) error {
 	// Note that we don't cancel queued "syncing" changesets, since their
 	// owned_by_campaign_id is not set. That's on purpose. It's okay if they're
 	// being processed after this, since they only pull data and not create
 	// changesets on the code hosts.
 	q := sqlf.Sprintf(
-		cancelQueuedCampaignChangesetsFmtstr,
+		cancelQueuedBatchChangeChangesetsFmtstr,
 		campaignID,
 		CanceledChangesetFailureMessage,
 	)
 	return s.Store.Exec(ctx, q)
 }
 
-const cancelQueuedCampaignChangesetsFmtstr = `
--- source: enterprise/internal/batches/store_changesets.go:CancelQueuedCampaignChangesets
+const cancelQueuedBatchChangeChangesetsFmtstr = `
+-- source: enterprise/internal/batches/store_changesets.go:CancelQueuedBatchChangeChangesets
 WITH changeset_ids AS (
   SELECT id FROM changesets
   WHERE
@@ -627,7 +627,7 @@ WHERE id IN (SELECT id FROM changeset_ids);
 `
 
 // EnqueueChangesetsToClose updates all changesets that are owned by the given
-// campaign to set their reconciler status to 'queued' and the Closing boolean
+// batch change to set their reconciler status to 'queued' and the Closing boolean
 // to true.
 //
 // It does not update the changesets that are fully processed and already
@@ -696,12 +696,12 @@ func scanChangesets(rows *sql.Rows, queryErr error) ([]*batches.Changeset, error
 // It implements the sql.Scanner interface so it can be used as a scan destination,
 // similar to sql.NullString.
 type jsonCampaignChangesetSet struct {
-	Assocs *[]batches.CampaignAssoc
+	Assocs *[]batches.BatchChangeAssoc
 }
 
 // Scan implements the Scanner interface.
 func (n *jsonCampaignChangesetSet) Scan(value interface{}) error {
-	m := make(map[int64]batches.CampaignAssoc)
+	m := make(map[int64]batches.BatchChangeAssoc)
 
 	switch value := value.(type) {
 	case nil:
@@ -714,13 +714,13 @@ func (n *jsonCampaignChangesetSet) Scan(value interface{}) error {
 	}
 
 	if *n.Assocs == nil {
-		*n.Assocs = make([]batches.CampaignAssoc, 0, len(m))
+		*n.Assocs = make([]batches.BatchChangeAssoc, 0, len(m))
 	} else {
 		*n.Assocs = (*n.Assocs)[:0]
 	}
 
 	for id, assoc := range m {
-		*n.Assocs = append(*n.Assocs, batches.CampaignAssoc{CampaignID: id, Detach: assoc.Detach})
+		*n.Assocs = append(*n.Assocs, batches.BatchChangeAssoc{BatchChangeID: id, Detach: assoc.Detach})
 	}
 
 	return nil
@@ -751,7 +751,7 @@ func scanChangeset(t *batches.Changeset, s scanner) error {
 		&t.CreatedAt,
 		&t.UpdatedAt,
 		&metadata,
-		&jsonCampaignChangesetSet{Assocs: &t.Campaigns},
+		&jsonCampaignChangesetSet{Assocs: &t.BatchChanges},
 		&dbutil.NullString{S: &t.ExternalID},
 		&t.ExternalServiceType,
 		&dbutil.NullString{S: &t.ExternalBranch},
@@ -764,7 +764,7 @@ func scanChangeset(t *batches.Changeset, s scanner) error {
 		&t.DiffStatChanged,
 		&t.DiffStatDeleted,
 		&syncState,
-		&dbutil.NullInt64{N: &t.OwnedByCampaignID},
+		&dbutil.NullInt64{N: &t.OwnedByBatchChangeID},
 		&dbutil.NullInt64{N: &t.CurrentSpecID},
 		&dbutil.NullInt64{N: &t.PreviousSpecID},
 		&t.PublicationState,

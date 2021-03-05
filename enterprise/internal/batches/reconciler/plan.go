@@ -112,12 +112,12 @@ func DeterminePlan(previousSpec, currentSpec *batches.ChangesetSpec, ch *batches
 
 	wantDetach := false
 	isStillAttached := false
-	wantDetachFromOwnerCampaign := false
-	for _, assoc := range ch.Campaigns {
+	wantDetachFromOwnerBatchChange := false
+	for _, assoc := range ch.BatchChanges {
 		if assoc.Detach {
 			wantDetach = true
-			if assoc.CampaignID == ch.OwnedByCampaignID {
-				wantDetachFromOwnerCampaign = true
+			if assoc.BatchChangeID == ch.OwnedByBatchChangeID {
+				wantDetachFromOwnerBatchChange = true
 			}
 		} else {
 			isStillAttached = true
@@ -131,14 +131,14 @@ func DeterminePlan(previousSpec, currentSpec *batches.ChangesetSpec, ch *batches
 		pl.AddOp(batches.ReconcilerOperationClose)
 		// Close is a final operation, nothing else should overwrite it.
 		return pl, nil
-	} else if wantDetachFromOwnerCampaign {
-		// If the owner campaign detaches the changeset, we don't need to
-		// do any additional writing operations, we can just return
-		// operation "detach".
-		// If some other campaign detached, but the owner campaign didn't,
-		// detach, update is a valid combination, since we'll detach from one
-		// campaign but still update the changeset because the owning campaign
-		// changed the spec.
+	} else if wantDetachFromOwnerBatchChange {
+		// If the owner batch change detaches the changeset, we don't need to do
+		// any additional writing operations, we can just return operation
+		// "detach".
+		// If some other batch change detached, but the owner batch change
+		// didn't, detach, update is a valid combination, since we'll detach
+		// from one batch change but still update the changeset because the
+		// owning batch change changed the spec.
 		return pl, nil
 	}
 
@@ -224,8 +224,8 @@ func reopenAfterDetach(ch *batches.Changeset) bool {
 		return false
 	}
 
-	// Sanity check: if it's not owned by a campaign, it's simply being tracked.
-	if ch.OwnedByCampaignID == 0 {
+	// Sanity check: if it's not owned by a batch change, it's simply being tracked.
+	if ch.OwnedByBatchChangeID == 0 {
 		return false
 	}
 	// Sanity check 2: if it's marked as to-be-closed, then we don't reopen it.
@@ -236,7 +236,7 @@ func reopenAfterDetach(ch *batches.Changeset) bool {
 	// At this point the changeset is closed and not marked as to-be-closed.
 
 	// TODO: What if somebody closed the changeset on purpose on the codehost?
-	return ch.AttachedTo(ch.OwnedByCampaignID)
+	return ch.AttachedTo(ch.OwnedByBatchChangeID)
 }
 
 func compareChangesetSpecs(previous, current *batches.ChangesetSpec) (*ChangesetSpecDelta, error) {

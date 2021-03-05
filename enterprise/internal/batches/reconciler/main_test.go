@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	dbtesting.DBNameSuffix = "campaignsreconcilerdb"
+	dbtesting.DBNameSuffix = "batchchangesreconcilerdb"
 }
 
 func buildGithubPR(now time.Time, externalState batches.ChangesetExternalState) *github.PullRequest {

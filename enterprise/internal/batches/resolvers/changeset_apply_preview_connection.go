@@ -245,7 +245,7 @@ type rewirerMappingsFacade struct {
 	store          *store.Store
 
 	// This field is set when ReconcileCampaign is called.
-	campaign *batches.Campaign
+	campaign *batches.BatchChange
 
 	// Cache of filtered pages.
 	pagesMu sync.Mutex
@@ -269,12 +269,12 @@ func newRewirerMappingsFacade(s *store.Store, campaignSpecID int64) *rewirerMapp
 
 func (rmf *rewirerMappingsFacade) compute(ctx context.Context, opts store.GetRewirerMappingsOpts) error {
 	svc := service.New(rmf.store)
-	campaignSpec, err := rmf.store.GetCampaignSpec(ctx, store.GetCampaignSpecOpts{ID: rmf.campaignSpecID})
+	campaignSpec, err := rmf.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: rmf.campaignSpecID})
 	if err != nil {
 		return err
 	}
 	// Dry-run reconcile the campaign with the new campaign spec.
-	if rmf.campaign, _, err = svc.ReconcileCampaign(ctx, campaignSpec); err != nil {
+	if rmf.campaign, _, err = svc.ReconcileBatchChange(ctx, campaignSpec); err != nil {
 		return err
 	}
 

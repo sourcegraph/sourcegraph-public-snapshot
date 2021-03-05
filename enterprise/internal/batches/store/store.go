@@ -17,14 +17,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
-// seededRand is used to populate the RandID fields on CampaignSpec and
+// seededRand is used to populate the RandID fields on BatchSpec and
 // ChangesetSpec when creating them.
 var seededRand *rand.Rand = rand.New(rand.NewSource(timeutil.Now().UnixNano()))
 
 // ErrNoResults is returned by Store method calls that found no results.
 var ErrNoResults = errors.New("no results")
 
-// Store exposes methods to read and write campaigns domain models
+// Store exposes methods to read and write batches domain models
 // from persistent storage.
 type Store struct {
 	*basestore.Store

@@ -21,7 +21,7 @@ type changesetApplyPreviewResolver struct {
 
 	mapping           *store.RewirerMapping
 	preloadedNextSync time.Time
-	preloadedCampaign *batches.Campaign
+	preloadedCampaign *batches.BatchChange
 	campaignSpecID    int64
 }
 
@@ -133,7 +133,7 @@ type visibleChangesetApplyPreviewResolver struct {
 
 	mapping           *store.RewirerMapping
 	preloadedNextSync time.Time
-	preloadedCampaign *batches.Campaign
+	preloadedCampaign *batches.BatchChange
 	campaignSpecID    int64
 
 	planOnce sync.Once
@@ -141,7 +141,7 @@ type visibleChangesetApplyPreviewResolver struct {
 	planErr  error
 
 	campaignOnce sync.Once
-	campaign     *batches.Campaign
+	campaign     *batches.BatchChange
 	campaignErr  error
 }
 
@@ -256,20 +256,20 @@ func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) 
 	return r.plan, r.planErr
 }
 
-func (r *visibleChangesetApplyPreviewResolver) computeCampaign(ctx context.Context) (*batches.Campaign, error) {
+func (r *visibleChangesetApplyPreviewResolver) computeCampaign(ctx context.Context) (*batches.BatchChange, error) {
 	r.campaignOnce.Do(func() {
 		if r.preloadedCampaign != nil {
 			r.campaign = r.preloadedCampaign
 			return
 		}
 		svc := service.New(r.store)
-		campaignSpec, err := r.store.GetCampaignSpec(ctx, store.GetCampaignSpecOpts{ID: r.campaignSpecID})
+		campaignSpec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: r.campaignSpecID})
 		if err != nil {
 			r.planErr = err
 			return
 		}
 		// Dry-run reconcile the campaign with the new campaign spec.
-		r.campaign, _, r.campaignErr = svc.ReconcileCampaign(ctx, campaignSpec)
+		r.campaign, _, r.campaignErr = svc.ReconcileBatchChange(ctx, campaignSpec)
 	})
 	return r.campaign, r.campaignErr
 }

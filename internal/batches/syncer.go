@@ -6,7 +6,7 @@ type ChangesetSyncState struct {
 	BaseRefOid string
 	HeadRefOid string
 
-	// This is essentially the result of c.ExternalState != CampaignStateOpen
+	// This is essentially the result of c.ExternalState != BatchChangeStateOpen
 	// the last time a sync occured. We use this to short circuit computing the
 	// sync state if the changeset remains closed.
 	IsComplete bool

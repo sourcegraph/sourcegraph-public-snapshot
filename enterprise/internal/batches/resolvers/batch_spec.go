@@ -24,8 +24,8 @@ func marshalBatchSpecRandID(id string) graphql.ID {
 	return relay.MarshalID("BatchSpec", id)
 }
 
-func unmarshalBatchSpecID(id graphql.ID) (campaignSpecRandID string, err error) {
-	err = relay.UnmarshalSpec(id, &campaignSpecRandID)
+func unmarshalBatchSpecID(id graphql.ID) (batchSpecRandID string, err error) {
+	err = relay.UnmarshalSpec(id, &batchSpecRandID)
 	return
 }
 
@@ -34,7 +34,7 @@ var _ graphqlbackend.BatchSpecResolver = &batchSpecResolver{}
 type batchSpecResolver struct {
 	store *store.Store
 
-	campaignSpec       *batches.CampaignSpec
+	batchSpec          *batches.BatchSpec
 	preloadedNamespace *graphqlbackend.NamespaceResolver
 
 	// We cache the namespace on the resolver, since it's accessed more than once.
@@ -53,15 +53,15 @@ func (r *batchSpecResolver) ActAsCampaignSpec() bool {
 func (r *batchSpecResolver) ID() graphql.ID {
 	// 🚨 SECURITY: This needs to be the RandID! We can't expose the
 	// sequential, guessable ID.
-	return marshalBatchSpecRandID(r.campaignSpec.RandID)
+	return marshalBatchSpecRandID(r.batchSpec.RandID)
 }
 
 func (r *batchSpecResolver) OriginalInput() (string, error) {
-	return r.campaignSpec.RawSpec, nil
+	return r.batchSpec.RawSpec, nil
 }
 
 func (r *batchSpecResolver) ParsedInput() (graphqlbackend.JSONValue, error) {
-	return graphqlbackend.JSONValue{Value: r.campaignSpec.Spec}, nil
+	return graphqlbackend.JSONValue{Value: r.batchSpec.Spec}, nil
 }
 
 func (r *batchSpecResolver) ChangesetSpecs(ctx context.Context, args *graphqlbackend.ChangesetSpecsConnectionArgs) (graphqlbackend.ChangesetSpecConnectionResolver, error) {
@@ -81,7 +81,7 @@ func (r *batchSpecResolver) ChangesetSpecs(ctx context.Context, args *graphqlbac
 	return &changesetSpecConnectionResolver{
 		store:          r.store,
 		opts:           opts,
-		campaignSpecID: r.campaignSpec.ID,
+		campaignSpecID: r.batchSpec.ID,
 	}, nil
 }
 
@@ -114,19 +114,19 @@ func (r *batchSpecResolver) ApplyPreview(ctx context.Context, args *graphqlbacke
 		store:          r.store,
 		opts:           opts,
 		action:         args.Action,
-		campaignSpecID: r.campaignSpec.ID,
+		campaignSpecID: r.batchSpec.ID,
 	}, nil
 }
 
 func (r *batchSpecResolver) Description() graphqlbackend.CampaignDescriptionResolver {
-	return &campaignDescriptionResolver{
-		name:        r.campaignSpec.Spec.Name,
-		description: r.campaignSpec.Spec.Description,
+	return &batchChangeDescriptionResolver{
+		name:        r.batchSpec.Spec.Name,
+		description: r.batchSpec.Spec.Description,
 	}
 }
 
 func (r *batchSpecResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DB(), r.campaignSpec.UserID)
+	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DB(), r.batchSpec.UserID)
 	if errcode.IsNotFound(err) {
 		return nil, nil
 	}
@@ -148,10 +148,10 @@ func (r *batchSpecResolver) computeNamespace(ctx context.Context) (*graphqlbacke
 			n   = &graphqlbackend.NamespaceResolver{}
 		)
 
-		if r.campaignSpec.NamespaceUserID != 0 {
-			n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, r.store.DB(), r.campaignSpec.NamespaceUserID)
+		if r.batchSpec.NamespaceUserID != 0 {
+			n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, r.store.DB(), r.batchSpec.NamespaceUserID)
 		} else {
-			n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, r.store.DB(), r.campaignSpec.NamespaceOrgID)
+			n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, r.store.DB(), r.batchSpec.NamespaceOrgID)
 		}
 
 		if errcode.IsNotFound(err) {
@@ -175,33 +175,33 @@ func (r *batchSpecResolver) ApplyURL(ctx context.Context) (string, error) {
 }
 
 func (r *batchSpecResolver) CreatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.campaignSpec.CreatedAt}
+	return graphqlbackend.DateTime{Time: r.batchSpec.CreatedAt}
 }
 
 func (r *batchSpecResolver) ExpiresAt() *graphqlbackend.DateTime {
-	return &graphqlbackend.DateTime{Time: r.campaignSpec.ExpiresAt()}
+	return &graphqlbackend.DateTime{Time: r.batchSpec.ExpiresAt()}
 }
 
 func (r *batchSpecResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	return checkSiteAdminOrSameUser(ctx, r.campaignSpec.UserID)
+	return checkSiteAdminOrSameUser(ctx, r.batchSpec.UserID)
 }
 
-type campaignDescriptionResolver struct {
+type batchChangeDescriptionResolver struct {
 	name, description string
 }
 
-func (r *campaignDescriptionResolver) Name() string {
+func (r *batchChangeDescriptionResolver) Name() string {
 	return r.name
 }
 
-func (r *campaignDescriptionResolver) Description() string {
+func (r *batchChangeDescriptionResolver) Description() string {
 	return r.description
 }
 
 func (r *batchSpecResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
 	specsConnection := &changesetSpecConnectionResolver{
 		store:          r.store,
-		campaignSpecID: r.campaignSpec.ID,
+		campaignSpecID: r.batchSpec.ID,
 	}
 
 	specs, err := specsConnection.Nodes(ctx)
@@ -236,7 +236,7 @@ func (r *batchSpecResolver) AppliesToCampaign(ctx context.Context) (graphqlbacke
 
 func (r *batchSpecResolver) AppliesToBatchChange(ctx context.Context) (graphqlbackend.BatchChangeResolver, error) {
 	svc := service.New(r.store)
-	batchChange, err := svc.GetCampaignMatchingCampaignSpec(ctx, r.campaignSpec)
+	batchChange, err := svc.GetBatchChangeMatchingBatchSpec(ctx, r.batchSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -261,26 +261,26 @@ func (r *batchSpecResolver) SupersedingBatchSpec(ctx context.Context) (graphqlba
 	}
 
 	svc := service.New(r.store)
-	newest, err := svc.GetNewestCampaignSpec(ctx, r.store, r.campaignSpec, actor.FromContext(ctx).UID)
+	newest, err := svc.GetNewestBatchSpec(ctx, r.store, r.batchSpec, actor.FromContext(ctx).UID)
 	if err != nil {
 		return nil, err
 	}
 
 	// If this is the newest spec, then we can just return nil.
-	if newest == nil || newest.ID == r.campaignSpec.ID {
+	if newest == nil || newest.ID == r.batchSpec.ID {
 		return nil, nil
 	}
 
 	// If this spec and the new spec have different creators, we shouldn't
 	// return this as a superseding spec.
-	if newest.UserID != r.campaignSpec.UserID {
+	if newest.UserID != r.batchSpec.UserID {
 		return nil, nil
 	}
 
 	// Create our new resolver, reusing as many fields as we can from this one.
 	resolver := &batchSpecResolver{
 		store:              r.store,
-		campaignSpec:       newest,
+		batchSpec:          newest,
 		preloadedNamespace: namespace,
 	}
 
@@ -316,7 +316,7 @@ func (r *batchSpecResolver) ViewerBatchChangesCodeHosts(ctx context.Context, arg
 		}
 	}
 
-	specs, _, err := r.store.ListChangesetSpecs(ctx, store.ListChangesetSpecsOpts{CampaignSpecID: r.campaignSpec.ID})
+	specs, _, err := r.store.ListChangesetSpecs(ctx, store.ListChangesetSpecsOpts{CampaignSpecID: r.batchSpec.ID})
 	if err != nil {
 		return nil, err
 	}

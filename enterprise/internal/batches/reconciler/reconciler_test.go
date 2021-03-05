@@ -89,15 +89,15 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			// Create necessary associations.
-			previousCampaignSpec := ct.CreateCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
-			campaignSpec := ct.CreateCampaignSpec(t, ctx, store, "reconciler-test-campaign", admin.ID)
-			campaign := ct.CreateCampaign(t, ctx, store, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
+			previousCampaignSpec := ct.CreateBatchSpec(t, ctx, store, "reconciler-test-batch-change", admin.ID)
+			batchSpec := ct.CreateBatchSpec(t, ctx, store, "reconciler-test-batch-change", admin.ID)
+			batchChange := ct.CreateBatchChange(t, ctx, store, "reconciler-test-batch-change", admin.ID, batchSpec.ID)
 
 			// Create the specs.
 			specOpts := *tc.currentSpec
 			specOpts.User = admin.ID
 			specOpts.Repo = rs[0].ID
-			specOpts.CampaignSpec = campaignSpec.ID
+			specOpts.CampaignSpec = batchSpec.ID
 			changesetSpec := ct.CreateChangesetSpec(t, ctx, store, specOpts)
 
 			previousSpecOpts := *tc.previousSpec
@@ -109,8 +109,8 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 			// Create the changeset with correct associations.
 			changesetOpts := tc.changeset
 			changesetOpts.Repo = rs[0].ID
-			changesetOpts.Campaigns = []batches.CampaignAssoc{{CampaignID: campaign.ID}}
-			changesetOpts.OwnedByCampaign = campaign.ID
+			changesetOpts.Campaigns = []batches.BatchChangeAssoc{{BatchChangeID: batchChange.ID}}
+			changesetOpts.OwnedByCampaign = batchChange.ID
 			if changesetSpec != nil {
 				changesetOpts.CurrentSpec = changesetSpec.ID
 			}
@@ -151,7 +151,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 			assertions := tc.wantChangeset
 			assertions.Repo = rs[0].ID
 			assertions.OwnedByCampaign = changesetOpts.OwnedByCampaign
-			assertions.AttachedTo = []int64{campaign.ID}
+			assertions.AttachedTo = []int64{batchChange.ID}
 			assertions.CurrentSpec = changesetSpec.ID
 			assertions.PreviousSpec = previousSpec.ID
 			ct.ReloadAndAssertChangeset(t, ctx, store, changeset, assertions)

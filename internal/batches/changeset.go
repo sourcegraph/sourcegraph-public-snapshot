@@ -194,21 +194,21 @@ func (s ChangesetCheckState) Valid() bool {
 	}
 }
 
-// CampaignAssoc stores the details of a association to a Campaign.
-type CampaignAssoc struct {
-	CampaignID int64 `json:"-"`
-	Detach     bool  `json:"detach"`
+// BatchChangeAssoc stores the details of a association to a BatchChange.
+type BatchChangeAssoc struct {
+	BatchChangeID int64 `json:"-"`
+	Detach        bool  `json:"detach"`
 }
 
 // A Changeset is a changeset on a code host belonging to a Repository and many
-// Campaigns.
+// BatchChanges.
 type Changeset struct {
 	ID                  int64
 	RepoID              api.RepoID
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
 	Metadata            interface{}
-	Campaigns           []CampaignAssoc
+	BatchChanges        []BatchChangeAssoc
 	ExternalID          string
 	ExternalServiceType string
 	// ExternalBranch should always be prefixed with refs/heads/. Call git.EnsureRefPrefix before setting this value.
@@ -223,9 +223,9 @@ type Changeset struct {
 	DiffStatDeleted     *int32
 	SyncState           ChangesetSyncState
 
-	// The campaign that "owns" this changeset: it can create/close
-	// it on code host. If this is 0, it is imported/tracked by a campaign.
-	OwnedByCampaignID int64
+	// The batch change that "owns" this changeset: it can create/close
+	// it on code host. If this is 0, it is imported/tracked by a batch change.
+	OwnedByBatchChangeID int64
 
 	// This is 0 if the Changeset isn't owned by Sourcegraph.
 	CurrentSpecID  int64
@@ -254,7 +254,7 @@ func (c *Changeset) RecordID() int { return int(c.ID) }
 // Clone returns a clone of a Changeset.
 func (c *Changeset) Clone() *Changeset {
 	tt := *c
-	tt.Campaigns = c.Campaigns[:len(c.Campaigns):len(c.Campaigns)]
+	tt.BatchChanges = c.BatchChanges[:len(c.BatchChanges):len(c.BatchChanges)]
 	return &tt
 }
 
@@ -324,12 +324,12 @@ func (c *Changeset) SetMetadata(meta interface{}) error {
 	return nil
 }
 
-// RemoveCampaignID removes the given id from the Changesets CampaignIDs slice.
-// If the id is not in CampaignIDs calling this method doesn't have an effect.
-func (c *Changeset) RemoveCampaignID(id int64) {
-	for i := len(c.Campaigns) - 1; i >= 0; i-- {
-		if c.Campaigns[i].CampaignID == id {
-			c.Campaigns = append(c.Campaigns[:i], c.Campaigns[i+1:]...)
+// RemoveBatchChangeID removes the given id from the Changesets BatchChangesIDs slice.
+// If the id is not in BatchChangesIDs calling this method doesn't have an effect.
+func (c *Changeset) RemoveBatchChangeID(id int64) {
+	for i := len(c.BatchChanges) - 1; i >= 0; i-- {
+		if c.BatchChanges[i].BatchChangeID == id {
+			c.BatchChanges = append(c.BatchChanges[:i], c.BatchChanges[i+1:]...)
 		}
 	}
 }
@@ -621,37 +621,38 @@ func (c *Changeset) BaseRef() (string, error) {
 	}
 }
 
-// AttachedTo returns true if the changeset is currently attached to the campaign with the given campaignID.
-func (c *Changeset) AttachedTo(campaignID int64) bool {
-	for _, assoc := range c.Campaigns {
-		if assoc.CampaignID == campaignID {
+// AttachedTo returns true if the changeset is currently attached to the batch
+// change with the given batchChangeID.
+func (c *Changeset) AttachedTo(batchChangeID int64) bool {
+	for _, assoc := range c.BatchChanges {
+		if assoc.BatchChangeID == batchChangeID {
 			return true
 		}
 	}
 	return false
 }
 
-// Attach attaches the campaign with the given ID to the changeset.
-// If the campaign is already attached, this is a noop.
-// If the campaign is still attached but is marked as to be detached,
+// Attach attaches the batch change with the given ID to the changeset.
+// If the batch change is already attached, this is a noop.
+// If the batch change is still attached but is marked as to be detached,
 // the detach flag is removed.
-func (c *Changeset) Attach(campaignID int64) {
-	for i := range c.Campaigns {
-		if c.Campaigns[i].CampaignID == campaignID {
-			c.Campaigns[i].Detach = false
+func (c *Changeset) Attach(batchChangeID int64) {
+	for i := range c.BatchChanges {
+		if c.BatchChanges[i].BatchChangeID == batchChangeID {
+			c.BatchChanges[i].Detach = false
 			return
 		}
 	}
-	c.Campaigns = append(c.Campaigns, CampaignAssoc{CampaignID: campaignID})
+	c.BatchChanges = append(c.BatchChanges, BatchChangeAssoc{BatchChangeID: batchChangeID})
 }
 
-// Detach marks the given campaign as to-be-detached. Returns true, if the
-// campaign currently is attached to the campaign. This function is a noop,
-// if the given campaign was not attached to the changeset.
-func (c *Changeset) Detach(campaignID int64) bool {
-	for i := range c.Campaigns {
-		if c.Campaigns[i].CampaignID == campaignID {
-			c.Campaigns[i].Detach = true
+// Detach marks the given batch change as to-be-detached. Returns true, if the
+// batch change currently is attached to the batch change. This function is a noop,
+// if the given batch change was not attached to the changeset.
+func (c *Changeset) Detach(batchChangeID int64) bool {
+	for i := range c.BatchChanges {
+		if c.BatchChanges[i].BatchChangeID == batchChangeID {
+			c.BatchChanges[i].Detach = true
 			return true
 		}
 	}

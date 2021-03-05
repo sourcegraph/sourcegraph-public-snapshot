@@ -31,7 +31,7 @@ func newWorker(
 	s *store.Store,
 	gitClient reconciler.GitserverClient,
 	sourcer repos.Sourcer,
-	metrics campaignsMetrics,
+	metrics batchChangesMetrics,
 ) *workerutil.Worker {
 	r := &reconciler.Reconciler{GitserverClient: gitClient, Sourcer: sourcer, Store: s}
 
@@ -48,7 +48,7 @@ func newWorker(
 	return worker
 }
 
-func newWorkerResetter(s *store.Store, metrics campaignsMetrics) *dbworker.Resetter {
+func newWorkerResetter(s *store.Store, metrics batchChangesMetrics) *dbworker.Resetter {
 	workerStore := createDBWorkerStore(s)
 
 	options := dbworker.ResetterOptions{

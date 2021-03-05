@@ -10,7 +10,7 @@ type CodeHost struct {
 }
 
 // IsSupported returns true, when this code host is supported by
-// the campaigns feature.
+// the batch changes feature.
 func (c *CodeHost) IsSupported() bool {
 	return IsKindSupported(extsvc.TypeToKind(c.ExternalServiceType))
 }

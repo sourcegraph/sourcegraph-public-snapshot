@@ -13,8 +13,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
-// InitFrontend initializes the given enterpriseServices to include the required resolvers for campaigns
-// and sets up webhook handlers for changeset events.
+// InitFrontend initializes the given enterpriseServices to include the required
+// resolvers for batch changes and sets up webhook handlers for changeset
+// events.
 func InitFrontend(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services) error {
 	globalState, err := globalstatedb.Get(ctx)
 	if err != nil {
@@ -23,7 +24,7 @@ func InitFrontend(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *o
 
 	cstore := store.New(db)
 
-	enterpriseServices.CampaignsResolver = resolvers.New(cstore)
+	enterpriseServices.BatchChangesResolver = resolvers.New(cstore)
 	enterpriseServices.GitHubWebhook = webhooks.NewGitHubWebhook(cstore)
 	enterpriseServices.BitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(
 		cstore,

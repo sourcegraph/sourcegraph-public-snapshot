@@ -354,9 +354,9 @@ func TestApplyBatchChange(t *testing.T) {
 
 	repoAPIID := graphqlbackend.MarshalRepositoryID(repo.ID)
 
-	campaignSpec := &batches.CampaignSpec{
+	campaignSpec := &batches.BatchSpec{
 		RawSpec: ct.TestRawBatchSpec,
-		Spec: batches.CampaignSpecFields{
+		Spec: batches.BatchSpecFields{
 			Name:        "my-campaign",
 			Description: "My description",
 			ChangesetTemplate: batches.ChangesetTemplate{
@@ -372,7 +372,7 @@ func TestApplyBatchChange(t *testing.T) {
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
-	if err := cstore.CreateCampaignSpec(ctx, campaignSpec); err != nil {
+	if err := cstore.CreateBatchSpec(ctx, campaignSpec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -500,16 +500,16 @@ func TestCreateBatchChange(t *testing.T) {
 
 	cstore := store.New(db)
 
-	campaignSpec := &batches.CampaignSpec{
+	campaignSpec := &batches.BatchSpec{
 		RawSpec: ct.TestRawBatchSpec,
-		Spec: batches.CampaignSpecFields{
+		Spec: batches.BatchSpecFields{
 			Name:        "my-campaign",
 			Description: "My description",
 		},
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
-	if err := cstore.CreateCampaignSpec(ctx, campaignSpec); err != nil {
+	if err := cstore.CreateBatchSpec(ctx, campaignSpec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -539,7 +539,7 @@ func TestCreateBatchChange(t *testing.T) {
 	if len(errors) != 1 {
 		t.Fatalf("expected single errors, but got none")
 	}
-	if have, want := errors[0].Message, service.ErrMatchingCampaignExists.Error(); have != want {
+	if have, want := errors[0].Message, service.ErrMatchingBatchChangeExists.Error(); have != want {
 		t.Fatalf("wrong error. want=%q, have=%q", want, have)
 	}
 }
@@ -566,24 +566,24 @@ func TestMoveBatchChange(t *testing.T) {
 
 	cstore := store.New(db)
 
-	campaignSpec := &batches.CampaignSpec{
+	campaignSpec := &batches.BatchSpec{
 		RawSpec:         ct.TestRawBatchSpec,
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
-	if err := cstore.CreateCampaignSpec(ctx, campaignSpec); err != nil {
+	if err := cstore.CreateBatchSpec(ctx, campaignSpec); err != nil {
 		t.Fatal(err)
 	}
 
-	campaign := &batches.Campaign{
-		CampaignSpecID:   campaignSpec.ID,
+	campaign := &batches.BatchChange{
+		BatchSpecID:      campaignSpec.ID,
 		Name:             "old-name",
 		InitialApplierID: userID,
 		LastApplierID:    userID,
 		LastAppliedAt:    time.Now(),
 		NamespaceUserID:  campaignSpec.UserID,
 	}
-	if err := cstore.CreateCampaign(ctx, campaign); err != nil {
+	if err := cstore.CreateBatchChange(ctx, campaign); err != nil {
 		t.Fatal(err)
 	}
 
