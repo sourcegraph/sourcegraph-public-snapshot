@@ -535,6 +535,9 @@ func (s *SearchStreamClient) SearchFiles(query string) (*SearchFileResults, erro
 		OnMatches: func(matches []streamhttp.EventMatch) {
 			for _, m := range matches {
 				switch v := m.(type) {
+				case *streamhttp.EventRepoMatch:
+					results.Results = append(results.Results, &SearchFileResult{})
+
 				case *streamhttp.EventFileMatch:
 					var r SearchFileResult
 					r.File.Name = v.Path
