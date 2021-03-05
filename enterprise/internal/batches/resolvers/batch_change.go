@@ -233,7 +233,7 @@ func (r *batchChangeResolver) ChangesetCountsOverTime(
 }
 
 func (r *batchChangeResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
-	diffStat, err := r.store.GetCampaignDiffStat(ctx, store.GetCampaignDiffStatOpts{CampaignID: r.batchChange.ID})
+	diffStat, err := r.store.GetBatchChangeDiffStat(ctx, store.GetBatchChangeDiffStatOpts{CampaignID: r.batchChange.ID})
 	if err != nil {
 		return nil, err
 	}

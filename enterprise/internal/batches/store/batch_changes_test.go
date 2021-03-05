@@ -70,7 +70,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 	})
 
 	t.Run("Count", func(t *testing.T) {
-		count, err := s.CountCampaigns(ctx, CountCampaignsOpts{})
+		count, err := s.CountBatchChanges(ctx, CountBatchChangesOpts{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -80,7 +80,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 		}
 
 		t.Run("Global", func(t *testing.T) {
-			count, err = s.CountCampaigns(ctx, CountCampaignsOpts{})
+			count, err = s.CountBatchChanges(ctx, CountBatchChangesOpts{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -95,7 +95,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 				Campaigns: []batches.CampaignAssoc{{CampaignID: cs[0].ID}},
 			})
 
-			count, err = s.CountCampaigns(ctx, CountCampaignsOpts{ChangesetID: changeset.ID})
+			count, err = s.CountBatchChanges(ctx, CountBatchChangesOpts{ChangesetID: changeset.ID})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -107,7 +107,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 
 		t.Run("OnlyForAuthor set", func(t *testing.T) {
 			for _, c := range cs {
-				count, err = s.CountCampaigns(ctx, CountCampaignsOpts{InitialApplierID: c.InitialApplierID})
+				count, err = s.CountBatchChanges(ctx, CountBatchChangesOpts{InitialApplierID: c.InitialApplierID})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -130,7 +130,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 			}
 
 			for userID, want := range wantCounts {
-				have, err := s.CountCampaigns(ctx, CountCampaignsOpts{NamespaceUserID: userID})
+				have, err := s.CountBatchChanges(ctx, CountBatchChangesOpts{NamespaceUserID: userID})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -154,7 +154,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 			}
 
 			for orgID, want := range wantCounts {
-				have, err := s.CountCampaigns(ctx, CountCampaignsOpts{NamespaceOrgID: orgID})
+				have, err := s.CountBatchChanges(ctx, CountBatchChangesOpts{NamespaceOrgID: orgID})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -172,9 +172,9 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 				changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
 					Campaigns: []batches.CampaignAssoc{{CampaignID: cs[i-1].ID}},
 				})
-				opts := ListCampaignsOpts{ChangesetID: changeset.ID}
+				opts := ListBatchChangesOpts{ChangesetID: changeset.ID}
 
-				ts, next, err := s.ListCampaigns(ctx, opts)
+				ts, next, err := s.ListBatchChanges(ctx, opts)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -202,7 +202,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 
 		t.Run("With Limit", func(t *testing.T) {
 			for i := 1; i <= len(reversedCampaigns); i++ {
-				cs, next, err := s.ListCampaigns(ctx, ListCampaignsOpts{LimitOpts: LimitOpts{Limit: i}})
+				cs, next, err := s.ListBatchChanges(ctx, ListBatchChangesOpts{LimitOpts: LimitOpts{Limit: i}})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -234,8 +234,8 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 		t.Run("With Cursor", func(t *testing.T) {
 			var cursor int64
 			for i := 1; i <= len(reversedCampaigns); i++ {
-				opts := ListCampaignsOpts{Cursor: cursor, LimitOpts: LimitOpts{Limit: 1}}
-				have, next, err := s.ListCampaigns(ctx, opts)
+				opts := ListBatchChangesOpts{Cursor: cursor, LimitOpts: LimitOpts{Limit: 1}}
+				have, next, err := s.ListBatchChanges(ctx, opts)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -273,7 +273,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 
 		for _, tc := range filterTests {
 			t.Run("ListCampaigns State "+tc.name, func(t *testing.T) {
-				have, _, err := s.ListCampaigns(ctx, ListCampaignsOpts{State: tc.state})
+				have, _, err := s.ListBatchChanges(ctx, ListBatchChangesOpts{State: tc.state})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -285,7 +285,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 
 		t.Run("ListCampaigns OnlyForAuthor set", func(t *testing.T) {
 			for _, c := range cs {
-				have, next, err := s.ListCampaigns(ctx, ListCampaignsOpts{InitialApplierID: c.InitialApplierID})
+				have, next, err := s.ListBatchChanges(ctx, ListBatchChangesOpts{InitialApplierID: c.InitialApplierID})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -306,8 +306,8 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 				if c.NamespaceUserID == 0 {
 					continue
 				}
-				opts := ListCampaignsOpts{NamespaceUserID: c.NamespaceUserID}
-				have, _, err := s.ListCampaigns(ctx, opts)
+				opts := ListBatchChangesOpts{NamespaceUserID: c.NamespaceUserID}
+				have, _, err := s.ListBatchChanges(ctx, opts)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -325,8 +325,8 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 				if c.NamespaceOrgID == 0 {
 					continue
 				}
-				opts := ListCampaignsOpts{NamespaceOrgID: c.NamespaceOrgID}
-				have, _, err := s.ListCampaigns(ctx, opts)
+				opts := ListBatchChangesOpts{NamespaceOrgID: c.NamespaceOrgID}
+				have, _, err := s.ListBatchChanges(ctx, opts)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -361,7 +361,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 			want.UpdatedAt = clock.Now()
 
 			have := c.Clone()
-			if err := s.UpdateCampaign(ctx, have); err != nil {
+			if err := s.UpdateBatchChange(ctx, have); err != nil {
 				t.Fatal(err)
 			}
 
@@ -374,9 +374,9 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 	t.Run("Get", func(t *testing.T) {
 		t.Run("ByID", func(t *testing.T) {
 			want := cs[0]
-			opts := GetCampaignOpts{ID: want.ID}
+			opts := CountBatchChangeOpts{ID: want.ID}
 
-			have, err := s.GetCampaign(ctx, opts)
+			have, err := s.GetBatchChange(ctx, opts)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -388,9 +388,9 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 
 		t.Run("ByCampaignSpecID", func(t *testing.T) {
 			want := cs[0]
-			opts := GetCampaignOpts{CampaignSpecID: want.CampaignSpecID}
+			opts := CountBatchChangeOpts{BatchChangeSpecID: want.CampaignSpecID}
 
-			have, err := s.GetCampaign(ctx, opts)
+			have, err := s.GetBatchChange(ctx, opts)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -403,7 +403,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 		t.Run("ByName", func(t *testing.T) {
 			want := cs[0]
 
-			have, err := s.GetCampaign(ctx, GetCampaignOpts{Name: want.Name})
+			have, err := s.GetBatchChange(ctx, CountBatchChangeOpts{Name: want.Name})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -420,9 +420,9 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 				}
 
 				want := c
-				opts := GetCampaignOpts{NamespaceUserID: c.NamespaceUserID}
+				opts := CountBatchChangeOpts{NamespaceUserID: c.NamespaceUserID}
 
-				have, err := s.GetCampaign(ctx, opts)
+				have, err := s.GetBatchChange(ctx, opts)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -440,9 +440,9 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 				}
 
 				want := c
-				opts := GetCampaignOpts{NamespaceOrgID: c.NamespaceOrgID}
+				opts := CountBatchChangeOpts{NamespaceOrgID: c.NamespaceOrgID}
 
-				have, err := s.GetCampaign(ctx, opts)
+				have, err := s.GetBatchChange(ctx, opts)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -454,9 +454,9 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 		})
 
 		t.Run("NoResults", func(t *testing.T) {
-			opts := GetCampaignOpts{ID: 0xdeadbeef}
+			opts := CountBatchChangeOpts{ID: 0xdeadbeef}
 
-			_, have := s.GetCampaign(ctx, opts)
+			_, have := s.GetBatchChange(ctx, opts)
 			want := ErrNoResults
 
 			if have != want {
@@ -492,8 +492,8 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 				Changed: testDiffStatCount,
 				Deleted: testDiffStatCount,
 			}
-			opts := GetCampaignDiffStatOpts{CampaignID: campaignID}
-			have, err := s.GetCampaignDiffStat(userCtx, opts)
+			opts := GetBatchChangeDiffStatOpts{CampaignID: campaignID}
+			have, err := s.GetBatchChangeDiffStat(userCtx, opts)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -511,8 +511,8 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 				Changed: 0,
 				Deleted: 0,
 			}
-			opts := GetCampaignDiffStatOpts{CampaignID: campaignID}
-			have, err := s.GetCampaignDiffStat(userCtx, opts)
+			opts := GetBatchChangeDiffStatOpts{CampaignID: campaignID}
+			have, err := s.GetBatchChangeDiffStat(userCtx, opts)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -525,12 +525,12 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 
 	t.Run("Delete", func(t *testing.T) {
 		for i := range cs {
-			err := s.DeleteCampaign(ctx, cs[i].ID)
+			err := s.DeleteBatchChange(ctx, cs[i].ID)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			count, err := s.CountCampaigns(ctx, CountCampaignsOpts{})
+			count, err := s.CountBatchChanges(ctx, CountBatchChangesOpts{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -598,7 +598,7 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 		var testCampaignIsGone = func() {
 			// We should now have the unowned campaign still be valid, but the
 			// owned campaign should have gone away.
-			cs, _, err := s.ListCampaigns(ctx, ListCampaignsOpts{})
+			cs, _, err := s.ListBatchChanges(ctx, ListBatchChangesOpts{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -610,7 +610,7 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 			}
 
 			// The count of campaigns should also respect it.
-			count, err := s.CountCampaigns(ctx, CountCampaignsOpts{})
+			count, err := s.CountBatchChanges(ctx, CountBatchChangesOpts{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -620,7 +620,7 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 			}
 
 			// And getting the campaign by its ID also shouldn't work.
-			if _, err := s.GetCampaign(ctx, GetCampaignOpts{ID: ownedCampaign.ID}); err == nil || err != ErrNoResults {
+			if _, err := s.GetBatchChange(ctx, CountBatchChangeOpts{ID: ownedCampaign.ID}); err == nil || err != ErrNoResults {
 				t.Fatalf("got invalid error, want=%+v have=%+v", ErrNoResults, err)
 			}
 

@@ -111,7 +111,7 @@ func (s *Service) ApplyBatchChange(ctx context.Context, opts ApplyBatchChangeOpt
 			return nil, err
 		}
 	} else {
-		if err := tx.UpdateCampaign(ctx, batchChange); err != nil {
+		if err := tx.UpdateBatchChange(ctx, batchChange); err != nil {
 			return nil, err
 		}
 	}

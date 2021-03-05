@@ -200,7 +200,7 @@ func TestService(t *testing.T) {
 			t.Fatalf("campaign not deleted: %s", err)
 		}
 
-		_, err := s.GetCampaign(ctx, store.GetCampaignOpts{ID: campaign.ID})
+		_, err := s.GetBatchChange(ctx, store.CountBatchChangeOpts{ID: campaign.ID})
 		if err != nil && err != store.ErrNoResults {
 			t.Fatalf("want campaign to be deleted, but was not: %e", err)
 		}

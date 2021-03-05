@@ -1383,12 +1383,12 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 
 	t.Run("ignore closed campaign", func(t *testing.T) {
 		closedCampaignID := changesets[0].Campaigns[0].CampaignID
-		c, err := s.GetCampaign(ctx, GetCampaignOpts{ID: closedCampaignID})
+		c, err := s.GetBatchChange(ctx, CountBatchChangeOpts{ID: closedCampaignID})
 		if err != nil {
 			t.Fatal(err)
 		}
 		c.ClosedAt = clock.Now()
-		err = s.UpdateCampaign(ctx, c)
+		err = s.UpdateBatchChange(ctx, c)
 		if err != nil {
 			t.Fatal(err)
 		}

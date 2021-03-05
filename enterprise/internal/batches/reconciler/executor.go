@@ -630,16 +630,16 @@ func setBasicAuth(u *url.URL, extSvcType, username, password string) error {
 	return nil
 }
 
-type getCampaigner interface {
-	GetCampaign(ctx context.Context, opts store.GetCampaignOpts) (*batches.BatchChange, error)
+type getBatchChanger interface {
+	GetBatchChange(ctx context.Context, opts store.CountBatchChangeOpts) (*batches.BatchChange, error)
 }
 
-func loadCampaign(ctx context.Context, tx getCampaigner, id int64) (*batches.BatchChange, error) {
+func loadCampaign(ctx context.Context, tx getBatchChanger, id int64) (*batches.BatchChange, error) {
 	if id == 0 {
 		return nil, errors.New("changeset has no owning campaign")
 	}
 
-	campaign, err := tx.GetCampaign(ctx, store.GetCampaignOpts{ID: id})
+	campaign, err := tx.GetBatchChange(ctx, store.CountBatchChangeOpts{ID: id})
 	if err != nil && err != store.ErrNoResults {
 		return nil, errors.Wrapf(err, "retrieving owning campaign: %d", id)
 	} else if campaign == nil {
@@ -653,7 +653,7 @@ type getNamespacer interface {
 	GetByID(ctx context.Context, orgID, userID int32) (*database.Namespace, error)
 }
 
-func decorateChangesetBody(ctx context.Context, tx getCampaigner, nsStore getNamespacer, cs *repos.Changeset) error {
+func decorateChangesetBody(ctx context.Context, tx getBatchChanger, nsStore getNamespacer, cs *repos.Changeset) error {
 	campaign, err := loadCampaign(ctx, tx, cs.OwnedByCampaignID)
 	if err != nil {
 		return errors.Wrap(err, "failed to load campaign")

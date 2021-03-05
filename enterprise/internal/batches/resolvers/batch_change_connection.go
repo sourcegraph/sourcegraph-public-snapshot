@@ -15,7 +15,7 @@ var _ graphqlbackend.BatchChangesConnectionResolver = &batchChangesConnectionRes
 
 type batchChangesConnectionResolver struct {
 	store *store.Store
-	opts  store.ListCampaignsOpts
+	opts  store.ListBatchChangesOpts
 
 	// cache results because they are used by multiple fields
 	once         sync.Once
@@ -37,14 +37,14 @@ func (r *batchChangesConnectionResolver) Nodes(ctx context.Context) ([]graphqlba
 }
 
 func (r *batchChangesConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	opts := store.CountCampaignsOpts{
+	opts := store.CountBatchChangesOpts{
 		ChangesetID:      r.opts.ChangesetID,
 		State:            r.opts.State,
 		InitialApplierID: r.opts.InitialApplierID,
 		NamespaceUserID:  r.opts.NamespaceUserID,
 		NamespaceOrgID:   r.opts.NamespaceOrgID,
 	}
-	count, err := r.store.CountCampaigns(ctx, opts)
+	count, err := r.store.CountBatchChanges(ctx, opts)
 	return int32(count), err
 }
 
@@ -61,7 +61,7 @@ func (r *batchChangesConnectionResolver) PageInfo(ctx context.Context) (*graphql
 
 func (r *batchChangesConnectionResolver) compute(ctx context.Context) ([]*batches.BatchChange, int64, error) {
 	r.once.Do(func() {
-		r.batchChanges, r.next, r.err = r.store.ListCampaigns(ctx, r.opts)
+		r.batchChanges, r.next, r.err = r.store.ListBatchChanges(ctx, r.opts)
 	})
 	return r.batchChanges, r.next, r.err
 }

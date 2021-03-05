@@ -185,13 +185,13 @@ func (e *changesetSpecNotFoundErr) NotFound() bool { return true }
 // If it doesn't exist yet, both return values are nil.
 // It accepts a *store.Store so that it can be used inside a transaction.
 func (s *Service) GetBatchChangeMatchingBatchSpec(ctx context.Context, spec *batches.BatchSpec) (*batches.BatchChange, error) {
-	opts := store.GetCampaignOpts{
+	opts := store.CountBatchChangeOpts{
 		Name:            spec.Spec.Name,
 		NamespaceUserID: spec.NamespaceUserID,
 		NamespaceOrgID:  spec.NamespaceOrgID,
 	}
 
-	campaign, err := s.store.GetCampaign(ctx, opts)
+	campaign, err := s.store.GetBatchChange(ctx, opts)
 	if err != nil {
 		if err != store.ErrNoResults {
 			return nil, err
@@ -256,7 +256,7 @@ func (s *Service) MoveBatchChange(ctx context.Context, opts MoveBatchChangeOpts)
 	}
 	defer func() { err = tx.Done(err) }()
 
-	batchChange, err = tx.GetCampaign(ctx, store.GetCampaignOpts{ID: opts.BatchChangeID})
+	batchChange, err = tx.GetBatchChange(ctx, store.CountBatchChangeOpts{ID: opts.BatchChangeID})
 	if err != nil {
 		return nil, err
 	}
@@ -285,7 +285,7 @@ func (s *Service) MoveBatchChange(ctx context.Context, opts MoveBatchChangeOpts)
 		batchChange.Name = opts.NewName
 	}
 
-	return batchChange, tx.UpdateCampaign(ctx, batchChange)
+	return batchChange, tx.UpdateBatchChange(ctx, batchChange)
 }
 
 // CloseCampaign closes the Campaign with the given ID if it has not been closed yet.
@@ -297,7 +297,7 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 		tr.Finish()
 	}()
 
-	campaign, err = s.store.GetCampaign(ctx, store.GetCampaignOpts{ID: id})
+	campaign, err = s.store.GetBatchChange(ctx, store.CountBatchChangeOpts{ID: id})
 	if err != nil {
 		return nil, errors.Wrap(err, "getting campaign")
 	}
@@ -317,7 +317,7 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 	defer func() { err = tx.Done(err) }()
 
 	campaign.ClosedAt = s.clock()
-	if err := tx.UpdateCampaign(ctx, campaign); err != nil {
+	if err := tx.UpdateBatchChange(ctx, campaign); err != nil {
 		return nil, err
 	}
 
@@ -347,7 +347,7 @@ func (s *Service) DeleteBatchChange(ctx context.Context, id int64) (err error) {
 		tr.Finish()
 	}()
 
-	batchChange, err := s.store.GetCampaign(ctx, store.GetCampaignOpts{ID: id})
+	batchChange, err := s.store.GetBatchChange(ctx, store.CountBatchChangeOpts{ID: id})
 	if err != nil {
 		return err
 	}
@@ -356,7 +356,7 @@ func (s *Service) DeleteBatchChange(ctx context.Context, id int64) (err error) {
 		return err
 	}
 
-	return s.store.DeleteCampaign(ctx, id)
+	return s.store.DeleteBatchChange(ctx, id)
 }
 
 // EnqueueChangesetSync loads the given changeset from the database, checks
@@ -382,7 +382,7 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 		return err
 	}
 
-	batchChanges, _, err := s.store.ListCampaigns(ctx, store.ListCampaignsOpts{ChangesetID: id})
+	batchChanges, _, err := s.store.ListBatchChanges(ctx, store.ListBatchChangesOpts{ChangesetID: id})
 	if err != nil {
 		return err
 	}
@@ -437,7 +437,7 @@ func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *
 		return nil, nil, err
 	}
 
-	attachedBatchChanges, _, err := s.store.ListCampaigns(ctx, store.ListCampaignsOpts{ChangesetID: id})
+	attachedBatchChanges, _, err := s.store.ListBatchChanges(ctx, store.ListBatchChangesOpts{ChangesetID: id})
 	if err != nil {
 		return nil, nil, err
 	}

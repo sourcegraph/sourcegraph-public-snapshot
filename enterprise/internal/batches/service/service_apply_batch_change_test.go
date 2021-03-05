@@ -1110,7 +1110,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 		campaign := ct.CreateBatchChange(t, ctx, store, "closed-campaign", admin.ID, campaignSpec.ID)
 
 		campaign.ClosedAt = time.Now()
-		if err := store.UpdateCampaign(ctx, campaign); err != nil {
+		if err := store.UpdateBatchChange(ctx, campaign); err != nil {
 			t.Fatalf("failed to update campaign: %s", err)
 		}
 

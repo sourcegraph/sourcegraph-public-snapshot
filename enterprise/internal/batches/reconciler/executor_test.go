@@ -923,7 +923,7 @@ func TestDecorateChangesetBody(t *testing.T) {
 	defer func() { internalClient = api.InternalClient }()
 
 	fs := &FakeStore{
-		GetCampaignMock: func(ctx context.Context, opts store.GetCampaignOpts) (*batches.BatchChange, error) {
+		GetBatchChangeMock: func(ctx context.Context, opts store.CountBatchChangeOpts) (*batches.BatchChange, error) {
 			return &batches.BatchChange{ID: 1234, Name: "reconciler-test-campaign"}, nil
 		},
 	}

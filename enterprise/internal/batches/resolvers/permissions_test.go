@@ -114,7 +114,7 @@ func TestPermissionLevels(t *testing.T) {
 	cleanUpCampaigns := func(t *testing.T, s *store.Store) {
 		t.Helper()
 
-		campaigns, next, err := s.ListCampaigns(ctx, store.ListCampaignsOpts{LimitOpts: store.LimitOpts{Limit: 1000}})
+		campaigns, next, err := s.ListBatchChanges(ctx, store.ListBatchChangesOpts{LimitOpts: store.LimitOpts{Limit: 1000}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -123,7 +123,7 @@ func TestPermissionLevels(t *testing.T) {
 		}
 
 		for _, c := range campaigns {
-			if err := s.DeleteCampaign(ctx, c.ID); err != nil {
+			if err := s.DeleteBatchChange(ctx, c.ID); err != nil {
 				t.Fatal(err)
 			}
 		}

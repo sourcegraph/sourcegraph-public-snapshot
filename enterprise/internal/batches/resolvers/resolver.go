@@ -164,7 +164,7 @@ func (r *Resolver) BatchChangeByID(ctx context.Context, id graphql.ID) (graphqlb
 		return nil, nil
 	}
 
-	batchChange, err := r.store.GetCampaign(ctx, store.GetCampaignOpts{ID: batchChangeID})
+	batchChange, err := r.store.GetBatchChange(ctx, store.CountBatchChangeOpts{ID: batchChangeID})
 	if err != nil {
 		if err == store.ErrNoResults {
 			return nil, nil
@@ -180,14 +180,14 @@ func (r *Resolver) BatchChange(ctx context.Context, args *graphqlbackend.BatchCh
 		return nil, err
 	}
 
-	opts := store.GetCampaignOpts{Name: args.Name}
+	opts := store.CountBatchChangeOpts{Name: args.Name}
 
 	err := graphqlbackend.UnmarshalNamespaceID(graphql.ID(args.Namespace), &opts.NamespaceUserID, &opts.NamespaceOrgID)
 	if err != nil {
 		return nil, err
 	}
 
-	batchChange, err := r.store.GetCampaign(ctx, opts)
+	batchChange, err := r.store.GetBatchChange(ctx, opts)
 	if err != nil {
 		if err == store.ErrNoResults {
 			return nil, nil
@@ -600,7 +600,7 @@ func (r *Resolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBa
 		return nil, err
 	}
 
-	opts := store.ListCampaignsOpts{}
+	opts := store.ListBatchChangesOpts{}
 
 	state, err := parseCampaignState(args.State)
 	if err != nil {
