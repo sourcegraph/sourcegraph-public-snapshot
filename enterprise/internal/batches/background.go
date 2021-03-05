@@ -3,11 +3,11 @@ package batches
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/background"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -19,10 +19,13 @@ func InitBackgroundJobs(
 	ctx context.Context,
 	db dbutil.DB,
 	cf *httpcli.Factory,
-	// TODO(eseliger): Remove this parameter as the sunset of repo-updater is approaching.
-	// We should switch to our own polling mechanism instead of using repo-updaters.
-	server *repoupdater.Server,
-) {
+) interface {
+	// EnqueueChangesetSyncs will queue the supplied changesets to sync ASAP.
+	EnqueueChangesetSyncs(ctx context.Context, ids []int64) error
+	// HandleExternalServiceSync should be called when an external service changes so that
+	// the registry can start or stop the syncer associated with the service
+	HandleExternalServiceSync(es api.ExternalService)
+} {
 	cstore := store.New(db)
 
 	repoStore := cstore.Repos()
@@ -36,9 +39,8 @@ func InitBackgroundJobs(
 	ctx = actor.WithInternalActor(ctx)
 
 	syncRegistry := syncer.NewSyncRegistry(ctx, cstore, repoStore, esStore, cf)
-	if server != nil {
-		server.ChangesetSyncRegistry = syncRegistry
-	}
 
 	go goroutine.MonitorBackgroundRoutines(ctx, background.Routines(ctx, cstore, cf)...)
+
+	return syncRegistry
 }
