@@ -74,7 +74,7 @@ func TestBatchSpecResolver(t *testing.T) {
 		LastAppliedAt:    time.Now(),
 		CampaignSpecID:   spec.ID,
 	}
-	if err := cstore.CreateCampaign(ctx, matchingBatchChange); err != nil {
+	if err := cstore.CreateBatchChange(ctx, matchingBatchChange); err != nil {
 		t.Fatal(err)
 	}
 

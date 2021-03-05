@@ -426,7 +426,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 						LastApplierID:    campaignSpec.UserID,
 						LastAppliedAt:    time.Now(),
 					}
-					if err := s.CreateCampaign(ctx, campaign); err != nil {
+					if err := s.CreateBatchChange(ctx, campaign); err != nil {
 						t.Fatal(err)
 					}
 				}

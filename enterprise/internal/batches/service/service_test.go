@@ -50,7 +50,7 @@ func TestServicePermissionLevels(t *testing.T) {
 		}
 
 		campaign := testCampaign(author, spec)
-		if err := s.CreateCampaign(ctx, campaign); err != nil {
+		if err := s.CreateBatchChange(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
 
@@ -193,7 +193,7 @@ func TestService(t *testing.T) {
 		}
 
 		campaign := testCampaign(admin.ID, spec)
-		if err := s.CreateCampaign(ctx, campaign); err != nil {
+		if err := s.CreateBatchChange(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
 		if err := svc.DeleteBatchChange(ctx, campaign.ID); err != nil {
@@ -216,7 +216,7 @@ func TestService(t *testing.T) {
 			}
 
 			campaign := testCampaign(admin.ID, spec)
-			if err := s.CreateCampaign(ctx, campaign); err != nil {
+			if err := s.CreateBatchChange(ctx, campaign); err != nil {
 				t.Fatal(err)
 			}
 			return campaign
@@ -287,7 +287,7 @@ func TestService(t *testing.T) {
 		}
 
 		campaign := testCampaign(admin.ID, spec)
-		if err := s.CreateCampaign(ctx, campaign); err != nil {
+		if err := s.CreateBatchChange(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
 
@@ -330,7 +330,7 @@ func TestService(t *testing.T) {
 		}
 
 		campaign := testCampaign(admin.ID, spec)
-		if err := s.CreateCampaign(ctx, campaign); err != nil {
+		if err := s.CreateBatchChange(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
 
@@ -610,7 +610,7 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("MoveCampaign", func(t *testing.T) {
-		createCampaign := func(t *testing.T, name string, authorID, userID, orgID int32) *batches.BatchChange {
+		createBatchChange := func(t *testing.T, name string, authorID, userID, orgID int32) *batches.BatchChange {
 			t.Helper()
 
 			spec := &batches.BatchSpec{
@@ -633,7 +633,7 @@ func TestService(t *testing.T) {
 				CampaignSpecID:   spec.ID,
 			}
 
-			if err := s.CreateCampaign(ctx, c); err != nil {
+			if err := s.CreateBatchChange(ctx, c); err != nil {
 				t.Fatal(err)
 			}
 
@@ -641,7 +641,7 @@ func TestService(t *testing.T) {
 		}
 
 		t.Run("new name", func(t *testing.T) {
-			campaign := createCampaign(t, "old-name", admin.ID, admin.ID, 0)
+			campaign := createBatchChange(t, "old-name", admin.ID, admin.ID, 0)
 
 			opts := MoveBatchChangeOpts{BatchChangeID: campaign.ID, NewName: "new-name"}
 			moved, err := svc.MoveBatchChange(ctx, opts)
@@ -655,7 +655,7 @@ func TestService(t *testing.T) {
 		})
 
 		t.Run("new user namespace", func(t *testing.T) {
-			campaign := createCampaign(t, "old-name", admin.ID, admin.ID, 0)
+			campaign := createBatchChange(t, "old-name", admin.ID, admin.ID, 0)
 
 			user2 := ct.CreateTestUser(t, db, false)
 
@@ -675,7 +675,7 @@ func TestService(t *testing.T) {
 		})
 
 		t.Run("new user namespace but current user is not admin", func(t *testing.T) {
-			campaign := createCampaign(t, "old-name", user.ID, user.ID, 0)
+			campaign := createBatchChange(t, "old-name", user.ID, user.ID, 0)
 
 			user2 := ct.CreateTestUser(t, db, false)
 
@@ -689,7 +689,7 @@ func TestService(t *testing.T) {
 		})
 
 		t.Run("new org namespace", func(t *testing.T) {
-			campaign := createCampaign(t, "old-name", admin.ID, admin.ID, 0)
+			campaign := createBatchChange(t, "old-name", admin.ID, admin.ID, 0)
 
 			orgID := ct.InsertTestOrg(t, db, "org")
 
@@ -709,7 +709,7 @@ func TestService(t *testing.T) {
 		})
 
 		t.Run("new org namespace but current user is missing access", func(t *testing.T) {
-			campaign := createCampaign(t, "old-name", user.ID, user.ID, 0)
+			campaign := createBatchChange(t, "old-name", user.ID, user.ID, 0)
 
 			orgID := ct.InsertTestOrg(t, db, "org-no-access")
 
@@ -744,7 +744,7 @@ func TestService(t *testing.T) {
 			LastApplierID:    admin.ID,
 			LastAppliedAt:    time.Now(),
 		}
-		if err := s.CreateCampaign(ctx, matchingCampaign); err != nil {
+		if err := s.CreateBatchChange(ctx, matchingCampaign); err != nil {
 			t.Fatalf("failed to create campaign: %s\n", err)
 		}
 

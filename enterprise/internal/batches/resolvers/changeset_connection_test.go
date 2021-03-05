@@ -56,7 +56,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		LastAppliedAt:    time.Now(),
 		CampaignSpecID:   spec.ID,
 	}
-	if err := cstore.CreateCampaign(ctx, campaign); err != nil {
+	if err := cstore.CreateBatchChange(ctx, campaign); err != nil {
 		t.Fatal(err)
 	}
 

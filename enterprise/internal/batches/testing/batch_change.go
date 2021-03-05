@@ -9,7 +9,7 @@ import (
 )
 
 type CreateCampaigner interface {
-	CreateCampaign(ctx context.Context, campaign *batches.BatchChange) error
+	CreateBatchChange(ctx context.Context, campaign *batches.BatchChange) error
 	Clock() func() time.Time
 }
 
@@ -31,7 +31,7 @@ func CreateBatchChange(t *testing.T, ctx context.Context, store CreateCampaigner
 
 	b := BuildBatchChange(store, name, userID, spec)
 
-	if err := store.CreateCampaign(ctx, b); err != nil {
+	if err := store.CreateBatchChange(ctx, b); err != nil {
 		t.Fatal(err)
 	}
 

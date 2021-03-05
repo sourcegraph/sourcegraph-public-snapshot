@@ -53,7 +53,7 @@ func TestBatchChangeResolver(t *testing.T) {
 		LastAppliedAt:    now,
 		CampaignSpecID:   batchSpec.ID,
 	}
-	if err := cstore.CreateCampaign(ctx, batchChange); err != nil {
+	if err := cstore.CreateBatchChange(ctx, batchChange); err != nil {
 		t.Fatal(err)
 	}
 

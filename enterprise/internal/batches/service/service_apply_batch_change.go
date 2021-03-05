@@ -107,7 +107,7 @@ func (s *Service) ApplyBatchChange(ctx context.Context, opts ApplyBatchChangeOpt
 	defer func() { err = tx.Done(err) }()
 
 	if batchChange.ID == 0 {
-		if err := tx.CreateCampaign(ctx, batchChange); err != nil {
+		if err := tx.CreateBatchChange(ctx, batchChange); err != nil {
 			return nil, err
 		}
 	} else {

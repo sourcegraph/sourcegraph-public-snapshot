@@ -109,7 +109,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			CampaignSpecID:   spec.ID,
 		}
 
-		err = s.CreateCampaign(ctx, campaign)
+		err = s.CreateBatchChange(ctx, campaign)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -288,7 +288,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			CampaignSpecID:   spec.ID,
 		}
 
-		err = s.CreateCampaign(ctx, campaign)
+		err = s.CreateBatchChange(ctx, campaign)
 		if err != nil {
 			t.Fatal(err)
 		}

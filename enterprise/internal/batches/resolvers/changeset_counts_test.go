@@ -137,7 +137,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		CampaignSpecID:   spec.ID,
 	}
 
-	err = cstore.CreateCampaign(ctx, campaign)
+	err = cstore.CreateBatchChange(ctx, campaign)
 	if err != nil {
 		t.Fatal(err)
 	}

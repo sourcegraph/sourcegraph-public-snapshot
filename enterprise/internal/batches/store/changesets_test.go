@@ -1290,7 +1290,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 			LastAppliedAt:  time.Now(),
 			CampaignSpecID: 42,
 		}
-		err := s.CreateCampaign(ctx, c)
+		err := s.CreateBatchChange(ctx, c)
 		if err != nil {
 			t.Fatal(err)
 		}

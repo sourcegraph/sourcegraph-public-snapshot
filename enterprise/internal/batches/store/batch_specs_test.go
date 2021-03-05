@@ -322,7 +322,7 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 					LastApplierID:    1,
 					LastAppliedAt:    time.Now(),
 				}
-				if err := s.CreateCampaign(ctx, campaign); err != nil {
+				if err := s.CreateBatchChange(ctx, campaign); err != nil {
 					t.Fatal(err)
 				}
 			}

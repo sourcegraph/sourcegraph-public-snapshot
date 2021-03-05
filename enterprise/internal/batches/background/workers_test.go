@@ -91,7 +91,7 @@ func TestWorkerView(t *testing.T) {
 		}
 		orgCampaign := ct.BuildBatchChange(cstore, "test-user-namespace", 0, spec.ID)
 		orgCampaign.NamespaceOrgID = orgID
-		if err := cstore.CreateCampaign(ctx, orgCampaign); err != nil {
+		if err := cstore.CreateBatchChange(ctx, orgCampaign); err != nil {
 			t.Fatal(err)
 		}
 		c := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{

@@ -82,7 +82,7 @@ func TestPermissionLevels(t *testing.T) {
 			LastAppliedAt:    time.Now(),
 			CampaignSpecID:   campaignSpecID,
 		}
-		if err := s.CreateCampaign(ctx, c); err != nil {
+		if err := s.CreateBatchChange(ctx, c); err != nil {
 			t.Fatal(err)
 		}
 
@@ -840,7 +840,7 @@ func TestRepositoryPermissions(t *testing.T) {
 			LastAppliedAt:    time.Now(),
 			CampaignSpecID:   spec.ID,
 		}
-		if err := cstore.CreateCampaign(ctx, campaign); err != nil {
+		if err := cstore.CreateBatchChange(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
 		// We attach the two changesets to the campaign

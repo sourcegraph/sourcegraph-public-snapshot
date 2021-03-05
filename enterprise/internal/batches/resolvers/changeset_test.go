@@ -169,7 +169,7 @@ func TestChangesetResolver(t *testing.T) {
 		LastApplierID:    userID,
 		LastAppliedAt:    time.Now(),
 	}
-	if err := cstore.CreateCampaign(ctx, campaign); err != nil {
+	if err := cstore.CreateBatchChange(ctx, campaign); err != nil {
 		t.Fatal(err)
 	}
 	// Associate the changeset with a campaign, so it's considered in syncer logic.

@@ -13,9 +13,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-// campaignColumns are used by the campaign related Store methods to insert,
+// batchChangeColumns are used by the campaign related Store methods to insert,
 // update and query batches.
-var campaignColumns = []*sqlf.Query{
+var batchChangeColumns = []*sqlf.Query{
 	sqlf.Sprintf("campaigns.id"),
 	sqlf.Sprintf("campaigns.name"),
 	sqlf.Sprintf("campaigns.description"),
@@ -30,10 +30,10 @@ var campaignColumns = []*sqlf.Query{
 	sqlf.Sprintf("campaigns.campaign_spec_id"),
 }
 
-// campaignInsertColumns is the list of campaign columns that are modified in
+// batchChangeInsertColumns is the list of campaign columns that are modified in
 // CreateCampaign and UpdateCampaign.
 // update and query batches.
-var campaignInsertColumns = []*sqlf.Query{
+var batchChangeInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("name"),
 	sqlf.Sprintf("description"),
 	sqlf.Sprintf("initial_applier_id"),
@@ -47,8 +47,8 @@ var campaignInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("campaign_spec_id"),
 }
 
-// CreateCampaign creates the given Campaign.
-func (s *Store) CreateCampaign(ctx context.Context, c *batches.BatchChange) error {
+// CreateBatchChange creates the given Campaign.
+func (s *Store) CreateBatchChange(ctx context.Context, c *batches.BatchChange) error {
 	q := s.createCampaignQuery(c)
 
 	return s.query(ctx, q, func(sc scanner) (err error) {
@@ -57,7 +57,7 @@ func (s *Store) CreateCampaign(ctx context.Context, c *batches.BatchChange) erro
 }
 
 var createCampaignQueryFmtstr = `
--- source: enterprise/internal/batches/store.go:CreateCampaign
+-- source: enterprise/internal/batches/store.go:CreateBatchChange
 INSERT INTO campaigns (%s)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING %s
@@ -74,7 +74,7 @@ func (s *Store) createCampaignQuery(c *batches.BatchChange) *sqlf.Query {
 
 	return sqlf.Sprintf(
 		createCampaignQueryFmtstr,
-		sqlf.Join(campaignInsertColumns, ", "),
+		sqlf.Join(batchChangeInsertColumns, ", "),
 		c.Name,
 		c.Description,
 		nullInt32Column(c.InitialApplierID),
@@ -86,7 +86,7 @@ func (s *Store) createCampaignQuery(c *batches.BatchChange) *sqlf.Query {
 		c.UpdatedAt,
 		nullTimeColumn(c.ClosedAt),
 		c.CampaignSpecID,
-		sqlf.Join(campaignColumns, ", "),
+		sqlf.Join(batchChangeColumns, ", "),
 	)
 }
 
@@ -110,7 +110,7 @@ func (s *Store) updateCampaignQuery(c *batches.BatchChange) *sqlf.Query {
 
 	return sqlf.Sprintf(
 		updateCampaignQueryFmtstr,
-		sqlf.Join(campaignInsertColumns, ", "),
+		sqlf.Join(batchChangeInsertColumns, ", "),
 		c.Name,
 		c.Description,
 		nullInt32Column(c.InitialApplierID),
@@ -123,7 +123,7 @@ func (s *Store) updateCampaignQuery(c *batches.BatchChange) *sqlf.Query {
 		nullTimeColumn(c.ClosedAt),
 		c.CampaignSpecID,
 		c.ID,
-		sqlf.Join(campaignColumns, ", "),
+		sqlf.Join(batchChangeColumns, ", "),
 	)
 }
 
@@ -273,7 +273,7 @@ func getCampaignQuery(opts *GetCampaignOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(
 		getCampaignsQueryFmtstr,
-		sqlf.Join(campaignColumns, ", "),
+		sqlf.Join(batchChangeColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
@@ -408,7 +408,7 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(
 		listCampaignsQueryFmtstr+opts.LimitOpts.ToDB(),
-		sqlf.Join(campaignColumns, ", "),
+		sqlf.Join(batchChangeColumns, ", "),
 		sqlf.Join(joins, "\n"),
 		sqlf.Join(preds, "\n AND "),
 	)

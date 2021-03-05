@@ -48,7 +48,7 @@ func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Cl
 			want := c.Clone()
 			have := c
 
-			err := s.CreateCampaign(ctx, have)
+			err := s.CreateBatchChange(ctx, have)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -574,7 +574,7 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 			LastAppliedAt:    clock.Now(),
 			CampaignSpecID:   ownedSpec.ID,
 		}
-		if err := s.CreateCampaign(ctx, ownedCampaign); err != nil {
+		if err := s.CreateBatchChange(ctx, ownedCampaign); err != nil {
 			t.Fatal(err)
 		}
 
@@ -586,7 +586,7 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 			LastAppliedAt:    clock.Now(),
 			CampaignSpecID:   ownedSpec.ID,
 		}
-		if err := s.CreateCampaign(ctx, unownedCampaign); err != nil {
+		if err := s.CreateBatchChange(ctx, unownedCampaign); err != nil {
 			t.Fatal(err)
 		}
 
