@@ -1,5 +1,5 @@
 // We want to polyfill first.
-import '../../ui-kit-legacy-shared/polyfills'
+import '../../shared/polyfills'
 
 import { Endpoint } from 'comlink'
 import { without } from 'lodash'

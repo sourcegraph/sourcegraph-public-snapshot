@@ -1,4 +1,4 @@
-import '../../ui-kit-legacy-shared/polyfills'
+import '../../shared/polyfills'
 
 import { fromEvent, Subscription } from 'rxjs'
 import { first } from 'rxjs/operators'

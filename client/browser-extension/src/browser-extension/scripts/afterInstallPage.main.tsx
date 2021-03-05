@@ -1,5 +1,5 @@
 // We want to polyfill first.
-import '../../ui-kit-legacy-shared/polyfills'
+import '../../shared/polyfills'
 
 import React from 'react'
 import { render } from 'react-dom'
