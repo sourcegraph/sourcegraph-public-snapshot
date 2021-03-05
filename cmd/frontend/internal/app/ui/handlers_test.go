@@ -11,7 +11,6 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
@@ -19,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/database/globalstatedb"
+	"github.com/sourcegraph/sourcegraph/internal/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"

@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 

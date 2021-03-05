@@ -14,8 +14,8 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/envvar"
 )
 
 var queueURL = env.Get("EXECUTOR_QUEUE_URL", "", "HTTP address for the internal executor-queue.")

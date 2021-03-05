@@ -23,7 +23,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -31,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"

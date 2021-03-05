@@ -11,9 +11,9 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )

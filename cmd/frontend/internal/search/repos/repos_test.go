@@ -9,9 +9,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"

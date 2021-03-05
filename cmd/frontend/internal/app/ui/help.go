@@ -6,7 +6,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 

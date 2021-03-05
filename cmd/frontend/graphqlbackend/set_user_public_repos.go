@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/envvar"
 
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"

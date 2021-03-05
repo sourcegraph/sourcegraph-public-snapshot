@@ -5,9 +5,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/envvar"
 )
 
 func TestFilteringExtensionIDs(t *testing.T) {

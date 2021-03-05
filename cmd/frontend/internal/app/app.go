@@ -5,9 +5,9 @@ import (
 
 	"github.com/NYTimes/gziphandler"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
+	"github.com/sourcegraph/sourcegraph/internal/envvar"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil"
