@@ -80,7 +80,7 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; history: H.His
             {skipped.message && (
                 <Collapse isOpen={isOpen}>
                     <Markdown
-                        className="streaming-skipped-item__message text-left mb-1"
+                        className="streaming-skipped-item__message text-left py-1"
                         dangerousInnerHTML={renderMarkdown(skipped.message)}
                         history={history}
                     />
