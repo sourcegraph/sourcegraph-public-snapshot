@@ -335,61 +335,42 @@ delete_sources AS (
 ),
 `
 
-// DeleteExternalService deletes an external service, its repository associations and any of the
-// corresponding repositories that are no longer associated with any external service.
-func (s *Store) DeleteExternalService(ctx context.Context, id int64) (deletedRepoIDs []api.RepoID, err error) {
-	tr, ctx := s.trace(ctx, "Store.DeleteExternalService")
-
-	defer func(began time.Time) {
-		secs := time.Since(began).Seconds()
-
-		tr.LogFields(
-			otlog.Int64("id", id),
-			otlog.Int("deleted_repos", len(deletedRepoIDs)),
-		)
-
-		s.Metrics.DeleteExternalService.Observe(secs, 1, &err)
-
-		logging.Log(s.Log, "store.delete-external-service", &err,
-			"id", id,
-			"duration_seconds", secs,
-			"deleted_repos", len(deletedRepoIDs),
-		)
-
-		tr.SetError(err)
-		tr.Finish()
-	}(time.Now())
-
-	q := sqlf.Sprintf(deleteExternalServiceQuery, id, id)
-	return deletedRepoIDs, s.QueryRow(ctx, q).Scan(pq.Array(&deletedRepoIDs))
+// DeleteExternalServiceRepos deletes an external service's repo associations in the external_service_repos table,
+// returning the repo ids that were previously associated.
+func (s *Store) DeleteExternalServiceRepos(ctx context.Context, externalServiceID int64) (repoIDs []int32, err error) {
+	q := sqlf.Sprintf(`DELETE FROM external_service_repos WHERE external_service_id = %d RETURNING repo_id`, externalServiceID)
+	return basestore.ScanInt32s(s.Query(ctx, q))
 }
 
-const deleteExternalServiceQuery = `
-WITH deleted_associations AS (
-	DELETE FROM external_service_repos
-	WHERE external_service_id = %d
-	RETURNING repo_id
-),
+// DeleteOrphanedRepos deletes any orphaned repos (i.e. those no longer owned by any external service) in the given
+// set. If no repoIDs are given, it will delete all orphaned repos.
+func (s *Store) DeleteOrphanedRepos(ctx context.Context, repoIDs ...int32) (deletedRepoIDs []int32, err error) {
+	var where *sqlf.Query
+	if len(repoIDs) == 0 {
+		where = sqlf.Sprintf("NOT EXISTS (SELECT FROM external_service_repos WHERE repo_id = repo.id)")
+	} else {
+		ids := make([]*sqlf.Query, 0, len(repoIDs))
+		for _, id := range repoIDs {
+			ids = append(ids, sqlf.Sprintf("%d", id))
+		}
+		where = sqlf.Sprintf(
+			"id IN (%s) AND ID NOT IN (SELECT repo_id FROM external_service_repos WHERE repo_id IN (%s))",
+			sqlf.Join(ids, ", "),
+			sqlf.Join(ids, ", "),
+		)
+	}
 
-deleted_repos AS (
-	UPDATE repo FROM deleted_associations
-	SET
-		name = soft_deleted_repository_name(name),
-		deleted_at = transaction_timestamp()
-	WHERE repo.id = deleted.id
-	AND repo.id AND NOT EXISTS (
-		SELECT FROM external_service_repos
-		WHERE repo_id = repo.id
-	)
-	RETURNING repo.id
-)
+	const deleteOrphanedReposQuery = `
+		UPDATE repo
+		SET
+			name = soft_deleted_repository_name(name),
+			deleted_at = transaction_timestamp()
+		WHERE %s
+		RETURNING repo.id
+	`
 
-UPDATE external_services
-FROM deleted_repos
-SET deleted_at = transaction_timestamp()
-WHERE id = %d
-RETURNING array_agg(deleted_repos.id) AS deleted_repos
-`
+	return basestore.ScanInt32s(s.Query(ctx, sqlf.Sprintf(deleteOrphanedReposQuery, where)))
+}
 
 // SetClonedRepos updates cloned status for all repositories.
 // All repositories whose name is in repoNames will have their cloned column set to true

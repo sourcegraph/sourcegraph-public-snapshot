@@ -78,6 +78,10 @@ func NewDB(t testing.TB, dsn string) *sql.DB {
 		}
 	}
 
+	if testing.Verbose() {
+		t.Logf("DATABASE %s created and migrated", dbname)
+	}
+
 	t.Cleanup(func() {
 		defer db.Close()
 
