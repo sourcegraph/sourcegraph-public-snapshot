@@ -358,8 +358,12 @@ func testSearchClient(t *testing.T, client searchClient) {
 			},
 			{
 				name:       "fork:no",
-				query:      "fork:no FORK_SENTINEL",
+				query:      "fork:no FORK" + "_SENTINEL",
 				zeroResult: true,
+			},
+			{
+				name:  "fork:yes",
+				query: "fork:yes FORK" + "_SENTINEL",
 			},
 			{
 				name:       "random characters, zero results",
