@@ -306,20 +306,20 @@ func (s *Server) HostnameMatch(addr string) bool {
 	return addr[:n] == s.Hostname
 }
 
-var repoSyncStateCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_repo_sync_state_counter",
-	Help: "Incremented each time we check the state of repo",
-}, []string{"type"})
-
-var repoSyncStatePercentComplete = promauto.NewGauge(prometheus.GaugeOpts{
-	Name: "src_repo_sync_state_percent_complete",
-	Help: "Percent complete for the current sync run, from 0 to 100",
-})
-
-var repoStateUpsertCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_repo_sync_state_upsert_counter",
-	Help: "Incremented each time we upsert repo state in the database",
-}, []string{"success"})
+var (
+	repoSyncStateCounter = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_repo_sync_state_counter",
+		Help: "Incremented each time we check the state of repo",
+	}, []string{"type"})
+	repoSyncStatePercentComplete = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "src_repo_sync_state_percent_complete",
+		Help: "Percent complete for the current sync run, from 0 to 100",
+	})
+	repoStateUpsertCounter = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_repo_sync_state_upsert_counter",
+		Help: "Incremented each time we upsert repo state in the database",
+	}, []string{"success"})
+)
 
 func (s *Server) syncRepoState(db dbutil.DB, addrs []string, batchSize, perSecond int) error {
 	// Sanity check our host exists in addrs before starting any work
