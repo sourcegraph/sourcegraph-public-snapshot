@@ -98,3 +98,6 @@ cmd/indexer/debug
 # Web
 node_modules/
 /client/web
+
+# Extensions
+/extension-api/dist
