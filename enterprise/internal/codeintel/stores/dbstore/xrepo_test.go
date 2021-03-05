@@ -85,10 +85,15 @@ func TestDefinitionDumps(t *testing.T) {
 	insertUploads(t, dbconn.Global, dumpToUpload(expected1), dumpToUpload(expected2))
 	insertVisibleAtTip(t, dbconn.Global, 50, 1)
 
-	if err := store.UpdatePackages(context.Background(), []lsifstore.Package{
-		{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"},
-		{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"},
-		{DumpID: 2, Scheme: "npm", Name: "north-pad", Version: "0.2.0"},
+	if err := store.UpdatePackages(context.Background(), 1, []semantic.Package{
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0"},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0"},
+	}); err != nil {
+		t.Fatalf("unexpected error updating packages: %s", err)
+	}
+
+	if err := store.UpdatePackages(context.Background(), 2, []semantic.Package{
+		{Scheme: "npm", Name: "north-pad", Version: "0.2.0"},
 	}); err != nil {
 		t.Fatalf("unexpected error updating packages: %s", err)
 	}

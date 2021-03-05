@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/correlation"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/conversion"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/pathexistence"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 )
@@ -32,7 +32,7 @@ cd <path>                                             change directory
 `
 
 func main() {
-	var bundles []*correlation.GroupedBundleDataMaps
+	var bundles []*conversion.GroupedBundleDataMaps
 
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Printf("\n> ")
@@ -139,8 +139,8 @@ func main() {
 	}
 }
 
-func queryBundle(bundle *correlation.GroupedBundleDataMaps, path string, line, character int) error {
-	results, err := correlation.Query(bundle, path, line, character)
+func queryBundle(bundle *conversion.GroupedBundleDataMaps, path string, line, character int) error {
+	results, err := conversion.Query(bundle, path, line, character)
 	if err != nil {
 		fmt.Printf("No data found at location")
 		return err
@@ -189,7 +189,7 @@ func makeExistenceFunc(path string) pathexistence.GetChildrenFunc {
 	}
 }
 
-func readBundle(dumpID int, root string) (*correlation.GroupedBundleDataMaps, error) {
+func readBundle(dumpID int, root string) (*conversion.GroupedBundleDataMaps, error) {
 	dumpPath := path.Join(root, "dump.lsif")
 	getChildrenFunc := makeExistenceFunc(root)
 	file, err := os.Open(dumpPath)
@@ -199,17 +199,17 @@ func readBundle(dumpID int, root string) (*correlation.GroupedBundleDataMaps, er
 	}
 	defer file.Close()
 
-	bundle, err := correlation.Correlate(context.Background(), file, dumpID, "", getChildrenFunc)
+	bundle, err := conversion.Correlate(context.Background(), file, dumpID, "", getChildrenFunc)
 	if err != nil {
-		fmt.Println("Correlation failed")
+		fmt.Println("Conversion failed")
 		return nil, err
 	}
 
-	return correlation.GroupedBundleDataChansToMaps(context.Background(), bundle), nil
+	return conversion.GroupedBundleDataChansToMaps(context.Background(), bundle), nil
 }
 
 // finds all documents which have definition edges pointing into the argument list
-func documentsReferencing(bundle *correlation.GroupedBundleDataMaps, paths []string) (_ []string, err error) {
+func documentsReferencing(bundle *conversion.GroupedBundleDataMaps, paths []string) (_ []string, err error) {
 	pathMap := map[string]struct{}{}
 	for _, path := range paths {
 		pathMap[path] = struct{}{}

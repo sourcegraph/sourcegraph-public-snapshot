@@ -6,7 +6,6 @@ import (
 	"context"
 	"sync"
 
-	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	semantic "github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
@@ -80,12 +79,12 @@ func NewMockDBStore() *MockDBStore {
 			},
 		},
 		UpdatePackageReferencesFunc: &DBStoreUpdatePackageReferencesFunc{
-			defaultHook: func(context.Context, []lsifstore.PackageReference) error {
+			defaultHook: func(context.Context, int, []semantic.PackageReference) error {
 				return nil
 			},
 		},
 		UpdatePackagesFunc: &DBStoreUpdatePackagesFunc{
-			defaultHook: func(context.Context, []lsifstore.Package) error {
+			defaultHook: func(context.Context, int, []semantic.Package) error {
 				return nil
 			},
 		},
@@ -773,24 +772,24 @@ func (c DBStoreTransactFuncCall) Results() []interface{} {
 // UpdatePackageReferences method of the parent MockDBStore instance is
 // invoked.
 type DBStoreUpdatePackageReferencesFunc struct {
-	defaultHook func(context.Context, []lsifstore.PackageReference) error
-	hooks       []func(context.Context, []lsifstore.PackageReference) error
+	defaultHook func(context.Context, int, []semantic.PackageReference) error
+	hooks       []func(context.Context, int, []semantic.PackageReference) error
 	history     []DBStoreUpdatePackageReferencesFuncCall
 	mutex       sync.Mutex
 }
 
 // UpdatePackageReferences delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockDBStore) UpdatePackageReferences(v0 context.Context, v1 []lsifstore.PackageReference) error {
-	r0 := m.UpdatePackageReferencesFunc.nextHook()(v0, v1)
-	m.UpdatePackageReferencesFunc.appendCall(DBStoreUpdatePackageReferencesFuncCall{v0, v1, r0})
+func (m *MockDBStore) UpdatePackageReferences(v0 context.Context, v1 int, v2 []semantic.PackageReference) error {
+	r0 := m.UpdatePackageReferencesFunc.nextHook()(v0, v1, v2)
+	m.UpdatePackageReferencesFunc.appendCall(DBStoreUpdatePackageReferencesFuncCall{v0, v1, v2, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the
 // UpdatePackageReferences method of the parent MockDBStore instance is
 // invoked and the hook queue is empty.
-func (f *DBStoreUpdatePackageReferencesFunc) SetDefaultHook(hook func(context.Context, []lsifstore.PackageReference) error) {
+func (f *DBStoreUpdatePackageReferencesFunc) SetDefaultHook(hook func(context.Context, int, []semantic.PackageReference) error) {
 	f.defaultHook = hook
 }
 
@@ -798,7 +797,7 @@ func (f *DBStoreUpdatePackageReferencesFunc) SetDefaultHook(hook func(context.Co
 // UpdatePackageReferences method of the parent MockDBStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *DBStoreUpdatePackageReferencesFunc) PushHook(hook func(context.Context, []lsifstore.PackageReference) error) {
+func (f *DBStoreUpdatePackageReferencesFunc) PushHook(hook func(context.Context, int, []semantic.PackageReference) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -807,7 +806,7 @@ func (f *DBStoreUpdatePackageReferencesFunc) PushHook(hook func(context.Context,
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *DBStoreUpdatePackageReferencesFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, []lsifstore.PackageReference) error {
+	f.SetDefaultHook(func(context.Context, int, []semantic.PackageReference) error {
 		return r0
 	})
 }
@@ -815,12 +814,12 @@ func (f *DBStoreUpdatePackageReferencesFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *DBStoreUpdatePackageReferencesFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, []lsifstore.PackageReference) error {
+	f.PushHook(func(context.Context, int, []semantic.PackageReference) error {
 		return r0
 	})
 }
 
-func (f *DBStoreUpdatePackageReferencesFunc) nextHook() func(context.Context, []lsifstore.PackageReference) error {
+func (f *DBStoreUpdatePackageReferencesFunc) nextHook() func(context.Context, int, []semantic.PackageReference) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -859,7 +858,10 @@ type DBStoreUpdatePackageReferencesFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 []lsifstore.PackageReference
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 []semantic.PackageReference
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -868,7 +870,7 @@ type DBStoreUpdatePackageReferencesFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c DBStoreUpdatePackageReferencesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
@@ -880,24 +882,24 @@ func (c DBStoreUpdatePackageReferencesFuncCall) Results() []interface{} {
 // DBStoreUpdatePackagesFunc describes the behavior when the UpdatePackages
 // method of the parent MockDBStore instance is invoked.
 type DBStoreUpdatePackagesFunc struct {
-	defaultHook func(context.Context, []lsifstore.Package) error
-	hooks       []func(context.Context, []lsifstore.Package) error
+	defaultHook func(context.Context, int, []semantic.Package) error
+	hooks       []func(context.Context, int, []semantic.Package) error
 	history     []DBStoreUpdatePackagesFuncCall
 	mutex       sync.Mutex
 }
 
 // UpdatePackages delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockDBStore) UpdatePackages(v0 context.Context, v1 []lsifstore.Package) error {
-	r0 := m.UpdatePackagesFunc.nextHook()(v0, v1)
-	m.UpdatePackagesFunc.appendCall(DBStoreUpdatePackagesFuncCall{v0, v1, r0})
+func (m *MockDBStore) UpdatePackages(v0 context.Context, v1 int, v2 []semantic.Package) error {
+	r0 := m.UpdatePackagesFunc.nextHook()(v0, v1, v2)
+	m.UpdatePackagesFunc.appendCall(DBStoreUpdatePackagesFuncCall{v0, v1, v2, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the UpdatePackages
 // method of the parent MockDBStore instance is invoked and the hook queue
 // is empty.
-func (f *DBStoreUpdatePackagesFunc) SetDefaultHook(hook func(context.Context, []lsifstore.Package) error) {
+func (f *DBStoreUpdatePackagesFunc) SetDefaultHook(hook func(context.Context, int, []semantic.Package) error) {
 	f.defaultHook = hook
 }
 
@@ -905,7 +907,7 @@ func (f *DBStoreUpdatePackagesFunc) SetDefaultHook(hook func(context.Context, []
 // UpdatePackages method of the parent MockDBStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *DBStoreUpdatePackagesFunc) PushHook(hook func(context.Context, []lsifstore.Package) error) {
+func (f *DBStoreUpdatePackagesFunc) PushHook(hook func(context.Context, int, []semantic.Package) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -914,7 +916,7 @@ func (f *DBStoreUpdatePackagesFunc) PushHook(hook func(context.Context, []lsifst
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *DBStoreUpdatePackagesFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, []lsifstore.Package) error {
+	f.SetDefaultHook(func(context.Context, int, []semantic.Package) error {
 		return r0
 	})
 }
@@ -922,12 +924,12 @@ func (f *DBStoreUpdatePackagesFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *DBStoreUpdatePackagesFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, []lsifstore.Package) error {
+	f.PushHook(func(context.Context, int, []semantic.Package) error {
 		return r0
 	})
 }
 
-func (f *DBStoreUpdatePackagesFunc) nextHook() func(context.Context, []lsifstore.Package) error {
+func (f *DBStoreUpdatePackagesFunc) nextHook() func(context.Context, int, []semantic.Package) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -965,7 +967,10 @@ type DBStoreUpdatePackagesFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 []lsifstore.Package
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 []semantic.Package
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -974,7 +979,7 @@ type DBStoreUpdatePackagesFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c DBStoreUpdatePackagesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
