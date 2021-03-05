@@ -328,6 +328,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			zeroResult    bool
 			minMatchCount int64
 			wantAlert     *gqltestutil.SearchAlert
+			skipStream    bool
 		}{
 			// Global search
 			{
@@ -381,6 +382,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 			{
 				name:  "non-master branch, nonzero result",
 				query: `repo:^github\.com/sgtest/java-langserver$@v1 void sendPartialResult(Object requestId, JsonPatch jsonPatch); patterntype:literal count:1 type:file`,
+			},
+			{
+				name:       "non-master branch, nonzero result stable",
+				query:      `repo:^github\.com/sgtest/java-langserver$@v1 void sendPartialResult(Object requestId, JsonPatch jsonPatch); patterntype:literal count:1 stable:yes type:file`,
+				skipStream: true,
 			},
 			{
 				name:  "indexed multiline search, nonzero result",
@@ -473,6 +479,10 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
+				if test.skipStream && isStreaming {
+					t.Skip("streaming not supported yet")
+				}
+
 				results, err := client.SearchFiles(test.query)
 				if err != nil {
 					t.Fatal(err)
@@ -600,6 +610,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 			{
 				name:  `And operator, basic`,
 				query: `repo:^github\.com/sgtest/go-diff$ func and main count:1 type:file`,
+			},
+			{
+				name:       `And operator, basic with stable`,
+				query:      `repo:^github\.com/sgtest/go-diff$ func and main count:1 stable:yes type:file`,
+				skipStream: true,
 			},
 			{
 				name:  `Or operator, single and double quoted`,
