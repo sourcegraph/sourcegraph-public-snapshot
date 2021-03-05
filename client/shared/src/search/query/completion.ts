@@ -301,7 +301,7 @@ export async function getCompletionItems(
                         // Set the current value as filterText, so that all dynamic suggestions
                         // returned by the server are displayed. otherwise, if the current filter value
                         // is a regex pattern, Monaco's filtering might hide some suggestions.
-                        filterText: value && (value?.type === 'literal' ? value.value : value.quotedValue),
+                        filterText: value?.value,
                         range: value ? toMonacoRange(value.range) : defaultRange,
                         command: COMPLETION_ITEM_SELECTED,
                     })),
