@@ -40,8 +40,6 @@
 
 .streaming-skipped-item {
     &__button {
-        background: transparent !important;
-        border: none !important;
         &:disabled {
             opacity: 1;
         }
@@ -79,6 +77,8 @@
 
     &__bottom-border-spacer {
         border-bottom: 1px solid var(--border-color-2);
+        margin-left: 0.75rem;
+        margin-right: 0.75rem;
     }
 
     &--warn {

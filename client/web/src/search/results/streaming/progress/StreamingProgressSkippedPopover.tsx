@@ -51,12 +51,12 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; history: H.His
 
     return (
         <div
-            className={classNames('streaming-skipped-item pt-2 pb-0 w-100', {
+            className={classNames('streaming-skipped-item pt-2 w-100', {
                 'streaming-skipped-item--warn': skipped.severity !== 'info',
             })}
         >
             <Button
-                className="streaming-skipped-item__button py-2 w-100"
+                className="streaming-skipped-item__button py-2 w-100 bg-transparent border-0"
                 onClick={toggleIsOpen}
                 onKeyDown={onKeyDown}
                 disabled={!skipped.message}
@@ -80,13 +80,13 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; history: H.His
             {skipped.message && (
                 <Collapse isOpen={isOpen}>
                     <Markdown
-                        className="streaming-skipped-item__message text-left"
+                        className="streaming-skipped-item__message text-left mb-1"
                         dangerousInnerHTML={renderMarkdown(skipped.message)}
                         history={history}
                     />
                 </Collapse>
             )}
-            <div className="streaming-skipped-item__bottom-border-spacer mt-3" />
+            <div className="streaming-skipped-item__bottom-border-spacer mt-2" />
         </div>
     )
 }
