@@ -179,20 +179,7 @@ function createExtensionAPI(
         MarkupKind,
         NotificationType,
         DocumentHighlightKind,
-        app: {
-            // TODO(tj): deprecate the following 3, implement get window()
-            activeWindowChanges: app.activeWindowChanges,
-            get activeWindow(): sourcegraph.Window | undefined {
-                return app.activeWindow
-            },
-            get windows(): sourcegraph.Window[] {
-                return app.windows
-            },
-            registerFileDecorationProvider: app.registerFileDecorationProvider,
-            createPanelView: app.createPanelView,
-            createDecorationType,
-            registerViewProvider: (id, provider) => views.registerViewProvider(id, provider),
-        },
+        app,
 
         workspace,
         configuration,

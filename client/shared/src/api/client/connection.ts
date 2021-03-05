@@ -72,7 +72,7 @@ export async function createExtensionHostClientConnection(
         initialSettings: isSettingsValid(initialSettings) ? initialSettings : { final: {}, subjects: [] },
     })
 
-    const clientViews = new ClientViews(services.panelViews, services.textDocumentLocations, services.view, proxy)
+    const clientViews = new ClientViews(services.view)
 
     const { api: newAPI, subscription: apiSubscriptions } = initMainThreadAPI(
         proxy,

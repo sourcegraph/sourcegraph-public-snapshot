@@ -13,6 +13,8 @@ import { ViewerData, ViewerId } from './client/services/viewerService'
 import { ContributionScope } from './client/context/context'
 import { ErrorLike } from '../util/errors'
 import { ConfiguredExtension } from '../extensions/extension'
+import { ViewContexts } from './client/services/viewService'
+import { DeepReplace } from '../util/types'
 
 // TODO: Move types to extension-api-types
 
@@ -57,6 +59,14 @@ export interface ProgressNotification {
      * If this Observable errors, the notification will be changed to an error type.
      */
     progress: ProxySubscribable<sourcegraph.Progress>
+}
+
+export interface ViewProviderResult {
+    /** The ID of the view provider. */
+    id: string
+
+    /** The result returned by the provider. */
+    view: sourcegraph.View | undefined | ErrorLike
 }
 
 /**
@@ -201,6 +211,13 @@ export interface FlatExtensionHostAPI {
 
     // Views
     getPanelViews: () => ProxySubscribable<PanelViewData[]>
+    getInsightsViews: (context: ViewContexts['insightsPage']) => ProxySubscribable<ViewProviderResult[]>
+    getHomepageViews: (context: ViewContexts['homepage']) => ProxySubscribable<ViewProviderResult[]>
+    getGlobalPageViews: (context: ViewContexts['global/page']) => ProxySubscribable<ViewProviderResult[]>
+    getDirectoryViews: (
+        // Construct URL object on host from string provided by main thread
+        context: DeepReplace<ViewContexts['directory'], URL, string>
+    ) => ProxySubscribable<ViewProviderResult[]>
 
     // Content
     getLinkPreviews: (url: string) => ProxySubscribable<LinkPreviewMerged | null>

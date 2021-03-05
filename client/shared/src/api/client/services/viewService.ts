@@ -1,6 +1,6 @@
 import { Observable, BehaviorSubject, of, combineLatest, concat, Subscription } from 'rxjs'
 import type { View as ExtensionView, DirectoryViewContext } from 'sourcegraph'
-import { switchMap, map, distinctUntilChanged, startWith, delay, catchError } from 'rxjs/operators'
+import { switchMap, map, distinctUntilChanged, startWith, delay, catchError, tap } from 'rxjs/operators'
 import { Evaluated, Contributions, ContributableViewContainer } from '../../protocol'
 import { isEqual } from 'lodash'
 import { asError, ErrorLike } from '../../../util/errors'
@@ -20,7 +20,8 @@ export interface ViewContexts {
     [ContributableViewContainer.Homepage]: {}
     [ContributableViewContainer.InsightsPage]: {}
     [ContributableViewContainer.GlobalPage]: Record<string, string>
-    [ContributableViewContainer.Directory]: DeepReplace<DirectoryViewContext, URL, string>
+    // TODO(tj): seperate client
+    [ContributableViewContainer.Directory]: DirectoryViewContext
 }
 
 export type ViewProviderFunction<C> = (context: C) => Observable<View | null>
@@ -165,7 +166,10 @@ export const getViewsForContainer = <W extends ContributableViewContainer>(
                                 return [asError(error)]
                             })
                         )
-                    ).pipe(map(view => ({ id: provider.id, view })))
+                    ).pipe(
+                        map(view => ({ id: provider.id, view })),
+                        tap(view => console.log('insight client', { id: view.id, ms: Date.now() }))
+                    )
                 ),
             ])
         ),

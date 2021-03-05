@@ -42,13 +42,11 @@ function fetchBackendInsights(): Observable<InsightFields[]> {
     )
 }
 
-export function getCombinedViews<W extends ContributableViewContainer>(
-    where: W,
-    parameters: ViewContexts[W],
-    viewService: Pick<ViewService, 'getWhere'>
+export function getCombinedViews(
+    getExtensionsInsights: () => Observable<ViewProviderResult[]>
 ): Observable<ViewProviderResult[]> {
     return combineLatest([
-        getViewsForContainer(where, parameters, viewService),
+        getExtensionsInsights(),
         fetchBackendInsights().pipe(
             map(backendInsights =>
                 backendInsights.map(

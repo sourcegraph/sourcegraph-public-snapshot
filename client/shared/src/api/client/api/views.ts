@@ -22,8 +22,6 @@ export interface PanelUpdater extends Unsubscribable, comlink.ProxyMarked {
 
 /** @internal */
 export interface ClientViewsAPI extends comlink.ProxyMarked {
-    $registerPanelViewProvider(provider: { id: string }): PanelUpdater
-
     $registerDirectoryViewProvider(
         id: string,
         provider: comlink.Remote<
@@ -63,68 +61,7 @@ export interface ClientViewsAPI extends comlink.ProxyMarked {
 export class ClientViews implements ClientViewsAPI {
     public readonly [comlink.proxyMarker] = true
 
-    constructor(
-        private panelViewRegistry: PanelViewProviderRegistry,
-        private textDocumentLocations: TextDocumentLocationProviderIDRegistry,
-        private viewService: ViewService,
-        private proxy: comlink.Remote<ExtensionHostAPI>
-    ) {}
-
-    public $registerPanelViewProvider(provider: { id: string }): PanelUpdater {
-        // TODO(sqs): This will probably hang forever if an extension neglects to set any of the fields on a
-        // PanelView because this subject will never emit.
-        const panelView = new ReplaySubject<PanelViewData>(1)
-        const registryUnsubscribable = this.panelViewRegistry.registerProvider(
-            { ...provider, container: ContributableViewContainer.Panel },
-            combineLatest([
-                panelView.pipe(
-                    map(data => omit(data, 'component')),
-                    distinctUntilChanged((a, b) => isEqual(a, b))
-                ),
-                panelView.pipe(
-                    map(({ component }) => component),
-                    distinctUntilChanged((a, b) => isEqual(a, b)),
-                    map(component => {
-                        if (!component) {
-                            return undefined
-                        }
-
-                        return wrapRemoteObservable(this.proxy.getActiveCodeEditorPosition()).pipe(
-                            switchMap(
-                                (parameters): ObservableInput<MaybeLoadingResult<Location[]>> => {
-                                    if (!parameters) {
-                                        return [{ isLoading: false, result: [] }]
-                                    }
-                                    return this.textDocumentLocations.getLocations(
-                                        component.locationProvider,
-                                        parameters
-                                    )
-                                }
-                            )
-                        )
-                    })
-                ),
-            ]).pipe(
-                map(([{ title, content, priority }, locationProvider]) => {
-                    const panelView: PanelViewWithComponent = {
-                        title,
-                        content,
-                        priority,
-                        locationProvider,
-                    }
-                    return panelView
-                })
-            )
-        )
-        return comlink.proxy({
-            update: (data: PanelViewData) => {
-                panelView.next(data)
-            },
-            unsubscribe: () => {
-                registryUnsubscribable.unsubscribe()
-            },
-        })
-    }
+    constructor(private viewService: ViewService) {}
 
     public $registerDirectoryViewProvider(
         id: string,

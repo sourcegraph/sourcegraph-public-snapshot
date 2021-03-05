@@ -10,7 +10,7 @@ import UserIcon from 'mdi-react/UserIcon'
 import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { Link, Redirect } from 'react-router-dom'
 import { Observable, EMPTY, from } from 'rxjs'
-import { catchError, map, switchMap } from 'rxjs/operators'
+import { catchError, map, switchMap, tap } from 'rxjs/operators'
 import { ActionItem } from '../../../../shared/src/actions/ActionItem'
 import { ActionsContainer } from '../../../../shared/src/actions/ActionsContainer'
 import { ContributableMenu, ContributableViewContainer } from '../../../../shared/src/api/protocol'
@@ -49,6 +49,7 @@ import { getFileDecorations } from '../../backend/features'
 import { FileDecorationsByPath } from '../../../../shared/src/api/extension/flatExtensionApi'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import { getCombinedViews } from '../../insights/backend'
+import { wrapRemoteObservable } from '../../../../shared/src/api/client/api/common'
 
 const fetchTreeCommits = memoizeObservable(
     (args: {
@@ -245,20 +246,24 @@ export const TreePage: React.FunctionComponent<Props> = ({
         useMemo(
             () =>
                 codeInsightsEnabled && workspaceUri
-                    ? getCombinedViews(
-                          ContributableViewContainer.Directory,
-                          {
-                              viewer: {
-                                  type: 'DirectoryViewer',
-                                  directory: {
-                                      uri,
-                                  },
-                              },
-                              workspace: {
-                                  uri: workspaceUri,
-                              },
-                          },
-                          services.view
+                    ? getCombinedViews(() =>
+                          from(props.extensionsController.extHostAPI).pipe(
+                              switchMap(extensionHostAPI =>
+                                  wrapRemoteObservable(
+                                      extensionHostAPI.getDirectoryViews({
+                                          viewer: {
+                                              type: 'DirectoryViewer',
+                                              directory: {
+                                                  uri,
+                                              },
+                                          },
+                                          workspace: {
+                                              uri: workspaceUri,
+                                          },
+                                      })
+                                  )
+                              )
+                          )
                       )
                     : EMPTY,
             [codeInsightsEnabled, workspaceUri, uri, services.view]

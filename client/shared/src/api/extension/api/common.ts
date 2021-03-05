@@ -1,6 +1,6 @@
 import { Remote, ProxyMarked, proxy, proxyMarker, UnproxyOrClone } from 'comlink'
 import { from, isObservable, Observable, Observer, of } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { finalize, map, tap } from 'rxjs/operators'
 import { ProviderResult, Subscribable, Unsubscribable } from 'sourcegraph'
 import { isAsyncIterable, isPromiseLike, isSubscribable, observableFromAsyncIterable } from '../../util'
 import { identity } from 'lodash'
@@ -54,7 +54,12 @@ export function toProxyableSubscribable<T, R>(
     result: ProviderResult<T>,
     mapFunc: (value: T | undefined | null) => R = identity
 ): ProxySubscribable<R> {
-    return proxySubscribable(providerResultToObservable(result, mapFunc))
+    return proxySubscribable(
+        providerResultToObservable(result, mapFunc).pipe(
+            tap(view => console.log('insight host', { view, ms: Date.now() })),
+            finalize(() => console.log('insight unsubbed from'))
+        )
+    )
 }
 
 export function providerResultToObservable<T, R = T>(

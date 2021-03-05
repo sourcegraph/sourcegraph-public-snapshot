@@ -20,6 +20,7 @@ import {
     NotificationType,
     PlainNotification,
     ProgressNotification,
+    ViewProviderResult,
 } from '../contract'
 import { syncSubscription, tryCatchPromise } from '../util'
 import {
@@ -40,13 +41,13 @@ import { TextDocumentIdentifier, match } from '../client/types/textDocument'
 import { getModeFromPath } from '../../languages'
 import { parseRepoURI } from '../../util/url'
 import { fromLocation, toPosition } from './api/types'
-import { Contributions, TextDocumentPositionParameters } from '../protocol'
+import { ContributableViewContainer, Contributions, TextDocumentPositionParameters } from '../protocol'
 import { LOADING, MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { combineLatestOrDefault } from '../../util/rxjs/combineLatestOrDefault'
 import { castArray, groupBy, identity, isEqual, isMatch, sortBy } from 'lodash'
 import { fromHoverMerged } from '../client/types/hover'
-import { isNot, isExactly, isDefined, property } from '../../util/types'
-import { validateFileDecoration } from './api/decorations'
+import { isNot, isExactly, isDefined, property, allOf } from '../../util/types'
+import { createDecorationType, validateFileDecoration } from './api/decorations'
 import { InitData } from './extensionHost'
 import { ExtensionDocument } from './api/textDocument'
 import { ReferenceCounter } from '../../util/ReferenceCounter'
@@ -78,6 +79,7 @@ import { checkOk } from '../../backend/fetch'
 import { memoizeObservable } from '../../util/memoizeObservable'
 import { ExecutableExtension } from '../client/services/extensionsService'
 import { areExtensionsSame } from '../../extensions/extensions'
+import { ViewContexts } from '../client/services/viewService'
 
 /**
  * Holds the entire state exposed to the extension host
@@ -129,11 +131,22 @@ export interface ExtensionHostState {
 
     // Views
     panelViews: BehaviorSubject<readonly Observable<PanelViewData>[]>
+    insightsPageViewProviders: BehaviorSubject<readonly RegisteredViewProvider<'insightsPage'>[]>
+    homepageViewProviders: BehaviorSubject<readonly RegisteredViewProvider<'homepage'>[]>
+    globalPageViewProviders: BehaviorSubject<readonly RegisteredViewProvider<'global/page'>[]>
+    directoryViewProviders: BehaviorSubject<readonly RegisteredViewProvider<'directory'>[]>
 
     // Content
     linkPreviewProviders: BehaviorSubject<
         readonly { urlMatchPattern: string; provider: sourcegraph.LinkPreviewProvider }[]
     >
+}
+
+interface RegisteredViewProvider<W extends ContributableViewContainer> {
+    id: string
+    viewProvider: {
+        provideView: (context: ViewContexts[W]) => sourcegraph.ProviderResult<sourcegraph.View>
+    }
 }
 
 export interface InitResult {
@@ -153,7 +166,7 @@ export interface InitResult {
     graphQL: typeof sourcegraph['graphQL']
     content: typeof sourcegraph['content']
     internal: Pick<typeof sourcegraph['internal'], 'updateContext'>
-    app: Omit<typeof sourcegraph['app'], 'createDecorationType' | 'registerViewProvider'>
+    app: typeof sourcegraph['app']
 }
 
 /**
@@ -223,6 +236,10 @@ export const initNewExtensionAPI = (
         progressNotifications: new ReplaySubject<ProgressNotification & ProxyMarked>(3),
 
         panelViews: new BehaviorSubject<readonly Observable<PanelViewData>[]>([]),
+        insightsPageViewProviders: new BehaviorSubject<readonly RegisteredViewProvider<'insightsPage'>[]>([]),
+        homepageViewProviders: new BehaviorSubject<readonly RegisteredViewProvider<'homepage'>[]>([]),
+        globalPageViewProviders: new BehaviorSubject<readonly RegisteredViewProvider<'global/page'>[]>([]),
+        directoryViewProviders: new BehaviorSubject<readonly RegisteredViewProvider<'directory'>[]>([]),
 
         linkPreviewProviders: new BehaviorSubject<
             readonly { urlMatchPattern: string; provider: sourcegraph.LinkPreviewProvider }[]
@@ -230,8 +247,6 @@ export const initNewExtensionAPI = (
     }
 
     const getTextDocument = (uri: string): ExtensionDocument => {
-        // TODO(tj): fix race condition when hover event comes before
-        // document is registered
         const textDocument = state.textDocuments.get(uri)
         if (!textDocument) {
             throw new Error(`Text document does not exist with URI ${uri}`)
@@ -597,6 +612,26 @@ export const initNewExtensionAPI = (
                 )
             ),
 
+        getInsightsViews: context => proxySubscribable(callViewProviders(context, state.insightsPageViewProviders)),
+        getHomepageViews: context => proxySubscribable(callViewProviders(context, state.homepageViewProviders)),
+        getGlobalPageViews: context => proxySubscribable(callViewProviders(context, state.globalPageViewProviders)),
+        getDirectoryViews: context =>
+            proxySubscribable(
+                callViewProviders(
+                    {
+                        viewer: {
+                            ...context.viewer,
+                            directory: {
+                                ...context.viewer.directory,
+                                uri: new URL(context.viewer.directory.uri),
+                            },
+                        },
+                        workspace: { uri: new URL(context.workspace.uri) },
+                    },
+                    state.directoryViewProviders
+                )
+            ),
+
         // Content
         getLinkPreviews: (url: string) =>
             proxySubscribable(
@@ -713,10 +748,7 @@ export const initNewExtensionAPI = (
         showInputBox: options => mainAPI.showInputBox(options),
     }
 
-    const app: Pick<
-        typeof sourcegraph['app'],
-        'activeWindow' | 'activeWindowChanges' | 'windows' | 'registerFileDecorationProvider' | 'createPanelView'
-    > = {
+    const app: typeof sourcegraph['app'] = {
         // deprecated, add simple window getter
         get activeWindow() {
             return window
@@ -771,6 +803,23 @@ export const initNewExtensionAPI = (
 
             return panelView
         },
+        registerViewProvider: (id, provider) => {
+            console.log('registering view provider in host!!', { id, provider })
+            switch (provider.where) {
+                case 'insightsPage':
+                    return addWithRollback(state.insightsPageViewProviders, { id, viewProvider: provider })
+
+                case 'directory':
+                    return addWithRollback(state.directoryViewProviders, { id, viewProvider: provider })
+
+                case 'global/page':
+                    return addWithRollback(state.globalPageViewProviders, { id, viewProvider: provider })
+
+                case 'homepage':
+                    return addWithRollback(state.homepageViewProviders, { id, viewProvider: provider })
+            }
+        },
+        createDecorationType,
     }
 
     // Commands
@@ -1409,4 +1458,43 @@ function mergeLinkPreviews(
         return null
     }
     return { content: contentValues.map(({ content }) => content), hover: hoverValues.map(({ hover }) => hover) }
+}
+
+// Views
+
+/**
+ * A map from type of container names to the internal type of the context parameter provided by the container.
+ */
+export interface ViewContexts {
+    [ContributableViewContainer.Panel]: never
+    [ContributableViewContainer.Homepage]: {}
+    [ContributableViewContainer.InsightsPage]: {}
+    [ContributableViewContainer.GlobalPage]: Record<string, string>
+    [ContributableViewContainer.Directory]: sourcegraph.DirectoryViewContext
+}
+
+function callViewProviders<W extends ContributableViewContainer>(
+    context: ViewContexts[W],
+    providers: Observable<readonly RegisteredViewProvider<W>[]>
+): Observable<ViewProviderResult[]> {
+    return providers.pipe(
+        debounceTime(0),
+        switchMap(providers =>
+            combineLatest([
+                of(null),
+                ...providers.map(({ viewProvider, id }) =>
+                    concat(
+                        [undefined],
+                        providerResultToObservable(viewProvider.provideView(context)).pipe(
+                            catchError((error): [ErrorLike] => {
+                                console.error('View provider errored:', error)
+                                return [asError(error)]
+                            })
+                        )
+                    ).pipe(map(view => ({ id, view })))
+                ),
+            ])
+        ),
+        map(views => views.filter(isDefined))
+    )
 }

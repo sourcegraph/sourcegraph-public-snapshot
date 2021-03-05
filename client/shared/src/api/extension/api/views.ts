@@ -1,78 +1,17 @@
 import * as comlink from 'comlink'
 import * as sourcegraph from 'sourcegraph'
-import { ClientViewsAPI, PanelUpdater, PanelViewData } from '../../client/api/views'
+import { ClientViewsAPI } from '../../client/api/views'
 import { syncSubscription } from '../../util'
 import { Unsubscribable } from 'rxjs'
 import { toProxyableSubscribable } from './common'
 import { ContributableViewContainer } from '../../protocol'
 import { ViewContexts } from '../../client/services/viewService'
 
-/**
- * @internal
- */
-class ExtensionPanelView implements sourcegraph.PanelView {
-    private data: PanelViewData = {
-        title: '',
-        content: '',
-        priority: 0,
-        component: null,
-    }
-
-    constructor(private proxyPromise: Promise<comlink.Remote<PanelUpdater>>) {}
-
-    public get title(): string {
-        return this.data.title
-    }
-    public set title(value: string) {
-        this.data.title = value
-        this.sendData()
-    }
-
-    public get content(): string {
-        return this.data.content
-    }
-    public set content(value: string) {
-        this.data.content = value
-        this.sendData()
-    }
-
-    public get priority(): number {
-        return this.data.priority
-    }
-    public set priority(value: number) {
-        this.data.priority = value
-        this.sendData()
-    }
-
-    public get component(): sourcegraph.PanelView['component'] {
-        return this.data.component
-    }
-    public set component(value: sourcegraph.PanelView['component']) {
-        this.data.component = value
-        this.sendData()
-    }
-
-    private sendData(): void {
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        this.proxyPromise.then(proxy => proxy.update(this.data))
-    }
-
-    public unsubscribe(): void {
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        this.proxyPromise.then(proxy => proxy.unsubscribe())
-    }
-}
-
 /** @internal */
 export class ExtensionViewsApi implements comlink.ProxyMarked {
     public readonly [comlink.proxyMarker] = true
 
     constructor(private proxy: comlink.Remote<ClientViewsAPI>) {}
-
-    public createPanelView(id: string): ExtensionPanelView {
-        const panelProxyPromise = this.proxy.$registerPanelViewProvider({ id })
-        return new ExtensionPanelView(panelProxyPromise)
-    }
 
     public registerViewProvider(id: string, provider: sourcegraph.ViewProvider): Unsubscribable {
         switch (provider.where) {

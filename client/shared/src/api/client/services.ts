@@ -1,5 +1,5 @@
 import { PlatformContext } from '../../platform/context'
-import { ContributableViewContainer, ReferenceParameters } from '../protocol'
+import { ReferenceParameters } from '../protocol'
 import { createContextService } from './context/contextService'
 import { CompletionItemProviderRegistry } from './services/completion'
 import { ContributionRegistry } from './services/contribution'
@@ -59,12 +59,7 @@ export class Services {
     public readonly textDocumentReferences = new TextDocumentLocationProviderRegistry<ReferenceParameters>()
     public readonly textDocumentLocations = new TextDocumentLocationProviderIDRegistry()
     public readonly panelViews = new PanelViewProviderRegistry()
-
-    // Feature provider services
-
-    // TODO(tj): refactor this in a separate PR
-    public readonly view = createViewService()
-
-    public readonly linkPreviews = new LinkPreviewProviderRegistry() // TODO(tj): remove and deprecate
     public readonly completionItems = new CompletionItemProviderRegistry()
+    public readonly linkPreviews = new LinkPreviewProviderRegistry() // TODO(tj): remove and deprecate
+    public readonly view = createViewService()
 }
