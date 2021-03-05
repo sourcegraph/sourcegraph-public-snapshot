@@ -5,6 +5,7 @@
   "description": "Sourcegraph utils",
   "main": "./src/index.ts",
   "sideEffects": false,
+  "license": "Apache-2.0",
   "scripts": {
     "eslint": "eslint --cache '**/*.[jt]s?(x)'",
     "stylelint": "stylelint 'src/**/*.scss' --quiet",
