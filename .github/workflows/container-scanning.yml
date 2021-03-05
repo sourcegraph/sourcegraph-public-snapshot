@@ -1,7 +1,7 @@
 name: Scan latest container
 on:
   schedule:
-  - cron: '5 5 * * *'
+    - cron: '5 5 * * *'
 
 jobs:
   scan:
@@ -12,9 +12,9 @@ jobs:
       - name: Scan image
         uses: anchore/scan-action@v2
         with:
-          image: "sourcegraph/server:insiders"
+          image: 'sourcegraph/server:insiders'
           acs-report-enable: true
-          act-report-severity-cutoff: "Medium"
+          act-report-severity-cutoff: 'Medium'
           fail-build: false
       - name: Upload SARIF report
         uses: github/codeql-action/upload-sarif@v1

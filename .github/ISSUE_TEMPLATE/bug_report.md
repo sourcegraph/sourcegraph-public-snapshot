@@ -4,7 +4,6 @@ about: Report problems and unexpected behavior
 title: ''
 labels: ''
 assignees: ''
-
 ---
 
 - **Sourcegraph version:** <!-- the version of Sourcegraph or "Sourcegraph.com" -->

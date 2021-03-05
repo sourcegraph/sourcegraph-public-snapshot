@@ -27,7 +27,8 @@
     "browserslist": "browserslist",
     "analyze-bundle": "NODE_ENV=production ENTERPRISE=1 WEBPACK_ANALYZER=1 yarn build"
   },
-  "bundlesize": [{
+  "bundlesize": [
+    {
       "path": "../../ui/assets/styles/app.bundle.css"
     },
     {
