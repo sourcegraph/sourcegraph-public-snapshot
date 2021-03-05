@@ -9,15 +9,14 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/bloomfilter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	uploadstoremocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
@@ -32,6 +31,7 @@ func TestHandle(t *testing.T) {
 		Indexer:      "lsif-go",
 	}
 
+	mockWorkerStore := NewMockWorkerStore()
 	mockDBStore := NewMockDBStore()
 	mockLSIFStore := NewMockLSIFStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
@@ -57,10 +57,9 @@ func TestHandle(t *testing.T) {
 		lsifStore:       mockLSIFStore,
 		uploadStore:     mockUploadStore,
 		gitserverClient: gitserverClient,
-		metrics:         metrics.NewWorkerMetrics(&observation.TestContext),
 	}
 
-	requeued, err := handler.handle(context.Background(), mockDBStore, upload)
+	requeued, err := handler.handle(context.Background(), mockWorkerStore, mockDBStore, upload)
 	if err != nil {
 		t.Fatalf("unexpected error handling upload: %s", err)
 	} else if requeued {
@@ -134,6 +133,7 @@ func TestHandleError(t *testing.T) {
 		Indexer:      "lsif-go",
 	}
 
+	mockWorkerStore := NewMockWorkerStore()
 	mockDBStore := NewMockDBStore()
 	mockLSIFStore := NewMockLSIFStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
@@ -157,10 +157,9 @@ func TestHandleError(t *testing.T) {
 		lsifStore:       mockLSIFStore,
 		uploadStore:     mockUploadStore,
 		gitserverClient: gitserverClient,
-		metrics:         metrics.NewWorkerMetrics(&observation.TestContext),
 	}
 
-	requeued, err := handler.handle(context.Background(), mockDBStore, upload)
+	requeued, err := handler.handle(context.Background(), mockWorkerStore, mockDBStore, upload)
 	if err == nil {
 		t.Fatalf("unexpected nil error handling upload")
 	} else if !strings.Contains(err.Error(), "uh-oh!") {
@@ -203,6 +202,7 @@ func TestHandleCloneInProgress(t *testing.T) {
 		Indexer:      "lsif-go",
 	}
 
+	mockWorkerStore := NewMockWorkerStore()
 	mockDBStore := NewMockDBStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 	gitserverClient := NewMockGitserverClient()
@@ -210,25 +210,24 @@ func TestHandleCloneInProgress(t *testing.T) {
 	handler := &handler{
 		uploadStore:     mockUploadStore,
 		gitserverClient: gitserverClient,
-		metrics:         metrics.NewWorkerMetrics(&observation.TestContext),
 	}
 
-	requeued, err := handler.handle(context.Background(), mockDBStore, upload)
+	requeued, err := handler.handle(context.Background(), mockWorkerStore, mockDBStore, upload)
 	if err != nil {
 		t.Fatalf("unexpected error handling upload: %s", err)
 	} else if !requeued {
 		t.Errorf("expected upload to be requeued")
 	}
 
-	if len(mockDBStore.RequeueFunc.History()) != 1 {
-		t.Errorf("unexpected number of Requeue calls. want=%d have=%d", 1, len(mockDBStore.RequeueFunc.History()))
+	if len(mockWorkerStore.RequeueFunc.History()) != 1 {
+		t.Errorf("unexpected number of Requeue calls. want=%d have=%d", 1, len(mockWorkerStore.RequeueFunc.History()))
 	}
 }
 
 //
 //
 
-func copyTestDump(ctx context.Context, key string, offsetBytes int64) (io.ReadCloser, error) {
+func copyTestDump(ctx context.Context, key string) (io.ReadCloser, error) {
 	return os.Open("../../testdata/dump1.lsif.gz")
 }
 

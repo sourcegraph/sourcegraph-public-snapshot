@@ -7,7 +7,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/segmentio/fasthash/fnv1"
-	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -25,7 +26,11 @@ func (s *Store) Lock(ctx context.Context, key int, blocking bool) (locked bool, 
 		log.Int("key", key),
 		log.Bool("blocking", blocking),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer func() {
+		endObservation(1, observation.Args{LogFields: []log.Field{
+			log.Bool("locked", locked),
+		}})
+	}()
 
 	if blocking {
 		locked, err = s.lock(ctx, key)
@@ -50,25 +55,40 @@ func (s *Store) Lock(ctx context.Context, key int, blocking bool) (locked bool, 
 
 // lock blocks until an advisory lock is taken on the given key.
 func (s *Store) lock(ctx context.Context, key int) (bool, error) {
-	err := s.Store.Exec(ctx, sqlf.Sprintf(`SELECT pg_advisory_lock(%s, %s)`, appLockKey, key))
+	err := s.Store.Exec(ctx, sqlf.Sprintf(lockQuery, appLockKey, key))
 	if err != nil {
 		return false, err
 	}
 	return true, nil
 }
 
+const lockQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/lock.go:lock
+SELECT pg_advisory_lock(%s, %s)
+`
+
 // tryLock attempts to tak ean advisory lock on the given key. Returns true on
 // success and false on failure.
 func (s *Store) tryLock(ctx context.Context, key int) (bool, error) {
-	ok, _, err := basestore.ScanFirstBool(s.Store.Query(ctx, sqlf.Sprintf(`SELECT pg_try_advisory_lock(%s, %s)`, appLockKey, key)))
+	ok, _, err := basestore.ScanFirstBool(s.Store.Query(ctx, sqlf.Sprintf(tryLockQuery, appLockKey, key)))
 	if err != nil || !ok {
 		return false, err
 	}
 	return true, nil
 }
 
+const tryLockQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/lock.go:tryLock
+SELECT pg_try_advisory_lock(%s, %s)
+`
+
 // unlock releases the advisory lock on the given key.
 func (s *Store) unlock(key int) error {
-	err := s.Store.Exec(context.Background(), sqlf.Sprintf(`SELECT pg_advisory_unlock(%s, %s)`, appLockKey, key))
+	err := s.Store.Exec(context.Background(), sqlf.Sprintf(unlockQuery, appLockKey, key))
 	return err
 }
+
+const unlockQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/lock.go:unlock
+SELECT pg_advisory_unlock(%s, %s)
+`

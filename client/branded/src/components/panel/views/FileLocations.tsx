@@ -9,7 +9,7 @@ import * as React from 'react'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import { FetchFileParameters } from '../../../../../shared/src/components/CodeExcerpt'
-import { FileMatch, IFileMatch, ILineMatch } from '../../../../../shared/src/components/FileMatch'
+import { FileLineMatch, FileMatch, LineMatch } from '../../../../../shared/src/components/FileMatch'
 import { VirtualList } from '../../../../../shared/src/components/VirtualList'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
@@ -46,7 +46,7 @@ interface Props extends SettingsCascadeProps, VersionContextProps {
 
     isLightTheme: boolean
 
-    fetchHighlightedFileLines: (parameters: FetchFileParameters, force?: boolean) => Observable<string[]>
+    fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
 const LOADING = 'loading' as const
@@ -59,6 +59,11 @@ interface State {
     locationsOrError: typeof LOADING | Location[] | null | ErrorLike
 
     itemsToShow: number
+}
+
+interface OrderedURI {
+    uri: string
+    repo: string
 }
 
 /**
@@ -134,23 +139,13 @@ export class FileLocations extends React.PureComponent<Props, State> {
 
         return (
             <div className={`file-locations ${this.props.className || ''}`}>
-                <VirtualList
+                <VirtualList<OrderedURI, { locationsByURI: Map<string, Location[]> }>
                     itemsToShow={this.state.itemsToShow}
                     onShowMoreItems={this.onShowMoreItems}
-                    items={orderedURIs.map(({ uri, repo }, index) => (
-                        <FileMatch
-                            key={index}
-                            location={this.props.location}
-                            expanded={true}
-                            result={referencesToFileMatch(uri, locationsByURI.get(uri)!)}
-                            icon={this.props.icon}
-                            onSelect={this.onSelect}
-                            showAllMatches={true}
-                            isLightTheme={this.props.isLightTheme}
-                            fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
-                            settingsCascade={this.props.settingsCascade}
-                        />
-                    ))}
+                    items={orderedURIs}
+                    renderItem={this.renderFileMatch}
+                    itemProps={{ locationsByURI }}
+                    itemKey={this.itemKey}
                 />
             </div>
         )
@@ -165,9 +160,28 @@ export class FileLocations extends React.PureComponent<Props, State> {
             this.props.onSelect()
         }
     }
+
+    private itemKey = (item: OrderedURI): string => item.uri
+
+    private renderFileMatch = (
+        { uri }: OrderedURI,
+        { locationsByURI }: { locationsByURI: Map<string, Location[]> }
+    ): JSX.Element => (
+        <FileMatch
+            location={this.props.location}
+            expanded={true}
+            result={referencesToFileLineMatch(uri, locationsByURI.get(uri)!)}
+            icon={this.props.icon}
+            onSelect={this.onSelect}
+            showAllMatches={true}
+            isLightTheme={this.props.isLightTheme}
+            fetchHighlightedFileLineRanges={this.props.fetchHighlightedFileLineRanges}
+            settingsCascade={this.props.settingsCascade}
+        />
+    )
 }
 
-function referencesToFileMatch(uri: string, references: Badged<Location>[]): IFileMatch {
+function referencesToFileLineMatch(uri: string, references: Badged<Location>[]): FileLineMatch {
     const parsedUri = parseRepoURI(uri)
     return {
         file: {
@@ -190,7 +204,7 @@ function referencesToFileMatch(uri: string, references: Badged<Location>[]): IFi
         },
         limitHit: false,
         lineMatches: references.filter(property('range', isDefined)).map(
-            (reference): ILineMatch => ({
+            (reference): LineMatch => ({
                 preview: '',
                 limitHit: false,
                 lineNumber: reference.range.start.line,

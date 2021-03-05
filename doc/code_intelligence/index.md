@@ -32,9 +32,25 @@ Code intelligence provides advanced code navigation features that let developers
   </a>
 </div>
 
+
+## [How-tos](how-to/index.md)
+
+- [Add a GitHub repository to your Sourcegraph instance](how-to/add_a_repository.md)
+- [Index a Go repository](how-to/index_a_go_repository.md)
+- [Index a TypeScript or JavaScript repository](how-to/index_a_typescript_and_javascript_repository.md)
+- [Index a C++ repository](how-to/index_a_cpp_repository.md)
+- [Index other languages](how-to/index_other_languages.md)
+- [Add LSIF to many repositories](how-to/adding_lsif_to_many_repos.md)
+- [Adding LSIF to CI workflows](how-to/adding_lsif_to_workflows.md)
+
+## [Tutorials](tutorials/index.md)
+
+- [Manually index a popular Go repository](tutorials/indexing_go_repo.md)
+- [Manually index a popular TypeScript repository](tutorials/indexing_ts_repo.md)
+
 ## [Explanations](explanations/index.md)
 
-- [Basic code intelligence](explanations/basic_code_intelligence.md)
+- [Search-based code intelligence](explanations/search_based_code_intelligence.md)
 - [Precise code intelligence](explanations/precise_code_intelligence.md)
 - [Features](explanations/features.md)
   - [Hover tooltips](explanations/features.md#hover-tooltips-with-documentation-and-type-signatures)
@@ -42,21 +58,6 @@ Code intelligence provides advanced code navigation features that let developers
   - [Find references](explanations/features.md#find-references)
   - [Symbol search](explanations/features.md#symbol-search)
 - [Writing an indexer](explanations/writing_an_indexer.md)
-
-## [How-tos](how-to/index.md)
-
-- [Enable LSIF](how-to/enable_lsif.md)
-- [Add a Go repository to your Sourcegraph instance](how-to/add_a_go_repository.md)
-- [LSIF quickstart guide](lsif_quickstart.md)
-- [Add LSIF to many repositories](how-to/adding_lsif_to_many_repos.md)
-- [Adding LSIF to CI workflows](how-to/adding_lsif_to_workflows.md)
-- [Index a Go repository](how-to/index_a_go_repository.md)
-- [Index a TypeScript or JavaScript repository](how-to/index_a_typescript_and_javascript_repository.md)
-
-## [Tutorials](tutorials/index.md)
-
-- [Index a popular public Go repository](tutorials/indexing_go_repo.md)
-- TODO: Index a popular public repository for TypeScript
 
 ## [References](references/index.md)
 

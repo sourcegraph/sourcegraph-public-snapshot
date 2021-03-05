@@ -21,7 +21,7 @@ const babelLoader = {
 
 const extensionHostWorker = /main\.worker\.ts$/
 
-const config: webpack.Configuration = {
+export const config: webpack.Configuration = {
     entry: {
         // Browser extension
         background: buildEntry(
@@ -99,4 +99,3 @@ const config: webpack.Configuration = {
         ],
     },
 }
-export default config

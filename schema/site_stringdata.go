@@ -102,6 +102,12 @@ const SiteSchemaJSON = `{
           "default": false,
           "!go": { "pointer": true }
         },
+        "perforce": {
+          "description": "Allow adding Perforce code host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "enabled"
+        },
         "tls.external": {
           "description": "Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.",
           "type": "object",
@@ -234,6 +240,12 @@ const SiteSchemaJSON = `{
               ]
             }
           ]
+        },
+        "enablePermissionsWebhooks": {
+          "description": "Enables webhook consumers to sync permissions from external services faster than the defaults schedule",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": false }
         }
       },
       "examples": [
@@ -271,6 +283,19 @@ const SiteSchemaJSON = `{
       "!go": { "pointer": true },
       "group": "Campaigns"
     },
+    "campaigns.restrictToAdmins": {
+      "description": "When enabled, only site admins can create and apply campaigns.",
+      "type": "boolean",
+      "group": "Campaigns",
+      "default": false
+    },
+    "codeIntelAutoIndexing.enabled": {
+      "description": "Enables/disables the code intel auto indexing feature.",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "Code intelligence",
+      "default": false
+    },
     "corsOrigin": {
       "description": "Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.",
       "type": "string",
@@ -294,6 +319,29 @@ const SiteSchemaJSON = `{
       "description": "Disable periodically fetching git contents for existing repositories.",
       "type": "boolean",
       "default": false,
+      "group": "External services"
+    },
+    "gitUpdateInterval": {
+      "description": "JSON array of repo name patterns and update intervals. If a repo matches a pattern, the associated interval will be used. If it matches no patterns a default backoff heuristic will be used. Pattern matches are attempted in the order they are provided.",
+      "type": "array",
+      "items": {
+        "title": "UpdateIntervalRule",
+        "type": "object",
+        "required": ["pattern", "interval"],
+        "additionalProperties": false,
+        "properties": {
+          "pattern": {
+            "description": "A regular expression matching a repo name",
+            "type": "string",
+            "minLength": 1
+          },
+          "interval": {
+            "description": "An integer representing the number of minutes to wait until the next update",
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
       "group": "External services"
     },
     "disablePublicRepoRedirects": {
@@ -426,9 +474,9 @@ const SiteSchemaJSON = `{
       "group": "Security"
     },
     "externalService.userMode": {
-      "description": "Enable to allow users to add external services for public repositories to the Sourcegraph instance.",
+      "description": "Enable to allow users to add external services for public and private repositories to the Sourcegraph instance.",
       "type": "string",
-      "enum": ["public", "disabled"],
+      "enum": ["public", "disabled", "all"],
       "default": "disabled"
     },
     "permissions.userMapping": {
@@ -617,6 +665,11 @@ const SiteSchemaJSON = `{
           "properties": {
             "dsn": {
               "description": "Sentry Data Source Name (DSN). Per the Sentry docs (https://docs.sentry.io/quickstart/#about-the-dsn), it should match the following pattern: '{PROTOCOL}://{PUBLIC_KEY}@{HOST}/{PATH}{PROJECT_ID}'.",
+              "type": "string",
+              "pattern": "^https?://"
+            },
+            "backendDSN": {
+              "description": "Sentry Data Source Name (DSN) for backend errors. Per the Sentry docs (https://docs.sentry.io/quickstart/#about-the-dsn), it should match the following pattern: '{PROTOCOL}://{PUBLIC_KEY}@{HOST}/{PATH}{PROJECT_ID}'.",
               "type": "string",
               "pattern": "^https?://"
             }
@@ -812,6 +865,12 @@ const SiteSchemaJSON = `{
       "default": 12,
       "group": "Authentication"
     },
+    "auth.passwordResetLinkExpiry": {
+      "description": "The duration (in seconds) that a password reset link is considered valid.",
+      "type": "integer",
+      "default": 14400,
+      "group": "Authentication"
+    },
     "update.channel": {
       "description": "The channel on which to automatically check for Sourcegraph updates.",
       "type": ["string"],
@@ -831,6 +890,68 @@ const SiteSchemaJSON = `{
       "type": "integer",
       "default": 2000,
       "group": "Misc."
+    },
+    "productResearchPage.enabled": {
+      "description": "Enables users access to the product research page in their settings.",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "Misc.",
+      "default": true
+    },
+    "encryption.keys": {
+      "description": "Configuration for encryption keys used to encrypt data at rest in the database.",
+      "type": "object",
+      "properties": {
+        "externalServiceKey": {
+          "$ref": "#/definitions/EncryptionKey"
+        }
+      }
+    },
+    "api.ratelimit": {
+      "description": "Configuration for API rate limiting",
+      "type": "object",
+      "required": ["enabled", "perUser", "perIP"],
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether API rate limiting is enabled"
+        },
+        "perUser": {
+          "description": "Limit granted per user per hour",
+          "type": "integer",
+          "minimum": 1,
+          "default": 1000000
+        },
+        "perIP": {
+          "description": "Limit granted per IP per hour, only applied to anonymous users",
+          "type": "integer",
+          "minimum": 1,
+          "default": 1000000
+        },
+        "overrides": {
+          "description": "An array of rate limit overrides",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "description": "The key that we want to override for example a username",
+                "type": "string",
+                "minLength": 1
+              },
+              "limit": {
+                "description": "The limit per hour, 'unlimited' or 'blocked'",
+                "oneOf": [
+                  { "type": "string", "const": "unlimited" },
+                  { "type": "string", "const": "blocked" },
+                  { "type": "integer", "minimum": 1 }
+                ]
+              }
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -976,6 +1097,11 @@ const SiteSchemaJSON = `{
           "description": "Whether the Service Provider should (insecurely) accept assertions from the Identity Provider without a valid signature.",
           "type": "boolean",
           "default": false
+        },
+        "allowSignup": {
+          "description": "Allows new visitors to sign up for accounts via SAML authentication. If false, users signing in via SAML must have an existing Sourcegraph account, which will be linked to their SAML identity after sign-in.",
+          "type": "boolean",
+          "!go": { "pointer": true }
         }
       }
     },
@@ -1112,7 +1238,7 @@ const SiteSchemaJSON = `{
     "NotifierPagerduty": {
       "description": "PagerDuty notifier",
       "type": "object",
-      "required": ["type", "routingKey"],
+      "required": ["type", "integrationKey"],
       "properties": {
         "type": {
           "type": "string",
@@ -1162,7 +1288,7 @@ const SiteSchemaJSON = `{
     "NotifierOpsGenie": {
       "description": "OpsGenie notifier",
       "type": "object",
-      "required": ["type", "apiKey"],
+      "required": ["type"],
       "properties": {
         "type": {
           "type": "string",
@@ -1194,6 +1320,46 @@ const SiteSchemaJSON = `{
               { "required": ["type", "username"] }
             ]
           }
+        }
+      }
+    },
+    "EncryptionKey": {
+      "description": "Config for a key",
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["cloudkms", "noop"]
+        }
+      },
+      "oneOf": [{ "$ref": "#/definitions/CloudKMSEncryptionKey" }, { "$ref": "#/definitions/NoOpEncryptionKey" }],
+      "!go": {
+        "taggedUnionType": true
+      }
+    },
+    "CloudKMSEncryptionKey": {
+      "description": "Google Cloud KMS Encryption Key, used to encrypt data in Google Cloud environments",
+      "type": "object",
+      "required": ["type", "keyname"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "cloudkms"
+        },
+        "keyname": {
+          "type": "string"
+        }
+      }
+    },
+    "NoOpEncryptionKey": {
+      "description": "This encryption key is a no op, leaving your data in plaintext (not recommended).",
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "noop"
         }
       }
     }

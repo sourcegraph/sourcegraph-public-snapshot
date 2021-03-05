@@ -15,10 +15,11 @@ import (
 	"github.com/graphql-go/graphql/language/parser"
 	"github.com/graphql-go/graphql/language/visitor"
 	"github.com/pkg/errors"
+	"golang.org/x/time/rate"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"golang.org/x/time/rate"
 )
 
 // V4Client is a GitHub GraphQL API client.
@@ -79,7 +80,7 @@ func NewV4Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V4Cli
 	}
 
 	rl := ratelimit.DefaultRegistry.Get(apiURL.String())
-	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, &ratelimit.Monitor{HeaderPrefix: "X-"})
+	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, "graphql", &ratelimit.Monitor{HeaderPrefix: "X-"})
 
 	return &V4Client{
 		apiURL:           apiURL,
@@ -96,6 +97,11 @@ func NewV4Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V4Cli
 // authenticator instance (most likely a token).
 func (c *V4Client) WithAuthenticator(a auth.Authenticator) *V4Client {
 	return NewV4Client(c.apiURL, a, c.httpClient)
+}
+
+// RateLimitMonitor exposes the rate limit monitor.
+func (c *V4Client) RateLimitMonitor() *ratelimit.Monitor {
+	return c.rateLimitMonitor
 }
 
 func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[string]interface{}, result interface{}) (err error) {
@@ -140,7 +146,7 @@ func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[st
 
 	time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(cost))
 
-	if err := doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, &respBody); err != nil {
+	if err := doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, "graphql", c.httpClient, req, &respBody); err != nil {
 		return err
 	}
 

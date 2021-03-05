@@ -6,9 +6,21 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/go-enry/go-enry/v2"
 	"github.com/pkg/errors"
-	"github.com/src-d/enry/v2"
+
+	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 )
+
+// IsBasic returns whether a query is a basic query. A basic query is one which
+// does not have a DNF-expansion. I.e., there is only one disjunct. A basic
+// query implies that it has no subexpressions that we need to evaluate. IsBasic
+// is used in our codebase where legacy code has not been updated to handle
+// queries with multiple expressions (like alerts), and assume only one
+// evaluatable query.
+func IsBasic(nodes []Node) bool {
+	return len(Dnf(nodes)) == 1
+}
 
 // exists traverses every node in nodes and returns early as soon as fn is satisfied.
 func exists(nodes []Node, fn func(node Node) bool) bool {
@@ -53,16 +65,6 @@ func containsPattern(node Node) bool {
 	return exists([]Node{node}, func(node Node) bool {
 		_, ok := node.(Pattern)
 		return ok
-	})
-}
-
-// containsField returns true if the field exists in the query.
-func containsField(nodes []Node, field string) bool {
-	return exists(nodes, func(node Node) bool {
-		if p, ok := node.(Parameter); ok && p.Field == field {
-			return true
-		}
-		return false
 	})
 }
 
@@ -199,8 +201,21 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		return nil
 	}
 
+	isYesNoOnly := func() error {
+		v := ParseYesNoOnly(value)
+		if v == Invalid {
+			return fmt.Errorf("invalid value %q for field %q. Valid values are: yes, only, no", value, field)
+		}
+		return nil
+	}
+
 	isUnrecognizedField := func() error {
 		return fmt.Errorf("unrecognized field %q", field)
+	}
+
+	isValidSelect := func() error {
+		_, err := filter.SelectPathFromString(value)
+		return err
 	}
 
 	satisfies := func(fns ...func() error) error {
@@ -223,7 +238,8 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		FieldRepo:
 		return satisfies(isValidRegexp)
 	case
-		FieldRepoGroup:
+		FieldRepoGroup,
+		FieldContext:
 		return satisfies(isSingular, isNotNegated)
 	case
 		FieldFile:
@@ -260,7 +276,7 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		return satisfies(isValidRegexp)
 	case
 		FieldIndex:
-		return satisfies(isSingular, isNotNegated)
+		return satisfies(isSingular, isNotNegated, isYesNoOnly)
 	case
 		FieldCount:
 		return satisfies(isSingular, isNumber, isNotNegated)
@@ -275,6 +291,9 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 	case
 		FieldRev:
 		return satisfies(isSingular, isNotNegated)
+	case
+		FieldSelect:
+		return satisfies(isSingular, isNotNegated, isValidSelect)
 	default:
 		return isUnrecognizedField()
 	}
@@ -322,6 +341,25 @@ func validateCommitParameters(nodes []Node) error {
 	return nil
 }
 
+// validateRepoHasFile validates that the repohasfile parameter can be executed.
+// A query like `repohasfile:foo type:symbol patter-to-match-symbols` is
+// currently not supported.
+func validateRepoHasFile(nodes []Node) error {
+	var seenRepoHasFile, seenTypeSymbol bool
+	VisitParameter(nodes, func(field, value string, _ bool, _ Annotation) {
+		if field == FieldRepoHasFile {
+			seenRepoHasFile = true
+		}
+		if field == FieldType && strings.EqualFold(value, "symbol") {
+			seenTypeSymbol = true
+		}
+	})
+	if seenRepoHasFile && seenTypeSymbol {
+		return errors.New("repohasfile is not compatible for type:symbol. Subscribe to https://github.com/sourcegraph/sourcegraph/issues/4610 for updates")
+	}
+	return nil
+}
+
 // validatePureLiteralPattern checks that no pattern expression contains and/or
 // operators nested inside concat. It may happen that we interpret a query this
 // way due to ambiguity. If this happens, return an error message.
@@ -345,7 +383,7 @@ func validatePureLiteralPattern(nodes []Node, balanced bool) error {
 	return nil
 }
 
-func validate(nodes []Node) error {
+func validateParameters(nodes []Node) error {
 	var err error
 	seen := map[string]struct{}{}
 	VisitParameter(nodes, func(field, value string, negated bool, _ Annotation) {
@@ -355,6 +393,11 @@ func validate(nodes []Node) error {
 		err = validateField(field, value, negated, seen)
 		seen[field] = struct{}{}
 	})
+	return err
+}
+
+func validatePattern(nodes []Node) error {
+	var err error
 	VisitPattern(nodes, func(value string, negated bool, annotation Annotation) {
 		if annotation.Labels.isSet(Regexp) {
 			if err != nil {
@@ -369,13 +412,80 @@ func validate(nodes []Node) error {
 			err = errors.New("the query contains a negated search pattern. Structural search does not support negated search patterns at the moment")
 		}
 	})
-	if err != nil {
-		return err
-	}
-	err = validateRepoRevPair(nodes)
-	if err != nil {
-		return err
-	}
-	err = validateCommitParameters(nodes)
 	return err
+}
+
+func validate(nodes []Node) error {
+	succeeds := func(fns ...func([]Node) error) error {
+		for _, fn := range fns {
+			if err := fn(nodes); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	return succeeds(
+		validateParameters,
+		validatePattern,
+		validateRepoRevPair,
+		validateRepoHasFile,
+		validateCommitParameters,
+	)
+}
+
+type YesNoOnly string
+
+const (
+	Yes     YesNoOnly = "yes"
+	No      YesNoOnly = "no"
+	Only    YesNoOnly = "only"
+	Invalid YesNoOnly = "invalid"
+)
+
+func ParseYesNoOnly(s string) YesNoOnly {
+	switch s {
+	case "y", "Y", "yes", "YES", "Yes":
+		return Yes
+	case "n", "N", "no", "NO", "No":
+		return No
+	case "o", "only", "ONLY", "Only":
+		return Only
+	default:
+		if b, err := strconv.ParseBool(s); err == nil {
+			if b {
+				return Yes
+			}
+			return No
+		}
+		return Invalid
+	}
+}
+
+func ContainsRefGlobs(q Q) bool {
+	containsRefGlobs := false
+	if repoFilterValues, _ := q.RegexpPatterns(FieldRepo); len(repoFilterValues) > 0 {
+		for _, v := range repoFilterValues {
+			repoRev := strings.SplitN(v, "@", 2)
+			if len(repoRev) == 1 { // no revision
+				continue
+			}
+			if ContainsNoGlobSyntax(repoRev[1]) {
+				continue
+			}
+			containsRefGlobs = true
+			break
+		}
+	}
+	return containsRefGlobs
+}
+
+func HasTypeRepo(q Q) bool {
+	found := false
+	VisitField(q, "type", func(value string, _ bool, _ Annotation) {
+		if value == "repo" {
+			found = true
+		}
+	})
+	return found
 }

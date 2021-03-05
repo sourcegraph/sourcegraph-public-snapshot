@@ -1,18 +1,9 @@
 env:
-  ENTERPRISE: '1'
-  DOCKER_BUILDKIT: '1'
-  FORCE_COLOR: '3'
-  GO111MODULE: 'on'
-  IMAGE: 'server_instrumented'
-  TAG: '${BUILDKITE_BUILD_NUMBER}_${BUILDKITE_RETRY_COUNT}'
-  COVERAGE_INSTRUMENT: 'true'
   VAGRANT_RUN_ENV: 'CI'
-
 steps:
   - label: ':chromium: Sourcegraph E2E'
     artifact_paths: ./*.png;./*.mp4;./ffmpeg.log
-    # set commands to pass until tests are 100% confirmed as working, so as to avoid disruting dev workflow on main
     command:
-      - .buildkite/vagrant-run.sh sourcegraph-e2e || true
+      - .buildkite/vagrant-run.sh sourcegraph-e2e
     agents:
       queue: 'baremetal'

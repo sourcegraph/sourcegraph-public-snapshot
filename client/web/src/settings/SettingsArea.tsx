@@ -18,9 +18,9 @@ import { eventLogger } from '../tracking/eventLogger'
 import { mergeSettingsSchemas } from './configuration'
 import { SettingsPage } from './SettingsPage'
 import { ErrorMessage } from '../components/alerts'
-import * as H from 'history'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { AuthenticatedUser } from '../auth'
+import { Scalars } from '../../../shared/src/graphql-operations'
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
@@ -52,7 +52,6 @@ export interface SettingsAreaPageProps extends SettingsAreaPageCommonProps {
 interface Props extends SettingsAreaPageCommonProps, RouteComponentProps<{}> {
     className?: string
     extraHeader?: JSX.Element
-    history: H.History
 }
 
 const LOADING = 'loading' as const
@@ -124,7 +123,7 @@ export class SettingsArea extends React.Component<Props, State> {
                 <HeroPage
                     icon={AlertCircleIcon}
                     title="Error"
-                    subtitle={<ErrorMessage error={this.state.dataOrError} history={this.props.history} />}
+                    subtitle={<ErrorMessage error={this.state.dataOrError} />}
                 />
             )
         }
@@ -197,7 +196,7 @@ export class SettingsArea extends React.Component<Props, State> {
     }
 }
 
-function fetchSettingsCascade(subject: GQL.ID): Observable<Pick<GQL.ISettingsCascade, 'subjects'>> {
+function fetchSettingsCascade(subject: Scalars['ID']): Observable<Pick<GQL.ISettingsCascade, 'subjects'>> {
     return queryGraphQL(
         gql`
             query SettingsCascade($subject: ID!) {

@@ -45,7 +45,7 @@ export interface HierarchicalLocationsViewProps extends SettingsCascadeProps, Ve
 
     isLightTheme: boolean
 
-    fetchHighlightedFileLines: (parameters: FetchFileParameters, force?: boolean) => Observable<string[]>
+    fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 
     extensionsController: {
         services: Pick<ExtensionsControllerProps['extensionsController']['services'], 'context'> & {
@@ -279,7 +279,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                         onSelect={this.props.onSelectLocation}
                         icon={SourceRepositoryIcon}
                         isLightTheme={this.props.isLightTheme}
-                        fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
+                        fetchHighlightedFileLineRanges={this.props.fetchHighlightedFileLineRanges}
                         settingsCascade={this.props.settingsCascade}
                         versionContext={this.props.versionContext}
                     />

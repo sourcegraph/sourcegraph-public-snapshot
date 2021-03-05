@@ -8,7 +8,9 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 var (
@@ -165,8 +167,8 @@ var logStageEvent = func(userID int32, event string, isAuthenticated bool) error
 }
 
 // LogEvent logs users events.
-func LogEvent(ctx context.Context, name, url string, userID int32, userCookieID, source string, argument json.RawMessage) error {
-	info := &db.Event{
+func LogEvent(ctx context.Context, db dbutil.DB, name, url string, userID int32, userCookieID, source string, argument json.RawMessage) error {
+	info := &database.Event{
 		Name:            name,
 		URL:             url,
 		UserID:          uint32(userID),
@@ -174,5 +176,5 @@ func LogEvent(ctx context.Context, name, url string, userID int32, userCookieID,
 		Source:          source,
 		Argument:        argument,
 	}
-	return db.EventLogs.Insert(ctx, info)
+	return database.EventLogs(db).Insert(ctx, info)
 }

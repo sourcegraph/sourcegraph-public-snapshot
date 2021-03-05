@@ -1,0 +1,74 @@
+.search-context-dropdown {
+    &__button {
+        color: var(--search-query-text-color);
+        margin-left: 0.25rem;
+        margin-right: 0.25rem;
+        padding: 0.125rem 0.25rem;
+        border-radius: 0.25rem;
+        border: 2px solid transparent;
+        box-sizing: border-box;
+        transition: none;
+
+        &:hover,
+        &:active,
+        &:focus {
+            text-decoration: none;
+        }
+
+        &:hover,
+        &:focus {
+            background-color: var(--color-bg-2);
+            border-color: var(--color-bg-2);
+        }
+
+        &:focus {
+            border-color: var(--color-border-active);
+            box-shadow: none;
+        }
+
+        &:active,
+        &--open,
+        &--open:hover,
+        &--open:focus {
+            background-color: var(--color-bg-4);
+        }
+
+        &:disabled,
+        &:hover:disabled,
+        &:active:disabled,
+        &:focus:disabled {
+            background-color: var(--color-bg-3);
+            color: var(--color-text-3);
+            border-color: transparent;
+            opacity: 1;
+            pointer-events: auto; // Required to show tooltip on hover
+
+            .theme-light & {
+                background-color: var(--color-bg-4);
+            }
+
+            .search-filter-keyword,
+            .search-keyword {
+                color: var(--color-text-3);
+            }
+        }
+
+        &::after {
+            // Hide chevron usually shown by dropdown buttons
+            display: none;
+        }
+
+        &-content {
+            display: block;
+            font-size: 0.75rem;
+            line-height: 1rem;
+        }
+    }
+
+    &__separator {
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        width: 1px;
+        height: 1.125rem;
+        background-color: var(--border-color-2);
+    }
+}

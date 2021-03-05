@@ -144,7 +144,7 @@ func DeployType() string {
 	if e := os.Getenv("DEPLOY_TYPE"); e != "" {
 		return e
 	}
-	// Default to Kubernetes cluster so that every Kubernetes c
+	// Default to Kubernetes cluster so that every Kubernetes
 	// cluster deployment doesn't need to be configured with DEPLOY_TYPE.
 	return DeployKubernetes
 }
@@ -221,6 +221,20 @@ func SearchIndexEnabled() bool {
 
 func CampaignsEnabled() bool {
 	if enabled := Get().CampaignsEnabled; enabled != nil {
+		return *enabled
+	}
+	return true
+}
+
+func CodeIntelAutoIndexingEnabled() bool {
+	if enabled := Get().CodeIntelAutoIndexingEnabled; enabled != nil {
+		return *enabled
+	}
+	return false
+}
+
+func ProductResearchPageEnabled() bool {
+	if enabled := Get().ProductResearchPageEnabled; enabled != nil {
 		return *enabled
 	}
 	return true
@@ -306,9 +320,36 @@ func AuthMinPasswordLength() int {
 	return val
 }
 
-// ExternalServiceUserMode returns true if users are allowed to add external services
-// for public repositories.
-func ExternalServiceUserMode() bool {
-	val := Get().ExternalServiceUserMode
-	return val == "public"
+// By default, password reset links are valid for 4 hours.
+const defaultPasswordLinkExpiry = 14400
+
+// AuthPasswordResetLinkExpiry returns the time (in seconds) indicating how long password
+// reset links are considered valid. If not set, it returns the default value.
+func AuthPasswordResetLinkExpiry() int {
+	val := Get().AuthPasswordResetLinkExpiry
+	if val <= 0 {
+		return defaultPasswordLinkExpiry
+	}
+	return val
+}
+
+type ExternalServiceMode int
+
+const (
+	ExternalServiceModeDisabled ExternalServiceMode = 0
+	ExternalServiceModePublic   ExternalServiceMode = 1
+	ExternalServiceModeAll      ExternalServiceMode = 2
+)
+
+// ExternalServiceUserMode returns the mode describing if users are allowed to add external services
+// for public and private repositories.
+func ExternalServiceUserMode() ExternalServiceMode {
+	switch Get().ExternalServiceUserMode {
+	case "public":
+		return ExternalServiceModePublic
+	case "all":
+		return ExternalServiceModeAll
+	default:
+		return ExternalServiceModeDisabled
+	}
 }

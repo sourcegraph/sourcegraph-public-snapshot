@@ -21,8 +21,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestatsdeprecated"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
@@ -76,9 +77,9 @@ func recordOperation(method string) func(*error) {
 	}
 }
 
-func getAndMarshalSiteActivityJSON(ctx context.Context, criticalOnly bool) (_ json.RawMessage, err error) {
+func getAndMarshalSiteActivityJSON(ctx context.Context, db dbutil.DB, criticalOnly bool) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalSiteActivityJSON")(&err)
-	siteActivity, err := usagestats.GetSiteUsageStats(ctx, criticalOnly)
+	siteActivity, err := usagestats.GetSiteUsageStats(ctx, db, criticalOnly)
 
 	if err != nil {
 		return nil, err
@@ -99,12 +100,12 @@ func hasFindRefsOccurred(ctx context.Context) (_ bool, err error) {
 
 func getTotalUsersCount(ctx context.Context) (_ int, err error) {
 	defer recordOperation("getTotalUsersCount")(&err)
-	return db.Users.Count(ctx, &db.UsersListOptions{})
+	return database.GlobalUsers.Count(ctx, &database.UsersListOptions{})
 }
 
 func getTotalReposCount(ctx context.Context) (_ int, err error) {
 	defer recordOperation("getTotalReposCount")(&err)
-	return db.Repos.Count(ctx, db.ReposListOptions{})
+	return database.GlobalRepos.Count(ctx, database.ReposListOptions{})
 }
 
 func getUsersActiveTodayCount(ctx context.Context) (_ int, err error) {
@@ -114,7 +115,7 @@ func getUsersActiveTodayCount(ctx context.Context) (_ int, err error) {
 
 func getInitialSiteAdminEmail(ctx context.Context) (_ string, err error) {
 	defer recordOperation("getInitialSiteAdminEmail")(&err)
-	return db.UserEmails.GetInitialSiteAdminEmail(ctx)
+	return database.GlobalUserEmails.GetInitialSiteAdminEmail(ctx)
 }
 
 func getAndMarshalCampaignsUsageJSON(ctx context.Context) (_ json.RawMessage, err error) {
@@ -167,6 +168,17 @@ func getAndMarshalRepositoriesJSON(ctx context.Context) (_ json.RawMessage, err 
 	return json.Marshal(repos)
 }
 
+func getAndMarshalRetentionStatisticsJSON(ctx context.Context) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalRetentionStatisticsJSON")(&err)
+
+	retentionStatistics, err := usagestats.GetRetentionStatistics(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(retentionStatistics)
+}
+
 func getAndMarshalSearchOnboardingJSON(ctx context.Context) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalSearchOnboardingJSON")(&err)
 
@@ -178,10 +190,10 @@ func getAndMarshalSearchOnboardingJSON(ctx context.Context) (_ json.RawMessage, 
 	return json.Marshal(searchOnboarding)
 }
 
-func getAndMarshalAggregatedCodeIntelUsageJSON(ctx context.Context) (_ json.RawMessage, err error) {
+func getAndMarshalAggregatedCodeIntelUsageJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalAggregatedCodeIntelUsageJSON")(&err)
 
-	codeIntelUsage, err := usagestats.GetAggregatedCodeIntelStats(ctx)
+	codeIntelUsage, err := usagestats.GetAggregatedCodeIntelStats(ctx, db)
 	if err != nil {
 		return nil, err
 	}
@@ -189,15 +201,37 @@ func getAndMarshalAggregatedCodeIntelUsageJSON(ctx context.Context) (_ json.RawM
 	return json.Marshal(codeIntelUsage)
 }
 
-func getAndMarshalAggregatedSearchUsageJSON(ctx context.Context) (_ json.RawMessage, err error) {
+func getAndMarshalAggregatedSearchUsageJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalAggregatedSearchUsageJSON")(&err)
 
-	searchUsage, err := usagestats.GetAggregatedSearchStats(ctx)
+	searchUsage, err := usagestats.GetAggregatedSearchStats(ctx, db)
 	if err != nil {
 		return nil, err
 	}
 
 	return json.Marshal(searchUsage)
+}
+
+func getAndMarshalExtensionsUsageStatisticsJSON(ctx context.Context) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalExtensionsUsageStatisticsJSON")
+
+	extensionsUsage, err := usagestats.GetExtensionsUsageStatistics(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(extensionsUsage)
+}
+
+func getAndMarshalCodeInsightsUsageJSON(ctx context.Context) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalCodeInsightsUsageJSON")
+
+	codeInsightsUsage, err := usagestats.GetCodeInsightsUsageStatistics(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(codeInsightsUsage)
 }
 
 func getDependencyVersions(ctx context.Context, logFunc func(string, ...interface{})) (json.RawMessage, error) {
@@ -261,7 +295,7 @@ func parseRedisInfo(buf []byte) (map[string]string, error) {
 	return m, nil
 }
 
-func updateBody(ctx context.Context) (io.Reader, error) {
+func updateBody(ctx context.Context, db dbutil.DB) (io.Reader, error) {
 	logFunc := log15.Debug
 	if envvar.SourcegraphDotComMode() {
 		logFunc = log15.Warn
@@ -273,23 +307,27 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		ClientVersionString: version.Version(),
 		LicenseKey:          conf.Get().LicenseKey,
 		CodeIntelUsage:      []byte("{}"),
+		NewCodeIntelUsage:   []byte("{}"),
 		SearchUsage:         []byte("{}"),
 		CampaignsUsage:      []byte("{}"),
 		GrowthStatistics:    []byte("{}"),
 		SavedSearches:       []byte("{}"),
 		HomepagePanels:      []byte("{}"),
 		Repositories:        []byte("{}"),
+		RetentionStatistics: []byte("{}"),
 		SearchOnboarding:    []byte("{}"),
+		ExtensionsUsage:     []byte("{}"),
+		CodeInsightsUsage:   []byte("{}"),
 	}
 
 	totalUsers, err := getTotalUsersCount(ctx)
 	if err != nil {
-		logFunc("telemetry: db.Users.Count failed", "error", err)
+		logFunc("telemetry: database.Users.Count failed", "error", err)
 	}
 	r.TotalUsers = int32(totalUsers)
 	r.InitialAdminEmail, err = getInitialSiteAdminEmail(ctx)
 	if err != nil {
-		logFunc("telemetry: db.UserEmails.GetInitialSiteAdminEmail failed", "error", err)
+		logFunc("telemetry: database.UserEmails.GetInitialSiteAdminEmail failed", "error", err)
 	}
 
 	r.DependencyVersions, err = getDependencyVersions(ctx, logFunc)
@@ -351,6 +389,21 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 			logFunc("telemetry: updatecheck.getAndMarshalRepositoriesJSON failed", "error", err)
 		}
 
+		r.RetentionStatistics, err = getAndMarshalRetentionStatisticsJSON(ctx)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalRetentionStatisticsJSON failed", "error", err)
+		}
+
+		r.ExtensionsUsage, err = getAndMarshalExtensionsUsageStatisticsJSON(ctx)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalExtensionsUsageStatisticsJSON failed", "error", err)
+		}
+
+		r.CodeInsightsUsage, err = getAndMarshalCodeInsightsUsageJSON(ctx)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalCodeInsightsUsageJSON failed", "error", err)
+		}
+
 		r.ExternalServices, err = externalServiceKinds(ctx)
 		if err != nil {
 			logFunc("telemetry: externalServicesKinds failed", "error", err)
@@ -368,7 +421,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			r.Activity, err = getAndMarshalSiteActivityJSON(ctx, false)
+			r.Activity, err = getAndMarshalSiteActivityJSON(ctx, db, false)
 			if err != nil {
 				logFunc("telemetry: updatecheck.getAndMarshalSiteActivityJSON failed", "error", err)
 			}
@@ -377,7 +430,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			r.CodeIntelUsage, err = getAndMarshalAggregatedCodeIntelUsageJSON(ctx)
+			r.NewCodeIntelUsage, err = getAndMarshalAggregatedCodeIntelUsageJSON(ctx, db)
 			if err != nil {
 				logFunc("telemetry: updatecheck.getAndMarshalAggregatedCodeIntelUsageJSON failed", "error", err)
 			}
@@ -386,7 +439,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			r.SearchUsage, err = getAndMarshalAggregatedSearchUsageJSON(ctx)
+			r.SearchUsage, err = getAndMarshalAggregatedSearchUsageJSON(ctx, db)
 			if err != nil {
 				logFunc("telemetry: updatecheck.getAndMarshalAggregatedSearchUsageJSON failed", "error", err)
 			}
@@ -394,7 +447,12 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 
 		wg.Wait()
 	} else {
-		r.Activity, err = getAndMarshalSiteActivityJSON(ctx, true)
+		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalRepositoriesJSON failed", "error", err)
+		}
+
+		r.Activity, err = getAndMarshalSiteActivityJSON(ctx, db, true)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalSiteActivityJSON failed", "error", err)
 		}
@@ -404,13 +462,14 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = db.EventLogs.Insert(ctx, &db.Event{
+
+	err = database.EventLogs(db).Insert(ctx, &database.Event{
 		UserID:          0,
 		Name:            "ping",
 		URL:             "",
 		AnonymousUserID: "backend",
 		Source:          "BACKEND",
-		Argument:        json.RawMessage(contents),
+		Argument:        contents,
 		Timestamp:       time.Now().UTC(),
 	})
 
@@ -428,17 +487,17 @@ func authProviderTypes() []string {
 
 func externalServiceKinds(ctx context.Context) (kinds []string, err error) {
 	defer recordOperation("externalServiceKinds")(&err)
-	kinds, err = db.ExternalServices.DistinctKinds(ctx)
+	kinds, err = database.GlobalExternalServices.DistinctKinds(ctx)
 	return kinds, err
 }
 
 // check performs an update check and updates the global state.
-func check() {
+func check(db dbutil.DB) {
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
 
 	doCheck := func() (updateVersion string, err error) {
-		body, err := updateBody(ctx)
+		body, err := updateBody(ctx, db)
 		if err != nil {
 			return "", err
 		}
@@ -504,7 +563,7 @@ func check() {
 var started bool
 
 // Start starts checking for software updates periodically.
-func Start() {
+func Start(db dbutil.DB) {
 	if started {
 		panic("already started")
 	}
@@ -516,7 +575,7 @@ func Start() {
 
 	const delay = 30 * time.Minute
 	for {
-		check()
+		check(db)
 
 		// Randomize sleep to prevent thundering herds.
 		randomDelay := time.Duration(rand.Intn(600)) * time.Second

@@ -6,15 +6,18 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/query-runner/queryrunnerapi"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type savedSearchResolver struct {
-	s types.SavedSearch
+	db dbutil.DB
+	s  types.SavedSearch
 }
 
 func marshalSavedSearchID(savedSearchID int32) graphql.ID {
@@ -26,13 +29,13 @@ func unmarshalSavedSearchID(id graphql.ID) (savedSearchID int32, err error) {
 	return
 }
 
-func savedSearchByID(ctx context.Context, id graphql.ID) (*savedSearchResolver, error) {
+func (r *schemaResolver) savedSearchByID(ctx context.Context, id graphql.ID) (*savedSearchResolver, error) {
 	intID, err := unmarshalSavedSearchID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	ss, err := db.SavedSearches.GetByID(ctx, intID)
+	ss, err := database.SavedSearches(r.db).GetByID(ctx, intID)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +45,7 @@ func savedSearchByID(ctx context.Context, id graphql.ID) (*savedSearchResolver, 
 			return nil, err
 		}
 	} else if ss.Config.OrgID != nil {
-		if err := backend.CheckOrgAccess(ctx, *ss.Config.OrgID); err != nil {
+		if err := backend.CheckOrgAccess(ctx, r.db, *ss.Config.OrgID); err != nil {
 			return nil, err
 		}
 	} else {
@@ -50,7 +53,8 @@ func savedSearchByID(ctx context.Context, id graphql.ID) (*savedSearchResolver, 
 	}
 
 	savedSearch := &savedSearchResolver{
-		types.SavedSearch{
+		db: r.db,
+		s: types.SavedSearch{
 			ID:              intID,
 			Description:     ss.Config.Description,
 			Query:           ss.Config.Query,
@@ -82,14 +86,14 @@ func (r savedSearchResolver) Query() string { return r.s.Query }
 
 func (r savedSearchResolver) Namespace(ctx context.Context) (*NamespaceResolver, error) {
 	if r.s.OrgID != nil {
-		n, err := NamespaceByID(ctx, MarshalOrgID(*r.s.OrgID))
+		n, err := NamespaceByID(ctx, r.db, MarshalOrgID(*r.s.OrgID))
 		if err != nil {
 			return nil, err
 		}
 		return &NamespaceResolver{n}, nil
 	}
 	if r.s.UserID != nil {
-		n, err := NamespaceByID(ctx, MarshalUserID(*r.s.UserID))
+		n, err := NamespaceByID(ctx, r.db, MarshalUserID(*r.s.UserID))
 		if err != nil {
 			return nil, err
 		}
@@ -100,25 +104,25 @@ func (r savedSearchResolver) Namespace(ctx context.Context) (*NamespaceResolver,
 
 func (r savedSearchResolver) SlackWebhookURL() *string { return r.s.SlackWebhookURL }
 
-func toSavedSearchResolver(entry types.SavedSearch) *savedSearchResolver {
-	return &savedSearchResolver{entry}
+func (r *schemaResolver) toSavedSearchResolver(entry types.SavedSearch) *savedSearchResolver {
+	return &savedSearchResolver{db: r.db, s: entry}
 }
 
 func (r *schemaResolver) SavedSearches(ctx context.Context) ([]*savedSearchResolver, error) {
 	var savedSearches []*savedSearchResolver
-	currentUser, err := CurrentUser(ctx)
+	currentUser, err := CurrentUser(ctx, r.db)
 	if currentUser == nil {
 		return nil, errors.New("No currently authenticated user")
 	}
 	if err != nil {
 		return nil, err
 	}
-	allSavedSearches, err := db.SavedSearches.ListSavedSearchesByUserID(ctx, currentUser.DatabaseID())
+	allSavedSearches, err := database.SavedSearches(r.db).ListSavedSearchesByUserID(ctx, currentUser.DatabaseID())
 	if err != nil {
 		return nil, err
 	}
 	for _, savedSearch := range allSavedSearches {
-		savedSearches = append(savedSearches, toSavedSearchResolver(*savedSearch))
+		savedSearches = append(savedSearches, r.toSavedSearchResolver(*savedSearch))
 	}
 
 	return savedSearches, nil
@@ -135,7 +139,7 @@ func (r *schemaResolver) SendSavedSearchTestNotification(ctx context.Context, ar
 	if err != nil {
 		return nil, err
 	}
-	savedSearch, err := db.SavedSearches.GetByID(ctx, id)
+	savedSearch, err := database.SavedSearches(r.db).GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +173,7 @@ func (r *schemaResolver) CreateSavedSearch(ctx context.Context, args *struct {
 			return nil, err
 		}
 		orgID = &o
-		if err := backend.CheckOrgAccess(ctx, o); err != nil {
+		if err := backend.CheckOrgAccess(ctx, r.db, o); err != nil {
 			return nil, err
 		}
 	} else {
@@ -180,7 +184,7 @@ func (r *schemaResolver) CreateSavedSearch(ctx context.Context, args *struct {
 		return nil, errMissingPatternType
 	}
 
-	ss, err := db.SavedSearches.Create(ctx, &types.SavedSearch{
+	ss, err := database.SavedSearches(r.db).Create(ctx, &types.SavedSearch{
 		Description: args.Description,
 		Query:       args.Query,
 		Notify:      args.NotifyOwner,
@@ -192,7 +196,7 @@ func (r *schemaResolver) CreateSavedSearch(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	return toSavedSearchResolver(*ss), nil
+	return r.toSavedSearchResolver(*ss), nil
 }
 
 func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
@@ -221,7 +225,7 @@ func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
 			return nil, err
 		}
 		orgID = &o
-		if err := backend.CheckOrgAccess(ctx, o); err != nil {
+		if err := backend.CheckOrgAccess(ctx, r.db, o); err != nil {
 			return nil, err
 		}
 	} else {
@@ -237,7 +241,7 @@ func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
 		return nil, errMissingPatternType
 	}
 
-	ss, err := db.SavedSearches.Update(ctx, &types.SavedSearch{
+	ss, err := database.SavedSearches(r.db).Update(ctx, &types.SavedSearch{
 		ID:          id,
 		Description: args.Description,
 		Query:       args.Query,
@@ -250,7 +254,7 @@ func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	return toSavedSearchResolver(*ss), nil
+	return r.toSavedSearchResolver(*ss), nil
 }
 
 func (r *schemaResolver) DeleteSavedSearch(ctx context.Context, args *struct {
@@ -260,7 +264,7 @@ func (r *schemaResolver) DeleteSavedSearch(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-	ss, err := db.SavedSearches.GetByID(ctx, id)
+	ss, err := database.SavedSearches(r.db).GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -270,23 +274,23 @@ func (r *schemaResolver) DeleteSavedSearch(ctx context.Context, args *struct {
 			return nil, err
 		}
 	} else if ss.Config.OrgID != nil {
-		if err := backend.CheckOrgAccess(ctx, *ss.Config.OrgID); err != nil {
+		if err := backend.CheckOrgAccess(ctx, r.db, *ss.Config.OrgID); err != nil {
 			return nil, err
 		}
 	} else {
 		return nil, errors.New("failed to delete saved search: no Org ID or User ID associated with saved search")
 	}
-	err = db.SavedSearches.Delete(ctx, id)
+	err = database.SavedSearches(r.db).Delete(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
 }
 
-var patternTypeRegexp = lazyregexp.New(`(?i)\bpatternType:(literal|regexp)\b`)
+var patternType = lazyregexp.New(`(?i)\bpatternType:(literal|regexp|structural)\b`)
 
 func queryHasPatternType(query string) bool {
-	return patternTypeRegexp.Match([]byte(query))
+	return patternType.Match([]byte(query))
 }
 
-var errMissingPatternType = errors.New("a `patternType:` filter is required in the query for all saved searches. `patternType` can be \"literal\" or \"regexp\"")
+var errMissingPatternType = errors.New("a `patternType:` filter is required in the query for all saved searches. `patternType` can be \"literal\", \"regexp\" or \"structural\"")

@@ -2,19 +2,25 @@ package graphqlbackend
 
 import (
 	"context"
+	"errors"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/hubspot/hubspotutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type surveyResponseResolver struct {
+	db             dbutil.DB
 	surveyResponse *types.SurveyResponse
 }
 
@@ -25,7 +31,7 @@ func marshalSurveyResponseID(id int32) graphql.ID { return relay.MarshalID("Surv
 
 func (s *surveyResponseResolver) User(ctx context.Context) (*UserResolver, error) {
 	if s.surveyResponse.UserID != nil {
-		user, err := UserByIDInt32(ctx, *s.surveyResponse.UserID)
+		user, err := UserByIDInt32(ctx, s.db, *s.surveyResponse.UserID)
 		if err != nil && errcode.IsNotFound(err) {
 			// This can happen if the user has been deleted, see issue #4888 and #6454
 			return nil, nil
@@ -89,7 +95,7 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 	actor := actor.FromContext(ctx)
 	if actor.IsAuthenticated() {
 		uid = &actor.UID
-		e, _, err := db.UserEmails.GetPrimaryEmail(ctx, actor.UID)
+		e, _, err := database.GlobalUserEmails.GetPrimaryEmail(ctx, actor.UID)
 		if err != nil && !errcode.IsNotFound(err) {
 			return nil, err
 		}
@@ -98,7 +104,7 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 		}
 	}
 
-	_, err := db.SurveyResponses.Create(ctx, uid, email, int(input.Score), input.Reason, input.Better)
+	_, err := database.SurveyResponses(r.db).Create(ctx, uid, email, int(input.Score), input.Reason, input.Better)
 	if err != nil {
 		return nil, err
 	}
@@ -114,6 +120,67 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 	}); err != nil {
 		// Log an error, but don't return one if the only failure was in submitting survey results to HubSpot.
 		log15.Error("Unable to submit survey results to Sourcegraph remote", "error", err)
+	}
+
+	return &EmptyResponse{}, nil
+}
+
+// FeedbackSubmissionInput contains a happiness feedback response.
+type HappinessFeedbackSubmissionInput struct {
+	// Score is the user's happiness rating, from 1-4.
+	Score int32
+	// Feedback is the answer to "What's going well? What could be better?".
+	Feedback *string
+	// The path that the happiness feedback was submitted from
+	CurrentPath *string
+}
+
+type happinessFeedbackSubmissionForHubSpot struct {
+	Email       *string `url:"email"`
+	Score       int32   `url:"happiness_score"`
+	Feedback    *string `url:"happiness_feedback"`
+	CurrentPath *string `url:"happiness_current_url"`
+	IsTest      bool    `url:"happiness_is_test"`
+	SiteID      string  `url:"site_id"`
+}
+
+// SubmitHappinessFeedback records a new happiness feedback response by the current user.
+func (r *schemaResolver) SubmitHappinessFeedback(ctx context.Context, args *struct {
+	Input *HappinessFeedbackSubmissionInput
+}) (*EmptyResponse, error) {
+	var email *string
+
+	if args.Input.Score < 1 || args.Input.Score > 4 {
+		return nil, errors.New("Score must be a value between 1 and 4")
+	}
+
+	// If we are on Sourcegraph.com, we want to capture the email of the user
+	if envvar.SourcegraphDotComMode() {
+		actor := actor.FromContext(ctx)
+
+		// If user is authenticated, use their uid and set the email field.
+		if actor.IsAuthenticated() {
+			e, _, err := database.UserEmails(r.db).GetPrimaryEmail(ctx, actor.UID)
+			if err != nil && !errcode.IsNotFound(err) {
+				return nil, err
+			}
+			if e != "" {
+				email = &e
+			}
+		}
+	}
+
+	// Submit form to HubSpot
+	if err := hubspotutil.Client().SubmitForm(hubspotutil.HappinessFeedbackFormID, &happinessFeedbackSubmissionForHubSpot{
+		Email:       email,
+		Score:       args.Input.Score,
+		Feedback:    args.Input.Feedback,
+		CurrentPath: args.Input.CurrentPath,
+		IsTest:      env.InsecureDev,
+		SiteID:      siteid.Get(),
+	}); err != nil {
+		// Log an error, but don't return one if the only failure was in submitting feedback results to HubSpot.
+		log15.Error("Unable to submit happiness feedback results to Sourcegraph remote", "error", err)
 	}
 
 	return &EmptyResponse{}, nil

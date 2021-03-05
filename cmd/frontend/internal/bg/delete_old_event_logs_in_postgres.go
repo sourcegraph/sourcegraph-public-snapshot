@@ -5,7 +5,8 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 )
 
 func DeleteOldEventLogsInPostgres(ctx context.Context) {

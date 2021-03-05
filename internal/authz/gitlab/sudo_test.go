@@ -15,11 +15,11 @@ import (
 	"github.com/sergi/go-diff/diffmatchpatch"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func Test_GitLab_FetchAccount(t *testing.T) {
@@ -228,7 +228,7 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 		p := newSudoProvider(SudoProviderOp{
 			BaseURL: mustURL(t, "https://gitlab.com"),
 		}, nil)
-		_, err := p.FetchUserPerms(context.Background(), nil)
+		_, _, err := p.FetchUserPerms(context.Background(), nil)
 		want := "no account provided"
 		got := fmt.Sprintf("%v", err)
 		if got != want {
@@ -240,7 +240,7 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 		p := newSudoProvider(SudoProviderOp{
 			BaseURL: mustURL(t, "https://gitlab.com"),
 		}, nil)
-		_, err := p.FetchUserPerms(context.Background(),
+		_, _, err := p.FetchUserPerms(context.Background(),
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
 					ServiceType: extsvc.TypeGitHub,
@@ -295,7 +295,7 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 	)
 
 	accountData := json.RawMessage(`{"id": 999}`)
-	repoIDs, err := p.FetchUserPerms(context.Background(),
+	repoIDs, _, err := p.FetchUserPerms(context.Background(),
 		&extsvc.Account{
 			AccountSpec: extsvc.AccountSpec{
 				ServiceType: "gitlab",

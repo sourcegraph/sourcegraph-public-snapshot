@@ -12,16 +12,17 @@ import {
     TabsWithLocalStorageViewStatePersistence,
 } from '../../../branded/src/components/Tabs'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { AbsoluteRepoFile } from '../../../shared/src/util/url'
 import { eventLogger } from '../tracking/eventLogger'
 import { Tree } from '../tree/Tree'
 import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
+import { ThemeProps } from '../../../shared/src/theme'
+import { Scalars } from '../../../shared/src/graphql-operations'
 
 type SidebarTabID = 'files' | 'symbols' | 'history'
 
-interface Props extends AbsoluteRepoFile, ExtensionsControllerProps {
-    repoID: GQL.ID
+interface Props extends AbsoluteRepoFile, ExtensionsControllerProps, ThemeProps {
+    repoID: Scalars['ID']
     isDir: boolean
     defaultBranch: string
     className: string
@@ -124,6 +125,8 @@ export class RepoRevisionSidebar extends React.PureComponent<Props, State> {
                             activePath={this.props.filePath}
                             activePathIsDir={this.props.isDir}
                             sizeKey={`Resizable:${STORAGE_KEY}`}
+                            extensionsController={this.props.extensionsController}
+                            isLightTheme={this.props.isLightTheme}
                         />
                         <RepoRevisionSidebarSymbols
                             key="symbols"

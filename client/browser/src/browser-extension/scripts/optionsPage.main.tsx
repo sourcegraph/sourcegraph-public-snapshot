@@ -51,7 +51,7 @@ const IS_EXTENSION = true
 /**
  * A list of protocols where we should *not* show the permissions notification.
  */
-const PERMISSIONS_PROTOCOL_BLOCKLIST = new Set(['chrome:', 'about:'])
+const PERMISSIONS_PROTOCOL_BLOCKLIST = new Set(['chrome:', 'about:', 'safari-web-extension:'])
 
 setLinkComponent(AnchorLink)
 

@@ -11,8 +11,9 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	nettrace "golang.org/x/net/trace"
+
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 var spanURL atomic.Value

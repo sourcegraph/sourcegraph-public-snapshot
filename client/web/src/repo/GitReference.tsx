@@ -9,7 +9,7 @@ import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { numberWithCommas } from '../../../shared/src/util/strings'
 import { queryGraphQL } from '../backend/graphql'
 import { Timestamp } from '../components/time/Timestamp'
-import { GitRefType } from '../graphql-operations'
+import { GitRefType, Scalars } from '../graphql-operations'
 
 interface GitReferenceNodeProps {
     node: GQL.IGitRef
@@ -94,7 +94,7 @@ export const gitReferenceFragments = gql`
 
 export const queryGitReferences = memoizeObservable(
     (args: {
-        repo: GQL.ID
+        repo: Scalars['ID']
         first?: number
         query?: string
         type: GitRefType

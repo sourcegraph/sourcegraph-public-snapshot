@@ -5,15 +5,15 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
 func TestProductSubscriptions_Create(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
-	u, err := db.Users.Create(ctx, db.NewUser{Username: "u"})
+	u, err := database.GlobalUsers.Create(ctx, database.NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,11 +61,11 @@ func TestProductSubscriptions_List(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
-	u1, err := db.Users.Create(ctx, db.NewUser{Username: "u1"})
+	u1, err := database.GlobalUsers.Create(ctx, database.NewUser{Username: "u1"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	u2, err := db.Users.Create(ctx, db.NewUser{Username: "u2"})
+	u2, err := database.GlobalUsers.Create(ctx, database.NewUser{Username: "u2"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -124,7 +124,7 @@ func TestProductSubscriptions_Update(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
-	u, err := db.Users.Create(ctx, db.NewUser{Username: "u"})
+	u, err := database.GlobalUsers.Create(ctx, database.NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,8 +1,7 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import * as React from 'react'
+import React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import * as GQL from '../../../../shared/src/graphql/schema'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
@@ -13,7 +12,8 @@ import { UserSettingsSidebar, UserSettingsSidebarItems } from './UserSettingsSid
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { OnboardingTourProps } from '../../search'
 import { AuthenticatedUser } from '../../auth'
-import { UserAreaUserFields } from '../../graphql-operations'
+import { CreateAccessTokenResult, UserAreaUserFields } from '../../graphql-operations'
+import { UserRepositoriesUpdateProps } from '../../util'
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
@@ -24,7 +24,8 @@ export interface UserSettingsAreaProps
         RouteComponentProps<{}>,
         ThemeProps,
         TelemetryProps,
-        OnboardingTourProps {
+        OnboardingTourProps,
+        UserRepositoriesUpdateProps {
     authenticatedUser: AuthenticatedUser
     sideBarItems: UserSettingsSidebarItems
     routes: readonly UserSettingsAreaRoute[]
@@ -36,9 +37,6 @@ export interface UserSettingsAreaRouteContext extends UserSettingsAreaProps {
      * is viewing another user's account page).
      */
     user: UserAreaUserFields
-    newToken?: GQL.ICreateAccessTokenResult
-    onDidCreateAccessToken: (value?: GQL.ICreateAccessTokenResult) => void
-    onDidPresentNewToken: (value?: GQL.ICreateAccessTokenResult) => void
 }
 
 interface UserSettingsAreaState {
@@ -46,7 +44,7 @@ interface UserSettingsAreaState {
      * Holds the newly created access token (from UserSettingsCreateAccessTokenPage), if any. After
      * it is displayed to the user, this subject's value is set back to undefined.
      */
-    newlyCreatedAccessToken?: GQL.ICreateAccessTokenResult
+    newlyCreatedAccessToken?: CreateAccessTokenResult['createAccessToken']
 }
 
 /**
@@ -74,15 +72,15 @@ export const UserSettingsArea = withAuthenticatedUser(
             const { children, ...props } = this.props
             const context: UserSettingsAreaRouteContext = {
                 ...props,
-                newToken: this.state.newlyCreatedAccessToken,
-                user: this.props.user,
-                onDidCreateAccessToken: this.setNewToken,
-                onDidPresentNewToken: this.setNewToken,
             }
 
             return (
                 <div className="d-flex">
-                    <UserSettingsSidebar items={this.props.sideBarItems} {...this.props} className="flex-0 mr-3" />
+                    <UserSettingsSidebar
+                        items={this.props.sideBarItems}
+                        {...this.props}
+                        className="flex-0 mr-3 user-settings-sidebar"
+                    />
                     <div className="flex-1">
                         <ErrorBoundary location={this.props.location}>
                             <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
@@ -108,10 +106,6 @@ export const UserSettingsArea = withAuthenticatedUser(
                     </div>
                 </div>
             )
-        }
-
-        private setNewToken = (value?: GQL.ICreateAccessTokenResult): void => {
-            this.setState({ newlyCreatedAccessToken: value })
         }
     }
 )

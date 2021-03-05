@@ -2,8 +2,26 @@
   // This is set from an environment variable
   "experimentalFeatures": {
     "showRepogroupHomepage": true,
-    "showMultilineSearchConsole": true
+    "showMultilineSearchConsole": true,
+    "codeMonitoring": true,
+    "codeInsights": true
   },
+  "insights": [
+    {
+      "title": "fmt usage",
+      "description": "fmt.Errorf/fmt.Printf usage",
+      "series": [
+        {
+          "label": "fmt.Errorf",
+          "search": "errorf"
+        },
+        {
+          "label": "printf",
+          "search": "fmt.Printf"
+        }
+      ]
+    }
+  ],
   "search.repositoryGroups": {
     "test": ["github.com/gorilla/mux", "github.com/gorilla/pat"]
   }

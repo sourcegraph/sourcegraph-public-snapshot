@@ -15,6 +15,7 @@
 
     display: flex;
     flex-direction: column;
+    position: relative;
 
     background-color: var(--color-bg-1);
     border-top: 1px solid var(--border-color);
@@ -40,6 +41,12 @@
         }
     }
 
+    &__tab-bar {
+        flex-wrap: wrap;
+        position: relative;
+        overflow-x: hidden; /* We can rely on the tab bar breaking onto new lines */
+    }
+
     &__tabs {
         flex: 1;
         min-height: 0; /* needed for Firefox for content scrolling to work properly; See sourcegraph/sourcegraph#12340 and https://codepen.io/slimsag/pen/mjPXyN */
@@ -49,5 +56,35 @@
                 overflow: auto;
             }
         }
+    }
+
+    &__dismiss {
+        position: absolute;
+        right: 0.5rem;
+        top: 4px;
+        border: none;
+    }
+
+    &__actions {
+        padding-right: 2rem;
+
+        // Ensures the action border always completes the full line it breaks onto
+        &::after {
+            opacity: 0.6;
+            position: absolute;
+            content: '';
+            width: 100%;
+            top: calc(100% - 3px);
+            border-bottom: 3px solid var(--border-color);
+        }
+
+        li:first-child .panel__action {
+            padding-left: 0.5rem;
+        }
+    }
+
+    &__action {
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        padding: 0.25rem 0.75rem calc(0.25rem + 3px);
     }
 }

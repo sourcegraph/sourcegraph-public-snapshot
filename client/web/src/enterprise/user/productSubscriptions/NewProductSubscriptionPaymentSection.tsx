@@ -15,16 +15,17 @@ import { formatUserCount, mailtoSales } from '../../productSubscription/helpers'
 import { ProductSubscriptionBeforeAfterInvoiceItem } from './ProductSubscriptionBeforeAfterInvoiceItem'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { PaymentValidity } from './ProductSubscriptionForm'
+import { Scalars } from '../../../../../shared/src/graphql-operations'
 
 interface Props {
     /**
      * The ID of the account associated with the subscription, or null if there is none (in which case the
      * subscription price can be quoted but the subscription can't be bought).
      */
-    accountID: GQL.ID | null
+    accountID: Scalars['ID'] | null
 
     /** The existing product subscription to edit, or null if this is a new subscription. */
-    subscriptionID: GQL.ID | null
+    subscriptionID: Scalars['ID'] | null
 
     /**
      * The product subscription chosen by the user, or null for an invalid choice.

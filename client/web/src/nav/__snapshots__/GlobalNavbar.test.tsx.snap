@@ -19,11 +19,12 @@ exports[`GlobalNavbar default 1`] = `
   >
     <SearchNavbarItem
       authenticatedUser={null}
+      availableSearchContexts={Array []}
       caseSensitive={false}
       copyQueryButton={false}
+      defaultSearchContextSpec=""
       enableSmartQuery={false}
       extensionsController={Object {}}
-      filtersInQuery={Object {}}
       globbing={false}
       history={
         Object {
@@ -72,27 +73,30 @@ exports[`GlobalNavbar default 1`] = `
       }
       navbarSearchState={
         Object {
-          "cursorPosition": 0,
           "query": "q",
         }
       }
       onChange={[Function]}
       onThemePreferenceChange={[Function]}
+      parsedSearchQuery="r:golang/oauth2 test f:travis"
       patternType="literal"
       platformContext={Object {}}
+      routes={Array []}
+      selectedSearchContextSpec=""
       setCaseSensitivity={[Function]}
       setPatternType={[Function]}
+      setSelectedSearchContextSpec={[Function]}
       settingsCascade={
         Object {
           "final": null,
           "subjects": null,
         }
       }
-      showCampaigns={false}
+      showBatchChanges={false}
       showOnboardingTour={false}
+      showSearchContext={false}
       telemetryService={Object {}}
       themePreference="light"
-      toggleSearchMode={[Function]}
     />
   </div>
 </div>

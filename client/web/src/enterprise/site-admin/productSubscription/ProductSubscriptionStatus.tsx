@@ -15,9 +15,11 @@ import { TrueUpStatusSummary } from '../../productSubscription/TrueUpStatusSumma
 import { ErrorAlert } from '../../../components/alerts'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
-import * as H from 'history'
 
-const queryProductLicenseInfo = (): Observable<GQL.IProductSubscriptionStatus> =>
+const queryProductLicenseInfo = (): Observable<{
+    productSubscription: GQL.IProductSubscriptionStatus
+    currentUserCount: number
+}> =>
     queryGraphQL(gql`
         query ProductLicenseInfo {
             site {
@@ -33,10 +35,16 @@ const queryProductLicenseInfo = (): Observable<GQL.IProductSubscriptionStatus> =
                     }
                 }
             }
+            users {
+                totalCount
+            }
         }
     `).pipe(
         map(dataOrThrowErrors),
-        map(data => data.site.productSubscription)
+        map(({ site, users }) => ({
+            productSubscription: site.productSubscription,
+            currentUserCount: users.totalCount,
+        }))
     )
 
 interface Props {
@@ -49,13 +57,12 @@ interface Props {
      *
      */
     showTrueUpStatus?: boolean
-    history: H.History
 }
 
 /**
  * A component displaying information about and the status of the product subscription.
  */
-export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ className, showTrueUpStatus, history }) => {
+export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ className, showTrueUpStatus }) => {
     /** The product subscription status, or an error, or undefined while loading. */
     const statusOrError = useObservable(
         useMemo(() => queryProductLicenseInfo().pipe(catchError((error): [ErrorLike] => [asError(error)])), [])
@@ -68,15 +75,18 @@ export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ clas
         )
     }
     if (isErrorLike(statusOrError)) {
-        return <ErrorAlert error={statusOrError} prefix="Error checking product license" history={history} />
+        return <ErrorAlert error={statusOrError} prefix="Error checking product license" />
     }
 
     const {
-        productNameWithBrand,
-        actualUserCount,
-        actualUserCountDate,
-        noLicenseWarningUserCount,
-        license,
+        productSubscription: {
+            productNameWithBrand,
+            actualUserCount,
+            actualUserCountDate,
+            noLicenseWarningUserCount,
+            license,
+        },
+        currentUserCount,
     } = statusOrError
 
     // No license means Sourcegraph Free. For that, show the user that they can use this for free
@@ -104,8 +114,9 @@ export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ clas
                         {license ? (
                             <>
                                 <div>
-                                    <strong>User licenses:</strong> {numberWithCommas(actualUserCount)} used /{' '}
-                                    {numberWithCommas(license.userCount - actualUserCount)} remaining
+                                    <strong>User licenses:</strong> {numberWithCommas(currentUserCount)} currently used
+                                    / {numberWithCommas(license.userCount - currentUserCount)} remaining (
+                                    {numberWithCommas(actualUserCount)} maximum ever used)
                                 </div>
                                 <a
                                     href="https://about.sourcegraph.com/pricing"

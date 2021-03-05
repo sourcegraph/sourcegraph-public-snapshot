@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
 	"github.com/google/zoekt/rpc"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -43,20 +43,16 @@ func SearcherURLs() *endpoint.Map {
 
 func Indexed() *backend.Zoekt {
 	indexedSearchOnce.Do(func() {
-		dial := func(endpoint string) zoekt.Searcher {
-			return backend.NewMeteredSearcher(endpoint, rpc.Client(endpoint))
-		}
-
-		var client zoekt.Searcher
+		var client zoekt.Streamer
 		if indexers := Indexers(); indexers.Enabled() {
 			client = backend.NewMeteredSearcher(
 				"", // no hostname means its the aggregator
 				&backend.HorizontalSearcher{
 					Map:  indexers.Map,
-					Dial: dial,
+					Dial: backend.ZoektDial,
 				})
 		} else if addr := zoektAddr(os.Environ()); addr != "" {
-			client = dial(addr)
+			client = backend.ZoektDial(addr)
 		}
 
 		indexedSearch = &backend.Zoekt{Client: client}
@@ -70,7 +66,7 @@ func Indexed() *backend.Zoekt {
 
 func Indexers() *backend.Indexers {
 	indexersOnce.Do(func() {
-		if addr := zoektAddr(os.Environ()); addr != "" && !disableHorizontalSearch() {
+		if addr := zoektAddr(os.Environ()); addr != "" {
 			indexers = &backend.Indexers{
 				Map:     endpoint.New(addr),
 				Indexed: reposAtEndpoint,
@@ -82,12 +78,6 @@ func Indexers() *backend.Indexers {
 		}
 	})
 	return indexers
-}
-
-// escape hatch to disable new indexed-search code path. Can remove in 3.11
-func disableHorizontalSearch() bool {
-	v, _ := strconv.ParseBool(os.Getenv("DISABLE_HORIZONTAL_INDEXED_SEARCH"))
-	return v
 }
 
 func zoektAddr(environ []string) string {

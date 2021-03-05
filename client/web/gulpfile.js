@@ -79,7 +79,11 @@ async function webpackDevelopmentServer() {
       '/': {
         target: 'http://localhost:3081',
         // Avoid crashing on "read ECONNRESET".
-        onError: error => console.error(error),
+        onError: () => undefined,
+        // Don't log proxy errors, these usually just contain
+        // ECONNRESET errors caused by the browser cancelling
+        // requests. This should not be needed to actually debug something.
+        logLevel: 'silent',
         onProxyReqWs: (_proxyRequest, _request, socket) =>
           socket.on('error', error => console.error('WebSocket proxy error:', error)),
       },
@@ -97,14 +101,14 @@ async function webpackDevelopmentServer() {
 /**
  * Builds everything.
  */
-const build = gulp.series(gulp.parallel(schema, graphQlOperations, graphQlSchema), gulp.parallel(webpack))
+const build = gulp.series(gulp.parallel(schema, graphQlOperations, graphQlSchema), webpack)
 
 /**
  * Starts a development server, watches everything and rebuilds on file changes.
  */
 const development = gulp.series(
   // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
-  gulp.parallel(schema, graphQlSchema),
+  gulp.parallel(schema, graphQlOperations, graphQlSchema),
   gulp.parallel(watchSchema, watchGraphQlSchema, watchGraphQlOperations, webpackDevelopmentServer)
 )
 
@@ -114,7 +118,7 @@ const development = gulp.series(
  */
 const watch = gulp.series(
   // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
-  gulp.parallel(schema, graphQlSchema),
+  gulp.parallel(schema, graphQlOperations, graphQlSchema),
   gulp.parallel(watchSchema, watchGraphQlSchema, watchGraphQlOperations, watchWebpack)
 )
 

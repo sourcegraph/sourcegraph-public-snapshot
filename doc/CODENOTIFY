@@ -1,2 +1,3 @@
 **/* @christinaforney
-user/campaigns/**/* @eseliger
+**/admin/** @sourcegraph/distribution
+dev/background-information/adding_ping_data.md @ebrodymoore @dadlerj

@@ -44,7 +44,11 @@ func (c *Client) GetRepository(ctx context.Context, arn string) (*Repository, er
 	if GetRepositoryMock != nil {
 		return GetRepositoryMock(ctx, arn)
 	}
-	return c.cachedGetRepository(ctx, arn)
+	r, err := c.cachedGetRepository(ctx, arn)
+	if err != nil {
+		return r, &wrappedError{err: err}
+	}
+	return r, nil
 }
 
 // cachedGetRepository caches the getRepositoryFromAPI call.
@@ -147,6 +151,12 @@ const MaxMetadataBatch = 25
 
 // ListRepositories calls the ListRepositories API method of AWS CodeCommit.
 func (c *Client) ListRepositories(ctx context.Context, nextToken string) (repos []*Repository, nextNextToken string, err error) {
+	defer func() {
+		if err != nil {
+			err = &wrappedError{err}
+		}
+	}()
+
 	svc := codecommit.New(c.aws)
 
 	// List repositories.
@@ -215,6 +225,25 @@ func (c *Client) getRepositories(ctx context.Context, svc *codecommit.Client, re
 		c.addRepositoryToCache(key, &cachedRepo{Repository: *repos[i]})
 	}
 	return repos, nil
+}
+
+type wrappedError struct {
+	err error
+}
+
+func (w *wrappedError) Error() string {
+	if w.err != nil {
+		return w.err.Error()
+	}
+	return ""
+}
+
+func (w *wrappedError) NotFound() bool {
+	return IsNotFound(w.err)
+}
+
+func (w *wrappedError) Unauthorized() bool {
+	return IsUnauthorized(w.err)
 }
 
 func fromRepoMetadata(m *codecommit.RepositoryMetadata) *Repository {

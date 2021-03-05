@@ -12,16 +12,17 @@ import { subtypeOf } from '../../../../shared/src/util/types'
 const validateSourcegraphUrl = (): Observable<string | undefined> => of(undefined)
 const invalidSourcegraphUrl = (): Observable<string | undefined> => of('Arbitrary error string')
 
-const commonProps = subtypeOf<Partial<OptionsPageProps>>()({
-    onChangeOptionFlag: action('onChangeOptionFlag'),
-    optionFlags: [
-        { key: 'allowErrorReporting', label: 'Allow error reporting', value: false },
-        { key: 'experimentalLinkPreviews', label: 'Experimental link previews', value: false },
-        { key: 'experimentalTextFieldCompletion', label: 'Experimental text field completion', value: false },
-    ],
-    version: text('version', '0.0.0'),
-    onChangeSourcegraphUrl: action('onChangeSourcegraphUrl'),
-})
+const commonProps = () =>
+    subtypeOf<Partial<OptionsPageProps>>()({
+        onChangeOptionFlag: action('onChangeOptionFlag'),
+        optionFlags: [
+            { key: 'allowErrorReporting', label: 'Allow error reporting', value: false },
+            { key: 'experimentalLinkPreviews', label: 'Experimental link previews', value: false },
+            { key: 'experimentalTextFieldCompletion', label: 'Experimental text field completion', value: false },
+        ],
+        version: text('version', '0.0.0'),
+        onChangeSourcegraphUrl: action('onChangeSourcegraphUrl'),
+    })
 
 const requestPermissionsHandler = action('requestPermission')
 
@@ -29,7 +30,7 @@ storiesOf('browser/Options/OptionsPage', module)
     .addDecorator(story => <BrandedStory styles={brandedStyles}>{() => story()}</BrandedStory>)
     .add('Default', () => (
         <OptionsPage
-            {...commonProps}
+            {...commonProps()}
             showPrivateRepositoryAlert={boolean('isCurrentRepositoryPrivate', false)}
             showSourcegraphCloudAlert={boolean('showSourcegraphCloudAlert', false)}
             validateSourcegraphUrl={validateSourcegraphUrl}
@@ -43,7 +44,7 @@ storiesOf('browser/Options/OptionsPage', module)
         const [isActivated, setIsActivated] = useState(false)
         return (
             <OptionsPage
-                {...commonProps}
+                {...commonProps()}
                 isActivated={isActivated}
                 onToggleActivated={setIsActivated}
                 validateSourcegraphUrl={validateSourcegraphUrl}
@@ -58,7 +59,7 @@ storiesOf('browser/Options/OptionsPage', module)
         const [isActivated, setIsActivated] = useState(false)
         return (
             <OptionsPage
-                {...commonProps}
+                {...commonProps()}
                 isActivated={isActivated}
                 onToggleActivated={setIsActivated}
                 validateSourcegraphUrl={invalidSourcegraphUrl}
@@ -69,7 +70,7 @@ storiesOf('browser/Options/OptionsPage', module)
     })
     .add('Asking for permission', () => (
         <OptionsPage
-            {...commonProps}
+            {...commonProps()}
             validateSourcegraphUrl={validateSourcegraphUrl}
             onToggleActivated={action('onToggleActivated')}
             isActivated={true}
@@ -82,7 +83,7 @@ storiesOf('browser/Options/OptionsPage', module)
     ))
     .add('On private repository', () => (
         <OptionsPage
-            {...commonProps}
+            {...commonProps()}
             validateSourcegraphUrl={validateSourcegraphUrl}
             onToggleActivated={action('onToggleActivated')}
             isActivated={true}
@@ -95,7 +96,7 @@ storiesOf('browser/Options/OptionsPage', module)
     ))
     .add('On Sourcegraph Cloud', () => (
         <OptionsPage
-            {...commonProps}
+            {...commonProps()}
             validateSourcegraphUrl={validateSourcegraphUrl}
             onToggleActivated={action('onToggleActivated')}
             isActivated={true}

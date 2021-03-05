@@ -21,7 +21,7 @@ var (
 
 // A UsersStore captures the necessary methods for the licensing
 // package to query Sourcegraph users. It allows decoupling this package
-// from the OSS db package.
+// from the OSS database package.
 type UsersStore interface {
 	// Count returns the total count of active Sourcegraph users.
 	Count(context.Context) (int, error)
@@ -92,7 +92,7 @@ func checkMaxUsers(ctx context.Context, s UsersStore, signature string) error {
 		log15.Error("licensing.checkMaxUsers: error getting user count", "error", err)
 		return err
 	}
-	err = setMaxUsers(signature, int(count))
+	err = setMaxUsers(signature, count)
 	if err != nil {
 		log15.Error("licensing.checkMaxUsers: error setting new max users", "error", err)
 		return err

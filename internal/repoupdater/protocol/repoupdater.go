@@ -138,13 +138,10 @@ type RepoLinks struct {
 // RepoUpdateRequest is a request to update the contents of a given repo, or clone it if it doesn't exist.
 type RepoUpdateRequest struct {
 	Repo api.RepoName `json:"repo"`
-
-	// URL is the repository's Git remote URL (from which to clone or update).
-	URL string `json:"url"`
 }
 
 func (a *RepoUpdateRequest) String() string {
-	return fmt.Sprintf("RepoUpdateRequest{%s, %s}", a.Repo, a.URL)
+	return fmt.Sprintf("RepoUpdateRequest{%s}", a.Repo)
 }
 
 // RepoUpdateResponse is a response type to a RepoUpdateRequest.
@@ -191,27 +188,4 @@ type ExternalServiceSyncRequest struct {
 type ExternalServiceSyncResult struct {
 	ExternalService api.ExternalService
 	Error           string
-}
-
-type CloningProgress struct {
-	Message string
-}
-
-type ExternalServiceSyncError struct {
-	Message           string
-	ExternalServiceId int64
-}
-
-type SyncError struct {
-	Message string
-}
-
-type StatusMessage struct {
-	Cloning                  *CloningProgress          `json:"cloning"`
-	ExternalServiceSyncError *ExternalServiceSyncError `json:"external_service_sync_error"`
-	SyncError                *SyncError                `json:"sync_error"`
-}
-
-type StatusMessagesResponse struct {
-	Messages []StatusMessage `json:"messages"`
 }

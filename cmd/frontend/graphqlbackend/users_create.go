@@ -4,16 +4,18 @@ import (
 	"context"
 
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func (*schemaResolver) CreateUser(ctx context.Context, args *struct {
+func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 	Username string
 	Email    *string
 }) (*createUserResult, error) {
@@ -28,7 +30,7 @@ func (*schemaResolver) CreateUser(ctx context.Context, args *struct {
 	}
 
 	// The new user will be created with a verified email address.
-	user, err := db.Users.Create(ctx, db.NewUser{
+	user, err := database.GlobalUsers.Create(ctx, database.NewUser{
 		Username:        args.Username,
 		Email:           email,
 		EmailIsVerified: true,
@@ -38,7 +40,7 @@ func (*schemaResolver) CreateUser(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if err = db.Authz.GrantPendingPermissions(ctx, &db.GrantPendingPermissionsArgs{
+	if err = database.GlobalAuthz.GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
 		UserID: user.ID,
 		Perm:   authz.Read,
 		Type:   authz.PermRepos,
@@ -46,17 +48,18 @@ func (*schemaResolver) CreateUser(ctx context.Context, args *struct {
 		log15.Error("Failed to grant user pending permissions", "userID", user.ID, "error", err)
 	}
 
-	return &createUserResult{user: user}, nil
+	return &createUserResult{db: r.db, user: user}, nil
 }
 
 // createUserResult is the result of Mutation.createUser.
 //
 // 🚨 SECURITY: Only site admins should be able to instantiate this value.
 type createUserResult struct {
+	db   dbutil.DB
 	user *types.User
 }
 
-func (r *createUserResult) User() *UserResolver { return &UserResolver{user: r.user} }
+func (r *createUserResult) User() *UserResolver { return NewUserResolver(r.db, r.user) }
 
 func (r *createUserResult) ResetPasswordURL(ctx context.Context) (*string, error) {
 	if !userpasswd.ResetPasswordEnabled() {

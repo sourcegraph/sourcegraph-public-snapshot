@@ -2,8 +2,10 @@ package app
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 )
 
@@ -28,10 +30,10 @@ func RegisterSSOSignOutHandler(f func(w http.ResponseWriter, r *http.Request)) {
 func serveSignOut(w http.ResponseWriter, r *http.Request) {
 	// Invalidate all user sessions first
 	// This way, any other signout failures should not leave a valid session
-	if err := session.InvalidateSessionCurrentUser(r); err != nil {
+	if err := session.InvalidateSessionCurrentUser(w, r); err != nil {
 		log15.Error("Error in signout.", "err", err)
 	}
-	if err := session.SetActor(w, r, nil, 0); err != nil {
+	if err := session.SetActor(w, r, nil, 0, time.Time{}); err != nil {
 		log15.Error("Error in signout.", "err", err)
 	}
 	if ssoSignOutHandler != nil {

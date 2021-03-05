@@ -4,7 +4,7 @@ Definition, reference, and hover providers are invoked from the extension host w
 
 These providers receive the current text document (denoting a repository, commit, and path) and the position the user is hovering (a line and column offset within the file). The providers return results as an asynchronous iterator, which allows additional results to be streamed into the UI as they are received from the backend.
 
-Code intelligence queries are resolved favoring [precise](http://localhost:5080/code_intelligence/explanations/precise_code_intelligence) code intelligence, if available, then falling back to [search-based](http://localhost:5080/code_intelligence/explanations/basic_code_intelligence).
+Code intelligence queries are resolved favoring [precise](http://localhost:5080/code_intelligence/explanations/precise_code_intelligence) code intelligence, if available, then falling back to [search-based](http://localhost:5080/code_intelligence/explanations/search_based_code_intelligence).
 
 ## Definitions
 
@@ -33,7 +33,7 @@ The definitions provider returns the set of locations that reference the symbol 
 
 The LSIF provider is invoked first. This provider will make a paginated `References` query, returning each page of results to the extension host as they are resolved (up to a maximum number of pages).
 
-This result set is then supplemented by results from the search provider. The search provider will perform two regexp searches using the text of the hovered symbol as the base of the query. One search will look only within the same repository and commit, and the other sesarch will _exclude_ the source repository. Both searches are made in parallel. Results from the search provider for a location in a file that also contains a precise result are filtered before being sent to the extension host to avoid littering the result set.
+This result set is then supplemented by results from the search provider. The search provider will perform two regexp searches using the text of the hovered symbol as the base of the query. One search will look only within the same repository and commit, and the other search will _exclude_ the source repository. Both searches are made in parallel. Results from the search provider for a location in a file that also contains a precise result are filtered before being sent to the extension host to avoid littering the result set.
 
 ## Hover
 

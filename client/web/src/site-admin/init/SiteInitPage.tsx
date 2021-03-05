@@ -4,11 +4,20 @@ import { SignUpArguments, SignUpForm } from '../../auth/SignUpForm'
 import { submitTrialRequest } from '../../marketing/backend'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { ThemeProps } from '../../../../shared/src/theme'
-import * as H from 'history'
 import { AuthenticatedUser } from '../../auth'
 import { SourcegraphContext } from '../../jscontext'
 
 const initSite = async (args: SignUpArguments): Promise<void> => {
+    const pingUrl = new URL('https://sourcegraph.com/ping-from-self-hosted')
+    pingUrl.searchParams.set('email', args.email)
+
+    await fetch(pingUrl.toString(), {
+        credentials: 'include',
+    })
+        .then() // no op
+        .catch((error): void => {
+            console.error(error)
+        })
     const response = await fetch('/-/site-init', {
         credentials: 'same-origin',
         method: 'POST',
@@ -37,7 +46,6 @@ interface Props extends ThemeProps {
      * `window.context.needsSiteInit` is used.
      */
     needsSiteInit?: typeof window.context.needsSiteInit
-    history: H.History
     context: Pick<SourcegraphContext, 'sourcegraphDotComMode' | 'authProviders'>
 }
 
@@ -49,7 +57,6 @@ export const SiteInitPage: React.FunctionComponent<Props> = ({
     authenticatedUser,
     isLightTheme,
     needsSiteInit = window.context.needsSiteInit,
-    history,
     context,
 }) => {
     if (!needsSiteInit) {
@@ -77,7 +84,6 @@ export const SiteInitPage: React.FunctionComponent<Props> = ({
                                 className="w-100"
                                 buttonLabel="Create admin account & continue"
                                 doSignUp={initSite}
-                                history={history}
                                 context={context}
                             />
                         </>

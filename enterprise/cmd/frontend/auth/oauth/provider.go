@@ -6,17 +6,19 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"net/http"
 	"net/url"
 	"path"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+
 	"github.com/dghubble/gologin"
 	goauth2 "github.com/dghubble/gologin/oauth2"
 	"github.com/inconshreveable/log15"
+	"golang.org/x/oauth2"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"golang.org/x/oauth2"
 )
 
 type Provider struct {

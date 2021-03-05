@@ -750,6 +750,7 @@ export async function createDriverForTest(options?: DriverOptions): Promise<Driv
         args,
         defaultViewport: null,
         product: options.browser,
+        timeout: 30000,
     }
     let browser: puppeteer.Browser
     if (options.browser === 'firefox') {

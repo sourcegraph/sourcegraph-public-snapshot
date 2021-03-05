@@ -1,0 +1,51 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://gitlab.com/api/v4/projects/999999999999/merge_requests/100000
+    method: GET
+  response:
+    body: '{"message":"404 Project Not Found"}'
+    headers:
+      Cache-Control:
+      - no-cache
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 620a4c6b2c41acbe-OTP
+      Cf-Request-Id:
+      - 083a4e16fc0000acbe2b0c6000000001
+      Content-Length:
+      - "35"
+      Content-Type:
+      - application/json
+      Date:
+      - Sat, 13 Feb 2021 00:05:34 GMT
+      Expect-Ct:
+      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      Gitlab-Lb:
+      - fe-10-lb-gprd
+      Gitlab-Sv:
+      - api-07-sv-gprd
+      Server:
+      - cloudflare
+      Vary:
+      - Origin
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Gitlab-Feature-Category:
+      - code_review
+      X-Request-Id:
+      - 01EYCB9ZV25SYMGN24FFV0ES6P
+      X-Runtime:
+      - "0.027809"
+    status: 404 Not Found
+    code: 404
+    duration: ""

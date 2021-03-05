@@ -23,8 +23,12 @@ import { ErrorAlert } from '../../../components/alerts'
 import * as H from 'history'
 import { AuthenticatedUser } from '../../../auth'
 import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
+import { Scalars } from '../../../../../shared/src/graphql-operations'
 
-function createExtension(publisher: GQL.ID, name: string): Observable<GQL.IExtensionRegistryCreateExtensionResult> {
+function createExtension(
+    publisher: Scalars['ID'],
+    name: string
+): Observable<GQL.IExtensionRegistryCreateExtensionResult> {
     return mutateGraphQL(
         gql`
             mutation CreateRegistryExtension($publisher: ID!, $name: String!) {
@@ -65,7 +69,7 @@ interface State {
     publishersOrError: 'loading' | RegistryPublisher[] | ErrorLike
 
     name: string
-    publisher?: GQL.ID
+    publisher?: Scalars['ID']
 
     /** The creation result, undefined while loading, or an error. */
     creationOrError?: 'loading' | GQL.IExtensionRegistryCreateExtensionResult | ErrorLike
@@ -124,7 +128,7 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
             )
 
             this.subscriptions.add(
-                this.props.setBreadcrumb({ key: 'create-new-extension', element: <>Create new extension</> })
+                this.props.setBreadcrumb({ key: 'create-new-extension', element: <>Create extension</> })
             )
 
             this.componentUpdates.next(this.props)
@@ -178,7 +182,6 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                                 publishersOrError={this.state.publishersOrError}
                                 onChange={this.onPublisherChange}
                                 disabled={this.state.creationOrError === 'loading'}
-                                history={this.props.history}
                             />
                             <RegistryExtensionNameFormGroup
                                 value={this.state.name}
@@ -219,11 +222,7 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                             </button>
                         </Form>
                         {isErrorLike(this.state.creationOrError) && (
-                            <ErrorAlert
-                                className="mt-3"
-                                error={this.state.creationOrError}
-                                history={this.props.history}
-                            />
+                            <ErrorAlert className="mt-3" error={this.state.creationOrError} />
                         )}
                     </ModalPage>
                 </>

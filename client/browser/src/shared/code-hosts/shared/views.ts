@@ -14,6 +14,10 @@ export type ViewWithSubscriptions<V extends View> = V & {
     subscriptions: Subscription
 }
 
+export type CustomSelectorFunction = (
+    target: HTMLElement
+) => ReturnType<ParentNode['querySelectorAll']> | HTMLElement[] | null | undefined
+
 /**
  * Finds and resolves elements matched by a MutationObserver to views.
  *
@@ -24,7 +28,7 @@ export interface ViewResolver<V extends View> {
      * The element selector (used with {@link Window#querySelectorAll}) that matches candidate
      * elements to be passed to {@link ViewResolver#resolveView}.
      */
-    selector: string
+    selector: string | CustomSelectorFunction
 
     /**
      * Resolve an element matched by {@link ViewResolver#selector} to a view, or `null` if it's not
@@ -81,7 +85,7 @@ export function trackViews<V extends View>(
                         mergeMap(addedElement =>
                             from(viewResolvers).pipe(
                                 mergeMap(({ selector, resolveView }) =>
-                                    [...querySelectorAllOrSelf<HTMLElement>(addedElement, selector)].map(
+                                    [...queryWithSelector(addedElement, selector)].map(
                                         (element): ViewWithSubscriptions<V> | null => {
                                             const view = resolveView(element)
                                             return (
@@ -104,6 +108,20 @@ export function trackViews<V extends View>(
                 )
             )
         })
+}
+
+/**
+ * Find elements in the subtree of the target element using either a string selector or a custom selector function.
+ */
+export function queryWithSelector(
+    target: HTMLElement,
+    selector: string | CustomSelectorFunction
+): ArrayLike<HTMLElement> & Iterable<HTMLElement> {
+    if (typeof selector === 'string') {
+        return querySelectorAllOrSelf<HTMLElement>(target, selector)
+    }
+    const selectorResult = selector(target) as NodeListOf<HTMLElement>
+    return selectorResult || []
 }
 
 export type IntersectionObserverCallbackLike = (

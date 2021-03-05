@@ -15,6 +15,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -22,15 +23,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/hubspot"
+	"github.com/sourcegraph/sourcegraph/internal/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/routevar"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -188,13 +191,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 		// Update gitserver contents for a repo whenever it is visited.
 		go func() {
 			ctx := context.Background()
-			gitserverRepo, err := backend.GitRepo(ctx, common.Repo)
-			if err != nil {
-				log15.Error("backend.GitRepo", "error", err)
-				return
-			}
-
-			_, err = repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo)
+			_, err = repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, common.Repo.Name)
 			if err != nil {
 				log15.Error("EnqueueRepoUpdate", "error", err)
 			}
@@ -282,11 +279,7 @@ func redirectTreeOrBlob(routeName, path string, common *Common, w http.ResponseW
 		}
 		return false, nil
 	}
-	cachedRepo, err := backend.CachedGitRepo(r.Context(), common.Repo)
-	if err != nil {
-		return false, err
-	}
-	stat, err := git.Stat(r.Context(), *cachedRepo, common.CommitID, path)
+	stat, err := git.Stat(r.Context(), common.Repo.Name, common.CommitID, path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			serveError(w, r, err, http.StatusNotFound)
@@ -379,11 +372,48 @@ func serveRepoOrBlob(routeName string, title func(c *Common, r *http.Request) st
 
 // searchBadgeHandler serves the search readme badges from the search-badger service
 // https://github.com/sourcegraph/search-badger
-var searchBadgeHandler = &httputil.ReverseProxy{
-	Director: func(r *http.Request) {
-		r.URL.Scheme = "http"
-		r.URL.Host = "search-badger"
-		r.URL.Path = "/"
-	},
-	ErrorLog: log.New(env.DebugOut, "search-badger proxy: ", log.LstdFlags),
+func searchBadgeHandler() *httputil.ReverseProxy {
+	return &httputil.ReverseProxy{
+		Director: func(r *http.Request) {
+			r.URL.Scheme = "http"
+			r.URL.Host = "search-badger"
+			r.URL.Path = "/"
+		},
+		ErrorLog: log.New(env.DebugOut, "search-badger proxy: ", log.LstdFlags),
+	}
+}
+
+func servePingFromSelfHosted(w http.ResponseWriter, r *http.Request) error {
+	// CORS to allow request from anywhere
+	u, err := url.Parse(r.Referer())
+	if err != nil {
+		return err
+	}
+	w.Header().Add("Access-Control-Allow-Origin", u.Host)
+	w.Header().Add("Access-Control-Allow-Credentials", "true")
+	if r.Method == http.MethodOptions {
+		// CORS preflight request, respond 204 and allow origin header
+		w.WriteHeader(http.StatusNoContent)
+		return nil
+	}
+	email := r.URL.Query().Get("email")
+
+	sourceURLCookie, err := r.Cookie("sourcegraphSourceUrl")
+	var sourceURL string
+	if err == nil && sourceURLCookie != nil {
+		sourceURL = sourceURLCookie.Value
+	}
+
+	anonymousUIDCookie, err := r.Cookie("sourcegraphAnonymousUid")
+	var anonymousUserId string
+	if err == nil && anonymousUIDCookie != nil {
+		anonymousUserId = anonymousUIDCookie.Value
+	}
+
+	hubspotutil.SyncUser(email, hubspotutil.SelfHostedSiteInitEventID, &hubspot.ContactProperties{
+		IsServerAdmin:   true,
+		AnonymousUserID: anonymousUserId,
+		FirstSourceURL:  sourceURL,
+	})
+	return nil
 }

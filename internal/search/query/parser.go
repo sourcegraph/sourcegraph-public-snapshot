@@ -618,17 +618,17 @@ func (p *parser) TryParseDelimiter() (string, rune, bool) {
 	return "", 0, false
 }
 
-// ParseFieldValue parses a value after a field like "repo:". If the value
-// starts with a recognized quoting delimiter but does not close it, an error is
-// returned.
-func (p *parser) ParseFieldValue() (string, error) {
-	delimited := func(delimiter rune) (string, error) {
+// ParseFieldValue parses a value after a field like "repo:". It returns the
+// parsed value and whether it was quoted. If the value starts with a recognized
+// quoting delimiter but does not close it, an error is returned.
+func (p *parser) ParseFieldValue() (string, bool, error) {
+	delimited := func(delimiter rune) (string, bool, error) {
 		value, advance, err := ScanDelimited(p.buf[p.pos:], true, delimiter)
 		if err != nil {
-			return "", err
+			return "", false, err
 		}
 		p.pos += advance
-		return value, nil
+		return value, true, nil
 	}
 	if p.match(SQUOTE) {
 		return delimited('\'')
@@ -644,7 +644,7 @@ func (p *parser) ParseFieldValue() (string, error) {
 		value, advance = ScanValue(p.buf[p.pos:], false)
 	}
 	p.pos += advance
-	return value, nil
+	return value, false, nil
 }
 
 // Try parse a delimited pattern, quoted as "...", '...', or /.../.
@@ -728,15 +728,19 @@ func (p *parser) ParseParameter() (Parameter, bool, error) {
 	}
 
 	p.pos += advance
-	value, err := p.ParseFieldValue()
+	value, quoted, err := p.ParseFieldValue()
 	if err != nil {
 		return Parameter{}, false, err
+	}
+	var labels labels
+	if quoted {
+		labels.set(Quoted)
 	}
 	return Parameter{
 		Field:      field,
 		Value:      value,
 		Negated:    negated,
-		Annotation: Annotation{Range: newRange(start, p.pos)},
+		Annotation: Annotation{Range: newRange(start, p.pos), Labels: labels},
 	}, true, nil
 }
 
@@ -810,7 +814,7 @@ loop:
 			nodes = append(nodes, result...)
 		case p.expect(RPAREN) && !isSet(p.heuristics, allowDanglingParens):
 			if p.balanced <= 0 {
-				return nil, errors.New("unbalanced expression: unmatched closing parenthesis )")
+				return nil, errors.New("unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses")
 			}
 			p.balanced--
 			p.heuristics |= disambiguated
@@ -834,6 +838,9 @@ loop:
 			err := p.skipSpaces()
 			if err != nil {
 				return nil, err
+			}
+			if p.match(LPAREN) {
+				return nil, errors.New("it looks like you tried to use an expression after NOT. The NOT operator can only be used with simple search patterns or filters, and is not supported for expressions or subqueries")
 			}
 			if parameter, ok, _ := p.ParseParameter(); ok {
 				// we don't support NOT -field:value
@@ -1053,7 +1060,7 @@ type ParserOptions struct {
 }
 
 // ProcessAndOr query parses and validates an and/or query for a given search type.
-func ProcessAndOr(in string, options ParserOptions) (QueryInfo, error) {
+func ProcessAndOr(in string, options ParserOptions) (Q, error) {
 	var query []Node
 	var err error
 
@@ -1085,5 +1092,13 @@ func ProcessAndOr(in string, options ParserOptions) (QueryInfo, error) {
 			return nil, err
 		}
 	}
-	return &AndOrQuery{Query: query}, nil
+	return query, nil
+}
+
+func ParseLiteral(in string) (Q, error) {
+	return ProcessAndOr(in, ParserOptions{SearchType: SearchTypeLiteral})
+}
+
+func ParseRegexp(in string) (Q, error) {
+	return ProcessAndOr(in, ParserOptions{SearchType: SearchTypeRegex})
 }

@@ -3,28 +3,25 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
-import * as GQL from '../../../../shared/src/graphql/schema'
 import { ExternalServiceCard } from '../../components/externalServices/ExternalServiceCard'
 import { Form } from '../../../../branded/src/components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
-import { fetchRepository } from './backend'
+import { fetchSettingsAreaRepository } from './backend'
 import { ErrorAlert } from '../../components/alerts'
 import { defaultExternalServices } from '../../components/externalServices/externalServices'
 import { asError } from '../../../../shared/src/util/errors'
-import * as H from 'history'
+import { SettingsAreaRepositoryFields } from '../../graphql-operations'
 
 interface Props extends RouteComponentProps<{}> {
-    repo: GQL.IRepository
-    onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
-    history: H.History
+    repo: SettingsAreaRepositoryFields
 }
 
 interface State {
     /**
      * The repository object, refreshed after we make changes that modify it.
      */
-    repo: GQL.IRepository
+    repo: SettingsAreaRepositoryFields
 
     loading: boolean
     error?: string
@@ -50,7 +47,7 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
         eventLogger.logViewEvent('RepoSettings')
 
         this.subscriptions.add(
-            this.repoUpdates.pipe(switchMap(() => fetchRepository(this.props.repo.name))).subscribe(
+            this.repoUpdates.pipe(switchMap(() => fetchSettingsAreaRepository(this.props.repo.name))).subscribe(
                 repo => this.setState({ repo }),
                 error => this.setState({ error: asError(error).message })
             )
@@ -68,7 +65,7 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                 <PageTitle title="Repository settings" />
                 <h2>Settings</h2>
                 {this.state.loading && <LoadingSpinner className="icon-inline" />}
-                {this.state.error && <ErrorAlert error={this.state.error} history={this.props.history} />}
+                {this.state.error && <ErrorAlert error={this.state.error} />}
                 {services.length > 0 && (
                     <div className="mb-4">
                         {services.map(service => (

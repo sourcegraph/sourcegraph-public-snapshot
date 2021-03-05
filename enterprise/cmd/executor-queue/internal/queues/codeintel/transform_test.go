@@ -4,8 +4,9 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/apiworker/apiclient"
+
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 )
 
 func TestTransformRecord(t *testing.T) {
@@ -27,7 +28,7 @@ func TestTransformRecord(t *testing.T) {
 	}
 	config := &Config{
 		FrontendURL:      "https://test.io",
-		FrontendUsername: "test",
+		FrontendUsername: "test*",
 		FrontendPassword: "hunter2",
 	}
 
@@ -49,7 +50,7 @@ func TestTransformRecord(t *testing.T) {
 			},
 			{
 				Image:    "lsif-node",
-				Commands: []string{"-p", "."},
+				Commands: []string{"-p ."},
 				Dir:      "web",
 			},
 		},
@@ -63,10 +64,16 @@ func TestTransformRecord(t *testing.T) {
 					"-root", "web",
 					"-upload-route", "/.executors/lsif/upload",
 					"-file", "dump.lsif",
+					"-associated-index-id", "42",
 				},
 				Dir: "web",
-				Env: []string{"SRC_ENDPOINT=https://test:hunter2@test.io"},
+				Env: []string{"SRC_ENDPOINT=https://test%2A:hunter2@test.io"},
 			},
+		},
+		RedactedValues: map[string]string{
+			"https://test%2A:hunter2@test.io": "https://USERNAME_REMOVED:PASSWORD_REMOVED@test.io",
+			"test*":                           "USERNAME_REMOVED",
+			"hunter2":                         "PASSWORD_REMOVED",
 		},
 	}
 	if diff := cmp.Diff(expected, job); diff != "" {
@@ -98,7 +105,7 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 	}
 	config := &Config{
 		FrontendURL:      "https://test.io",
-		FrontendUsername: "test",
+		FrontendUsername: "test*",
 		FrontendPassword: "hunter2",
 	}
 
@@ -134,10 +141,16 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 					"-root", ".",
 					"-upload-route", "/.executors/lsif/upload",
 					"-file", "other/path/lsif.dump",
+					"-associated-index-id", "42",
 				},
 				Dir: "",
-				Env: []string{"SRC_ENDPOINT=https://test:hunter2@test.io"},
+				Env: []string{"SRC_ENDPOINT=https://test%2A:hunter2@test.io"},
 			},
+		},
+		RedactedValues: map[string]string{
+			"https://test%2A:hunter2@test.io": "https://USERNAME_REMOVED:PASSWORD_REMOVED@test.io",
+			"test*":                           "USERNAME_REMOVED",
+			"hunter2":                         "PASSWORD_REMOVED",
 		},
 	}
 	if diff := cmp.Diff(expected, job); diff != "" {

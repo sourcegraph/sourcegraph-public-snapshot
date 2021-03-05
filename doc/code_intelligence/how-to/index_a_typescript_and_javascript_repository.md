@@ -1,43 +1,6 @@
 # TypeScript and JavaScript
 
-This guide is meant to provide specific instructions to get you producing index data in LSIF as quickly as possible. The [LSIF quick start](../lsif_quickstart.md) and [CI configuration](../how-to/adding_lsif_to_workflows.md) guides provide more in depth descriptions of each step and a lot of helpful context that we haven't duplicated in each language guide.
-
-## Manual indexing
-
-1. Install [lsif-node](https://github.com/sourcegraph/lsif-node) with `npm install -g @sourcegraph/lsif-tsc` or your favorite method of installing npm packages.
-
-1. Install the [Sourcegraph CLI](https://github.com/sourcegraph/src-cli) with
-
-   ```
-   curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
-   chmod +x /usr/local/bin/src
-   ```
-
-   - **macOS**: replace `linux` with `darwin` in the URL
-   - **Windows**: visit [the CLI's repo](https://github.com/sourcegraph/src-cli) for further instructions
-
-1. `cd` into your project's root (where the package.json/tsconfig.json) and run the following:
-
-   ```
-   # for typescript projects
-   lsif-tsc -p .
-   # for javascript projects
-   lsif-tsc **/*.js --allowJs --checkJs
-   ```
-
-   Check out the tool's documentation if you're having trouble getting `lsif-tsc` to work. It accepts any options `tsc` does, so it shouldn't be too hard to get it running on your project.
-
-1. Upload the data to a Sourcegraph instance with
-
-   ```
-   # for private instances
-   src -endpoint=<your sourcegraph endpoint> lsif upload
-   # for public instances
-   src lsif upload -github-token=<your github token>
-   ```
-   Visit the [LSIF quickstart](../lsif_quickstart.md) for more information about the upload command.
-
-The upload command will provide a URL you can visit to see the upload's status, and when it's done you can visit the repo and check out the difference in code navigation quality! To troubleshoot issues, visit the more in depth [LSIF quickstart](../lsif_quickstart.md) guide and check out the documentation for the `lsif-node` and `src-cli` tools.
+This guide is meant to provide specific instructions to get you producing index data in LSIF as quickly as possible for JavaScript and TypeScript codebases. 
 
 ## Automated indexing
 
@@ -189,3 +152,39 @@ The following projects have example Travis CI configurations to generate and upl
 - [Microsoft/TypeScript](https://github.com/sourcegraph-codeintel-showcase/TypeScript/blob/f37f1dee1b3e63b12df2935590c8707a5ec3993b/.travis.yml)
 - [moment/moment](https://github.com/sourcegraph-codeintel-showcase/moment/blob/eedccdc2c07fb5abe931b427d50f5b3c3f44ac95/.travis.yml)
 - [sindresorhus/got](https://github.com/sourcegraph-codeintel-showcase/got/blob/164d55a029512cea7f245de870cbb1eaba114734/.travis.yml)
+
+## Manual indexing
+
+1. Install [lsif-node](https://github.com/sourcegraph/lsif-node) with `npm install -g @sourcegraph/lsif-tsc` or your favorite method of installing npm packages.
+
+1. Install the [Sourcegraph CLI](https://github.com/sourcegraph/src-cli) with
+
+   ```
+   curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
+   chmod +x /usr/local/bin/src
+   ```
+
+   - **macOS**: replace `linux` with `darwin` in the URL
+   - **Windows**: visit [the CLI's repo](https://github.com/sourcegraph/src-cli) for further instructions
+
+1. `cd` into your project's root (where the package.json/tsconfig.json) and run the following:
+
+   ```
+   # for typescript projects
+   lsif-tsc -p .
+   # for javascript projects
+   lsif-tsc **/*.js --allowJs --checkJs
+   ```
+
+   Check out the tool's documentation if you're having trouble getting `lsif-tsc` to work. It accepts any options `tsc` does, so it shouldn't be too hard to get it running on your project.
+
+1. Upload the data to a Sourcegraph instance with
+
+   ```
+   # for private instances
+   src -endpoint=<your sourcegraph endpoint> lsif upload
+   # for public instances
+   src lsif upload -github-token=<your github token>
+   ```
+
+The upload command will provide a URL you can visit to see the upload's status, and when it's done you can visit the repo and check out the difference in code navigation quality! 

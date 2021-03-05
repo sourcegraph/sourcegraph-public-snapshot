@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 func init() {
@@ -14,7 +15,7 @@ func init() {
 	registry.CountLocalRegistryExtensions = countLocalRegistryExtensions
 }
 
-func listLocalRegistryExtensions(ctx context.Context, args graphqlbackend.RegistryExtensionConnectionArgs) ([]graphqlbackend.RegistryExtension, error) {
+func listLocalRegistryExtensions(ctx context.Context, db dbutil.DB, args graphqlbackend.RegistryExtensionConnectionArgs) ([]graphqlbackend.RegistryExtension, error) {
 	if args.PrioritizeExtensionIDs != nil {
 		ids := filterStripLocalExtensionIDs(*args.PrioritizeExtensionIDs)
 		args.PrioritizeExtensionIDs = &ids
@@ -38,12 +39,12 @@ func listLocalRegistryExtensions(ctx context.Context, args graphqlbackend.Regist
 	}
 	var ys []graphqlbackend.RegistryExtension
 	for _, v := range vs {
-		ys = append(ys, &extensionDBResolver{v: v, r: releasesByExtensionID[v.ID]})
+		ys = append(ys, &extensionDBResolver{db: db, v: v, r: releasesByExtensionID[v.ID]})
 	}
 	return ys, nil
 }
 
-func countLocalRegistryExtensions(ctx context.Context, args graphqlbackend.RegistryExtensionConnectionArgs) (int, error) {
+func countLocalRegistryExtensions(ctx context.Context, db dbutil.DB, args graphqlbackend.RegistryExtensionConnectionArgs) (int, error) {
 	opt, err := toDBExtensionsListOptions(args)
 	if err != nil {
 		return 0, err

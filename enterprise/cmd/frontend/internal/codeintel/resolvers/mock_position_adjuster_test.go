@@ -4,8 +4,9 @@ package resolvers
 
 import (
 	"context"
-	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"sync"
+
+	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 )
 
 // MockPositionAdjuster is a mock implementation of the PositionAdjuster
@@ -89,7 +90,7 @@ func (f *PositionAdjusterAdjustPathFunc) SetDefaultHook(hook func(context.Contex
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// AdjustPath method of the parent MockPositionAdjuster instance inovkes the
+// AdjustPath method of the parent MockPositionAdjuster instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
 func (f *PositionAdjusterAdjustPathFunc) PushHook(hook func(context.Context, string, string, bool) (string, bool, error)) {
@@ -208,7 +209,7 @@ func (f *PositionAdjusterAdjustPositionFunc) SetDefaultHook(hook func(context.Co
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// AdjustPosition method of the parent MockPositionAdjuster instance inovkes
+// AdjustPosition method of the parent MockPositionAdjuster instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
 func (f *PositionAdjusterAdjustPositionFunc) PushHook(hook func(context.Context, string, string, lsifstore.Position, bool) (string, lsifstore.Position, bool, error)) {
@@ -334,7 +335,7 @@ func (f *PositionAdjusterAdjustRangeFunc) SetDefaultHook(hook func(context.Conte
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// AdjustRange method of the parent MockPositionAdjuster instance inovkes
+// AdjustRange method of the parent MockPositionAdjuster instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
 func (f *PositionAdjusterAdjustRangeFunc) PushHook(hook func(context.Context, string, string, lsifstore.Range, bool) (string, lsifstore.Range, bool, error)) {

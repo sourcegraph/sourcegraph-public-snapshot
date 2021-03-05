@@ -1,21 +1,80 @@
 .toggle-container {
     display: flex;
+    align-items: center;
 
-    &__toggle {
-        display: block;
-        cursor: pointer;
-        &:not(:last-child) {
-            margin-right: 0.25rem;
-        }
-        border: 1px solid transparent;
-        &--active {
-            border: 1px solid var(--primary);
-            border-radius: 2px;
-            background-color: var(--color-bg-3);
-        }
+    &__separator {
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        width: 1px;
+        height: 1.125rem;
+        margin: 0 0.5rem 0 0.375rem;
+        background-color: var(--border-color-2);
     }
 
     &__copy-query-button {
-        opacity: 0;
+        color: var(--search-filter-keyword-color) !important;
+        padding: 0.125rem;
+
+        .mdi-icon {
+            width: 1rem;
+            height: 1rem;
+        }
+    }
+
+    &__regexp-button {
+        padding: 0.0625rem 0;
+
+        .mdi-icon {
+            width: 1.25rem;
+            height: 1.125rem;
+        }
+    }
+
+    &__toggle {
+        display: flex;
+        cursor: pointer;
+        border-radius: 4px;
+        border: 2px solid transparent;
+
+        &:not(:last-child) {
+            margin-right: 0.125rem;
+        }
+
+        &:hover {
+            background-color: var(--color-bg-2);
+        }
+
+        &:focus {
+            box-shadow: none;
+        }
+
+        &:active {
+            // stylelint-disable-next-line declaration-property-unit-whitelist
+            border: 2px solid var(--color-border-active);
+        }
+
+        &.disabled,
+        &.disabled:hover {
+            background-color: var(--color-bg-3);
+            color: var(--color-text-3);
+            cursor: default;
+            opacity: 1;
+
+            .theme-light & {
+                background-color: var(--color-bg-4);
+            }
+
+            &:active {
+                border-color: transparent;
+            }
+        }
+
+        &--active {
+            background-color: var(--color-border-active);
+            color: #ffffff !important;
+
+            &:hover {
+                background-color: var(--color-border-active);
+            }
+        }
     }
 }

@@ -3,22 +3,25 @@
 package endpoint
 
 import (
-	"context"
 	"fmt"
 	"hash/crc32"
+	"io/ioutil"
 	"net/url"
 	"sort"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/ericchiang/k8s"
-	corev1 "github.com/ericchiang/k8s/apis/core/v1"
 	"github.com/inconshreveable/log15"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-
-	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/kubernetes"
+	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/rest"
 )
 
 // Map is a consistent hash map to URLs. It uses the kubernetes API to watch
@@ -67,13 +70,12 @@ func New(urlspec string) *Map {
 			return nil, err
 		}
 
-		client, err := loadClient()
+		client, ns, err := loadClient()
 		if err != nil {
 			return nil, err
 		}
 
-		var endpoints corev1.Endpoints
-		err = client.Get(context.Background(), client.Namespace, u.Service, &endpoints)
+		endpoints, err := client.CoreV1().Endpoints(ns).Get(u.Service, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
@@ -81,13 +83,13 @@ func New(urlspec string) *Map {
 		// Kick off watcher in the background
 		go func() {
 			for {
-				err := inform(client, m, u)
+				err := inform(client.CoreV1().Endpoints(ns), m, u)
 				log15.Debug("failed to watch kubernetes endpoint", "name", u.Service, "error", err)
 				time.Sleep(time.Second)
 			}
 		}()
 
-		return endpointsToMap(u, &endpoints)
+		return endpointsToMap(u, *endpoints)
 	}
 
 	return m
@@ -172,40 +174,47 @@ func (m *Map) getUrls() (*hashMap, error) {
 	return urls, err
 }
 
-func inform(client *k8s.Client, m *Map, u *k8sURL) error {
-	watcher, err := client.Watch(context.Background(), client.Namespace, new(corev1.Endpoints), k8s.QueryParam("fieldSelector", "metadata.name="+u.Service))
-	if err != nil {
-		return errors.Wrap(err, "client.Watch")
-	}
-	defer watcher.Close()
+func inform(client v1.EndpointsInterface, m *Map, u *k8sURL) error {
+
+	// TODO(Dax): We shouldn't use watch directly, use an informer here
+	watcher, err := client.Watch(metav1.ListOptions{
+		FieldSelector: "metadata.name=" + u.Service,
+	})
+
+	defer watcher.Stop()
 
 	for {
-		var endpoints corev1.Endpoints
-		eventType, err := watcher.Next(&endpoints)
-		if err != nil {
-			return errors.Wrap(err, "watcher.Next")
+		event := <-watcher.ResultChan()
+		e := event.Object
+		endpoints, ok := e.(*corev1.Endpoints)
+		if !ok {
+			return errors.Wrap(err, "object from watcher is not an endpoint")
 		}
 
-		if eventType != k8s.EventAdded && eventType != k8s.EventModified {
+		if event.Type == watch.Error {
+			return errors.Wrap(err, "watcher error")
+		}
+
+		if event.Type != watch.Added && event.Type != watch.Modified {
 			// Either we are error or the endpoint has been removed.
-			log15.Warn(`eventType is not "added" or "modified"`, "eventType", eventType, "subsets", endpoints.Subsets)
+			log15.Warn(`eventType is not "added" or "modified"`, "eventType", event.Type, "subsets", endpoints.Subsets)
 			endpoints.Subsets = nil
 		}
-		urls, err := endpointsToMap(u, &endpoints)
+		urls, err := endpointsToMap(u, *endpoints)
 		m.mu.Lock()
 		m.urls, m.err = urls, err
 		m.mu.Unlock()
 	}
 }
 
-func endpointsToMap(u *k8sURL, eps *corev1.Endpoints) (*hashMap, error) {
+func endpointsToMap(u *k8sURL, eps corev1.Endpoints) (*hashMap, error) {
 	var urls []string
 	for _, subset := range eps.Subsets {
 		for _, addr := range subset.Addresses {
-			if addr.Hostname != nil && *addr.Hostname != "" {
-				urls = append(urls, u.endpointURL(*addr.Hostname+"."+u.Service))
-			} else if addr.Ip != nil {
-				urls = append(urls, u.endpointURL(*addr.Ip))
+			if addr.Hostname != "" {
+				urls = append(urls, u.endpointURL(addr.Hostname+"."+u.Service))
+			} else if addr.IP != "" {
+				urls = append(urls, u.endpointURL(addr.IP))
 			}
 		}
 	}
@@ -268,25 +277,55 @@ func newConsistentHashMap(keys []string) *hashMap {
 	return m
 }
 
-func loadClient() (*k8s.Client, error) {
+// namespace returns the namespace the pod is currently running in
+// this is done because the k8s client we previously used set the namespace
+// when the client was created, the official k8s client does not
+func namespace() string {
+	const filename = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
+	data, err := ioutil.ReadFile(filename)
+	if err != nil {
+		log15.Warn("endpoint: falling back to kubernetes default namespace", "error", filename+" is empty")
+		return "default"
+	}
+
+	ns := strings.TrimSpace(string(data))
+	if ns == "" {
+		log15.Warn("file: ", filename, " empty using \"default\" ns")
+		return "default"
+	}
+	return ns
+}
+
+func loadClient() (client *kubernetes.Clientset, ns string, err error) {
 	// Uncomment below to test against a real cluster. This is only important
 	// when you are changing how we interact with the k8s API and you want to
-	// test against the real thing. Remember to run a proxy to the API first
-	// (takes care of auth and endpoint details)
-	//
-	//   kubectl proxy --port 10810
-	//
-	// NewInClusterClient only works when running inside of a pod in a k8s
+	// test against the real thing.
+	// Ensure you set your KUBECONFIG env var or your current kubeconfig will be used
+
+	// InClusterConfig only works when running inside of a pod in a k8s
 	// cluster.
+	// From https://github.com/kubernetes/client-go/tree/master/examples/out-of-cluster-client-configuration
 	/*
-		return &k8s.Client{
-			Endpoint:  "http://127.0.0.1:10810",
-			Namespace: "prod",
-			Client:    http.DefaultClient,
-			//Client: &http.Client{Transport: &loghttp.Transport{}},
-		}, nil
+		c, err := clientcmd.NewDefaultClientConfigLoadingRules().Load()
+		if err != nil {
+			log15.Error("couldn't load kubeconfig")
+			os.Exit(1)
+		}
+		clientConfig := clientcmd.NewDefaultClientConfig(*c, nil)
+		config, err = clientConfig.ClientConfig()
+		namespace = "prod"
 	*/
-	return k8s.NewInClusterClient()
+
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, "", err
+	}
+	client, err = kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return client, namespace(), err
 }
 
 var metricEndpointSize = promauto.NewGaugeVec(prometheus.GaugeOpts{

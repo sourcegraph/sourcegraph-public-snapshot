@@ -6,7 +6,7 @@ exports[`BadgeAttachment renders an img element with a base64 icon 1`] = `
     class=""
     data-placement="left"
     data-tooltip="Search-based results - click to see how these results are calculated and how to get precise intelligence with LSIF."
-    href="https://docs.sourcegraph.com/code_intelligence/explanations/basic_code_intelligence"
+    href="https://docs.sourcegraph.com/code_intelligence/explanations/search_based_code_intelligence"
     rel="noreferrer noopener"
     target="_blank"
   >
@@ -23,7 +23,7 @@ exports[`BadgeAttachment renders an svg element with a predefined icon 1`] = `
     class=""
     data-placement="left"
     data-tooltip="Search-based results - click to see how these results are calculated and how to get precise intelligence with LSIF."
-    href="https://docs.sourcegraph.com/code_intelligence/explanations/basic_code_intelligence"
+    href="https://docs.sourcegraph.com/code_intelligence/explanations/search_based_code_intelligence"
     rel="noreferrer noopener"
     target="_blank"
   >

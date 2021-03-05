@@ -19,15 +19,17 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/ctxvfs"
+	"golang.org/x/tools/go/buildutil"
+
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/vfsutil"
-	"golang.org/x/tools/go/buildutil"
 
 	"github.com/sourcegraph/go-lsp"
 
 	"github.com/hashicorp/go-multierror"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -102,7 +104,7 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	location, err := symbolLocation(r.Context(), vfs, commitID, importPath, path.Join("/", dir.RepoPrefix, strings.TrimPrefix(dir.ImportPath, string(dir.ProjectRoot))), receiver, symbolName)
+	location, err := symbolLocation(r.Context(), vfs, commitID, importPath, path.Join("/", dir.RepoPrefix, strings.TrimPrefix(dir.ImportPath, dir.ProjectRoot)), receiver, symbolName)
 	if err != nil {
 		return err
 	}
@@ -192,7 +194,7 @@ func symbolLocation(ctx context.Context, vfs ctxvfs.FileSystem, commitID api.Com
 
 	position := fileSet.Position(*pos)
 	location := lsp.Location{
-		URI: lsp.DocumentURI("https://" + string(importPath) + "?" + string(commitID) + "#" + position.Filename),
+		URI: lsp.DocumentURI("https://" + importPath + "?" + string(commitID) + "#" + position.Filename),
 		Range: lsp.Range{
 			Start: lsp.Position{
 				Line:      position.Line - 1,

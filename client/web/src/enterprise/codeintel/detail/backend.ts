@@ -11,14 +11,14 @@ import {
     DeleteLsifIndexVariables,
     DeleteLsifUploadResult,
     DeleteLsifUploadVariables,
-    LsifIndexResult,
     LsifIndexFields,
+    LsifIndexResult,
     LsifIndexVariables,
+    LsifUploadFields,
     LsifUploadResult,
     LsifUploadVariables,
-    LsifUploadFields,
 } from '../../../graphql-operations'
-import { lsifIndexFieldsFragment, lsifUploadFieldsFragment } from '../backend'
+import { lsifIndexFieldsFragment, lsifUploadFieldsFragment } from '../shared/backend'
 
 export function fetchLsifUpload({ id }: { id: string }): Observable<LsifUploadFields | null> {
     const query = gql`

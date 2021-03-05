@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/registry"
 )
 
@@ -24,7 +25,7 @@ func makePrioritizeExtensionIDsSet(args graphqlbackend.RegistryExtensionConnecti
 }
 
 func (r *extensionRegistryResolver) Extensions(ctx context.Context, args *graphqlbackend.RegistryExtensionConnectionArgs) (graphqlbackend.RegistryExtensionConnection, error) {
-	return &registryExtensionConnectionResolver{args: *args}, nil
+	return &registryExtensionConnectionResolver{args: *args, db: r.db}, nil
 }
 
 // registryExtensionConnectionResolver resolves a list of registry extensions.
@@ -35,17 +36,18 @@ type registryExtensionConnectionResolver struct {
 	once               sync.Once
 	registryExtensions []graphqlbackend.RegistryExtension
 	err                error
+	db                 dbutil.DB
 }
 
 var (
 	// ListLocalRegistryExtensions lists and returns local registry extensions according to the args. If
 	// there is no local extension registry, it is not implemented.
-	ListLocalRegistryExtensions func(context.Context, graphqlbackend.RegistryExtensionConnectionArgs) ([]graphqlbackend.RegistryExtension, error)
+	ListLocalRegistryExtensions func(context.Context, dbutil.DB, graphqlbackend.RegistryExtensionConnectionArgs) ([]graphqlbackend.RegistryExtension, error)
 
 	// CountLocalRegistryExtensions returns the count of local registry extensions according to the
 	// args. Pagination-related args are ignored. If there is no local extension registry, it is not
 	// implemented.
-	CountLocalRegistryExtensions func(context.Context, graphqlbackend.RegistryExtensionConnectionArgs) (int, error)
+	CountLocalRegistryExtensions func(context.Context, dbutil.DB, graphqlbackend.RegistryExtensionConnectionArgs) (int, error)
 )
 
 func (r *registryExtensionConnectionResolver) compute(ctx context.Context) ([]graphqlbackend.RegistryExtension, error) {
@@ -65,7 +67,7 @@ func (r *registryExtensionConnectionResolver) compute(ctx context.Context) ([]gr
 		// Query local registry extensions.
 		var local []graphqlbackend.RegistryExtension
 		if r.args.Local && ListLocalRegistryExtensions != nil {
-			local, r.err = ListLocalRegistryExtensions(ctx, args2)
+			local, r.err = ListLocalRegistryExtensions(ctx, r.db, args2)
 			if r.err != nil {
 				return
 			}
@@ -121,7 +123,7 @@ func (r *registryExtensionConnectionResolver) TotalCount(ctx context.Context) (i
 	var total int
 
 	if r.args.Local && CountLocalRegistryExtensions != nil {
-		dbCount, err := CountLocalRegistryExtensions(ctx, r.args)
+		dbCount, err := CountLocalRegistryExtensions(ctx, r.db, r.args)
 		if err != nil {
 			return 0, err
 		}

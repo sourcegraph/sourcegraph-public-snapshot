@@ -1,5 +1,4 @@
 import * as React from 'react'
-import * as GQL from '../../../../../shared/src/graphql/schema'
 import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import {
     EXTENSION_NAME_MAX_LENGTH,
@@ -8,25 +7,24 @@ import {
     RegistryPublisher,
 } from '../../../extensions/extension/extension'
 import { ErrorAlert } from '../../../components/alerts'
-import * as H from 'history'
+import { Scalars } from '../../../../../shared/src/graphql-operations'
 
 export const RegistryPublisherFormGroup: React.FunctionComponent<{
     className?: string
 
     /** The current publisher value. */
-    value?: GQL.ID
+    value?: Scalars['ID']
 
     /** The viewer's authorized publishers, undefined while loading, or an error. */
     publishersOrError: 'loading' | RegistryPublisher[] | ErrorLike
 
     disabled?: boolean
     onChange?: React.FormEventHandler<HTMLSelectElement>
-    history: H.History
-}> = ({ className = '', value, publishersOrError, disabled, onChange, history }) => (
+}> = ({ className = '', value, publishersOrError, disabled, onChange }) => (
     <div className={`form-group ${className}`}>
         <label htmlFor="extension-registry-create-extension-page__publisher">Publisher</label>
         {isErrorLike(publishersOrError) ? (
-            <ErrorAlert error={publishersOrError} history={history} />
+            <ErrorAlert error={publishersOrError} />
         ) : (
             <select
                 id="extension-registry-create-extension-page__publisher"

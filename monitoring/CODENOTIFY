@@ -2,6 +2,7 @@
 
 **/* @bobheadxi
 **/* @slimsag
+**/* @sourcegraph/distribution
 
 frontend.go @efritz
 precise_code_intel_* @efritz

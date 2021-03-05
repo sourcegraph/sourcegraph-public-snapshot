@@ -1,0 +1,23 @@
+# This file contains the configuration of the enforced linters for the project.
+# Eventually, the goal is to unify this with .golangci.yml. 
+# https://github.com/sourcegraph/sourcegraph/issues/18720
+
+
+# See explanation of linters at https://golangci-lint.run/usage/linters/
+linters:
+  disable-all: true
+  enable:
+    - ineffassign
+    - typecheck
+    - nolintlint
+    - unconvert
+    - goimports
+
+run:
+  timeout: 5m
+
+  skip-dirs:
+    - client
+    - ui
+    - vendor
+    - node_modules

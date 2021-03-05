@@ -12,7 +12,6 @@ Sourcegraph has the following dependencies:
 - [PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) (v11 or higher)
 - [Redis](http://redis.io/) (v5.0.7 or higher)
 - [Yarn](https://yarnpkg.com) (v1.10.1 or higher)
-- [NGINX](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-open-source/) (v1.14 or higher)
 - [SQLite](https://www.sqlite.org/index.html) tools
 - [Golang Migrate](https://github.com/golang-migrate/migrate/) (v4.7.0 or higher)
 - [Comby](https://github.com/comby-tools/comby/) (v0.11.3 or higher)
@@ -28,13 +27,13 @@ The following are two recommendations for installing these dependencies:
     optionally via `brew`
 
     ```
-    brew cask install docker
+    brew install --cask docker
     ```
 
-3.  Install Go, Node Version Manager, PostgreSQL, Redis, Git, NGINX, golang-migrate, Comby, SQLite tools, and jq with the following command:
+3.  Install Go, Node Version Manager, PostgreSQL, Redis, Git, golang-migrate, Comby, SQLite tools, and jq with the following command:
 
     ```
-    brew install go yarn redis postgresql git gnu-sed nginx golang-migrate comby sqlite pcre FiloSottile/musl-cross/musl-cross jq watchman
+    brew install go yarn redis postgresql git gnu-sed golang-migrate comby sqlite pcre FiloSottile/musl-cross/musl-cross jq watchman
     ```
 
 4.  Install the Node Version Manager (`nvm`) using:
@@ -132,7 +131,7 @@ The following are two recommendations for installing these dependencies:
 3. Install dependencies:
 
     ```
-    sudo apt install -y make git-all postgresql postgresql-contrib redis-server nginx libpcre3-dev libsqlite3-dev pkg-config golang-go musl-tools docker-ce docker-ce-cli containerd.io yarn jq
+    sudo apt install -y make git-all postgresql postgresql-contrib redis-server libpcre3-dev libsqlite3-dev pkg-config golang-go musl-tools docker-ce docker-ce-cli containerd.io yarn jq libnss3-tools
 
     # install golang-migrate (you must rename the extracted binary to `golang-migrate` and move the binary into your $PATH)
     curl -L https://github.com/golang-migrate/migrate/releases/download/v4.7.0/migrate.linux-amd64.tar.gz | tar xvz
@@ -177,7 +176,7 @@ The following are two recommendations for installing these dependencies:
     # $REDIS_DATA_DIR should be an absolute path to a folder where you intend to store Redis data
     ```
 
-    You need to have Redis running when you start the dev server later on. If you have issues running Docker, try [adding your user to the docker group][dockerGroup], and/or [updating the socket file persimissions][socketPermissions], or try running these commands under `sudo`.
+    You need to have Redis running when you start the dev server later on. If you have issues running Docker, try [adding your user to the docker group][dockerGroup], and/or [updating the socket file permissions][socketPermissions], or try running these commands under `sudo`.
 
     [dockerGroup]: https://stackoverflow.com/a/48957722
     [socketPermissions]: https://stackoverflow.com/a/51362528
@@ -192,7 +191,7 @@ We use asdf in buildkite to lock the versions of the tools that we use on a per-
 
 #### asdf binary
 
-See the [installation instructions on the official asdf documentation](https://asdf-vm.com/#/core-manage-asdf-vm?id=install-asdf-vm).
+See the [installation instructions on the official asdf documentation](https://asdf-vm.com/#/core-manage-asdf?id=install).
 
 #### Plugins
 

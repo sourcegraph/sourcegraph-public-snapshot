@@ -1,13 +1,13 @@
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useMemo } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import * as GQL from '../../../../shared/src/graphql/schema'
 import { HeroPage } from '../../components/HeroPage'
 import { RepoContainerContext } from '../RepoContainer'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
 import { RepositoryReleasesTagsPage } from './RepositoryReleasesTagsPage'
 import * as H from 'history'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
+import { RepositoryFields } from '../../graphql-operations'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -21,7 +21,7 @@ interface Props
     extends RouteComponentProps<{}>,
         Pick<RepoContainerContext, 'repo' | 'routePrefix' | 'repoHeaderContributionsLifecycleProps'>,
         BreadcrumbSetters {
-    repo: GQL.IRepository
+    repo: RepositoryFields
     history: H.History
 }
 
@@ -32,7 +32,7 @@ export interface RepositoryReleasesAreaPageProps {
     /**
      * The active repository.
      */
-    repo: GQL.IRepository
+    repo: RepositoryFields
 }
 
 /**
@@ -49,7 +49,7 @@ export const RepositoryReleasesArea: React.FunctionComponent<Props> = ({ useBrea
         )
     )
 
-    const transferProps: { repo: GQL.IRepository } = {
+    const transferProps: { repo: RepositoryFields } = {
         repo,
     }
 

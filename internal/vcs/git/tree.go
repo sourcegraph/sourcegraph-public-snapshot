@@ -16,6 +16,7 @@ import (
 
 	"github.com/golang/groupcache/lru"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -24,7 +25,7 @@ import (
 
 // Lstat returns a FileInfo describing the named file at commit. If the file is a symbolic link, the
 // returned FileInfo describes the symbolic link.  Lstat makes no attempt to follow the link.
-func Lstat(ctx context.Context, repo gitserver.Repo, commit api.CommitID, path string) (os.FileInfo, error) {
+func Lstat(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (os.FileInfo, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: Lstat")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
@@ -57,7 +58,7 @@ func Lstat(ctx context.Context, repo gitserver.Repo, commit api.CommitID, path s
 }
 
 // Stat returns a FileInfo describing the named file at commit.
-func Stat(ctx context.Context, repo gitserver.Repo, commit api.CommitID, path string) (os.FileInfo, error) {
+func Stat(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (os.FileInfo, error) {
 	if Mocks.Stat != nil {
 		return Mocks.Stat(commit, path)
 	}
@@ -98,7 +99,7 @@ func Stat(ctx context.Context, repo gitserver.Repo, commit api.CommitID, path st
 }
 
 // ReadDir reads the contents of the named directory at commit.
-func ReadDir(ctx context.Context, repo gitserver.Repo, commit api.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
+func ReadDir(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
 	if Mocks.ReadDir != nil {
 		return Mocks.ReadDir(commit, path, recurse)
 	}
@@ -132,13 +133,13 @@ var (
 )
 
 // lsTree returns ls of tree at path.
-func lsTree(ctx context.Context, repo gitserver.Repo, commit api.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
+func lsTree(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
 	if path != "" || !recurse {
 		// Only cache the root recursive ls-tree.
 		return lsTreeUncached(ctx, repo, commit, path, recurse)
 	}
 
-	key := string(repo.Name) + ":" + string(commit) + ":" + path
+	key := string(repo) + ":" + string(commit) + ":" + path
 	lsTreeRootCacheMu.Lock()
 	v, ok := lsTreeRootCache.Get(key)
 	lsTreeRootCacheMu.Unlock()
@@ -166,7 +167,7 @@ func lsTree(ctx context.Context, repo gitserver.Repo, commit api.CommitID, path 
 	return entries, nil
 }
 
-func lsTreeUncached(ctx context.Context, repo gitserver.Repo, commit api.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
+func lsTreeUncached(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
 	if err := ensureAbsoluteCommit(commit); err != nil {
 		return nil, err
 	}
@@ -297,7 +298,7 @@ func lsTreeUncached(ctx context.Context, repo gitserver.Repo, commit api.CommitI
 
 		fis[i] = &util.FileInfo{
 			Name_: name, // full path relative to root (not just basename)
-			Mode_: os.FileMode(mode),
+			Mode_: mode,
 			Size_: size,
 			Sys_:  sys,
 		}

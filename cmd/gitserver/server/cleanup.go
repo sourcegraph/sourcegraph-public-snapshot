@@ -19,7 +19,9 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 
@@ -37,6 +39,11 @@ const (
 	repoTTLGC = time.Hour * 24 * 2
 )
 
+// EnableGCAuto is a temporary flag that allows us to control whether or not
+// `git gc --auto` is invoked during janitorial activities. This flag will
+// likely evolve into some form of site config value in the future.
+var enableGCAuto, _ = strconv.ParseBool(env.Get("SRC_ENABLE_GC_AUTO", "true", "Use git-gc during janitorial cleanup phases"))
+
 var (
 	reposRemoved = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_gitserver_repos_removed",
@@ -50,6 +57,14 @@ var (
 		Name: "src_gitserver_repos_removed_disk_pressure",
 		Help: "number of repos removed due to not enough disk space",
 	})
+	janitorRunning = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "src_gitserver_janitor_running",
+		Help: "set to 1 when the gitserver janitor background job is running",
+	})
+	jobTimer = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "src_gitserver_janitor_job_duration_seconds",
+		Help: "Duration of the individual jobs within the gitserver janitor background job",
+	}, []string{"job_name"})
 )
 
 const reposStatsName = "repos-stats.json"
@@ -58,9 +73,13 @@ const reposStatsName = "repos-stats.json"
 //
 // 1. Remove corrupt repos.
 // 2. Remove stale lock files.
-// 3. Remove inactive repos on sourcegraph.com
+// 3. Remove repos based on disk pressure.
 // 4. Reclone repos after a while. (simulate git gc)
 func (s *Server) cleanupRepos() {
+	janitorRunning.Set(1)
+
+	defer janitorRunning.Set(0)
+
 	bCtx, bCancel := s.serverContext()
 	defer bCancel()
 
@@ -93,7 +112,20 @@ func (s *Server) cleanupRepos() {
 		return false, setGitAttributes(dir)
 	}
 
+	scrubRemoteURL := func(dir GitDir) (done bool, err error) {
+		cmd := exec.Command("git", "remote", "remove", "origin")
+		dir.Set(cmd)
+		// ignore error since we fail if the remote has already been scrubbed.
+		_ = cmd.Run()
+		return false, nil
+	}
+
 	maybeReclone := func(dir GitDir) (done bool, err error) {
+		repoType, err := getRepositoryType(dir)
+		if err != nil {
+			return false, err
+		}
+
 		recloneTime, err := getRecloneTime(dir)
 		if err != nil {
 			return false, err
@@ -102,8 +134,9 @@ func (s *Server) cleanupRepos() {
 		// Add a jitter to spread out recloning of repos cloned at the same
 		// time.
 		var reason string
+		const maybeCorrupt = "maybeCorrupt"
 		if maybeCorrupt, _ := gitConfigGet(dir, "sourcegraph.maybeCorruptRepo"); maybeCorrupt != "" {
-			reason = "maybeCorrupt"
+			reason = maybeCorrupt
 			// unset flag to stop constantly recloning if it fails.
 			_ = gitConfigUnset(dir, "sourcegraph.maybeCorruptRepo")
 		}
@@ -115,6 +148,14 @@ func (s *Server) cleanupRepos() {
 				reason = fmt.Sprintf("git gc %s", string(bytes.TrimSpace(gclog)))
 			}
 		}
+
+		// We believe converting a Perforce depot to a Git repository is generally a
+		// very expensive operation, therefore we do not try to reclone/redo the
+		// conversion only because it is old or slow to do "git gc".
+		if repoType == "perforce" && reason != maybeCorrupt {
+			reason = ""
+		}
+
 		if reason == "" {
 			return false, nil
 		}
@@ -134,12 +175,7 @@ func (s *Server) cleanupRepos() {
 			log15.Warn("setting backed off reclone time failed", "repo", repo, "cloned", recloneTime, "reason", reason, "error", err)
 		}
 
-		remoteURL, err := repoRemoteURL(ctx, dir)
-		if err != nil {
-			return false, errors.Wrap(err, "failed to get remote URL")
-		}
-
-		if _, err := s.cloneRepo(ctx, repo, remoteURL, &cloneOptions{Block: true, Overwrite: true}); err != nil {
+		if _, err := s.cloneRepo(ctx, repo, &cloneOptions{Block: true, Overwrite: true}); err != nil {
 			return true, err
 		}
 		reposRecloned.Inc()
@@ -179,6 +215,13 @@ func (s *Server) cleanupRepos() {
 		return false, multi
 	}
 
+	performGC := func(dir GitDir) (done bool, err error) {
+		if !enableGCAuto {
+			return false, nil
+		}
+		return false, gitGC(dir)
+	}
+
 	type cleanupFn struct {
 		Name string
 		Do   func(GitDir) (bool, error)
@@ -193,11 +236,21 @@ func (s *Server) cleanupRepos() {
 		// We always want to have the same git attributes file at
 		// info/attributes.
 		{"ensure git attributes", ensureGitAttributes},
+		// 2021-03-01 (tomas,keegan) we used to store an authenticated remote
+		// URL on disk. We no longer need it so we can scrub it.
+		{"scrub remote URL", scrubRemoteURL},
 		// Old git clones accumulate loose git objects that waste space and
 		// slow down git operations. Periodically do a fresh clone to avoid
 		// these problems. git gc is slow and resource intensive. It is
 		// cheaper and faster to just reclone the repository.
 		{"maybe reclone", maybeReclone},
+		// Runs a number of housekeeping tasks within the current repository,
+		// such as compressing file revisions (to reduce disk space and increase
+		// performance), removing unreachable objects which may have been created
+		// from prior invocations of git add, packing refs, pruning reflog, rerere
+		// metadata or stale working trees. May also update ancillary indexes such
+		// as the commit-graph.
+		{"garbage collect", performGC},
 	}
 
 	err := bestEffortWalk(s.ReposDir, func(dir string, fi os.FileInfo) error {
@@ -217,10 +270,12 @@ func (s *Server) cleanupRepos() {
 		gitDir := GitDir(dir)
 
 		for _, cfn := range cleanups {
+			start := time.Now()
 			done, err := cfn.Do(gitDir)
 			if err != nil {
 				log15.Error("error running cleanup command", "name", cfn.Name, "repo", gitDir, "error", err)
 			}
+			jobTimer.WithLabelValues(cfn.Name).Observe(time.Since(start).Seconds())
 			if done {
 				break
 			}
@@ -559,11 +614,25 @@ func (s *Server) SetupAndClearTmp() (string, error) {
 	return dir, nil
 }
 
+// setRepositoryType sets the type of the repository.
+func setRepositoryType(dir GitDir, typ string) error {
+	return gitConfigSet(dir, "sourcegraph.type", typ)
+}
+
+// getRepositoryType returns the type of the repository.
+func getRepositoryType(dir GitDir) (string, error) {
+	val, err := gitConfigGet(dir, "sourcegraph.type")
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(val), nil
+}
+
 // setRecloneTime sets the time a repository is cloned.
 func setRecloneTime(dir GitDir, now time.Time) error {
 	err := gitConfigSet(dir, "sourcegraph.recloneTimestamp", strconv.FormatInt(now.Unix(), 10))
 	if err != nil {
-		ensureHead(dir)
+		ensureHEAD(dir)
 		return errors.Wrap(err, "failed to update recloneTimestamp")
 	}
 	return nil
@@ -622,6 +691,19 @@ func checkMaybeCorruptRepo(repo api.RepoName, dir GitDir, stderr string) {
 	if err != nil {
 		log15.Error("failed to set maybeCorruptRepo config", repo, "repo", "error", err)
 	}
+}
+
+// gitGC will invoke `git-gc` to clean up any garbage in the repo. It will
+// operate synchronously and be aggressive with its internal heurisitcs when
+// deciding to act (meaning it will act now at lower thresholds).
+func gitGC(dir GitDir) error {
+	cmd := exec.Command("git", "-c", "gc.auto=1", "-c", "gc.autoDetach=false", "gc", "--auto")
+	dir.Set(cmd)
+	err := cmd.Run()
+	if err != nil {
+		return errors.Wrapf(wrapCmdError(cmd, err), "failed to git-gc")
+	}
+	return nil
 }
 
 func gitConfigGet(dir GitDir, key string) (string, error) {

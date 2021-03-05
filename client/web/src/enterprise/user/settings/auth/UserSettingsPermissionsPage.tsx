@@ -68,9 +68,7 @@ interface ScheduleUserPermissionsSyncActionContainerProps {
     history: H.History
 }
 
-class ScheduleUserPermissionsSyncActionContainer extends React.PureComponent<
-    ScheduleUserPermissionsSyncActionContainerProps
-> {
+class ScheduleUserPermissionsSyncActionContainer extends React.PureComponent<ScheduleUserPermissionsSyncActionContainerProps> {
     public render(): JSX.Element | null {
         return (
             <ActionContainer

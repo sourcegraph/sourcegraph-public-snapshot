@@ -13,33 +13,35 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 func init() {
 	// TODO(efritz) - de-globalize assignments in this function
-	graphqlbackend.ProductLicenseByID = func(ctx context.Context, id graphql.ID) (graphqlbackend.ProductLicense, error) {
-		return productLicenseByID(ctx, id)
+	graphqlbackend.ProductLicenseByID = func(ctx context.Context, db dbutil.DB, id graphql.ID) (graphqlbackend.ProductLicense, error) {
+		return productLicenseByID(ctx, db, id)
 	}
 }
 
 // productLicense implements the GraphQL type ProductLicense.
 type productLicense struct {
-	v *dbLicense
+	db dbutil.DB
+	v  *dbLicense
 }
 
 // productLicenseByID looks up and returns the ProductLicense with the given GraphQL ID. If no such
 // ProductLicense exists, it returns a non-nil error.
-func productLicenseByID(ctx context.Context, id graphql.ID) (*productLicense, error) {
+func productLicenseByID(ctx context.Context, db dbutil.DB, id graphql.ID) (*productLicense, error) {
 	idInt32, err := unmarshalProductLicenseID(id)
 	if err != nil {
 		return nil, err
 	}
-	return productLicenseByDBID(ctx, idInt32)
+	return productLicenseByDBID(ctx, db, idInt32)
 }
 
 // productLicenseByDBID looks up and returns the ProductLicense with the given database ID. If no
 // such ProductLicense exists, it returns a non-nil error.
-func productLicenseByDBID(ctx context.Context, id string) (*productLicense, error) {
+func productLicenseByDBID(ctx context.Context, db dbutil.DB, id string) (*productLicense, error) {
 	v, err := dbLicenses{}.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -47,7 +49,7 @@ func productLicenseByDBID(ctx context.Context, id string) (*productLicense, erro
 
 	// 🚨 SECURITY: Only site admins and the license's subscription's account's user may view a
 	// product license.
-	sub, err := productSubscriptionByDBID(ctx, v.ProductSubscriptionID)
+	sub, err := productSubscriptionByDBID(ctx, db, v.ProductSubscriptionID)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +57,7 @@ func productLicenseByDBID(ctx context.Context, id string) (*productLicense, erro
 		return nil, err
 	}
 
-	return &productLicense{v: v}, nil
+	return &productLicense{db: db, v: v}, nil
 }
 
 func (r *productLicense) ID() graphql.ID {
@@ -72,7 +74,7 @@ func unmarshalProductLicenseID(id graphql.ID) (productLicenseID string, err erro
 }
 
 func (r *productLicense) Subscription(ctx context.Context) (graphqlbackend.ProductSubscription, error) {
-	return productSubscriptionByDBID(ctx, r.v.ProductSubscriptionID)
+	return productSubscriptionByDBID(ctx, r.db, r.v.ProductSubscriptionID)
 }
 
 func (r *productLicense) Info() (*graphqlbackend.ProductLicenseInfo, error) {
@@ -107,12 +109,12 @@ func generateProductLicenseForSubscription(ctx context.Context, subscriptionID s
 	return dbLicenses{}.Create(ctx, subscriptionID, licenseKey)
 }
 
-func (ProductSubscriptionLicensingResolver) GenerateProductLicenseForSubscription(ctx context.Context, args *graphqlbackend.GenerateProductLicenseForSubscriptionArgs) (graphqlbackend.ProductLicense, error) {
+func (r ProductSubscriptionLicensingResolver) GenerateProductLicenseForSubscription(ctx context.Context, args *graphqlbackend.GenerateProductLicenseForSubscriptionArgs) (graphqlbackend.ProductLicense, error) {
 	// 🚨 SECURITY: Only site admins may generate product licenses.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
-	sub, err := productSubscriptionByID(ctx, args.ProductSubscriptionID)
+	sub, err := productSubscriptionByID(ctx, r.DB, args.ProductSubscriptionID)
 	if err != nil {
 		return nil, err
 	}
@@ -120,10 +122,10 @@ func (ProductSubscriptionLicensingResolver) GenerateProductLicenseForSubscriptio
 	if err != nil {
 		return nil, err
 	}
-	return productLicenseByDBID(ctx, id)
+	return productLicenseByDBID(ctx, r.DB, id)
 }
 
-func (ProductSubscriptionLicensingResolver) ProductLicenses(ctx context.Context, args *graphqlbackend.ProductLicensesArgs) (graphqlbackend.ProductLicenseConnection, error) {
+func (r ProductSubscriptionLicensingResolver) ProductLicenses(ctx context.Context, args *graphqlbackend.ProductLicensesArgs) (graphqlbackend.ProductLicenseConnection, error) {
 	// 🚨 SECURITY: Only site admins may list product licenses.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -132,7 +134,7 @@ func (ProductSubscriptionLicensingResolver) ProductLicenses(ctx context.Context,
 	var sub *productSubscription
 	if args.ProductSubscriptionID != nil {
 		var err error
-		sub, err = productSubscriptionByID(ctx, *args.ProductSubscriptionID)
+		sub, err = productSubscriptionByID(ctx, r.DB, *args.ProductSubscriptionID)
 		if err != nil {
 			return nil, err
 		}
@@ -146,7 +148,7 @@ func (ProductSubscriptionLicensingResolver) ProductLicenses(ctx context.Context,
 		opt.LicenseKeySubstring = *args.LicenseKeySubstring
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
-	return &productLicenseConnection{opt: opt}, nil
+	return &productLicenseConnection{db: r.DB, opt: opt}, nil
 }
 
 // productLicenseConnection implements the GraphQL type ProductLicenseConnection.
@@ -155,6 +157,7 @@ func (ProductSubscriptionLicensingResolver) ProductLicenses(ctx context.Context,
 // check permissions.
 type productLicenseConnection struct {
 	opt dbLicensesListOptions
+	db  dbutil.DB
 
 	// cache results because they are used by multiple fields
 	once    sync.Once
@@ -184,7 +187,7 @@ func (r *productLicenseConnection) Nodes(ctx context.Context) ([]graphqlbackend.
 
 	var l []graphqlbackend.ProductLicense
 	for _, result := range results {
-		l = append(l, &productLicense{v: result})
+		l = append(l, &productLicense{db: r.db, v: result})
 	}
 	return l, nil
 }

@@ -1,10 +1,10 @@
-import { noop } from 'lodash'
 import React from 'react'
 import renderer from 'react-test-renderer'
 import { RegistryExtensionOverviewPage } from './RegistryExtensionOverviewPage'
 import { PageTitle } from '../../components/PageTitle'
 import { createMemoryHistory } from 'history'
 import { Router } from 'react-router'
+import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
 
 jest.mock('mdi-react/GithubIcon', () => 'GithubIcon')
 
@@ -19,7 +19,7 @@ describe('RegistryExtensionOverviewPage', () => {
                 .create(
                     <Router history={history}>
                         <RegistryExtensionOverviewPage
-                            eventLogger={{ logViewEvent: noop }}
+                            telemetryService={NOOP_TELEMETRY_SERVICE}
                             extension={{
                                 id: 'x',
                                 rawManifest: '{}',
@@ -36,6 +36,7 @@ describe('RegistryExtensionOverviewPage', () => {
                                 },
                             }}
                             history={history}
+                            isLightTheme={true}
                         />
                     </Router>
                 )
@@ -51,7 +52,7 @@ describe('RegistryExtensionOverviewPage', () => {
                 .create(
                     <Router history={history}>
                         <RegistryExtensionOverviewPage
-                            eventLogger={{ logViewEvent: noop }}
+                            telemetryService={NOOP_TELEMETRY_SERVICE}
                             extension={{
                                 id: 'x',
                                 rawManifest: '{}',
@@ -68,6 +69,7 @@ describe('RegistryExtensionOverviewPage', () => {
                                 },
                             }}
                             history={history}
+                            isLightTheme={true}
                         />
                     </Router>
                 )
@@ -81,7 +83,7 @@ describe('RegistryExtensionOverviewPage', () => {
             const output = renderer.create(
                 <Router history={history}>
                     <RegistryExtensionOverviewPage
-                        eventLogger={{ logViewEvent: noop }}
+                        telemetryService={NOOP_TELEMETRY_SERVICE}
                         extension={{
                             id: 'x',
                             rawManifest: '',
@@ -92,6 +94,7 @@ describe('RegistryExtensionOverviewPage', () => {
                             },
                         }}
                         history={createMemoryHistory()}
+                        isLightTheme={true}
                     />
                 </Router>
             ).root

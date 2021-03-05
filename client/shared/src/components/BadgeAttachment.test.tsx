@@ -11,7 +11,7 @@ export const base64ImageBadge: Omit<BadgeAttachmentRenderOptions, 'kind'> = {
     light: { icon: base64icon },
     hoverMessage:
         'Search-based results - click to see how these results are calculated and how to get precise intelligence with LSIF.',
-    linkURL: 'https://docs.sourcegraph.com/code_intelligence/explanations/basic_code_intelligence',
+    linkURL: 'https://docs.sourcegraph.com/code_intelligence/explanations/search_based_code_intelligence',
 }
 
 export const badgeWithKind: BadgeAttachmentRenderOptions = {

@@ -4,6 +4,8 @@
 
 - [How to debug live code](debug_live_code.md)
 - [Set up local development with Zoekt and Sourcegraph](zoekt_local_dev.md)
+- [Ignoring editor config files in Git](ignoring_editor_config_files.md)
+- [Use `golangci-lint`](use-golangci-lint.md)
 
 ## New features
 
@@ -24,12 +26,19 @@
 ## Implementing Sourcegraph
 
 - [Developing the product documentation](documentation_implementation.md)
+- [Observability](../background-information/observability/index.md)
+  - [How to find monitoring](find_monitoring.md)
+  - [How to add monitoring](add_monitoring.md)
+  - [Set up local Sourcegraph monitoring development](monitoring_local_dev.md)
 
-## Testing Sourcegraph
+## Testing Sourcegraph & CI
 
 - [How to run tests](../background-information/testing.md)
+- [Testing Principles](../background-information/testing_principles.md)
+- [Continuous Integration](../background-information/continuous_integration.md)
 - [Configure a test instance of Phabricator and Gitolite](configure_phabricator_gitolite.md)
 - [Test a Phabricator and Gitolite instance](test_phabricator.md)
+- [Adding or changing Buildkite secrets](adding_buildkite_secrets.md)
 
 ## Windows support
 
@@ -43,7 +52,7 @@ Sometimes you will want to develop Sourcegraph but it just so happens you will b
 train or perhaps a beach, and you will have no WiFi. And you may raise your fist toward heaven and
 say something like, "Why, we can put a man on the moon, so why can't we develop high-quality code
 search without an Internet connection?" But lower your hand back to your keyboard and fret no
-further, for the year is 2019, and you *can* develop Sourcegraph with no connectivity by setting the
+further, you *can* develop Sourcegraph with no connectivity by setting the
 `OFFLINE` environment variable:
 
 ```bash

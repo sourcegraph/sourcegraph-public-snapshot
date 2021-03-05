@@ -356,7 +356,9 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
     return (
         <ButtonElement
             role="button"
-            className={`command-list__popover-button ${buttonClassName} ${isOpen ? buttonOpenClassName : ''}`}
+            className={`command-list__popover-button test-command-list-button ${buttonClassName} ${
+                isOpen ? buttonOpenClassName : ''
+            }`}
             id={id}
             onClick={toggleIsOpen}
         >

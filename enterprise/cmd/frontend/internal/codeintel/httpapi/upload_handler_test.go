@@ -16,11 +16,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	uploadstoremocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestMain(m *testing.M) {
@@ -418,7 +419,7 @@ func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
 	}
 }
 
-func setupRepoMocks(t *testing.T) {
+func setupRepoMocks(t testing.TB) {
 	t.Cleanup(func() {
 		backend.Mocks.Repos.GetByName = nil
 		backend.Mocks.Repos.ResolveRev = nil

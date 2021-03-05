@@ -9,19 +9,19 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/authz/github"
 	"github.com/sourcegraph/sourcegraph/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type ExternalServicesStore interface {
-	List(context.Context, db.ExternalServicesListOptions) ([]*types.ExternalService, error)
+	List(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error)
 }
 
 // ProvidersFromConfig returns the set of permission-related providers derived from the site config.
@@ -46,13 +46,13 @@ func ProvidersFromConfig(
 		}
 	}()
 
-	opt := db.ExternalServicesListOptions{
+	opt := database.ExternalServicesListOptions{
 		Kinds: []string{
 			extsvc.KindGitHub,
 			extsvc.KindGitLab,
 			extsvc.KindBitbucketServer,
 		},
-		LimitOffset: &db.LimitOffset{
+		LimitOffset: &database.LimitOffset{
 			Limit: 500, // The number is randomly chosen
 		},
 	}

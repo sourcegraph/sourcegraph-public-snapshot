@@ -15,7 +15,6 @@ import (
 	"testing/quick"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/pathmatch"
 	"github.com/sourcegraph/sourcegraph/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
@@ -250,7 +249,7 @@ func benchSearchRegex(b *testing.B, p *protocol.Request) {
 	}
 
 	ctx := context.Background()
-	path, err := githubStore.PrepareZip(ctx, gitserver.Repo{Name: p.Repo}, p.Commit)
+	path, err := githubStore.PrepareZip(ctx, p.Repo, p.Commit)
 	if err != nil {
 		b.Fatal(err)
 	}

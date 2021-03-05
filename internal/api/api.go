@@ -17,6 +17,14 @@ type RepoName string
 // CommitID is the 40-character SHA-1 hash for a Git commit.
 type CommitID string
 
+// Short returns the SHA-1 commit hash truncated to 7 characters
+func (c CommitID) Short() string {
+	if len(c) >= 7 {
+		return string(c)[:7]
+	}
+	return string(c)
+}
+
 // Repo represents a source code repository.
 type Repo struct {
 	// ID is the unique numeric ID for this repository on Sourcegraph.
@@ -127,6 +135,7 @@ type ExternalService struct {
 	NextSyncAt      time.Time
 	NamespaceUserID int32
 	Unrestricted    bool
+	CloudDefault    bool
 }
 
 func cmp(a, b string) int {

@@ -23,9 +23,7 @@ const { add } = storiesOf('shared/NotificationItem', module).addDecorator(story 
     <>
         <style>{webStyles}</style>
         <style>{notificationItemStyles}</style>
-        <div className="theme-light" style={{ maxWidth: '20rem', margin: '2rem' }}>
-            {story()}
-        </div>
+        <div style={{ maxWidth: '20rem', margin: '2rem' }}>{story()}</div>
     </>
 ))
 

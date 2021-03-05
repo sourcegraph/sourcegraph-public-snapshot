@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 
+	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
@@ -16,12 +17,12 @@ func (g repoGroup) Name() string { return g.name }
 func (g repoGroup) Repositories() []string { return repoNamesToStrings(g.repositories) }
 
 func (r *schemaResolver) RepoGroups(ctx context.Context) ([]*repoGroup, error) {
-	settings, err := decodedViewerFinalSettings(ctx)
+	settings, err := decodedViewerFinalSettings(ctx, r.db)
 	if err != nil {
 		return nil, err
 	}
 
-	groupsByName, err := resolveRepoGroups(ctx, settings)
+	groupsByName, err := searchrepos.ResolveRepoGroups(ctx, settings)
 	if err != nil {
 		return nil, err
 	}
@@ -31,9 +32,9 @@ func (r *schemaResolver) RepoGroups(ctx context.Context) ([]*repoGroup, error) {
 		var repoPaths []api.RepoName
 		for _, value := range values {
 			switch v := value.(type) {
-			case RepoPath:
+			case searchrepos.RepoPath:
 				repoPaths = append(repoPaths, api.RepoName(v.String()))
-			case RepoRegexpPattern:
+			case searchrepos.RepoRegexpPattern:
 				// TODO(@sourcegraph/search): decide how to handle
 				// regexp patterns associated with repogroups.
 				// Currently they are skipped. They either need to

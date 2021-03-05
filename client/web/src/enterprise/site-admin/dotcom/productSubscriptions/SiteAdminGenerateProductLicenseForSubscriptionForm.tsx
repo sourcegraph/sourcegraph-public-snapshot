@@ -11,12 +11,11 @@ import { Form } from '../../../../../../branded/src/components/Form'
 import { ExpirationDate } from '../../../productSubscription/ExpirationDate'
 import { ErrorAlert } from '../../../../components/alerts'
 import { useEventObservable } from '../../../../../../shared/src/util/useObservable'
-import * as H from 'history'
+import { Scalars } from '../../../../../../shared/src/graphql-operations'
 
 interface Props {
-    subscriptionID: GQL.ID
+    subscriptionID: Scalars['ID']
     onGenerate: () => void
-    history: H.History
 }
 
 const LOADING = 'loading' as const
@@ -53,7 +52,6 @@ const DURATION_LINKS = [
 export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionComponent<Props> = ({
     subscriptionID,
     onGenerate,
-    history,
 }) => {
     const [formData, setFormData] = useState<FormData>(EMPTY_FORM_DATA)
 
@@ -226,7 +224,7 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                     </button>
                 </Form>
             )}
-            {isErrorLike(creation) && <ErrorAlert className="mt-3" error={creation} history={history} />}
+            {isErrorLike(creation) && <ErrorAlert className="mt-3" error={creation} />}
         </div>
     )
 }

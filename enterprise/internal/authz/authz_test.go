@@ -12,12 +12,12 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -48,7 +48,7 @@ func (m gitlabAuthzProviderParams) URN() string {
 
 func (m gitlabAuthzProviderParams) Validate() []string { return nil }
 
-func (m gitlabAuthzProviderParams) FetchUserPerms(context.Context, *extsvc.Account) ([]extsvc.RepoID, error) {
+func (m gitlabAuthzProviderParams) FetchUserPerms(context.Context, *extsvc.Account) ([]extsvc.RepoID, extsvc.RepoIDType, error) {
 	panic("should never be called")
 }
 
@@ -500,7 +500,7 @@ type fakeStore struct {
 	bitbucketServers []*schema.BitbucketServerConnection
 }
 
-func (s fakeStore) List(ctx context.Context, opt db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+func (s fakeStore) List(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 	mustMarshalJSONString := func(v interface{}) string {
 		str, err := jsoniter.MarshalToString(v)
 		if err != nil {

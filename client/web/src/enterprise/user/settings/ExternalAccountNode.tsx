@@ -2,14 +2,14 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, filter, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
-import { gql } from '../../../../../shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
-import { mutateGraphQL } from '../../../backend/graphql'
+import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import { requestGraphQL } from '../../../backend/graphql'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { userURL } from '../../../user'
 import { ErrorAlert } from '../../../components/alerts'
-import * as H from 'history'
+import { DeleteExternalAccountResult, DeleteExternalAccountVariables, Scalars } from '../../../graphql-operations'
 
 export const externalAccountFragment = gql`
     fragment ExternalAccountFields on ExternalAccount {
@@ -29,8 +29,8 @@ export const externalAccountFragment = gql`
     }
 `
 
-function deleteExternalAccount(externalAccount: GQL.ID): Observable<void> {
-    return mutateGraphQL(
+function deleteExternalAccount(externalAccount: Scalars['ID']): Observable<void> {
+    return requestGraphQL<DeleteExternalAccountResult, DeleteExternalAccountVariables>(
         gql`
             mutation DeleteExternalAccount($externalAccount: ID!) {
                 deleteExternalAccount(externalAccount: $externalAccount) {
@@ -39,13 +39,7 @@ function deleteExternalAccount(externalAccount: GQL.ID): Observable<void> {
             }
         `,
         { externalAccount }
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.deleteExternalAccount || (errors && errors.length > 0)) {
-                throw createAggregateError(errors)
-            }
-        })
-    )
+    ).pipe(map(dataOrThrowErrors), mapTo(undefined))
 }
 
 export interface ExternalAccountNodeProps {
@@ -54,7 +48,6 @@ export interface ExternalAccountNodeProps {
     showUser: boolean
 
     onDidUpdate: () => void
-    history: H.History
 }
 
 interface ExternalAccountNodeState {
@@ -155,11 +148,7 @@ export class ExternalAccountNode extends React.PureComponent<ExternalAccountNode
                             Delete
                         </button>
                         {isErrorLike(this.state.deletionOrError) && (
-                            <ErrorAlert
-                                className="mt-2"
-                                error={this.state.deletionOrError}
-                                history={this.props.history}
-                            />
+                            <ErrorAlert className="mt-2" error={this.state.deletionOrError} />
                         )}
                     </div>
                 </div>

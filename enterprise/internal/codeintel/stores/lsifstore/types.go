@@ -50,6 +50,12 @@ type PackageInformationData struct {
 	Version string
 }
 
+// QualifiedMonikerData pairs a moniker with its package information.
+type QualifiedMonikerData struct {
+	MonikerData
+	PackageInformationData
+}
+
 // DiagnosticData carries diagnostic information attached to a range within its
 // containing document.
 type DiagnosticData struct {

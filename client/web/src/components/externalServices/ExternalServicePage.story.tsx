@@ -24,6 +24,10 @@ const fetchExternalService: typeof _fetchExternalService = () =>
         config: '{"githubconfig": true}',
         displayName: 'GitHub.com',
         webhookURL: null,
+        lastSyncError: null,
+        repoCount: 0,
+        lastSyncAt: '0001-01-01T00:00:00Z',
+        nextSyncAt: '0001-01-01T00:00:00Z',
     })
 
 add('View external service config', () => (

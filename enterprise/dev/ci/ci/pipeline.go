@@ -42,10 +42,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		env["PERCY_TARGET_BRANCH"] = c.branch
 	}
 
-	for k, v := range env {
-		bk.BeforeEveryStepOpts = append(bk.BeforeEveryStepOpts, bk.Env(k, v))
-	}
-
 	if c.profilingEnabled {
 		bk.AfterEveryStepOpts = append(bk.AfterEveryStepOpts, func(s *bk.Step) {
 			// wrap "time -v" around each command for CPU/RAM utilization information
@@ -116,6 +112,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addBrowserExt,
 			addWebApp,
 			addSharedTests(c),
+			addBrandedTests,
 			addGoTests,
 			addGoBuild,
 			addDockerfileLint,
@@ -129,12 +126,14 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		//
 		// PERF: Try to order steps such that slower steps are first.
 		pipelineOperations = []func(*bk.Pipeline){
+			triggerAsync(c),               // triggers a slow pipeline, so do it first.
 			addBackendIntegrationTests(c), // ~11m
 			addDockerImages(c, false),     // ~8m (candidate images)
 			addLint,                       // ~4.5m
 			addSharedTests(c),             // ~4.5m
 			addWebApp,                     // ~3m
 			addBrowserExt,                 // ~2m
+			addBrandedTests,               // ~1.5m
 			addGoTests,                    // ~1.5m
 			addCheck,                      // ~1m
 			addGoBuild,                    // ~0.5m
@@ -148,7 +147,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Construct pipeline
-	pipeline := &bk.Pipeline{}
+	pipeline := &bk.Pipeline{
+		Env: env,
+	}
 	for _, p := range pipelineOperations {
 		p(pipeline)
 	}

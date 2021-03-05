@@ -65,10 +65,10 @@ describe('QueryBuilder', () => {
     })
 
     it('checks that the "Author", "Before", "After", and "Message" fields do not exist if the search type is set to code search', () => {
-        expect(queryByTestId(container, 'test-author')).toBeNull()
-        expect(queryByTestId(container, 'test-after')).toBeNull()
-        expect(queryByTestId(container, 'test-before')).toBeNull()
-        expect(queryByTestId(container, 'test-message')).toBeNull()
+        expect(queryByTestId(container, 'test-author')).not.toBeInTheDocument()
+        expect(queryByTestId(container, 'test-after')).not.toBeInTheDocument()
+        expect(queryByTestId(container, 'test-before')).not.toBeInTheDocument()
+        expect(queryByTestId(container, 'test-message')).not.toBeInTheDocument()
     })
 
     it('checks that the "Author", "Before", "After", and "Message" fields exist if the search type is set to diff search', async () => {
@@ -76,13 +76,13 @@ describe('QueryBuilder', () => {
         fireEvent.change(typeField, { target: { value: 'diff' } })
 
         await waitFor(() => queryByTestId(container, 'test-author'))
-        expect(queryByTestId(container, 'test-author')).toBeTruthy()
+        expect(queryByTestId(container, 'test-author')).toBeVisible()
         await waitFor(() => queryByTestId(container, 'test-after'))
-        expect(queryByTestId(container, 'test-after')).toBeTruthy()
+        expect(queryByTestId(container, 'test-after')).toBeVisible()
         await waitFor(() => queryByTestId(container, 'test-before'))
-        expect(queryByTestId(container, 'test-before')).toBeTruthy()
+        expect(queryByTestId(container, 'test-before')).toBeVisible()
         await waitFor(() => queryByTestId(container, 'test-message'))
-        expect(queryByTestId(container, 'test-message')).toBeTruthy()
+        expect(queryByTestId(container, 'test-message')).toBeVisible()
     })
 
     it('checks that the "Author", "Before", and "After" fields exist if type is commit', async () => {
@@ -90,13 +90,13 @@ describe('QueryBuilder', () => {
         fireEvent.change(typeField, { target: { value: 'commit' } })
 
         await waitFor(() => queryByTestId(container, 'test-author'))
-        expect(queryByTestId(container, 'test-author')).toBeTruthy()
+        expect(queryByTestId(container, 'test-author')).toBeVisible()
         await waitFor(() => queryByTestId(container, 'test-after'))
-        expect(queryByTestId(container, 'test-after')).toBeTruthy()
+        expect(queryByTestId(container, 'test-after')).toBeVisible()
         await waitFor(() => queryByTestId(container, 'test-before'))
-        expect(queryByTestId(container, 'test-before')).toBeTruthy()
+        expect(queryByTestId(container, 'test-before')).toBeVisible()
         await waitFor(() => queryByTestId(container, 'test-message'))
-        expect(queryByTestId(container, 'test-message')).toBeTruthy()
+        expect(queryByTestId(container, 'test-message')).toBeVisible()
     })
 
     it('fires the onFieldsQueryChange prop handler with the "author:" filter when updating the "Author" field', async () => {

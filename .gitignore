@@ -155,12 +155,11 @@ storybook-static/
 *.pem
 *.crt
 
-# Custom dev-specific nginx config
-/dev/*.nginx.conf
-
 # tilt files
 /dev/tilt/generated-cluster
 /dev/tilt/tilt-watch-targets
 
 # sonarqube
 .scannerwork
+
+depgraph.cache

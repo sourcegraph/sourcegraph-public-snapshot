@@ -5,9 +5,11 @@ import (
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -23,7 +25,7 @@ func (r *siteResolver) ExternalAccounts(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	var opt db.ExternalAccountsListOptions
+	var opt database.ExternalAccountsListOptions
 	if args.ServiceType != nil {
 		opt.ServiceType = *args.ServiceType
 	}
@@ -41,7 +43,7 @@ func (r *siteResolver) ExternalAccounts(ctx context.Context, args *struct {
 		}
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
-	return &externalAccountConnectionResolver{opt: opt}, nil
+	return &externalAccountConnectionResolver{db: r.db, opt: opt}, nil
 }
 
 func (r *UserResolver) ExternalAccounts(ctx context.Context, args *struct {
@@ -52,11 +54,11 @@ func (r *UserResolver) ExternalAccounts(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	opt := db.ExternalAccountsListOptions{
+	opt := database.ExternalAccountsListOptions{
 		UserID: r.user.ID,
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
-	return &externalAccountConnectionResolver{opt: opt}, nil
+	return &externalAccountConnectionResolver{db: r.db, opt: opt}, nil
 }
 
 // externalAccountConnectionResolver resolves a list of external accounts.
@@ -64,7 +66,8 @@ func (r *UserResolver) ExternalAccounts(ctx context.Context, args *struct {
 // 🚨 SECURITY: When instantiating an externalAccountConnectionResolver value, the caller MUST check
 // permissions.
 type externalAccountConnectionResolver struct {
-	opt db.ExternalAccountsListOptions
+	db  dbutil.DB
+	opt database.ExternalAccountsListOptions
 
 	// cache results because they are used by multiple fields
 	once             sync.Once
@@ -81,7 +84,7 @@ func (r *externalAccountConnectionResolver) compute(ctx context.Context) ([]*ext
 			opt2.Limit++ // so we can detect if there is a next page
 		}
 
-		r.externalAccounts, r.err = db.ExternalAccounts.List(ctx, opt2)
+		r.externalAccounts, r.err = database.GlobalExternalAccounts.List(ctx, opt2)
 	})
 	return r.externalAccounts, r.err
 }
@@ -94,13 +97,13 @@ func (r *externalAccountConnectionResolver) Nodes(ctx context.Context) ([]*exter
 
 	var l []*externalAccountResolver
 	for _, externalAccount := range externalAccounts {
-		l = append(l, &externalAccountResolver{account: *externalAccount})
+		l = append(l, &externalAccountResolver{db: r.db, account: *externalAccount})
 	}
 	return l, nil
 }
 
 func (r *externalAccountConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	count, err := db.ExternalAccounts.Count(ctx, r.opt)
+	count, err := database.GlobalExternalAccounts.Count(ctx, r.opt)
 	return int32(count), err
 }
 
@@ -119,7 +122,7 @@ func (r *schemaResolver) DeleteExternalAccount(ctx context.Context, args *struct
 	if err != nil {
 		return nil, err
 	}
-	account, err := db.ExternalAccounts.Get(ctx, id)
+	account, err := database.GlobalExternalAccounts.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +132,7 @@ func (r *schemaResolver) DeleteExternalAccount(ctx context.Context, args *struct
 		return nil, err
 	}
 
-	if err := db.ExternalAccounts.Delete(ctx, account.ID); err != nil {
+	if err := database.GlobalExternalAccounts.Delete(ctx, account.ID); err != nil {
 		return nil, err
 	}
 

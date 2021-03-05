@@ -11,34 +11,45 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background/commitgraph"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background/indexing"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background/janitor"
 	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	codeintelgqlresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/graphql"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
-	if err := initServices(ctx); err != nil {
+func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services) error {
+	observationContext := &observation.Context{
+		Logger:     log15.Root(),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
+
+	if err := initServices(ctx, db); err != nil {
 		return err
 	}
 
-	resolver, err := newResolver(ctx)
+	if err := registerMigrations(ctx, db, outOfBandMigrationRunner); err != nil {
+		return err
+	}
+
+	resolver, err := newResolver(ctx, db, observationContext)
 	if err != nil {
 		return err
 	}
 
-	uploadHandler, err := newUploadHandler(ctx)
+	uploadHandler, err := newUploadHandler(ctx, db)
 	if err != nil {
 		return err
 	}
 
-	routines, err := newBackgroundRoutines()
-	if err != nil {
-		return err
-	}
+	routines := newBackgroundRoutines(observationContext)
 
 	enterpriseServices.CodeIntelResolver = resolver
 	enterpriseServices.NewCodeIntelUploadHandler = uploadHandler
@@ -56,30 +67,32 @@ func Init(ctx context.Context, enterpriseServices *enterprise.Services) error {
 	return nil
 }
 
-func newResolver(ctx context.Context) (gql.CodeIntelResolver, error) {
+func newResolver(ctx context.Context, db dbutil.DB, observationContext *observation.Context) (gql.CodeIntelResolver, error) {
 	hunkCache, err := codeintelresolvers.NewHunkCache(config.HunkCacheSize)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to initialize hunk cache: %s", err)
+		return nil, fmt.Errorf("failed to initialize hunk cache: %s", err)
 	}
 
 	innerResolver := codeintelresolvers.NewResolver(
-		&resolvers.DBStoreShim{services.dbStore},
+		services.dbStore,
 		services.lsifStore,
-		services.api,
+		services.gitserverClient,
+		services.indexEnqueuer,
 		hunkCache,
+		observationContext,
 	)
-	resolver := codeintelgqlresolvers.NewResolver(innerResolver)
+	resolver := codeintelgqlresolvers.NewResolver(db, innerResolver)
 
 	return resolver, err
 }
 
-func newUploadHandler(ctx context.Context) (func(internal bool) http.Handler, error) {
-	internalHandler, err := NewCodeIntelUploadHandler(ctx, true)
+func newUploadHandler(ctx context.Context, db dbutil.DB) (func(internal bool) http.Handler, error) {
+	internalHandler, err := NewCodeIntelUploadHandler(ctx, db, true)
 	if err != nil {
 		return nil, err
 	}
 
-	externalHandler, err := NewCodeIntelUploadHandler(ctx, false)
+	externalHandler, err := NewCodeIntelUploadHandler(ctx, db, false)
 	if err != nil {
 		return nil, err
 	}
@@ -95,29 +108,63 @@ func newUploadHandler(ctx context.Context) (func(internal bool) http.Handler, er
 	return uploadHandler, nil
 }
 
-func newBackgroundRoutines() ([]goroutine.BackgroundRoutine, error) {
-	observationContext := &observation.Context{
-		Logger:     log15.Root(),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-		Registerer: prometheus.DefaultRegisterer,
+func newBackgroundRoutines(observationContext *observation.Context) (routines []goroutine.BackgroundRoutine) {
+	routines = append(routines, newCommitGraphRoutines(observationContext)...)
+	routines = append(routines, newIndexingRoutines(observationContext)...)
+	routines = append(routines, newJanitorRoutines(observationContext)...)
+	return routines
+}
+
+func newCommitGraphRoutines(observationContext *observation.Context) []goroutine.BackgroundRoutine {
+	return []goroutine.BackgroundRoutine{
+		commitgraph.NewUpdater(
+			services.dbStore,
+			services.gitserverClient,
+			config.CommitGraphUpdateTaskInterval,
+			observationContext,
+		),
 	}
+}
 
-	dbStoreShim := &background.DBStoreShim{services.dbStore}
-	lsifStoreShim := services.lsifStore
-	gitserverClient := &background.GitserverClientShim{services.gitserverClient}
-	metrics := background.NewMetrics(observationContext.Registerer)
-
-	routines := []goroutine.BackgroundRoutine{
-		background.NewAbandonedUploadJanitor(dbStoreShim, config.UploadTimeout, config.BackgroundTaskInterval, metrics),
-		background.NewDeletedRepositoryJanitor(dbStoreShim, config.BackgroundTaskInterval, metrics),
-		background.NewHardDeleter(dbStoreShim, lsifStoreShim, config.BackgroundTaskInterval, metrics),
-		background.NewIndexScheduler(dbStoreShim, gitserverClient, config.IndexBatchSize, config.MinimumTimeSinceLastEnqueue, config.MinimumSearchCount, float64(config.MinimumSearchRatio)/100, config.MinimumPreciseCount, config.BackgroundTaskInterval, metrics),
-		background.NewIndexabilityUpdater(dbStoreShim, gitserverClient, config.MinimumSearchCount, float64(config.MinimumSearchRatio)/100, config.MinimumPreciseCount, config.BackgroundTaskInterval, metrics),
-		background.NewRecordExpirer(dbStoreShim, config.DataTTL, config.BackgroundTaskInterval, metrics),
-		background.NewUploadResetter(dbStoreShim, config.BackgroundTaskInterval, metrics),
-		background.NewIndexResetter(dbStoreShim, config.BackgroundTaskInterval, metrics),
-		background.NewCommitUpdater(dbStoreShim, gitserverClient, config.BackgroundTaskInterval),
+func newIndexingRoutines(observationContext *observation.Context) []goroutine.BackgroundRoutine {
+	return []goroutine.BackgroundRoutine{
+		indexing.NewIndexScheduler(
+			services.dbStore,
+			services.indexEnqueuer,
+			config.IndexBatchSize,
+			config.MinimumTimeSinceLastEnqueue,
+			config.MinimumSearchCount,
+			float64(config.MinimumSearchRatio)/100,
+			config.MinimumPreciseCount,
+			config.AutoIndexingTaskInterval,
+			observationContext,
+		),
+		indexing.NewIndexabilityUpdater(
+			services.dbStore,
+			services.gitserverClient,
+			config.MinimumSearchCount,
+			float64(config.MinimumSearchRatio)/100,
+			config.MinimumPreciseCount,
+			config.AutoIndexingSkipManualInterval,
+			config.AutoIndexingTaskInterval,
+			observationContext,
+		),
 	}
+}
 
-	return routines, nil
+func newJanitorRoutines(observationContext *observation.Context) []goroutine.BackgroundRoutine {
+	dbStore := &janitor.DBStoreShim{services.dbStore}
+	uploadWorkerStore := dbstore.WorkerutilUploadStore(services.dbStore, observationContext)
+	indexWorkerStore := dbstore.WorkerutilIndexStore(services.dbStore, observationContext)
+	lsifStore := services.lsifStore
+	metrics := janitor.NewMetrics(observationContext)
+
+	return []goroutine.BackgroundRoutine{
+		janitor.NewAbandonedUploadJanitor(dbStore, config.UploadTimeout, config.CleanupTaskInterval, metrics),
+		janitor.NewDeletedRepositoryJanitor(dbStore, config.CleanupTaskInterval, metrics),
+		janitor.NewHardDeleter(dbStore, lsifStore, config.CleanupTaskInterval, metrics),
+		janitor.NewRecordExpirer(dbStore, config.DataTTL, config.CleanupTaskInterval, metrics),
+		janitor.NewUploadResetter(uploadWorkerStore, config.CleanupTaskInterval, metrics, observationContext),
+		janitor.NewIndexResetter(indexWorkerStore, config.CleanupTaskInterval, metrics, observationContext),
+	}
 }

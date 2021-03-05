@@ -11,14 +11,14 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"golang.org/x/net/context/ctxhttp"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
-func FetchTarFromGithub(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error) {
+func FetchTarFromGithub(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 	// key is a sha256 hash since we want to use it for the disk name
-	h := sha256.Sum256([]byte(string(repo.Name) + " " + string(commit)))
+	h := sha256.Sum256([]byte(string(repo) + " " + string(commit)))
 	key := hex.EncodeToString(h[:])
 	path := filepath.Join("/tmp/search_test/codeload/", key+".tar.gz")
 
@@ -34,7 +34,7 @@ func FetchTarFromGithub(ctx context.Context, repo gitserver.Repo, commit api.Com
 
 	// Fetch archive to a temporary path
 	tmpPath := path + ".part"
-	url := fmt.Sprintf("https://codeload.%s/tar.gz/%s", string(repo.Name), string(commit))
+	url := fmt.Sprintf("https://codeload.%s/tar.gz/%s", string(repo), string(commit))
 	fmt.Println("fetching", url)
 	resp, err := ctxhttp.Get(ctx, nil, url)
 	if err != nil {

@@ -1,6 +1,6 @@
 # GraphQL integration tests
 
-This directory contains GraphQL-based integration tests in the form of standard Go tests.
+This directory contains API-based integration tests in the form of standard Go tests. It is called gqltest since most of our API is GraphQL. However, the test suite has been extended to test other endpoints such as streaming search.
 
 ## How to set up credentials
 
@@ -26,6 +26,15 @@ export BITBUCKET_SERVER_USERNAME=<REDACTED>
 
 You need to run `direnv allow` after editing the `.envrc` file.
 
+Alternatively you can use the 1password CLI tool:
+
+```sh
+# dev-private token for ghe.sgdev.org
+op get item bw4nttlfqve3rc6xqzbqq7l7pm | jq -r '.. | select(.t? == "token name: dev-private") | @sh "export GITHUB_TOKEN=\(.v)"'
+# AWS and Bitbucket tokens
+op get item 5q5lnpirajegt7uifngeabrak4 | jq -r '.details.sections[] | .fields[] | @sh "export \(.t)=\(.v)"
+```
+
 ## How to run tests
 
 GraphQL-based integration tests are running against a live Sourcegraph instance, the eaiset way to make one is by booting up a single Docker container:
@@ -39,7 +48,7 @@ docker run --publish 7080:7080 --rm sourcegraph/server:insiders
 Once the the instance is live (look for the log line `✱ Sourcegraph is ready at: http://127.0.0.1:7080`), you can open another terminal tab to run these tests under this directory (`dev/gqltest`):
 
 ```sh
-→ go test -tags "gqltest"
+→ go test -long
 2020/07/17 14:17:32 Site admin has been created: gqltest-admin
 PASS
 ok  	github.com/sourcegraph/sourcegraph/dev/gqltest	31.521s
@@ -50,7 +59,7 @@ ok  	github.com/sourcegraph/sourcegraph/dev/gqltest	31.521s
 It is not required to boot up a single Docker container to run these tests, which means it's also possible to run these tests against any Sourcegraph instance, for example, your local dev instance:
 
 ```sh
-go test -tags "gqltest" -base-url "http://localhost:3080" -email "joe@sourcegraph.com" -username "joe" -password "<REDACTED>"
+go test -long -base-url "http://localhost:3080" -email "joe@sourcegraph.com" -username "joe" -password "<REDACTED>"
 ```
 
 Generally, you're able to repeatedly run these tests regardless of any failures because tests are written in the way that cleans up and restores to the previous state. It is aware of if the instance has been initialized, so you can focus on debugging tests.
@@ -58,7 +67,7 @@ Generally, you're able to repeatedly run these tests regardless of any failures 
 Because we're using the standard Go test framework, you are able to just run a single or subset of these tests:
 
 ```sh
-→ go test -tags "gqltest" -run TestSearch
+→ go test -long -run TestSearch
 2020/07/17 14:20:59 Site admin authenticated: gqltest-admin
 PASS
 ok  	github.com/sourcegraph/sourcegraph/dev/gqltest	3.073s
@@ -68,9 +77,9 @@ ok  	github.com/sourcegraph/sourcegraph/dev/gqltest	3.073s
 
 Adding new tests to this test suite is as easy as adding a Go test, here are some general rules to follow:
 
-- Add `// +build gqltest` on every new file as the very first line.
 - Use `gqltest-` prefix for entity name, and be as specific as possible for easier debugging, e.g. `gqltest-org-user-1`.
 - Restore the previous state regardless of failures, including:
   - Delete new users created during the test.
   - Delete external service created during the test.
   - Although, sometimes you would not want to delete an entity so you could login and inspect the failure state.
+- Prefix your branch name with `master-dry-run/` will run integration tests in CI on your pull request.

@@ -30,7 +30,8 @@
  "auth.providers": [
    {
      "type": "saml",
-     "identityProviderMetadataURL": "https://okta.example.com/app/8VglnckX0yyhdkp0bk00/sso/saml/metadata"
+     "identityProviderMetadataURL": "https://okta.example.com/app/8VglnckX0yyhdkp0bk00/sso/saml/metadata",
+     "allowSignup": true 
    }
  ]
 }

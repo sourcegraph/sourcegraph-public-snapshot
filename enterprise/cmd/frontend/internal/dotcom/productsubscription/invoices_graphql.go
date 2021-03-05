@@ -56,13 +56,13 @@ func (r *productSubscriptionPreviewInvoice) AfterInvoiceItem() graphqlbackend.Pr
 	return r.after
 }
 
-func (ProductSubscriptionLicensingResolver) PreviewProductSubscriptionInvoice(ctx context.Context, args *graphqlbackend.PreviewProductSubscriptionInvoiceArgs) (graphqlbackend.ProductSubscriptionPreviewInvoice, error) {
+func (r ProductSubscriptionLicensingResolver) PreviewProductSubscriptionInvoice(ctx context.Context, args *graphqlbackend.PreviewProductSubscriptionInvoiceArgs) (graphqlbackend.ProductSubscriptionPreviewInvoice, error) {
 	// Support previewing an invoice with or without a customer ID.
 	var custID string
 	var accountUserID *int32
 	if args.Account != nil {
 		// There is a customer ID given.
-		accountUser, err := graphqlbackend.UserByID(ctx, *args.Account)
+		accountUser, err := graphqlbackend.UserByID(ctx, r.DB, *args.Account)
 		if err != nil {
 			return nil, err
 		}
@@ -126,7 +126,7 @@ func (ProductSubscriptionLicensingResolver) PreviewProductSubscriptionInvoice(ct
 		//
 		// When updating an existing subscription, craft the params to replace the existing subscription
 		// item (otherwise the invoice would include both the existing and updated subscription items).
-		subToUpdate, err := productSubscriptionByID(ctx, *args.SubscriptionToUpdate)
+		subToUpdate, err := productSubscriptionByID(ctx, r.DB, *args.SubscriptionToUpdate)
 		if err != nil {
 			return nil, err
 		}

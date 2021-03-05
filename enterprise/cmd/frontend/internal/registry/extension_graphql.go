@@ -6,14 +6,17 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // extensionDBResolver implements the GraphQL type RegistryExtension.
 type extensionDBResolver struct {
-	v *dbExtension
+	db dbutil.DB
+	v  *dbExtension
 
 	// Supplied as part of list endpoints, but
 	// calculated as part of single-extension endpoints
@@ -34,7 +37,7 @@ func (r *extensionDBResolver) ExtensionIDWithoutRegistry() string {
 }
 
 func (r *extensionDBResolver) Publisher(ctx context.Context) (graphqlbackend.RegistryPublisher, error) {
-	return getRegistryPublisher(ctx, r.v.Publisher)
+	return getRegistryPublisher(ctx, r.db, r.v.Publisher)
 }
 
 func (r *extensionDBResolver) Name() string { return r.v.Name }
@@ -84,7 +87,7 @@ func (r *extensionDBResolver) IsWorkInProgress() bool {
 }
 
 func (r *extensionDBResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	err := toRegistryPublisherID(r.v).viewerCanAdminister(ctx)
+	err := toRegistryPublisherID(r.v).viewerCanAdminister(ctx, r.db)
 	if err == backend.ErrMustBeSiteAdmin || err == backend.ErrNotAnOrgMember || err == backend.ErrNotAuthenticated {
 		return false, nil
 	}

@@ -4,18 +4,38 @@
 package search
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
-	"io"
+	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
+	"time"
 
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-// ServeStream is an http handler which streams back search results.
-func ServeStream(w http.ResponseWriter, r *http.Request) {
+// StreamHandler is an http handler which streams back search results.
+func StreamHandler(db dbutil.DB) http.Handler {
+	return &streamHandler{
+		db:                db,
+		newSearchResolver: defaultNewSearchResolver,
+	}
+}
+
+type streamHandler struct {
+	db                dbutil.DB
+	newSearchResolver func(context.Context, dbutil.DB, *graphqlbackend.SearchArgs) (searchResolver, error)
+}
+
+func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 
@@ -25,136 +45,165 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	eventWriter, err := newEventStreamWriter(w)
+	tr, ctx := trace.New(ctx, "search.ServeStream", args.Query,
+		trace.Tag{Key: "version", Value: args.Version},
+		trace.Tag{Key: "pattern_type", Value: args.PatternType},
+		trace.Tag{Key: "version_context", Value: args.VersionContext},
+	)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	eventWriter, err := streamhttp.NewWriter(w)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	search, err := graphqlbackend.NewSearchImplementer(ctx, &graphqlbackend.SearchArgs{
-		Query:          args.Query,
-		Version:        args.Version,
-		PatternType:    strPtr(args.PatternType),
-		VersionContext: strPtr(args.VersionContext),
-	})
-	if err != nil {
-		eventWriter.Event("error", err.Error())
-		return
+	// Always send a final done event so clients know the stream is shutting
+	// down.
+	defer eventWriter.Event("done", map[string]interface{}{})
+
+	// Log events to trace
+	eventWriter.StatHook = eventStreamOTHook(tr.LogFields)
+
+	events, inputs, results := h.startSearch(ctx, args)
+
+	progress := progressAggregator{
+		Start: time.Now(),
+		Limit: inputs.MaxResults(),
 	}
 
-	resultsResolver, err := search.Results(ctx)
-	if err != nil {
-		eventWriter.Event("error", err.Error())
-		return
+	// Display is the number of results we send down. If display is < 0 we
+	// want to send everything we find before hitting a limit. Otherwise we
+	// can only send up to limit results.
+	display := args.Display
+	if limit := inputs.MaxResults(); display < 0 || display > limit {
+		display = limit
 	}
 
-	const filematchesChunk = 1000
-	filematchesBuf := make([]eventFileMatch, 0, filematchesChunk)
-	flushFileMatchesBuf := func() {
-		if len(filematchesBuf) > 0 {
-			if err := eventWriter.Event("filematches", filematchesBuf); err != nil {
-				// EOF
-				return
-			}
-			filematchesBuf = filematchesBuf[:0]
+	sendProgress := func() {
+		_ = eventWriter.Event("progress", progress.Current())
+	}
+
+	filters := &graphqlbackend.SearchFilters{
+		Globbing: false, // TODO
+	}
+
+	// Store marshalled matches and flush periodically or when we go over
+	// 32kb.
+	matchesBuf := &jsonArrayBuf{
+		// 32kb chosen to be smaller than bufio.MaxTokenSize. Note: we can
+		// still write more than that.
+		FlushSize: 32 * 1024,
+		Write: func(data []byte) error {
+			return eventWriter.EventBytes("matches", data)
+		},
+	}
+	matchesFlush := func() {
+		if err := matchesBuf.Flush(); err != nil {
+			// EOF
+			return
+		}
+
+		if progress.Dirty {
+			sendProgress()
 		}
 	}
-
-	const symbolmatchesChunk = 1000
-	symbolmatchesBuf := make([]eventSymbolMatch, 0, symbolmatchesChunk)
-	flushSymbolMatchesBuf := func() {
-		if len(symbolmatchesBuf) > 0 {
-			if err := eventWriter.Event("symbolmatches", symbolmatchesBuf); err != nil {
-				// EOF
-				return
-			}
-			symbolmatchesBuf = symbolmatchesBuf[:0]
-		}
+	matchesAppend := func(m streamhttp.EventMatch) {
+		// Only possible error is EOF, ignore
+		_ = matchesBuf.Append(m)
 	}
 
-	const repomatchesChunk = 1000
-	repomatchesBuf := make([]eventRepoMatch, 0, repomatchesChunk)
-	flushRepoMatchesBuf := func() {
-		if len(repomatchesBuf) > 0 {
-			if err := eventWriter.Event("repomatches", repomatchesBuf); err != nil {
-				// EOF
-				return
-			}
-			repomatchesBuf = repomatchesBuf[:0]
-		}
-	}
+	flushTicker := time.NewTicker(100 * time.Millisecond)
+	defer flushTicker.Stop()
 
-	const commitmatchesChunk = 1000
-	commitmatchesBuf := make([]eventCommitMatch, 0, commitmatchesChunk)
-	flushCommitMatchesBuf := func() {
-		if len(commitmatchesBuf) > 0 {
-			if err := eventWriter.Event("commitmatches", commitmatchesBuf); err != nil {
-				// EOF
-				return
-			}
-			commitmatchesBuf = commitmatchesBuf[:0]
-		}
-	}
+	pingTicker := time.NewTicker(5 * time.Second)
+	defer pingTicker.Stop()
 
-	for _, result := range resultsResolver.Results() {
-		if fm, ok := result.ToFileMatch(); ok {
-			if syms := fm.Symbols(); len(syms) > 0 {
-				// Inlining to avoid exporting a bunch of stuff from
-				// graphqlbackend
-				symbols := make([]symbol, 0, len(syms))
-				for _, sym := range syms {
-					u, err := sym.URL(ctx)
-					if err != nil {
-						continue
+	first := true
+
+	for {
+		var event graphqlbackend.SearchEvent
+		var ok bool
+		select {
+		case event, ok = <-events:
+		case <-flushTicker.C:
+			ok = true
+			matchesFlush()
+		case <-pingTicker.C:
+			ok = true
+			sendProgress()
+		}
+
+		if !ok {
+			break
+		}
+
+		progress.Update(event)
+		filters.Update(event)
+
+		for _, result := range event.Results {
+			if display <= 0 {
+				break
+			}
+
+			if fm, ok := result.ToFileMatch(); ok {
+				display = fm.Limit(display)
+
+				if syms := fm.Symbols(); len(syms) > 0 {
+					// Inlining to avoid exporting a bunch of stuff from
+					// graphqlbackend
+					symbols := make([]streamhttp.Symbol, 0, len(syms))
+					for _, sym := range syms {
+						u, err := sym.URL(ctx)
+						if err != nil {
+							continue
+						}
+						symbols = append(symbols, streamhttp.Symbol{
+							URL:           u,
+							Name:          sym.Name(),
+							ContainerName: fromStrPtr(sym.ContainerName()),
+							Kind:          sym.Kind(),
+						})
 					}
-					symbols = append(symbols, symbol{
-						URL:           u,
-						Name:          sym.Name(),
-						ContainerName: fromStrPtr(sym.ContainerName()),
-						Kind:          sym.Kind(),
-					})
+					matchesAppend(fromSymbolMatch(fm, symbols))
+				} else {
+					matchesAppend(fromFileMatch(&fm.FileMatch))
 				}
-				symbolmatchesBuf = append(symbolmatchesBuf, fromSymbolMatch(fm, symbols))
-				if len(symbolmatchesBuf) == cap(symbolmatchesBuf) {
-					flushSymbolMatchesBuf()
-				}
-			} else {
-				filematchesBuf = append(filematchesBuf, fromFileMatch(fm))
-				if len(filematchesBuf) == cap(filematchesBuf) {
-					flushFileMatchesBuf()
-				}
+			}
+			if repo, ok := result.ToRepository(); ok {
+				display = repo.Limit(display)
+
+				matchesAppend(fromRepository(repo))
+			}
+			if commit, ok := result.ToCommitSearchResult(); ok {
+				display = commit.Limit(display)
+
+				matchesAppend(fromCommit(commit))
 			}
 		}
-		if repo, ok := result.ToRepository(); ok {
-			repomatchesBuf = append(repomatchesBuf, fromRepository(repo))
-			if len(repomatchesBuf) == cap(repomatchesBuf) {
-				flushRepoMatchesBuf()
-			}
-		}
-		if commit, ok := result.ToCommitSearchResult(); ok {
-			commitmatchesBuf = append(commitmatchesBuf, fromCommit(commit))
-			if len(commitmatchesBuf) == cap(commitmatchesBuf) {
-				flushCommitMatchesBuf()
-			}
+
+		// Instantly send results if we have not sent any yet.
+		if first && matchesBuf.Len() > 0 {
+			first = false
+			matchesFlush()
 		}
 	}
 
-	flushFileMatchesBuf()
-	flushSymbolMatchesBuf()
-	flushRepoMatchesBuf()
-	flushCommitMatchesBuf()
+	matchesFlush()
 
-	// Send dynamic filters once. When this is true streaming we may want to
-	// send updated filters as we find more results.
-	if filters := resultsResolver.DynamicFilters(ctx); len(filters) > 0 {
-		buf := make([]eventFilter, 0, len(filters))
+	// Send dynamic filters once.
+	if filters := filters.Compute(); len(filters) > 0 {
+		buf := make([]streamhttp.EventFilter, 0, len(filters))
 		for _, f := range filters {
-			buf = append(buf, eventFilter{
-				Value:    f.Value(),
-				Label:    f.Label(),
-				Count:    int(f.Count()),
-				LimitHit: f.LimitHit(),
-				Kind:     f.Kind(),
+			buf = append(buf, streamhttp.EventFilter{
+				Value:    f.Value,
+				Label:    f.Label,
+				Count:    f.Count,
+				LimitHit: f.IsLimitHit,
+				Kind:     f.Kind,
 			})
 		}
 
@@ -164,25 +213,81 @@ func ServeStream(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	resultsResolver, err := results()
+	if err != nil {
+		_ = eventWriter.Event("error", streamhttp.EventError{Message: err.Error()})
+		return
+	}
+
 	if alert := resultsResolver.Alert(); alert != nil {
-		var pqs []proposedQuery
+		var pqs []streamhttp.ProposedQuery
 		if proposed := alert.ProposedQueries(); proposed != nil {
 			for _, pq := range *proposed {
-				pqs = append(pqs, proposedQuery{
+				pqs = append(pqs, streamhttp.ProposedQuery{
 					Description: fromStrPtr(pq.Description()),
 					Query:       pq.Query(),
 				})
 			}
 		}
-		_ = eventWriter.Event("alert", eventAlert{
+		_ = eventWriter.Event("alert", streamhttp.EventAlert{
 			Title:           alert.Title(),
 			Description:     fromStrPtr(alert.Description()),
 			ProposedQueries: pqs,
 		})
 	}
 
-	// TODO stats
-	_ = eventWriter.Event("done", map[string]interface{}{})
+	_ = eventWriter.Event("progress", progress.Final())
+}
+
+// startSearch will start a search. It returns the events channel which
+// streams out search events. Once events is closed you can call results which
+// will return the results resolver and error.
+func (h *streamHandler) startSearch(ctx context.Context, a *args) (events <-chan graphqlbackend.SearchEvent, inputs graphqlbackend.SearchInputs, results func() (*graphqlbackend.SearchResultsResolver, error)) {
+	eventsC := make(chan graphqlbackend.SearchEvent)
+
+	search, err := h.newSearchResolver(ctx, h.db, &graphqlbackend.SearchArgs{
+		Query:          a.Query,
+		Version:        a.Version,
+		PatternType:    strPtr(a.PatternType),
+		VersionContext: strPtr(a.VersionContext),
+
+		Stream: graphqlbackend.StreamFunc(func(event graphqlbackend.SearchEvent) {
+			eventsC <- event
+		}),
+	})
+	if err != nil {
+		close(eventsC)
+		return eventsC, graphqlbackend.SearchInputs{}, func() (*graphqlbackend.SearchResultsResolver, error) {
+			return nil, err
+		}
+	}
+
+	type finalResult struct {
+		resultsResolver *graphqlbackend.SearchResultsResolver
+		err             error
+	}
+	final := make(chan finalResult, 1)
+	go func() {
+		defer close(final)
+		defer close(eventsC)
+
+		r, err := search.Results(ctx)
+		final <- finalResult{resultsResolver: r, err: err}
+	}()
+
+	return eventsC, search.Inputs(), func() (*graphqlbackend.SearchResultsResolver, error) {
+		f := <-final
+		return f.resultsResolver, f.err
+	}
+}
+
+type searchResolver interface {
+	Results(context.Context) (*graphqlbackend.SearchResultsResolver, error)
+	Inputs() graphqlbackend.SearchInputs
+}
+
+func defaultNewSearchResolver(ctx context.Context, db dbutil.DB, args *graphqlbackend.SearchArgs) (searchResolver, error) {
+	return graphqlbackend.NewSearchImplementer(ctx, db, args)
 }
 
 type args struct {
@@ -190,6 +295,7 @@ type args struct {
 	Version        string
 	PatternType    string
 	VersionContext string
+	Display        int
 }
 
 func parseURLQuery(q url.Values) (*args, error) {
@@ -212,6 +318,12 @@ func parseURLQuery(q url.Values) (*args, error) {
 		return nil, errors.New("no query found")
 	}
 
+	display := get("display", "-1")
+	var err error
+	if a.Display, err = strconv.Atoi(display); err != nil {
+		return nil, fmt.Errorf("display must be an integer, got %q: %w", display, err)
+	}
+
 	return &a, nil
 }
 
@@ -229,13 +341,13 @@ func fromStrPtr(s *string) string {
 	return *s
 }
 
-func fromFileMatch(fm *graphqlbackend.FileMatchResolver) eventFileMatch {
-	lineMatches := make([]eventLineMatch, 0, len(fm.JLineMatches))
-	for _, lm := range fm.JLineMatches {
-		lineMatches = append(lineMatches, eventLineMatch{
-			Line:             lm.JPreview,
-			LineNumber:       lm.JLineNumber,
-			OffsetAndLengths: lm.JOffsetAndLengths,
+func fromFileMatch(fm *result.FileMatch) *streamhttp.EventFileMatch {
+	lineMatches := make([]streamhttp.EventLineMatch, 0, len(fm.LineMatches))
+	for _, lm := range fm.LineMatches {
+		lineMatches = append(lineMatches, streamhttp.EventLineMatch{
+			Line:             lm.Preview,
+			LineNumber:       lm.LineNumber,
+			OffsetAndLengths: lm.OffsetAndLengths,
 		})
 	}
 
@@ -244,43 +356,46 @@ func fromFileMatch(fm *graphqlbackend.FileMatchResolver) eventFileMatch {
 		branches = []string{*fm.InputRev}
 	}
 
-	return eventFileMatch{
-		Path:        fm.JPath,
-		Repository:  fm.Repo.Name(),
+	return &streamhttp.EventFileMatch{
+		Type:        streamhttp.FileMatchType,
+		Path:        fm.Path,
+		Repository:  string(fm.Repo.Name),
 		Branches:    branches,
 		Version:     string(fm.CommitID),
 		LineMatches: lineMatches,
 	}
 }
 
-func fromSymbolMatch(fm *graphqlbackend.FileMatchResolver, symbols []symbol) eventSymbolMatch {
+func fromSymbolMatch(fm *graphqlbackend.FileMatchResolver, symbols []streamhttp.Symbol) *streamhttp.EventSymbolMatch {
 	var branches []string
 	if fm.InputRev != nil {
 		branches = []string{*fm.InputRev}
 	}
 
-	return eventSymbolMatch{
-		Path:       fm.JPath,
-		Repository: fm.Repo.Name(),
+	return &streamhttp.EventSymbolMatch{
+		Type:       streamhttp.SymbolMatchType,
+		Path:       fm.Path,
+		Repository: string(fm.Repo.Name),
 		Branches:   branches,
 		Version:    string(fm.CommitID),
 		Symbols:    symbols,
 	}
 }
 
-func fromRepository(repo *graphqlbackend.RepositoryResolver) eventRepoMatch {
+func fromRepository(repo *graphqlbackend.RepositoryResolver) *streamhttp.EventRepoMatch {
 	var branches []string
 	if rev := repo.Rev(); rev != "" {
 		branches = []string{rev}
 	}
 
-	return eventRepoMatch{
+	return &streamhttp.EventRepoMatch{
+		Type:       streamhttp.RepoMatchType,
 		Repository: repo.Name(),
 		Branches:   branches,
 	}
 }
 
-func fromCommit(commit *graphqlbackend.CommitSearchResultResolver) eventCommitMatch {
+func fromCommit(commit *graphqlbackend.CommitSearchResultResolver) *streamhttp.EventCommitMatch {
 	var content string
 	var ranges [][3]int32
 	if matches := commit.Matches(); len(matches) == 1 {
@@ -292,7 +407,8 @@ func fromCommit(commit *graphqlbackend.CommitSearchResultResolver) eventCommitMa
 			ranges[i] = [3]int32{h.Line(), h.Character(), h.Length()}
 		}
 	}
-	return eventCommitMatch{
+	return &streamhttp.EventCommitMatch{
+		Type:    streamhttp.CommitMatchType,
 		Icon:    commit.Icon(),
 		Label:   commit.Label().Text(),
 		URL:     commit.URL(),
@@ -302,134 +418,68 @@ func fromCommit(commit *graphqlbackend.CommitSearchResultResolver) eventCommitMa
 	}
 }
 
-type eventStreamWriter struct {
-	w     io.Writer
-	enc   *json.Encoder
-	flush func()
+// eventStreamOTHook returns a StatHook which logs to log.
+func eventStreamOTHook(log func(...otlog.Field)) func(streamhttp.WriterStat) {
+	return func(stat streamhttp.WriterStat) {
+		fields := []otlog.Field{
+			otlog.String("streamhttp.Event", stat.Event),
+			otlog.Int("bytes", stat.Bytes),
+			otlog.Int64("duration_ms", stat.Duration.Milliseconds()),
+		}
+		if stat.Error != nil {
+			fields = append(fields, otlog.Error(stat.Error))
+		}
+		log(fields...)
+	}
 }
 
-func newEventStreamWriter(w http.ResponseWriter) (*eventStreamWriter, error) {
-	flusher, ok := w.(http.Flusher)
-	if !ok {
-		return nil, errors.New("http flushing not supported")
-	}
+// jsonArrayBuf builds up a JSON array by marshalling per item. Once the array
+// has reached FlushSize it will be written out via Write and the buffer will
+// be reset.
+type jsonArrayBuf struct {
+	FlushSize int
+	Write     func([]byte) error
 
-	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Cache-Control", "no-cache")
-	w.Header().Set("Connection", "keep-alive")
-
-	return &eventStreamWriter{
-		w:     w,
-		enc:   json.NewEncoder(w),
-		flush: flusher.Flush,
-	}, nil
+	buf bytes.Buffer
 }
 
-func (e *eventStreamWriter) Event(event string, data interface{}) error {
-	if event != "" {
-		// event: $event\n
-		if _, err := e.w.Write([]byte("event: ")); err != nil {
-			return err
-		}
-		if _, err := e.w.Write([]byte(event)); err != nil {
-			return err
-		}
-		if _, err := e.w.Write([]byte("\n")); err != nil {
-			return err
-		}
-	}
-
-	// data: json(data)\n\n
-	if _, err := e.w.Write([]byte("data: ")); err != nil {
-		return err
-	}
-	if err := e.enc.Encode(data); err != nil {
-		return err
-	}
-	// Encode writes a newline, so only need to write one newline.
-	if _, err := e.w.Write([]byte("\n")); err != nil {
+// Append marshals v and adds it to the json array buffer. If the size of the
+// buffer exceed FlushSize the buffer is written out.
+func (j *jsonArrayBuf) Append(v interface{}) error {
+	b, err := json.Marshal(v)
+	if err != nil {
 		return err
 	}
 
-	e.flush()
+	if j.buf.Len() == 0 {
+		j.buf.WriteByte('[')
+	} else {
+		j.buf.WriteByte(',')
+	}
 
+	// err is always nil for a bytes.Buffer
+	_, _ = j.buf.Write(b)
+
+	if j.buf.Len() >= j.FlushSize {
+		return j.Flush()
+	}
 	return nil
 }
 
-// eventFileMatch is a subset of zoekt.FileMatch for our event API.
-type eventFileMatch struct {
-	Path       string   `json:"name"`
-	Repository string   `json:"repository"`
-	Branches   []string `json:"branches,omitempty"`
-	Version    string   `json:"version,omitempty"`
+// Flush writes and resets the buffer if there is data to write.
+func (j *jsonArrayBuf) Flush() error {
+	if j.buf.Len() == 0 {
+		return nil
+	}
 
-	LineMatches []eventLineMatch `json:"lineMatches"`
+	// Terminate array
+	j.buf.WriteByte(']')
+
+	buf := j.buf.Bytes()
+	j.buf.Reset()
+	return j.Write(buf)
 }
 
-// eventLineMatch is a subset of zoekt.LineMatch for our event API.
-type eventLineMatch struct {
-	Line             string     `json:"line"`
-	LineNumber       int32      `json:"lineNumber"`
-	OffsetAndLengths [][2]int32 `json:"offsetAndLengths"`
-}
-
-// eventRepoMatch is a subset of zoekt.FileMatch for our event API.
-type eventRepoMatch struct {
-	Repository string   `json:"repository"`
-	Branches   []string `json:"branches,omitempty"`
-}
-
-// eventSymbolMatch is eventFileMatch but with Symbols instead of LineMatches
-type eventSymbolMatch struct {
-	Path       string   `json:"name"`
-	Repository string   `json:"repository"`
-	Branches   []string `json:"branches,omitempty"`
-	Version    string   `json:"version,omitempty"`
-
-	Symbols []symbol `json:"symbols"`
-}
-
-type symbol struct {
-	URL           string `json:"url"`
-	Name          string `json:"name"`
-	ContainerName string `json:"containerName"`
-	Kind          string `json:"kind"`
-}
-
-// eventCommitMatch is the generic results interface from GQL. There is a lot
-// of potential data that may be useful here, and some thought needs to be put
-// into what is actually useful in a commit result / or if we should have a
-// "type" for that.
-type eventCommitMatch struct {
-	Icon    string `json:"icon"`
-	Label   string `json:"label"`
-	URL     string `json:"url"`
-	Detail  string `json:"detail"`
-	Content string `json:"content"`
-	// [line, character, length]
-	Ranges [][3]int32 `json:"ranges"`
-}
-
-// eventFilter is a suggestion for a search filter. Currently has a 1-1
-// correspondance with the SearchFilter graphql type.
-type eventFilter struct {
-	Value    string `json:"value"`
-	Label    string `json:"label"`
-	Count    int    `json:"count"`
-	LimitHit bool   `json:"limitHit"`
-	Kind     string `json:"kind"`
-}
-
-// eventAlert is GQL.SearchAlert. It replaces when sent to match existing
-// behaviour.
-type eventAlert struct {
-	Title           string          `json:"title"`
-	Description     string          `json:"description,omitempty"`
-	ProposedQueries []proposedQuery `json:"proposedQueries"`
-}
-
-// proposedQuery is a suggested query to run when we emit an alert.
-type proposedQuery struct {
-	Description string `json:"description,omitempty"`
-	Query       string `json:"query"`
+func (j *jsonArrayBuf) Len() int {
+	return j.buf.Len()
 }

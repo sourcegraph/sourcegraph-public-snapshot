@@ -13,11 +13,12 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/net/context/ctxhttp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"golang.org/x/net/context/ctxhttp"
 )
 
 var MockCountGoImporters func(ctx context.Context, repo api.RepoName) (int, error)
@@ -81,7 +82,7 @@ func CountGoImporters(ctx context.Context, repo api.RepoName) (count int, err er
 	// addressed in the future. See https://github.com/sourcegraph/sourcegraph/issues/2663.
 	for _, pkg := range goPackages {
 		// Assumes the import path is the same as the repo name - not always true!
-		response, err := ctxhttp.Get(ctx, countGoImportersHTTPClient, "https://api.godoc.org/importers/"+string(pkg))
+		response, err := ctxhttp.Get(ctx, countGoImportersHTTPClient, "https://api.godoc.org/importers/"+pkg)
 		if err != nil {
 			return 0, err
 		}
@@ -119,15 +120,12 @@ func listGoPackagesInRepoImprecise(ctx context.Context, repoName api.RepoName) (
 	if err != nil {
 		return nil, err
 	}
-	gitRepo, err := CachedGitRepo(ctx, repo)
+
+	commitID, err := git.ResolveRevision(ctx, repo.Name, "HEAD", git.ResolveRevisionOptions{})
 	if err != nil {
 		return nil, err
 	}
-	commitID, err := git.ResolveRevision(ctx, *gitRepo, nil, "HEAD", git.ResolveRevisionOptions{})
-	if err != nil {
-		return nil, err
-	}
-	fis, err := git.ReadDir(ctx, *gitRepo, commitID, "", true)
+	fis, err := git.ReadDir(ctx, repo.Name, commitID, "", true)
 	if err != nil {
 		return nil, err
 	}

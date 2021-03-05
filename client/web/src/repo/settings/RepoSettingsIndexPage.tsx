@@ -16,12 +16,12 @@ import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { eventLogger } from '../../tracking/eventLogger'
 import { ErrorAlert } from '../../components/alerts'
-import * as H from 'history'
+import { Scalars, SettingsAreaRepositoryFields } from '../../graphql-operations'
 
 /**
  * Fetches a repository's text search index information.
  */
-function fetchRepositoryTextSearchIndex(id: GQL.ID): Observable<GQL.IRepositoryTextSearchIndex | null> {
+function fetchRepositoryTextSearchIndex(id: Scalars['ID']): Observable<GQL.IRepositoryTextSearchIndex | null> {
     return queryGraphQL(
         gql`
             query RepositoryTextSearchIndex($id: ID!) {
@@ -70,7 +70,7 @@ function fetchRepositoryTextSearchIndex(id: GQL.ID): Observable<GQL.IRepositoryT
 }
 
 const TextSearchIndexedReference: React.FunctionComponent<{
-    repo: GQL.IRepository
+    repo: SettingsAreaRepositoryFields
     indexedRef: GQL.IRepositoryTextSearchIndexedRef
 }> = ({ repo, indexedRef }) => {
     let Icon: React.ComponentType<{ className?: string }>
@@ -113,8 +113,7 @@ const TextSearchIndexedReference: React.FunctionComponent<{
 }
 
 interface Props extends RouteComponentProps<{}> {
-    repo: GQL.IRepository
-    history: H.History
+    repo: SettingsAreaRepositoryFields
 }
 
 interface State {
@@ -160,11 +159,7 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                 <h2>Indexing</h2>
                 {this.state.loading && <LoadingSpinner className="icon-inline" />}
                 {this.state.error && (
-                    <ErrorAlert
-                        prefix="Error getting repository index status"
-                        error={this.state.error}
-                        history={this.props.history}
-                    />
+                    <ErrorAlert prefix="Error getting repository index status" error={this.state.error} />
                 )}
                 {!this.state.error &&
                     !this.state.loading &&

@@ -1,21 +1,22 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 import { isErrorLike } from '../../../../shared/src/util/errors'
 import classNames from 'classnames'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ErrorAlert } from '../../components/alerts'
 import { ViewContent, ViewContentProps } from '../../views/ViewContent'
-import * as H from 'history'
 import { WidthProvider, Responsive, Layout as ReactGridLayout, Layouts as ReactGridLayouts } from 'react-grid-layout'
 import { ViewProviderResult } from '../../../../shared/src/api/client/services/viewService'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 
 // TODO use a method to get width that also triggers when file explorer is closed
 // (WidthProvider only listens to window resize events)
 const ResponsiveGridLayout = WidthProvider(Responsive)
 
-export interface ViewGridProps extends Omit<ViewContentProps, 'viewContent'> {
+export interface ViewGridProps
+    extends Omit<ViewContentProps, 'viewContent' | 'viewID' | 'containerClassName'>,
+        TelemetryProps {
     views: ViewProviderResult[]
     className?: string
-    history: H.History
 }
 
 const breakpointNames = ['xs', 'sm', 'md', 'lg'] as const
@@ -54,38 +55,55 @@ const viewsToReactGridLayouts = (views: ViewProviderResult[]): ReactGridLayouts 
     return reactGridLayouts
 }
 
-export const ViewGrid: React.FunctionComponent<ViewGridProps> = props => (
-    <div className={classNames(props.className, 'view-grid')}>
-        <ResponsiveGridLayout
-            breakpoints={breakpoints}
-            layouts={viewsToReactGridLayouts(props.views)}
-            cols={columns}
-            autoSize={true}
-            rowHeight={6 * 16}
-            containerPadding={[0, 0]}
-            margin={[12, 12]}
-        >
-            {props.views.map(({ id, view }) => (
-                <div key={id} className={classNames('card view-grid__item')}>
-                    {view === undefined ? (
-                        <div className="flex-grow-1 d-flex flex-column align-items-center justify-content-center">
-                            <LoadingSpinner /> Loading code insight
-                        </div>
-                    ) : isErrorLike(view) ? (
-                        <ErrorAlert className="m-0" error={view} history={props.history} />
-                    ) : (
-                        <>
-                            <h3 className="view-grid__view-title">{view.title}</h3>
-                            {view.subtitle && <div className="view-grid__view-subtitle">{view.subtitle}</div>}
-                            <ViewContent
-                                {...props}
-                                settingsCascade={props.settingsCascade}
-                                viewContent={view.content}
-                            />
-                        </>
-                    )}
-                </div>
-            ))}
-        </ResponsiveGridLayout>
-    </div>
-)
+export const ViewGrid: React.FunctionComponent<ViewGridProps> = props => {
+    const onResizeOrDragStart: ReactGridLayout.ItemCallback = useCallback(
+        (_layout, item) => {
+            try {
+                props.telemetryService.log('InsightUICustomization', { insightType: item.i.split('.')[0] })
+            } catch {
+                // noop
+            }
+        },
+        [props.telemetryService]
+    )
+
+    return (
+        <div className={classNames(props.className, 'view-grid')}>
+            <ResponsiveGridLayout
+                breakpoints={breakpoints}
+                layouts={viewsToReactGridLayouts(props.views)}
+                cols={columns}
+                autoSize={true}
+                rowHeight={6 * 16}
+                containerPadding={[0, 0]}
+                margin={[12, 12]}
+                onResizeStart={onResizeOrDragStart}
+                onDragStart={onResizeOrDragStart}
+            >
+                {props.views.map(({ id, view }) => (
+                    <div key={id} className={classNames('card view-grid__item')}>
+                        {view === undefined ? (
+                            <div className="flex-grow-1 d-flex flex-column align-items-center justify-content-center">
+                                <LoadingSpinner /> Loading code insight
+                            </div>
+                        ) : isErrorLike(view) ? (
+                            <ErrorAlert className="m-0" error={view} />
+                        ) : (
+                            <>
+                                <h3 className="view-grid__view-title">{view.title}</h3>
+                                {view.subtitle && <div className="view-grid__view-subtitle">{view.subtitle}</div>}
+                                <ViewContent
+                                    {...props}
+                                    settingsCascade={props.settingsCascade}
+                                    viewContent={view.content}
+                                    viewID={id}
+                                    containerClassName="view-grid__item"
+                                />
+                            </>
+                        )}
+                    </div>
+                ))}
+            </ResponsiveGridLayout>
+        </div>
+    )
+}

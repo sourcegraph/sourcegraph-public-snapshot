@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 
 /**
  * A React hook to use and set state that is persisted in localStorage.
@@ -12,17 +12,30 @@ export const useLocalStorage = <T>(
     initialValue: T
 ): [T, (value: T | ((previousValue: T) => T)) => void] => {
     const [storedValue, setStoredValue] = useState<T>(() => {
-        const item = localStorage.getItem(key)
-        return item ? (JSON.parse(item) as T) : initialValue
+        try {
+            const item = localStorage.getItem(key)
+            return item ? (JSON.parse(item) as T) : initialValue
+        } catch {
+            return initialValue
+        }
     })
 
-    const setValue = (value: T | ((previousValue: T) => T)): void => {
-        // We need to cast here because T could be a function type itself,
-        // but we cannot tell TypeScript that functions are not allowed as T.
-        const valueToStore = typeof value === 'function' ? (value as (previousValue: T) => T)(storedValue) : value
-        window.localStorage.setItem(key, JSON.stringify(valueToStore))
-        setStoredValue(valueToStore)
-    }
+    // We want `setValue` to have a stable identity like `setState`, so it shouldn't depend on `storedValue`.
+    // Instead, have it read from a ref which is updated on each render.
+    const storedValueReference = useRef<T>(storedValue)
+    storedValueReference.current = storedValue
+
+    const setValue = useCallback(
+        (value: T | ((previousValue: T) => T)): void => {
+            // We need to cast here because T could be a function type itself,
+            // but we cannot tell TypeScript that functions are not allowed as T.
+            const valueToStore =
+                typeof value === 'function' ? (value as (previousValue: T) => T)(storedValueReference.current) : value
+            window.localStorage.setItem(key, JSON.stringify(valueToStore))
+            setStoredValue(valueToStore)
+        },
+        [key]
+    )
 
     return [storedValue, setValue]
 }

@@ -1,0 +1,18 @@
+.file-decoration {
+    &__after {
+        margin-bottom: -0.125rem;
+        color: var(--text-muted);
+
+        &--active {
+            color: $white;
+        }
+    }
+
+    &__meter {
+        width: 1.5rem;
+    }
+
+    &:not(:last-child) {
+        margin-right: 0.75rem;
+    }
+}

@@ -1,8 +1,9 @@
 import AddIcon from 'mdi-react/AddIcon'
 import ConsoleIcon from 'mdi-react/ConsoleIcon'
-import LogoutIcon from 'mdi-react/LogoutIcon'
 import ServerIcon from 'mdi-react/ServerIcon'
 import MapSearchOutlineIcon from 'mdi-react/MapSearchOutlineIcon'
+import AccountCircleIcon from 'mdi-react/AccountCircleIcon'
+import DomainIcon from 'mdi-react/DomainIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 import {
@@ -14,13 +15,17 @@ import {
 } from '../../components/Sidebar'
 import { OrgAvatar } from '../../org/OrgAvatar'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
-import { eventLogger } from '../../tracking/eventLogger'
 import { NavItemDescriptor } from '../../util/contributions'
 import { UserAreaRouteContext } from '../area/UserArea'
-import { HAS_SEEN_TOUR_KEY, HAS_CANCELLED_TOUR_KEY } from '../../search/input/SearchOnboardingTour'
+import {
+    HAS_SEEN_TOUR_KEY,
+    HAS_CANCELLED_TOUR_KEY,
+    HAS_COMPLETED_TOUR_KEY,
+} from '../../search/input/SearchOnboardingTour'
 import { OnboardingTourProps } from '../../search'
 import { AuthenticatedUser } from '../../auth'
 import { UserAreaUserFields } from '../../graphql-operations'
+import { Badge, BadgeStatus } from '../../components/Badge'
 
 export interface UserSettingsSidebarItemConditionContext {
     user: UserAreaUserFields
@@ -28,10 +33,14 @@ export interface UserSettingsSidebarItemConditionContext {
     isSourcegraphDotCom: boolean
 }
 
-export type UserSettingsSidebarItems = Record<
-    'account',
-    readonly NavItemDescriptor<UserSettingsSidebarItemConditionContext>[]
->
+type UserSettingsSidebarItem = NavItemDescriptor<UserSettingsSidebarItemConditionContext> & {
+    status?: BadgeStatus
+}
+
+export interface UserSettingsSidebarItems {
+    account: readonly UserSettingsSidebarItem[]
+    misc?: readonly UserSettingsSidebarItem[]
+}
 
 export interface UserSettingsSidebarProps extends UserAreaRouteContext, OnboardingTourProps, RouteComponentProps<{}> {
     items: UserSettingsSidebarItems
@@ -42,6 +51,7 @@ export interface UserSettingsSidebarProps extends UserAreaRouteContext, Onboardi
 function reEnableSearchTour(): void {
     localStorage.setItem(HAS_SEEN_TOUR_KEY, 'false')
     localStorage.setItem(HAS_CANCELLED_TOUR_KEY, 'false')
+    localStorage.setItem(HAS_COMPLETED_TOUR_KEY, 'false')
 }
 
 /** Sidebar for user account pages. */
@@ -59,7 +69,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
     }
 
     return (
-        <div className={`user-settings-sidebar ${props.className || ''}`}>
+        <div className={props.className}>
             {/* Indicate when the site admin is viewing another user's account */}
             {siteAdminViewingOtherUser && (
                 <SiteAdminAlert className="sidebar__alert">
@@ -68,22 +78,35 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
             )}
 
             <SidebarGroup>
-                <SidebarGroupHeader label="User account" />
+                <SidebarGroupHeader label="User account" icon={AccountCircleIcon} />
                 <SidebarGroupItems>
                     {props.items.account.map(
-                        ({ label, to, exact, condition = () => true }) =>
+                        ({ label, to, exact, status, condition = () => true }) =>
                             condition(context) && (
-                                <SidebarNavItem key={label} to={props.match.path + to} exact={exact}>
-                                    {label}
+                                <SidebarNavItem key={label} to={props.match.path + to} exact={exact} className="d-flex">
+                                    {label} {status && <Badge className="ml-1" status={status} />}
                                 </SidebarNavItem>
                             )
                     )}
                 </SidebarGroupItems>
             </SidebarGroup>
-
+            {props.items.misc?.length && (
+                <SidebarGroup>
+                    <SidebarGroupItems>
+                        {props.items.misc.map(
+                            ({ label, to, exact, condition = () => true }) =>
+                                condition(context) && (
+                                    <SidebarNavItem key={label} to={props.match.path + to} exact={exact}>
+                                        {label}
+                                    </SidebarNavItem>
+                                )
+                        )}
+                    </SidebarGroupItems>
+                </SidebarGroup>
+            )}
             {(props.user.organizations.nodes.length > 0 || !siteAdminViewingOtherUser) && (
                 <SidebarGroup>
-                    <SidebarGroupHeader label="Organizations" />
+                    <SidebarGroupHeader label="Organizations" icon={DomainIcon} />
                     <SidebarGroupItems>
                         {props.user.organizations.nodes.map(org => (
                             <SidebarNavItem
@@ -91,7 +114,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                                 to={`/organizations/${org.name}/settings`}
                                 className="text-truncate text-nowrap"
                             >
-                                <OrgAvatar org={org.name} className="d-inline-flex" /> {org.name}
+                                <OrgAvatar org={org.name} className="d-inline-flex mr-1" /> {org.name}
                             </SidebarNavItem>
                         ))}
                     </SidebarGroupItems>
@@ -117,18 +140,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                     <MapSearchOutlineIcon className="icon-inline list-group-item-action-icon" /> Show search tour
                 </button>
             )}
-            {!siteAdminViewingOtherUser &&
-                props.authenticatedUser.session &&
-                props.authenticatedUser.session.canSignOut && (
-                    <a href="/-/sign-out" className={SIDEBAR_BUTTON_CLASS} onClick={logTelemetryOnSignOut}>
-                        <LogoutIcon className="icon-inline list-group-item-action-icon" /> Sign out
-                    </a>
-                )}
             <div>Version: {window.context.version}</div>
         </div>
     )
-}
-
-function logTelemetryOnSignOut(): void {
-    eventLogger.log('SignOutClicked')
 }

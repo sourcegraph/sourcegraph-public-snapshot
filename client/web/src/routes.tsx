@@ -1,7 +1,6 @@
 import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { LayoutProps } from './Layout'
-import { parseSearchURLQuery } from './search'
 import { lazyComponent } from './util/lazyComponent'
 import { isErrorLike } from '../../shared/src/util/errors'
 import { RepogroupPage } from './repogroups/RepogroupPage'
@@ -14,6 +13,8 @@ import { stanford } from './repogroups/Stanford'
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 import { cncf } from './repogroups/cncf'
 import { ExtensionAlertProps } from './repo/RepoContainer'
+import { StreamingSearchResults } from './search/results/streaming/StreamingSearchResults'
+import { isMacPlatform, UserRepositoriesUpdateProps } from './util'
 
 const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
 const SearchResults = lazyComponent(() => import('./search/results/SearchResults'), 'SearchResults')
@@ -29,7 +30,8 @@ interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteP
         Omit<LayoutProps, 'match'>,
         BreadcrumbsProps,
         BreadcrumbSetters,
-        ExtensionAlertProps {}
+        ExtensionAlertProps,
+        UserRepositoriesUpdateProps {}
 
 export interface LayoutRouteProps<Parameters_ extends { [K in keyof Parameters_]?: string }> {
     path: string
@@ -70,8 +72,13 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/search',
         render: props =>
-            parseSearchURLQuery(props.location.search) ? (
-                <SearchResults {...props} deployType={window.context.deployType} />
+            props.parsedSearchQuery ? (
+                !isErrorLike(props.settingsCascade.final) &&
+                props.settingsCascade.final?.experimentalFeatures?.searchStreaming ? (
+                    <StreamingSearchResults {...props} />
+                ) : (
+                    <SearchResults {...props} deployType={window.context.deployType} />
+                )
             ) : (
                 <SearchPage {...props} />
             ),
@@ -93,11 +100,11 @@ export const routes: readonly LayoutRouteProps<any>[] = [
             props.showMultilineSearchConsole ? (
                 <SearchConsolePage
                     {...props}
+                    isMacPlatform={isMacPlatform}
                     allExpanded={false}
                     showSavedQueryModal={false}
                     deployType={window.context.deployType}
                     showSavedQueryButton={false}
-                    didSave={false}
                 />
             ) : (
                 <Redirect to="/search" />

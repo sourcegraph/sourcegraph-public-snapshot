@@ -9,12 +9,15 @@ import (
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
@@ -25,7 +28,7 @@ type symbolsArgs struct {
 }
 
 func (r *GitTreeEntryResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
-	symbols, err := computeSymbols(ctx, r.commit, args.Query, args.First, args.IncludePatterns)
+	symbols, err := computeSymbols(ctx, r.db, r.commit, args.Query, args.First, args.IncludePatterns)
 	if err != nil && len(symbols) == 0 {
 		return nil, err
 	}
@@ -33,7 +36,7 @@ func (r *GitTreeEntryResolver) Symbols(ctx context.Context, args *symbolsArgs) (
 }
 
 func (r *GitCommitResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
-	symbols, err := computeSymbols(ctx, r, args.Query, args.First, args.IncludePatterns)
+	symbols, err := computeSymbols(ctx, r.db, r, args.Query, args.First, args.IncludePatterns)
 	if err != nil && len(symbols) == 0 {
 		return nil, err
 	}
@@ -42,7 +45,7 @@ func (r *GitCommitResolver) Symbols(ctx context.Context, args *symbolsArgs) (*sy
 
 type symbolConnectionResolver struct {
 	first   *int32
-	symbols []*symbolResolver
+	symbols []symbolResolver
 }
 
 func limitOrDefault(first *int32) int {
@@ -82,7 +85,7 @@ func indexedSymbolsBranch(ctx context.Context, repository, commit string) string
 	return ""
 }
 
-func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, branch string, queryString *string, first *int32, includePatterns *[]string) (res []*symbolResolver, err error) {
+func searchZoektSymbols(ctx context.Context, db dbutil.DB, commit *GitCommitResolver, branch string, queryString *string, first *int32, includePatterns *[]string) (res []symbolResolver, err error) {
 	raw := *queryString
 	if raw == "" {
 		raw = ".*"
@@ -108,12 +111,12 @@ func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, branch s
 
 	ands := []zoektquery.Q{
 		&zoektquery.RepoBranches{Set: map[string][]string{
-			string(commit.repoResolver.repo.Name): {branch},
+			commit.repoResolver.Name(): {branch},
 		}},
 		&zoektquery.Symbol{Expr: query},
 	}
 	for _, p := range *includePatterns {
-		q, err := fileRe(p, true)
+		q, err := zoektutil.FileRe(p, true)
 		if err != nil {
 			return nil, err
 		}
@@ -135,7 +138,7 @@ func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, branch s
 		return nil, err
 	}
 
-	baseURI, err := gituri.Parse("git://" + string(commit.repoResolver.repo.Name) + "?" + string(commit.oid))
+	baseURI, err := gituri.Parse("git://" + commit.repoResolver.Name() + "?" + string(commit.oid))
 	for _, file := range resp.Files {
 		for _, l := range file.LineMatches {
 			if l.FileName {
@@ -148,17 +151,20 @@ func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, branch s
 				}
 
 				res = append(res, toSymbolResolver(
-					protocol.Symbol{
-						Name:       m.SymbolInfo.Sym,
-						Kind:       m.SymbolInfo.Kind,
-						Parent:     m.SymbolInfo.Parent,
-						ParentKind: m.SymbolInfo.ParentKind,
-						Path:       file.FileName,
-						Line:       l.LineNumber,
-					},
-					baseURI,
-					strings.ToLower(file.Language),
+					db,
 					commit,
+					&result.SymbolMatch{
+						Symbol: result.Symbol{
+							Name:       m.SymbolInfo.Sym,
+							Kind:       m.SymbolInfo.Kind,
+							Parent:     m.SymbolInfo.Parent,
+							ParentKind: m.SymbolInfo.ParentKind,
+							Path:       file.FileName,
+							Line:       l.LineNumber,
+						},
+						BaseURI: baseURI,
+						Lang:    strings.ToLower(file.Language),
+					},
 				))
 			}
 		}
@@ -166,11 +172,11 @@ func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, branch s
 	return
 }
 
-func computeSymbols(ctx context.Context, commit *GitCommitResolver, query *string, first *int32, includePatterns *[]string) (res []*symbolResolver, err error) {
+func computeSymbols(ctx context.Context, db dbutil.DB, commit *GitCommitResolver, query *string, first *int32, includePatterns *[]string) (res []symbolResolver, err error) {
 	// TODO(keegancsmith) we should be able to use indexedSearchRequest here
 	// and remove indexedSymbolsBranch.
-	if branch := indexedSymbolsBranch(ctx, string(commit.repoResolver.repo.Name), string(commit.oid)); branch != "" {
-		return searchZoektSymbols(ctx, commit, branch, query, first, includePatterns)
+	if branch := indexedSymbolsBranch(ctx, commit.repoResolver.Name(), string(commit.oid)); branch != "" {
+		return searchZoektSymbols(ctx, db, commit, branch, query, first, includePatterns)
 	}
 
 	ctx, done := context.WithTimeout(ctx, 5*time.Second)
@@ -188,13 +194,13 @@ func computeSymbols(ctx context.Context, commit *GitCommitResolver, query *strin
 	searchArgs := search.SymbolsParameters{
 		CommitID:        api.CommitID(commit.oid),
 		First:           limitOrDefault(first) + 1, // add 1 so we can determine PageInfo.hasNextPage
-		Repo:            commit.repoResolver.repo.Name,
+		Repo:            commit.repoResolver.name,
 		IncludePatterns: includePatternsSlice,
 	}
 	if query != nil {
 		searchArgs.Query = *query
 	}
-	baseURI, err := gituri.Parse("git://" + string(commit.repoResolver.repo.Name) + "?" + string(commit.oid))
+	baseURI, err := gituri.Parse("git://" + commit.repoResolver.Name() + "?" + string(commit.oid))
 	if err != nil {
 		return nil, err
 	}
@@ -202,35 +208,28 @@ func computeSymbols(ctx context.Context, commit *GitCommitResolver, query *strin
 	if baseURI == nil {
 		return
 	}
-	resolvers := make([]*symbolResolver, 0, len(symbols))
+	resolvers := make([]symbolResolver, 0, len(symbols))
 	for _, symbol := range symbols {
-		resolver := toSymbolResolver(symbol, baseURI, strings.ToLower(symbol.Language), commit)
-		if resolver == nil {
-			continue
+		sr := result.SymbolMatch{
+			Symbol:  symbol,
+			BaseURI: baseURI,
+			Lang:    strings.ToLower(symbol.Language),
 		}
+		resolver := toSymbolResolver(db, commit, &sr)
 		resolvers = append(resolvers, resolver)
 	}
 	return resolvers, err
 }
 
-func toSymbolResolver(symbol protocol.Symbol, baseURI *gituri.URI, lang string, commitResolver *GitCommitResolver) *symbolResolver {
-	resolver := &symbolResolver{
-		symbol:   symbol,
-		language: lang,
-		uri:      baseURI.WithFilePath(symbol.Path),
+func toSymbolResolver(db dbutil.DB, commit *GitCommitResolver, sr *result.SymbolMatch) symbolResolver {
+	return symbolResolver{
+		db:          db,
+		commit:      commit,
+		SymbolMatch: sr,
 	}
-	symbolRange := symbolRange(symbol)
-	resolver.location = &locationResolver{
-		resource: &GitTreeEntryResolver{
-			commit: commitResolver,
-			stat:   CreateFileInfo(resolver.uri.Fragment, false), // assume the path refers to a file (not dir)
-		},
-		lspRange: &symbolRange,
-	}
-	return resolver
 }
 
-func (r *symbolConnectionResolver) Nodes(ctx context.Context) ([]*symbolResolver, error) {
+func (r *symbolConnectionResolver) Nodes(ctx context.Context) ([]symbolResolver, error) {
 	symbols := r.symbols
 	if len(r.symbols) > limitOrDefault(r.first) {
 		symbols = symbols[:limitOrDefault(r.first)]
@@ -243,35 +242,42 @@ func (r *symbolConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.P
 }
 
 type symbolResolver struct {
-	symbol   protocol.Symbol
-	language string
-	location *locationResolver
-	uri      *gituri.URI
+	db     dbutil.DB
+	commit *GitCommitResolver
+	*result.SymbolMatch
 }
 
-func (r *symbolResolver) Name() string { return r.symbol.Name }
+func (r symbolResolver) Name() string { return r.Symbol.Name }
 
-func (r *symbolResolver) ContainerName() *string {
-	if r.symbol.Parent == "" {
+func (r symbolResolver) ContainerName() *string {
+	if r.Symbol.Parent == "" {
 		return nil
 	}
-	return &r.symbol.Parent
+	return &r.Symbol.Parent
 }
 
-func (r *symbolResolver) Kind() string /* enum SymbolKind */ {
-	kind := ctagsKindToLSPSymbolKind(r.symbol.Kind)
+func (r symbolResolver) Kind() string /* enum SymbolKind */ {
+	kind := ctagsKindToLSPSymbolKind(r.Symbol.Kind)
 	if kind == 0 {
 		return "UNKNOWN"
 	}
 	return strings.ToUpper(kind.String())
 }
 
-func (r *symbolResolver) Language() string { return r.language }
+func (r symbolResolver) Language() string { return r.Symbol.Language }
 
-func (r *symbolResolver) Location() *locationResolver { return r.location }
+func (r symbolResolver) Location() *locationResolver {
+	uri := r.BaseURI.WithFilePath(r.Symbol.Path)
+	stat := CreateFileInfo(uri.Fragment, false)
+	sr := symbolRange(r.Symbol)
+	return &locationResolver{
+		resource: NewGitTreeEntryResolver(r.commit, r.db, stat),
+		lspRange: &sr,
+	}
+}
 
-func (r *symbolResolver) URL(ctx context.Context) (string, error) { return r.location.URL(ctx) }
+func (r symbolResolver) URL(ctx context.Context) (string, error) { return r.Location().URL(ctx) }
 
-func (r *symbolResolver) CanonicalURL() (string, error) { return r.location.CanonicalURL() }
+func (r symbolResolver) CanonicalURL() (string, error) { return r.Location().CanonicalURL() }
 
-func (r *symbolResolver) FileLocal() bool { return r.symbol.FileLimited }
+func (r symbolResolver) FileLocal() bool { return r.Symbol.FileLimited }

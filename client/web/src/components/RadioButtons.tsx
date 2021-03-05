@@ -1,4 +1,4 @@
-import * as React from 'react'
+import React from 'react'
 
 /**
  * Descriptor of a radio button element.
@@ -50,30 +50,22 @@ interface Props {
 /**
  * A row of radio buttons.
  */
-export class RadioButtons extends React.PureComponent<Props> {
-    public render(): React.ReactFragment {
-        return (
-            <div className="radio-buttons">
-                {this.props.nodes.map(node => (
-                    <label
-                        key={node.key ? node.key : node.id.toString()}
-                        className="radio-buttons__item"
-                        title={node.tooltip}
-                    >
-                        <input
-                            className={`radio-buttons__input ${this.props.className || ''}`}
-                            name="filter"
-                            type="radio"
-                            onChange={this.props.onChange}
-                            value={node.id}
-                            checked={node.id === this.props.selected}
-                        />{' '}
-                        <small>
-                            <div className="radio-buttons__label">{node.label}</div>
-                        </small>
-                    </label>
-                ))}
-            </div>
-        )
-    }
-}
+export const RadioButtons: React.FunctionComponent<Props> = ({ nodes, onChange, selected, className }) => (
+    <div className="radio-buttons">
+        {nodes.map(node => (
+            <label key={node.key ? node.key : node.id.toString()} className="radio-buttons__item" title={node.tooltip}>
+                <input
+                    className={`radio-buttons__input ${className || ''}`}
+                    name="filter"
+                    type="radio"
+                    onChange={onChange}
+                    value={node.id}
+                    checked={node.id === selected}
+                />{' '}
+                <small>
+                    <div className="radio-buttons__label">{node.label}</div>
+                </small>
+            </label>
+        ))}
+    </div>
+)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"path"
@@ -184,7 +185,7 @@ func (p *ClientProvider) newClient(baseURL *url.URL, a auth.Authenticator, httpC
 	projCache := rcache.NewWithTTL(key, int(cacheTTL/time.Second))
 
 	rl := ratelimit.DefaultRegistry.Get(baseURL.String())
-	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(baseURL.String(), tokenHash, &ratelimit.Monitor{})
+	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
 
 	return &Client{
 		baseURL:          baseURL,
@@ -240,7 +241,11 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 
 	c.rateLimitMonitor.Update(resp.Header)
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		return nil, resp.StatusCode, errors.Wrap(HTTPError(resp.StatusCode), fmt.Sprintf("unexpected response from GitLab API (%s)", req.URL))
+		// We swallow the error here, because we don't want to fail. Parsing the body
+		// is just optional to provide some more context.
+		body, _ := ioutil.ReadAll(resp.Body)
+		err := NewHTTPError(resp.StatusCode, body)
+		return nil, resp.StatusCode, errors.Wrap(err, fmt.Sprintf("unexpected response from GitLab API (%s)", req.URL))
 	}
 
 	return resp.Header, resp.StatusCode, json.NewDecoder(resp.Body).Decode(result)
@@ -256,16 +261,43 @@ func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
 
 	cc := *c
 	cc.rateLimiter = ratelimit.DefaultRegistry.Get(cc.baseURL.String())
-	cc.rateLimitMonitor = ratelimit.DefaultMonitorRegistry.GetOrSet(cc.baseURL.String(), tokenHash, &ratelimit.Monitor{})
+	cc.rateLimitMonitor = ratelimit.DefaultMonitorRegistry.GetOrSet(cc.baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
 	cc.Auth = a
 
 	return &cc
 }
 
-type HTTPError int
+type HTTPError struct {
+	code int
+	body []byte
+}
+
+func NewHTTPError(code int, body []byte) HTTPError {
+	return HTTPError{
+		code: code,
+		body: body,
+	}
+}
+
+func (err HTTPError) Code() int {
+	return err.code
+}
+
+func (err HTTPError) Message() string {
+	var errBody struct {
+		Message string `json:"message"`
+	}
+	// Swallow error, decoding the body as
+	_ = json.Unmarshal(err.body, &errBody)
+	return errBody.Message
+}
 
 func (err HTTPError) Error() string {
-	return fmt.Sprintf("HTTP error status %d", err)
+	return fmt.Sprintf("HTTP error status %d", err.code)
+}
+
+func (err HTTPError) Unauthorized() bool {
+	return err.code == http.StatusUnauthorized
 }
 
 // HTTPErrorCode returns err's HTTP status code, if it is an HTTP error from
@@ -278,18 +310,24 @@ func HTTPErrorCode(err error) int {
 		e, ok = err.(HTTPError)
 	}
 	if ok {
-		return int(e)
+		return e.Code()
 	}
 	return 0
 }
 
-// ErrNotFound is when the requested GitLab project is not found.
-var ErrNotFound = errors.New("GitLab project not found")
+// ErrProjectNotFound is when the requested GitLab project is not found.
+var ErrProjectNotFound = errors.New("GitLab project not found")
+
+// ErrMergeRequestNotFound is when the requested GitLab merge request is not found.
+var ErrMergeRequestNotFound = errors.New("GitLab merge request not found")
 
 // IsNotFound reports whether err is a GitLab API error of type NOT_FOUND, the equivalent cached
 // response error, or HTTP 404.
 func IsNotFound(err error) bool {
-	if err == ErrNotFound || errors.Cause(err) == ErrNotFound {
+	if err == ErrProjectNotFound || errors.Cause(err) == ErrProjectNotFound {
+		return true
+	}
+	if err == ErrMergeRequestNotFound || errors.Cause(err) == ErrMergeRequestNotFound {
 		return true
 	}
 	if HTTPErrorCode(err) == http.StatusNotFound {

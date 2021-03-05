@@ -5,7 +5,11 @@ import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
-import { ConfiguredRegistryExtension, toConfiguredRegistryExtension } from '../../../../shared/src/extensions/extension'
+import {
+    ConfiguredRegistryExtension,
+    splitExtensionID,
+    toConfiguredRegistryExtension,
+} from '../../../../shared/src/extensions/extension'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
@@ -22,7 +26,6 @@ import { ErrorMessage } from '../../components/alerts'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { AuthenticatedUser } from '../../auth'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
-import { splitExtensionID } from './extension'
 
 export const registryExtensionFragment = gql`
     fragment RegistryExtensionFields on RegistryExtension {
@@ -189,7 +192,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
                 <HeroPage
                     icon={AlertCircleIcon}
                     title="Error"
-                    subtitle={<ErrorMessage error={this.state.extensionOrError} history={this.props.history} />}
+                    subtitle={<ErrorMessage error={this.state.extensionOrError} />}
                 />
             )
         }
@@ -214,7 +217,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
                     {...this.props}
                     {...context}
                     navItems={this.props.extensionAreaHeaderNavItems}
-                    className="border-bottom mt-4"
+                    className="border-bottom"
                 />
                 <div className="container pt-3">
                     <ErrorBoundary location={this.props.location}>

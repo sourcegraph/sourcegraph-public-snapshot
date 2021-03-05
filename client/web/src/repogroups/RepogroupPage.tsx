@@ -10,10 +10,11 @@ import { ActivationProps } from '../../../shared/src/components/activation/Activ
 import {
     PatternTypeProps,
     CaseSensitivityProps,
-    InteractiveSearchProps,
     CopyQueryButtonProps,
     OnboardingTourProps,
     ShowQueryBuilderProps,
+    ParsedSearchQueryProps,
+    SearchContextProps,
 } from '../search'
 import { eventLogger } from '../tracking/eventLogger'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
@@ -39,14 +40,15 @@ export interface RepogroupPageProps
         ThemePreferenceProps,
         ActivationProps,
         TelemetryProps,
+        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         PatternTypeProps,
         CaseSensitivityProps,
         KeyboardShortcutsProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
-        InteractiveSearchProps,
         CopyQueryButtonProps,
         VersionContextProps,
+        SearchContextProps,
         OnboardingTourProps,
         ShowQueryBuilderProps {
     authenticatedUser: AuthenticatedUser | null

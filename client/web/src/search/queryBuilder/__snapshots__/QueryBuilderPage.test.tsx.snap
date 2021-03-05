@@ -1,11 +1,19 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`QueryBuilderPage simple 1`] = `
-<div
-  className="container mt-4"
->
+<Page>
   <PageTitle
     title="Query builder"
+  />
+  <PageHeader
+    className="mb-3"
+    path={
+      Array [
+        Object {
+          "text": "Query builder",
+        },
+      ]
+    }
   />
   <div
     className="form form-inline mt-3"
@@ -20,7 +28,7 @@ exports[`QueryBuilderPage simple 1`] = `
     />
     <Link
       className="btn btn-primary disabled"
-      to="/search?q=&patternType=literal"
+      to="/search?q=context:global+&patternType=literal"
     >
       Search
     </Link>
@@ -29,5 +37,5 @@ exports[`QueryBuilderPage simple 1`] = `
     onFieldsQueryChange={[Function]}
     patternType="literal"
   />
-</div>
+</Page>
 `;

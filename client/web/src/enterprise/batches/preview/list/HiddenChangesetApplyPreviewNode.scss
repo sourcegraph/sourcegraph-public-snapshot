@@ -1,0 +1,36 @@
+.hidden-changeset-apply-preview-node {
+    &__list-cell {
+        @include media-breakpoint-up(sm) {
+            padding: 0.5rem;
+        }
+        @include media-breakpoint-down(xs) {
+            padding-top: 0.25rem;
+            padding-bottom: 0.25rem;
+        }
+    }
+    &__current-state,
+    &__action,
+    &__information {
+        @include media-breakpoint-down(xs) {
+            // Make it full width in the current row.
+            grid-column: 1 / -1;
+        }
+    }
+    &__current-state {
+        color: $gray-11;
+        @include media-breakpoint-up(sm) {
+            background-color: var(--oc-blue-0);
+        }
+    }
+}
+
+.theme-dark {
+    .hidden-changeset-apply-preview-node {
+        &__current-state {
+            color: var(--body-color);
+            @include media-breakpoint-up(sm) {
+                background-color: var(--oc-gray-7);
+            }
+        }
+    }
+}

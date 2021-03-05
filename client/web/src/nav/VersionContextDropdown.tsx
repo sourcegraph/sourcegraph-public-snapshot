@@ -15,9 +15,8 @@ import FlagVariantIcon from 'mdi-react/FlagVariantIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import { VersionContext } from '../schema/site.schema'
-import { PatternTypeProps, CaseSensitivityProps, InteractiveSearchProps } from '../search'
+import { PatternTypeProps, CaseSensitivityProps, SearchContextProps } from '../search'
 import { submitSearch } from '../search/helpers'
-import { isEmpty } from 'lodash'
 import { useLocalStorage } from '../util/useLocalStorage'
 
 const HAS_DISMISSED_INFO_KEY = 'sg-has-dismissed-version-context-info'
@@ -25,8 +24,8 @@ const HAS_DISMISSED_INFO_KEY = 'sg-has-dismissed-version-context-info'
 export interface VersionContextDropdownProps
     extends Pick<PatternTypeProps, 'patternType'>,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
-        Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>>,
-        VersionContextProps {
+        VersionContextProps,
+        Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     setVersionContext: (versionContext: string | undefined) => void
     availableVersionContexts: VersionContext[] | undefined
     history: H.History
@@ -42,12 +41,12 @@ export interface VersionContextDropdownProps
 export const VersionContextDropdown: React.FunctionComponent<VersionContextDropdownProps> = ({
     history,
     navbarSearchQuery,
-    filtersInQuery,
     caseSensitive,
     patternType,
     setVersionContext,
     availableVersionContexts,
     versionContext: currentVersionContext,
+    selectedSearchContextSpec,
     alwaysExpanded,
     portal,
 }: VersionContextDropdownProps) => {
@@ -55,8 +54,8 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
     const [hasDismissedInfo, setHasDismissedInfo] = useLocalStorage(HAS_DISMISSED_INFO_KEY, false)
 
     const submitOnToggle = useCallback(
-        (versionContext: string): void => {
-            const searchQueryNotEmpty = navbarSearchQuery !== '' || (filtersInQuery && !isEmpty(filtersInQuery))
+        (versionContext?: string): void => {
+            const searchQueryNotEmpty = navbarSearchQuery !== ''
             const activation = undefined
             const source = 'filter'
             const searchParameters: { key: string; value: string }[] = [{ key: 'from-context-toggle', value: 'true' }]
@@ -69,16 +68,16 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
                     caseSensitive,
                     versionContext,
                     activation,
-                    filtersInQuery,
                     searchParameters,
+                    selectedSearchContextSpec,
                 })
             }
         },
-        [caseSensitive, filtersInQuery, history, navbarSearchQuery, patternType]
+        [caseSensitive, history, navbarSearchQuery, patternType, selectedSearchContextSpec]
     )
 
     const updateValue = useCallback(
-        (newValue: string): void => {
+        (newValue?: string): void => {
             setVersionContext(newValue)
             submitOnToggle(newValue)
         },
@@ -86,8 +85,8 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
     )
 
     const disableValue = useCallback((): void => {
-        setVersionContext(undefined)
-    }, [setVersionContext])
+        updateValue(undefined)
+    }, [updateValue])
 
     if (!availableVersionContexts || availableVersionContexts.length === 0) {
         return null

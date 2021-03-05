@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/google/zoekt"
@@ -11,6 +12,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
@@ -26,24 +28,29 @@ func init() {
 }
 
 type meteredSearcher struct {
-	zoekt.Searcher
+	zoekt.Streamer
 
 	hostname string
 }
 
-func NewMeteredSearcher(hostname string, z zoekt.Searcher) zoekt.Searcher {
+func NewMeteredSearcher(hostname string, z zoekt.Streamer) zoekt.Streamer {
 	return &meteredSearcher{
-		Searcher: z,
+		Streamer: z,
 		hostname: hostname,
 	}
 }
 
-func (m *meteredSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
+func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, c zoekt.Sender) error {
 	start := time.Now()
+
+	// isLeaf is true if this is a zoekt.Searcher which does a network
+	// call. False if we are an aggregator. We use this to decide if we need
+	// to add RPC tracing and adjust how we record metrics.
+	isLeaf := m.hostname != ""
 
 	var cat string
 	var tags []trace.Tag
-	if m.hostname == "" {
+	if !isLeaf {
 		cat = "SearchAll"
 	} else {
 		cat = "Search"
@@ -67,8 +74,9 @@ func (m *meteredSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.Sea
 			log.Int("opts.max_doc_display_count", opts.MaxDocDisplayCount),
 		)
 	}
+	defer tr.Finish()
 
-	if opts != nil && ot.ShouldTrace(ctx) {
+	if isLeaf && opts != nil && ot.ShouldTrace(ctx) {
 		// Replace any existing spanContext with a new one, given we've done additional tracing
 		spanContext := make(map[string]string)
 		if err := ot.GetTracer(ctx).Inject(opentracing.SpanFromContext(ctx).Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err == nil {
@@ -82,59 +90,71 @@ func (m *meteredSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.Sea
 
 	// Instrument the RPC layer
 	var writeRequestStart, writeRequestDone time.Time
-	ctx = rpc.WithClientTrace(ctx, &rpc.ClientTrace{
-		WriteRequestStart: func() {
-			tr.LogFields(log.String("event", "rpc.write_request_start"))
-			writeRequestStart = time.Now()
-		},
+	if isLeaf {
+		ctx = rpc.WithClientTrace(ctx, &rpc.ClientTrace{
+			WriteRequestStart: func() {
+				tr.LogFields(log.String("event", "rpc.write_request_start"))
+				writeRequestStart = time.Now()
+			},
 
-		WriteRequestDone: func(err error) {
-			fields := []log.Field{log.String("event", "rpc.write_request_done")}
-			if err != nil {
-				fields = append(fields, log.String("rpc.write_request.error", err.Error()))
-			}
-			tr.LogFields(fields...)
-			writeRequestDone = time.Now()
-		},
-	})
-
-	zsr, err := m.Searcher.Search(ctx, q, opts)
-
-	code := "200"
-	if err != nil {
-		code = "error"
+			WriteRequestDone: func(err error) {
+				fields := []log.Field{log.String("event", "rpc.write_request_done")}
+				if err != nil {
+					fields = append(fields, log.String("rpc.write_request.error", err.Error()))
+				}
+				tr.LogFields(fields...)
+				writeRequestDone = time.Now()
+			},
+		})
 	}
 
-	d := time.Since(start)
-	requestDuration.WithLabelValues(m.hostname, cat, code).Observe(d.Seconds())
-
-	tr.SetError(err)
-	tr.LogFields(
-		log.Int64("rpc.queue_latency_ms", writeRequestStart.Sub(start).Milliseconds()),
-		log.Int64("rpc.write_duration_ms", writeRequestDone.Sub(writeRequestStart).Milliseconds()),
+	var (
+		code  = "200" // final code to record
+		first sync.Once
 	)
-	if zsr != nil {
-		tr.LogFields(
-			log.Int("filematches", len(zsr.Files)),
-			log.Int64("rpc.latency_ms", (d-zsr.Stats.Duration-zsr.Stats.Wait).Milliseconds()),
-			log.Int64("stats.content_bytes_loaded", zsr.Stats.ContentBytesLoaded),
-			log.Int64("stats.index_bytes_loaded", zsr.Stats.IndexBytesLoaded),
-			log.Int("stats.crashes", zsr.Stats.Crashes),
-			log.Int64("stats.duration_ms", zsr.Stats.Duration.Milliseconds()),
-			log.Int("stats.file_count", zsr.Stats.FileCount),
-			log.Int("stats.shard_files_considered", zsr.Stats.ShardFilesConsidered),
-			log.Int("stats.files_considered", zsr.Stats.FilesConsidered),
-			log.Int("stats.files_loaded", zsr.Stats.FilesLoaded),
-			log.Int("stats.files_skipped", zsr.Stats.FilesSkipped),
-			log.Int("stats.shards_skipped", zsr.Stats.ShardsSkipped),
-			log.Int("stats.match_count", zsr.Stats.MatchCount),
-			log.Int("stats.ngram_matches", zsr.Stats.NgramMatches),
-			log.Int64("stats.wait_ms", zsr.Stats.Wait.Milliseconds()),
-		)
-	}
-	tr.Finish()
 
-	return zsr, err
+	err := m.Streamer.StreamSearch(ctx, q, opts, ZoektStreamFunc(func(zsr *zoekt.SearchResult) {
+		first.Do(func() {
+			if isLeaf {
+				tr.LogFields(
+					log.Int64("rpc.queue_latency_ms", writeRequestStart.Sub(start).Milliseconds()),
+					log.Int64("rpc.write_duration_ms", writeRequestDone.Sub(writeRequestStart).Milliseconds()),
+				)
+			}
+		})
+
+		if zsr != nil {
+			tr.LogFields(
+				log.Int("filematches", len(zsr.Files)),
+				log.Int64("rpc.latency_ms", (time.Since(start)-zsr.Stats.Duration-zsr.Stats.Wait).Milliseconds()),
+				log.Int64("stats.content_bytes_loaded", zsr.Stats.ContentBytesLoaded),
+				log.Int64("stats.index_bytes_loaded", zsr.Stats.IndexBytesLoaded),
+				log.Int("stats.crashes", zsr.Stats.Crashes),
+				log.Int64("stats.duration_ms", zsr.Stats.Duration.Milliseconds()),
+				log.Int("stats.file_count", zsr.Stats.FileCount),
+				log.Int("stats.shard_files_considered", zsr.Stats.ShardFilesConsidered),
+				log.Int("stats.files_considered", zsr.Stats.FilesConsidered),
+				log.Int("stats.files_loaded", zsr.Stats.FilesLoaded),
+				log.Int("stats.files_skipped", zsr.Stats.FilesSkipped),
+				log.Int("stats.shards_skipped", zsr.Stats.ShardsSkipped),
+				log.Int("stats.match_count", zsr.Stats.MatchCount),
+				log.Int("stats.ngram_matches", zsr.Stats.NgramMatches),
+				log.Int64("stats.wait_ms", zsr.Stats.Wait.Milliseconds()),
+			)
+
+			c.Send(zsr)
+		}
+	}))
+	if err != nil {
+		return err
+	}
+	// Record total duration of stream
+	requestDuration.WithLabelValues(m.hostname, cat, code).Observe(time.Since(start).Seconds())
+	return nil
+}
+
+func (m *meteredSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
+	return AggregateStreamSearch(ctx, m.StreamSearch, q, opts)
 }
 
 func (m *meteredSearcher) List(ctx context.Context, q query.Q) (*zoekt.RepoList, error) {
@@ -155,7 +175,7 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q) (*zoekt.RepoList,
 
 	tr, ctx := trace.New(ctx, "zoekt."+cat, queryString(q), tags...)
 
-	zsl, err := m.Searcher.List(ctx, q)
+	zsl, err := m.Streamer.List(ctx, q)
 
 	code := "200"
 	if err != nil {
@@ -171,6 +191,10 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q) (*zoekt.RepoList,
 	tr.Finish()
 
 	return zsl, err
+}
+
+func (m *meteredSearcher) String() string {
+	return "MeteredSearcher{" + m.Streamer.String() + "}"
 }
 
 func queryString(q query.Q) string {

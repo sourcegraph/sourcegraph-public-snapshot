@@ -10,6 +10,7 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -105,7 +106,7 @@ func GitServerFetchArchive(ctx context.Context, opts ArchiveOpts) (archive *os.F
 		args = append(args, string(opts.Commit))
 		args = append(args, opts.RelativePath)
 		cmd := gitserver.DefaultClient.Command("git", args...)
-		cmd.Repo = gitserver.Repo{Name: opts.Repo}
+		cmd.Repo = opts.Repo
 		r, err := gitserver.StdoutReader(ctx, cmd)
 		if err != nil {
 			return nil, err

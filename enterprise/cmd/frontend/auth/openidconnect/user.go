@@ -6,9 +6,10 @@ import (
 
 	"github.com/coreos/go-oidc"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -56,7 +57,7 @@ func getOrCreateUser(ctx context.Context, p *provider, idToken *oidc.IDToken, us
 	}{IDToken: idToken, UserInfo: userInfo, UserClaims: claims})
 
 	userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, auth.GetAndSaveUserOp{
-		UserProps: db.NewUser{
+		UserProps: database.NewUser{
 			Username:        login,
 			Email:           email,
 			EmailIsVerified: email != "", // verified email check is at the top of the function

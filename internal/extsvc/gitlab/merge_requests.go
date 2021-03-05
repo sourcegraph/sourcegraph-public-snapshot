@@ -41,6 +41,7 @@ type MergeRequest struct {
 	TargetBranch   string            `json:"target_branch"`
 	WebURL         string            `json:"web_url"`
 	WorkInProgress bool              `json:"work_in_progress"`
+	Author         User              `json:"author"`
 
 	DiffRefs DiffRefs `json:"diff_refs"`
 
@@ -48,22 +49,28 @@ type MergeRequest struct {
 	// Merge Request. Once our minimum version is GitLab 12.0, we can use the
 	// GraphQL API to retrieve all of this data at once, but until then, we have
 	// to do it the old fashioned way with lots of REST requests.
-	Notes     []*Note
-	Pipelines []*Pipeline
+	Notes               []*Note
+	Pipelines           []*Pipeline
+	ResourceStateEvents []*ResourceStateEvent
 }
 
+// IsWIP returns true if the given title would result in GitLab rendering the MR as 'work in progress'.
+func IsWIP(title string) bool {
+	return strings.HasPrefix(title, "Draft:") || strings.HasPrefix(title, "WIP:")
+}
+
+// SetWIP ensures a "WIP:" prefix on the given title. If a "Draft:" prefix is found, that one is retained instead.
 func SetWIP(title string) string {
-	if !strings.HasPrefix(title, "WIP:") {
-		return "WIP: " + title
+	if IsWIP(title) {
+		return title
 	}
-	return title
+	return "WIP: " + title
 }
 
+// UnsetWIP removes "WIP:" and "Draft:" prefixes from the given title.
+// Depending on the GitLab version, either of them are used so we need to strip them both.
 func UnsetWIP(title string) string {
-	if strings.HasPrefix(title, "WIP: ") {
-		return strings.TrimPrefix(title, "WIP: ")
-	}
-	return title
+	return strings.TrimPrefix(strings.TrimPrefix(title, "WIP: "), "Draft: ")
 }
 
 type DiffRefs struct {
@@ -74,7 +81,6 @@ type DiffRefs struct {
 
 var (
 	ErrMergeRequestAlreadyExists = errors.New("merge request already exists")
-	ErrMergeRequestNotFound      = errors.New("merge request not found")
 	ErrTooManyMergeRequests      = errors.New("retrieved too many merge requests")
 )
 
@@ -130,6 +136,13 @@ func (c *Client) GetMergeRequest(ctx context.Context, project *Project, iid ID) 
 
 	resp := &MergeRequest{}
 	if _, _, err := c.do(ctx, req, resp); err != nil {
+		if e, ok := errors.Cause(err).(HTTPError); ok && e.Code() == http.StatusNotFound {
+			if strings.Contains(e.Message(), "Project Not Found") {
+				err = ErrProjectNotFound
+			} else {
+				err = ErrMergeRequestNotFound
+			}
+		}
 		return nil, errors.Wrap(err, "sending request to get a merge request")
 	}
 

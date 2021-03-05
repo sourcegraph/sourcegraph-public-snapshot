@@ -9,11 +9,9 @@
       [
         "anyof",
         ["suffix", "go"],
-        ["dirname", "cmd/symbols"],
-        ["dirname", "schema"],
-        ["dirname", "docker-images/grafana/jsonnet"],
+        ["name", "cmd/frontend/graphqlbackend/schema.graphql", "wholename"],
         ["dirname", "monitoring"],
-        ["name", "cmd/frontend/graphqlbackend/schema.graphql", "wholename"]
+        ["match", "schema/*.json", "wholename"]
       ]
     ],
     "fields": ["name"]

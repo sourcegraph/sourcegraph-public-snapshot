@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/storage"
+
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -20,7 +21,7 @@ func TestGCSInit(t *testing.T) {
 
 	client := testGCSClient(gcsClient, true)
 	if err := client.Init(context.Background()); err != nil {
-		t.Fatalf("unexpected error initializing client: %s", err.Error())
+		t.Fatalf("unexpected error initializing client: %s", err)
 	}
 
 	if calls := gcsClient.BucketFunc.History(); len(calls) != 1 {
@@ -46,7 +47,7 @@ func TestGCSInitBucketExists(t *testing.T) {
 
 	client := testGCSClient(gcsClient, true)
 	if err := client.Init(context.Background()); err != nil {
-		t.Fatalf("unexpected error initializing client: %s", err.Error())
+		t.Fatalf("unexpected error initializing client: %s", err)
 	}
 
 	if calls := gcsClient.BucketFunc.History(); len(calls) != 1 {
@@ -71,7 +72,7 @@ func TestGCSUnmanagedInit(t *testing.T) {
 
 	client := testGCSClient(gcsClient, false)
 	if err := client.Init(context.Background()); err != nil {
-		t.Fatalf("unexpected error initializing client: %s", err.Error())
+		t.Fatalf("unexpected error initializing client: %s", err)
 	}
 
 	if calls := gcsClient.BucketFunc.History(); len(calls) != 0 {
@@ -94,15 +95,15 @@ func TestGCSGet(t *testing.T) {
 	objectHandle.NewRangeReaderFunc.SetDefaultReturn(ioutil.NopCloser(bytes.NewReader([]byte("TEST PAYLOAD"))), nil)
 
 	client := testGCSClient(gcsClient, false)
-	rc, err := client.Get(context.Background(), "test-key", 0)
+	rc, err := client.Get(context.Background(), "test-key")
 	if err != nil {
-		t.Fatalf("unexpected error getting key: %s", err.Error())
+		t.Fatalf("unexpected error getting key: %s", err)
 	}
 
 	defer rc.Close()
 	contents, err := ioutil.ReadAll(rc)
 	if err != nil {
-		t.Fatalf("unexpected error reading object: %s", err.Error())
+		t.Fatalf("unexpected error reading object: %s", err)
 	}
 
 	if string(contents) != "TEST PAYLOAD" {
@@ -124,45 +125,6 @@ func TestGCSGet(t *testing.T) {
 	}
 }
 
-func TestGCSGetSkipBytes(t *testing.T) {
-	gcsClient := NewMockGcsAPI()
-	bucketHandle := NewMockGcsBucketHandle()
-	objectHandle := NewMockGcsObjectHandle()
-	gcsClient.BucketFunc.SetDefaultReturn(bucketHandle)
-	bucketHandle.ObjectFunc.SetDefaultReturn(objectHandle)
-	objectHandle.NewRangeReaderFunc.SetDefaultReturn(ioutil.NopCloser(bytes.NewReader([]byte("TEST PAYLOAD"))), nil)
-
-	client := testGCSClient(gcsClient, false)
-	rc, err := client.Get(context.Background(), "test-key", 20)
-	if err != nil {
-		t.Fatalf("unexpected error getting key: %s", err.Error())
-	}
-
-	defer rc.Close()
-	contents, err := ioutil.ReadAll(rc)
-	if err != nil {
-		t.Fatalf("unexpected error reading object: %s", err.Error())
-	}
-
-	if string(contents) != "TEST PAYLOAD" {
-		t.Fatalf("unexpected contents. want=%s have=%s", "TEST PAYLOAD", contents)
-	}
-
-	if calls := gcsClient.BucketFunc.History(); len(calls) != 1 {
-		t.Fatalf("unexpected number of Bucket calls. want=%d have=%d", 1, len(calls))
-	} else if value := calls[0].Arg0; value != "test-bucket" {
-		t.Errorf("unexpected bucket argument. want=%s have=%s", "test-bucket", value)
-	}
-
-	if calls := objectHandle.NewRangeReaderFunc.History(); len(calls) != 1 {
-		t.Fatalf("unexpected number of NewRangeReader calls. want=%d have=%d", 1, len(calls))
-	} else if value := calls[0].Arg1; value != 20 {
-		t.Errorf("unexpected offset argument. want=%d have=%d", 20, value)
-	} else if value := calls[0].Arg2; value != -1 {
-		t.Errorf("unexpected length argument. want=%d have=%d", -1, value)
-	}
-}
-
 func TestGCSUpload(t *testing.T) {
 	buf := &bytes.Buffer{}
 
@@ -178,7 +140,7 @@ func TestGCSUpload(t *testing.T) {
 
 	size, err := client.Upload(context.Background(), "test-key", bytes.NewReader([]byte("TEST PAYLOAD")))
 	if err != nil {
-		t.Fatalf("unexpected error getting key: %s", err.Error())
+		t.Fatalf("unexpected error getting key: %s", err)
 	} else if size != 12 {
 		t.Errorf("unexpected size`. want=%d have=%d", 12, size)
 	}
@@ -223,7 +185,7 @@ func TestGCSCombine(t *testing.T) {
 
 	size, err := client.Compose(context.Background(), "test-key", "test-src1", "test-src2", "test-src3")
 	if err != nil {
-		t.Fatalf("unexpected error getting key: %s", err.Error())
+		t.Fatalf("unexpected error getting key: %s", err)
 	} else if size != 42 {
 		t.Errorf("unexpected size`. want=%d have=%d", 42, size)
 	}
@@ -276,7 +238,7 @@ func TestGCSDelete(t *testing.T) {
 
 	client := testGCSClient(gcsClient, false)
 	if err := client.Delete(context.Background(), "test-key"); err != nil {
-		t.Fatalf("unexpected error getting key: %s", err.Error())
+		t.Fatalf("unexpected error getting key: %s", err)
 	}
 
 	if calls := gcsClient.BucketFunc.History(); len(calls) != 1 {
@@ -305,7 +267,7 @@ func testGCSClient(client gcsAPI, manageBucket bool) Store {
 }
 
 func rawGCSClient(client gcsAPI, manageBucket bool) *gcsStore {
-	return newGCSWithClient(client, "test-bucket", time.Hour*24*3, manageBucket, GCSConfig{ProjectID: "pid"}, makeOperations(&observation.TestContext))
+	return newGCSWithClient(client, "test-bucket", time.Hour*24*3, manageBucket, GCSConfig{ProjectID: "pid"}, newOperations(&observation.TestContext))
 }
 
 type nopCloser struct {

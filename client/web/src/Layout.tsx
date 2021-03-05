@@ -1,5 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import React, { Suspense, useCallback } from 'react'
+import React, { Suspense, useCallback, useEffect, useMemo } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
 import { Observable } from 'rxjs'
 import { ActivationProps } from '../../shared/src/components/activation/Activation'
@@ -24,7 +24,7 @@ import { KeyboardShortcutsHelp } from './keyboardShortcuts/KeyboardShortcutsHelp
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import { OrgAreaRoute } from './org/area/OrgArea'
 import { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
-import { fetchHighlightedFileLines } from './repo/backend'
+import { fetchHighlightedFileLineRanges } from './repo/backend'
 import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
@@ -32,13 +32,17 @@ import { LayoutRouteProps } from './routes'
 import {
     parseSearchURLQuery,
     PatternTypeProps,
-    InteractiveSearchProps,
     CaseSensitivityProps,
     CopyQueryButtonProps,
     RepogroupHomepageProps,
     OnboardingTourProps,
     HomePanelsProps,
     SearchStreamingProps,
+    ParsedSearchQueryProps,
+    MutableVersionContextProps,
+    parseSearchURL,
+    SearchContextProps,
+    isSearchContextSpecAvailable,
 } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -53,8 +57,6 @@ import { ThemePreferenceProps } from './theme'
 import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_SHOW_HELP } from './keyboardShortcuts/keyboardShortcuts'
 import { QueryState } from './search/helpers'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
-import { VersionContextProps } from '../../shared/src/search/util'
-import { VersionContext } from './schema/site.schema'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { Settings } from './schema/settings.schema'
 import { Remote } from 'comlink'
@@ -65,6 +67,11 @@ import { SearchPatternType } from './graphql-operations'
 import { TelemetryProps } from '../../shared/src/telemetry/telemetryService'
 import { useObservable } from '../../shared/src/util/useObservable'
 import { useExtensionAlertAnimation } from './nav/UserNavItem'
+import { CodeMonitoringProps } from './enterprise/code-monitoring'
+import { UserRepositoriesUpdateProps } from './util'
+import { FilterKind, findFilter } from '../../shared/src/search/query/validate'
+import { FilterType } from '../../shared/src/search/query/filters'
+import { omitContextFilter } from '../../shared/src/search/query/transformer'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -76,15 +83,19 @@ export interface LayoutProps
         TelemetryProps,
         ThemePreferenceProps,
         ActivationProps,
+        ParsedSearchQueryProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        InteractiveSearchProps,
         CopyQueryButtonProps,
-        VersionContextProps,
+        MutableVersionContextProps,
         RepogroupHomepageProps,
         OnboardingTourProps,
+        SearchContextProps,
         HomePanelsProps,
-        SearchStreamingProps {
+        SearchStreamingProps,
+        CodeMonitoringProps,
+        SearchContextProps,
+        UserRepositoriesUpdateProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
     extensionsAreaRoutes: readonly ExtensionsAreaRoute[]
@@ -116,7 +127,7 @@ export interface LayoutProps
     // Search
     navbarSearchQueryState: QueryState
     onNavbarQueryChange: (queryState: QueryState) => void
-    fetchHighlightedFileLines: (parameters: FetchFileParameters, force?: boolean) => Observable<string[]>
+    fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     searchRequest: (
         query: QueryState['query'],
         version: string,
@@ -124,15 +135,13 @@ export interface LayoutProps
         versionContext: string | undefined,
         extensionHostPromise: Promise<Remote<FlatExtensionHostAPI>>
     ) => Observable<GQL.ISearchResults | ErrorLike>
-    setVersionContext: (versionContext: string | undefined) => void
-    availableVersionContexts: VersionContext[] | undefined
-    previousVersionContext: string | null
+
     globbing: boolean
     showMultilineSearchConsole: boolean
     showQueryBuilder: boolean
     enableSmartQuery: boolean
     isSourcegraphDotCom: boolean
-    showCampaigns: boolean
+    showBatchChanges: boolean
     fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>
     children?: never
 }
@@ -142,6 +151,87 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const isSearchRelatedPage = (routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')) ?? false
     const minimalNavLinks = routeMatch === '/cncf'
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
+
+    // Update parsedSearchQuery, patternType, caseSensitivity, versionContext, and selectedSearchContextSpec based on current URL
+    const {
+        history,
+        parsedSearchQuery: currentQuery,
+        patternType: currentPatternType,
+        caseSensitive: currentCaseSensitive,
+        versionContext: currentVersionContext,
+        selectedSearchContextSpec,
+        availableSearchContexts,
+        location,
+        setParsedSearchQuery,
+        setPatternType,
+        setCaseSensitivity,
+        setVersionContext,
+        setSelectedSearchContextSpec,
+    } = props
+
+    const { query = '', patternType, caseSensitive, versionContext } = useMemo(() => parseSearchURL(location.search), [
+        location.search,
+    ])
+
+    useEffect(() => {
+        const globalContextFilter = findFilter(query, FilterType.context, FilterKind.Global)
+        const searchContextSpec = globalContextFilter?.value
+            ? globalContextFilter.value.type === 'literal'
+                ? globalContextFilter.value.value
+                : globalContextFilter.value.quotedValue
+            : undefined
+
+        let finalQuery = query
+        if (
+            globalContextFilter &&
+            searchContextSpec &&
+            isSearchContextSpecAvailable(searchContextSpec, availableSearchContexts)
+        ) {
+            // If a global search context spec is available to the user, we omit it from the
+            // query and move it to the search contexts dropdown
+            finalQuery = omitContextFilter(finalQuery, globalContextFilter)
+        }
+
+        if (finalQuery !== currentQuery) {
+            setParsedSearchQuery(finalQuery)
+        }
+
+        // Only override filters from URL if there is a search query
+        if (query) {
+            if (patternType && patternType !== currentPatternType) {
+                setPatternType(patternType)
+            }
+
+            if (caseSensitive !== currentCaseSensitive) {
+                setCaseSensitivity(caseSensitive)
+            }
+
+            if (versionContext !== currentVersionContext) {
+                setVersionContext(versionContext)
+            }
+
+            if (searchContextSpec && searchContextSpec !== selectedSearchContextSpec) {
+                setSelectedSearchContextSpec(searchContextSpec)
+            }
+        }
+    }, [
+        history,
+        caseSensitive,
+        currentCaseSensitive,
+        currentPatternType,
+        currentQuery,
+        currentVersionContext,
+        selectedSearchContextSpec,
+        patternType,
+        query,
+        setCaseSensitivity,
+        setParsedSearchQuery,
+        setPatternType,
+        setVersionContext,
+        versionContext,
+        setSelectedSearchContextSpec,
+        availableSearchContexts,
+    ])
 
     // Hack! Hardcode these routes into cmd/frontend/internal/app/ui/router.go
     const repogroupPages = [
@@ -157,7 +247,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
 
     // TODO add a component layer as the parent of the Layout component rendering "top-level" routes that do not render the navbar,
     // so that Layout can always render the navbar.
-    const needsSiteInit = window.context.needsSiteInit
+    const needsSiteInit = window.context?.needsSiteInit
     const isSiteInit = props.location.pathname === '/site-admin/init'
     const isSignInOrUp =
         props.location.pathname === '/sign-in' ||
@@ -251,7 +341,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 <ResizablePanel
                     {...props}
                     repoName={`git://${parseBrowserRepoURL(props.location.pathname).repoName}`}
-                    fetchHighlightedFileLines={fetchHighlightedFileLines}
+                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                 />
             )}
             <GlobalContributions

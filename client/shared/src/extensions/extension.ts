@@ -95,3 +95,31 @@ export function extensionIDsFromSettings(settings: SettingsCascadeOrError): stri
     }
     return Object.keys(settings.final.extensions)
 }
+
+/**
+ * Mirrors `registry.SplitExtensionID` from `frontend`:
+ *
+ * `splitExtensionID` splits an extension ID of the form [host/]publisher/name (where [host/] is the
+ * optional registry prefix), such as "alice/myextension" or
+ * "sourcegraph.example.com/bob/myextension". It returns the components in an object.
+ *
+ * @param extensionID The extension ID (string)
+ */
+export function splitExtensionID(
+    extensionID: string
+): { publisher: string; name: string; host?: string; isSourcegraphExtension?: boolean } {
+    const parts = extensionID.split('/')
+    if (parts.length === 3) {
+        return {
+            host: parts[0],
+            publisher: parts[1],
+            name: parts[2],
+        }
+    }
+
+    return {
+        publisher: parts[0] ?? '',
+        name: parts[1] ?? '',
+        isSourcegraphExtension: parts[0] === 'sourcegraph',
+    }
+}

@@ -27,7 +27,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                 className="icon-inline"
               />
               <div
-                className="result-container__header-title "
+                className="result-container__header-title test-search-result-label"
                 data-testid="result-container-header"
               >
                 <span
@@ -114,6 +114,18 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                                
                             </td>
                           </tr>
+                          <tr>
+                            <td
+                              className="line"
+                            >
+                              3
+                            </td>
+                            <td
+                              className="code"
+                            >
+                               
+                            </td>
+                          </tr>
                         </tbody>
                       </table>
                     </code>
@@ -148,11 +160,6 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
       }
     >
       <div
-        className="resizable__ghost "
-        onMouseMove={[Function]}
-        onMouseUp={[Function]}
-      />
-      <div
         className="list-group list-group-flush hierarchical-locations-view__list test-hierarchical-locations-view-list"
       >
         <span
@@ -166,10 +173,14 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
             <span
               className="hierarchical-locations-view__item-name-text"
             >
-               
-              <strong>
-                file1.txt
-              </strong>
+              <span
+                className=""
+              >
+                 
+                <span>
+                  file1.txt
+                </span>
+              </span>
             </span>
           </span>
           <span
@@ -189,10 +200,14 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
             <span
               className="hierarchical-locations-view__item-name-text"
             >
-               
-              <strong>
-                file2.txt
-              </strong>
+              <span
+                className=""
+              >
+                 
+                <span>
+                  file2.txt
+                </span>
+              </span>
             </span>
           </span>
           <span
@@ -227,7 +242,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                 className="icon-inline"
               />
               <div
-                className="result-container__header-title "
+                className="result-container__header-title test-search-result-label"
                 data-testid="result-container-header"
               >
                 <span
@@ -338,6 +353,18 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                                
                             </td>
                           </tr>
+                          <tr>
+                            <td
+                              className="line"
+                            >
+                              5
+                            </td>
+                            <td
+                              className="code"
+                            >
+                               
+                            </td>
+                          </tr>
                         </tbody>
                       </table>
                     </code>
@@ -383,7 +410,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                 className="icon-inline"
               />
               <div
-                className="result-container__header-title "
+                className="result-container__header-title test-search-result-label"
                 data-testid="result-container-header"
               >
                 <span
@@ -463,6 +490,18 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                               className="line"
                             >
                               2
+                            </td>
+                            <td
+                              className="code"
+                            >
+                               
+                            </td>
+                          </tr>
+                          <tr>
+                            <td
+                              className="line"
+                            >
+                              3
                             </td>
                             <td
                               className="code"

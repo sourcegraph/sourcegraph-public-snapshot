@@ -12,6 +12,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 // SplitRepositoryNameWithOwner splits a GitHub repository's "owner/name" string into "owner" and "name", with
@@ -76,7 +77,7 @@ func (c *V3Client) cachedGetRepository(ctx context.Context, key string, getRepos
 		if cached := c.getRepositoryFromCache(ctx, key); cached != nil {
 			reposGitHubCacheCounter.WithLabelValues("hit").Inc()
 			if cached.NotFound {
-				return nil, ErrNotFound
+				return nil, ErrRepoNotFound
 			}
 			return &cached.Repository, nil
 		}
@@ -100,14 +101,10 @@ func (c *V3Client) cachedGetRepository(ctx context.Context, key string, getRepos
 	return repo, nil
 }
 
-var reposGitHubCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+var reposGitHubCacheCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "src_repos_github_cache_hit",
 	Help: "Counts cache hits and misses for GitHub repo metadata.",
 }, []string{"type"})
-
-func init() {
-	prometheus.MustRegister(reposGitHubCacheCounter)
-}
 
 type cachedRepo struct {
 	Repository
@@ -181,7 +178,7 @@ func (c *V3Client) getRepositoryFromAPI(ctx context.Context, owner, name string)
 	var result restRepository
 	if err := c.requestGet(ctx, fmt.Sprintf("/repos/%s/%s", owner, name), &result); err != nil {
 		if HTTPErrorCode(err) == http.StatusNotFound {
-			return nil, ErrNotFound
+			return nil, ErrRepoNotFound
 		}
 		return nil, err
 	}
@@ -373,6 +370,53 @@ func (c *V3Client) ListAffiliatedRepositories(ctx context.Context, visibility Vi
 	return repos, len(repos) > 0, 1, err
 }
 
+type repoResponse struct {
+	Viewer struct {
+		Repositories struct {
+			Nodes    []*Repository `json:"nodes"`
+			PageInfo struct {
+				EndCursor string `json:"endCursor"`
+			} `json:"pageInfo"`
+		} `json:"repositories"`
+	} `json:"viewer"`
+}
+
+func (c *V4Client) ListAffiliatedRepositories(ctx context.Context, visibility Visibility, after string) (
+	repos []*Repository,
+	endCursor string,
+	rateLimitCost int,
+	err error) {
+	res := repoResponse{}
+	args := make(map[string]interface{})
+	if after != "" {
+		args["after"] = after
+	}
+	err = c.requestGraphQL(ctx, `query GetAffiliatedRepos($after: String) {
+		viewer {
+			repositories(
+				first: 100,
+				after: $after,
+				ownerAffiliations: [
+					OWNER,
+					COLLABORATOR,
+					ORGANIZATION_MEMBER
+				]) {
+				  nodes {
+					nameWithOwner
+					isPrivate
+				  }
+				  pageInfo {
+					endCursor
+				  }
+			}
+		}
+	}`,
+		args,
+		&res,
+	)
+	return res.Viewer.Repositories.Nodes, res.Viewer.Repositories.PageInfo.EndCursor, 1, err
+}
+
 // ListOrgRepositories lists GitHub repositories from the specified organization.
 // org is the name of the organization. page is the page of results to return.
 // Pages are 1-indexed (so the first call should be for page 1).
@@ -444,7 +488,7 @@ func (c *V3Client) ListTopicsOnRepository(ctx context.Context, ownerAndName stri
 	var result restTopicsResponse
 	if err := c.requestGet(ctx, fmt.Sprintf("/repos/%s/%s/topics", owner, name), &result); err != nil {
 		if HTTPErrorCode(err) == http.StatusNotFound {
-			return nil, ErrNotFound
+			return nil, ErrRepoNotFound
 		}
 		return nil, err
 	}

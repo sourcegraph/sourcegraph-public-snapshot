@@ -7,7 +7,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -27,8 +28,8 @@ type Event struct {
 }
 
 // LogBackendEvent is a convenience function for logging backend events.
-func LogBackendEvent(userID int32, eventName string, argument json.RawMessage) error {
-	return LogEvent(context.Background(), Event{
+func LogBackendEvent(db dbutil.DB, userID int32, eventName string, argument json.RawMessage) error {
+	return LogEvent(context.Background(), db, Event{
 		EventName:    eventName,
 		UserID:       userID,
 		UserCookieID: "backend", // Use a non-empty string here to avoid the event_logs table's user existence constraint causing issues
@@ -39,7 +40,7 @@ func LogBackendEvent(userID int32, eventName string, argument json.RawMessage) e
 }
 
 // LogEvent logs an event.
-func LogEvent(ctx context.Context, args Event) error {
+func LogEvent(ctx context.Context, db dbutil.DB, args Event) error {
 	if !conf.EventLoggingEnabled() {
 		return nil
 	}
@@ -49,7 +50,7 @@ func LogEvent(ctx context.Context, args Event) error {
 			return err
 		}
 	}
-	return logLocalEvent(ctx, args.EventName, args.URL, args.UserID, args.UserCookieID, args.Source, args.Argument)
+	return logLocalEvent(ctx, db, args.EventName, args.URL, args.UserID, args.UserCookieID, args.Source, args.Argument)
 }
 
 type bigQueryEvent struct {
@@ -88,7 +89,7 @@ func publishSourcegraphDotComEvent(args Event) error {
 }
 
 // logLocalEvent logs users events.
-func logLocalEvent(ctx context.Context, name, url string, userID int32, userCookieID, source string, argument json.RawMessage) error {
+func logLocalEvent(ctx context.Context, db dbutil.DB, name, url string, userID int32, userCookieID, source string, argument json.RawMessage) error {
 	if name == "SearchResultsQueried" {
 		err := logSiteSearchOccurred()
 		if err != nil {
@@ -102,7 +103,7 @@ func logLocalEvent(ctx context.Context, name, url string, userID int32, userCook
 		}
 	}
 
-	info := &db.Event{
+	info := &database.Event{
 		Name:            name,
 		URL:             url,
 		UserID:          uint32(userID),
@@ -111,5 +112,5 @@ func logLocalEvent(ctx context.Context, name, url string, userID int32, userCook
 		Argument:        argument,
 		Timestamp:       timeNow().UTC(),
 	}
-	return db.EventLogs.Insert(ctx, info)
+	return database.EventLogs(db).Insert(ctx, info)
 }

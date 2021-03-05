@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -70,9 +71,10 @@ var (
 		router.CheckUsernameTaken: {},
 	}
 	anonymousAccessibleUIRoutes = map[string]struct{}{
-		uirouter.RouteSignIn:        {},
-		uirouter.RouteSignUp:        {},
-		uirouter.RoutePasswordReset: {},
+		uirouter.RouteSignIn:             {},
+		uirouter.RouteSignUp:             {},
+		uirouter.RoutePasswordReset:      {},
+		uirouter.RoutePingFromSelfHosted: {},
 	}
 	// Some routes return non-standard HTTP responses when a user is not
 	// signed in.

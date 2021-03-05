@@ -6,12 +6,6 @@ This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://d
 
 ---
 
-## (optional, recommended) Create a fork for customizations
-
-We **strongly** recommend that you create your own fork of [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/) to track customizations to the [Sourcegraph Docker Compose yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml). This will make upgrades far easier.
-
-See ["Store customizations in a fork"](./index.md#optional-recommended-store-customizations-in-a-fork) for full instructions.
-
 ## Deploy to EC2
 
 * Click **Launch Instance** from your [EC2 dashboard](https://console.aws.amazon.com/ec2/v2/home).
@@ -36,7 +30,7 @@ DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/home/ec2-user/deploy-sourcegraph-docker'
 
 # 🚨 Update these variables with the correct values from your fork!
 DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
-DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.17.2'
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.25.2'
 
 # Install git
 yum update -y
@@ -89,9 +83,6 @@ trap "rm -f ${tmp_config}" EXIT
 cat "${DOCKER_DAEMON_CONFIG_FILE}" | jq --arg DATA_ROOT "${DOCKER_DATA_ROOT}" '.["data-root"]=$DATA_ROOT' > "${tmp_config}"
 cat "${tmp_config}" > "${DOCKER_DAEMON_CONFIG_FILE}"
 
-# Configure inotify limits for indexed search.
-echo -e "\nfs.inotify.max_user_watches = 128000\n" >> /etc/sysctl.d/local.conf
-
 ## finally, restart Docker daemon to pick up our changes
 systemctl restart --now docker
 
@@ -109,7 +100,7 @@ docker-compose up -d
 * Click "Add New Volume" and add an additional volume (for storing Docker data) with the following settings:
 
   * **Volume Type** (left-most column): EBS
-  * **IMPORTANT: Device**: `/dev/sdb` 
+  * **IMPORTANT: Device**: `/dev/sdb`
   * **Size (GiB)**: `250` GB minimum *(As a rule of thumb, Sourcegraph needs at least as much space as all your repositories combined take up. Allocating as much disk space as you can upfront helps you avoid [resizing your volume](https://aws.amazon.com/premiumsupport/knowledge-center/expand-root-ebs-linux/) later on.)*
   * **Volume Type**: General Purpose SSD (gp2)
   * **Delete on Termination**: Leave this setting unchecked

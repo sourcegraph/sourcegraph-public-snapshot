@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
@@ -63,7 +64,7 @@ func newInternalProxyHandler(uploadHandler http.Handler) (func() http.Handler, e
 		base.Path("/git/{rest:.*/(?:info/refs|git-upload-pack)}").Handler(reverseProxy(frontendOrigin))
 
 		// Proxy only the known routes in the executor queue API
-		base.Path("/queue/{rest:heartbeat|.*/(?:dequeue|setLogContents|markComplete|markErrored)}").Handler(reverseProxy(queueOrigin))
+		base.Path("/queue/{rest:heartbeat|.*/(?:dequeue|addExecutionLogEntry|markComplete|markErrored|markFailed)}").Handler(reverseProxy(queueOrigin))
 
 		// Upload LSIF indexes without a sudo access token or github tokens
 		base.Path("/lsif/upload").Methods("POST").Handler(uploadHandler)

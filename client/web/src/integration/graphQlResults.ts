@@ -84,6 +84,10 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
 
     SiteAdminActivationStatus: () => ({
         externalServices: { totalCount: 3 },
+        repositoryStats: {
+            gitDirBytes: '1825299556',
+            indexedLinesCount: '2616264',
+        },
         repositories: { totalCount: 9 },
         viewerSettings: {
             final: JSON.stringify({}),
@@ -128,14 +132,41 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
     savedSearches: () => ({
         savedSearches: [],
     }),
-    logEvent: () => ({
+    LogEvent: () => ({
         logEvent: {
             alwaysNil: null,
         },
     }),
-    logUserEvent: () => ({
+    LogUserEvent: () => ({
         logUserEvent: {
             alwaysNil: null,
+        },
+    }),
+    SearchContexts: () => ({
+        searchContexts: [
+            {
+                __typename: 'SearchContext',
+                id: '1',
+                spec: 'global',
+                autoDefined: true,
+                description: 'All repositories on Sourcegraph',
+            },
+            {
+                __typename: 'SearchContext',
+                id: '2',
+                spec: '@username',
+                autoDefined: true,
+                description: 'Your repositories on Sourcegraph',
+            },
+        ],
+    }),
+    UserRepositories: () => ({
+        node: {
+            repositories: {
+                totalCount: 0,
+                nodes: [],
+                pageInfo: { hasNextPage: false },
+            },
         },
     }),
 }

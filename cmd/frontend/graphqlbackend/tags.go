@@ -5,8 +5,9 @@ import (
 	"errors"
 
 	"github.com/graph-gophers/graphql-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 func (r *schemaResolver) SetTag(ctx context.Context, args *struct {
@@ -28,7 +29,7 @@ func (r *schemaResolver) SetTag(ctx context.Context, args *struct {
 		return nil, errors.New("setting tags is only supported for users")
 	}
 
-	if err := db.Users.SetTag(ctx, user.user.ID, args.Tag, args.Present); err != nil {
+	if err := database.GlobalUsers.SetTag(ctx, user.user.ID, args.Tag, args.Present); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil

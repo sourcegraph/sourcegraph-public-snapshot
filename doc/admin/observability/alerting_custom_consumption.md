@@ -2,7 +2,7 @@
 
 If Sourcegraph's builtin [alerting](alerting.md) (which can notify you via email, Slack, PagerDuty, webhook, and more) is not sufficient for you, or if you just prefer to consume the alerts programatically for some reason, then this page is for you.
 
-For more information about Sourcegraph alerts, see: [high level alerting metrics](metrics_guide.md#high-level-alerting-metrics).
+For more information about Sourcegraph alerts, see [high level alerting metrics](metrics.md#high-level-alerting-metrics).
 
 ## Prometheus queries
 

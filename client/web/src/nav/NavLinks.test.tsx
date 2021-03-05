@@ -53,9 +53,6 @@ describe('NavLinks', () => {
         },
     }
     const history = H.createMemoryHistory({ keyLength: 0 })
-    const NOOP_TOGGLE_MODE = (): void => {
-        /* noop */
-    }
     const commonProps = {
         extensionsController: NOOP_EXTENSIONS_CONTROLLER,
         platformContext: NOOP_PLATFORM_CONTEXT,
@@ -67,10 +64,7 @@ describe('NavLinks', () => {
         settingsCascade: SETTINGS_CASCADE,
         history,
         isSourcegraphDotCom: false,
-        showCampaigns: true,
-        splitSearchModes: false,
-        interactiveSearchMode: false,
-        toggleSearchMode: NOOP_TOGGLE_MODE,
+        showBatchChanges: true,
     }
 
     // The 3 main props that affect the desired contents of NavLinks are whether the user is signed
@@ -93,6 +87,7 @@ describe('NavLinks', () => {
                                     showDotComMarketing={showDotComMarketing}
                                     location={H.createLocation(path, history.location)}
                                     isExtensionAlertAnimating={false}
+                                    routes={[]}
                                 />
                             </MemoryRouter>
                         )

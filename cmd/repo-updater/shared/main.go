@@ -20,23 +20,30 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared/assets"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
+	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/secret"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -44,20 +51,22 @@ const port = "3182"
 
 // EnterpriseInit is a function that allows enterprise code to be triggered when dependencies
 // created in Main are ready for use.
-type EnterpriseInit func(db *sql.DB, store repos.Store, cf *httpcli.Factory, server *repoupdater.Server) []debugserver.Dumper
+type EnterpriseInit func(db *sql.DB, store *repos.Store, cf *httpcli.Factory, server *repoupdater.Server) []debugserver.Dumper
 
 func Main(enterpriseInit EnterpriseInit) {
-	ctx := context.Background()
+	// NOTE: Internal actor is required to have full visibility of the repo table
+	// 	(i.e. bypass repository authorization).
+	ctx := actor.WithInternalActor(context.Background())
 	env.Lock()
 	env.HandleHelpFlag()
+
+	if err := profiler.Init(); err != nil {
+		log.Fatalf("failed to start profiler: %v", err)
+	}
+
 	logging.Init()
 	tracer.Init()
 	trace.Init(true)
-
-	err := secret.Init()
-	if err != nil {
-		log.Fatalf("Failed to initialize secrets encryption: %v", err)
-	}
 
 	clock := func() time.Time { return time.Now().UTC() }
 
@@ -84,24 +93,22 @@ func Main(enterpriseInit EnterpriseInit) {
 		}
 	})
 
-	db, err := dbutil.NewDB(dsn, "repo-updater")
+	if err := keyring.Init(ctx); err != nil {
+		log.Fatalf("error initialising encryption keyring: %v", err)
+	}
+
+	db, err := dbconn.New(dsn, "repo-updater")
 	if err != nil {
-		log.Fatalf("failed to initialize db store: %v", err)
+		log.Fatalf("failed to initialize database store: %v", err)
 	}
 
 	repos.MustRegisterMetrics(db)
 
-	var store repos.Store
+	store := repos.NewStore(db, sql.TxOptions{Isolation: sql.LevelDefault})
 	{
 		m := repos.NewStoreMetrics()
 		m.MustRegister(prometheus.DefaultRegisterer)
-
-		store = repos.NewObservedStore(
-			repos.NewDBStore(db, sql.TxOptions{Isolation: sql.LevelDefault}),
-			log15.Root(),
-			m,
-			trace.Tracer{Tracer: opentracing.GlobalTracer()},
-		)
+		store.Metrics = m
 	}
 
 	cf := httpcli.NewExternalHTTPClientFactory()
@@ -121,7 +128,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		GitserverClient: gitserver.DefaultClient,
 	}
 
-	rateLimitSyncer := repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store)
+	rateLimitSyncer := repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store.ExternalServiceStore)
 	server.RateLimitSyncer = rateLimitSyncer
 	// Attempt to perform an initial sync with all external services
 	if err := rateLimitSyncer.SyncRateLimiters(ctx); err != nil {
@@ -139,10 +146,12 @@ func Main(enterpriseInit EnterpriseInit) {
 	if envvar.SourcegraphDotComMode() {
 		server.SourcegraphDotComMode = true
 
-		es, err := store.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
-			// On Cloud we want to fetch our admin owned external service only here
-			NamespaceUserID: -1,
-			Kinds:           []string{extsvc.KindGitHub, extsvc.KindGitLab},
+		es, err := store.ExternalServiceStore.List(ctx, database.ExternalServicesListOptions{
+			// On Cloud we only want to fetch site level external services here where the
+			// cloud_default flag has been set.
+			NamespaceUserID:  -1,
+			OnlyCloudDefault: true,
+			Kinds:            []string{extsvc.KindGitHub, extsvc.KindGitLab},
 		})
 
 		if err != nil {
@@ -207,7 +216,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	}()
 	server.Syncer = syncer
 
-	go syncCloned(ctx, scheduler, gitserver.DefaultClient, store)
+	go syncScheduler(ctx, scheduler, gitserver.DefaultClient, store)
 
 	go repos.RunPhabricatorRepositorySyncWorker(ctx, store)
 
@@ -332,8 +341,20 @@ func Main(enterpriseInit EnterpriseInit) {
 	},
 	)
 
-	srv := &http.Server{Addr: addr, Handler: handler}
-	log.Fatal(srv.ListenAndServe())
+	// NOTE: Internal actor is required to have full visibility of the repo table
+	// 	(i.e. bypass repository authorization).
+	authzBypass := func(f http.Handler) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			r = r.WithContext(actor.WithInternalActor(r.Context()))
+			f.ServeHTTP(w, r)
+		}
+	}
+	httpSrv := httpserver.NewFromAddr(addr, &http.Server{
+		ReadTimeout:  75 * time.Second,
+		WriteTimeout: 10 * time.Minute,
+		Handler:      ot.Middleware(authzBypass(handler)),
+	})
+	goroutine.MonitorBackgroundRoutines(ctx, httpSrv)
 }
 
 type scheduler interface {
@@ -342,6 +363,9 @@ type scheduler interface {
 
 	// SetCloned ensures uncloned repos are given priority in the scheduler.
 	SetCloned([]string)
+
+	// EnsureScheduled ensures that all the repos provided are known to the scheduler
+	EnsureScheduled([]*types.RepoName)
 }
 
 func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps *repos.GitolitePhabricatorMetadataSyncer) {
@@ -372,9 +396,12 @@ func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps
 	}
 }
 
-// syncCloned will periodically list the cloned repositories on gitserver and
-// update the scheduler with the list.
-func syncCloned(ctx context.Context, sched scheduler, gitserverClient *gitserver.Client, store repos.Store) {
+// syncScheduler will periodically list the cloned repositories on gitserver and
+// update the scheduler with the list. It also ensures that if any of our default
+// repos are missing from the cloned list they will be added for cloning ASAP.
+func syncScheduler(ctx context.Context, sched scheduler, gitserverClient *gitserver.Client, store *repos.Store) {
+	baseRepoStore := database.ReposWith(store)
+
 	doSync := func() {
 		cloned, err := gitserverClient.ListCloned(ctx)
 		if err != nil {
@@ -382,13 +409,25 @@ func syncCloned(ctx context.Context, sched scheduler, gitserverClient *gitserver
 			return
 		}
 
-		sched.SetCloned(cloned)
-
 		err = store.SetClonedRepos(ctx, cloned...)
 		if err != nil {
 			log15.Warn("failed to set cloned repository list", "error", err)
 			return
 		}
+
+		// Fetch all default repos that are NOT cloned so that we can add them to the
+		// scheduler
+		repos, err := baseRepoStore.ListDefaultRepos(ctx, database.ListDefaultReposOptions{OnlyUncloned: true})
+		if err != nil {
+			log15.Error("Listing default repos", "error", err)
+			return
+		}
+
+		// Ensure that uncloned repos are known to the scheduler
+		sched.EnsureScheduled(repos)
+
+		// Ensure that any uncloned repos are moved to the front of the schedule
+		sched.SetCloned(cloned)
 	}
 
 	for ctx.Err() == nil {

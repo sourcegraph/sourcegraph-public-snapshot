@@ -5,7 +5,8 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
-	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -16,10 +17,7 @@ func (s *Store) RepoName(ctx context.Context, repositoryID int) (_ string, err e
 	}})
 	defer endObservation(1, observation.Args{})
 
-	name, exists, err := basestore.ScanFirstString(s.Store.Query(
-		ctx,
-		sqlf.Sprintf(`SELECT name FROM repo WHERE id = %s`, repositoryID),
-	))
+	name, exists, err := basestore.ScanFirstString(s.Store.Query(ctx, sqlf.Sprintf(repoNameQuery, repositoryID)))
 	if err != nil {
 		return "", err
 	}
@@ -28,3 +26,8 @@ func (s *Store) RepoName(ctx context.Context, repositoryID int) (_ string, err e
 	}
 	return name, nil
 }
+
+const repoNameQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/repos.go:RepoName
+SELECT name FROM repo WHERE id = %s
+`

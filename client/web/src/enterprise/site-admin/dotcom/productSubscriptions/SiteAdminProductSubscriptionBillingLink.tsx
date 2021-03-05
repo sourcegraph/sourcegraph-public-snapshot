@@ -6,8 +6,13 @@ import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operator
 import { gql } from '../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { asError, createAggregateError, isErrorLike } from '../../../../../../shared/src/util/errors'
-import { mutateGraphQL } from '../../../../backend/graphql'
+import { requestGraphQL } from '../../../../backend/graphql'
 import { useEventObservable } from '../../../../../../shared/src/util/useObservable'
+import {
+    Scalars,
+    SetProductSubscriptionBillingResult,
+    SetProductSubscriptionBillingVariables,
+} from '../../../../graphql-operations'
 
 interface Props {
     /** The product subscription to show a billing link for. */
@@ -30,7 +35,7 @@ export const SiteAdminProductSubscriptionBillingLink: React.FunctionComponent<Pr
     /** The result of updating this subscription: undefined for done or not started, loading, or an error. */
     const [nextUpdate, update] = useEventObservable(
         useCallback(
-            (updates: Observable<{ id: GQL.ID; billingSubscriptionID: string | null }>) =>
+            (updates: Observable<{ id: Scalars['ID']; billingSubscriptionID: string | null }>) =>
                 updates.pipe(
                     switchMap(({ id, billingSubscriptionID }) =>
                         setProductSubscriptionBilling({ id, billingSubscriptionID }).pipe(
@@ -84,10 +89,8 @@ export const SiteAdminProductSubscriptionBillingLink: React.FunctionComponent<Pr
     )
 }
 
-function setProductSubscriptionBilling(
-    args: GQL.ISetProductSubscriptionBillingOnDotcomMutationArguments
-): Observable<void> {
-    return mutateGraphQL(
+function setProductSubscriptionBilling(args: SetProductSubscriptionBillingVariables): Observable<void> {
+    return requestGraphQL<SetProductSubscriptionBillingResult, SetProductSubscriptionBillingVariables>(
         gql`
             mutation SetProductSubscriptionBilling($id: ID!, $billingSubscriptionID: String) {
                 dotcom {

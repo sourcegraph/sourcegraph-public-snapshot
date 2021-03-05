@@ -8,6 +8,11 @@ Upgrades should happen across consecutive minor versions of Sourcegraph. For exa
 
 **Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
 
+## 3.24 -> 3.25
+
+- Go `1.15` introduced changes to SSL/TLS connection validation which requires certificates to include a `SAN`. This field was not included in older certificates and clients relied on the `CN` field. You might see an error like `x509: certificate relies on legacy Common Name field`. We recommend that customers using Sourcegraph with an external database and and connecting to it using SSL/TLS check whether the certificate is up to date.
+  - AWS RDS customers please reference [AWS' documentation on updating the SSL/TLS certificate](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL-certificate-rotation.html) for steps to rotate your certificate.
+
 ## 3.20 -> 3.21
 
 This release introduces a second database instance, `codeintel-db`. If you have configured Sourcegraph with an external database, then update the `CODEINTEL_PG*` environment variables to point to a new external database as described in the [external database documentation](../external_services/postgres.md). Again, these must not point to the same database or the Sourcegraph instance will refuse to start.
@@ -28,7 +33,11 @@ If you had LSIF data uploaded prior to upgrading to 3.21.0, there is a backgroun
 
 In Sourcegraph version 3.20, we would automatically generate a secret key file (`/var/lib/sourcegraph/token`) inside the container for encrypting secrets stored in the database. However, it is not yet ready for general use and format of the secret key file might change. Therefore, it is best to delete the secret key file (`/var/lib/sourcegraph/token`) and turn off the database secrets encryption.
 
-### Standard upgrade procedure
+## 3.16 -> 3.17
+
+- There was [a bug](https://github.com/sourcegraph/sourcegraph/issues/11618) in the `sourcegraph/server:3.25.2` release that caused the version displayed on the `site-admin/update` page to be `0.0.0+dev` instead of `3.17.0`. This issue [was fixed](https://github.com/sourcegraph/sourcegraph/pull/11633) in the `3.17.2` release. We recommend that you avoid this issue by upgrading past `3.17.0` to `3.17.2` using the [Standard upgrade procedure](#Standard-upgrade-procedure) listed below.
+
+## Standard upgrade procedure
 
 To update, just use the newer `sourcegraph/server:N.N.N` Docker image (where `N.N.N` is the version number) in place of the older one, using the same Docker volumes. Your server's data will be migrated automatically if needed.
 

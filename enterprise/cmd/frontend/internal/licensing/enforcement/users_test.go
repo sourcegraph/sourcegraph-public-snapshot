@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestEnforcement_PreCreateUser(t *testing.T) {
@@ -169,9 +169,10 @@ func TestEnforcement_AfterCreateUser(t *testing.T) {
 			}
 
 			if test.wantCalledExecContext != calledExecContext {
-				t.Fatalf("calledExecContext: want %v but got %v", test.wantCalledExecContext, calledExecContext)
-			} else if test.wantSiteAdmin != user.SiteAdmin {
-				t.Fatalf("siteAdmin: want %v but got %v", test.wantSiteAdmin, user.SiteAdmin)
+				t.Errorf("calledExecContext: want %v but got %v", test.wantCalledExecContext, calledExecContext)
+			}
+			if test.wantSiteAdmin != user.SiteAdmin {
+				t.Errorf("siteAdmin: want %v but got %v", test.wantSiteAdmin, user.SiteAdmin)
 			}
 		})
 	}

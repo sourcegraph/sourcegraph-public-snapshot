@@ -8,19 +8,23 @@ import (
 	"regexp"
 	"strconv"
 	"testing"
+	"testing/quick"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	//"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestSearchCommitsInRepo(t *testing.T) {
 	ctx := context.Background()
+	db := new(dbtesting.MockDB)
 
 	var calledVCSRawLogDiffSearch bool
 	gitSignatureWithDate := git.Signature{Date: time.Now().UTC().AddDate(0, 0, -1)}
@@ -47,45 +51,59 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	}
 	defer git.ResetMocks()
 
-	query, err := query.ParseAndCheck("p")
+	q, err := query.ParseLiteral("p")
 	if err != nil {
 		t.Fatal(err)
 	}
 	repoRevs := &search.RepositoryRevisions{
-		Repo: &types.Repo{ID: 1, Name: "repo"},
+		Repo: &types.RepoName{ID: 1, Name: "repo"},
 		Revs: []search.RevisionSpecifier{{RevSpec: "rev"}},
 	}
-	results, limitHit, timedOut, err := searchCommitsInRepo(ctx, search.CommitParameters{
+	results, limitHit, timedOut, err := searchCommitsInRepo(ctx, db, search.CommitParameters{
 		RepoRevs:    repoRevs,
 		PatternInfo: &search.CommitPatternInfo{Pattern: "p", FileMatchLimit: int32(defaultMaxSearchResults)},
-		Query:       query,
+		Query:       q,
 		Diff:        true,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	wantCommit := GitCommitResolver{
-		repoResolver:    &RepositoryResolver{repo: &types.Repo{ID: 1, Name: "repo"}},
-		oid:             "c1",
-		author:          *toSignatureResolver(&gitSignatureWithDate, true),
-		includeUserInfo: true,
-	}
-	wantCommit.once.Do(func() {}) // mark as done
-
-	if want := []*CommitSearchResultResolver{
-		{
-			commit:      &wantCommit,
-			diffPreview: &highlightedString{value: "x", highlights: []*highlightedRange{}},
-			icon:        "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgdmVyc2lvbj0iMS4xIiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTE3LDEyQzE3LDE0LjQyIDE1LjI4LDE2LjQ0IDEzLDE2LjlWMjFIMTFWMTYuOUM4LjcyLDE2LjQ0IDcsMTQuNDIgNywxMkM3LDkuNTggOC43Miw3LjU2IDExLDcuMVYzSDEzVjcuMUMxNS4yOCw3LjU2IDE3LDkuNTggMTcsMTJNMTIsOUEzLDMgMCAwLDAgOSwxMkEzLDMgMCAwLDAgMTIsMTVBMywzIDAgMCwwIDE1LDEyQTMsMyAwIDAsMCAxMiw5WiIgLz48L3N2Zz4=",
-			label:       "[repo](/repo) › [](/repo/-/commit/c1): [](/repo/-/commit/c1)",
-			url:         "/repo/-/commit/c1",
-			detail:      "[`c1` one day ago](/repo/-/commit/c1)",
-			matches:     []*searchResultMatchResolver{{url: "/repo/-/commit/c1", body: "```diff\nx```", highlights: []*highlightedRange{}}},
+	want := []*CommitSearchResultResolver{{
+		db: db,
+		CommitSearchResult: CommitSearchResult{
+			Commit:      git.Commit{ID: "c1", Author: gitSignatureWithDate},
+			RepoName:    types.RepoName{ID: 1, Name: "repo"},
+			DiffPreview: &highlightedString{value: "x", highlights: []*highlightedRange{}},
+			Body:        "```diff\nx```",
+			Highlights:  []*highlightedRange{},
 		},
-	}; !reflect.DeepEqual(results, want) {
+	}}
+
+	if !reflect.DeepEqual(results, want) {
 		t.Errorf("results\ngot  %v\nwant %v", results, want)
 	}
+
+	wantDetail := Markdown("[`c1` one day ago](/repo/-/commit/c1)")
+	if gotDetail := want[0].Detail(); gotDetail != wantDetail {
+		t.Errorf("detail\ngot  %v\nwant %v", gotDetail, wantDetail)
+	}
+
+	wantLabel := Markdown("[repo](/repo) › [](/repo/-/commit/c1): [](/repo/-/commit/c1)")
+	if gotLabel := want[0].Label(); gotLabel != wantLabel {
+		t.Errorf("label\ngot  %v\nwant %v", gotLabel, wantLabel)
+	}
+
+	wantURL := "/repo/-/commit/c1"
+	if gotURL := want[0].URL(); gotURL != wantURL {
+		t.Errorf("url\ngot  %v\nwant %v", gotURL, wantURL)
+	}
+
+	wantMatches := []*searchResultMatchResolver{{url: "/repo/-/commit/c1", body: "```diff\nx```", highlights: []*highlightedRange{}}}
+	if gotMatches := want[0].Matches(); !reflect.DeepEqual(gotMatches, wantMatches) {
+		t.Errorf("matches\ngot  %v\nwant %v", gotMatches, wantMatches)
+	}
+
 	if limitHit {
 		t.Error("limitHit")
 	}
@@ -98,23 +116,23 @@ func TestSearchCommitsInRepo(t *testing.T) {
 }
 
 func (r *CommitSearchResultResolver) String() string {
-	return fmt.Sprintf("{commit: %+v diffPreview: %+v messagePreview: %+v}", r.commit, r.diffPreview, r.messagePreview)
+	return fmt.Sprintf("{commit: %+v diffPreview: %+v messagePreview: %+v}", r.Commit(), r.DiffPreview(), r.MessagePreview())
 }
 
 func TestExpandUsernamesToEmails(t *testing.T) {
 	resetMocks()
-	db.Mocks.Users.GetByUsername = func(ctx context.Context, username string) (*types.User, error) {
+	database.Mocks.Users.GetByUsername = func(ctx context.Context, username string) (*types.User, error) {
 		if want := "alice"; username != want {
 			t.Errorf("got %q, want %q", username, want)
 		}
 		return &types.User{ID: 123}, nil
 	}
-	db.Mocks.UserEmails.ListByUser = func(_ context.Context, opt db.UserEmailsListOptions) ([]*db.UserEmail, error) {
+	database.Mocks.UserEmails.ListByUser = func(_ context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
 		if want := int32(123); opt.UserID != want {
 			t.Errorf("got %v, want %v", opt.UserID, want)
 		}
 		t := time.Now()
-		return []*db.UserEmail{
+		return []*database.UserEmail{
 			{Email: "alice@example.com", VerifiedAt: &t},
 			{Email: "alice@example.org", VerifiedAt: &t},
 		}, nil
@@ -281,5 +299,50 @@ func Benchmark_highlightMatches(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = highlightMatches(rx, lines)
+	}
+}
+
+// searchCommitsInRepo is a blocking version of searchCommitsInRepoStream.
+func searchCommitsInRepo(ctx context.Context, db dbutil.DB, op search.CommitParameters) (results []*CommitSearchResultResolver, limitHit, timedOut bool, err error) {
+	for event := range searchCommitsInRepoStream(ctx, db, op) {
+		results = append(results, event.Results...)
+		limitHit = event.LimitHit
+		timedOut = event.TimedOut
+		err = event.Error
+	}
+	return results, limitHit, timedOut, err
+}
+
+func TestCommitSearchResult_Limit(t *testing.T) {
+	f := func(nHighlights []int, limitInput uint32) bool {
+		cr := &CommitSearchResult{
+			Highlights: make([]*highlightedRange, len(nHighlights)),
+		}
+
+		// It isn't interesting to test limit > ResultCount, so we bound it to
+		// [1, ResultCount]
+		count := cr.ResultCount()
+		limit := (int(limitInput) % count) + 1
+
+		after := cr.Limit(limit)
+		newCount := cr.ResultCount()
+
+		if after == 0 && newCount == limit {
+			return true
+		}
+
+		t.Logf("failed limit=%d count=%d => after=%d newCount=%d", limit, count, after, newCount)
+		return false
+	}
+	if err := quick.Check(f, nil); err != nil {
+		t.Error("quick check failed")
+	}
+
+	for nSymbols := 0; nSymbols <= 3; nSymbols++ {
+		for limit := 0; limit <= nSymbols; limit++ {
+			if !f(make([]int, nSymbols), uint32(limit)) {
+				t.Error("small exhaustive check failed")
+			}
+		}
 	}
 }

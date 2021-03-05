@@ -32,6 +32,7 @@ export type PlatformName =
     | NonNullable<typeof globalThis.SOURCEGRAPH_INTEGRATION>
     | 'firefox-extension'
     | 'chrome-extension'
+    | 'safari-extension'
 
 export function getPlatformName(): PlatformName {
     if (window.SOURCEGRAPH_PHABRICATOR_EXTENSION) {
@@ -39,6 +40,9 @@ export function getPlatformName(): PlatformName {
     }
     if (window.SOURCEGRAPH_INTEGRATION) {
         return window.SOURCEGRAPH_INTEGRATION
+    }
+    if (isSafari()) {
+        return 'safari-extension'
     }
     return isFirefox() ? 'firefox-extension' : 'chrome-extension'
 }
@@ -54,6 +58,12 @@ export function getExtensionVersion(): string {
 
 export function isFirefox(): boolean {
     return window.navigator.userAgent.includes('Firefox')
+}
+
+function isSafari(): boolean {
+    // Chrome's user agent contains "Safari" as well as "Chrome", so for Safari
+    // we must check that it does not include "Chrome"
+    return window.navigator.userAgent.includes('Safari') && !window.navigator.userAgent.includes('Chrome')
 }
 
 export function isDefaultSourcegraphUrl(url: string): boolean {

@@ -14,11 +14,11 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 var update = flag.Bool("update", false, "update testdata")
@@ -197,7 +197,7 @@ func testProviderFetchUserPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 
 				tc.err = strings.ReplaceAll(tc.err, "${INSTANCEURL}", cli.URL.String())
 
-				ids, err := p.FetchUserPerms(tc.ctx, tc.acct)
+				ids, _, err := p.FetchUserPerms(tc.ctx, tc.acct)
 
 				if have, want := fmt.Sprint(err), tc.err; have != want {
 					t.Errorf("error:\nhave: %q\nwant: %q", have, want)

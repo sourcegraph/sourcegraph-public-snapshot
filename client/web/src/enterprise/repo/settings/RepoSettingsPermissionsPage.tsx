@@ -1,14 +1,14 @@
 import React, { useEffect } from 'react'
-import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PageTitle } from '../../../components/PageTitle'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { eventLogger } from '../../../tracking/eventLogger'
 import * as H from 'history'
 import { scheduleRepositoryPermissionsSync } from '../../../site-admin/backend'
 import { ActionContainer } from '../../../repo/settings/components/ActionContainer'
+import { SettingsAreaRepositoryFields } from '../../../graphql-operations'
 
 export interface RepoSettingsPermissionsPageProps {
-    repo: GQL.IRepository
+    repo: SettingsAreaRepositoryFields
     history: H.History
 }
 
@@ -69,13 +69,11 @@ export const RepoSettingsPermissionsPage: React.FunctionComponent<RepoSettingsPe
 }
 
 interface ScheduleRepositoryPermissionsSyncActionContainerProps {
-    repo: GQL.IRepository
+    repo: SettingsAreaRepositoryFields
     history: H.History
 }
 
-class ScheduleRepositoryPermissionsSyncActionContainer extends React.PureComponent<
-    ScheduleRepositoryPermissionsSyncActionContainerProps
-> {
+class ScheduleRepositoryPermissionsSyncActionContainer extends React.PureComponent<ScheduleRepositoryPermissionsSyncActionContainerProps> {
     public render(): JSX.Element | null {
         return (
             <ActionContainer

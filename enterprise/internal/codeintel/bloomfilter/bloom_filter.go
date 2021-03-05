@@ -30,7 +30,8 @@ type encodedFilterPayload struct {
 }
 
 // CreateFilter allocates a new bloom filter and inserts all of the given identifiers. The returned
-// value is an encoded and compressed payload that can be passed to DecodeAndTestFilter.
+// value is an encoded and compressed payload that can be passed to Decode to test specific values
+// for membership within the identifier set.
 func CreateFilter(identifiers []string) ([]byte, error) {
 	buckets := make([]int32, BloomFilterBits)
 	for _, identifier := range identifiers {
@@ -40,31 +41,28 @@ func CreateFilter(identifiers []string) ([]byte, error) {
 	return encodeFilter(buckets, int32(BloomFilterNumHashFunctions))
 }
 
-// decodeAndTestFilter decodes the filter and determines if identifier is a member of the underlying
-// set. Returns an error if the encoded filter is malformed (improperly compressed or invalid JSON).
-func DecodeAndTestFilter(encodedFilter []byte, identifier string) (bool, error) {
-	buckets, numHashFunctions, err := decodeFilter(encodedFilter)
-	if err != nil {
-		return false, err
-	}
-
-	return testFilter(buckets, numHashFunctions, identifier), nil
-}
-
-// decodeFilter returns the buckets and the number of hash functions that were used to initially
-// populate the bloom filter from the given compressed payload.
-func decodeFilter(encodedFilter []byte) ([]int32, int32, error) {
+// Decode decodes the filter and returns a function that can be called to test if a specific value
+// is a member of the underlying set. This method returns an error if the encoded filter cannot be
+// decoded (improperly compressed or invalid JSON).
+func Decode(encodedFilter []byte) (func(identifier string) bool, error) {
 	r, err := gzip.NewReader(bytes.NewReader(encodedFilter))
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 
 	var payload encodedFilterPayload
 	if err := json.NewDecoder(r).Decode(&payload); err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 
-	return payload.Buckets, payload.NumHashFunctions, nil
+	buckets := payload.Buckets
+	numHashFunctions := payload.NumHashFunctions
+
+	test := func(identifier string) bool {
+		return testFilter(buckets, numHashFunctions, identifier)
+	}
+
+	return test, nil
 }
 
 // encodeFilters marshalls and compresses the given bloom filter state.
@@ -140,16 +138,16 @@ func index(b int32) (int32, int32) {
 func hashLocations(v string, m, k int32) []int32 {
 	a := fowlerNollVo1a(v, 0)
 	b := fowlerNollVo1a(v, 1576284489) // The seed value is chosen randomly
-	x := a % int32(m)
+	x := a % m
 	r := make([]int32, k)
 
 	for i := int32(0); i < k; i++ {
 		if x < 0 {
-			r[i] = x + int32(m)
+			r[i] = x + m
 		} else {
 			r[i] = x
 		}
-		x = (x + b) % int32(m)
+		x = (x + b) % m
 	}
 
 	return r
@@ -166,7 +164,7 @@ func fowlerNollVo1a(v string, seed int32) int32 {
 	for _, r := range utf16Runes(v) {
 		c := int64(r)
 		if d := c & 0xff00; d != 0 {
-			a = fowlerNollVoMultiply(int32(a ^ int64(d>>8)))
+			a = fowlerNollVoMultiply(int32(a ^ d>>8))
 		}
 		a = fowlerNollVoMultiply(int32(a) ^ int32(c&0xff))
 	}

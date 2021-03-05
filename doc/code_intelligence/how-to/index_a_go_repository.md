@@ -1,6 +1,6 @@
 # Go LSIF Indexing
 
-This guide is meant to provide specific instructions to get you producing index data in LSIF as quickly as possible. The [LSIF quick start](../lsif_quickstart.md) and [CI configuration](adding_lsif_to_workflows.md) guides provide more in depth descriptions of each step and a lot of helpful context that we haven't duplicated in each language guide.
+This guide is meant to provide specific instructions to get you producing index data in LSIF as quickly as possible for Go codebases.
 
 ## Automated indexing
 
@@ -116,6 +116,4 @@ The following projects have example Travis CI configurations to generate and upl
    src lsif upload -github-token=<your github token>
    ```
 
-   Visit the [LSIF quickstart](../lsif_quickstart.md) for more information about the upload command.
-
-The upload command will provide a URL you can visit to see the upload's status, and when it's done you can visit the repo and check out the difference in code navigation quality! To troubleshoot issues, visit the more in depth [LSIF quickstart](../lsif_quickstart.md) guide and check out the documentation for the `lsif-go` and `src-cli` tools.
+The upload command will provide a URL you can visit to see the upload's status, and when it's done you can visit the repo and check out the difference in code navigation quality! 

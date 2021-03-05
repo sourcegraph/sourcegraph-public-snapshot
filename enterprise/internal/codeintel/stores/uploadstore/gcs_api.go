@@ -29,10 +29,14 @@ type gcsComposer interface {
 	Run(ctx context.Context) (*storage.ObjectAttrs, error)
 }
 
-type gcsAPIShim struct{ *storage.Client }
-type bucketHandleShim struct{ *storage.BucketHandle }
-type objectHandleShim struct{ *storage.ObjectHandle }
-type composerShim struct{ *storage.Composer }
+type gcsAPIShim struct{ client *storage.Client }
+type bucketHandleShim struct{ handle *storage.BucketHandle }
+type objectHandleShim struct{ handle *storage.ObjectHandle }
+
+type composerShim struct {
+	handle  *storage.ObjectHandle
+	sources []*storage.ObjectHandle
+}
 
 var _ gcsAPI = &gcsAPIShim{}
 var _ gcsBucketHandle = &bucketHandleShim{}
@@ -40,49 +44,57 @@ var _ gcsObjectHandle = &objectHandleShim{}
 var _ gcsComposer = &composerShim{}
 
 func (s *gcsAPIShim) Bucket(name string) gcsBucketHandle {
-	return &bucketHandleShim{s.Client.Bucket(name)}
+	return &bucketHandleShim{handle: s.client.Bucket(name)}
 }
 
 func (s *bucketHandleShim) Attrs(ctx context.Context) (*storage.BucketAttrs, error) {
-	return s.BucketHandle.Attrs(ctx)
+	return s.handle.Attrs(ctx)
 }
 
 func (s *bucketHandleShim) Create(ctx context.Context, projectID string, attrs *storage.BucketAttrs) error {
-	return s.BucketHandle.Create(ctx, projectID, attrs)
+	return s.handle.Create(ctx, projectID, attrs)
 }
 
 func (s *bucketHandleShim) Update(ctx context.Context, attrs storage.BucketAttrsToUpdate) error {
-	_, err := s.BucketHandle.Update(ctx, attrs)
+	_, err := s.handle.Update(ctx, attrs)
 	return err
 }
 
 func (s *bucketHandleShim) Object(name string) gcsObjectHandle {
-	return &objectHandleShim{s.BucketHandle.Object(name)}
+	return &objectHandleShim{handle: s.handle.Object(name)}
 }
 
 func (s *objectHandleShim) Delete(ctx context.Context) error {
-	return s.ObjectHandle.Delete(ctx)
+	return s.handle.Delete(ctx)
 }
 
 func (s *objectHandleShim) NewRangeReader(ctx context.Context, offset, length int64) (io.ReadCloser, error) {
-	return s.ObjectHandle.NewRangeReader(ctx, offset, length)
+	return s.handle.NewRangeReader(ctx, offset, length)
 }
 
 func (s *objectHandleShim) NewWriter(ctx context.Context) io.WriteCloser {
-	return s.ObjectHandle.NewWriter(ctx)
+	return s.handle.NewWriter(ctx)
 }
 
 func (s *objectHandleShim) ComposerFrom(sources ...gcsObjectHandle) gcsComposer {
-	var rawSources []*storage.ObjectHandle
+	var handles []*storage.ObjectHandle
 	for _, source := range sources {
 		if shim, ok := source.(*objectHandleShim); ok {
-			rawSources = append(rawSources, shim.ObjectHandle)
+			handles = append(handles, shim.handle)
 		}
 	}
 
-	return &composerShim{s.ObjectHandle.ComposerFrom(rawSources...)}
+	return &composerShim{handle: s.handle, sources: handles}
 }
 
 func (s *composerShim) Run(ctx context.Context) (*storage.ObjectAttrs, error) {
-	return s.Composer.Run(ctx)
+	for len(s.sources) > 32 {
+		if _, err := s.handle.ComposerFrom(s.sources[:32]...).Run(ctx); err != nil {
+			return nil, err
+		}
+
+		s.sources = append([]*storage.ObjectHandle{s.handle}, s.sources[32:]...)
+	}
+
+	return s.handle.ComposerFrom(s.sources...).Run(ctx)
 }

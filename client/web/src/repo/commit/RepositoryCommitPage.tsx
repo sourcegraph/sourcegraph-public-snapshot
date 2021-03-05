@@ -43,6 +43,7 @@ import {
     GitCommitFields,
     RepositoryCommitResult,
     RepositoryCommitVariables,
+    RepositoryFields,
     Scalars,
 } from '../../graphql-operations'
 
@@ -87,7 +88,7 @@ interface Props
         PlatformContextProps,
         ExtensionsControllerProps,
         ThemeProps {
-    repo: GQL.IRepository
+    repo: RepositoryFields
 
     onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
 }
@@ -228,7 +229,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                 {this.state.commitOrError === undefined ? (
                     <LoadingSpinner className="icon-inline mt-2" />
                 ) : isErrorLike(this.state.commitOrError) ? (
-                    <ErrorAlert className="mt-2" error={this.state.commitOrError} history={this.props.history} />
+                    <ErrorAlert className="mt-2" error={this.state.commitOrError} />
                 ) : (
                     <>
                         <div className="card repository-commit-page__card">

@@ -1,20 +1,19 @@
 import * as React from 'react'
-import * as H from 'history'
 import { SearchType } from './SearchResults'
 import { NavLink } from 'react-router-dom'
 import { toggleSearchType } from '../helpers'
-import { buildSearchURLQuery, generateFiltersQuery } from '../../../../shared/src/util/url'
+import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { constant } from 'lodash'
-import { PatternTypeProps, CaseSensitivityProps, parseSearchURLQuery, InteractiveSearchProps } from '..'
-import { scanSearchQuery } from '../../../../shared/src/search/parser/scanner'
+import { PatternTypeProps, CaseSensitivityProps, ParsedSearchQueryProps, SearchContextProps } from '..'
+import { scanSearchQuery } from '../../../../shared/src/search/query/scanner'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 
 interface Props
     extends Omit<PatternTypeProps, 'setPatternType'>,
         Omit<CaseSensitivityProps, 'setCaseSensitivity'>,
-        Pick<InteractiveSearchProps, 'filtersInQuery'>,
-        VersionContextProps {
-    location: H.Location
+        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
+        VersionContextProps,
+        Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     type: SearchType
     query: string
 }
@@ -28,19 +27,24 @@ const typeToProse: Record<Exclude<SearchType, null>, string> = {
 }
 
 export const SearchResultTabHeader: React.FunctionComponent<Props> = ({
-    location,
     type,
     query,
-    filtersInQuery,
+    parsedSearchQuery,
     patternType,
     caseSensitive,
     versionContext,
+    selectedSearchContextSpec,
 }) => {
-    const fullQuery = [query, generateFiltersQuery(filtersInQuery)].filter(query => query.length > 0).join(' ')
-    const caseToggledQuery = toggleSearchType(fullQuery, type)
-    const builtURLQuery = buildSearchURLQuery(caseToggledQuery, patternType, caseSensitive, versionContext)
+    const caseToggledQuery = toggleSearchType(query, type)
+    const builtURLQuery = buildSearchURLQuery(
+        caseToggledQuery,
+        patternType,
+        caseSensitive,
+        versionContext,
+        selectedSearchContextSpec
+    )
 
-    const currentQuery = parseSearchURLQuery(location.search) || ''
+    const currentQuery = parsedSearchQuery
     const scannedQuery = scanSearchQuery(currentQuery)
     let typeInQuery: SearchType = null
 
@@ -48,11 +52,11 @@ export const SearchResultTabHeader: React.FunctionComponent<Props> = ({
         // Parse any `type:` filter that exists in a query so
         // we can check whether this tab should be active.
         for (const token of scannedQuery.term) {
-            if (token.type === 'filter' && token.filterType.value === 'type' && token.filterValue) {
+            if (token.type === 'filter' && token.field.value === 'type' && token.value) {
                 typeInQuery =
-                    token.filterValue.type === 'literal'
-                        ? (token.filterValue.value as SearchType)
-                        : (token.filterValue.quotedValue as SearchType)
+                    token.value.type === 'literal'
+                        ? (token.value.value as SearchType)
+                        : (token.value.quotedValue as SearchType)
             }
         }
     }

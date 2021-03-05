@@ -8,6 +8,7 @@ import React, { useEffect, useState } from 'react'
 import { PhabricatorIcon } from '../../../../shared/src/components/icons'
 import { WebStory } from '../../components/WebStory'
 import { InstallBrowserExtensionPopover } from './InstallBrowserExtensionPopover'
+import { ExternalServiceKind } from '../../../../shared/src/graphql/schema'
 
 const onClose = action('onClose')
 const onRejection = action('onRejection')
@@ -20,8 +21,8 @@ const { add } = storiesOf('web/repo/actions/InstallBrowserExtensionPopover', mod
 add('GitHub', () => (
     <WebStory>
         {() => {
-            const serviceType = 'github'
-            const targetID = `view-on-${serviceType}`
+            const serviceKind = ExternalServiceKind.GITHUB
+            const targetID = `view-on-${serviceKind}`
             const [open, setOpen] = useState(false)
             // The popover cannot be open on initial render
             // since the target element isn't in the DOM yet
@@ -35,7 +36,7 @@ add('GitHub', () => (
                     </button>
                     <InstallBrowserExtensionPopover
                         url=""
-                        serviceType={serviceType}
+                        serviceKind={serviceKind}
                         onClose={onClose}
                         onRejection={onRejection}
                         onClickInstall={onClickInstall}
@@ -56,8 +57,8 @@ add(
     () => (
         <WebStory>
             {() => {
-                const serviceType = 'gitlab'
-                const targetID = `view-on-${serviceType}`
+                const serviceKind = ExternalServiceKind.GITLAB
+                const targetID = `view-on-${serviceKind}`
                 const [open, setOpen] = useState(false)
                 useEffect(() => {
                     setTimeout(() => setOpen(true), 0)
@@ -69,7 +70,7 @@ add(
                         </button>
                         <InstallBrowserExtensionPopover
                             url=""
-                            serviceType={serviceType}
+                            serviceKind={serviceKind}
                             onClose={onClose}
                             onRejection={onRejection}
                             onClickInstall={onClickInstall}
@@ -94,8 +95,8 @@ add(
     () => (
         <WebStory>
             {() => {
-                const serviceType = 'phabricator'
-                const targetID = `view-on-${serviceType}`
+                const serviceKind = ExternalServiceKind.PHABRICATOR
+                const targetID = `view-on-${serviceKind}`
                 const [open, setOpen] = useState(false)
                 useEffect(() => {
                     setTimeout(() => setOpen(true), 0)
@@ -107,7 +108,7 @@ add(
                         </button>
                         <InstallBrowserExtensionPopover
                             url=""
-                            serviceType={serviceType}
+                            serviceKind={serviceKind}
                             onClose={onClose}
                             onRejection={onRejection}
                             onClickInstall={onClickInstall}
@@ -132,8 +133,8 @@ add(
     () => (
         <WebStory>
             {() => {
-                const serviceType = 'bitbucketServer'
-                const targetID = `view-on-${serviceType}`
+                const serviceKind = ExternalServiceKind.BITBUCKETSERVER
+                const targetID = `view-on-${serviceKind}`
                 const [open, setOpen] = useState(false)
                 useEffect(() => {
                     setTimeout(() => setOpen(true), 0)
@@ -146,7 +147,7 @@ add(
 
                         <InstallBrowserExtensionPopover
                             url=""
-                            serviceType={serviceType}
+                            serviceKind={serviceKind}
                             onClose={onClose}
                             onRejection={onRejection}
                             onClickInstall={onClickInstall}

@@ -17,7 +17,6 @@ import {
 } from '../../../../../shared/src/api/protocol'
 import { ActivationProps } from '../../../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
-import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
 import { AbsoluteRepoFile, ModeSpec, parseHash, UIPositionSpec } from '../../../../../shared/src/util/url'
@@ -27,6 +26,7 @@ import { ThemeProps } from '../../../../../shared/src/theme'
 import { AuthenticatedUser } from '../../../auth'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { wrapRemoteObservable } from '../../../../../shared/src/api/client/api/common'
+import { Scalars } from '../../../../../shared/src/graphql-operations'
 
 interface Props
     extends AbsoluteRepoFile,
@@ -40,7 +40,7 @@ interface Props
         ActivationProps {
     location: H.Location
     history: H.History
-    repoID: GQL.ID
+    repoID: Scalars['ID']
     repoName: string
     commitID: string
     authenticatedUser: AuthenticatedUser | null

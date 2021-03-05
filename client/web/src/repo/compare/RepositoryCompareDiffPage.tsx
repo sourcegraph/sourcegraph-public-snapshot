@@ -17,9 +17,10 @@ import { FileDiffNode } from '../../components/diff/FileDiffNode'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { fileDiffFields, diffStatFields } from '../../backend/diff'
+import { Scalars } from '../../../../shared/src/graphql-operations'
 
 export function queryRepositoryComparisonFileDiffs(args: {
-    repo: GQL.ID
+    repo: Scalars['ID']
     base: string | null
     head: string | null
     first?: number
@@ -83,10 +84,10 @@ interface RepositoryCompareDiffPageProps
         ExtensionsControllerProps,
         ThemeProps {
     /** The base of the comparison. */
-    base: { repoName: string; repoID: GQL.ID; revision: string | null; commitID: string }
+    base: { repoName: string; repoID: Scalars['ID']; revision: string | null; commitID: string }
 
     /** The head of the comparison. */
-    head: { repoName: string; repoID: GQL.ID; revision: string | null; commitID: string }
+    head: { repoName: string; repoID: Scalars['ID']; revision: string | null; commitID: string }
     hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
 }
 

@@ -107,6 +107,21 @@ If you are running Sourcegraph as a Kubernetes cluster, you have two additional 
    service](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/docs/configure.md#nginx-service),
    modify
    [`nginx.ConfigMap.yaml`](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/nginx-svc/nginx.ConfigMap.yaml).
+   
+## What external HTTP checks are configured?
+
+We leave the choice of which external HTTP check monitor up to our users. What we provide out-of-the-box is extensive metrics monitoring through Prometheus and Grafana, with builtin alert thresholds and dashboards, and Kubernetes/Docker HTTP health checks which verify that the server is running. Sourcegraph's frontend has a default health check at
+https://$SOURCEGRAPH_BASE_URL/healthz. Some users choose to set up their own external HTTP health checker which tests if the homepage loads, a repository page loads, and if a search GraphQL request returns successfully. 
+
+
+
+## Can I consume Sourcegraph's metrics in my own monitoring system (Datadog, New Relic, etc.)?
+
+Sourcegraph provides [high-level alerting metrics](./observability/metrics.md#high-level-alerting-metrics) which you can integrate into your own monitoring system - see the [alerting custom consumption guide](./observability/alerting_custom_consumption.md) for more details.
+
+While it is technically possible to consume all of Sourcegraph's metrics in an external system, our recommendation is to utilize the builtin monitoring tools and configure Sourcegraph to [send alerts to your own PagerDuty, Slack, email, etc.](./observability/alerting.md). Metrics and thresholds can change with each release, therefore manually defining the alerts required to monitor Sourcegraph's health is not recommended. Sourcegraph automatically updates the dashboards and alerts on each release to ensure the displayed information is up-to-date.
+
+Other monitoring systems that support Prometheus scraping (for example, Datadog and New Relic) or [Prometheus federation](https://prometheus.io/docs/prometheus/latest/federation/) can be configured to federate Sourcegraph's [high-level alerting metrics](./observability/metrics.md#high-level-alerting-metrics). For information on how to configure those systems, please check your provider's documentation.
 
 ## Troubleshooting
 

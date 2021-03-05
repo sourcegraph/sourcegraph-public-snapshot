@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/globalstatedb"
 )
 
 func TestNotInited(t *testing.T) {
@@ -22,7 +22,7 @@ func TestGet(t *testing.T) {
 	reset := func() {
 		inited = false
 		siteID = ""
-		db.Mocks = db.MockStores{}
+		database.Mocks = database.MockStores{}
 		conf.Mock(nil)
 	}
 

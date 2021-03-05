@@ -1,5 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import * as H from 'history'
+import DeleteIcon from 'mdi-react/DeleteIcon'
 import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { SchedulerLike, timer } from 'rxjs'
@@ -9,20 +9,19 @@ import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetrySer
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { ErrorAlert } from '../../../components/alerts'
+import { PageHeader } from '../../../components/PageHeader'
 import { PageTitle } from '../../../components/PageTitle'
 import { LsifIndexFields } from '../../../graphql-operations'
+import { CodeIntelStateBanner } from '../shared/CodeIntelStateBanner'
 import { deleteLsifIndex, fetchLsifIndex as defaultFetchLsifIndex } from './backend'
-import { CodeIntelDeleteIndex } from './CodeIntelDeleteIndex'
-import { CodeIntelIndexInfo } from './CodeIntelIndexInfo'
-import { CodeIntelIndexPageTitle } from './CodeIntelIndexPageTitle'
-import { CodeIntelStateBanner } from './CodeIntelStateBanner'
+import { CodeIntelIndexMeta } from './CodeIntelIndexMeta'
+import { CodeIntelIndexTimeline } from './CodeIntelIndexTimeline'
 
 export interface CodeIntelIndexPageProps extends RouteComponentProps<{ id: string }>, TelemetryProps {
     fetchLsifIndex?: typeof defaultFetchLsifIndex
     now?: () => Date
     /** Scheduler for the refresh timer */
     scheduler?: SchedulerLike
-    history: H.History
 }
 
 const REFRESH_INTERVAL_MS = 5000
@@ -37,7 +36,6 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
     match: {
         params: { id },
     },
-    history,
     telemetryService,
     fetchLsifIndex = defaultFetchLsifIndex,
     now,
@@ -84,28 +82,48 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
     return deletionOrError === 'deleted' ? (
         <Redirect to="." />
     ) : isErrorLike(deletionOrError) ? (
-        <ErrorAlert prefix="Error deleting LSIF index record" error={deletionOrError} history={history} />
+        <ErrorAlert prefix="Error deleting LSIF index record" error={deletionOrError} />
     ) : (
-        <div className="site-admin-lsif-index-page w-100">
+        <div className="site-admin-lsif-index-page w-100 web-content">
             <PageTitle title="Code intelligence - auto-indexing" />
             {isErrorLike(indexOrError) ? (
-                <ErrorAlert prefix="Error loading LSIF index" error={indexOrError} history={history} />
+                <ErrorAlert prefix="Error loading LSIF index" error={indexOrError} />
             ) : !indexOrError ? (
                 <LoadingSpinner className="icon-inline" />
             ) : (
                 <>
-                    <CodeIntelIndexPageTitle index={indexOrError} />
+                    <PageHeader
+                        path={[
+                            {
+                                text: (
+                                    <>
+                                        <span className="text-muted">Auto-index record for commit</span>
+                                        <span className="ml-2">
+                                            {indexOrError.projectRoot
+                                                ? indexOrError.projectRoot.commit.abbreviatedOID
+                                                : indexOrError.inputCommit.slice(0, 7)}
+                                        </span>
+                                    </>
+                                ),
+                            },
+                        ]}
+                        actions={<CodeIntelDeleteIndex deleteIndex={deleteIndex} deletionOrError={deletionOrError} />}
+                        className="mb-3"
+                    />
                     <CodeIntelStateBanner
                         state={indexOrError.state}
                         placeInQueue={indexOrError.placeInQueue}
                         failure={indexOrError.failure}
                         typeName="index"
                         pluralTypeName="indexes"
-                        history={history}
                         className={classNamesByState.get(indexOrError.state)}
                     />
-                    <CodeIntelIndexInfo index={indexOrError} now={now} />
-                    <CodeIntelDeleteIndex deleteIndex={deleteIndex} deletionOrError={deletionOrError} />
+                    <div className="card mb-3">
+                        <div className="card-body">
+                            <CodeIntelIndexMeta node={indexOrError} now={now} />
+                        </div>
+                    </div>
+                    <CodeIntelIndexTimeline index={indexOrError} now={now} className="mb-3" />
                 </>
             )}
         </div>
@@ -117,3 +135,21 @@ const terminalStates = new Set([LSIFIndexState.COMPLETED, LSIFIndexState.ERRORED
 function shouldReload(index: LsifIndexFields | ErrorLike | null | undefined): boolean {
     return !isErrorLike(index) && !(index && terminalStates.has(index.state))
 }
+
+interface CodeIntelDeleteIndexProps {
+    deleteIndex: () => Promise<void>
+    deletionOrError?: 'loading' | 'deleted' | ErrorLike
+}
+
+const CodeIntelDeleteIndex: FunctionComponent<CodeIntelDeleteIndexProps> = ({ deleteIndex, deletionOrError }) => (
+    <button
+        type="button"
+        className="btn btn-outline-danger"
+        onClick={deleteIndex}
+        disabled={deletionOrError === 'loading'}
+        aria-describedby="upload-delete-button-help"
+        data-tooltip="Deleting this index will remove it from the index queue."
+    >
+        <DeleteIcon className="icon-inline" /> Delete index
+    </button>
+)

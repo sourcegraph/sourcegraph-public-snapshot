@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"time"
 
 	amclient "github.com/prometheus/alertmanager/api/v2/client"
 	"github.com/prometheus/alertmanager/api/v2/client/general"
+	amconfig "github.com/prometheus/alertmanager/config"
 	"github.com/prometheus/common/model"
+	"gopkg.in/yaml.v2"
 )
 
 // Prefix to serve alertmanager on. If you change this, make sure you update prometheus.yml as well
@@ -63,6 +66,33 @@ func reloadAlertmanager(ctx context.Context) error {
 			return fmt.Errorf("reload failed with status %d", resp.StatusCode)
 		}
 		return fmt.Errorf("reload failed with status %d: %s", resp.StatusCode, string(data))
+	}
+	return nil
+}
+
+// renderConfiguration marshals the given Alertmanager configuration to a format accepted
+// by Alertmanager, and also validates that it will be accepted by Alertmanager.
+func renderConfiguration(cfg *amconfig.Config) ([]byte, error) {
+	data, err := yaml.Marshal(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal: %w", err)
+	}
+	_, err = amconfig.Load(string(data))
+	return data, err
+}
+
+// applyConfiguration writes validates and writes the given Alertmanager configuration
+// to disk, and triggers a reload.
+func applyConfiguration(ctx context.Context, cfg *amconfig.Config) error {
+	amConfigData, err := renderConfiguration(cfg)
+	if err != nil {
+		return fmt.Errorf("failed to generate Alertmanager configuration: %w", err)
+	}
+	if err := ioutil.WriteFile(alertmanagerConfigPath, amConfigData, os.ModePerm); err != nil {
+		return fmt.Errorf("failed to write Alertmanager configuration: %w", err)
+	}
+	if err := reloadAlertmanager(ctx); err != nil {
+		return fmt.Errorf("failed to reload Alertmanager configuration: %w", err)
 	}
 	return nil
 }

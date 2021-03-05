@@ -1,16 +1,41 @@
 .monaco-query-input-container {
     position: relative;
     border: 1px solid $input-border-color;
-    // Match padding from the regular query input.
-    padding-left: 0.75rem;
+    border-right-color: transparent;
     background-color: var(--input-bg);
     display: flex;
     align-items: center;
     flex: 1 1 auto;
     min-width: 12rem;
+
     &:focus-within {
-        border: 1px solid $input-focus-border-color;
-        box-shadow: 0 0 0 2px rgba(28, 126, 214, 0.25);
+        .search-context-dropdown__separator {
+            visibility: hidden;
+        }
+    }
+
+    &__focus-container {
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        height: calc(100% + 2px); // add 2 pixels for border
+        display: flex;
+        align-items: center;
+        flex: 1 1 auto;
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        margin: -1px; // To compensate for the border
+        border: 1px solid transparent;
+        // Match padding from the regular query input.
+        padding-left: 0.75rem;
+        &:not(:first-child) {
+            padding-left: 0.5rem; // smaller padding if the search context selector is visible
+            margin-left: 0.0625rem;
+            border-top-left-radius: 0.25rem;
+            border-bottom-left-radius: 0.25rem;
+        }
+
+        &:focus-within {
+            border: 1px solid $input-focus-border-color;
+            box-shadow: 0 0 0 2px rgba(28, 126, 214, 0.25);
+        }
     }
 
     .monaco-editor {
@@ -61,7 +86,7 @@
     }
 
     &__toggle-container {
-        padding-right: 0.35rem;
+        padding-right: 0.5rem;
         padding-left: 0.35rem;
     }
 }

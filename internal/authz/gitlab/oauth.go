@@ -7,11 +7,11 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 var _ authz.Provider = (*OAuthProvider)(nil)
@@ -79,19 +79,19 @@ func (p *OAuthProvider) FetchAccount(ctx context.Context, user *types.User, curr
 // callers to decide whether to discard.
 //
 // API docs: https://docs.gitlab.com/ee/api/projects.html#list-all-projects
-func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Account) ([]extsvc.RepoID, error) {
+func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Account) ([]extsvc.RepoID, extsvc.RepoIDType, error) {
 	if account == nil {
-		return nil, errors.New("no account provided")
+		return nil, extsvc.RepoIDExact, errors.New("no account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
-		return nil, fmt.Errorf("not a code host of the account: want %q but have %q",
+		return nil, extsvc.RepoIDExact, fmt.Errorf("not a code host of the account: want %q but have %q",
 			account.AccountSpec.ServiceID, p.codeHost.ServiceID)
 	}
 
 	_, tok, err := gitlab.GetExternalAccountData(&account.AccountData)
 	if err != nil {
-		return nil, errors.Wrap(err, "get external account data")
+		return nil, extsvc.RepoIDExact, errors.Wrap(err, "get external account data")
 	} else if tok == nil {
-		return nil, errors.New("no token found in the external account data")
+		return nil, extsvc.RepoIDExact, errors.New("no token found in the external account data")
 	}
 
 	client := p.clientProvider.GetOAuthClient(tok.AccessToken)

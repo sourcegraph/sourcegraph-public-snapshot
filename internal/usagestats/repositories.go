@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/zoekt/query"
+
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 )

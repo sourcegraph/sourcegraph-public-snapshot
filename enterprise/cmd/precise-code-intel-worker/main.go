@@ -5,21 +5,26 @@ import (
 	"database/sql"
 	"errors"
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/metrics"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/worker"
+	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
@@ -27,6 +32,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 const addr = ":3188"
@@ -53,20 +60,21 @@ func main() {
 	}
 
 	// Start debug server
-	debugServer, err := debugserver.NewServerRoutine()
-	if err != nil {
-		log.Fatalf("Failed to create listener: %s", err)
+	go debugserver.NewServerRoutine().Start()
+
+	if err := keyring.Init(context.Background()); err != nil {
+		log.Fatalf("Failed to intialise keyring: %v", err)
 	}
-	go debugServer.Start()
 
 	// Connect to databases
 	db := mustInitializeDB()
 	codeIntelDB := mustInitializeCodeIntelDB()
 
 	// Initialize stores
-	dbStore := store.NewWithDB(db, observationContext)
+	dbStore := dbstore.NewWithDB(db, observationContext)
+	workerStore := dbstore.WorkerutilUploadStore(dbStore, observationContext)
 	lsifStore := lsifstore.NewStore(codeIntelDB, observationContext)
-	gitserverClient := gitserver.New(observationContext)
+	gitserverClient := gitserver.New(dbStore, observationContext)
 
 	uploadStore, err := uploadstore.CreateLazy(context.Background(), config.UploadStoreConfig, observationContext)
 	if err != nil {
@@ -76,27 +84,30 @@ func main() {
 		log.Fatalf("Failed to initialize upload store: %s", err)
 	}
 
+	// Initialize metrics
+	mustRegisterQueueMetric(observationContext, workerStore)
+
 	// Initialize worker
 	worker := worker.NewWorker(
-		&worker.DBStoreShim{dbStore},
-		&worker.LSIFStoreShim{lsifStore},
+		&worker.DBStoreShim{Store: dbStore},
+		workerStore,
+		&worker.LSIFStoreShim{Store: lsifStore},
 		uploadStore,
 		gitserverClient,
 		config.WorkerPollInterval,
 		config.WorkerConcurrency,
 		config.WorkerBudget,
-		metrics.NewWorkerMetrics(observationContext),
-		observationContext,
+		makeWorkerMetrics(observationContext),
 	)
 
 	// Initialize health server
-	server, err := httpserver.NewFromAddr(addr, httpserver.NewHandler(nil), httpserver.Options{})
-	if err != nil {
-		log.Fatalf("Failed to create listener: %s", err)
-	}
+	server := httpserver.NewFromAddr(addr, &http.Server{
+		ReadTimeout:  75 * time.Second,
+		WriteTimeout: 10 * time.Minute,
+		Handler:      httpserver.NewHandler(nil),
+	})
 
 	// Go!
-	mustRegisterQueueMetric(observationContext, dbStore)
 	goroutine.MonitorBackgroundRoutines(context.Background(), worker, server)
 }
 
@@ -111,6 +122,20 @@ func mustInitializeDB() *sql.DB {
 	if err := dbconn.SetupGlobalConnection(postgresDSN); err != nil {
 		log.Fatalf("Failed to connect to frontend database: %s", err)
 	}
+
+	//
+	// START FLAILING
+
+	ctx := context.Background()
+	go func() {
+		for range time.NewTicker(5 * time.Second).C {
+			allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.GlobalExternalServices)
+			authz.SetProviders(allowAccessByDefault, authzProviders)
+		}
+	}()
+
+	// END FLAILING
+	//
 
 	return dbconn.Global
 }
@@ -128,25 +153,29 @@ func mustInitializeCodeIntelDB() *sql.DB {
 		log.Fatalf("Failed to connect to codeintel database: %s", err)
 	}
 
-	if err := dbconn.MigrateDB(db, "codeintel"); err != nil {
+	if err := dbconn.MigrateDB(db, dbconn.CodeIntel); err != nil {
 		log.Fatalf("Failed to perform codeintel database migration: %s", err)
 	}
 
 	return db
 }
 
-func mustRegisterQueueMetric(observationContext *observation.Context, dbStore *store.Store) {
+func mustRegisterQueueMetric(observationContext *observation.Context, workerStore dbworkerstore.Store) {
 	observationContext.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Name: "src_upload_queue_uploads_total",
-		Help: "Total number of queued in the queued state.",
+		Help: "Total number of uploads in the queued state.",
 	}, func() float64 {
-		count, err := dbStore.QueueSize(context.Background())
+		count, err := workerStore.QueuedCount(context.Background(), nil)
 		if err != nil {
 			log15.Error("Failed to determine queue size", "err", err)
 		}
 
 		return float64(count)
 	}))
+}
+
+func makeWorkerMetrics(observationContext *observation.Context) workerutil.WorkerMetrics {
+	return workerutil.NewMetrics(observationContext, "codeintel_upload_queue_processor", nil)
 }
 
 func initializeUploadStore(ctx context.Context, uploadStore uploadstore.Store) error {

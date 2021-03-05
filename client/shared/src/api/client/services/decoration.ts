@@ -7,6 +7,7 @@ import {
     ThemableDecorationStyle,
     BadgeAttachmentRenderOptions,
     ThemableBadgeAttachmentStyle,
+    FileDecoration,
 } from 'sourcegraph'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { TextDocumentIdentifier } from '../types/textDocument'
@@ -53,6 +54,23 @@ export function decorationStyleForTheme(
     // Discard non-ThemableDecorationStyle properties so they aren't included in result.
     const { range, isWholeLine, after, light, dark, ...base } = attachment
     return { ...base, ...overrides }
+}
+
+/**
+ * Resolves the actual color to use for the file decoration based on the current theme and selection state.
+ */
+export function fileDecorationColorForTheme(
+    after: NonNullable<FileDecoration['after']>,
+    isLightTheme: boolean,
+    isActive?: boolean
+): string | undefined {
+    const overrides = isLightTheme ? after.light : after.dark
+    // Discard non-ThemableFileDecorationStyle properties so they aren't included in result.
+    const { light, dark, contentText, hoverMessage, ...base } = after
+    const merged = { ...base, ...overrides }
+
+    // fall back to default color if active color isn't specified
+    return isActive ? merged.activeColor ?? merged.color : merged.color
 }
 
 /**

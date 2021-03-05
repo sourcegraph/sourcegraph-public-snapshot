@@ -6,7 +6,8 @@ import (
 
 	"github.com/inconshreveable/log15"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // feederDB is a front to a sqlite DB that records ownerRepo processed, orgs created and whether

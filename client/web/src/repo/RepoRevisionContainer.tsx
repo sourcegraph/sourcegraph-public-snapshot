@@ -12,7 +12,6 @@ import {
 } from '../../../shared/src/backend/errors'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
@@ -27,7 +26,7 @@ import { RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { EmptyRepositoryPage, RepositoryCloningInProgressPage } from './RepositoryGitDataContainer'
 import { RevisionsPopover } from './RevisionsPopover'
-import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps } from '../search'
+import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps, SearchContextProps } from '../search'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { ErrorMessage } from '../components/alerts'
 import * as H from 'history'
@@ -37,6 +36,7 @@ import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { AuthenticatedUser } from '../auth'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { RepositoryFields } from '../graphql-operations'
 
 /** Props passed to sub-routes of {@link RepoRevisionContainer}. */
 export interface RepoRevisionContainerContext
@@ -48,17 +48,15 @@ export interface RepoRevisionContainerContext
         TelemetryProps,
         HoverThresholdProps,
         ActivationProps,
-        Pick<
-            RepoContainerContext,
-            Exclude<keyof RepoContainerContext, 'onDidUpdateRepository' | 'onDidUpdateExternalLinks'>
-        >,
+        Omit<RepoContainerContext, 'onDidUpdateExternalLinks'>,
         PatternTypeProps,
         CaseSensitivityProps,
         CopyQueryButtonProps,
         VersionContextProps,
+        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         RevisionSpec,
         BreadcrumbSetters {
-    repo: GQL.IRepository
+    repo: RepositoryFields
     resolvedRev: ResolvedRevision
 
     /** The URL route match for {@link RepoRevisionContainer}. */
@@ -84,12 +82,13 @@ interface RepoRevisionContainerProps
         CaseSensitivityProps,
         CopyQueryButtonProps,
         VersionContextProps,
+        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         RevisionSpec,
         BreadcrumbSetters {
     routes: readonly RepoRevisionContainerRoute[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
-    repo: GQL.IRepository
+    repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
     routePrefix: string
 
@@ -208,7 +207,7 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
             <HeroPage
                 icon={AlertCircleIcon}
                 title="Error"
-                subtitle={<ErrorMessage error={props.resolvedRevisionOrError} history={props.history} />}
+                subtitle={<ErrorMessage error={props.resolvedRevisionOrError} />}
             />
         )
     }

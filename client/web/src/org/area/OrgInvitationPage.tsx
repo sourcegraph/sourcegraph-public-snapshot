@@ -2,14 +2,14 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as React from 'react'
 import { Link, Redirect } from 'react-router-dom'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
-import { catchError, concatMap, distinctUntilKeyChanged, map, tap, withLatestFrom } from 'rxjs/operators'
+import { catchError, concatMap, distinctUntilKeyChanged, map, mapTo, tap, withLatestFrom } from 'rxjs/operators'
 import { orgURL } from '..'
-import { gql } from '../../../../shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { refreshAuthenticatedUser, AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
-import { mutateGraphQL } from '../../backend/graphql'
+import { requestGraphQL } from '../../backend/graphql'
 import { Form } from '../../../../branded/src/components/Form'
 import { ModalPage } from '../../components/ModalPage'
 import { PageTitle } from '../../components/PageTitle'
@@ -18,15 +18,17 @@ import { userURL } from '../../user'
 import { OrgAvatar } from '../OrgAvatar'
 import { OrgAreaPageProps } from './OrgArea'
 import { ErrorAlert } from '../../components/alerts'
-import * as H from 'history'
 import { OrganizationInvitationResponseType } from '../../../../shared/src/graphql-operations'
+import {
+    RespondToOrganizationInvitationResult,
+    RespondToOrganizationInvitationVariables,
+} from '../../graphql-operations'
 
 interface Props extends OrgAreaPageProps {
     authenticatedUser: AuthenticatedUser
 
     /** Called when the viewer responds to the invitation. */
     onDidRespondToInvitation: () => void
-    history: H.History
 }
 
 interface State {
@@ -160,11 +162,7 @@ export const OrgInvitationPage = withAuthenticatedUser(
                                     </button>
                                 </div>
                                 {isErrorLike(this.state.submissionOrError) && (
-                                    <ErrorAlert
-                                        className="my-2"
-                                        error={this.state.submissionOrError}
-                                        history={this.props.history}
-                                    />
+                                    <ErrorAlert className="my-2" error={this.state.submissionOrError} />
                                 )}
                                 {this.state.submissionOrError === 'loading' && (
                                     <LoadingSpinner className="icon-inline" />
@@ -191,7 +189,7 @@ export const OrgInvitationPage = withAuthenticatedUser(
         private respondToOrganizationInvitation = (
             args: GQL.IRespondToOrganizationInvitationOnMutationArguments
         ): Observable<void> =>
-            mutateGraphQL(
+            requestGraphQL<RespondToOrganizationInvitationResult, RespondToOrganizationInvitationVariables>(
                 gql`
                     mutation RespondToOrganizationInvitation(
                         $organizationInvitation: ID!
@@ -206,13 +204,6 @@ export const OrgInvitationPage = withAuthenticatedUser(
                     }
                 `,
                 args
-            ).pipe(
-                map(({ data, errors }) => {
-                    if (!data || !data.respondToOrganizationInvitation) {
-                        throw createAggregateError(errors)
-                    }
-                    return
-                })
-            )
+            ).pipe(map(dataOrThrowErrors), mapTo(undefined))
     }
 )

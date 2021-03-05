@@ -7,11 +7,12 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
@@ -44,7 +45,7 @@ func HandleResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	usr, err := db.Users.GetByVerifiedEmail(ctx, formData.Email)
+	usr, err := database.GlobalUsers.GetByVerifiedEmail(ctx, formData.Email)
 	if err != nil {
 		// 🚨 SECURITY: We don't show an error message when the user is not found
 		// as to not leak the existence of a given e-mail address in the database.
@@ -55,7 +56,7 @@ func HandleResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resetURL, err := backend.MakePasswordResetURL(ctx, usr.ID)
-	if err == db.ErrPasswordResetRateLimit {
+	if err == database.ErrPasswordResetRateLimit {
 		httpLogAndError(w, "Too many password reset requests. Try again in a few minutes.", http.StatusTooManyRequests, "err", err)
 		return
 	} else if err != nil {
@@ -102,18 +103,18 @@ To reset the password for {{.Username}} on Sourcegraph, follow this link:
 
 // HandleSetPasswordEmail sends the password reset email directly to the user for users created by site admins.
 func HandleSetPasswordEmail(ctx context.Context, id int32) (string, error) {
-	e, _, err := db.UserEmails.GetPrimaryEmail(ctx, id)
+	e, _, err := database.GlobalUserEmails.GetPrimaryEmail(ctx, id)
 	if err != nil {
 		return "", errors.Wrap(err, "get user primary email")
 	}
 
-	usr, err := db.Users.GetByID(ctx, id)
+	usr, err := database.GlobalUsers.GetByID(ctx, id)
 	if err != nil {
 		return "", errors.Wrap(err, "get user by ID")
 	}
 
 	ru, err := backend.MakePasswordResetURL(ctx, id)
-	if err == db.ErrPasswordResetRateLimit {
+	if err == database.ErrPasswordResetRateLimit {
 		return "", err
 	} else if err != nil {
 		return "", errors.Wrap(err, "make password reset URL")
@@ -176,12 +177,12 @@ func HandleResetPasswordCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := db.CheckPasswordLength(params.Password); err != nil {
+	if err := database.CheckPasswordLength(params.Password); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	success, err := db.Users.SetPassword(ctx, params.UserID, params.Code, params.Password)
+	success, err := database.GlobalUsers.SetPassword(ctx, params.UserID, params.Code, params.Password)
 	if err != nil {
 		httpLogAndError(w, "Unexpected error", http.StatusInternalServerError, "err", err)
 		return

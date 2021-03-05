@@ -9,38 +9,41 @@ import (
 	"io/ioutil"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-diff/diff"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/highlight"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestRepositoryComparison(t *testing.T) {
 	ctx := context.Background()
+	db := new(dbtesting.MockDB)
 
 	wantBaseRevision := "24f7ca7c1190835519e261d7eefa09df55ceea4f"
 	wantMergeBaseRevision := "a7985dde7f92ad3490ec513be78fa2b365c7534c"
 	wantHeadRevision := "b69072d5f687b31b9f6ae3ceafdc24c259c4b9ec"
 
 	repo := &types.Repo{
-		ID:   api.RepoID(1),
-		Name: api.RepoName("github.com/sourcegraph/sourcegraph"),
+		ID:        api.RepoID(1),
+		Name:      api.RepoName("github.com/sourcegraph/sourcegraph"),
+		CreatedAt: time.Now(),
 	}
 
-	git.Mocks.GetCommit = func(id api.CommitID) (*git.Commit, error) {
-		if string(id) != wantMergeBaseRevision && string(id) != wantHeadRevision {
-			t.Fatalf("GetCommit received wrong ID: %s", id)
+	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+		if spec != wantMergeBaseRevision && spec != wantHeadRevision {
+			t.Fatalf("ResolveRevision received wrong spec: %s", spec)
 		}
-
-		return &git.Commit{ID: id}, nil
+		return api.CommitID(spec), nil
 	}
-	t.Cleanup(func() { git.Mocks.GetCommit = nil })
+	t.Cleanup(func() { git.Mocks.ResolveRevision = nil })
 
 	git.Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
 		if len(args) < 1 && args[0] != "diff" {
@@ -50,7 +53,7 @@ func TestRepositoryComparison(t *testing.T) {
 	}
 	t.Cleanup(func() { git.Mocks.ExecReader = nil })
 
-	git.Mocks.MergeBase = func(repo gitserver.Repo, a, b api.CommitID) (api.CommitID, error) {
+	git.Mocks.MergeBase = func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
 		if string(a) != wantBaseRevision || string(b) != wantHeadRevision {
 			t.Fatalf("gitserver.MergeBase received wrong args: %s %s", a, b)
 		}
@@ -59,9 +62,9 @@ func TestRepositoryComparison(t *testing.T) {
 	t.Cleanup(func() { git.Mocks.MergeBase = nil })
 
 	input := &RepositoryComparisonInput{Base: &wantBaseRevision, Head: &wantHeadRevision}
-	repoResolver := NewRepositoryResolver(repo)
+	repoResolver := NewRepositoryResolver(db, repo)
 
-	comp, err := NewRepositoryComparison(ctx, repoResolver, input)
+	comp, err := NewRepositoryComparison(ctx, db, repoResolver, input)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -93,7 +96,7 @@ func TestRepositoryComparison(t *testing.T) {
 			{ID: api.CommitID(wantHeadRevision)},
 		}
 
-		git.Mocks.Commits = func(repo gitserver.Repo, opts git.CommitsOptions) ([]*git.Commit, error) {
+		git.Mocks.Commits = func(repo api.RepoName, opts git.CommitsOptions) ([]*git.Commit, error) {
 			wantRange := fmt.Sprintf("%s..%s", wantBaseRevision, wantHeadRevision)
 
 			if have, want := opts.Range, wantRange; have != want {

@@ -5,12 +5,14 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type PersonResolver struct {
+	db    dbutil.DB
 	name  string
 	email string
 
@@ -23,8 +25,9 @@ type PersonResolver struct {
 	err  error
 }
 
-func NewPersonResolver(name, email string, includeUserInfo bool) *PersonResolver {
+func NewPersonResolver(db dbutil.DB, name, email string, includeUserInfo bool) *PersonResolver {
 	return &PersonResolver{
+		db:              db,
 		name:            name,
 		email:           email,
 		includeUserInfo: includeUserInfo,
@@ -36,7 +39,7 @@ func NewPersonResolver(name, email string, includeUserInfo bool) *PersonResolver
 func (r *PersonResolver) resolveUser(ctx context.Context) (*types.User, error) {
 	r.once.Do(func() {
 		if r.includeUserInfo && r.email != "" {
-			r.user, r.err = db.Users.GetByVerifiedEmail(ctx, r.email)
+			r.user, r.err = database.GlobalUsers.GetByVerifiedEmail(ctx, r.email)
 			if errcode.IsNotFound(r.err) {
 				r.err = nil
 			}
@@ -96,5 +99,5 @@ func (r *PersonResolver) User(ctx context.Context) (*UserResolver, error) {
 	if user == nil || err != nil {
 		return nil, err
 	}
-	return &UserResolver{user: user}, nil
+	return NewUserResolver(r.db, user), nil
 }

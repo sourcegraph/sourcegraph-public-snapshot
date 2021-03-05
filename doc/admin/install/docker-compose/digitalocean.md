@@ -6,12 +6,6 @@ This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://d
 
 ---
 
-## (optional, recommended) Create a fork for customizations
-
-We **strongly** recommend that you create your own fork of [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/) to track customizations to the [Sourcegraph Docker Compose yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml). This will make upgrades far easier.
-
-See ["Store customizations in a fork"](./index.md#optional-recommended-store-customizations-in-a-fork) for full instructions.
-
 ## Run Sourcegraph on a Digital Ocean Droplet
 
 * [Create a new Digital Ocean Droplet](https://cloud.digitalocean.com/droplets/new).
@@ -40,7 +34,7 @@ DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/root/deploy-sourcegraph-docker'
 
 # 🚨 Update these variables with the correct values from your fork!
 DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
-DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.14.2'
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.25.2'
 
 # Install git
 sudo apt-get update -y

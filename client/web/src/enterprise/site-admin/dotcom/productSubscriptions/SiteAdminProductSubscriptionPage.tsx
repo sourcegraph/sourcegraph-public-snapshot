@@ -9,7 +9,7 @@ import { catchError, map, mapTo, startWith, switchMap, tap, filter } from 'rxjs/
 import { gql } from '../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { asError, createAggregateError, isErrorLike } from '../../../../../../shared/src/util/errors'
-import { mutateGraphQL, queryGraphQL } from '../../../../backend/graphql'
+import { queryGraphQL, requestGraphQL } from '../../../../backend/graphql'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
 import { Timestamp } from '../../../../components/time/Timestamp'
@@ -29,6 +29,7 @@ import { SiteAdminProductSubscriptionBillingLink } from './SiteAdminProductSubsc
 import { ErrorAlert } from '../../../../components/alerts'
 import { useEventObservable, useObservable } from '../../../../../../shared/src/util/useObservable'
 import * as H from 'history'
+import { ArchiveProductSubscriptionResult, ArchiveProductSubscriptionVariables } from '../../../../graphql-operations'
 
 interface Props extends RouteComponentProps<{ subscriptionUUID: string }> {
     /** For mocking in tests only. */
@@ -137,7 +138,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
             {productSubscription === LOADING ? (
                 <LoadingSpinner className="icon-inline" />
             ) : isErrorLike(productSubscription) ? (
-                <ErrorAlert className="my-2" error={productSubscription} history={history} />
+                <ErrorAlert className="my-2" error={productSubscription} />
             ) : (
                 <>
                     <h2>Product subscription {productSubscription.name}</h2>
@@ -150,7 +151,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
                         >
                             Archive
                         </button>
-                        {isErrorLike(archival) && <ErrorAlert className="mt-2" error={archival} history={history} />}
+                        {isErrorLike(archival) && <ErrorAlert className="mt-2" error={archival} />}
                     </div>
                     <div className="card mt-3">
                         <div className="card-header">Details</div>
@@ -218,7 +219,6 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
                                 <SiteAdminGenerateProductLicenseForSubscriptionForm
                                     subscriptionID={productSubscription.id}
                                     onGenerate={onLicenseUpdate}
-                                    history={history}
                                 />
                             </div>
                         )}
@@ -359,8 +359,8 @@ function queryProductLicenses(
     )
 }
 
-function archiveProductSubscription(args: GQL.IArchiveProductSubscriptionOnDotcomMutationArguments): Observable<void> {
-    return mutateGraphQL(
+function archiveProductSubscription(args: ArchiveProductSubscriptionVariables): Observable<void> {
+    return requestGraphQL<ArchiveProductSubscriptionResult, ArchiveProductSubscriptionVariables>(
         gql`
             mutation ArchiveProductSubscription($id: ID!) {
                 dotcom {

@@ -8,17 +8,20 @@ import (
 
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -45,7 +48,7 @@ func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err er
 	ctx, done := trace(ctx, "Repos", "Get", repo, &err)
 	defer done()
 
-	return db.Repos.Get(ctx, repo)
+	return database.GlobalRepos.Get(ctx, repo)
 }
 
 // GetByName retrieves the repository with the given name. On sourcegraph.com,
@@ -60,17 +63,18 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 	ctx, done := trace(ctx, "Repos", "GetByName", name, &err)
 	defer done()
 
-	switch repo, err := db.Repos.GetByName(ctx, name); {
+	switch repo, err := database.GlobalRepos.GetByName(ctx, name); {
 	case err == nil:
 		return repo, nil
 	case !errcode.IsNotFound(err):
 		return nil, err
 	case envvar.SourcegraphDotComMode():
 		// Automatically add repositories on Sourcegraph.com.
-		if err := s.Add(ctx, name); err != nil {
+		newName, err := s.Add(ctx, name)
+		if err != nil {
 			return nil, err
 		}
-		return db.Repos.GetByName(ctx, name)
+		return database.GlobalRepos.GetByName(ctx, newName)
 	case shouldRedirect(name):
 		return nil, ErrRepoSeeOther{RedirectURL: (&url.URL{
 			Scheme:   "https",
@@ -88,9 +92,15 @@ func shouldRedirect(name api.RepoName) bool {
 		extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...) != nil
 }
 
+var metricIsRepoCloneable = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "src_frontend_repo_add_is_cloneable",
+	Help: "temporary metric to measure if this codepath is valuable on sourcegraph.com",
+}, []string{"status"})
+
 // Add adds the repository with the given name to the database by calling
-// repo-updater when in sourcegraph.com mode.
-func (s *repos) Add(ctx context.Context, name api.RepoName) (err error) {
+// repo-updater when in sourcegraph.com mode. It's possible that the repo has
+// been renamed on the code host in which case a different name may be returned.
+func (s *repos) Add(ctx context.Context, name api.RepoName) (addedName api.RepoName, err error) {
 	ctx, done := trace(ctx, "Repos", "Add", name, &err)
 	defer done()
 
@@ -98,25 +108,32 @@ func (s *repos) Add(ctx context.Context, name api.RepoName) (err error) {
 	// limit) for repositories that don't exist or private repositories that people attempt to
 	// access.
 	if host := extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...); host != nil {
-		gitserverRepo, err := quickGitserverRepo(ctx, name, host.ServiceType)
-		if err != nil {
-			return err
-		}
+		status := "unknown"
+		defer func() {
+			metricIsRepoCloneable.WithLabelValues(status).Inc()
+		}()
 
-		if gitserverRepo != nil {
-			if err := gitserver.DefaultClient.IsRepoCloneable(ctx, *gitserverRepo); err != nil {
-				return err
+		if err := gitserver.DefaultClient.IsRepoCloneable(ctx, name); err != nil {
+			if ctx.Err() != nil {
+				status = "timeout"
+			} else {
+				status = "fail"
 			}
+			return "", err
 		}
+		status = "success"
 	}
 
 	// Looking up the repo in repo-updater makes it sync that repo to the
 	// database on sourcegraph.com if that repo is from github.com or gitlab.com
-	_, err = repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{Repo: name})
-	return err
+	lookupResult, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{Repo: name})
+	if lookupResult != nil && lookupResult.Repo != nil {
+		return lookupResult.Repo.Name, err
+	}
+	return "", err
 }
 
-func (s *repos) List(ctx context.Context, opt db.ReposListOptions) (repos []*types.Repo, err error) {
+func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos []*types.Repo, err error) {
 	if Mocks.Repos.List != nil {
 		return Mocks.Repos.List(ctx, opt)
 	}
@@ -130,11 +147,11 @@ func (s *repos) List(ctx context.Context, opt db.ReposListOptions) (repos []*typ
 		done()
 	}()
 
-	return db.Repos.List(ctx, opt)
+	return database.GlobalRepos.List(ctx, opt)
 }
 
-// ListDefault calls db.DefaultRepos.List, with tracing.
-func (s *repos) ListDefault(ctx context.Context) (repos []*types.Repo, err error) {
+// ListDefault calls database.DefaultRepos.List, with tracing.
+func (s *repos) ListDefault(ctx context.Context) (repos []*types.RepoName, err error) {
 	ctx, done := trace(ctx, "Repos", "ListDefault", nil, &err)
 	defer func() {
 		if err == nil {
@@ -143,7 +160,7 @@ func (s *repos) ListDefault(ctx context.Context) (repos []*types.Repo, err error
 		}
 		done()
 	}()
-	return db.DefaultRepos.List(ctx)
+	return database.GlobalDefaultRepos.List(ctx)
 }
 
 func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID, forceEnhancedLanguageDetection bool) (res *inventory.Inventory, err error) {
@@ -158,17 +175,12 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
 	defer cancel()
 
-	cachedRepo, err := CachedGitRepo(ctx, repo)
+	invCtx, err := InventoryContext(repo.Name, commitID, forceEnhancedLanguageDetection)
 	if err != nil {
 		return nil, err
 	}
 
-	invCtx, err := InventoryContext(*cachedRepo, commitID, forceEnhancedLanguageDetection)
-	if err != nil {
-		return nil, err
-	}
-
-	root, err := git.Stat(ctx, *cachedRepo, commitID, "")
+	root, err := git.Stat(ctx, repo.Name, commitID, "")
 	if err != nil {
 		return nil, err
 	}

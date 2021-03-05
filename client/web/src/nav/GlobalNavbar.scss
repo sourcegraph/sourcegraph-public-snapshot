@@ -1,11 +1,10 @@
-@import '../search/input/QueryInput';
 @import './VersionContextDropdown';
 
 .global-navbar {
     flex: 0 0 auto;
     max-height: 80%;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     width: 100%;
     &--bg {
         background-color: var(--color-bg-2);
@@ -31,11 +30,5 @@
         display: flex;
         flex-direction: column;
         justify-content: center;
-    }
-
-    &:hover {
-        .toggle-container__copy-query-button {
-            opacity: 1;
-        }
     }
 }

@@ -2,36 +2,43 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
+
+	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
 func (r *schemaResolver) StatusMessages(ctx context.Context) ([]*statusMessageResolver, error) {
-	var messages []*statusMessageResolver
-
-	// 🚨 SECURITY: Only site admins can see status messages.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	currentUser, err := backend.CurrentUser(ctx)
+	if err != nil {
 		return nil, err
 	}
+	if currentUser == nil {
+		return nil, backend.ErrNotAuthenticated
+	}
 
-	result, err := repoupdater.DefaultClient.StatusMessages(ctx)
+	// 🚨 SECURITY: Users will fetch status messages for any external services they
+	// own. In addition, site admins will also fetch site level external services.
+	messages, err := repos.FetchStatusMessages(ctx, r.db, currentUser, envvar.SourcegraphDotComMode())
 	if err != nil {
 		return nil, err
 	}
 
-	for _, m := range result.Messages {
-		messages = append(messages, &statusMessageResolver{message: m})
+	var messageResolvers []*statusMessageResolver
+	for _, m := range messages {
+		messageResolvers = append(messageResolvers, &statusMessageResolver{db: r.db, message: m})
 	}
 
-	return messages, nil
+	return messageResolvers, nil
 }
 
 type statusMessageResolver struct {
-	message protocol.StatusMessage
+	message repos.StatusMessage
+	db      dbutil.DB
 }
 
 func (r *statusMessageResolver) ToCloningProgress() (*statusMessageResolver, bool) {
@@ -61,10 +68,10 @@ func (r *statusMessageResolver) Message() (string, error) {
 
 func (r *statusMessageResolver) ExternalService(ctx context.Context) (*externalServiceResolver, error) {
 	id := r.message.ExternalServiceSyncError.ExternalServiceId
-	externalService, err := db.ExternalServices.GetByID(ctx, id)
+	externalService, err := database.GlobalExternalServices.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	return &externalServiceResolver{externalService: externalService}, nil
+	return &externalServiceResolver{db: r.db, externalService: externalService}, nil
 }

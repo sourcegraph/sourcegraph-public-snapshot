@@ -4,8 +4,9 @@ package httpapi
 
 import (
 	"context"
-	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"sync"
+
+	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 )
 
 // MockDBStore is a mock implementation of the DBStore interface (from the
@@ -120,7 +121,7 @@ func (f *DBStoreAddUploadPartFunc) SetDefaultHook(hook func(context.Context, int
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// AddUploadPart method of the parent MockDBStore instance inovkes the hook
+// AddUploadPart method of the parent MockDBStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
 func (f *DBStoreAddUploadPartFunc) PushHook(hook func(context.Context, int, int) error) {
@@ -228,7 +229,7 @@ func (f *DBStoreDoneFunc) SetDefaultHook(hook func(error) error) {
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Done method of the parent MockDBStore instance inovkes the hook at the
+// Done method of the parent MockDBStore instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
 func (f *DBStoreDoneFunc) PushHook(hook func(error) error) {
@@ -331,7 +332,7 @@ func (f *DBStoreGetUploadByIDFunc) SetDefaultHook(hook func(context.Context, int
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetUploadByID method of the parent MockDBStore instance inovkes the hook
+// GetUploadByID method of the parent MockDBStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
 func (f *DBStoreGetUploadByIDFunc) PushHook(hook func(context.Context, int) (dbstore.Upload, bool, error)) {
@@ -443,7 +444,7 @@ func (f *DBStoreInsertUploadFunc) SetDefaultHook(hook func(context.Context, dbst
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// InsertUpload method of the parent MockDBStore instance inovkes the hook
+// InsertUpload method of the parent MockDBStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
 func (f *DBStoreInsertUploadFunc) PushHook(hook func(context.Context, dbstore.Upload) (int, error)) {
@@ -551,7 +552,7 @@ func (f *DBStoreMarkQueuedFunc) SetDefaultHook(hook func(context.Context, int, *
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// MarkQueued method of the parent MockDBStore instance inovkes the hook at
+// MarkQueued method of the parent MockDBStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
 func (f *DBStoreMarkQueuedFunc) PushHook(hook func(context.Context, int, *int64) error) {
@@ -659,7 +660,7 @@ func (f *DBStoreTransactFunc) SetDefaultHook(hook func(context.Context) (DBStore
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Transact method of the parent MockDBStore instance inovkes the hook at
+// Transact method of the parent MockDBStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
 func (f *DBStoreTransactFunc) PushHook(hook func(context.Context) (DBStore, error)) {

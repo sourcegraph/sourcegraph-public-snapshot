@@ -1,7 +1,8 @@
 import { Observable, Subscription } from 'rxjs'
 import { startWith } from 'rxjs/operators'
-import { MutationRecordLike, observeMutations } from '../../util/dom'
-import { determineCodeHost, injectCodeIntelligenceToCodeHost } from './codeHost'
+import { MutationRecordLike, observeMutations as defaultObserveMutations } from '../../util/dom'
+
+import { determineCodeHost, injectCodeIntelligenceToCodeHost, ObserveMutations } from './codeHost'
 import { SourcegraphIntegrationURLs } from '../../platform/context'
 
 /**
@@ -14,7 +15,8 @@ export function injectCodeIntelligence(urls: SourcegraphIntegrationURLs, isExten
     const subscriptions = new Subscription()
     const codeHost = determineCodeHost()
     if (codeHost) {
-        console.log('Detected code host:', codeHost.type)
+        console.log('Sourcegraph: Detected code host:', codeHost.type)
+        const observeMutations: ObserveMutations = codeHost.observeMutations || defaultObserveMutations
         const mutations: Observable<MutationRecordLike[]> = observeMutations(document.body, {
             childList: true,
             subtree: true,

@@ -1,15 +1,43 @@
 # Updating a Kubernetes Sourcegraph instance
 
-This document describes the exact changes needed to update a Kubernetes Sourcegraph instance.
-Follow the [recommended method](../install/kubernetes/update.md) of upgrading a Kubernetes cluster.
+This document describes the exact changes needed to update a Kubernetes Sourcegraph instance. Follow
+the [recommended method](../install/kubernetes/update.md) of upgrading a Kubernetes cluster.
 
-A new version of Sourcegraph is released every month (with patch releases in between, released as needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) or the site admin updates page to learn about updates. We actively maintain the two most recent monthly releases of Sourcegraph.
+A new version of Sourcegraph is released every month on the **20th** (with patch releases in between, released as
+needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) or the site admin updates page to learn about
+updates. We actively maintain the two most recent monthly releases of Sourcegraph.
 
-Upgrades should happen across consecutive minor versions of Sourcegraph. For example, if you are running Sourcegraph 3.1 and want to upgrade to 3.3, you should upgrade to 3.2 and then 3.3.
+Upgrades **must** happen across consecutive minor versions of Sourcegraph. For example, if you are running Sourcegraph
+3.1 and want to upgrade to 3.3, you **must** upgrade to 3.2 and then 3.3.
 
-**Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
+**Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade,
+and any manual migration steps you must perform.
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
+
+## 3.24 -> 3.25
+
+
+## 3.24 -> 3.25
+
+- Go `1.15` introduced changes to SSL/TLS connection validation which requires certificates to include a `SAN`. This field was not included in older certificates and clients relied on the `CN` field. You might see an error like `x509: certificate relies on legacy Common Name field`. We recommend that customers using Sourcegraph with an external database and and connecting to it using SSL/TLS check whether the certificate is up to date.
+  - AWS RDS customers please reference [AWS' documentation on updating the SSL/TLS certificate](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL-certificate-rotation.html) for steps to rotate your certificate.
+
+## 3.23 -> 3.24
+
+No manual migration required, follow the [standard upgrade method](../install/kubernetes/update.md) to upgrade your deployment.
+
+## 3.22 -> 3.23
+
+No manual migration is required, follow the [standard upgrade method](../install/kubernetes/update.md) to upgrade your deployment.
+
+## 3.21 -> 3.22
+
+No manual migration is required, follow the [standard upgrade method](../install/kubernetes/update.md) to upgrade your deployment.
+
+This upgrade removes the `code intel bundle manager`. This service has been deprecated and all references to it have been removed.
+
+This upgrade also adds a MinIO container that doesn't require any custom configuration. You can find more detailed documentation in https://docs.sourcegraph.com/admin/external_services/object_storage.
 
 ## 3.20 -> 3.21
 
@@ -57,7 +85,7 @@ Note: The following deployments have had their `strategy` changed from `rolling`
 - pgsql
 - precise-code-intel-bundle-manager
 - prometheus
-  
+
 This change was made to avoid two pods writing to the same volume and causing corruption. No special action is needed to apply the change.
 
 ## 3.15
@@ -77,7 +105,7 @@ If you have previously uploaded LSIF precise code intelligence data and wish to 
 
 **Skipping the migration**
 
-If you choose not to migrate the data, Sourcegraph will use basic code intelligence until you upload LSIF data again.
+If you choose not to migrate the data, Sourcegraph will use search-based code intelligence until you upload LSIF data again.
 
 You may run the following commands to remove the now unused resources:
 
@@ -156,7 +184,7 @@ In 3.9 `indexed-search` is migrated from a Kubernetes [Deployment](https://kuber
 
 ``` bash
 # Set the reclaim policy to retain so when we delete the volume claim the volume is not deleted.
-kubectl patch pv -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}' $(kubectl get pv -o json | jq -r '.items[] | select(.spec.claimRef.name == "indexed-search").metadata.name') 
+kubectl patch pv -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}' $(kubectl get pv -o json | jq -r '.items[] | select(.spec.claimRef.name == "indexed-search").metadata.name')
 
 # Stop indexed search so we can migrate it. This means indexed search will be down!
 kubectl scale deploy/indexed-search --replicas=0
@@ -165,7 +193,7 @@ kubectl scale deploy/indexed-search --replicas=0
 kubectl delete pvc indexed-search
 
 # Move the claim to data-indexed-search-0, which is the name created by stateful set.
-kubectl patch pv -p '{"spec":{"claimRef":{"name":"data-indexed-search-0","uuid":null}}}' $(kubectl get pv -o json | jq -r '.items[] | select(.spec.claimRef.name == "indexed-search").metadata.name') 
+kubectl patch pv -p '{"spec":{"claimRef":{"name":"data-indexed-search-0","uuid":null}}}' $(kubectl get pv -o json | jq -r '.items[] | select(.spec.claimRef.name == "indexed-search").metadata.name')
 
 # Create the stateful set
 kubectl apply -f base/indexed-search/indexed-search.StatefulSet.yaml
@@ -191,7 +219,7 @@ In Sourcegraph 3.0 all site configuration has been moved out of the `config-file
 
 After running 3.0, you should visit the configuration page (`/site-admin/configuration`) and [the management console](https://docs.sourcegraph.com/admin/management_console) and ensure that your configuration is as expected. In some rare cases, automatic migration may not be able to properly carry over some settings and you may need to reconfigure them.
 
-### `sourcegraph-frontend` service type 
+### `sourcegraph-frontend` service type
 
 The type of the `sourcegraph-frontend` service ([base/frontend/sourcegraph-frontend.Service.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/frontend/sourcegraph-frontend.Service.yaml)) has changed
 from `NodePort` to `ClusterIP`. Directly applying this change [will

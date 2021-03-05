@@ -1,13 +1,14 @@
 import { escapeRegExp } from 'lodash'
-import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/util'
-import { parseCaseSensitivityFromQuery, parsePatternTypeFromQuery } from '../../../shared/src/util/url'
 import { replaceRange } from '../../../shared/src/util/strings'
-import { discreteValueAliases } from '../../../shared/src/search/parser/filters'
+import { discreteValueAliases, escapeSpaces } from '../../../shared/src/search/query/filters'
 import { VersionContext } from '../schema/site.schema'
 import { SearchPatternType } from '../../../shared/src/graphql-operations'
 import { Observable } from 'rxjs'
-import { ISavedSearch } from '../../../shared/src/graphql/schema'
+import { ISavedSearch, ISearchContext } from '../../../shared/src/graphql/schema'
 import { EventLogResult } from './backend'
+import { AggregateStreamingSearchResults, StreamSearchOptions } from './stream'
+import { findFilter, FilterKind } from '../../../shared/src/search/query/validate'
+import { VersionContextProps } from '../../../shared/src/search/util'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it
@@ -15,9 +16,6 @@ import { EventLogResult } from './backend'
  * will be parsed and detected.
  *
  * @param query the URL query parameters
- * @param interactiveMode whether to parse the search URL query in interactive mode, reading query params such as `repo=` and `file=`.
- * @param navbarQueryOnly whether to only parse the query for the main query input, i.e. only the value passed to the `q=`
- * URL query parameter, as this represents the query that appears in the main query input in both modes.
  *
  */
 export function parseSearchURLQuery(query: string): string | undefined {
@@ -46,21 +44,28 @@ export function parseSearchURLPatternType(query: string): SearchPatternType | un
  * Parses the version context out of the URL search params (the 'c' parameter). If the version context
  * is not present, return undefined.
  */
-export function parseSearchURLVersionContext(query: string): string | undefined {
+function parseSearchURLVersionContext(query: string): string | undefined {
     const searchParameters = new URLSearchParams(query)
     const context = searchParameters.get('c')
     return context ?? undefined
 }
 
-export function searchURLIsCaseSensitive(query: string): boolean {
-    const queryCaseSensitivity = parseCaseSensitivityFromQuery(parseSearchURLQuery(query) || '')
-    if (queryCaseSensitivity) {
+function searchURLIsCaseSensitive(query: string): boolean {
+    const globalCase = findFilter(parseSearchURLQuery(query) || '', 'case', FilterKind.Global)
+    if (globalCase?.value && globalCase.value.type === 'literal') {
         // if `case:` filter exists in the query, override the existing case: query param
-        return discreteValueAliases.yes.includes(queryCaseSensitivity.value)
+        return discreteValueAliases.yes.includes(globalCase.value.value)
     }
     const searchParameters = new URLSearchParams(query)
     const caseSensitive = searchParameters.get('case')
     return discreteValueAliases.yes.includes(caseSensitive || '')
+}
+
+export interface ParsedSearchURL {
+    query: string | undefined
+    patternType: SearchPatternType | undefined
+    caseSensitive: boolean
+    versionContext: string | undefined
 }
 
 /**
@@ -73,34 +78,35 @@ export function searchURLIsCaseSensitive(query: string): boolean {
  * @param urlSearchQuery a URL's query string.
  */
 export function parseSearchURL(
-    urlSearchQuery: string
-): {
-    query: string | undefined
-    patternType: SearchPatternType | undefined
-    caseSensitive: boolean
-    versionContext: string | undefined
-} {
+    urlSearchQuery: string,
+    { appendCaseFilter = false }: { appendCaseFilter?: boolean } = {}
+): ParsedSearchURL {
     let finalQuery = parseSearchURLQuery(urlSearchQuery) || ''
     let patternType = parseSearchURLPatternType(urlSearchQuery)
     let caseSensitive = searchURLIsCaseSensitive(urlSearchQuery)
 
-    const patternTypeInQuery = parsePatternTypeFromQuery(finalQuery)
-    if (patternTypeInQuery) {
+    const globalPatternType = findFilter(finalQuery, 'patterntype', FilterKind.Global)
+    if (globalPatternType?.value && globalPatternType.value.type === 'literal') {
         // Any `patterntype:` filter in the query should override the patternType= URL query parameter if it exists.
-        finalQuery = replaceRange(finalQuery, patternTypeInQuery.range)
-        patternType = patternTypeInQuery.value as SearchPatternType
+        finalQuery = replaceRange(finalQuery, globalPatternType.range)
+        patternType = globalPatternType.value.value as SearchPatternType
     }
 
-    const caseInQuery = parseCaseSensitivityFromQuery(finalQuery)
-    if (caseInQuery) {
+    const globalCase = findFilter(finalQuery, 'case', FilterKind.Global)
+    if (globalCase?.value && globalCase.value.type === 'literal') {
         // Any `case:` filter in the query should override the case= URL query parameter if it exists.
-        finalQuery = replaceRange(finalQuery, caseInQuery.range)
+        finalQuery = replaceRange(finalQuery, globalCase.range)
 
-        if (discreteValueAliases.yes.includes(caseInQuery.value)) {
+        if (discreteValueAliases.yes.includes(globalCase.value.value)) {
             caseSensitive = true
-        } else if (discreteValueAliases.no.includes(caseInQuery.value)) {
+        } else if (discreteValueAliases.no.includes(globalCase.value.value)) {
             caseSensitive = false
         }
+    }
+
+    if (appendCaseFilter) {
+        // Invariant: If case:value was in the query, it is erased at this point. Add case:yes if needed.
+        finalQuery = caseSensitive ? `${finalQuery} case:yes` : finalQuery
     }
 
     return {
@@ -113,9 +119,9 @@ export function parseSearchURL(
 
 export function repoFilterForRepoRevision(repoName: string, globbing: boolean, revision?: string): string {
     if (globbing) {
-        return `${quoteIfNeeded(`${repoName}${revision ? `@${abbreviateOID(revision)}` : ''}`)}`
+        return `${escapeSpaces(`${repoName}${revision ? `@${abbreviateOID(revision)}` : ''}`)}`
     }
-    return `${quoteIfNeeded(`^${escapeRegExp(repoName)}$${revision ? `@${abbreviateOID(revision)}` : ''}`)}`
+    return `${escapeSpaces(`^${escapeRegExp(repoName)}$${revision ? `@${abbreviateOID(revision)}` : ''}`)}`
 }
 
 export function searchQueryForRepoRevision(repoName: string, globbing: boolean, revision?: string): string {
@@ -136,6 +142,11 @@ export function quoteIfNeeded(string: string): string {
     return string
 }
 
+export interface ParsedSearchQueryProps {
+    parsedSearchQuery: string
+    setParsedSearchQuery: (query: string) => void
+}
+
 export interface PatternTypeProps {
     patternType: SearchPatternType
     setPatternType: (patternType: SearchPatternType) => void
@@ -146,12 +157,10 @@ export interface CaseSensitivityProps {
     setCaseSensitivity: (caseSensitive: boolean) => void
 }
 
-export interface InteractiveSearchProps {
-    filtersInQuery: FiltersToTypeAndValue
-    onFiltersInQueryChange: (filtersInQuery: FiltersToTypeAndValue) => void
-    splitSearchModes: boolean
-    interactiveSearchMode: boolean
-    toggleSearchMode: (event: React.MouseEvent<HTMLAnchorElement>) => void
+export interface MutableVersionContextProps extends VersionContextProps {
+    setVersionContext: (versionContext: string | undefined) => void
+    availableVersionContexts: VersionContext[] | undefined
+    previousVersionContext: string | null
 }
 
 export interface CopyQueryButtonProps {
@@ -164,6 +173,14 @@ export interface RepogroupHomepageProps {
 
 export interface OnboardingTourProps {
     showOnboardingTour: boolean
+}
+
+export interface SearchContextProps {
+    showSearchContext: boolean
+    availableSearchContexts: ISearchContext[]
+    defaultSearchContextSpec: string
+    selectedSearchContextSpec?: string
+    setSelectedSearchContextSpec: (spec: string) => void
 }
 
 export interface ShowQueryBuilderProps {
@@ -181,7 +198,7 @@ export interface HomePanelsProps {
 }
 
 export interface SearchStreamingProps {
-    searchStreaming: boolean
+    streamSearch: (options: StreamSearchOptions) => Observable<AggregateStreamingSearchResults>
 }
 
 /**
@@ -210,4 +227,16 @@ export function resolveVersionContext(
     }
 
     return versionContext
+}
+
+export function isSearchContextSpecAvailable(spec: string, availableSearchContexts: ISearchContext[]): boolean {
+    return availableSearchContexts.map(item => item.spec).includes(spec)
+}
+
+export function resolveSearchContextSpec(
+    spec: string,
+    availableSearchContexts: ISearchContext[],
+    defaultSpec: string
+): string {
+    return isSearchContextSpecAvailable(spec, availableSearchContexts) ? spec : defaultSpec
 }

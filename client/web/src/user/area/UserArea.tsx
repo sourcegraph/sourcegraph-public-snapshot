@@ -25,6 +25,8 @@ import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumb
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { requestGraphQL } from '../../backend/graphql'
 import { EditUserProfilePageGQLFragment } from '../settings/profile/UserSettingsProfilePage'
+import { Page } from '../../components/Page'
+import { UserRepositoriesUpdateProps } from '../../util'
 
 /** GraphQL fragment for the User fields needed by UserArea. */
 export const UserAreaGQLFragment = gql`
@@ -96,7 +98,8 @@ interface UserAreaProps
         OnboardingTourProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
-        Omit<PatternTypeProps, 'setPatternType'> {
+        Omit<PatternTypeProps, 'setPatternType'>,
+        UserRepositoriesUpdateProps {
     userAreaRoutes: readonly UserAreaRoute[]
     userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
     userSettingsSideBarItems: UserSettingsSidebarItems
@@ -125,7 +128,8 @@ export interface UserAreaRouteContext
         OnboardingTourProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
-        Omit<PatternTypeProps, 'setPatternType'> {
+        Omit<PatternTypeProps, 'setPatternType'>,
+        UserRepositoriesUpdateProps {
     /** The user area main URL. */
     url: string
 
@@ -204,13 +208,8 @@ export const UserArea: React.FunctionComponent<UserAreaProps> = ({
     }
 
     return (
-        <div className="user-area w-100">
-            <UserAreaHeader
-                {...props}
-                {...context}
-                navItems={props.userAreaHeaderNavItems}
-                className="border-bottom mt-4"
-            />
+        <Page className="user-area">
+            <UserAreaHeader {...props} {...context} navItems={props.userAreaHeaderNavItems} className="border-bottom" />
             <div className="container mt-3">
                 <ErrorBoundary location={props.location}>
                     <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
@@ -240,6 +239,6 @@ export const UserArea: React.FunctionComponent<UserAreaProps> = ({
                     </React.Suspense>
                 </ErrorBoundary>
             </div>
-        </div>
+        </Page>
     )
 }

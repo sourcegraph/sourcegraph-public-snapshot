@@ -1,5 +1,5 @@
 import { CreatedChangeset } from './github'
-import { readLine } from './util'
+import { readLine, cacheFolder } from './util'
 import YAML from 'yaml'
 import execa from 'execa'
 import fetch from 'node-fetch'
@@ -21,7 +21,7 @@ export async function sourcegraphCLIConfig(): Promise<SourcegraphCLIConfig> {
     await commandExists('src') // CLI must be present for campaigns interactions
     return {
         SRC_ENDPOINT: DEFAULT_SRC_ENDPOINT,
-        SRC_ACCESS_TOKEN: await readLine('k8s.sgdev.org src-cli token: ', '.secrets/src-cli.txt'),
+        SRC_ACCESS_TOKEN: await readLine('k8s.sgdev.org src-cli token: ', `${cacheFolder}/src-cli.txt`),
     }
 }
 

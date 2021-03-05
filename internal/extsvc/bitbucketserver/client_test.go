@@ -21,9 +21,10 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
 	"github.com/sergi/go-diff/diffmatchpatch"
+	"golang.org/x/time/rate"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"golang.org/x/time/rate"
 )
 
 var update = flag.Bool("update", false, "update testdata")
@@ -375,7 +376,7 @@ func TestClient_LoadPullRequest(t *testing.T) {
 				pr.ToRef.Repository.Project.Key = "SOUR"
 				return pr
 			},
-			err: "Bitbucket API HTTP error: code=404 url=\"${INSTANCEURL}/rest/api/1.0/projects/SOUR/repos/vegeta/pull-requests/9999\" body=\"{\\\"errors\\\":[{\\\"context\\\":null,\\\"message\\\":\\\"Pull request 9999 does not exist in SOUR/vegeta.\\\",\\\"exceptionName\\\":\\\"com.atlassian.bitbucket.pull.NoSuchPullRequestException\\\"}]}\"",
+			err: "pull request not found",
 		},
 		{
 			name: "non existing repo",

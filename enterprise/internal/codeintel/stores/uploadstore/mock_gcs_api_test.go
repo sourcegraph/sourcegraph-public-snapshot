@@ -3,10 +3,11 @@
 package uploadstore
 
 import (
-	storage "cloud.google.com/go/storage"
 	"context"
 	"io"
 	"sync"
+
+	storage "cloud.google.com/go/storage"
 )
 
 // MockGcsAPI is a mock implementation of the gcsAPI interface (from the
@@ -72,7 +73,7 @@ func (f *GcsAPIBucketFunc) SetDefaultHook(hook func(string) gcsBucketHandle) {
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Bucket method of the parent MockGcsAPI instance inovkes the hook at the
+// Bucket method of the parent MockGcsAPI instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
 func (f *GcsAPIBucketFunc) PushHook(hook func(string) gcsBucketHandle) {
@@ -253,7 +254,7 @@ func (f *GcsBucketHandleAttrsFunc) SetDefaultHook(hook func(context.Context) (*s
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Attrs method of the parent MockGcsBucketHandle instance inovkes the hook
+// Attrs method of the parent MockGcsBucketHandle instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
 func (f *GcsBucketHandleAttrsFunc) PushHook(hook func(context.Context) (*storage.BucketAttrs, error)) {
@@ -359,7 +360,7 @@ func (f *GcsBucketHandleCreateFunc) SetDefaultHook(hook func(context.Context, st
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Create method of the parent MockGcsBucketHandle instance inovkes the hook
+// Create method of the parent MockGcsBucketHandle instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
 func (f *GcsBucketHandleCreateFunc) PushHook(hook func(context.Context, string, *storage.BucketAttrs) error) {
@@ -468,7 +469,7 @@ func (f *GcsBucketHandleObjectFunc) SetDefaultHook(hook func(string) gcsObjectHa
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Object method of the parent MockGcsBucketHandle instance inovkes the hook
+// Object method of the parent MockGcsBucketHandle instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
 func (f *GcsBucketHandleObjectFunc) PushHook(hook func(string) gcsObjectHandle) {
@@ -571,7 +572,7 @@ func (f *GcsBucketHandleUpdateFunc) SetDefaultHook(hook func(context.Context, st
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Update method of the parent MockGcsBucketHandle instance inovkes the hook
+// Update method of the parent MockGcsBucketHandle instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
 func (f *GcsBucketHandleUpdateFunc) PushHook(hook func(context.Context, storage.BucketAttrsToUpdate) error) {
@@ -717,7 +718,7 @@ func (f *GcsComposerRunFunc) SetDefaultHook(hook func(context.Context) (*storage
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Run method of the parent MockGcsComposer instance inovkes the hook at the
+// Run method of the parent MockGcsComposer instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
 func (f *GcsComposerRunFunc) PushHook(hook func(context.Context) (*storage.ObjectAttrs, error)) {
@@ -902,7 +903,7 @@ func (f *GcsObjectHandleComposerFromFunc) SetDefaultHook(hook func(...gcsObjectH
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// ComposerFrom method of the parent MockGcsObjectHandle instance inovkes
+// ComposerFrom method of the parent MockGcsObjectHandle instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
 func (f *GcsObjectHandleComposerFromFunc) PushHook(hook func(...gcsObjectHandle) gcsComposer) {
@@ -1012,7 +1013,7 @@ func (f *GcsObjectHandleDeleteFunc) SetDefaultHook(hook func(context.Context) er
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Delete method of the parent MockGcsObjectHandle instance inovkes the hook
+// Delete method of the parent MockGcsObjectHandle instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
 func (f *GcsObjectHandleDeleteFunc) PushHook(hook func(context.Context) error) {
@@ -1116,7 +1117,7 @@ func (f *GcsObjectHandleNewRangeReaderFunc) SetDefaultHook(hook func(context.Con
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// NewRangeReader method of the parent MockGcsObjectHandle instance inovkes
+// NewRangeReader method of the parent MockGcsObjectHandle instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
 func (f *GcsObjectHandleNewRangeReaderFunc) PushHook(hook func(context.Context, int64, int64) (io.ReadCloser, error)) {
@@ -1229,7 +1230,7 @@ func (f *GcsObjectHandleNewWriterFunc) SetDefaultHook(hook func(context.Context)
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// NewWriter method of the parent MockGcsObjectHandle instance inovkes the
+// NewWriter method of the parent MockGcsObjectHandle instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
 func (f *GcsObjectHandleNewWriterFunc) PushHook(hook func(context.Context) io.WriteCloser) {

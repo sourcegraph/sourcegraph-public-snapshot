@@ -1,6 +1,6 @@
 # Testing
 
-_This documentation is specifically for the tests in the [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph) repository. For our general testing principles, please refer to our [testing guide in the handbook](https://about.sourcegraph.com/handbook/engineering/testing)._
+_This documentation is specifically for the tests in the [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph) repository. For our general testing principles, please see "[Testing Principles](testing_principles.md)"._
 
 ## Backend tests
 
@@ -129,6 +129,7 @@ To run integration tests for the web app:
 
 1. Run `yarn watch-web` in the repository root in a separate terminal to watch files and build a JavaScript bundle. You can also launch it as the VS Code task "Watch web app".
   - Alternatively, `yarn build-web` will only build a bundle once.
+  - If you need to build an Enterprise bundle (to test Enterprise features such as Campaigns), set `ENTERPRISE=1`
 1. Run `yarn test-integration` in the repository root to run the tests.
 
 A Sourcegraph instance does not need to be running, because all backend interactions are stubbed.
@@ -326,5 +327,5 @@ To manually test against a Kubernetes cluster, use https://k8s.sgdev.org.
 For testing with a single Docker image, run something like
 
 ```
-IMAGE=sourcegraph/server:3.21.2 ./dev/run-server-image.sh
+IMAGE=sourcegraph/server:3.25.2 ./dev/run-server-image.sh
 ```

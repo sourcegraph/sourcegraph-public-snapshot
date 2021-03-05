@@ -76,12 +76,19 @@ exports[`ViewPage renders view 1`] = `
         }
       }
       patternType="literal"
+      selectedSearchContextSpec="global"
       setCaseSensitivity={[Function]}
       setPatternType={[Function]}
       settingsCascade={
         Object {
           "final": Object {},
           "subjects": Array [],
+        }
+      }
+      telemetryService={
+        Object {
+          "log": [Function],
+          "logViewEvent": [Function],
         }
       }
     />

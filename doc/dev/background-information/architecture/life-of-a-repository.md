@@ -26,7 +26,7 @@ Our guiding principle is to ensure all repositories configured by a site adminis
 
 ## Discovery
 
-Before we can clone a repository, we first must discover that is exists. This is configured by a site administrator setting code host configuration. Typically a code host will have an API as well as git endpoints. A code host configuration typically will specify how to communicate with the API and which repositories to ask the API for. For example:
+Before we can clone a repository, we first must discover that it exists. This is configured by a site administrator setting code host configuration. Typically a code host will have an API as well as git endpoints. A code host configuration typically will specify how to communicate with the API and which repositories to ask the API for. For example:
 
 ``` json
 {
@@ -54,13 +54,14 @@ type Source interface {
 
 ## Syncing
 
-We keep a list of all repositories on Sourcegraph in the [`repo` table](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/frontend/db/schema.md#table-public-repo). This is so to provide a code host independent list of repositories on Sourcegraph that we can quickly query. `repo-updater` will periodically list all repositories from all sources and update the table. We need to list everything so we can detect which repositories to delete. See [`Syncer.Sync`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/repo-updater/repos/syncer.go#L101) for details.
+We keep a list of all repositories on Sourcegraph in the [`repo` table](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/frontend/db/schema.md#table-public-repo). This is to provide a code host independent list of repositories on Sourcegraph that we can quickly query. `repo-updater` will periodically sync each code host connection in the background. It compares the list of repos configured with those in our `repo` table and ensures that thet are consistent. See [`Syncer.SyncExternalServices`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.25.0/-/blob/internal/repos/syncer.go#L166) for details.
 
 ## Git Update Scheduler
 
 We can't clone all repositories concurrently due to resource constraints in Sourcegraph and on the code host. So `repo-updater` has an [update scheduler](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/repo-updater/repos/scheduler.go). Cloning and fetching are treated in the same way, but priority is given to newly discovered repositories.
 
 The scheduler is divided into two parts:
+
 - [`updateQueue`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/repo-updater/repos/scheduler.go#L392:6) is a priority queue of repositories to clone/fetch on `gitserver`.
 - [`schedule`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/repo-updater/repos/scheduler.go#L567:6) which places repositories onto the `updateQueue` when it thinks it should be updated. This is what paces out updates for a repository. It contains heuristics such that recently updated repositories are more frequently checked.
 

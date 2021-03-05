@@ -13,10 +13,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	ctags "github.com/sourcegraph/go-ctags"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	nettrace "golang.org/x/net/trace"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 // startParsers starts the parser process pool.
@@ -37,7 +38,7 @@ func (s *Service) startParsers() error {
 	return nil
 }
 
-func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID api.CommitID, callback func(symbol protocol.Symbol) error) (err error) {
+func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID api.CommitID, callback func(symbol result.Symbol) error) (err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "parseUncached")
 	defer func() {
 		if err != nil {
@@ -175,8 +176,8 @@ func (s *Service) parse(ctx context.Context, req parseRequest) (entries []*ctags
 	}
 }
 
-func entryToSymbol(e *ctags.Entry) protocol.Symbol {
-	return protocol.Symbol{
+func entryToSymbol(e *ctags.Entry) result.Symbol {
+	return result.Symbol{
 		Name:        e.Name,
 		Path:        e.Path,
 		Line:        e.Line,

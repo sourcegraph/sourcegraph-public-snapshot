@@ -6,7 +6,9 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // Namespace is the interface for the GraphQL Namespace interface.
@@ -17,7 +19,7 @@ type Namespace interface {
 }
 
 func (r *schemaResolver) Namespace(ctx context.Context, args *struct{ ID graphql.ID }) (*NamespaceResolver, error) {
-	n, err := NamespaceByID(ctx, args.ID)
+	n, err := NamespaceByID(ctx, r.db, args.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -33,12 +35,12 @@ func (e InvalidNamespaceIDErr) Error() string {
 }
 
 // NamespaceByID looks up a GraphQL value of type Namespace by ID.
-func NamespaceByID(ctx context.Context, id graphql.ID) (Namespace, error) {
+func NamespaceByID(ctx context.Context, db dbutil.DB, id graphql.ID) (Namespace, error) {
 	switch relay.UnmarshalKind(id) {
 	case "User":
-		return UserByID(ctx, id)
+		return UserByID(ctx, db, id)
 	case "Org":
-		return OrgByID(ctx, id)
+		return OrgByID(ctx, db, id)
 	default:
 		return nil, InvalidNamespaceIDErr{id: id}
 	}
@@ -57,8 +59,8 @@ func UnmarshalNamespaceID(id graphql.ID, userID *int32, orgID *int32) (err error
 }
 
 func (r *schemaResolver) NamespaceByName(ctx context.Context, args *struct{ Name string }) (*NamespaceResolver, error) {
-	namespace, err := db.Namespaces.GetByName(ctx, args.Name)
-	if err == db.ErrNamespaceNotFound {
+	namespace, err := database.Namespaces(r.db).GetByName(ctx, args.Name)
+	if err == database.ErrNamespaceNotFound {
 		return nil, nil
 	}
 	if err != nil {
@@ -68,9 +70,9 @@ func (r *schemaResolver) NamespaceByName(ctx context.Context, args *struct{ Name
 	var n Namespace
 	switch {
 	case namespace.User != 0:
-		n, err = UserByIDInt32(ctx, namespace.User)
+		n, err = UserByIDInt32(ctx, r.db, namespace.User)
 	case namespace.Organization != 0:
-		n, err = OrgByIDInt32(ctx, namespace.Organization)
+		n, err = OrgByIDInt32(ctx, r.db, namespace.Organization)
 	default:
 		panic("invalid namespace (neither user nor organization)")
 	}

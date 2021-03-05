@@ -14,7 +14,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { gitReferenceFragments, GitReferenceNode } from '../GitReference'
 import { RepositoryBranchesAreaPageProps } from './RepositoryBranchesArea'
 import { ErrorAlert } from '../../components/alerts'
-import * as H from 'history'
+import { Scalars } from '../../../../shared/src/graphql-operations'
 
 interface Data {
     defaultBranch: GQL.IGitRef | null
@@ -23,7 +23,7 @@ interface Data {
 }
 
 const queryGitBranches = memoizeObservable(
-    (args: { repo: GQL.ID; first: number }): Observable<Data> =>
+    (args: { repo: Scalars['ID']; first: number }): Observable<Data> =>
         queryGraphQL(
             gql`
                 query RepositoryGitBranchesOverview($repo: ID!, $first: Int!, $withBehindAhead: Boolean!) {
@@ -68,9 +68,7 @@ const queryGitBranches = memoizeObservable(
     args => `${args.repo}:${args.first}`
 )
 
-interface Props extends RepositoryBranchesAreaPageProps, RouteComponentProps<{}> {
-    history: H.History
-}
+interface Props extends RepositoryBranchesAreaPageProps, RouteComponentProps<{}> {}
 
 interface State {
     /** The page content, undefined while loading, or an error. */
@@ -123,7 +121,7 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                 {this.state.dataOrError === undefined ? (
                     <LoadingSpinner className="icon-inline mt-2" />
                 ) : isErrorLike(this.state.dataOrError) ? (
-                    <ErrorAlert className="mt-2" error={this.state.dataOrError} history={this.props.history} />
+                    <ErrorAlert className="mt-2" error={this.state.dataOrError} />
                 ) : (
                     <div className="repository-branches-page__cards">
                         {this.state.dataOrError.defaultBranch && (
