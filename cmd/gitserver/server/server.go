@@ -287,7 +287,7 @@ func (s *Server) Janitor(interval time.Duration) {
 
 // SyncRepoState syncs state on disk to the database for all repos and is expected to
 // run in a background goroutine.
-func (s *Server) SyncRepoState(db dbutil.DB, interval time.Duration, batchSize int, perSecond int) {
+func (s *Server) SyncRepoState(db dbutil.DB, interval time.Duration, batchSize, perSecond int) {
 	for {
 		addrs := conf.Get().ServiceConnections.GitServers
 		s.syncRepoState(db, addrs, batchSize, perSecond)
