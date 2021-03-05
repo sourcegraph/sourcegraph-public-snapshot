@@ -340,7 +340,7 @@ func (s *Server) syncRepoState(db dbutil.DB, addrs []string, batchSize, perSecon
 
 		if err := store.Upsert(ctx, batch...); err != nil {
 			repoStateUpsertCounter.WithLabelValues("false").Add(float64(len(batch)))
-			log15.Error("Upserting GitserverRepo", "error", err)
+			log15.Error("Upserting GitserverRepos", "error", err)
 			return
 		}
 		repoStateUpsertCounter.WithLabelValues("true").Add(float64(len(batch)))
@@ -366,13 +366,13 @@ func (s *Server) syncRepoState(db dbutil.DB, addrs []string, batchSize, perSecon
 			}
 			shouldUpdate = true
 		}
-		if repo.GitserverRepo.ShardID != s.Hostname {
-			repo.GitserverRepo.ShardID = s.Hostname
+		if repo.ShardID != s.Hostname {
+			repo.ShardID = s.Hostname
 			shouldUpdate = true
 		}
 		cloneStatus := cloneStatus(cloned, cloning)
-		if repo.GitserverRepo.CloneStatus != cloneStatus {
-			repo.GitserverRepo.CloneStatus = cloneStatus
+		if repo.CloneStatus != cloneStatus {
+			repo.CloneStatus = cloneStatus
 			shouldUpdate = true
 		}
 
