@@ -11,10 +11,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry2"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/internal/registry"
 )
 
 // SplitExtensionID splits an extension ID of the form [host/]publisher/name (where [host/] is the
