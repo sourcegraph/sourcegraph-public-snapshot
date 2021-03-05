@@ -1,4 +1,4 @@
-package lsifstore
+package semantic
 
 import "sort"
 
