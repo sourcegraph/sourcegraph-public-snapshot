@@ -197,7 +197,7 @@ func (h Webhook) upsertChangesetEvent(
 }
 
 // GitHubWebhook receives GitHub organization webhook events that are
-// relevant to campaigns, normalizes those events into ChangesetEvents
+// relevant to batch changes, normalizes those events into ChangesetEvents
 // and upserts them to the database.
 type GitHubWebhook struct {
 	*Webhook
