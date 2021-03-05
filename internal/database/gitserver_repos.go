@@ -43,7 +43,7 @@ func (s *GitserverRepoStore) Upsert(ctx context.Context, repos ...types.Gitserve
 	values := make([]*sqlf.Query, 0, len(repos))
 	for _, gr := range repos {
 		values = append(values, sqlf.Sprintf(
-			"(%s,%s,%s,%s,%s,now())",
+			"(%s, %s, %s, %s, %s, now())",
 			gr.RepoID, gr.CloneStatus, dbutil.NewNullString(gr.ShardID), dbutil.NewNullInt64(gr.LastExternalService), dbutil.NewNullString(gr.LastError),
 		))
 	}
