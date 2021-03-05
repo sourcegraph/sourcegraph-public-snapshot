@@ -3,6 +3,8 @@ package definitions
 import (
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
+
 	"github.com/grafana-tools/sdk"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
@@ -10,6 +12,8 @@ import (
 )
 
 func GitServer() *monitoring.Container {
+	pctDesiredFree := float64(server.SRC_REPOS_DESIRED_PERCENT_FREE_DEFAULT)
+
 	return &monitoring.Container{
 		Name:        "gitserver",
 		Title:       "Git Server",
@@ -90,8 +94,8 @@ func GitServer() *monitoring.Container {
 							Name:        "disk_space_remaining",
 							Description: "disk space remaining by instance",
 							Query:       `(src_gitserver_disk_space_available / src_gitserver_disk_space_total) * 100`,
-							Warning:     monitoring.Alert().LessOrEqual(25, nil),
-							Critical:    monitoring.Alert().LessOrEqual(15, nil),
+							Warning:     nil,
+							Critical:    monitoring.Alert().LessOrEqual(pctDesiredFree, nil),
 							Panel: monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Percentage).With(func(o monitoring.Observable, g *sdk.GraphPanel) {
 								g.Legend.RightSide = true
 							}),
