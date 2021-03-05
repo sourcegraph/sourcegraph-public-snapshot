@@ -293,7 +293,7 @@ func TestPermissionLevels(t *testing.T) {
 					input := map[string]interface{}{"user": graphqlID}
 					queryCodeHosts := `
 				  query($user: ID!) {
-				    node(id: $user) { ... on User { campaignsCodeHosts { totalCount } } }
+				    node(id: $user) { ... on User { batchChangesCodeHosts { totalCount } } }
 				  }
                 `
 
@@ -545,9 +545,9 @@ func TestPermissionLevels(t *testing.T) {
 				},
 			},
 			{
-				name: "deleteCampaign",
+				name: "deleteBatchChange",
 				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
-					return fmt.Sprintf(`mutation { deleteCampaign(campaign: %q) { alwaysNil } } `, campaignID)
+					return fmt.Sprintf(`mutation { deleteBatchChange(batchChange: %q) { alwaysNil } } `, campaignID)
 				},
 			},
 			{
@@ -569,9 +569,9 @@ func TestPermissionLevels(t *testing.T) {
 				},
 			},
 			{
-				name: "moveCampaign",
+				name: "moveBatchChange",
 				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
-					return fmt.Sprintf(`mutation { moveCampaign(campaign: %q, newName: "foobar") { id } }`, campaignID)
+					return fmt.Sprintf(`mutation { moveBatchChange(batchChange: %q, newName: "foobar") { id } }`, campaignID)
 				},
 			},
 		}
@@ -693,11 +693,11 @@ func TestPermissionLevels(t *testing.T) {
 				},
 			},
 			{
-				name: "createCampaignSpec",
+				name: "createBatchSpec",
 				mutationFunc: func(userID string) string {
 					return fmt.Sprintf(`
 					mutation {
-						createCampaignSpec(namespace: %q, campaignSpec: "{}", changesetSpecs: []) {
+						createBatchSpec(namespace: %q, batchSpec: "{}", changesetSpecs: []) {
 							id
 						}
 					}`, userID)
