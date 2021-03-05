@@ -325,7 +325,7 @@ func (s *Server) syncRepoState(db dbutil.DB, addrs []string, batchSize, perSecon
 	// Sanity check our host exists in addrs before starting any work
 	var found bool
 	for _, a := range addrs {
-		if a == s.Hostname {
+		if s.HostnameMatch(a) {
 			found = true
 			break
 		}
