@@ -256,8 +256,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                 {/* Visual feedback: alert when optimistic update fails */}
                 {optimisticFailure && (
                     <div className="alert alert-danger px-2 py-1 extension-card__disabled-feedback">
-                        <span className="font-weight-semibold">Network Error:</span> {name} is{' '}
-                        {optimisticFailure.previousValue ? 'enabled' : 'disabled'} again
+                        <span className="font-weight-semibold">Network Error:</span> {optimisticFailure.error.message}
                     </div>
                 )}
             </div>
