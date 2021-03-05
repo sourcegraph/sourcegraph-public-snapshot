@@ -37,7 +37,7 @@ outer:
 		}
 
 		errors = append(errors, lintError{
-			name:        "NoSingleUseSharedCode",
+			name:        "NoBinarySpecificSharedCode",
 			pkg:         pkg,
 			description: fmt.Sprintf("imported only by %s", *firstImporter),
 		})
