@@ -13,9 +13,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-// campaignSpecColumns are used by the campaignSpec related Store methods to insert,
+// batchSpecColumns are used by the batchSpec related Store methods to insert,
 // update and query batches.
-var campaignSpecColumns = []*sqlf.Query{
+var batchSpecColumns = []*sqlf.Query{
 	sqlf.Sprintf("campaign_specs.id"),
 	sqlf.Sprintf("campaign_specs.rand_id"),
 	sqlf.Sprintf("campaign_specs.raw_spec"),
@@ -27,9 +27,9 @@ var campaignSpecColumns = []*sqlf.Query{
 	sqlf.Sprintf("campaign_specs.updated_at"),
 }
 
-// campaignSpecInsertColumns is the list of campaign_specs columns that are
-// modified when updating/inserting campaign specs.
-var campaignSpecInsertColumns = []*sqlf.Query{
+// batchSpecInsertColumns is the list of batch_specs columns that are
+// modified when updating/inserting batch specs.
+var batchSpecInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("rand_id"),
 	sqlf.Sprintf("raw_spec"),
 	sqlf.Sprintf("spec"),
@@ -40,24 +40,24 @@ var campaignSpecInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("updated_at"),
 }
 
-const campaignSpecInsertColsFmt = `(%s, %s, %s, %s, %s, %s, %s, %s)`
+const batchSpecInsertColsFmt = `(%s, %s, %s, %s, %s, %s, %s, %s)`
 
-// CreateCampaignSpec creates the given CampaignSpec.
-func (s *Store) CreateCampaignSpec(ctx context.Context, c *batches.BatchSpec) error {
-	q, err := s.createCampaignSpecQuery(c)
+// CreateBatchSpec creates the given BatchSpec.
+func (s *Store) CreateBatchSpec(ctx context.Context, c *batches.BatchSpec) error {
+	q, err := s.createBatchSpecQuery(c)
 	if err != nil {
 		return err
 	}
-	return s.query(ctx, q, func(sc scanner) error { return scanCampaignSpec(c, sc) })
+	return s.query(ctx, q, func(sc scanner) error { return scanBatchSpec(c, sc) })
 }
 
-var createCampaignSpecQueryFmtstr = `
--- source: enterprise/internal/batches/store_campaign_specs.go:CreateCampaignSpec
+var createBatchSpecQueryFmtstr = `
+-- source: enterprise/internal/batches/store/batch_specs.go:CreateBatchSpec
 INSERT INTO campaign_specs (%s)
-VALUES ` + campaignSpecInsertColsFmt + `
+VALUES ` + batchSpecInsertColsFmt + `
 RETURNING %s`
 
-func (s *Store) createCampaignSpecQuery(c *batches.BatchSpec) (*sqlf.Query, error) {
+func (s *Store) createBatchSpecQuery(c *batches.BatchSpec) (*sqlf.Query, error) {
 	spec, err := jsonbColumn(c.Spec)
 	if err != nil {
 		return nil, err
@@ -78,8 +78,8 @@ func (s *Store) createCampaignSpecQuery(c *batches.BatchSpec) (*sqlf.Query, erro
 	}
 
 	return sqlf.Sprintf(
-		createCampaignSpecQueryFmtstr,
-		sqlf.Join(campaignSpecInsertColumns, ", "),
+		createBatchSpecQueryFmtstr,
+		sqlf.Join(batchSpecInsertColumns, ", "),
 		c.RandID,
 		c.RawSpec,
 		spec,
@@ -88,30 +88,30 @@ func (s *Store) createCampaignSpecQuery(c *batches.BatchSpec) (*sqlf.Query, erro
 		nullInt32Column(c.UserID),
 		c.CreatedAt,
 		c.UpdatedAt,
-		sqlf.Join(campaignSpecColumns, ", "),
+		sqlf.Join(batchSpecColumns, ", "),
 	), nil
 }
 
-// UpdateCampaignSpec updates the given CampaignSpec.
-func (s *Store) UpdateCampaignSpec(ctx context.Context, c *batches.BatchSpec) error {
-	q, err := s.updateCampaignSpecQuery(c)
+// UpdateBatchSpec updates the given BatchSpec.
+func (s *Store) UpdateBatchSpec(ctx context.Context, c *batches.BatchSpec) error {
+	q, err := s.updateBatchSpecQuery(c)
 	if err != nil {
 		return err
 	}
 
 	return s.query(ctx, q, func(sc scanner) error {
-		return scanCampaignSpec(c, sc)
+		return scanBatchSpec(c, sc)
 	})
 }
 
-var updateCampaignSpecQueryFmtstr = `
--- source: enterprise/internal/batches/store_campaign_specs.go:UpdateCampaignSpec
+var updateBatchSpecQueryFmtstr = `
+-- source: enterprise/internal/batches/store/batch_specs.go:UpdateBatchSpec
 UPDATE campaign_specs
-SET (%s) = ` + campaignSpecInsertColsFmt + `
+SET (%s) = ` + batchSpecInsertColsFmt + `
 WHERE id = %s
 RETURNING %s`
 
-func (s *Store) updateCampaignSpecQuery(c *batches.BatchSpec) (*sqlf.Query, error) {
+func (s *Store) updateBatchSpecQuery(c *batches.BatchSpec) (*sqlf.Query, error) {
 	spec, err := jsonbColumn(c.Spec)
 	if err != nil {
 		return nil, err
@@ -120,8 +120,8 @@ func (s *Store) updateCampaignSpecQuery(c *batches.BatchSpec) (*sqlf.Query, erro
 	c.UpdatedAt = s.now()
 
 	return sqlf.Sprintf(
-		updateCampaignSpecQueryFmtstr,
-		sqlf.Join(campaignSpecInsertColumns, ", "),
+		updateBatchSpecQueryFmtstr,
+		sqlf.Join(batchSpecInsertColumns, ", "),
 		c.RandID,
 		c.RawSpec,
 		spec,
@@ -131,44 +131,44 @@ func (s *Store) updateCampaignSpecQuery(c *batches.BatchSpec) (*sqlf.Query, erro
 		c.CreatedAt,
 		c.UpdatedAt,
 		c.ID,
-		sqlf.Join(campaignSpecColumns, ", "),
+		sqlf.Join(batchSpecColumns, ", "),
 	), nil
 }
 
-// DeleteCampaignSpec deletes the CampaignSpec with the given ID.
-func (s *Store) DeleteCampaignSpec(ctx context.Context, id int64) error {
-	return s.Store.Exec(ctx, sqlf.Sprintf(deleteCampaignSpecQueryFmtstr, id))
+// DeleteBatchSpec deletes the BatchSpec with the given ID.
+func (s *Store) DeleteBatchSpec(ctx context.Context, id int64) error {
+	return s.Store.Exec(ctx, sqlf.Sprintf(deleteBatchSpecQueryFmtstr, id))
 }
 
-var deleteCampaignSpecQueryFmtstr = `
--- source: enterprise/internal/batches/store_campaign_specs.go:DeleteCampaignSpec
+var deleteBatchSpecQueryFmtstr = `
+-- source: enterprise/internal/batches/store/batch_specs.go:DeleteBatchSpec
 DELETE FROM campaign_specs WHERE id = %s
 `
 
-// CountCampaignSpecs returns the number of code mods in the database.
-func (s *Store) CountCampaignSpecs(ctx context.Context) (int, error) {
-	return s.queryCount(ctx, sqlf.Sprintf(countCampaignSpecsQueryFmtstr))
+// CountBatchSpecs returns the number of code mods in the database.
+func (s *Store) CountBatchSpecs(ctx context.Context) (int, error) {
+	return s.queryCount(ctx, sqlf.Sprintf(countBatchSpecsQueryFmtstr))
 }
 
-var countCampaignSpecsQueryFmtstr = `
--- source: enterprise/internal/batches/store_campaign_specs.go:CountCampaignSpecs
+var countBatchSpecsQueryFmtstr = `
+-- source: enterprise/internal/batches/store/batch_specs.go:CountBatchSpecs
 SELECT COUNT(id)
 FROM campaign_specs
 `
 
-// GetCampaignSpecOpts captures the query options needed for getting a CampaignSpec
-type GetCampaignSpecOpts struct {
+// GetBatchSpecOpts captures the query options needed for getting a BatchSpec
+type GetBatchSpecOpts struct {
 	ID     int64
 	RandID string
 }
 
-// GetCampaignSpec gets a code mod matching the given options.
-func (s *Store) GetCampaignSpec(ctx context.Context, opts GetCampaignSpecOpts) (*batches.BatchSpec, error) {
-	q := getCampaignSpecQuery(&opts)
+// GetBatchSpec gets a BatchSpec matching the given options.
+func (s *Store) GetBatchSpec(ctx context.Context, opts GetBatchSpecOpts) (*batches.BatchSpec, error) {
+	q := getBatchSpecQuery(&opts)
 
 	var c batches.BatchSpec
 	err := s.query(ctx, q, func(sc scanner) (err error) {
-		return scanCampaignSpec(&c, sc)
+		return scanBatchSpec(&c, sc)
 	})
 	if err != nil {
 		return nil, err
@@ -181,14 +181,14 @@ func (s *Store) GetCampaignSpec(ctx context.Context, opts GetCampaignSpecOpts) (
 	return &c, nil
 }
 
-var getCampaignSpecsQueryFmtstr = `
--- source: enterprise/internal/batches/store_campaign_specs.go:GetCampaignSpec
+var getBatchSpecsQueryFmtstr = `
+-- source: enterprise/internal/batches/store/batch_specs.go:GetBatchSpec
 SELECT %s FROM campaign_specs
 WHERE %s
 LIMIT 1
 `
 
-func getCampaignSpecQuery(opts *GetCampaignSpecOpts) *sqlf.Query {
+func getBatchSpecQuery(opts *GetBatchSpecOpts) *sqlf.Query {
 	var preds []*sqlf.Query
 	if opts.ID != 0 {
 		preds = append(preds, sqlf.Sprintf("id = %s", opts.ID))
@@ -203,30 +203,30 @@ func getCampaignSpecQuery(opts *GetCampaignSpecOpts) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf(
-		getCampaignSpecsQueryFmtstr,
-		sqlf.Join(campaignSpecColumns, ", "),
+		getBatchSpecsQueryFmtstr,
+		sqlf.Join(batchSpecColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
 
-// GetNewestCampaignSpecOpts captures the query options needed to get the latest
-// campaign spec for the given parameters. One of the namespace fields and all
+// GetNewestBatchSpecOpts captures the query options needed to get the latest
+// batch spec for the given parameters. One of the namespace fields and all
 // the others must be defined.
-type GetNewestCampaignSpecOpts struct {
+type GetNewestBatchSpecOpts struct {
 	NamespaceUserID int32
 	NamespaceOrgID  int32
 	UserID          int32
 	Name            string
 }
 
-// GetNewestCampaignSpec returns the newest campaign spec that matches the given
+// GetNewestBatchSpec returns the newest batch spec that matches the given
 // options.
-func (s *Store) GetNewestCampaignSpec(ctx context.Context, opts GetNewestCampaignSpecOpts) (*batches.BatchSpec, error) {
-	q := getNewestCampaignSpecQuery(&opts)
+func (s *Store) GetNewestBatchSpec(ctx context.Context, opts GetNewestBatchSpecOpts) (*batches.BatchSpec, error) {
+	q := getNewestBatchSpecQuery(&opts)
 
 	var c batches.BatchSpec
 	err := s.query(ctx, q, func(sc scanner) (err error) {
-		return scanCampaignSpec(&c, sc)
+		return scanBatchSpec(&c, sc)
 	})
 	if err != nil {
 		return nil, err
@@ -239,15 +239,15 @@ func (s *Store) GetNewestCampaignSpec(ctx context.Context, opts GetNewestCampaig
 	return &c, nil
 }
 
-const getNewestCampaignSpecQueryFmtstr = `
--- source: enterprise/internal/batches/store_campaign_specs.go:GetNewestCampaignSpec
+const getNewestBatchSpecQueryFmtstr = `
+-- source: enterprise/internal/batches/store/batch_specs.go:GetNewestBatchSpec
 SELECT %s FROM campaign_specs
 WHERE %s
 ORDER BY id DESC
 LIMIT 1
 `
 
-func getNewestCampaignSpecQuery(opts *GetNewestCampaignSpecOpts) *sqlf.Query {
+func getNewestBatchSpecQuery(opts *GetNewestBatchSpecOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("user_id = %s", opts.UserID),
 		sqlf.Sprintf("spec->>'name' = %s", opts.Name),
@@ -268,27 +268,27 @@ func getNewestCampaignSpecQuery(opts *GetNewestCampaignSpecOpts) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf(
-		getNewestCampaignSpecQueryFmtstr,
-		sqlf.Join(campaignSpecColumns, ", "),
+		getNewestBatchSpecQueryFmtstr,
+		sqlf.Join(batchSpecColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
 
-// ListCampaignSpecsOpts captures the query options needed for
-// listing code mods.
-type ListCampaignSpecsOpts struct {
+// ListBatchSpecsOpts captures the query options needed for
+// listing batch specs.
+type ListBatchSpecsOpts struct {
 	LimitOpts
 	Cursor int64
 }
 
-// ListCampaignSpecs lists CampaignSpecs with the given filters.
-func (s *Store) ListCampaignSpecs(ctx context.Context, opts ListCampaignSpecsOpts) (cs []*batches.BatchSpec, next int64, err error) {
-	q := listCampaignSpecsQuery(&opts)
+// ListBatchSpecs lists BatchSpecs with the given filters.
+func (s *Store) ListBatchSpecs(ctx context.Context, opts ListBatchSpecsOpts) (cs []*batches.BatchSpec, next int64, err error) {
+	q := listBatchSpecsQuery(&opts)
 
 	cs = make([]*batches.BatchSpec, 0, opts.DBLimit())
 	err = s.query(ctx, q, func(sc scanner) error {
 		var c batches.BatchSpec
-		if err := scanCampaignSpec(&c, sc); err != nil {
+		if err := scanBatchSpec(&c, sc); err != nil {
 			return err
 		}
 		cs = append(cs, &c)
@@ -303,36 +303,36 @@ func (s *Store) ListCampaignSpecs(ctx context.Context, opts ListCampaignSpecsOpt
 	return cs, next, err
 }
 
-var listCampaignSpecsQueryFmtstr = `
--- source: enterprise/internal/batches/store_campaign_specs.go:ListCampaignSpecs
+var listBatchSpecsQueryFmtstr = `
+-- source: enterprise/internal/batches/store/batch_specs.go:ListBatchSpecs
 SELECT %s FROM campaign_specs
 WHERE %s
 ORDER BY id ASC
 `
 
-func listCampaignSpecsQuery(opts *ListCampaignSpecsOpts) *sqlf.Query {
+func listBatchSpecsQuery(opts *ListBatchSpecsOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("id >= %s", opts.Cursor),
 	}
 
 	return sqlf.Sprintf(
-		listCampaignSpecsQueryFmtstr+opts.LimitOpts.ToDB(),
-		sqlf.Join(campaignSpecColumns, ", "),
+		listBatchSpecsQueryFmtstr+opts.LimitOpts.ToDB(),
+		sqlf.Join(batchSpecColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
 
-// DeleteExpiredCampaignSpecs deletes CampaignSpecs that have not been attached
-// to a Campaign within CampaignSpecTTL.
-func (s *Store) DeleteExpiredCampaignSpecs(ctx context.Context) error {
-	expirationTime := s.now().Add(-batches.CampaignSpecTTL)
-	q := sqlf.Sprintf(deleteExpiredCampaignSpecsQueryFmtstr, expirationTime)
+// DeleteExpiredBatchSpecs deletes BatchSpecs that have not been attached
+// to a Batch change within BatchSpecTTL.
+func (s *Store) DeleteExpiredBatchSpecs(ctx context.Context) error {
+	expirationTime := s.now().Add(-batches.BatchSpecTTL)
+	q := sqlf.Sprintf(deleteExpiredBatchSpecsQueryFmtstr, expirationTime)
 
 	return s.Store.Exec(ctx, q)
 }
 
-var deleteExpiredCampaignSpecsQueryFmtstr = `
--- source: enterprise/internal/batches/store.go:DeleteExpiredCampaignSpecs
+var deleteExpiredBatchSpecsQueryFmtstr = `
+-- source: enterprise/internal/batches/store.go:DeleteExpiredBatchSpecs
 DELETE FROM
   campaign_specs
 WHERE
@@ -346,7 +346,7 @@ AND NOT EXISTS (
 );
 `
 
-func scanCampaignSpec(c *batches.BatchSpec, s scanner) error {
+func scanBatchSpec(c *batches.BatchSpec, s scanner) error {
 	var spec json.RawMessage
 
 	err := s.Scan(
@@ -362,11 +362,11 @@ func scanCampaignSpec(c *batches.BatchSpec, s scanner) error {
 	)
 
 	if err != nil {
-		return errors.Wrap(err, "scanning campaign spec")
+		return errors.Wrap(err, "scanning batch spec")
 	}
 
 	if err = json.Unmarshal(spec, &c.Spec); err != nil {
-		return errors.Wrap(err, "scanCampaignSpec: failed to unmarshal spec")
+		return errors.Wrap(err, "scanBatchSpec: failed to unmarshal spec")
 	}
 
 	return nil

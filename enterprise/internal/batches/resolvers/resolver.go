@@ -212,8 +212,8 @@ func (r *Resolver) BatchSpecByID(ctx context.Context, id graphql.ID) (graphqlbac
 		return nil, nil
 	}
 
-	opts := store.GetCampaignSpecOpts{RandID: campaignSpecRandID}
-	campaignSpec, err := r.store.GetCampaignSpec(ctx, opts)
+	opts := store.GetBatchSpecOpts{RandID: campaignSpecRandID}
+	campaignSpec, err := r.store.GetBatchSpec(ctx, opts)
 	if err != nil {
 		if err == store.ErrNoResults {
 			return nil, nil

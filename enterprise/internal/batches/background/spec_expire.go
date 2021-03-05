@@ -18,7 +18,7 @@ func newSpecExpireWorker(ctx context.Context, campaignsStore *store.Store) gorou
 		}
 		// ... and then the CampaignSpecs, due to the campaign_spec_id
 		// foreign key on changeset_specs.
-		if err := campaignsStore.DeleteExpiredCampaignSpecs(ctx); err != nil {
+		if err := campaignsStore.DeleteExpiredBatchSpecs(ctx); err != nil {
 			return errors.Wrap(err, "DeleteExpiredCampaignSpecs")
 		}
 		return nil

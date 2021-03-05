@@ -93,18 +93,18 @@ func TestPermissionLevels(t *testing.T) {
 		}
 
 		cs := &batches.BatchSpec{UserID: userID, NamespaceUserID: userID}
-		if err := s.CreateCampaignSpec(ctx, cs); err != nil {
+		if err := s.CreateBatchSpec(ctx, cs); err != nil {
 			t.Fatal(err)
 		}
 
 		return c.ID
 	}
 
-	createCampaignSpec := func(t *testing.T, s *store.Store, userID int32) (randID string, id int64) {
+	createBatchSpec := func(t *testing.T, s *store.Store, userID int32) (randID string, id int64) {
 		t.Helper()
 
 		cs := &batches.BatchSpec{UserID: userID, NamespaceUserID: userID}
-		if err := s.CreateCampaignSpec(ctx, cs); err != nil {
+		if err := s.CreateBatchSpec(ctx, cs); err != nil {
 			t.Fatal(err)
 		}
 
@@ -132,9 +132,9 @@ func TestPermissionLevels(t *testing.T) {
 	t.Run("queries", func(t *testing.T) {
 		cleanUpCampaigns(t, cstore)
 
-		adminCampaignSpec, adminCampaignSpecID := createCampaignSpec(t, cstore, adminID)
+		adminCampaignSpec, adminCampaignSpecID := createBatchSpec(t, cstore, adminID)
 		adminCampaign := createCampaign(t, cstore, "admin", adminID, adminCampaignSpecID)
-		userCampaignSpec, userCampaignSpecID := createCampaignSpec(t, cstore, userID)
+		userCampaignSpec, userCampaignSpecID := createBatchSpec(t, cstore, userID)
 		userCampaign := createCampaign(t, cstore, "user", userID, userCampaignSpecID)
 
 		t.Run("BatchChangeByID", func(t *testing.T) {
@@ -616,7 +616,7 @@ func TestPermissionLevels(t *testing.T) {
 						t.Run(fmt.Sprintf("%s restrict: %v", tc.name, restrict), func(t *testing.T) {
 							cleanUpCampaigns(t, cstore)
 
-							campaignSpecRandID, campaignSpecID := createCampaignSpec(t, cstore, tc.campaignAuthor)
+							campaignSpecRandID, campaignSpecID := createBatchSpec(t, cstore, tc.campaignAuthor)
 							campaignID := createCampaign(t, cstore, "test-campaign", tc.campaignAuthor, campaignSpecID)
 
 							// We add the changeset to the campaign. It doesn't
@@ -828,7 +828,7 @@ func TestRepositoryPermissions(t *testing.T) {
 			NamespaceUserID: userID,
 			UserID:          userID,
 		}
-		if err := cstore.CreateCampaignSpec(ctx, spec); err != nil {
+		if err := cstore.CreateBatchSpec(ctx, spec); err != nil {
 			t.Fatal(err)
 		}
 
@@ -933,7 +933,7 @@ func TestRepositoryPermissions(t *testing.T) {
 			NamespaceUserID: userID,
 			Spec:            batches.CampaignSpecFields{Name: "campaign-spec-and-changeset-specs"},
 		}
-		if err := cstore.CreateCampaignSpec(ctx, campaignSpec); err != nil {
+		if err := cstore.CreateBatchSpec(ctx, campaignSpec); err != nil {
 			t.Fatal(err)
 		}
 

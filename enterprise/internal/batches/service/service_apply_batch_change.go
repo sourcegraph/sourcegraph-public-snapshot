@@ -55,7 +55,7 @@ func (s *Service) ApplyBatchChange(ctx context.Context, opts ApplyBatchChangeOpt
 		tr.Finish()
 	}()
 
-	campaignSpec, err := s.store.GetCampaignSpec(ctx, store.GetCampaignSpecOpts{
+	campaignSpec, err := s.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{
 		RandID: opts.BatchSpecRandID,
 	})
 	if err != nil {
@@ -96,7 +96,7 @@ func (s *Service) ApplyBatchChange(ctx context.Context, opts ApplyBatchChangeOpt
 	// codehost while we're applying a new campaign spec.
 	// This is blocking, because the changeset rows currently being processed by the
 	// reconciler are locked.
-	if err := s.store.CancelQueuedCampaignChangesets(ctx, batchChange.ID); err != nil {
+	if err := s.store.CancelQueuedBatchChangeChangesets(ctx, batchChange.ID); err != nil {
 		return batchChange, nil
 	}
 

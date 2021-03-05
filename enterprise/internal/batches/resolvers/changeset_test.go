@@ -157,7 +157,7 @@ func TestChangesetResolver(t *testing.T) {
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
-	if err := cstore.CreateCampaignSpec(ctx, spec); err != nil {
+	if err := cstore.CreateBatchSpec(ctx, spec); err != nil {
 		t.Fatal(err)
 	}
 

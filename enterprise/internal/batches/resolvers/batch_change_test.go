@@ -40,7 +40,7 @@ func TestBatchChangeResolver(t *testing.T) {
 		UserID:         userID,
 		NamespaceOrgID: orgID,
 	}
-	if err := cstore.CreateCampaignSpec(ctx, batchSpec); err != nil {
+	if err := cstore.CreateBatchSpec(ctx, batchSpec); err != nil {
 		t.Fatal(err)
 	}
 

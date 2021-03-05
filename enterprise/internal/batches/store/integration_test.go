@@ -16,7 +16,7 @@ func TestIntegration(t *testing.T) {
 	db := dbtesting.GetDB(t)
 
 	t.Run("Store", func(t *testing.T) {
-		t.Run("Campaigns", storeTest(db, testStoreCampaigns))
+		t.Run("Campaigns", storeTest(db, testStoreBatchChanges))
 		t.Run("Changesets", storeTest(db, testStoreChangesets))
 		t.Run("ChangesetEvents", storeTest(db, testStoreChangesetEvents))
 		t.Run("ListChangesetSyncData", storeTest(db, testStoreListChangesetSyncData))

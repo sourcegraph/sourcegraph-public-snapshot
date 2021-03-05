@@ -83,7 +83,7 @@ func (s *Service) CreateCampaignSpec(ctx context.Context, opts CreateCampaignSpe
 	spec.UserID = actor.UID
 
 	if len(opts.ChangesetSpecRandIDs) == 0 {
-		return spec, s.store.CreateCampaignSpec(ctx, spec)
+		return spec, s.store.CreateBatchSpec(ctx, spec)
 	}
 
 	listOpts := store.ListChangesetSpecsOpts{RandIDs: opts.ChangesetSpecRandIDs}
@@ -122,7 +122,7 @@ func (s *Service) CreateCampaignSpec(ctx context.Context, opts CreateCampaignSpe
 	}
 	defer func() { err = tx.Done(err) }()
 
-	if err := tx.CreateCampaignSpec(ctx, spec); err != nil {
+	if err := tx.CreateBatchSpec(ctx, spec); err != nil {
 		return nil, err
 	}
 
@@ -204,14 +204,14 @@ func (s *Service) GetBatchChangeMatchingBatchSpec(ctx context.Context, spec *bat
 // GetNewestBatchSpec returns the newest batch spec that matches the given
 // spec's namespace and name and is owned by the given user, or nil if none is found.
 func (s *Service) GetNewestBatchSpec(ctx context.Context, tx *store.Store, spec *batches.BatchSpec, userID int32) (*batches.BatchSpec, error) {
-	opts := store.GetNewestCampaignSpecOpts{
+	opts := store.GetNewestBatchSpecOpts{
 		UserID:          userID,
 		NamespaceUserID: spec.NamespaceUserID,
 		NamespaceOrgID:  spec.NamespaceOrgID,
 		Name:            spec.Spec.Name,
 	}
 
-	newest, err := tx.GetNewestCampaignSpec(ctx, opts)
+	newest, err := tx.GetNewestBatchSpec(ctx, opts)
 	if err != nil {
 		if err != store.ErrNoResults {
 			return nil, err

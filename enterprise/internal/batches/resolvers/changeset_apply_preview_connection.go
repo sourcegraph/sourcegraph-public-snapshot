@@ -269,7 +269,7 @@ func newRewirerMappingsFacade(s *store.Store, campaignSpecID int64) *rewirerMapp
 
 func (rmf *rewirerMappingsFacade) compute(ctx context.Context, opts store.GetRewirerMappingsOpts) error {
 	svc := service.New(rmf.store)
-	campaignSpec, err := rmf.store.GetCampaignSpec(ctx, store.GetCampaignSpecOpts{ID: rmf.campaignSpecID})
+	campaignSpec, err := rmf.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: rmf.campaignSpecID})
 	if err != nil {
 		return err
 	}

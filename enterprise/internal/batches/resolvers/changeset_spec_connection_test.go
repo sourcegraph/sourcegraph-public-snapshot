@@ -34,7 +34,7 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
-	if err := cstore.CreateCampaignSpec(ctx, campaignSpec); err != nil {
+	if err := cstore.CreateBatchSpec(ctx, campaignSpec); err != nil {
 		t.Fatal(err)
 	}
 

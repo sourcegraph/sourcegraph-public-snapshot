@@ -962,7 +962,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			ReconcilerState: batches.ReconcilerStateProcessing,
 		})
 
-		if err := s.CancelQueuedCampaignChangesets(ctx, campaignID); err != nil {
+		if err := s.CancelQueuedBatchChangeChangesets(ctx, campaignID); err != nil {
 			t.Fatal(err)
 		}
 

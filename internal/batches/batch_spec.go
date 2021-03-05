@@ -44,14 +44,14 @@ func (cs *BatchSpec) UnmarshalValidate() error {
 	return yaml.UnmarshalValidate(schema.CampaignSpecSchemaJSON, []byte(cs.RawSpec), &cs.Spec)
 }
 
-// CampaignSpecTTL specifies the TTL of CampaignSpecs that haven't been applied
+// BatchSpecTTL specifies the TTL of CampaignSpecs that haven't been applied
 // yet. It's set to 1 week.
-const CampaignSpecTTL = 7 * 24 * time.Hour
+const BatchSpecTTL = 7 * 24 * time.Hour
 
 // ExpiresAt returns the time when the CampaignSpec will be deleted if not
 // applied.
 func (cs *BatchSpec) ExpiresAt() time.Time {
-	return cs.CreatedAt.Add(CampaignSpecTTL)
+	return cs.CreatedAt.Add(BatchSpecTTL)
 }
 
 type CampaignSpecFields struct {

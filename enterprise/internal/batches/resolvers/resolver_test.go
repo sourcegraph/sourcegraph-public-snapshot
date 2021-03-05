@@ -372,7 +372,7 @@ func TestApplyBatchChange(t *testing.T) {
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
-	if err := cstore.CreateCampaignSpec(ctx, campaignSpec); err != nil {
+	if err := cstore.CreateBatchSpec(ctx, campaignSpec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -509,7 +509,7 @@ func TestCreateBatchChange(t *testing.T) {
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
-	if err := cstore.CreateCampaignSpec(ctx, campaignSpec); err != nil {
+	if err := cstore.CreateBatchSpec(ctx, campaignSpec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -571,7 +571,7 @@ func TestMoveBatchChange(t *testing.T) {
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
-	if err := cstore.CreateCampaignSpec(ctx, campaignSpec); err != nil {
+	if err := cstore.CreateBatchSpec(ctx, campaignSpec); err != nil {
 		t.Fatal(err)
 	}
 

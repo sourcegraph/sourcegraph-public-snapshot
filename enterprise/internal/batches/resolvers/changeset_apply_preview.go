@@ -263,7 +263,7 @@ func (r *visibleChangesetApplyPreviewResolver) computeCampaign(ctx context.Conte
 			return
 		}
 		svc := service.New(r.store)
-		campaignSpec, err := r.store.GetCampaignSpec(ctx, store.GetCampaignSpecOpts{ID: r.campaignSpecID})
+		campaignSpec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: r.campaignSpecID})
 		if err != nil {
 			r.planErr = err
 			return

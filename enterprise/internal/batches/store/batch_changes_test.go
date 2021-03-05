@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
-func testStoreCampaigns(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
 	cs := make([]*batches.BatchChange, 0, 3)
 
 	t.Run("Create", func(t *testing.T) {
@@ -554,7 +554,7 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 			NamespaceUserID: user.ID,
 			UserID:          user.ID,
 		}
-		if err := s.CreateCampaignSpec(ctx, ownedSpec); err != nil {
+		if err := s.CreateBatchSpec(ctx, ownedSpec); err != nil {
 			t.Fatal(err)
 		}
 
@@ -562,7 +562,7 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 			NamespaceOrgID: orgID,
 			UserID:         user.ID,
 		}
-		if err := s.CreateCampaignSpec(ctx, unownedSpec); err != nil {
+		if err := s.CreateBatchSpec(ctx, unownedSpec); err != nil {
 			t.Fatal(err)
 		}
 
@@ -626,7 +626,7 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 
 			// Both campaign specs should still be in place, at least until we add
 			// a foreign key constraint to campaign_specs.namespace_user_id.
-			specs, _, err := s.ListCampaignSpecs(ctx, ListCampaignSpecsOpts{})
+			specs, _, err := s.ListBatchSpecs(ctx, ListBatchSpecsOpts{})
 			if err != nil {
 				t.Fatal(err)
 			}

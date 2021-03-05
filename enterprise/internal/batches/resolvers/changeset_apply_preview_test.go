@@ -35,7 +35,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
-	if err := cstore.CreateCampaignSpec(ctx, oldCampaignSpec); err != nil {
+	if err := cstore.CreateBatchSpec(ctx, oldCampaignSpec); err != nil {
 		t.Fatal(err)
 	}
 	// Create a campaign and create a new spec targetting the same campaign again.

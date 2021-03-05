@@ -413,7 +413,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 			campaignSpec := &batches.BatchSpec{UserID: 4567, NamespaceUserID: 4567}
 
 			if tc.hasCampaignSpec {
-				if err := s.CreateCampaignSpec(ctx, campaignSpec); err != nil {
+				if err := s.CreateBatchSpec(ctx, campaignSpec); err != nil {
 					t.Fatal(err)
 				}
 

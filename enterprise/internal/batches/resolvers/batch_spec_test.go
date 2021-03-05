@@ -50,7 +50,7 @@ func TestBatchSpecResolver(t *testing.T) {
 	}
 	spec.UserID = userID
 	spec.NamespaceOrgID = orgID
-	if err := cstore.CreateCampaignSpec(ctx, spec); err != nil {
+	if err := cstore.CreateBatchSpec(ctx, spec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -162,7 +162,7 @@ func TestBatchSpecResolver(t *testing.T) {
 	}
 	sup.UserID = userID
 	sup.NamespaceOrgID = orgID
-	if err := cstore.CreateCampaignSpec(ctx, sup); err != nil {
+	if err := cstore.CreateBatchSpec(ctx, sup); err != nil {
 		t.Fatal(err)
 	}
 
@@ -186,7 +186,7 @@ func TestBatchSpecResolver(t *testing.T) {
 	// If the superseding batch spec was created by a different user, then we
 	// shouldn't return it.
 	sup.UserID = adminID
-	if err := cstore.UpdateCampaignSpec(ctx, sup); err != nil {
+	if err := cstore.UpdateBatchSpec(ctx, sup); err != nil {
 		t.Fatal(err)
 	}
 

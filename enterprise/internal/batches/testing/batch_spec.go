@@ -8,7 +8,7 @@ import (
 )
 
 type CreateBatchSpecer interface {
-	CreateCampaignSpec(ctx context.Context, campaignSpec *batches.BatchSpec) error
+	CreateBatchSpec(ctx context.Context, batchSpec *batches.BatchSpec) error
 }
 
 func CreateBatchSpec(t *testing.T, ctx context.Context, store CreateBatchSpecer, name string, userID int32) *batches.BatchSpec {
@@ -26,7 +26,7 @@ func CreateBatchSpec(t *testing.T, ctx context.Context, store CreateBatchSpecer,
 		},
 	}
 
-	if err := store.CreateCampaignSpec(ctx, s); err != nil {
+	if err := store.CreateBatchSpec(ctx, s); err != nil {
 		t.Fatal(err)
 	}
 

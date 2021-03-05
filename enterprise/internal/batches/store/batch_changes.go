@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-// batchChangeColumns are used by the campaign related Store methods to insert,
+// batchChangeColumns are used by the batch change related Store methods to insert,
 // update and query batches.
 var batchChangeColumns = []*sqlf.Query{
 	sqlf.Sprintf("campaigns.id"),
@@ -336,7 +336,7 @@ type ListBatchChangesOpts struct {
 
 // ListBatchChanges lists batch changes with the given filters.
 func (s *Store) ListBatchChanges(ctx context.Context, opts ListBatchChangesOpts) (cs []*batches.BatchChange, next int64, err error) {
-	q := listCampaignsQuery(&opts)
+	q := listBatchChangesQuery(&opts)
 
 	cs = make([]*batches.BatchChange, 0, opts.DBLimit())
 	err = s.query(ctx, q, func(sc scanner) error {
@@ -364,7 +364,7 @@ WHERE %s
 ORDER BY id DESC
 `
 
-func listCampaignsQuery(opts *ListBatchChangesOpts) *sqlf.Query {
+func listBatchChangesQuery(opts *ListBatchChangesOpts) *sqlf.Query {
 	joins := []*sqlf.Query{
 		sqlf.Sprintf("LEFT JOIN users namespace_user ON campaigns.namespace_user_id = namespace_user.id"),
 		sqlf.Sprintf("LEFT JOIN orgs namespace_org ON campaigns.namespace_org_id = namespace_org.id"),

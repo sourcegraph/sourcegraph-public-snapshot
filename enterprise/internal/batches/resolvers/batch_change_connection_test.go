@@ -42,14 +42,14 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 		NamespaceUserID: userID,
 		UserID:          userID,
 	}
-	if err := cstore.CreateCampaignSpec(ctx, spec1); err != nil {
+	if err := cstore.CreateBatchSpec(ctx, spec1); err != nil {
 		t.Fatal(err)
 	}
 	spec2 := &batches.BatchSpec{
 		NamespaceUserID: userID,
 		UserID:          userID,
 	}
-	if err := cstore.CreateCampaignSpec(ctx, spec2); err != nil {
+	if err := cstore.CreateBatchSpec(ctx, spec2); err != nil {
 		t.Fatal(err)
 	}
 
@@ -197,7 +197,7 @@ func TestBatchChangesListing(t *testing.T) {
 
 		spec.UserID = userID
 		spec.NamespaceUserID = userID
-		if err := store.CreateCampaignSpec(ctx, spec); err != nil {
+		if err := store.CreateBatchSpec(ctx, spec); err != nil {
 			t.Fatal(err)
 		}
 	}

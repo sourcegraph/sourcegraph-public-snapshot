@@ -45,7 +45,7 @@ func TestServicePermissionLevels(t *testing.T) {
 
 	createTestData := func(t *testing.T, s *store.Store, svc *Service, author int32) (*batches.BatchChange, *batches.Changeset, *batches.BatchSpec) {
 		spec := testCampaignSpec(author)
-		if err := s.CreateCampaignSpec(ctx, spec); err != nil {
+		if err := s.CreateBatchSpec(ctx, spec); err != nil {
 			t.Fatal(err)
 		}
 
@@ -188,7 +188,7 @@ func TestService(t *testing.T) {
 
 	t.Run("DeleteCampaign", func(t *testing.T) {
 		spec := testCampaignSpec(admin.ID)
-		if err := s.CreateCampaignSpec(ctx, spec); err != nil {
+		if err := s.CreateBatchSpec(ctx, spec); err != nil {
 			t.Fatal(err)
 		}
 
@@ -211,7 +211,7 @@ func TestService(t *testing.T) {
 			t.Helper()
 
 			spec := testCampaignSpec(admin.ID)
-			if err := s.CreateCampaignSpec(ctx, spec); err != nil {
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
 				t.Fatal(err)
 			}
 
@@ -282,7 +282,7 @@ func TestService(t *testing.T) {
 
 	t.Run("EnqueueChangesetSync", func(t *testing.T) {
 		spec := testCampaignSpec(admin.ID)
-		if err := s.CreateCampaignSpec(ctx, spec); err != nil {
+		if err := s.CreateBatchSpec(ctx, spec); err != nil {
 			t.Fatal(err)
 		}
 
@@ -325,7 +325,7 @@ func TestService(t *testing.T) {
 
 	t.Run("ReenqueueChangeset", func(t *testing.T) {
 		spec := testCampaignSpec(admin.ID)
-		if err := s.CreateCampaignSpec(ctx, spec); err != nil {
+		if err := s.CreateBatchSpec(ctx, spec); err != nil {
 			t.Fatal(err)
 		}
 
@@ -619,7 +619,7 @@ func TestService(t *testing.T) {
 				NamespaceOrgID:  orgID,
 			}
 
-			if err := s.CreateCampaignSpec(ctx, spec); err != nil {
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
 				t.Fatal(err)
 			}
 

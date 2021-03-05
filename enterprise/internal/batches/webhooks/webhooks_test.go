@@ -95,7 +95,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			NamespaceUserID: userID,
 			UserID:          userID,
 		}
-		if err := s.CreateCampaignSpec(ctx, spec); err != nil {
+		if err := s.CreateBatchSpec(ctx, spec); err != nil {
 			t.Fatal(err)
 		}
 
@@ -274,7 +274,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			NamespaceUserID: userID,
 			UserID:          userID,
 		}
-		if err := s.CreateCampaignSpec(ctx, spec); err != nil {
+		if err := s.CreateBatchSpec(ctx, spec); err != nil {
 			t.Fatal(err)
 		}
 
