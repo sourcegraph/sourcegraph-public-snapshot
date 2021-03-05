@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { Markdown } from '../../../../ui-kit-legacy-shared/src/components/Markdown'
+import { Markdown } from '@sourcegraph/ui-kit/src/components/Markdown'
 import { ConfiguredRegistryExtension } from '../../../../ui-kit-legacy-shared/src/extensions/extension'
 import { isErrorLike } from '../../../../ui-kit-legacy-shared/src/util/errors'
 import { renderMarkdown } from '../../../../ui-kit-legacy-shared/src/util/markdown'

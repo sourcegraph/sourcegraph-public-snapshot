@@ -1,6 +1,6 @@
 import * as React from 'react'
 import * as H from 'history'
-import { Markdown } from '../../../../ui-kit-legacy-shared/src/components/Markdown'
+import { Markdown } from '@sourcegraph/ui-kit/src/components/Markdown'
 import { useScrollToLocationHash } from '../../components/useScrollToLocationHash'
 
 interface Props {

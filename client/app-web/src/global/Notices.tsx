@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Markdown } from '../../../ui-kit-legacy-shared/src/components/Markdown'
+import { Markdown } from '@sourcegraph/ui-kit/src/components/Markdown'
 import { isSettingsValid, SettingsCascadeProps } from '../../../ui-kit-legacy-shared/src/settings/settings'
 import { renderMarkdown } from '../../../ui-kit-legacy-shared/src/util/markdown'
 import { DismissibleAlert } from '../components/DismissibleAlert'

@@ -13,6 +13,7 @@
     { "path": "client/ui-kit-legacy-shared" },
     { "path": "client/ui-kit-legacy-shared/src/testing" },
     { "path": "client/ui-kit-legacy-branded" },
+    { "path": "client/utils" },
     { "path": "dev/release" },
     { "path": "schema" },
   ],

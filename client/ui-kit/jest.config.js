@@ -6,6 +6,6 @@ const config = require('../../jest.config.base')
 /** @type {jest.InitialOptions} */
 module.exports = {
   ...config,
-  displayName: 'ui-kit-legacy-shared',
+  displayName: 'ui-kit',
   rootDir: __dirname,
 }

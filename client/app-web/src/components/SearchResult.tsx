@@ -7,7 +7,7 @@ import { renderMarkdown } from '../../../ui-kit-legacy-shared/src/util/markdown'
 import { SearchResultMatch } from './SearchResultMatch'
 import { ThemeProps } from '../../../ui-kit-legacy-shared/src/theme'
 import * as H from 'history'
-import { Markdown } from '../../../ui-kit-legacy-shared/src/components/Markdown'
+import { Markdown } from '@sourcegraph/ui-kit/src/components/Markdown'
 
 interface Props extends ThemeProps {
     result: Omit<GQL.IGenericSearchResultInterface, '__typename'>

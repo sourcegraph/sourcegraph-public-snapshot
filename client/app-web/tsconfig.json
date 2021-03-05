@@ -18,6 +18,7 @@
     ],
   },
   "references": [
+    { "path": "../ui-kit" },
     { "path": "../ui-kit-legacy-shared" },
     { "path": "../ui-kit-legacy-branded" },
     { "path": "../../schema" },

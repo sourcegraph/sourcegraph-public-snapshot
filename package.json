@@ -14,6 +14,7 @@
     "prettier": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --write --list-different --config prettier.config.js",
     "prettier-check": "yarn -s run prettier --write=false",
     "all:eslint": "DOCSITE_LIST=\"$(./dev/docsite.sh -config doc/docsite.json ls)\" dev/foreach-ts-project.sh yarn -s run eslint --quiet",
+    "all:eslint:workspaces": "DOCSITE_LIST=\"$(./dev/docsite.sh -config doc/docsite.json ls)\" yarn workspaces run eslint --quiet",
     "all:stylelint": "yarn --cwd client/app-web run stylelint && yarn --cwd client/ui-kit-legacy-shared run stylelint && yarn --cwd client/ui-kit-legacy-branded run stylelint && yarn --cwd client/browser-extension run stylelint",
     "all:tsgql": "yarn --cwd client/app-web run tsgql validate -p . --exitOnWarn && yarn --cwd client/ui-kit-legacy-shared run tsgql validate -p . --exitOnWarn && yarn --cwd client/browser-extension run tsgql validate -p . --exitOnWarn",
     "build-ts": "tsc -b tsconfig.all.json",

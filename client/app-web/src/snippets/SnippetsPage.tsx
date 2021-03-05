@@ -9,7 +9,7 @@ import { SNIPPET_URI_SCHEME } from '../../../ui-kit-legacy-shared/src/api/client
 import { ContributableViewContainer } from '../../../ui-kit-legacy-shared/src/api/protocol'
 import { EditorTextField } from '../../../ui-kit-legacy-shared/src/components/editorTextField/EditorTextField'
 import { WithLinkPreviews } from '../../../ui-kit-legacy-shared/src/components/linkPreviews/WithLinkPreviews'
-import { Markdown } from '../../../ui-kit-legacy-shared/src/components/Markdown'
+import { Markdown } from '@sourcegraph/ui-kit/src/components/Markdown'
 import { ExtensionsControllerProps } from '../../../ui-kit-legacy-shared/src/extensions/controller'
 import { renderMarkdown } from '../../../ui-kit-legacy-shared/src/util/markdown'
 import { LINK_PREVIEW_CLASS } from '../components/linkPreviews/styles'

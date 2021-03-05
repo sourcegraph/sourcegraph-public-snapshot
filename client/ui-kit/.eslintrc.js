@@ -1,10 +1,13 @@
-const baseConfig = require('../../.eslintrc')
+// @ts-check
+
+const baseConfig = require('../../.eslintrc.js')
 
 module.exports = {
   extends: '../../.eslintrc.js',
   parserOptions: {
     ...baseConfig.parserOptions,
-    project: __dirname + '/tsconfig.json',
+    project: [__dirname + '/tsconfig.json'],
   },
+  rules: {},
   overrides: baseConfig.overrides,
 }

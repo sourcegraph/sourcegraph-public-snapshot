@@ -12,8 +12,10 @@ export ARGS=$*
 
 DIRS=(
   client/app-web
+  client/ui-kit
   client/ui-kit-legacy-shared
   client/ui-kit-legacy-branded
+  client/utils
   client/browser-extension
   client/extension-api
   client/eslint-plugin-sourcegraph

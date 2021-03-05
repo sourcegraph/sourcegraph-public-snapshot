@@ -1,6 +1,6 @@
 import * as H from 'history'
 import React from 'react'
-import { Markdown } from '../../../../ui-kit-legacy-shared/src/components/Markdown'
+import { Markdown } from '@sourcegraph/ui-kit/src/components/Markdown'
 import { renderMarkdown } from '../../../../ui-kit-legacy-shared/src/util/markdown'
 import { BatchChangeFields } from '../../graphql-operations'
 import classNames from 'classnames'

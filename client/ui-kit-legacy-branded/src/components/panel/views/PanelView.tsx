@@ -6,7 +6,7 @@ import {
     PanelViewProviderRegistrationOptions,
 } from '../../../../../ui-kit-legacy-shared/src/api/client/services/panelViews'
 import { FetchFileParameters } from '../../../../../ui-kit-legacy-shared/src/components/CodeExcerpt'
-import { Markdown } from '../../../../../ui-kit-legacy-shared/src/components/Markdown'
+import { Markdown } from '@sourcegraph/ui-kit/src/components/Markdown'
 import { ExtensionsControllerProps } from '../../../../../ui-kit-legacy-shared/src/extensions/controller'
 import { SettingsCascadeProps } from '../../../../../ui-kit-legacy-shared/src/settings/settings'
 import { renderMarkdown } from '../../../../../ui-kit-legacy-shared/src/util/markdown'

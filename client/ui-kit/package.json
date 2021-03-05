@@ -1,10 +1,14 @@
 {
+  "private": true,
   "name": "@sourcegraph/ui-kit",
   "version": "0.0.1",
   "description": "Sourcegraph design system",
-  "main": "./index.ts",
+  "main": "./src/index.ts",
   "sideEffects": false,
   "scripts": {
+    "eslint": "eslint --cache '**/*.[jt]s?(x)'",
+    "stylelint": "stylelint 'src/**/*.scss' --quiet",
+    "test": "jest",
     "storybook": "start-storybook -p 9001 --config-dir .storybook --static-dir ../../ui/assets",
     "build-storybook": "build-storybook --config-dir .storybook --static-dir ../../ui/assets",
     "cover-storybook": "nyc --hook-require=false yarn jest .storybook/coverage"

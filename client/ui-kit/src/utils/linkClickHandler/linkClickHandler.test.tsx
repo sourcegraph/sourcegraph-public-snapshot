@@ -1,9 +1,9 @@
+import React from 'react'
+import ReactDOM from 'react-dom'
 import { createMemoryHistory } from 'history'
 import * as sinon from 'sinon'
 import assert from 'assert'
 import { createLinkClickHandler } from './linkClickHandler'
-import ReactDOM from 'react-dom'
-import React from 'react'
 
 describe('createLinkClickHandler', () => {
     it('handles clicks on links that stay inside the app', () => {

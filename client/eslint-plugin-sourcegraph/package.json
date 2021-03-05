@@ -6,7 +6,7 @@
   "keywords": ["eslint", "eslintplugin", "eslint-plugin"],
   "main": "lib/index.js",
   "scripts": {
-    "eslint": "../../../../node_modules/.bin/eslint",
+    "eslint": "echo 'not implemented'",
     "test": "mocha tests --recursive"
   },
   "dependencies": {
