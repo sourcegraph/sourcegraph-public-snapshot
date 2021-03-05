@@ -39,7 +39,7 @@ func (s *GitserverRepoStore) Transact(ctx context.Context) (*GitserverRepoStore,
 }
 
 // Upsert adds a row representing the GitServer status of a repo
-func (s *GitserverRepoStore) Upsert(ctx context.Context, repos ...types.GitserverRepo) error {
+func (s *GitserverRepoStore) Upsert(ctx context.Context, repos ...*types.GitserverRepo) error {
 	values := make([]*sqlf.Query, 0, len(repos))
 	for _, gr := range repos {
 		values = append(values, sqlf.Sprintf(

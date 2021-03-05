@@ -338,7 +338,7 @@ func (s *Server) syncRepoState(db dbutil.DB, addrs []string, batchSize, perSecon
 		batchSize = perSecond
 	}
 
-	batch := make([]types.GitserverRepo, 0)
+	batch := make([]*types.GitserverRepo, 0)
 
 	writeBatch := func() {
 		if len(batch) == 0 {
@@ -405,7 +405,7 @@ func (s *Server) syncRepoState(db dbutil.DB, addrs []string, batchSize, perSecon
 			return nil
 		}
 
-		batch = append(batch, *repo.GitserverRepo)
+		batch = append(batch, repo.GitserverRepo)
 
 		if len(batch) >= batchSize {
 			writeBatch()

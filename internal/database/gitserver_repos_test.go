@@ -41,7 +41,7 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	gitserverRepo := types.GitserverRepo{
+	gitserverRepo := &types.GitserverRepo{
 		RepoID:              repo1.ID,
 		ShardID:             "gitserver1",
 		CloneStatus:         types.CloneStatusNotCloned,
@@ -101,7 +101,7 @@ func TestGitserverRepoUpsertNullShard(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	gitserverRepo := types.GitserverRepo{
+	gitserverRepo := &types.GitserverRepo{
 		RepoID:              repo1.ID,
 		ShardID:             "",
 		CloneStatus:         types.CloneStatusNotCloned,
@@ -136,7 +136,7 @@ func TestGitserverRepoUpsert(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	gitserverRepo := types.GitserverRepo{
+	gitserverRepo := &types.GitserverRepo{
 		RepoID:      repo1.ID,
 		ShardID:     "abc",
 		CloneStatus: types.CloneStatusNotCloned,
@@ -153,7 +153,7 @@ func TestGitserverRepoUpsert(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if diff := cmp.Diff(gitserverRepo, *fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
 		t.Fatal(diff)
 	}
 
@@ -166,7 +166,7 @@ func TestGitserverRepoUpsert(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if diff := cmp.Diff(gitserverRepo, *fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
 		t.Fatal(diff)
 	}
 
@@ -179,7 +179,7 @@ func TestGitserverRepoUpsert(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if diff := cmp.Diff(gitserverRepo, *fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
 		t.Fatal(diff)
 	}
 
@@ -192,7 +192,7 @@ func TestGitserverRepoUpsert(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if diff := cmp.Diff(gitserverRepo, *fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
 		t.Fatal(diff)
 	}
 }
