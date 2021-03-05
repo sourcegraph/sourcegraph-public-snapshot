@@ -1,8 +1,8 @@
 package correlation
 
 import (
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/datastructures"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/lsif"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/datastructures"
 )
 
 // State is an in-memory representation of an uploaded LSIF index.

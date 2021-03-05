@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/correlation"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/existence"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/pathexistence"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 )
 
@@ -176,7 +176,7 @@ func queryBundle(bundle *correlation.GroupedBundleDataMaps, path string, line, c
 	return nil
 }
 
-func makeExistenceFunc(path string) existence.GetChildrenFunc {
+func makeExistenceFunc(path string) pathexistence.GetChildrenFunc {
 	return func(ctx context.Context, dirnames []string) (map[string][]string, error) {
 		cmd := exec.Command("git", append([]string{"ls-tree", "--name-only", "HEAD"}, cleanDirectoriesForLsTree(dirnames)...)...)
 		out, err := cmd.CombinedOutput()
