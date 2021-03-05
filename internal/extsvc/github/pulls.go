@@ -869,7 +869,7 @@ func (c *V4Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, ba
 	q.WriteString(fmt.Sprintf("repository(owner: %q, name: %q) {\n",
 		owner, name))
 	q.WriteString(fmt.Sprintf("pullRequests(baseRefName: %q, headRefName: %q, first: 1, states: OPEN) { \n",
-		AbbreviateRef(baseRef), AbbreviateRef(headRef),
+		abbreviateRef(baseRef), abbreviateRef(headRef),
 	))
 	q.WriteString("nodes{ ... pr }\n}\n}\n}")
 
@@ -966,11 +966,11 @@ func (c *V4Client) loadRemainingTimelineItems(ctx context.Context, prID string, 
 	return
 }
 
-// AbbreviateRef removes the "refs/heads/" prefix from a given ref. If the ref
+// abbreviateRef removes the "refs/heads/" prefix from a given ref. If the ref
 // doesn't have the prefix, it returns it unchanged.
 //
 // Copied from internal/vcs/git to avoid a cyclic import
-func AbbreviateRef(ref string) string {
+func abbreviateRef(ref string) string {
 	return strings.TrimPrefix(ref, "refs/heads/")
 }
 
