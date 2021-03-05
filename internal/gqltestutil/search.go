@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
@@ -32,6 +33,15 @@ func (rs SearchRepositoryResults) Exists(names ...string) []string {
 		missing = append(missing, name)
 	}
 	return missing
+}
+
+func (rs SearchRepositoryResults) String() string {
+	var names []string
+	for _, r := range rs {
+		names = append(names, r.Name)
+	}
+	sort.Strings(names)
+	return fmt.Sprintf("%q", names)
 }
 
 // SearchRepositories search repositories with given query.

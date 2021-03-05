@@ -104,15 +104,15 @@ func testSearchClient(t *testing.T, client searchClient) {
 			wantMissing []string
 		}{
 			{
-				query:       "type:repo visibility:private",
+				query:       "type:repo visibility:private sgtest",
 				wantMissing: []string{},
 			},
 			{
-				query:       "type:repo visibility:public",
+				query:       "type:repo visibility:public sgtest",
 				wantMissing: []string{"github.com/sgtest/private"},
 			},
 			{
-				query:       "type:repo visibility:any",
+				query:       "type:repo visibility:any sgtest",
 				wantMissing: []string{},
 			},
 		}
