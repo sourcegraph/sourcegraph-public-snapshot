@@ -75,7 +75,7 @@ export function useBlobPanelViews({
                     if (!textDocumentPositionParameters) {
                         return null
                     }
-                    console.log({ textDocumentPositionParameters })
+                    console.log('subscribing to location provider')
                     return {
                         title,
                         content: '',

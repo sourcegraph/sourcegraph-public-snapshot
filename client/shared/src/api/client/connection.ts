@@ -1,16 +1,11 @@
 import * as comlink from 'comlink'
 import { from, Subscription } from 'rxjs'
 import { first } from 'rxjs/operators'
-import { ContextValues, Unsubscribable } from 'sourcegraph'
+import { Unsubscribable } from 'sourcegraph'
 import { PlatformContext, ClosableEndpointPair } from '../../platform/context'
 import { ExtensionHostAPIFactory } from '../extension/api/api'
 import { InitData } from '../extension/extensionHost'
 import { ClientAPI } from './api/api'
-import { ClientCodeEditor } from './api/codeEditor'
-import { createClientContent } from './api/content'
-import { ClientContext } from './api/context'
-import { ClientExtensions } from './api/extensions'
-import { ClientLanguageFeatures } from './api/languageFeatures'
 import { ClientViews } from './api/views'
 import { Services } from './services'
 import { registerComlinkTransferHandlers } from '../util'
@@ -77,22 +72,7 @@ export async function createExtensionHostClientConnection(
         initialSettings: isSettingsValid(initialSettings) ? initialSettings : { final: {}, subjects: [] },
     })
 
-    const clientContext = new ClientContext((updates: ContextValues) => services.context.updateContext(updates))
-    subscription.add(clientContext)
-
     const clientViews = new ClientViews(services.panelViews, services.textDocumentLocations, services.view, proxy)
-
-    const clientCodeEditor = new ClientCodeEditor(services.textDocumentDecoration)
-    subscription.add(clientCodeEditor)
-
-    const clientLanguageFeatures = new ClientLanguageFeatures(
-        services.textDocumentReferences,
-        services.textDocumentLocations,
-        services.completionItems
-    )
-    subscription.add(new ClientExtensions(proxy.extensions, services.extensions, platformContext))
-
-    const clientContent = createClientContent(services.linkPreviews)
 
     const { api: newAPI, subscription: apiSubscriptions } = initMainThreadAPI(
         proxy,
@@ -104,11 +84,8 @@ export async function createExtensionHostClientConnection(
 
     const clientAPI: ClientAPI = {
         ping: () => 'pong',
-        context: clientContext,
-        languageFeatures: clientLanguageFeatures,
-        codeEditor: clientCodeEditor,
+
         views: clientViews,
-        content: clientContent,
         ...newAPI,
     }
 

@@ -1,24 +1,15 @@
-import { from, Subject, Subscription, Unsubscribable, combineLatest, of, Observable } from 'rxjs'
-import { catchError, map, publishReplay, refCount, switchMap, withLatestFrom } from 'rxjs/operators'
+import { Subject, Subscription, Unsubscribable } from 'rxjs'
 import { Services } from '../api/client/services'
 import { ExecuteCommandParameters } from '../api/client/services/command'
-import { ContributionRegistry, parseContributionExpressions } from '../api/client/services/contribution'
-import { ExecutableExtension, ExtensionsService } from '../api/client/services/extensionsService'
 import { InitData } from '../api/extension/extensionHost'
 import { registerBuiltinClientCommands } from '../commands/commands'
 import { Notification } from '../notifications/notification'
 import { PlatformContext } from '../platform/context'
-import { asError, ErrorLike, isErrorLike } from '../util/errors'
-import { isDefined } from '../util/types'
+import { asError } from '../util/errors'
 import { createExtensionHostClientConnection } from '../api/client/connection'
 import { Remote } from 'comlink'
 import { FlatExtensionHostAPI, NotificationType } from '../api/contract'
 import { CommandEntry, MainThreadAPIDependencies } from '../api/client/mainthread-api'
-import { viewerConfiguredExtensions } from './helpers'
-import { ConfiguredExtension, isExtensionEnabled } from './extension'
-import { checkOk } from '../backend/fetch'
-import { fromFetch } from 'rxjs/fetch'
-import { ExtensionManifest } from './extensionManifest'
 
 export interface Controller extends Unsubscribable {
     services: Services
@@ -106,7 +97,6 @@ export function createController(context: PlatformContext): Controller {
     const notifications = new Subject<Notification>()
 
     subscriptions.add(registerBuiltinClientCommands(services, context, mainThreadAPIDependencies))
-    // subscriptions.add(registerExtensionContributions(services.contribution, services.extensions))
 
     // Debug helpers.
     const DEBUG = true
@@ -141,44 +131,6 @@ export function createController(context: PlatformContext): Controller {
         extHostAPI: extensionHostClientPromise.then(({ api }) => api),
         unsubscribe: () => subscriptions.unsubscribe(),
     }
-}
-
-export function registerExtensionContributions(
-    contributionRegistry: Pick<ContributionRegistry, 'registerContributions'>,
-    { activeExtensions }: Pick<ExtensionsService, 'activeExtensions'>
-): Unsubscribable {
-    // TODO(tj): once extension activation is moved to host side, we can complete contribution move :)
-    const contributions = from(activeExtensions).pipe(
-        map(extensions =>
-            extensions
-                .map(({ manifest }) => manifest)
-                .filter(
-                    (manifest): manifest is Exclude<typeof manifest, ErrorLike | null> =>
-                        manifest !== null && !isErrorLike(manifest)
-                )
-                .map(({ contributes }) => contributes)
-                .filter(isDefined)
-                .map(contributions => {
-                    try {
-                        // TODO(tj): looks like all contributions are parsed each time an extension is activated
-                        return parseContributionExpressions(contributions)
-                    } catch (error) {
-                        // An error during evaluation causes all of the contributions in the same entry to be
-                        // discarded.
-                        console.warn('Discarding contributions: parsing expressions or templates failed.', {
-                            contributions,
-                            error,
-                        })
-                        return {}
-                    }
-                })
-        ),
-        // Perf optimization: only parse all the context expression once if there are multiple Subscribers.
-        // This does not change the behaviour of the Observable, it always emits the current value on Subscription.
-        publishReplay(1),
-        refCount()
-    )
-    return contributionRegistry.registerContributions({ contributions })
 }
 
 /** Prints a nicely formatted console log or error message. */

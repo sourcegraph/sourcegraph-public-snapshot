@@ -5,13 +5,10 @@ import * as sourcegraph from 'sourcegraph'
 import { EndpointPair } from '../../platform/context'
 import { ClientAPI } from '../client/api/api'
 import { ExtensionHostAPI, ExtensionHostAPIFactory } from './api/api'
-import { ExtensionContent } from './api/content'
-import { ExtensionContext } from './api/context'
 import { createDecorationType } from './api/decorations'
 import { ExtensionDocuments } from './api/documents'
 import { DocumentHighlightKind } from './api/documentHighlights'
 import { Extensions } from './api/extensions'
-import { ExtensionLanguageFeatures } from './api/languageFeatures'
 import { ExtensionViewsApi } from './api/views'
 import { registerComlinkTransferHandlers } from '../util'
 import { initNewExtensionAPI } from './flatExtensionApi'
@@ -123,22 +120,20 @@ function createExtensionAPI(
     /** Proxy to main thread */
     const proxy = comlink.wrap<ClientAPI>(endpoints.proxy)
 
-    // For debugging/tests.
+    // For debugging/tests. TODO(tj): can deprecate
     const sync = async (): Promise<void> => {
         await proxy.ping()
     }
-    const context = new ExtensionContext(proxy.context)
-    // TODO(tj): temporary keep this around even though we don't use it anymore
-    // we're flattening extension windows and documents, but extensionlanguagefeatures
-    // depends on documents. refactor remaining language features in next commit
+    // const context = new ExtensionContext(proxy.context)
+
+    // TODO(tj): ready to remove
     const documents = new ExtensionDocuments(sync)
 
     const extensions = new Extensions()
     subscription.add(extensions)
+    // TODO(tj): remember to add new extension activation sub to bag
 
     const views = new ExtensionViewsApi(proxy.views)
-    const languageFeatures = new ExtensionLanguageFeatures(proxy.languageFeatures, documents)
-    const content = new ExtensionContent(proxy.content)
 
     const {
         configuration,
@@ -146,16 +141,12 @@ function createExtensionAPI(
         workspace,
         commands,
         search,
-        languages: {
-            registerHoverProvider,
-            registerDocumentHighlightProvider,
-            registerDefinitionProvider,
-            registerReferenceProvider,
-        },
+        languages,
         graphQL,
+        content,
         app,
         internal,
-    } = initNewExtensionAPI(proxy, initData, documents)
+    } = initNewExtensionAPI(proxy, initData)
 
     // Expose the extension host API to the client (main thread)
     const extensionHostAPI: ExtensionHostAPI = {
@@ -206,55 +197,19 @@ function createExtensionAPI(
         workspace,
         configuration,
 
-        languages: {
-            registerHoverProvider,
-            registerDocumentHighlightProvider,
-            registerDefinitionProvider,
-
-            // These were removed, but keep them here so that calls from old extensions do not throw
-            // an exception and completely break.
-            registerTypeDefinitionProvider: () => {
-                console.warn(
-                    'sourcegraph.languages.registerTypeDefinitionProvider was removed. Use sourcegraph.languages.registerLocationProvider instead.'
-                )
-                return { unsubscribe: () => undefined }
-            },
-            registerImplementationProvider: () => {
-                console.warn(
-                    'sourcegraph.languages.registerImplementationProvider was removed. Use sourcegraph.languages.registerLocationProvider instead.'
-                )
-                return { unsubscribe: () => undefined }
-            },
-
-            // registerReferenceProvider: (
-            //     selector: sourcegraph.DocumentSelector,
-            //     provider: sourcegraph.ReferenceProvider
-            // ) => languageFeatures.registerReferenceProvider(selector, provider),
-            registerReferenceProvider,
-
-            registerLocationProvider: (
-                id: string,
-                selector: sourcegraph.DocumentSelector,
-                provider: sourcegraph.LocationProvider
-            ) => languageFeatures.registerLocationProvider(id, selector, provider),
-
-            registerCompletionItemProvider: (
-                selector: sourcegraph.DocumentSelector,
-                provider: sourcegraph.CompletionItemProvider
-            ) => languageFeatures.registerCompletionItemProvider(selector, provider),
-        },
+        languages,
 
         search,
         commands,
         graphQL,
-        content: {
-            registerLinkPreviewProvider: (urlMatchPattern: string, provider: sourcegraph.LinkPreviewProvider) =>
-                content.registerLinkPreviewProvider(urlMatchPattern, provider),
-        },
+        content,
 
         internal: {
-            sync,
-            updateContext: (updates: sourcegraph.ContextValues) => context.updateContext(updates),
+            sync: () => {
+                console.warn('Sourcegraph extensions no longer need to call sync to ensure intended behavior') // TODO(tj): better error
+                return sync()
+            },
+            updateContext: (updates: sourcegraph.ContextValues) => internal.updateContext(updates),
             sourcegraphURL: new URL(initData.sourcegraphURL),
             clientApplication: initData.clientApplication,
         },

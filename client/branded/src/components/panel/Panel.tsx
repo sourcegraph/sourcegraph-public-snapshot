@@ -17,7 +17,6 @@ import { EmptyPanelView } from './views/EmptyPanelView'
 import { PanelView } from './views/PanelView'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { VersionContextProps } from '../../../../shared/src/search/util'
-import * as sourcegraph from 'sourcegraph'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { combineLatestOrDefault } from '../../../../shared/src/util/rxjs/combineLatestOrDefault'
 import { Location } from '@sourcegraph/extension-api-types'
@@ -25,7 +24,7 @@ import { isDefined } from '../../../../shared/src/util/types'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { wrapRemoteObservable } from '../../../../shared/src/api/client/api/common'
 import { PanelViewData } from '../../../../shared/src/api/extension/flatExtensionApi'
-import { merge } from 'lodash'
+import { ExtensionsLoadingPanelView } from './views/ExtensionsLoadingView'
 
 interface Props
     extends ExtensionsControllerProps,
@@ -74,8 +73,10 @@ interface PanelItem extends Tab<string> {
     hasLocations?: boolean
 }
 
+export type BuiltinPanelView = Omit<PanelViewWithComponent, 'component' | 'id'>
+
 const builtinPanelViewProviders = new BehaviorSubject<
-    Map<string, { id: string; provider: Observable<PanelViewWithComponent | null> }>
+    Map<string, { id: string; provider: Observable<BuiltinPanelView | null> }>
 >(new Map())
 
 /**
@@ -83,7 +84,7 @@ const builtinPanelViewProviders = new BehaviorSubject<
  * contributed by Sourcegraph extensions)
  */
 export function useBuiltinPanelViews(
-    builtinPanels: { id: string; provider: Observable<PanelViewWithComponent | null> }[]
+    builtinPanels: { id: string; provider: Observable<BuiltinPanelView | null> }[]
 ): void {
     useEffect(() => {
         for (const builtinPanel of builtinPanels) {
@@ -107,6 +108,20 @@ export function useBuiltinPanelViews(
  * Other components can contribute panel items to the panel with the `useBuildinPanelViews` hook.
  */
 export const Panel = React.memo<Props>(props => {
+    // Ensures that we don't show a misleading empty state when extensions haven't loaded yet.
+    // Also acts as a "ping" function on subsequent mounts (this returns true at the same time that the extension host
+    // returns location providers and extension-contributed views)
+    // how to solve problem with location providers..
+    const areExtensionsReady = useObservable(
+        useMemo(
+            () =>
+                from(props.extensionsController.extHostAPI).pipe(
+                    switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.haveInitialExtensionsLoaded()))
+                ),
+            [props.extensionsController]
+        )
+    )
+
     const builtinPanels: PanelViewWithComponent[] | undefined = useObservable(
         useMemo(
             () =>
@@ -114,7 +129,7 @@ export const Panel = React.memo<Props>(props => {
                     switchMap(providers =>
                         combineLatestOrDefault(
                             [...providers].map(([id, { provider }]) =>
-                                provider.pipe(map(view => (view ? { ...view, id } : null)))
+                                provider.pipe(map(view => (view ? { ...view, id, component: null } : null)))
                             )
                         )
                     ),
@@ -155,16 +170,14 @@ export const Panel = React.memo<Props>(props => {
                                 }
                                 return panelViewWithProvider
                             }
-                            const panelViewWithoutProvider: PanelViewWithComponent = panelView
-                            return panelViewWithoutProvider
+
+                            return panelView
                         })
                     )
-                    // TODO: map `component` to location provider. memoize observable by id
                 ),
             [props.extensionsController]
         )
     )
-    console.log({ extensionPanels })
 
     const onDismiss = useCallback(
         () => props.history.push(TabsWithURLViewStatePersistence.urlForTabID(props.location, null)),
@@ -172,7 +185,7 @@ export const Panel = React.memo<Props>(props => {
     )
 
     const panelViews = [...(builtinPanels || []), ...(extensionPanels || [])]
-    console.log({ panelViews })
+
     const items = panelViews
         ? panelViews
               .map(
@@ -189,9 +202,12 @@ export const Panel = React.memo<Props>(props => {
     const hasTabs = items.length > 0
     const activePanelViewID = TabsWithURLViewStatePersistence.readFromURL(props.location, items)
     const activePanelView = items.find(item => item.id === activePanelViewID)
+
     return (
         <div className="panel">
-            {hasTabs ? (
+            {!areExtensionsReady ? (
+                <ExtensionsLoadingPanelView />
+            ) : hasTabs ? (
                 <TabsWithURLViewStatePersistence
                     tabs={items}
                     tabBarEndFragment={

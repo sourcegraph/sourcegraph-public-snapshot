@@ -56,15 +56,15 @@ export class Services {
         this.context.data
     )
     public readonly textDocumentDecoration = new TextDocumentDecorationProviderRegistry()
-
-    // Feature provider services
     public readonly textDocumentReferences = new TextDocumentLocationProviderRegistry<ReferenceParameters>()
     public readonly textDocumentLocations = new TextDocumentLocationProviderIDRegistry()
-
     public readonly panelViews = new PanelViewProviderRegistry()
+
+    // Feature provider services
+
     // TODO(tj): refactor this in a separate PR
     public readonly view = createViewService()
 
-    public readonly linkPreviews = new LinkPreviewProviderRegistry()
+    public readonly linkPreviews = new LinkPreviewProviderRegistry() // TODO(tj): remove and deprecate
     public readonly completionItems = new CompletionItemProviderRegistry()
 }

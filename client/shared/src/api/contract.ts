@@ -8,7 +8,7 @@ import { Contributions, Evaluated, Raw, TextDocumentPositionParameters } from '.
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { HoverMerged } from './client/types/hover'
 import { GraphQLResult } from '../graphql/graphql'
-import { Context, FileDecorationsByPath, PanelViewData } from './extension/flatExtensionApi'
+import { Context, FileDecorationsByPath, LinkPreviewMerged, PanelViewData } from './extension/flatExtensionApi'
 import { ViewerData, ViewerId } from './client/services/viewerService'
 import { ContributionScope } from './client/context/context'
 import { ErrorLike } from '../util/errors'
@@ -201,6 +201,9 @@ export interface FlatExtensionHostAPI {
 
     // Views
     getPanelViews: () => ProxySubscribable<PanelViewData[]>
+
+    // Content
+    getLinkPreviews: (url: string) => ProxySubscribable<LinkPreviewMerged | null>
 
     /**
      * Emits true when the initial batch of extensions have been loaded.

@@ -546,7 +546,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
 
     return (
         <div className={`blob ${props.className}`} ref={nextBlobElement}>
-            {showExtensionFeaturesLoading && <p>extension features loading...</p>}
             <code
                 className={`blob__code ${props.wrapCode ? ' blob__code--wrapped' : ''} test-blob`}
                 ref={nextCodeViewElement}

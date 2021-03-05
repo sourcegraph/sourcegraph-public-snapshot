@@ -315,7 +315,13 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             )}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
             <ErrorBoundary location={props.location}>
-                <Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
+                <Suspense
+                    fallback={
+                        <div className="flex flex-1">
+                            <LoadingSpinner className="icon-inline m-2" />
+                        </div>
+                    }
+                >
                     <Switch>
                         {/* eslint-disable react/jsx-no-bind */}
                         {props.routes.map(

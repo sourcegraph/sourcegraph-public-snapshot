@@ -12,7 +12,6 @@ import {
     ReplaySubject,
     combineLatest,
     Subscribable,
-    throwError,
     Subscription,
 } from 'rxjs'
 import {
@@ -32,10 +31,7 @@ import {
     distinctUntilChanged,
     mapTo,
     tap,
-    shareReplay,
     withLatestFrom,
-    bufferTime,
-    throttleTime,
     debounceTime,
     concatMap,
 } from 'rxjs/operators'
@@ -43,14 +39,13 @@ import { proxySubscribable, providerResultToObservable } from './api/common'
 import { TextDocumentIdentifier, match } from '../client/types/textDocument'
 import { getModeFromPath } from '../../languages'
 import { parseRepoURI } from '../../util/url'
-import { ExtensionDocuments } from './api/documents'
 import { fromLocation, toPosition } from './api/types'
 import { Contributions, TextDocumentPositionParameters } from '../protocol'
 import { LOADING, MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { combineLatestOrDefault } from '../../util/rxjs/combineLatestOrDefault'
 import { castArray, groupBy, identity, isEqual, isMatch, sortBy } from 'lodash'
 import { fromHoverMerged } from '../client/types/hover'
-import { isNot, isExactly, isDefined } from '../../util/types'
+import { isNot, isExactly, isDefined, property } from '../../util/types'
 import { validateFileDecoration } from './api/decorations'
 import { InitData } from './extensionHost'
 import { ExtensionDocument } from './api/textDocument'
@@ -73,7 +68,6 @@ import {
     ConfiguredRegistryExtension,
     toConfiguredRegistryExtension,
     ConfiguredExtension,
-    isExtensionEnabled,
     getScriptURLFromExtensionManifest,
 } from '../../extensions/extension'
 import { gql } from '../../graphql/graphql'
@@ -84,7 +78,6 @@ import { checkOk } from '../../backend/fetch'
 import { memoizeObservable } from '../../util/memoizeObservable'
 import { ExecutableExtension } from '../client/services/extensionsService'
 import { areExtensionsSame } from '../../extensions/extensions'
-import { PanelViewWithComponent } from '../client/services/panelViews'
 
 /**
  * Holds the entire state exposed to the extension host
@@ -136,11 +129,11 @@ export interface ExtensionHostState {
 
     // Views
     panelViews: BehaviorSubject<readonly Observable<PanelViewData>[]>
-}
 
-export interface RegisteredProvider<T> {
-    selector: sourcegraph.DocumentSelector
-    provider: T
+    // Content
+    linkPreviewProviders: BehaviorSubject<
+        readonly { urlMatchPattern: string; provider: sourcegraph.LinkPreviewProvider }[]
+    >
 }
 
 export interface InitResult {
@@ -151,67 +144,16 @@ export interface InitResult {
     state: Readonly<ExtensionHostState>
     commands: typeof sourcegraph['commands']
     search: typeof sourcegraph['search']
-    languages: Pick<
-        typeof sourcegraph['languages'],
-        | 'registerHoverProvider'
-        | 'registerDocumentHighlightProvider'
-        | 'registerDefinitionProvider'
-        | 'registerReferenceProvider'
-        | 'registerLocationProvider'
-    >
+    languages: typeof sourcegraph['languages'] & {
+        // Backcompat definitions that were removed from sourcegraph.d.ts but are still defined (as
+        // noops with a log message), to avoid completely breaking extensions that use them.
+        registerTypeDefinitionProvider: any
+        registerImplementationProvider: any
+    }
     graphQL: typeof sourcegraph['graphQL']
+    content: typeof sourcegraph['content']
     internal: Pick<typeof sourcegraph['internal'], 'updateContext'>
     app: Omit<typeof sourcegraph['app'], 'createDecorationType' | 'registerViewProvider'>
-}
-
-/** Object of array of file decorations keyed by path relative to repo root uri */
-export type FileDecorationsByPath = Record<string, sourcegraph.FileDecoration[] | undefined>
-
-const VIEWER_NOT_FOUND_ERROR_NAME = 'ViewerNotFoundError'
-class ViewerNotFoundError extends Error {
-    public readonly name = VIEWER_NOT_FOUND_ERROR_NAME
-    constructor(viewerId: string) {
-        super(`Viewer not found: ${viewerId}`)
-    }
-}
-
-function assertViewerType<T extends ExtensionViewer['type']>(
-    viewer: ExtensionViewer,
-    type: T
-): asserts viewer is ExtensionViewer & { type: T } {
-    if (viewer.type !== type) {
-        throw new Error(`Viewer ID ${viewer.viewerId} is type ${viewer.type}, expected ${type}`)
-    }
-}
-
-/**
- * Context is an arbitrary, immutable set of key-value pairs. Its value can be any JSON object.
- *
- * @template T If you have a value with a property of type T that is not one of the primitive types listed below
- * (or Context), you can use Context<T> to hold that value. T must be a value that can be represented by a JSON
- * object.
- */
-export interface Context<T = never>
-    extends Record<
-        string,
-        string | number | boolean | null | Context<T> | T | (string | number | boolean | null | Context<T> | T)[]
-    > {}
-
-/** A registered set of contributions from an extension in the registry. */
-export interface ContributionsEntry {
-    /**
-     * The contributions, either as a value or an observable.
-     *
-     * If an observable is used, it should be a cold Observable and emit (e.g., its current value) upon
-     * subscription. The {@link ContributionRegistry#contributions} observable blocks until all observables have
-     * emitted.
-     */
-    contributions: Contributions | Observable<Contributions | Contributions[]>
-}
-
-/** @internal */
-export interface PanelViewData extends Omit<sourcegraph.PanelView, 'unsubscribe'> {
-    id: string
 }
 
 /**
@@ -223,8 +165,7 @@ export interface PanelViewData extends Omit<sourcegraph.PanelView, 'unsubscribe'
  */
 export const initNewExtensionAPI = (
     mainAPI: Remote<MainThreadAPI>,
-    { initialSettings, clientApplication }: Pick<InitData, 'initialSettings' | 'clientApplication'>,
-    textDocuments: ExtensionDocuments
+    { initialSettings, clientApplication }: Pick<InitData, 'initialSettings' | 'clientApplication'>
 ): InitResult => {
     const state: ExtensionHostState = {
         haveInitialExtensionsLoaded: new BehaviorSubject<boolean>(false),
@@ -282,6 +223,10 @@ export const initNewExtensionAPI = (
         progressNotifications: new ReplaySubject<ProgressNotification & ProxyMarked>(3),
 
         panelViews: new BehaviorSubject<readonly Observable<PanelViewData>[]>([]),
+
+        linkPreviewProviders: new BehaviorSubject<
+            readonly { urlMatchPattern: string; provider: sourcegraph.LinkPreviewProvider }[]
+        >([]),
     }
 
     const getTextDocument = (uri: string): ExtensionDocument => {
@@ -620,7 +565,6 @@ export const initNewExtensionAPI = (
 
                         return multiContributions.map(contributions => {
                             try {
-                                console.log({ computedContext, contributions })
                                 return filterContributions(evaluateContributions(computedContext, contributions))
                             } catch (error) {
                                 // An error during evaluation causes all of the contributions in the same entry to be
@@ -646,7 +590,23 @@ export const initNewExtensionAPI = (
         getPanelViews: () =>
             // Don't need `combineLatestOrDefault` here since each panel view
             // is a BehaviorSubject, and therefore guaranteed to emit
-            proxySubscribable(state.panelViews.pipe(switchMap(panelViews => combineLatest([...panelViews])))),
+            proxySubscribable(
+                state.panelViews.pipe(
+                    switchMap(panelViews => combineLatest([...panelViews])),
+                    debounceTime(0)
+                )
+            ),
+
+        // Content
+        getLinkPreviews: (url: string) =>
+            proxySubscribable(
+                callProviders(
+                    state.linkPreviewProviders,
+                    entries => entries.filter(entry => url.startsWith(entry.urlMatchPattern)),
+                    ({ provider }) => provider.provideLinkPreview(new URL(url)),
+                    stuffs => mergeLinkPreviews(stuffs)
+                ).pipe(map(result => (result.isLoading ? null : result.result)))
+            ),
 
         getActiveExtensions: () => proxySubscribable(activeExtensions),
     }
@@ -768,8 +728,6 @@ export const initNewExtensionAPI = (
         registerFileDecorationProvider: (provider: sourcegraph.FileDecorationProvider): sourcegraph.Unsubscribable =>
             addWithRollback(state.fileDecorationProviders, provider),
         createPanelView: id => {
-            console.log('creating panel view')
-
             const panelViewData = new BehaviorSubject<PanelViewData>({
                 id,
                 title: '',
@@ -808,7 +766,7 @@ export const initNewExtensionAPI = (
                 },
             }
 
-            // batch updates from same task
+            // batch updates from same tick
             const subscription = addWithRollback(state.panelViews, panelViewData.pipe(debounceTime(0)))
 
             return panelView
@@ -826,37 +784,65 @@ export const initNewExtensionAPI = (
         registerQueryTransformer: transformer => addWithRollback(state.queryTransformers, transformer),
     }
 
-    // Languages
-    const registerHoverProvider = (
-        selector: sourcegraph.DocumentSelector,
-        provider: sourcegraph.HoverProvider
-    ): sourcegraph.Unsubscribable => addWithRollback(state.hoverProviders, { selector, provider })
-    const registerDocumentHighlightProvider = (
-        selector: sourcegraph.DocumentSelector,
-        provider: sourcegraph.DocumentHighlightProvider
-    ): sourcegraph.Unsubscribable => addWithRollback(state.documentHighlightProviders, { selector, provider })
-    const registerDefinitionProvider = (
-        selector: sourcegraph.DocumentSelector,
-        provider: sourcegraph.DefinitionProvider
-    ): sourcegraph.Unsubscribable => addWithRollback(state.definitionProviders, { selector, provider })
-    const registerReferenceProvider = (
-        selector: sourcegraph.DocumentSelector,
-        provider: sourcegraph.ReferenceProvider
-    ): sourcegraph.Unsubscribable => addWithRollback(state.referenceProviders, { selector, provider })
-    const registerLocationProvider = (
-        id: string,
-        selector: sourcegraph.DocumentSelector,
-        provider: sourcegraph.LocationProvider
-    ): sourcegraph.Unsubscribable => addWithRollback(state.locationProviders, { selector, provider })
+    const languages: InitResult['languages'] = {
+        registerHoverProvider: (
+            selector: sourcegraph.DocumentSelector,
+            provider: sourcegraph.HoverProvider
+        ): sourcegraph.Unsubscribable => addWithRollback(state.hoverProviders, { selector, provider }),
+        registerDocumentHighlightProvider: (
+            selector: sourcegraph.DocumentSelector,
+            provider: sourcegraph.DocumentHighlightProvider
+        ): sourcegraph.Unsubscribable => addWithRollback(state.documentHighlightProviders, { selector, provider }),
+        registerDefinitionProvider: (
+            selector: sourcegraph.DocumentSelector,
+            provider: sourcegraph.DefinitionProvider
+        ): sourcegraph.Unsubscribable => addWithRollback(state.definitionProviders, { selector, provider }),
+        registerReferenceProvider: (
+            selector: sourcegraph.DocumentSelector,
+            provider: sourcegraph.ReferenceProvider
+        ): sourcegraph.Unsubscribable => addWithRollback(state.referenceProviders, { selector, provider }),
+        registerLocationProvider: (
+            id: string,
+            selector: sourcegraph.DocumentSelector,
+            provider: sourcegraph.LocationProvider
+        ): sourcegraph.Unsubscribable =>
+            addWithRollback(state.locationProviders, { selector, provider: { id, provider } }),
+
+        // These were removed, but keep them here so that calls from old extensions do not throw
+        // an exception and completely break.
+        registerTypeDefinitionProvider: () => {
+            console.warn(
+                'sourcegraph.languages.registerTypeDefinitionProvider was removed. Use sourcegraph.languages.registerLocationProvider instead.'
+            )
+            return { unsubscribe: () => undefined }
+        },
+        registerImplementationProvider: () => {
+            console.warn(
+                'sourcegraph.languages.registerImplementationProvider was removed. Use sourcegraph.languages.registerLocationProvider instead.'
+            )
+            return { unsubscribe: () => undefined }
+        },
+        registerCompletionItemProvider: (): sourcegraph.Unsubscribable => {
+            console.warn('sourcegraph.languages.registerCompletionItemProvider was removed.')
+            return { unsubscribe: () => undefined }
+        },
+    }
 
     // GraphQL
     const graphQL: typeof sourcegraph['graphQL'] = {
         execute: (query, variables) => mainAPI.requestGraphQL(query, variables),
     }
 
+    // Content
+    const content: typeof sourcegraph['content'] = {
+        registerLinkPreviewProvider: (urlMatchPattern: string, provider: sourcegraph.LinkPreviewProvider) =>
+            addWithRollback(state.linkPreviewProviders, { urlMatchPattern, provider }),
+    }
+
     // Context + Contributions
     // Same implementation is exposed to main and extensions
     function updateContext(update: { [k: string]: unknown }): void {
+        console.log({ updatedContext: update })
         if (isMatch(state.context.value, update)) {
             return
         }
@@ -874,13 +860,10 @@ export const initNewExtensionAPI = (
         state.context.next(result)
     }
 
-    state.contributions.subscribe(entries => console.log('exthostcontributions', entries))
-
     const getScriptURLs = memoizeObservable(
         () =>
             from(mainAPI.getScriptURLForExtension()).pipe(
                 map(getScriptURL => {
-                    console.log({ getScriptURL })
                     function getBundleURLs(urls: string[]): Promise<(string | ErrorLike)[]> {
                         return getScriptURL ? getScriptURL(urls) : Promise.resolve(urls)
                     }
@@ -1007,23 +990,21 @@ export const initNewExtensionAPI = (
         state,
         commands,
         search,
-        languages: {
-            registerHoverProvider,
-            registerDocumentHighlightProvider,
-            registerDefinitionProvider,
-            registerReferenceProvider,
-            registerLocationProvider,
-        },
+        languages,
         app,
         graphQL,
+        content,
         internal: {
             updateContext,
         },
     }
 }
 
-/** The WebWorker's global scope */
-declare const self: any
+// Providers
+export interface RegisteredProvider<T> {
+    selector: sourcegraph.DocumentSelector
+    provider: T
+}
 
 // TODO (loic, felix) it might make sense to port tests with the rest of provider registries.
 /**
@@ -1132,6 +1113,65 @@ export function mergeProviderResults<TProviderResultElement>(
         .filter(isDefined)
 }
 
+/** Object of array of file decorations keyed by path relative to repo root uri */
+export type FileDecorationsByPath = Record<string, sourcegraph.FileDecoration[] | undefined>
+
+// Viewers + documents
+
+const VIEWER_NOT_FOUND_ERROR_NAME = 'ViewerNotFoundError'
+class ViewerNotFoundError extends Error {
+    public readonly name = VIEWER_NOT_FOUND_ERROR_NAME
+    constructor(viewerId: string) {
+        super(`Viewer not found: ${viewerId}`)
+    }
+}
+
+function assertViewerType<T extends ExtensionViewer['type']>(
+    viewer: ExtensionViewer,
+    type: T
+): asserts viewer is ExtensionViewer & { type: T } {
+    if (viewer.type !== type) {
+        throw new Error(`Viewer ID ${viewer.viewerId} is type ${viewer.type}, expected ${type}`)
+    }
+}
+
+// Context + contributions
+
+/**
+ * Context is an arbitrary, immutable set of key-value pairs. Its value can be any JSON object.
+ *
+ * @template T If you have a value with a property of type T that is not one of the primitive types listed below
+ * (or Context), you can use Context<T> to hold that value. T must be a value that can be represented by a JSON
+ * object.
+ */
+export interface Context<T = never>
+    extends Record<
+        string,
+        string | number | boolean | null | Context<T> | T | (string | number | boolean | null | Context<T> | T)[]
+    > {}
+
+/** A registered set of contributions from an extension in the registry. */
+export interface ContributionsEntry {
+    /**
+     * The contributions, either as a value or an observable.
+     *
+     * If an observable is used, it should be a cold Observable and emit (e.g., its current value) upon
+     * subscription. The {@link ContributionRegistry#contributions} observable blocks until all observables have
+     * emitted.
+     */
+    contributions: Contributions | Observable<Contributions | Contributions[]>
+}
+
+/** @internal */
+export interface PanelViewData extends Omit<sourcegraph.PanelView, 'unsubscribe'> {
+    id: string
+}
+
+// Activation
+
+/** The WebWorker's global scope */
+declare const self: any
+
 /**
  * Query the GraphQL API for registry metadata about the extensions given in {@link extensionIDs}.
  *
@@ -1213,6 +1253,7 @@ interface SideloadedExtensionManifest extends Omit<ExtensionManifest, 'url'> {
     main: string
 }
 
+// TODO(tj): use this
 const getConfiguredSideloadedExtension = (baseUrl: string): Observable<ConfiguredExtension> =>
     fromFetch(`${baseUrl}/package.json`, { selector: response => checkOk(response).json() }).pipe(
         map(
@@ -1337,4 +1378,35 @@ async function deactivateExtension(extensionID: string): Promise<void> {
         extensionDeactivates.delete(extensionID)
         await Promise.resolve(deactivate())
     }
+}
+
+// Content
+
+interface MarkupContentPlainTextOnly extends Pick<sourcegraph.MarkupContent, 'value'> {
+    kind: sourcegraph.MarkupKind.PlainText
+}
+
+/**
+ * Represents one or more {@link sourcegraph.LinkPreview} values merged together.
+ */
+export interface LinkPreviewMerged {
+    /** The content of the merged {@link sourcegraph.LinkPreview} values. */
+    content: sourcegraph.MarkupContent[]
+
+    /** The hover content of the merged {@link sourcegraph.LinkPreview} values. */
+    hover: MarkupContentPlainTextOnly[]
+}
+
+function mergeLinkPreviews(
+    values: readonly (sourcegraph.LinkPreview | 'loading' | null | undefined)[]
+): LinkPreviewMerged | null {
+    const nonemptyValues = values
+        .filter(isDefined)
+        .filter((value): value is Exclude<sourcegraph.LinkPreview | 'loading', 'loading'> => value !== 'loading')
+    const contentValues = nonemptyValues.filter(property('content', isDefined))
+    const hoverValues = nonemptyValues.filter(property('hover', isDefined))
+    if (hoverValues.length === 0 && contentValues.length === 0) {
+        return null
+    }
+    return { content: contentValues.map(({ content }) => content), hover: hoverValues.map(({ hover }) => hover) }
 }
