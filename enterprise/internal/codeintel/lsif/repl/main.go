@@ -13,7 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/correlation"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/existence"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 )
 
 const helpMsg string = `
@@ -215,7 +215,7 @@ func documentsReferencing(bundle *correlation.GroupedBundleDataMaps, paths []str
 		pathMap[path] = struct{}{}
 	}
 
-	resultIDs := map[lsifstore.ID]struct{}{}
+	resultIDs := map[semantic.ID]struct{}{}
 	for _, resultChunk := range bundle.ResultChunks {
 		for resultID, documentIDRangeIDs := range resultChunk.DocumentIDRangeIDs {
 			for _, documentIDRangeID := range documentIDRangeIDs {

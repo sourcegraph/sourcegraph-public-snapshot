@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/protocol"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/protocol/reader"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 )
 
 func TestGroupBundleData(t *testing.T) {
@@ -270,7 +271,7 @@ func TestGroupBundleData(t *testing.T) {
 		t.Fatalf("unexpected error converting correlation state to types: %s", err)
 	}
 
-	expectedMetaData := lsifstore.MetaData{
+	expectedMetaData := semantic.MetaData{
 		NumResultChunks: 1,
 	}
 	if diff := cmp.Diff(expectedMetaData, actualBundleData.Meta); diff != "" {
@@ -295,7 +296,7 @@ func TestGroupBundleData(t *testing.T) {
 		t.Errorf("unexpected package references (-want +got):\n%s", diff)
 	}
 
-	documents := map[string]lsifstore.DocumentData{}
+	documents := map[string]semantic.DocumentData{}
 	for v := range actualBundleData.Documents {
 		documents[v.Path] = v.Document
 	}
@@ -307,9 +308,9 @@ func TestGroupBundleData(t *testing.T) {
 		}
 	}
 
-	expectedDocumentData := map[string]lsifstore.DocumentData{
+	expectedDocumentData := map[string]semantic.DocumentData{
 		"foo.go": {
-			Ranges: map[lsifstore.ID]lsifstore.RangeData{
+			Ranges: map[semantic.ID]semantic.RangeData{
 				"2001": {
 					StartLine:          1,
 					StartCharacter:     2,
@@ -318,7 +319,7 @@ func TestGroupBundleData(t *testing.T) {
 					DefinitionResultID: "3001",
 					ReferenceResultID:  "",
 					HoverResultID:      "",
-					MonikerIDs:         []lsifstore.ID{"4001", "4002"},
+					MonikerIDs:         []semantic.ID{"4001", "4002"},
 				},
 				"2002": {
 					StartLine:          2,
@@ -328,7 +329,7 @@ func TestGroupBundleData(t *testing.T) {
 					DefinitionResultID: "",
 					ReferenceResultID:  "3006",
 					HoverResultID:      "",
-					MonikerIDs:         []lsifstore.ID{"4003", "4004"},
+					MonikerIDs:         []semantic.ID{"4003", "4004"},
 				},
 				"2003": {
 					StartLine:          3,
@@ -338,11 +339,11 @@ func TestGroupBundleData(t *testing.T) {
 					DefinitionResultID: "3002",
 					ReferenceResultID:  "",
 					HoverResultID:      "",
-					MonikerIDs:         []lsifstore.ID{},
+					MonikerIDs:         []semantic.ID{},
 				},
 			},
-			HoverResults: map[lsifstore.ID]string{},
-			Monikers: map[lsifstore.ID]lsifstore.MonikerData{
+			HoverResults: map[semantic.ID]string{},
+			Monikers: map[semantic.ID]semantic.MonikerData{
 				"4001": {
 					Kind:                 "import",
 					Scheme:               "scheme A",
@@ -368,7 +369,7 @@ func TestGroupBundleData(t *testing.T) {
 					PackageInformationID: "",
 				},
 			},
-			PackageInformation: map[lsifstore.ID]lsifstore.PackageInformationData{
+			PackageInformation: map[semantic.ID]semantic.PackageInformationData{
 				"5001": {
 					Name:    "pkg A",
 					Version: "0.1.0",
@@ -378,7 +379,7 @@ func TestGroupBundleData(t *testing.T) {
 					Version: "1.2.3",
 				},
 			},
-			Diagnostics: []lsifstore.DiagnosticData{
+			Diagnostics: []semantic.DiagnosticData{
 				{
 					Severity:       1,
 					Code:           "1234",
@@ -402,7 +403,7 @@ func TestGroupBundleData(t *testing.T) {
 			},
 		},
 		"bar.go": {
-			Ranges: map[lsifstore.ID]lsifstore.RangeData{
+			Ranges: map[semantic.ID]semantic.RangeData{
 				"2004": {
 					StartLine:          4,
 					StartCharacter:     5,
@@ -411,7 +412,7 @@ func TestGroupBundleData(t *testing.T) {
 					DefinitionResultID: "",
 					ReferenceResultID:  "3007",
 					HoverResultID:      "",
-					MonikerIDs:         []lsifstore.ID{},
+					MonikerIDs:         []semantic.ID{},
 				},
 				"2005": {
 					StartLine:          5,
@@ -421,7 +422,7 @@ func TestGroupBundleData(t *testing.T) {
 					DefinitionResultID: "3003",
 					ReferenceResultID:  "",
 					HoverResultID:      "",
-					MonikerIDs:         []lsifstore.ID{},
+					MonikerIDs:         []semantic.ID{},
 				},
 				"2006": {
 					StartLine:          6,
@@ -431,13 +432,13 @@ func TestGroupBundleData(t *testing.T) {
 					DefinitionResultID: "",
 					ReferenceResultID:  "",
 					HoverResultID:      "3008",
-					MonikerIDs:         []lsifstore.ID{},
+					MonikerIDs:         []semantic.ID{},
 				},
 			},
-			HoverResults:       map[lsifstore.ID]string{"3008": "foo"},
-			Monikers:           map[lsifstore.ID]lsifstore.MonikerData{},
-			PackageInformation: map[lsifstore.ID]lsifstore.PackageInformationData{},
-			Diagnostics: []lsifstore.DiagnosticData{
+			HoverResults:       map[semantic.ID]string{"3008": "foo"},
+			Monikers:           map[semantic.ID]semantic.MonikerData{},
+			PackageInformation: map[semantic.ID]semantic.PackageInformationData{},
+			Diagnostics: []semantic.DiagnosticData{
 				{
 					Severity:       3,
 					Code:           "3234",
@@ -461,7 +462,7 @@ func TestGroupBundleData(t *testing.T) {
 			},
 		},
 		"baz.go": {
-			Ranges: map[lsifstore.ID]lsifstore.RangeData{
+			Ranges: map[semantic.ID]semantic.RangeData{
 				"2007": {
 					StartLine:          7,
 					StartCharacter:     8,
@@ -470,7 +471,7 @@ func TestGroupBundleData(t *testing.T) {
 					DefinitionResultID: "3004",
 					ReferenceResultID:  "",
 					HoverResultID:      "",
-					MonikerIDs:         []lsifstore.ID{},
+					MonikerIDs:         []semantic.ID{},
 				},
 				"2008": {
 					StartLine:          8,
@@ -480,7 +481,7 @@ func TestGroupBundleData(t *testing.T) {
 					DefinitionResultID: "",
 					ReferenceResultID:  "",
 					HoverResultID:      "3009",
-					MonikerIDs:         []lsifstore.ID{},
+					MonikerIDs:         []semantic.ID{},
 				},
 				"2009": {
 					StartLine:          9,
@@ -490,20 +491,20 @@ func TestGroupBundleData(t *testing.T) {
 					DefinitionResultID: "3005",
 					ReferenceResultID:  "",
 					HoverResultID:      "",
-					MonikerIDs:         []lsifstore.ID{},
+					MonikerIDs:         []semantic.ID{},
 				},
 			},
-			HoverResults:       map[lsifstore.ID]string{"3009": "bar"},
-			Monikers:           map[lsifstore.ID]lsifstore.MonikerData{},
-			PackageInformation: map[lsifstore.ID]lsifstore.PackageInformationData{},
-			Diagnostics:        []lsifstore.DiagnosticData{},
+			HoverResults:       map[semantic.ID]string{"3009": "bar"},
+			Monikers:           map[semantic.ID]semantic.MonikerData{},
+			PackageInformation: map[semantic.ID]semantic.PackageInformationData{},
+			Diagnostics:        []semantic.DiagnosticData{},
 		},
 	}
 	if diff := cmp.Diff(expectedDocumentData, documents, datastructures.Comparers...); diff != "" {
 		t.Errorf("unexpected document data (-want +got):\n%s", diff)
 	}
 
-	resultChunkData := map[int]lsifstore.ResultChunkData{}
+	resultChunkData := map[int]semantic.ResultChunkData{}
 	for v := range actualBundleData.ResultChunks {
 		resultChunkData[v.Index] = v.ResultChunk
 	}
@@ -513,14 +514,14 @@ func TestGroupBundleData(t *testing.T) {
 		}
 	}
 
-	expectedResultChunkData := map[int]lsifstore.ResultChunkData{
+	expectedResultChunkData := map[int]semantic.ResultChunkData{
 		0: {
-			DocumentPaths: map[lsifstore.ID]string{
+			DocumentPaths: map[semantic.ID]string{
 				"1001": "foo.go",
 				"1002": "bar.go",
 				"1003": "baz.go",
 			},
-			DocumentIDRangeIDs: map[lsifstore.ID][]lsifstore.DocumentIDRangeID{
+			DocumentIDRangeIDs: map[semantic.ID][]semantic.DocumentIDRangeID{
 				"3001": {
 					{DocumentID: "1001", RangeID: "2003"},
 					{DocumentID: "1002", RangeID: "2004"},
@@ -563,17 +564,17 @@ func TestGroupBundleData(t *testing.T) {
 		t.Errorf("unexpected result chunk data (-want +got):\n%s", diff)
 	}
 
-	var definitions []lsifstore.MonikerLocations
+	var definitions []semantic.MonikerLocations
 	for v := range actualBundleData.Definitions {
 		definitions = append(definitions, v)
 	}
 	sortMonikerLocations(definitions)
 
-	expectedDefinitions := []lsifstore.MonikerLocations{
+	expectedDefinitions := []semantic.MonikerLocations{
 		{
 			Scheme:     "scheme A",
 			Identifier: "ident A",
-			Locations: []lsifstore.LocationData{
+			Locations: []semantic.LocationData{
 				{URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
 				{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
 				{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
@@ -582,7 +583,7 @@ func TestGroupBundleData(t *testing.T) {
 		{
 			Scheme:     "scheme B",
 			Identifier: "ident B",
-			Locations: []lsifstore.LocationData{
+			Locations: []semantic.LocationData{
 				{URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
 				{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
 				{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
@@ -593,17 +594,17 @@ func TestGroupBundleData(t *testing.T) {
 		t.Errorf("unexpected definitions (-want +got):\n%s", diff)
 	}
 
-	var references []lsifstore.MonikerLocations
+	var references []semantic.MonikerLocations
 	for v := range actualBundleData.References {
 		references = append(references, v)
 	}
 	sortMonikerLocations(references)
 
-	expectedReferences := []lsifstore.MonikerLocations{
+	expectedReferences := []semantic.MonikerLocations{
 		{
 			Scheme:     "scheme C",
 			Identifier: "ident C",
-			Locations: []lsifstore.LocationData{
+			Locations: []semantic.LocationData{
 				{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
 				{URI: "baz.go", StartLine: 9, StartCharacter: 0, EndLine: 1, EndCharacter: 2},
 				{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
@@ -612,7 +613,7 @@ func TestGroupBundleData(t *testing.T) {
 		{
 			Scheme:     "scheme D",
 			Identifier: "ident D",
-			Locations: []lsifstore.LocationData{
+			Locations: []semantic.LocationData{
 				{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
 				{URI: "baz.go", StartLine: 9, StartCharacter: 0, EndLine: 1, EndCharacter: 2},
 				{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
@@ -627,19 +628,19 @@ func TestGroupBundleData(t *testing.T) {
 //
 //
 
-func sortMonikerIDs(s []lsifstore.ID) {
+func sortMonikerIDs(s []semantic.ID) {
 	sort.Slice(s, func(i, j int) bool {
 		return strings.Compare(string(s[i]), string(s[j])) < 0
 	})
 }
 
-func sortDiagnostics(s []lsifstore.DiagnosticData) {
+func sortDiagnostics(s []semantic.DiagnosticData) {
 	sort.Slice(s, func(i, j int) bool {
 		return strings.Compare(s[i].Message, s[j].Message) < 0
 	})
 }
 
-func sortDocumentIDRangeIDs(s []lsifstore.DocumentIDRangeID) {
+func sortDocumentIDRangeIDs(s []semantic.DocumentIDRangeID) {
 	sort.Slice(s, func(i, j int) bool {
 		if cmp := strings.Compare(string(s[i].DocumentID), string(s[j].DocumentID)); cmp != 0 {
 			return cmp < 0
@@ -649,7 +650,7 @@ func sortDocumentIDRangeIDs(s []lsifstore.DocumentIDRangeID) {
 	})
 }
 
-func sortMonikerLocations(monikerLocations []lsifstore.MonikerLocations) {
+func sortMonikerLocations(monikerLocations []semantic.MonikerLocations) {
 	sort.Slice(monikerLocations, func(i, j int) bool {
 		if cmp := strings.Compare(monikerLocations[i].Scheme, monikerLocations[j].Scheme); cmp != 0 {
 			return cmp < 0
@@ -664,7 +665,7 @@ func sortMonikerLocations(monikerLocations []lsifstore.MonikerLocations) {
 	}
 }
 
-func sortLocations(locations []lsifstore.LocationData) {
+func sortLocations(locations []semantic.LocationData) {
 	sort.Slice(locations, func(i, j int) bool {
 		if cmp := strings.Compare(locations[i].URI, locations[j].URI); cmp != 0 {
 			return cmp < 0

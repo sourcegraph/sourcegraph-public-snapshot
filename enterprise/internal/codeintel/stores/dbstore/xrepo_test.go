@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
@@ -21,28 +22,28 @@ func TestDefinitionDumps(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	store := testStore()
 
-	moniker1 := lsifstore.QualifiedMonikerData{
-		MonikerData: lsifstore.MonikerData{
+	moniker1 := semantic.QualifiedMonikerData{
+		MonikerData: semantic.MonikerData{
 			Scheme: "gomod",
 		},
-		PackageInformationData: lsifstore.PackageInformationData{
+		PackageInformationData: semantic.PackageInformationData{
 			Name:    "leftpad",
 			Version: "0.1.0",
 		},
 	}
 
-	moniker2 := lsifstore.QualifiedMonikerData{
-		MonikerData: lsifstore.MonikerData{
+	moniker2 := semantic.QualifiedMonikerData{
+		MonikerData: semantic.MonikerData{
 			Scheme: "npm",
 		},
-		PackageInformationData: lsifstore.PackageInformationData{
+		PackageInformationData: semantic.PackageInformationData{
 			Name:    "north-pad",
 			Version: "0.2.0",
 		},
 	}
 
 	// Package does not exist initially
-	if dumps, err := store.DefinitionDumps(context.Background(), []lsifstore.QualifiedMonikerData{moniker1}); err != nil {
+	if dumps, err := store.DefinitionDumps(context.Background(), []semantic.QualifiedMonikerData{moniker1}); err != nil {
 		t.Fatalf("unexpected error getting package: %s", err)
 	} else if len(dumps) != 0 {
 		t.Fatal("unexpected record")
@@ -92,7 +93,7 @@ func TestDefinitionDumps(t *testing.T) {
 		t.Fatalf("unexpected error updating packages: %s", err)
 	}
 
-	if dumps, err := store.DefinitionDumps(context.Background(), []lsifstore.QualifiedMonikerData{moniker1}); err != nil {
+	if dumps, err := store.DefinitionDumps(context.Background(), []semantic.QualifiedMonikerData{moniker1}); err != nil {
 		t.Fatalf("unexpected error getting package: %s", err)
 	} else if len(dumps) != 1 {
 		t.Fatal("expected one record")
@@ -100,7 +101,7 @@ func TestDefinitionDumps(t *testing.T) {
 		t.Errorf("unexpected dump (-want +got):\n%s", diff)
 	}
 
-	if dumps, err := store.DefinitionDumps(context.Background(), []lsifstore.QualifiedMonikerData{moniker1, moniker2}); err != nil {
+	if dumps, err := store.DefinitionDumps(context.Background(), []semantic.QualifiedMonikerData{moniker1, moniker2}); err != nil {
 		t.Fatalf("unexpected error getting package: %s", err)
 	} else if len(dumps) != 2 {
 		t.Fatal("expected two records")
@@ -165,11 +166,11 @@ func TestReferenceIDsAndFilters(t *testing.T) {
 		{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0", Filter: []byte("f5")},
 	})
 
-	moniker := lsifstore.QualifiedMonikerData{
-		MonikerData: lsifstore.MonikerData{
+	moniker := semantic.QualifiedMonikerData{
+		MonikerData: semantic.MonikerData{
 			Scheme: "gomod",
 		},
-		PackageInformationData: lsifstore.PackageInformationData{
+		PackageInformationData: semantic.PackageInformationData{
 			Name:    "leftpad",
 			Version: "0.1.0",
 		},
@@ -196,7 +197,7 @@ func TestReferenceIDsAndFilters(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("i=%d", i), func(t *testing.T) {
-			scanner, totalCount, err := store.ReferenceIDsAndFilters(context.Background(), 50, makeCommit(1), []lsifstore.QualifiedMonikerData{moniker}, testCase.limit, testCase.offset)
+			scanner, totalCount, err := store.ReferenceIDsAndFilters(context.Background(), 50, makeCommit(1), []semantic.QualifiedMonikerData{moniker}, testCase.limit, testCase.offset)
 			if err != nil {
 				t.Fatalf("unexpected error getting filters: %s", err)
 			}
@@ -249,17 +250,17 @@ func TestReferenceIDsAndFiltersVisibility(t *testing.T) {
 		{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0", Filter: []byte("f5")},
 	})
 
-	moniker := lsifstore.QualifiedMonikerData{
-		MonikerData: lsifstore.MonikerData{
+	moniker := semantic.QualifiedMonikerData{
+		MonikerData: semantic.MonikerData{
 			Scheme: "gomod",
 		},
-		PackageInformationData: lsifstore.PackageInformationData{
+		PackageInformationData: semantic.PackageInformationData{
 			Name:    "leftpad",
 			Version: "0.1.0",
 		},
 	}
 
-	scanner, totalCount, err := store.ReferenceIDsAndFilters(context.Background(), 50, makeCommit(6), []lsifstore.QualifiedMonikerData{moniker}, 5, 0)
+	scanner, totalCount, err := store.ReferenceIDsAndFilters(context.Background(), 50, makeCommit(6), []semantic.QualifiedMonikerData{moniker}, 5, 0)
 	if err != nil {
 		t.Fatalf("unexpected error getting filters: %s", err)
 	}
@@ -316,17 +317,17 @@ func TestReferenceIDsAndFiltersRemoteVisibility(t *testing.T) {
 		{DumpID: 7, Scheme: "gomod", Name: "leftpad", Version: "0.1.0", Filter: []byte("f7")},
 	})
 
-	moniker := lsifstore.QualifiedMonikerData{
-		MonikerData: lsifstore.MonikerData{
+	moniker := semantic.QualifiedMonikerData{
+		MonikerData: semantic.MonikerData{
 			Scheme: "gomod",
 		},
-		PackageInformationData: lsifstore.PackageInformationData{
+		PackageInformationData: semantic.PackageInformationData{
 			Name:    "leftpad",
 			Version: "0.1.0",
 		},
 	}
 
-	scanner, totalCount, err := store.ReferenceIDsAndFilters(context.Background(), 50, makeCommit(6), []lsifstore.QualifiedMonikerData{moniker}, 5, 0)
+	scanner, totalCount, err := store.ReferenceIDsAndFilters(context.Background(), 50, makeCommit(6), []semantic.QualifiedMonikerData{moniker}, 5, 0)
 	if err != nil {
 		t.Fatalf("unexpected error getting filters: %s", err)
 	}
