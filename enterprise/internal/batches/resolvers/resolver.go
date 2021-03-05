@@ -424,7 +424,7 @@ func (r *Resolver) CreateBatchSpec(ctx context.Context, args *graphqlbackend.Cre
 		}
 	}
 
-	opts := service.CreateCampaignSpecOpts{RawSpec: args.BatchSpec}
+	opts := service.CreateBatchSpecOpts{RawSpec: args.BatchSpec}
 
 	err = graphqlbackend.UnmarshalNamespaceID(args.Namespace, &opts.NamespaceUserID, &opts.NamespaceOrgID)
 	if err != nil {
@@ -440,7 +440,7 @@ func (r *Resolver) CreateBatchSpec(ctx context.Context, args *graphqlbackend.Cre
 	}
 
 	svc := service.New(r.store)
-	campaignSpec, err := svc.CreateCampaignSpec(ctx, opts)
+	campaignSpec, err := svc.CreateBatchSpec(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -457,7 +457,7 @@ func (r *Resolver) CreateBatchSpec(ctx context.Context, args *graphqlbackend.Cre
 	return specResolver, nil
 }
 
-func logCampaignSpecCreated(ctx context.Context, db dbutil.DB, opts *service.CreateCampaignSpecOpts) error {
+func logCampaignSpecCreated(ctx context.Context, db dbutil.DB, opts *service.CreateBatchSpecOpts) error {
 	// Log an analytics event when a CampaignSpec has been created.
 	// See internal/usagestats/batches.go.
 	actor := actor.FromContext(ctx)
@@ -840,7 +840,7 @@ func (r *Resolver) CloseBatchChange(ctx context.Context, args *graphqlbackend.Cl
 
 	svc := service.New(r.store)
 	// 🚨 SECURITY: CloseCampaign checks whether current user is authorized.
-	batchChange, err := svc.CloseCampaign(ctx, batchChangeID, args.CloseChangesets)
+	batchChange, err := svc.CloseBatchChange(ctx, batchChangeID, args.CloseChangesets)
 	if err != nil {
 		return nil, errors.Wrap(err, "closing batch change")
 	}

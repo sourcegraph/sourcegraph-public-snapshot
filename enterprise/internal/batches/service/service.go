@@ -50,7 +50,7 @@ func (s *Service) WithStore(store *store.Store) *Service {
 	return &Service{store: store, sourcer: s.sourcer, clock: s.clock}
 }
 
-type CreateCampaignSpecOpts struct {
+type CreateBatchSpecOpts struct {
 	RawSpec string `json:"raw_spec"`
 
 	NamespaceUserID int32 `json:"namespace_user_id"`
@@ -59,10 +59,10 @@ type CreateCampaignSpecOpts struct {
 	ChangesetSpecRandIDs []string `json:"changeset_spec_rand_ids"`
 }
 
-// CreateCampaignSpec creates the CampaignSpec.
-func (s *Service) CreateCampaignSpec(ctx context.Context, opts CreateCampaignSpecOpts) (spec *batches.BatchSpec, err error) {
+// CreateBatchSpec creates the BatchSpec.
+func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts) (spec *batches.BatchSpec, err error) {
 	actor := actor.FromContext(ctx)
-	tr, ctx := trace.New(ctx, "Service.CreateCampaignSpec", fmt.Sprintf("Actor %s", actor))
+	tr, ctx := trace.New(ctx, "Service.CreateBatchSpec", fmt.Sprintf("Actor %s", actor))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -164,7 +164,7 @@ func (s *Service) CreateChangesetSpec(ctx context.Context, rawSpec string, userI
 	return spec, s.store.CreateChangesetSpec(ctx, spec)
 }
 
-// changesetSpecNotFoundErr is returned by CreateCampaignSpec if a
+// changesetSpecNotFoundErr is returned by CreateBatchSpec if a
 // ChangesetSpec with the given RandID doesn't exist.
 // It fulfills the interface required by errcode.IsNotFound.
 type changesetSpecNotFoundErr struct {
@@ -180,8 +180,8 @@ func (e *changesetSpecNotFoundErr) Error() string {
 
 func (e *changesetSpecNotFoundErr) NotFound() bool { return true }
 
-// GetBatchChangeMatchingBatchSpec returns the Campaign that the CampaignSpec
-// applies to, if that Campaign already exists.
+// GetBatchChangeMatchingBatchSpec returns the batch change that the BatchSpec
+// applies to, if that BatchChange already exists.
 // If it doesn't exist yet, both return values are nil.
 // It accepts a *store.Store so that it can be used inside a transaction.
 func (s *Service) GetBatchChangeMatchingBatchSpec(ctx context.Context, spec *batches.BatchSpec) (*batches.BatchChange, error) {
@@ -191,14 +191,14 @@ func (s *Service) GetBatchChangeMatchingBatchSpec(ctx context.Context, spec *bat
 		NamespaceOrgID:  spec.NamespaceOrgID,
 	}
 
-	campaign, err := s.store.GetBatchChange(ctx, opts)
+	batchChange, err := s.store.GetBatchChange(ctx, opts)
 	if err != nil {
 		if err != store.ErrNoResults {
 			return nil, err
 		}
 		err = nil
 	}
-	return campaign, err
+	return batchChange, err
 }
 
 // GetNewestBatchSpec returns the newest batch spec that matches the given
@@ -241,8 +241,8 @@ func (o MoveBatchChangeOpts) String() string {
 	)
 }
 
-// MoveBatchChange moves the campaign from one namespace to another and/or renames
-// the campaign.
+// MoveBatchChange moves the batch change from one namespace to another and/or renames
+// the batch change.
 func (s *Service) MoveBatchChange(ctx context.Context, opts MoveBatchChangeOpts) (batchChange *batches.BatchChange, err error) {
 	tr, ctx := trace.New(ctx, "Service.MoveBatchChange", opts.String())
 	defer func() {
@@ -261,7 +261,7 @@ func (s *Service) MoveBatchChange(ctx context.Context, opts MoveBatchChangeOpts)
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only the Author of the campaign can move it.
+	// 🚨 SECURITY: Only the Author of the batch change can move it.
 	if err := backend.CheckSiteAdminOrSameUser(ctx, batchChange.InitialApplierID); err != nil {
 		return nil, err
 	}
@@ -288,25 +288,25 @@ func (s *Service) MoveBatchChange(ctx context.Context, opts MoveBatchChangeOpts)
 	return batchChange, tx.UpdateBatchChange(ctx, batchChange)
 }
 
-// CloseCampaign closes the Campaign with the given ID if it has not been closed yet.
-func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets bool) (campaign *batches.BatchChange, err error) {
-	traceTitle := fmt.Sprintf("campaign: %d, closeChangesets: %t", id, closeChangesets)
-	tr, ctx := trace.New(ctx, "service.CloseCampaign", traceTitle)
+// CloseBatchChange closes the BatchChange with the given ID if it has not been closed yet.
+func (s *Service) CloseBatchChange(ctx context.Context, id int64, closeChangesets bool) (batchChange *batches.BatchChange, err error) {
+	traceTitle := fmt.Sprintf("batchChange: %d, closeChangesets: %t", id, closeChangesets)
+	tr, ctx := trace.New(ctx, "service.CloseBatchChange", traceTitle)
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	campaign, err = s.store.GetBatchChange(ctx, store.CountBatchChangeOpts{ID: id})
+	batchChange, err = s.store.GetBatchChange(ctx, store.CountBatchChangeOpts{ID: id})
 	if err != nil {
-		return nil, errors.Wrap(err, "getting campaign")
+		return nil, errors.Wrap(err, "getting batch change")
 	}
 
-	if campaign.Closed() {
-		return campaign, nil
+	if batchChange.Closed() {
+		return batchChange, nil
 	}
 
-	if err := backend.CheckSiteAdminOrSameUser(ctx, campaign.InitialApplierID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, batchChange.InitialApplierID); err != nil {
 		return nil, err
 	}
 
@@ -316,13 +316,13 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 	}
 	defer func() { err = tx.Done(err) }()
 
-	campaign.ClosedAt = s.clock()
-	if err := tx.UpdateBatchChange(ctx, campaign); err != nil {
+	batchChange.ClosedAt = s.clock()
+	if err := tx.UpdateBatchChange(ctx, batchChange); err != nil {
 		return nil, err
 	}
 
 	if !closeChangesets {
-		return campaign, nil
+		return batchChange, nil
 	}
 
 	// At this point we don't know which changesets have ExternalStateOpen,
@@ -330,11 +330,11 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 	// reconciler.
 	// So enqueue all, except the ones that are completed and closed/merged,
 	// for closing. If after being processed they're not open, it'll be a noop.
-	if err := tx.EnqueueChangesetsToClose(ctx, campaign.ID); err != nil {
+	if err := tx.EnqueueChangesetsToClose(ctx, batchChange.ID); err != nil {
 		return nil, err
 	}
 
-	return campaign, nil
+	return batchChange, nil
 }
 
 // DeleteBatchChange deletes the BatchChange with the given ID if it hasn't been

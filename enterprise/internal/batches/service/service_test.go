@@ -136,7 +136,7 @@ func TestServicePermissionLevels(t *testing.T) {
 			})
 
 			t.Run("CloseCampaign", func(t *testing.T) {
-				_, err := svc.CloseCampaign(currentUserCtx, campaign.ID, false)
+				_, err := svc.CloseBatchChange(currentUserCtx, campaign.ID, false)
 				tc.assertFunc(t, err)
 			})
 
@@ -227,7 +227,7 @@ func TestService(t *testing.T) {
 		closeConfirm := func(t *testing.T, c *batches.BatchChange, closeChangesets bool) {
 			t.Helper()
 
-			closedCampaign, err := svc.CloseCampaign(adminCtx, c.ID, closeChangesets)
+			closedCampaign, err := svc.CloseBatchChange(adminCtx, c.ID, closeChangesets)
 			if err != nil {
 				t.Fatalf("campaign not closed: %s", err)
 			}
@@ -383,13 +383,13 @@ func TestService(t *testing.T) {
 		userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
 
 		t.Run("success", func(t *testing.T) {
-			opts := CreateCampaignSpecOpts{
+			opts := CreateBatchSpecOpts{
 				NamespaceUserID:      admin.ID,
 				RawSpec:              ct.TestRawBatchSpec,
 				ChangesetSpecRandIDs: changesetSpecRandIDs,
 			}
 
-			spec, err := svc.CreateCampaignSpec(adminCtx, opts)
+			spec, err := svc.CreateBatchSpec(adminCtx, opts)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -424,12 +424,12 @@ func TestService(t *testing.T) {
 		})
 
 		t.Run("success with YAML raw spec", func(t *testing.T) {
-			opts := CreateCampaignSpecOpts{
+			opts := CreateBatchSpecOpts{
 				NamespaceUserID: admin.ID,
 				RawSpec:         ct.TestRawBatchSpecYAML,
 			}
 
-			spec, err := svc.CreateCampaignSpec(adminCtx, opts)
+			spec, err := svc.CreateBatchSpec(adminCtx, opts)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -451,26 +451,26 @@ func TestService(t *testing.T) {
 		t.Run("missing repository permissions", func(t *testing.T) {
 			ct.MockRepoPermissions(t, db, user.ID)
 
-			opts := CreateCampaignSpecOpts{
+			opts := CreateBatchSpecOpts{
 				NamespaceUserID:      user.ID,
 				RawSpec:              ct.TestRawBatchSpec,
 				ChangesetSpecRandIDs: changesetSpecRandIDs,
 			}
 
-			if _, err := svc.CreateCampaignSpec(userCtx, opts); !errcode.IsNotFound(err) {
+			if _, err := svc.CreateBatchSpec(userCtx, opts); !errcode.IsNotFound(err) {
 				t.Fatalf("expected not-found error but got %s", err)
 			}
 		})
 
 		t.Run("invalid changesetspec id", func(t *testing.T) {
 			containsInvalidID := []string{changesetSpecRandIDs[0], "foobar"}
-			opts := CreateCampaignSpecOpts{
+			opts := CreateBatchSpecOpts{
 				NamespaceUserID:      admin.ID,
 				RawSpec:              ct.TestRawBatchSpec,
 				ChangesetSpecRandIDs: containsInvalidID,
 			}
 
-			if _, err := svc.CreateCampaignSpec(adminCtx, opts); !errcode.IsNotFound(err) {
+			if _, err := svc.CreateBatchSpec(adminCtx, opts); !errcode.IsNotFound(err) {
 				t.Fatalf("expected not-found error but got %s", err)
 			}
 		})
@@ -478,12 +478,12 @@ func TestService(t *testing.T) {
 		t.Run("namespace user is not admin and not creator", func(t *testing.T) {
 			userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
 
-			opts := CreateCampaignSpecOpts{
+			opts := CreateBatchSpecOpts{
 				NamespaceUserID: admin.ID,
 				RawSpec:         ct.TestRawBatchSpecYAML,
 			}
 
-			_, err := svc.CreateCampaignSpec(userCtx, opts)
+			_, err := svc.CreateBatchSpec(userCtx, opts)
 			if !errcode.IsUnauthorized(err) {
 				t.Fatalf("expected unauthorized error but got %s", err)
 			}
@@ -493,7 +493,7 @@ func TestService(t *testing.T) {
 
 			opts.NamespaceUserID = user.ID
 
-			_, err = svc.CreateCampaignSpec(adminCtx, opts)
+			_, err = svc.CreateBatchSpec(adminCtx, opts)
 			if err != nil {
 				t.Fatalf("expected no error but got %s", err)
 			}
@@ -502,7 +502,7 @@ func TestService(t *testing.T) {
 		t.Run("missing access to namespace org", func(t *testing.T) {
 			orgID := ct.InsertTestOrg(t, db, "test-org")
 
-			opts := CreateCampaignSpecOpts{
+			opts := CreateBatchSpecOpts{
 				NamespaceOrgID:       orgID,
 				RawSpec:              ct.TestRawBatchSpec,
 				ChangesetSpecRandIDs: changesetSpecRandIDs,
@@ -510,7 +510,7 @@ func TestService(t *testing.T) {
 
 			userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
 
-			_, err := svc.CreateCampaignSpec(userCtx, opts)
+			_, err := svc.CreateBatchSpec(userCtx, opts)
 			if have, want := err, backend.ErrNotAnOrgMember; have != want {
 				t.Fatalf("expected %s error but got %s", want, have)
 			}
@@ -520,7 +520,7 @@ func TestService(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			_, err = svc.CreateCampaignSpec(userCtx, opts)
+			_, err = svc.CreateBatchSpec(userCtx, opts)
 			if err != nil {
 				t.Fatalf("expected no error but got %s", err)
 			}
@@ -530,13 +530,13 @@ func TestService(t *testing.T) {
 			// We already have ChangesetSpecs in the database. Here we
 			// want to make sure that the new CampaignSpec is created,
 			// without accidently attaching the existing ChangesetSpecs.
-			opts := CreateCampaignSpecOpts{
+			opts := CreateBatchSpecOpts{
 				NamespaceUserID:      admin.ID,
 				RawSpec:              ct.TestRawBatchSpec,
 				ChangesetSpecRandIDs: []string{},
 			}
 
-			spec, err := svc.CreateCampaignSpec(adminCtx, opts)
+			spec, err := svc.CreateBatchSpec(adminCtx, opts)
 			if err != nil {
 				t.Fatal(err)
 			}
