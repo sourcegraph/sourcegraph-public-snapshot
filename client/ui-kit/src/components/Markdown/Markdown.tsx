@@ -1,6 +1,9 @@
 import React, { useMemo } from 'react'
 import classNames from 'classnames'
 import { History } from 'history'
+// TODO: consider using absolute paths for modules inside of the workspace
+// At the moment Jest fails to understand TS references
+// see discussion: https://github.com/kulshekhar/ts-jest/issues/1648
 import { createLinkClickHandler } from '../../utils/linkClickHandler'
 
 export interface Props {
