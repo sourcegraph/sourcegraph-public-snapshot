@@ -12,6 +12,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+func init() {
+	dbtesting.DBNameSuffix = "gitserver"
+}
+
 func TestIterateRepoGitserverStatus(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
