@@ -305,7 +305,7 @@ var repoStateUpsertCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "Incremented each time we upsert repo state in the database",
 }, []string{"success"})
 
-func (s *Server) syncRepoState(db dbutil.DB, addrs []string, batchSize int, perSecond int) {
+func (s *Server) syncRepoState(db dbutil.DB, addrs []string, batchSize, perSecond int) {
 	ctx := context.Background()
 	store := database.GitserverRepos(db)
 
