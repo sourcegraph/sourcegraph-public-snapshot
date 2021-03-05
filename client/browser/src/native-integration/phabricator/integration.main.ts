@@ -54,7 +54,7 @@ async function init(): Promise<void> {
     window.localStorage.setItem('SOURCEGRAPH_URL', sourcegraphURL)
     metaClickOverride()
     injectExtensionMarker()
-    injectCodeIntelligence({ sourcegraphURL, assetsURL }, IS_EXTENSION)
+    await injectCodeIntelligence({ sourcegraphURL, assetsURL }, IS_EXTENSION)
 }
 
 init().catch(error => console.error('Error initializing Phabricator integration', error))
