@@ -39,7 +39,6 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; history: H.His
     const [isOpen, setIsOpen] = useState(startOpen)
 
     const toggleIsOpen = useCallback(() => setIsOpen(oldValue => !oldValue), [])
-    const cancelOpen = useCallback((event: React.MouseEvent) => event.stopPropagation(), [])
 
     // Reactstrap is preventing default behavior on all non-DropdownItem elements inside a Dropdown,
     // so we need to stop propagation to allow normal behavior (e.g. enter and space to activate buttons)
@@ -79,7 +78,7 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; history: H.His
                 </h4>
             </Button>
             {skipped.message && (
-                <Collapse isOpen={isOpen} onClick={cancelOpen}>
+                <Collapse isOpen={isOpen}>
                     <Markdown
                         className="streaming-skipped-item__message text-left"
                         dangerousInnerHTML={renderMarkdown(skipped.message)}
