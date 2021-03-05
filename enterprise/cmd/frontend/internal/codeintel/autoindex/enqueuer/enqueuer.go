@@ -9,9 +9,9 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/inference"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/autoindex/config"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/autoindex/inference"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 

@@ -9,7 +9,7 @@ import (
 
 // MockGitserverClientWrapper is a mock implementation of the
 // GitserverClientWrapper interface (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/inference)
+// github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/autoindex/inference)
 // used for unit testing.
 type MockGitserverClientWrapper struct {
 	// FileExistsFunc is an instance of a mock function object controlling

@@ -14,7 +14,7 @@ import (
 
 // MockDBStore is a mock implementation of the DBStore interface (from the
 // package
-// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer)
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/autoindex/enqueuer)
 // used for unit testing.
 type MockDBStore struct {
 	// DirtyRepositoriesFunc is an instance of a mock function object
@@ -1468,7 +1468,7 @@ func (c DBStoreUpdateIndexableRepositoryFuncCall) Results() []interface{} {
 
 // MockEnqueuer is a mock implementation of the Enqueuer interface (from the
 // package
-// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer)
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/autoindex/enqueuer)
 // used for unit testing.
 type MockEnqueuer struct {
 	// ForceQueueIndexFunc is an instance of a mock function object
@@ -1722,7 +1722,7 @@ func (c EnqueuerQueueIndexFuncCall) Results() []interface{} {
 
 // MockGitserverClient is a mock implementation of the GitserverClient
 // interface (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer)
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/autoindex/enqueuer)
 // used for unit testing.
 type MockGitserverClient struct {
 	// FileExistsFunc is an instance of a mock function object controlling

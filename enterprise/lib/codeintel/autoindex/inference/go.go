@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/autoindex/config"
 )
 
 const lsifGoImage = "sourcegraph/lsif-go:latest"

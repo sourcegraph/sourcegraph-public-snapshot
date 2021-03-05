@@ -3,7 +3,7 @@ package inference
 import (
 	"regexp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/autoindex/config"
 )
 
 // IndexJobRecognizer infers index jobs from repository structure.
