@@ -534,15 +534,22 @@ func (s *SearchStreamClient) SearchFiles(query string) (*SearchFileResults, erro
 		},
 		OnMatches: func(matches []streamhttp.EventMatch) {
 			for _, m := range matches {
-				fm, ok := m.(*streamhttp.EventFileMatch)
-				if !ok {
-					continue
+				switch v := m.(type) {
+				case *streamhttp.EventFileMatch:
+					var r SearchFileResult
+					r.File.Name = v.Path
+					r.Repository.Name = v.Repository
+					r.RevSpec.Expr = v.Branches[0]
+					results.Results = append(results.Results, &r)
+
+				case *streamhttp.EventSymbolMatch:
+					var r SearchFileResult
+					r.File.Name = v.Path
+					r.Repository.Name = v.Repository
+					r.RevSpec.Expr = v.Branches[0]
+					results.Results = append(results.Results, &r)
+
 				}
-				var r SearchFileResult
-				r.File.Name = fm.Path
-				r.Repository.Name = fm.Repository
-				r.RevSpec.Expr = fm.Branches[0]
-				results.Results = append(results.Results, &r)
 			}
 		},
 		OnAlert: func(alert *streamhttp.EventAlert) {
