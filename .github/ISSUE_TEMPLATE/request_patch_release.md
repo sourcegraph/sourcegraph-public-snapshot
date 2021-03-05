@@ -4,6 +4,7 @@ about: Sourcegraph teams, use this issue to request the Distribution team perfor
 title: ''
 labels: 'team/distribution,patch-release-request'
 assignees: ''
+
 ---
 
 @sourcegraph/distribution I am requesting the following commits be included in a patch release. They are already merged into `main`:

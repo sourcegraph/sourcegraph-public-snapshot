@@ -4,6 +4,7 @@ about: Suggest an idea for Sourcegraph
 title: ''
 labels: ''
 assignees: ''
+
 ---
 
 #### Feature request description
