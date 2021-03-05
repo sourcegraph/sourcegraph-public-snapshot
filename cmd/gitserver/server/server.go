@@ -302,6 +302,11 @@ var repoSyncStateCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "Incremented each time we check the state of repo",
 }, []string{"type"})
 
+var repoSyncStatePercentComplete = promauto.NewGauge(prometheus.GaugeOpts{
+	Name: "src_repo_sync_state_percent_complete",
+	Help: "Percent complete for the current sync run, from 0 to 100",
+})
+
 var repoStateUpsertCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "src_repo_sync_state_upsert_counter",
 	Help: "Incremented each time we upsert repo state in the database",
@@ -348,7 +353,16 @@ func (s *Server) syncRepoState(db dbutil.DB, addrs []string, batchSize, perSecon
 		repoStateUpsertCounter.WithLabelValues("true").Add(float64(len(batch)))
 	}
 
-	err := store.IterateRepoGitserverStatus(ctx, func(repo types.RepoGitserverStatus) error {
+	totalRepos, err := database.Repos(db).Count(ctx, database.ReposListOptions{})
+	if err != nil {
+		return errors.Wrap(err, "counting repos")
+	}
+
+	var count int
+	err = store.IterateRepoGitserverStatus(ctx, func(repo types.RepoGitserverStatus) error {
+		count++
+		repoSyncStatePercentComplete.Set((float64(count) / float64(totalRepos)) * 100)
+
 		repoSyncStateCounter.WithLabelValues("check").Inc()
 		// Ensure we're only dealing with repos we are responsible for
 		if addr := gitserver.AddrForRepo(repo.Name, addrs); addr != s.Hostname {
