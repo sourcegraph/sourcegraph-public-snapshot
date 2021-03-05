@@ -92,7 +92,7 @@ func (r *ChangesetRewirer) createChangesetForSpec(repo *types.Repo, spec *batche
 		RepoID:              spec.RepoID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
 
-		Campaigns:         []batches.CampaignAssoc{{CampaignID: r.campaignID}},
+		Campaigns:         []batches.BatchChangeAssoc{{CampaignID: r.campaignID}},
 		OwnedByCampaignID: r.campaignID,
 		CurrentSpecID:     spec.ID,
 
@@ -127,7 +127,7 @@ func (r *ChangesetRewirer) createTrackingChangeset(repo *types.Repo, externalID 
 		RepoID:              repo.ID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
 
-		Campaigns:  []batches.CampaignAssoc{{CampaignID: r.campaignID}},
+		Campaigns:  []batches.BatchChangeAssoc{{CampaignID: r.campaignID}},
 		ExternalID: externalID,
 		// Note: no CurrentSpecID, because we merely track this one
 

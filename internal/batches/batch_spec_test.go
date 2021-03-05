@@ -33,7 +33,7 @@ func TestBatchSpecUnmarshalValidate(t *testing.T) {
 				],
 				"changesetTemplate": {
 					"title": "Hello World",
-					"body": "My first campaign!",
+					"body": "My first batch change!",
 					"branch": "hello-world",
 					"commit": {
 						"message": "Append Hello World to all README.md files"
@@ -57,7 +57,7 @@ steps:
     PATH: "/work/foobar:$PATH"
 changesetTemplate:
   title: Hello World
-  body: My first campaign!
+  body: My first batch change!
   branch: hello-world
   commit:
     message: Append Hello World to all README.md files
@@ -84,7 +84,7 @@ changesetTemplate:
 				],
 				"changesetTemplate": {
 					"title": "Hello World",
-					"body": "My first campaign!",
+					"body": "My first batch change!",
 					"branch": "hello-world",
 					"commit": {
 						"message": "Append Hello World to all README.md files"

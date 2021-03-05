@@ -356,7 +356,7 @@ func TestApplyBatchChange(t *testing.T) {
 
 	campaignSpec := &batches.BatchSpec{
 		RawSpec: ct.TestRawBatchSpec,
-		Spec: batches.CampaignSpecFields{
+		Spec: batches.BatchSpecFields{
 			Name:        "my-campaign",
 			Description: "My description",
 			ChangesetTemplate: batches.ChangesetTemplate{
@@ -502,7 +502,7 @@ func TestCreateBatchChange(t *testing.T) {
 
 	campaignSpec := &batches.BatchSpec{
 		RawSpec: ct.TestRawBatchSpec,
-		Spec: batches.CampaignSpecFields{
+		Spec: batches.BatchSpecFields{
 			Name:        "my-campaign",
 			Description: "My description",
 		},

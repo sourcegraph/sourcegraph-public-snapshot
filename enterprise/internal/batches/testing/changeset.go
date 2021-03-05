@@ -19,7 +19,7 @@ type TestChangesetOpts struct {
 	Campaign     int64
 	CurrentSpec  int64
 	PreviousSpec int64
-	Campaigns    []batches.CampaignAssoc
+	Campaigns    []batches.BatchChangeAssoc
 
 	ExternalServiceType string
 	ExternalID          string
@@ -104,7 +104,7 @@ func BuildChangeset(opts TestChangesetOpts) *batches.Changeset {
 	}
 
 	if opts.Campaign != 0 {
-		changeset.Campaigns = []batches.CampaignAssoc{{CampaignID: opts.Campaign}}
+		changeset.Campaigns = []batches.BatchChangeAssoc{{CampaignID: opts.Campaign}}
 	}
 
 	if opts.DiffStatAdded > 0 || opts.DiffStatChanged > 0 || opts.DiffStatDeleted > 0 {
@@ -336,7 +336,7 @@ func SetChangesetClosed(t *testing.T, ctx context.Context, s UpdateChangeseter, 
 	c.Closing = false
 	c.ExternalState = batches.ChangesetExternalStateClosed
 
-	assocs := make([]batches.CampaignAssoc, 0)
+	assocs := make([]batches.BatchChangeAssoc, 0)
 	for _, assoc := range c.Campaigns {
 		if !assoc.Detach {
 			assocs = append(assocs, assoc)

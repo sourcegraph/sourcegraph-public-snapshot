@@ -92,7 +92,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 
 		t.Run("ChangesetID", func(t *testing.T) {
 			changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-				Campaigns: []batches.CampaignAssoc{{CampaignID: cs[0].ID}},
+				Campaigns: []batches.BatchChangeAssoc{{CampaignID: cs[0].ID}},
 			})
 
 			count, err = s.CountBatchChanges(ctx, CountBatchChangesOpts{ChangesetID: changeset.ID})
@@ -170,7 +170,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 		t.Run("By ChangesetID", func(t *testing.T) {
 			for i := 1; i <= len(cs); i++ {
 				changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-					Campaigns: []batches.CampaignAssoc{{CampaignID: cs[i-1].ID}},
+					Campaigns: []batches.BatchChangeAssoc{{CampaignID: cs[i-1].ID}},
 				})
 				opts := ListBatchChangesOpts{ChangesetID: changeset.ID}
 
@@ -480,7 +480,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 		var testDiffStatCount int32 = 10
 		ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
 			Repo:            repo.ID,
-			Campaigns:       []batches.CampaignAssoc{{CampaignID: campaignID}},
+			Campaigns:       []batches.BatchChangeAssoc{{CampaignID: campaignID}},
 			DiffStatAdded:   testDiffStatCount,
 			DiffStatChanged: testDiffStatCount,
 			DiffStatDeleted: testDiffStatCount,

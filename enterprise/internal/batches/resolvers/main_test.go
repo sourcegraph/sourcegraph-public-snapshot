@@ -224,7 +224,7 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 func addChangeset(t *testing.T, ctx context.Context, s *store.Store, c *batches.Changeset, campaign int64) {
 	t.Helper()
 
-	c.Campaigns = append(c.Campaigns, batches.CampaignAssoc{CampaignID: campaign})
+	c.Campaigns = append(c.Campaigns, batches.BatchChangeAssoc{CampaignID: campaign})
 	if err := s.UpdateChangeset(ctx, c); err != nil {
 		t.Fatal(err)
 	}

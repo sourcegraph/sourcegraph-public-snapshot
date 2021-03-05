@@ -2,7 +2,7 @@ package batches
 
 import "time"
 
-// BatchChangeState defines the possible states of a Campaign
+// BatchChangeState defines the possible states of a BatchChange
 type BatchChangeState string
 
 const (

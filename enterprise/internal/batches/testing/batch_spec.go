@@ -17,7 +17,7 @@ func CreateBatchSpec(t *testing.T, ctx context.Context, store CreateBatchSpecer,
 	s := &batches.BatchSpec{
 		UserID:          userID,
 		NamespaceUserID: userID,
-		Spec: batches.CampaignSpecFields{
+		Spec: batches.BatchSpecFields{
 			Name:        name,
 			Description: "the description",
 			ChangesetTemplate: batches.ChangesetTemplate{

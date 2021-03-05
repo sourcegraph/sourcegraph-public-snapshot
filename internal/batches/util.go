@@ -17,7 +17,7 @@ const (
 type CodehostCapabilities map[CodehostCapability]bool
 
 // SupportedExternalServices are the external service types currently supported
-// by the campaigns feature. Repos that are associated with external services
+// by the batch changes feature. Repos that are associated with external services
 // whose type is not in this list will simply be filtered out from the search
 // results.
 var SupportedExternalServices = map[string]CodehostCapabilities{
@@ -27,14 +27,14 @@ var SupportedExternalServices = map[string]CodehostCapabilities{
 }
 
 // IsRepoSupported returns whether the given ExternalRepoSpec is supported by
-// the campaigns feature, based on the external service type.
+// the batch changes feature, based on the external service type.
 func IsRepoSupported(spec *api.ExternalRepoSpec) bool {
 	_, ok := SupportedExternalServices[spec.ServiceType]
 	return ok
 }
 
 // IsKindSupported returns whether the given extsvc Kind is supported by
-// campaigns.
+// batch changes.
 func IsKindSupported(extSvcKind string) bool {
 	_, ok := SupportedExternalServices[extsvc.KindToType(extSvcKind)]
 	return ok

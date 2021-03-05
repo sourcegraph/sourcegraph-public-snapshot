@@ -194,8 +194,8 @@ func (s ChangesetCheckState) Valid() bool {
 	}
 }
 
-// CampaignAssoc stores the details of a association to a Campaign.
-type CampaignAssoc struct {
+// BatchChangeAssoc stores the details of a association to a BatchChange.
+type BatchChangeAssoc struct {
 	CampaignID int64 `json:"-"`
 	Detach     bool  `json:"detach"`
 }
@@ -208,7 +208,7 @@ type Changeset struct {
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
 	Metadata            interface{}
-	Campaigns           []CampaignAssoc
+	Campaigns           []BatchChangeAssoc
 	ExternalID          string
 	ExternalServiceType string
 	// ExternalBranch should always be prefixed with refs/heads/. Call git.EnsureRefPrefix before setting this value.
@@ -642,7 +642,7 @@ func (c *Changeset) Attach(campaignID int64) {
 			return
 		}
 	}
-	c.Campaigns = append(c.Campaigns, CampaignAssoc{CampaignID: campaignID})
+	c.Campaigns = append(c.Campaigns, BatchChangeAssoc{CampaignID: campaignID})
 }
 
 // Detach marks the given campaign as to-be-detached. Returns true, if the

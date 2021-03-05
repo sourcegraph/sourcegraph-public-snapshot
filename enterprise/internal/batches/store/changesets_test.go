@@ -82,7 +82,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 				CreatedAt:           clock.Now(),
 				UpdatedAt:           clock.Now(),
 				Metadata:            githubPR,
-				Campaigns:           []batches.CampaignAssoc{{CampaignID: int64(i) + 1}},
+				Campaigns:           []batches.BatchChangeAssoc{{CampaignID: int64(i) + 1}},
 				ExternalID:          fmt.Sprintf("foobar-%d", i),
 				ExternalServiceType: extsvc.TypeGitHub,
 				ExternalBranch:      fmt.Sprintf("refs/heads/campaigns/test/%d", i),
@@ -162,7 +162,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			CreatedAt:           clock.Now(),
 			UpdatedAt:           clock.Now(),
 			Metadata:            githubPR,
-			Campaigns:           []batches.CampaignAssoc{{CampaignID: 1}},
+			Campaigns:           []batches.BatchChangeAssoc{{CampaignID: 1}},
 			ExternalID:          "foobar-123",
 			ExternalServiceType: extsvc.TypeGitHub,
 			ExternalBranch:      "refs/heads/campaigns/test",
@@ -632,7 +632,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		cs := &batches.Changeset{
 			RepoID:              repo.ID,
 			Metadata:            githubPR,
-			Campaigns:           []batches.CampaignAssoc{{CampaignID: 1}},
+			Campaigns:           []batches.BatchChangeAssoc{{CampaignID: 1}},
 			ExternalID:          fmt.Sprintf("foobar-%d", 42),
 			ExternalServiceType: extsvc.TypeGitHub,
 			ExternalBranch:      "refs/heads/campaigns/test",
@@ -865,8 +865,8 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 		for i := range have {
 			// Test we can add to the set.
-			have[i].Campaigns = append(have[i].Campaigns, batches.CampaignAssoc{CampaignID: 42})
-			want[i].Campaigns = append(want[i].Campaigns, batches.CampaignAssoc{CampaignID: 42})
+			have[i].Campaigns = append(have[i].Campaigns, batches.BatchChangeAssoc{CampaignID: 42})
+			want[i].Campaigns = append(want[i].Campaigns, batches.BatchChangeAssoc{CampaignID: 42})
 
 			if err := s.UpdateChangeset(ctx, have[i]); err != nil {
 				t.Fatal(err)
@@ -1256,7 +1256,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 			CreatedAt:           clock.Now(),
 			UpdatedAt:           clock.Now(),
 			Metadata:            githubPR,
-			Campaigns:           []batches.CampaignAssoc{{CampaignID: int64(i) + 1}},
+			Campaigns:           []batches.BatchChangeAssoc{{CampaignID: int64(i) + 1}},
 			ExternalID:          fmt.Sprintf("foobar-%d", i),
 			ExternalServiceType: extsvc.TypeGitHub,
 			ExternalBranch:      "refs/heads/campaigns/test",
@@ -1295,7 +1295,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 			t.Fatal(err)
 		}
 
-		cs.Campaigns = []batches.CampaignAssoc{{CampaignID: c.ID}}
+		cs.Campaigns = []batches.BatchChangeAssoc{{CampaignID: c.ID}}
 
 		if err := s.UpdateChangeset(ctx, cs); err != nil {
 			t.Fatal(err)
@@ -1402,7 +1402,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		// If a changeset has ANY open campaigns we should list it
 		// Attach cs1 to both an open and closed campaign
 		openCampaignID := changesets[1].Campaigns[0].CampaignID
-		changesets[0].Campaigns = []batches.CampaignAssoc{{CampaignID: closedCampaignID}, {CampaignID: openCampaignID}}
+		changesets[0].Campaigns = []batches.BatchChangeAssoc{{CampaignID: closedCampaignID}, {CampaignID: openCampaignID}}
 		err = s.UpdateChangeset(ctx, changesets[0])
 		if err != nil {
 			t.Fatal(err)

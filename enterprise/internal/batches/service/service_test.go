@@ -402,7 +402,7 @@ func TestService(t *testing.T) {
 				t.Fatalf("UserID is %d, want %d", have, want)
 			}
 
-			var wantFields batches.CampaignSpecFields
+			var wantFields batches.BatchSpecFields
 			if err := json.Unmarshal([]byte(spec.RawSpec), &wantFields); err != nil {
 				t.Fatal(err)
 			}
@@ -438,7 +438,7 @@ func TestService(t *testing.T) {
 				t.Fatalf("CampaignSpec ID is 0")
 			}
 
-			var wantFields batches.CampaignSpecFields
+			var wantFields batches.BatchSpecFields
 			if err := json.Unmarshal([]byte(ct.TestRawBatchSpec), &wantFields); err != nil {
 				t.Fatal(err)
 			}
@@ -853,7 +853,7 @@ func testChangeset(repoID api.RepoID, campaign int64, extState batches.Changeset
 	}
 
 	if campaign != 0 {
-		changeset.Campaigns = []batches.CampaignAssoc{{CampaignID: campaign}}
+		changeset.Campaigns = []batches.BatchChangeAssoc{{CampaignID: campaign}}
 	}
 
 	return changeset

@@ -119,7 +119,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			RepoID:              githubRepo.ID,
 			ExternalID:          "10156",
 			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
-			Campaigns:           []batches.CampaignAssoc{{CampaignID: campaign.ID}},
+			Campaigns:           []batches.BatchChangeAssoc{{CampaignID: campaign.ID}},
 		}
 
 		err = s.CreateChangeset(ctx, changeset)
@@ -298,13 +298,13 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				RepoID:              bitbucketRepo.ID,
 				ExternalID:          "69",
 				ExternalServiceType: bitbucketRepo.ExternalRepo.ServiceType,
-				Campaigns:           []batches.CampaignAssoc{{CampaignID: campaign.ID}},
+				Campaigns:           []batches.BatchChangeAssoc{{CampaignID: campaign.ID}},
 			},
 			{
 				RepoID:              bitbucketRepo.ID,
 				ExternalID:          "19",
 				ExternalServiceType: bitbucketRepo.ExternalRepo.ServiceType,
-				Campaigns:           []batches.CampaignAssoc{{CampaignID: campaign.ID}},
+				Campaigns:           []batches.BatchChangeAssoc{{CampaignID: campaign.ID}},
 			},
 		}
 

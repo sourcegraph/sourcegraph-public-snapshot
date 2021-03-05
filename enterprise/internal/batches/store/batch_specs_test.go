@@ -19,7 +19,7 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		for i := 0; i < cap(campaignSpecs); i++ {
 			c := &batches.BatchSpec{
 				RawSpec: `{"name": "Foobar", "description": "My description"}`,
-				Spec: batches.CampaignSpecFields{
+				Spec: batches.BatchSpecFields{
 					Name:        "Foobar",
 					Description: "My description",
 					ChangesetTemplate: batches.ChangesetTemplate{
