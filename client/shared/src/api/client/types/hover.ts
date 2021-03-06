@@ -26,6 +26,7 @@ export function fromHoverMerged(values: (Badged<Hover | PlainHover> | null | und
             if (result.alerts) {
                 alerts.push(...result.alerts)
             }
+
             if (result.range && !range) {
                 // TODO(tj): Merge ranges so we highlight all provided ranges, not just the first range
                 if (result.range instanceof Range) {

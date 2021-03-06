@@ -6,13 +6,6 @@ import { BrandedStory } from '../../BrandedStory'
 import * as H from 'history'
 import { Location } from '@sourcegraph/extension-api-types'
 import { of } from 'rxjs'
-import { createContextService } from '../../../../../shared/src/api/client/context/contextService'
-// import {
-//     ContributionsEntry,
-//     ContributionUnsubscribable,
-// } from '../../../../../shared/src/api/client/services/contribution'
-import { noop } from 'lodash'
-import { ContributionsEntry } from '../../../../../shared/src/api/extension/flatExtensionApi'
 import { pretendRemote } from '../../../../../shared/src/api/util'
 
 const { add } = storiesOf('branded/HierarchicalLocationsView', module).addDecorator(story => (
