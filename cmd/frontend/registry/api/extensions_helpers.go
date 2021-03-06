@@ -1,9 +1,9 @@
-package registry
+package api
 
 import (
 	"strings"
 
-	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry2"
+	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/client"
 )
 
 // FilterRegistryExtensions returns the subset of extensions that match the query. It does not

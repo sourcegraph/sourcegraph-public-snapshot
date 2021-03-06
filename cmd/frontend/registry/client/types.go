@@ -1,4 +1,4 @@
-package registry2
+package client
 
 import "time"
 

@@ -1,8 +1,8 @@
 package registry
 
 import (
-	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
-	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry2"
+	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
+	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/client"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
