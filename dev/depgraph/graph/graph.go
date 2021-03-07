@@ -12,13 +12,16 @@ import (
 // DependencyGraph encodes the import relationships between packages within
 // the sourcegraph/sourcegraph repository.
 type DependencyGraph struct {
-	// Packages is a de-duplicated and ordered list of all package.
+	// Packages is a de-duplicated and ordered list of all package paths.
 	Packages []string
 
-	// Dependencies is a map from package name to the set of packages it imports.
+	// PackageNames is a map from package paths to their declared names.
+	PackageNames map[string][]string
+
+	// Dependencies is a map from package path to the set of packages it imports.
 	Dependencies map[string][]string
 
-	// Dependents is a map from package name to the set of packages that import it.
+	// Dependents is a map from package path to the set of packages that import it.
 	Dependents map[string][]string
 }
 
@@ -34,7 +37,10 @@ func Load() (*DependencyGraph, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	names, err := parseNames(root, packageMap)
+	if err != nil {
+		return nil, err
+	}
 	imports, err := parseImports(root, packageMap)
 	if err != nil {
 		return nil, err
@@ -63,6 +69,7 @@ func Load() (*DependencyGraph, error) {
 
 	return &DependencyGraph{
 		Packages:     packages,
+		PackageNames: names,
 		Dependencies: imports,
 		Dependents:   reverseImports,
 	}, nil

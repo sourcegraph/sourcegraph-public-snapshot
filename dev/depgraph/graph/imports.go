@@ -13,7 +13,7 @@ import (
 
 const RootPackage = "github.com/sourcegraph/sourcegraph"
 
-// parseImports returns a map from package names to the set of (internal) packages that
+// parseImports returns a map from package paths to the set of (internal) packages that
 // package imports.
 func parseImports(root string, packageMap map[string]struct{}) (map[string][]string, error) {
 	imports := map[string][]string{}
@@ -25,7 +25,7 @@ func parseImports(root string, packageMap map[string]struct{}) (map[string][]str
 
 		importMap := map[string]struct{}{}
 		for _, info := range fileInfos {
-			if info.IsDir() {
+			if info.IsDir() || filepath.Ext(info.Name()) != ".go" {
 				continue
 			}
 
