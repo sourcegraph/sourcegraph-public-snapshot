@@ -82,7 +82,7 @@ func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, toke
 		return "Must be authenticated to create code host connection from OAuth flow.", errors.New("unauthenticated request")
 	}
 
-	p := oauth.GetProvider(extsvc.TypeGitHub, providerID)
+	p := oauth.GetProvider(extsvc.TypeGitLab, providerID)
 	if p == nil {
 		return "Could not find OAuth provider for the state.", errors.Errorf("provider not found for %q", providerID)
 	}
@@ -94,13 +94,13 @@ func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, toke
 
 	err = database.GlobalExternalServices.Create(ctx, conf.Get,
 		&types.ExternalService{
-			Kind:        extsvc.KindGitHub,
-			DisplayName: fmt.Sprintf("GitHub (%s)", gUser.Username),
+			Kind:        extsvc.KindGitLab,
+			DisplayName: fmt.Sprintf("GitLab (%s)", gUser.Username),
 			Config: fmt.Sprintf(`
 {
   "url": "%s",
   "token": "%s",
-  "projectQuery": ["?"]
+  "projectQuery": ["projects?visibility=public"]
 }
 `, p.ServiceID, token.AccessToken),
 			NamespaceUserID: actor.UID,
