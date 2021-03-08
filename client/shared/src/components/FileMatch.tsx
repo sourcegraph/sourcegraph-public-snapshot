@@ -177,5 +177,10 @@ export class FileMatch extends React.PureComponent<Props> {
 }
 
 function aggregateTags(items: MatchItem[]): AggregableTag[] {
-    return [...new Set(items.flatMap(item => item.aggregableTags || []))].sort()
+    const aggregatedTags = new Map<string, AggregableTag>()
+    for (const item of items.flatMap(item => item.aggregableTags || [])) {
+        aggregatedTags.set(item.text, item)
+    }
+
+    return [...aggregatedTags.values()].sort((a, b) => a.text.localeCompare(b.text))
 }
