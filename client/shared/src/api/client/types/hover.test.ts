@@ -75,7 +75,12 @@ describe('HoverMerged', () => {
                 ])
             ).toEqual({
                 contents: [{ kind: MarkupKind.Markdown, value: 'x' }],
-                alerts: [{ summary: { kind: MarkupKind.PlainText, value: 'x' }, aggregableTags: ['t03', 't01'] }],
+                alerts: [
+                    {
+                        summary: { kind: MarkupKind.PlainText, value: 'x' },
+                        aggregableTags: [{ text: 't03' }, { text: 't01' }],
+                    },
+                ],
                 aggregatedTags: [{ text: 't01' }, { text: 't02' }, { text: 't03' }],
             }))
     })
