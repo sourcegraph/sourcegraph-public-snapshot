@@ -6,37 +6,37 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/depgraph/graph"
 )
 
-// NoBinarySpecificSharedCode returns an error for each shared package that is
-// used only by a single binary.
+// NoBinarySpecificSharedCode returns an error for each shared package that is used
+// by a single command.
 func NoBinarySpecificSharedCode(graph *graph.DependencyGraph) error {
-	var errors []lintError
-outer:
-	for _, pkg := range graph.Packages {
-		if isLibrary(pkg) || containingCommand(pkg) != "" {
-			// Publicly shared or within a command definition
-			continue
+	return mapPackageErrors(graph, func(pkg string) (lintError, bool) {
+		if containingCommand(pkg) != "" || isLibrary(pkg) {
+			// Not shared code
+			return lintError{}, false
 		}
 
-		var firstImporter *string
-		for _, p := range graph.Dependents[pkg] {
-			if cmd := containingCommand(p); firstImporter == nil {
-				firstImporter = &cmd
-			} else if cmd != *firstImporter {
-				continue outer
-			}
+		dependentCommands := map[string]struct{}{}
+		for _, dependent := range graph.Dependents[pkg] {
+			dependentCommands[containingCommand(dependent)] = struct{}{}
+		}
+		if len(dependentCommands) != 1 {
+			// Not a single import
+			return lintError{}, false
 		}
 
-		if firstImporter == nil || *firstImporter == "" {
-			// No or multiple distinct importers
-			continue
+		var importer string
+		for cmd := range dependentCommands {
+			importer = cmd
+		}
+		if importer == "" {
+			// Only imported by other internal packages
+			return lintError{}, false
 		}
 
-		errors = append(errors, lintError{
+		return lintError{
 			name:        "NoBinarySpecificSharedCode",
 			pkg:         pkg,
-			description: fmt.Sprintf("imported only by %s", *firstImporter),
-		})
-	}
-
-	return multi(errors)
+			description: fmt.Sprintf("imported only by %s", importer),
+		}, true
+	})
 }
