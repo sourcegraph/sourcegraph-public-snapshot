@@ -43,23 +43,23 @@ func TestServicePermissionLevels(t *testing.T) {
 
 	rs, _ := ct.CreateTestRepos(t, ctx, db, 1)
 
-	createTestData := func(t *testing.T, s *store.Store, svc *Service, author int32) (*batches.Campaign, *batches.Changeset, *batches.CampaignSpec) {
-		spec := testCampaignSpec(author)
-		if err := s.CreateCampaignSpec(ctx, spec); err != nil {
+	createTestData := func(t *testing.T, s *store.Store, svc *Service, author int32) (*batches.BatchChange, *batches.Changeset, *batches.BatchSpec) {
+		spec := testBatchSpec(author)
+		if err := s.CreateBatchSpec(ctx, spec); err != nil {
 			t.Fatal(err)
 		}
 
-		campaign := testCampaign(author, spec)
-		if err := s.CreateCampaign(ctx, campaign); err != nil {
+		batchChange := testBatchChange(author, spec)
+		if err := s.CreateBatchChange(ctx, batchChange); err != nil {
 			t.Fatal(err)
 		}
 
-		changeset := testChangeset(rs[0].ID, campaign.ID, batches.ChangesetExternalStateOpen)
+		changeset := testChangeset(rs[0].ID, batchChange.ID, batches.ChangesetExternalStateOpen)
 		if err := s.CreateChangeset(ctx, changeset); err != nil {
 			t.Fatal(err)
 		}
 
-		return campaign, changeset, spec
+		return batchChange, changeset, spec
 	}
 
 	assertAuthError := func(t *testing.T, err error) {
@@ -85,35 +85,35 @@ func TestServicePermissionLevels(t *testing.T) {
 	}
 
 	tests := []struct {
-		name           string
-		campaignAuthor int32
-		currentUser    int32
-		assertFunc     func(t *testing.T, err error)
+		name              string
+		batchChangeAuthor int32
+		currentUser       int32
+		assertFunc        func(t *testing.T, err error)
 	}{
 		{
-			name:           "unauthorized user",
-			campaignAuthor: user.ID,
-			currentUser:    otherUser.ID,
-			assertFunc:     assertAuthError,
+			name:              "unauthorized user",
+			batchChangeAuthor: user.ID,
+			currentUser:       otherUser.ID,
+			assertFunc:        assertAuthError,
 		},
 		{
-			name:           "campaign author",
-			campaignAuthor: user.ID,
-			currentUser:    user.ID,
-			assertFunc:     assertNoAuthError,
+			name:              "batch change author",
+			batchChangeAuthor: user.ID,
+			currentUser:       user.ID,
+			assertFunc:        assertNoAuthError,
 		},
 
 		{
-			name:           "site-admin",
-			campaignAuthor: user.ID,
-			currentUser:    admin.ID,
-			assertFunc:     assertNoAuthError,
+			name:              "site-admin",
+			batchChangeAuthor: user.ID,
+			currentUser:       admin.ID,
+			assertFunc:        assertNoAuthError,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			campaign, changeset, campaignSpec := createTestData(t, s, svc, tc.campaignAuthor)
+			batchChange, changeset, batchSpec := createTestData(t, s, svc, tc.batchChangeAuthor)
 			// Fresh context.Background() because the previous one is wrapped in AuthzBypas
 			currentUserCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
 
@@ -135,27 +135,27 @@ func TestServicePermissionLevels(t *testing.T) {
 				tc.assertFunc(t, err)
 			})
 
-			t.Run("CloseCampaign", func(t *testing.T) {
-				_, err := svc.CloseCampaign(currentUserCtx, campaign.ID, false)
+			t.Run("CloseBatchChange", func(t *testing.T) {
+				_, err := svc.CloseBatchChange(currentUserCtx, batchChange.ID, false)
 				tc.assertFunc(t, err)
 			})
 
-			t.Run("DeleteCampaign", func(t *testing.T) {
-				err := svc.DeleteCampaign(currentUserCtx, campaign.ID)
+			t.Run("DeleteBatchChange", func(t *testing.T) {
+				err := svc.DeleteBatchChange(currentUserCtx, batchChange.ID)
 				tc.assertFunc(t, err)
 			})
 
-			t.Run("MoveCampaign", func(t *testing.T) {
-				_, err := svc.MoveCampaign(currentUserCtx, MoveCampaignOpts{
-					CampaignID: campaign.ID,
-					NewName:    "foobar2",
+			t.Run("MoveBatchChange", func(t *testing.T) {
+				_, err := svc.MoveBatchChange(currentUserCtx, MoveBatchChangeOpts{
+					BatchChangeID: batchChange.ID,
+					NewName:       "foobar2",
 				})
 				tc.assertFunc(t, err)
 			})
 
-			t.Run("ApplyCampaign", func(t *testing.T) {
-				_, err := svc.ApplyCampaign(currentUserCtx, ApplyCampaignOpts{
-					CampaignSpecRandID: campaignSpec.RandID,
+			t.Run("ApplyBatchChange", func(t *testing.T) {
+				_, err := svc.ApplyBatchChange(currentUserCtx, ApplyBatchChangeOpts{
+					BatchSpecRandID: batchSpec.RandID,
 				})
 				tc.assertFunc(t, err)
 			})
@@ -186,53 +186,53 @@ func TestService(t *testing.T) {
 	svc := New(s)
 	svc.sourcer = sourcer
 
-	t.Run("DeleteCampaign", func(t *testing.T) {
-		spec := testCampaignSpec(admin.ID)
-		if err := s.CreateCampaignSpec(ctx, spec); err != nil {
+	t.Run("DeleteBatchChange", func(t *testing.T) {
+		spec := testBatchSpec(admin.ID)
+		if err := s.CreateBatchSpec(ctx, spec); err != nil {
 			t.Fatal(err)
 		}
 
-		campaign := testCampaign(admin.ID, spec)
-		if err := s.CreateCampaign(ctx, campaign); err != nil {
+		batchChange := testBatchChange(admin.ID, spec)
+		if err := s.CreateBatchChange(ctx, batchChange); err != nil {
 			t.Fatal(err)
 		}
-		if err := svc.DeleteCampaign(ctx, campaign.ID); err != nil {
-			t.Fatalf("campaign not deleted: %s", err)
+		if err := svc.DeleteBatchChange(ctx, batchChange.ID); err != nil {
+			t.Fatalf("batch change not deleted: %s", err)
 		}
 
-		_, err := s.GetCampaign(ctx, store.GetCampaignOpts{ID: campaign.ID})
+		_, err := s.GetBatchChange(ctx, store.CountBatchChangeOpts{ID: batchChange.ID})
 		if err != nil && err != store.ErrNoResults {
-			t.Fatalf("want campaign to be deleted, but was not: %e", err)
+			t.Fatalf("want batch change to be deleted, but was not: %e", err)
 		}
 	})
 
-	t.Run("CloseCampaign", func(t *testing.T) {
-		createCampaign := func(t *testing.T) *batches.Campaign {
+	t.Run("CloseBatchChange", func(t *testing.T) {
+		createBatchChange := func(t *testing.T) *batches.BatchChange {
 			t.Helper()
 
-			spec := testCampaignSpec(admin.ID)
-			if err := s.CreateCampaignSpec(ctx, spec); err != nil {
+			spec := testBatchSpec(admin.ID)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
 				t.Fatal(err)
 			}
 
-			campaign := testCampaign(admin.ID, spec)
-			if err := s.CreateCampaign(ctx, campaign); err != nil {
+			batchChange := testBatchChange(admin.ID, spec)
+			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
 				t.Fatal(err)
 			}
-			return campaign
+			return batchChange
 		}
 
 		adminCtx := actor.WithActor(context.Background(), actor.FromUser(admin.ID))
 
-		closeConfirm := func(t *testing.T, c *batches.Campaign, closeChangesets bool) {
+		closeConfirm := func(t *testing.T, c *batches.BatchChange, closeChangesets bool) {
 			t.Helper()
 
-			closedCampaign, err := svc.CloseCampaign(adminCtx, c.ID, closeChangesets)
+			closedBatchChange, err := svc.CloseBatchChange(adminCtx, c.ID, closeChangesets)
 			if err != nil {
-				t.Fatalf("campaign not closed: %s", err)
+				t.Fatalf("batch change not closed: %s", err)
 			}
-			if !closedCampaign.ClosedAt.Equal(now) {
-				t.Fatalf("campaign ClosedAt is zero")
+			if !closedBatchChange.ClosedAt.Equal(now) {
+				t.Fatalf("batch change ClosedAt is zero")
 			}
 
 			if !closeChangesets {
@@ -240,7 +240,7 @@ func TestService(t *testing.T) {
 			}
 
 			cs, _, err := s.ListChangesets(ctx, store.ListChangesetsOpts{
-				OwnedByCampaignID: c.ID,
+				OwnedByBatchChangeID: c.ID,
 			})
 			if err != nil {
 				t.Fatalf("listing changesets failed: %s", err)
@@ -257,41 +257,41 @@ func TestService(t *testing.T) {
 		}
 
 		t.Run("no changesets", func(t *testing.T) {
-			campaign := createCampaign(t)
-			closeConfirm(t, campaign, false)
+			batchChange := createBatchChange(t)
+			closeConfirm(t, batchChange, false)
 		})
 
 		t.Run("changesets", func(t *testing.T) {
-			campaign := createCampaign(t)
+			batchChange := createBatchChange(t)
 
-			changeset1 := testChangeset(rs[0].ID, campaign.ID, batches.ChangesetExternalStateOpen)
+			changeset1 := testChangeset(rs[0].ID, batchChange.ID, batches.ChangesetExternalStateOpen)
 			changeset1.ReconcilerState = batches.ReconcilerStateCompleted
 			if err := s.CreateChangeset(ctx, changeset1); err != nil {
 				t.Fatal(err)
 			}
 
-			changeset2 := testChangeset(rs[1].ID, campaign.ID, batches.ChangesetExternalStateOpen)
+			changeset2 := testChangeset(rs[1].ID, batchChange.ID, batches.ChangesetExternalStateOpen)
 			changeset2.ReconcilerState = batches.ReconcilerStateCompleted
 			if err := s.CreateChangeset(ctx, changeset2); err != nil {
 				t.Fatal(err)
 			}
 
-			closeConfirm(t, campaign, true)
+			closeConfirm(t, batchChange, true)
 		})
 	})
 
 	t.Run("EnqueueChangesetSync", func(t *testing.T) {
-		spec := testCampaignSpec(admin.ID)
-		if err := s.CreateCampaignSpec(ctx, spec); err != nil {
+		spec := testBatchSpec(admin.ID)
+		if err := s.CreateBatchSpec(ctx, spec); err != nil {
 			t.Fatal(err)
 		}
 
-		campaign := testCampaign(admin.ID, spec)
-		if err := s.CreateCampaign(ctx, campaign); err != nil {
+		batchChange := testBatchChange(admin.ID, spec)
+		if err := s.CreateBatchChange(ctx, batchChange); err != nil {
 			t.Fatal(err)
 		}
 
-		changeset := testChangeset(rs[0].ID, campaign.ID, batches.ChangesetExternalStateOpen)
+		changeset := testChangeset(rs[0].ID, batchChange.ID, batches.ChangesetExternalStateOpen)
 		if err := s.CreateChangeset(ctx, changeset); err != nil {
 			t.Fatal(err)
 		}
@@ -324,17 +324,17 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("ReenqueueChangeset", func(t *testing.T) {
-		spec := testCampaignSpec(admin.ID)
-		if err := s.CreateCampaignSpec(ctx, spec); err != nil {
+		spec := testBatchSpec(admin.ID)
+		if err := s.CreateBatchSpec(ctx, spec); err != nil {
 			t.Fatal(err)
 		}
 
-		campaign := testCampaign(admin.ID, spec)
-		if err := s.CreateCampaign(ctx, campaign); err != nil {
+		batchChange := testBatchChange(admin.ID, spec)
+		if err := s.CreateBatchChange(ctx, batchChange); err != nil {
 			t.Fatal(err)
 		}
 
-		changeset := testChangeset(rs[0].ID, campaign.ID, batches.ChangesetExternalStateOpen)
+		changeset := testChangeset(rs[0].ID, batchChange.ID, batches.ChangesetExternalStateOpen)
 		if err := s.CreateChangeset(ctx, changeset); err != nil {
 			t.Fatal(err)
 		}
@@ -349,7 +349,7 @@ func TestService(t *testing.T) {
 			Repo:          rs[0].ID,
 			ExternalState: batches.ChangesetExternalStateOpen,
 			ExternalID:    "ext-id-5",
-			AttachedTo:    []int64{campaign.ID},
+			AttachedTo:    []int64{batchChange.ID},
 
 			// The important fields:
 			ReconcilerState: batches.ReconcilerStateQueued,
@@ -367,7 +367,7 @@ func TestService(t *testing.T) {
 		}
 	})
 
-	t.Run("CreateCampaignSpec", func(t *testing.T) {
+	t.Run("CreateBatchSpec", func(t *testing.T) {
 		changesetSpecs := make([]*batches.ChangesetSpec, 0, len(rs))
 		changesetSpecRandIDs := make([]string, 0, len(rs))
 		for _, r := range rs {
@@ -383,26 +383,26 @@ func TestService(t *testing.T) {
 		userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
 
 		t.Run("success", func(t *testing.T) {
-			opts := CreateCampaignSpecOpts{
+			opts := CreateBatchSpecOpts{
 				NamespaceUserID:      admin.ID,
 				RawSpec:              ct.TestRawBatchSpec,
 				ChangesetSpecRandIDs: changesetSpecRandIDs,
 			}
 
-			spec, err := svc.CreateCampaignSpec(adminCtx, opts)
+			spec, err := svc.CreateBatchSpec(adminCtx, opts)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			if spec.ID == 0 {
-				t.Fatalf("CampaignSpec ID is 0")
+				t.Fatalf("BatchSpec ID is 0")
 			}
 
 			if have, want := spec.UserID, admin.ID; have != want {
 				t.Fatalf("UserID is %d, want %d", have, want)
 			}
 
-			var wantFields batches.CampaignSpecFields
+			var wantFields batches.BatchSpecFields
 			if err := json.Unmarshal([]byte(spec.RawSpec), &wantFields); err != nil {
 				t.Fatal(err)
 			}
@@ -417,28 +417,28 @@ func TestService(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				if have, want := cs2.CampaignSpecID, spec.ID; have != want {
-					t.Fatalf("changesetSpec has wrong CampaignSpecID. want=%d, have=%d", want, have)
+				if have, want := cs2.BatchSpecID, spec.ID; have != want {
+					t.Fatalf("changesetSpec has wrong BatchSpec. want=%d, have=%d", want, have)
 				}
 			}
 		})
 
 		t.Run("success with YAML raw spec", func(t *testing.T) {
-			opts := CreateCampaignSpecOpts{
+			opts := CreateBatchSpecOpts{
 				NamespaceUserID: admin.ID,
 				RawSpec:         ct.TestRawBatchSpecYAML,
 			}
 
-			spec, err := svc.CreateCampaignSpec(adminCtx, opts)
+			spec, err := svc.CreateBatchSpec(adminCtx, opts)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			if spec.ID == 0 {
-				t.Fatalf("CampaignSpec ID is 0")
+				t.Fatalf("BatchSpec ID is 0")
 			}
 
-			var wantFields batches.CampaignSpecFields
+			var wantFields batches.BatchSpecFields
 			if err := json.Unmarshal([]byte(ct.TestRawBatchSpec), &wantFields); err != nil {
 				t.Fatal(err)
 			}
@@ -451,26 +451,26 @@ func TestService(t *testing.T) {
 		t.Run("missing repository permissions", func(t *testing.T) {
 			ct.MockRepoPermissions(t, db, user.ID)
 
-			opts := CreateCampaignSpecOpts{
+			opts := CreateBatchSpecOpts{
 				NamespaceUserID:      user.ID,
 				RawSpec:              ct.TestRawBatchSpec,
 				ChangesetSpecRandIDs: changesetSpecRandIDs,
 			}
 
-			if _, err := svc.CreateCampaignSpec(userCtx, opts); !errcode.IsNotFound(err) {
+			if _, err := svc.CreateBatchSpec(userCtx, opts); !errcode.IsNotFound(err) {
 				t.Fatalf("expected not-found error but got %s", err)
 			}
 		})
 
 		t.Run("invalid changesetspec id", func(t *testing.T) {
 			containsInvalidID := []string{changesetSpecRandIDs[0], "foobar"}
-			opts := CreateCampaignSpecOpts{
+			opts := CreateBatchSpecOpts{
 				NamespaceUserID:      admin.ID,
 				RawSpec:              ct.TestRawBatchSpec,
 				ChangesetSpecRandIDs: containsInvalidID,
 			}
 
-			if _, err := svc.CreateCampaignSpec(adminCtx, opts); !errcode.IsNotFound(err) {
+			if _, err := svc.CreateBatchSpec(adminCtx, opts); !errcode.IsNotFound(err) {
 				t.Fatalf("expected not-found error but got %s", err)
 			}
 		})
@@ -478,12 +478,12 @@ func TestService(t *testing.T) {
 		t.Run("namespace user is not admin and not creator", func(t *testing.T) {
 			userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
 
-			opts := CreateCampaignSpecOpts{
+			opts := CreateBatchSpecOpts{
 				NamespaceUserID: admin.ID,
 				RawSpec:         ct.TestRawBatchSpecYAML,
 			}
 
-			_, err := svc.CreateCampaignSpec(userCtx, opts)
+			_, err := svc.CreateBatchSpec(userCtx, opts)
 			if !errcode.IsUnauthorized(err) {
 				t.Fatalf("expected unauthorized error but got %s", err)
 			}
@@ -493,7 +493,7 @@ func TestService(t *testing.T) {
 
 			opts.NamespaceUserID = user.ID
 
-			_, err = svc.CreateCampaignSpec(adminCtx, opts)
+			_, err = svc.CreateBatchSpec(adminCtx, opts)
 			if err != nil {
 				t.Fatalf("expected no error but got %s", err)
 			}
@@ -502,7 +502,7 @@ func TestService(t *testing.T) {
 		t.Run("missing access to namespace org", func(t *testing.T) {
 			orgID := ct.InsertTestOrg(t, db, "test-org")
 
-			opts := CreateCampaignSpecOpts{
+			opts := CreateBatchSpecOpts{
 				NamespaceOrgID:       orgID,
 				RawSpec:              ct.TestRawBatchSpec,
 				ChangesetSpecRandIDs: changesetSpecRandIDs,
@@ -510,7 +510,7 @@ func TestService(t *testing.T) {
 
 			userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
 
-			_, err := svc.CreateCampaignSpec(userCtx, opts)
+			_, err := svc.CreateBatchSpec(userCtx, opts)
 			if have, want := err, backend.ErrNotAnOrgMember; have != want {
 				t.Fatalf("expected %s error but got %s", want, have)
 			}
@@ -520,7 +520,7 @@ func TestService(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			_, err = svc.CreateCampaignSpec(userCtx, opts)
+			_, err = svc.CreateBatchSpec(userCtx, opts)
 			if err != nil {
 				t.Fatalf("expected no error but got %s", err)
 			}
@@ -528,26 +528,26 @@ func TestService(t *testing.T) {
 
 		t.Run("no side-effects if no changeset spec IDs are given", func(t *testing.T) {
 			// We already have ChangesetSpecs in the database. Here we
-			// want to make sure that the new CampaignSpec is created,
+			// want to make sure that the new BatchSpec is created,
 			// without accidently attaching the existing ChangesetSpecs.
-			opts := CreateCampaignSpecOpts{
+			opts := CreateBatchSpecOpts{
 				NamespaceUserID:      admin.ID,
 				RawSpec:              ct.TestRawBatchSpec,
 				ChangesetSpecRandIDs: []string{},
 			}
 
-			spec, err := svc.CreateCampaignSpec(adminCtx, opts)
+			spec, err := svc.CreateBatchSpec(adminCtx, opts)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			countOpts := store.CountChangesetSpecsOpts{CampaignSpecID: spec.ID}
+			countOpts := store.CountChangesetSpecsOpts{BatchSpecID: spec.ID}
 			count, err := s.CountChangesetSpecs(adminCtx, countOpts)
 			if err != nil {
 				return
 			}
 			if count != 0 {
-				t.Fatalf("want no changeset specs attached to campaign spec, but have %d", count)
+				t.Fatalf("want no changeset specs attached to batch spec, but have %d", count)
 			}
 		})
 	})
@@ -605,35 +605,35 @@ func TestService(t *testing.T) {
 		})
 	})
 
-	t.Run("ApplyCampaign", func(t *testing.T) {
-		// See TestServiceApplyCampaign
+	t.Run("ApplyBatchChange", func(t *testing.T) {
+		// See TestServiceApplyBatchChange
 	})
 
-	t.Run("MoveCampaign", func(t *testing.T) {
-		createCampaign := func(t *testing.T, name string, authorID, userID, orgID int32) *batches.Campaign {
+	t.Run("MoveBatchChange", func(t *testing.T) {
+		createBatchChange := func(t *testing.T, name string, authorID, userID, orgID int32) *batches.BatchChange {
 			t.Helper()
 
-			spec := &batches.CampaignSpec{
+			spec := &batches.BatchSpec{
 				UserID:          authorID,
 				NamespaceUserID: userID,
 				NamespaceOrgID:  orgID,
 			}
 
-			if err := s.CreateCampaignSpec(ctx, spec); err != nil {
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
 				t.Fatal(err)
 			}
 
-			c := &batches.Campaign{
+			c := &batches.BatchChange{
 				InitialApplierID: authorID,
 				NamespaceUserID:  userID,
 				NamespaceOrgID:   orgID,
 				Name:             name,
 				LastApplierID:    authorID,
 				LastAppliedAt:    time.Now(),
-				CampaignSpecID:   spec.ID,
+				BatchSpecID:      spec.ID,
 			}
 
-			if err := s.CreateCampaign(ctx, c); err != nil {
+			if err := s.CreateBatchChange(ctx, c); err != nil {
 				t.Fatal(err)
 			}
 
@@ -641,10 +641,10 @@ func TestService(t *testing.T) {
 		}
 
 		t.Run("new name", func(t *testing.T) {
-			campaign := createCampaign(t, "old-name", admin.ID, admin.ID, 0)
+			batchChange := createBatchChange(t, "old-name", admin.ID, admin.ID, 0)
 
-			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewName: "new-name"}
-			moved, err := svc.MoveCampaign(ctx, opts)
+			opts := MoveBatchChangeOpts{BatchChangeID: batchChange.ID, NewName: "new-name"}
+			moved, err := svc.MoveBatchChange(ctx, opts)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -655,12 +655,12 @@ func TestService(t *testing.T) {
 		})
 
 		t.Run("new user namespace", func(t *testing.T) {
-			campaign := createCampaign(t, "old-name", admin.ID, admin.ID, 0)
+			batchChange := createBatchChange(t, "old-name", admin.ID, admin.ID, 0)
 
 			user2 := ct.CreateTestUser(t, db, false)
 
-			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewNamespaceUserID: user2.ID}
-			moved, err := svc.MoveCampaign(ctx, opts)
+			opts := MoveBatchChangeOpts{BatchChangeID: batchChange.ID, NewNamespaceUserID: user2.ID}
+			moved, err := svc.MoveBatchChange(ctx, opts)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -675,26 +675,26 @@ func TestService(t *testing.T) {
 		})
 
 		t.Run("new user namespace but current user is not admin", func(t *testing.T) {
-			campaign := createCampaign(t, "old-name", user.ID, user.ID, 0)
+			batchChange := createBatchChange(t, "old-name", user.ID, user.ID, 0)
 
 			user2 := ct.CreateTestUser(t, db, false)
 
-			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewNamespaceUserID: user2.ID}
+			opts := MoveBatchChangeOpts{BatchChangeID: batchChange.ID, NewNamespaceUserID: user2.ID}
 
 			userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
-			_, err := svc.MoveCampaign(userCtx, opts)
+			_, err := svc.MoveBatchChange(userCtx, opts)
 			if !errcode.IsUnauthorized(err) {
 				t.Fatalf("expected unauthorized error but got %s", err)
 			}
 		})
 
 		t.Run("new org namespace", func(t *testing.T) {
-			campaign := createCampaign(t, "old-name", admin.ID, admin.ID, 0)
+			batchChange := createBatchChange(t, "old-name", admin.ID, admin.ID, 0)
 
 			orgID := ct.InsertTestOrg(t, db, "org")
 
-			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewNamespaceOrgID: orgID}
-			moved, err := svc.MoveCampaign(ctx, opts)
+			opts := MoveBatchChangeOpts{BatchChangeID: batchChange.ID, NewNamespaceOrgID: orgID}
+			moved, err := svc.MoveBatchChange(ctx, opts)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -709,86 +709,86 @@ func TestService(t *testing.T) {
 		})
 
 		t.Run("new org namespace but current user is missing access", func(t *testing.T) {
-			campaign := createCampaign(t, "old-name", user.ID, user.ID, 0)
+			batchChange := createBatchChange(t, "old-name", user.ID, user.ID, 0)
 
 			orgID := ct.InsertTestOrg(t, db, "org-no-access")
 
-			opts := MoveCampaignOpts{CampaignID: campaign.ID, NewNamespaceOrgID: orgID}
+			opts := MoveBatchChangeOpts{BatchChangeID: batchChange.ID, NewNamespaceOrgID: orgID}
 
 			userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
-			_, err := svc.MoveCampaign(userCtx, opts)
+			_, err := svc.MoveBatchChange(userCtx, opts)
 			if have, want := err, backend.ErrNotAnOrgMember; have != want {
 				t.Fatalf("expected %s error but got %s", want, have)
 			}
 		})
 	})
 
-	t.Run("GetCampaignMatchingCampaignSpec", func(t *testing.T) {
-		campaignSpec := ct.CreateCampaignSpec(t, ctx, s, "matching-campaign-spec", admin.ID)
+	t.Run("GetBatchChangeMatchingBatchSpec", func(t *testing.T) {
+		batchSpec := ct.CreateBatchSpec(t, ctx, s, "matching-batch-spec", admin.ID)
 
-		haveCampaign, err := svc.GetCampaignMatchingCampaignSpec(ctx, campaignSpec)
+		haveBatchChange, err := svc.GetBatchChangeMatchingBatchSpec(ctx, batchSpec)
 		if err != nil {
 			t.Fatalf("unexpected error: %s\n", err)
 		}
-		if haveCampaign != nil {
-			t.Fatalf("expected campaign to be nil, but is not: %+v\n", haveCampaign)
+		if haveBatchChange != nil {
+			t.Fatalf("expected batch change to be nil, but is not: %+v\n", haveBatchChange)
 		}
 
-		matchingCampaign := &batches.Campaign{
-			Name:             campaignSpec.Spec.Name,
-			Description:      campaignSpec.Spec.Description,
+		matchingBatchChange := &batches.BatchChange{
+			Name:             batchSpec.Spec.Name,
+			Description:      batchSpec.Spec.Description,
 			InitialApplierID: admin.ID,
-			NamespaceOrgID:   campaignSpec.NamespaceOrgID,
-			NamespaceUserID:  campaignSpec.NamespaceUserID,
-			CampaignSpecID:   campaignSpec.ID,
+			NamespaceOrgID:   batchSpec.NamespaceOrgID,
+			NamespaceUserID:  batchSpec.NamespaceUserID,
+			BatchSpecID:      batchSpec.ID,
 			LastApplierID:    admin.ID,
 			LastAppliedAt:    time.Now(),
 		}
-		if err := s.CreateCampaign(ctx, matchingCampaign); err != nil {
-			t.Fatalf("failed to create campaign: %s\n", err)
+		if err := s.CreateBatchChange(ctx, matchingBatchChange); err != nil {
+			t.Fatalf("failed to create batch change: %s\n", err)
 		}
 
-		haveCampaign, err = svc.GetCampaignMatchingCampaignSpec(ctx, campaignSpec)
+		haveBatchChange, err = svc.GetBatchChangeMatchingBatchSpec(ctx, batchSpec)
 		if err != nil {
 			t.Fatalf("unexpected error: %s\n", err)
 		}
-		if haveCampaign == nil {
-			t.Fatalf("expected to have matching campaign, but got nil")
+		if haveBatchChange == nil {
+			t.Fatalf("expected to have matching batch change, but got nil")
 		}
 
-		if diff := cmp.Diff(matchingCampaign, haveCampaign); diff != "" {
-			t.Fatalf("wrong campaign was matched (-want +got):\n%s", diff)
+		if diff := cmp.Diff(matchingBatchChange, haveBatchChange); diff != "" {
+			t.Fatalf("wrong batch change was matched (-want +got):\n%s", diff)
 		}
 	})
 
-	t.Run("GetNewestCampaignSpec", func(t *testing.T) {
-		older := ct.CreateCampaignSpec(t, ctx, s, "superseding", user.ID)
-		newer := ct.CreateCampaignSpec(t, ctx, s, "superseding", user.ID)
+	t.Run("GetNewestBatchSpec", func(t *testing.T) {
+		older := ct.CreateBatchSpec(t, ctx, s, "superseding", user.ID)
+		newer := ct.CreateBatchSpec(t, ctx, s, "superseding", user.ID)
 
-		for name, in := range map[string]*batches.CampaignSpec{
+		for name, in := range map[string]*batches.BatchSpec{
 			"older": older,
 			"newer": newer,
 		} {
 			t.Run(name, func(t *testing.T) {
-				have, err := svc.GetNewestCampaignSpec(ctx, s, in, user.ID)
+				have, err := svc.GetNewestBatchSpec(ctx, s, in, user.ID)
 				if err != nil {
 					t.Errorf("unexpected error: %v", err)
 				}
 
 				if diff := cmp.Diff(newer, have); diff != "" {
-					t.Errorf("unexpected newer campaign spec (-want +have):\n%s", diff)
+					t.Errorf("unexpected newer batch spec (-want +have):\n%s", diff)
 				}
 			})
 		}
 
 		t.Run("different user", func(t *testing.T) {
-			have, err := svc.GetNewestCampaignSpec(ctx, s, older, admin.ID)
+			have, err := svc.GetNewestBatchSpec(ctx, s, older, admin.ID)
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
 			}
 
 			if have != nil {
-				t.Errorf("unexpected non-nil campaign spec: %+v", have)
+				t.Errorf("unexpected non-nil batch spec: %+v", have)
 			}
 		})
 	})
@@ -823,12 +823,12 @@ func TestService(t *testing.T) {
 	})
 }
 
-func testCampaign(user int32, spec *batches.CampaignSpec) *batches.Campaign {
-	c := &batches.Campaign{
-		Name:             "test-campaign",
+func testBatchChange(user int32, spec *batches.BatchSpec) *batches.BatchChange {
+	c := &batches.BatchChange{
+		Name:             "test-batch-change",
 		InitialApplierID: user,
 		NamespaceUserID:  user,
-		CampaignSpecID:   spec.ID,
+		BatchSpecID:      spec.ID,
 		LastApplierID:    user,
 		LastAppliedAt:    time.Now(),
 	}
@@ -836,24 +836,24 @@ func testCampaign(user int32, spec *batches.CampaignSpec) *batches.Campaign {
 	return c
 }
 
-func testCampaignSpec(user int32) *batches.CampaignSpec {
-	return &batches.CampaignSpec{
+func testBatchSpec(user int32) *batches.BatchSpec {
+	return &batches.BatchSpec{
 		UserID:          user,
 		NamespaceUserID: user,
 	}
 }
 
-func testChangeset(repoID api.RepoID, campaign int64, extState batches.ChangesetExternalState) *batches.Changeset {
+func testChangeset(repoID api.RepoID, batchChange int64, extState batches.ChangesetExternalState) *batches.Changeset {
 	changeset := &batches.Changeset{
 		RepoID:              repoID,
 		ExternalServiceType: extsvc.TypeGitHub,
-		ExternalID:          fmt.Sprintf("ext-id-%d", campaign),
+		ExternalID:          fmt.Sprintf("ext-id-%d", batchChange),
 		Metadata:            &github.PullRequest{State: string(extState), CreatedAt: time.Now()},
 		ExternalState:       extState,
 	}
 
-	if campaign != 0 {
-		changeset.Campaigns = []batches.CampaignAssoc{{CampaignID: campaign}}
+	if batchChange != 0 {
+		changeset.BatchChanges = []batches.BatchChangeAssoc{{BatchChangeID: batchChange}}
 	}
 
 	return changeset

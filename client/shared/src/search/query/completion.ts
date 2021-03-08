@@ -309,7 +309,7 @@ export async function getCompletionItems(
         }
         if (resolvedFilter.definition.discreteValues) {
             return {
-                suggestions: resolvedFilter.definition.discreteValues.map(
+                suggestions: resolvedFilter.definition.discreteValues(token.value).map(
                     (label, index): Monaco.languages.CompletionItem => ({
                         label,
                         sortText: index.toString(), // suggestions sort by order in the list, not alphabetically.

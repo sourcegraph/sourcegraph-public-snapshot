@@ -31,12 +31,12 @@ func newWorker(
 	s *store.Store,
 	gitClient reconciler.GitserverClient,
 	sourcer repos.Sourcer,
-	metrics campaignsMetrics,
+	metrics batchChangesMetrics,
 ) *workerutil.Worker {
 	r := &reconciler.Reconciler{GitserverClient: gitClient, Sourcer: sourcer, Store: s}
 
 	options := workerutil.WorkerOptions{
-		Name:        "campaigns_reconciler_worker",
+		Name:        "batches_reconciler_worker",
 		NumHandlers: 5,
 		Interval:    5 * time.Second,
 		Metrics:     metrics.workerMetrics,
@@ -48,11 +48,11 @@ func newWorker(
 	return worker
 }
 
-func newWorkerResetter(s *store.Store, metrics campaignsMetrics) *dbworker.Resetter {
+func newWorkerResetter(s *store.Store, metrics batchChangesMetrics) *dbworker.Resetter {
 	workerStore := createDBWorkerStore(s)
 
 	options := dbworker.ResetterOptions{
-		Name:     "campaigns_reconciler_worker_resetter",
+		Name:     "batches_reconciler_worker_resetter",
 		Interval: 1 * time.Minute,
 		Metrics: dbworker.ResetterMetrics{
 			Errors:              metrics.errors,
@@ -71,7 +71,7 @@ func scanFirstChangesetRecord(rows *sql.Rows, err error) (workerutil.Record, boo
 
 func createDBWorkerStore(s *store.Store) dbworkerstore.Store {
 	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
-		Name:                 "campaigns_reconciler_worker_store",
+		Name:                 "batches_reconciler_worker_store",
 		TableName:            "changesets",
 		ViewName:             "reconciler_changesets changesets",
 		AlternateColumnNames: map[string]string{"state": "reconciler_state"},

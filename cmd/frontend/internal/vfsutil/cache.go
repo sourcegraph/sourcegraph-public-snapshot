@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -78,11 +79,7 @@ func initArchiveCacheDir() {
 	})
 }
 
-var cachedFileEvict = prometheus.NewCounter(prometheus.CounterOpts{
+var cachedFileEvict = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "vfsutil_vfs_cached_file_evict",
 	Help: "Total number of evictions to cachedFetch archives.",
 })
-
-func init() {
-	prometheus.MustRegister(cachedFileEvict)
-}

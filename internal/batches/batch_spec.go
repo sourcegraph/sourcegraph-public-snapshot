@@ -10,18 +10,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func NewCampaignSpecFromRaw(rawSpec string) (*CampaignSpec, error) {
-	c := &CampaignSpec{RawSpec: rawSpec}
+func NewBatchSpecFromRaw(rawSpec string) (*BatchSpec, error) {
+	c := &BatchSpec{RawSpec: rawSpec}
 
 	return c, c.UnmarshalValidate()
 }
 
-type CampaignSpec struct {
+type BatchSpec struct {
 	ID     int64
 	RandID string
 
 	RawSpec string
-	Spec    CampaignSpecFields
+	Spec    BatchSpecFields
 
 	NamespaceUserID int32
 	NamespaceOrgID  int32
@@ -32,49 +32,49 @@ type CampaignSpec struct {
 	UpdatedAt time.Time
 }
 
-// Clone returns a clone of a CampaignSpec.
-func (cs *CampaignSpec) Clone() *CampaignSpec {
+// Clone returns a clone of a BatchSpec.
+func (cs *BatchSpec) Clone() *BatchSpec {
 	cc := *cs
 	return &cc
 }
 
 // UnmarshalValidate unmarshals the RawSpec into Spec and validates it against
-// the CampaignSpec schema and does additional semantic validation.
-func (cs *CampaignSpec) UnmarshalValidate() error {
+// the BatchSpec schema and does additional semantic validation.
+func (cs *BatchSpec) UnmarshalValidate() error {
 	return yaml.UnmarshalValidate(schema.CampaignSpecSchemaJSON, []byte(cs.RawSpec), &cs.Spec)
 }
 
-// CampaignSpecTTL specifies the TTL of CampaignSpecs that haven't been applied
+// BatchSpecTTL specifies the TTL of BatchSpecs that haven't been applied
 // yet. It's set to 1 week.
-const CampaignSpecTTL = 7 * 24 * time.Hour
+const BatchSpecTTL = 7 * 24 * time.Hour
 
-// ExpiresAt returns the time when the CampaignSpec will be deleted if not
+// ExpiresAt returns the time when the BatchSpec will be deleted if not
 // applied.
-func (cs *CampaignSpec) ExpiresAt() time.Time {
-	return cs.CreatedAt.Add(CampaignSpecTTL)
+func (cs *BatchSpec) ExpiresAt() time.Time {
+	return cs.CreatedAt.Add(BatchSpecTTL)
 }
 
-type CampaignSpecFields struct {
-	Name              string                    `json:"name" yaml:"name"`
-	Description       string                    `json:"description,omitempty" yaml:"description,omitempty"`
-	On                []CampaignSpecOn          `json:"on,omitempty" yaml:"on,omitempty"`
-	Steps             []CampaignSpecStep        `json:"steps,omitempty" yaml:"steps,omitempty"`
-	ImportChangeset   []CampaignImportChangeset `json:"importChangesets,omitempty" yaml:"importChangesets,omitempty"`
-	ChangesetTemplate ChangesetTemplate         `json:"changesetTemplate,omitempty" yaml:"changesetTemplate,omitempty"`
+type BatchSpecFields struct {
+	Name              string                       `json:"name" yaml:"name"`
+	Description       string                       `json:"description,omitempty" yaml:"description,omitempty"`
+	On                []BatchSpecOn                `json:"on,omitempty" yaml:"on,omitempty"`
+	Steps             []BatchSpecStep              `json:"steps,omitempty" yaml:"steps,omitempty"`
+	ImportChangeset   []BatchChangeImportChangeset `json:"importChangesets,omitempty" yaml:"importChangesets,omitempty"`
+	ChangesetTemplate ChangesetTemplate            `json:"changesetTemplate,omitempty" yaml:"changesetTemplate,omitempty"`
 }
 
-type CampaignSpecOn struct {
+type BatchSpecOn struct {
 	RepositoriesMatchingQuery string `json:"repositoriesMatchingQuery,omitempty" yaml:"repositoriesMatchingQuery,omitempty"`
 	Repository                string `json:"repository,omitempty" yaml:"repository,omitempty"`
 }
 
-type CampaignSpecStep struct {
+type BatchSpecStep struct {
 	Run       string          `json:"run" yaml:"run"`
 	Container string          `json:"container" yaml:"container"`
 	Env       env.Environment `json:"env,omitempty" yaml:"env,omitempty"`
 }
 
-type CampaignImportChangeset struct {
+type BatchChangeImportChangeset struct {
 	Repository  string        `json:"repository" yaml:"repository"`
 	ExternalIDs []interface{} `json:"externalIDs" yaml:"externalIDs"`
 }

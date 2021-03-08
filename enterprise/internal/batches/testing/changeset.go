@@ -16,10 +16,10 @@ import (
 
 type TestChangesetOpts struct {
 	Repo         api.RepoID
-	Campaign     int64
+	BatchChange  int64
 	CurrentSpec  int64
 	PreviousSpec int64
-	Campaigns    []batches.CampaignAssoc
+	BatchChanges []batches.BatchChangeAssoc
 
 	ExternalServiceType string
 	ExternalID          string
@@ -38,7 +38,7 @@ type TestChangesetOpts struct {
 	FailureMessage  string
 	NumFailures     int64
 
-	OwnedByCampaign int64
+	OwnedByBatchChange int64
 
 	Closing bool
 
@@ -75,7 +75,7 @@ func BuildChangeset(opts TestChangesetOpts) *batches.Changeset {
 		RepoID:         opts.Repo,
 		CurrentSpecID:  opts.CurrentSpec,
 		PreviousSpecID: opts.PreviousSpec,
-		Campaigns:      opts.Campaigns,
+		BatchChanges:   opts.BatchChanges,
 
 		ExternalServiceType: opts.ExternalServiceType,
 		ExternalID:          opts.ExternalID,
@@ -85,7 +85,7 @@ func BuildChangeset(opts TestChangesetOpts) *batches.Changeset {
 
 		PublicationState: opts.PublicationState,
 
-		OwnedByCampaignID: opts.OwnedByCampaign,
+		OwnedByBatchChangeID: opts.OwnedByBatchChange,
 
 		Closing: opts.Closing,
 
@@ -103,8 +103,8 @@ func BuildChangeset(opts TestChangesetOpts) *batches.Changeset {
 		changeset.FailureMessage = &opts.FailureMessage
 	}
 
-	if opts.Campaign != 0 {
-		changeset.Campaigns = []batches.CampaignAssoc{{CampaignID: opts.Campaign}}
+	if opts.BatchChange != 0 {
+		changeset.BatchChanges = []batches.BatchChangeAssoc{{BatchChangeID: opts.BatchChange}}
 	}
 
 	if opts.DiffStatAdded > 0 || opts.DiffStatChanged > 0 || opts.DiffStatDeleted > 0 {
@@ -117,17 +117,17 @@ func BuildChangeset(opts TestChangesetOpts) *batches.Changeset {
 }
 
 type ChangesetAssertions struct {
-	Repo             api.RepoID
-	CurrentSpec      int64
-	PreviousSpec     int64
-	OwnedByCampaign  int64
-	ReconcilerState  batches.ReconcilerState
-	PublicationState batches.ChangesetPublicationState
-	ExternalState    batches.ChangesetExternalState
-	ExternalID       string
-	ExternalBranch   string
-	DiffStat         *diff.Stat
-	Closing          bool
+	Repo               api.RepoID
+	CurrentSpec        int64
+	PreviousSpec       int64
+	OwnedByBatchChange int64
+	ReconcilerState    batches.ReconcilerState
+	PublicationState   batches.ChangesetPublicationState
+	ExternalState      batches.ChangesetExternalState
+	ExternalID         string
+	ExternalBranch     string
+	DiffStat           *diff.Stat
+	Closing            bool
 
 	Title string
 	Body  string
@@ -160,8 +160,8 @@ func AssertChangeset(t *testing.T, c *batches.Changeset, a ChangesetAssertions) 
 		t.Fatalf("changeset PreviousSpecID wrong. want=%d, have=%d", want, have)
 	}
 
-	if have, want := c.OwnedByCampaignID, a.OwnedByCampaign; have != want {
-		t.Fatalf("changeset OwnedByCampaignID wrong. want=%d, have=%d", want, have)
+	if have, want := c.OwnedByBatchChangeID, a.OwnedByBatchChange; have != want {
+		t.Fatalf("changeset OwnedByBatchChangeID wrong. want=%d, have=%d", want, have)
 	}
 
 	if have, want := c.ReconcilerState, a.ReconcilerState; have != want {
@@ -197,9 +197,9 @@ func AssertChangeset(t *testing.T, c *batches.Changeset, a ChangesetAssertions) 
 	}
 
 	toDetach := []int64{}
-	for _, assoc := range c.Campaigns {
+	for _, assoc := range c.BatchChanges {
 		if assoc.Detach {
-			toDetach = append(toDetach, assoc.CampaignID)
+			toDetach = append(toDetach, assoc.BatchChangeID)
 		}
 	}
 	if a.DetachFrom == nil {
@@ -212,9 +212,9 @@ func AssertChangeset(t *testing.T, c *batches.Changeset, a ChangesetAssertions) 
 	}
 
 	attachedTo := []int64{}
-	for _, assoc := range c.Campaigns {
+	for _, assoc := range c.BatchChanges {
 		if !assoc.Detach {
-			attachedTo = append(attachedTo, assoc.CampaignID)
+			attachedTo = append(attachedTo, assoc.BatchChangeID)
 		}
 	}
 	if a.AttachedTo == nil {
@@ -336,14 +336,14 @@ func SetChangesetClosed(t *testing.T, ctx context.Context, s UpdateChangeseter, 
 	c.Closing = false
 	c.ExternalState = batches.ChangesetExternalStateClosed
 
-	assocs := make([]batches.CampaignAssoc, 0)
-	for _, assoc := range c.Campaigns {
+	assocs := make([]batches.BatchChangeAssoc, 0)
+	for _, assoc := range c.BatchChanges {
 		if !assoc.Detach {
 			assocs = append(assocs, assoc)
 		}
 	}
 
-	c.Campaigns = assocs
+	c.BatchChanges = assocs
 
 	if err := s.UpdateChangeset(ctx, c); err != nil {
 		t.Fatalf("failed to update changeset: %s", err)

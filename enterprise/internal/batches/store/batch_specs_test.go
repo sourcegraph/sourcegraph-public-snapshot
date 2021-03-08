@@ -12,14 +12,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/batches"
 )
 
-func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	campaignSpecs := make([]*batches.CampaignSpec, 0, 3)
+func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+	batchSpecs := make([]*batches.BatchSpec, 0, 3)
 
 	t.Run("Create", func(t *testing.T) {
-		for i := 0; i < cap(campaignSpecs); i++ {
-			c := &batches.CampaignSpec{
+		for i := 0; i < cap(batchSpecs); i++ {
+			c := &batches.BatchSpec{
 				RawSpec: `{"name": "Foobar", "description": "My description"}`,
-				Spec: batches.CampaignSpecFields{
+				Spec: batches.BatchSpecFields{
 					Name:        "Foobar",
 					Description: "My description",
 					ChangesetTemplate: batches.ChangesetTemplate{
@@ -44,7 +44,7 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, clock c
 			want := c.Clone()
 			have := c
 
-			err := s.CreateCampaignSpec(ctx, have)
+			err := s.CreateBatchSpec(ctx, have)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -66,21 +66,21 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, clock c
 				t.Fatal(diff)
 			}
 
-			campaignSpecs = append(campaignSpecs, c)
+			batchSpecs = append(batchSpecs, c)
 		}
 	})
 
-	if len(campaignSpecs) != cap(campaignSpecs) {
-		t.Fatalf("campaignSpecs is empty. creation failed")
+	if len(batchSpecs) != cap(batchSpecs) {
+		t.Fatalf("batchSpecs is empty. creation failed")
 	}
 
 	t.Run("Count", func(t *testing.T) {
-		count, err := s.CountCampaignSpecs(ctx)
+		count, err := s.CountBatchSpecs(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if have, want := count, len(campaignSpecs); have != want {
+		if have, want := count, len(batchSpecs); have != want {
 			t.Fatalf("have count: %d, want: %d", have, want)
 		}
 	})
@@ -88,9 +88,9 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, clock c
 	t.Run("List", func(t *testing.T) {
 		t.Run("NoLimit", func(t *testing.T) {
 			// Empty should return all entries
-			opts := ListCampaignSpecsOpts{}
+			opts := ListBatchSpecsOpts{}
 
-			ts, next, err := s.ListCampaignSpecs(ctx, opts)
+			ts, next, err := s.ListBatchSpecs(ctx, opts)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -99,9 +99,9 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, clock c
 				t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
 			}
 
-			have, want := ts, campaignSpecs
+			have, want := ts, batchSpecs
 			if len(have) != len(want) {
-				t.Fatalf("listed %d campaignSpecs, want: %d", len(have), len(want))
+				t.Fatalf("listed %d batchSpecs, want: %d", len(have), len(want))
 			}
 
 			if diff := cmp.Diff(have, want); diff != "" {
@@ -110,16 +110,16 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, clock c
 		})
 
 		t.Run("WithLimit", func(t *testing.T) {
-			for i := 1; i <= len(campaignSpecs); i++ {
-				cs, next, err := s.ListCampaignSpecs(ctx, ListCampaignSpecsOpts{LimitOpts: LimitOpts{Limit: i}})
+			for i := 1; i <= len(batchSpecs); i++ {
+				cs, next, err := s.ListBatchSpecs(ctx, ListBatchSpecsOpts{LimitOpts: LimitOpts{Limit: i}})
 				if err != nil {
 					t.Fatal(err)
 				}
 
 				{
 					have, want := next, int64(0)
-					if i < len(campaignSpecs) {
-						want = campaignSpecs[i].ID
+					if i < len(batchSpecs) {
+						want = batchSpecs[i].ID
 					}
 
 					if have != want {
@@ -128,9 +128,9 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, clock c
 				}
 
 				{
-					have, want := cs, campaignSpecs[:i]
+					have, want := cs, batchSpecs[:i]
 					if len(have) != len(want) {
-						t.Fatalf("listed %d campaignSpecs, want: %d", len(have), len(want))
+						t.Fatalf("listed %d batchSpecs, want: %d", len(have), len(want))
 					}
 
 					if diff := cmp.Diff(have, want); diff != "" {
@@ -143,14 +143,14 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, clock c
 
 		t.Run("WithLimitAndCursor", func(t *testing.T) {
 			var cursor int64
-			for i := 1; i <= len(campaignSpecs); i++ {
-				opts := ListCampaignSpecsOpts{Cursor: cursor, LimitOpts: LimitOpts{Limit: 1}}
-				have, next, err := s.ListCampaignSpecs(ctx, opts)
+			for i := 1; i <= len(batchSpecs); i++ {
+				opts := ListBatchSpecsOpts{Cursor: cursor, LimitOpts: LimitOpts{Limit: 1}}
+				have, next, err := s.ListBatchSpecs(ctx, opts)
 				if err != nil {
 					t.Fatal(err)
 				}
 
-				want := campaignSpecs[i-1 : i]
+				want := batchSpecs[i-1 : i]
 				if diff := cmp.Diff(have, want); diff != "" {
 					t.Fatalf("opts: %+v, diff: %s", opts, diff)
 				}
@@ -161,7 +161,7 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, clock c
 	})
 
 	t.Run("Update", func(t *testing.T) {
-		for _, c := range campaignSpecs {
+		for _, c := range batchSpecs {
 			c.UserID += 1234
 
 			clock.Add(1 * time.Second)
@@ -170,7 +170,7 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, clock c
 			want.UpdatedAt = clock.Now()
 
 			have := c.Clone()
-			if err := s.UpdateCampaignSpec(ctx, have); err != nil {
+			if err := s.UpdateBatchSpec(ctx, have); err != nil {
 				t.Fatal(err)
 			}
 
@@ -181,8 +181,8 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, clock c
 	})
 
 	t.Run("Get", func(t *testing.T) {
-		want := campaignSpecs[1]
-		tests := map[string]GetCampaignSpecOpts{
+		want := batchSpecs[1]
+		tests := map[string]GetBatchSpecOpts{
 			"ByID":          {ID: want.ID},
 			"ByRandID":      {RandID: want.RandID},
 			"ByIDAndRandID": {ID: want.ID, RandID: want.RandID},
@@ -190,7 +190,7 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, clock c
 
 		for name, opts := range tests {
 			t.Run(name, func(t *testing.T) {
-				have, err := s.GetCampaignSpec(ctx, opts)
+				have, err := s.GetBatchSpec(ctx, opts)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -202,9 +202,9 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, clock c
 		}
 
 		t.Run("NoResults", func(t *testing.T) {
-			opts := GetCampaignSpecOpts{ID: 0xdeadbeef}
+			opts := GetBatchSpecOpts{ID: 0xdeadbeef}
 
-			_, have := s.GetCampaignSpec(ctx, opts)
+			_, have := s.GetBatchSpec(ctx, opts)
 			want := ErrNoResults
 
 			if have != want {
@@ -213,145 +213,145 @@ func testStoreCampaignSpecs(t *testing.T, ctx context.Context, s *Store, clock c
 		})
 	})
 
-	t.Run("GetNewestCampaignSpec", func(t *testing.T) {
+	t.Run("GetNewestBatchSpec", func(t *testing.T) {
 		t.Run("NotFound", func(t *testing.T) {
-			opts := GetNewestCampaignSpecOpts{
+			opts := GetNewestBatchSpecOpts{
 				NamespaceUserID: 1235,
 				Name:            "Foobar",
 				UserID:          1234567,
 			}
 
-			_, err := s.GetNewestCampaignSpec(ctx, opts)
+			_, err := s.GetNewestBatchSpec(ctx, opts)
 			if err != ErrNoResults {
 				t.Errorf("unexpected error: have=%v want=%v", err, ErrNoResults)
 			}
 		})
 
 		t.Run("NamespaceUser", func(t *testing.T) {
-			opts := GetNewestCampaignSpecOpts{
+			opts := GetNewestBatchSpecOpts{
 				NamespaceUserID: 1235,
 				Name:            "Foobar",
 				UserID:          1235 + 1234,
 			}
 
-			have, err := s.GetNewestCampaignSpec(ctx, opts)
+			have, err := s.GetNewestBatchSpec(ctx, opts)
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
 			}
 
-			want := campaignSpecs[1]
+			want := batchSpecs[1]
 			if diff := cmp.Diff(have, want); diff != "" {
-				t.Errorf("unexpected campaign spec:\n%s", diff)
+				t.Errorf("unexpected batch spec:\n%s", diff)
 			}
 		})
 
 		t.Run("NamespaceOrg", func(t *testing.T) {
-			opts := GetNewestCampaignSpecOpts{
+			opts := GetNewestBatchSpecOpts{
 				NamespaceOrgID: 23,
 				Name:           "Foobar",
 				UserID:         1234 + 1234,
 			}
 
-			have, err := s.GetNewestCampaignSpec(ctx, opts)
+			have, err := s.GetNewestBatchSpec(ctx, opts)
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
 			}
 
-			want := campaignSpecs[0]
+			want := batchSpecs[0]
 			if diff := cmp.Diff(have, want); diff != "" {
-				t.Errorf("unexpected campaign spec:\n%s", diff)
+				t.Errorf("unexpected batch spec:\n%s", diff)
 			}
 		})
 	})
 
 	t.Run("Delete", func(t *testing.T) {
-		for i := range campaignSpecs {
-			err := s.DeleteCampaignSpec(ctx, campaignSpecs[i].ID)
+		for i := range batchSpecs {
+			err := s.DeleteBatchSpec(ctx, batchSpecs[i].ID)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			count, err := s.CountCampaignSpecs(ctx)
+			count, err := s.CountBatchSpecs(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if have, want := count, len(campaignSpecs)-(i+1); have != want {
+			if have, want := count, len(batchSpecs)-(i+1); have != want {
 				t.Fatalf("have count: %d, want: %d", have, want)
 			}
 		}
 	})
 
-	t.Run("DeleteExpiredCampaignSpecs", func(t *testing.T) {
-		underTTL := clock.Now().Add(-batches.CampaignSpecTTL + 1*time.Minute)
-		overTTL := clock.Now().Add(-batches.CampaignSpecTTL - 1*time.Minute)
+	t.Run("DeleteExpiredBatchSpecs", func(t *testing.T) {
+		underTTL := clock.Now().Add(-batches.BatchSpecTTL + 1*time.Minute)
+		overTTL := clock.Now().Add(-batches.BatchSpecTTL - 1*time.Minute)
 
 		tests := []struct {
 			createdAt         time.Time
-			hasCampaign       bool
+			hasBatchChange    bool
 			hasChangesetSpecs bool
 			wantDeleted       bool
 		}{
-			{hasCampaign: false, hasChangesetSpecs: false, createdAt: underTTL, wantDeleted: false},
-			{hasCampaign: false, hasChangesetSpecs: false, createdAt: overTTL, wantDeleted: true},
+			{hasBatchChange: false, hasChangesetSpecs: false, createdAt: underTTL, wantDeleted: false},
+			{hasBatchChange: false, hasChangesetSpecs: false, createdAt: overTTL, wantDeleted: true},
 
-			{hasCampaign: false, hasChangesetSpecs: true, createdAt: underTTL, wantDeleted: false},
-			{hasCampaign: false, hasChangesetSpecs: true, createdAt: overTTL, wantDeleted: false},
+			{hasBatchChange: false, hasChangesetSpecs: true, createdAt: underTTL, wantDeleted: false},
+			{hasBatchChange: false, hasChangesetSpecs: true, createdAt: overTTL, wantDeleted: false},
 
-			{hasCampaign: true, hasChangesetSpecs: true, createdAt: underTTL, wantDeleted: false},
-			{hasCampaign: true, hasChangesetSpecs: true, createdAt: overTTL, wantDeleted: false},
+			{hasBatchChange: true, hasChangesetSpecs: true, createdAt: underTTL, wantDeleted: false},
+			{hasBatchChange: true, hasChangesetSpecs: true, createdAt: overTTL, wantDeleted: false},
 		}
 
 		for _, tc := range tests {
-			campaignSpec := &batches.CampaignSpec{
+			batchSpec := &batches.BatchSpec{
 				UserID:          1,
 				NamespaceUserID: 1,
 				CreatedAt:       tc.createdAt,
 			}
 
-			if err := s.CreateCampaignSpec(ctx, campaignSpec); err != nil {
+			if err := s.CreateBatchSpec(ctx, batchSpec); err != nil {
 				t.Fatal(err)
 			}
 
-			if tc.hasCampaign {
-				campaign := &batches.Campaign{
+			if tc.hasBatchChange {
+				batchChange := &batches.BatchChange{
 					Name:             "not-blank",
 					InitialApplierID: 1,
 					NamespaceUserID:  1,
-					CampaignSpecID:   campaignSpec.ID,
+					BatchSpecID:      batchSpec.ID,
 					LastApplierID:    1,
 					LastAppliedAt:    time.Now(),
 				}
-				if err := s.CreateCampaign(ctx, campaign); err != nil {
+				if err := s.CreateBatchChange(ctx, batchChange); err != nil {
 					t.Fatal(err)
 				}
 			}
 
 			if tc.hasChangesetSpecs {
 				changesetSpec := &batches.ChangesetSpec{
-					RepoID:         1,
-					CampaignSpecID: campaignSpec.ID,
+					RepoID:      1,
+					BatchSpecID: batchSpec.ID,
 				}
 				if err := s.CreateChangesetSpec(ctx, changesetSpec); err != nil {
 					t.Fatal(err)
 				}
 			}
 
-			if err := s.DeleteExpiredCampaignSpecs(ctx); err != nil {
+			if err := s.DeleteExpiredBatchSpecs(ctx); err != nil {
 				t.Fatal(err)
 			}
 
-			haveCampaignSpec, err := s.GetCampaignSpec(ctx, GetCampaignSpecOpts{ID: campaignSpec.ID})
+			haveBatchSpecs, err := s.GetBatchSpec(ctx, GetBatchSpecOpts{ID: batchSpec.ID})
 			if err != nil && err != ErrNoResults {
 				t.Fatal(err)
 			}
 
 			if tc.wantDeleted && err == nil {
-				t.Fatalf("tc=%+v\n\t want campaign spec to be deleted. got: %v", tc, haveCampaignSpec)
+				t.Fatalf("tc=%+v\n\t want batch spec to be deleted. got: %v", tc, haveBatchSpecs)
 			}
 
 			if !tc.wantDeleted && err == ErrNoResults {
-				t.Fatalf("tc=%+v\n\t want campaign spec NOT to be deleted, but got deleted", tc)
+				t.Fatalf("tc=%+v\n\t want batch spec NOT to be deleted, but got deleted", tc)
 			}
 		}
 	})

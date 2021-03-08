@@ -21,7 +21,7 @@ var _ graphqlbackend.BatchChangeResolver = &batchChangeResolver{}
 type batchChangeResolver struct {
 	store *store.Store
 
-	batchChange *batches.Campaign
+	batchChange *batches.BatchChange
 
 	// Cache the namespace on the resolver, since it's accessed more than once.
 	namespaceOnce sync.Once
@@ -83,8 +83,8 @@ func (r *batchChangeResolver) LastAppliedAt() graphqlbackend.DateTime {
 }
 
 func (r *batchChangeResolver) SpecCreator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	spec, err := r.store.GetCampaignSpec(ctx, store.GetCampaignSpecOpts{
-		ID: r.batchChange.CampaignSpecID,
+	spec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{
+		ID: r.batchChange.BatchSpecID,
 	})
 	if err != nil {
 		return nil, err
@@ -153,7 +153,7 @@ func (r *batchChangeResolver) ClosedAt() *graphqlbackend.DateTime {
 
 func (r *batchChangeResolver) ChangesetsStats(ctx context.Context) (graphqlbackend.ChangesetsStatsResolver, error) {
 	stats, err := r.store.GetChangesetsStats(ctx, store.GetChangesetsStatsOpts{
-		CampaignID: r.batchChange.ID,
+		BatchChangeID: r.batchChange.ID,
 	})
 	if err != nil {
 		return nil, err
@@ -169,7 +169,7 @@ func (r *batchChangeResolver) Changesets(
 	if err != nil {
 		return nil, err
 	}
-	opts.CampaignID = r.batchChange.ID
+	opts.BatchChangeID = r.batchChange.ID
 	return &changesetsConnectionResolver{
 		store:    r.store,
 		opts:     opts,
@@ -185,7 +185,7 @@ func (r *batchChangeResolver) ChangesetCountsOverTime(
 
 	publishedState := batches.ChangesetPublicationStatePublished
 	opts := store.ListChangesetsOpts{
-		CampaignID: r.batchChange.ID,
+		BatchChangeID: r.batchChange.ID,
 		// Only load fully-synced changesets, so that the data we use for computing the changeset counts is complete.
 		PublicationState: &publishedState,
 	}
@@ -233,7 +233,7 @@ func (r *batchChangeResolver) ChangesetCountsOverTime(
 }
 
 func (r *batchChangeResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
-	diffStat, err := r.store.GetCampaignDiffStat(ctx, store.GetCampaignDiffStatOpts{CampaignID: r.batchChange.ID})
+	diffStat, err := r.store.GetBatchChangeDiffStat(ctx, store.GetBatchChangeDiffStatOpts{BatchChangeID: r.batchChange.ID})
 	if err != nil {
 		return nil, err
 	}
@@ -241,11 +241,11 @@ func (r *batchChangeResolver) DiffStat(ctx context.Context) (*graphqlbackend.Dif
 }
 
 func (r *batchChangeResolver) CurrentSpec(ctx context.Context) (graphqlbackend.BatchSpecResolver, error) {
-	campaignSpec, err := r.store.GetCampaignSpec(ctx, store.GetCampaignSpecOpts{ID: r.batchChange.CampaignSpecID})
+	batchSpec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: r.batchChange.BatchSpecID})
 	if err != nil {
 		// This spec should always exist, so fail hard on not found errors as well.
 		return nil, err
 	}
 
-	return &batchSpecResolver{store: r.store, campaignSpec: campaignSpec}, nil
+	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
 }

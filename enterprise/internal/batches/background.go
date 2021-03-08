@@ -14,7 +14,7 @@ import (
 )
 
 // InitBackgroundJobs starts all jobs required to run batches. Currently, it is called from
-// repo-updater and in the future will be the main entry point for the campaigns worker.
+// repo-updater and in the future will be the main entry point for the batch changes worker.
 func InitBackgroundJobs(
 	ctx context.Context,
 	db dbutil.DB,
@@ -35,7 +35,7 @@ func InitBackgroundJobs(
 	// the database without repository permissions being enforced.
 	// We do check for repository permissions conciously in the Rewirer when
 	// creating new changesets and in the executor, when talking to the code
-	// host, we manually check for CampaignsCredentials.
+	// host, we manually check for BatchChangesCredentials.
 	ctx = actor.WithInternalActor(ctx)
 
 	syncRegistry := syncer.NewSyncRegistry(ctx, cstore, repoStore, esStore, cf)

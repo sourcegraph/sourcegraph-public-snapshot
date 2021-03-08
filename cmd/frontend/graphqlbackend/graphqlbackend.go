@@ -337,19 +337,19 @@ func prometheusGraphQLRequestName(requestName string) string {
 	return "other"
 }
 
-func NewSchema(db dbutil.DB, campaigns CampaignsResolver, codeIntel CodeIntelResolver, insights InsightsResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver, license LicenseResolver) (*graphql.Schema, error) {
+func NewSchema(db dbutil.DB, campaigns BatchChangesResolver, codeIntel CodeIntelResolver, insights InsightsResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver, license LicenseResolver) (*graphql.Schema, error) {
 	resolver := &schemaResolver{
 		db: db,
 
-		CampaignsResolver: defaultCampaignsResolver{},
-		AuthzResolver:     defaultAuthzResolver{},
-		CodeIntelResolver: defaultCodeIntelResolver{},
-		InsightsResolver:  defaultInsightsResolver{},
-		LicenseResolver:   defaultLicenseResolver{},
+		BatchChangesResolver: defaultBatchChangesResolver{},
+		AuthzResolver:        defaultAuthzResolver{},
+		CodeIntelResolver:    defaultCodeIntelResolver{},
+		InsightsResolver:     defaultInsightsResolver{},
+		LicenseResolver:      defaultLicenseResolver{},
 	}
 	if campaigns != nil {
 		EnterpriseResolvers.campaignsResolver = campaigns
-		resolver.CampaignsResolver = campaigns
+		resolver.BatchChangesResolver = campaigns
 	}
 	if codeIntel != nil {
 		EnterpriseResolvers.codeIntelResolver = codeIntel
@@ -598,7 +598,7 @@ func (r *NodeResolver) ToOutOfBandMigration() (*outOfBandMigrationResolver, bool
 // uses subresolvers which are globals. Enterprise-only resolvers are assigned
 // to a field of EnterpriseResolvers.
 type schemaResolver struct {
-	CampaignsResolver
+	BatchChangesResolver
 	AuthzResolver
 	CodeIntelResolver
 	InsightsResolver
@@ -614,13 +614,13 @@ var EnterpriseResolvers = struct {
 	codeIntelResolver    CodeIntelResolver
 	insightsResolver     InsightsResolver
 	authzResolver        AuthzResolver
-	campaignsResolver    CampaignsResolver
+	campaignsResolver    BatchChangesResolver
 	codeMonitorsResolver CodeMonitorsResolver
 	licenseResolver      LicenseResolver
 }{
 	codeIntelResolver:    defaultCodeIntelResolver{},
 	authzResolver:        defaultAuthzResolver{},
-	campaignsResolver:    defaultCampaignsResolver{},
+	campaignsResolver:    defaultBatchChangesResolver{},
 	codeMonitorsResolver: defaultCodeMonitorsResolver{},
 	licenseResolver:      defaultLicenseResolver{},
 }

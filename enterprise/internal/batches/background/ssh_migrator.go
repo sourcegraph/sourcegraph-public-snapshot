@@ -14,9 +14,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
-// CampaignsSSHMigrationID is the ID of row holding the ssh migration. It is defined in
+// BatchChangesSSHMigrationID is the ID of row holding the ssh migration. It is defined in
 // `1528395788_campaigns_ssh_key_migration.up`.
-const CampaignsSSHMigrationID = 2
+const BatchChangesSSHMigrationID = 2
 
 const sshMigrationCountPerRun = 5
 

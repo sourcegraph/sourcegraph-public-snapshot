@@ -12,10 +12,10 @@ import (
 )
 
 type TestSpecOpts struct {
-	ID           int64
-	User         int32
-	Repo         api.RepoID
-	CampaignSpec int64
+	ID        int64
+	User      int32
+	Repo      api.RepoID
+	BatchSpec int64
 
 	// If this is non-blank, the changesetSpec will be an import/track spec for
 	// the changeset with the given ExternalID in the given repo.
@@ -55,10 +55,10 @@ func BuildChangesetSpec(t *testing.T, opts TestSpecOpts) *batches.ChangesetSpec 
 	}
 
 	spec := &batches.ChangesetSpec{
-		ID:             opts.ID,
-		UserID:         opts.User,
-		RepoID:         opts.Repo,
-		CampaignSpecID: opts.CampaignSpec,
+		ID:          opts.ID,
+		UserID:      opts.User,
+		RepoID:      opts.Repo,
+		BatchSpecID: opts.BatchSpec,
 		Spec: &batches.ChangesetSpecDescription{
 			BaseRepository: graphqlbackend.MarshalRepositoryID(opts.Repo),
 

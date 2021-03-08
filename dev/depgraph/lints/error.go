@@ -17,7 +17,12 @@ func (e lintError) Error() string {
 		desc = ": " + desc
 	}
 
-	return fmt.Sprintf("(%s) %s%s", e.name, e.pkg, desc)
+	pkg := e.pkg
+	if pkg == "" {
+		pkg = "<root>"
+	}
+
+	return fmt.Sprintf("(%s) %s%s", e.name, pkg, desc)
 }
 
 type lintErrors []lintError

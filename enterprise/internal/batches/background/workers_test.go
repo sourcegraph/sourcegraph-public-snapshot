@@ -31,8 +31,8 @@ func TestWorkerView(t *testing.T) {
 	cstore := store.NewWithClock(db, clock)
 
 	user := ct.CreateTestUser(t, db, true)
-	spec := ct.CreateCampaignSpec(t, ctx, cstore, "test-campaign", user.ID)
-	campaign := ct.CreateCampaign(t, ctx, cstore, "test-campaign", user.ID, spec.ID)
+	spec := ct.CreateBatchSpec(t, ctx, cstore, "test-batch-change", user.ID)
+	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test-batch-change", user.ID, spec.ID)
 	repos, _ := ct.CreateTestRepos(t, ctx, cstore.DB(), 2)
 	repo := repos[0]
 	deletedRepo := repos[1]
@@ -43,7 +43,7 @@ func TestWorkerView(t *testing.T) {
 	t.Run("Queued changeset", func(t *testing.T) {
 		c := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 			Repo:            repo.ID,
-			Campaign:        campaign.ID,
+			BatchChange:     batchChange.ID,
 			ReconcilerState: batches.ReconcilerStateQueued,
 		})
 		t.Cleanup(func() {
@@ -53,10 +53,10 @@ func TestWorkerView(t *testing.T) {
 		})
 		assertReturnedChangesetIDs(t, ctx, cstore.DB(), []int{int(c.ID)})
 	})
-	t.Run("Not in campaign", func(t *testing.T) {
+	t.Run("Not in batch change", func(t *testing.T) {
 		c := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 			Repo:            repo.ID,
-			Campaign:        0,
+			BatchChange:     0,
 			ReconcilerState: batches.ReconcilerStateQueued,
 		})
 		t.Cleanup(func() {
@@ -66,15 +66,15 @@ func TestWorkerView(t *testing.T) {
 		})
 		assertReturnedChangesetIDs(t, ctx, cstore.DB(), []int{})
 	})
-	t.Run("In campaign with deleted user namespace", func(t *testing.T) {
+	t.Run("In batch change with deleted user namespace", func(t *testing.T) {
 		deletedUser := ct.CreateTestUser(t, db, true)
 		if err := database.UsersWith(cstore).Delete(ctx, deletedUser.ID); err != nil {
 			t.Fatal(err)
 		}
-		userCampaign := ct.CreateCampaign(t, ctx, cstore, "test-user-namespace", deletedUser.ID, spec.ID)
+		userBatchChange := ct.CreateBatchChange(t, ctx, cstore, "test-user-namespace", deletedUser.ID, spec.ID)
 		c := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 			Repo:            repo.ID,
-			Campaign:        userCampaign.ID,
+			BatchChange:     userBatchChange.ID,
 			ReconcilerState: batches.ReconcilerStateQueued,
 		})
 		t.Cleanup(func() {
@@ -84,19 +84,19 @@ func TestWorkerView(t *testing.T) {
 		})
 		assertReturnedChangesetIDs(t, ctx, cstore.DB(), []int{})
 	})
-	t.Run("In campaign with deleted org namespace", func(t *testing.T) {
+	t.Run("In batch change with deleted org namespace", func(t *testing.T) {
 		orgID := ct.InsertTestOrg(t, db, "deleted-org")
 		if err := database.OrgsWith(cstore).Delete(ctx, orgID); err != nil {
 			t.Fatal(err)
 		}
-		orgCampaign := ct.BuildCampaign(cstore, "test-user-namespace", 0, spec.ID)
-		orgCampaign.NamespaceOrgID = orgID
-		if err := cstore.CreateCampaign(ctx, orgCampaign); err != nil {
+		orgBatchChange := ct.BuildBatchChange(cstore, "test-user-namespace", 0, spec.ID)
+		orgBatchChange.NamespaceOrgID = orgID
+		if err := cstore.CreateBatchChange(ctx, orgBatchChange); err != nil {
 			t.Fatal(err)
 		}
 		c := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 			Repo:            repo.ID,
-			Campaign:        orgCampaign.ID,
+			BatchChange:     orgBatchChange.ID,
 			ReconcilerState: batches.ReconcilerStateQueued,
 		})
 		t.Cleanup(func() {
@@ -106,19 +106,19 @@ func TestWorkerView(t *testing.T) {
 		})
 		assertReturnedChangesetIDs(t, ctx, cstore.DB(), []int{})
 	})
-	t.Run("In campaign with deleted namespace but another campaign with an existing one", func(t *testing.T) {
+	t.Run("In batch change with deleted namespace but another batch change with an existing one", func(t *testing.T) {
 		deletedUser := ct.CreateTestUser(t, db, true)
 		if err := database.UsersWith(cstore).Delete(ctx, deletedUser.ID); err != nil {
 			t.Fatal(err)
 		}
-		userCampaign := ct.CreateCampaign(t, ctx, cstore, "test-user-namespace", deletedUser.ID, spec.ID)
+		userBatchChange := ct.CreateBatchChange(t, ctx, cstore, "test-user-namespace", deletedUser.ID, spec.ID)
 		c := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 			Repo:            repo.ID,
-			Campaign:        userCampaign.ID,
+			BatchChange:     userBatchChange.ID,
 			ReconcilerState: batches.ReconcilerStateQueued,
 		})
-		// Attach second campaign
-		c.Attach(campaign.ID)
+		// Attach second batch change
+		c.Attach(batchChange.ID)
 		if err := cstore.UpdateChangeset(ctx, c); err != nil {
 			t.Fatal(err)
 		}
@@ -132,7 +132,7 @@ func TestWorkerView(t *testing.T) {
 	t.Run("In deleted repo", func(t *testing.T) {
 		c := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 			Repo:            deletedRepo.ID,
-			Campaign:        campaign.ID,
+			BatchChange:     batchChange.ID,
 			ReconcilerState: batches.ReconcilerStateQueued,
 		})
 		t.Cleanup(func() {

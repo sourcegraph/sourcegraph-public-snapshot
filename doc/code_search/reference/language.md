@@ -1124,7 +1124,7 @@ matches.
 Filter out stale repositories that don’t contain commits past the specified time
 frame. This parameter is experimental.
 
-**Example:** `-repohasfile:Dockerfile docker` [↗](https://sourcegraph.com/search?q=-repohasfile:Dockerfile+docker&patternType=regexp)
+**Example:** `repo:github\.com/sourcegraph repohascommitafter:"1 week ago"` [↗](https://sourcegraph.com/search?q=context:global+repo:github%5C.com/sourcegraph+repohascommitafter:%221+week+ago%22&patternType=literal)
 
 ### Count
 

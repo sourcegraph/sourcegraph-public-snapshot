@@ -12,13 +12,16 @@ import (
 // DependencyGraph encodes the import relationships between packages within
 // the sourcegraph/sourcegraph repository.
 type DependencyGraph struct {
-	// Packages is a de-duplicated and ordered list of all package.
+	// Packages is a de-duplicated and ordered list of all package paths.
 	Packages []string
 
-	// Dependencies is a map from package name to the set of packages it imports.
+	// PackageNames is a map from package paths to their declared names.
+	PackageNames map[string][]string
+
+	// Dependencies is a map from package path to the set of packages it imports.
 	Dependencies map[string][]string
 
-	// Dependents is a map from package name to the set of packages that import it.
+	// Dependents is a map from package path to the set of packages that import it.
 	Dependents map[string][]string
 }
 
@@ -34,25 +37,25 @@ func Load() (*DependencyGraph, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	names, err := parseNames(root, packageMap)
+	if err != nil {
+		return nil, err
+	}
 	imports, err := parseImports(root, packageMap)
 	if err != nil {
 		return nil, err
 	}
+	reverseImports := reverseGraph(imports)
 
-	reverseImports := make(map[string][]string, len(imports))
-	for pkg, dependencies := range imports {
-		for _, dependency := range dependencies {
-			reverseImports[dependency] = append(reverseImports[dependency], pkg)
-		}
+	allPackages := make(map[string]struct{}, len(names)+len(imports)+len(reverseImports))
+	for pkg := range names {
+		allPackages[pkg] = struct{}{}
 	}
-
-	allPackages := make(map[string]struct{}, len(imports))
-	for k := range imports {
-		allPackages[k] = struct{}{}
+	for pkg := range imports {
+		allPackages[pkg] = struct{}{}
 	}
-	for k := range reverseImports {
-		allPackages[k] = struct{}{}
+	for pkg := range reverseImports {
+		allPackages[pkg] = struct{}{}
 	}
 
 	packages := make([]string, 0, len(allPackages))
@@ -63,6 +66,7 @@ func Load() (*DependencyGraph, error) {
 
 	return &DependencyGraph{
 		Packages:     packages,
+		PackageNames: names,
 		Dependencies: imports,
 		Dependents:   reverseImports,
 	}, nil
@@ -96,4 +100,16 @@ func findRoot() (string, error) {
 
 		return "", fmt.Errorf("not running inside sourcegraph/sourcegraph")
 	}
+}
+
+// reverseGraph returns the given graph with all edges reversed.
+func reverseGraph(graph map[string][]string) map[string][]string {
+	reverseGraph := make(map[string][]string, len(graph))
+	for pkg, dependencies := range graph {
+		for _, dependency := range dependencies {
+			reverseGraph[dependency] = append(reverseGraph[dependency], pkg)
+		}
+	}
+
+	return reverseGraph
 }

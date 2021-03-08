@@ -42,23 +42,23 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	spec := &batches.CampaignSpec{
+	spec := &batches.BatchSpec{
 		NamespaceUserID: userID,
 		UserID:          userID,
 	}
-	if err := cstore.CreateCampaignSpec(ctx, spec); err != nil {
+	if err := cstore.CreateBatchSpec(ctx, spec); err != nil {
 		t.Fatal(err)
 	}
 
-	campaign := &batches.Campaign{
+	batchChange := &batches.BatchChange{
 		Name:             "my-unique-name",
 		NamespaceUserID:  userID,
 		InitialApplierID: userID,
 		LastApplierID:    userID,
 		LastAppliedAt:    time.Now(),
-		CampaignSpecID:   spec.ID,
+		BatchSpecID:      spec.ID,
 	}
-	if err := cstore.CreateCampaign(ctx, campaign); err != nil {
+	if err := cstore.CreateBatchChange(ctx, batchChange); err != nil {
 		t.Fatal(err)
 	}
 
@@ -67,8 +67,8 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 		ExternalServiceType: "github",
 		PublicationState:    batches.ChangesetPublicationStateUnpublished,
 		ExternalReviewState: batches.ChangesetReviewStatePending,
-		OwnedByCampaign:     campaign.ID,
-		Campaign:            campaign.ID,
+		OwnedByBatchChange:  batchChange.ID,
+		BatchChange:         batchChange.ID,
 		Metadata: &github.PullRequest{
 			TimelineItems: []github.TimelineItem{
 				{Type: "PullRequestCommit", Item: &github.PullRequestCommit{
@@ -93,7 +93,7 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	addChangeset(t, ctx, cstore, changeset, campaign.ID)
+	addChangeset(t, ctx, cstore, changeset, batchChange.ID)
 
 	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil)
 	if err != nil {
