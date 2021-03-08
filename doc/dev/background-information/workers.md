@@ -23,7 +23,7 @@ func (h *myHandler) PreDequeue(context.Context) (dequeueable bool, extraDequeueA
 
 If the hook returns with `dequeueable = false`, the worker will continue to wait before the next attempt to dequeue an available job. If the hook returns with `extraDequeueArguments`, then it will be passed (in an implementation-specific manner) to the store while dequeueing a job. For the database-backed store, the `extraDequeueArguments` take the form of `*sqlf.Query` expressions, which are added to the conditional clause when selecting a candidate job record.
 
-The main use of these return values are to aide in implementation of a worker _budget_. If the worker is processing multiple jobs, it must be careful that the maximum number of concurrent jobs do not exceed the resource capacity of the worker process. Adding additional conditions to the dequeue method in this manner allows us to skip over jobs that would require more resources than our current capacity. (This applies to jobs for which the resource usage can be fairly accurately estimated.)
+The main use of these return values are to aid in implementation of a worker _budget_. If the worker is processing multiple jobs, it must be careful that the maximum number of concurrent jobs do not exceed the resource capacity of the worker process. Adding additional conditions to the dequeue method in this manner allows us to skip over jobs that would require more resources than our current capacity. (This applies to jobs for which the resource usage can be fairly accurately estimated.)
 
 #### Hook 2: PreHandle (optional)
 
