@@ -1,30 +1,16 @@
 import React from 'react'
 
-interface ButtonProps {
+interface PageButton extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     active?: boolean
-    onClick?: () => void
-    disabled?: boolean
-    className?: string
 }
 
-const PageSelectorButton: React.FunctionComponent<ButtonProps> = ({ children, disabled, onClick, active }) => (
+const PageButton: React.FunctionComponent<PageButton> = ({ children, active, ...props }) => (
     <li>
-        <button
-            type="button"
-            onClick={onClick}
-            className={`btn mx-1 ${active ? 'btn-primary' : ''}`}
-            disabled={disabled}
-        >
+        <button type="button" className={`btn mx-1 ${active ? 'btn-primary' : ''}`} {...props}>
             {children}
         </button>
     </li>
 )
-
-interface Props {
-    currentPage: number
-    onPageChange: (page: number) => void
-    maxPages: number
-}
 
 const range = (start: number, end: number) => {
     const length = end - start + 1
@@ -34,22 +20,22 @@ const range = (start: number, end: number) => {
 type Page = '...' | number
 
 const getPages = (currentPage: number, maxPages: number): Page[] => {
-    const siblingCount = 1
+    const maxSiblingRange = 5
     const boundary = 3
     const upperBoundary = maxPages - boundary + 1
 
     const siblingsStart = Math.max(
         Math.min(
-            currentPage - siblingCount,
-            upperBoundary - siblingCount * 2 // Lower boundary when page is high
+            currentPage - 1,
+            maxPages - maxSiblingRange + 1 // Extend range when page is high
         ),
         boundary // Minimum boundary
     )
 
     const siblingsEnd = Math.min(
         Math.max(
-            currentPage + siblingCount,
-            siblingCount * 2 + boundary // Upper boundary when page is low
+            currentPage + 1,
+            maxSiblingRange // Extend range when page is low
         ),
         upperBoundary // Maximum boundary
     )
@@ -63,26 +49,25 @@ const getPages = (currentPage: number, maxPages: number): Page[] => {
     return [1, ...middle, maxPages]
 }
 
+interface Props {
+    currentPage: number
+    onPageChange: (page: number) => void
+    maxPages: number
+}
+
 export const PageSelector: React.FunctionComponent<Props> = ({ currentPage, onPageChange, maxPages }) => {
     const pages = getPages(currentPage, maxPages)
 
     return (
         <nav>
             <ul className="page-selector">
-                <PageSelectorButton onClick={() => onPageChange(currentPage - 1)}>Previous</PageSelectorButton>
+                <PageButton onClick={() => onPageChange(currentPage - 1)}>Previous</PageButton>
                 {pages.map((page, i) => (
-                    <li key={i}>
-                        <button
-                            type="button"
-                            disabled={page === '...'}
-                            onClick={() => page !== '...' && onPageChange(page)}
-                            className={`btn mx-1 ${page === currentPage ? 'btn-primary' : ''}`}
-                        >
-                            {page}
-                        </button>
-                    </li>
+                    <PageButton key={i} disabled={page === '...'} onClick={() => page !== '...' && onPageChange(page)}>
+                        {page}
+                    </PageButton>
                 ))}
-                <PageSelectorButton onClick={() => onPageChange(currentPage + 1)}>Next</PageSelectorButton>
+                <PageButton onClick={() => onPageChange(currentPage + 1)}>Next</PageButton>
             </ul>
         </nav>
     )
