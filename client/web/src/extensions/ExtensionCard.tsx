@@ -173,11 +173,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                         <div className="d-flex align-items-center">
                             <span className="mb-0 mr-1 text-truncate flex-1">
                                 <Link
-                                    to={`/extensions/${
-                                        extension.registryExtension
-                                            ? extension.registryExtension.extensionIDWithoutRegistry
-                                            : extension.id
-                                    }`}
+                                    to={`/extensions/${extension.id}`}
                                     className={classNames('font-weight-bold', change === 'enabled' ? 'alert-link' : '')}
                                 >
                                     {name}
