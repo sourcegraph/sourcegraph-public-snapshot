@@ -138,6 +138,8 @@ This guide will show you how to add a new database-backed worker instance.
 
 First, we create a table containing _at least_ the fields described above. We're also going to add a reference to a repository (by identifier). We're also define a view that additionally grabs the name of the associated repository from the `repo` table.
 
+Defining this view is **optional** and is done here to showcase the flexibility in configuration. The rest of the tutorial would remain the same using the table name directly where the view is used (except, of course, references to fields defined only on the view).
+
 ```sql
 BEGIN;
 
