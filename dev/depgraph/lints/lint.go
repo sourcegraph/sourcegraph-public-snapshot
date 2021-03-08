@@ -2,6 +2,7 @@ package lints
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/sourcegraph/sourcegraph/dev/depgraph/graph"
 )
@@ -12,6 +13,7 @@ var lintsByName = map[string]Lint{
 	"NoDeadPackages":             NoDeadPackages,
 	"NoReachingIntoCommands":     NoReachingIntoCommands,
 	"NoBinarySpecificSharedCode": NoBinarySpecificSharedCode,
+	"NoLooseCommands":            NoLooseCommands,
 }
 
 var DefaultLints []string
@@ -44,6 +46,9 @@ func Run(graph *graph.DependencyGraph, names []string) error {
 			errors = append(errors, lError...)
 		}
 	}
+	sort.Slice(errors, func(i, j int) bool {
+		return errors[i].name < errors[j].name || (errors[i].name == errors[j].name && errors[i].pkg < errors[j].pkg)
+	})
 
 	return multi(errors)
 }

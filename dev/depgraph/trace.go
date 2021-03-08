@@ -207,7 +207,7 @@ func isParent(child, parent string) bool {
 	return parent == "" || strings.HasPrefix(child, parent+"/")
 }
 
-// labelize returns the last segment of the given package name.
+// labelize returns the last segment of the given package path.
 func labelize(pkg string) string {
 	if pkg == "" {
 		pkg = "sg/sg"
@@ -218,7 +218,7 @@ func labelize(pkg string) string {
 
 var nonAlphaPattern = regexp.MustCompile(`[^a-z]`)
 
-// normalize makes a package name suitable for a dot node name.
+// normalize makes a package path suitable for a dot node name.
 func normalize(pkg string) string {
 	if pkg == "" {
 		pkg = "sg/sg"
