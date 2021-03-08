@@ -36,6 +36,7 @@ const (
 type QueryInfo interface {
 	Count() *int
 	Archived() *YesNoOnly
+	Fork() *YesNoOnly
 	Timeout() *time.Duration
 	RegexpPatterns(field string) (values, negatedValues []string)
 	StringValues(field string) (values, negatedValues []string)
@@ -133,6 +134,10 @@ func (q Q) Count() *int {
 
 func (q Q) Archived() *YesNoOnly {
 	return q.yesNoOnlyValue(FieldArchived)
+}
+
+func (q Q) Fork() *YesNoOnly {
+	return q.yesNoOnlyValue(FieldFork)
 }
 
 func (q Q) yesNoOnlyValue(field string) *YesNoOnly {

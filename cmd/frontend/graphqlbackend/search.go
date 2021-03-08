@@ -414,13 +414,15 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		settingArchived = *v
 	}
 
-	forkStr, _ := r.Query.StringValue(query.FieldFork)
-	fork := query.ParseYesNoOnly(forkStr)
-	if fork == query.Invalid && !searchrepos.ExactlyOneRepo(repoFilters) && !settingForks {
+	fork := query.No
+	if searchrepos.ExactlyOneRepo(repoFilters) || settingForks {
 		// fork defaults to No unless either of:
 		// (1) exactly one repo is being searched, or
 		// (2) user/org/global setting includes forks
-		fork = query.No
+		fork = query.Yes
+	}
+	if setFork := r.Query.Fork(); setFork != nil {
+		fork = *setFork
 	}
 
 	archived := query.No
