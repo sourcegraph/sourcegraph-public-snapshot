@@ -6,6 +6,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
 // TODO(campaigns-deprecation): Remove when campaigns are fully removed
@@ -153,4 +154,30 @@ func (c *campaignsCodeHostResolver) Credential() graphqlbackend.CampaignsCredent
 
 func (c *campaignsCodeHostResolver) RequiresSSH() bool {
 	return c.BatchChangesCodeHostResolver.RequiresSSH()
+}
+
+type campaignsCodeHostConnectionResolver struct {
+	graphqlbackend.BatchChangesCodeHostConnectionResolver
+}
+
+var _ graphqlbackend.CampaignsCodeHostConnectionResolver = &campaignsCodeHostConnectionResolver{}
+
+func (c *campaignsCodeHostConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	return c.BatchChangesCodeHostConnectionResolver.TotalCount(ctx)
+}
+
+func (c *campaignsCodeHostConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	return c.BatchChangesCodeHostConnectionResolver.PageInfo(ctx)
+}
+
+func (c *campaignsCodeHostConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.CampaignsCodeHostResolver, error) {
+	batchNodes, err := c.BatchChangesCodeHostConnectionResolver.Nodes(ctx)
+	if err != nil {
+		return nil, err
+	}
+	nodes := make([]graphqlbackend.CampaignsCodeHostResolver, len(batchNodes))
+	for i, ch := range batchNodes {
+		nodes[i] = &campaignsCodeHostResolver{BatchChangesCodeHostResolver: ch}
+	}
+	return nodes, nil
 }
