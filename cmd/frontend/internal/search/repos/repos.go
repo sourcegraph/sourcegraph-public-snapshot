@@ -169,19 +169,20 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 		go func() {
 			var out []*types.RepoName
 			defer func() { userPublicRepos <- out }()
-			if searchContext != nil && searchContext.UserID != 0 {
-				userRepos, err := database.UserPublicRepos(r.DB).ListByUser(ctx, searchContext.UserID)
-				if err != nil {
-					log15.Error("Error fetching user public repos for search context", "error", err)
-					return
+			if searchContext == nil || searchContext.UserID == 0 {
+				return
+			}
+			userRepos, err := database.UserPublicRepos(r.DB).ListByUser(ctx, searchContext.UserID)
+			if err != nil {
+				log15.Error("Error fetching user public repos for search context", "error", err)
+				return
+			}
+			for _, repo := range userRepos {
+				name := types.RepoName{
+					ID:   repo.RepoID,
+					Name: api.RepoName(repo.RepoURI),
 				}
-				for _, repo := range userRepos {
-					name := types.RepoName{
-						ID:   repo.RepoID,
-						Name: api.RepoName(repo.RepoURI),
-					}
-					out = append(out, &name)
-				}
+				out = append(out, &name)
 			}
 		}()
 
