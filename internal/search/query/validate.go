@@ -245,10 +245,6 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		FieldFile:
 		return satisfies(isValidRegexp)
 	case
-		FieldFork,
-		FieldArchived:
-		return satisfies(isSingular, isNotNegated)
-	case
 		FieldLang:
 		return satisfies(isLanguage)
 	case
@@ -275,7 +271,9 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		FieldMessage:
 		return satisfies(isValidRegexp)
 	case
-		FieldIndex:
+		FieldIndex,
+		FieldFork,
+		FieldArchived:
 		return satisfies(isSingular, isNotNegated, isYesNoOnly)
 	case
 		FieldCount:
