@@ -3,6 +3,7 @@ package query
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 )
 
 type ExpectedOperand struct {
@@ -32,6 +33,7 @@ const (
 // QueryInfo is an interface for accessing query values that drive our search logic.
 // It will be removed in favor of a cleaner query API to access values.
 type QueryInfo interface {
+	Count() *int
 	RegexpPatterns(field string) (values, negatedValues []string)
 	StringValues(field string) (values, negatedValues []string)
 	StringValue(field string) (value, negatedValue string)
@@ -112,6 +114,18 @@ func (q Q) BoolValue(field string) bool {
 		result, _ = parseBool(value) // err was checked during parsing and validation.
 	})
 	return result
+}
+
+func (q Q) Count() *int {
+	var count *int
+	VisitField(q, FieldCount, func(value string, _ bool, _ Annotation) {
+		c, err := strconv.Atoi(value)
+		if err != nil {
+			panic(fmt.Sprintf("Value %q for count cannot be parsed as an int: %s", value, err))
+		}
+		count = &c
+	})
+	return count
 }
 
 func (q Q) IsCaseSensitive() bool {
