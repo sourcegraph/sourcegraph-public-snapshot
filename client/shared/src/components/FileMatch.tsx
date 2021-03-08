@@ -8,7 +8,7 @@ import { FetchFileParameters } from './CodeExcerpt'
 import { EventLogger, FileMatchChildren } from './FileMatchChildren'
 import { RepoFileLink } from './RepoFileLink'
 import { Props as ResultContainerProps, ResultContainer } from './ResultContainer'
-import { Badge } from 'sourcegraph'
+import { AggregableTag, Badge } from 'sourcegraph'
 import { AggregatedTag } from './AggregatedTag'
 
 const SUBSET_COUNT_KEY = 'fileMatchSubsetCount'
@@ -121,7 +121,7 @@ export class FileMatch extends React.PureComponent<Props> {
             items.length > 0 ? (
                 <>
                     {aggregateTags(items).map(tag => (
-                        <AggregatedTag key={tag} text={tag} />
+                        <AggregatedTag key={tag.text} tag={tag} />
                     ))}
                 </>
             ) : undefined
@@ -176,6 +176,6 @@ export class FileMatch extends React.PureComponent<Props> {
     }
 }
 
-function aggregateTags(items: MatchItem[]): string[] {
+function aggregateTags(items: MatchItem[]): AggregableTag[] {
     return [...new Set(items.flatMap(item => item.aggregableTags || []))].sort()
 }

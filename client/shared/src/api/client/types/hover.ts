@@ -16,7 +16,7 @@ export interface HoverMerged {
 export function fromHoverMerged(values: (Badged<Hover | PlainHover> | null | undefined)[]): HoverMerged | null {
     const contents: HoverMerged['contents'] = []
     const alerts: HoverMerged['alerts'] = []
-    const aggregatedTags = new Set<AggregableTag>()
+    const aggregatedTags = new Map<string, AggregableTag>()
     let range: PlainRange | undefined
     for (const result of values) {
         if (result) {
@@ -34,7 +34,7 @@ export function fromHoverMerged(values: (Badged<Hover | PlainHover> | null | und
             const tags = [result, ...(result.alerts || [])].flatMap(badged => badged.aggregableTags || [])
 
             for (const tag of tags) {
-                aggregatedTags.add(tag)
+                aggregatedTags.set(tag.text, tag)
             }
 
             if (result.range && !range) {
@@ -57,7 +57,7 @@ export function fromHoverMerged(values: (Badged<Hover | PlainHover> | null | und
         alerts,
         ...(range ? { range } : {}),
         ...(aggregatedTags.size > 0
-            ? { aggregatedTags: [...aggregatedTags].sort((a, b) => a.text.localeCompare(b.text)) }
+            ? { aggregatedTags: [...aggregatedTags.values()].sort((a, b) => a.text.localeCompare(b.text)) }
             : {}),
     }
 }
