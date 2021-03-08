@@ -38,7 +38,7 @@ func parseImports(root string, packageMap map[string]struct{}) (map[string][]str
 			}
 		}
 
-		var flattened []string
+		flattened := make([]string, 0, len(importMap))
 		for pkg := range importMap {
 			if strings.HasPrefix(pkg, rootPackage) {
 				// internal packages only; omit leading root package prefix
