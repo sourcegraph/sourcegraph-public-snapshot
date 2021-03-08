@@ -7,17 +7,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// GetCampaignsUsageStatistics returns the current site's campaigns usage.
-func GetCampaignsUsageStatistics(ctx context.Context) (*types.CampaignsUsageStatistics, error) {
+// GetBatchChangesUsageStatistics returns the current site's batch changes usage.
+func GetBatchChangesUsageStatistics(ctx context.Context) (*types.CampaignsUsageStatistics, error) {
 	stats := types.CampaignsUsageStatistics{}
 
-	const campaignsCountsQuery = `
+	const batchChangesCountsQuery = `
 SELECT
-    COUNT(*)                                      AS campaigns_count,
-    COUNT(*) FILTER (WHERE closed_at IS NOT NULL) AS campaigns_closed_count
-FROM campaigns;
+    COUNT(*)                                      AS batch_changes_count,
+    COUNT(*) FILTER (WHERE closed_at IS NOT NULL) AS batch_changes_closed_count
+FROM batch_changes;
 `
-	if err := dbconn.Global.QueryRowContext(ctx, campaignsCountsQuery).Scan(
+	if err := dbconn.Global.QueryRowContext(ctx, batchChangesCountsQuery).Scan(
 		&stats.CampaignsCount,
 		&stats.CampaignsClosedCount,
 	); err != nil {
@@ -26,16 +26,16 @@ FROM campaigns;
 
 	const changesetCountsQuery = `
 SELECT
-    COUNT(*)                        FILTER (WHERE owned_by_campaign_id IS NOT NULL AND publication_state = 'PUBLISHED') AS action_changesets,
-    COALESCE(SUM(diff_stat_added)   FILTER (WHERE owned_by_campaign_id IS NOT NULL AND publication_state = 'PUBLISHED'), 0) AS action_changesets_diff_stat_added_sum,
-    COALESCE(SUM(diff_stat_changed) FILTER (WHERE owned_by_campaign_id IS NOT NULL AND publication_state = 'PUBLISHED'), 0) AS action_changesets_diff_stat_changed_sum,
-    COALESCE(SUM(diff_stat_deleted) FILTER (WHERE owned_by_campaign_id IS NOT NULL AND publication_state = 'PUBLISHED'), 0) AS action_changesets_diff_stat_deleted_sum,
-    COUNT(*)                        FILTER (WHERE owned_by_campaign_id IS NOT NULL AND publication_state = 'PUBLISHED' AND external_state = 'MERGED') AS action_changesets_merged,
-    COALESCE(SUM(diff_stat_added)   FILTER (WHERE owned_by_campaign_id IS NOT NULL AND publication_state = 'PUBLISHED' AND external_state = 'MERGED'), 0) AS action_changesets_merged_diff_stat_added_sum,
-    COALESCE(SUM(diff_stat_changed) FILTER (WHERE owned_by_campaign_id IS NOT NULL AND publication_state = 'PUBLISHED' AND external_state = 'MERGED'), 0) AS action_changesets_merged_diff_stat_changed_sum,
-    COALESCE(SUM(diff_stat_deleted) FILTER (WHERE owned_by_campaign_id IS NOT NULL AND publication_state = 'PUBLISHED' AND external_state = 'MERGED'), 0) AS action_changesets_merged_diff_stat_deleted_sum,
-    COUNT(*) FILTER (WHERE owned_by_campaign_id IS NULL) AS manual_changesets,
-    COUNT(*) FILTER (WHERE owned_by_campaign_id IS NULL AND external_state = 'MERGED') AS manual_changesets_merged
+    COUNT(*)                        FILTER (WHERE owned_by_batch_change_id IS NOT NULL AND publication_state = 'PUBLISHED') AS action_changesets,
+    COALESCE(SUM(diff_stat_added)   FILTER (WHERE owned_by_batch_change_id IS NOT NULL AND publication_state = 'PUBLISHED'), 0) AS action_changesets_diff_stat_added_sum,
+    COALESCE(SUM(diff_stat_changed) FILTER (WHERE owned_by_batch_change_id IS NOT NULL AND publication_state = 'PUBLISHED'), 0) AS action_changesets_diff_stat_changed_sum,
+    COALESCE(SUM(diff_stat_deleted) FILTER (WHERE owned_by_batch_change_id IS NOT NULL AND publication_state = 'PUBLISHED'), 0) AS action_changesets_diff_stat_deleted_sum,
+    COUNT(*)                        FILTER (WHERE owned_by_batch_change_id IS NOT NULL AND publication_state = 'PUBLISHED' AND external_state = 'MERGED') AS action_changesets_merged,
+    COALESCE(SUM(diff_stat_added)   FILTER (WHERE owned_by_batch_change_id IS NOT NULL AND publication_state = 'PUBLISHED' AND external_state = 'MERGED'), 0) AS action_changesets_merged_diff_stat_added_sum,
+    COALESCE(SUM(diff_stat_changed) FILTER (WHERE owned_by_batch_change_id IS NOT NULL AND publication_state = 'PUBLISHED' AND external_state = 'MERGED'), 0) AS action_changesets_merged_diff_stat_changed_sum,
+    COALESCE(SUM(diff_stat_deleted) FILTER (WHERE owned_by_batch_change_id IS NOT NULL AND publication_state = 'PUBLISHED' AND external_state = 'MERGED'), 0) AS action_changesets_merged_diff_stat_deleted_sum,
+    COUNT(*) FILTER (WHERE owned_by_batch_change_id IS NULL) AS manual_changesets,
+    COUNT(*) FILTER (WHERE owned_by_batch_change_id IS NULL AND external_state = 'MERGED') AS manual_changesets_merged
 FROM changesets;
 `
 	if err := dbconn.Global.QueryRowContext(ctx, changesetCountsQuery).Scan(

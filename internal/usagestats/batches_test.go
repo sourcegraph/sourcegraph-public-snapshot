@@ -10,19 +10,18 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestCampaignsUsageStatistics(t *testing.T) {
+func TestGetBatchChangesUsageStatistics(t *testing.T) {
 	ctx := context.Background()
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
 	// Create stub repo.
-	repoStore := database.Repos(dbconn.Global)
-	esStore := database.ExternalServices(dbconn.Global)
+	repoStore := database.Repos(db)
+	esStore := database.ExternalServices(db)
 
 	now := time.Now()
 	svc := types.ExternalService{
@@ -54,14 +53,14 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 	}
 
 	// Create a user.
-	user, err := database.GlobalUsers.Create(ctx, database.NewUser{Username: "test"})
+	user, err := database.Users(db).Create(ctx, database.NewUser{Username: "test"})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Create campaign specs 1, 2.
-	_, err = dbconn.Global.Exec(`
-		INSERT INTO campaign_specs
+	// Create batch specs 1, 2.
+	_, err = db.Exec(`
+		INSERT INTO batch_specs
 			(id, rand_id, raw_spec, namespace_user_id)
 		VALUES
 			(1, '123', '{}', $1),
@@ -72,25 +71,25 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 	}
 
 	// Create event logs
-	_, err = dbconn.Global.Exec(`
+	_, err = db.Exec(`
 		INSERT INTO event_logs
 			(id, name, argument, url, user_id, anonymous_user_id, source, version, timestamp)
 		VALUES
 			(1, 'CampaignSpecCreated', '{"changeset_specs_count": 3}', '', 23, '', 'backend', 'version', now()),
 			(2, 'CampaignSpecCreated', '{"changeset_specs_count": 1}', '', 23, '', 'backend', 'version', now()),
 			(3, 'CampaignSpecCreated', '{}', '', 23, '', 'backend', 'version', now()),
-			(4, 'ViewCampaignApplyPage', '{}', 'https://sourcegraph.test:3443/users/mrnugget/campaigns/apply/RANDID', 23, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', now()),
-			(5, 'ViewCampaignDetailsPageAfterCreate', '{}', 'https://sourcegraph.test:3443/users/mrnugget/campaigns/gitignore-files', 23, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', now()),
-			(6, 'ViewCampaignDetailsPageAfterUpdate', '{}', 'https://sourcegraph.test:3443/users/mrnugget/campaigns/gitignore-files', 23, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', now())
+			(4, 'ViewCampaignApplyPage', '{}', 'https://sourcegraph.test:3443/users/mrnugget/batch-changes/apply/RANDID', 23, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', now()),
+			(5, 'ViewCampaignDetailsPageAfterCreate', '{}', 'https://sourcegraph.test:3443/users/mrnugget/batch-changes/gitignore-files', 23, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', now()),
+			(6, 'ViewCampaignDetailsPageAfterUpdate', '{}', 'https://sourcegraph.test:3443/users/mrnugget/batch-changes/gitignore-files', 23, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', now())
 	`)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Create campaigns 1, 2.
-	_, err = dbconn.Global.Exec(`
-		INSERT INTO campaigns
-			(id, name, campaign_spec_id, last_applied_at, namespace_user_id, closed_at)
+	// Create batch changes 1, 2.
+	_, err = db.Exec(`
+		INSERT INTO batch_changes
+			(id, name, batch_spec_id, last_applied_at, namespace_user_id, closed_at)
 		VALUES
 			(1, 'test', 1, NOW(), $1, NULL),
 			(2, 'test-2', 2, NOW(), $1, NOW())
@@ -101,16 +100,16 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 
 	// Create 6 changesets.
 	// 2 tracked: one OPEN, one MERGED.
-	// 4 created by a campaign: 2 open (one with diffstat, one without), 2 merged (one with diffstat, one without)
+	// 4 created by a batch change: 2 open (one with diffstat, one without), 2 merged (one with diffstat, one without)
 	// missing diffstat shouldn't happen anymore (due to migration), but it's still a nullable field.
-	_, err = dbconn.Global.Exec(`
+	_, err = db.Exec(`
 		INSERT INTO changesets
-			(id, repo_id, external_service_type, owned_by_campaign_id, external_state, publication_state, diff_stat_added, diff_stat_changed, diff_stat_deleted)
+			(id, repo_id, external_service_type, owned_by_batch_change_id, external_state, publication_state, diff_stat_added, diff_stat_changed, diff_stat_deleted)
 		VALUES
 		    -- tracked
 			(1, $1, 'github', NULL, 'OPEN',   'PUBLISHED', 9, 7, 5),
 			(2, $1, 'github', NULL, 'MERGED', 'PUBLISHED', 7, 9, 5),
-			-- created by campaign
+			-- created by batch change
 			(4, $1, 'github', 1, 'OPEN',   'PUBLISHED', 5, 7, 9),
 			(5, $1, 'github', 1, 'OPEN',   'PUBLISHED', NULL, NULL, NULL),
 			(6, $1, 'github', 2, 'MERGED', 'PUBLISHED', 9, 7, 5),
@@ -119,7 +118,7 @@ func TestCampaignsUsageStatistics(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	have, err := GetCampaignsUsageStatistics(ctx)
+	have, err := GetBatchChangesUsageStatistics(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
