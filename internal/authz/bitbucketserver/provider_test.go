@@ -206,10 +206,10 @@ func testProviderFetchUserPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 					sort.Slice(got.Exacts, func(i, j int) bool { return got.Exacts[i] < got.Exacts[j] })
 				}
 
-				var want *authz.AccessibleRepoIDs
+				var want *authz.ExternalUserPermissions
 				if len(tc.ids) > 0 {
 					sort.Slice(tc.ids, func(i, j int) bool { return tc.ids[i] < tc.ids[j] })
-					want = &authz.AccessibleRepoIDs{
+					want = &authz.ExternalUserPermissions{
 						Exacts: tc.ids,
 					}
 				}

@@ -68,7 +68,7 @@ func (p *Provider) Validate() (problems []string) {
 // callers to decide whether to discard.
 //
 // API docs: https://developer.github.com/v3/repos/#list-repositories-for-the-authenticated-user
-func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) (*authz.AccessibleRepoIDs, error) {
+func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 	if account == nil {
 		return nil, errors.New("no account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
@@ -94,7 +94,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 		var repos []*github.Repository
 		repos, hasNextPage, _, err = client.ListAffiliatedRepositories(ctx, github.VisibilityPrivate, page)
 		if err != nil {
-			return &authz.AccessibleRepoIDs{
+			return &authz.ExternalUserPermissions{
 				Exacts: repoIDs,
 			}, err
 		}
@@ -104,7 +104,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 		}
 	}
 
-	return &authz.AccessibleRepoIDs{
+	return &authz.ExternalUserPermissions{
 		Exacts: repoIDs,
 	}, nil
 }

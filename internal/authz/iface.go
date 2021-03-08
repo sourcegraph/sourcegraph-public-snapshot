@@ -9,10 +9,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// AccessibleRepoIDs is a collection of accessible repository/project IDs (on
-// code host). It contains exact IDs, as well as prefixes to both include and
-// exclude IDs.
-type AccessibleRepoIDs struct {
+// ExternalUserPermissions is a collection of accessible repository/project IDs
+// (on code host). It contains exact IDs, as well as prefixes to both include
+// and exclude IDs.
+//
+// 🚨 SECURITY: Every call site should evaluate all fields of this struct to
+// have a complete set of IDs.
+type ExternalUserPermissions struct {
 	Exacts          []extsvc.RepoID
 	IncludePrefixes []extsvc.RepoID
 	ExcludePrefixes []extsvc.RepoID
@@ -51,7 +54,7 @@ type Provider interface {
 	// Because permissions fetching APIs are often expensive, the implementation should
 	// try to return partial but valid results in case of error, and it is up to callers
 	// to decide whether to discard.
-	FetchUserPerms(ctx context.Context, account *extsvc.Account) (*AccessibleRepoIDs, error)
+	FetchUserPerms(ctx context.Context, account *extsvc.Account) (*ExternalUserPermissions, error)
 
 	// FetchRepoPerms returns a list of user IDs (on code host) who have read access to
 	// the given repository/project on the code host. The user ID should be the same value

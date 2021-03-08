@@ -195,7 +195,7 @@ func (p *SudoProvider) fetchAccountByUsername(ctx context.Context, username stri
 // callers to decide whether to discard.
 //
 // API docs: https://docs.gitlab.com/ee/api/projects.html#list-all-projects
-func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Account) (*authz.AccessibleRepoIDs, error) {
+func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 	if account == nil {
 		return nil, errors.New("no account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
@@ -216,7 +216,7 @@ func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Accou
 // (access level: 20 => Reporter access) by the authenticated or impersonated user in the client.
 // It may return partial but valid results in case of error, and it is up to callers to decide
 // whether to discard.
-func listProjects(ctx context.Context, client *gitlab.Client) (*authz.AccessibleRepoIDs, error) {
+func listProjects(ctx context.Context, client *gitlab.Client) (*authz.ExternalUserPermissions, error) {
 	q := make(url.Values)
 	q.Add("visibility", "private")  // This method is meant to return only private projects
 	q.Add("min_access_level", "20") // 20 => Reporter access (i.e. have access to project code)
@@ -231,7 +231,7 @@ func listProjects(ctx context.Context, client *gitlab.Client) (*authz.Accessible
 	for {
 		projects, next, err := client.ListProjects(ctx, nextURL)
 		if err != nil {
-			return &authz.AccessibleRepoIDs{
+			return &authz.ExternalUserPermissions{
 				Exacts: projectIDs,
 			}, err
 		}
@@ -246,7 +246,7 @@ func listProjects(ctx context.Context, client *gitlab.Client) (*authz.Accessible
 		nextURL = *next
 	}
 
-	return &authz.AccessibleRepoIDs{
+	return &authz.ExternalUserPermissions{
 		Exacts: projectIDs,
 	}, nil
 }

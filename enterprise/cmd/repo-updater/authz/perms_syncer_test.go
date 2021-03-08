@@ -67,7 +67,7 @@ type mockProvider struct {
 	serviceType string
 	serviceID   string
 
-	fetchUserPerms func(context.Context, *extsvc.Account) (*authz.AccessibleRepoIDs, error)
+	fetchUserPerms func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error)
 	fetchRepoPerms func(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error)
 }
 
@@ -80,7 +80,7 @@ func (p *mockProvider) ServiceID() string   { return p.serviceID }
 func (p *mockProvider) URN() string         { return extsvc.URN(p.serviceType, p.id) }
 func (*mockProvider) Validate() []string    { return nil }
 
-func (p *mockProvider) FetchUserPerms(ctx context.Context, acct *extsvc.Account) (*authz.AccessibleRepoIDs, error) {
+func (p *mockProvider) FetchUserPerms(ctx context.Context, acct *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 	return p.fetchUserPerms(ctx, acct)
 }
 
@@ -156,8 +156,8 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.AccessibleRepoIDs, error) {
-				return &authz.AccessibleRepoIDs{
+			p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
+				return &authz.ExternalUserPermissions{
 					Exacts: []extsvc.RepoID{"1"},
 				}, test.fetchErr
 			}
@@ -217,7 +217,7 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 			return nil
 		}
 
-		p.fetchUserPerms = func(ctx context.Context, account *extsvc.Account) (*authz.AccessibleRepoIDs, error) {
+		p.fetchUserPerms = func(ctx context.Context, account *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 			return nil, &github.APIError{Code: http.StatusUnauthorized}
 		}
 
@@ -238,7 +238,7 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 			return nil
 		}
 
-		p.fetchUserPerms = func(ctx context.Context, account *extsvc.Account) (*authz.AccessibleRepoIDs, error) {
+		p.fetchUserPerms = func(ctx context.Context, account *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 			return nil, &github.APIError{
 				URL:     "https://api.github.com/user/repos",
 				Code:    http.StatusForbidden,
