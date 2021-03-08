@@ -1,4 +1,4 @@
-package registry
+package api
 
 import (
 	"context"
@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/client"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/registry"
 )
 
 func TestSplitExtensionID(t *testing.T) {

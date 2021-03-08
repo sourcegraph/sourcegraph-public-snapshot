@@ -1,4 +1,4 @@
-package registry
+package api
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
-	"github.com/sourcegraph/sourcegraph/internal/registry"
+	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/client"
 )
 
 // registryExtensionRemoteResolver implements the GraphQL type RegistryExtension with data from a
