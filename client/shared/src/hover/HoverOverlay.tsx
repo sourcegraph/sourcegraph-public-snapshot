@@ -192,15 +192,13 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOv
                                             ))}
 
                                             {content.badge && this.state.showBadges && (
-                                                <>
-                                                    <BadgeAttachment
-                                                        className="hover-overlay__badge test-hover-badge"
-                                                        iconClassName={this.props.iconClassName}
-                                                        iconButtonClassName={this.props.iconButtonClassName}
-                                                        attachment={content.badge}
-                                                        isLightTheme={this.props.isLightTheme}
-                                                    />
-                                                </>
+                                                <BadgeAttachment
+                                                    className="hover-overlay__badge test-hover-badge"
+                                                    iconClassName={this.props.iconClassName}
+                                                    iconButtonClassName={this.props.iconButtonClassName}
+                                                    attachment={content.badge}
+                                                    isLightTheme={this.props.isLightTheme}
+                                                />
                                             )}
 
                                             <span
