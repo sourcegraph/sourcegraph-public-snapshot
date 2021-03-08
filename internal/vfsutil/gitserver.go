@@ -10,6 +10,7 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -120,17 +121,12 @@ func GitServerFetchArchive(ctx context.Context, opts ArchiveOpts) (archive *os.F
 	return ff.File, ff, nil
 }
 
-var gitserverFetchTotal = prometheus.NewCounter(prometheus.CounterOpts{
+var gitserverFetchTotal = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "vfsutil_vfs_gitserver_fetch_total",
 	Help: "Total number of fetches to GitServer.",
 })
 
-var gitserverFetchFailedTotal = prometheus.NewCounter(prometheus.CounterOpts{
+var gitserverFetchFailedTotal = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "vfsutil_vfs_gitserver_fetch_failed_total",
 	Help: "Total number of fetches to GitServer that failed.",
 })
-
-func init() {
-	prometheus.MustRegister(gitserverFetchTotal)
-	prometheus.MustRegister(gitserverFetchFailedTotal)
-}
