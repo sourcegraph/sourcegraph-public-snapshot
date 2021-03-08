@@ -1,4 +1,4 @@
-package lsifstore
+package semantic
 
 // HashKey hashes a string identifier into the range [0, maxIndex)`. The
 // hash algorithm here is similar ot the one used in Java's String.hashCode.

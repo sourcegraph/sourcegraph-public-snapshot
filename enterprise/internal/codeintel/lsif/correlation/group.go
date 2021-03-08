@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/datastructures"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/lsif"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 )
 
 // GroupedBundleData{Chans,Maps} is a view of a correlation State that sorts data by it's containing document
@@ -20,21 +21,21 @@ import (
 // and parallelizing the work, while the Maps version can be modified for e.g. local development
 // via the REPL or patching for incremental indexing.
 type GroupedBundleDataChans struct {
-	Meta              lsifstore.MetaData
-	Documents         chan lsifstore.KeyedDocumentData
-	ResultChunks      chan lsifstore.IndexedResultChunkData
-	Definitions       chan lsifstore.MonikerLocations
-	References        chan lsifstore.MonikerLocations
+	Meta              semantic.MetaData
+	Documents         chan semantic.KeyedDocumentData
+	ResultChunks      chan semantic.IndexedResultChunkData
+	Definitions       chan semantic.MonikerLocations
+	References        chan semantic.MonikerLocations
 	Packages          []lsifstore.Package
 	PackageReferences []lsifstore.PackageReference
 }
 
 type GroupedBundleDataMaps struct {
-	Meta              lsifstore.MetaData
-	Documents         map[string]lsifstore.DocumentData
-	ResultChunks      map[int]lsifstore.ResultChunkData
-	Definitions       map[string]map[string][]lsifstore.LocationData
-	References        map[string]map[string][]lsifstore.LocationData
+	Meta              semantic.MetaData
+	Documents         map[string]semantic.DocumentData
+	ResultChunks      map[int]semantic.ResultChunkData
+	Definitions       map[string]map[string][]semantic.LocationData
+	References        map[string]map[string][]semantic.LocationData
 	Packages          []lsifstore.Package
 	PackageReferences []lsifstore.PackageReference
 }
@@ -56,7 +57,7 @@ func groupBundleData(ctx context.Context, state *State, dumpID int) (*GroupedBun
 		),
 	))
 
-	meta := lsifstore.MetaData{NumResultChunks: numResultChunks}
+	meta := semantic.MetaData{NumResultChunks: numResultChunks}
 	documents := serializeBundleDocuments(ctx, state)
 	resultChunks := serializeResultChunks(ctx, state, numResultChunks)
 	definitionRows := gatherMonikersLocations(ctx, state, state.DefinitionData, getDefinitionResultID)
@@ -78,8 +79,8 @@ func groupBundleData(ctx context.Context, state *State, dumpID int) (*GroupedBun
 	}, nil
 }
 
-func serializeBundleDocuments(ctx context.Context, state *State) chan lsifstore.KeyedDocumentData {
-	ch := make(chan lsifstore.KeyedDocumentData)
+func serializeBundleDocuments(ctx context.Context, state *State) chan semantic.KeyedDocumentData {
+	ch := make(chan semantic.KeyedDocumentData)
 
 	go func() {
 		defer close(ch)
@@ -89,7 +90,7 @@ func serializeBundleDocuments(ctx context.Context, state *State) chan lsifstore.
 				continue
 			}
 
-			data := lsifstore.KeyedDocumentData{
+			data := semantic.KeyedDocumentData{
 				Path:     uri,
 				Document: serializeDocument(state, documentID),
 			}
@@ -105,24 +106,24 @@ func serializeBundleDocuments(ctx context.Context, state *State) chan lsifstore.
 	return ch
 }
 
-func serializeDocument(state *State, documentID int) lsifstore.DocumentData {
-	document := lsifstore.DocumentData{
-		Ranges:             make(map[lsifstore.ID]lsifstore.RangeData, state.Contains.SetLen(documentID)),
-		HoverResults:       map[lsifstore.ID]string{},
-		Monikers:           map[lsifstore.ID]lsifstore.MonikerData{},
-		PackageInformation: map[lsifstore.ID]lsifstore.PackageInformationData{},
-		Diagnostics:        make([]lsifstore.DiagnosticData, 0, state.Diagnostics.SetLen(documentID)),
+func serializeDocument(state *State, documentID int) semantic.DocumentData {
+	document := semantic.DocumentData{
+		Ranges:             make(map[semantic.ID]semantic.RangeData, state.Contains.SetLen(documentID)),
+		HoverResults:       map[semantic.ID]string{},
+		Monikers:           map[semantic.ID]semantic.MonikerData{},
+		PackageInformation: map[semantic.ID]semantic.PackageInformationData{},
+		Diagnostics:        make([]semantic.DiagnosticData, 0, state.Diagnostics.SetLen(documentID)),
 	}
 
 	state.Contains.SetEach(documentID, func(rangeID int) {
 		rangeData := state.RangeData[rangeID]
 
-		monikerIDs := make([]lsifstore.ID, 0, state.Monikers.SetLen(rangeID))
+		monikerIDs := make([]semantic.ID, 0, state.Monikers.SetLen(rangeID))
 		state.Monikers.SetEach(rangeID, func(monikerID int) {
 			moniker := state.MonikerData[monikerID]
 			monikerIDs = append(monikerIDs, toID(monikerID))
 
-			document.Monikers[toID(monikerID)] = lsifstore.MonikerData{
+			document.Monikers[toID(monikerID)] = semantic.MonikerData{
 				Kind:                 moniker.Kind,
 				Scheme:               moniker.Scheme,
 				Identifier:           moniker.Identifier,
@@ -131,14 +132,14 @@ func serializeDocument(state *State, documentID int) lsifstore.DocumentData {
 
 			if moniker.PackageInformationID != 0 {
 				packageInformation := state.PackageInformationData[moniker.PackageInformationID]
-				document.PackageInformation[toID(moniker.PackageInformationID)] = lsifstore.PackageInformationData{
+				document.PackageInformation[toID(moniker.PackageInformationID)] = semantic.PackageInformationData{
 					Name:    packageInformation.Name,
 					Version: packageInformation.Version,
 				}
 			}
 		})
 
-		document.Ranges[toID(rangeID)] = lsifstore.RangeData{
+		document.Ranges[toID(rangeID)] = semantic.RangeData{
 			StartLine:          rangeData.Start.Line,
 			StartCharacter:     rangeData.Start.Character,
 			EndLine:            rangeData.End.Line,
@@ -157,7 +158,7 @@ func serializeDocument(state *State, documentID int) lsifstore.DocumentData {
 
 	state.Diagnostics.SetEach(documentID, func(diagnosticID int) {
 		for _, diagnostic := range state.DiagnosticResults[diagnosticID] {
-			document.Diagnostics = append(document.Diagnostics, lsifstore.DiagnosticData{
+			document.Diagnostics = append(document.Diagnostics, semantic.DiagnosticData{
 				Severity:       diagnostic.Severity,
 				Code:           diagnostic.Code,
 				Message:        diagnostic.Message,
@@ -173,18 +174,18 @@ func serializeDocument(state *State, documentID int) lsifstore.DocumentData {
 	return document
 }
 
-func serializeResultChunks(ctx context.Context, state *State, numResultChunks int) chan lsifstore.IndexedResultChunkData {
+func serializeResultChunks(ctx context.Context, state *State, numResultChunks int) chan semantic.IndexedResultChunkData {
 	chunkAssignments := make(map[int][]int, numResultChunks)
 	for id := range state.DefinitionData {
-		index := lsifstore.HashKey(toID(id), numResultChunks)
+		index := semantic.HashKey(toID(id), numResultChunks)
 		chunkAssignments[index] = append(chunkAssignments[index], id)
 	}
 	for id := range state.ReferenceData {
-		index := lsifstore.HashKey(toID(id), numResultChunks)
+		index := semantic.HashKey(toID(id), numResultChunks)
 		chunkAssignments[index] = append(chunkAssignments[index], id)
 	}
 
-	ch := make(chan lsifstore.IndexedResultChunkData)
+	ch := make(chan semantic.IndexedResultChunkData)
 
 	go func() {
 		defer close(ch)
@@ -194,8 +195,8 @@ func serializeResultChunks(ctx context.Context, state *State, numResultChunks in
 				continue
 			}
 
-			documentPaths := map[lsifstore.ID]string{}
-			rangeIDsByResultID := make(map[lsifstore.ID][]lsifstore.DocumentIDRangeID, len(resultIDs))
+			documentPaths := map[semantic.ID]string{}
+			rangeIDsByResultID := make(map[semantic.ID][]semantic.DocumentIDRangeID, len(resultIDs))
 
 			for _, resultID := range resultIDs {
 				documentRanges, ok := state.DefinitionData[resultID]
@@ -203,8 +204,8 @@ func serializeResultChunks(ctx context.Context, state *State, numResultChunks in
 					documentRanges = state.ReferenceData[resultID]
 				}
 
-				rangeIDMap := map[lsifstore.ID]int{}
-				var documentIDRangeIDs []lsifstore.DocumentIDRangeID
+				rangeIDMap := map[semantic.ID]int{}
+				var documentIDRangeIDs []semantic.DocumentIDRangeID
 
 				documentRanges.Each(func(documentID int, rangeIDs *datastructures.IDSet) {
 					docID := toID(documentID)
@@ -213,7 +214,7 @@ func serializeResultChunks(ctx context.Context, state *State, numResultChunks in
 					rangeIDs.Each(func(rangeID int) {
 						rangeIDMap[toID(rangeID)] = rangeID
 
-						documentIDRangeIDs = append(documentIDRangeIDs, lsifstore.DocumentIDRangeID{
+						documentIDRangeIDs = append(documentIDRangeIDs, semantic.DocumentIDRangeID{
 							DocumentID: docID,
 							RangeID:    toID(rangeID),
 						})
@@ -234,9 +235,9 @@ func serializeResultChunks(ctx context.Context, state *State, numResultChunks in
 				rangeIDsByResultID[toID(resultID)] = documentIDRangeIDs
 			}
 
-			data := lsifstore.IndexedResultChunkData{
+			data := semantic.IndexedResultChunkData{
 				Index: index,
-				ResultChunk: lsifstore.ResultChunkData{
+				ResultChunk: semantic.ResultChunkData{
 					DocumentPaths:      documentPaths,
 					DocumentIDRangeIDs: rangeIDsByResultID,
 				},
@@ -256,9 +257,9 @@ func serializeResultChunks(ctx context.Context, state *State, numResultChunks in
 // sortableDocumentIDRangeIDs implements sort.Interface for document/range id pairs.
 type sortableDocumentIDRangeIDs struct {
 	state         *State
-	documentPaths map[lsifstore.ID]string
-	rangeIDMap    map[lsifstore.ID]int
-	s             []lsifstore.DocumentIDRangeID
+	documentPaths map[semantic.ID]string
+	rangeIDMap    map[semantic.ID]int
+	s             []semantic.DocumentIDRangeID
 }
 
 func (s sortableDocumentIDRangeIDs) Len() int      { return len(s.s) }
@@ -281,7 +282,7 @@ func (s sortableDocumentIDRangeIDs) Less(i, j int) bool {
 	return iRange.Start.Character-jRange.Start.Character < 0
 }
 
-func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*datastructures.DefaultIDSetMap, getResultID func(r lsif.Range) int) chan lsifstore.MonikerLocations {
+func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*datastructures.DefaultIDSetMap, getResultID func(r lsif.Range) int) chan semantic.MonikerLocations {
 	monikers := datastructures.NewDefaultIDSetMap()
 	for rangeID, r := range state.RangeData {
 		if resultID := getResultID(r); resultID != 0 {
@@ -307,14 +308,14 @@ func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*da
 		})
 	}
 
-	ch := make(chan lsifstore.MonikerLocations)
+	ch := make(chan semantic.MonikerLocations)
 
 	go func() {
 		defer close(ch)
 
 		for scheme, idsByIdentifier := range idsBySchemeByIdentifier {
 			for identifier, ids := range idsByIdentifier {
-				var locations []lsifstore.LocationData
+				var locations []semantic.LocationData
 				for _, id := range ids {
 					data[id].Each(func(documentID int, rangeIDs *datastructures.IDSet) {
 						uri := state.DocumentData[documentID]
@@ -325,7 +326,7 @@ func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*da
 						rangeIDs.Each(func(id int) {
 							r := state.RangeData[id]
 
-							locations = append(locations, lsifstore.LocationData{
+							locations = append(locations, semantic.LocationData{
 								URI:            uri,
 								StartLine:      r.Start.Line,
 								StartCharacter: r.Start.Character,
@@ -346,7 +347,7 @@ func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*da
 
 				sort.Sort(sortableLocations(locations))
 
-				data := lsifstore.MonikerLocations{
+				data := semantic.MonikerLocations{
 					Scheme:     scheme,
 					Identifier: identifier,
 					Locations:  locations,
@@ -365,7 +366,7 @@ func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*da
 }
 
 // sortableLocations implements sort.Interface for locations.
-type sortableLocations []lsifstore.LocationData
+type sortableLocations []semantic.LocationData
 
 func (s sortableLocations) Len() int      { return len(s) }
 func (s sortableLocations) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
@@ -446,12 +447,12 @@ func gatherPackageReferences(state *State, dumpID int) ([]lsifstore.PackageRefer
 
 // CAUTION: Data is not deep copied.
 func GroupedBundleDataMapsToChans(ctx context.Context, maps *GroupedBundleDataMaps) *GroupedBundleDataChans {
-	documentChan := make(chan lsifstore.KeyedDocumentData, len(maps.Documents))
+	documentChan := make(chan semantic.KeyedDocumentData, len(maps.Documents))
 	go func() {
 		defer close(documentChan)
 		for path, doc := range maps.Documents {
 			select {
-			case documentChan <- lsifstore.KeyedDocumentData{
+			case documentChan <- semantic.KeyedDocumentData{
 				Path:     path,
 				Document: doc,
 			}:
@@ -460,13 +461,13 @@ func GroupedBundleDataMapsToChans(ctx context.Context, maps *GroupedBundleDataMa
 			}
 		}
 	}()
-	resultChunkChan := make(chan lsifstore.IndexedResultChunkData, len(maps.ResultChunks))
+	resultChunkChan := make(chan semantic.IndexedResultChunkData, len(maps.ResultChunks))
 	go func() {
 		defer close(resultChunkChan)
 
 		for idx, chunk := range maps.ResultChunks {
 			select {
-			case resultChunkChan <- lsifstore.IndexedResultChunkData{
+			case resultChunkChan <- semantic.IndexedResultChunkData{
 				Index:       idx,
 				ResultChunk: chunk,
 			}:
@@ -475,14 +476,14 @@ func GroupedBundleDataMapsToChans(ctx context.Context, maps *GroupedBundleDataMa
 			}
 		}
 	}()
-	monikerDefsChan := make(chan lsifstore.MonikerLocations)
+	monikerDefsChan := make(chan semantic.MonikerLocations)
 	go func() {
 		defer close(monikerDefsChan)
 
 		for scheme, identMap := range maps.Definitions {
 			for ident, locations := range identMap {
 				select {
-				case monikerDefsChan <- lsifstore.MonikerLocations{
+				case monikerDefsChan <- semantic.MonikerLocations{
 					Scheme:     scheme,
 					Identifier: ident,
 					Locations:  locations,
@@ -493,14 +494,14 @@ func GroupedBundleDataMapsToChans(ctx context.Context, maps *GroupedBundleDataMa
 			}
 		}
 	}()
-	monikerRefsChan := make(chan lsifstore.MonikerLocations)
+	monikerRefsChan := make(chan semantic.MonikerLocations)
 	go func() {
 		defer close(monikerRefsChan)
 
 		for scheme, identMap := range maps.References {
 			for ident, locations := range identMap {
 				select {
-				case monikerRefsChan <- lsifstore.MonikerLocations{
+				case monikerRefsChan <- semantic.MonikerLocations{
 					Scheme:     scheme,
 					Identifier: ident,
 					Locations:  locations,
@@ -525,27 +526,27 @@ func GroupedBundleDataMapsToChans(ctx context.Context, maps *GroupedBundleDataMa
 
 // CAUTION: Data is not deep copied.
 func GroupedBundleDataChansToMaps(ctx context.Context, chans *GroupedBundleDataChans) *GroupedBundleDataMaps {
-	documentMap := make(map[string]lsifstore.DocumentData)
+	documentMap := make(map[string]semantic.DocumentData)
 	for keyedDocumentData := range chans.Documents {
 		documentMap[keyedDocumentData.Path] = keyedDocumentData.Document
 	}
-	resultChunkMap := make(map[int]lsifstore.ResultChunkData)
+	resultChunkMap := make(map[int]semantic.ResultChunkData)
 	for indexedResultChunk := range chans.ResultChunks {
 		resultChunkMap[indexedResultChunk.Index] = indexedResultChunk.ResultChunk
 	}
-	monikerDefsMap := make(map[string]map[string][]lsifstore.LocationData)
+	monikerDefsMap := make(map[string]map[string][]semantic.LocationData)
 	for monikerDefs := range chans.Definitions {
 		identMap, exists := monikerDefsMap[monikerDefs.Scheme]
 		if !exists {
-			identMap = make(map[string][]lsifstore.LocationData)
+			identMap = make(map[string][]semantic.LocationData)
 		}
 		identMap[monikerDefs.Identifier] = monikerDefs.Locations
 	}
-	monikerRefsMap := make(map[string]map[string][]lsifstore.LocationData)
+	monikerRefsMap := make(map[string]map[string][]semantic.LocationData)
 	for monikerRefs := range chans.References {
 		identMap, exists := monikerRefsMap[monikerRefs.Scheme]
 		if !exists {
-			identMap = make(map[string][]lsifstore.LocationData)
+			identMap = make(map[string][]semantic.LocationData)
 		}
 		identMap[monikerRefs.Identifier] = monikerRefs.Locations
 	}
