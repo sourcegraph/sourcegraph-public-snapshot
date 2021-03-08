@@ -14,13 +14,13 @@ sidebar. /*
 
 </style>
 
-[Sourcegraph campaigns](../index.md) use [batch specs](../explanations/introduction_to_batch_changes.md#campaign-spec) to define campaigns.
+[Sourcegraph Batch Changes](../index.md) use [batch specs](../explanations/introduction_to_batch_changes.md#batch-spec) to define batch changes.
 
 This page is a reference guide to the batch spec YAML format in which batch specs are defined. If you're new to YAML and want a short introduction, see "[Learn YAML in five minutes](https://learnxinyminutes.com/docs/yaml/)."
 
 ## [`name`](#name)
 
-The name of the campaign, which is unique among all campaigns in the namespace. A campaign's name is case-preserving.
+The name of the batch change, which is unique among all batch changes in the namespace. A batch change's name is case-preserving.
 
 ### Examples
 
@@ -34,17 +34,17 @@ name: update-node.js
 
 ## [`description`](#description)
 
-The description of the campaign. It's rendered as Markdown.
+The description of the batch change. It's rendered as Markdown.
 
 ### Examples
 
 ```yaml
-description: This campaign changes all `fmt.Sprintf` calls to `strconv.Iota`.
+description: This batch change changes all `fmt.Sprintf` calls to `strconv.Iota`.
 ```
 
 ```yaml
 description: |
-  This campaign changes all imports from
+  This batch change changes all imports from
 
   `gopkg.in/sourcegraph/sourcegraph-in-x86-asm`
 
@@ -55,7 +55,7 @@ description: |
 
 ## [`on`](#on)
 
-The set of repositories (and branches) to run the campaign on, specified as a list of search queries (that match repositories) and/or specific repositories.
+The set of repositories (and branches) to run the batch change on, specified as a list of search queries (that match repositories) and/or specific repositories.
 
 ### Examples
 
@@ -67,7 +67,7 @@ on:
 
 ## [`on.repositoriesMatchingQuery`](#on-repositoriesmatchingquery)
 
-A Sourcegraph search query that matches a set of repositories (and branches). Each matched repository branch is added to the list of repositories that the campaign will be run on.
+A Sourcegraph search query that matches a set of repositories (and branches). Each matched repository branch is added to the list of repositories that the batch change will be run on.
 
 See "[Code search](../../code_search/index.md)" for more information on Sourcegraph search queries.
 
@@ -85,7 +85,7 @@ on:
 
 ## [`on.repository`](#on-repository)
 
-A specific repository (and branch) that is added to the list of repositories that the campaign will be run on.
+A specific repository (and branch) that is added to the list of repositories that the batch change will be run on.
 
 A `branch` attribute specifies the branch on the repository to propose changes to. If unset, the repository's default branch is used. If set, it overwrites earlier values to be used for the repository's branch.
 
@@ -126,7 +126,7 @@ on:
 
 ## [`steps`](#steps)
 
-The sequence of commands to run (for each repository branch matched in the `on` property) to produce the campaign's changes.
+The sequence of commands to run (for each repository branch matched in the `on` property) to produce the batch change's changes.
 
 ### Examples
 
@@ -200,7 +200,7 @@ steps:
 In this case, `steps.env` is an array. Each array item is either:
 
 1. An object with a single property, in which case the key is used as the environment variable name and the value the value, or
-2. A string that defines an environment variable to include from the environment `src` is being run within. This is useful to define secrets that you don't want to include in the spec file, but this makes the spec dependent on your environment, means that the local execution cache will be invalidated each time the environment variable changes, and means that the batch spec file is no longer [the sole source of truth intended by the campaigns design](../explanations/batch_changes_design.md).
+2. A string that defines an environment variable to include from the environment `src` is being run within. This is useful to define secrets that you don't want to include in the spec file, but this makes the spec dependent on your environment, means that the local execution cache will be invalidated each time the environment variable changes, and means that the batch spec file is no longer [the sole source of truth intended by the Batch Changes design](../explanations/batch_changes_design.md).
 
 #### Examples
 
@@ -345,7 +345,7 @@ Possible values: `text`, `yaml`, `json`. Default is `text`.
 
 ## [`importChangesets`](#importchangesets)
 
-An array describing which already-existing changesets should be imported from the code host into the campaign.
+An array describing which already-existing changesets should be imported from the code host into the batch change.
 
 ### Examples
 
@@ -377,8 +377,8 @@ This defines what the changesets on the code hosts (pull requests on GitHub, mer
 ```yaml
 changesetTemplate:
   title: Replace equivalent fmt.Sprintf calls with strconv.Itoa
-  body: This campaign replaces `fmt.Sprintf("%d", integer)` calls with semantically equivalent `strconv.Itoa` calls
-  branch: campaigns/sprintf-to-itoa
+  body: This batch change replaces `fmt.Sprintf("%d", integer)` calls with semantically equivalent `strconv.Itoa` calls
+  branch: batch-changes/sprintf-to-itoa
   commit:
     message: Replacing fmt.Sprintf with strconv.Iota
     author:
@@ -391,7 +391,7 @@ changesetTemplate:
 changesetTemplate:
   title: Update rxjs in package.json to newest version
   body: This pull request updates rxjs to the newest version, `6.6.2`.
-  branch: campaigns/update-rxjs
+  branch: batch-changes/update-rxjs
   commit:
     message: Update rxjs to 6.6.2
   published: true
@@ -469,9 +469,9 @@ changesetTemplate:
 
 ## [`changesetTemplate.published`](#changesettemplate-published)
 
-Whether to publish the changeset. This may be a boolean value (ie `true` or `false`), `'draft'`, or [an array to only publish some changesets within the campaign](#publishing-only-specific-changesets).
+Whether to publish the changeset. This may be a boolean value (ie `true` or `false`), `'draft'`, or [an array to only publish some changesets within the batch change](#publishing-only-specific-changesets).
 
-An unpublished changeset can be previewed on Sourcegraph by any person who can view the campaign, but its commit, branch, and pull request aren't created on the code host.
+An unpublished changeset can be previewed on Sourcegraph by any person who can view the batch change, but its commit, branch, and pull request aren't created on the code host.
 
 When `published` is set to `draft` a commit, branch, and pull request / merge request are being created on the code host **in draft mode**. This means:
 
@@ -485,14 +485,15 @@ A published changeset results in a commit, branch, and pull request being create
 
 ### [Publishing only specific changesets](#publishing-only-specific-changesets)
 
-To publish only specific changesets within a campaign, an array of single-element objects can be provided. For example:
+To publish only specific changesets within a batch change, an array of single-element objects can be provided. For example:
 
 ```yaml
 published:
   - github.com/sourcegraph/sourcegraph: true
   - github.com/sourcegraph/src-cli: false
-  - github.com/sourcegraph/campaignutils: draft
+  - github.com/sourcegraph/batchutils: draft
 ```
+<!--- TODO --->
 
 Each key will be matched against the repository name using [glob](https://godoc.org/github.com/gobwas/glob#Compile) syntax. The [gobwas/glob library](https://godoc.org/github.com/gobwas/glob#Compile) is used for matching, with the key operators being:
 
@@ -532,14 +533,14 @@ published:
 
 ### Examples
 
-To publish all changesets created by a campaign:
+To publish all changesets created by a batch change:
 
 ```yaml
 changesetTemplate:
   published: true
 ```
 
-To publish all changesets created by a campaign as drafts:
+To publish all changesets created by a batch change as drafts:
 
 ```yaml
 changesetTemplate:
@@ -603,10 +604,10 @@ transformChanges:
   group:
     # Create a separate changeset for all changes in the top-level `go` directory
     - directory: go
-      branch: my-campaign-go # will replace the `branch` in the `changesetTemplate`
+      branch: my-batch-change-go # will replace the `branch` in the `changesetTemplate`
 
     - directory: internal/codeintel
-      branch: my-campaign-codeintel # will replace the `branch` in the `changesetTemplate`
+      branch: my-batch-change-codeintel # will replace the `branch` in the `changesetTemplate`
       repository: github.com/sourcegraph/src-cli # optional: only apply the rule in this repository
 ```
 
@@ -615,12 +616,12 @@ transformChanges:
 transformChanges:
   group:
     - directory: go/utils/time
-      branch: my-campaign-go-time
+      branch: my-batch-change-go-time
 
     # The *last* matching directory is used, not the most specific one,
     # so only this changeset would be opened.
     - directory: go/utils
-      branch: my-campaign-go-date
+      branch: my-batch-change-go-date
 ```
 
 ## [`transformChanges.group`](#transformchanges-group)
@@ -641,7 +642,7 @@ The name is relative to the root of the repository.
 
 The branch that should be used for this additional changeset. This **overwrites the [`changesetTemplate.branch`](#changesettemplate-branch)** when creating the additional changeset.
 
-**Important**: the branch can _not_ be nested under the [`changesetTemplate.branch`](#changesettemplate-branch), i.e. if the `changesetTemplate.branch` is `my-campaign` then this can _not_ be `my-campaign/my-subdirectory` since [git doesn't allow that](https://stackoverflow.com/a/22630664).
+**Important**: the branch can _not_ be nested under the [`changesetTemplate.branch`](#changesettemplate-branch), i.e. if the `changesetTemplate.branch` is `my-batch-change` then this can _not_ be `my-batch-change/my-subdirectory` since [git doesn't allow that](https://stackoverflow.com/a/22630664).
 
 ## [`transformChanges.group.repository`](#transformchanges-repository)
 
@@ -679,7 +680,7 @@ changesetTemplate:
 
   # We can use templating and helper functions get the `path` in which
   # the `steps` executed and turn that into a branch name:
-  branch: my-multi-workspace-campaign-${{ replace steps.path "/" "-" }}
+  branch: my-multi-workspace-batch-change-${{ replace steps.path "/" "-" }}
 ```
 
 Using templating to produce a unique branch name in repositories _with_ workspaces and repositories without workspaces:
@@ -699,7 +700,7 @@ changesetTemplate:
   # Since the steps in `github.com/sourcegraph/src-cli` are executed in the
   # root, where path is "", we can use `join_if` to drop it from the branch name
   # if it's a blank string:
-  branch: ${{ join_if "-" "my-multi-workspace-campaign" (replace steps.path "/" "-") }}
+  branch: ${{ join_if "-" "my-multi-workspace-batch-change" (replace steps.path "/" "-") }}
 ```
 
 Defining where Go, JavaScript, and Rust projects live in multiple repositories:
@@ -717,7 +718,7 @@ workspaces:
 changesetTemplate:
   # [...]
 
-  branch: ${{ join_if "-" "my-multi-workspace-campaign" (replace steps.path "/" "-") }}
+  branch: ${{ join_if "-" "my-multi-workspace-batch-change" (replace steps.path "/" "-") }}
 ```
 
 Using [`steps.outputs`](#steps-outputs) to dynamically create unique branch names:
@@ -749,7 +750,7 @@ changesetTemplate:
   # [...]
 
   # Use `outputs` variables to create a unique branch name per changeset:
-  branch: my-campaign-${{ outputs.projectName }}
+  branch: my-batch-change-${{ outputs.projectName }}
 ```
 
 ## [`workspaces.rootAtLocationOf`](#workspaces-rootatlocationof)

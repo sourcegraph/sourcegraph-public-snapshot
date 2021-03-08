@@ -7,7 +7,7 @@
 
 ## Overview
 
-[Certain fields](#fields-with-template-support) in a [batch spec YAML](batch_spec_yaml_reference.md) support templating to create even more powerful and performant campaigns.
+[Certain fields](#fields-with-template-support) in a [batch spec YAML](batch_spec_yaml_reference.md) support templating to create even more powerful and performant batch changes.
 
 Templating in a batch spec uses the delimiters `${{` and `}}`. Inside the delimiters, [template variables](#template-variables) and [template helper functions](#template-helpers-functions) may be used to produce a text value.
 
@@ -161,7 +161,7 @@ steps:
       /tmp/search-results: ${{ join repository.search_result_paths "\n" }}
 ```
 
-Put information in environment variables, based on the output of previous step `steps.env` also 
+Put information in environment variables, based on the output of previous step `steps.env` also
 
 ```yaml
 steps:

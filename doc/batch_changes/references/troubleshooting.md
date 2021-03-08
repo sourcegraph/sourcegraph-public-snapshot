@@ -1,10 +1,10 @@
 # Troubleshooting
 
-This page is meant to help narrow down and eliminate problems when trying to execute a batch spec with `src campaign [apply|preview]` or managing an already created campaign and its changesets.
+This page is meant to help narrow down and eliminate problems when trying to execute a batch spec with `src batch [apply|preview]` or managing an already created batch change and its changesets.
 
-## Executing campaign steps
+## Executing batch change steps
 
-Since `src campaign [apply|preview]` execute a batch spec on the host machine on which it is executed (and not on the Sourcegraph instance), there are a lot of different possibilities that can cause it to fail: from missing dependencies to missing credentials when trying to connect ot the Sourcegraph instance.
+Since `src batch [apply|preview]` execute a batch spec on the host machine on which it is executed (and not on the Sourcegraph instance), there are a lot of different possibilities that can cause it to fail: from missing dependencies to missing credentials when trying to connect ot the Sourcegraph instance.
 
 The following questions can be used to find out what's causing the problem and should ideally be answered with "yes".
 
@@ -44,9 +44,9 @@ That command will pull Docker's `hello-world` image and try to execute a contain
 
 ### Does "Hello World" work?
 
-If executing your batch spec fails and you haven't tested campaigns with another batch spec before, it can help to run the "Hello World" campaign to nail down what the problem is.
+If executing your batch spec fails and you haven't tested Batch Changes with another batch spec before, it can help to run the "Hello World" batch change to nail down what the problem is.
 
-Go through the "[Quickstart](../quickstart.md)" to run a campaign that adds "Hello World" to `README.md` files with the following batch spec:
+Go through the "[Quickstart](../quickstart.md)" to run a batch change that adds "Hello World" to `README.md` files with the following batch spec:
 
 ```yaml
 name: hello-world
@@ -64,7 +64,7 @@ steps:
 # Describe the changeset (e.g., GitHub pull request) you want for each repository.
 changesetTemplate:
   title: Hello World
-  body: My first campaign!
+  body: My first batch change!
   branch: hello-world # Push the commit to this branch.
   commit:
     message: Append Hello World to all README.md files
@@ -75,9 +75,9 @@ If even that doesn't work, then we can at least exclude the possibility that _on
 
 ### Does it work with a single repository? Five? Ten?
 
-Debugging large campaigns that make changes in hundreds of repositories is hard.
+Debugging large batch changes that make changes in hundreds of repositories is hard.
 
-In order to find out whether a problem is related to the _size_ or _scope_ of a campaign or with _what_ it's trying to achieve, try reducing the scope of your campaign.
+In order to find out whether a problem is related to the _size_ or _scope_ of a batch change or with _what_ it's trying to achieve, try reducing the scope of your batch change.
 
 You can do so by changing the [`on.repositoriesMatchingQuery`](batch_spec_yaml_reference.md#on-repositoriesmatchingquery) to yield less results or by using a concrete list of repositories with [`on.repository`](batch_spec_yaml_reference.md#on-repository).
 
@@ -121,7 +121,7 @@ curl -L -v -X GET -H 'Accept: application/zip' \
   --output ~/tmp/my-repo.zip
 ```
 
-That command is equivalent to what `src` does under the hood when downloading an archive of `github.com/my-org/my-repo@master` to execute camapaign spec `steps`.
+That command is equivalent to what `src` does under the hood when downloading an archive of `github.com/my-org/my-repo@master` to execute batch spec `steps`.
 
 If that fails, then that points to the Sourcegraph setup or infrastructure as a likely source of the problem, not `src`.
 
