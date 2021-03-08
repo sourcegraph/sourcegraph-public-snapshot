@@ -27,4 +27,6 @@ type MockStores struct {
 	Authz MockAuthz
 
 	EventLogs MockEventLogs
+
+	UserPublicRepos MockUserPublicRepos
 }
