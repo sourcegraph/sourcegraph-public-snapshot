@@ -154,7 +154,7 @@ func TestCreateBatchSpec(t *testing.T) {
 				oldMock := licensing.MockCheckFeature
 				licensing.MockCheckFeature = func(feature licensing.Feature) error {
 					if feature == licensing.FeatureCampaigns {
-						return licensing.NewFeatureNotActivatedError("no campaigns for you!")
+						return licensing.NewFeatureNotActivatedError("no batch changes for you!")
 					}
 					return nil
 				}
@@ -354,10 +354,10 @@ func TestApplyBatchChange(t *testing.T) {
 
 	repoAPIID := graphqlbackend.MarshalRepositoryID(repo.ID)
 
-	campaignSpec := &batches.BatchSpec{
+	batchSpec := &batches.BatchSpec{
 		RawSpec: ct.TestRawBatchSpec,
 		Spec: batches.BatchSpecFields{
-			Name:        "my-campaign",
+			Name:        "my-batch-change",
 			Description: "My description",
 			ChangesetTemplate: batches.ChangesetTemplate{
 				Title:  "Hello there",
@@ -372,12 +372,12 @@ func TestApplyBatchChange(t *testing.T) {
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
-	if err := cstore.CreateBatchSpec(ctx, campaignSpec); err != nil {
+	if err := cstore.CreateBatchSpec(ctx, batchSpec); err != nil {
 		t.Fatal(err)
 	}
 
 	changesetSpec := &batches.ChangesetSpec{
-		CampaignSpecID: campaignSpec.ID,
+		BatchSpecID: batchSpec.ID,
 		Spec: &batches.ChangesetSpecDescription{
 			BaseRepository: repoAPIID,
 		},
@@ -396,7 +396,7 @@ func TestApplyBatchChange(t *testing.T) {
 
 	userAPIID := string(graphqlbackend.MarshalUserID(userID))
 	input := map[string]interface{}{
-		"batchSpec": string(marshalBatchSpecRandID(campaignSpec.RandID)),
+		"batchSpec": string(marshalBatchSpecRandID(batchSpec.RandID)),
 	}
 
 	var response struct{ ApplyBatchChange apitest.BatchChange }
@@ -412,8 +412,8 @@ func TestApplyBatchChange(t *testing.T) {
 	have := response.ApplyBatchChange
 	want := apitest.BatchChange{
 		ID:          have.ID,
-		Name:        campaignSpec.Spec.Name,
-		Description: campaignSpec.Spec.Description,
+		Name:        batchSpec.Spec.Name,
+		Description: batchSpec.Spec.Description,
 		Namespace: apitest.UserOrg{
 			ID:         userAPIID,
 			DatabaseID: userID,
@@ -434,14 +434,14 @@ func TestApplyBatchChange(t *testing.T) {
 		t.Fatalf("unexpected response (-want +got):\n%s", diff)
 	}
 
-	// Now we execute it again and make sure we get the same campaign back
+	// Now we execute it again and make sure we get the same batch change back
 	apitest.MustExec(actorCtx, t, s, input, &response, mutationApplyBatchChange)
 	have2 := response.ApplyBatchChange
 	if diff := cmp.Diff(want, have2); diff != "" {
 		t.Fatalf("unexpected response (-want +got):\n%s", diff)
 	}
 
-	// Execute it again with ensureBatchChange set to correct campaign's ID
+	// Execute it again with ensureBatchChange set to correct batch change's ID
 	input["ensureBatchChange"] = have2.ID
 	apitest.MustExec(actorCtx, t, s, input, &response, mutationApplyBatchChange)
 	have3 := response.ApplyBatchChange
@@ -449,12 +449,12 @@ func TestApplyBatchChange(t *testing.T) {
 		t.Fatalf("unexpected response (-want +got):\n%s", diff)
 	}
 
-	// Execute it again but ensureBatchChange set to wrong campaign ID
-	campaignID, err := unmarshalBatchChangeID(graphql.ID(have3.ID))
+	// Execute it again but ensureBatchChange set to wrong batch change ID
+	batchChangeID, err := unmarshalBatchChangeID(graphql.ID(have3.ID))
 	if err != nil {
 		t.Fatal(err)
 	}
-	input["ensureBatchChange"] = marshalBatchChangeID(campaignID + 999)
+	input["ensureBatchChange"] = marshalBatchChangeID(batchChangeID + 999)
 	errs := apitest.Exec(actorCtx, t, s, input, &response, mutationApplyBatchChange)
 	if len(errs) == 0 {
 		t.Fatalf("expected errors, got none")
@@ -500,16 +500,16 @@ func TestCreateBatchChange(t *testing.T) {
 
 	cstore := store.New(db)
 
-	campaignSpec := &batches.BatchSpec{
+	batchSpec := &batches.BatchSpec{
 		RawSpec: ct.TestRawBatchSpec,
 		Spec: batches.BatchSpecFields{
-			Name:        "my-campaign",
+			Name:        "my-batch-change",
 			Description: "My description",
 		},
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
-	if err := cstore.CreateBatchSpec(ctx, campaignSpec); err != nil {
+	if err := cstore.CreateBatchSpec(ctx, batchSpec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -520,17 +520,17 @@ func TestCreateBatchChange(t *testing.T) {
 	}
 
 	input := map[string]interface{}{
-		"batchSpec": string(marshalBatchSpecRandID(campaignSpec.RandID)),
+		"batchSpec": string(marshalBatchSpecRandID(batchSpec.RandID)),
 	}
 
 	var response struct{ CreateBatchChange apitest.BatchChange }
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
-	// First time it should work, because no campaign exists
+	// First time it should work, because no batch change exists
 	apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateBatchChange)
 
 	if response.CreateBatchChange.ID == "" {
-		t.Fatalf("expected campaign to be created, but was not")
+		t.Fatalf("expected batch change to be created, but was not")
 	}
 
 	// Second time it should fail
@@ -566,24 +566,24 @@ func TestMoveBatchChange(t *testing.T) {
 
 	cstore := store.New(db)
 
-	campaignSpec := &batches.BatchSpec{
+	batchSpec := &batches.BatchSpec{
 		RawSpec:         ct.TestRawBatchSpec,
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
-	if err := cstore.CreateBatchSpec(ctx, campaignSpec); err != nil {
+	if err := cstore.CreateBatchSpec(ctx, batchSpec); err != nil {
 		t.Fatal(err)
 	}
 
-	campaign := &batches.BatchChange{
-		BatchSpecID:      campaignSpec.ID,
+	batchChange := &batches.BatchChange{
+		BatchSpecID:      batchSpec.ID,
 		Name:             "old-name",
 		InitialApplierID: userID,
 		LastApplierID:    userID,
 		LastAppliedAt:    time.Now(),
-		NamespaceUserID:  campaignSpec.UserID,
+		NamespaceUserID:  batchSpec.UserID,
 	}
-	if err := cstore.CreateBatchChange(ctx, campaign); err != nil {
+	if err := cstore.CreateBatchChange(ctx, batchChange); err != nil {
 		t.Fatal(err)
 	}
 
@@ -594,47 +594,47 @@ func TestMoveBatchChange(t *testing.T) {
 	}
 
 	// Move to a new name
-	campaignAPIID := string(marshalBatchChangeID(campaign.ID))
-	newCampaignName := "new-name"
+	batchChangeAPIID := string(marshalBatchChangeID(batchChange.ID))
+	newBatchChagneName := "new-name"
 	input := map[string]interface{}{
-		"batchChange": campaignAPIID,
-		"newName":     newCampaignName,
+		"batchChange": batchChangeAPIID,
+		"newName":     newBatchChagneName,
 	}
 
 	var response struct{ MoveBatchChange apitest.BatchChange }
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
-	apitest.MustExec(actorCtx, t, s, input, &response, mutationMoveCampaign)
+	apitest.MustExec(actorCtx, t, s, input, &response, mutationMoveBatchChange)
 
-	haveCampaign := response.MoveBatchChange
-	if diff := cmp.Diff(input["newName"], haveCampaign.Name); diff != "" {
+	haveBatchChange := response.MoveBatchChange
+	if diff := cmp.Diff(input["newName"], haveBatchChange.Name); diff != "" {
 		t.Fatalf("unexpected name (-want +got):\n%s", diff)
 	}
 
-	wantURL := fmt.Sprintf("/users/%s/batch-changes/%s", user.Username, newCampaignName)
-	if diff := cmp.Diff(wantURL, haveCampaign.URL); diff != "" {
+	wantURL := fmt.Sprintf("/users/%s/batch-changes/%s", user.Username, newBatchChagneName)
+	if diff := cmp.Diff(wantURL, haveBatchChange.URL); diff != "" {
 		t.Fatalf("unexpected URL (-want +got):\n%s", diff)
 	}
 
 	// Move to a new namespace
 	orgAPIID := graphqlbackend.MarshalOrgID(orgID)
 	input = map[string]interface{}{
-		"batchChange":  string(marshalBatchChangeID(campaign.ID)),
+		"batchChange":  string(marshalBatchChangeID(batchChange.ID)),
 		"newNamespace": orgAPIID,
 	}
 
-	apitest.MustExec(actorCtx, t, s, input, &response, mutationMoveCampaign)
+	apitest.MustExec(actorCtx, t, s, input, &response, mutationMoveBatchChange)
 
-	haveCampaign = response.MoveBatchChange
-	if diff := cmp.Diff(string(orgAPIID), haveCampaign.Namespace.ID); diff != "" {
+	haveBatchChange = response.MoveBatchChange
+	if diff := cmp.Diff(string(orgAPIID), haveBatchChange.Namespace.ID); diff != "" {
 		t.Fatalf("unexpected namespace (-want +got):\n%s", diff)
 	}
-	wantURL = fmt.Sprintf("/organizations/%s/batch-changes/%s", orgName, newCampaignName)
-	if diff := cmp.Diff(wantURL, haveCampaign.URL); diff != "" {
+	wantURL = fmt.Sprintf("/organizations/%s/batch-changes/%s", orgName, newBatchChagneName)
+	if diff := cmp.Diff(wantURL, haveBatchChange.URL); diff != "" {
 		t.Fatalf("unexpected URL (-want +got):\n%s", diff)
 	}
 }
 
-const mutationMoveCampaign = `
+const mutationMoveBatchChange = `
 fragment u on User { id, databaseID, siteAdmin }
 fragment o on Org  { id, name }
 
@@ -661,9 +661,9 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 	wantExternalStates := []batches.ChangesetExternalState{"OPEN"}
 	wantReviewStates := []batches.ChangesetReviewState{"APPROVED", "INVALID"}
 	wantCheckStates := []batches.ChangesetCheckState{"PENDING", "INVALID"}
-	wantOnlyPublishedByThisCampaign := []bool{true}
+	wantOnlyPublishedByThisBatchChange := []bool{true}
 	wantSearches := []search.TextSearchTerm{{Term: "foo"}, {Term: "bar", Not: true}}
-	var campaignID int64 = 1
+	var batchChangeID int64 = 1
 
 	tcs := []struct {
 		args       *graphqlbackend.ListChangesetsArgs
@@ -734,26 +734,26 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 			},
 			wantErr: "changeset check state not valid",
 		},
-		// Setting OnlyPublishedByThisCampaign true.
+		// Setting OnlyPublishedByThisBatchChange true.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				OnlyPublishedByThisCampaign: &wantOnlyPublishedByThisCampaign[0],
+				OnlyPublishedByThisCampaign: &wantOnlyPublishedByThisBatchChange[0],
 			},
 			wantSafe: true,
 			wantParsed: store.ListChangesetsOpts{
-				PublicationState:  &wantPublicationStates[0],
-				OwnedByCampaignID: campaignID,
+				PublicationState:     &wantPublicationStates[0],
+				OwnedByBatchChangeID: batchChangeID,
 			},
 		},
 		// Setting OnlyPublishedByThisBatchChange true.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				OnlyPublishedByThisBatchChange: &wantOnlyPublishedByThisCampaign[0],
+				OnlyPublishedByThisBatchChange: &wantOnlyPublishedByThisBatchChange[0],
 			},
 			wantSafe: true,
 			wantParsed: store.ListChangesetsOpts{
-				PublicationState:  &wantPublicationStates[0],
-				OwnedByCampaignID: campaignID,
+				PublicationState:     &wantPublicationStates[0],
+				OwnedByBatchChangeID: batchChangeID,
 			},
 		},
 		// Setting a positive search.
@@ -779,7 +779,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 	}
 	for i, tc := range tcs {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			haveParsed, haveSafe, err := listChangesetOptsFromArgs(tc.args, campaignID)
+			haveParsed, haveSafe, err := listChangesetOptsFromArgs(tc.args, batchChangeID)
 			if tc.wantErr == "" && err != nil {
 				t.Fatal(err)
 			}

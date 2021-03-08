@@ -8,12 +8,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/batches"
 )
 
-type CreateCampaigner interface {
-	CreateBatchChange(ctx context.Context, campaign *batches.BatchChange) error
+type CreateBatchChanger interface {
+	CreateBatchChange(ctx context.Context, batchChange *batches.BatchChange) error
 	Clock() func() time.Time
 }
 
-func BuildBatchChange(store CreateCampaigner, name string, userID int32, spec int64) *batches.BatchChange {
+func BuildBatchChange(store CreateBatchChanger, name string, userID int32, spec int64) *batches.BatchChange {
 	b := &batches.BatchChange{
 		InitialApplierID: userID,
 		LastApplierID:    userID,
@@ -21,12 +21,12 @@ func BuildBatchChange(store CreateCampaigner, name string, userID int32, spec in
 		NamespaceUserID:  userID,
 		BatchSpecID:      spec,
 		Name:             name,
-		Description:      "campaign description",
+		Description:      "batch change description",
 	}
 	return b
 }
 
-func CreateBatchChange(t *testing.T, ctx context.Context, store CreateCampaigner, name string, userID int32, spec int64) *batches.BatchChange {
+func CreateBatchChange(t *testing.T, ctx context.Context, store CreateBatchChanger, name string, userID int32, spec int64) *batches.BatchChange {
 	t.Helper()
 
 	b := BuildBatchChange(store, name, userID, spec)

@@ -279,7 +279,7 @@ func getBatchChangeQuery(opts *CountBatchChangeOpts) *sqlf.Query {
 }
 
 type GetBatchChangeDiffStatOpts struct {
-	CampaignID int64
+	BatchChangeID int64
 }
 
 func (s *Store) GetBatchChangeDiffStat(ctx context.Context, opts GetBatchChangeDiffStatOpts) (*diff.Stat, error) {
@@ -317,7 +317,7 @@ WHERE
 `
 
 func getBatchChangeDiffStatQuery(opts GetBatchChangeDiffStatOpts, authzConds *sqlf.Query) *sqlf.Query {
-	return sqlf.Sprintf(getBatchChangeDiffStatQueryFmtstr, strconv.Itoa(int(opts.CampaignID)), authzConds)
+	return sqlf.Sprintf(getBatchChangeDiffStatQueryFmtstr, strconv.Itoa(int(opts.BatchChangeID)), authzConds)
 }
 
 // ListBatchChangesOpts captures the query options needed for
@@ -357,7 +357,7 @@ func (s *Store) ListBatchChanges(ctx context.Context, opts ListBatchChangesOpts)
 }
 
 var listBatchChangesQueryFmtstr = `
--- source: enterprise/internal/batches/store.go:ListCampaigns
+-- source: enterprise/internal/batches/store.go:ListBatchChanges
 SELECT %s FROM campaigns
 %s
 WHERE %s

@@ -30,11 +30,11 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 
 	cstore := store.New(db)
 
-	campaignSpec := &batches.BatchSpec{
+	batchSpec := &batches.BatchSpec{
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
-	if err := cstore.CreateBatchSpec(ctx, campaignSpec); err != nil {
+	if err := cstore.CreateBatchSpec(ctx, batchSpec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -58,7 +58,7 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		s.CampaignSpecID = campaignSpec.ID
+		s.BatchSpecID = batchSpec.ID
 		s.UserID = userID
 		s.RepoID = r.ID
 
@@ -74,7 +74,7 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	apiID := string(marshalBatchSpecRandID(campaignSpec.RandID))
+	apiID := string(marshalBatchSpecRandID(batchSpec.RandID))
 
 	tests := []struct {
 		first int

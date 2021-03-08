@@ -35,9 +35,9 @@ type ChangesetSpec struct {
 	DiffStatChanged int32
 	DiffStatDeleted int32
 
-	CampaignSpecID int64
-	RepoID         api.RepoID
-	UserID         int32
+	BatchSpecID int64
+	RepoID      api.RepoID
+	UserID      int32
 
 	CreatedAt time.Time
 	UpdatedAt time.Time

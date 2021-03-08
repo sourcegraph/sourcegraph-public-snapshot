@@ -25,25 +25,25 @@ func newMetrics() batchChangesMetrics {
 	}
 
 	resetFailures := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "src_campaigns_background_reconciler_reset_failures_total",
+		Name: "src_batch_changes_background_reconciler_reset_failures_total",
 		Help: "The number of reconciler reset failures.",
 	})
 	observationContext.Registerer.MustRegister(resetFailures)
 
 	resets := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "src_campaigns_background_reconciler_resets_total",
+		Name: "src_batch_changes_background_reconciler_resets_total",
 		Help: "The number of reconciler records reset.",
 	})
 	observationContext.Registerer.MustRegister(resets)
 
 	errors := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "src_campaigns_background_errors_total",
-		Help: "The number of errors that occur during a campaigns background job.",
+		Name: "src_batch_changes_background_errors_total",
+		Help: "The number of errors that occur during a batch changes background job.",
 	})
 	observationContext.Registerer.MustRegister(errors)
 
 	return batchChangesMetrics{
-		workerMetrics: workerutil.NewMetrics(observationContext, "campaigns_reconciler", nil),
+		workerMetrics: workerutil.NewMetrics(observationContext, "batch_changes_reconciler", nil),
 		resets:        resets,
 		resetFailures: resetFailures,
 		errors:        errors,

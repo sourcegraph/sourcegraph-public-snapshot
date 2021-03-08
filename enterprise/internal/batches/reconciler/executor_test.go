@@ -410,15 +410,15 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				specOpts := ct.TestSpecOpts{}
 				specOpts.User = admin.ID
 				specOpts.Repo = rs[0].ID
-				specOpts.CampaignSpec = batchSpec.ID
+				specOpts.BatchSpec = batchSpec.ID
 				changesetSpec = ct.CreateChangesetSpec(t, ctx, cstore, specOpts)
 			}
 
 			// Create the changeset with correct associations.
 			changesetOpts := tc.changeset
 			changesetOpts.Repo = rs[0].ID
-			changesetOpts.Campaigns = []batches.BatchChangeAssoc{{BatchChangeID: batchChange.ID}}
-			changesetOpts.OwnedByCampaign = batchChange.ID
+			changesetOpts.BatchChanges = []batches.BatchChangeAssoc{{BatchChangeID: batchChange.ID}}
+			changesetOpts.OwnedByBatchChange = batchChange.ID
 			if changesetSpec != nil {
 				changesetOpts.CurrentSpec = changesetSpec.ID
 			}
@@ -511,7 +511,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			// Assert that the changeset in the database looks like we want
 			assertions := tc.wantChangeset
 			assertions.Repo = rs[0].ID
-			assertions.OwnedByCampaign = changesetOpts.OwnedByCampaign
+			assertions.OwnedByBatchChange = changesetOpts.OwnedByBatchChange
 			assertions.AttachedTo = []int64{batchChange.ID}
 			if changesetSpec != nil {
 				assertions.CurrentSpec = changesetSpec.ID
@@ -530,7 +530,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			}
 
 			if rcs != nil {
-				if !strings.Contains(rcs.Body, "Created by Sourcegraph campaign") {
+				if !strings.Contains(rcs.Body, "Created by Sourcegraph batch change") {
 					t.Errorf("did not find backlink in body: %q", rcs.Body)
 				}
 			}
@@ -598,9 +598,9 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 	rs, _ := ct.CreateTestRepos(t, ctx, db, 1)
 	repo := rs[0]
 
-	campaignSpec := ct.CreateBatchSpec(t, ctx, cstore, "reconciler-test-campaign", admin.ID)
-	adminCampaign := ct.CreateBatchChange(t, ctx, cstore, "reconciler-test-campaign", admin.ID, campaignSpec.ID)
-	userCampaign := ct.CreateBatchChange(t, ctx, cstore, "reconciler-test-campaign", user.ID, campaignSpec.ID)
+	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "reconciler-test-batch-change", admin.ID)
+	adminBatchChange := ct.CreateBatchChange(t, ctx, cstore, "reconciler-test-batch-change", admin.ID, batchSpec.ID)
+	userBatchChange := ct.CreateBatchChange(t, ctx, cstore, "reconciler-test-batch-change", user.ID, batchSpec.ID)
 
 	t.Run("imported changeset uses global token", func(t *testing.T) {
 		a, err := (&executor{
@@ -616,7 +616,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 		}
 	})
 
-	t.Run("owned by missing campaign", func(t *testing.T) {
+	t.Run("owned by missing batch change", func(t *testing.T) {
 		_, err := (&executor{
 			ch: &batches.Changeset{
 				OwnedByBatchChangeID: 1234,
@@ -631,7 +631,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 	t.Run("owned by admin user without credential", func(t *testing.T) {
 		a, err := (&executor{
 			ch: &batches.Changeset{
-				OwnedByBatchChangeID: adminCampaign.ID,
+				OwnedByBatchChangeID: adminBatchChange.ID,
 			},
 			repo: repo,
 			tx:   cstore,
@@ -647,7 +647,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 	t.Run("owned by normal user without credential", func(t *testing.T) {
 		_, err := (&executor{
 			ch: &batches.Changeset{
-				OwnedByBatchChangeID: userCampaign.ID,
+				OwnedByBatchChangeID: userBatchChange.ID,
 			},
 			repo: repo,
 			tx:   cstore,
@@ -670,7 +670,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 
 		a, err := (&executor{
 			ch: &batches.Changeset{
-				OwnedByBatchChangeID: adminCampaign.ID,
+				OwnedByBatchChangeID: adminBatchChange.ID,
 			},
 			repo: repo,
 			tx:   cstore,
@@ -696,7 +696,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 
 		a, err := (&executor{
 			ch: &batches.Changeset{
-				OwnedByBatchChangeID: userCampaign.ID,
+				OwnedByBatchChangeID: userBatchChange.ID,
 			},
 			repo: repo,
 			tx:   cstore,
@@ -873,11 +873,11 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 				defer func() { cstore.UserCredentials().Delete(ctx, cred.ID) }()
 			}
 
-			campaignSpec := ct.CreateBatchSpec(t, ctx, cstore, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID)
-			campaign := ct.CreateBatchChange(t, ctx, cstore, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID, campaignSpec.ID)
+			batchSpec := ct.CreateBatchSpec(t, ctx, cstore, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID)
+			batchChange := ct.CreateBatchChange(t, ctx, cstore, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID, batchSpec.ID)
 
 			plan.Changeset = &batches.Changeset{
-				OwnedByBatchChangeID: campaign.ID,
+				OwnedByBatchChangeID: batchChange.ID,
 				RepoID:               tt.repo.ID,
 			}
 			plan.ChangesetSpec = ct.BuildChangesetSpec(t, ct.TestSpecOpts{
@@ -924,23 +924,23 @@ func TestDecorateChangesetBody(t *testing.T) {
 
 	fs := &FakeStore{
 		GetBatchChangeMock: func(ctx context.Context, opts store.CountBatchChangeOpts) (*batches.BatchChange, error) {
-			return &batches.BatchChange{ID: 1234, Name: "reconciler-test-campaign"}, nil
+			return &batches.BatchChange{ID: 1234, Name: "reconciler-test-batch-change"}, nil
 		},
 	}
 
-	cs := ct.BuildChangeset(ct.TestChangesetOpts{OwnedByCampaign: 1234})
+	cs := ct.BuildChangeset(ct.TestChangesetOpts{OwnedByBatchChange: 1234})
 
 	body := "body"
 	rcs := &repos.Changeset{Body: body, Changeset: cs}
 	if err := decorateChangesetBody(context.Background(), fs, database.Namespaces(new(dbtesting.MockDB)), rcs); err != nil {
 		t.Errorf("unexpected non-nil error: %v", err)
 	}
-	if want := body + "\n\n[_Created by Sourcegraph campaign `my-user/reconciler-test-campaign`._](https://sourcegraph.test/users/my-user/batch-changes/reconciler-test-campaign)"; rcs.Body != want {
+	if want := body + "\n\n[_Created by Sourcegraph batch change `my-user/reconciler-test-batch-change`._](https://sourcegraph.test/users/my-user/batch-changes/reconciler-test-batch-change)"; rcs.Body != want {
 		t.Errorf("repos.Changeset body unexpectedly changed:\nhave=%q\nwant=%q", rcs.Body, want)
 	}
 }
 
-func TestCampaignURL(t *testing.T) {
+func TestBatchChangeURL(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("errors", func(t *testing.T) {
@@ -952,7 +952,7 @@ func TestCampaignURL(t *testing.T) {
 				internalClient = tc
 				defer func() { internalClient = api.InternalClient }()
 
-				if _, err := campaignURL(ctx, nil, nil); err == nil {
+				if _, err := batchChangeURL(ctx, nil, nil); err == nil {
 					t.Error("unexpected nil error")
 				}
 			})
@@ -963,7 +963,7 @@ func TestCampaignURL(t *testing.T) {
 		internalClient = &mockInternalClient{externalURL: "https://sourcegraph.test"}
 		defer func() { internalClient = api.InternalClient }()
 
-		url, err := campaignURL(
+		url, err := batchChangeURL(
 			ctx,
 			&database.Namespace{Name: "foo", Organization: 123},
 			&batches.BatchChange{Name: "bar"},

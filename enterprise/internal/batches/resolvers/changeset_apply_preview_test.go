@@ -30,18 +30,18 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 
 	cstore := store.New(db)
 
-	// Create a campaign spec for the target campaign.
-	oldCampaignSpec := &batches.BatchSpec{
+	// Create a batch spec for the target batch change.
+	oldBatchSpec := &batches.BatchSpec{
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
-	if err := cstore.CreateBatchSpec(ctx, oldCampaignSpec); err != nil {
+	if err := cstore.CreateBatchSpec(ctx, oldBatchSpec); err != nil {
 		t.Fatal(err)
 	}
-	// Create a campaign and create a new spec targetting the same campaign again.
-	campaignName := "test-apply-preview-resolver"
-	campaign := ct.CreateBatchChange(t, ctx, cstore, campaignName, userID, oldCampaignSpec.ID)
-	campaignSpec := ct.CreateBatchSpec(t, ctx, cstore, campaignName, userID)
+	// Create a batch change and create a new spec targetting the same batch change again.
+	batchChangeName := "test-apply-preview-resolver"
+	batchChange := ct.CreateBatchChange(t, ctx, cstore, batchChangeName, userID, oldBatchSpec.ID)
+	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, batchChangeName, userID)
 
 	esStore := database.ExternalServicesWith(cstore)
 	repoStore := database.ReposWith(cstore)
@@ -59,10 +59,10 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 	changesetSpecs := make([]*batches.ChangesetSpec, 0, 2)
 	for i, r := range rs[:2] {
 		s := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
-			CampaignSpec: campaignSpec.ID,
-			User:         userID,
-			Repo:         r.ID,
-			HeadRef:      fmt.Sprintf("d34db33f-%d", i),
+			BatchSpec: batchSpec.ID,
+			User:      userID,
+			Repo:      r.ID,
+			HeadRef:   fmt.Sprintf("d34db33f-%d", i),
 		})
 
 		changesetSpecs = append(changesetSpecs, s)
@@ -70,31 +70,31 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 
 	// Add one changeset that doesn't match any new spec anymore but was there before (close, detach).
 	closingChangesetSpec := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
-		User:         userID,
-		Repo:         rs[2].ID,
-		CampaignSpec: oldCampaignSpec.ID,
-		HeadRef:      "d34db33f-2",
+		User:      userID,
+		Repo:      rs[2].ID,
+		BatchSpec: oldBatchSpec.ID,
+		HeadRef:   "d34db33f-2",
 	})
 	closingChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 		Repo:             rs[2].ID,
-		Campaign:         campaign.ID,
+		BatchChange:      batchChange.ID,
 		CurrentSpec:      closingChangesetSpec.ID,
 		PublicationState: batches.ChangesetPublicationStatePublished,
 	})
 
 	// Add one changeset that doesn't matches a new spec (update).
 	updatedChangesetSpec := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
-		CampaignSpec: oldCampaignSpec.ID,
-		User:         userID,
-		Repo:         changesetSpecs[1].RepoID,
-		HeadRef:      changesetSpecs[1].Spec.HeadRef,
+		BatchSpec: oldBatchSpec.ID,
+		User:      userID,
+		Repo:      changesetSpecs[1].RepoID,
+		HeadRef:   changesetSpecs[1].Spec.HeadRef,
 	})
 	updatedChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
-		Repo:             rs[1].ID,
-		Campaign:         campaign.ID,
-		CurrentSpec:      updatedChangesetSpec.ID,
-		PublicationState: batches.ChangesetPublicationStatePublished,
-		OwnedByCampaign:  campaign.ID,
+		Repo:               rs[1].ID,
+		BatchChange:        batchChange.ID,
+		CurrentSpec:        updatedChangesetSpec.ID,
+		PublicationState:   batches.ChangesetPublicationStatePublished,
+		OwnedByBatchChange: batchChange.ID,
 	})
 
 	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil)
@@ -102,7 +102,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	apiID := string(marshalBatchSpecRandID(campaignSpec.RandID))
+	apiID := string(marshalBatchSpecRandID(batchSpec.RandID))
 
 	input := map[string]interface{}{"batchSpec": apiID}
 	var response struct{ Node apitest.BatchSpec }

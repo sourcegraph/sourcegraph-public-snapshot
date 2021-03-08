@@ -161,7 +161,7 @@ func TestChangesetResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	campaign := &batches.BatchChange{
+	batchChange := &batches.BatchChange{
 		Name:             "my-unique-name",
 		NamespaceUserID:  userID,
 		InitialApplierID: userID,
@@ -169,11 +169,11 @@ func TestChangesetResolver(t *testing.T) {
 		LastApplierID:    userID,
 		LastAppliedAt:    time.Now(),
 	}
-	if err := cstore.CreateBatchChange(ctx, campaign); err != nil {
+	if err := cstore.CreateBatchChange(ctx, batchChange); err != nil {
 		t.Fatal(err)
 	}
-	// Associate the changeset with a campaign, so it's considered in syncer logic.
-	addChangeset(t, ctx, cstore, syncedGitHubChangeset, campaign.ID)
+	// Associate the changeset with a batch change, so it's considered in syncer logic.
+	addChangeset(t, ctx, cstore, syncedGitHubChangeset, batchChange.ID)
 
 	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil)
 	if err != nil {
@@ -278,7 +278,7 @@ func TestChangesetResolver(t *testing.T) {
 
 			tc.want.ID = string(apiID)
 			if diff := cmp.Diff(tc.want, response.Node); diff != "" {
-				t.Fatalf("wrong campaign response (-want +got):\n%s", diff)
+				t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
 			}
 		})
 	}

@@ -71,7 +71,7 @@ func TestPermissionLevels(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	createCampaign := func(t *testing.T, s *store.Store, name string, userID int32, campaignSpecID int64) (campaignID int64) {
+	createBatchChange := func(t *testing.T, s *store.Store, name string, userID int32, batchSpecID int64) (batchChangeID int64) {
 		t.Helper()
 
 		c := &batches.BatchChange{
@@ -80,13 +80,13 @@ func TestPermissionLevels(t *testing.T) {
 			NamespaceUserID:  userID,
 			LastApplierID:    userID,
 			LastAppliedAt:    time.Now(),
-			BatchSpecID:      campaignSpecID,
+			BatchSpecID:      batchSpecID,
 		}
 		if err := s.CreateBatchChange(ctx, c); err != nil {
 			t.Fatal(err)
 		}
 
-		// We attach the changeset to the campaign so we can test syncChangeset
+		// We attach the changeset to the batch change so we can test syncChangeset
 		changeset.BatchChanges = append(changeset.BatchChanges, batches.BatchChangeAssoc{BatchChangeID: c.ID})
 		if err := s.UpdateChangeset(ctx, changeset); err != nil {
 			t.Fatal(err)
@@ -111,18 +111,18 @@ func TestPermissionLevels(t *testing.T) {
 		return cs.RandID, cs.ID
 	}
 
-	cleanUpCampaigns := func(t *testing.T, s *store.Store) {
+	cleanUpBatchChanges := func(t *testing.T, s *store.Store) {
 		t.Helper()
 
-		campaigns, next, err := s.ListBatchChanges(ctx, store.ListBatchChangesOpts{LimitOpts: store.LimitOpts{Limit: 1000}})
+		batchChanges, next, err := s.ListBatchChanges(ctx, store.ListBatchChangesOpts{LimitOpts: store.LimitOpts{Limit: 1000}})
 		if err != nil {
 			t.Fatal(err)
 		}
 		if next != 0 {
-			t.Fatalf("more campaigns in store")
+			t.Fatalf("more batch changes in store")
 		}
 
-		for _, c := range campaigns {
+		for _, c := range batchChanges {
 			if err := s.DeleteBatchChange(ctx, c.ID); err != nil {
 				t.Fatal(err)
 			}
@@ -130,61 +130,61 @@ func TestPermissionLevels(t *testing.T) {
 	}
 
 	t.Run("queries", func(t *testing.T) {
-		cleanUpCampaigns(t, cstore)
+		cleanUpBatchChanges(t, cstore)
 
-		adminCampaignSpec, adminCampaignSpecID := createBatchSpec(t, cstore, adminID)
-		adminCampaign := createCampaign(t, cstore, "admin", adminID, adminCampaignSpecID)
-		userCampaignSpec, userCampaignSpecID := createBatchSpec(t, cstore, userID)
-		userCampaign := createCampaign(t, cstore, "user", userID, userCampaignSpecID)
+		adminBatchSpec, adminBatchSpecID := createBatchSpec(t, cstore, adminID)
+		adminBatchChange := createBatchChange(t, cstore, "admin", adminID, adminBatchSpecID)
+		userBatchSpec, userBatchSpecID := createBatchSpec(t, cstore, userID)
+		userBatchChange := createBatchChange(t, cstore, "user", userID, userBatchSpecID)
 
 		t.Run("BatchChangeByID", func(t *testing.T) {
 			tests := []struct {
 				name                    string
 				currentUser             int32
-				campaign                int64
+				batchChange             int64
 				wantViewerCanAdminister bool
 			}{
 				{
-					name:                    "site-admin viewing own campaign",
+					name:                    "site-admin viewing own batch change",
 					currentUser:             adminID,
-					campaign:                adminCampaign,
+					batchChange:             adminBatchChange,
 					wantViewerCanAdminister: true,
 				},
 				{
-					name:                    "non-site-admin viewing other's campaign",
+					name:                    "non-site-admin viewing other's batch change",
 					currentUser:             userID,
-					campaign:                adminCampaign,
+					batchChange:             adminBatchChange,
 					wantViewerCanAdminister: false,
 				},
 				{
-					name:                    "site-admin viewing other's campaign",
+					name:                    "site-admin viewing other's batch change",
 					currentUser:             adminID,
-					campaign:                userCampaign,
+					batchChange:             userBatchChange,
 					wantViewerCanAdminister: true,
 				},
 				{
-					name:                    "non-site-admin viewing own campaign",
+					name:                    "non-site-admin viewing own batch change",
 					currentUser:             userID,
-					campaign:                userCampaign,
+					batchChange:             userBatchChange,
 					wantViewerCanAdminister: true,
 				},
 			}
 
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
-					graphqlID := string(marshalBatchChangeID(tc.campaign))
+					graphqlID := string(marshalBatchChangeID(tc.batchChange))
 
 					var res struct{ Node apitest.BatchChange }
 
 					input := map[string]interface{}{"batchChange": graphqlID}
-					queryCampaign := `
+					queryBatchChange := `
 				  query($batchChange: ID!) {
 				    node(id: $batchChange) { ... on BatchChange { id, viewerCanAdminister } }
 				  }
                 `
 
 					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
-					apitest.MustExec(actorCtx, t, s, input, &res, queryCampaign)
+					apitest.MustExec(actorCtx, t, s, input, &res, queryBatchChange)
 
 					if have, want := res.Node.ID, graphqlID; have != want {
 						t.Fatalf("queried batch change has wrong id %q, want %q", have, want)
@@ -204,27 +204,27 @@ func TestPermissionLevels(t *testing.T) {
 				wantViewerCanAdminister bool
 			}{
 				{
-					name:                    "site-admin viewing own campaign spec",
+					name:                    "site-admin viewing own batch spec",
 					currentUser:             adminID,
-					batchSpec:               adminCampaignSpec,
+					batchSpec:               adminBatchSpec,
 					wantViewerCanAdminister: true,
 				},
 				{
-					name:                    "non-site-admin viewing other's campaign spec",
+					name:                    "non-site-admin viewing other's batch spec",
 					currentUser:             userID,
-					batchSpec:               adminCampaignSpec,
+					batchSpec:               adminBatchSpec,
 					wantViewerCanAdminister: false,
 				},
 				{
-					name:                    "site-admin viewing other's campaign spec",
+					name:                    "site-admin viewing other's batch spec",
 					currentUser:             adminID,
-					batchSpec:               userCampaignSpec,
+					batchSpec:               userBatchSpec,
 					wantViewerCanAdminister: true,
 				},
 				{
-					name:                    "non-site-admin viewing own campaign spec",
+					name:                    "non-site-admin viewing own batch spec",
 					currentUser:             userID,
-					batchSpec:               userCampaignSpec,
+					batchSpec:               userBatchSpec,
 					wantViewerCanAdminister: true,
 				},
 			}
@@ -236,26 +236,26 @@ func TestPermissionLevels(t *testing.T) {
 					var res struct{ Node apitest.BatchSpec }
 
 					input := map[string]interface{}{"batchSpec": graphqlID}
-					queryCampaignSpec := `
+					queryBatchSpec := `
 				  query($batchSpec: ID!) {
 				    node(id: $batchSpec) { ... on BatchSpec { id, viewerCanAdminister } }
 				  }
                 `
 
 					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
-					apitest.MustExec(actorCtx, t, s, input, &res, queryCampaignSpec)
+					apitest.MustExec(actorCtx, t, s, input, &res, queryBatchSpec)
 
 					if have, want := res.Node.ID, graphqlID; have != want {
-						t.Fatalf("queried campaign spec has wrong id %q, want %q", have, want)
+						t.Fatalf("queried batch spec has wrong id %q, want %q", have, want)
 					}
 					if have, want := res.Node.ViewerCanAdminister, tc.wantViewerCanAdminister; have != want {
-						t.Fatalf("queried campaign spec's ViewerCanAdminister is wrong %t, want %t", have, want)
+						t.Fatalf("queried batch spec's ViewerCanAdminister is wrong %t, want %t", have, want)
 					}
 				})
 			}
 		})
 
-		t.Run("CampaignsCodeHosts", func(t *testing.T) {
+		t.Run("BatchChangesCodeHosts", func(t *testing.T) {
 			tests := []struct {
 				name        string
 				currentUser int32
@@ -308,7 +308,7 @@ func TestPermissionLevels(t *testing.T) {
 			}
 		})
 
-		t.Run("CampaignsCredentialByID", func(t *testing.T) {
+		t.Run("BatchChangesCredentialByID", func(t *testing.T) {
 			tests := []struct {
 				name        string
 				currentUser int32
@@ -458,38 +458,38 @@ func TestPermissionLevels(t *testing.T) {
 				name                string
 				currentUser         int32
 				viewerCanAdminister bool
-				wantCampaigns       []int64
+				wantBatchChanges    []int64
 			}{
 				{
 					name:                "admin listing viewerCanAdminister: true",
 					currentUser:         adminID,
 					viewerCanAdminister: true,
-					wantCampaigns:       []int64{adminCampaign, userCampaign},
+					wantBatchChanges:    []int64{adminBatchChange, userBatchChange},
 				},
 				{
 					name:                "user listing viewerCanAdminister: true",
 					currentUser:         userID,
 					viewerCanAdminister: true,
-					wantCampaigns:       []int64{userCampaign},
+					wantBatchChanges:    []int64{userBatchChange},
 				},
 				{
 					name:                "admin listing viewerCanAdminister: false",
 					currentUser:         adminID,
 					viewerCanAdminister: false,
-					wantCampaigns:       []int64{adminCampaign, userCampaign},
+					wantBatchChanges:    []int64{adminBatchChange, userBatchChange},
 				},
 				{
 					name:                "user listing viewerCanAdminister: false",
 					currentUser:         userID,
 					viewerCanAdminister: false,
-					wantCampaigns:       []int64{adminCampaign, userCampaign},
+					wantBatchChanges:    []int64{adminBatchChange, userBatchChange},
 				},
 			}
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
 					actorCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
-					expectedIDs := make(map[string]bool, len(tc.wantCampaigns))
-					for _, c := range tc.wantCampaigns {
+					expectedIDs := make(map[string]bool, len(tc.wantBatchChanges))
+					for _, c := range tc.wantBatchChanges {
 						graphqlID := string(marshalBatchChangeID(c))
 						expectedIDs[graphqlID] = true
 					}
@@ -510,15 +510,15 @@ func TestPermissionLevels(t *testing.T) {
 					}
 					apitest.MustExec(actorCtx, t, s, nil, &res, query)
 					for _, conn := range []apitest.BatchChangeConnection{res.BatchChanges, res.Node.BatchChanges} {
-						if have, want := conn.TotalCount, len(tc.wantCampaigns); have != want {
-							t.Fatalf("wrong count of campaigns returned, want=%d have=%d", want, have)
+						if have, want := conn.TotalCount, len(tc.wantBatchChanges); have != want {
+							t.Fatalf("wrong count of batch changes returned, want=%d have=%d", want, have)
 						}
 						if have, want := conn.TotalCount, len(conn.Nodes); have != want {
 							t.Fatalf("totalCount and nodes length don't match, want=%d have=%d", want, have)
 						}
 						for _, node := range conn.Nodes {
 							if _, ok := expectedIDs[node.ID]; !ok {
-								t.Fatalf("received wrong campaign with id %q", node.ID)
+								t.Fatalf("received wrong batch change with id %q", node.ID)
 							}
 						}
 					}
@@ -530,48 +530,48 @@ func TestPermissionLevels(t *testing.T) {
 	t.Run("batch change mutations", func(t *testing.T) {
 		mutations := []struct {
 			name         string
-			mutationFunc func(campaignID, changesetID, campaignSpecID string) string
+			mutationFunc func(batchChangeID, changesetID, batchSpecID string) string
 		}{
 			{
 				name: "createBatchChange",
-				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
-					return fmt.Sprintf(`mutation { createBatchChange(batchSpec: %q) { id } }`, campaignSpecID)
+				mutationFunc: func(batchChangeID, changesetID, batchSpecID string) string {
+					return fmt.Sprintf(`mutation { createBatchChange(batchSpec: %q) { id } }`, batchSpecID)
 				},
 			},
 			{
 				name: "closeBatchChange",
-				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
-					return fmt.Sprintf(`mutation { closeBatchChange(batchChange: %q, closeChangesets: false) { id } }`, campaignID)
+				mutationFunc: func(batchChangeID, changesetID, batchSpecID string) string {
+					return fmt.Sprintf(`mutation { closeBatchChange(batchChange: %q, closeChangesets: false) { id } }`, batchChangeID)
 				},
 			},
 			{
 				name: "deleteBatchChange",
-				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
-					return fmt.Sprintf(`mutation { deleteBatchChange(batchChange: %q) { alwaysNil } } `, campaignID)
+				mutationFunc: func(batchChangeID, changesetID, batchSpecID string) string {
+					return fmt.Sprintf(`mutation { deleteBatchChange(batchChange: %q) { alwaysNil } } `, batchChangeID)
 				},
 			},
 			{
 				name: "syncChangeset",
-				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
+				mutationFunc: func(batchChangeID, changesetID, batchSpecID string) string {
 					return fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, changesetID)
 				},
 			},
 			{
 				name: "reenqueueChangeset",
-				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
+				mutationFunc: func(batchChangeID, changesetID, batchSpecID string) string {
 					return fmt.Sprintf(`mutation { reenqueueChangeset(changeset: %q) { id } }`, changesetID)
 				},
 			},
 			{
 				name: "applyBatchChange",
-				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
-					return fmt.Sprintf(`mutation { applyBatchChange(batchSpec: %q) { id } }`, campaignSpecID)
+				mutationFunc: func(batchChangeID, changesetID, batchSpecID string) string {
+					return fmt.Sprintf(`mutation { applyBatchChange(batchSpec: %q) { id } }`, batchSpecID)
 				},
 			},
 			{
 				name: "moveBatchChange",
-				mutationFunc: func(campaignID, changesetID, campaignSpecID string) string {
-					return fmt.Sprintf(`mutation { moveBatchChange(batchChange: %q, newName: "foobar") { id } }`, campaignID)
+				mutationFunc: func(batchChangeID, changesetID, batchSpecID string) string {
+					return fmt.Sprintf(`mutation { moveBatchChange(batchChange: %q, newName: "foobar") { id } }`, batchChangeID)
 				},
 			},
 		}
@@ -579,59 +579,59 @@ func TestPermissionLevels(t *testing.T) {
 		for _, m := range mutations {
 			t.Run(m.name, func(t *testing.T) {
 				tests := []struct {
-					name           string
-					currentUser    int32
-					campaignAuthor int32
-					wantAuthErr    bool
+					name              string
+					currentUser       int32
+					batchChangeAuthor int32
+					wantAuthErr       bool
 
 					// If batches.restrictToAdmins is enabled, should an error
 					// be generated?
 					wantDisabledErr bool
 				}{
 					{
-						name:            "unauthorized",
-						currentUser:     userID,
-						campaignAuthor:  adminID,
-						wantAuthErr:     true,
-						wantDisabledErr: true,
+						name:              "unauthorized",
+						currentUser:       userID,
+						batchChangeAuthor: adminID,
+						wantAuthErr:       true,
+						wantDisabledErr:   true,
 					},
 					{
-						name:            "authorized campaign owner",
-						currentUser:     userID,
-						campaignAuthor:  userID,
-						wantAuthErr:     false,
-						wantDisabledErr: true,
+						name:              "authorized batch change owner",
+						currentUser:       userID,
+						batchChangeAuthor: userID,
+						wantAuthErr:       false,
+						wantDisabledErr:   true,
 					},
 					{
-						name:            "authorized site-admin",
-						currentUser:     adminID,
-						campaignAuthor:  userID,
-						wantAuthErr:     false,
-						wantDisabledErr: false,
+						name:              "authorized site-admin",
+						currentUser:       adminID,
+						batchChangeAuthor: userID,
+						wantAuthErr:       false,
+						wantDisabledErr:   false,
 					},
 				}
 
 				for _, tc := range tests {
 					for _, restrict := range []bool{true, false} {
 						t.Run(fmt.Sprintf("%s restrict: %v", tc.name, restrict), func(t *testing.T) {
-							cleanUpCampaigns(t, cstore)
+							cleanUpBatchChanges(t, cstore)
 
-							campaignSpecRandID, campaignSpecID := createBatchSpec(t, cstore, tc.campaignAuthor)
-							campaignID := createCampaign(t, cstore, "test-campaign", tc.campaignAuthor, campaignSpecID)
+							batchSpecRandID, batchSpecID := createBatchSpec(t, cstore, tc.batchChangeAuthor)
+							batchChagneID := createBatchChange(t, cstore, "test-batch-change", tc.batchChangeAuthor, batchSpecID)
 
-							// We add the changeset to the campaign. It doesn't
-							// matter for the addChangesetsToCampaign mutation,
+							// We add the changeset to the batch change. It doesn't
+							// matter for the addChangesetsToBatchChange mutation,
 							// since that is idempotent and we want to solely
 							// check for auth errors.
-							changeset.BatchChanges = []batches.BatchChangeAssoc{{BatchChangeID: campaignID}}
+							changeset.BatchChanges = []batches.BatchChangeAssoc{{BatchChangeID: batchChagneID}}
 							if err := cstore.UpdateChangeset(ctx, changeset); err != nil {
 								t.Fatal(err)
 							}
 
 							mutation := m.mutationFunc(
-								string(marshalBatchChangeID(campaignID)),
+								string(marshalBatchChangeID(batchChagneID)),
 								string(marshalChangesetID(changeset.ID)),
-								string(marshalBatchSpecRandID(campaignSpecRandID)),
+								string(marshalBatchSpecRandID(batchSpecRandID)),
 							)
 
 							actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
@@ -669,7 +669,7 @@ func TestPermissionLevels(t *testing.T) {
 								for _, e := range errs {
 									if strings.Contains(e.Error(), "must be authenticated") {
 										t.Fatalf("auth error wrongly returned: %s %T", errs[0], errs[0])
-									} else if strings.Contains(e.Error(), "campaigns are disabled for non-site-admin users") {
+									} else if strings.Contains(e.Error(), "batch changes are disabled for non-site-admin users") {
 										t.Fatalf("site admin error wrongly returned: %s %T", errs[0], errs[0])
 									}
 								}
@@ -719,12 +719,12 @@ func TestPermissionLevels(t *testing.T) {
 
 				for _, tc := range tests {
 					t.Run(tc.name, func(t *testing.T) {
-						cleanUpCampaigns(t, cstore)
+						cleanUpBatchChanges(t, cstore)
 
 						namespaceID := string(graphqlbackend.MarshalUserID(tc.currentUser))
 						if tc.currentUser == 0 {
 							// If we don't have a currentUser we try to create
-							// a campaign in another namespace, solely for the
+							// a batch change in another namespace, solely for the
 							// purposes of this test.
 							namespaceID = string(graphqlbackend.MarshalUserID(userID))
 						}
@@ -794,7 +794,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		repos = append(repos, r)
 	}
 
-	t.Run("Campaign and changesets", func(t *testing.T) {
+	t.Run("BatchChange and changesets", func(t *testing.T) {
 		// Create 2 changesets for 2 repositories
 		changesetBaseRefOid := "f00b4r"
 		changesetHeadRefOid := "b4rf00"
@@ -832,36 +832,36 @@ func TestRepositoryPermissions(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		campaign := &batches.BatchChange{
-			Name:             "my campaign",
+		batchChange := &batches.BatchChange{
+			Name:             "my batch change",
 			InitialApplierID: userID,
 			NamespaceUserID:  userID,
 			LastApplierID:    userID,
 			LastAppliedAt:    time.Now(),
 			BatchSpecID:      spec.ID,
 		}
-		if err := cstore.CreateBatchChange(ctx, campaign); err != nil {
+		if err := cstore.CreateBatchChange(ctx, batchChange); err != nil {
 			t.Fatal(err)
 		}
-		// We attach the two changesets to the campaign
+		// We attach the two changesets to the batch change
 		for _, c := range changesets {
-			c.BatchChanges = []batches.BatchChangeAssoc{{BatchChangeID: campaign.ID}}
+			c.BatchChanges = []batches.BatchChangeAssoc{{BatchChangeID: batchChange.ID}}
 			if err := cstore.UpdateChangeset(ctx, c); err != nil {
 				t.Fatal(err)
 			}
 		}
 
-		// Query campaign and check that we get all changesets
+		// Query batch change and check that we get all changesets
 		userCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
 		input := map[string]interface{}{
-			"batchChange": string(marshalBatchChangeID(campaign.ID)),
+			"batchChange": string(marshalBatchChangeID(batchChange.ID)),
 		}
-		testCampaignResponse(t, s, userCtx, input, wantCampaignResponse{
+		testBatchChangeResponse(t, s, userCtx, input, wantBatchChangeResponse{
 			changesetTypes:  map[string]int{"ExternalChangeset": 2},
 			changesetsCount: 2,
 			changesetStats:  apitest.ChangesetsStats{Open: 2, Total: 2},
-			campaignDiffStat: apitest.DiffStat{
+			batchChangeDiffStat: apitest.DiffStat{
 				Added:   2 * changesetDiffStat.Added,
 				Changed: 2 * changesetDiffStat.Changed,
 				Deleted: 2 * changesetDiffStat.Deleted,
@@ -880,20 +880,20 @@ func TestRepositoryPermissions(t *testing.T) {
 
 		// Send query again and check that for each filtered repository we get a
 		// HiddenChangeset
-		want := wantCampaignResponse{
+		want := wantBatchChangeResponse{
 			changesetTypes: map[string]int{
 				"ExternalChangeset":       1,
 				"HiddenExternalChangeset": 1,
 			},
 			changesetsCount: 2,
 			changesetStats:  apitest.ChangesetsStats{Open: 2, Total: 2},
-			campaignDiffStat: apitest.DiffStat{
+			batchChangeDiffStat: apitest.DiffStat{
 				Added:   1 * changesetDiffStat.Added,
 				Changed: 1 * changesetDiffStat.Changed,
 				Deleted: 1 * changesetDiffStat.Deleted,
 			},
 		}
-		testCampaignResponse(t, s, userCtx, input, want)
+		testBatchChangeResponse(t, s, userCtx, input, want)
 
 		for _, c := range changesets {
 			// The changeset whose repository has been filtered should be hidden
@@ -908,7 +908,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		// should not be returned, since that would leak information about the
 		// hidden changesets.
 		input = map[string]interface{}{
-			"batchChange": string(marshalBatchChangeID(campaign.ID)),
+			"batchChange": string(marshalBatchChangeID(batchChange.ID)),
 			"checkState":  string(batches.ChangesetCheckStatePassed),
 		}
 		wantCheckStateResponse := want
@@ -917,23 +917,23 @@ func TestRepositoryPermissions(t *testing.T) {
 			"ExternalChangeset": 1,
 			// No HiddenExternalChangeset
 		}
-		testCampaignResponse(t, s, userCtx, input, wantCheckStateResponse)
+		testBatchChangeResponse(t, s, userCtx, input, wantCheckStateResponse)
 
 		input = map[string]interface{}{
-			"batchChange": string(marshalBatchChangeID(campaign.ID)),
+			"batchChange": string(marshalBatchChangeID(batchChange.ID)),
 			"reviewState": string(batches.ChangesetReviewStateChangesRequested),
 		}
 		wantReviewStateResponse := wantCheckStateResponse
-		testCampaignResponse(t, s, userCtx, input, wantReviewStateResponse)
+		testBatchChangeResponse(t, s, userCtx, input, wantReviewStateResponse)
 	})
 
-	t.Run("CampaignSpec and changesetSpecs", func(t *testing.T) {
-		campaignSpec := &batches.BatchSpec{
+	t.Run("BatchSpec and changesetSpecs", func(t *testing.T) {
+		batchSpec := &batches.BatchSpec{
 			UserID:          userID,
 			NamespaceUserID: userID,
-			Spec:            batches.BatchSpecFields{Name: "campaign-spec-and-changeset-specs"},
+			Spec:            batches.BatchSpecFields{Name: "batch-spec-and-changeset-specs"},
 		}
-		if err := cstore.CreateBatchSpec(ctx, campaignSpec); err != nil {
+		if err := cstore.CreateBatchSpec(ctx, batchSpec); err != nil {
 			t.Fatal(err)
 		}
 
@@ -942,7 +942,7 @@ func TestRepositoryPermissions(t *testing.T) {
 			c := &batches.ChangesetSpec{
 				RepoID:          r.ID,
 				UserID:          userID,
-				CampaignSpecID:  campaignSpec.ID,
+				BatchSpecID:     batchSpec.ID,
 				DiffStatAdded:   4,
 				DiffStatChanged: 4,
 				DiffStatDeleted: 4,
@@ -953,14 +953,14 @@ func TestRepositoryPermissions(t *testing.T) {
 			changesetSpecs = append(changesetSpecs, c)
 		}
 
-		// Query campaignSpec and check that we get all changesetSpecs
+		// Query BatchSpec and check that we get all changesetSpecs
 		userCtx := actor.WithActor(ctx, actor.FromUser(userID))
-		testCampaignSpecResponse(t, s, userCtx, campaignSpec.RandID, wantCampaignSpecResponse{
+		testBatchSpecResponse(t, s, userCtx, batchSpec.RandID, wantBatchSpecResponse{
 			changesetSpecTypes:    map[string]int{"VisibleChangesetSpec": 2},
 			changesetSpecsCount:   2,
 			changesetPreviewTypes: map[string]int{"VisibleChangesetApplyPreview": 2},
 			changesetPreviewCount: 2,
-			campaignSpecDiffStat: apitest.DiffStat{
+			batchSpecDiffStat: apitest.DiffStat{
 				Added: 8, Changed: 8, Deleted: 8,
 			},
 		})
@@ -979,7 +979,7 @@ func TestRepositoryPermissions(t *testing.T) {
 
 		// Send query again and check that for each filtered repository we get a
 		// HiddenChangesetSpec.
-		testCampaignSpecResponse(t, s, userCtx, campaignSpec.RandID, wantCampaignSpecResponse{
+		testBatchSpecResponse(t, s, userCtx, batchSpec.RandID, wantBatchSpecResponse{
 			changesetSpecTypes: map[string]int{
 				"VisibleChangesetSpec": 1,
 				"HiddenChangesetSpec":  1,
@@ -987,7 +987,7 @@ func TestRepositoryPermissions(t *testing.T) {
 			changesetSpecsCount:   2,
 			changesetPreviewTypes: map[string]int{"VisibleChangesetApplyPreview": 1, "HiddenChangesetApplyPreview": 1},
 			changesetPreviewCount: 2,
-			campaignSpecDiffStat: apitest.DiffStat{
+			batchSpecDiffStat: apitest.DiffStat{
 				Added: 4, Changed: 4, Deleted: 4,
 			},
 		})
@@ -1004,14 +1004,14 @@ func TestRepositoryPermissions(t *testing.T) {
 	})
 }
 
-type wantCampaignResponse struct {
-	changesetTypes   map[string]int
-	changesetsCount  int
-	changesetStats   apitest.ChangesetsStats
-	campaignDiffStat apitest.DiffStat
+type wantBatchChangeResponse struct {
+	changesetTypes      map[string]int
+	changesetsCount     int
+	changesetStats      apitest.ChangesetsStats
+	batchChangeDiffStat apitest.DiffStat
 }
 
-func testCampaignResponse(t *testing.T, s *graphql.Schema, ctx context.Context, in map[string]interface{}, w wantCampaignResponse) {
+func testBatchChangeResponse(t *testing.T, s *graphql.Schema, ctx context.Context, in map[string]interface{}, w wantBatchChangeResponse) {
 	t.Helper()
 
 	var response struct{ Node apitest.BatchChange }
@@ -1037,7 +1037,7 @@ func testCampaignResponse(t *testing.T, s *graphql.Schema, ctx context.Context, 
 		t.Fatalf("unexpected changesettypes (-want +got):\n%s", diff)
 	}
 
-	if diff := cmp.Diff(w.campaignDiffStat, response.Node.DiffStat); diff != "" {
+	if diff := cmp.Diff(w.batchChangeDiffStat, response.Node.DiffStat); diff != "" {
 		t.Fatalf("unexpected batch change diff stat (-want +got):\n%s", diff)
 	}
 }
@@ -1093,7 +1093,7 @@ func testChangesetResponse(t *testing.T, s *graphql.Schema, ctx context.Context,
 	}
 
 	if have, want := res.Node.BatchChanges.TotalCount, 1; have != want {
-		t.Fatalf("changeset has wrong campaigns totalcount. want=%d, have=%d", want, have)
+		t.Fatalf("changeset has wrong batch changes totalcount. want=%d, have=%d", want, have)
 	}
 
 	if parseJSONTime(t, res.Node.CreatedAt).IsZero() {
@@ -1145,23 +1145,23 @@ query {
 }
 `
 
-type wantCampaignSpecResponse struct {
+type wantBatchSpecResponse struct {
 	changesetPreviewTypes map[string]int
 	changesetPreviewCount int
 	changesetSpecTypes    map[string]int
 	changesetSpecsCount   int
-	campaignSpecDiffStat  apitest.DiffStat
+	batchSpecDiffStat     apitest.DiffStat
 }
 
-func testCampaignSpecResponse(t *testing.T, s *graphql.Schema, ctx context.Context, campaignSpecRandID string, w wantCampaignSpecResponse) {
+func testBatchSpecResponse(t *testing.T, s *graphql.Schema, ctx context.Context, batchSpecRandID string, w wantBatchSpecResponse) {
 	t.Helper()
 
 	in := map[string]interface{}{
-		"batchSpec": string(marshalBatchSpecRandID(campaignSpecRandID)),
+		"batchSpec": string(marshalBatchSpecRandID(batchSpecRandID)),
 	}
 
 	var response struct{ Node apitest.BatchSpec }
-	apitest.MustExec(ctx, t, s, in, &response, queryCampaignSpecPermLevels)
+	apitest.MustExec(ctx, t, s, in, &response, queryBatchSpecPermLevels)
 
 	if have, want := response.Node.ID, in["batchSpec"]; have != want {
 		t.Fatalf("batch spec id is wrong. have %q, want %q", have, want)
@@ -1192,7 +1192,7 @@ func testCampaignSpecResponse(t *testing.T, s *graphql.Schema, ctx context.Conte
 	}
 }
 
-const queryCampaignSpecPermLevels = `
+const queryBatchSpecPermLevels = `
 query($batchSpec: ID!) {
   node(id: $batchSpec) {
     ... on BatchSpec {

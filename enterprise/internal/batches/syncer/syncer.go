@@ -73,7 +73,7 @@ func NewSyncRegistry(ctx context.Context, cstore SyncStore, repoStore RepoStore,
 func (s *SyncRegistry) Add(codeHost *batches.CodeHost) {
 	// This should never happen since the store does the filtering for us, but let's be super duper extra cautious.
 	if !codeHost.IsSupported() {
-		log15.Info("Code host not support by campaigns", "type", codeHost.ExternalServiceType, "url", codeHost.ExternalServiceID)
+		log15.Info("Code host not support by batch changes", "type", codeHost.ExternalServiceType, "url", codeHost.ExternalServiceID)
 		return
 	}
 

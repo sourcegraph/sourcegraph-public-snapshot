@@ -48,7 +48,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	campaign := &batches.BatchChange{
+	batchChange := &batches.BatchChange{
 		Name:             "my-unique-name",
 		NamespaceUserID:  userID,
 		InitialApplierID: userID,
@@ -56,7 +56,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		LastAppliedAt:    time.Now(),
 		BatchSpecID:      spec.ID,
 	}
-	if err := cstore.CreateBatchChange(ctx, campaign); err != nil {
+	if err := cstore.CreateBatchChange(ctx, batchChange); err != nil {
 		t.Fatal(err)
 	}
 
@@ -65,8 +65,8 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		ExternalServiceType: "github",
 		PublicationState:    batches.ChangesetPublicationStateUnpublished,
 		ExternalReviewState: batches.ChangesetReviewStatePending,
-		OwnedByCampaign:     campaign.ID,
-		Campaign:            campaign.ID,
+		OwnedByBatchChange:  batchChange.ID,
+		BatchChange:         batchChange.ID,
 	})
 
 	changeset2 := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
@@ -77,8 +77,8 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		ExternalState:       batches.ChangesetExternalStateOpen,
 		PublicationState:    batches.ChangesetPublicationStatePublished,
 		ExternalReviewState: batches.ChangesetReviewStatePending,
-		OwnedByCampaign:     campaign.ID,
-		Campaign:            campaign.ID,
+		OwnedByBatchChange:  batchChange.ID,
+		BatchChange:         batchChange.ID,
 	})
 
 	changeset3 := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
@@ -89,8 +89,8 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		ExternalState:       batches.ChangesetExternalStateMerged,
 		PublicationState:    batches.ChangesetPublicationStatePublished,
 		ExternalReviewState: batches.ChangesetReviewStatePending,
-		OwnedByCampaign:     campaign.ID,
-		Campaign:            campaign.ID,
+		OwnedByBatchChange:  batchChange.ID,
+		BatchChange:         batchChange.ID,
 	})
 	changeset4 := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 		Repo:                inaccessibleRepo.ID,
@@ -100,21 +100,21 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		ExternalState:       batches.ChangesetExternalStateOpen,
 		PublicationState:    batches.ChangesetPublicationStatePublished,
 		ExternalReviewState: batches.ChangesetReviewStatePending,
-		OwnedByCampaign:     campaign.ID,
-		Campaign:            campaign.ID,
+		OwnedByBatchChange:  batchChange.ID,
+		BatchChange:         batchChange.ID,
 	})
 
-	addChangeset(t, ctx, cstore, changeset1, campaign.ID)
-	addChangeset(t, ctx, cstore, changeset2, campaign.ID)
-	addChangeset(t, ctx, cstore, changeset3, campaign.ID)
-	addChangeset(t, ctx, cstore, changeset4, campaign.ID)
+	addChangeset(t, ctx, cstore, changeset1, batchChange.ID)
+	addChangeset(t, ctx, cstore, changeset2, batchChange.ID)
+	addChangeset(t, ctx, cstore, changeset3, batchChange.ID)
+	addChangeset(t, ctx, cstore, changeset4, batchChange.ID)
 
 	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	campaignAPIID := string(marshalBatchChangeID(campaign.ID))
+	batchChangeAPIID := string(marshalBatchChangeID(batchChange.ID))
 	nodes := []apitest.Changeset{
 		{
 			Typename:   "ExternalChangeset",
@@ -158,7 +158,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(fmt.Sprintf("Unsafe opts %t, first %d", tc.useUnsafeOpts, tc.firstParam), func(t *testing.T) {
-			input := map[string]interface{}{"batchChange": campaignAPIID, "first": int64(tc.firstParam)}
+			input := map[string]interface{}{"batchChange": batchChangeAPIID, "first": int64(tc.firstParam)}
 			if tc.useUnsafeOpts {
 				input["reviewState"] = batches.ChangesetReviewStatePending
 			}
@@ -187,7 +187,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 
 	var endCursor *string
 	for i := range nodes {
-		input := map[string]interface{}{"batchChange": campaignAPIID, "first": 1}
+		input := map[string]interface{}{"batchChange": batchChangeAPIID, "first": 1}
 		if endCursor != nil {
 			input["after"] = *endCursor
 		}

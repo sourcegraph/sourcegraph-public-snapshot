@@ -155,7 +155,7 @@ func (e *executor) buildChangesetSource(repo *types.Repo, extSvc *types.External
 
 	if e.au != nil {
 		// If e.au == nil that means the user that applied that last
-		// campaign/changeset spec is a site-admin and we can fall back to the
+		// batch/changeset spec is a site-admin and we can fall back to the
 		// global credentials stored in extSvc.
 		ucs, ok := src.(repos.UserSource)
 		if !ok {
@@ -179,7 +179,7 @@ func (e *executor) buildChangesetSource(repo *types.Repo, extSvc *types.External
 // reconciling the current changeset. It will return nil, nil if the code host's
 // global configuration should be used (ie the applying user is an admin and
 // doesn't have a credential configured for the code host, or the changeset
-// isn't owned by a campaign).
+// isn't owned by a batch change).
 func (e *executor) loadAuthenticator(ctx context.Context) (auth.Authenticator, error) {
 	if e.ch.OwnedByBatchChangeID == 0 {
 		// Unowned changesets are imported, and therefore don't need to use a user
@@ -187,9 +187,9 @@ func (e *executor) loadAuthenticator(ctx context.Context) (auth.Authenticator, e
 		return nil, nil
 	}
 
-	// If the changeset is owned by a campaign, we want to reconcile using
+	// If the changeset is owned by a batch change, we want to reconcile using
 	// the user's credentials, which means we need to know which user last
-	// applied the owning campaign. Let's go find out.
+	// applied the owning batch change. Let's go find out.
 	batchChange, err := loadBatchChange(ctx, e.tx, e.ch.OwnedByBatchChangeID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load owning batch change")
@@ -441,19 +441,19 @@ func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFro
 
 // ErrPublishSameBranch is returned by publish changeset if a changeset with
 // the same external branch already exists in the database and is owned by
-// another campaign.
+// another batch change.
 // It is a terminal error that won't be fixed by retrying to publish the
 // changeset with the same spec.
 type ErrPublishSameBranch struct{}
 
 func (e ErrPublishSameBranch) Error() string {
-	return "cannot create changeset on the same branch in multiple campaigns"
+	return "cannot create changeset on the same branch in multiple batch changes"
 }
 
 func (e ErrPublishSameBranch) NonRetryable() bool { return true }
 
 // ErrMissingCredentials is returned by loadAuthenticator if the user that
-// applied the last campaign/changeset spec doesn't have UserCredentials for
+// applied the last batch  change/changeset spec doesn't have UserCredentials for
 // the given repository and is not a site-admin (so no fallback to the global
 // credentials is possible).
 type ErrMissingCredentials struct{ repo string }
@@ -636,17 +636,17 @@ type getBatchChanger interface {
 
 func loadBatchChange(ctx context.Context, tx getBatchChanger, id int64) (*batches.BatchChange, error) {
 	if id == 0 {
-		return nil, errors.New("changeset has no owning campaign")
+		return nil, errors.New("changeset has no owning batch change")
 	}
 
-	campaign, err := tx.GetBatchChange(ctx, store.CountBatchChangeOpts{ID: id})
+	batchChange, err := tx.GetBatchChange(ctx, store.CountBatchChangeOpts{ID: id})
 	if err != nil && err != store.ErrNoResults {
-		return nil, errors.Wrapf(err, "retrieving owning campaign: %d", id)
-	} else if campaign == nil {
-		return nil, errors.Errorf("campaign not found: %d", id)
+		return nil, errors.Wrapf(err, "retrieving owning batch change: %d", id)
+	} else if batchChange == nil {
+		return nil, errors.Errorf("batch change not found: %d", id)
 	}
 
-	return campaign, nil
+	return batchChange, nil
 }
 
 type getNamespacer interface {
@@ -654,26 +654,26 @@ type getNamespacer interface {
 }
 
 func decorateChangesetBody(ctx context.Context, tx getBatchChanger, nsStore getNamespacer, cs *repos.Changeset) error {
-	campaign, err := loadBatchChange(ctx, tx, cs.OwnedByBatchChangeID)
+	batchChange, err := loadBatchChange(ctx, tx, cs.OwnedByBatchChangeID)
 	if err != nil {
-		return errors.Wrap(err, "failed to load campaign")
+		return errors.Wrap(err, "failed to load batch change")
 	}
 
-	// We need to get the namespace, since external campaign URLs are
+	// We need to get the namespace, since external batch change URLs are
 	// namespaced.
-	ns, err := nsStore.GetByID(ctx, campaign.NamespaceOrgID, campaign.NamespaceUserID)
+	ns, err := nsStore.GetByID(ctx, batchChange.NamespaceOrgID, batchChange.NamespaceUserID)
 	if err != nil {
 		return errors.Wrap(err, "retrieving namespace")
 	}
 
-	u, err := campaignURL(ctx, ns, campaign)
+	u, err := batchChangeURL(ctx, ns, batchChange)
 	if err != nil {
 		return errors.Wrap(err, "building URL")
 	}
 
 	cs.Body = fmt.Sprintf(
-		"%s\n\n[_Created by Sourcegraph campaign `%s/%s`._](%s)",
-		cs.Body, ns.Name, campaign.Name, u,
+		"%s\n\n[_Created by Sourcegraph batch change `%s/%s`._](%s)",
+		cs.Body, ns.Name, batchChange.Name, u,
 	)
 
 	return nil
@@ -684,7 +684,7 @@ var internalClient interface {
 	ExternalURL(context.Context) (string, error)
 } = api.InternalClient
 
-func campaignURL(ctx context.Context, ns *database.Namespace, c *batches.BatchChange) (string, error) {
+func batchChangeURL(ctx context.Context, ns *database.Namespace, c *batches.BatchChange) (string, error) {
 	// To build the absolute URL, we need to know where Sourcegraph is!
 	extStr, err := internalClient.ExternalURL(ctx)
 	if err != nil {
@@ -696,7 +696,7 @@ func campaignURL(ctx context.Context, ns *database.Namespace, c *batches.BatchCh
 		return "", errors.Wrap(err, "parsing external Sourcegraph URL")
 	}
 
-	// This needs to be kept consistent with resolvers.campaignURL().
+	// This needs to be kept consistent with resolvers.batchChangeURL().
 	// (Refactoring the resolver to use the same function is difficult due to
 	// the different querying and caching behaviour in GraphQL resolvers, so we
 	// simply replicate the logic here.)

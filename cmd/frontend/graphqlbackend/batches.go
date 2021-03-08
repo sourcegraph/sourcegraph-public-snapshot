@@ -254,7 +254,7 @@ type BatchSpecResolver interface {
 	ChangesetSpecs(ctx context.Context, args *ChangesetSpecsConnectionArgs) (ChangesetSpecConnectionResolver, error)
 	ApplyPreview(ctx context.Context, args *ChangesetApplyPreviewConnectionArgs) (ChangesetApplyPreviewConnectionResolver, error)
 
-	Description() CampaignDescriptionResolver
+	Description() BatchChangeDescriptionResolver
 
 	Creator(context.Context) (*UserResolver, error)
 	CreatedAt() DateTime
@@ -285,7 +285,7 @@ type BatchSpecResolver interface {
 	ActAsCampaignSpec() bool
 }
 
-type CampaignDescriptionResolver interface {
+type BatchChangeDescriptionResolver interface {
 	Name() string
 	Description() string
 }
