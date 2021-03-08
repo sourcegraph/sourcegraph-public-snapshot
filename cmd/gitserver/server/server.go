@@ -1388,36 +1388,28 @@ func scanCRLF(data []byte, atEOF bool) (advance int, token []byte, err error) {
 var testGitRepoExists func(ctx context.Context, remoteURL *url.URL) error
 
 var (
-	execRunning = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	execRunning = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "src_gitserver_exec_running",
 		Help: "number of gitserver.Command running concurrently.",
 	}, []string{"cmd", "repo"})
-	execDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	execDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name:    "src_gitserver_exec_duration_seconds",
 		Help:    "gitserver.Command latencies in seconds.",
 		Buckets: trace.UserLatencyBuckets,
 	}, []string{"cmd", "repo", "status"})
-	cloneQueue = prometheus.NewGauge(prometheus.GaugeOpts{
+	cloneQueue = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "src_gitserver_clone_queue",
 		Help: "number of repos waiting to be cloned.",
 	})
-	lsRemoteQueue = prometheus.NewGauge(prometheus.GaugeOpts{
+	lsRemoteQueue = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "src_gitserver_lsremote_queue",
 		Help: "number of repos waiting to check existence on remote code host (git ls-remote).",
 	})
-	repoClonedCounter = prometheus.NewCounter(prometheus.CounterOpts{
+	repoClonedCounter = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_gitserver_repo_cloned",
 		Help: "number of successful git clones run",
 	})
 )
-
-func init() {
-	prometheus.MustRegister(execRunning)
-	prometheus.MustRegister(execDuration)
-	prometheus.MustRegister(cloneQueue)
-	prometheus.MustRegister(lsRemoteQueue)
-	prometheus.MustRegister(repoClonedCounter)
-}
 
 // Send 1 in 16 events to honeycomb. This is hardcoded since we only use this
 // for Sourcegraph.com.
