@@ -40,20 +40,20 @@ Changesets that are marked as **Failed** won't be retried automatically. That's 
 
 When a changeset failed publishing, the user can click _Retry_ on the error message. No re-applying needed.
 
-Additionally, in order to retry all **Failed** (or even **Retrying**) changesets manually, you can re-apply the campaign spec.
+Additionally, in order to retry all **Failed** (or even **Retrying**) changesets manually, you can re-apply the batch spec.
 
-**Option 1:** Preview and re-apply the campaign spec in the UI by running
+**Option 1:** Preview and re-apply the batch spec in the UI by running
 
 ```bash
-src campaign preview -f YOUR_CAMPAIGN_SPEC.campaign.yaml
+src batch preview -f YOUR_CAMPAIGN_SPEC.campaign.yaml
 ```
 
-and clicking on the printed URL to apply the uploaded campaign spec.
+and clicking on the printed URL to apply the uploaded batch spec.
 
 **Option 2:** Re-apply directly by running the following:
 
 ```bash
-src campaign apply -f YOUR_CAMPAIGN_SPEC.campaign.yaml
+src batch apply -f YOUR_CAMPAIGN_SPEC.campaign.yaml
 ```
 
 See "[Creating a campaign](creating_a_batch_change.md)" for more information on these commands.

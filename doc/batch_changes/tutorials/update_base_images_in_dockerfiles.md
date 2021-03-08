@@ -14,25 +14,25 @@ Create a campaign to update Dockerfiles in every one of your repositories.
 
 Campaigns allow us to update the base images used in our Dockerfiles, across many repositories, in just a few commands.
 
-This tutorial shows you how to create [a campaign spec](../explanations/introduction_to_batch_changes.md#campaign-spec) that
+This tutorial shows you how to create [a batch spec](../explanations/introduction_to_batch_changes.md#campaign-spec) that
 
 1. finds `Dockerfile`s that make use of `google/dart:2.x` base images and 
 2. changes those `Dockerfiles` to use `google/dart:2.10`
 
-The campaign spec and instructions here can [easily be adapted to update other base images](#updating-other-base-images).
+The batch spec and instructions here can [easily be adapted to update other base images](#updating-other-base-images).
 
 <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tutorials/update_base_images_in_dockerfiles_teaser.png" class="screenshot center">
 
 ### Prerequisites
 
-We recommend using the latest version of Sourcegraph when working with campaigns and that you have a basic understanding of how to create campaign specs and run them. See the following documents for more information:
+We recommend using the latest version of Sourcegraph when working with campaigns and that you have a basic understanding of how to create batch specs and run them. See the following documents for more information:
 
 1. ["Quickstart"](../quickstart.md)
 1. ["Introduction to campaigns"](../explanations/introduction_to_batch_changes.md)
 
-### Create the campaign spec
+### Create the batch spec
 
-Save the following campaign spec YAML as `update-dart-base-images-2-10.campaign.yaml`:
+Save the following batch spec YAML as `update-dart-base-images-2-10.campaign.yaml`:
 
 ```yaml
 name: update-dart-base-images-2-10
@@ -76,19 +76,19 @@ changesetTemplate:
 
 1. In your terminal, run this command:
 
-    <pre>src campaign preview -f update-dart-base-images-2-10.campaign.yaml</pre>
+    <pre>src batch preview -f update-dart-base-images-2-10.campaign.yaml</pre>
 1. Wait for it to run and compute the changes for each repository.
     <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tutorials/update_base_images_in_dockerfiles_wait_run.png" class="screenshot">
 1. Open the preview URL that the command printed out.
     <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tutorials/update_base_images_in_dockerfiles_click_url.png" class="screenshot">
-1. Examine the preview. Confirm that the changesets are the ones you intended to track. If not, edit the campaign spec and then rerun the command above.
+1. Examine the preview. Confirm that the changesets are the ones you intended to track. If not, edit the batch spec and then rerun the command above.
     <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tutorials/update_base_images_in_dockerfiles_preview.png" class="screenshot">
 1. Click the **Apply spec** button to create the campaign.
-1. Feel free to then publish the changesets (i.e. create pull requests and merge requests) by [modifying the `published` attribute in the campaign spec](../references/batch_spec_yaml_reference.md#changesettemplate-published) and re-running the `src campaign preview` command.
+1. Feel free to then publish the changesets (i.e. create pull requests and merge requests) by [modifying the `published` attribute in the batch spec](../references/batch_spec_yaml_reference.md#changesettemplate-published) and re-running the `src batch preview` command.
 
 ### Updating other base images
 
-In order to update other base images in `Dockerfile`s you can either extend the campaign spec or create another campaign spec in which you change the `repositoriesMatchingQuery` and the `steps.run` properties.
+In order to update other base images in `Dockerfile`s you can either extend the batch spec or create another batch spec in which you change the `repositoriesMatchingQuery` and the `steps.run` properties.
 
 You can keep using regexp-based search and `sed`, or you can use [structural search](../../code_search/reference/structural.md) combined with [comby](https://comby.dev) to update base images.
 

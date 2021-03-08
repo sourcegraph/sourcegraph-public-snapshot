@@ -1,4 +1,4 @@
-# Campaign spec YAML reference
+# batch spec YAML reference
 
 <style>
 .markdown-body h2 { margin-top: 50px; }
@@ -14,9 +14,9 @@ sidebar. /*
 
 </style>
 
-[Sourcegraph campaigns](../index.md) use [campaign specs](../explanations/introduction_to_batch_changes.md#campaign-spec) to define campaigns.
+[Sourcegraph campaigns](../index.md) use [batch specs](../explanations/introduction_to_batch_changes.md#campaign-spec) to define campaigns.
 
-This page is a reference guide to the campaign spec YAML format in which campaign specs are defined. If you're new to YAML and want a short introduction, see "[Learn YAML in five minutes](https://learnxinyminutes.com/docs/yaml/)."
+This page is a reference guide to the batch spec YAML format in which batch specs are defined. If you're new to YAML and want a short introduction, see "[Learn YAML in five minutes](https://learnxinyminutes.com/docs/yaml/)."
 
 ## [`name`](#name)
 
@@ -200,7 +200,7 @@ steps:
 In this case, `steps.env` is an array. Each array item is either:
 
 1. An object with a single property, in which case the key is used as the environment variable name and the value the value, or
-2. A string that defines an environment variable to include from the environment `src` is being run within. This is useful to define secrets that you don't want to include in the spec file, but this makes the spec dependent on your environment, means that the local execution cache will be invalidated each time the environment variable changes, and means that the campaign spec file is no longer [the sole source of truth intended by the campaigns design](../explanations/batch_changes_design.md).
+2. A string that defines an environment variable to include from the environment `src` is being run within. This is useful to define secrets that you don't want to include in the spec file, but this makes the spec dependent on your environment, means that the local execution cache will be invalidated each time the environment variable changes, and means that the batch spec file is no longer [the sole source of truth intended by the campaigns design](../explanations/batch_changes_design.md).
 
 #### Examples
 

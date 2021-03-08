@@ -1,4 +1,4 @@
-# Campaign spec templating
+# batch spec templating
 
 <style>
 .markdown-body h2 { margin-top: 50px; }
@@ -7,13 +7,13 @@
 
 ## Overview
 
-[Certain fields](#fields-with-template-support) in a [campaign spec YAML](batch_spec_yaml_reference.md) support templating to create even more powerful and performant campaigns.
+[Certain fields](#fields-with-template-support) in a [batch spec YAML](batch_spec_yaml_reference.md) support templating to create even more powerful and performant campaigns.
 
-Templating in a campaign spec uses the delimiters `${{` and `}}`. Inside the delimiters, [template variables](#template-variables) and [template helper functions](#template-helpers-functions) may be used to produce a text value.
+Templating in a batch spec uses the delimiters `${{` and `}}`. Inside the delimiters, [template variables](#template-variables) and [template helper functions](#template-helpers-functions) may be used to produce a text value.
 
-### Example campaign spec
+### Example batch spec
 
-Here is an excerpt of a campaign spec that uses templating:
+Here is an excerpt of a batch spec that uses templating:
 
 ```yaml
 on:
@@ -44,7 +44,7 @@ Before the second step is executed `previous_step.modified_files` will be replac
 run: goimports -w cmd/src/main.go internal/fmt/fmt.go
 ```
 
-See "[Examples](#examples)" for more examples of how to use and leverage templating in campaign specs.
+See "[Examples](#examples)" for more examples of how to use and leverage templating in batch specs.
 
 ## Fields with template support
 

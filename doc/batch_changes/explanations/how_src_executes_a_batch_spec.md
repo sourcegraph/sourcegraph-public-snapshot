@@ -1,41 +1,41 @@
-# How `src` executes a campaign spec
+# How `src` executes a batch spec
 
-This document is meant to help with debugging and troubleshooting the writing and execution of campaign specs with [Sourcegraph CLI `src`](../../cli/index.md).
+This document is meant to help with debugging and troubleshooting the writing and execution of batch specs with [Sourcegraph CLI `src`](../../cli/index.md).
 
-It explains what happens under the hood when a user uses applies or previews a campaign spec by running `src campaign apply` or `src campaign preview`.
+It explains what happens under the hood when a user uses applies or previews a batch spec by running `src batch apply` or `src batch preview`.
 
 ## Overview
 
-`src campaign apply` and `src campaign preview` execute a campaign spec the same way:
+`src batch apply` and `src batch preview` execute a batch spec the same way:
 
-1. [Parse the campaign spec](#parse-campaign-spec)
+1. [Parse the batch spec](#parse-batch-spec)
 1. [Resolve the namespace](#resolving-namespace)
 1. [Prepare container images](#preparing-container-images)
 1. [Resolve repositories](#resolving-repositories)
 1. [Executing steps](#executing-steps)
 1. [Sending changeset specs](#sending-changeset-specs)
-1. [Sending campaign spec](#sending-campaign-spec)
-1. [Preview or apply the campaign spec](#preview-or-apply-the-campaign-spec)
+1. [Sending batch spec](#sending-batch-spec)
+1. [Preview or apply the batch spec](#preview-or-apply-the-batch-spec)
 
-The difference is the last step: `src campaign apply` _applies_ the campaign spec where the `src campaign preview` only prints a URL at which you can preview what would happen if you apply it.
+The difference is the last step: `src batch apply` _applies_ the batch spec where the `src batch preview` only prints a URL at which you can preview what would happen if you apply it.
 
 The rest of the document explains each step in more detail.
 
-## Parse campaign spec
+## Parse batch spec
 
-`src` reads in, parses and validates the campaign spec YAML specified with the `-f` flag.
+`src` reads in, parses and validates the batch spec YAML specified with the `-f` flag.
 
-It validates the campaign spec against its [schema](https://github.com/sourcegraph/src-cli/blob/main/schema/campaign_spec.schema.json) and does some semantic checks to make sure that, for example, `changesetTemplate` is specified if `steps` are specified, or that no feature is used that's not supported by the Sourcegraph instance.
+It validates the batch spec against its [schema](https://github.com/sourcegraph/src-cli/blob/main/schema/batch_spec.schema.json) and does some semantic checks to make sure that, for example, `changesetTemplate` is specified if `steps` are specified, or that no feature is used that's not supported by the Sourcegraph instance.
 
 ## Resolving namespace
 
-`src` resolves the given namespace in which to apply/preview the campaign spec by sending a GraphQL request to the Sourcegraph instance to fetch the ID for the given namespace name.
+`src` resolves the given namespace in which to apply/preview the batch spec by sending a GraphQL request to the Sourcegraph instance to fetch the ID for the given namespace name.
 
 If no namespace is specified with `-namespace` (or `-n`) then the currently authenticated user is used as the namespace. See "[Connect to Sourcegraph](../../cli/quickstart.md#connect-to-sourcegraph)" in the CLI docs for details on how to authenticate.
 
 ## Preparing container images
 
-If the campaign spec contains `steps`, then for each step `src` checks its `container` image to see whether it's already available locally.
+If the batch spec contains `steps`, then for each step `src` checks its `container` image to see whether it's already available locally.
 
 To do that it runs `docker image inspect --format {{.Id}} -- <container-image-name>` to get the specific image ID for the container image.
 
@@ -43,7 +43,7 @@ If that fails with a "No such image" error, `src` tries to pull the image by run
 
 ## Resolving repositories
 
-`src` resolves each entry in the campaign spec's `on` property to produce a _unique list of repositories (!)_ in which to execute the campaign spec's `steps`.
+`src` resolves each entry in the batch spec's `on` property to produce a _unique list of repositories (!)_ in which to execute the batch spec's `steps`.
 
 With an `on` property like this
 
@@ -70,7 +70,7 @@ on:
 
 ## Executing steps
 
-If a campaign spec contains `steps` then `src` executes the steps _locally_, on the machine on which `src` is run, for _each repository yielded by the previous "[Resolving repositories](#resolving-repositories)" step_.
+If a batch spec contains `steps` then `src` executes the steps _locally_, on the machine on which `src` is run, for _each repository yielded by the previous "[Resolving repositories](#resolving-repositories)" step_.
 
 If `-clear-cache` is _not_ set and it previously executed _the same `steps`_ for the _same repository_ at the _same revision of the base branch_, it will try to use cached results instead of re-executing the steps.
 
@@ -87,7 +87,7 @@ The following is what `src` does _for each repository_:
       --output ~/tmp/my-repo.zip
     ```
 2. Unzip archive into the workspace. Where the workspace lives depends on the workspace mode, which can be controlled by the `-workspace` flag. The two modes are:
-  * _Bind_ mount mode (the default everywhere except Intel macOS), this will be somewhere on the filesystem, e.g. `~/.cache/sourcegraph/campaigns` (see `src campaign preview -h` for the default value of cache directory, overwrite with `-cache`)
+  * _Bind_ mount mode (the default everywhere except Intel macOS), this will be somewhere on the filesystem, e.g. `~/.cache/sourcegraph/batch-changes` (see `src batch preview -h` for the default value of cache directory, overwrite with `-cache`)
   * _Volume_ mount mode (the default on Intel macOS): a Docker volume will be created using `docker volume create` and attached to all running containers, then removed before `src` exits
 3. `cd` into the workspace, which now contains the unzipped archive
 4. In the workspace, create a git repository:
@@ -97,19 +97,19 @@ The following is what `src` does _for each repository_:
     export GIT_CONFIG_NOSYSTEM=1 \
            GIT_CONFIG=/dev/null \
            GIT_AUTHOR_NAME=Sourcegraph \
-           GIT_AUTHOR_EMAIL=campaigns@sourcegraph.com \
+           GIT_AUTHOR_EMAIL=batch-changes@sourcegraph.com \
            GIT_COMMITTER_NAME=Sourcegraph \
-           GIT_COMMITTER_EMAIL=campaigns@sourcegraph.com
+           GIT_COMMITTER_EMAIL=batch-changes@sourcegraph.com
     ```
   - Run `git init`
   - Run `git config --local user.name Sourcegraph`
-  - Run `git config --local user.email campaigns@sourcegraph.com`
+  - Run `git config --local user.email batch-changes@sourcegraph.com`
   - Run `git add --force --all`
-  - Run `git commit --quiet --all -m sourcegraph-campaigns`
+  - Run `git commit --quiet --all -m sourcegraph-batch-changes`
 
 ### 2. Run the steps
 
-For each step in the campaign specs `steps`:
+For each step in the batch spec `steps`:
 
 1. Probe container image (the `container` property of the step) to see whether it has `/bin/sh` or `/bin/bash`
 2. Write the step's `run` command to a temp file on the host, e.g. `/tmp-script`
@@ -145,18 +145,18 @@ In the workspace:
 
 `src` then creates a changeset spec from:
 - the diff
-- information about the repository in which the changes have been made (the name and ID of the repository, the revision of its base branch) 
+- information about the repository in which the changes have been made (the name and ID of the repository, the revision of its base branch)
 - the `changesetTemplate`
 
 A changeset spec is a description of what the changeset should look like.
 
 ## Importing changesets
 
-If the campaign spec contains [`importChangesets`](../references/batch_spec_yaml_reference.md#importchangesets) then `src` goes through the list of `importChangesets` and for each entry it:
+If the batch spec contains [`importChangesets`](../references/batch_spec_yaml_reference.md#importchangesets) then `src` goes through the list of `importChangesets` and for each entry it:
 
 1. Resolves the repository name, trying to get to get an ID, base branch, and revision for the given repository name.
 1. Parses the `externalIDs`, checking that they're valid strings or numbers.
-1. For each external ID it saves a changeset spec that describes that a changeset with the given external ID, in the given repository, should be imported and tracked in the campaign.
+1. For each external ID it saves a changeset spec that describes that a changeset with the given external ID, in the given repository, should be imported and tracked in the batch change.
 
 ## Sending changeset specs
 
@@ -166,16 +166,16 @@ These changeset specs are now uploaded to the connected Sourcegraph instance, on
 
 Each request yields an ID that uniquely identifies the changeset spec on the Sourcegraph instance. These IDs are used for the next step.
 
-## Sending campaign spec
+## Sending batch spec
 
-The IDs of the changeset specs that were created in the previous step, "[Sending changeset specs](#sending-changeset-specs)", are collected into a list and used for the next request with which `src` uploads the campaign spec to the connected Sourcegraph instance.
+The IDs of the changeset specs that were created in the previous step, "[Sending changeset specs](#sending-changeset-specs)", are collected into a list and used for the next request with which `src` uploads the batch spec to the connected Sourcegraph instance.
 
-`src` _creates_ the campaign spec on the Sourcegraph instance, together with the changeset spec IDs, so that the campaign spec fully describes the desired state of a campaign: its name, its description, and which changesets should be created or imported from which repository on which code host.
+`src` _creates_ the batch spec on the Sourcegraph instance, together with the changeset spec IDs, so that the batch spec fully describes the desired state of a batch change: its name, its description, and which changesets should be created or imported from which repository on which code host.
 
-That request yields an ID that uniquely identifies this expanded version of the campaign spec.
+That request yields an ID that uniquely identifies this expanded version of the batch spec.
 
-## Preview or apply the campaign spec
+## Preview or apply the batch spec
 
-If `src campaign apply` was used, then the ID of the campaign is then used to send another request to the Sourcegraph instance, to _apply_ the campaign spec.
+If `src batch apply` was used, then the ID of the batch change is then used to send another request to the Sourcegraph instance, to _apply_ the batch spec.
 
-If `src campaign preview` was used to execute and create the campaign spec, then a URL is printed, pointing to a preview page on the Sourcegraph instance on which we can see what _would_ happen if we were to apply the campaign spec.
+If `src batch preview` was used to execute and create the batch spec, then a URL is printed, pointing to a preview page on the Sourcegraph instance on which we can see what _would_ happen if we were to apply the batch spec.

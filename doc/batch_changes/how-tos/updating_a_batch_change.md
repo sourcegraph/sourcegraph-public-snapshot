@@ -1,10 +1,10 @@
 # Updating a campaign
 
-Updating a campaign works by applying a campaign spec to an **existing** campaign in the same namespace.
+Updating a campaign works by applying a batch spec to an **existing** campaign in the same namespace.
 
-Since campaigns are uniquely identified by their name (the `name` property in the campaign spec) and the namespace in which they were created, you can edit any other part of a campaign spec and apply it again.
+Since campaigns are uniquely identified by their name (the `name` property in the batch spec) and the namespace in which they were created, you can edit any other part of a batch spec and apply it again.
 
-When a new campaign spec is applied to an existing campaign the existing campaign is updated and its changesets are updated to match the new desired state.
+When a new batch spec is applied to an existing campaign the existing campaign is updated and its changesets are updated to match the new desired state.
 
 ## Requirements 
 
@@ -16,33 +16,33 @@ To update a changeset, you need:
 
 For more information, see [Code host interactions in campaigns](../explanations/permissions_in_batch_changes.md#code-host-interactions-in-campaigns).
 
-## Preview and apply a new campaign spec
+## Preview and apply a new batch spec
 
 In order to update a campaign after previewing the changes, do the following:
 
-1. Edit the [campaign spec](../references/batch_spec_yaml_reference.md) with which you created the campaign to include the changes you want to make to the campaign. For example, change [the commit message in the `changesetTemplate`](../references/batch_spec_yaml_reference.md#changesettemplate-commit-message), or add a new changeset id [to the importedChangesets](https://docs.sourcegraph.com/campaigns/references/batch_spec_yaml_reference#importchangesets), or [modify the repositoriesMatchingQuery](https://docs.sourcegraph.com/campaigns/references/batch_spec_yaml_reference#on-repositoriesmatchingquery) to return different search results.
-1. Use the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) to execute and preview the campaign spec.
+1. Edit the [batch spec](../references/batch_spec_yaml_reference.md) with which you created the campaign to include the changes you want to make to the campaign. For example, change [the commit message in the `changesetTemplate`](../references/batch_spec_yaml_reference.md#changesettemplate-commit-message), or add a new changeset id [to the importedChangesets](https://docs.sourcegraph.com/campaigns/references/batch_spec_yaml_reference#importchangesets), or [modify the repositoriesMatchingQuery](https://docs.sourcegraph.com/campaigns/references/batch_spec_yaml_reference#on-repositoriesmatchingquery) to return different search results.
+1. Use the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) to execute and preview the batch spec.
 
-    <pre><code>src campaign preview -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em></code></pre>
-1. Open on the URL that's printed to preview the changes that will be made by applying the new campaign spec.
+    <pre><code>src batch preview -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em></code></pre>
+1. Open on the URL that's printed to preview the changes that will be made by applying the new batch spec.
 1. Click **Apply spec** to update the campaign.
 
 All of the changesets on your code host will be updated to the desired state that was shown in the preview.
 
-## Apply a new campaign spec directly
+## Apply a new batch spec directly
 
 In order to update a campaign directly, without preview, do the following:
 
-1. Edit the [campaign spec](../references/batch_spec_yaml_reference.md) with which you created the campaign to include the changes you want to make to the campaign.
-1. Use the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) to execute, upload, and the campaign spec.
+1. Edit the [batch spec](../references/batch_spec_yaml_reference.md) with which you created the campaign to include the changes you want to make to the campaign.
+1. Use the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) to execute, upload, and the batch spec.
 
-    <pre><code>src campaign apply -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em></code></pre>
+    <pre><code>src batch apply -f <em>YOUR_CAMPAIGN_SPEC.campaign.yaml</em></code></pre>
 
-The new campaign spec will be applied directly and the campaign and its changesets will be updated.
+The new batch spec will be applied directly and the campaign and its changesets will be updated.
 
 ## How campaign updates are processed
 
-Changes in the campaign spec that that affect campaign itself, such as the [`description`](../references/batch_spec_yaml_reference.md#description), are applied directly when you apply the new campaign spec.
+Changes in the batch spec that that affect campaign itself, such as the [`description`](../references/batch_spec_yaml_reference.md#description), are applied directly when you apply the new batch spec.
 
 Changes that affect the changesets are processed asynchronously to update the changeset to its new desired state. Different fields are processed differently.
 
@@ -51,7 +51,7 @@ Here are some examples:
 - When the diff or attributes that affect the resulting commit of a changeset directly (such as the [`changesetTemplate.commit.message`](../references/batch_spec_yaml_reference.md#changesettemplate-commit-message) or the [`changesetTemplate.commit.author`](../references/batch_spec_yaml_reference.md#changesettemplate-commit-author)) and the changeset has been published, the commit on the code host will be overwritten by a new commit that includes the updated diff.
 - When the [`changesetTemplate.title`](../references/batch_spec_yaml_reference.md#changesettemplate-title) or the [`changesetTemplate.body`](../references/batch_spec_yaml_reference.md#changesettemplate-commit-author) are changed and the changeset has been published, the changeset on the code host will be updated accordingly.
 - When the [`changesetTemplate.branch`](../references/batch_spec_yaml_reference.md#changesettemplate-title) is changed after the changeset has been published on the code host, the existing changeset will be closed on the code host and new one, with the new branch, will be created.
-- When the campaign spec is changed in such a way that no diff is produced in a repository in which the campaign already created and published a changeset, the existing changeset will be closed on the code host and detached from the campaign.
+- When the batch spec is changed in such a way that no diff is produced in a repository in which the campaign already created and published a changeset, the existing changeset will be closed on the code host and detached from the campaign.
 
 See the "[Campaigns design](../explanations/batch_changes_design.md)" doc for more information on the declarative nature of the campaigns system.
 
@@ -59,9 +59,9 @@ See the "[Campaigns design](../explanations/batch_changes_design.md)" doc for mo
 
 ### Increasing the number of changesets
 
-You can gradually increase the number of repositories to which a campaign applies by modifying the entries in the [`on`](../references/batch_spec_yaml_reference.md#on) property of the campaign spec.
+You can gradually increase the number of repositories to which a campaign applies by modifying the entries in the [`on`](../references/batch_spec_yaml_reference.md#on) property of the batch spec.
 
-That means you can start with an `on` property like this in your campaign spec:
+That means you can start with an `on` property like this in your batch spec:
 
 ```yaml
 # [...]
@@ -73,7 +73,7 @@ on:
 # [...]
 ```
 
-After you applied that campaign spec, you can extend the scope of campaign by changing the `on` property to result in more repositories:
+After you applied that batch spec, you can extend the scope of campaign by changing the `on` property to result in more repositories:
 
 ```yaml
 # [...]
@@ -87,13 +87,13 @@ on:
 
 The updated [`repo:` keyword](../../code_search/reference/queries.md#keywords-all-searches) in the search query will result in more repositories being returned by the search.
 
-If you apply the updated campaign spec new changesets will be created for each additional repository.
+If you apply the updated batch spec new changesets will be created for each additional repository.
 
 ### Decreasing the number of changesets
 
 You can also decrease the number of repositories to which a campaign applies the by modifying the entries in the [`on`](../references/batch_spec_yaml_reference.md#on) property.
 
-If you, for example, started with this campaign spec
+If you, for example, started with this batch spec
 
 ```yaml
 # [...]
