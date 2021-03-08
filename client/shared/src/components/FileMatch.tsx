@@ -10,6 +10,7 @@ import { RepoFileLink } from './RepoFileLink'
 import { Props as ResultContainerProps, ResultContainer } from './ResultContainer'
 import { AggregableTag, Badge } from 'sourcegraph'
 import { AggregatedTag } from './AggregatedTag'
+import { LinkOrSpan } from './LinkOrSpan'
 
 const SUBSET_COUNT_KEY = 'fileMatchSubsetCount'
 
@@ -121,7 +122,9 @@ export class FileMatch extends React.PureComponent<Props> {
             items.length > 0 ? (
                 <>
                     {aggregateTags(items).map(tag => (
-                        <AggregatedTag key={tag.text} tag={tag} />
+                        <LinkOrSpan key={tag.text} to={tag.linkURL}>
+                            <span className="badge badge-secondary text-uppercase">{tag.text}</span>
+                        </LinkOrSpan>
                     ))}
                 </>
             ) : undefined

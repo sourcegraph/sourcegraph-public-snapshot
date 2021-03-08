@@ -16,7 +16,8 @@ import { BadgeAttachment } from '../components/BadgeAttachment'
 import { ThemeProps } from '../theme'
 import { PlatformContextProps } from '../platform/context'
 import { Subscription } from 'rxjs'
-import { AggregatedTag } from '../components/AggregatedTag'
+import { ReactComponent } from 'react-hot-loader'
+import { LinkOrSpan } from '../components/LinkOrSpan'
 
 const LOADING = 'loading' as const
 
@@ -184,11 +185,11 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOv
                                             {index !== 0 && <hr />}
 
                                             {(hoverOrError?.aggregatedTags || []).map(tag => (
-                                                <AggregatedTag
-                                                    key={tag.text}
-                                                    tag={tag}
-                                                    className="hover-overlay__tag test-hover-tag"
-                                                />
+                                                <LinkOrSpan key={tag.text} to={tag.linkURL}>
+                                                    <span className="badge badge-secondary text-uppercase hover-overlay__tag test-hover-tag">
+                                                        {tag.text}
+                                                    </span>
+                                                </LinkOrSpan>
                                             ))}
 
                                             {content.badge && this.state.showBadges && (
