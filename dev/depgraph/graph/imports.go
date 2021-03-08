@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-const RootPackage = "github.com/sourcegraph/sourcegraph"
+const rootPackage = "github.com/sourcegraph/sourcegraph"
 
 // parseImports returns a map from package paths to the set of (internal) packages that
 // package imports.
@@ -40,9 +40,9 @@ func parseImports(root string, packageMap map[string]struct{}) (map[string][]str
 
 		var flattened []string
 		for pkg := range importMap {
-			if strings.HasPrefix(pkg, RootPackage) {
+			if strings.HasPrefix(pkg, rootPackage) {
 				// internal packages only; omit leading root package prefix
-				flattened = append(flattened, strings.TrimPrefix(strings.TrimPrefix(pkg, RootPackage), "/"))
+				flattened = append(flattened, strings.TrimPrefix(strings.TrimPrefix(pkg, rootPackage), "/"))
 			}
 		}
 		sort.Strings(flattened)
