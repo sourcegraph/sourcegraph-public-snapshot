@@ -1,9 +1,8 @@
-package correlation
+package conversion
 
 import (
 	"sort"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/lsif"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/datastructures"
 )
 
@@ -167,7 +166,7 @@ func canonicalizeRanges(state *State) {
 // canonicalizeResultSets "merges down" the definition, reference, and hover result identifiers
 // from the element's "next" result set if such an element exists and the identifier is not
 // already defined. This also merges down the moniker ids by unioning the sets.
-func canonicalizeResultSetData(state *State, id int, item lsif.ResultSet) lsif.ResultSet {
+func canonicalizeResultSetData(state *State, id int, item ResultSet) ResultSet {
 	if nextID, nextItem, ok := next(state, id); ok {
 		// Recursively canonicalize the next element
 		nextItem = canonicalizeResultSetData(state, nextID, nextItem)
@@ -184,7 +183,7 @@ func canonicalizeResultSetData(state *State, id int, item lsif.ResultSet) lsif.R
 // mergeNextResultSetData merges the definition, reference, and hover result identifiers from
 // nextItem into item when not already defined. The moniker identifiers of nextItem are unioned
 // into the moniker identifiers of item.
-func mergeNextResultSetData(state *State, itemID int, item lsif.ResultSet, nextID int, nextItem lsif.ResultSet) lsif.ResultSet {
+func mergeNextResultSetData(state *State, itemID int, item ResultSet, nextID int, nextItem ResultSet) ResultSet {
 	if item.DefinitionResultID == 0 {
 		item = item.SetDefinitionResultID(nextItem.DefinitionResultID)
 	}
@@ -202,7 +201,7 @@ func mergeNextResultSetData(state *State, itemID int, item lsif.ResultSet, nextI
 // mergeNextRangeData merges the definition, reference, and hover result identifiers from nextItem
 // into item when not already defined. The moniker identifiers of nextItem are unioned into the
 // moniker identifiers of item.
-func mergeNextRangeData(state *State, itemID int, item lsif.Range, nextID int, nextItem lsif.ResultSet) lsif.Range {
+func mergeNextRangeData(state *State, itemID int, item Range, nextID int, nextItem ResultSet) Range {
 	if item.DefinitionResultID == 0 {
 		item = item.SetDefinitionResultID(nextItem.DefinitionResultID)
 	}
@@ -240,10 +239,10 @@ func gatherMonikers(state *State, source *datastructures.IDSet) *datastructures.
 }
 
 // next returns the "next" identifier and result set element for the given identifier, if one exists.
-func next(state *State, id int) (int, lsif.ResultSet, bool) {
+func next(state *State, id int) (int, ResultSet, bool) {
 	nextID, ok := state.NextData[id]
 	if !ok {
-		return 0, lsif.ResultSet{}, false
+		return 0, ResultSet{}, false
 	}
 
 	return nextID, state.ResultSetData[nextID], true

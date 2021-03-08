@@ -1,7 +1,6 @@
-package correlation
+package conversion
 
 import (
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/lsif"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/datastructures"
 )
 
@@ -10,14 +9,14 @@ type State struct {
 	LSIFVersion            string
 	ProjectRoot            string
 	DocumentData           map[int]string
-	RangeData              map[int]lsif.Range
-	ResultSetData          map[int]lsif.ResultSet
+	RangeData              map[int]Range
+	ResultSetData          map[int]ResultSet
 	DefinitionData         map[int]*datastructures.DefaultIDSetMap
 	ReferenceData          map[int]*datastructures.DefaultIDSetMap
 	HoverData              map[int]string
-	MonikerData            map[int]lsif.Moniker
-	PackageInformationData map[int]lsif.PackageInformation
-	DiagnosticResults      map[int][]lsif.Diagnostic
+	MonikerData            map[int]Moniker
+	PackageInformationData map[int]PackageInformation
+	DiagnosticResults      map[int][]Diagnostic
 	NextData               map[int]int                     // maps range/result sets related via next edges
 	ImportedMonikers       *datastructures.IDSet           // moniker ids that have kind "import"
 	ExportedMonikers       *datastructures.IDSet           // moniker ids that have kind "export"
@@ -32,14 +31,14 @@ type State struct {
 func newState() *State {
 	return &State{
 		DocumentData:           map[int]string{},
-		RangeData:              map[int]lsif.Range{},
-		ResultSetData:          map[int]lsif.ResultSet{},
+		RangeData:              map[int]Range{},
+		ResultSetData:          map[int]ResultSet{},
 		DefinitionData:         map[int]*datastructures.DefaultIDSetMap{},
 		ReferenceData:          map[int]*datastructures.DefaultIDSetMap{},
 		HoverData:              map[int]string{},
-		MonikerData:            map[int]lsif.Moniker{},
-		PackageInformationData: map[int]lsif.PackageInformation{},
-		DiagnosticResults:      map[int][]lsif.Diagnostic{},
+		MonikerData:            map[int]Moniker{},
+		PackageInformationData: map[int]PackageInformation{},
+		DiagnosticResults:      map[int][]Diagnostic{},
 		NextData:               map[int]int{},
 		ImportedMonikers:       datastructures.NewIDSet(),
 		ExportedMonikers:       datastructures.NewIDSet(),

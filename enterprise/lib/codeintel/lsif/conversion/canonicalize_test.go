@@ -1,11 +1,10 @@
-package correlation
+package conversion
 
 import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/lsif"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/datastructures"
 )
 
@@ -69,11 +68,11 @@ func TestCanonicalizeReferenceResults(t *testing.T) {
 	linkedReferenceResults.Link(2001, 2003)
 
 	state := &State{
-		RangeData: map[int]lsif.Range{
+		RangeData: map[int]Range{
 			3001: {ReferenceResultID: 2002},
 			3002: {ReferenceResultID: 2003},
 		},
-		ResultSetData: map[int]lsif.ResultSet{
+		ResultSetData: map[int]ResultSet{
 			5003: {ReferenceResultID: 2003},
 			5004: {ReferenceResultID: 2004},
 		},
@@ -98,11 +97,11 @@ func TestCanonicalizeReferenceResults(t *testing.T) {
 	canonicalizeReferenceResults(state)
 
 	expectedState := &State{
-		RangeData: map[int]lsif.Range{
+		RangeData: map[int]Range{
 			3001: {ReferenceResultID: 2002},
 			3002: {ReferenceResultID: 2001},
 		},
-		ResultSetData: map[int]lsif.ResultSet{
+		ResultSetData: map[int]ResultSet{
 			5003: {ReferenceResultID: 2001},
 			5004: {ReferenceResultID: 2004},
 		},
@@ -133,7 +132,7 @@ func TestCanonicalizeResultSets(t *testing.T) {
 	linkedMonikers.Link(4002, 4005)
 
 	state := &State{
-		ResultSetData: map[int]lsif.ResultSet{
+		ResultSetData: map[int]ResultSet{
 			5001: {
 				DefinitionResultID: 0,
 				ReferenceResultID:  0,
@@ -177,7 +176,7 @@ func TestCanonicalizeResultSets(t *testing.T) {
 	canonicalizeResultSets(state)
 
 	expectedState := &State{
-		ResultSetData: map[int]lsif.ResultSet{
+		ResultSetData: map[int]ResultSet{
 			5001: {
 				DefinitionResultID: 2006,
 				ReferenceResultID:  2007,
@@ -225,7 +224,7 @@ func TestCanonicalizeRanges(t *testing.T) {
 	linkedMonikers.Link(4002, 4005)
 
 	state := &State{
-		RangeData: map[int]lsif.Range{
+		RangeData: map[int]Range{
 			3001: {
 				DefinitionResultID: 0,
 				ReferenceResultID:  0,
@@ -242,7 +241,7 @@ func TestCanonicalizeRanges(t *testing.T) {
 				HoverResultID:      0,
 			},
 		},
-		ResultSetData: map[int]lsif.ResultSet{
+		ResultSetData: map[int]ResultSet{
 			5001: {
 				DefinitionResultID: 2006,
 				ReferenceResultID:  2007,
@@ -272,7 +271,7 @@ func TestCanonicalizeRanges(t *testing.T) {
 	canonicalizeRanges(state)
 
 	expectedState := &State{
-		RangeData: map[int]lsif.Range{
+		RangeData: map[int]Range{
 			3001: {
 				DefinitionResultID: 2006,
 				ReferenceResultID:  2007,
@@ -289,7 +288,7 @@ func TestCanonicalizeRanges(t *testing.T) {
 				HoverResultID:      2008,
 			},
 		},
-		ResultSetData: map[int]lsif.ResultSet{
+		ResultSetData: map[int]ResultSet{
 			5001: {
 				DefinitionResultID: 2006,
 				ReferenceResultID:  2007,

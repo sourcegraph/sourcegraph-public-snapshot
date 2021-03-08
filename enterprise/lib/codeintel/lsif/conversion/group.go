@@ -1,4 +1,4 @@
-package correlation
+package conversion
 
 import (
 	"context"
@@ -8,8 +8,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/lsif"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/bloomfilter"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/datastructures"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
@@ -26,8 +24,8 @@ type GroupedBundleDataChans struct {
 	ResultChunks      chan semantic.IndexedResultChunkData
 	Definitions       chan semantic.MonikerLocations
 	References        chan semantic.MonikerLocations
-	Packages          []lsifstore.Package
-	PackageReferences []lsifstore.PackageReference
+	Packages          []semantic.Package
+	PackageReferences []semantic.PackageReference
 }
 
 type GroupedBundleDataMaps struct {
@@ -36,15 +34,15 @@ type GroupedBundleDataMaps struct {
 	ResultChunks      map[int]semantic.ResultChunkData
 	Definitions       map[string]map[string][]semantic.LocationData
 	References        map[string]map[string][]semantic.LocationData
-	Packages          []lsifstore.Package
-	PackageReferences []lsifstore.PackageReference
+	Packages          []semantic.Package
+	PackageReferences []semantic.PackageReference
 }
 
 const MaxNumResultChunks = 1000
 const ResultsPerResultChunk = 500
 
-func getDefinitionResultID(r lsif.Range) int { return r.DefinitionResultID }
-func getReferenceResultID(r lsif.Range) int  { return r.ReferenceResultID }
+func getDefinitionResultID(r Range) int { return r.DefinitionResultID }
+func getReferenceResultID(r Range) int  { return r.ReferenceResultID }
 
 // groupBundleData converts a raw (but canonicalized) correlation State into a GroupedBundleData.
 func groupBundleData(ctx context.Context, state *State, dumpID int) (*GroupedBundleDataChans, error) {
@@ -282,7 +280,7 @@ func (s sortableDocumentIDRangeIDs) Less(i, j int) bool {
 	return iRange.Start.Character-jRange.Start.Character < 0
 }
 
-func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*datastructures.DefaultIDSetMap, getResultID func(r lsif.Range) int) chan semantic.MonikerLocations {
+func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*datastructures.DefaultIDSetMap, getResultID func(r Range) int) chan semantic.MonikerLocations {
 	monikers := datastructures.NewDefaultIDSetMap()
 	for rangeID, r := range state.RangeData {
 		if resultID := getResultID(r); resultID != 0 {
@@ -382,21 +380,20 @@ func (s sortableLocations) Less(i, j int) bool {
 	return s[i].StartCharacter < s[j].StartCharacter
 }
 
-func gatherPackages(state *State, dumpID int) []lsifstore.Package {
-	uniques := make(map[string]lsifstore.Package, state.ExportedMonikers.Len())
+func gatherPackages(state *State, dumpID int) []semantic.Package {
+	uniques := make(map[string]semantic.Package, state.ExportedMonikers.Len())
 	state.ExportedMonikers.Each(func(id int) {
 		source := state.MonikerData[id]
 		packageInfo := state.PackageInformationData[source.PackageInformationID]
 
-		uniques[makeKey(source.Scheme, packageInfo.Name, packageInfo.Version)] = lsifstore.Package{
-			DumpID:  dumpID,
+		uniques[makeKey(source.Scheme, packageInfo.Name, packageInfo.Version)] = semantic.Package{
 			Scheme:  source.Scheme,
 			Name:    packageInfo.Name,
 			Version: packageInfo.Version,
 		}
 	})
 
-	packages := make([]lsifstore.Package, 0, len(uniques))
+	packages := make([]semantic.Package, 0, len(uniques))
 	for _, v := range uniques {
 		packages = append(packages, v)
 	}
@@ -404,7 +401,7 @@ func gatherPackages(state *State, dumpID int) []lsifstore.Package {
 	return packages
 }
 
-func gatherPackageReferences(state *State, dumpID int) ([]lsifstore.PackageReference, error) {
+func gatherPackageReferences(state *State, dumpID int) ([]semantic.PackageReference, error) {
 	type ExpandedPackageReference struct {
 		Scheme      string
 		Name        string
@@ -426,15 +423,14 @@ func gatherPackageReferences(state *State, dumpID int) ([]lsifstore.PackageRefer
 		}
 	})
 
-	packageReferences := make([]lsifstore.PackageReference, 0, len(uniques))
+	packageReferences := make([]semantic.PackageReference, 0, len(uniques))
 	for _, v := range uniques {
 		filter, err := bloomfilter.CreateFilter(v.Identifiers)
 		if err != nil {
 			return nil, errors.Wrap(err, "bloomfilter.CreateFilter")
 		}
 
-		packageReferences = append(packageReferences, lsifstore.PackageReference{
-			DumpID:  dumpID,
+		packageReferences = append(packageReferences, semantic.PackageReference{
 			Scheme:  v.Scheme,
 			Name:    v.Name,
 			Version: v.Version,

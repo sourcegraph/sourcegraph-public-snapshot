@@ -1,4 +1,4 @@
-package lsif
+package conversion
 
 import "github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/protocol/reader"
 

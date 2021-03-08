@@ -1,4 +1,4 @@
-package correlation
+package conversion
 
 import (
 	"bytes"
@@ -8,7 +8,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/lsif"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/datastructures"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/protocol"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/protocol/reader"
@@ -32,7 +31,7 @@ func TestCorrelate(t *testing.T) {
 			2: "foo.go",
 			3: "bar.go",
 		},
-		RangeData: map[int]lsif.Range{
+		RangeData: map[int]Range{
 			4: {
 				Range: reader.Range{
 					RangeData: protocol.RangeData{
@@ -88,7 +87,7 @@ func TestCorrelate(t *testing.T) {
 				},
 			},
 		},
-		ResultSetData: map[int]lsif.ResultSet{
+		ResultSetData: map[int]ResultSet{
 			10: {
 				DefinitionResultID: 12,
 				ReferenceResultID:  14,
@@ -109,7 +108,7 @@ func TestCorrelate(t *testing.T) {
 			16: "```go\ntext A\n```",
 			17: "```go\ntext B\n```",
 		},
-		MonikerData: map[int]lsif.Moniker{
+		MonikerData: map[int]Moniker{
 			18: {
 				Moniker: reader.Moniker{
 					Kind:       "import",
@@ -143,11 +142,11 @@ func TestCorrelate(t *testing.T) {
 				PackageInformationID: 0,
 			},
 		},
-		PackageInformationData: map[int]lsif.PackageInformation{
+		PackageInformationData: map[int]PackageInformation{
 			22: {Name: "pkg A", Version: "v0.1.0"},
 			23: {Name: "pkg B", Version: "v1.2.3"},
 		},
-		DiagnosticResults: map[int][]lsif.Diagnostic{
+		DiagnosticResults: map[int][]Diagnostic{
 			49: {
 				{
 					Severity:       1,
@@ -206,14 +205,14 @@ func TestCorrelateMetaDataRoot(t *testing.T) {
 		DocumentData: map[int]string{
 			2: "foo.go",
 		},
-		RangeData:              map[int]lsif.Range{},
-		ResultSetData:          map[int]lsif.ResultSet{},
+		RangeData:              map[int]Range{},
+		ResultSetData:          map[int]ResultSet{},
 		DefinitionData:         map[int]*datastructures.DefaultIDSetMap{},
 		ReferenceData:          map[int]*datastructures.DefaultIDSetMap{},
 		HoverData:              map[int]string{},
-		MonikerData:            map[int]lsif.Moniker{},
-		PackageInformationData: map[int]lsif.PackageInformation{},
-		DiagnosticResults:      map[int][]lsif.Diagnostic{},
+		MonikerData:            map[int]Moniker{},
+		PackageInformationData: map[int]PackageInformation{},
+		DiagnosticResults:      map[int][]Diagnostic{},
 		NextData:               map[int]int{},
 		ImportedMonikers:       datastructures.NewIDSet(),
 		ExportedMonikers:       datastructures.NewIDSet(),
@@ -246,14 +245,14 @@ func TestCorrelateMetaDataRootX(t *testing.T) {
 		DocumentData: map[int]string{
 			2: "../node_modules/@types/history/index.d.ts",
 		},
-		RangeData:              map[int]lsif.Range{},
-		ResultSetData:          map[int]lsif.ResultSet{},
+		RangeData:              map[int]Range{},
+		ResultSetData:          map[int]ResultSet{},
 		DefinitionData:         map[int]*datastructures.DefaultIDSetMap{},
 		ReferenceData:          map[int]*datastructures.DefaultIDSetMap{},
 		HoverData:              map[int]string{},
-		MonikerData:            map[int]lsif.Moniker{},
-		PackageInformationData: map[int]lsif.PackageInformation{},
-		DiagnosticResults:      map[int][]lsif.Diagnostic{},
+		MonikerData:            map[int]Moniker{},
+		PackageInformationData: map[int]PackageInformation{},
+		DiagnosticResults:      map[int][]Diagnostic{},
 		NextData:               map[int]int{},
 		ImportedMonikers:       datastructures.NewIDSet(),
 		ExportedMonikers:       datastructures.NewIDSet(),

@@ -1,4 +1,4 @@
-package lsif
+package conversion
 
 import (
 	"context"

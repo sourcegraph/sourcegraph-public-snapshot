@@ -1,4 +1,4 @@
-package correlation
+package conversion
 
 import (
 	"context"
@@ -8,8 +8,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/lsif"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/bloomfilter"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/datastructures"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/protocol"
@@ -24,7 +22,7 @@ func TestGroupBundleData(t *testing.T) {
 			1002: "bar.go",
 			1003: "baz.go",
 		},
-		RangeData: map[int]lsif.Range{
+		RangeData: map[int]Range{
 			2001: {
 				Range: reader.Range{
 					RangeData: protocol.RangeData{
@@ -157,7 +155,7 @@ func TestGroupBundleData(t *testing.T) {
 			3008: "foo",
 			3009: "bar",
 		},
-		MonikerData: map[int]lsif.Moniker{
+		MonikerData: map[int]Moniker{
 			4001: {
 				Moniker: reader.Moniker{
 					Kind:       "import",
@@ -191,7 +189,7 @@ func TestGroupBundleData(t *testing.T) {
 				PackageInformationID: 0,
 			},
 		},
-		PackageInformationData: map[int]lsif.PackageInformation{
+		PackageInformationData: map[int]PackageInformation{
 			5001: {
 				Name:    "pkg A",
 				Version: "0.1.0",
@@ -201,7 +199,7 @@ func TestGroupBundleData(t *testing.T) {
 				Version: "1.2.3",
 			},
 		},
-		DiagnosticResults: map[int][]lsif.Diagnostic{
+		DiagnosticResults: map[int][]Diagnostic{
 			1001: {
 				{
 					Severity:       1,
@@ -278,8 +276,8 @@ func TestGroupBundleData(t *testing.T) {
 		t.Errorf("unexpected meta data (-want +got):\n%s", diff)
 	}
 
-	expectedPackages := []lsifstore.Package{
-		{DumpID: 42, Scheme: "scheme C", Name: "pkg B", Version: "1.2.3"},
+	expectedPackages := []semantic.Package{
+		{Scheme: "scheme C", Name: "pkg B", Version: "1.2.3"},
 	}
 	if diff := cmp.Diff(expectedPackages, actualBundleData.Packages); diff != "" {
 		t.Errorf("unexpected packages (-want +got):\n%s", diff)
@@ -289,8 +287,8 @@ func TestGroupBundleData(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error creating bloom filter: %s", err)
 	}
-	expectedPackageReferences := []lsifstore.PackageReference{
-		{DumpID: 42, Scheme: "scheme A", Name: "pkg A", Version: "0.1.0", Filter: expectedFilter},
+	expectedPackageReferences := []semantic.PackageReference{
+		{Scheme: "scheme A", Name: "pkg A", Version: "0.1.0", Filter: expectedFilter},
 	}
 	if diff := cmp.Diff(expectedPackageReferences, actualBundleData.PackageReferences); diff != "" {
 		t.Errorf("unexpected package references (-want +got):\n%s", diff)
