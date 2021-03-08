@@ -745,9 +745,9 @@ func (r *searchResolver) evaluateOr(ctx context.Context, scopeParameters []query
 	}
 
 	wantCount := defaultMaxSearchResults
-	query.VisitField(scopeParameters, query.FieldCount, func(value string, _ bool, _ query.Annotation) {
-		wantCount, _ = strconv.Atoi(value) // Invariant: count is validated.
-	})
+	if count := query.Q(scopeParameters).Count(); count != nil {
+		wantCount = *count
+	}
 
 	result, err := r.evaluatePatternExpression(ctx, scopeParameters, operands[0])
 	if err != nil {
@@ -869,9 +869,9 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 	}()
 
 	wantCount := defaultMaxSearchResults
-	query.VisitField(r.Query, query.FieldCount, func(value string, _ bool, _ query.Annotation) {
-		wantCount, _ = strconv.Atoi(value)
-	})
+	if count := r.Query.Count(); count != nil {
+		wantCount = *count
+	}
 
 	if invalidateRepoCache(r.Query) {
 		r.invalidateRepoCache = true

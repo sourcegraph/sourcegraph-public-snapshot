@@ -169,19 +169,12 @@ func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchIm
 // ordering. The transformed query uses pagination underneath the hood.
 func queryForStableResults(args *SearchArgs, q query.Q) (*SearchArgs, query.Q, error) {
 	if q.BoolValue(query.FieldStable) {
-		var stableResultCount int32
-		if _, countPresent := q.Fields()["count"]; countPresent {
-			count, _ := q.StringValue(query.FieldCount)
-			count64, err := strconv.ParseInt(count, 10, 32)
-			if err != nil {
-				return nil, nil, err
-			}
-			stableResultCount = int32(count64)
+		var stableResultCount int32 = defaultMaxSearchResults
+		if count := q.Count(); count != nil {
+			stableResultCount = int32(*count)
 			if stableResultCount > maxSearchResultsPerPaginatedRequest {
 				return nil, nil, fmt.Errorf("Stable searches are limited to at max count:%d results. Consider removing 'stable:', narrowing the search with 'repo:', or using the paginated search API.", maxSearchResultsPerPaginatedRequest)
 			}
-		} else {
-			stableResultCount = defaultMaxSearchResults
 		}
 		args.First = &stableResultCount
 		fileValue := "file"
@@ -316,9 +309,9 @@ func (r *searchResolver) rawQuery() string {
 }
 
 func (r *searchResolver) countIsSet() bool {
-	count, _ := r.Query.StringValues(query.FieldCount)
+	count := r.Query.Count()
 	max, _ := r.Query.StringValues(query.FieldMax)
-	return len(count) > 0 || len(max) > 0
+	return count != nil || len(max) > 0
 }
 
 const defaultMaxSearchResults = 30
@@ -337,13 +330,11 @@ func (inputs SearchInputs) MaxResults() int {
 	if inputs.Query == nil {
 		return 0
 	}
-	count, _ := inputs.Query.StringValues(query.FieldCount)
-	if len(count) > 0 {
-		n, _ := strconv.Atoi(count[0])
-		if n > 0 {
-			return n
-		}
+
+	if count := inputs.Query.Count(); count != nil {
+		return *count
 	}
+
 	max, _ := inputs.Query.StringValues(query.FieldMax)
 	if len(max) > 0 {
 		n, _ := strconv.Atoi(max[0])
