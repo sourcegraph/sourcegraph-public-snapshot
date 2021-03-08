@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"strconv"
 	"sync"
 
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -310,8 +309,7 @@ func (r *searchResolver) rawQuery() string {
 
 func (r *searchResolver) countIsSet() bool {
 	count := r.Query.Count()
-	max, _ := r.Query.StringValues(query.FieldMax)
-	return count != nil || len(max) > 0
+	return count != nil
 }
 
 const defaultMaxSearchResults = 30
@@ -333,14 +331,6 @@ func (inputs SearchInputs) MaxResults() int {
 
 	if count := inputs.Query.Count(); count != nil {
 		return *count
-	}
-
-	max, _ := inputs.Query.StringValues(query.FieldMax)
-	if len(max) > 0 {
-		n, _ := strconv.Atoi(max[0])
-		if n > 0 {
-			return n
-		}
 	}
 
 	if inputs.DefaultLimit != 0 {

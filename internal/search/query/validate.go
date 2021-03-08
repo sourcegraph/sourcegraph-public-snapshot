@@ -291,7 +291,6 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		FieldStable:
 		return satisfies(isSingular, isBoolean, isNotNegated)
 	case
-		FieldMax,
 		FieldCombyRule:
 		return satisfies(isSingular, isNotNegated)
 	case
