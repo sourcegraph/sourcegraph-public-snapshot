@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/felixge/fgprof"
 	"github.com/gorilla/mux"
@@ -76,8 +77,13 @@ type Dumper interface {
 	DebugDump() interface{}
 }
 
+type Options struct {
+	Timeout time.Duration
+	Healthy chan struct{}
+}
+
 // NewServerRoutine returns a background routine that exposes pprof and metrics endpoints.
-func NewServerRoutine(extra ...Endpoint) goroutine.BackgroundRoutine {
+func NewServerRoutine(opts *Options, extra ...Endpoint) goroutine.BackgroundRoutine {
 	if addr == "" {
 		return goroutine.NoopRoutine()
 	}
@@ -120,6 +126,7 @@ func NewServerRoutine(extra ...Endpoint) goroutine.BackgroundRoutine {
 		router.Handle("/debug/pprof/trace", http.HandlerFunc(pprof.Trace))
 		router.Handle("/debug/requests", http.HandlerFunc(trace.Traces))
 		router.Handle("/debug/events", http.HandlerFunc(trace.Events))
+		router.Handle("/liveness", healthCheckHandler(opts))
 		router.Handle("/metrics", promhttp.Handler())
 
 		// This path acts as a wildcard and should appear after more specific entries.
@@ -135,6 +142,6 @@ func NewServerRoutine(extra ...Endpoint) goroutine.BackgroundRoutine {
 
 // Start runs a debug server (pprof, prometheus, etc) if it is configured (via
 // SRC_PROF_HTTP environment variable). It is blocking.
-func Start(extra ...Endpoint) {
-	NewServerRoutine(extra...).Start()
+func Start(opts *Options, extra ...Endpoint) {
+	NewServerRoutine(opts, extra...).Start()
 }

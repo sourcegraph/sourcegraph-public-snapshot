@@ -60,7 +60,7 @@ func main() {
 	}
 
 	// Start debug server
-	go debugserver.NewServerRoutine().Start()
+	go debugserver.NewServerRoutine(nil).Start()
 
 	if err := keyring.Init(context.Background()); err != nil {
 		log.Fatalf("Failed to intialise keyring: %v", err)

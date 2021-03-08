@@ -138,7 +138,7 @@ func main() {
 	// Create Handler now since it also initializes state
 	handler := ot.Middleware(gitserver.Handler())
 
-	go debugserver.Start()
+	go debugserver.Start(nil)
 	go gitserver.Janitor(janitorInterval)
 	go gitserver.SyncRepoState(syncRepoStateInterval, syncRepoStateBatchSize, syncRepoStateUpsertPerSecond)
 

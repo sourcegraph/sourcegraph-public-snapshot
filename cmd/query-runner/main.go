@@ -46,7 +46,7 @@ func main() {
 		os.Exit(0)
 	}()
 
-	go debugserver.Start()
+	go debugserver.Start(nil)
 
 	ctx := context.Background()
 

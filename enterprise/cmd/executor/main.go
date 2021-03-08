@@ -45,7 +45,7 @@ func main() {
 	}
 
 	// Start debug server
-	go debugserver.NewServerRoutine().Start()
+	go debugserver.NewServerRoutine(nil).Start()
 
 	routines := []goroutine.BackgroundRoutine{
 		worker.NewWorker(config.APIWorkerOptions(nil), observationContext),

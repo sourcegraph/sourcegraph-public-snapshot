@@ -67,7 +67,7 @@ func main() {
 		os.Exit(0)
 	}()
 
-	go debugserver.Start()
+	go debugserver.Start(nil)
 
 	// Use a custom client/transport because GitHub closes keep-alive
 	// connections after 60s. In order to avoid running into EOF errors, we use

@@ -57,7 +57,7 @@ func main() {
 	}
 
 	// Start debug server
-	go debugserver.NewServerRoutine().Start()
+	go debugserver.NewServerRoutine(nil).Start()
 
 	// Connect to databases
 	db := connectToDatabase()

@@ -46,7 +46,7 @@ func main() {
 
 	sqliteutil.MustRegisterSqlite3WithPcre()
 
-	go debugserver.Start()
+	go debugserver.Start(nil)
 
 	service := symbols.Service{
 		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {

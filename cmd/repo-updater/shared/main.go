@@ -253,7 +253,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	}
 
 	globals.WatchExternalURL(nil)
-	go debugserver.Start(debugserver.Endpoint{
+	go debugserver.Start(nil, debugserver.Endpoint{
 		Name: "Repo Updater State",
 		Path: "/repo-updater-state",
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
