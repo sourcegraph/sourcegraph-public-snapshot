@@ -4,7 +4,7 @@ Workers are the consumer side of a producer/consumer relationship.
 
 ## Overview
 
-A **worker** is an generic process configured with a _store_ and a _handler_. In short, the store describes how to interact with where jobs are persisted; the handler (supplied by the user describes how to process each job. Both of these components will be discussed in more detail below.
+A **worker** is an generic process configured with a _store_ and a _handler_. In short, the store describes how to interact with where jobs are persisted; the handler (supplied by the user) describes how to process each job. Both of these components will be discussed in more detail below.
 
 The **store** is responsible for selecting the next available job from the backing persistence layer and suitably _locking_ it from other consumers as well as updating the job records as they make progress in the handler. Generally, this will be an instance of [dbworker/store.Store](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.25.0/-/blob/internal/workerutil/dbworker/store/store.go#L204:6), although there are [other implementations](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.25.0/-/blob/enterprise/cmd/executor/internal/apiclient/client.go#L51:6).
 
