@@ -12,6 +12,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
@@ -41,6 +43,7 @@ type Resolved struct {
 }
 
 type Resolver struct {
+	DB               dbutil.DB
 	Zoekt            *searchbackend.Zoekt
 	DefaultReposFunc defaultReposFunc
 	NamespaceStore   interface {
@@ -160,14 +163,36 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 		// on Sourcegraph.com (100ms+).
 		excludedC := make(chan ExcludedRepos)
 		go func() {
-			excludedC <- computeExcludedRepositories(ctx, op.Query, options)
+			excludedC <- computeExcludedRepositories(ctx, r.DB, op.Query, options)
 		}()
 
-		repos, err = database.GlobalRepos.ListRepoNames(ctx, options)
+		userPublicRepos := make(chan []*types.RepoName)
+		go func() {
+			var out []*types.RepoName
+			defer func() { userPublicRepos <- out }()
+			if searchContext != nil && searchContext.UserID != 0 {
+				userRepos, err := database.UserPublicRepos(r.DB).ListByUser(ctx, searchContext.UserID)
+				if err != nil {
+					log15.Error("Error fetching user public repos for search context", "error", err)
+					return
+				}
+				for _, repo := range userRepos {
+					name := types.RepoName{
+						ID:   repo.RepoID,
+						Name: api.RepoName(repo.RepoURI),
+					}
+					out = append(out, &name)
+				}
+			}
+		}()
+
+		repos, err = database.Repos(r.DB).ListRepoNames(ctx, options)
 		tr.LazyPrintf("Repos.List - done")
 
 		excluded = <-excludedC
 		tr.LazyPrintf("excluded repos: %+v", excluded)
+
+		repos = append(repos, <-userPublicRepos...)
 
 		if err != nil {
 			return Resolved{}, err
@@ -430,7 +455,7 @@ type ExcludedRepos struct {
 
 // computeExcludedRepositories returns a list of excluded repositories (Forks or
 // archives) based on the search Query.
-func computeExcludedRepositories(ctx context.Context, q query.Q, op database.ReposListOptions) (excluded ExcludedRepos) {
+func computeExcludedRepositories(ctx context.Context, db dbutil.DB, q query.Q, op database.ReposListOptions) (excluded ExcludedRepos) {
 	if q == nil {
 		return ExcludedRepos{}
 	}
@@ -452,7 +477,7 @@ func computeExcludedRepositories(ctx context.Context, q query.Q, op database.Rep
 			selectForks.OnlyForks = true
 			selectForks.NoForks = false
 			var err error
-			numExcludedForks, err = database.GlobalRepos.Count(ctx, selectForks)
+			numExcludedForks, err = database.Repos(db).Count(ctx, selectForks)
 			if err != nil {
 				log15.Warn("repo count for excluded fork", "err", err)
 			}
@@ -471,7 +496,7 @@ func computeExcludedRepositories(ctx context.Context, q query.Q, op database.Rep
 			selectArchived.OnlyArchived = true
 			selectArchived.NoArchived = false
 			var err error
-			numExcludedArchived, err = database.GlobalRepos.Count(ctx, selectArchived)
+			numExcludedArchived, err = database.Repos(db).Count(ctx, selectArchived)
 			if err != nil {
 				log15.Warn("repo count for excluded archive", "err", err)
 			}

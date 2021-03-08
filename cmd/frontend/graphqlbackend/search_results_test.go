@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
 	"github.com/hexops/autogold"
@@ -1349,6 +1351,8 @@ func TestSearchContext(t *testing.T) {
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(orig)
 
+	db := dbtest.NewDB(t, "")
+
 	tts := []struct {
 		name        string
 		searchQuery string
@@ -1383,6 +1387,7 @@ func TestSearchContext(t *testing.T) {
 				reposMu:  &sync.Mutex{},
 				resolved: &searchrepos.Resolved{},
 				zoekt:    mockZoekt,
+				db:       db,
 			}
 
 			numGetByNameCalls := 0
