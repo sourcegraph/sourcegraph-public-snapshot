@@ -12,7 +12,7 @@ func NoUnusedSharedCommandCode(graph *graph.DependencyGraph) error {
 		}
 
 		for _, dependent := range graph.Dependents[pkg] {
-			if !isCommandPrivate(dependent) {
+			if !isCommandPrivate(dependent) && !isEnterprise(dependent) {
 				return lintError{}, false
 			}
 		}
