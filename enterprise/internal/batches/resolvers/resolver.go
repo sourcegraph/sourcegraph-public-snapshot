@@ -571,7 +571,7 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 }
 
 func (r *Resolver) DeleteBatchChange(ctx context.Context, args *graphqlbackend.DeleteBatchChangeArgs) (_ *graphqlbackend.EmptyResponse, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.DeleteCampaign", fmt.Sprintf("BatchChange: %q", args.BatchChange))
+	tr, ctx := trace.New(ctx, "Resolver.DeleteBatchChange", fmt.Sprintf("BatchChange: %q", args.BatchChange))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -590,7 +590,7 @@ func (r *Resolver) DeleteBatchChange(ctx context.Context, args *graphqlbackend.D
 	}
 
 	svc := service.New(r.store)
-	// 🚨 SECURITY: DeleteCampaign checks whether current user is authorized.
+	// 🚨 SECURITY: DeleteBatchChange checks whether current user is authorized.
 	err = svc.DeleteBatchChange(ctx, batchChangeID)
 	return &graphqlbackend.EmptyResponse{}, err
 }
