@@ -7,6 +7,8 @@ import (
 	"runtime"
 	"runtime/debug"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
 // expvarHandler is copied from package expvar and exported so that it
@@ -45,4 +47,20 @@ func freeOSMemoryHandler(w http.ResponseWriter, r *http.Request) {
 	t0 := time.Now()
 	debug.FreeOSMemory()
 	fmt.Fprintf(w, "FreeOSMemory took %s\n", time.Since(t0))
+}
+
+// healthCheckHandler returns a healthcheck handler that is "unhealthy" if
+// the timeout has been met AND the channel has not been closed
+func healthCheckHandler(options *Options) http.Handler {
+
+	start := time.Now()
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("HERE 3")
+		_, closed := <-options.Healthy
+		if !closed && time.Since(start) >= options.Timeout {
+			http.Error(w, "healthcheck failed", http.StatusInternalServerError)
+			return
+		}
+		_, _ = w.Write([]byte(version.Version()))
+	})
 }

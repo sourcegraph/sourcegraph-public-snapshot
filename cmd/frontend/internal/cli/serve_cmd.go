@@ -14,6 +14,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/debugserver"
+
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/tmpfriend"
@@ -33,7 +35,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -132,6 +133,12 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 		log.Fatalf("failed to initialize profiling: %v", err)
 	}
 
+	healthy := make(chan struct{}, 1)
+	go debugserver.Start(&debugserver.Options{
+		Timeout: 10 * time.Minute,
+		Healthy: healthy,
+	})
+
 	db, err := InitDB()
 	if err != nil {
 		log.Fatalf("ERROR: %v", err)
@@ -222,8 +229,6 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 		return err
 	}
 
-	go debugserver.Start()
-
 	siteid.Init()
 
 	globals.WatchExternalURL(defaultExternalURL(nginxAddr, httpAddr))
@@ -275,6 +280,9 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 		fmt.Println(" ")
 	}
 	fmt.Printf("✱ Sourcegraph is ready at: %s\n", globals.ExternalURL())
+
+	// acknowledge readiness probes and accept traffic
+	close(healthy)
 
 	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
 	return nil
