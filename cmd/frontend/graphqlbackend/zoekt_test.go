@@ -709,7 +709,7 @@ func BenchmarkSearchResults(b *testing.B) {
 	b.ReportAllocs()
 
 	for n := 0; n < b.N; n++ {
-		q, err := query.ProcessAndOr(`print index:only count:350`, query.ParserOptions{SearchType: query.SearchTypeLiteral})
+		q, err := query.ParseLiteral(`print index:only count:350`)
 		if err != nil {
 			b.Fatal(err)
 		}

@@ -94,7 +94,7 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 	var q query.Q
 	globbing := getBoolPtr(settings.SearchGlobbing, false)
 	tr.LogFields(otlog.Bool("globbing", globbing))
-	q, err = query.ProcessAndOr(args.Query, query.ParserOptions{SearchType: searchType, Globbing: globbing})
+	q, err = query.Parse(args.Query, query.ParserOptions{SearchType: searchType, Globbing: globbing})
 	if err != nil {
 		return alertForQuery(db, args.Query, err), nil
 	}
