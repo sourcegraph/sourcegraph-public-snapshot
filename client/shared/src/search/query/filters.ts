@@ -1,4 +1,4 @@
-import { Filter, Quoted, Literal } from './token'
+import { Filter, Literal } from './token'
 import { SearchSuggestion } from '../suggestions'
 import { Omit } from 'utility-types'
 import { selectorCompletion } from './selectFilter'
@@ -109,7 +109,7 @@ export const resolveNegatedFilter = (filter: NegatedFilters): NegatableFilter =>
 interface BaseFilterDefinition {
     alias?: string
     description: string
-    discreteValues?: (value: Quoted | Literal | undefined) => string[]
+    discreteValues?: (value: Literal | undefined) => string[]
     suggestions?: SearchSuggestion['__typename'] | string[]
     default?: string
     /** Whether the filter may only be used 0 or 1 times in a query. */
@@ -332,7 +332,7 @@ export const resolveFilter = (
  */
 const isValidDiscreteValue = (
     definition: NegatableFilterDefinition | BaseFilterDefinition,
-    input: Literal | Quoted,
+    input: Literal,
     value: string
 ): boolean => {
     if (!definition.discreteValues || definition.discreteValues(input).includes(value)) {
@@ -363,13 +363,7 @@ export const validateFilter = (
         return { valid: false, reason: 'Invalid filter type.' }
     }
     const { definition } = typeAndDefinition
-    if (
-        definition.discreteValues &&
-        (!value ||
-            (value.type !== 'literal' && value.type !== 'quoted') ||
-            (value.type === 'literal' && !isValidDiscreteValue(definition, value, value.value)) ||
-            (value.type === 'quoted' && !isValidDiscreteValue(definition, value, value.quotedValue)))
-    ) {
+    if (definition.discreteValues && (!value || !isValidDiscreteValue(definition, value, value.value))) {
         return {
             valid: false,
             reason: `Invalid filter value, expected one of: ${definition.discreteValues(value).join(', ')}.`,
