@@ -5,8 +5,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/datastructures"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/lsif"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/datastructures"
 )
 
 func TestCanonicalizeDocuments(t *testing.T) {

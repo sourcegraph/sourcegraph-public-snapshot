@@ -1,4 +1,4 @@
-package existence
+package pathexistence
 
 import "path/filepath"
 

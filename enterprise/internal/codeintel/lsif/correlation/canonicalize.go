@@ -3,8 +3,8 @@ package correlation
 import (
 	"sort"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/datastructures"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsif/lsif"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/datastructures"
 )
 
 // canonicalize deduplicates data in the raw correlation state and collapses range,
