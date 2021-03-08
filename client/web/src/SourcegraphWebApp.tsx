@@ -81,6 +81,7 @@ import { aggregateStreamingSearch } from './search/stream'
 import { ISearchContext } from '../../shared/src/graphql/schema'
 import { logCodeInsightsChanges } from './insights/analytics'
 import { listUserRepositories } from './site-admin/backend'
+import fetcher from './client'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
@@ -239,7 +240,14 @@ const LayoutWithActivation = window.context.sourcegraphDotComMode ? Layout : wit
  * This is the non-hot-reload component. It is wrapped in `hot(...)` below to make it
  * hot-reloadable in development.
  */
-const queryClient = new QueryClient()
+const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            queryFn: fetcher,
+        },
+    },
+})
+
 class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, SourcegraphWebAppState> {
     private readonly subscriptions = new Subscription()
     private readonly userRepositoriesUpdates = new Subject<void>()

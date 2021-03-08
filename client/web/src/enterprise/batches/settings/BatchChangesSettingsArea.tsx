@@ -17,7 +17,7 @@ export interface BatchChangesSettingsAreaProps extends Pick<RouteComponentProps,
 
 /** The page area for all batch changes settings. It's shown in the user settings sidebar. */
 export const BatchChangesSettingsArea: React.FunctionComponent<BatchChangesSettingsAreaProps> = () => {
-    const userID = 'XXXX' // TODO: We need a useGetUserID or similar
+    const userID = 'VXNlcjox' // TODO: We need a useGetUserID or similar
     const { status, data, isFetching }: { data: any; status: string; isFetching: boolean } = useBatchChanges(userID)
 
     if (status === 'loading') {
@@ -31,7 +31,7 @@ export const BatchChangesSettingsArea: React.FunctionComponent<BatchChangesSetti
             <h2>Code host tokens</h2>
             <p>Add authentication tokens to enable batch changes changeset creation on your code hosts.</p>
             <div>{isFetching ? 'Background Updating...' : ' '}</div>
-            {data.node.batchChangesCodeHosts.nodes.map((batch: BatchChangesCodeHostFields, index: number) => (
+            {data.map((batch: BatchChangesCodeHostFields, index: number) => (
                 <div key={index}>
                     <CodeHostConnectionNode node={batch} userID={userID} />
                 </div>
