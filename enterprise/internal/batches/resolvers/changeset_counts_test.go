@@ -119,25 +119,25 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 
 	cstore := store.New(db)
 
-	spec := &batches.CampaignSpec{
+	spec := &batches.BatchSpec{
 		NamespaceUserID: userID,
 		UserID:          userID,
 	}
-	if err := cstore.CreateCampaignSpec(ctx, spec); err != nil {
+	if err := cstore.CreateBatchSpec(ctx, spec); err != nil {
 		t.Fatal(err)
 	}
 
-	campaign := &batches.Campaign{
+	campaign := &batches.BatchChange{
 		Name:             "Test campaign",
 		Description:      "Testing changeset counts",
 		InitialApplierID: userID,
 		NamespaceUserID:  userID,
 		LastApplierID:    userID,
 		LastAppliedAt:    time.Now(),
-		CampaignSpecID:   spec.ID,
+		BatchSpecID:      spec.ID,
 	}
 
-	err = cstore.CreateCampaign(ctx, campaign)
+	err = cstore.CreateBatchChange(ctx, campaign)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -147,14 +147,14 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 			RepoID:              githubRepo.ID,
 			ExternalID:          "5834",
 			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
-			Campaigns:           []batches.CampaignAssoc{{CampaignID: campaign.ID}},
+			BatchChanges:        []batches.BatchChangeAssoc{{BatchChangeID: campaign.ID}},
 			PublicationState:    batches.ChangesetPublicationStatePublished,
 		},
 		{
 			RepoID:              githubRepo.ID,
 			ExternalID:          "5849",
 			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
-			Campaigns:           []batches.CampaignAssoc{{CampaignID: campaign.ID}},
+			BatchChanges:        []batches.BatchChangeAssoc{{BatchChangeID: campaign.ID}},
 			PublicationState:    batches.ChangesetPublicationStatePublished,
 		},
 	}

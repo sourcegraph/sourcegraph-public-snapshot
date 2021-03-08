@@ -74,37 +74,37 @@ func TestPermissionLevels(t *testing.T) {
 	createCampaign := func(t *testing.T, s *store.Store, name string, userID int32, campaignSpecID int64) (campaignID int64) {
 		t.Helper()
 
-		c := &batches.Campaign{
+		c := &batches.BatchChange{
 			Name:             name,
 			InitialApplierID: userID,
 			NamespaceUserID:  userID,
 			LastApplierID:    userID,
 			LastAppliedAt:    time.Now(),
-			CampaignSpecID:   campaignSpecID,
+			BatchSpecID:      campaignSpecID,
 		}
-		if err := s.CreateCampaign(ctx, c); err != nil {
+		if err := s.CreateBatchChange(ctx, c); err != nil {
 			t.Fatal(err)
 		}
 
 		// We attach the changeset to the campaign so we can test syncChangeset
-		changeset.Campaigns = append(changeset.Campaigns, batches.CampaignAssoc{CampaignID: c.ID})
+		changeset.BatchChanges = append(changeset.BatchChanges, batches.BatchChangeAssoc{BatchChangeID: c.ID})
 		if err := s.UpdateChangeset(ctx, changeset); err != nil {
 			t.Fatal(err)
 		}
 
-		cs := &batches.CampaignSpec{UserID: userID, NamespaceUserID: userID}
-		if err := s.CreateCampaignSpec(ctx, cs); err != nil {
+		cs := &batches.BatchSpec{UserID: userID, NamespaceUserID: userID}
+		if err := s.CreateBatchSpec(ctx, cs); err != nil {
 			t.Fatal(err)
 		}
 
 		return c.ID
 	}
 
-	createCampaignSpec := func(t *testing.T, s *store.Store, userID int32) (randID string, id int64) {
+	createBatchSpec := func(t *testing.T, s *store.Store, userID int32) (randID string, id int64) {
 		t.Helper()
 
-		cs := &batches.CampaignSpec{UserID: userID, NamespaceUserID: userID}
-		if err := s.CreateCampaignSpec(ctx, cs); err != nil {
+		cs := &batches.BatchSpec{UserID: userID, NamespaceUserID: userID}
+		if err := s.CreateBatchSpec(ctx, cs); err != nil {
 			t.Fatal(err)
 		}
 
@@ -114,7 +114,7 @@ func TestPermissionLevels(t *testing.T) {
 	cleanUpCampaigns := func(t *testing.T, s *store.Store) {
 		t.Helper()
 
-		campaigns, next, err := s.ListCampaigns(ctx, store.ListCampaignsOpts{LimitOpts: store.LimitOpts{Limit: 1000}})
+		campaigns, next, err := s.ListBatchChanges(ctx, store.ListBatchChangesOpts{LimitOpts: store.LimitOpts{Limit: 1000}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -123,7 +123,7 @@ func TestPermissionLevels(t *testing.T) {
 		}
 
 		for _, c := range campaigns {
-			if err := s.DeleteCampaign(ctx, c.ID); err != nil {
+			if err := s.DeleteBatchChange(ctx, c.ID); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -132,9 +132,9 @@ func TestPermissionLevels(t *testing.T) {
 	t.Run("queries", func(t *testing.T) {
 		cleanUpCampaigns(t, cstore)
 
-		adminCampaignSpec, adminCampaignSpecID := createCampaignSpec(t, cstore, adminID)
+		adminCampaignSpec, adminCampaignSpecID := createBatchSpec(t, cstore, adminID)
 		adminCampaign := createCampaign(t, cstore, "admin", adminID, adminCampaignSpecID)
-		userCampaignSpec, userCampaignSpecID := createCampaignSpec(t, cstore, userID)
+		userCampaignSpec, userCampaignSpecID := createBatchSpec(t, cstore, userID)
 		userCampaign := createCampaign(t, cstore, "user", userID, userCampaignSpecID)
 
 		t.Run("BatchChangeByID", func(t *testing.T) {
@@ -616,14 +616,14 @@ func TestPermissionLevels(t *testing.T) {
 						t.Run(fmt.Sprintf("%s restrict: %v", tc.name, restrict), func(t *testing.T) {
 							cleanUpCampaigns(t, cstore)
 
-							campaignSpecRandID, campaignSpecID := createCampaignSpec(t, cstore, tc.campaignAuthor)
+							campaignSpecRandID, campaignSpecID := createBatchSpec(t, cstore, tc.campaignAuthor)
 							campaignID := createCampaign(t, cstore, "test-campaign", tc.campaignAuthor, campaignSpecID)
 
 							// We add the changeset to the campaign. It doesn't
 							// matter for the addChangesetsToCampaign mutation,
 							// since that is idempotent and we want to solely
 							// check for auth errors.
-							changeset.Campaigns = []batches.CampaignAssoc{{CampaignID: campaignID}}
+							changeset.BatchChanges = []batches.BatchChangeAssoc{{BatchChangeID: campaignID}}
 							if err := cstore.UpdateChangeset(ctx, changeset); err != nil {
 								t.Fatal(err)
 							}
@@ -652,7 +652,7 @@ func TestPermissionLevels(t *testing.T) {
 								if len(errs) != 1 {
 									t.Fatalf("expected 1 error, but got %d: %s", len(errs), errs)
 								}
-								if !strings.Contains(errs[0].Error(), "campaigns are disabled for non-site-admin users") {
+								if !strings.Contains(errs[0].Error(), "batch changes are disabled for non-site-admin users") {
 									t.Fatalf("wrong error: %s %T", errs[0], errs[0])
 								}
 							} else if tc.wantAuthErr {
@@ -824,28 +824,28 @@ func TestRepositoryPermissions(t *testing.T) {
 			changesets = append(changesets, c)
 		}
 
-		spec := &batches.CampaignSpec{
+		spec := &batches.BatchSpec{
 			NamespaceUserID: userID,
 			UserID:          userID,
 		}
-		if err := cstore.CreateCampaignSpec(ctx, spec); err != nil {
+		if err := cstore.CreateBatchSpec(ctx, spec); err != nil {
 			t.Fatal(err)
 		}
 
-		campaign := &batches.Campaign{
+		campaign := &batches.BatchChange{
 			Name:             "my campaign",
 			InitialApplierID: userID,
 			NamespaceUserID:  userID,
 			LastApplierID:    userID,
 			LastAppliedAt:    time.Now(),
-			CampaignSpecID:   spec.ID,
+			BatchSpecID:      spec.ID,
 		}
-		if err := cstore.CreateCampaign(ctx, campaign); err != nil {
+		if err := cstore.CreateBatchChange(ctx, campaign); err != nil {
 			t.Fatal(err)
 		}
 		// We attach the two changesets to the campaign
 		for _, c := range changesets {
-			c.Campaigns = []batches.CampaignAssoc{{CampaignID: campaign.ID}}
+			c.BatchChanges = []batches.BatchChangeAssoc{{BatchChangeID: campaign.ID}}
 			if err := cstore.UpdateChangeset(ctx, c); err != nil {
 				t.Fatal(err)
 			}
@@ -928,12 +928,12 @@ func TestRepositoryPermissions(t *testing.T) {
 	})
 
 	t.Run("CampaignSpec and changesetSpecs", func(t *testing.T) {
-		campaignSpec := &batches.CampaignSpec{
+		campaignSpec := &batches.BatchSpec{
 			UserID:          userID,
 			NamespaceUserID: userID,
-			Spec:            batches.CampaignSpecFields{Name: "campaign-spec-and-changeset-specs"},
+			Spec:            batches.BatchSpecFields{Name: "campaign-spec-and-changeset-specs"},
 		}
-		if err := cstore.CreateCampaignSpec(ctx, campaignSpec); err != nil {
+		if err := cstore.CreateBatchSpec(ctx, campaignSpec); err != nil {
 			t.Fatal(err)
 		}
 

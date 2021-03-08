@@ -82,7 +82,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 				CreatedAt:           clock.Now(),
 				UpdatedAt:           clock.Now(),
 				Metadata:            githubPR,
-				Campaigns:           []batches.CampaignAssoc{{CampaignID: int64(i) + 1}},
+				BatchChanges:        []batches.BatchChangeAssoc{{BatchChangeID: int64(i) + 1}},
 				ExternalID:          fmt.Sprintf("foobar-%d", i),
 				ExternalServiceType: extsvc.TypeGitHub,
 				ExternalBranch:      fmt.Sprintf("refs/heads/campaigns/test/%d", i),
@@ -91,10 +91,10 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 				ExternalReviewState: batches.ChangesetReviewStateApproved,
 				ExternalCheckState:  batches.ChangesetCheckStatePassed,
 
-				CurrentSpecID:     int64(i) + 1,
-				PreviousSpecID:    int64(i) + 1,
-				OwnedByCampaignID: int64(i) + 1,
-				PublicationState:  batches.ChangesetPublicationStatePublished,
+				CurrentSpecID:        int64(i) + 1,
+				PreviousSpecID:       int64(i) + 1,
+				OwnedByBatchChangeID: int64(i) + 1,
+				PublicationState:     batches.ChangesetPublicationStatePublished,
 
 				ReconcilerState: batches.ReconcilerStateCompleted,
 				FailureMessage:  &failureMessage,
@@ -158,25 +158,25 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 	t.Run("Upsert", func(t *testing.T) {
 		changeset := &batches.Changeset{
-			RepoID:              repo.ID,
-			CreatedAt:           clock.Now(),
-			UpdatedAt:           clock.Now(),
-			Metadata:            githubPR,
-			Campaigns:           []batches.CampaignAssoc{{CampaignID: 1}},
-			ExternalID:          "foobar-123",
-			ExternalServiceType: extsvc.TypeGitHub,
-			ExternalBranch:      "refs/heads/campaigns/test",
-			ExternalUpdatedAt:   clock.Now(),
-			ExternalState:       batches.ChangesetExternalStateOpen,
-			ExternalReviewState: batches.ChangesetReviewStateApproved,
-			ExternalCheckState:  batches.ChangesetCheckStatePassed,
-			PreviousSpecID:      1,
-			OwnedByCampaignID:   1,
-			PublicationState:    batches.ChangesetPublicationStatePublished,
-			ReconcilerState:     batches.ReconcilerStateCompleted,
-			StartedAt:           clock.Now(),
-			FinishedAt:          clock.Now(),
-			ProcessAfter:        clock.Now(),
+			RepoID:               repo.ID,
+			CreatedAt:            clock.Now(),
+			UpdatedAt:            clock.Now(),
+			Metadata:             githubPR,
+			BatchChanges:         []batches.BatchChangeAssoc{{BatchChangeID: 1}},
+			ExternalID:           "foobar-123",
+			ExternalServiceType:  extsvc.TypeGitHub,
+			ExternalBranch:       "refs/heads/campaigns/test",
+			ExternalUpdatedAt:    clock.Now(),
+			ExternalState:        batches.ChangesetExternalStateOpen,
+			ExternalReviewState:  batches.ChangesetReviewStateApproved,
+			ExternalCheckState:   batches.ChangesetCheckStatePassed,
+			PreviousSpecID:       1,
+			OwnedByBatchChangeID: 1,
+			PublicationState:     batches.ChangesetPublicationStatePublished,
+			ReconcilerState:      batches.ReconcilerStateCompleted,
+			StartedAt:            clock.Now(),
+			FinishedAt:           clock.Now(),
+			ProcessAfter:         clock.Now(),
 		}
 
 		if err := s.UpsertChangeset(ctx, changeset); err != nil {
@@ -632,7 +632,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		cs := &batches.Changeset{
 			RepoID:              repo.ID,
 			Metadata:            githubPR,
-			Campaigns:           []batches.CampaignAssoc{{CampaignID: 1}},
+			BatchChanges:        []batches.BatchChangeAssoc{{BatchChangeID: 1}},
 			ExternalID:          fmt.Sprintf("foobar-%d", 42),
 			ExternalServiceType: extsvc.TypeGitHub,
 			ExternalBranch:      "refs/heads/campaigns/test",
@@ -823,7 +823,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 			c.CurrentSpecID = c.CurrentSpecID + 1
 			c.PreviousSpecID = c.PreviousSpecID + 1
-			c.OwnedByCampaignID = c.OwnedByCampaignID + 1
+			c.OwnedByBatchChangeID = c.OwnedByBatchChangeID + 1
 
 			c.PublicationState = batches.ChangesetPublicationStatePublished
 			c.ReconcilerState = batches.ReconcilerStateErrored
@@ -851,7 +851,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 		for i := range have {
 			// Test that duplicates are not introduced.
-			have[i].Campaigns = append(have[i].Campaigns, have[i].Campaigns...)
+			have[i].BatchChanges = append(have[i].BatchChanges, have[i].BatchChanges...)
 
 			if err := s.UpdateChangeset(ctx, have[i]); err != nil {
 				t.Fatal(err)
@@ -865,8 +865,8 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 		for i := range have {
 			// Test we can add to the set.
-			have[i].Campaigns = append(have[i].Campaigns, batches.CampaignAssoc{CampaignID: 42})
-			want[i].Campaigns = append(want[i].Campaigns, batches.CampaignAssoc{CampaignID: 42})
+			have[i].BatchChanges = append(have[i].BatchChanges, batches.BatchChangeAssoc{BatchChangeID: 42})
+			want[i].BatchChanges = append(want[i].BatchChanges, batches.BatchChangeAssoc{BatchChangeID: 42})
 
 			if err := s.UpdateChangeset(ctx, have[i]); err != nil {
 				t.Fatal(err)
@@ -875,8 +875,8 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		}
 
 		for i := range have {
-			sort.Slice(have[i].Campaigns, func(a, b int) bool {
-				return have[i].Campaigns[a].CampaignID < have[i].Campaigns[b].CampaignID
+			sort.Slice(have[i].BatchChanges, func(a, b int) bool {
+				return have[i].BatchChanges[a].BatchChangeID < have[i].BatchChanges[b].BatchChangeID
 			})
 
 			if diff := cmp.Diff(have[i], want[i]); diff != "" {
@@ -886,8 +886,8 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 		for i := range have {
 			// Test we can remove from the set.
-			have[i].Campaigns = have[i].Campaigns[:0]
-			want[i].Campaigns = want[i].Campaigns[:0]
+			have[i].BatchChanges = have[i].BatchChanges[:0]
+			want[i].BatchChanges = want[i].BatchChanges[:0]
 
 			if err := s.UpdateChangeset(ctx, have[i]); err != nil {
 				t.Fatal(err)
@@ -962,7 +962,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			ReconcilerState: batches.ReconcilerStateProcessing,
 		})
 
-		if err := s.CancelQueuedCampaignChangesets(ctx, campaignID); err != nil {
+		if err := s.CancelQueuedBatchChangeChangesets(ctx, campaignID); err != nil {
 			t.Fatal(err)
 		}
 
@@ -1256,7 +1256,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 			CreatedAt:           clock.Now(),
 			UpdatedAt:           clock.Now(),
 			Metadata:            githubPR,
-			Campaigns:           []batches.CampaignAssoc{{CampaignID: int64(i) + 1}},
+			BatchChanges:        []batches.BatchChangeAssoc{{BatchChangeID: int64(i) + 1}},
 			ExternalID:          fmt.Sprintf("foobar-%d", i),
 			ExternalServiceType: extsvc.TypeGitHub,
 			ExternalBranch:      "refs/heads/campaigns/test",
@@ -1283,19 +1283,19 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 
 	// We need campaigns attached to each changeset
 	for _, cs := range changesets {
-		c := &batches.Campaign{
+		c := &batches.BatchChange{
 			Name:           "ListChangesetSyncData test",
 			NamespaceOrgID: 23,
 			LastApplierID:  1,
 			LastAppliedAt:  time.Now(),
-			CampaignSpecID: 42,
+			BatchSpecID:    42,
 		}
-		err := s.CreateCampaign(ctx, c)
+		err := s.CreateBatchChange(ctx, c)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		cs.Campaigns = []batches.CampaignAssoc{{CampaignID: c.ID}}
+		cs.BatchChanges = []batches.BatchChangeAssoc{{BatchChangeID: c.ID}}
 
 		if err := s.UpdateChangeset(ctx, cs); err != nil {
 			t.Fatal(err)
@@ -1382,13 +1382,13 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 	})
 
 	t.Run("ignore closed campaign", func(t *testing.T) {
-		closedCampaignID := changesets[0].Campaigns[0].CampaignID
-		c, err := s.GetCampaign(ctx, GetCampaignOpts{ID: closedCampaignID})
+		closedCampaignID := changesets[0].BatchChanges[0].BatchChangeID
+		c, err := s.GetBatchChange(ctx, CountBatchChangeOpts{ID: closedCampaignID})
 		if err != nil {
 			t.Fatal(err)
 		}
 		c.ClosedAt = clock.Now()
-		err = s.UpdateCampaign(ctx, c)
+		err = s.UpdateBatchChange(ctx, c)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1401,8 +1401,8 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 
 		// If a changeset has ANY open campaigns we should list it
 		// Attach cs1 to both an open and closed campaign
-		openCampaignID := changesets[1].Campaigns[0].CampaignID
-		changesets[0].Campaigns = []batches.CampaignAssoc{{CampaignID: closedCampaignID}, {CampaignID: openCampaignID}}
+		openCampaignID := changesets[1].BatchChanges[0].BatchChangeID
+		changesets[0].BatchChanges = []batches.BatchChangeAssoc{{BatchChangeID: closedCampaignID}, {BatchChangeID: openCampaignID}}
 		err = s.UpdateChangeset(ctx, changesets[0])
 		if err != nil {
 			t.Fatal(err)

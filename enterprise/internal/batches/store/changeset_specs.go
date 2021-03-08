@@ -377,7 +377,7 @@ func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
 }
 
 // DeleteExpiredChangesetSpecs deletes ChangesetSpecs that have not been
-// attached to a CampaignSpec within ChangesetSpecTTL.
+// attached to a BatchSpec within ChangesetSpecTTL.
 func (s *Store) DeleteExpiredChangesetSpecs(ctx context.Context) error {
 	expirationTime := s.now().Add(-batches.ChangesetSpecTTL)
 	q := sqlf.Sprintf(deleteExpiredChangesetSpecsQueryFmtstr, expirationTime)
@@ -426,7 +426,7 @@ func scanChangesetSpec(c *batches.ChangesetSpec, s scanner) error {
 	)
 
 	if err != nil {
-		return errors.Wrap(err, "scanning campaign spec")
+		return errors.Wrap(err, "scanning changeset spec")
 	}
 
 	c.Spec = new(batches.ChangesetSpecDescription)
@@ -557,7 +557,7 @@ type GetRewirerMappingsOpts struct {
 
 // GetRewirerMappings returns RewirerMappings between changeset specs and changesets.
 //
-// We have two imaginary lists, the current changesets in the campaign and the new changeset specs:
+// We have two imaginary lists, the current changesets in the batch change and the new changeset specs:
 //
 // ┌───────────────────────────────────────┐   ┌───────────────────────────────┐
 // │Changeset 1 | Repo A | #111 | run-gofmt│   │  Spec 1 | Repo A | run-gofmt  │
@@ -604,7 +604,7 @@ type GetRewirerMappingsOpts struct {
 // Spec 2 should be attached to Changeset 2 and publish it on the code host. (ChangesetSpec = 2, Changeset = 2)
 // Spec 3 should get a new Changeset, since its branch doesn't match Changeset 3's branch. (ChangesetSpec = 3, Changeset = 0)
 // Spec 4 should be attached to Changeset 4, since it tracks PR #333 in Repo C. (ChangesetSpec = 4, Changeset = 4)
-// Changeset 3 doesn't have a matching spec and should be detached from the campaign (and closed) (ChangesetSpec == 0, Changeset = 3).
+// Changeset 3 doesn't have a matching spec and should be detached from the batch change (and closed) (ChangesetSpec == 0, Changeset = 3).
 func (s *Store) GetRewirerMappings(ctx context.Context, opts GetRewirerMappingsOpts) (mappings RewirerMappings, err error) {
 	q, err := getRewirerMappingsQuery(opts)
 	if err != nil {

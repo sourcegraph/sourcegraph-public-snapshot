@@ -53,12 +53,12 @@ func TestChangesetSpecResolver(t *testing.T) {
 	testRev := api.CommitID("b69072d5f687b31b9f6ae3ceafdc24c259c4b9ec")
 	mockBackendCommits(t, testRev)
 
-	campaignSpec, err := batches.NewCampaignSpecFromRaw(`name: awesome-test`)
+	batchSpec, err := batches.NewBatchSpecFromRaw(`name: awesome-test`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	campaignSpec.NamespaceUserID = userID
-	if err := cstore.CreateCampaignSpec(ctx, campaignSpec); err != nil {
+	batchSpec.NamespaceUserID = userID
+	if err := cstore.CreateBatchSpec(ctx, batchSpec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -210,7 +210,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 			}
 			spec.UserID = userID
 			spec.RepoID = repo.ID
-			spec.CampaignSpecID = campaignSpec.ID
+			spec.CampaignSpecID = batchSpec.ID
 
 			if err := cstore.CreateChangesetSpec(ctx, spec); err != nil {
 				t.Fatal(err)

@@ -33,7 +33,7 @@ func TestBatchSpecResolver(t *testing.T) {
 	repoStore := database.ReposWith(cstore)
 	esStore := database.ExternalServicesWith(cstore)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/campaign-spec-test", newGitHubExternalService(t, esStore))
+	repo := newGitHubTestRepo("github.com/sourcegraph/batch-spec-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
@@ -44,13 +44,13 @@ func TestBatchSpecResolver(t *testing.T) {
 	adminID := ct.CreateTestUser(t, db, true).ID
 	orgID := ct.InsertTestOrg(t, db, orgname)
 
-	spec, err := batches.NewCampaignSpecFromRaw(ct.TestRawBatchSpec)
+	spec, err := batches.NewBatchSpecFromRaw(ct.TestRawBatchSpec)
 	if err != nil {
 		t.Fatal(err)
 	}
 	spec.UserID = userID
 	spec.NamespaceOrgID = orgID
-	if err := cstore.CreateCampaignSpec(ctx, spec); err != nil {
+	if err := cstore.CreateBatchSpec(ctx, spec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -66,15 +66,15 @@ func TestBatchSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	matchingCampaign := &batches.Campaign{
+	matchingBatchChange := &batches.BatchChange{
 		Name:             spec.Spec.Name,
 		NamespaceOrgID:   orgID,
 		InitialApplierID: userID,
 		LastApplierID:    userID,
 		LastAppliedAt:    time.Now(),
-		CampaignSpecID:   spec.ID,
+		BatchSpecID:      spec.ID,
 	}
-	if err := cstore.CreateCampaign(ctx, matchingCampaign); err != nil {
+	if err := cstore.CreateBatchChange(ctx, matchingBatchChange); err != nil {
 		t.Fatal(err)
 	}
 
@@ -131,7 +131,7 @@ func TestBatchSpecResolver(t *testing.T) {
 		},
 
 		AppliesToBatchChange: apitest.BatchChange{
-			ID: string(marshalBatchChangeID(matchingCampaign.ID)),
+			ID: string(marshalBatchChangeID(matchingBatchChange.ID)),
 		},
 
 		AllCodeHosts: apitest.BatchChangesCodeHostsConnection{
@@ -155,14 +155,14 @@ func TestBatchSpecResolver(t *testing.T) {
 	}
 
 	// Now create an updated changeset spec and check that we get a superseding
-	// campaign spec.
-	sup, err := batches.NewCampaignSpecFromRaw(ct.TestRawBatchSpec)
+	// batch spec.
+	sup, err := batches.NewBatchSpecFromRaw(ct.TestRawBatchSpec)
 	if err != nil {
 		t.Fatal(err)
 	}
 	sup.UserID = userID
 	sup.NamespaceOrgID = orgID
-	if err := cstore.CreateCampaignSpec(ctx, sup); err != nil {
+	if err := cstore.CreateBatchSpec(ctx, sup); err != nil {
 		t.Fatal(err)
 	}
 
@@ -183,10 +183,10 @@ func TestBatchSpecResolver(t *testing.T) {
 		}
 	}
 
-	// If the superseding campaign spec was created by a different user, then we
+	// If the superseding batch spec was created by a different user, then we
 	// shouldn't return it.
 	sup.UserID = adminID
-	if err := cstore.UpdateCampaignSpec(ctx, sup); err != nil {
+	if err := cstore.UpdateBatchSpec(ctx, sup); err != nil {
 		t.Fatal(err)
 	}
 
@@ -206,7 +206,7 @@ func TestBatchSpecResolver(t *testing.T) {
 		}
 	}
 
-	// Now soft-delete the creator and check that the campaign spec is still retrievable.
+	// Now soft-delete the creator and check that the batch spec is still retrievable.
 	err = database.UsersWith(cstore).Delete(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
@@ -221,7 +221,7 @@ func TestBatchSpecResolver(t *testing.T) {
 		want.OnlyWithoutCredential = apitest.BatchChangesCodeHostsConnection{
 			Nodes: []apitest.BatchChangesCodeHost{},
 		}
-		// Expect no superseding campaign spec, since this request is run as a
+		// Expect no superseding batch spec, since this request is run as a
 		// different user.
 		want.SupersedingBatchSpec = nil
 
@@ -230,7 +230,7 @@ func TestBatchSpecResolver(t *testing.T) {
 		}
 	}
 
-	// Now hard-delete the creator and check that the campaign spec is still retrievable.
+	// Now hard-delete the creator and check that the batch spec is still retrievable.
 	err = database.UsersWith(cstore).HardDelete(ctx, userID)
 	if err != nil {
 		t.Fatal(err)

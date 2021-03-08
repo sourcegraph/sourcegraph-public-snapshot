@@ -7,7 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestCampaignSpecUnmarshalValidate(t *testing.T) {
+func TestBatchSpecUnmarshalValidate(t *testing.T) {
 	tests := []struct {
 		name    string
 		rawSpec string
@@ -33,7 +33,7 @@ func TestCampaignSpecUnmarshalValidate(t *testing.T) {
 				],
 				"changesetTemplate": {
 					"title": "Hello World",
-					"body": "My first campaign!",
+					"body": "My first batch change!",
 					"branch": "hello-world",
 					"commit": {
 						"message": "Append Hello World to all README.md files"
@@ -57,7 +57,7 @@ steps:
     PATH: "/work/foobar:$PATH"
 changesetTemplate:
   title: Hello World
-  body: My first campaign!
+  body: My first batch change!
   branch: hello-world
   commit:
     message: Append Hello World to all README.md files
@@ -84,7 +84,7 @@ changesetTemplate:
 				],
 				"changesetTemplate": {
 					"title": "Hello World",
-					"body": "My first campaign!",
+					"body": "My first batch change!",
 					"branch": "hello-world",
 					"commit": {
 						"message": "Append Hello World to all README.md files"
@@ -98,7 +98,7 @@ changesetTemplate:
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			spec := &CampaignSpec{RawSpec: tc.rawSpec}
+			spec := &BatchSpec{RawSpec: tc.rawSpec}
 			haveErr := fmt.Sprintf("%v", spec.UnmarshalValidate())
 			if haveErr == "<nil>" {
 				haveErr = ""

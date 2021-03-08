@@ -118,15 +118,15 @@ func (cs *ChangesetSpec) UnmarshalValidate() error {
 }
 
 // ChangesetSpecTTL specifies the TTL of ChangesetSpecs that haven't been
-// attached to a CampaignSpec.
-// It's lower than CampaignSpecTTL because ChangesetSpecs should be attached to
+// attached to a BatchSpec.
+// It's lower than BatchSpecTTL because ChangesetSpecs should be attached to
 // a CampaignSpec immediately after having been created, whereas a CampaignSpec
 // might take a while to be complete and might also go through a lengthy review
 // phase.
 const ChangesetSpecTTL = 2 * 24 * time.Hour
 
 // ExpiresAt returns the time when the ChangesetSpec will be deleted if not
-// attached to a CampaignSpec.
+// attached to a BatchSpec.
 func (cs *ChangesetSpec) ExpiresAt() time.Time {
 	return cs.CreatedAt.Add(ChangesetSpecTTL)
 }

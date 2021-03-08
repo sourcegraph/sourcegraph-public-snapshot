@@ -28,32 +28,32 @@ func TestBatchChangeResolver(t *testing.T) {
 	db := dbtesting.GetDB(t)
 
 	userID := ct.CreateTestUser(t, db, true).ID
-	orgName := "test-campaign-resolver-org"
+	orgName := "test-batch-change-resolver-org"
 	orgID := ct.InsertTestOrg(t, db, orgName)
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
 	cstore := store.NewWithClock(db, clock)
 
-	campaignSpec := &batches.CampaignSpec{
+	batchSpec := &batches.BatchSpec{
 		RawSpec:        ct.TestRawBatchSpec,
 		UserID:         userID,
 		NamespaceOrgID: orgID,
 	}
-	if err := cstore.CreateCampaignSpec(ctx, campaignSpec); err != nil {
+	if err := cstore.CreateBatchSpec(ctx, batchSpec); err != nil {
 		t.Fatal(err)
 	}
 
-	campaign := &batches.Campaign{
+	batchChange := &batches.BatchChange{
 		Name:             "my-unique-name",
-		Description:      "The campaign description",
+		Description:      "The batch change description",
 		NamespaceOrgID:   orgID,
 		InitialApplierID: userID,
 		LastApplierID:    userID,
 		LastAppliedAt:    now,
-		CampaignSpecID:   campaignSpec.ID,
+		BatchSpecID:      batchSpec.ID,
 	}
-	if err := cstore.CreateCampaign(ctx, campaign); err != nil {
+	if err := cstore.CreateBatchChange(ctx, batchChange); err != nil {
 		t.Fatal(err)
 	}
 
@@ -62,41 +62,41 @@ func TestBatchChangeResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	campaignAPIID := string(marshalBatchChangeID(campaign.ID))
+	batchChangeAPIID := string(marshalBatchChangeID(batchChange.ID))
 	namespaceAPIID := string(graphqlbackend.MarshalOrgID(orgID))
 	apiUser := &apitest.User{DatabaseID: userID, SiteAdmin: true}
-	wantCampaign := apitest.BatchChange{
-		ID:             campaignAPIID,
-		Name:           campaign.Name,
-		Description:    campaign.Description,
+	wantBatchChange := apitest.BatchChange{
+		ID:             batchChangeAPIID,
+		Name:           batchChange.Name,
+		Description:    batchChange.Description,
 		Namespace:      apitest.UserOrg{ID: namespaceAPIID, Name: orgName},
 		InitialApplier: apiUser,
 		LastApplier:    apiUser,
 		SpecCreator:    apiUser,
 		LastAppliedAt:  marshalDateTime(t, now),
-		URL:            fmt.Sprintf("/organizations/%s/batch-changes/%s", orgName, campaign.Name),
+		URL:            fmt.Sprintf("/organizations/%s/batch-changes/%s", orgName, batchChange.Name),
 		CreatedAt:      marshalDateTime(t, now),
 		UpdatedAt:      marshalDateTime(t, now),
 		// Not closed.
 		ClosedAt: "",
 	}
 
-	input := map[string]interface{}{"batchChange": campaignAPIID}
+	input := map[string]interface{}{"batchChange": batchChangeAPIID}
 	{
 		var response struct{ Node apitest.BatchChange }
 		apitest.MustExec(ctx, t, s, input, &response, queryBatchChange)
 
-		if diff := cmp.Diff(wantCampaign, response.Node); diff != "" {
+		if diff := cmp.Diff(wantBatchChange, response.Node); diff != "" {
 			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
 		}
 	}
 	// Test resolver by namespace and name
-	byNameInput := map[string]interface{}{"name": campaign.Name, "namespace": namespaceAPIID}
+	byNameInput := map[string]interface{}{"name": batchChange.Name, "namespace": namespaceAPIID}
 	{
 		var response struct{ BatchChange apitest.BatchChange }
 		apitest.MustExec(ctx, t, s, byNameInput, &response, queryBatchChangeByName)
 
-		if diff := cmp.Diff(wantCampaign, response.BatchChange); diff != "" {
+		if diff := cmp.Diff(wantBatchChange, response.BatchChange); diff != "" {
 			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
 		}
 	}
@@ -107,15 +107,15 @@ func TestBatchChangeResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	wantCampaign.InitialApplier = nil
-	wantCampaign.LastApplier = nil
-	wantCampaign.SpecCreator = nil
+	wantBatchChange.InitialApplier = nil
+	wantBatchChange.LastApplier = nil
+	wantBatchChange.SpecCreator = nil
 
 	{
 		var response struct{ Node apitest.BatchChange }
 		apitest.MustExec(ctx, t, s, input, &response, queryBatchChange)
 
-		if diff := cmp.Diff(wantCampaign, response.Node); diff != "" {
+		if diff := cmp.Diff(wantBatchChange, response.Node); diff != "" {
 			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
 		}
 	}
@@ -129,7 +129,7 @@ func TestBatchChangeResolver(t *testing.T) {
 		var response struct{ Node apitest.BatchChange }
 		apitest.MustExec(ctx, t, s, input, &response, queryBatchChange)
 
-		if diff := cmp.Diff(wantCampaign, response.Node); diff != "" {
+		if diff := cmp.Diff(wantBatchChange, response.Node); diff != "" {
 			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
 		}
 	}

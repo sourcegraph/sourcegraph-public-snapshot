@@ -181,7 +181,7 @@ func (e *executor) buildChangesetSource(repo *types.Repo, extSvc *types.External
 // doesn't have a credential configured for the code host, or the changeset
 // isn't owned by a campaign).
 func (e *executor) loadAuthenticator(ctx context.Context) (auth.Authenticator, error) {
-	if e.ch.OwnedByCampaignID == 0 {
+	if e.ch.OwnedByBatchChangeID == 0 {
 		// Unowned changesets are imported, and therefore don't need to use a user
 		// credential, since reconciliation isn't a mutating process.
 		return nil, nil
@@ -190,14 +190,14 @@ func (e *executor) loadAuthenticator(ctx context.Context) (auth.Authenticator, e
 	// If the changeset is owned by a campaign, we want to reconcile using
 	// the user's credentials, which means we need to know which user last
 	// applied the owning campaign. Let's go find out.
-	campaign, err := loadCampaign(ctx, e.tx, e.ch.OwnedByCampaignID)
+	batchChange, err := loadBatchChange(ctx, e.tx, e.ch.OwnedByBatchChangeID)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to load owning campaign")
+		return nil, errors.Wrap(err, "failed to load owning batch change")
 	}
 
 	cred, err := e.tx.UserCredentials().GetByScope(ctx, database.UserCredentialScope{
 		Domain:              database.UserCredentialDomainCampaigns,
-		UserID:              campaign.LastApplierID,
+		UserID:              batchChange.LastApplierID,
 		ExternalServiceType: e.repo.ExternalRepo.ServiceType,
 		ExternalServiceID:   e.repo.ExternalRepo.ServiceID,
 	})
@@ -207,9 +207,9 @@ func (e *executor) loadAuthenticator(ctx context.Context) (auth.Authenticator, e
 			// we can use the nil return from loadUserCredential() to fall
 			// back to the global credentials used for the code host. If
 			// not, then we need to error out.
-			user, err := database.UsersWith(e.tx).GetByID(ctx, campaign.LastApplierID)
+			user, err := database.UsersWith(e.tx).GetByID(ctx, batchChange.LastApplierID)
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to load user applying the campaign")
+				return nil, errors.Wrap(err, "failed to load user applying the batch change")
 			}
 
 			if user.SiteAdmin {
@@ -369,9 +369,9 @@ func (e *executor) reopenChangeset(ctx context.Context) (err error) {
 }
 
 func (e *executor) detachChangeset() {
-	for _, assoc := range e.ch.Campaigns {
+	for _, assoc := range e.ch.BatchChanges {
 		if assoc.Detach {
-			e.ch.RemoveCampaignID(assoc.CampaignID)
+			e.ch.RemoveBatchChangeID(assoc.BatchChangeID)
 		}
 	}
 }
@@ -630,16 +630,16 @@ func setBasicAuth(u *url.URL, extSvcType, username, password string) error {
 	return nil
 }
 
-type getCampaigner interface {
-	GetCampaign(ctx context.Context, opts store.GetCampaignOpts) (*batches.Campaign, error)
+type getBatchChanger interface {
+	GetBatchChange(ctx context.Context, opts store.CountBatchChangeOpts) (*batches.BatchChange, error)
 }
 
-func loadCampaign(ctx context.Context, tx getCampaigner, id int64) (*batches.Campaign, error) {
+func loadBatchChange(ctx context.Context, tx getBatchChanger, id int64) (*batches.BatchChange, error) {
 	if id == 0 {
 		return nil, errors.New("changeset has no owning campaign")
 	}
 
-	campaign, err := tx.GetCampaign(ctx, store.GetCampaignOpts{ID: id})
+	campaign, err := tx.GetBatchChange(ctx, store.CountBatchChangeOpts{ID: id})
 	if err != nil && err != store.ErrNoResults {
 		return nil, errors.Wrapf(err, "retrieving owning campaign: %d", id)
 	} else if campaign == nil {
@@ -653,8 +653,8 @@ type getNamespacer interface {
 	GetByID(ctx context.Context, orgID, userID int32) (*database.Namespace, error)
 }
 
-func decorateChangesetBody(ctx context.Context, tx getCampaigner, nsStore getNamespacer, cs *repos.Changeset) error {
-	campaign, err := loadCampaign(ctx, tx, cs.OwnedByCampaignID)
+func decorateChangesetBody(ctx context.Context, tx getBatchChanger, nsStore getNamespacer, cs *repos.Changeset) error {
+	campaign, err := loadBatchChange(ctx, tx, cs.OwnedByBatchChangeID)
 	if err != nil {
 		return errors.Wrap(err, "failed to load campaign")
 	}
@@ -684,7 +684,7 @@ var internalClient interface {
 	ExternalURL(context.Context) (string, error)
 } = api.InternalClient
 
-func campaignURL(ctx context.Context, ns *database.Namespace, c *batches.Campaign) (string, error) {
+func campaignURL(ctx context.Context, ns *database.Namespace, c *batches.BatchChange) (string, error) {
 	// To build the absolute URL, we need to know where Sourcegraph is!
 	extStr, err := internalClient.ExternalURL(ctx)
 	if err != nil {

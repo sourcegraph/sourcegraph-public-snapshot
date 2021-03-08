@@ -42,23 +42,23 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	spec := &batches.CampaignSpec{
+	spec := &batches.BatchSpec{
 		NamespaceUserID: userID,
 		UserID:          userID,
 	}
-	if err := cstore.CreateCampaignSpec(ctx, spec); err != nil {
+	if err := cstore.CreateBatchSpec(ctx, spec); err != nil {
 		t.Fatal(err)
 	}
 
-	campaign := &batches.Campaign{
+	campaign := &batches.BatchChange{
 		Name:             "my-unique-name",
 		NamespaceUserID:  userID,
 		InitialApplierID: userID,
 		LastApplierID:    userID,
 		LastAppliedAt:    time.Now(),
-		CampaignSpecID:   spec.ID,
+		BatchSpecID:      spec.ID,
 	}
-	if err := cstore.CreateCampaign(ctx, campaign); err != nil {
+	if err := cstore.CreateBatchChange(ctx, campaign); err != nil {
 		t.Fatal(err)
 	}
 

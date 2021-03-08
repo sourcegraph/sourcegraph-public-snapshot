@@ -92,9 +92,9 @@ func (r *ChangesetRewirer) createChangesetForSpec(repo *types.Repo, spec *batche
 		RepoID:              spec.RepoID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
 
-		Campaigns:         []batches.CampaignAssoc{{CampaignID: r.campaignID}},
-		OwnedByCampaignID: r.campaignID,
-		CurrentSpecID:     spec.ID,
+		BatchChanges:         []batches.BatchChangeAssoc{{BatchChangeID: r.campaignID}},
+		OwnedByBatchChangeID: r.campaignID,
+		CurrentSpecID:        spec.ID,
 
 		PublicationState: batches.ChangesetPublicationStateUnpublished,
 		ReconcilerState:  batches.ReconcilerStateQueued,
@@ -127,8 +127,8 @@ func (r *ChangesetRewirer) createTrackingChangeset(repo *types.Repo, externalID 
 		RepoID:              repo.ID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
 
-		Campaigns:  []batches.CampaignAssoc{{CampaignID: r.campaignID}},
-		ExternalID: externalID,
+		BatchChanges: []batches.BatchChangeAssoc{{BatchChangeID: r.campaignID}},
+		ExternalID:   externalID,
 		// Note: no CurrentSpecID, because we merely track this one
 
 		PublicationState: batches.ChangesetPublicationStateUnpublished,
@@ -146,14 +146,14 @@ func (r *ChangesetRewirer) attachTrackingChangeset(changeset *batches.Changeset)
 	changeset.Attach(r.campaignID)
 
 	// If it's errored and not created by another campaign, we re-enqueue it.
-	if changeset.OwnedByCampaignID == 0 && (changeset.ReconcilerState == batches.ReconcilerStateErrored || changeset.ReconcilerState == batches.ReconcilerStateFailed) {
+	if changeset.OwnedByBatchChangeID == 0 && (changeset.ReconcilerState == batches.ReconcilerStateErrored || changeset.ReconcilerState == batches.ReconcilerStateFailed) {
 		changeset.ResetQueued()
 	}
 }
 
 func (r *ChangesetRewirer) closeChangeset(changeset *batches.Changeset) {
 	reset := false
-	if changeset.CurrentSpecID != 0 && changeset.OwnedByCampaignID == r.campaignID {
+	if changeset.CurrentSpecID != 0 && changeset.OwnedByBatchChangeID == r.campaignID {
 		// If we have a current spec ID and the changeset was created by
 		// _this_ campaign that means we should detach and close it.
 		if changeset.Published() {

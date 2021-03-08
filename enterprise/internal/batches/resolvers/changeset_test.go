@@ -153,23 +153,23 @@ func TestChangesetResolver(t *testing.T) {
 		ReconcilerState:     batches.ReconcilerStateQueued,
 	})
 
-	spec := &batches.CampaignSpec{
+	spec := &batches.BatchSpec{
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
-	if err := cstore.CreateCampaignSpec(ctx, spec); err != nil {
+	if err := cstore.CreateBatchSpec(ctx, spec); err != nil {
 		t.Fatal(err)
 	}
 
-	campaign := &batches.Campaign{
+	campaign := &batches.BatchChange{
 		Name:             "my-unique-name",
 		NamespaceUserID:  userID,
 		InitialApplierID: userID,
-		CampaignSpecID:   spec.ID,
+		BatchSpecID:      spec.ID,
 		LastApplierID:    userID,
 		LastAppliedAt:    time.Now(),
 	}
-	if err := cstore.CreateCampaign(ctx, campaign); err != nil {
+	if err := cstore.CreateBatchChange(ctx, campaign); err != nil {
 		t.Fatal(err)
 	}
 	// Associate the changeset with a campaign, so it's considered in syncer logic.

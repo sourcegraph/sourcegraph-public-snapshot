@@ -8,10 +8,10 @@ import (
 )
 
 // RegisterMigrations registers all currently implemented out of band migrations
-// by campaigns with the migration runner.
+// by batch changes with the migration runner.
 func RegisterMigrations(cstore *store.Store, outOfBandMigrationRunner *oobmigration.Runner) error {
 	migrations := map[int]oobmigration.Migrator{
-		CampaignsSSHMigrationID: &sshMigrator{store: cstore},
+		BatchChangesSSHMigrationID: &sshMigrator{store: cstore},
 	}
 
 	for id, migrator := range migrations {

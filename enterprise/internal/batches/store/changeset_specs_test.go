@@ -410,23 +410,23 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 		}
 
 		for _, tc := range tests {
-			campaignSpec := &batches.CampaignSpec{UserID: 4567, NamespaceUserID: 4567}
+			campaignSpec := &batches.BatchSpec{UserID: 4567, NamespaceUserID: 4567}
 
 			if tc.hasCampaignSpec {
-				if err := s.CreateCampaignSpec(ctx, campaignSpec); err != nil {
+				if err := s.CreateBatchSpec(ctx, campaignSpec); err != nil {
 					t.Fatal(err)
 				}
 
 				if tc.campaignSpecApplied {
-					campaign := &batches.Campaign{
+					campaign := &batches.BatchChange{
 						Name:             fmt.Sprintf("campaign for spec %d", campaignSpec.ID),
-						CampaignSpecID:   campaignSpec.ID,
+						BatchSpecID:      campaignSpec.ID,
 						InitialApplierID: campaignSpec.UserID,
 						NamespaceUserID:  campaignSpec.NamespaceUserID,
 						LastApplierID:    campaignSpec.UserID,
 						LastAppliedAt:    time.Now(),
 					}
-					if err := s.CreateCampaign(ctx, campaign); err != nil {
+					if err := s.CreateBatchChange(ctx, campaign); err != nil {
 						t.Fatal(err)
 					}
 				}
@@ -487,7 +487,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 	t.Run("GetRewirerMappings", func(t *testing.T) {
 		// Create some test data
 		user := ct.CreateTestUser(t, s.DB(), true)
-		campaignSpec := ct.CreateCampaignSpec(t, ctx, s, "get-rewirer-mappings", user.ID)
+		campaignSpec := ct.CreateBatchSpec(t, ctx, s, "get-rewirer-mappings", user.ID)
 		var mappings RewirerMappings = make(RewirerMappings, 3)
 		changesetSpecIDs := make([]int64, 0, cap(mappings))
 		for i := 0; i < cap(mappings); i++ {
@@ -693,11 +693,11 @@ func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *S
 	user := ct.CreateTestUser(t, s.DB(), false)
 
 	// Next, we need old and new campaign specs.
-	oldCampaignSpec := ct.CreateCampaignSpec(t, ctx, s, "old", user.ID)
-	newCampaignSpec := ct.CreateCampaignSpec(t, ctx, s, "new", user.ID)
+	oldCampaignSpec := ct.CreateBatchSpec(t, ctx, s, "old", user.ID)
+	newCampaignSpec := ct.CreateBatchSpec(t, ctx, s, "new", user.ID)
 
 	// That's enough to create a campaign, so let's do that.
-	campaign := ct.CreateCampaign(t, ctx, s, "text", user.ID, oldCampaignSpec.ID)
+	campaign := ct.CreateBatchChange(t, ctx, s, "text", user.ID, oldCampaignSpec.ID)
 
 	// Now for some changeset specs.
 	var (
@@ -787,15 +787,15 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 	user := ct.CreateTestUser(t, s.DB(), false)
 
 	// Next, we need old and new campaign specs.
-	oldCampaignSpec := ct.CreateCampaignSpec(t, ctx, s, "old", user.ID)
-	newCampaignSpec := ct.CreateCampaignSpec(t, ctx, s, "new", user.ID)
+	oldCampaignSpec := ct.CreateBatchSpec(t, ctx, s, "old", user.ID)
+	newCampaignSpec := ct.CreateBatchSpec(t, ctx, s, "new", user.ID)
 
 	// That's enough to create a campaign, so let's do that.
-	campaign := ct.CreateCampaign(t, ctx, s, "text", user.ID, oldCampaignSpec.ID)
+	campaign := ct.CreateBatchChange(t, ctx, s, "text", user.ID, oldCampaignSpec.ID)
 
 	// Now we'll add three old and new pairs of changeset specs. Two will have
 	// matching statuses, and a different two will have matching names.
-	createChangesetSpecPair := func(t *testing.T, ctx context.Context, s *Store, oldCampaignSpec, newCampaignSpec *batches.CampaignSpec, opts ct.TestSpecOpts) (old, new *batches.ChangesetSpec) {
+	createChangesetSpecPair := func(t *testing.T, ctx context.Context, s *Store, oldCampaignSpec, newCampaignSpec *batches.BatchSpec, opts ct.TestSpecOpts) (old, new *batches.ChangesetSpec) {
 		opts.CampaignSpec = oldCampaignSpec.ID
 		old = ct.CreateChangesetSpec(t, ctx, s, opts)
 
@@ -952,10 +952,10 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 	user := ct.CreateTestUser(t, s.DB(), false)
 
 	// Next, we need a campaign spec.
-	oldCampaignSpec := ct.CreateCampaignSpec(t, ctx, s, "text", user.ID)
+	oldCampaignSpec := ct.CreateBatchSpec(t, ctx, s, "text", user.ID)
 
 	// That's enough to create a campaign, so let's do that.
-	campaign := ct.CreateCampaign(t, ctx, s, "text", user.ID, oldCampaignSpec.ID)
+	campaign := ct.CreateBatchChange(t, ctx, s, "text", user.ID, oldCampaignSpec.ID)
 
 	// Now we can create the changeset specs.
 	oldTrackedGitHubSpec := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
@@ -1033,7 +1033,7 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 		},
 	})
 	// Cool. Now let's set up a new campaign spec.
-	newCampaignSpec := ct.CreateCampaignSpec(t, ctx, s, "text", user.ID)
+	newCampaignSpec := ct.CreateBatchSpec(t, ctx, s, "text", user.ID)
 
 	// And we need all new changeset specs to go into that spec.
 	newTrackedGitHub := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{

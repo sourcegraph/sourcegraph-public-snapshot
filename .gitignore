@@ -161,5 +161,3 @@ storybook-static/
 
 # sonarqube
 .scannerwork
-
-depgraph.cache

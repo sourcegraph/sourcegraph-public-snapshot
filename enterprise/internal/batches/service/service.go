@@ -50,7 +50,7 @@ func (s *Service) WithStore(store *store.Store) *Service {
 	return &Service{store: store, sourcer: s.sourcer, clock: s.clock}
 }
 
-type CreateCampaignSpecOpts struct {
+type CreateBatchSpecOpts struct {
 	RawSpec string `json:"raw_spec"`
 
 	NamespaceUserID int32 `json:"namespace_user_id"`
@@ -59,16 +59,16 @@ type CreateCampaignSpecOpts struct {
 	ChangesetSpecRandIDs []string `json:"changeset_spec_rand_ids"`
 }
 
-// CreateCampaignSpec creates the CampaignSpec.
-func (s *Service) CreateCampaignSpec(ctx context.Context, opts CreateCampaignSpecOpts) (spec *batches.CampaignSpec, err error) {
+// CreateBatchSpec creates the BatchSpec.
+func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts) (spec *batches.BatchSpec, err error) {
 	actor := actor.FromContext(ctx)
-	tr, ctx := trace.New(ctx, "Service.CreateCampaignSpec", fmt.Sprintf("Actor %s", actor))
+	tr, ctx := trace.New(ctx, "Service.CreateBatchSpec", fmt.Sprintf("Actor %s", actor))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	spec, err = batches.NewCampaignSpecFromRaw(opts.RawSpec)
+	spec, err = batches.NewBatchSpecFromRaw(opts.RawSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func (s *Service) CreateCampaignSpec(ctx context.Context, opts CreateCampaignSpe
 	spec.UserID = actor.UID
 
 	if len(opts.ChangesetSpecRandIDs) == 0 {
-		return spec, s.store.CreateCampaignSpec(ctx, spec)
+		return spec, s.store.CreateBatchSpec(ctx, spec)
 	}
 
 	listOpts := store.ListChangesetSpecsOpts{RandIDs: opts.ChangesetSpecRandIDs}
@@ -122,7 +122,7 @@ func (s *Service) CreateCampaignSpec(ctx context.Context, opts CreateCampaignSpe
 	}
 	defer func() { err = tx.Done(err) }()
 
-	if err := tx.CreateCampaignSpec(ctx, spec); err != nil {
+	if err := tx.CreateBatchSpec(ctx, spec); err != nil {
 		return nil, err
 	}
 
@@ -164,7 +164,7 @@ func (s *Service) CreateChangesetSpec(ctx context.Context, rawSpec string, userI
 	return spec, s.store.CreateChangesetSpec(ctx, spec)
 }
 
-// changesetSpecNotFoundErr is returned by CreateCampaignSpec if a
+// changesetSpecNotFoundErr is returned by CreateBatchSpec if a
 // ChangesetSpec with the given RandID doesn't exist.
 // It fulfills the interface required by errcode.IsNotFound.
 type changesetSpecNotFoundErr struct {
@@ -180,38 +180,38 @@ func (e *changesetSpecNotFoundErr) Error() string {
 
 func (e *changesetSpecNotFoundErr) NotFound() bool { return true }
 
-// GetCampaignMatchingCampaignSpec returns the Campaign that the CampaignSpec
-// applies to, if that Campaign already exists.
+// GetBatchChangeMatchingBatchSpec returns the batch change that the BatchSpec
+// applies to, if that BatchChange already exists.
 // If it doesn't exist yet, both return values are nil.
 // It accepts a *store.Store so that it can be used inside a transaction.
-func (s *Service) GetCampaignMatchingCampaignSpec(ctx context.Context, spec *batches.CampaignSpec) (*batches.Campaign, error) {
-	opts := store.GetCampaignOpts{
+func (s *Service) GetBatchChangeMatchingBatchSpec(ctx context.Context, spec *batches.BatchSpec) (*batches.BatchChange, error) {
+	opts := store.CountBatchChangeOpts{
 		Name:            spec.Spec.Name,
 		NamespaceUserID: spec.NamespaceUserID,
 		NamespaceOrgID:  spec.NamespaceOrgID,
 	}
 
-	campaign, err := s.store.GetCampaign(ctx, opts)
+	batchChange, err := s.store.GetBatchChange(ctx, opts)
 	if err != nil {
 		if err != store.ErrNoResults {
 			return nil, err
 		}
 		err = nil
 	}
-	return campaign, err
+	return batchChange, err
 }
 
-// GetNewestCampaignSpec returns the newest campaign spec that matches the given
+// GetNewestBatchSpec returns the newest batch spec that matches the given
 // spec's namespace and name and is owned by the given user, or nil if none is found.
-func (s *Service) GetNewestCampaignSpec(ctx context.Context, tx *store.Store, spec *batches.CampaignSpec, userID int32) (*batches.CampaignSpec, error) {
-	opts := store.GetNewestCampaignSpecOpts{
+func (s *Service) GetNewestBatchSpec(ctx context.Context, tx *store.Store, spec *batches.BatchSpec, userID int32) (*batches.BatchSpec, error) {
+	opts := store.GetNewestBatchSpecOpts{
 		UserID:          userID,
 		NamespaceUserID: spec.NamespaceUserID,
 		NamespaceOrgID:  spec.NamespaceOrgID,
 		Name:            spec.Spec.Name,
 	}
 
-	newest, err := tx.GetNewestCampaignSpec(ctx, opts)
+	newest, err := tx.GetNewestBatchSpec(ctx, opts)
 	if err != nil {
 		if err != store.ErrNoResults {
 			return nil, err
@@ -222,8 +222,8 @@ func (s *Service) GetNewestCampaignSpec(ctx context.Context, tx *store.Store, sp
 	return newest, nil
 }
 
-type MoveCampaignOpts struct {
-	CampaignID int64
+type MoveBatchChangeOpts struct {
+	BatchChangeID int64
 
 	NewName string
 
@@ -231,20 +231,20 @@ type MoveCampaignOpts struct {
 	NewNamespaceOrgID  int32
 }
 
-func (o MoveCampaignOpts) String() string {
+func (o MoveBatchChangeOpts) String() string {
 	return fmt.Sprintf(
-		"CampaignID %d, NewName %q, NewNamespaceUserID %d, NewNamespaceOrgID %d",
-		o.CampaignID,
+		"BatchChangeID %d, NewName %q, NewNamespaceUserID %d, NewNamespaceOrgID %d",
+		o.BatchChangeID,
 		o.NewName,
 		o.NewNamespaceUserID,
 		o.NewNamespaceOrgID,
 	)
 }
 
-// MoveCampaign moves the campaign from one namespace to another and/or renames
-// the campaign.
-func (s *Service) MoveCampaign(ctx context.Context, opts MoveCampaignOpts) (campaign *batches.Campaign, err error) {
-	tr, ctx := trace.New(ctx, "Service.MoveCampaign", opts.String())
+// MoveBatchChange moves the batch change from one namespace to another and/or renames
+// the batch change.
+func (s *Service) MoveBatchChange(ctx context.Context, opts MoveBatchChangeOpts) (batchChange *batches.BatchChange, err error) {
+	tr, ctx := trace.New(ctx, "Service.MoveBatchChange", opts.String())
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -256,13 +256,13 @@ func (s *Service) MoveCampaign(ctx context.Context, opts MoveCampaignOpts) (camp
 	}
 	defer func() { err = tx.Done(err) }()
 
-	campaign, err = tx.GetCampaign(ctx, store.GetCampaignOpts{ID: opts.CampaignID})
+	batchChange, err = tx.GetBatchChange(ctx, store.CountBatchChangeOpts{ID: opts.BatchChangeID})
 	if err != nil {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only the Author of the campaign can move it.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, campaign.InitialApplierID); err != nil {
+	// 🚨 SECURITY: Only the Author of the batch change can move it.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, batchChange.InitialApplierID); err != nil {
 		return nil, err
 	}
 	// Check if current user has access to target namespace if set.
@@ -274,47 +274,39 @@ func (s *Service) MoveCampaign(ctx context.Context, opts MoveCampaignOpts) (camp
 	}
 
 	if opts.NewNamespaceOrgID != 0 {
-		campaign.NamespaceOrgID = opts.NewNamespaceOrgID
-		campaign.NamespaceUserID = 0
+		batchChange.NamespaceOrgID = opts.NewNamespaceOrgID
+		batchChange.NamespaceUserID = 0
 	} else if opts.NewNamespaceUserID != 0 {
-		campaign.NamespaceUserID = opts.NewNamespaceUserID
-		campaign.NamespaceOrgID = 0
+		batchChange.NamespaceUserID = opts.NewNamespaceUserID
+		batchChange.NamespaceOrgID = 0
 	}
 
 	if opts.NewName != "" {
-		campaign.Name = opts.NewName
+		batchChange.Name = opts.NewName
 	}
 
-	return campaign, tx.UpdateCampaign(ctx, campaign)
+	return batchChange, tx.UpdateBatchChange(ctx, batchChange)
 }
 
-// TODO(campaigns-deprecation): this needs to be renamed, but cast to
-// "EnsureCampaignFailed" if the applycampaign mutation was used.
-//
-// ErrEnsureCampaignFailed is returned by ApplyCampaign when a ensureCampaignID
-// is provided but a campaign with the name specified the campaignSpec exists
-// in the given namespace but has a different ID.
-var ErrEnsureCampaignFailed = errors.New("a campaign in the given namespace and with the given name exists but does not match the given ID")
-
-// CloseCampaign closes the Campaign with the given ID if it has not been closed yet.
-func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets bool) (campaign *batches.Campaign, err error) {
-	traceTitle := fmt.Sprintf("campaign: %d, closeChangesets: %t", id, closeChangesets)
-	tr, ctx := trace.New(ctx, "service.CloseCampaign", traceTitle)
+// CloseBatchChange closes the BatchChange with the given ID if it has not been closed yet.
+func (s *Service) CloseBatchChange(ctx context.Context, id int64, closeChangesets bool) (batchChange *batches.BatchChange, err error) {
+	traceTitle := fmt.Sprintf("batchChange: %d, closeChangesets: %t", id, closeChangesets)
+	tr, ctx := trace.New(ctx, "service.CloseBatchChange", traceTitle)
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	campaign, err = s.store.GetCampaign(ctx, store.GetCampaignOpts{ID: id})
+	batchChange, err = s.store.GetBatchChange(ctx, store.CountBatchChangeOpts{ID: id})
 	if err != nil {
-		return nil, errors.Wrap(err, "getting campaign")
+		return nil, errors.Wrap(err, "getting batch change")
 	}
 
-	if campaign.Closed() {
-		return campaign, nil
+	if batchChange.Closed() {
+		return batchChange, nil
 	}
 
-	if err := backend.CheckSiteAdminOrSameUser(ctx, campaign.InitialApplierID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, batchChange.InitialApplierID); err != nil {
 		return nil, err
 	}
 
@@ -324,13 +316,13 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 	}
 	defer func() { err = tx.Done(err) }()
 
-	campaign.ClosedAt = s.clock()
-	if err := tx.UpdateCampaign(ctx, campaign); err != nil {
+	batchChange.ClosedAt = s.clock()
+	if err := tx.UpdateBatchChange(ctx, batchChange); err != nil {
 		return nil, err
 	}
 
 	if !closeChangesets {
-		return campaign, nil
+		return batchChange, nil
 	}
 
 	// At this point we don't know which changesets have ExternalStateOpen,
@@ -338,33 +330,33 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 	// reconciler.
 	// So enqueue all, except the ones that are completed and closed/merged,
 	// for closing. If after being processed they're not open, it'll be a noop.
-	if err := tx.EnqueueChangesetsToClose(ctx, campaign.ID); err != nil {
+	if err := tx.EnqueueChangesetsToClose(ctx, batchChange.ID); err != nil {
 		return nil, err
 	}
 
-	return campaign, nil
+	return batchChange, nil
 }
 
-// DeleteCampaign deletes the Campaign with the given ID if it hasn't been
+// DeleteBatchChange deletes the BatchChange with the given ID if it hasn't been
 // deleted yet.
-func (s *Service) DeleteCampaign(ctx context.Context, id int64) (err error) {
-	traceTitle := fmt.Sprintf("campaign: %d", id)
-	tr, ctx := trace.New(ctx, "service.DeleteCampaign", traceTitle)
+func (s *Service) DeleteBatchChange(ctx context.Context, id int64) (err error) {
+	traceTitle := fmt.Sprintf("BatchChange: %d", id)
+	tr, ctx := trace.New(ctx, "service.BatchChange", traceTitle)
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	campaign, err := s.store.GetCampaign(ctx, store.GetCampaignOpts{ID: id})
+	batchChange, err := s.store.GetBatchChange(ctx, store.CountBatchChangeOpts{ID: id})
 	if err != nil {
 		return err
 	}
 
-	if err := backend.CheckSiteAdminOrSameUser(ctx, campaign.InitialApplierID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, batchChange.InitialApplierID); err != nil {
 		return err
 	}
 
-	return s.store.DeleteCampaign(ctx, id)
+	return s.store.DeleteBatchChange(ctx, id)
 }
 
 // EnqueueChangesetSync loads the given changeset from the database, checks
@@ -390,7 +382,7 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 		return err
 	}
 
-	campaigns, _, err := s.store.ListCampaigns(ctx, store.ListCampaignsOpts{ChangesetID: id})
+	batchChanges, _, err := s.store.ListBatchChanges(ctx, store.ListBatchChangesOpts{ChangesetID: id})
 	if err != nil {
 		return err
 	}
@@ -401,7 +393,7 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 		hasAdminRights bool
 	)
 
-	for _, c := range campaigns {
+	for _, c := range batchChanges {
 		err := backend.CheckSiteAdminOrSameUser(ctx, c.InitialApplierID)
 		if err != nil {
 			authErr = err
@@ -445,7 +437,7 @@ func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *
 		return nil, nil, err
 	}
 
-	attachedCampaigns, _, err := s.store.ListCampaigns(ctx, store.ListCampaignsOpts{ChangesetID: id})
+	attachedBatchChanges, _, err := s.store.ListBatchChanges(ctx, store.ListBatchChangesOpts{ChangesetID: id})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -456,7 +448,7 @@ func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *
 		hasAdminRights bool
 	)
 
-	for _, c := range attachedCampaigns {
+	for _, c := range attachedBatchChanges {
 		err := backend.CheckSiteAdminOrSameUser(ctx, c.InitialApplierID)
 		if err != nil {
 			authErr = err

@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
-func TestServiceApplyCampaign(t *testing.T) {
+func TestServiceApplyBatchChange(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -42,9 +42,9 @@ func TestServiceApplyCampaign(t *testing.T) {
 	t.Run("campaignSpec without changesetSpecs", func(t *testing.T) {
 		t.Run("new campaign", func(t *testing.T) {
 			ct.TruncateTables(t, db, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
-			campaignSpec := ct.CreateCampaignSpec(t, ctx, store, "campaign1", admin.ID)
-			campaign, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
-				CampaignSpecRandID: campaignSpec.RandID,
+			campaignSpec := ct.CreateBatchSpec(t, ctx, store, "campaign1", admin.ID)
+			campaign, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
+				BatchSpecRandID: campaignSpec.RandID,
 			})
 			if err != nil {
 				t.Fatal(err)
@@ -54,14 +54,14 @@ func TestServiceApplyCampaign(t *testing.T) {
 				t.Fatalf("campaign ID is 0")
 			}
 
-			want := &batches.Campaign{
+			want := &batches.BatchChange{
 				Name:             campaignSpec.Spec.Name,
 				Description:      campaignSpec.Spec.Description,
 				InitialApplierID: admin.ID,
 				LastApplierID:    admin.ID,
 				LastAppliedAt:    now,
 				NamespaceUserID:  campaignSpec.NamespaceUserID,
-				CampaignSpecID:   campaignSpec.ID,
+				BatchSpecID:      campaignSpec.ID,
 
 				// Ignore these fields
 				ID:        campaign.ID,
@@ -76,12 +76,12 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 		t.Run("existing campaign", func(t *testing.T) {
 			ct.TruncateTables(t, db, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
-			campaignSpec := ct.CreateCampaignSpec(t, ctx, store, "campaign2", admin.ID)
-			campaign := ct.CreateCampaign(t, ctx, store, "campaign2", admin.ID, campaignSpec.ID)
+			campaignSpec := ct.CreateBatchSpec(t, ctx, store, "campaign2", admin.ID)
+			campaign := ct.CreateBatchChange(t, ctx, store, "campaign2", admin.ID, campaignSpec.ID)
 
 			t.Run("apply same campaignSpec", func(t *testing.T) {
-				campaign2, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
-					CampaignSpecRandID: campaignSpec.RandID,
+				campaign2, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
+					BatchSpecRandID: campaignSpec.RandID,
 				})
 				if err != nil {
 					t.Fatal(err)
@@ -93,19 +93,19 @@ func TestServiceApplyCampaign(t *testing.T) {
 			})
 
 			t.Run("apply same campaignSpec with FailIfExists", func(t *testing.T) {
-				_, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
-					CampaignSpecRandID:   campaignSpec.RandID,
-					FailIfCampaignExists: true,
+				_, err := svc.ApplyBatchChange(ctx, ApplyBatchChangeOpts{
+					BatchSpecRandID:         campaignSpec.RandID,
+					FailIfBatchChangeExists: true,
 				})
-				if err != ErrMatchingCampaignExists {
-					t.Fatalf("unexpected error. want=%s, got=%s", ErrMatchingCampaignExists, err)
+				if err != ErrMatchingBatchChangeExists {
+					t.Fatalf("unexpected error. want=%s, got=%s", ErrMatchingBatchChangeExists, err)
 				}
 			})
 
 			t.Run("apply campaign spec with same name", func(t *testing.T) {
-				campaignSpec2 := ct.CreateCampaignSpec(t, ctx, store, "campaign2", admin.ID)
-				campaign2, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
-					CampaignSpecRandID: campaignSpec2.RandID,
+				campaignSpec2 := ct.CreateBatchSpec(t, ctx, store, "campaign2", admin.ID)
+				campaign2, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
+					BatchSpecRandID: campaignSpec2.RandID,
 				})
 				if err != nil {
 					t.Fatal(err)
@@ -117,8 +117,8 @@ func TestServiceApplyCampaign(t *testing.T) {
 			})
 
 			t.Run("apply campaign spec with same name but different current user", func(t *testing.T) {
-				campaignSpec := ct.CreateCampaignSpec(t, ctx, store, "created-by-user", user.ID)
-				campaign := ct.CreateCampaign(t, ctx, store, "created-by-user", user.ID, campaignSpec.ID)
+				campaignSpec := ct.CreateBatchSpec(t, ctx, store, "created-by-user", user.ID)
+				campaign := ct.CreateBatchChange(t, ctx, store, "created-by-user", user.ID, campaignSpec.ID)
 
 				if have, want := campaign.InitialApplierID, user.ID; have != want {
 					t.Fatalf("campaign InitialApplierID is wrong. want=%d, have=%d", want, have)
@@ -128,9 +128,9 @@ func TestServiceApplyCampaign(t *testing.T) {
 					t.Fatalf("campaign LastApplierID is wrong. want=%d, have=%d", want, have)
 				}
 
-				campaignSpec2 := ct.CreateCampaignSpec(t, ctx, store, "created-by-user", user.ID)
-				campaign2, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
-					CampaignSpecRandID: campaignSpec2.RandID,
+				campaignSpec2 := ct.CreateBatchSpec(t, ctx, store, "created-by-user", user.ID)
+				campaign2, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
+					BatchSpecRandID: campaignSpec2.RandID,
 				})
 				if err != nil {
 					t.Fatal(err)
@@ -151,10 +151,10 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 			t.Run("apply campaign spec with same name but different namespace", func(t *testing.T) {
 				user2 := ct.CreateTestUser(t, db, false)
-				campaignSpec2 := ct.CreateCampaignSpec(t, ctx, store, "campaign2", user2.ID)
+				campaignSpec2 := ct.CreateBatchSpec(t, ctx, store, "campaign2", user2.ID)
 
-				campaign2, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
-					CampaignSpecRandID: campaignSpec2.RandID,
+				campaign2, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
+					BatchSpecRandID: campaignSpec2.RandID,
 				})
 				if err != nil {
 					t.Fatal(err)
@@ -170,11 +170,11 @@ func TestServiceApplyCampaign(t *testing.T) {
 			})
 
 			t.Run("campaign spec with same name and same ensureCampaignID", func(t *testing.T) {
-				campaignSpec2 := ct.CreateCampaignSpec(t, ctx, store, "campaign2", admin.ID)
+				campaignSpec2 := ct.CreateBatchSpec(t, ctx, store, "campaign2", admin.ID)
 
-				campaign2, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
-					CampaignSpecRandID: campaignSpec2.RandID,
-					EnsureCampaignID:   campaign.ID,
+				campaign2, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
+					BatchSpecRandID:     campaignSpec2.RandID,
+					EnsureBatchChangeID: campaign.ID,
 				})
 				if err != nil {
 					t.Fatal(err)
@@ -185,13 +185,13 @@ func TestServiceApplyCampaign(t *testing.T) {
 			})
 
 			t.Run("campaign spec with same name but different ensureCampaignID", func(t *testing.T) {
-				campaignSpec2 := ct.CreateCampaignSpec(t, ctx, store, "campaign2", admin.ID)
+				campaignSpec2 := ct.CreateBatchSpec(t, ctx, store, "campaign2", admin.ID)
 
-				_, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
-					CampaignSpecRandID: campaignSpec2.RandID,
-					EnsureCampaignID:   campaign.ID + 999,
+				_, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
+					BatchSpecRandID:     campaignSpec2.RandID,
+					EnsureBatchChangeID: campaign.ID + 999,
 				})
-				if err != ErrEnsureCampaignFailed {
+				if err != ErrEnsureBatchChangeFailed {
 					t.Fatalf("wrong error: %s", err)
 				}
 			})
@@ -204,7 +204,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 	t.Run("campaignSpec with changesetSpecs", func(t *testing.T) {
 		t.Run("new campaign", func(t *testing.T) {
 			ct.TruncateTables(t, db, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
-			campaignSpec := ct.CreateCampaignSpec(t, ctx, store, "campaign3", admin.ID)
+			campaignSpec := ct.CreateBatchSpec(t, ctx, store, "campaign3", admin.ID)
 
 			spec1 := ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
 				User:         admin.ID,
@@ -252,7 +252,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			// First we create a campaignSpec and apply it, so that we have
 			// changesets and changesetSpecs in the database, wired up
 			// correctly.
-			campaignSpec1 := ct.CreateCampaignSpec(t, ctx, store, "campaign4", admin.ID)
+			campaignSpec1 := ct.CreateBatchSpec(t, ctx, store, "campaign4", admin.ID)
 
 			ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
 				User:         admin.ID,
@@ -287,7 +287,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 			// Now we create another campaign spec with the same campaign name
 			// and namespace.
-			campaignSpec2 := ct.CreateCampaignSpec(t, ctx, store, "campaign4", admin.ID)
+			campaignSpec2 := ct.CreateBatchSpec(t, ctx, store, "campaign4", admin.ID)
 
 			// Same
 			spec1 := ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
@@ -425,7 +425,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 		t.Run("campaign tracking changesets owned by another campaign", func(t *testing.T) {
 			ct.TruncateTables(t, db, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
-			campaignSpec1 := ct.CreateCampaignSpec(t, ctx, store, "owner-campaign", admin.ID)
+			campaignSpec1 := ct.CreateBatchSpec(t, ctx, store, "owner-campaign", admin.ID)
 
 			oldSpec1 := ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
 				User:         admin.ID,
@@ -442,7 +442,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			ct.SetChangesetPublished(t, ctx, store, c, "88888", "refs/heads/repo-0-branch-0")
 
 			// This other campaign tracks the changeset created by the first one
-			campaignSpec2 := ct.CreateCampaignSpec(t, ctx, store, "tracking-campaign", admin.ID)
+			campaignSpec2 := ct.CreateBatchSpec(t, ctx, store, "tracking-campaign", admin.ID)
 			ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
 				User:         admin.ID,
 				Repo:         c.RepoID,
@@ -468,7 +468,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			ct.AssertChangeset(t, c2, trackedChangesetAssertions)
 
 			// Now try to apply a new spec that wants to modify the formerly tracked changeset.
-			campaignSpec3 := ct.CreateCampaignSpec(t, ctx, store, "tracking-campaign", admin.ID)
+			campaignSpec3 := ct.CreateBatchSpec(t, ctx, store, "tracking-campaign", admin.ID)
 
 			spec3 := ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
 				User:         admin.ID,
@@ -500,7 +500,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 		t.Run("campaign with changeset that is unpublished", func(t *testing.T) {
 			ct.TruncateTables(t, db, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
-			campaignSpec1 := ct.CreateCampaignSpec(t, ctx, store, "unpublished-changesets", admin.ID)
+			campaignSpec1 := ct.CreateBatchSpec(t, ctx, store, "unpublished-changesets", admin.ID)
 
 			ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
 				User:         admin.ID,
@@ -514,7 +514,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 			// But the changeset was not published yet.
 			// And now we apply a new spec without any changesets.
-			campaignSpec2 := ct.CreateCampaignSpec(t, ctx, store, "unpublished-changesets", admin.ID)
+			campaignSpec2 := ct.CreateBatchSpec(t, ctx, store, "unpublished-changesets", admin.ID)
 
 			// That should close no changesets, but set the unpublished changesets to be detached when
 			// the reconciler picks them up.
@@ -523,7 +523,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 		t.Run("campaign with changeset that wasn't processed before reapply", func(t *testing.T) {
 			ct.TruncateTables(t, db, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
-			campaignSpec1 := ct.CreateCampaignSpec(t, ctx, store, "queued-changesets", admin.ID)
+			campaignSpec1 := ct.CreateBatchSpec(t, ctx, store, "queued-changesets", admin.ID)
 
 			specOpts := ct.TestSpecOpts{
 				User:         admin.ID,
@@ -555,7 +555,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			})
 
 			// Apply again so that an update to the changeset is pending.
-			campaignSpec2 := ct.CreateCampaignSpec(t, ctx, store, "queued-changesets", admin.ID)
+			campaignSpec2 := ct.CreateBatchSpec(t, ctx, store, "queued-changesets", admin.ID)
 
 			specOpts.CampaignSpec = campaignSpec2.ID
 			specOpts.Title = "Spec2"
@@ -595,7 +595,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			}
 
 			// And now we apply a new spec before the reconciler could process the changeset.
-			campaignSpec3 := ct.CreateCampaignSpec(t, ctx, store, "queued-changesets", admin.ID)
+			campaignSpec3 := ct.CreateBatchSpec(t, ctx, store, "queued-changesets", admin.ID)
 
 			// No change this time, just reapplying.
 			specOpts.CampaignSpec = campaignSpec3.ID
@@ -636,7 +636,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			// Now test that it still updates when this update failed.
 			ct.SetChangesetFailed(t, ctx, store, changesets[0])
 
-			campaignSpec4 := ct.CreateCampaignSpec(t, ctx, store, "queued-changesets", admin.ID)
+			campaignSpec4 := ct.CreateBatchSpec(t, ctx, store, "queued-changesets", admin.ID)
 
 			// No change this time, just reapplying.
 			specOpts.CampaignSpec = campaignSpec4.ID
@@ -680,7 +680,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			ct.MockRepoPermissions(t, db, user.ID, repos[0].ID, repos[2].ID, repos[3].ID)
 
 			// NOTE: We cannot use a context that has authz bypassed.
-			campaignSpec := ct.CreateCampaignSpec(t, userCtx, store, "missing-permissions", user.ID)
+			campaignSpec := ct.CreateBatchSpec(t, userCtx, store, "missing-permissions", user.ID)
 
 			ct.CreateChangesetSpec(t, userCtx, store, ct.TestSpecOpts{
 				User:         user.ID,
@@ -696,8 +696,8 @@ func TestServiceApplyCampaign(t *testing.T) {
 				HeadRef:      "refs/heads/my-branch",
 			})
 
-			_, err := svc.ApplyCampaign(userCtx, ApplyCampaignOpts{
-				CampaignSpecRandID: campaignSpec.RandID,
+			_, err := svc.ApplyBatchChange(userCtx, ApplyBatchChangeOpts{
+				BatchSpecRandID: campaignSpec.RandID,
 			})
 			if err == nil {
 				t.Fatal("expected error, but got none")
@@ -713,7 +713,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 		t.Run("campaign with errored changeset", func(t *testing.T) {
 			ct.TruncateTables(t, db, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
-			campaignSpec1 := ct.CreateCampaignSpec(t, ctx, store, "errored-changeset-campaign", admin.ID)
+			campaignSpec1 := ct.CreateBatchSpec(t, ctx, store, "errored-changeset-campaign", admin.ID)
 
 			spec1Opts := ct.TestSpecOpts{
 				User:         admin.ID,
@@ -742,7 +742,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 			// Now we create another campaign spec with the same campaign name
 			// and namespace.
-			campaignSpec2 := ct.CreateCampaignSpec(t, ctx, store, "errored-changeset-campaign", admin.ID)
+			campaignSpec2 := ct.CreateBatchSpec(t, ctx, store, "errored-changeset-campaign", admin.ID)
 			spec1Opts.CampaignSpec = campaignSpec2.ID
 			newSpec1 := ct.CreateChangesetSpec(t, ctx, store, spec1Opts)
 			spec2Opts.CampaignSpec = campaignSpec2.ID
@@ -796,7 +796,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 		t.Run("closed and detached changeset not re-enqueued for close", func(t *testing.T) {
 			ct.TruncateTables(t, db, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
-			campaignSpec1 := ct.CreateCampaignSpec(t, ctx, store, "detached-closed-changeset", admin.ID)
+			campaignSpec1 := ct.CreateBatchSpec(t, ctx, store, "detached-closed-changeset", admin.ID)
 
 			specOpts := ct.TestSpecOpts{
 				User:         admin.ID,
@@ -830,7 +830,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 			// STEP 2: Now we apply a new spec without any changesets, but expect the changeset-to-be-detached to
 			// be left in the campaign (the reconciler would detach it, if the executor picked up the changeset).
-			campaignSpec2 := ct.CreateCampaignSpec(t, ctx, store, "detached-closed-changeset", admin.ID)
+			campaignSpec2 := ct.CreateBatchSpec(t, ctx, store, "detached-closed-changeset", admin.ID)
 			applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 1)
 
 			// Our previously published changeset should be marked as "to be closed"
@@ -851,7 +851,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 			c = ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
 			// STEP 3: We apply a new campaign spec and expect that the detached changeset record is not re-enqueued.
-			campaignSpec3 := ct.CreateCampaignSpec(t, ctx, store, "detached-closed-changeset", admin.ID)
+			campaignSpec3 := ct.CreateBatchSpec(t, ctx, store, "detached-closed-changeset", admin.ID)
 
 			applyAndListChangesets(adminCtx, t, svc, campaignSpec3.RandID, 0)
 
@@ -862,7 +862,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 		t.Run("campaign with changeset that is detached and reattached", func(t *testing.T) {
 			t.Run("changeset has been closed before re-attaching", func(t *testing.T) {
 				ct.TruncateTables(t, db, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
-				campaignSpec1 := ct.CreateCampaignSpec(t, ctx, store, "detach-reattach-changeset", admin.ID)
+				campaignSpec1 := ct.CreateBatchSpec(t, ctx, store, "detach-reattach-changeset", admin.ID)
 
 				specOpts := ct.TestSpecOpts{
 					User:         admin.ID,
@@ -895,7 +895,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
 				// STEP 2: Now we apply a new spec without any changesets.
-				campaignSpec2 := ct.CreateCampaignSpec(t, ctx, store, "detach-reattach-changeset", admin.ID)
+				campaignSpec2 := ct.CreateBatchSpec(t, ctx, store, "detach-reattach-changeset", admin.ID)
 				applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 1)
 
 				// Our previously published changeset should be marked as "to be closed"
@@ -918,7 +918,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				// STEP 3: We apply a new campaign spec with a changeset spec that
 				// matches the old changeset and expect _the same changeset_ to be
 				// re-attached.
-				campaignSpec3 := ct.CreateCampaignSpec(t, ctx, store, "detach-reattach-changeset", admin.ID)
+				campaignSpec3 := ct.CreateBatchSpec(t, ctx, store, "detach-reattach-changeset", admin.ID)
 
 				specOpts.CampaignSpec = campaignSpec3.ID
 				spec2 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
@@ -941,7 +941,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 			t.Run("changeset has failed closing before re-attaching", func(t *testing.T) {
 				ct.TruncateTables(t, db, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
-				campaignSpec1 := ct.CreateCampaignSpec(t, ctx, store, "detach-reattach-failed-changeset", admin.ID)
+				campaignSpec1 := ct.CreateBatchSpec(t, ctx, store, "detach-reattach-failed-changeset", admin.ID)
 
 				specOpts := ct.TestSpecOpts{
 					User:         admin.ID,
@@ -974,7 +974,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
 				// STEP 2: Now we apply a new spec without any changesets.
-				campaignSpec2 := ct.CreateCampaignSpec(t, ctx, store, "detach-reattach-failed-changeset", admin.ID)
+				campaignSpec2 := ct.CreateBatchSpec(t, ctx, store, "detach-reattach-failed-changeset", admin.ID)
 				applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 1)
 
 				// Our previously published changeset should be marked as "to be closed"
@@ -986,7 +986,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				assertions.PreviousSpec = spec1.ID
 				c = ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
-				if len(c.Campaigns) != 1 {
+				if len(c.BatchChanges) != 1 {
 					t.Fatal("Expected changeset to be still attached to campaign, but wasn't")
 				}
 
@@ -1004,7 +1004,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				// STEP 3: We apply a new campaign spec with a changeset spec that
 				// matches the old changeset and expect _the same changeset_ to be
 				// re-attached.
-				campaignSpec3 := ct.CreateCampaignSpec(t, ctx, store, "detach-reattach-failed-changeset", admin.ID)
+				campaignSpec3 := ct.CreateBatchSpec(t, ctx, store, "detach-reattach-failed-changeset", admin.ID)
 
 				specOpts.CampaignSpec = campaignSpec3.ID
 				spec2 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
@@ -1034,7 +1034,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				// changeset to make it look closed. We want to make sure that
 				// we also pick up enqueued-to-be-closed changesets.
 
-				campaignSpec1 := ct.CreateCampaignSpec(t, ctx, store, "detach-reattach-changeset-2", admin.ID)
+				campaignSpec1 := ct.CreateBatchSpec(t, ctx, store, "detach-reattach-changeset-2", admin.ID)
 
 				specOpts := ct.TestSpecOpts{
 					User:         admin.ID,
@@ -1065,7 +1065,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
 				// STEP 2: Now we apply a new spec without any changesets.
-				campaignSpec2 := ct.CreateCampaignSpec(t, ctx, store, "detach-reattach-changeset-2", admin.ID)
+				campaignSpec2 := ct.CreateBatchSpec(t, ctx, store, "detach-reattach-changeset-2", admin.ID)
 				applyAndListChangesets(adminCtx, t, svc, campaignSpec2.RandID, 1)
 
 				// Our previously published changeset should be marked as "to be closed"
@@ -1080,7 +1080,7 @@ func TestServiceApplyCampaign(t *testing.T) {
 				// STEP 3: We apply a new campaign spec with a changeset spec that
 				// matches the old changeset and expect _the same changeset_ to be
 				// re-attached.
-				campaignSpec3 := ct.CreateCampaignSpec(t, ctx, store, "detach-reattach-changeset-2", admin.ID)
+				campaignSpec3 := ct.CreateBatchSpec(t, ctx, store, "detach-reattach-changeset-2", admin.ID)
 
 				specOpts.CampaignSpec = campaignSpec3.ID
 				spec2 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
@@ -1106,28 +1106,28 @@ func TestServiceApplyCampaign(t *testing.T) {
 
 	t.Run("applying to closed campaign", func(t *testing.T) {
 		ct.TruncateTables(t, db, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
-		campaignSpec := ct.CreateCampaignSpec(t, ctx, store, "closed-campaign", admin.ID)
-		campaign := ct.CreateCampaign(t, ctx, store, "closed-campaign", admin.ID, campaignSpec.ID)
+		campaignSpec := ct.CreateBatchSpec(t, ctx, store, "closed-campaign", admin.ID)
+		campaign := ct.CreateBatchChange(t, ctx, store, "closed-campaign", admin.ID, campaignSpec.ID)
 
 		campaign.ClosedAt = time.Now()
-		if err := store.UpdateCampaign(ctx, campaign); err != nil {
+		if err := store.UpdateBatchChange(ctx, campaign); err != nil {
 			t.Fatalf("failed to update campaign: %s", err)
 		}
 
-		_, err := svc.ApplyCampaign(adminCtx, ApplyCampaignOpts{
-			CampaignSpecRandID: campaignSpec.RandID,
+		_, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
+			BatchSpecRandID: campaignSpec.RandID,
 		})
-		if err != ErrApplyClosedCampaign {
+		if err != ErrApplyClosedBatchChange {
 			t.Fatalf("ApplyCampaign returned unexpected error: %s", err)
 		}
 	})
 }
 
-func applyAndListChangesets(ctx context.Context, t *testing.T, svc *Service, campaignSpecRandID string, wantChangesets int) (*batches.Campaign, batches.Changesets) {
+func applyAndListChangesets(ctx context.Context, t *testing.T, svc *Service, campaignSpecRandID string, wantChangesets int) (*batches.BatchChange, batches.Changesets) {
 	t.Helper()
 
-	campaign, err := svc.ApplyCampaign(ctx, ApplyCampaignOpts{
-		CampaignSpecRandID: campaignSpecRandID,
+	campaign, err := svc.ApplyBatchChange(ctx, ApplyBatchChangeOpts{
+		BatchSpecRandID: campaignSpecRandID,
 	})
 	if err != nil {
 		t.Fatalf("failed to apply campaign: %s", err)

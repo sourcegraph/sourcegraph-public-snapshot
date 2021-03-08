@@ -51,7 +51,10 @@ func enterpriseInit(
 	codemonitorsBackground.StartBackgroundJobs(ctx, db)
 	insightsBackground.StartBackgroundJobs(ctx, db)
 
-	batches.InitBackgroundJobs(ctx, db, cf, server)
+	syncRegistry := batches.InitBackgroundJobs(ctx, db, cf)
+	if server != nil {
+		server.ChangesetSyncRegistry = syncRegistry
+	}
 
 	// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB.ExternalServices for now.
 	dbconn.Global = db

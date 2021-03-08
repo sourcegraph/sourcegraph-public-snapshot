@@ -167,7 +167,7 @@ func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.
 }
 
 func (r *changesetResolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBatchChangesArgs) (graphqlbackend.BatchChangesConnectionResolver, error) {
-	opts := store.ListCampaignsOpts{
+	opts := store.ListBatchChangesOpts{
 		ChangesetID: r.changeset.ID,
 	}
 

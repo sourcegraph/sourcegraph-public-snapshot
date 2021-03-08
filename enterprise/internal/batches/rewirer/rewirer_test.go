@@ -46,7 +46,7 @@ func TestRewirer_Rewire(t *testing.T) {
 			mappings: store.RewirerMappings{{
 				Changeset: ct.BuildChangeset(ct.TestChangesetOpts{
 					Repo:      testRepoID,
-					Campaigns: []batches.CampaignAssoc{{CampaignID: testCampaignID}},
+					Campaigns: []batches.BatchChangeAssoc{{BatchChangeID: testCampaignID}},
 
 					// Imported changeset:
 					OwnedByCampaign: 0,
@@ -67,7 +67,7 @@ func TestRewirer_Rewire(t *testing.T) {
 			mappings: store.RewirerMappings{{
 				Changeset: ct.BuildChangeset(ct.TestChangesetOpts{
 					Repo:      testRepoID,
-					Campaigns: []batches.CampaignAssoc{{CampaignID: testCampaignID}},
+					Campaigns: []batches.BatchChangeAssoc{{BatchChangeID: testCampaignID}},
 
 					// Owned unpublished branch changeset:
 					PublicationState: batches.ChangesetPublicationStateUnpublished,
@@ -92,7 +92,7 @@ func TestRewirer_Rewire(t *testing.T) {
 			mappings: store.RewirerMappings{{
 				Changeset: ct.BuildChangeset(ct.TestChangesetOpts{
 					Repo:      testRepoID,
-					Campaigns: []batches.CampaignAssoc{{CampaignID: testCampaignID}},
+					Campaigns: []batches.BatchChangeAssoc{{BatchChangeID: testCampaignID}},
 
 					// Owned, published branch changeset:
 					OwnedByCampaign:  testCampaignID,
@@ -123,7 +123,7 @@ func TestRewirer_Rewire(t *testing.T) {
 			mappings: store.RewirerMappings{{
 				Changeset: ct.BuildChangeset(ct.TestChangesetOpts{
 					Repo:      0,
-					Campaigns: []batches.CampaignAssoc{{CampaignID: testCampaignID}},
+					Campaigns: []batches.BatchChangeAssoc{{BatchChangeID: testCampaignID}},
 				}),
 				// No access to repo.
 				Repo: nil,
@@ -216,7 +216,7 @@ func TestRewirer_Rewire(t *testing.T) {
 					Repo:       testRepoID,
 					ExternalID: "123",
 					// Already attached to another campaign
-					Campaigns: []batches.CampaignAssoc{{CampaignID: testCampaignID + 1}},
+					Campaigns: []batches.BatchChangeAssoc{{BatchChangeID: testCampaignID + 1}},
 				}),
 				Repo: testRepo,
 			}},
@@ -243,7 +243,7 @@ func TestRewirer_Rewire(t *testing.T) {
 					Repo:       testRepoID,
 					ExternalID: "123",
 					// Already attached to another campaign
-					Campaigns:       []batches.CampaignAssoc{{CampaignID: testCampaignID + 1}},
+					Campaigns:       []batches.BatchChangeAssoc{{BatchChangeID: testCampaignID + 1}},
 					ReconcilerState: batches.ReconcilerStateFailed,
 				}),
 				Repo: testRepo,
@@ -268,7 +268,7 @@ func TestRewirer_Rewire(t *testing.T) {
 					Repo:       testRepoID,
 					ExternalID: "123",
 					// Already attached to another campaign
-					Campaigns: []batches.CampaignAssoc{{CampaignID: testCampaignID + 1}},
+					Campaigns: []batches.BatchChangeAssoc{{BatchChangeID: testCampaignID + 1}},
 					// Other campaign created this changeset.
 					OwnedByCampaign: testCampaignID + 1,
 				}),
@@ -298,7 +298,7 @@ func TestRewirer_Rewire(t *testing.T) {
 					Repo:             testRepoID,
 					ExternalID:       "123",
 					CurrentSpec:      testChangesetSpecID,
-					Campaigns:        []batches.CampaignAssoc{{CampaignID: testCampaignID}},
+					Campaigns:        []batches.BatchChangeAssoc{{BatchChangeID: testCampaignID}},
 					OwnedByCampaign:  testCampaignID,
 					PublicationState: batches.ChangesetPublicationStatePublished,
 					ReconcilerState:  batches.ReconcilerStateCompleted,
@@ -330,7 +330,7 @@ func TestRewirer_Rewire(t *testing.T) {
 					Repo:             testRepoID,
 					ExternalID:       "123",
 					CurrentSpec:      testChangesetSpecID,
-					Campaigns:        []batches.CampaignAssoc{{CampaignID: testCampaignID}},
+					Campaigns:        []batches.BatchChangeAssoc{{BatchChangeID: testCampaignID}},
 					OwnedByCampaign:  testCampaignID,
 					PublicationState: batches.ChangesetPublicationStatePublished,
 					ReconcilerState:  batches.ReconcilerStateFailed,

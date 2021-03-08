@@ -91,25 +91,25 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 
 		s := store.NewWithClock(db, clock)
 
-		spec := &batches.CampaignSpec{
+		spec := &batches.BatchSpec{
 			NamespaceUserID: userID,
 			UserID:          userID,
 		}
-		if err := s.CreateCampaignSpec(ctx, spec); err != nil {
+		if err := s.CreateBatchSpec(ctx, spec); err != nil {
 			t.Fatal(err)
 		}
 
-		campaign := &batches.Campaign{
+		campaign := &batches.BatchChange{
 			Name:             "Test campaign",
 			Description:      "Testing THE WEBHOOKS",
 			InitialApplierID: userID,
 			NamespaceUserID:  userID,
 			LastApplierID:    userID,
 			LastAppliedAt:    clock(),
-			CampaignSpecID:   spec.ID,
+			BatchSpecID:      spec.ID,
 		}
 
-		err = s.CreateCampaign(ctx, campaign)
+		err = s.CreateBatchChange(ctx, campaign)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -119,7 +119,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			RepoID:              githubRepo.ID,
 			ExternalID:          "10156",
 			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
-			Campaigns:           []batches.CampaignAssoc{{CampaignID: campaign.ID}},
+			BatchChanges:        []batches.BatchChangeAssoc{{BatchChangeID: campaign.ID}},
 		}
 
 		err = s.CreateChangeset(ctx, changeset)
@@ -270,25 +270,25 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 
 		s := store.NewWithClock(db, clock)
 
-		spec := &batches.CampaignSpec{
+		spec := &batches.BatchSpec{
 			NamespaceUserID: userID,
 			UserID:          userID,
 		}
-		if err := s.CreateCampaignSpec(ctx, spec); err != nil {
+		if err := s.CreateBatchSpec(ctx, spec); err != nil {
 			t.Fatal(err)
 		}
 
-		campaign := &batches.Campaign{
+		campaign := &batches.BatchChange{
 			Name:             "Test campaign",
 			Description:      "Testing THE WEBHOOKS",
 			InitialApplierID: userID,
 			NamespaceUserID:  userID,
 			LastApplierID:    userID,
 			LastAppliedAt:    clock(),
-			CampaignSpecID:   spec.ID,
+			BatchSpecID:      spec.ID,
 		}
 
-		err = s.CreateCampaign(ctx, campaign)
+		err = s.CreateBatchChange(ctx, campaign)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -298,13 +298,13 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				RepoID:              bitbucketRepo.ID,
 				ExternalID:          "69",
 				ExternalServiceType: bitbucketRepo.ExternalRepo.ServiceType,
-				Campaigns:           []batches.CampaignAssoc{{CampaignID: campaign.ID}},
+				BatchChanges:        []batches.BatchChangeAssoc{{BatchChangeID: campaign.ID}},
 			},
 			{
 				RepoID:              bitbucketRepo.ID,
 				ExternalID:          "19",
 				ExternalServiceType: bitbucketRepo.ExternalRepo.ServiceType,
-				Campaigns:           []batches.CampaignAssoc{{CampaignID: campaign.ID}},
+				BatchChanges:        []batches.BatchChangeAssoc{{BatchChangeID: campaign.ID}},
 			},
 		}
 
