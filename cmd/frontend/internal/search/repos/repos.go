@@ -179,7 +179,8 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 			}
 			for _, repo := range userRepos {
 				name := types.RepoName{
-					ID:   repo.RepoID,
+					ID: repo.RepoID,
+					// this is safe as the SetUserPublicRepo graphql endpoint normalises the repo URI before saving
 					Name: api.RepoName(repo.RepoURI),
 				}
 				out = append(out, &name)
