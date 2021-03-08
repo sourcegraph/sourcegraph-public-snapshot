@@ -23,6 +23,7 @@ This command ensures the following lint passes. Violations of the lint rules wil
 - **NoDeadPackages**: Report packages with no users (except for cmd roots)
 - **NoReachingIntoCommands**: Report packages that import from a command they are not a part of
 - **NoBinarySpecificSharedCode**: Report shared packages that are imported by a single command
+- **NoLooseCommands**: Report main packages outside of known command roots
 
 #### trace
 
