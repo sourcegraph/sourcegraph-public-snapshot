@@ -27,6 +27,7 @@ type SessionData struct {
 
 type SessionIssuerHelper interface {
 	GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL string) (actr *actor.Actor, safeErrMsg string, err error)
+	CreateCodeHostConnection(ctx context.Context, token *oauth2.Token, providerID string) (safeErrMsg string, err error)
 	DeleteStateCookie(w http.ResponseWriter)
 	SessionData(token *oauth2.Token) SessionData
 }
@@ -39,6 +40,44 @@ func SessionIssuer(s SessionIssuerHelper, sessionKey string) http.Handler {
 		if err != nil {
 			log15.Error("OAuth failed: could not read token from context", "error", err)
 			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not read token from callback request.", http.StatusInternalServerError)
+			return
+		}
+
+		expiryDuration := time.Duration(0)
+		if token.Expiry != (time.Time{}) {
+			expiryDuration = time.Until(token.Expiry)
+		}
+		if expiryDuration < 0 {
+			log15.Error("OAuth failed: token was expired.")
+			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: OAuth token was expired.", http.StatusInternalServerError)
+			return
+		}
+
+		encodedState, err := goauth2.StateFromContext(ctx)
+		if err != nil {
+			log15.Error("OAuth failed: could not get state from context.", "error", err)
+			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not get OAuth state from context.", http.StatusInternalServerError)
+			return
+		}
+		state, err := DecodeState(encodedState)
+		if err != nil {
+			log15.Error("OAuth failed: could not decode state.", "error", err)
+			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not get decode OAuth state.", http.StatusInternalServerError)
+			return
+		}
+
+		// Delete state cookie (no longer needed, while be stale if user logs out and logs back in within 120s)
+		defer s.DeleteStateCookie(w)
+
+		if state.Op == LoginStateOpCreateCodeHostConnection {
+			safeErrMsg, err := s.CreateCodeHostConnection(ctx, token, state.ProviderID)
+			if err != nil {
+				log15.Error("OAuth failed: error upserting code host connection from OAuth token.", "error", err, "userErr", safeErrMsg)
+				http.Error(w, safeErrMsg, http.StatusInternalServerError)
+				return
+			}
+
+			http.Redirect(w, r, auth.SafeRedirectURL(state.Redirect), http.StatusFound)
 			return
 		}
 
@@ -57,16 +96,6 @@ func SessionIssuer(s SessionIssuerHelper, sessionKey string) http.Handler {
 			return
 		}
 
-		expiryDuration := time.Duration(0)
-		if token.Expiry != (time.Time{}) {
-			expiryDuration = time.Until(token.Expiry)
-		}
-		if expiryDuration < 0 {
-			log15.Error("OAuth failed: token was expired.")
-			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: OAuth token was expired.", http.StatusInternalServerError)
-			return
-		}
-
 		user, err := database.GlobalUsers.GetByID(r.Context(), actr.UID)
 		if err != nil {
 			log15.Error("OAuth failed: error retrieving user from database.", "error", err)
@@ -80,27 +109,11 @@ func SessionIssuer(s SessionIssuerHelper, sessionKey string) http.Handler {
 			return
 		}
 
-		encodedState, err := goauth2.StateFromContext(ctx)
-		if err != nil {
-			log15.Error("OAuth failed: could not get state from context.", "error", err)
-			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not get OAuth state from context.", http.StatusInternalServerError)
-			return
-		}
-		state, err := DecodeState(encodedState)
-		if err != nil {
-			log15.Error("OAuth failed: could not decode state.", "error", err)
-			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not get decode OAuth state.", http.StatusInternalServerError)
-			return
-		}
-
 		if err := session.SetData(w, r, sessionKey, s.SessionData(token)); err != nil {
 			// It's not fatal if this fails. It just means we won't be able to sign the user out of
 			// the OP.
 			log15.Warn("Failed to set OAuth session data. The session is still secure, but Sourcegraph will be unable to revoke the user's token or redirect the user to the end-session endpoint after the user signs out of Sourcegraph.", "error", err)
 		}
-
-		// Delete state cookie (no longer needed, while be stale if user logs out and logs back in within 120s)
-		s.DeleteStateCookie(w)
 
 		http.Redirect(w, r, auth.SafeRedirectURL(state.Redirect), http.StatusFound)
 	})

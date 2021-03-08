@@ -10,8 +10,8 @@ site_monitoring.go @bobheadxi
 *zoekt*.go @rvantonder
 
 # Campaigns
-campaigns.go @LawnGnome
-campaigns.go @eseliger
+batches.go @LawnGnome
+batches.go @eseliger
 
 # Insights
 insights.go @slimsag

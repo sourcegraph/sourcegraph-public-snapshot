@@ -75,8 +75,8 @@ var toSelectKind = map[string]string{
 	"annotation":      "type-parameter",
 }
 
-func pick(symbols []*result.SearchSymbolResult, satisfy func(*result.SearchSymbolResult) bool) []*result.SearchSymbolResult {
-	var result []*result.SearchSymbolResult
+func pick(symbols []*result.SymbolMatch, satisfy func(*result.SymbolMatch) bool) []*result.SymbolMatch {
+	var result []*result.SymbolMatch
 	for _, symbol := range symbols {
 		if satisfy(symbol) {
 			result = append(result, symbol)
@@ -85,8 +85,8 @@ func pick(symbols []*result.SearchSymbolResult, satisfy func(*result.SearchSymbo
 	return result
 }
 
-func SelectSymbolKind(symbols []*result.SearchSymbolResult, field string) []*result.SearchSymbolResult {
-	return pick(symbols, func(s *result.SearchSymbolResult) bool {
+func SelectSymbolKind(symbols []*result.SymbolMatch, field string) []*result.SymbolMatch {
+	return pick(symbols, func(s *result.SymbolMatch) bool {
 		if field == toSelectKind[strings.ToLower(s.Symbol.Kind)] {
 			return true
 		}

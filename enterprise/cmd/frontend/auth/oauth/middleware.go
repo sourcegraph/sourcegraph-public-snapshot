@@ -60,7 +60,7 @@ func newOAuthFlowHandler(serviceType string) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/login", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		id := req.URL.Query().Get("pc")
-		p := getProvider(serviceType, id)
+		p := GetProvider(serviceType, id)
 		if p == nil {
 			log15.Error("no OAuth provider found with ID and service type", "id", id, "serviceType", serviceType)
 			http.Error(w, "Misconfigured GitHub auth provider.", http.StatusInternalServerError)
@@ -75,7 +75,7 @@ func newOAuthFlowHandler(serviceType string) http.Handler {
 			return
 		}
 
-		p := getProvider(serviceType, state.ProviderID)
+		p := GetProvider(serviceType, state.ProviderID)
 		if p == nil {
 			log15.Error("OAuth failed: in callback, no auth provider found with ID and service type", "id", state.ProviderID, "serviceType", serviceType)
 			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not find provider that matches the OAuth state parameter.", http.StatusBadRequest)

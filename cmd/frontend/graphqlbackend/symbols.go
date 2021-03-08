@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
-	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
@@ -154,8 +153,8 @@ func searchZoektSymbols(ctx context.Context, db dbutil.DB, commit *GitCommitReso
 				res = append(res, toSymbolResolver(
 					db,
 					commit,
-					&result.SearchSymbolResult{
-						Symbol: protocol.Symbol{
+					&result.SymbolMatch{
+						Symbol: result.Symbol{
 							Name:       m.SymbolInfo.Sym,
 							Kind:       m.SymbolInfo.Kind,
 							Parent:     m.SymbolInfo.Parent,
@@ -211,7 +210,7 @@ func computeSymbols(ctx context.Context, db dbutil.DB, commit *GitCommitResolver
 	}
 	resolvers := make([]symbolResolver, 0, len(symbols))
 	for _, symbol := range symbols {
-		sr := result.SearchSymbolResult{
+		sr := result.SymbolMatch{
 			Symbol:  symbol,
 			BaseURI: baseURI,
 			Lang:    strings.ToLower(symbol.Language),
@@ -222,11 +221,11 @@ func computeSymbols(ctx context.Context, db dbutil.DB, commit *GitCommitResolver
 	return resolvers, err
 }
 
-func toSymbolResolver(db dbutil.DB, commit *GitCommitResolver, sr *result.SearchSymbolResult) symbolResolver {
+func toSymbolResolver(db dbutil.DB, commit *GitCommitResolver, sr *result.SymbolMatch) symbolResolver {
 	return symbolResolver{
-		db:                 db,
-		commit:             commit,
-		SearchSymbolResult: sr,
+		db:          db,
+		commit:      commit,
+		SymbolMatch: sr,
 	}
 }
 
@@ -245,7 +244,7 @@ func (r *symbolConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.P
 type symbolResolver struct {
 	db     dbutil.DB
 	commit *GitCommitResolver
-	*result.SearchSymbolResult
+	*result.SymbolMatch
 }
 
 func (r symbolResolver) Name() string { return r.Symbol.Name }

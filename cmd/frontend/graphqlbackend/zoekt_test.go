@@ -27,9 +27,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
-	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -1019,7 +1019,7 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 	repo := NewRepositoryResolver(db, &types.Repo{Name: "foo"})
 
 	results := zoektFileMatchToSymbolResults(repo, "master", file)
-	var symbols []protocol.Symbol
+	var symbols []result.Symbol
 	for _, res := range results {
 		// Check the fields which are not specific to the symbol
 		if got, want := res.Lang, "go"; got != want {
@@ -1032,7 +1032,7 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 		symbols = append(symbols, res.Symbol)
 	}
 
-	want := []protocol.Symbol{{
+	want := []result.Symbol{{
 		Name:    "a",
 		Line:    10,
 		Pattern: "/^symbol a symbol b$/",

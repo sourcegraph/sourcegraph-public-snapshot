@@ -33,7 +33,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -868,6 +867,7 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 		tr.SetError(err)
 		tr.Finish()
 	}()
+
 	wantCount := defaultMaxSearchResults
 	query.VisitField(r.Query, query.FieldCount, func(value string, _ bool, _ query.Annotation) {
 		wantCount, _ = strconv.Atoi(value)
@@ -876,6 +876,7 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 	if invalidateRepoCache(r.Query) {
 		r.invalidateRepoCache = true
 	}
+
 	for _, disjunct := range query.Dnf(r.Query) {
 		disjunct = query.ConcatRevFilters(disjunct)
 		newResult, err := r.evaluate(ctx, disjunct)
@@ -884,17 +885,17 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 			return nil, err
 		}
 		if newResult != nil {
-			newResult.SearchResults = r.selectResults(newResult.SearchResults)
+			newResult.SearchResults = selectResults(newResult.SearchResults, r.Query)
 			srr = union(srr, newResult)
 			if len(srr.SearchResults) > wantCount {
 				srr.SearchResults = srr.SearchResults[:wantCount]
 				break
 			}
-
 		}
 	}
+
 	if srr != nil {
-		r.sortResults(ctx, srr.SearchResults)
+		r.sortResults(srr.SearchResults)
 	}
 	// copy userSettings from searchResolver to SearchResultsResolver
 	if srr != nil {
@@ -954,20 +955,6 @@ func longer(N int, dt time.Duration) time.Duration {
 		return lowest
 	}
 	return dt2
-}
-
-var decimalRx = lazyregexp.New(`\d+\.\d+`)
-
-// roundStr rounds the first number containing a decimal within a string
-func roundStr(s string) string {
-	return decimalRx.ReplaceAllStringFunc(s, func(ns string) string {
-		f, err := strconv.ParseFloat(ns, 64)
-		if err != nil {
-			return s
-		}
-		f = math.Round(f)
-		return strconv.Itoa(int(f))
-	})
 }
 
 type searchResultsStats struct {
@@ -1822,7 +1809,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	tr.LazyPrintf("results=%d %s", len(results), &common)
 
-	r.sortResults(ctx, results)
+	r.sortResults(results)
 
 	resultsResolver := SearchResultsResolver{
 		db:            r.db,
@@ -1926,23 +1913,23 @@ func compareSearchResults(left, right SearchResultResolver, exactFilePatterns ma
 	return arepo < brepo
 }
 
-func (r *searchResolver) selectResults(results []SearchResultResolver) []SearchResultResolver {
-	value, _ := r.Query.StringValue(query.FieldSelect)
-	if value == "" {
+func selectResults(results []SearchResultResolver, q query.Q) []SearchResultResolver {
+	v, _ := q.StringValue(query.FieldSelect)
+	if v == "" {
 		return results
 	}
-	sm, _ := filter.SelectPathFromString(value) // Invariant: select is validated.
+	sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
 
 	dedup := NewDeduper()
 	for _, result := range results {
 		var current SearchResultResolver
 		switch v := result.(type) {
 		case *FileMatchResolver:
-			current = v.Select(sm)
+			current = v.Select(sp)
 		case *RepositoryResolver:
-			current = v.Select(sm)
+			current = v.Select(sp)
 		case *CommitSearchResultResolver:
-			current = v.Select(sm)
+			current = v.Select(sp)
 		default:
 			current = result
 		}
@@ -1955,7 +1942,7 @@ func (r *searchResolver) selectResults(results []SearchResultResolver) []SearchR
 	return dedup.Results()
 }
 
-func (r *searchResolver) sortResults(ctx context.Context, results []SearchResultResolver) {
+func (r *searchResolver) sortResults(results []SearchResultResolver) {
 	var exactPatterns map[string]struct{}
 	if getBoolPtr(r.UserSettings.SearchGlobbing, false) {
 		exactPatterns = r.getExactFilePatterns()
