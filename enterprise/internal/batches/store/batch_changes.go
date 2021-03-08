@@ -16,18 +16,18 @@ import (
 // batchChangeColumns are used by the batch change related Store methods to insert,
 // update and query batches.
 var batchChangeColumns = []*sqlf.Query{
-	sqlf.Sprintf("campaigns.id"),
-	sqlf.Sprintf("campaigns.name"),
-	sqlf.Sprintf("campaigns.description"),
-	sqlf.Sprintf("campaigns.initial_applier_id"),
-	sqlf.Sprintf("campaigns.last_applier_id"),
-	sqlf.Sprintf("campaigns.last_applied_at"),
-	sqlf.Sprintf("campaigns.namespace_user_id"),
-	sqlf.Sprintf("campaigns.namespace_org_id"),
-	sqlf.Sprintf("campaigns.created_at"),
-	sqlf.Sprintf("campaigns.updated_at"),
-	sqlf.Sprintf("campaigns.closed_at"),
-	sqlf.Sprintf("campaigns.campaign_spec_id"),
+	sqlf.Sprintf("batch_changes.id"),
+	sqlf.Sprintf("batch_changes.name"),
+	sqlf.Sprintf("batch_changes.description"),
+	sqlf.Sprintf("batch_changes.initial_applier_id"),
+	sqlf.Sprintf("batch_changes.last_applier_id"),
+	sqlf.Sprintf("batch_changes.last_applied_at"),
+	sqlf.Sprintf("batch_changes.namespace_user_id"),
+	sqlf.Sprintf("batch_changes.namespace_org_id"),
+	sqlf.Sprintf("batch_changes.created_at"),
+	sqlf.Sprintf("batch_changes.updated_at"),
+	sqlf.Sprintf("batch_changes.closed_at"),
+	sqlf.Sprintf("batch_changes.batch_spec_id"),
 }
 
 // batchChangeInsertColumns is the list of batch changes columns that are
@@ -44,7 +44,7 @@ var batchChangeInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
 	sqlf.Sprintf("closed_at"),
-	sqlf.Sprintf("campaign_spec_id"),
+	sqlf.Sprintf("batch_spec_id"),
 }
 
 // CreateBatchChange creates the given batch change.
@@ -58,7 +58,7 @@ func (s *Store) CreateBatchChange(ctx context.Context, c *batches.BatchChange) e
 
 var createBatchChangeQueryFmtstr = `
 -- source: enterprise/internal/batches/store.go:CreateBatchChange
-INSERT INTO campaigns (%s)
+INSERT INTO batch_changes (%s)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING %s
 `
@@ -99,7 +99,7 @@ func (s *Store) UpdateBatchChange(ctx context.Context, c *batches.BatchChange) e
 
 var updateBatchChangeQueryFmtstr = `
 -- source: enterprise/internal/batches/store.go:UpdateBatchChange
-UPDATE campaigns
+UPDATE batch_changes
 SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING %s
@@ -134,7 +134,7 @@ func (s *Store) DeleteBatchChange(ctx context.Context, id int64) error {
 
 var deleteBatchChangeQueryFmtstr = `
 -- source: enterprise/internal/batches/store.go:DeleteBatchChange
-DELETE FROM campaigns WHERE id = %s
+DELETE FROM batch_changes WHERE id = %s
 `
 
 // CountBatchChangesOpts captures the query options needed for
@@ -156,16 +156,16 @@ func (s *Store) CountBatchChanges(ctx context.Context, opts CountBatchChangesOpt
 
 var countBatchChangesQueryFmtstr = `
 -- source: enterprise/internal/batches/store.go:CountBatchChanges
-SELECT COUNT(campaigns.id)
-FROM campaigns
+SELECT COUNT(batch_changes.id)
+FROM batch_changes
 %s
 WHERE %s
 `
 
 func countBatchChangesQuery(opts *CountBatchChangesOpts) *sqlf.Query {
 	joins := []*sqlf.Query{
-		sqlf.Sprintf("LEFT JOIN users namespace_user ON campaigns.namespace_user_id = namespace_user.id"),
-		sqlf.Sprintf("LEFT JOIN orgs namespace_org ON campaigns.namespace_org_id = namespace_org.id"),
+		sqlf.Sprintf("LEFT JOIN users namespace_user ON batch_changes.namespace_user_id = namespace_user.id"),
+		sqlf.Sprintf("LEFT JOIN orgs namespace_org ON batch_changes.namespace_org_id = namespace_org.id"),
 	}
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("namespace_user.deleted_at IS NULL"),
@@ -173,27 +173,27 @@ func countBatchChangesQuery(opts *CountBatchChangesOpts) *sqlf.Query {
 	}
 
 	if opts.ChangesetID != 0 {
-		joins = append(joins, sqlf.Sprintf("INNER JOIN changesets ON changesets.campaign_ids ? campaigns.id::TEXT"))
+		joins = append(joins, sqlf.Sprintf("INNER JOIN changesets ON changesets.batch_change_ids ? batch_changes.id::TEXT"))
 		preds = append(preds, sqlf.Sprintf("changesets.id = %s", opts.ChangesetID))
 	}
 
 	switch opts.State {
 	case batches.BatchChangeStateOpen:
-		preds = append(preds, sqlf.Sprintf("campaigns.closed_at IS NULL"))
+		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NULL"))
 	case batches.BatchChangeStateClosed:
-		preds = append(preds, sqlf.Sprintf("campaigns.closed_at IS NOT NULL"))
+		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NOT NULL"))
 	}
 
 	if opts.InitialApplierID != 0 {
-		preds = append(preds, sqlf.Sprintf("campaigns.initial_applier_id = %d", opts.InitialApplierID))
+		preds = append(preds, sqlf.Sprintf("batch_changes.initial_applier_id = %d", opts.InitialApplierID))
 	}
 
 	if opts.NamespaceUserID != 0 {
-		preds = append(preds, sqlf.Sprintf("campaigns.namespace_user_id = %s", opts.NamespaceUserID))
+		preds = append(preds, sqlf.Sprintf("batch_changes.namespace_user_id = %s", opts.NamespaceUserID))
 	}
 
 	if opts.NamespaceOrgID != 0 {
-		preds = append(preds, sqlf.Sprintf("campaigns.namespace_org_id = %s", opts.NamespaceOrgID))
+		preds = append(preds, sqlf.Sprintf("batch_changes.namespace_org_id = %s", opts.NamespaceOrgID))
 	}
 
 	if len(preds) == 0 {
@@ -210,8 +210,8 @@ type CountBatchChangeOpts struct {
 	NamespaceUserID int32
 	NamespaceOrgID  int32
 
-	BatchChangeSpecID int64
-	Name              string
+	BatchSpecID int64
+	Name        string
 }
 
 // GetBatchChange gets a batch change matching the given options.
@@ -235,9 +235,9 @@ func (s *Store) GetBatchChange(ctx context.Context, opts CountBatchChangeOpts) (
 
 var getBatchChangesQueryFmtstr = `
 -- source: enterprise/internal/batches/store.go:GetBatchChange
-SELECT %s FROM campaigns
-LEFT JOIN users namespace_user ON campaigns.namespace_user_id = namespace_user.id
-LEFT JOIN orgs  namespace_org  ON campaigns.namespace_org_id = namespace_org.id
+SELECT %s FROM batch_changes
+LEFT JOIN users namespace_user ON batch_changes.namespace_user_id = namespace_user.id
+LEFT JOIN orgs  namespace_org  ON batch_changes.namespace_org_id = namespace_org.id
 WHERE %s
 LIMIT 1
 `
@@ -248,23 +248,23 @@ func getBatchChangeQuery(opts *CountBatchChangeOpts) *sqlf.Query {
 		sqlf.Sprintf("namespace_org.deleted_at IS NULL"),
 	}
 	if opts.ID != 0 {
-		preds = append(preds, sqlf.Sprintf("campaigns.id = %s", opts.ID))
+		preds = append(preds, sqlf.Sprintf("batch_changes.id = %s", opts.ID))
 	}
 
-	if opts.BatchChangeSpecID != 0 {
-		preds = append(preds, sqlf.Sprintf("campaigns.campaign_spec_id = %s", opts.BatchChangeSpecID))
+	if opts.BatchSpecID != 0 {
+		preds = append(preds, sqlf.Sprintf("batch_changes.batch_spec_id = %s", opts.BatchSpecID))
 	}
 
 	if opts.NamespaceUserID != 0 {
-		preds = append(preds, sqlf.Sprintf("campaigns.namespace_user_id = %s", opts.NamespaceUserID))
+		preds = append(preds, sqlf.Sprintf("batch_changes.namespace_user_id = %s", opts.NamespaceUserID))
 	}
 
 	if opts.NamespaceOrgID != 0 {
-		preds = append(preds, sqlf.Sprintf("campaigns.namespace_org_id = %s", opts.NamespaceOrgID))
+		preds = append(preds, sqlf.Sprintf("batch_changes.namespace_org_id = %s", opts.NamespaceOrgID))
 	}
 
 	if opts.Name != "" {
-		preds = append(preds, sqlf.Sprintf("campaigns.name = %s", opts.Name))
+		preds = append(preds, sqlf.Sprintf("batch_changes.name = %s", opts.Name))
 	}
 
 	if len(preds) == 0 {
@@ -310,7 +310,7 @@ FROM
 	changesets
 INNER JOIN repo ON changesets.repo_id = repo.id
 WHERE
-	changesets.campaign_ids ? %s AND
+	changesets.batch_change_ids ? %s AND
 	repo.deleted_at IS NULL AND
 	-- authz conditions:
 	%s
@@ -358,7 +358,7 @@ func (s *Store) ListBatchChanges(ctx context.Context, opts ListBatchChangesOpts)
 
 var listBatchChangesQueryFmtstr = `
 -- source: enterprise/internal/batches/store.go:ListBatchChanges
-SELECT %s FROM campaigns
+SELECT %s FROM batch_changes
 %s
 WHERE %s
 ORDER BY id DESC
@@ -366,8 +366,8 @@ ORDER BY id DESC
 
 func listBatchChangesQuery(opts *ListBatchChangesOpts) *sqlf.Query {
 	joins := []*sqlf.Query{
-		sqlf.Sprintf("LEFT JOIN users namespace_user ON campaigns.namespace_user_id = namespace_user.id"),
-		sqlf.Sprintf("LEFT JOIN orgs namespace_org ON campaigns.namespace_org_id = namespace_org.id"),
+		sqlf.Sprintf("LEFT JOIN users namespace_user ON batch_changes.namespace_user_id = namespace_user.id"),
+		sqlf.Sprintf("LEFT JOIN orgs namespace_org ON batch_changes.namespace_org_id = namespace_org.id"),
 	}
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("namespace_user.deleted_at IS NULL"),
@@ -375,31 +375,31 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts) *sqlf.Query {
 	}
 
 	if opts.Cursor != 0 {
-		preds = append(preds, sqlf.Sprintf("campaigns.id <= %s", opts.Cursor))
+		preds = append(preds, sqlf.Sprintf("batch_changes.id <= %s", opts.Cursor))
 	}
 
 	if opts.ChangesetID != 0 {
-		joins = append(joins, sqlf.Sprintf("INNER JOIN changesets ON changesets.campaign_ids ? campaigns.id::TEXT"))
+		joins = append(joins, sqlf.Sprintf("INNER JOIN changesets ON changesets.batch_change_ids ? batch_changes.id::TEXT"))
 		preds = append(preds, sqlf.Sprintf("changesets.id = %s", opts.ChangesetID))
 	}
 
 	switch opts.State {
 	case batches.BatchChangeStateOpen:
-		preds = append(preds, sqlf.Sprintf("campaigns.closed_at IS NULL"))
+		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NULL"))
 	case batches.BatchChangeStateClosed:
-		preds = append(preds, sqlf.Sprintf("campaigns.closed_at IS NOT NULL"))
+		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NOT NULL"))
 	}
 
 	if opts.InitialApplierID != 0 {
-		preds = append(preds, sqlf.Sprintf("campaigns.initial_applier_id = %d", opts.InitialApplierID))
+		preds = append(preds, sqlf.Sprintf("batch_changes.initial_applier_id = %d", opts.InitialApplierID))
 	}
 
 	if opts.NamespaceUserID != 0 {
-		preds = append(preds, sqlf.Sprintf("campaigns.namespace_user_id = %s", opts.NamespaceUserID))
+		preds = append(preds, sqlf.Sprintf("batch_changes.namespace_user_id = %s", opts.NamespaceUserID))
 	}
 
 	if opts.NamespaceOrgID != 0 {
-		preds = append(preds, sqlf.Sprintf("campaigns.namespace_org_id = %s", opts.NamespaceOrgID))
+		preds = append(preds, sqlf.Sprintf("batch_changes.namespace_org_id = %s", opts.NamespaceOrgID))
 	}
 
 	if len(preds) == 0 {

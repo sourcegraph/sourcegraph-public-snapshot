@@ -42,7 +42,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 	bbsRepo := bbsRepos[0]
 
 	cred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
-		Domain:              database.UserCredentialDomainCampaigns,
+		Domain:              database.UserCredentialDomainBatches,
 		ExternalServiceID:   ghRepo.ExternalRepo.ServiceID,
 		ExternalServiceType: ghRepo.ExternalRepo.ServiceType,
 		UserID:              userID,

@@ -156,7 +156,7 @@ func (r *batchSpecResolver) computeNamespace(ctx context.Context) (*graphqlbacke
 
 		if errcode.IsNotFound(err) {
 			r.namespace = nil
-			r.namespaceErr = errors.New("namespace of campaign spec has been deleted")
+			r.namespaceErr = errors.New("namespace of batch spec has been deleted")
 			return
 		}
 

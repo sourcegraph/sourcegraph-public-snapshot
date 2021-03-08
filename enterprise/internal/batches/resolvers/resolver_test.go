@@ -734,7 +734,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 			},
 			wantErr: "changeset check state not valid",
 		},
-		// Setting OnlyPublishedByThisBatchChange true.
+		// Setting OnlyPublishedByThisCampaign true.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
 				OnlyPublishedByThisCampaign: &wantOnlyPublishedByThisBatchChange[0],
@@ -872,7 +872,7 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 	cstore := store.New(db)
 
 	cred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
-		Domain:              database.UserCredentialDomainCampaigns,
+		Domain:              database.UserCredentialDomainBatches,
 		ExternalServiceType: extsvc.TypeGitHub,
 		ExternalServiceID:   "https://github.com/",
 		UserID:              userID,

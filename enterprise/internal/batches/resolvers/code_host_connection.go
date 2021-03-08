@@ -78,7 +78,7 @@ func (c *batchChangesCodeHostConnectionResolver) compute(ctx context.Context) (a
 		}
 
 		// Fetch all user credentials to avoid N+1 per credential resolver.
-		creds, _, err := c.store.UserCredentials().List(ctx, database.UserCredentialsListOpts{Scope: database.UserCredentialScope{Domain: database.UserCredentialDomainCampaigns, UserID: c.userID}})
+		creds, _, err := c.store.UserCredentials().List(ctx, database.UserCredentialsListOpts{Scope: database.UserCredentialScope{Domain: database.UserCredentialDomainBatches, UserID: c.userID}})
 		if err != nil {
 			c.chsErr = err
 			return
