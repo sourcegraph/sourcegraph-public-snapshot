@@ -9,7 +9,6 @@ import { EventLogger, FileMatchChildren } from './FileMatchChildren'
 import { RepoFileLink } from './RepoFileLink'
 import { Props as ResultContainerProps, ResultContainer } from './ResultContainer'
 import { AggregableTag, Badge } from 'sourcegraph'
-import { AggregatedTag } from './AggregatedTag'
 import { LinkOrSpan } from './LinkOrSpan'
 
 const SUBSET_COUNT_KEY = 'fileMatchSubsetCount'

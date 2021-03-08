@@ -16,7 +16,6 @@ import { BadgeAttachment } from '../components/BadgeAttachment'
 import { ThemeProps } from '../theme'
 import { PlatformContextProps } from '../platform/context'
 import { Subscription } from 'rxjs'
-import { ReactComponent } from 'react-hot-loader'
 import { LinkOrSpan } from '../components/LinkOrSpan'
 
 const LOADING = 'loading' as const
