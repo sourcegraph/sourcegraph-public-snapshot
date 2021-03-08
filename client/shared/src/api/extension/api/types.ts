@@ -34,6 +34,7 @@ export function fromLocation(
         uri: location.uri.href,
         range: fromRange(location.range),
         badge: location.badge,
+        aggregableTags: location.aggregableTags,
     }
 }
 
@@ -46,8 +47,9 @@ export function fromHover(hover: sourcegraph.Badged<sourcegraph.Hover>): sourceg
     return {
         contents: hover.contents,
         range: fromRange(hover.range),
-        badge: hover.badge,
         alerts: hover.alerts,
+        badge: hover.badge,
+        aggregableTags: hover.aggregableTags,
     }
 }
 

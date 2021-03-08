@@ -58,5 +58,25 @@ describe('HoverMerged', () => {
                     { summary: { kind: MarkupKind.PlainText, value: 'y' } },
                 ],
             }))
+
+        test('Tags', () =>
+            expect(
+                fromHoverMerged([
+                    {
+                        contents: { kind: MarkupKind.Markdown, value: 'x' },
+                        alerts: [
+                            {
+                                summary: { kind: MarkupKind.PlainText, value: 'x' },
+                                aggregableTags: [{ text: 't03' }, { text: 't01' }],
+                            },
+                        ],
+                        aggregableTags: [{ text: 't02' }],
+                    },
+                ])
+            ).toEqual({
+                contents: [{ kind: MarkupKind.Markdown, value: 'x' }],
+                alerts: [{ summary: { kind: MarkupKind.PlainText, value: 'x' }, aggregableTags: ['t03', 't01'] }],
+                aggregatedTags: [{ text: 't01' }, { text: 't02' }, { text: 't03' }],
+            }))
     })
 })

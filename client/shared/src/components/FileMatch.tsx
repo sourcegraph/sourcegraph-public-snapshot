@@ -8,7 +8,8 @@ import { FetchFileParameters } from './CodeExcerpt'
 import { EventLogger, FileMatchChildren } from './FileMatchChildren'
 import { RepoFileLink } from './RepoFileLink'
 import { Props as ResultContainerProps, ResultContainer } from './ResultContainer'
-import { BadgeAttachmentRenderOptions } from 'sourcegraph'
+import { Badge } from 'sourcegraph'
+import { AggregatedTag } from './AggregatedTag'
 
 const SUBSET_COUNT_KEY = 'fileMatchSubsetCount'
 
@@ -18,11 +19,9 @@ export type FileLineMatch = Partial<Pick<GQL.IFileMatch, 'revSpec' | 'symbols' |
     lineMatches: LineMatch[]
 }
 
-export type LineMatch = Pick<GQL.ILineMatch, 'preview' | 'lineNumber' | 'offsetAndLengths' | 'limitHit'> & {
-    badge?: BadgeAttachmentRenderOptions
-}
+export type LineMatch = Pick<GQL.ILineMatch, 'preview' | 'lineNumber' | 'offsetAndLengths' | 'limitHit'> & Badge
 
-export interface MatchItem {
+export interface MatchItem extends Badge {
     highlightRanges: {
         start: number
         highlightLength: number
@@ -32,7 +31,6 @@ export interface MatchItem {
      * The 0-based line number of this match.
      */
     line: number
-    badge?: BadgeAttachmentRenderOptions
 }
 
 interface Props extends SettingsCascadeProps {
@@ -95,6 +93,7 @@ export class FileMatch extends React.PureComponent<Props> {
             preview: match.preview,
             line: match.lineNumber,
             badge: match.badge,
+            aggregableTags: match.aggregableTags,
         }))
 
         const { repoAtRevURL, revDisplayName } =
@@ -118,6 +117,15 @@ export class FileMatch extends React.PureComponent<Props> {
             />
         )
 
+        const description =
+            items.length > 0 ? (
+                <>
+                    {aggregateTags(items).map(tag => (
+                        <AggregatedTag key={tag} text={tag} />
+                    ))}
+                </>
+            ) : undefined
+
         let containerProps: ResultContainerProps
 
         const expandedChildren = (
@@ -136,6 +144,7 @@ export class FileMatch extends React.PureComponent<Props> {
                 defaultExpanded: this.props.expanded,
                 icon: this.props.icon,
                 title,
+                description,
                 expandedChildren,
                 allExpanded: this.props.allExpanded,
             }
@@ -146,6 +155,7 @@ export class FileMatch extends React.PureComponent<Props> {
                 defaultExpanded: this.props.expanded,
                 icon: this.props.icon,
                 title,
+                description,
                 collapsedChildren: (
                     <FileMatchChildren
                         {...this.props}
@@ -164,4 +174,8 @@ export class FileMatch extends React.PureComponent<Props> {
 
         return <ResultContainer {...containerProps} titleClassName="test-search-result-label" />
     }
+}
+
+function aggregateTags(items: MatchItem[]): string[] {
+    return [...new Set(items.flatMap(item => item.aggregableTags || []))].sort()
 }

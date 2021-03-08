@@ -16,6 +16,7 @@ import { BadgeAttachment } from '../components/BadgeAttachment'
 import { ThemeProps } from '../theme'
 import { PlatformContextProps } from '../platform/context'
 import { Subscription } from 'rxjs'
+import { AggregatedTag } from '../components/AggregatedTag'
 
 const LOADING = 'loading' as const
 
@@ -182,14 +183,25 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOv
                                         <React.Fragment key={index}>
                                             {index !== 0 && <hr />}
 
-                                            {content.badge && this.state.showBadges && (
-                                                <BadgeAttachment
-                                                    className="hover-overlay__badge test-hover-badge"
-                                                    iconClassName={this.props.iconClassName}
-                                                    iconButtonClassName={this.props.iconButtonClassName}
-                                                    attachment={content.badge}
-                                                    isLightTheme={this.props.isLightTheme}
+                                            {(hoverOrError?.aggregatedTags || []).map(tag => (
+                                                <AggregatedTag
+                                                    key={tag.text}
+                                                    tag={tag}
+                                                    className="hover-overlay__tag test-hover-tag"
                                                 />
+                                            ))}
+
+                                            {content.badge && this.state.showBadges && (
+                                                <>
+                                                    booboaroijweri
+                                                    <BadgeAttachment
+                                                        className="hover-overlay__badge test-hover-badge"
+                                                        iconClassName={this.props.iconClassName}
+                                                        iconButtonClassName={this.props.iconButtonClassName}
+                                                        attachment={content.badge}
+                                                        isLightTheme={this.props.isLightTheme}
+                                                    />
+                                                </>
                                             )}
 
                                             <span
@@ -227,8 +239,8 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOv
                                     className={classNames('hover-overlay__alert', this.props.infoAlertClassName)}
                                     key={index}
                                 >
-                                    {/* Show badge in the top-right if there is no "Dismiss" action */}
-                                    {badge && !type && (
+                                    {/* Show badge in the top-right */}
+                                    {badge && (
                                         <BadgeAttachment
                                             className="hover-overlay__badge test-hover-badge"
                                             iconClassName={this.props.iconClassName}
@@ -247,18 +259,9 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOv
                                         />
                                     )}
 
-                                    {/* Show badge and "Dismiss" in the bottom-right if there is a dismiss button */}
+                                    {/* Show Dismiss" in the bottom-right if there is a dismiss button */}
                                     {type && (
                                         <div className="hover-overlay__alert-actions">
-                                            {badge && (
-                                                <BadgeAttachment
-                                                    className="hover-overlay__badge test-hover-badge"
-                                                    iconClassName={this.props.iconClassName}
-                                                    iconButtonClassName={this.props.iconButtonClassName}
-                                                    attachment={badge}
-                                                    isLightTheme={this.props.isLightTheme}
-                                                />
-                                            )}
                                             <a href="" onClick={this.onAlertDismissedCallback(type)}>
                                                 <small>Dismiss</small>
                                             </a>

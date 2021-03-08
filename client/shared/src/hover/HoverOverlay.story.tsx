@@ -61,24 +61,11 @@ const FIXTURE_BADGE: BadgeAttachmentRenderOptions = {
     linkURL: 'https://docs.sourcegraph.com/code_intelligence/explanations/search_based_code_intelligence',
 }
 
-const LEGACY_FIXTURE_BADGE = {
-    icon:
-        'data:image/svg+xml;base64,IDxzdmcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJyBzdHlsZT0id2lkdGg6MjRweDtoZWlnaHQ6MjRweCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjZmZmZmZmIj4gPHBhdGggZD0iIE0xMSwgOUgxM1Y3SDExTTEyLCAyMEM3LjU5LCAyMCA0LCAxNi40MSA0LCAxMkM0LCA3LjU5IDcuNTksIDQgMTIsIDRDMTYuNDEsIDQgMjAsIDcuNTkgMjAsIDEyQzIwLCAxNi40MSAxNi40MSwgMjAgMTIsIDIwTTEyLCAyQTEwLCAxMCAwIDAsIDAgMiwgMTJBMTAsIDEwIDAgMCwgMCAxMiwgMjJBMTAsIDEwIDAgMCwgMCAyMiwgMTJBMTAsIDEwIDAgMCwgMCAxMiwgMk0xMSwgMTdIMTNWMTFIMTFWMTdaIiAvPiA8L3N2Zz4g',
-    light: {
-        icon:
-            'data:image/svg+xml;base64,IDxzdmcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJyBzdHlsZT0id2lkdGg6MjRweDtoZWlnaHQ6MjRweCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjMDAwMDAwIj4gPHBhdGggZD0iIE0xMSwgOUgxM1Y3SDExTTEyLCAyMEM3LjU5LCAyMCA0LCAxNi40MSA0LCAxMkM0LCA3LjU5IDcuNTksIDQgMTIsIDRDMTYuNDEsIDQgMjAsIDcuNTkgMjAsIDEyQzIwLCAxNi40MSAxNi40MSwgMjAgMTIsIDIwTTEyLCAyQTEwLCAxMCAwIDAsIDAgMiwgMTJBMTAsIDEwIDAgMCwgMCAxMiwgMjJBMTAsIDEwIDAgMCwgMCAyMiwgMTJBMTAsIDEwIDAgMCwgMCAxMiwgMk0xMSwgMTdIMTNWMTFIMTFWMTdaIiAvPiA8L3N2Zz4g',
-    },
-    hoverMessage:
-        'Search-based results - click to see how these results are calculated and how to get precise intelligence with LSIF.',
-    linkURL: 'https://docs.sourcegraph.com/code_intelligence/explanations/search_based_code_intelligence',
-} as BadgeAttachmentRenderOptions
-
 const FIXTURE_CONTENT: Badged<MarkupContent> = {
     value:
         '```typescript\nexport interface TestInterface<A, B, C>\n```\n\n' +
         '---\n\nVeniam voluptate quis magna mollit aliqua enim id ea fugiat. Aliqua anim eiusmod nisi excepteur.\n',
     kind: MarkupKind.Markdown,
-    badge: FIXTURE_BADGE,
 }
 
 const FIXTURE_CONTENT_LONG_CODE = {
@@ -164,7 +151,28 @@ add('Legacy badge', () => (
             {...commonProps()}
             {...webHoverOverlayClassProps}
             hoverOrError={{
-                contents: [{ ...FIXTURE_CONTENT, badge: LEGACY_FIXTURE_BADGE }],
+                contents: [{ ...FIXTURE_CONTENT, badge: FIXTURE_BADGE }],
+            }}
+            actionsOrError={FIXTURE_ACTIONS}
+        />
+    </>
+))
+
+add('Aggregated Tags', () => (
+    <>
+        <style>{webStyles}</style>
+        <HoverOverlay
+            {...commonProps()}
+            {...webHoverOverlayClassProps}
+            hoverOrError={{
+                contents: [FIXTURE_CONTENT],
+                aggregatedTags: [
+                    {
+                        text: 'semantic',
+                        linkURL:
+                            'https://docs.sourcegraph.com/code_intelligence/explanations/precise_code_intelligence',
+                    },
+                ],
             }}
             actionsOrError={FIXTURE_ACTIONS}
         />
@@ -363,6 +371,13 @@ add('Bitbucket styles', () => (
             {...bitbucketClassProps}
             hoverOrError={{
                 contents: [FIXTURE_CONTENT],
+                aggregatedTags: [
+                    {
+                        text: 'semantic',
+                        linkURL:
+                            'https://docs.sourcegraph.com/code_intelligence/explanations/precise_code_intelligence',
+                    },
+                ],
             }}
             actionsOrError={FIXTURE_ACTIONS}
         />

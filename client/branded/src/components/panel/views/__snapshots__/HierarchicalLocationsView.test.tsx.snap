@@ -48,6 +48,9 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                     </strong>
                   </a>
                 </span>
+                <span
+                  className="ml-2"
+                />
               </div>
               <small
                 className="result-container__toggle-matches-container"
@@ -263,6 +266,9 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                     </strong>
                   </a>
                 </span>
+                <span
+                  className="ml-2"
+                />
               </div>
               <small
                 className="result-container__toggle-matches-container"
@@ -431,6 +437,9 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                     </strong>
                   </a>
                 </span>
+                <span
+                  className="ml-2"
+                />
               </div>
               <small
                 className="result-container__toggle-matches-container"

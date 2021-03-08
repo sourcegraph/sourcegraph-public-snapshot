@@ -1366,13 +1366,38 @@ declare module 'sourcegraph' {
         dark?: ThemableBadgeAttachmentStyle
     }
 
-    /**
-     * A wrapper around a providable type (currently hover and locations) with additional
-     * context to enable displaying badges next to the wrapped result value in the UI.
-     */
-    export type Badged<T extends object> = T & {
+    /** A badge holds the extra fields that can be attached to a providable type T via Badged<T>. */
+    export interface Badge {
+        /** Badges are displayed next to each result. */
         badge?: BadgeAttachmentRenderOptions
+
+        /**
+         * Aggregable tags are concatenated and de-duplicated within a particular result set. These
+         * values can briefly be used to describe some common property of the underlying result set.
+         *
+         * We currently use this to display whether a file in the file match locations pane contains
+         * only precise or only search-based code intelligence results.
+         */
+        aggregableTags?: AggregableTag[]
     }
+
+    /**
+     * Aggregable tags are concatenated and de-duplicated within a particular result set. These
+     * values can briefly be used to describe some common property of the underlying result set.
+     */
+    export interface AggregableTag {
+        /** The display text of the tag. */
+        text: string
+
+        /** If set, the tag becomes a link with this destination URL. */
+        linkURL?: string
+    }
+
+    /**
+     * A wrapper around a providable type (hover text and locations) with additional context to enable
+     * displaying badge and tags next to the wrapped result value in the UI.
+     */
+    export type Badged<T extends object> = T & Badge
 
     /**
      * A hover represents additional information for a symbol or word. Hovers are rendered in a tooltip-like

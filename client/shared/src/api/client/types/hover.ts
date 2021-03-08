@@ -1,18 +1,22 @@
 import { MarkupKind, Range } from '@sourcegraph/extension-api-classes'
 import { Hover as PlainHover, Range as PlainRange } from '@sourcegraph/extension-api-types'
-import { Badged, Hover, MarkupContent, HoverAlert } from 'sourcegraph'
+import { Badged, Hover, MarkupContent, HoverAlert, AggregableTag } from 'sourcegraph'
 
 /** A hover that is merged from multiple Hover results and normalized. */
 export interface HoverMerged {
     contents: Badged<MarkupContent>[]
     alerts?: Badged<HoverAlert>[]
     range?: PlainRange
+
+    /** Sorted and de-duplicated set of tags in all source hover values. */
+    aggregatedTags?: AggregableTag[]
 }
 
 /** Create a merged hover from the given individual hovers. */
 export function fromHoverMerged(values: (Badged<Hover | PlainHover> | null | undefined)[]): HoverMerged | null {
     const contents: HoverMerged['contents'] = []
     const alerts: HoverMerged['alerts'] = []
+    const aggregatedTags = new Set<AggregableTag>()
     let range: PlainRange | undefined
     for (const result of values) {
         if (result) {
@@ -26,6 +30,13 @@ export function fromHoverMerged(values: (Badged<Hover | PlainHover> | null | und
             if (result.alerts) {
                 alerts.push(...result.alerts)
             }
+
+            const tags = [result, ...(result.alerts || [])].flatMap(badged => badged.aggregableTags || [])
+
+            for (const tag of tags) {
+                aggregatedTags.add(tag)
+            }
+
             if (result.range && !range) {
                 // TODO(tj): Merge ranges so we highlight all provided ranges, not just the first range
                 if (result.range instanceof Range) {
@@ -40,5 +51,13 @@ export function fromHoverMerged(values: (Badged<Hover | PlainHover> | null | und
     if (contents.length === 0) {
         return null
     }
-    return range ? { contents, alerts, range } : { contents, alerts }
+
+    return {
+        contents,
+        alerts,
+        ...(range ? { range } : {}),
+        ...(aggregatedTags.size > 0
+            ? { aggregatedTags: [...aggregatedTags].sort((a, b) => a.text.localeCompare(b.text)) }
+            : {}),
+    }
 }

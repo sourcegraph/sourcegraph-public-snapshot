@@ -10,10 +10,15 @@
     overflow: hidden;
 
     &__close-button,
-    &__badge {
-        // We want text to wrap around the close button and badges.
+    &__tag {
+        // We want text to wrap around the close button and tags.
         float: right;
         margin-left: 0.25rem;
+    }
+
+    &__badge {
+        float: left;
+        margin-right: 0.25rem;
     }
 
     &__close-button {
