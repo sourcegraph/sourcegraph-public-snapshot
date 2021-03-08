@@ -12,6 +12,7 @@ var lintsByName = map[string]Lint{
 	"NoDeadPackages":             NoDeadPackages,
 	"NoReachingIntoCommands":     NoReachingIntoCommands,
 	"NoBinarySpecificSharedCode": NoBinarySpecificSharedCode,
+	"NoLooseCommands":            NoLooseCommands,
 }
 
 var DefaultLints []string
