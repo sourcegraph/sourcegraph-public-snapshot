@@ -39,9 +39,9 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 			Spec: &batches.ChangesetSpecDescription{
 				ExternalID: "123456",
 			},
-			UserID:         int32(i + 1234),
-			CampaignSpecID: int64(i + 910),
-			RepoID:         repo.ID,
+			UserID:      int32(i + 1234),
+			BatchSpecID: int64(i + 910),
+			RepoID:      repo.ID,
 
 			DiffStatAdded:   123,
 			DiffStatChanged: 456,
@@ -49,7 +49,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 		}
 
 		if i == cap(changesetSpecs)-1 {
-			c.CampaignSpecID = 0
+			c.BatchSpecID = 0
 		}
 		changesetSpecs = append(changesetSpecs, c)
 	}
@@ -58,11 +58,11 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 	// listing or getting ChangesetSpecs, since we don't want to load
 	// ChangesetSpecs whose repository has been (soft-)deleted.
 	changesetSpecDeletedRepo := &batches.ChangesetSpec{
-		UserID:         int32(424242),
-		Spec:           &batches.ChangesetSpecDescription{},
-		CampaignSpecID: int64(424242),
-		RawSpec:        `{}`,
-		RepoID:         deletedRepo.ID,
+		UserID:      int32(424242),
+		Spec:        &batches.ChangesetSpecDescription{},
+		BatchSpecID: int64(424242),
+		RawSpec:     `{}`,
+		RepoID:      deletedRepo.ID,
 	}
 
 	t.Run("Create", func(t *testing.T) {
@@ -108,14 +108,14 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 			t.Fatalf("have count: %d, want: %d", have, want)
 		}
 
-		t.Run("WithCampaignSpecID", func(t *testing.T) {
+		t.Run("WithBatchSpecID", func(t *testing.T) {
 			testsRan := false
 			for _, c := range changesetSpecs {
-				if c.CampaignSpecID == 0 {
+				if c.BatchSpecID == 0 {
 					continue
 				}
 
-				opts := CountChangesetSpecsOpts{CampaignSpecID: c.CampaignSpecID}
+				opts := CountChangesetSpecsOpts{BatchSpecID: c.BatchSpecID}
 				subCount, err := s.CountChangesetSpecs(ctx, opts)
 				if err != nil {
 					t.Fatal(err)
@@ -128,7 +128,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 			}
 
 			if !testsRan {
-				t.Fatal("no changesetSpec has a non-zero CampaignSpecID")
+				t.Fatal("no changesetSpec has a non-zero BatchSpecID")
 			}
 		})
 	})
@@ -205,12 +205,12 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 			}
 		})
 
-		t.Run("WithCampaignSpecID", func(t *testing.T) {
+		t.Run("WithBatchSpecID", func(t *testing.T) {
 			for _, c := range changesetSpecs {
-				if c.CampaignSpecID == 0 {
+				if c.BatchSpecID == 0 {
 					continue
 				}
-				opts := ListChangesetSpecsOpts{CampaignSpecID: c.CampaignSpecID}
+				opts := ListChangesetSpecsOpts{BatchSpecID: c.BatchSpecID}
 				have, _, err := s.ListChangesetSpecs(ctx, opts)
 				if err != nil {
 					t.Fatal(err)
@@ -367,8 +367,8 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 		type testCase struct {
 			createdAt time.Time
 
-			hasCampaignSpec     bool
-			campaignSpecApplied bool
+			hasBatchSpec     bool
+			batchSpecApplied bool
 
 			isCurrentSpec  bool
 			isPreviousSpec bool
@@ -383,57 +383,57 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 			}
 
 			return fmt.Sprintf(
-				"[tooOld=%t, hasCampaignSpec=%t, campaignSpecApplied=%t, isCurrentSpec=%t, isPreviousSpec=%t]",
-				tooOld, tc.hasCampaignSpec, tc.campaignSpecApplied, tc.isCurrentSpec, tc.isPreviousSpec,
+				"[tooOld=%t, hasBatchSpec=%t, batchSpecApplied=%t, isCurrentSpec=%t, isPreviousSpec=%t]",
+				tooOld, tc.hasBatchSpec, tc.batchSpecApplied, tc.isCurrentSpec, tc.isPreviousSpec,
 			)
 		}
 
 		tests := []testCase{
-			// ChangesetSpec was created but never attached to a CampaignSpec
-			{hasCampaignSpec: false, createdAt: underTTL, wantDeleted: false},
-			{hasCampaignSpec: false, createdAt: overTTL, wantDeleted: true},
+			// ChangesetSpec was created but never attached to a BatchSpec
+			{hasBatchSpec: false, createdAt: underTTL, wantDeleted: false},
+			{hasBatchSpec: false, createdAt: overTTL, wantDeleted: true},
 
-			// Attached to CampaignSpec that's applied to a Campaign
-			{hasCampaignSpec: true, campaignSpecApplied: true, isCurrentSpec: true, createdAt: underTTL, wantDeleted: false},
-			{hasCampaignSpec: true, campaignSpecApplied: true, isCurrentSpec: true, createdAt: overTTL, wantDeleted: false},
+			// Attached to BatchSpec that's applied to a BatchChange
+			{hasBatchSpec: true, batchSpecApplied: true, isCurrentSpec: true, createdAt: underTTL, wantDeleted: false},
+			{hasBatchSpec: true, batchSpecApplied: true, isCurrentSpec: true, createdAt: overTTL, wantDeleted: false},
 
-			// CampaignSpec is not applied to a Campaign anymore and the
+			// BatchSpec is not applied to a BatchChange anymore and the
 			// ChangesetSpecs are now the PreviousSpec.
-			{hasCampaignSpec: true, isPreviousSpec: true, createdAt: underTTL, wantDeleted: false},
-			{hasCampaignSpec: true, isPreviousSpec: true, createdAt: overTTL, wantDeleted: false},
+			{hasBatchSpec: true, isPreviousSpec: true, createdAt: underTTL, wantDeleted: false},
+			{hasBatchSpec: true, isPreviousSpec: true, createdAt: overTTL, wantDeleted: false},
 
-			// Has a CampaignSpec, but that CampaignSpec is not applied
+			// Has a BatchSpec, but that BatchSpec is not applied
 			// anymore, and the ChangesetSpec is neither the current, nor the
 			// previous spec.
-			{hasCampaignSpec: true, createdAt: underTTL, wantDeleted: false},
-			{hasCampaignSpec: true, createdAt: overTTL, wantDeleted: true},
+			{hasBatchSpec: true, createdAt: underTTL, wantDeleted: false},
+			{hasBatchSpec: true, createdAt: overTTL, wantDeleted: true},
 		}
 
 		for _, tc := range tests {
-			campaignSpec := &batches.BatchSpec{UserID: 4567, NamespaceUserID: 4567}
+			batchSpec := &batches.BatchSpec{UserID: 4567, NamespaceUserID: 4567}
 
-			if tc.hasCampaignSpec {
-				if err := s.CreateBatchSpec(ctx, campaignSpec); err != nil {
+			if tc.hasBatchSpec {
+				if err := s.CreateBatchSpec(ctx, batchSpec); err != nil {
 					t.Fatal(err)
 				}
 
-				if tc.campaignSpecApplied {
-					campaign := &batches.BatchChange{
-						Name:             fmt.Sprintf("campaign for spec %d", campaignSpec.ID),
-						BatchSpecID:      campaignSpec.ID,
-						InitialApplierID: campaignSpec.UserID,
-						NamespaceUserID:  campaignSpec.NamespaceUserID,
-						LastApplierID:    campaignSpec.UserID,
+				if tc.batchSpecApplied {
+					batchChange := &batches.BatchChange{
+						Name:             fmt.Sprintf("batch change for spec %d", batchSpec.ID),
+						BatchSpecID:      batchSpec.ID,
+						InitialApplierID: batchSpec.UserID,
+						NamespaceUserID:  batchSpec.NamespaceUserID,
+						LastApplierID:    batchSpec.UserID,
 						LastAppliedAt:    time.Now(),
 					}
-					if err := s.CreateBatchChange(ctx, campaign); err != nil {
+					if err := s.CreateBatchChange(ctx, batchChange); err != nil {
 						t.Fatal(err)
 					}
 				}
 			}
 
 			changesetSpec := &batches.ChangesetSpec{
-				CampaignSpecID: campaignSpec.ID,
+				BatchSpecID: batchSpec.ID,
 				// Need to set a RepoID otherwise GetChangesetSpec filters it out.
 				RepoID:    repo.ID,
 				CreatedAt: tc.createdAt,
@@ -487,14 +487,14 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 	t.Run("GetRewirerMappings", func(t *testing.T) {
 		// Create some test data
 		user := ct.CreateTestUser(t, s.DB(), true)
-		campaignSpec := ct.CreateBatchSpec(t, ctx, s, "get-rewirer-mappings", user.ID)
+		batchSpec := ct.CreateBatchSpec(t, ctx, s, "get-rewirer-mappings", user.ID)
 		var mappings RewirerMappings = make(RewirerMappings, 3)
 		changesetSpecIDs := make([]int64, 0, cap(mappings))
 		for i := 0; i < cap(mappings); i++ {
 			spec := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
-				HeadRef:      fmt.Sprintf("refs/heads/test-get-rewirer-mappings-%d", i),
-				Repo:         repo.ID,
-				CampaignSpec: campaignSpec.ID,
+				HeadRef:   fmt.Sprintf("refs/heads/test-get-rewirer-mappings-%d", i),
+				Repo:      repo.ID,
+				BatchSpec: batchSpec.ID,
 			})
 			changesetSpecIDs = append(changesetSpecIDs, spec.ID)
 			mappings[i] = &RewirerMapping{
@@ -506,7 +506,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 		t.Run("NoLimit", func(t *testing.T) {
 			// Empty limit should return all entries.
 			opts := GetRewirerMappingsOpts{
-				CampaignSpecID: campaignSpec.ID,
+				BatchSpecID: batchSpec.ID,
 			}
 			ts, err := s.GetRewirerMappings(ctx, opts)
 			if err != nil {
@@ -562,8 +562,8 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 			for i := 1; i <= len(mappings); i++ {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
 					opts := GetRewirerMappingsOpts{
-						CampaignSpecID: campaignSpec.ID,
-						LimitOffset:    &database.LimitOffset{Limit: i},
+						BatchSpecID: batchSpec.ID,
+						LimitOffset: &database.LimitOffset{Limit: i},
 					}
 					ts, err := s.GetRewirerMappings(ctx, opts)
 					if err != nil {
@@ -622,8 +622,8 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 			for i := 1; i <= len(mappings); i++ {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
 					opts := GetRewirerMappingsOpts{
-						CampaignSpecID: campaignSpec.ID,
-						LimitOffset:    &database.LimitOffset{Limit: 1, Offset: offset},
+						BatchSpecID: batchSpec.ID,
+						LimitOffset: &database.LimitOffset{Limit: 1, Offset: offset},
 					}
 					ts, err := s.GetRewirerMappings(ctx, opts)
 					if err != nil {
@@ -681,7 +681,7 @@ func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *S
 	repoStore := database.ReposWith(s)
 	esStore := database.ExternalServicesWith(s)
 
-	// Let's set up a campaign with one of every changeset state.
+	// Let's set up a batch change with one of every changeset state.
 
 	// First up, let's create a repo.
 	repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
@@ -692,12 +692,12 @@ func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *S
 	// Create a user.
 	user := ct.CreateTestUser(t, s.DB(), false)
 
-	// Next, we need old and new campaign specs.
-	oldCampaignSpec := ct.CreateBatchSpec(t, ctx, s, "old", user.ID)
-	newCampaignSpec := ct.CreateBatchSpec(t, ctx, s, "new", user.ID)
+	// Next, we need old and new batch specs.
+	oldBatchSpec := ct.CreateBatchSpec(t, ctx, s, "old", user.ID)
+	newBatchSpec := ct.CreateBatchSpec(t, ctx, s, "new", user.ID)
 
-	// That's enough to create a campaign, so let's do that.
-	campaign := ct.CreateBatchChange(t, ctx, s, "text", user.ID, oldCampaignSpec.ID)
+	// That's enough to create a batch change, so let's do that.
+	batchChange := ct.CreateBatchChange(t, ctx, s, "text", user.ID, oldBatchSpec.ID)
 
 	// Now for some changeset specs.
 	var (
@@ -721,16 +721,16 @@ func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *S
 	)
 	for state, opts := range states {
 		specOpts := ct.TestSpecOpts{
-			User:         user.ID,
-			Repo:         repo.ID,
-			CampaignSpec: oldCampaignSpec.ID,
-			Title:        string(state),
-			Published:    true,
-			HeadRef:      string(state),
+			User:      user.ID,
+			Repo:      repo.ID,
+			BatchSpec: oldBatchSpec.ID,
+			Title:     string(state),
+			Published: true,
+			HeadRef:   string(state),
 		}
 		oldSpecs[state] = ct.CreateChangesetSpec(t, ctx, s, specOpts)
 
-		specOpts.CampaignSpec = newCampaignSpec.ID
+		specOpts.BatchSpec = newBatchSpec.ID
 		newSpecs[state] = ct.CreateChangesetSpec(t, ctx, s, specOpts)
 
 		if opts.ExternalState != "" {
@@ -738,9 +738,9 @@ func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *S
 		}
 		opts.ExternalServiceType = repo.ExternalRepo.ServiceType
 		opts.Repo = repo.ID
-		opts.Campaign = campaign.ID
+		opts.BatchChange = batchChange.ID
 		opts.CurrentSpec = oldSpecs[state].ID
-		opts.OwnedByCampaign = campaign.ID
+		opts.OwnedByBatchChange = batchChange.ID
 		opts.Metadata = map[string]interface{}{"Title": string(state)}
 		changesets[state] = ct.CreateChangeset(t, ctx, s, *opts)
 	}
@@ -750,9 +750,9 @@ func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *S
 	for state := range states {
 		t.Run(string(state), func(t *testing.T) {
 			mappings, err := s.GetRewirerMappings(ctx, GetRewirerMappingsOpts{
-				CampaignSpecID: newCampaignSpec.ID,
-				CampaignID:     campaign.ID,
-				CurrentState:   &state,
+				BatchSpecID:   newBatchSpec.ID,
+				BatchChangeID: batchChange.ID,
+				CurrentState:  &state,
 			})
 			if err != nil {
 				t.Errorf("unexpected error: %+v", err)
@@ -775,7 +775,7 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 	repoStore := database.ReposWith(s)
 	esStore := database.ExternalServicesWith(s)
 
-	// Let's set up a campaign with one of every changeset state.
+	// Let's set up a batch change with one of every changeset state.
 
 	// First up, let's create a repo.
 	repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
@@ -786,82 +786,82 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 	// Create a user.
 	user := ct.CreateTestUser(t, s.DB(), false)
 
-	// Next, we need old and new campaign specs.
-	oldCampaignSpec := ct.CreateBatchSpec(t, ctx, s, "old", user.ID)
-	newCampaignSpec := ct.CreateBatchSpec(t, ctx, s, "new", user.ID)
+	// Next, we need old and new batch specs.
+	oldBatchSpec := ct.CreateBatchSpec(t, ctx, s, "old", user.ID)
+	newBatchSpec := ct.CreateBatchSpec(t, ctx, s, "new", user.ID)
 
-	// That's enough to create a campaign, so let's do that.
-	campaign := ct.CreateBatchChange(t, ctx, s, "text", user.ID, oldCampaignSpec.ID)
+	// That's enough to create a batch change, so let's do that.
+	batchChange := ct.CreateBatchChange(t, ctx, s, "text", user.ID, oldBatchSpec.ID)
 
 	// Now we'll add three old and new pairs of changeset specs. Two will have
 	// matching statuses, and a different two will have matching names.
-	createChangesetSpecPair := func(t *testing.T, ctx context.Context, s *Store, oldCampaignSpec, newCampaignSpec *batches.BatchSpec, opts ct.TestSpecOpts) (old, new *batches.ChangesetSpec) {
-		opts.CampaignSpec = oldCampaignSpec.ID
+	createChangesetSpecPair := func(t *testing.T, ctx context.Context, s *Store, oldBatchSpec, newBatchSpec *batches.BatchSpec, opts ct.TestSpecOpts) (old, new *batches.ChangesetSpec) {
+		opts.BatchSpec = oldBatchSpec.ID
 		old = ct.CreateChangesetSpec(t, ctx, s, opts)
 
-		opts.CampaignSpec = newCampaignSpec.ID
+		opts.BatchSpec = newBatchSpec.ID
 		new = ct.CreateChangesetSpec(t, ctx, s, opts)
 
 		return old, new
 	}
-	oldOpenFoo, _ := createChangesetSpecPair(t, ctx, s, oldCampaignSpec, newCampaignSpec, ct.TestSpecOpts{
-		User:         user.ID,
-		Repo:         repo.ID,
-		CampaignSpec: oldCampaignSpec.ID,
-		Title:        "foo",
-		Published:    true,
-		HeadRef:      "open-foo",
+	oldOpenFoo, _ := createChangesetSpecPair(t, ctx, s, oldBatchSpec, newBatchSpec, ct.TestSpecOpts{
+		User:      user.ID,
+		Repo:      repo.ID,
+		BatchSpec: oldBatchSpec.ID,
+		Title:     "foo",
+		Published: true,
+		HeadRef:   "open-foo",
 	})
-	oldOpenBar, _ := createChangesetSpecPair(t, ctx, s, oldCampaignSpec, newCampaignSpec, ct.TestSpecOpts{
-		User:         user.ID,
-		Repo:         repo.ID,
-		CampaignSpec: oldCampaignSpec.ID,
-		Title:        "bar",
-		Published:    true,
-		HeadRef:      "open-bar",
+	oldOpenBar, _ := createChangesetSpecPair(t, ctx, s, oldBatchSpec, newBatchSpec, ct.TestSpecOpts{
+		User:      user.ID,
+		Repo:      repo.ID,
+		BatchSpec: oldBatchSpec.ID,
+		Title:     "bar",
+		Published: true,
+		HeadRef:   "open-bar",
 	})
-	oldClosedFoo, _ := createChangesetSpecPair(t, ctx, s, oldCampaignSpec, newCampaignSpec, ct.TestSpecOpts{
-		User:         user.ID,
-		Repo:         repo.ID,
-		CampaignSpec: oldCampaignSpec.ID,
-		Title:        "foo",
-		Published:    true,
-		HeadRef:      "closed-foo",
+	oldClosedFoo, _ := createChangesetSpecPair(t, ctx, s, oldBatchSpec, newBatchSpec, ct.TestSpecOpts{
+		User:      user.ID,
+		Repo:      repo.ID,
+		BatchSpec: oldBatchSpec.ID,
+		Title:     "foo",
+		Published: true,
+		HeadRef:   "closed-foo",
 	})
 
 	// Finally, the changesets.
 	openFoo := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
 		Repo:                repo.ID,
-		Campaign:            campaign.ID,
+		BatchChange:         batchChange.ID,
 		CurrentSpec:         oldOpenFoo.ID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
 		ExternalID:          "5678",
 		ExternalState:       batches.ChangesetExternalStateOpen,
-		OwnedByCampaign:     campaign.ID,
+		OwnedByBatchChange:  batchChange.ID,
 		Metadata: map[string]interface{}{
 			"Title": "foo",
 		},
 	})
 	openBar := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
 		Repo:                repo.ID,
-		Campaign:            campaign.ID,
+		BatchChange:         batchChange.ID,
 		CurrentSpec:         oldOpenBar.ID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
 		ExternalID:          "5679",
 		ExternalState:       batches.ChangesetExternalStateOpen,
-		OwnedByCampaign:     campaign.ID,
+		OwnedByBatchChange:  batchChange.ID,
 		Metadata: map[string]interface{}{
 			"Title": "bar",
 		},
 	})
 	_ = ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
 		Repo:                repo.ID,
-		Campaign:            campaign.ID,
+		BatchChange:         batchChange.ID,
 		CurrentSpec:         oldClosedFoo.ID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
 		ExternalID:          "5680",
 		ExternalState:       batches.ChangesetExternalStateClosed,
-		OwnedByCampaign:     campaign.ID,
+		OwnedByBatchChange:  batchChange.ID,
 		Metadata: map[string]interface{}{
 			"Title": "foo",
 		},
@@ -905,8 +905,8 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			tc.opts.CampaignSpecID = newCampaignSpec.ID
-			tc.opts.CampaignID = campaign.ID
+			tc.opts.BatchSpecID = newBatchSpec.ID
+			tc.opts.BatchChangeID = batchChange.ID
 			mappings, err := s.GetRewirerMappings(ctx, tc.opts)
 			if err != nil {
 				t.Errorf("unexpected error: %+v", err)
@@ -934,7 +934,7 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 	esStore := database.ExternalServicesWith(s)
 
 	// OK, let's set up an interesting scenario. We're going to set up a
-	// campaign that tracks two changesets in different repositories, and
+	// batch change that tracks two changesets in different repositories, and
 	// creates two changesets in those same repositories with different names.
 
 	// First up, let's create the repos.
@@ -951,118 +951,118 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 	// Create a user.
 	user := ct.CreateTestUser(t, s.DB(), false)
 
-	// Next, we need a campaign spec.
-	oldCampaignSpec := ct.CreateBatchSpec(t, ctx, s, "text", user.ID)
+	// Next, we need a batch spec.
+	oldBatchSpec := ct.CreateBatchSpec(t, ctx, s, "text", user.ID)
 
-	// That's enough to create a campaign, so let's do that.
-	campaign := ct.CreateBatchChange(t, ctx, s, "text", user.ID, oldCampaignSpec.ID)
+	// That's enough to create a batch change, so let's do that.
+	batchChange := ct.CreateBatchChange(t, ctx, s, "text", user.ID, oldBatchSpec.ID)
 
 	// Now we can create the changeset specs.
 	oldTrackedGitHubSpec := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
-		User:         user.ID,
-		Repo:         repos[0].ID,
-		CampaignSpec: oldCampaignSpec.ID,
-		ExternalID:   "1234",
+		User:       user.ID,
+		Repo:       repos[0].ID,
+		BatchSpec:  oldBatchSpec.ID,
+		ExternalID: "1234",
 	})
 	oldTrackedGitLabSpec := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
-		User:         user.ID,
-		Repo:         repos[1].ID,
-		CampaignSpec: oldCampaignSpec.ID,
-		ExternalID:   "1234",
+		User:       user.ID,
+		Repo:       repos[1].ID,
+		BatchSpec:  oldBatchSpec.ID,
+		ExternalID: "1234",
 	})
 	oldBranchGitHubSpec := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
-		User:         user.ID,
-		Repo:         repos[0].ID,
-		CampaignSpec: oldCampaignSpec.ID,
-		HeadRef:      "main",
-		Published:    true,
-		Title:        "GitHub branch",
+		User:      user.ID,
+		Repo:      repos[0].ID,
+		BatchSpec: oldBatchSpec.ID,
+		HeadRef:   "main",
+		Published: true,
+		Title:     "GitHub branch",
 	})
 	oldBranchGitLabSpec := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
-		User:         user.ID,
-		Repo:         repos[1].ID,
-		CampaignSpec: oldCampaignSpec.ID,
-		HeadRef:      "main",
-		Published:    true,
-		Title:        "GitLab branch",
+		User:      user.ID,
+		Repo:      repos[1].ID,
+		BatchSpec: oldBatchSpec.ID,
+		HeadRef:   "main",
+		Published: true,
+		Title:     "GitLab branch",
 	})
 
 	// We also need actual changesets.
 	oldTrackedGitHub := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
 		Repo:                repos[0].ID,
-		Campaign:            campaign.ID,
+		BatchChange:         batchChange.ID,
 		CurrentSpec:         oldTrackedGitHubSpec.ID,
 		ExternalServiceType: repos[0].ExternalRepo.ServiceType,
 		ExternalID:          "1234",
-		OwnedByCampaign:     campaign.ID,
+		OwnedByBatchChange:  batchChange.ID,
 		Metadata: map[string]interface{}{
 			"Title": "Tracked GitHub",
 		},
 	})
 	oldTrackedGitLab := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
 		Repo:                repos[1].ID,
-		Campaign:            campaign.ID,
+		BatchChange:         batchChange.ID,
 		CurrentSpec:         oldTrackedGitLabSpec.ID,
 		ExternalServiceType: repos[1].ExternalRepo.ServiceType,
 		ExternalID:          "1234",
-		OwnedByCampaign:     campaign.ID,
+		OwnedByBatchChange:  batchChange.ID,
 		Metadata: map[string]interface{}{
 			"title": "Tracked GitLab",
 		},
 	})
 	oldBranchGitHub := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
 		Repo:                repos[0].ID,
-		Campaign:            campaign.ID,
+		BatchChange:         batchChange.ID,
 		CurrentSpec:         oldBranchGitHubSpec.ID,
 		ExternalServiceType: repos[0].ExternalRepo.ServiceType,
 		ExternalID:          "5678",
-		OwnedByCampaign:     campaign.ID,
+		OwnedByBatchChange:  batchChange.ID,
 		Metadata: map[string]interface{}{
 			"Title": "GitHub branch",
 		},
 	})
 	oldBranchGitLab := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
 		Repo:                repos[1].ID,
-		Campaign:            campaign.ID,
+		BatchChange:         batchChange.ID,
 		CurrentSpec:         oldBranchGitLabSpec.ID,
 		ExternalServiceType: repos[1].ExternalRepo.ServiceType,
 		ExternalID:          "5678",
-		OwnedByCampaign:     campaign.ID,
+		OwnedByBatchChange:  batchChange.ID,
 		Metadata: map[string]interface{}{
 			"title": "GitLab branch",
 		},
 	})
-	// Cool. Now let's set up a new campaign spec.
-	newCampaignSpec := ct.CreateBatchSpec(t, ctx, s, "text", user.ID)
+	// Cool. Now let's set up a new batch spec.
+	newBatchSpec := ct.CreateBatchSpec(t, ctx, s, "text", user.ID)
 
 	// And we need all new changeset specs to go into that spec.
 	newTrackedGitHub := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
-		User:         user.ID,
-		Repo:         repos[0].ID,
-		CampaignSpec: newCampaignSpec.ID,
-		ExternalID:   "1234",
+		User:       user.ID,
+		Repo:       repos[0].ID,
+		BatchSpec:  newBatchSpec.ID,
+		ExternalID: "1234",
 	})
 	newTrackedGitLab := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
-		User:         user.ID,
-		Repo:         repos[1].ID,
-		CampaignSpec: newCampaignSpec.ID,
-		ExternalID:   "1234",
+		User:       user.ID,
+		Repo:       repos[1].ID,
+		BatchSpec:  newBatchSpec.ID,
+		ExternalID: "1234",
 	})
 	newBranchGitHub := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
-		User:         user.ID,
-		Repo:         repos[0].ID,
-		CampaignSpec: newCampaignSpec.ID,
-		HeadRef:      "main",
-		Published:    true,
-		Title:        "New GitHub branch",
+		User:      user.ID,
+		Repo:      repos[0].ID,
+		BatchSpec: newBatchSpec.ID,
+		HeadRef:   "main",
+		Published: true,
+		Title:     "New GitHub branch",
 	})
 	newBranchGitLab := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
-		User:         user.ID,
-		Repo:         repos[1].ID,
-		CampaignSpec: newCampaignSpec.ID,
-		HeadRef:      "main",
-		Published:    true,
-		Title:        "New GitLab branch",
+		User:      user.ID,
+		Repo:      repos[1].ID,
+		BatchSpec: newBatchSpec.ID,
+		HeadRef:   "main",
+		Published: true,
+		Title:     "New GitLab branch",
 	})
 
 	// A couple of hundred lines of boilerplate later, we have a scenario! Let's
@@ -1165,9 +1165,9 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 		t.Run(name, func(t *testing.T) {
 			t.Run("no limits", func(t *testing.T) {
 				have, err := s.GetRewirerMappings(ctx, GetRewirerMappingsOpts{
-					CampaignSpecID: newCampaignSpec.ID,
-					CampaignID:     campaign.ID,
-					TextSearch:     tc.search,
+					BatchSpecID:   newBatchSpec.ID,
+					BatchChangeID: batchChange.ID,
+					TextSearch:    tc.search,
 				})
 				if err != nil {
 					t.Errorf("unexpected error: %+v", err)
@@ -1180,10 +1180,10 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 
 			t.Run("with limit", func(t *testing.T) {
 				have, err := s.GetRewirerMappings(ctx, GetRewirerMappingsOpts{
-					CampaignSpecID: newCampaignSpec.ID,
-					CampaignID:     campaign.ID,
-					LimitOffset:    &database.LimitOffset{Limit: 1},
-					TextSearch:     tc.search,
+					BatchSpecID:   newBatchSpec.ID,
+					BatchChangeID: batchChange.ID,
+					LimitOffset:   &database.LimitOffset{Limit: 1},
+					TextSearch:    tc.search,
 				})
 				if err != nil {
 					t.Errorf("unexpected error: %+v", err)
@@ -1200,10 +1200,10 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 
 			t.Run("with offset and limit", func(t *testing.T) {
 				have, err := s.GetRewirerMappings(ctx, GetRewirerMappingsOpts{
-					CampaignSpecID: newCampaignSpec.ID,
-					CampaignID:     campaign.ID,
-					LimitOffset:    &database.LimitOffset{Offset: 1, Limit: 1},
-					TextSearch:     tc.search,
+					BatchSpecID:   newBatchSpec.ID,
+					BatchChangeID: batchChange.ID,
+					LimitOffset:   &database.LimitOffset{Offset: 1, Limit: 1},
+					TextSearch:    tc.search,
 				})
 				if err != nil {
 					t.Errorf("unexpected error: %+v", err)

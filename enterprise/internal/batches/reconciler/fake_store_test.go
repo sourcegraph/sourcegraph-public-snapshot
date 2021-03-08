@@ -24,5 +24,5 @@ func (fs *FakeStore) GetBatchChange(ctx context.Context, opts store.CountBatchCh
 	if fs.GetBatchChangeMock != nil {
 		return fs.GetBatchChangeMock(ctx, opts)
 	}
-	return nil, mockMissingErr{"GetCampaign"}
+	return nil, mockMissingErr{"GetBatchChange"}
 }

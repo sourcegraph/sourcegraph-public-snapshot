@@ -377,7 +377,7 @@ func TestApplyBatchChange(t *testing.T) {
 	}
 
 	changesetSpec := &batches.ChangesetSpec{
-		CampaignSpecID: campaignSpec.ID,
+		BatchSpecID: campaignSpec.ID,
 		Spec: &batches.ChangesetSpecDescription{
 			BaseRepository: repoAPIID,
 		},
@@ -741,8 +741,8 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 			},
 			wantSafe: true,
 			wantParsed: store.ListChangesetsOpts{
-				PublicationState:  &wantPublicationStates[0],
-				OwnedByCampaignID: campaignID,
+				PublicationState:     &wantPublicationStates[0],
+				OwnedByBatchChangeID: campaignID,
 			},
 		},
 		// Setting OnlyPublishedByThisBatchChange true.
@@ -752,8 +752,8 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 			},
 			wantSafe: true,
 			wantParsed: store.ListChangesetsOpts{
-				PublicationState:  &wantPublicationStates[0],
-				OwnedByCampaignID: campaignID,
+				PublicationState:     &wantPublicationStates[0],
+				OwnedByBatchChangeID: campaignID,
 			},
 		},
 		// Setting a positive search.

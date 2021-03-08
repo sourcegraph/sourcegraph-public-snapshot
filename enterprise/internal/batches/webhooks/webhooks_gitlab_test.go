@@ -476,7 +476,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			}
 		})
 
-		t.Run("broken campaign store", func(t *testing.T) {
+		t.Run("broken batches store", func(t *testing.T) {
 			// We can induce an error with a broken database connection.
 			s := gitLabTestSetup(t, db)
 			h := NewGitLabWebhook(s)

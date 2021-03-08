@@ -101,8 +101,8 @@ func (p *Plan) SetOp(op batches.ReconcilerOperation) { p.Ops = Operations{op} }
 
 // DeterminePlan looks at the given changeset to determine what action the
 // reconciler should take.
-// It consumes the current and the previous changeset spec, if they exist.
-// If the current ChangesetSpec is not applied to a campaign, it returns an
+// It consumes the current and the previous changeset spec, if they exist. If
+// the current ChangesetSpec is not applied to a batch change, it returns an
 // error.
 func DeterminePlan(previousSpec, currentSpec *batches.ChangesetSpec, ch *batches.Changeset) (*Plan, error) {
 	pl := &Plan{

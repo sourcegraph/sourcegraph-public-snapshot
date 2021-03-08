@@ -58,7 +58,7 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		s.CampaignSpecID = campaignSpec.ID
+		s.BatchSpecID = campaignSpec.ID
 		s.UserID = userID
 		s.RepoID = r.ID
 

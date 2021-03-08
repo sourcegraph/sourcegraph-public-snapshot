@@ -793,7 +793,7 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, batchCha
 	if args.OnlyPublishedByThisCampaign != nil || args.OnlyPublishedByThisBatchChange != nil {
 		published := batches.ChangesetPublicationStatePublished
 
-		opts.OwnedByCampaignID = batchChangeID
+		opts.OwnedByBatchChangeID = batchChangeID
 		opts.PublicationState = &published
 	}
 	if args.Search != nil {

@@ -113,7 +113,7 @@ func (s *Store) createChangesetSpecQuery(c *batches.ChangesetSpec) (*sqlf.Query,
 		c.RandID,
 		c.RawSpec,
 		spec,
-		nullInt64Column(c.CampaignSpecID),
+		nullInt64Column(c.BatchSpecID),
 		c.RepoID,
 		nullInt32Column(c.UserID),
 		c.DiffStatAdded,
@@ -174,7 +174,7 @@ func (s *Store) updateChangesetSpecQuery(c *batches.ChangesetSpec) (*sqlf.Query,
 		c.RandID,
 		c.RawSpec,
 		spec,
-		nullInt64Column(c.CampaignSpecID),
+		nullInt64Column(c.BatchSpecID),
 		c.RepoID,
 		nullInt32Column(c.UserID),
 		c.DiffStatAdded,
@@ -203,7 +203,7 @@ DELETE FROM changeset_specs WHERE id = %s
 // CountChangesetSpecsOpts captures the query options needed for counting
 // ChangesetSpecs.
 type CountChangesetSpecsOpts struct {
-	CampaignSpecID int64
+	BatchSpecID int64
 }
 
 // CountChangesetSpecs returns the number of changeset specs in the database.
@@ -224,8 +224,8 @@ func countChangesetSpecsQuery(opts *CountChangesetSpecsOpts) *sqlf.Query {
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
 
-	if opts.CampaignSpecID != 0 {
-		cond := sqlf.Sprintf("changeset_specs.campaign_spec_id = %s", opts.CampaignSpecID)
+	if opts.BatchSpecID != 0 {
+		cond := sqlf.Sprintf("changeset_specs.campaign_spec_id = %s", opts.BatchSpecID)
 		preds = append(preds, cond)
 	}
 
@@ -304,9 +304,9 @@ type ListChangesetSpecsOpts struct {
 	LimitOpts
 	Cursor int64
 
-	CampaignSpecID int64
-	RandIDs        []string
-	IDs            []int64
+	BatchSpecID int64
+	RandIDs     []string
+	IDs         []int64
 }
 
 // ListChangesetSpecs lists ChangesetSpecs with the given filters.
@@ -345,8 +345,8 @@ func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
 
-	if opts.CampaignSpecID != 0 {
-		preds = append(preds, sqlf.Sprintf("changeset_specs.campaign_spec_id = %d", opts.CampaignSpecID))
+	if opts.BatchSpecID != 0 {
+		preds = append(preds, sqlf.Sprintf("changeset_specs.campaign_spec_id = %d", opts.BatchSpecID))
 	}
 
 	if len(opts.RandIDs) != 0 {
@@ -415,7 +415,7 @@ func scanChangesetSpec(c *batches.ChangesetSpec, s scanner) error {
 		&c.RandID,
 		&c.RawSpec,
 		&spec,
-		&dbutil.NullInt64{N: &c.CampaignSpecID},
+		&dbutil.NullInt64{N: &c.BatchSpecID},
 		&c.RepoID,
 		&dbutil.NullInt32{N: &c.UserID},
 		&c.DiffStatAdded,
@@ -547,8 +547,8 @@ func (rm RewirerMappings) RepoIDs() []api.RepoID {
 }
 
 type GetRewirerMappingsOpts struct {
-	CampaignSpecID int64
-	CampaignID     int64
+	BatchSpecID   int64
+	BatchChangeID int64
 
 	LimitOffset  *database.LimitOffset
 	TextSearch   []search.TextSearchTerm
@@ -637,17 +637,17 @@ func getRewirerMappingsQuery(opts GetRewirerMappingsOpts) (*sqlf.Query, error) {
 
 	return sqlf.Sprintf(
 		getRewirerMappingsQueryFmtstr,
-		opts.CampaignSpecID,
+		opts.BatchSpecID,
 		viewTextSearch,
 		currentState,
-		opts.CampaignID,
-		opts.CampaignSpecID,
+		opts.BatchChangeID,
+		opts.BatchSpecID,
 		viewTextSearch,
 		currentState,
-		opts.CampaignSpecID,
-		opts.CampaignID,
-		opts.CampaignSpecID,
-		strconv.Itoa(int(opts.CampaignID)),
+		opts.BatchSpecID,
+		opts.BatchChangeID,
+		opts.BatchSpecID,
+		strconv.Itoa(int(opts.BatchChangeID)),
 		detachTextSearch,
 		currentState,
 		opts.LimitOffset.SQL(),

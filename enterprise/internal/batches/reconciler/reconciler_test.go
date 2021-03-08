@@ -89,7 +89,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			// Create necessary associations.
-			previousCampaignSpec := ct.CreateBatchSpec(t, ctx, store, "reconciler-test-batch-change", admin.ID)
+			previousBatchSpec := ct.CreateBatchSpec(t, ctx, store, "reconciler-test-batch-change", admin.ID)
 			batchSpec := ct.CreateBatchSpec(t, ctx, store, "reconciler-test-batch-change", admin.ID)
 			batchChange := ct.CreateBatchChange(t, ctx, store, "reconciler-test-batch-change", admin.ID, batchSpec.ID)
 
@@ -97,20 +97,20 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 			specOpts := *tc.currentSpec
 			specOpts.User = admin.ID
 			specOpts.Repo = rs[0].ID
-			specOpts.CampaignSpec = batchSpec.ID
+			specOpts.BatchSpec = batchSpec.ID
 			changesetSpec := ct.CreateChangesetSpec(t, ctx, store, specOpts)
 
 			previousSpecOpts := *tc.previousSpec
 			previousSpecOpts.User = admin.ID
 			previousSpecOpts.Repo = rs[0].ID
-			previousSpecOpts.CampaignSpec = previousCampaignSpec.ID
+			previousSpecOpts.BatchSpec = previousBatchSpec.ID
 			previousSpec := ct.CreateChangesetSpec(t, ctx, store, previousSpecOpts)
 
 			// Create the changeset with correct associations.
 			changesetOpts := tc.changeset
 			changesetOpts.Repo = rs[0].ID
-			changesetOpts.Campaigns = []batches.BatchChangeAssoc{{BatchChangeID: batchChange.ID}}
-			changesetOpts.OwnedByCampaign = batchChange.ID
+			changesetOpts.BatchChanges = []batches.BatchChangeAssoc{{BatchChangeID: batchChange.ID}}
+			changesetOpts.OwnedByBatchChange = batchChange.ID
 			if changesetSpec != nil {
 				changesetOpts.CurrentSpec = changesetSpec.ID
 			}
@@ -150,7 +150,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 			// Assert that the changeset in the database looks like we want
 			assertions := tc.wantChangeset
 			assertions.Repo = rs[0].ID
-			assertions.OwnedByCampaign = changesetOpts.OwnedByCampaign
+			assertions.OwnedByBatchChange = changesetOpts.OwnedByBatchChange
 			assertions.AttachedTo = []int64{batchChange.ID}
 			assertions.CurrentSpec = changesetSpec.ID
 			assertions.PreviousSpec = previousSpec.ID

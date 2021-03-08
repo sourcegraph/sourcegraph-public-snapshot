@@ -127,7 +127,7 @@ func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts)
 	}
 
 	for _, changesetSpec := range cs {
-		changesetSpec.CampaignSpecID = spec.ID
+		changesetSpec.BatchSpecID = spec.ID
 
 		if err := tx.UpdateChangesetSpec(ctx, changesetSpec); err != nil {
 			return nil, err

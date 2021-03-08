@@ -121,8 +121,8 @@ func (s *Service) ApplyBatchChange(ctx context.Context, opts ApplyBatchChangeOpt
 
 	// Load the mapping between ChangesetSpecs and existing Changesets in the target batch spec.
 	mappings, err := tx.GetRewirerMappings(ctx, store.GetRewirerMappingsOpts{
-		CampaignSpecID: batchChange.BatchSpecID,
-		CampaignID:     batchChange.ID,
+		BatchSpecID:   batchChange.BatchSpecID,
+		BatchChangeID: batchChange.ID,
 	})
 	if err != nil {
 		return nil, err

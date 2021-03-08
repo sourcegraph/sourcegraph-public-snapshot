@@ -67,8 +67,8 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 		ExternalServiceType: "github",
 		PublicationState:    batches.ChangesetPublicationStateUnpublished,
 		ExternalReviewState: batches.ChangesetReviewStatePending,
-		OwnedByCampaign:     campaign.ID,
-		Campaign:            campaign.ID,
+		OwnedByBatchChange:  campaign.ID,
+		BatchChange:         campaign.ID,
 		Metadata: &github.PullRequest{
 			TimelineItems: []github.TimelineItem{
 				{Type: "PullRequestCommit", Item: &github.PullRequestCommit{

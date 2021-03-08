@@ -45,12 +45,12 @@ func TestRewirer_Rewire(t *testing.T) {
 			name: "no spec matching existing imported changeset",
 			mappings: store.RewirerMappings{{
 				Changeset: ct.BuildChangeset(ct.TestChangesetOpts{
-					Repo:      testRepoID,
-					Campaigns: []batches.BatchChangeAssoc{{BatchChangeID: testCampaignID}},
+					Repo:         testRepoID,
+					BatchChanges: []batches.BatchChangeAssoc{{BatchChangeID: testCampaignID}},
 
 					// Imported changeset:
-					OwnedByCampaign: 0,
-					CurrentSpec:     0,
+					OwnedByBatchChange: 0,
+					CurrentSpec:        0,
 				}),
 				Repo: testRepo,
 			}},
@@ -66,24 +66,24 @@ func TestRewirer_Rewire(t *testing.T) {
 			name: "no spec matching existing unpublished branch changeset owned by this campaign",
 			mappings: store.RewirerMappings{{
 				Changeset: ct.BuildChangeset(ct.TestChangesetOpts{
-					Repo:      testRepoID,
-					Campaigns: []batches.BatchChangeAssoc{{BatchChangeID: testCampaignID}},
+					Repo:         testRepoID,
+					BatchChanges: []batches.BatchChangeAssoc{{BatchChangeID: testCampaignID}},
 
 					// Owned unpublished branch changeset:
-					PublicationState: batches.ChangesetPublicationStateUnpublished,
-					OwnedByCampaign:  testCampaignID,
-					CurrentSpec:      testChangesetSpecID,
+					PublicationState:   batches.ChangesetPublicationStateUnpublished,
+					OwnedByBatchChange: testCampaignID,
+					CurrentSpec:        testChangesetSpecID,
 				}),
 				Repo: testRepo,
 			}},
 			wantChangesets: []ct.ChangesetAssertions{
 				// No match, should be re-enqueued and detached from the campaign.
 				assertResetQueued(ct.ChangesetAssertions{
-					PublicationState: batches.ChangesetPublicationStateUnpublished,
-					OwnedByCampaign:  testCampaignID,
-					CurrentSpec:      testChangesetSpecID,
-					Repo:             testRepoID,
-					DetachFrom:       []int64{testCampaignID},
+					PublicationState:   batches.ChangesetPublicationStateUnpublished,
+					OwnedByBatchChange: testCampaignID,
+					CurrentSpec:        testChangesetSpecID,
+					Repo:               testRepoID,
+					DetachFrom:         []int64{testCampaignID},
 				}),
 			},
 		},
@@ -91,13 +91,13 @@ func TestRewirer_Rewire(t *testing.T) {
 			name: "no spec matching existing published branch changeset owned by this campaign",
 			mappings: store.RewirerMappings{{
 				Changeset: ct.BuildChangeset(ct.TestChangesetOpts{
-					Repo:      testRepoID,
-					Campaigns: []batches.BatchChangeAssoc{{BatchChangeID: testCampaignID}},
+					Repo:         testRepoID,
+					BatchChanges: []batches.BatchChangeAssoc{{BatchChangeID: testCampaignID}},
 
 					// Owned, published branch changeset:
-					OwnedByCampaign:  testCampaignID,
-					CurrentSpec:      testChangesetSpecID,
-					PublicationState: batches.ChangesetPublicationStatePublished,
+					OwnedByBatchChange: testCampaignID,
+					CurrentSpec:        testChangesetSpecID,
+					PublicationState:   batches.ChangesetPublicationStatePublished,
 					// Publication succeeded
 					ReconcilerState: batches.ReconcilerStateCompleted,
 				}),
@@ -106,9 +106,9 @@ func TestRewirer_Rewire(t *testing.T) {
 			wantChangesets: []ct.ChangesetAssertions{
 				// No match, should be re-enqueued and detached from the campaign.
 				assertResetQueued(ct.ChangesetAssertions{
-					PublicationState: batches.ChangesetPublicationStatePublished,
-					OwnedByCampaign:  testCampaignID,
-					CurrentSpec:      testChangesetSpecID,
+					PublicationState:   batches.ChangesetPublicationStatePublished,
+					OwnedByBatchChange: testCampaignID,
+					CurrentSpec:        testChangesetSpecID,
 					// The changeset should be closed on the code host.
 					Closing:    true,
 					Repo:       testRepoID,
@@ -122,8 +122,8 @@ func TestRewirer_Rewire(t *testing.T) {
 			name: "no spec matching existing changeset, no repo perms",
 			mappings: store.RewirerMappings{{
 				Changeset: ct.BuildChangeset(ct.TestChangesetOpts{
-					Repo:      0,
-					Campaigns: []batches.BatchChangeAssoc{{BatchChangeID: testCampaignID}},
+					Repo:         0,
+					BatchChanges: []batches.BatchChangeAssoc{{BatchChangeID: testCampaignID}},
 				}),
 				// No access to repo.
 				Repo: nil,
@@ -165,11 +165,11 @@ func TestRewirer_Rewire(t *testing.T) {
 				Repo: testRepo,
 			}},
 			wantChangesets: []ct.ChangesetAssertions{assertResetQueued(ct.ChangesetAssertions{
-				Repo:             testRepoID,
-				PublicationState: batches.ChangesetPublicationStateUnpublished,
-				AttachedTo:       []int64{testCampaignID},
-				OwnedByCampaign:  testCampaignID,
-				CurrentSpec:      testChangesetSpecID,
+				Repo:               testRepoID,
+				PublicationState:   batches.ChangesetPublicationStateUnpublished,
+				AttachedTo:         []int64{testCampaignID},
+				OwnedByBatchChange: testCampaignID,
+				CurrentSpec:        testChangesetSpecID,
 				// Diff stat is copied over from changeset spec
 				DiffStat: ct.TestChangsetSpecDiffStat,
 			})},
@@ -216,7 +216,7 @@ func TestRewirer_Rewire(t *testing.T) {
 					Repo:       testRepoID,
 					ExternalID: "123",
 					// Already attached to another campaign
-					Campaigns: []batches.BatchChangeAssoc{{BatchChangeID: testCampaignID + 1}},
+					BatchChanges: []batches.BatchChangeAssoc{{BatchChangeID: testCampaignID + 1}},
 				}),
 				Repo: testRepo,
 			}},
@@ -243,7 +243,7 @@ func TestRewirer_Rewire(t *testing.T) {
 					Repo:       testRepoID,
 					ExternalID: "123",
 					// Already attached to another campaign
-					Campaigns:       []batches.BatchChangeAssoc{{BatchChangeID: testCampaignID + 1}},
+					BatchChanges:    []batches.BatchChangeAssoc{{BatchChangeID: testCampaignID + 1}},
 					ReconcilerState: batches.ReconcilerStateFailed,
 				}),
 				Repo: testRepo,
@@ -268,18 +268,18 @@ func TestRewirer_Rewire(t *testing.T) {
 					Repo:       testRepoID,
 					ExternalID: "123",
 					// Already attached to another campaign
-					Campaigns: []batches.BatchChangeAssoc{{BatchChangeID: testCampaignID + 1}},
+					BatchChanges: []batches.BatchChangeAssoc{{BatchChangeID: testCampaignID + 1}},
 					// Other campaign created this changeset.
-					OwnedByCampaign: testCampaignID + 1,
+					OwnedByBatchChange: testCampaignID + 1,
 				}),
 				Repo: testRepo,
 			}},
 			wantChangesets: []ct.ChangesetAssertions{
 				// Changeset owned by another campaign should not be retried.
 				{
-					Repo:            testRepoID,
-					ExternalID:      "123",
-					OwnedByCampaign: testCampaignID + 1,
+					Repo:               testRepoID,
+					ExternalID:         "123",
+					OwnedByBatchChange: testCampaignID + 1,
 					// Now should be attached to both batches.
 					AttachedTo: []int64{testCampaignID + 1, testCampaignID},
 				}},
@@ -295,23 +295,23 @@ func TestRewirer_Rewire(t *testing.T) {
 					HeadRef: "refs/heads/test-branch",
 				}),
 				Changeset: ct.BuildChangeset(ct.TestChangesetOpts{
-					Repo:             testRepoID,
-					ExternalID:       "123",
-					CurrentSpec:      testChangesetSpecID,
-					Campaigns:        []batches.BatchChangeAssoc{{BatchChangeID: testCampaignID}},
-					OwnedByCampaign:  testCampaignID,
-					PublicationState: batches.ChangesetPublicationStatePublished,
-					ReconcilerState:  batches.ReconcilerStateCompleted,
+					Repo:               testRepoID,
+					ExternalID:         "123",
+					CurrentSpec:        testChangesetSpecID,
+					BatchChanges:       []batches.BatchChangeAssoc{{BatchChangeID: testCampaignID}},
+					OwnedByBatchChange: testCampaignID,
+					PublicationState:   batches.ChangesetPublicationStatePublished,
+					ReconcilerState:    batches.ReconcilerStateCompleted,
 				}),
 				Repo: testRepo,
 			}},
 			wantChangesets: []ct.ChangesetAssertions{assertResetQueued(ct.ChangesetAssertions{
-				Repo:             testRepoID,
-				ExternalID:       "123",
-				OwnedByCampaign:  testCampaignID,
-				AttachedTo:       []int64{testCampaignID},
-				PublicationState: batches.ChangesetPublicationStatePublished,
-				CurrentSpec:      testChangesetSpecID + 1,
+				Repo:               testRepoID,
+				ExternalID:         "123",
+				OwnedByBatchChange: testCampaignID,
+				AttachedTo:         []int64{testCampaignID},
+				PublicationState:   batches.ChangesetPublicationStatePublished,
+				CurrentSpec:        testChangesetSpecID + 1,
 				// The changeset was reconciled successfully before, so the previous spec should have been recorded.
 				PreviousSpec: testChangesetSpecID,
 			})},
@@ -327,23 +327,23 @@ func TestRewirer_Rewire(t *testing.T) {
 					HeadRef: "refs/heads/test-branch",
 				}),
 				Changeset: ct.BuildChangeset(ct.TestChangesetOpts{
-					Repo:             testRepoID,
-					ExternalID:       "123",
-					CurrentSpec:      testChangesetSpecID,
-					Campaigns:        []batches.BatchChangeAssoc{{BatchChangeID: testCampaignID}},
-					OwnedByCampaign:  testCampaignID,
-					PublicationState: batches.ChangesetPublicationStatePublished,
-					ReconcilerState:  batches.ReconcilerStateFailed,
+					Repo:               testRepoID,
+					ExternalID:         "123",
+					CurrentSpec:        testChangesetSpecID,
+					BatchChanges:       []batches.BatchChangeAssoc{{BatchChangeID: testCampaignID}},
+					OwnedByBatchChange: testCampaignID,
+					PublicationState:   batches.ChangesetPublicationStatePublished,
+					ReconcilerState:    batches.ReconcilerStateFailed,
 				}),
 				Repo: testRepo,
 			}},
 			wantChangesets: []ct.ChangesetAssertions{assertResetQueued(ct.ChangesetAssertions{
-				Repo:             testRepoID,
-				ExternalID:       "123",
-				OwnedByCampaign:  testCampaignID,
-				AttachedTo:       []int64{testCampaignID},
-				PublicationState: batches.ChangesetPublicationStatePublished,
-				CurrentSpec:      testChangesetSpecID + 1,
+				Repo:               testRepoID,
+				ExternalID:         "123",
+				OwnedByBatchChange: testCampaignID,
+				AttachedTo:         []int64{testCampaignID},
+				PublicationState:   batches.ChangesetPublicationStatePublished,
+				CurrentSpec:        testChangesetSpecID + 1,
 				// The changeset was not reconciled successfully before, so the previous spec should have remained unset.
 				PreviousSpec: 0,
 			})},

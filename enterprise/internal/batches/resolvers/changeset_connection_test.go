@@ -65,8 +65,8 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		ExternalServiceType: "github",
 		PublicationState:    batches.ChangesetPublicationStateUnpublished,
 		ExternalReviewState: batches.ChangesetReviewStatePending,
-		OwnedByCampaign:     campaign.ID,
-		Campaign:            campaign.ID,
+		OwnedByBatchChange:  campaign.ID,
+		BatchChange:         campaign.ID,
 	})
 
 	changeset2 := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
@@ -77,8 +77,8 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		ExternalState:       batches.ChangesetExternalStateOpen,
 		PublicationState:    batches.ChangesetPublicationStatePublished,
 		ExternalReviewState: batches.ChangesetReviewStatePending,
-		OwnedByCampaign:     campaign.ID,
-		Campaign:            campaign.ID,
+		OwnedByBatchChange:  campaign.ID,
+		BatchChange:         campaign.ID,
 	})
 
 	changeset3 := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
@@ -89,8 +89,8 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		ExternalState:       batches.ChangesetExternalStateMerged,
 		PublicationState:    batches.ChangesetPublicationStatePublished,
 		ExternalReviewState: batches.ChangesetReviewStatePending,
-		OwnedByCampaign:     campaign.ID,
-		Campaign:            campaign.ID,
+		OwnedByBatchChange:  campaign.ID,
+		BatchChange:         campaign.ID,
 	})
 	changeset4 := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 		Repo:                inaccessibleRepo.ID,
@@ -100,8 +100,8 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		ExternalState:       batches.ChangesetExternalStateOpen,
 		PublicationState:    batches.ChangesetPublicationStatePublished,
 		ExternalReviewState: batches.ChangesetReviewStatePending,
-		OwnedByCampaign:     campaign.ID,
-		Campaign:            campaign.ID,
+		OwnedByBatchChange:  campaign.ID,
+		BatchChange:         campaign.ID,
 	})
 
 	addChangeset(t, ctx, cstore, changeset1, campaign.ID)

@@ -942,7 +942,7 @@ func TestRepositoryPermissions(t *testing.T) {
 			c := &batches.ChangesetSpec{
 				RepoID:          r.ID,
 				UserID:          userID,
-				CampaignSpecID:  campaignSpec.ID,
+				BatchSpecID:     campaignSpec.ID,
 				DiffStatAdded:   4,
 				DiffStatChanged: 4,
 				DiffStatDeleted: 4,
