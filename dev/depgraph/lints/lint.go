@@ -10,10 +10,12 @@ import (
 type Lint func(graph *graph.DependencyGraph) error
 
 var lintsByName = map[string]Lint{
-	"NoDeadPackages":             NoDeadPackages,
-	"NoReachingIntoCommands":     NoReachingIntoCommands,
 	"NoBinarySpecificSharedCode": NoBinarySpecificSharedCode,
+	"NoDeadPackages":             NoDeadPackages,
+	"NoEnterpriseImportsFromOSS": NoEnterpriseImportsFromOSS,
 	"NoLooseCommands":            NoLooseCommands,
+	"NoReachingIntoCommands":     NoReachingIntoCommands,
+	"NoUnusedSharedCommandCode":  NoUnusedSharedCommandCode,
 }
 
 var DefaultLints []string

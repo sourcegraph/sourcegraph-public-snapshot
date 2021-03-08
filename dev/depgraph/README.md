@@ -22,8 +22,10 @@ This command ensures the following lint passes. Violations of the lint rules wil
 
 - **NoDeadPackages**: Report unused packages (except for library code and main packages)
 - **NoReachingIntoCommands**: Report packages that import code from an unrelated command
-- **NoBinarySpecificSharedCode**: Report packages that are imported only by a single command
+- **NoBinarySpecificSharedCode**: Report shared packages that are imported only by a single command
 - **NoLooseCommands**: Report main packages outside of known command roots
+- **NoUnusedSharedCommandCode**: Report packages that could be moved into an internal package
+- **NoEnterpriseImportsFromOSS**: Report packages that illegally import enterprise code
 
 #### trace
 
