@@ -95,7 +95,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                         Remove
                     </button>
                 ) : (
-                    <ButtonDropdown isOpen={dropdownOpen} toggle={toggleDropdown} direction="down" right={true}>
+                    <ButtonDropdown isOpen={dropdownOpen} toggle={toggleDropdown} direction="down">
                         <DropdownToggle className="btn-sm" color="outline-secondary" caret={true}>
                             Connect
                         </DropdownToggle>

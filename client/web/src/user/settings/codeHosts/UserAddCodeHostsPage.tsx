@@ -7,6 +7,7 @@ import { AddExternalServiceOptions } from '../../../components/externalServices/
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import { ErrorAlert } from '../../../components/alerts'
 import { Link } from '../../../../../shared/src/components/Link'
+
 import { isDefined, keyExistsIn } from '../../../../../shared/src/util/types'
 
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
@@ -14,9 +15,9 @@ import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../.
 import { eventLogger } from '../../../tracking/eventLogger'
 import { SourcegraphContext } from '../../../jscontext'
 
-// type AuthProvider = SourcegraphContext['authProviders'][0]
-// type ServiceType = AuthProvider['serviceType']
-// type AuthProvidersByType = Partial<Record<ServiceType, AuthProvider>>
+type AuthProvider = SourcegraphContext['authProviders'][0]
+type ServiceType = AuthProvider['serviceType']
+type AuthProvidersByType = Partial<Record<ServiceType, AuthProvider>>
 
 export interface UserAddCodeHostsPageProps {
     userID: Scalars['ID']
@@ -35,9 +36,10 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     userID,
     codeHostExternalServices,
     routingPrefix,
-    /* context */
+    context,
 }) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
+    const [oauthRequestFor, setOauthRequestFor] = useState<ExternalServiceKind>()
     const [showAddReposFor, setShowAddReposFor] = useState('')
 
     const fetchExternalServices = useCallback(async () => {
@@ -102,19 +104,39 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         </div>
     )
 
+    // auth providers by service type
+    const authProvidersByType = context.authProviders.reduce((accumulator: AuthProvidersByType, provider) => {
+        accumulator[provider.serviceType] = provider
+        return accumulator
+    }, {})
+
     const codeHostOAuthButtons = isServicesByKind(statusOrError)
         ? Object.values(codeHostExternalServices).reduce(
               (accumulator: JSX.Element[], { kind, defaultDisplayName, icon: Icon }) => {
                   if (!statusOrError[kind]) {
-                      accumulator.push(
-                          <button
-                              key={kind}
-                              type="button"
-                              className={`btn mr-2 ${kind === 'GITLAB' ? 'btn-gitlab' : 'btn-dark'}`}
-                          >
-                              <Icon className="icon-inline" /> {defaultDisplayName}
-                          </button>
-                      )
+                      const type = kind.toLocaleLowerCase() as ServiceType
+                      const authProvider = authProvidersByType[type]
+
+                      if (authProvider) {
+                          accumulator.push(
+                              <button
+                                  key={kind}
+                                  type="button"
+                                  onClick={() => {
+                                      setOauthRequestFor(kind)
+                                      window.location.assign(
+                                          `${authProvider.authenticationURL as string}&redirect=${
+                                              window.location.href
+                                          }&op=createCodeHostConnection`
+                                      )
+                                  }}
+                                  className={`btn mr-2 ${kind === 'GITLAB' ? 'btn-gitlab' : 'btn-dark'}`}
+                              >
+                                  {oauthRequestFor === kind && <LoadingSpinner className="icon-inline mr-1" />}
+                                  <Icon className="icon-inline" /> {defaultDisplayName}
+                              </button>
+                          )
+                      }
                   }
 
                   return accumulator
