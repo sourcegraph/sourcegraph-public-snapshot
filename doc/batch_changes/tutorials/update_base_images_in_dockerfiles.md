@@ -7,36 +7,37 @@
 </style>
 
 <p class="lead">
-Create a campaign to update Dockerfiles in every one of your repositories.
+Create a batch change to update Dockerfiles in every one of your repositories.
 </p>
 
 ### Introduction
 
-Campaigns allow us to update the base images used in our Dockerfiles, across many repositories, in just a few commands.
+Batch Changes allow us to update the base images used in our Dockerfiles, across many repositories, in just a few commands.
 
-This tutorial shows you how to create [a batch spec](../explanations/introduction_to_batch_changes.md#campaign-spec) that
+This tutorial shows you how to create [a batch spec](../explanations/introduction_to_batch_changes.md#batch-spec) that
 
-1. finds `Dockerfile`s that make use of `google/dart:2.x` base images and 
+1. finds `Dockerfile`s that make use of `google/dart:2.x` base images and
 2. changes those `Dockerfiles` to use `google/dart:2.10`
 
 The batch spec and instructions here can [easily be adapted to update other base images](#updating-other-base-images).
 
+<!---TODO update link-->
 <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tutorials/update_base_images_in_dockerfiles_teaser.png" class="screenshot center">
 
 ### Prerequisites
 
-We recommend using the latest version of Sourcegraph when working with campaigns and that you have a basic understanding of how to create batch specs and run them. See the following documents for more information:
+We recommend using the latest version of Sourcegraph when working with Batch Changes and that you have a basic understanding of how to create batch specs and run them. See the following documents for more information:
 
 1. ["Quickstart"](../quickstart.md)
-1. ["Introduction to campaigns"](../explanations/introduction_to_batch_changes.md)
+1. ["Introduction to Batch Changes"](../explanations/introduction_to_batch_changes.md)
 
 ### Create the batch spec
 
-Save the following batch spec YAML as `update-dart-base-images-2-10.campaign.yaml`:
+Save the following batch spec YAML as `update-dart-base-images-2-10.batch.yaml`:
 
 ```yaml
 name: update-dart-base-images-2-10
-description: This campaign updates `google/dart:2.*` base images in Dockerfiles to `google/dart:2.10.2`.
+description: This batch change updates `google/dart:2.*` base images in Dockerfiles to `google/dart:2.10.2`.
 
 on:
   # Find all repositories that contain Dockerfiles with `FROM google/dart:2.*` as base images.
@@ -66,24 +67,24 @@ steps:
 changesetTemplate:
   title: Update google/dart base images in Dockerfiles to 2.10.2
   body: This updates google/dart base images used in Dockerfiles to version 2.10.2
-  branch: campaigns/google-dart-2-10-2-base-images # Push the commit to this branch.
+  branch: batch-changes/google-dart-2-10-2-base-images # Push the commit to this branch.
   commit:
     message: Update google/dart base images in Dockerfiles to 2.10.2
   published: false
 ```
 
-### Create the campaign
+### Create the batch change
 
 1. In your terminal, run this command:
 
-    <pre>src batch preview -f update-dart-base-images-2-10.campaign.yaml</pre>
+    <pre>src batch preview -f update-dart-base-images-2-10.batch.yaml</pre>
 1. Wait for it to run and compute the changes for each repository.
     <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tutorials/update_base_images_in_dockerfiles_wait_run.png" class="screenshot">
 1. Open the preview URL that the command printed out.
     <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tutorials/update_base_images_in_dockerfiles_click_url.png" class="screenshot">
 1. Examine the preview. Confirm that the changesets are the ones you intended to track. If not, edit the batch spec and then rerun the command above.
     <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tutorials/update_base_images_in_dockerfiles_preview.png" class="screenshot">
-1. Click the **Apply spec** button to create the campaign.
+1. Click the **Apply spec** button to create the batch change.
 1. Feel free to then publish the changesets (i.e. create pull requests and merge requests) by [modifying the `published` attribute in the batch spec](../references/batch_spec_yaml_reference.md#changesettemplate-published) and re-running the `src batch preview` command.
 
 ### Updating other base images
