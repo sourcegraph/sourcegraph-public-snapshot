@@ -2,7 +2,6 @@ package lints
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/sourcegraph/sourcegraph/dev/depgraph/graph"
 )
@@ -13,12 +12,8 @@ func NoBinarySpecificSharedCode(graph *graph.DependencyGraph) error {
 	var errors []lintError
 outer:
 	for _, pkg := range graph.Packages {
-		if strings.HasPrefix(pkg, "enterprise/lib") {
-			// May have external/unknown imports
-			continue
-		}
-		if containingCommand(pkg) != "" {
-			// Not shared code
+		if isLibrary(pkg) || containingCommand(pkg) != "" {
+			// Publicly shared or within a command definition
 			continue
 		}
 

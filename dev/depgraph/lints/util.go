@@ -14,3 +14,21 @@ func containingCommand(path string) string {
 
 	return ""
 }
+
+var publicLibraryPrefix = regexp.MustCompile("^(?:enterprise/)?lib/")
+
+// isLibray returns true if the given path is publicly importable.
+func isLibrary(path string) bool {
+	return publicLibraryPrefix.MatchString(path)
+}
+
+// isMain returns true if the given package declares "main" in the given package name map.
+func isMain(packageNames map[string][]string, pkg string) bool {
+	for _, name := range packageNames[pkg] {
+		if name == "main" {
+			return true
+		}
+	}
+
+	return false
+}

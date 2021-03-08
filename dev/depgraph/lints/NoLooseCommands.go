@@ -12,13 +12,11 @@ var validCommandPattern = regexp.MustCompile(`^(?:enterprise/)?(?:dev|cmd)/([^/]
 func NoLooseCommands(graph *graph.DependencyGraph) error {
 	var errors []lintError
 	for _, pkg := range graph.Packages {
-		for _, name := range graph.PackageNames[pkg] {
-			if name == "main" && !validCommandPattern.MatchString(pkg) {
-				errors = append(errors, lintError{
-					name: "NoLooseCommands",
-					pkg:  pkg,
-				})
-			}
+		if isMain(graph.PackageNames, pkg) && !validCommandPattern.MatchString(pkg) {
+			errors = append(errors, lintError{
+				name: "NoLooseCommands",
+				pkg:  pkg,
+			})
 		}
 	}
 
