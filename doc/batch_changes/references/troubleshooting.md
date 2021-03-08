@@ -1,10 +1,10 @@
 # Troubleshooting
 
-This page is meant to help narrow down and eliminate problems when trying to execute a campaign spec with `src campaign [apply|preview]` or managing an already created campaign and its changesets.
+This page is meant to help narrow down and eliminate problems when trying to execute a batch spec with `src campaign [apply|preview]` or managing an already created campaign and its changesets.
 
 ## Executing campaign steps
 
-Since `src campaign [apply|preview]` execute a campaign spec on the host machine on which it is executed (and not on the Sourcegraph instance), there are a lot of different possibilities that can cause it to fail: from missing dependencies to missing credentials when trying to connect ot the Sourcegraph instance.
+Since `src campaign [apply|preview]` execute a batch spec on the host machine on which it is executed (and not on the Sourcegraph instance), there are a lot of different possibilities that can cause it to fail: from missing dependencies to missing credentials when trying to connect ot the Sourcegraph instance.
 
 The following questions can be used to find out what's causing the problem and should ideally be answered with "yes".
 
@@ -26,7 +26,7 @@ If `src` is correctly configured, then the output should look similar to the fol
 
 ### Are dependencies installed?
 
-When executing campaign specs `src` uses Docker and git. Make sure that those are installed and accessible to you on your machine.
+When executing batch specs `src` uses Docker and git. Make sure that those are installed and accessible to you on your machine.
 
 To test whether `git` is installed and accessible, run the following:
 
@@ -44,9 +44,9 @@ That command will pull Docker's `hello-world` image and try to execute a contain
 
 ### Does "Hello World" work?
 
-If executing your campaign spec fails and you haven't tested campaigns with another campaign spec before, it can help to run the "Hello World" campaign to nail down what the problem is.
+If executing your batch spec fails and you haven't tested campaigns with another batch spec before, it can help to run the "Hello World" campaign to nail down what the problem is.
 
-Go through the "[Quickstart](../quickstart.md)" to run a campaign that adds "Hello World" to `README.md` files with the following campaign spec:
+Go through the "[Quickstart](../quickstart.md)" to run a campaign that adds "Hello World" to `README.md` files with the following batch spec:
 
 ```yaml
 name: hello-world
@@ -71,7 +71,7 @@ changesetTemplate:
   published: false
 ```
 
-If even that doesn't work, then we can at least exclude the possibility that _only_ something with _your campaign spec_ is wrong.
+If even that doesn't work, then we can at least exclude the possibility that _only_ something with _your batch spec_ is wrong.
 
 ### Does it work with a single repository? Five? Ten?
 
@@ -108,7 +108,7 @@ on:
   - repository: github.com/my-org/my-repo2
 ```
 
-Once you know that executing the campaign spec works with one or more repositories, you can expand the scope back to its original form and hopefully nail down in which repository execution breaks.
+Once you know that executing the batch spec works with one or more repositories, you can expand the scope back to its original form and hopefully nail down in which repository execution breaks.
 
 ### Can you download a repository archive?
 

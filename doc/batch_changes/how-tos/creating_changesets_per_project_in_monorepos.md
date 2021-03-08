@@ -9,9 +9,9 @@
 
 ## Overview
 
-Large repositories often contain multiple projects, making them so-called monorepos. It can make sense to run the campaign spec [`steps`][steps] separately in each project and create one changeset per project.
+Large repositories often contain multiple projects, making them so-called monorepos. It can make sense to run the batch spec [`steps`][steps] separately in each project and create one changeset per project.
 
-That can be done by using [`workspaces`][workspaces] in the campaign specs in two steps:
+That can be done by using [`workspaces`][workspaces] in the batch specs in two steps:
 
 1. Define the project locations with the `workspaces` property
 2. Produce unique `changesetTemplate.branch` names
@@ -38,7 +38,7 @@ examples/project3/src/...
 
 The location of the `package.json` files tell us that the TypeScript projects are in `project1`, `project2` and `examples/project3`. In each of these we to run the `npm update` command and produce an individual changeset per project.
 
-The [`workspaces`][workspaces] property in campaign specs allows us to do that:
+The [`workspaces`][workspaces] property in batch specs allows us to do that:
 
 ```yaml
 name: update-typescript-monorepo
@@ -89,7 +89,7 @@ With the file and directory structure above, that means we'd end up with the fol
 - `campaigns/update-typescript-project2`
 - `campaigns/update-typescript-examples-project3`
 
-And with that, we're done and ready to produce multiple changesets in a single repository, with the full campaign spec looking like this:
+And with that, we're done and ready to produce multiple changesets in a single repository, with the full batch spec looking like this:
 
 ```yaml
 name: update-typescript-monorepo
@@ -115,11 +115,11 @@ changesetTemplate:
   published: false
 ```
 
-Now we only need to run `src campaign [apply|preview]` to execute our campaign spec.
+Now we only need to run `src campaign [apply|preview]` to execute our batch spec.
 
 ## Dynamic discovery of workspaces
 
-The `workspace` property leverages Sourcegraph search to find the location of the defined workspaces in the repositories yielded by the [`on`][on] property of the campaign spec.
+The `workspace` property leverages Sourcegraph search to find the location of the defined workspaces in the repositories yielded by the [`on`][on] property of the batch spec.
 
 That has the advantage that it's _dynamic_: whenever `src campaign [apply|preview]` is re-executed, Sourcegraph search is used again to find workspaces, automatically picking up new ones and removing workspaces that no longer exist.
 
@@ -129,7 +129,7 @@ If the repository containing the workspaces is really large and it's not feasibl
 
 ## Learn more
 
-To learn more about `workspaces`, take a look at its entry in the "[Campaign Spec YAML reference][workspaces]".
+To learn more about `workspaces`, take a look at its entry in the "[batch spec YAML reference][workspaces]".
 
 <!-- References for easier reading of text above: -->
 

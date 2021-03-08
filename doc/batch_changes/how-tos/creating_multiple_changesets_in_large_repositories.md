@@ -19,11 +19,11 @@
 
 Campaigns can produce a lot of changes in a single repository and in order to make reviewing and merging them easier, it might make sense to split the changes up into multiple changesets.
 
-That can be done by using [`transformChanges`](../references/batch_spec_yaml_reference.md#transformchanges) in the campaign spec to group the changes produced in one single repository by directory and create a changeset for each group.
+That can be done by using [`transformChanges`](../references/batch_spec_yaml_reference.md#transformchanges) in the batch spec to group the changes produced in one single repository by directory and create a changeset for each group.
 
 ## Using `transformChanges`
 
-The following campaign spec uses the `transformChanges` property to create up to 4 changesets in a single repository by grouping the changes made in different directories:
+The following batch spec uses the `transformChanges` property to create up to 4 changesets in a single repository by grouping the changes made in different directories:
 
 ```yaml
 name: hello-world
@@ -64,7 +64,7 @@ changesetTemplate:
   published: false # Do not publish any changes to the code hosts yet
 ```
 
-This campaign spec will produce up to 4 changesets in the `github.com/sourcegraph/sourcegraph` repository:
+This batch spec will produce up to 4 changesets in the `github.com/sourcegraph/sourcegraph` repository:
 
 1. a changeset with the changes in the `client` directory
 1. a changeset with the changes in `docker-images`
@@ -77,4 +77,4 @@ In case no changes have been made in a `directory` specified in a `group`, no ad
 
 If the optional `repository` property is specified only the changes in that repository will be grouped.
 
-See the [campaign spec YAML reference on `transformChanges`](../references/batch_spec_yaml_reference.md#transformchanges) for more details.
+See the [batch spec YAML reference on `transformChanges`](../references/batch_spec_yaml_reference.md#transformchanges) for more details.

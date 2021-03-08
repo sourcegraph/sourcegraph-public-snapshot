@@ -12,22 +12,22 @@ Create a campaign that changes wording in every repository.
 
 ### Introduction
 
-This tutorial shows you how to create [a campaign spec](../explanations/introduction_to_batch_changes.md#campaign-spec) that replaces the words `whitelist` and `blacklist` with `allowlist` and `denylist` in every Markdown file across your entire code base.
+This tutorial shows you how to create [a batch spec](../explanations/introduction_to_batch_changes.md#campaign-spec) that replaces the words `whitelist` and `blacklist` with `allowlist` and `denylist` in every Markdown file across your entire code base.
 
-The campaign spec can be easily changed to search and replace other terms in other file types.
+The batch spec can be easily changed to search and replace other terms in other file types.
 
 <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tutorials/use_allowlist_denylist_wording_teaser.png" class="screenshot center">
 
 ### Prerequisites
 
-We recommend using the latest version of Sourcegraph when working with campaigns and that you have a basic understanding of how to create campaign specs and run them. See the following documents for more information:
+We recommend using the latest version of Sourcegraph when working with campaigns and that you have a basic understanding of how to create batch specs and run them. See the following documents for more information:
 
 1. ["Quickstart"](../quickstart.md)
 1. ["Introduction to campaigns"](../explanations/introduction_to_batch_changes.md)
 
-### Create the campaign spec
+### Create the batch spec
 
-Save the following campaign spec YAML as `allowlist-denylist.campaign.yaml`:
+Save the following batch spec YAML as `allowlist-denylist.campaign.yaml`:
 
 ```yaml
 name: use-allowlist-denylist-wording
@@ -61,21 +61,21 @@ changesetTemplate:
 
 1. In your terminal, run this command:
 
-    <pre>src campaign preview -f use-allowlist-denylist-wording.campaign.yaml</pre>
+    <pre>src batch preview -f use-allowlist-denylist-wording.campaign.yaml</pre>
 1. Wait for it to run and compute the changes for each repository.
     <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tutorials/use_allowlist_denylist_wording_wait_run.png" class="screenshot">
 1. Open the preview URL that the command printed out.
     <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tutorials/use_allowlist_denylist_wording_click_url.png" class="screenshot">
-1. Examine the preview. Confirm that the changes are what you intended. If not, edit your campaign spec and then rerun the command above.
+1. Examine the preview. Confirm that the changes are what you intended. If not, edit your batch spec and then rerun the command above.
     <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tutorials/use_allowlist_denylist_wording_preview.png" class="screenshot">
 1. Click the **Apply spec** button to create the campaign.
-1. Feel free to then publish the changesets (i.e. create pull requests and merge requests) by [modifying the `published` attribute in the campaign spec](../references/batch_spec_yaml_reference.md#changesettemplate-published) and re-running the `src campaign preview` command.
+1. Feel free to then publish the changesets (i.e. create pull requests and merge requests) by [modifying the `published` attribute in the batch spec](../references/batch_spec_yaml_reference.md#changesettemplate-published) and re-running the `src batch preview` command.
 
 ### Using `ruplacer` to replace terms in multiple case styles
 
 With [ruplacer](https://github.com/TankerHQ/ruplacer) we can easily search and replace terms in multiple case styles: `white_list`, `WhiteList`, `WHITE_LIST` etc.
 
-The easiest way to use `ruplacer` in our campaign spec would look like this:
+The easiest way to use `ruplacer` in our batch spec would look like this:
 
 ```yaml
 steps:
@@ -92,7 +92,7 @@ steps:
     container: rust
 ```
 
-But there's a problem with that approach: every new execution of `src campaign preview` has to execute the `cargo install ruplacer` command again. And if you're tweaking which terms you're replacing, that performance cost can become too much quite fast.
+But there's a problem with that approach: every new execution of `src batch preview` has to execute the `cargo install ruplacer` command again. And if you're tweaking which terms you're replacing, that performance cost can become too much quite fast.
 
 A better option would be to to build a small Docker image in which `ruplacer` is already installed.
 
@@ -109,7 +109,7 @@ Then build a Docker image out of it, tagged with `ruplacer`, by running the foll
 docker build . -t ruplacer
 ```
 
-Once that is done, we can use the following `steps` in our campaign spec:
+Once that is done, we can use the following `steps` in our batch spec:
 
 ```yaml
 steps:
@@ -124,4 +124,4 @@ steps:
     container: ruplacer
 ```
 
-Save the file and run the `src campaign preview` command from above again to use `ruplacer` to replace variations of terms.
+Save the file and run the `src batch preview` command from above again to use `ruplacer` to replace variations of terms.

@@ -6,9 +6,9 @@ Campaigns allow you not only to [publish changesets](publishing_changesets.md) b
 
 ## Importing changesets into a campaign
 
-To track existing changesets in a campaign you add them to the [campaign spec](../explanations/introduction_to_batch_changes.md#campaign-spec) under the `importChangesets` property and apply the campaign spec.
+To track existing changesets in a campaign you add them to the [batch spec](../explanations/introduction_to_batch_changes.md#campaign-spec) under the `importChangesets` property and apply the batch spec.
 
-The following example campaign spec tracks multiple existing changesets in different repositories on different code hosts:
+The following example batch spec tracks multiple existing changesets in different repositories on different code hosts:
 
 ```yaml
 name: track-important-milestone
@@ -25,9 +25,9 @@ importChangesets:
   externalIDs: [113, 119]
 ```
 
-See "[Creating a campaign](creating_a_batch_change.md)" on how to create a campaign from the campaign spec.
+See "[Creating a campaign](creating_a_batch_change.md)" on how to create a campaign from the batch spec.
 
-> NOTE: You can combine the tracking of existing changesets and creating new ones by adding `importChangesets:` to your campaign specs that have `on:`, `steps:` and `changesetTemplate:` properties.
+> NOTE: You can combine the tracking of existing changesets and creating new ones by adding `importChangesets:` to your batch specs that have `on:`, `steps:` and `changesetTemplate:` properties.
 
 Once you've created the campaign you'll see the existing changeset show up in the list of changesets. The campaign will track the changeset's status and include it in the overall campaign progress (in the same way as if it had been created by the campaign):
 
