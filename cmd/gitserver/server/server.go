@@ -137,8 +137,7 @@ type Server struct {
 	GetVCSSyncer func(context.Context, api.RepoName) (VCSSyncer, error)
 
 	// Hostname is how we identify this instance of gitserver. Generally it is the
-	// actual hostname can also be overridden by the NODE_NAME or HOSTNAME
-	// environment variables.
+	// actual hostname but can also be overridden by the HOSTNAME environment variable.
 	Hostname string
 
 	// skipCloneForTests is set by tests to avoid clones.
@@ -294,26 +293,39 @@ func (s *Server) SyncRepoState(db dbutil.DB, interval time.Duration, batchSize, 
 	}
 }
 
-var repoSyncStateCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_repo_sync_state_counter",
-	Help: "Incremented each time we check the state of repo",
-}, []string{"type"})
+// HostnameMatch checks whether the hostname matches the given address.
+// If we don't find an exact match, we look at the initial prefix.
+func (s *Server) HostnameMatch(addr string) bool {
+	if addr == s.Hostname {
+		return true
+	}
+	n := strings.Index(addr, ".")
+	if n == -1 {
+		return false
+	}
+	return addr[:n] == s.Hostname
+}
 
-var repoSyncStatePercentComplete = promauto.NewGauge(prometheus.GaugeOpts{
-	Name: "src_repo_sync_state_percent_complete",
-	Help: "Percent complete for the current sync run, from 0 to 100",
-})
-
-var repoStateUpsertCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_repo_sync_state_upsert_counter",
-	Help: "Incremented each time we upsert repo state in the database",
-}, []string{"success"})
+var (
+	repoSyncStateCounter = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_repo_sync_state_counter",
+		Help: "Incremented each time we check the state of repo",
+	}, []string{"type"})
+	repoSyncStatePercentComplete = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "src_repo_sync_state_percent_complete",
+		Help: "Percent complete for the current sync run, from 0 to 100",
+	})
+	repoStateUpsertCounter = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_repo_sync_state_upsert_counter",
+		Help: "Incremented each time we upsert repo state in the database",
+	}, []string{"success"})
+)
 
 func (s *Server) syncRepoState(db dbutil.DB, addrs []string, batchSize, perSecond int) error {
 	// Sanity check our host exists in addrs before starting any work
 	var found bool
 	for _, a := range addrs {
-		if a == s.Hostname {
+		if s.HostnameMatch(a) {
 			found = true
 			break
 		}
@@ -374,7 +386,7 @@ func (s *Server) syncRepoState(db dbutil.DB, addrs []string, batchSize, perSecon
 
 		repoSyncStateCounter.WithLabelValues("check").Inc()
 		// Ensure we're only dealing with repos we are responsible for
-		if addr := gitserver.AddrForRepo(repo.Name, addrs); addr != s.Hostname {
+		if addr := gitserver.AddrForRepo(repo.Name, addrs); !s.HostnameMatch(addr) {
 			repoSyncStateCounter.WithLabelValues("other_shard").Inc()
 			return nil
 		}
