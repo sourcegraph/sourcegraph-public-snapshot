@@ -12,7 +12,7 @@ The **handler** is responsible for handling a single job once dequeued from the 
 
 #### Hook 1: Pre-dequeue (optional)
 
-Before the worker dequeues, the next job, the _pre dequeue_ hook (if defined) is invoked. The hook has the following signature:
+Before the worker dequeues the next job, the _pre dequeue_ hook (if defined) is invoked. The hook has the following signature:
 
 ```
 func (h *myHandler) PreDequeue(context.Context) (dequeueable bool, extraDequeueArguments interface{}, err error) {
