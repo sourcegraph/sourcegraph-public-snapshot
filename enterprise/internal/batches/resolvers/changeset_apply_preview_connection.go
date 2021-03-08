@@ -244,7 +244,7 @@ type rewirerMappingsFacade struct {
 	batchSpecID int64
 	store       *store.Store
 
-	// This field is set when ReconcileCampaign is called.
+	// This field is set when ReconcileBatchChange is called.
 	batchChange *batches.BatchChange
 
 	// Cache of filtered pages.
@@ -257,7 +257,7 @@ type rewirerMappingsFacade struct {
 }
 
 // newRewirerMappingsFacade creates a new rewirer mappings object, which
-// includes dry running the campaign reconciliation.
+// includes dry running the batch change reconciliation.
 func newRewirerMappingsFacade(s *store.Store, batchSpecID int64) *rewirerMappingsFacade {
 	return &rewirerMappingsFacade{
 		batchSpecID: batchSpecID,

@@ -22,9 +22,6 @@ var ErrApplyClosedBatchChange = errors.New("existing batch change matched by bat
 // batch spec already exists and FailIfExists was set.
 var ErrMatchingBatchChangeExists = errors.New("a batch change matching the given batch spec already exists")
 
-// TODO(campaigns-deprecation): this needs to be renamed, but cast to
-// "EnsureCampaignFailed" if the applycampaign mutation was used.
-//
 // ErrEnsureBatchChangeFailed is returned by AppplyBatchChange when a
 // ensureBatchChangeID is provided but a batch change with the name specified the
 // batchSpec exists in the given namespace but has a different ID.

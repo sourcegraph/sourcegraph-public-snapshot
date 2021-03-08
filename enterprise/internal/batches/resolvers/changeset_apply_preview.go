@@ -141,8 +141,8 @@ type visibleChangesetApplyPreviewResolver struct {
 	planErr  error
 
 	batchChangeOnce sync.Once
-	campaign        *batches.BatchChange
-	campaignErr     error
+	batchChange     *batches.BatchChange
+	batchChangeErr  error
 }
 
 var _ graphqlbackend.VisibleChangesetApplyPreviewResolver = &visibleChangesetApplyPreviewResolver{}
@@ -177,7 +177,7 @@ func (r *visibleChangesetApplyPreviewResolver) Targets() graphqlbackend.VisibleA
 
 func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) (*reconciler.Plan, error) {
 	r.planOnce.Do(func() {
-		campaign, err := r.computeCampaign(ctx)
+		batchChange, err := r.computeBatchChange(ctx)
 		if err != nil {
 			r.planErr = err
 			return
@@ -210,7 +210,7 @@ func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) 
 			ChangesetSpec: mappingChangesetSpec,
 			Changeset:     mappingChangeset,
 			Repo:          mappingRepo,
-		}}, campaign.ID)
+		}}, batchChange.ID)
 		changesets, err := rewirer.Rewire()
 		if err != nil {
 			r.planErr = err
@@ -256,10 +256,10 @@ func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) 
 	return r.plan, r.planErr
 }
 
-func (r *visibleChangesetApplyPreviewResolver) computeCampaign(ctx context.Context) (*batches.BatchChange, error) {
+func (r *visibleChangesetApplyPreviewResolver) computeBatchChange(ctx context.Context) (*batches.BatchChange, error) {
 	r.batchChangeOnce.Do(func() {
 		if r.preloadedBatchChange != nil {
-			r.campaign = r.preloadedBatchChange
+			r.batchChange = r.preloadedBatchChange
 			return
 		}
 		svc := service.New(r.store)
@@ -268,10 +268,10 @@ func (r *visibleChangesetApplyPreviewResolver) computeCampaign(ctx context.Conte
 			r.planErr = err
 			return
 		}
-		// Dry-run reconcile the batch  with the new campaign spec.
-		r.campaign, _, r.campaignErr = svc.ReconcileBatchChange(ctx, batchSpec)
+		// Dry-run reconcile the batch  with the new batch spec.
+		r.batchChange, _, r.batchChangeErr = svc.ReconcileBatchChange(ctx, batchSpec)
 	})
-	return r.campaign, r.campaignErr
+	return r.batchChange, r.batchChangeErr
 }
 
 type visibleApplyPreviewTargetsResolver struct {

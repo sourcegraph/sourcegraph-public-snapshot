@@ -596,7 +596,7 @@ func TestPermissionLevels(t *testing.T) {
 						wantDisabledErr:   true,
 					},
 					{
-						name:              "authorized campaign owner",
+						name:              "authorized batch change owner",
 						currentUser:       userID,
 						batchChangeAuthor: userID,
 						wantAuthErr:       false,

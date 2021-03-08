@@ -287,19 +287,6 @@ func (r *batchSpecResolver) SupersedingBatchSpec(ctx context.Context) (graphqlba
 	return resolver, nil
 }
 
-// TODO(campaigns-deprecation): Remove when campaigns are fully removed
-func (r *batchSpecResolver) ViewerCampaignsCodeHosts(ctx context.Context, args *graphqlbackend.ListViewerCampaignsCodeHostsArgs) (graphqlbackend.CampaignsCodeHostConnectionResolver, error) {
-	res, err := r.ViewerBatchChangesCodeHosts(ctx, &graphqlbackend.ListViewerBatchChangesCodeHostsArgs{
-		First:                 args.First,
-		After:                 args.After,
-		OnlyWithoutCredential: args.OnlyWithoutCredential,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &campaignsCodeHostConnectionResolver{BatchChangesCodeHostConnectionResolver: res}, nil
-}
-
 func (r *batchSpecResolver) ViewerBatchChangesCodeHosts(ctx context.Context, args *graphqlbackend.ListViewerBatchChangesCodeHostsArgs) (graphqlbackend.BatchChangesCodeHostConnectionResolver, error) {
 	actor := actor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
