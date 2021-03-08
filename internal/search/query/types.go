@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"time"
 )
 
 type ExpectedOperand struct {
@@ -35,6 +36,7 @@ const (
 type QueryInfo interface {
 	Count() *int
 	Archived() *YesNoOnly
+	Timeout() *time.Duration
 	RegexpPatterns(field string) (values, negatedValues []string)
 	StringValues(field string) (values, negatedValues []string)
 	StringValue(field string) (value, negatedValue string)
@@ -143,6 +145,18 @@ func (q Q) yesNoOnlyValue(field string) *YesNoOnly {
 		res = &yno
 	})
 	return res
+}
+
+func (q Q) Timeout() *time.Duration {
+	var timeout *time.Duration
+	VisitField(q, FieldTimeout, func(value string, _ bool, _ Annotation) {
+		t, err := time.ParseDuration(value)
+		if err != nil {
+			panic(fmt.Sprintf("Value %q for timeout cannot be parsed as an duration: %s", value, err))
+		}
+		timeout = &t
+	})
+	return timeout
 }
 
 func (q Q) IsCaseSensitive() bool {
