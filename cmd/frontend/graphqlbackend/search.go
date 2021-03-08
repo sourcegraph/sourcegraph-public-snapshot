@@ -423,13 +423,15 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		fork = query.No
 	}
 
-	archivedStr, _ := r.Query.StringValue(query.FieldArchived)
-	archived := query.ParseYesNoOnly(archivedStr)
-	if archived == query.Invalid && !searchrepos.ExactlyOneRepo(repoFilters) && !settingArchived {
+	archived := query.No
+	if searchrepos.ExactlyOneRepo(repoFilters) || settingArchived {
 		// archived defaults to No unless either of:
 		// (1) exactly one repo is being searched, or
 		// (2) user/org/global setting includes archives in all searches
-		archived = query.No
+		archived = query.Yes
+	}
+	if setArchived := r.Query.Archived(); setArchived != nil {
+		archived = *setArchived
 	}
 
 	visibilityStr, _ := r.Query.StringValue(query.FieldVisibility)

@@ -34,6 +34,7 @@ const (
 // It will be removed in favor of a cleaner query API to access values.
 type QueryInfo interface {
 	Count() *int
+	Archived() *YesNoOnly
 	RegexpPatterns(field string) (values, negatedValues []string)
 	StringValues(field string) (values, negatedValues []string)
 	StringValue(field string) (value, negatedValue string)
@@ -126,6 +127,22 @@ func (q Q) Count() *int {
 		count = &c
 	})
 	return count
+}
+
+func (q Q) Archived() *YesNoOnly {
+	return q.yesNoOnlyValue(FieldArchived)
+}
+
+func (q Q) yesNoOnlyValue(field string) *YesNoOnly {
+	var res *YesNoOnly
+	VisitField(q, field, func(value string, _ bool, _ Annotation) {
+		yno := ParseYesNoOnly(value)
+		if yno == Invalid {
+			panic(fmt.Sprintf("Invalid value %q for field %q", value, field))
+		}
+		res = &yno
+	})
+	return res
 }
 
 func (q Q) IsCaseSensitive() bool {

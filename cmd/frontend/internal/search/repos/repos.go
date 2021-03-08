@@ -459,9 +459,7 @@ func computeExcludedRepositories(ctx context.Context, q query.Q, op database.Rep
 		}()
 	}
 
-	archivedStr, _ := q.StringValue(query.FieldArchived)
-	archived := query.ParseYesNoOnly(archivedStr)
-	if archived == query.Invalid && !ExactlyOneRepo(op.IncludePatterns) {
+	if q.Archived() == nil && !ExactlyOneRepo(op.IncludePatterns) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
