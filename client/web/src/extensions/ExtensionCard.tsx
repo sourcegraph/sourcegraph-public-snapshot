@@ -29,6 +29,7 @@ interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettin
     >
     subject: Pick<GQL.SettingsSubject, 'id' | 'viewerCanAdminister'>
     enabled: boolean
+    settingsURL: string
 }
 
 const stopPropagation: React.MouseEventHandler<HTMLElement> = event => {
@@ -45,6 +46,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
     platformContext,
     subject,
     enabled,
+    settingsURL,
     isLightTheme,
 }) {
     const manifest: ExtensionManifest | undefined =
@@ -74,6 +76,18 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
             ),
         [extension]
     )
+
+    const actionableErrorMessage = (error: Error) => {
+        let errorMessage;
+
+        if (error.message.startsWith('invalid settings')) {
+            errorMessage = <>Could not enable / disable {name}. Edit your <a href={settingsURL}>user settings</a> to fix this error.</>
+        } else {
+            errorMessage = <>{error.message}</>;
+        }
+
+        return errorMessage;
+    }
 
     /**
      * When extension enablement state changes, display visual feedback for $delay seconds.
@@ -256,7 +270,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                 {/* Visual feedback: alert when optimistic update fails */}
                 {optimisticFailure && (
                     <div className="alert alert-danger px-2 py-1 extension-card__disabled-feedback">
-                        <span className="font-weight-semibold">Network Error:</span> {optimisticFailure.error.message}
+                        <span className="font-weight-semibold">Error:</span> {actionableErrorMessage(optimisticFailure.error)}
                     </div>
                 )}
             </div>
