@@ -11,6 +11,13 @@ type Flags struct {
 	insecureSkipVerify *bool
 }
 
+func (f *Flags) Trace() bool {
+	if f.trace == nil {
+		return false
+	}
+	return *(f.trace)
+}
+
 // NewFlags instantiates a new Flags structure and attaches flags to the given
 // flag set.
 func NewFlags(flagSet *flag.FlagSet) *Flags {

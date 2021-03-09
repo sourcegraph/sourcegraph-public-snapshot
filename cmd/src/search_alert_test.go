@@ -13,10 +13,7 @@ func TestRender(t *testing.T) {
 	full := &searchResultsAlert{
 		Title:       "foo",
 		Description: "bar",
-		ProposedQueries: []struct {
-			Description string
-			Query       string
-		}{
+		ProposedQueries: []ProposedQuery{
 			{
 				Description: "quux",
 				Query:       "xyz:abc",

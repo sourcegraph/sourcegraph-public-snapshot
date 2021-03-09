@@ -60,6 +60,9 @@ func parseTemplate(text string) (*template.Template, error) {
 		"addFloat": func(x, y float64) float64 {
 			return x + y
 		},
+		"addInt32": func(x, y int32) int32 {
+			return x + y
+		},
 		"debug": func(v interface{}) string {
 			data, _ := marshalIndent(v)
 			fmt.Println(string(data))
@@ -90,6 +93,13 @@ func parseTemplate(text string) (*template.Template, error) {
 		"htmlToPlainText":                   searchTemplateFuncs["htmlToPlainText"],
 		"buildVersionHasNewSearchInterface": searchTemplateFuncs["buildVersionHasNewSearchInterface"],
 		"renderResult":                      searchTemplateFuncs["renderResult"],
+
+		// Register stream-search specific template functions.
+		"streamSearchSequentialLineNumber": streamSearchTemplateFuncs["streamSearchSequentialLineNumber"],
+		"streamSearchHighlightMatch":       streamSearchTemplateFuncs["streamSearchHighlightMatch"],
+		"streamSearchHighlightCommit":      streamSearchTemplateFuncs["streamSearchHighlightCommit"],
+		"streamSearchRenderCommitLabel":    streamSearchTemplateFuncs["streamSearchRenderCommitLabel"],
+		"matchOrMatches":                   streamSearchTemplateFuncs["matchOrMatches"],
 
 		// Alert rendering
 		"searchAlertRender": func(alert searchResultsAlert) string {

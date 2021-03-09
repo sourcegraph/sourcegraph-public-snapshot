@@ -19,15 +19,18 @@ func init() {
 	}
 }
 
+// ProposedQuery is a suggested query to run when we emit an alert.
+type ProposedQuery struct {
+	Description string
+	Query       string
+}
+
 // searchResultsAlert is a type that can be used to unmarshal values returned by
 // the searchResultsAlertFragment GraphQL fragment below.
 type searchResultsAlert struct {
 	Title           string
 	Description     string
-	ProposedQueries []struct {
-		Description string
-		Query       string
-	}
+	ProposedQueries []ProposedQuery
 }
 
 // Render renders an alert to a string ready to be output to a console,
