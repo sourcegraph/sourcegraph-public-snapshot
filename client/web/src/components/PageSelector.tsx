@@ -1,4 +1,11 @@
 import React from 'react'
+import classNames from 'classnames'
+import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import useResizeObserver from 'use-resize-observer'
+import { useDebounce } from '../hooks'
+
+type Page = '...' | number
 
 interface PageButton extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     active?: boolean
@@ -6,7 +13,11 @@ interface PageButton extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 const PageButton: React.FunctionComponent<PageButton> = ({ children, active, ...props }) => (
     <li>
-        <button type="button" className={`btn mx-1 ${active ? 'btn-primary' : ''}`} {...props}>
+        <button
+            type="button"
+            className={classNames('btn', 'mx-1', 'page-selector__button', active && 'btn-primary')}
+            {...props}
+        >
             {children}
         </button>
     </li>
@@ -17,25 +28,24 @@ const range = (start: number, end: number) => {
     return Array.from({ length }, (_, i) => start + i)
 }
 
-type Page = '...' | number
-
-const getMiddlePages = (currentPage: number, maxPages: number): Page[] => {
-    const maximumSiblingRange = 6
+const getMiddlePages = ({ currentPage, maxPages, shrink }: GetPages): Page[] => {
+    const minimumSiblingRange = shrink ? 2 : 4
+    const maximumSiblingRange = shrink ? 3 : 5
     const minimumBoundary = 2
     const maximumBoundary = maxPages - 1
 
     const siblingsStart = Math.max(
         Math.min(
-            currentPage - 2,
-            maxPages - maximumSiblingRange + 1 // Extend range when page is high
+            currentPage - minimumSiblingRange / 2,
+            maxPages - maximumSiblingRange // Extend range when page is high
         ),
         minimumBoundary
     )
 
     const siblingsEnd = Math.min(
         Math.max(
-            currentPage + 2,
-            maximumSiblingRange // Extend range when page is low
+            currentPage + minimumSiblingRange / 2,
+            maximumSiblingRange + 1 // Extend range when page is low
         ),
         maximumBoundary
     )
@@ -53,7 +63,11 @@ const getMiddlePages = (currentPage: number, maxPages: number): Page[] => {
     return middle
 }
 
-const getPages = (currentPage: number, maxPages: number): Page[] => {
+interface GetPages extends Pick<Props, 'currentPage' | 'maxPages'> {
+    shrink: boolean
+}
+
+const getPages = ({ currentPage, maxPages, shrink }: GetPages): Page[] => {
     const pages: Page[] = [1]
 
     if (maxPages > 1) {
@@ -61,7 +75,7 @@ const getPages = (currentPage: number, maxPages: number): Page[] => {
     }
 
     if (maxPages > 2) {
-        pages.splice(1, 0, ...getMiddlePages(currentPage, maxPages))
+        pages.splice(1, 0, ...getMiddlePages({ currentPage, maxPages, shrink }))
     }
 
     return pages
@@ -71,15 +85,21 @@ interface Props {
     currentPage: number
     onPageChange: (page: number) => void
     maxPages: number
+    className?: string
 }
 
-export const PageSelector: React.FunctionComponent<Props> = ({ currentPage, onPageChange, maxPages }) => {
-    const pages = getPages(currentPage, maxPages)
+export const PageSelector: React.FunctionComponent<Props> = ({ currentPage, onPageChange, maxPages, className }) => {
+    const { ref, width } = useDebounce(useResizeObserver(), 50)
+    const shouldShrink = width !== undefined && width < 576
+    const pages = getPages({ currentPage, maxPages, shrink: shouldShrink })
 
     return (
-        <nav>
-            <ul className="page-selector">
-                <PageButton onClick={() => onPageChange(Math.max(currentPage - 1, 1))}>Previous</PageButton>
+        <nav ref={ref} className={classNames('page-selector', className)}>
+            <ul className="page-selector__pages">
+                <PageButton onClick={() => onPageChange(Math.max(currentPage - 1, 1))}>
+                    <ChevronLeftIcon className="icon-inline" aria-label="Previous" aria-hidden={!shouldShrink} />
+                    <span className={classNames(shouldShrink && 'd-none')}>Previous</span>
+                </PageButton>
                 {pages.map((page, index) => (
                     <PageButton
                         key={index}
@@ -90,7 +110,10 @@ export const PageSelector: React.FunctionComponent<Props> = ({ currentPage, onPa
                         {page}
                     </PageButton>
                 ))}
-                <PageButton onClick={() => onPageChange(Math.min(currentPage + 1, maxPages))}>Next</PageButton>
+                <PageButton onClick={() => onPageChange(Math.min(currentPage + 1, maxPages))}>
+                    <span className={classNames(shouldShrink && 'd-none')}>Next</span>
+                    <ChevronRightIcon className="icon-inline" aria-label="Next" aria-hidden={!shouldShrink} />
+                </PageButton>
             </ul>
         </nav>
     )
