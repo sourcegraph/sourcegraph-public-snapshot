@@ -575,6 +575,7 @@ Triggers:
  updated_at            | timestamp with time zone | not null default now()
 Indexes:
     "gitserver_repos_pkey" PRIMARY KEY, btree (repo_id)
+    "gitserver_repos_clone_status_idx" btree (clone_status)
 Foreign-key constraints:
     "gitserver_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id)
 

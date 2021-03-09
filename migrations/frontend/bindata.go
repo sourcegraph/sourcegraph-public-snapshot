@@ -124,6 +124,8 @@
 // 1528395793_fix_invalid_changeset_reconciler_states.up.sql (102B)
 // 1528395794_campaigns_rename.down.sql (5.869kB)
 // 1528395794_campaigns_rename.up.sql (5.929kB)
+// 1528395795_add_clone_status_index_to_gitserver_repos.down.sql (72B)
+// 1528395795_add_clone_status_index_to_gitserver_repos.up.sql (112B)
 
 package migrations
 
@@ -2672,6 +2674,46 @@ func _1528395794_campaigns_renameUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395795_add_clone_status_index_to_gitserver_reposDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\xf0\xf4\x73\x71\x8d\x50\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xcf\x2c\x29\x4e\x2d\x2a\x4b\x2d\x8a\x2f\x4a\x2d\xc8\x2f\x8e\x4f\xce\xc9\xcf\x4b\x8d\x2f\x2e\x49\x2c\x29\x2d\x8e\xcf\x4c\xa9\xb0\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xf3\x1c\x64\xd7\x48\x00\x00\x00")
+
+func _1528395795_add_clone_status_index_to_gitserver_reposDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395795_add_clone_status_index_to_gitserver_reposDownSql,
+		"1528395795_add_clone_status_index_to_gitserver_repos.down.sql",
+	)
+}
+
+func _1528395795_add_clone_status_index_to_gitserver_reposDownSql() (*asset, error) {
+	bytes, err := _1528395795_add_clone_status_index_to_gitserver_reposDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395795_add_clone_status_index_to_gitserver_repos.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xd7, 0xd7, 0x64, 0xc4, 0x18, 0xfd, 0x51, 0x37, 0xbf, 0x7c, 0x1c, 0xfc, 0x9c, 0x53, 0x5e, 0x8b, 0x39, 0xcf, 0xcf, 0x46, 0x34, 0x2e, 0xe8, 0x94, 0xd3, 0x90, 0xcf, 0xda, 0xc8, 0xa6, 0x5e, 0x49}}
+	return a, nil
+}
+
+var __1528395795_add_clone_status_index_to_gitserver_reposUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x0e\x72\x75\x0c\x71\x55\xf0\xf4\x73\x71\x8d\x50\xf0\x74\x53\xf0\xf3\x0f\x51\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xcf\x2c\x29\x4e\x2d\x2a\x4b\x2d\x8a\x2f\x4a\x2d\xc8\x2f\x8e\x4f\xce\xc9\xcf\x4b\x8d\x2f\x2e\x49\x2c\x29\x2d\x8e\xcf\x4c\xa9\x50\xf0\xf7\x43\x57\xa3\xa0\x81\xac\x48\x13\x64\xbe\xbf\xaf\xaf\x67\x88\x35\x17\x20\x00\x00\xff\xff\xb5\x1b\xc3\x5a\x70\x00\x00\x00")
+
+func _1528395795_add_clone_status_index_to_gitserver_reposUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395795_add_clone_status_index_to_gitserver_reposUpSql,
+		"1528395795_add_clone_status_index_to_gitserver_repos.up.sql",
+	)
+}
+
+func _1528395795_add_clone_status_index_to_gitserver_reposUpSql() (*asset, error) {
+	bytes, err := _1528395795_add_clone_status_index_to_gitserver_reposUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395795_add_clone_status_index_to_gitserver_repos.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x11, 0xe7, 0x66, 0xc1, 0x2f, 0xa6, 0x60, 0x34, 0x26, 0x55, 0x6c, 0xcd, 0x5d, 0xe, 0xd5, 0x1f, 0xf6, 0xbc, 0x8d, 0xbc, 0xa1, 0x71, 0xcb, 0xf4, 0xeb, 0x18, 0x5a, 0x10, 0x7a, 0x63, 0xc4, 0x7d}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2887,6 +2929,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395793_fix_invalid_changeset_reconciler_states.up.sql":                              _1528395793_fix_invalid_changeset_reconciler_statesUpSql,
 	"1528395794_campaigns_rename.down.sql":                                                   _1528395794_campaigns_renameDownSql,
 	"1528395794_campaigns_rename.up.sql":                                                     _1528395794_campaigns_renameUpSql,
+	"1528395795_add_clone_status_index_to_gitserver_repos.down.sql":                          _1528395795_add_clone_status_index_to_gitserver_reposDownSql,
+	"1528395795_add_clone_status_index_to_gitserver_repos.up.sql":                            _1528395795_add_clone_status_index_to_gitserver_reposUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3057,6 +3101,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395793_fix_invalid_changeset_reconciler_states.up.sql":                              {_1528395793_fix_invalid_changeset_reconciler_statesUpSql, map[string]*bintree{}},
 	"1528395794_campaigns_rename.down.sql":                                                   {_1528395794_campaigns_renameDownSql, map[string]*bintree{}},
 	"1528395794_campaigns_rename.up.sql":                                                     {_1528395794_campaigns_renameUpSql, map[string]*bintree{}},
+	"1528395795_add_clone_status_index_to_gitserver_repos.down.sql":                          {_1528395795_add_clone_status_index_to_gitserver_reposDownSql, map[string]*bintree{}},
+	"1528395795_add_clone_status_index_to_gitserver_repos.up.sql":                            {_1528395795_add_clone_status_index_to_gitserver_reposUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
