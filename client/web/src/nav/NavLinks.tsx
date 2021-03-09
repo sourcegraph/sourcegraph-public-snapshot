@@ -87,7 +87,9 @@ const getMinimizableNavItems = (props: Props): JSX.Element[] => {
     const { showBatchChanges, settingsCascade } = props
 
     const settings = !isErrorLike(settingsCascade.final) ? settingsCascade.final : null
-    const { codeInsights, codeMonitoring } = settings?.experimentalFeatures || {}
+    const { codeMonitoring } = settings?.experimentalFeatures || {}
+    const codeInsights =
+        settings?.experimentalFeatures?.codeInsights && settings?.['insights.displayLocation.insightsPage'] !== false
 
     return getReactElements([
         codeInsights && <InsightsNavItem />,
