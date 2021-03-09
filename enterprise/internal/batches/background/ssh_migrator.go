@@ -20,7 +20,7 @@ const BatchChangesSSHMigrationID = 2
 
 const sshMigrationCountPerRun = 5
 
-// sshMigrator migrates existing campaigns credentials that have no SSH key stored
+// sshMigrator migrates existing batch changes credentials that have no SSH key stored
 // to a variant that includes it.
 type sshMigrator struct {
 	store *store.Store
@@ -38,9 +38,9 @@ func (m *sshMigrator) Progress(ctx context.Context) (float64, error) {
 	progress, _, err := basestore.ScanFirstFloat(
 		m.store.Query(ctx, sqlf.Sprintf(
 			sshMigratorProgressQuery,
-			database.UserCredentialDomainCampaigns,
+			database.UserCredentialDomainBatches,
 			sqlf.Join(unmigratedMigratorTypes, ","),
-			database.UserCredentialDomainCampaigns,
+			database.UserCredentialDomainBatches,
 		)))
 	if err != nil {
 		return 0, err
@@ -67,7 +67,7 @@ func (m *sshMigrator) Up(ctx context.Context) error {
 
 	credentials, _, err := tx.UserCredentials().List(ctx, database.UserCredentialsListOpts{
 		Scope: database.UserCredentialScope{
-			Domain: database.UserCredentialDomainCampaigns,
+			Domain: database.UserCredentialDomainBatches,
 		},
 		LimitOffset: &database.LimitOffset{
 			Limit: sshMigrationCountPerRun,
@@ -123,7 +123,7 @@ func (m *sshMigrator) Down(ctx context.Context) error {
 
 	credentials, _, err := tx.UserCredentials().List(ctx, database.UserCredentialsListOpts{
 		Scope: database.UserCredentialScope{
-			Domain: database.UserCredentialDomainCampaigns,
+			Domain: database.UserCredentialDomainBatches,
 		},
 		LimitOffset: &database.LimitOffset{
 			Limit: sshMigrationCountPerRun,

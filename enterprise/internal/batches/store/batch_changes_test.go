@@ -388,7 +388,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 
 		t.Run("ByBatchSpecID", func(t *testing.T) {
 			want := cs[0]
-			opts := CountBatchChangeOpts{BatchChangeSpecID: want.BatchSpecID}
+			opts := CountBatchChangeOpts{BatchSpecID: want.BatchSpecID}
 
 			have, err := s.GetBatchChange(ctx, opts)
 			if err != nil {

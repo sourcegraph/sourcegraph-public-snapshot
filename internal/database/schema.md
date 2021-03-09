@@ -21,11 +21,47 @@ Foreign-key constraints:
 
 ```
 
-# Table "public.campaign_specs"
+# Table "public.batch_changes"
 ```
-      Column       |           Type           |                          Modifiers                          
--------------------+--------------------------+-------------------------------------------------------------
- id                | bigint                   | not null default nextval('campaign_specs_id_seq'::regclass)
+       Column       |           Type           |                         Modifiers                          
+--------------------+--------------------------+------------------------------------------------------------
+ id                 | bigint                   | not null default nextval('batch_changes_id_seq'::regclass)
+ name               | text                     | not null
+ description        | text                     | 
+ initial_applier_id | integer                  | 
+ namespace_user_id  | integer                  | 
+ namespace_org_id   | integer                  | 
+ created_at         | timestamp with time zone | not null default now()
+ updated_at         | timestamp with time zone | not null default now()
+ closed_at          | timestamp with time zone | 
+ batch_spec_id      | bigint                   | not null
+ last_applier_id    | bigint                   | 
+ last_applied_at    | timestamp with time zone | not null
+Indexes:
+    "batch_changes_pkey" PRIMARY KEY, btree (id)
+    "batch_changes_namespace_org_id" btree (namespace_org_id)
+    "batch_changes_namespace_user_id" btree (namespace_user_id)
+Check constraints:
+    "batch_changes_has_1_namespace" CHECK ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
+    "batch_changes_name_not_blank" CHECK (name <> ''::text)
+Foreign-key constraints:
+    "batch_changes_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
+    "batch_changes_initial_applier_id_fkey" FOREIGN KEY (initial_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+    "batch_changes_last_applier_id_fkey" FOREIGN KEY (last_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+    "batch_changes_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
+    "batch_changes_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+Referenced by:
+    TABLE "changesets" CONSTRAINT "changesets_owned_by_batch_spec_id_fkey" FOREIGN KEY (owned_by_batch_change_id) REFERENCES batch_changes(id) ON DELETE SET NULL DEFERRABLE
+Triggers:
+    trig_delete_batch_change_reference_on_changesets AFTER DELETE ON batch_changes FOR EACH ROW EXECUTE PROCEDURE delete_batch_change_reference_on_changesets()
+
+```
+
+# Table "public.batch_specs"
+```
+      Column       |           Type           |                        Modifiers                         
+-------------------+--------------------------+----------------------------------------------------------
+ id                | bigint                   | not null default nextval('batch_specs_id_seq'::regclass)
  rand_id           | text                     | not null
  raw_spec          | text                     | not null
  spec              | jsonb                    | not null default '{}'::jsonb
@@ -35,51 +71,15 @@ Foreign-key constraints:
  created_at        | timestamp with time zone | not null default now()
  updated_at        | timestamp with time zone | not null default now()
 Indexes:
-    "campaign_specs_pkey" PRIMARY KEY, btree (id)
-    "campaign_specs_rand_id" btree (rand_id)
+    "batch_specs_pkey" PRIMARY KEY, btree (id)
+    "batch_specs_rand_id" btree (rand_id)
 Check constraints:
-    "campaign_specs_has_1_namespace" CHECK ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
+    "batch_specs_has_1_namespace" CHECK ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
 Foreign-key constraints:
-    "campaign_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+    "batch_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
 Referenced by:
-    TABLE "campaigns" CONSTRAINT "campaigns_campaign_spec_id_fkey" FOREIGN KEY (campaign_spec_id) REFERENCES campaign_specs(id) DEFERRABLE
-    TABLE "changeset_specs" CONSTRAINT "changeset_specs_campaign_spec_id_fkey" FOREIGN KEY (campaign_spec_id) REFERENCES campaign_specs(id) DEFERRABLE
-
-```
-
-# Table "public.campaigns"
-```
-       Column       |           Type           |                       Modifiers                        
---------------------+--------------------------+--------------------------------------------------------
- id                 | bigint                   | not null default nextval('campaigns_id_seq'::regclass)
- name               | text                     | not null
- description        | text                     | 
- initial_applier_id | integer                  | 
- namespace_user_id  | integer                  | 
- namespace_org_id   | integer                  | 
- created_at         | timestamp with time zone | not null default now()
- updated_at         | timestamp with time zone | not null default now()
- closed_at          | timestamp with time zone | 
- campaign_spec_id   | bigint                   | not null
- last_applier_id    | bigint                   | 
- last_applied_at    | timestamp with time zone | not null
-Indexes:
-    "campaigns_pkey" PRIMARY KEY, btree (id)
-    "campaigns_namespace_org_id" btree (namespace_org_id)
-    "campaigns_namespace_user_id" btree (namespace_user_id)
-Check constraints:
-    "campaigns_has_1_namespace" CHECK ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
-    "campaigns_name_not_blank" CHECK (name <> ''::text)
-Foreign-key constraints:
-    "campaigns_campaign_spec_id_fkey" FOREIGN KEY (campaign_spec_id) REFERENCES campaign_specs(id) DEFERRABLE
-    "campaigns_initial_applier_id_fkey" FOREIGN KEY (initial_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
-    "campaigns_last_applier_id_fkey" FOREIGN KEY (last_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
-    "campaigns_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
-    "campaigns_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
-Referenced by:
-    TABLE "changesets" CONSTRAINT "changesets_owned_by_campaign_id_fkey" FOREIGN KEY (owned_by_campaign_id) REFERENCES campaigns(id) ON DELETE SET NULL DEFERRABLE
-Triggers:
-    trig_delete_campaign_reference_on_changesets AFTER DELETE ON campaigns FOR EACH ROW EXECUTE PROCEDURE delete_campaign_reference_on_changesets()
+    TABLE "batch_changes" CONSTRAINT "batch_changes_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
+    TABLE "changeset_specs" CONSTRAINT "changeset_specs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
 
 ```
 
@@ -114,7 +114,7 @@ Foreign-key constraints:
  rand_id           | text                     | not null
  raw_spec          | text                     | not null
  spec              | jsonb                    | not null default '{}'::jsonb
- campaign_spec_id  | bigint                   | 
+ batch_spec_id     | bigint                   | 
  repo_id           | integer                  | not null
  user_id           | integer                  | 
  diff_stat_added   | integer                  | 
@@ -132,7 +132,7 @@ Indexes:
     "changeset_specs_rand_id" btree (rand_id)
     "changeset_specs_title" btree (title)
 Foreign-key constraints:
-    "changeset_specs_campaign_spec_id_fkey" FOREIGN KEY (campaign_spec_id) REFERENCES campaign_specs(id) DEFERRABLE
+    "changeset_specs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
     "changeset_specs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
     "changeset_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
 Referenced by:
@@ -143,41 +143,41 @@ Referenced by:
 
 # Table "public.changesets"
 ```
-        Column         |           Type           |                        Modifiers                        
------------------------+--------------------------+---------------------------------------------------------
- id                    | bigint                   | not null default nextval('changesets_id_seq'::regclass)
- campaign_ids          | jsonb                    | not null default '{}'::jsonb
- repo_id               | integer                  | not null
- created_at            | timestamp with time zone | not null default now()
- updated_at            | timestamp with time zone | not null default now()
- metadata              | jsonb                    | default '{}'::jsonb
- external_id           | text                     | 
- external_service_type | text                     | not null
- external_deleted_at   | timestamp with time zone | 
- external_branch       | text                     | 
- external_updated_at   | timestamp with time zone | 
- external_state        | text                     | 
- external_review_state | text                     | 
- external_check_state  | text                     | 
- diff_stat_added       | integer                  | 
- diff_stat_changed     | integer                  | 
- diff_stat_deleted     | integer                  | 
- sync_state            | jsonb                    | not null default '{}'::jsonb
- current_spec_id       | bigint                   | 
- previous_spec_id      | bigint                   | 
- publication_state     | text                     | default 'UNPUBLISHED'::text
- owned_by_campaign_id  | bigint                   | 
- reconciler_state      | text                     | default 'queued'::text
- failure_message       | text                     | 
- started_at            | timestamp with time zone | 
- finished_at           | timestamp with time zone | 
- process_after         | timestamp with time zone | 
- num_resets            | integer                  | not null default 0
- closing               | boolean                  | not null default false
- num_failures          | integer                  | not null default 0
- log_contents          | text                     | 
- execution_logs        | json[]                   | 
- syncer_error          | text                     | 
+          Column          |           Type           |                        Modifiers                        
+--------------------------+--------------------------+---------------------------------------------------------
+ id                       | bigint                   | not null default nextval('changesets_id_seq'::regclass)
+ batch_change_ids         | jsonb                    | not null default '{}'::jsonb
+ repo_id                  | integer                  | not null
+ created_at               | timestamp with time zone | not null default now()
+ updated_at               | timestamp with time zone | not null default now()
+ metadata                 | jsonb                    | default '{}'::jsonb
+ external_id              | text                     | 
+ external_service_type    | text                     | not null
+ external_deleted_at      | timestamp with time zone | 
+ external_branch          | text                     | 
+ external_updated_at      | timestamp with time zone | 
+ external_state           | text                     | 
+ external_review_state    | text                     | 
+ external_check_state     | text                     | 
+ diff_stat_added          | integer                  | 
+ diff_stat_changed        | integer                  | 
+ diff_stat_deleted        | integer                  | 
+ sync_state               | jsonb                    | not null default '{}'::jsonb
+ current_spec_id          | bigint                   | 
+ previous_spec_id         | bigint                   | 
+ publication_state        | text                     | default 'UNPUBLISHED'::text
+ owned_by_batch_change_id | bigint                   | 
+ reconciler_state         | text                     | default 'queued'::text
+ failure_message          | text                     | 
+ started_at               | timestamp with time zone | 
+ finished_at              | timestamp with time zone | 
+ process_after            | timestamp with time zone | 
+ num_resets               | integer                  | not null default 0
+ closing                  | boolean                  | not null default false
+ num_failures             | integer                  | not null default 0
+ log_contents             | text                     | 
+ execution_logs           | json[]                   | 
+ syncer_error             | text                     | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -185,14 +185,14 @@ Indexes:
     "changesets_publication_state_idx" btree (publication_state)
     "changesets_reconciler_state_idx" btree (reconciler_state)
 Check constraints:
-    "changesets_campaign_ids_check" CHECK (jsonb_typeof(campaign_ids) = 'object'::text)
+    "changesets_batch_change_ids_check" CHECK (jsonb_typeof(batch_change_ids) = 'object'::text)
     "changesets_external_id_check" CHECK (external_id <> ''::text)
     "changesets_external_service_type_not_blank" CHECK (external_service_type <> ''::text)
     "changesets_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
     "external_branch_ref_prefix" CHECK (external_branch ~~ 'refs/heads/%'::text)
 Foreign-key constraints:
     "changesets_changeset_spec_id_fkey" FOREIGN KEY (current_spec_id) REFERENCES changeset_specs(id) DEFERRABLE
-    "changesets_owned_by_campaign_id_fkey" FOREIGN KEY (owned_by_campaign_id) REFERENCES campaigns(id) ON DELETE SET NULL DEFERRABLE
+    "changesets_owned_by_batch_spec_id_fkey" FOREIGN KEY (owned_by_batch_change_id) REFERENCES batch_changes(id) ON DELETE SET NULL DEFERRABLE
     "changesets_previous_spec_id_fkey" FOREIGN KEY (previous_spec_id) REFERENCES changeset_specs(id) DEFERRABLE
     "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
 Referenced by:
@@ -993,7 +993,7 @@ Check constraints:
     "orgs_name_max_length" CHECK (char_length(name::text) <= 255)
     "orgs_name_valid_chars" CHECK (name ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext)
 Referenced by:
-    TABLE "campaigns" CONSTRAINT "campaigns_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "batch_changes" CONSTRAINT "batch_changes_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
     TABLE "cm_monitors" CONSTRAINT "cm_monitors_org_id_fk" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
     TABLE "cm_recipients" CONSTRAINT "cm_recipients_org_id_fk" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
     TABLE "names" CONSTRAINT "names_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id) ON UPDATE CASCADE ON DELETE CASCADE
@@ -1513,10 +1513,10 @@ Check constraints:
 Referenced by:
     TABLE "access_tokens" CONSTRAINT "access_tokens_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     TABLE "access_tokens" CONSTRAINT "access_tokens_subject_user_id_fkey" FOREIGN KEY (subject_user_id) REFERENCES users(id)
-    TABLE "campaign_specs" CONSTRAINT "campaign_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
-    TABLE "campaigns" CONSTRAINT "campaigns_initial_applier_id_fkey" FOREIGN KEY (initial_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
-    TABLE "campaigns" CONSTRAINT "campaigns_last_applier_id_fkey" FOREIGN KEY (last_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
-    TABLE "campaigns" CONSTRAINT "campaigns_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "batch_changes" CONSTRAINT "batch_changes_initial_applier_id_fkey" FOREIGN KEY (initial_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+    TABLE "batch_changes" CONSTRAINT "batch_changes_last_applier_id_fkey" FOREIGN KEY (last_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+    TABLE "batch_changes" CONSTRAINT "batch_changes_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "batch_specs" CONSTRAINT "batch_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "cm_emails" CONSTRAINT "cm_emails_changed_by_fk" FOREIGN KEY (changed_by) REFERENCES users(id) ON DELETE CASCADE
     TABLE "cm_emails" CONSTRAINT "cm_emails_created_by_fk" FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
@@ -1565,18 +1565,18 @@ Indexes:
 
 # View "public.branch_changeset_specs_and_changesets"
 ```
-      Column       |  Type   | Modifiers 
--------------------+---------+-----------
- changeset_spec_id | bigint  | 
- changeset_id      | bigint  | 
- repo_id           | integer | 
- campaign_spec_id  | bigint  | 
- owner_campaign_id | bigint  | 
- repo_name         | citext  | 
- changeset_name    | text    | 
- external_state    | text    | 
- publication_state | text    | 
- reconciler_state  | text    | 
+        Column         |  Type   | Modifiers 
+-----------------------+---------+-----------
+ changeset_spec_id     | bigint  | 
+ changeset_id          | bigint  | 
+ repo_id               | integer | 
+ batch_spec_id         | bigint  | 
+ owner_batch_change_id | bigint  | 
+ repo_name             | citext  | 
+ changeset_name        | text    | 
+ external_state        | text    | 
+ publication_state     | text    | 
+ reconciler_state      | text    | 
 
 ```
 
@@ -1586,8 +1586,8 @@ Indexes:
  SELECT changeset_specs.id AS changeset_spec_id,
     COALESCE(changesets.id, (0)::bigint) AS changeset_id,
     changeset_specs.repo_id,
-    changeset_specs.campaign_spec_id,
-    changesets.owned_by_campaign_id AS owner_campaign_id,
+    changeset_specs.batch_spec_id,
+    changesets.owned_by_batch_change_id AS owner_batch_change_id,
     repo.name AS repo_name,
     changeset_specs.title AS changeset_name,
     changesets.external_state,
@@ -1848,41 +1848,41 @@ Indexes:
 
 # View "public.reconciler_changesets"
 ```
-        Column         |           Type           | Modifiers 
------------------------+--------------------------+-----------
- id                    | bigint                   | 
- campaign_ids          | jsonb                    | 
- repo_id               | integer                  | 
- created_at            | timestamp with time zone | 
- updated_at            | timestamp with time zone | 
- metadata              | jsonb                    | 
- external_id           | text                     | 
- external_service_type | text                     | 
- external_deleted_at   | timestamp with time zone | 
- external_branch       | text                     | 
- external_updated_at   | timestamp with time zone | 
- external_state        | text                     | 
- external_review_state | text                     | 
- external_check_state  | text                     | 
- diff_stat_added       | integer                  | 
- diff_stat_changed     | integer                  | 
- diff_stat_deleted     | integer                  | 
- sync_state            | jsonb                    | 
- current_spec_id       | bigint                   | 
- previous_spec_id      | bigint                   | 
- publication_state     | text                     | 
- owned_by_campaign_id  | bigint                   | 
- reconciler_state      | text                     | 
- failure_message       | text                     | 
- started_at            | timestamp with time zone | 
- finished_at           | timestamp with time zone | 
- process_after         | timestamp with time zone | 
- num_resets            | integer                  | 
- closing               | boolean                  | 
- num_failures          | integer                  | 
- log_contents          | text                     | 
- execution_logs        | json[]                   | 
- syncer_error          | text                     | 
+          Column          |           Type           | Modifiers 
+--------------------------+--------------------------+-----------
+ id                       | bigint                   | 
+ batch_change_ids         | jsonb                    | 
+ repo_id                  | integer                  | 
+ created_at               | timestamp with time zone | 
+ updated_at               | timestamp with time zone | 
+ metadata                 | jsonb                    | 
+ external_id              | text                     | 
+ external_service_type    | text                     | 
+ external_deleted_at      | timestamp with time zone | 
+ external_branch          | text                     | 
+ external_updated_at      | timestamp with time zone | 
+ external_state           | text                     | 
+ external_review_state    | text                     | 
+ external_check_state     | text                     | 
+ diff_stat_added          | integer                  | 
+ diff_stat_changed        | integer                  | 
+ diff_stat_deleted        | integer                  | 
+ sync_state               | jsonb                    | 
+ current_spec_id          | bigint                   | 
+ previous_spec_id         | bigint                   | 
+ publication_state        | text                     | 
+ owned_by_batch_change_id | bigint                   | 
+ reconciler_state         | text                     | 
+ failure_message          | text                     | 
+ started_at               | timestamp with time zone | 
+ finished_at              | timestamp with time zone | 
+ process_after            | timestamp with time zone | 
+ num_resets               | integer                  | 
+ closing                  | boolean                  | 
+ num_failures             | integer                  | 
+ log_contents             | text                     | 
+ execution_logs           | json[]                   | 
+ syncer_error             | text                     | 
 
 ```
 
@@ -1890,7 +1890,7 @@ Indexes:
 
 ```sql
  SELECT c.id,
-    c.campaign_ids,
+    c.batch_change_ids,
     c.repo_id,
     c.created_at,
     c.updated_at,
@@ -1910,7 +1910,7 @@ Indexes:
     c.current_spec_id,
     c.previous_spec_id,
     c.publication_state,
-    c.owned_by_campaign_id,
+    c.owned_by_batch_change_id,
     c.reconciler_state,
     c.failure_message,
     c.started_at,
@@ -1925,10 +1925,10 @@ Indexes:
    FROM (changesets c
      JOIN repo r ON ((r.id = c.repo_id)))
   WHERE ((r.deleted_at IS NULL) AND (EXISTS ( SELECT 1
-           FROM ((campaigns
-             LEFT JOIN users namespace_user ON ((campaigns.namespace_user_id = namespace_user.id)))
-             LEFT JOIN orgs namespace_org ON ((campaigns.namespace_org_id = namespace_org.id)))
-          WHERE ((c.campaign_ids ? (campaigns.id)::text) AND (namespace_user.deleted_at IS NULL) AND (namespace_org.deleted_at IS NULL)))));
+           FROM ((batch_changes
+             LEFT JOIN users namespace_user ON ((batch_changes.namespace_user_id = namespace_user.id)))
+             LEFT JOIN orgs namespace_org ON ((batch_changes.namespace_org_id = namespace_org.id)))
+          WHERE ((c.batch_change_ids ? (batch_changes.id)::text) AND (namespace_user.deleted_at IS NULL) AND (namespace_org.deleted_at IS NULL)))));
 ```
 
 # View "public.site_config"
@@ -1955,7 +1955,7 @@ Indexes:
  changeset_spec_id | bigint  | 
  changeset_id      | bigint  | 
  repo_id           | integer | 
- campaign_spec_id  | bigint  | 
+ batch_spec_id     | bigint  | 
  repo_name         | citext  | 
  changeset_name    | text    | 
  external_state    | text    | 
@@ -1970,7 +1970,7 @@ Indexes:
  SELECT changeset_specs.id AS changeset_spec_id,
     COALESCE(changesets.id, (0)::bigint) AS changeset_id,
     changeset_specs.repo_id,
-    changeset_specs.campaign_spec_id,
+    changeset_specs.batch_spec_id,
     repo.name AS repo_name,
     COALESCE((changesets.metadata ->> 'Title'::text), (changesets.metadata ->> 'title'::text)) AS changeset_name,
     changesets.external_state,

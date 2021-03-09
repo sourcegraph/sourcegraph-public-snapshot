@@ -41,7 +41,7 @@ func New(store *store.Store) graphqlbackend.BatchChangesResolver {
 }
 
 func batchChangesEnabled(ctx context.Context) error {
-	// On Sourcegraph.com nobody can read/create campaign entities
+	// On Sourcegraph.com nobody can read/create batch changes entities
 	if envvar.SourcegraphDotComMode() {
 		return ErrBatchChangesDotcom{}
 	}
@@ -262,7 +262,7 @@ func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.C
 	}
 
 	opts := service.ApplyBatchChangeOpts{
-		// This is what differentiates CreateCampaign from ApplyCampaign
+		// This is what differentiates CreateBatchChange from ApplyBatchChange
 		FailIfBatchChangeExists: true,
 	}
 
@@ -381,25 +381,25 @@ func (r *Resolver) CreateBatchSpec(ctx context.Context, args *graphqlbackend.Cre
 	}
 
 	svc := service.New(r.store)
-	campaignSpec, err := svc.CreateBatchSpec(ctx, opts)
+	batchSpec, err := svc.CreateBatchSpec(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := logCampaignSpecCreated(ctx, r.store.DB(), &opts); err != nil {
+	if err := logBatchSpecCreated(ctx, r.store.DB(), &opts); err != nil {
 		return nil, err
 	}
 
 	specResolver := &batchSpecResolver{
 		store:     r.store,
-		batchSpec: campaignSpec,
+		batchSpec: batchSpec,
 	}
 
 	return specResolver, nil
 }
 
-func logCampaignSpecCreated(ctx context.Context, db dbutil.DB, opts *service.CreateBatchSpecOpts) error {
-	// Log an analytics event when a CampaignSpec has been created.
+func logBatchSpecCreated(ctx context.Context, db dbutil.DB, opts *service.CreateBatchSpecOpts) error {
+	// Log an analytics event when a BatchSpec has been created.
 	// See internal/usagestats/batches.go.
 	actor := actor.FromContext(ctx)
 
@@ -451,7 +451,7 @@ func (r *Resolver) CreateChangesetSpec(ctx context.Context, args *graphqlbackend
 
 func (r *Resolver) MoveBatchChange(ctx context.Context, args *graphqlbackend.MoveBatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {
 	var err error
-	tr, ctx := trace.New(ctx, "Resolver.MoveBatchChange", fmt.Sprintf("Campaign %s", args.BatchChange))
+	tr, ctx := trace.New(ctx, "Resolver.MoveBatchChange", fmt.Sprintf("BatchChange %s", args.BatchChange))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -608,7 +608,7 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, batchCha
 
 	safe := true
 
-	// TODO: This _could_ become problematic if a user has a campaign with > 10000 changesets, once
+	// TODO: This _could_ become problematic if a user has a batch change with > 10000 changesets, once
 	// we use cursor based pagination in the frontend for ChangesetConnections this problem will disappear.
 	// Currently we cannot enable it, though, because we want to re-fetch the whole list periodically to
 	// check for a change in the changeset states.
@@ -716,13 +716,6 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, batchCha
 	}
 
 	return opts, safe, nil
-}
-
-func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.CloseCampaignArgs) (_ graphqlbackend.BatchChangeResolver, err error) {
-	return r.CloseBatchChange(ctx, &graphqlbackend.CloseBatchChangeArgs{
-		BatchChange:     args.Campaign,
-		CloseChangesets: args.CloseChangesets,
-	})
 }
 
 func (r *Resolver) CloseBatchChange(ctx context.Context, args *graphqlbackend.CloseBatchChangeArgs) (_ graphqlbackend.BatchChangeResolver, err error) {
@@ -849,7 +842,7 @@ func (r *Resolver) CreateBatchChangesCredential(ctx context.Context, args *graph
 	}
 
 	scope := database.UserCredentialScope{
-		Domain:              database.UserCredentialDomainCampaigns,
+		Domain:              database.UserCredentialDomainBatches,
 		ExternalServiceID:   args.ExternalServiceURL,
 		ExternalServiceType: extsvc.KindToType(kind),
 		UserID:              userID,
@@ -955,7 +948,7 @@ func parseBatchChangeState(s *string) (batches.BatchChangeState, error) {
 }
 
 func checkSiteAdminOrSameUser(ctx context.Context, userID int32) (bool, error) {
-	// 🚨 SECURITY: Only site admins or the authors of a campaign have campaign
+	// 🚨 SECURITY: Only site admins or the authors of a batch change have batch change
 	// admin rights.
 	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
 		if _, ok := err.(*backend.InsufficientAuthorizationError); ok {

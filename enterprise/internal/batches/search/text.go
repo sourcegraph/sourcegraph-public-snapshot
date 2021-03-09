@@ -27,7 +27,7 @@ func ParseTextSearch(search string) ([]TextSearchTerm, error) {
 	terms := []TextSearchTerm{}
 	for _, expr := range tree {
 		if expr.Field != "" {
-			// In the future, we may choose to support field types in campaign
+			// In the future, we may choose to support field types in batch changes
 			// text search queries. When that happens, we should extend this
 			// function to accept an additional parameter defining field types
 			// and what behaviour should be implemented when they are set. Until

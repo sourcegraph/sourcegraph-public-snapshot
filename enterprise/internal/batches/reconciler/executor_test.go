@@ -537,7 +537,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		})
 
 		// After each test: clean up database.
-		ct.TruncateTables(t, db, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
+		ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
 	}
 }
 
@@ -660,7 +660,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 	t.Run("owned by admin user with credential", func(t *testing.T) {
 		token := &auth.OAuthBearerToken{Token: "abcdef"}
 		if _, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
-			Domain:              database.UserCredentialDomainCampaigns,
+			Domain:              database.UserCredentialDomainBatches,
 			UserID:              admin.ID,
 			ExternalServiceType: repo.ExternalRepo.ServiceType,
 			ExternalServiceID:   repo.ExternalRepo.ServiceID,
@@ -686,7 +686,7 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 	t.Run("owned by normal user with credential", func(t *testing.T) {
 		token := &auth.OAuthBearerToken{Token: "abcdef"}
 		if _, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
-			Domain:              database.UserCredentialDomainCampaigns,
+			Domain:              database.UserCredentialDomainBatches,
 			UserID:              user.ID,
 			ExternalServiceType: repo.ExternalRepo.ServiceType,
 			ExternalServiceID:   repo.ExternalRepo.ServiceID,
@@ -862,7 +862,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.credentials != nil {
 				cred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
-					Domain:              database.UserCredentialDomainCampaigns,
+					Domain:              database.UserCredentialDomainBatches,
 					UserID:              tt.user.ID,
 					ExternalServiceType: tt.repo.ExternalRepo.ServiceType,
 					ExternalServiceID:   tt.repo.ExternalRepo.ServiceID,
