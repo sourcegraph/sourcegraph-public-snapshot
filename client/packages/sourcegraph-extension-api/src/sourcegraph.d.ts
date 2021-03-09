@@ -646,6 +646,9 @@ declare module 'sourcegraph' {
     export interface DirectoryViewer {
         readonly type: 'DirectoryViewer'
 
+        /** The internal ID of this directory viewer. */
+        readonly viewerId: string
+
         /**
          * The directory shown in the directory viewer.
          * This currently only exposes the URI of the directory.
@@ -659,7 +662,9 @@ declare module 'sourcegraph' {
      */
     export interface CodeEditor {
         /** The type tag for this kind of {@link ViewComponent}. */
-        readonly type: 'CodeEditor'
+        readonly type: 'CodeEditor' /** The internal ID of this code editor. */
+
+        /** The internal ID of this code editor. */ readonly viewerId: string
 
         /**
          * The text document that is open in this editor. The document remains the same for the entire lifetime of

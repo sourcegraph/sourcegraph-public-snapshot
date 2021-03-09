@@ -5,15 +5,14 @@ import { pretendRemote } from '../util'
 import { MainThreadAPI } from '../contract'
 import { SettingsCascade } from '../../settings/settings'
 import { BehaviorSubject, Observer } from 'rxjs'
-import { proxy, ProxyMarked, proxyMarker, Remote } from 'comlink'
+import { ProxyMarked, proxyMarker, Remote } from 'comlink'
 import { proxySubscribable } from './api/common'
 
 describe('getDocumentHighlights from ExtensionHost API, it aims to have more e2e feel', () => {
     // integration(ish) tests for scenarios not covered by providers tests
     const noopMain = pretendRemote<MainThreadAPI>({
-        // TODO(tj): spread common stubs
         getEnabledExtensions: () => proxySubscribable(new BehaviorSubject([])),
-        getScriptURLForExtension: proxy(() => undefined),
+        getScriptURLForExtension: () => undefined,
     })
     const emptySettings: SettingsCascade<object> = {
         subjects: [],

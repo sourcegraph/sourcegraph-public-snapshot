@@ -1,6 +1,6 @@
 import 'message-port-polyfill'
 
-import { BehaviorSubject, throwError, of, Subscription } from 'rxjs'
+import { BehaviorSubject, throwError, of, Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { EndpointPair, PlatformContext } from '../../platform/context'
 import { createExtensionHostClientConnection } from '../client/connection'
@@ -9,6 +9,7 @@ import { FlatExtensionHostAPI, MainThreadAPI, TextDocumentData } from '../contra
 import { Remote } from 'comlink'
 import { ViewerData } from '../viewerTypes'
 import { WorkspaceRootWithMetadata } from '../extension/flatExtensionApi'
+import { ExposedToClient } from '../client/mainthread-api'
 
 export function assertToJSON(a: any, expected: any): void {
     const raw = JSON.stringify(a)
@@ -65,11 +66,14 @@ const NOOP_MOCKS: Mocks = {
 export async function integrationTestContext(
     partialMocks: Partial<Mocks> = NOOP_MOCKS,
     initModel: TestInitData = FIXTURE_INIT_DATA
-): Promise<{
-    extensionAPI: typeof sourcegraph
-    extensionHostAPI: Remote<FlatExtensionHostAPI>
-    mainThreadAPI: MainThreadAPI
-}> {
+): Promise<
+    {
+        extensionAPI: typeof sourcegraph
+        extensionHostAPI: Remote<FlatExtensionHostAPI>
+        mainThreadAPI: MainThreadAPI
+        exposedToClient: ExposedToClient
+    } & Unsubscribable
+> {
     const mocks = partialMocks ? { ...NOOP_MOCKS, ...partialMocks } : NOOP_MOCKS
 
     const clientAPIChannel = new MessageChannel()
@@ -90,7 +94,7 @@ export async function integrationTestContext(
         clientApplication: 'sourcegraph',
     }
 
-    const { api: extensionHostAPI, mainThreadAPI } = await createExtensionHostClientConnection(
+    const { api: extensionHostAPI, mainThreadAPI, exposedToClient } = await createExtensionHostClientConnection(
         Promise.resolve({
             endpoints: clientEndpoints,
             subscription: new Subscription(),
@@ -109,6 +113,8 @@ export async function integrationTestContext(
         extensionAPI,
         extensionHostAPI,
         mainThreadAPI,
+        exposedToClient,
+        unsubscribe: () => extensionHost.unsubscribe(),
     }
 }
 

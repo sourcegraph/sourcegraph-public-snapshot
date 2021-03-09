@@ -1,4 +1,4 @@
-import { of } from 'rxjs'
+import { of, Subscription } from 'rxjs'
 import sinon from 'sinon'
 import { FlatExtensionHostAPI } from '../api/contract'
 import { pretendRemote } from '../api/util'
@@ -259,18 +259,8 @@ export const NOOP_SETTINGS_CASCADE = {
     final: null,
 }
 
-const services = {
-    contribution: {
-        getContributions: () => of({}),
-        registerContributions: () => {},
-    },
-    commands: {
-        registerCommand: () => {},
-    },
-}
-
-export const extensionsController: Pick<Controller, 'executeCommand' | 'services' | 'extHostAPI'> = {
+export const extensionsController: Pick<Controller, 'executeCommand' | 'registerCommand' | 'extHostAPI'> = {
     executeCommand: () => Promise.resolve(),
-    services: services as any,
+    registerCommand: () => new Subscription(),
     extHostAPI: Promise.resolve(pretendRemote<FlatExtensionHostAPI>({})),
 }
