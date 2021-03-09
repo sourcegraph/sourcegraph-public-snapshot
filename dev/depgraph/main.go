@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
+	"flag"
 	"fmt"
 	"os"
 
-	"github.com/sourcegraph/sourcegraph/dev/depgraph/graph"
+	"github.com/peterbourgon/ff/v3/ffcli"
 )
 
 func main() {
@@ -14,26 +16,21 @@ func main() {
 	}
 }
 
-var commands = map[string]func(*graph.DependencyGraph) error{
-	"lint":           lint,
-	"trace":          trace,
-	"trace-internal": traceInternal,
+var rootFlagSet = flag.NewFlagSet("depgraph", flag.ExitOnError)
+var rootCommand = &ffcli.Command{
+	ShortUsage: "depgraph [flags] <subcommand>",
+	FlagSet:    rootFlagSet,
+	Subcommands: []*ffcli.Command{
+		lintCommand,
+		traceCommand,
+		traceInternalCommand,
+	},
 }
 
 func mainErr() error {
-	if len(os.Args) < 2 {
-		fmt.Printf("No command supplied.\n")
-		return nil
-	}
-
-	graph, err := graph.Load()
-	if err != nil {
+	if err := rootCommand.Parse(os.Args[1:]); err != nil {
 		return err
 	}
 
-	if command, ok := commands[os.Args[1]]; ok {
-		return command(graph)
-	}
-
-	return fmt.Errorf(fmt.Sprintf("unknown subcommand '%s'", os.Args[1]))
+	return rootCommand.Run(context.Background())
 }

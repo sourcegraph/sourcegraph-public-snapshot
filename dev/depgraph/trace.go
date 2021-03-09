@@ -1,40 +1,40 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
-	"os"
 	"sort"
+
+	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"github.com/sourcegraph/sourcegraph/dev/depgraph/graph"
 	"github.com/sourcegraph/sourcegraph/dev/depgraph/visualization"
 )
 
-// Handles a command of the following form:
-//
-// depgraph trace {internal/honey} [-dependency-max-depth=1] [-dependent-max-depth=1]
-//
-// Outputs a graph in dot format (convert with `dot -Tsvg {file.dot} -o file.svg`).
-func trace(graph *graph.DependencyGraph) error {
-	if len(os.Args) < 3 {
-		fmt.Printf("No path supplied.\n")
-		os.Exit(1)
-	}
-	pkg := os.Args[2]
+var traceFlagSet = flag.NewFlagSet("depgraph trace", flag.ExitOnError)
+var dependencyMaxDepthFlag = traceFlagSet.Int("dependency-max-depth", 1, "Show transitive dependencies up to this depth (default 1)")
+var dependentMaxDepthFlag = traceFlagSet.Int("dependent-max-depth", 1, "Show transitive dependents up to this depth (default 1)")
 
-	dependencyMaxDepth := flag.Int("dependency-max-depth", 1, "Show transitive dependencies up to this depth (default 100)")
-	dependentMaxDepth := flag.Int("dependent-max-depth", 1, "Show transitive dependents up to this depth (default 100)")
-	if err := flag.CommandLine.Parse(os.Args[3:]); err != nil {
+var traceCommand = &ffcli.Command{
+	Name:       "trace",
+	ShortUsage: "depgraph trace {package} [-dependency-max-depth=1] [-dependent-max-depth=1]",
+	ShortHelp:  "Outputs a DOT-formatted graph of the given package dependency and dependents",
+	FlagSet:    traceFlagSet,
+	Exec:       trace,
+}
+
+func trace(ctx context.Context, args []string) error {
+	if len(args) != 1 {
+		return fmt.Errorf("expected exactly one package")
+	}
+
+	graph, err := graph.Load()
+	if err != nil {
 		return err
 	}
 
-	packages, dependencyEdges, dependentEdges := traceWalkGraph(
-		graph,
-		pkg,
-		*dependencyMaxDepth,
-		*dependentMaxDepth,
-	)
-
+	packages, dependencyEdges, dependentEdges := traceWalkGraph(graph, args[0], *dependencyMaxDepthFlag, *dependentMaxDepthFlag)
 	fmt.Printf("%s\n", visualization.Dotify(packages, dependencyEdges, dependentEdges))
 	return nil
 }
