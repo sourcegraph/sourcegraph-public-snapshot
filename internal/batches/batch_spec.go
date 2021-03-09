@@ -3,9 +3,9 @@ package batches
 import (
 	"time"
 
-	"github.com/sourcegraph/campaignutils/env"
-	"github.com/sourcegraph/campaignutils/overridable"
-	"github.com/sourcegraph/campaignutils/yaml"
+	"github.com/sourcegraph/batch-change-utils/env"
+	"github.com/sourcegraph/batch-change-utils/overridable"
+	"github.com/sourcegraph/batch-change-utils/yaml"
 
 	"github.com/sourcegraph/sourcegraph/schema"
 )
