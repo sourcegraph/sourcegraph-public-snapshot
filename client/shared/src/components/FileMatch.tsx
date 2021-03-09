@@ -8,7 +8,7 @@ import { FetchFileParameters } from './CodeExcerpt'
 import { EventLogger, FileMatchChildren } from './FileMatchChildren'
 import { RepoFileLink } from './RepoFileLink'
 import { Props as ResultContainerProps, ResultContainer } from './ResultContainer'
-import { AggregableTag, Badge } from 'sourcegraph'
+import { AggregableLabel, Badge } from 'sourcegraph'
 import { LinkOrSpan } from './LinkOrSpan'
 
 const SUBSET_COUNT_KEY = 'fileMatchSubsetCount'
@@ -93,7 +93,7 @@ export class FileMatch extends React.PureComponent<Props> {
             preview: match.preview,
             line: match.lineNumber,
             badge: match.badge,
-            aggregableTags: match.aggregableTags,
+            aggregableLabels: match.aggregableLabels,
         }))
 
         const { repoAtRevURL, revDisplayName } =
@@ -120,9 +120,9 @@ export class FileMatch extends React.PureComponent<Props> {
         const description =
             items.length > 0 ? (
                 <>
-                    {aggregateTags(items).map(tag => (
-                        <LinkOrSpan key={tag.text} to={tag.linkURL}>
-                            <span className="badge badge-secondary text-uppercase">{tag.text}</span>
+                    {aggregateLabels(items).map(label => (
+                        <LinkOrSpan key={label.text} to={label.linkURL}>
+                            <span className="badge badge-secondary text-uppercase">{label.text}</span>
                         </LinkOrSpan>
                     ))}
                 </>
@@ -178,11 +178,11 @@ export class FileMatch extends React.PureComponent<Props> {
     }
 }
 
-function aggregateTags(items: MatchItem[]): AggregableTag[] {
-    const aggregatedTags = new Map<string, AggregableTag>()
-    for (const item of items.flatMap(item => item.aggregableTags || [])) {
-        aggregatedTags.set(item.text, item)
+function aggregateLabels(items: MatchItem[]): AggregableLabel[] {
+    const aggregatedLabels = new Map<string, AggregableLabel>()
+    for (const item of items.flatMap(item => item.aggregableLabelss || [])) {
+        aggregatedLabels.set(item.text, item)
     }
 
-    return [...aggregatedTags.values()].sort((a, b) => a.text.localeCompare(b.text))
+    return [...aggregatedLabels.values()].sort((a, b) => a.text.localeCompare(b.text))
 }

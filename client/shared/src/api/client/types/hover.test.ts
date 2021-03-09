@@ -67,10 +67,10 @@ describe('HoverMerged', () => {
                         alerts: [
                             {
                                 summary: { kind: MarkupKind.PlainText, value: 'x' },
-                                aggregableTags: [{ text: 't03' }, { text: 't01' }],
+                                aggregableLabels: [{ text: 't03' }, { text: 't01' }],
                             },
                         ],
-                        aggregableTags: [{ text: 't02' }],
+                        aggregableLabels: [{ text: 't02' }],
                     },
                 ])
             ).toEqual({
@@ -78,7 +78,7 @@ describe('HoverMerged', () => {
                 alerts: [
                     {
                         summary: { kind: MarkupKind.PlainText, value: 'x' },
-                        aggregableTags: [{ text: 't03' }, { text: 't01' }],
+                        aggregableLabels: [{ text: 't03' }, { text: 't01' }],
                     },
                 ],
                 aggregatedTags: [{ text: 't01' }, { text: 't02' }, { text: 't03' }],

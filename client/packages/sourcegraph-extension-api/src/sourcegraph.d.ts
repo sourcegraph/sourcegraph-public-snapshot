@@ -1372,21 +1372,21 @@ declare module 'sourcegraph' {
         badge?: BadgeAttachmentRenderOptions
 
         /**
-         * Aggregable tags are concatenated and de-duplicated within a particular result set. These
+         * Aggregable labels are concatenated and de-duplicated within a particular result set. These
          * values can briefly be used to describe some common property of the underlying result set.
          *
          * We currently use this to display whether a file in the file match locations pane contains
          * only precise or only search-based code intelligence results.
          */
-        aggregableTags?: AggregableTag[]
+        aggregableLabels?: AggregableLabel[]
     }
 
     /**
-     * Aggregable tags are concatenated and de-duplicated within a particular result set. These
+     * Aggregable labels are concatenated and de-duplicated within a particular result set. These
      * values can briefly be used to describe some common property of the underlying result set.
      */
-    export interface AggregableTag {
-        /** The display text of the tag. */
+    export interface AggregableLabel {
+        /** The display text of the label. */
         text: string
 
         /** If set, the tag becomes a link with this destination URL. */
