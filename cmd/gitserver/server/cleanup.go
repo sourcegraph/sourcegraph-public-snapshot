@@ -493,13 +493,15 @@ func (s *Server) removeRepoDirectory(gitDir GitDir) error {
 	// should not be returned, just logged.
 
 	// Set as not_cloned in the database
-	repo, err := database.Repos(s.DB).GetByName(ctx, s.name(gitDir))
-	if err != nil {
-		log15.Error("Getting repo from db", "error", err)
-	} else {
-		err = database.GitserverRepos(s.DB).SetCloneStatus(ctx, repo.ID, types.CloneStatusNotCloned)
+	if s.DB != nil {
+		repo, err := database.Repos(s.DB).GetByName(ctx, s.name(gitDir))
 		if err != nil {
-			log15.Error("Setting clone status", "error", err)
+			log15.Error("Getting repo from db", "error", err)
+		} else {
+			err = database.GitserverRepos(s.DB).SetCloneStatus(ctx, repo.ID, types.CloneStatusNotCloned)
+			if err != nil {
+				log15.Error("Setting clone status", "error", err)
+			}
 		}
 	}
 

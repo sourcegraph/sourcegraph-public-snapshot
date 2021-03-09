@@ -162,7 +162,7 @@ WHERE repo_id = %s
 
 func (s *GitserverRepoStore) SetCloneStatus(ctx context.Context, id api.RepoID, status types.CloneStatus) error {
 	q := `
-UPDATE gitserver_repos 
+UPDATE gitserver_repos
 SET clone_status = %s
 WHERE repo_id = %s
 `
