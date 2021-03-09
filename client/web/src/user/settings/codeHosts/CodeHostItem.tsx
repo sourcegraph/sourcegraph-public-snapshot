@@ -16,6 +16,8 @@ interface CodeHostItemProps {
     kind: ExternalServiceKind
     name: string
     icon: React.ComponentType<{ className?: string }>
+    navigateToAuthProvider: (kind: ExternalServiceKind) => void
+
     // optional service object fields when the code host connection is active
     service?: ListExternalServiceFields
 
@@ -30,6 +32,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     kind,
     name,
     icon: Icon,
+    navigateToAuthProvider,
     onDidAdd,
     onDidRemove,
     onDidError,
@@ -47,6 +50,8 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
 
     const [dropdownOpen, setOpen] = useState(false)
     const toggleDropdown = useCallback((): void => setOpen(!dropdownOpen), [dropdownOpen])
+
+    const toAuthProvider = useCallback((): void => navigateToAuthProvider(kind), [kind, navigateToAuthProvider])
 
     return (
         <div className="p-2 d-flex align-items-start">
@@ -100,7 +105,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                             Connect
                         </DropdownToggle>
                         <DropdownMenu right={true}>
-                            <DropdownItem>Connect with {name} </DropdownItem>
+                            <DropdownItem onClick={toAuthProvider}>Connect with {name}</DropdownItem>
                             <DropdownItem onClick={toggleAddConnectionModal}>Connect with access token</DropdownItem>
                         </DropdownMenu>
                     </ButtonDropdown>

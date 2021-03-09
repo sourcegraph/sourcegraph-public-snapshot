@@ -96,6 +96,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                             { delay: 2000 }
                         ),
                         map(result => {
+                            debugger
                             const services: FilterValue[] = [
                                 {
                                     value: 'all',
@@ -104,7 +105,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                                 },
                                 ...result.nodes.map(node => ({
                                     value: node.id,
-                                    label: node.displayName,
+                                    label: node.displayName.split(' ')[0],
                                     tooltip: '',
                                     args: { externalServiceID: node.id },
                                 })),

@@ -16,8 +16,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { SourcegraphContext } from '../../../jscontext'
 
 type AuthProvider = SourcegraphContext['authProviders'][0]
-type ServiceType = AuthProvider['serviceType']
-type AuthProvidersByType = Partial<Record<ServiceType, AuthProvider>>
+type AuthProvidersByKind = Partial<Record<ExternalServiceKind, AuthProvider>>
 
 export interface UserAddCodeHostsPageProps {
     userID: Scalars['ID']
@@ -40,7 +39,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 }) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
     const [oauthRequestFor, setOauthRequestFor] = useState<ExternalServiceKind>()
-    const [showAddReposFor, setShowAddReposFor] = useState('')
+    const [showAddReposFor, setShowAddReposFor] = useState<string[]>([])
 
     const fetchExternalServices = useCallback(async () => {
         setStatusOrError('loading')
@@ -57,7 +56,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             return accumulator
         }, {})
 
-        setShowAddReposFor('')
+        setShowAddReposFor([])
         setStatusOrError(services)
     }, [userID])
 
@@ -71,17 +70,38 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         })
     }, [fetchExternalServices])
 
-    useEffect(() => {}, [statusOrError])
+    useEffect(() => {
+        if (isServicesByKind(statusOrError)) {
+            const newNotSyncedCodeHosts = []
+
+            for (const [, service] of Object.entries(statusOrError)) {
+                if (service && !service.lastSyncError && !service.warning) {
+                    // don't display user name in service name
+                    const serviceName = service.displayName.split(' ')[0]
+
+                    // if code host was just added and never synced
+                    if (!service?.lastSyncAt) {
+                        newNotSyncedCodeHosts.push(serviceName)
+                    } else {
+                        const lastSyncTime = new Date(service.lastSyncAt)
+                        const epochTime = new Date(0)
+
+                        // if code host was just added and has "sync now" timestamp
+                        if (lastSyncTime < epochTime) {
+                            newNotSyncedCodeHosts.push(serviceName)
+                        }
+                    }
+                }
+            }
+
+            setShowAddReposFor(newNotSyncedCodeHosts)
+        }
+    }, [statusOrError])
 
     const addNewService = useCallback(
         (service: ListExternalServiceFields): void => {
             if (isServicesByKind(statusOrError)) {
                 setStatusOrError({ ...statusOrError, [service.kind]: service })
-                // display "Add repos" banner only if we just added a connection
-                // and there were no errors or warnings
-                if (!service.lastSyncError && !service.warning) {
-                    setShowAddReposFor(service.displayName)
-                }
             }
         },
         [statusOrError]
@@ -90,7 +110,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     const handleError = useCallback((error: ErrorLike): void => {
         // reset 'add your repositories banner', we only want one banner at the
         // time and errors will have it's own
-        setShowAddReposFor('')
+        setShowAddReposFor([])
         setStatusOrError(error)
     }, [])
 
@@ -105,38 +125,44 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     )
 
     // auth providers by service type
-    const authProvidersByType = context.authProviders.reduce((accumulator: AuthProvidersByType, provider) => {
-        accumulator[provider.serviceType] = provider
+    const authProvidersByKind = context.authProviders.reduce((accumulator: AuthProvidersByKind, provider) => {
+        if (provider.authenticationURL) {
+            accumulator[provider.serviceType.toLocaleUpperCase() as ExternalServiceKind] = provider
+        }
         return accumulator
     }, {})
+
+    const navigateToAuthProvider = useCallback(
+        (kind: ExternalServiceKind): void => {
+            const authProvider = authProvidersByKind[kind]
+
+            if (authProvider) {
+                setOauthRequestFor(kind)
+                window.location.assign(
+                    `${authProvider.authenticationURL as string}&redirect=${
+                        window.location.href
+                    }&op=createCodeHostConnection`
+                )
+            }
+        },
+        [authProvidersByKind]
+    )
 
     const codeHostOAuthButtons = isServicesByKind(statusOrError)
         ? Object.values(codeHostExternalServices).reduce(
               (accumulator: JSX.Element[], { kind, defaultDisplayName, icon: Icon }) => {
-                  if (!statusOrError[kind]) {
-                      const type = kind.toLocaleLowerCase() as ServiceType
-                      const authProvider = authProvidersByType[type]
-
-                      if (authProvider) {
-                          accumulator.push(
-                              <button
-                                  key={kind}
-                                  type="button"
-                                  onClick={() => {
-                                      setOauthRequestFor(kind)
-                                      window.location.assign(
-                                          `${authProvider.authenticationURL as string}&redirect=${
-                                              window.location.href
-                                          }&op=createCodeHostConnection`
-                                      )
-                                  }}
-                                  className={`btn mr-2 ${kind === 'GITLAB' ? 'btn-gitlab' : 'btn-dark'}`}
-                              >
-                                  {oauthRequestFor === kind && <LoadingSpinner className="icon-inline mr-1" />}
-                                  <Icon className="icon-inline" /> {defaultDisplayName}
-                              </button>
-                          )
-                      }
+                  if (!statusOrError[kind] && authProvidersByKind[kind]) {
+                      accumulator.push(
+                          <button
+                              key={kind}
+                              type="button"
+                              onClick={() => navigateToAuthProvider(kind)}
+                              className={`btn mr-2 ${kind === 'GITLAB' ? 'btn-gitlab' : 'btn-dark'}`}
+                          >
+                              {oauthRequestFor === kind && <LoadingSpinner className="icon-inline mr-2 theme-dark" />}
+                              <Icon className="icon-inline " /> {defaultDisplayName}
+                          </button>
+                      )
                   }
 
                   return accumulator
@@ -161,15 +187,6 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 </p>
             </div>
 
-            {showAddReposFor && (
-                <div className="alert alert-success mb-4" role="alert">
-                    Connected with {showAddReposFor}. Next,{' '}
-                    <Link className="text-primary" to={`${routingPrefix}/repositories`}>
-                        <b>add your repositories →</b>
-                    </Link>
-                </div>
-            )}
-
             {/* display external service errors */}
             {isServicesByKind(statusOrError) &&
                 Object.values(statusOrError)
@@ -182,6 +199,15 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             {/* display other errors */}
             {isErrorLike(statusOrError) && (
                 <ErrorAlert error={statusOrError} prefix="Code host action error" icon={false} />
+            )}
+
+            {showAddReposFor.length > 0 && (
+                <div className="alert alert-success mb-4" role="alert">
+                    Connected with {showAddReposFor.join(', ')}. Next,{' '}
+                    <Link className="text-primary" to={`${routingPrefix}/repositories`}>
+                        <b>add your repositories →</b>
+                    </Link>
+                </div>
             )}
 
             {codeHostExternalServices && isServicesByKind(statusOrError) ? (
@@ -204,20 +230,23 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                     )}
 
                     <ul className="list-group">
-                        {Object.entries(codeHostExternalServices).map(([id, { kind, defaultDisplayName, icon }]) => (
-                            <li key={id} className="list-group-item">
-                                <CodeHostItem
-                                    service={isServicesByKind(statusOrError) ? statusOrError[kind] : undefined}
-                                    userID={userID}
-                                    kind={kind}
-                                    name={defaultDisplayName}
-                                    icon={icon}
-                                    onDidAdd={addNewService}
-                                    onDidRemove={fetchExternalServices}
-                                    onDidError={handleError}
-                                />
-                            </li>
-                        ))}
+                        {Object.entries(codeHostExternalServices).map(([id, { kind, defaultDisplayName, icon }]) =>
+                            authProvidersByKind[kind] ? (
+                                <li key={id} className="list-group-item">
+                                    <CodeHostItem
+                                        service={isServicesByKind(statusOrError) ? statusOrError[kind] : undefined}
+                                        userID={userID}
+                                        kind={kind}
+                                        name={defaultDisplayName}
+                                        navigateToAuthProvider={navigateToAuthProvider}
+                                        icon={icon}
+                                        onDidAdd={addNewService}
+                                        onDidRemove={fetchExternalServices}
+                                        onDidError={handleError}
+                                    />
+                                </li>
+                            ) : null
+                        )}
                     </ul>
                 </>
             ) : (
