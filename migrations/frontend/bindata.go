@@ -120,6 +120,8 @@
 // 1528395791_insights_query_runner_jobs_record_time.up.sql (92B)
 // 1528395792_add_user_public_repos.down.sql (57B)
 // 1528395792_add_user_public_repos.up.sql (317B)
+// 1528395793_fix_invalid_changeset_reconciler_states.down.sql (102B)
+// 1528395793_fix_invalid_changeset_reconciler_states.up.sql (102B)
 
 package migrations
 
@@ -2588,6 +2590,46 @@ func _1528395792_add_user_public_reposUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395793_fix_invalid_changeset_reconciler_statesDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x0a\x0d\x70\x71\x0c\x71\x55\x48\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x29\x56\x08\x76\x0d\x51\x28\x4a\x4d\xce\xcf\x4b\xce\xcc\x49\x2d\x8a\x2f\x2e\x49\x2c\x49\x55\xb0\x55\x50\x0f\x0c\x75\x0d\x75\x75\x51\x57\x08\xf7\x70\x0d\x72\xc5\xaa\xa2\xb0\x34\xb5\x34\x35\x45\xdd\x9a\x8b\xcb\xd9\xdf\xd7\xd7\x33\xc4\x9a\x0b\x10\x00\x00\xff\xff\x3b\x7c\x43\x73\x66\x00\x00\x00")
+
+func _1528395793_fix_invalid_changeset_reconciler_statesDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395793_fix_invalid_changeset_reconciler_statesDownSql,
+		"1528395793_fix_invalid_changeset_reconciler_states.down.sql",
+	)
+}
+
+func _1528395793_fix_invalid_changeset_reconciler_statesDownSql() (*asset, error) {
+	bytes, err := _1528395793_fix_invalid_changeset_reconciler_statesDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395793_fix_invalid_changeset_reconciler_states.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xb, 0x20, 0xb9, 0xcb, 0x44, 0xd1, 0xf2, 0x9, 0x39, 0x8e, 0xfd, 0xe5, 0xaf, 0x17, 0x1f, 0x71, 0x1d, 0x74, 0x4b, 0x5c, 0xf9, 0x5f, 0xd9, 0x59, 0xef, 0x32, 0x55, 0xa, 0x68, 0x3d, 0x4c, 0x8a}}
+	return a, nil
+}
+
+var __1528395793_fix_invalid_changeset_reconciler_statesUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x0a\x0d\x70\x71\x0c\x71\x55\x48\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x29\x56\x08\x76\x0d\x51\x28\x4a\x4d\xce\xcf\x4b\xce\xcc\x49\x2d\x8a\x2f\x2e\x49\x2c\x49\x55\xb0\x55\x50\x2f\x2c\x4d\x2d\x4d\x4d\x51\x57\x08\xf7\x70\x0d\x72\xc5\xaa\x22\x30\xd4\x35\xd4\xd5\x45\xdd\x9a\x8b\xcb\xd9\xdf\xd7\xd7\x33\xc4\x9a\x0b\x10\x00\x00\xff\xff\x4c\x36\xbe\xb1\x66\x00\x00\x00")
+
+func _1528395793_fix_invalid_changeset_reconciler_statesUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395793_fix_invalid_changeset_reconciler_statesUpSql,
+		"1528395793_fix_invalid_changeset_reconciler_states.up.sql",
+	)
+}
+
+func _1528395793_fix_invalid_changeset_reconciler_statesUpSql() (*asset, error) {
+	bytes, err := _1528395793_fix_invalid_changeset_reconciler_statesUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395793_fix_invalid_changeset_reconciler_states.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x79, 0x12, 0x8f, 0x3e, 0x21, 0x4, 0xbb, 0xf7, 0xfb, 0xdf, 0xf, 0x1, 0x4a, 0x37, 0x8, 0xd0, 0xa2, 0xaf, 0xda, 0xdd, 0xa4, 0x29, 0x20, 0xc2, 0x99, 0xe1, 0xce, 0xbb, 0x41, 0xfe, 0x82, 0xfa}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2799,6 +2841,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395791_insights_query_runner_jobs_record_time.up.sql":                               _1528395791_insights_query_runner_jobs_record_timeUpSql,
 	"1528395792_add_user_public_repos.down.sql":                                              _1528395792_add_user_public_reposDownSql,
 	"1528395792_add_user_public_repos.up.sql":                                                _1528395792_add_user_public_reposUpSql,
+	"1528395793_fix_invalid_changeset_reconciler_states.down.sql":                            _1528395793_fix_invalid_changeset_reconciler_statesDownSql,
+	"1528395793_fix_invalid_changeset_reconciler_states.up.sql":                              _1528395793_fix_invalid_changeset_reconciler_statesUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -2965,6 +3009,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395791_insights_query_runner_jobs_record_time.up.sql":                               {_1528395791_insights_query_runner_jobs_record_timeUpSql, map[string]*bintree{}},
 	"1528395792_add_user_public_repos.down.sql":                                              {_1528395792_add_user_public_reposDownSql, map[string]*bintree{}},
 	"1528395792_add_user_public_repos.up.sql":                                                {_1528395792_add_user_public_reposUpSql, map[string]*bintree{}},
+	"1528395793_fix_invalid_changeset_reconciler_states.down.sql":                            {_1528395793_fix_invalid_changeset_reconciler_statesDownSql, map[string]*bintree{}},
+	"1528395793_fix_invalid_changeset_reconciler_states.up.sql":                              {_1528395793_fix_invalid_changeset_reconciler_statesUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
