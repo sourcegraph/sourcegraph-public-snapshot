@@ -769,12 +769,27 @@ func TestHostnameMatch(t *testing.T) {
 			addr:        "",
 			shouldMatch: false,
 		},
+		{
+			hostname:    "gitserver-10",
+			addr:        "gitserver-10:3178",
+			shouldMatch: true,
+		},
+		{
+			hostname:    "gitserver-10",
+			addr:        "gitserver-10:3178",
+			shouldMatch: true,
+		},
+		{
+			hostname:    "gitserver-0.prod",
+			addr:        "gitserver-0.prod.default.namespace",
+			shouldMatch: true,
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run("", func(t *testing.T) {
 			s := Server{Hostname: tc.hostname}
-			have := s.HostnameMatch(tc.addr)
+			have := s.hostnameMatch(tc.addr)
 			if have != tc.shouldMatch {
 				t.Fatalf("Want %v, got %v", tc.shouldMatch, have)
 			}

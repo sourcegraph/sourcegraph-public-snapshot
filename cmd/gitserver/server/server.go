@@ -293,17 +293,19 @@ func (s *Server) SyncRepoState(db dbutil.DB, interval time.Duration, batchSize, 
 	}
 }
 
-// HostnameMatch checks whether the hostname matches the given address.
+// hostnameMatch checks whether the hostname matches the given address.
 // If we don't find an exact match, we look at the initial prefix.
-func (s *Server) HostnameMatch(addr string) bool {
+func (s *Server) hostnameMatch(addr string) bool {
+	if !strings.HasPrefix(addr, s.Hostname) {
+		return false
+	}
 	if addr == s.Hostname {
 		return true
 	}
-	n := strings.Index(addr, ".")
-	if n == -1 {
-		return false
-	}
-	return addr[:n] == s.Hostname
+	// We know that s.Hostname is shorter than addr so we can safely check the next
+	// char
+	next := addr[len(s.Hostname)]
+	return next == '.' || next == ':'
 }
 
 var (
@@ -325,7 +327,7 @@ func (s *Server) syncRepoState(db dbutil.DB, addrs []string, batchSize, perSecon
 	// Sanity check our host exists in addrs before starting any work
 	var found bool
 	for _, a := range addrs {
-		if s.HostnameMatch(a) {
+		if s.hostnameMatch(a) {
 			found = true
 			break
 		}
@@ -386,7 +388,7 @@ func (s *Server) syncRepoState(db dbutil.DB, addrs []string, batchSize, perSecon
 
 		repoSyncStateCounter.WithLabelValues("check").Inc()
 		// Ensure we're only dealing with repos we are responsible for
-		if addr := gitserver.AddrForRepo(repo.Name, addrs); !s.HostnameMatch(addr) {
+		if addr := gitserver.AddrForRepo(repo.Name, addrs); !s.hostnameMatch(addr) {
 			repoSyncStateCounter.WithLabelValues("other_shard").Inc()
 			return nil
 		}
