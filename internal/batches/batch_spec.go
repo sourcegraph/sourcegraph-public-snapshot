@@ -41,7 +41,7 @@ func (cs *BatchSpec) Clone() *BatchSpec {
 // UnmarshalValidate unmarshals the RawSpec into Spec and validates it against
 // the BatchSpec schema and does additional semantic validation.
 func (cs *BatchSpec) UnmarshalValidate() error {
-	return yaml.UnmarshalValidate(schema.CampaignSpecSchemaJSON, []byte(cs.RawSpec), &cs.Spec)
+	return yaml.UnmarshalValidate(schema.BatchSpecSchemaJSON, []byte(cs.RawSpec), &cs.Spec)
 }
 
 // BatchSpecTTL specifies the TTL of BatchSpecs that haven't been applied

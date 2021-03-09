@@ -129,6 +129,26 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header", "github", "gitlab"})
 }
 
+// BatchSpec description: A batch specification, which describes the batch change and what kinds of changes to make (or what existing changesets to track).
+type BatchSpec struct {
+	// ChangesetTemplate description: A template describing how to create (and update) changesets with the file changes produced by the command steps.
+	ChangesetTemplate *ChangesetTemplate `json:"changesetTemplate,omitempty"`
+	// Description description: The description of the batch change.
+	Description string `json:"description,omitempty"`
+	// ImportChangesets description: Import existing changesets on code hosts.
+	ImportChangesets []*ImportChangesets `json:"importChangesets,omitempty"`
+	// Name description: The name of the batch change, which is unique among all batch changes in the namespace. A batch change's name is case-preserving.
+	Name string `json:"name"`
+	// On description: The set of repositories (and branches) to run the batch change on, specified as a list of search queries (that match repositories) and/or specific repositories.
+	On []interface{} `json:"on,omitempty"`
+	// Steps description: The sequence of commands to run (for each repository branch matched in the `on` property) to produce the workspace changes that will be included in the batch change.
+	Steps []*Step `json:"steps,omitempty"`
+	// TransformChanges description: Optional transformations to apply to the changes produced in each repository.
+	TransformChanges *TransformChanges `json:"transformChanges,omitempty"`
+	// Workspaces description: Individual workspace configurations for one or more repositories that define which workspaces to use for the execution of steps in the repositories.
+	Workspaces []*WorkspaceConfiguration `json:"workspaces,omitempty"`
+}
+
 // BitbucketCloudConnection description: Configuration for a connection to Bitbucket Cloud.
 type BitbucketCloudConnection struct {
 	// ApiURL description: The API URL of Bitbucket Cloud, such as https://api.bitbucket.org. Generally, admin should not modify the value of this option because Bitbucket Cloud is a public hosting platform.
@@ -321,26 +341,6 @@ type BuiltinAuthProvider struct {
 	Type        string `json:"type"`
 }
 
-// CampaignSpec description: A campaign specification, which describes the campaign and what kinds of changes to make (or what existing changesets to track).
-type CampaignSpec struct {
-	// ChangesetTemplate description: A template describing how to create (and update) changesets with the file changes produced by the command steps.
-	ChangesetTemplate *ChangesetTemplate `json:"changesetTemplate,omitempty"`
-	// Description description: The description of the campaign.
-	Description string `json:"description,omitempty"`
-	// ImportChangesets description: Import existing changesets on code hosts.
-	ImportChangesets []*ImportChangesets `json:"importChangesets,omitempty"`
-	// Name description: The name of the campaign, which is unique among all campaigns in the namespace. A campaign's name is case-preserving.
-	Name string `json:"name"`
-	// On description: The set of repositories (and branches) to run the campaign on, specified as a list of search queries (that match repositories) and/or specific repositories.
-	On []interface{} `json:"on,omitempty"`
-	// Steps description: The sequence of commands to run (for each repository branch matched in the `on` property) to produce the campaign's changes.
-	Steps []*Step `json:"steps,omitempty"`
-	// TransformChanges description: Optional transformations to apply to the changes produced in each repository.
-	TransformChanges *TransformChanges `json:"transformChanges,omitempty"`
-	// Workspaces description: Individual workspace configurations for one or more repositories that define which workspaces to use for the execution of steps in the repositories.
-	Workspaces []*WorkspaceConfiguration `json:"workspaces,omitempty"`
-}
-
 // ChangesetTemplate description: A template describing how to create (and update) changesets with the file changes produced by the command steps.
 type ChangesetTemplate struct {
 	// Body description: The body (description) of the changeset.
@@ -349,7 +349,7 @@ type ChangesetTemplate struct {
 	Branch string `json:"branch"`
 	// Commit description: The Git commit to create with the changes.
 	Commit ExpandedGitCommitDescription `json:"commit"`
-	// Published description: Whether to publish the changeset. An unpublished changeset can be previewed on Sourcegraph by any person who can view the campaign, but its commit, branch, and pull request aren't created on the code host. A published changeset results in a commit, branch, and pull request being created on the code host.
+	// Published description: Whether to publish the changeset. An unpublished changeset can be previewed on Sourcegraph by any person who can view the batch change, but its commit, branch, and pull request aren't created on the code host. A published changeset results in a commit, branch, and pull request being created on the code host.
 	Published interface{} `json:"published"`
 	// Title description: The title of the changeset.
 	Title string `json:"title"`
@@ -955,13 +955,13 @@ type ObservabilityTracing struct {
 	Sampling string `json:"sampling,omitempty"`
 }
 
-// OnQuery description: A Sourcegraph search query that matches a set of repositories (and branches). Each matched repository branch is added to the list of repositories that the campaign will be run on.
+// OnQuery description: A Sourcegraph search query that matches a set of repositories (and branches). Each matched repository branch is added to the list of repositories that the batch change will be run on.
 type OnQuery struct {
 	// RepositoriesMatchingQuery description: A Sourcegraph search query that matches a set of repositories (and branches). If the query matches files, symbols, or some other object inside a repository, the object's repository is included.
 	RepositoriesMatchingQuery string `json:"repositoriesMatchingQuery"`
 }
 
-// OnRepository description: A specific repository (and branch) that is added to the list of repositories that the campaign will be run on.
+// OnRepository description: A specific repository (and branch) that is added to the list of repositories that the batch change will be run on.
 type OnRepository struct {
 	// Branch description: The branch on the repository to propose changes to. If unset, the repository's default branch is used.
 	Branch string `json:"branch,omitempty"`
@@ -1404,7 +1404,7 @@ type SiteConfiguration struct {
 	UserReposMaxPerUser int `json:"userRepos.maxPerUser,omitempty"`
 }
 
-// Step description: A command to run (as part of a sequence) in a repository branch to produce the campaign's changes.
+// Step description: A command to run (as part of a sequence) in a repository branch to produce the required changes.
 type Step struct {
 	// Container description: The Docker image used to launch the Docker container in which the shell command is run.
 	Container string `json:"container"`
