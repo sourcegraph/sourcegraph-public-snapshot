@@ -16,7 +16,6 @@ func main() {
 	}
 }
 
-
 var rootFlagSet = flag.NewFlagSet("depgraph", flag.ExitOnError)
 var rootCommand = &ffcli.Command{
 	ShortUsage: "depgraph [flags] <subcommand>",
