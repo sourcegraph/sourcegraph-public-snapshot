@@ -135,8 +135,8 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 	fork, _ := r.Query.StringValue(query.FieldFork)
 	onlyForks, noForks := fork == "only", fork == "no"
 	forksNotSet := len(fork) == 0
-	archived, _ := r.Query.StringValue(query.FieldArchived)
-	archivedNotSet := len(archived) == 0
+	archived := r.Query.Archived()
+	archivedNotSet := archived == nil
 
 	// Handle repogroup-only scenarios.
 	if len(repoFilters) == 0 && len(repoGroupFilters) == 0 {
