@@ -132,9 +132,12 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 	repoFilters, minusRepoFilters := r.Query.RegexpPatterns(query.FieldRepo)
 	repoGroupFilters, _ := r.Query.StringValues(query.FieldRepoGroup)
 	contextFilters, _ := r.Query.StringValues(query.FieldContext)
-	fork, _ := r.Query.StringValue(query.FieldFork)
-	onlyForks, noForks := fork == "only", fork == "no"
-	forksNotSet := len(fork) == 0
+	onlyForks, noForks, forksNotSet := false, false, true
+	if fork := r.Query.Fork(); fork != nil {
+		onlyForks = *fork == query.Only
+		noForks = *fork == query.No
+		forksNotSet = false
+	}
 	archived := r.Query.Archived()
 	archivedNotSet := archived == nil
 
