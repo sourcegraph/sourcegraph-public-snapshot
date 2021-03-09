@@ -1,26 +1,43 @@
 package main
 
 import (
+	"context"
+	"flag"
 	"fmt"
-	"os"
 	"strings"
+
+	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"github.com/sourcegraph/sourcegraph/dev/depgraph/graph"
 	"github.com/sourcegraph/sourcegraph/dev/depgraph/visualization"
 )
 
-// Handles a command of the following form:
-//
-// depgraph trace-internal {enterprise/cmd/frontend}
-//
-// Outputs a graph in dot format (convert with `dot -Tsvg {file.dot} -o file.svg`).
-func traceInternal(graph *graph.DependencyGraph) error {
-	if len(os.Args) < 3 {
-		fmt.Printf("No path supplied.\n")
-		os.Exit(1)
-	}
-	prefix := os.Args[2]
+var traceInternalFlagSet = flag.NewFlagSet("depgraph trace-internal", flag.ExitOnError)
 
+var traceInternalCommand = &ffcli.Command{
+	Name:       "trace-internal",
+	ShortUsage: "depgraph trace-internal {package}",
+	ShortHelp:  "Outputs a DOT-formatted graph of the given package's internal dependencies",
+	FlagSet:    traceInternalFlagSet,
+	Exec:       traceInternal,
+}
+
+func traceInternal(ctx context.Context, args []string) error {
+	if len(args) != 1 {
+		return fmt.Errorf("expected exactly one package")
+	}
+
+	graph, err := graph.Load()
+	if err != nil {
+		return err
+	}
+
+	packages, dependencyEdges := filterExternalReferences(graph, args[0])
+	fmt.Printf("%s\n", visualization.Dotify(packages, dependencyEdges, nil))
+	return nil
+}
+
+func filterExternalReferences(graph *graph.DependencyGraph, prefix string) ([]string, map[string][]string) {
 	packages := make([]string, 0, len(graph.Packages))
 	for _, pkg := range graph.Packages {
 		if strings.HasPrefix(pkg, prefix) {
@@ -39,6 +56,5 @@ func traceInternal(graph *graph.DependencyGraph) error {
 		}
 	}
 
-	fmt.Printf("%s\n", visualization.Dotify(packages, dependencyEdges, nil))
-	return nil
+	return packages, dependencyEdges
 }
