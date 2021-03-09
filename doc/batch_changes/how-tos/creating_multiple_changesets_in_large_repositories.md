@@ -17,7 +17,7 @@
 
 ## Overview
 
-Campaigns can produce a lot of changes in a single repository and in order to make reviewing and merging them easier, it might make sense to split the changes up into multiple changesets.
+Batch Changes can produce a lot of changes in a single repository and in order to make reviewing and merging them easier, it might make sense to split the changes up into multiple changesets.
 
 That can be done by using [`transformChanges`](../references/batch_spec_yaml_reference.md#transformchanges) in the batch spec to group the changes produced in one single repository by directory and create a changeset for each group.
 
@@ -56,7 +56,7 @@ transformChanges:
 # Describe the changeset (e.g., GitHub pull request) you want for each repository.
 changesetTemplate:
   title: Hello World
-  body: My first campaign!
+  body: My first batch change!
   branch: hello-world # This branch is the default branch and will be
                       # overwritten for each additional changeset.
   commit:

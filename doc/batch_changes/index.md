@@ -1,4 +1,4 @@
-# Campaigns
+# Batch Changes
 
 <style>
 
@@ -59,7 +59,7 @@ Create a batch change by specifying a search query to get a list of repositories
   <a href="https://www.youtube.com/watch?v=EfKwKFzOs3E" class="btn" alt="Watch the Batch Changes demo video">
    <span>Demo video</span>
    </br>
-   Watch the Batch Changes demo video to see what campaigns are capable of.
+   Watch the Batch Changes demo video to see what it's capable of.
   </a>
 
   <a href="explanations/introduction_to_batch_changes" class="btn" alt="Read the Introduction to Batch Changes">

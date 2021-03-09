@@ -1,7 +1,8 @@
 # Publishing changesets to the code host
 
-After you've [created a campaign](creating_a_batch_change.md) with `published: false` in its batch spec, you can see a preview of the changesets (e.g., GitHub pull requests) that will be created on the code host once they're published:
+After you've [created a batch change](creating_a_batch_change.md) with `published: false` in its batch spec, you can see a preview of the changesets (e.g., GitHub pull requests) that will be created on the code host once they're published:
 
+<!---TODO update link-->
 <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/publishing_changesets_preview_unpublished.png" class="screenshot center">
 
 In order to create these changesets on the code hosts, you need to publish them.
@@ -10,16 +11,16 @@ In order to create these changesets on the code hosts, you need to publish them.
 
 To publish a changeset, you need:
 
-1. [admin permissions for the campaign](../explanations/permissions_in_batch_changes.md#permission-levels-for-campaigns),
+1. [admin permissions for the batch change](../explanations/permissions_in_batch_changes.md#permission-levels-for-batch-changes),
 1. write access to the changeset's repository (on the code host), and
 1. a personal access token [configured in Sourcegraph for your code host(s)](configuring_user_credentials.md).  
 
-For more information, see "[Code host interactions in campaigns](../explanations/permissions_in_batch_changes.md#code-host-interactions-in-campaigns)".
+For more information, see "[Code host interactions in Batch Changes](../explanations/permissions_in_batch_changes.md#code-host-interactions-in-batch-changes)".
 [Forking the repository](../explanations/introduction_to_batch_changes.md#known-issues) is not yet supported.
 
 ## Publishing changesets
 
-When you're ready, you can publish all of a campaign's changesets by changing the `published: false` in your batch spec to `true`:
+When you're ready, you can publish all of a batch change's changesets by changing the `published: false` in your batch spec to `true`:
 
 ```yaml
 name: hello-world
@@ -51,7 +52,7 @@ You don't need to worry about multiple branches or pull requests being created w
 
 ## Publishing a subset of changesets
 
-Instead of publishing all changesets at the same time, you can also publish some of a campaign's changesets, by specifying which changesets you want to publish in the `published` field:
+Instead of publishing all changesets at the same time, you can also publish some of a batch change's changesets, by specifying which changesets you want to publish in the `published` field:
 
 ```yaml
 # ...

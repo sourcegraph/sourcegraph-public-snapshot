@@ -42,7 +42,7 @@ The [`workspaces`][workspaces] property in batch specs allows us to do that:
 
 ```yaml
 name: update-typescript-monorepo
-description: This campaign updates the TypeScript dependency to the latest version
+description: This batch change updates the TypeScript dependency to the latest version
 
 on:
   - repositoriesMatchingQuery: our-large-monorepo
@@ -60,7 +60,7 @@ steps:
 
 The `workspaces` property here defines that in `github.com/our-org/our-large-monorepo` different `workspaces` exist and contain a `package.json` at their root.
 
-When executed with `src campaign [apply|preview]` this would produce up to 3 changesets in `github.com/our-org/our-large-monorepo`, one for each project.
+When executed with `src batch [apply|preview]` this would produce up to 3 changesets in `github.com/our-org/our-large-monorepo`, one for each project.
 
 ## 2. Produce unique `changesetTemplate.branch` names
 
@@ -78,22 +78,22 @@ changesetTemplate:
     message: Update TypeScript
   # Templating and helper functions allow us to get the `path` in which
   # the `steps` executed and turn that into a branch name:
-  branch: campaigns/update-typescript-${{ replace steps.path "/" "-" }}
+  branch: batch-changes/update-typescript-${{ replace steps.path "/" "-" }}
 ```
 
 The `steps.path` [templating variable][templating] contains the path in which the `steps` were executed, relative to the root of the repository.
 
 With the file and directory structure above, that means we'd end up with the following branch names:
 
-- `campaigns/update-typescript-project1`
-- `campaigns/update-typescript-project2`
-- `campaigns/update-typescript-examples-project3`
+- `batch-changes/update-typescript-project1`
+- `batch-changes/update-typescript-project2`
+- `batch-changes/update-typescript-examples-project3`
 
 And with that, we're done and ready to produce multiple changesets in a single repository, with the full batch spec looking like this:
 
 ```yaml
 name: update-typescript-monorepo
-description: This campaign updates the TypeScript dependency to the latest version
+description: This batch change updates the TypeScript dependency to the latest version
 
 on:
   - repository: github.com/sourcegraph/automation-testing
@@ -109,19 +109,19 @@ steps:
 changesetTemplate:
   title: Update TypeScript
   body: This updates TypeScript to the latest version
-  branch: campaigns/update-typescript-${{ replace steps.path "/" "-" }}
+  branch: batch-changes/update-typescript-${{ replace steps.path "/" "-" }}
   commit:
     message: Update TypeScript
   published: false
 ```
 
-Now we only need to run `src campaign [apply|preview]` to execute our batch spec.
+Now we only need to run `src batch [apply|preview]` to execute our batch spec.
 
 ## Dynamic discovery of workspaces
 
 The `workspace` property leverages Sourcegraph search to find the location of the defined workspaces in the repositories yielded by the [`on`][on] property of the batch spec.
 
-That has the advantage that it's _dynamic_: whenever `src campaign [apply|preview]` is re-executed, Sourcegraph search is used again to find workspaces, automatically picking up new ones and removing workspaces that no longer exist.
+That has the advantage that it's _dynamic_: whenever `src batch [apply|preview]` is re-executed, Sourcegraph search is used again to find workspaces, automatically picking up new ones and removing workspaces that no longer exist.
 
 ## Only downloading workspace data in large repositories
 

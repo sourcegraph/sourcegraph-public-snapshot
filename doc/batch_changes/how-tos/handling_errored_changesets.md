@@ -6,6 +6,7 @@ Sometimes the problem can be fixed by automatically retrying to publish the chan
 
 Errored changesets that are marked as **Retrying** are being automatically retried:
 
+<!---TODO update link-->
 <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/retrying_changeset.png" class="screenshot">
 
 Changesets that are marked as **Failed** can be [retried manually](#manual-retrying-of-errored-changesets):
@@ -21,16 +22,16 @@ Examples of errors that can be fixed by [automatically retrying](#automatic-retr
 - Internal network errors
 - ...
 
-Examples of errors that requires [manual retrying](#manual-retrying-by-re-applying-the-campaign-spec):
+Examples of errors that requires [manual retrying](#manual-retrying-by-re-applying-the-batch-change-spec):
 
-- No [campaigns credentials](configuring_user_credentials.md) have been setup for the affected code host
+- No [Batch Changes credentials](configuring_user_credentials.md) have been setup for the affected code host
 - The configured code host connection needs a different type of credentials (e.g. SSH keys, which are currently not supported)
-- A pull request for the specified branch already exists in another campaign
+- A pull request for the specified branch already exists in another batch change
 - ...
 
 ## Automatic retrying of errored changesets
 
-When Sourcegraph campaigns marks a changeset as **Retrying** it's automatically going to retry publishing it for up to 60 times.
+When Sourcegraph batch changes marks a changeset as **Retrying** it's automatically going to retry publishing it for up to 60 times.
 
 No user action is needed.
 
@@ -45,7 +46,7 @@ Additionally, in order to retry all **Failed** (or even **Retrying**) changesets
 **Option 1:** Preview and re-apply the batch spec in the UI by running
 
 ```bash
-src batch preview -f YOUR_CAMPAIGN_SPEC.campaign.yaml
+src batch preview -f YOUR_BATCH_SPEC.batch.yaml
 ```
 
 and clicking on the printed URL to apply the uploaded batch spec.
@@ -53,7 +54,7 @@ and clicking on the printed URL to apply the uploaded batch spec.
 **Option 2:** Re-apply directly by running the following:
 
 ```bash
-src batch apply -f YOUR_CAMPAIGN_SPEC.campaign.yaml
+src batch apply -f YOUR_BATCH_SPEC.batch.yaml
 ```
 
-See "[Creating a campaign](creating_a_batch_change.md)" for more information on these commands.
+See "[Creating a batch change](creating_a_batch_change.md)" for more information on these commands.
