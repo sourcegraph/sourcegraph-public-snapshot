@@ -72,7 +72,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 
 	want := []*CommitSearchResultResolver{{
 		db: db,
-		CommitSearchResult: result.CommitSearchResult{
+		CommitMatch: result.CommitMatch{
 			Commit:      git.Commit{ID: "c1", Author: gitSignatureWithDate},
 			RepoName:    types.RepoName{ID: 1, Name: "repo"},
 			DiffPreview: &result.HighlightedString{Value: "x", Highlights: []result.HighlightedRange{}},
@@ -315,7 +315,7 @@ func searchCommitsInRepo(ctx context.Context, db dbutil.DB, op search.CommitPara
 
 func TestCommitSearchResult_Limit(t *testing.T) {
 	f := func(nHighlights []int, limitInput uint32) bool {
-		cr := &result.CommitSearchResult{
+		cr := &result.CommitMatch{
 			Body: result.HighlightedString{
 				Highlights: make([]result.HighlightedRange, len(nHighlights)),
 			},

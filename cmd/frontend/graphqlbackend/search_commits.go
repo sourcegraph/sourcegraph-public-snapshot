@@ -31,7 +31,7 @@ import (
 
 // CommitSearchResultResolver is a resolver for the GraphQL type `CommitSearchResult`
 type CommitSearchResultResolver struct {
-	result.CommitSearchResult
+	result.CommitMatch
 
 	db dbutil.DB
 
@@ -57,14 +57,14 @@ func (r *CommitSearchResultResolver) Commit() *GitCommitResolver {
 			return
 		}
 		repoResolver := NewRepositoryResolver(r.db, r.RepoName.ToRepo())
-		r.gitCommitResolver = toGitCommitResolver(repoResolver, r.db, r.CommitSearchResult.Commit.ID, &r.CommitSearchResult.Commit)
+		r.gitCommitResolver = toGitCommitResolver(repoResolver, r.db, r.CommitMatch.Commit.ID, &r.CommitMatch.Commit)
 	})
 	return r.gitCommitResolver
 }
 
 func (r *CommitSearchResultResolver) Refs() []*GitRefResolver {
-	out := make([]*GitRefResolver, 0, len(r.CommitSearchResult.Refs))
-	for _, ref := range r.CommitSearchResult.Refs {
+	out := make([]*GitRefResolver, 0, len(r.CommitMatch.Refs))
+	for _, ref := range r.CommitMatch.Refs {
 		out = append(out, &GitRefResolver{
 			repo: r.Commit().Repository(),
 			name: ref,
@@ -74,8 +74,8 @@ func (r *CommitSearchResultResolver) Refs() []*GitRefResolver {
 }
 
 func (r *CommitSearchResultResolver) SourceRefs() []*GitRefResolver {
-	out := make([]*GitRefResolver, 0, len(r.CommitSearchResult.SourceRefs))
-	for _, ref := range r.CommitSearchResult.SourceRefs {
+	out := make([]*GitRefResolver, 0, len(r.CommitMatch.SourceRefs))
+	for _, ref := range r.CommitMatch.SourceRefs {
 		out = append(out, &GitRefResolver{
 			repo: r.Commit().Repository(),
 			name: ref,
@@ -85,17 +85,17 @@ func (r *CommitSearchResultResolver) SourceRefs() []*GitRefResolver {
 }
 
 func (r *CommitSearchResultResolver) MessagePreview() *highlightedStringResolver {
-	if r.CommitSearchResult.MessagePreview == nil {
+	if r.CommitMatch.MessagePreview == nil {
 		return nil
 	}
-	return &highlightedStringResolver{*r.CommitSearchResult.MessagePreview}
+	return &highlightedStringResolver{*r.CommitMatch.MessagePreview}
 }
 
 func (r *CommitSearchResultResolver) DiffPreview() *highlightedStringResolver {
-	if r.CommitSearchResult.DiffPreview == nil {
+	if r.CommitMatch.DiffPreview == nil {
 		return nil
 	}
-	return &highlightedStringResolver{*r.CommitSearchResult.DiffPreview}
+	return &highlightedStringResolver{*r.CommitMatch.DiffPreview}
 }
 
 func (r *CommitSearchResultResolver) Icon() string {
@@ -103,8 +103,8 @@ func (r *CommitSearchResultResolver) Icon() string {
 }
 
 func (r *CommitSearchResultResolver) Label() Markdown {
-	message := r.CommitSearchResult.Commit.Message.Subject()
-	author := r.CommitSearchResult.Commit.Author.Name
+	message := r.CommitMatch.Commit.Message.Subject()
+	author := r.CommitMatch.Commit.Author.Name
 	repoName := displayRepoName(r.Commit().Repository().Name())
 	repoURL := r.Commit().Repository().URL()
 	url := r.Commit().URL()
@@ -118,16 +118,16 @@ func (r *CommitSearchResultResolver) URL() string {
 }
 
 func (r *CommitSearchResultResolver) Detail() Markdown {
-	commitHash := r.CommitSearchResult.Commit.ID.Short()
+	commitHash := r.CommitMatch.Commit.ID.Short()
 	timeagoConfig := timeago.NoMax(timeago.English)
-	detail := fmt.Sprintf("[`%v` %v](%v)", commitHash, timeagoConfig.Format(r.CommitSearchResult.Commit.Author.Date), r.Commit().URL())
+	detail := fmt.Sprintf("[`%v` %v](%v)", commitHash, timeagoConfig.Format(r.CommitMatch.Commit.Author.Date), r.Commit().URL())
 	return Markdown(detail)
 }
 
 func (r *CommitSearchResultResolver) Matches() []*searchResultMatchResolver {
 	match := &searchResultMatchResolver{
-		body:       r.CommitSearchResult.Body.Value,
-		highlights: r.CommitSearchResult.Body.Highlights,
+		body:       r.CommitMatch.Body.Value,
+		highlights: r.CommitMatch.Body.Highlights,
 		url:        r.Commit().URL(),
 	}
 	matches := []*searchResultMatchResolver{match}
@@ -429,7 +429,7 @@ func logCommitSearchResultsToResolvers(ctx context.Context, db dbutil.DB, op *se
 
 		results[i] = &CommitSearchResultResolver{
 			db: db,
-			CommitSearchResult: result.CommitSearchResult{
+			CommitMatch: result.CommitMatch{
 				Commit:         rawResult.Commit,
 				Refs:           rawResult.Refs,
 				SourceRefs:     rawResult.SourceRefs,
