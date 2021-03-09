@@ -14,7 +14,7 @@ import (
 
 // Handles a command of the following form:
 //
-// depgraph trace {internal/honey} [-dependencies=false] [-dependents=false]
+// depgraph trace {internal/honey} [-dependency-max-depth=100] [-dependent-max-depth=100]
 //
 // Outputs a graph in dot format (convert with `dot -Tsvg {file.dot} -o file.svg`).
 func trace(graph *graph.DependencyGraph) error {
@@ -24,8 +24,8 @@ func trace(graph *graph.DependencyGraph) error {
 	}
 	pkg := os.Args[2]
 
-	dependenciesFlag := flag.Bool("dependencies", true, "Whether to show dependencies (default true)")
-	dependentsFlag := flag.Bool("dependents", true, "Whether to show dependents (default true)")
+	dependencyMaxDepth := flag.Int("dependency-max-depth", 100, "Show transitive dependencies up to this depth (default 100)")
+	dependentMaxDepth := flag.Int("dependent-max-depth", 100, "Show transitive dependents up to this depth (default 100)")
 	if err := flag.CommandLine.Parse(os.Args[3:]); err != nil {
 		return err
 	}
@@ -33,8 +33,8 @@ func trace(graph *graph.DependencyGraph) error {
 	packages, dependencyEdges, dependentEdges := traceWalkGraph(
 		graph,
 		pkg,
-		*dependenciesFlag,
-		*dependentsFlag,
+		*dependencyMaxDepth,
+		*dependentMaxDepth,
 	)
 
 	traceDotify(packages, dependencyEdges, dependentEdges)
@@ -44,30 +44,22 @@ func trace(graph *graph.DependencyGraph) error {
 // traceWalkGraph traverses the given dependency graph in both directions and returns a
 // set of packages and edges (separated by traversal direction) forming the dependency
 // graph around the given blessed package.
-func traceWalkGraph(graph *graph.DependencyGraph, pkg string, traverseDependencies, traverseDependents bool) (packages []string, dependencyEdges, dependentEdges map[string][]string) {
-	if traverseDependencies {
-		newPackages, newEdges := traceTraverse(pkg, graph.Dependencies)
-		packages = append(packages, newPackages...)
-		dependencyEdges = newEdges
-	}
-	if traverseDependents {
-		newPackages, newEdges := traceTraverse(pkg, graph.Dependents)
-		packages = append(packages, newPackages...)
-		dependentEdges = newEdges
-	}
+func traceWalkGraph(graph *graph.DependencyGraph, pkg string, dependencyMaxDepth, dependentMaxDepth int) (packages []string, dependencyEdges, dependentEdges map[string][]string) {
+	dependencyPackages, dependencyEdges := traceTraverse(pkg, graph.Dependencies, dependencyMaxDepth)
+	dependentPackages, dependentEdges := traceTraverse(pkg, graph.Dependents, dependentMaxDepth)
 
-	return
+	return append(dependencyPackages, dependentPackages...), dependencyEdges, dependentEdges
 }
 
 // traceTraverse returns a set of packages and edges forming the dependency graph around
 // the given blessed package using the given relation to traverse the dependency graph in
 // one direction from the given package root.
-func traceTraverse(pkg string, relation map[string][]string) (packages []string, edges map[string][]string) {
+func traceTraverse(pkg string, relation map[string][]string, maxDepth int) (packages []string, edges map[string][]string) {
 	frontier := relation[pkg]
 	packageMap := map[string]int{pkg: 0}
 	edges = map[string][]string{pkg: relation[pkg]}
 
-	for depth := 0; len(frontier) > 0; depth++ {
+	for depth := 0; depth < maxDepth && len(frontier) > 0; depth++ {
 		nextFrontier := []string{}
 		for _, pkg := range frontier {
 			if _, ok := packageMap[pkg]; ok {
@@ -88,7 +80,24 @@ func traceTraverse(pkg string, relation map[string][]string) (packages []string,
 	}
 	sort.Strings(packages)
 
+	// Ensure we don't point to anything we don't have an explicit
+	// vertex for. This can happen at the edge of hte last frontier.
+	pruneEdges(edges, packageMap)
+
 	return packages, edges
+}
+
+// pruneEdges removes all references to a vertex that does not exist in the
+// given vertex map. The edge map is modified in place.
+func pruneEdges(edges map[string][]string, vertexMap map[string]int) {
+	for edge, targets := range edges {
+		edges[edge] = targets[:0]
+		for _, target := range targets {
+			if _, ok := vertexMap[target]; ok {
+				edges[edge] = append(edges[edge], target)
+			}
+		}
+	}
 }
 
 // traceDotify serializes the given package and edge data into a DOT-formatted graph.
