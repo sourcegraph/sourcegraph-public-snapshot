@@ -15,7 +15,7 @@ Batch Changes is compatible with the following code hosts:
 
 ### Batch Changes effect on code host rate limits
 
-For each changeset, Sourcegraph periodically makes API requests to its code host to update its status. Sourcegraph intelligently schedules these requests to avoid overwhelming the code host's rate limits. In environments with many open campaigns, this can result in outdated changesets as they await their turn in the update queue.
+For each changeset, Sourcegraph periodically makes API requests to its code host to update its status. Sourcegraph intelligently schedules these requests to avoid overwhelming the code host's rate limits. In environments with many open batch changes, this can result in outdated changesets as they await their turn in the update queue.
 
 We **highly recommend** enabling webhooks on code hosts where batch change changesets are created. Doing so removes the lag time in updating the status of a changeset and reduces the API requests associated with large batch changes. We have instructions for each supported code host:
 
