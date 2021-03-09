@@ -38,9 +38,7 @@ const BatchChangesChangelogAlert: React.FunctionComponent = () => (
             <div className="card-body">
                 <h4>New batch changes features in version 3.26</h4>
                 <ul className="text-muted mb-0 pl-3">
-                    <li>
-                        Campaigns have been renamed to Batch Changes!
-                    </li>
+                    <li>Campaigns have been renamed to Batch Changes!</li>
                 </ul>
             </div>
         </div>
