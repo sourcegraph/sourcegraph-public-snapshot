@@ -1,6 +1,6 @@
 import 'focus-visible'
-import { QueryClient, QueryClientProvider } from 'react-query'
-
+import { MutationFunction, QueryClient, QueryClientProvider } from 'react-query'
+import { ReactQueryDevtools } from 'react-query/devtools'
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import ServerIcon from 'mdi-react/ServerIcon'
 import * as React from 'react'
@@ -245,6 +245,9 @@ const queryClient = new QueryClient({
         queries: {
             queryFn: fetcher,
         },
+        mutations: {
+            mutationFn: fetcher as MutationFunction<unknown, unknown>,
+        },
     },
 })
 
@@ -449,6 +452,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
 
         return (
             <QueryClientProvider client={queryClient}>
+                <ReactQueryDevtools initialIsOpen={true} />
                 <ErrorBoundary location={null}>
                     <ShortcutProvider>
                         <BrowserRouter key={0}>

@@ -4,8 +4,13 @@ import { QueryFunction } from 'react-query'
 
 const uri = 'https://sourcegraph.test:3443/.api/graphql'
 
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-const fetcher = async (context: { queryKey: [string, Variables?] }): Promise<GraphQLResponse<any>> => {
+interface Parameters_<TQuery, TVariables> {
+    queryKey: [TQuery, TVariables]
+}
+
+const fetcher = async <TData, TVariables extends Variables>(
+    context: Parameters_<string, TVariables>
+): Promise<TData> => {
     const [query, variables] = context.queryKey
 
     const graphQLClient = new GraphQLClient(uri, {
@@ -17,7 +22,7 @@ const fetcher = async (context: { queryKey: [string, Variables?] }): Promise<Gra
         },
     })
 
-    const data = await graphQLClient.request<GraphQLResponse>(query, variables)
+    const data = await graphQLClient.request(query, variables)
     return data
 }
 
