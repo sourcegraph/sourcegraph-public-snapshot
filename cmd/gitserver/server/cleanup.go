@@ -21,9 +21,11 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -474,6 +476,7 @@ func dirSize(d string) int64 {
 //
 // Additionally it removes parent empty directories up until s.ReposDir.
 func (s *Server) removeRepoDirectory(gitDir GitDir) error {
+	ctx := context.Background()
 	dir := string(gitDir)
 
 	// Rename out of the location so we can atomically stop using the repo.
@@ -488,6 +491,17 @@ func (s *Server) removeRepoDirectory(gitDir GitDir) error {
 
 	// Everything after this point is just cleanup, so any error that occurs
 	// should not be returned, just logged.
+
+	// Set as not_cloned in the database
+	repo, err := database.Repos(s.DB).GetByName(ctx, s.name(gitDir))
+	if err != nil {
+		log15.Error("Getting repo from db", "error", err)
+	} else {
+		err = database.GitserverRepos(s.DB).SetCloneStatus(ctx, repo.ID, types.CloneStatusNotCloned)
+		if err != nil {
+			log15.Error("Setting clone status", "error", err)
+		}
+	}
 
 	// Cleanup empty parent directories. We just attempt to remove and if we
 	// have a failure we assume it's due to the directory having other

@@ -123,6 +123,7 @@ func main() {
 			return &server.GitRepoSyncer{}, nil
 		},
 		Hostname: hostnameBestEffort(),
+		DB:       db,
 	}
 	gitserver.RegisterMetrics()
 
