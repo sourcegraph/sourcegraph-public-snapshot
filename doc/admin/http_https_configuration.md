@@ -22,7 +22,22 @@ The first time Sourcegraph is run, it will create an [`nginx.conf`](https://gith
 - `~/.sourcegraph/config/nginx.conf` on the Docker/Sourcegraph host (presuming you're using the [quickstart `docker run` command](../index.md#quickstart))
 - `/etc/sourcegraph/nginx.conf` inside the container
 
-[SSL support requires manual editing](#nginx-ssl-https-configuration) of the NGINX configuration file if using the [quickstart docker run command](../index.md#quickstart) as it presumes local or internal usage.
+SSL support requires two things:
+1. [Manual editing](#nginx-ssl-https-configuration) of the NGINX configuration file if using the [quickstart docker run command](../index.md#quickstart) as it presumes local or internal usage.
+1. (Now that NGINX is listening on port 7443), we need to configure the Sourcegraph container to forward
+443 to 7443 by adding `--publish 443:7443` to the `docker run` command:
+
+```bash
+docker container run \
+  --rm  \
+  --publish 7080:7080 \
+  --publish 127.0.0.1:3370:3370 \
+  --publish 443:7443 \
+  \
+  --volume ~/.sourcegraph/config:/etc/sourcegraph  \
+  --volume ~/.sourcegraph/data:/var/opt/sourcegraph  \
+  sourcegraph/server:3.25.2
+```
 
 ### Sourcegraph Cluster (Kubernetes)
 
