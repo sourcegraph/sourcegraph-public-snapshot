@@ -219,11 +219,18 @@ func SearchIndexEnabled() bool {
 	return DeployType() != DeploySingleDocker
 }
 
-func CampaignsEnabled() bool {
-	if enabled := Get().CampaignsEnabled; enabled != nil {
+func BatchChangesEnabled() bool {
+	if enabled := Get().BatchChangesEnabled; enabled != nil {
 		return *enabled
 	}
 	return true
+}
+
+func BatchChangesRestrictedToAdmins() bool {
+	if restricted := Get().BatchChangesRestrictToAdmins; restricted != nil {
+		return *restricted
+	}
+	return false
 }
 
 func CodeIntelAutoIndexingEnabled() bool {
