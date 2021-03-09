@@ -180,7 +180,7 @@ export class FileMatch extends React.PureComponent<Props> {
 
 function aggregateLabels(items: MatchItem[]): AggregableLabel[] {
     const aggregatedLabels = new Map<string, AggregableLabel>()
-    for (const item of items.flatMap(item => item.aggregableLabelss || [])) {
+    for (const item of items.flatMap(item => item.aggregableLabels || [])) {
         aggregatedLabels.set(item.text, item)
     }
 
