@@ -29,6 +29,12 @@ This command ensures the following lint passes. Violations of the lint rules wil
 
 #### trace
 
-Usage: `./dev/depgraph/depgraph trace {package} [-dependency-max-depth=100] [-dependent-max-depth=100]`
+Usage: `./dev/depgraph/depgraph trace {package} [-dependency-max-depth=1] [-dependent-max-depth=1]`
 
 This command outputs a dot-formatted graph encoding the (transitive) dependencies of dependencies and (transitive) dependents of dependents rooted at the given package. Saved to a file `trace.dot`, you can convert this to SVG (or another format) via `dot -Tsvg trace.dot -o trace.svg`.
+
+#### trace-internal
+
+Usage: `./dev/depgraph/depgraph trace-internal {package}
+
+This command outputs a dot-formatted graph encoding the internal dependencies within the given package. Saved to a file `trace.dot`, you can convert this to SVG (or another format) via `dot -Tsvg trace.dot -o trace.svg`.

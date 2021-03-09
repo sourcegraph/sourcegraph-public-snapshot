@@ -15,8 +15,9 @@ func main() {
 }
 
 var commands = map[string]func(*graph.DependencyGraph) error{
-	"lint":  lint,
-	"trace": trace,
+	"lint":           lint,
+	"trace":          trace,
+	"trace-internal": traceInternal,
 }
 
 func mainErr() error {
