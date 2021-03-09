@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -33,9 +34,9 @@ type CommitSearchResult struct {
 	RepoName       types.RepoName
 	Refs           []string
 	SourceRefs     []string
-	MessagePreview *highlightedString
-	DiffPreview    *highlightedString
-	Body           highlightedString
+	MessagePreview *result.HighlightedString
+	DiffPreview    *result.HighlightedString
+	Body           result.HighlightedString
 }
 
 // ResultCount for CommitSearchResult returns the number of highlights if there
@@ -44,7 +45,7 @@ type CommitSearchResult struct {
 // compatibility for our GraphQL API. The GraphQL API calls ResultCount on the
 // resolver, while streaming calls ResultCount on CommitSearchResult.
 func (r *CommitSearchResult) ResultCount() int {
-	if n := len(r.Body.Highlights()); n > 0 {
+	if n := len(r.Body.Highlights); n > 0 {
 		return n
 	}
 	// Queries such as type:commit after:"1 week ago" don't have highlights. We count
@@ -53,13 +54,13 @@ func (r *CommitSearchResult) ResultCount() int {
 }
 
 func (r *CommitSearchResult) Limit(limit int) int {
-	if len(r.Body.highlights) == 0 {
+	if len(r.Body.Highlights) == 0 {
 		return limit - 1 // just counting the commit
-	} else if len(r.Body.highlights) > limit {
-		r.Body.highlights = r.Body.highlights[:limit]
+	} else if len(r.Body.Highlights) > limit {
+		r.Body.Highlights = r.Body.Highlights[:limit]
 		return 0
 	}
-	return limit - len(r.Body.highlights)
+	return limit - len(r.Body.Highlights)
 }
 
 // CommitSearchResultResolver is a resolver for the GraphQL type `CommitSearchResult`
@@ -117,12 +118,18 @@ func (r *CommitSearchResultResolver) SourceRefs() []*GitRefResolver {
 	return out
 }
 
-func (r *CommitSearchResultResolver) MessagePreview() *highlightedString {
-	return r.CommitSearchResult.MessagePreview
+func (r *CommitSearchResultResolver) MessagePreview() *highlightedStringResolver {
+	if r.CommitSearchResult.MessagePreview == nil {
+		return nil
+	}
+	return &highlightedStringResolver{*r.CommitSearchResult.MessagePreview}
 }
 
-func (r *CommitSearchResultResolver) DiffPreview() *highlightedString {
-	return r.CommitSearchResult.DiffPreview
+func (r *CommitSearchResultResolver) DiffPreview() *highlightedStringResolver {
+	if r.CommitSearchResult.DiffPreview == nil {
+		return nil
+	}
+	return &highlightedStringResolver{*r.CommitSearchResult.DiffPreview}
 }
 
 func (r *CommitSearchResultResolver) Icon() string {
@@ -153,8 +160,8 @@ func (r *CommitSearchResultResolver) Detail() Markdown {
 
 func (r *CommitSearchResultResolver) Matches() []*searchResultMatchResolver {
 	match := &searchResultMatchResolver{
-		body:       r.CommitSearchResult.Body.Value(),
-		highlights: r.CommitSearchResult.Body.Highlights(),
+		body:       r.CommitSearchResult.Body.Value,
+		highlights: r.CommitSearchResult.Body.Highlights,
 		url:        r.Commit().URL(),
 	}
 	matches := []*searchResultMatchResolver{match}
@@ -423,10 +430,10 @@ func logCommitSearchResultsToResolvers(ctx context.Context, db dbutil.DB, op *se
 		commit := rawResult.Commit
 
 		var (
-			diffPreview     *highlightedString
-			messagePreview  *highlightedString
+			diffPreview     *result.HighlightedString
+			messagePreview  *result.HighlightedString
 			matchBody       string
-			matchHighlights []*highlightedRange
+			matchHighlights []result.HighlightedRange
 		)
 		// TODO(sqs): properly combine message: and term values for type:commit searches
 		if !op.Diff {
@@ -438,18 +445,18 @@ func logCommitSearchResultsToResolvers(ctx context.Context, db dbutil.DB, op *se
 				pat, err := regexp.Compile(patString)
 				if err == nil {
 					messagePreview = highlightMatches(pat, []byte(commit.Message))
-					matchHighlights = messagePreview.highlights
+					matchHighlights = messagePreview.Highlights
 				}
 			} else {
-				messagePreview = &highlightedString{value: string(commit.Message)}
+				messagePreview = &result.HighlightedString{Value: string(commit.Message)}
 			}
 			matchBody = "```COMMIT_EDITMSG\n" + string(rawResult.Commit.Message) + "\n```"
 		}
 
 		if rawResult.Diff != nil && op.Diff {
-			diffPreview = &highlightedString{
-				value:      rawResult.Diff.Raw,
-				highlights: fromVCSHighlights(rawResult.DiffHighlights),
+			diffPreview = &result.HighlightedString{
+				Value:      rawResult.Diff.Raw,
+				Highlights: fromVCSHighlights(rawResult.DiffHighlights),
 			}
 			matchBody, matchHighlights = cleanDiffPreview(fromVCSHighlights(rawResult.DiffHighlights), rawResult.Diff.Raw)
 		}
@@ -462,9 +469,9 @@ func logCommitSearchResultsToResolvers(ctx context.Context, db dbutil.DB, op *se
 				SourceRefs:     rawResult.SourceRefs,
 				MessagePreview: messagePreview,
 				DiffPreview:    diffPreview,
-				Body: highlightedString{
-					value:      matchBody,
-					highlights: matchHighlights,
+				Body: result.HighlightedString{
+					Value:      matchBody,
+					Highlights: matchHighlights,
 				},
 				RepoName: repoName,
 			},
@@ -474,7 +481,7 @@ func logCommitSearchResultsToResolvers(ctx context.Context, db dbutil.DB, op *se
 	return results, nil
 }
 
-func cleanDiffPreview(highlights []*highlightedRange, rawDiffResult string) (string, []*highlightedRange) {
+func cleanDiffPreview(highlights []result.HighlightedRange, rawDiffResult string) (string, []result.HighlightedRange) {
 	// A map of line number to number of lines that have been ignored before the particular line number.
 	lineByCountIgnored := make(map[int]int32)
 	// The line numbers of lines that were ignored.
@@ -507,14 +514,14 @@ func cleanDiffPreview(highlights []*highlightedRange, rawDiffResult string) (str
 	for n := range highlights {
 		// For each highlight, adjust the line number by the number of lines that were
 		// ignored in the diff before.
-		linesIgnored := lineByCountIgnored[int(highlights[n].line)]
-		if ignoredLineNumbers[int(highlights[n].line)-1] {
+		linesIgnored := lineByCountIgnored[int(highlights[n].Line)]
+		if ignoredLineNumbers[int(highlights[n].Line)-1] {
 			// Effectively remove highlights that were on ignored lines by setting
 			// line to -1.
-			highlights[n].line = -1
+			highlights[n].Line = -1
 		}
 		if linesIgnored > 0 {
-			highlights[n].line = highlights[n].line - linesIgnored
+			highlights[n].Line = highlights[n].Line - linesIgnored
 		}
 	}
 
@@ -530,24 +537,23 @@ func displayRepoName(repoPath string) string {
 	return strings.Join(parts, "/")
 }
 
-func highlightMatches(pattern *regexp.Regexp, data []byte) *highlightedString {
+func highlightMatches(pattern *regexp.Regexp, data []byte) *result.HighlightedString {
 	const maxMatchesPerLine = 25 // arbitrary
 
-	var highlights []*highlightedRange
+	var highlights []result.HighlightedRange
 	for i, line := range bytes.Split(data, []byte("\n")) {
 		for _, match := range pattern.FindAllIndex(line, maxMatchesPerLine) {
-			highlights = append(highlights, &highlightedRange{
-				line:      int32(i + 1),
-				character: int32(utf8.RuneCount(line[:match[0]])),
-				length:    int32(utf8.RuneCount(line[:match[1]]) - utf8.RuneCount(line[:match[0]])),
+			highlights = append(highlights, result.HighlightedRange{
+				Line:      int32(i + 1),
+				Character: int32(utf8.RuneCount(line[:match[0]])),
+				Length:    int32(utf8.RuneCount(line[:match[1]]) - utf8.RuneCount(line[:match[0]])),
 			})
 		}
 	}
-	hls := &highlightedString{
-		value:      string(data),
-		highlights: highlights,
+	return &result.HighlightedString{
+		Value:      string(data),
+		Highlights: highlights,
 	}
-	return hls
 }
 
 // resolveCommitParameters creates parameters for commit search from tp. It

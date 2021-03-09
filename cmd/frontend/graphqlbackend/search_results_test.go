@@ -1427,7 +1427,7 @@ func commitResult(urlKey string) *CommitSearchResultResolver {
 func diffResult(urlKey string) *CommitSearchResultResolver {
 	return &CommitSearchResultResolver{
 		CommitSearchResult: CommitSearchResult{
-			DiffPreview: &highlightedString{},
+			DiffPreview: &result.HighlightedString{},
 		},
 		gitCommitResolver: &GitCommitResolver{
 			repoResolver: &RepositoryResolver{
