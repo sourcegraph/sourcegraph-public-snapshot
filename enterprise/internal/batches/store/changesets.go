@@ -637,7 +637,7 @@ WHERE id IN (SELECT id FROM changeset_ids);
 func (s *Store) EnqueueChangesetsToClose(ctx context.Context, batchChangeID int64) error {
 	q := sqlf.Sprintf(
 		enqueueChangesetsToCloseFmtstr,
-		batches.ReconcilerStateQueued,
+		batches.ReconcilerStateQueued.ToDB(),
 		batchChangeID,
 		batches.ChangesetPublicationStatePublished,
 		batches.ChangesetExternalStateClosed,
@@ -653,6 +653,7 @@ UPDATE
 SET
   reconciler_state = %s,
   failure_message = NULL,
+  num_resets = 0,
   num_failures = 0,
   closing = TRUE,
   syncer_error = NULL
