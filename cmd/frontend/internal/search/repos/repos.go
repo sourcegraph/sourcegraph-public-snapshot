@@ -156,6 +156,7 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 
 		if searchContext != nil && searchContext.UserID != 0 {
 			options.UserID = searchContext.UserID
+			options.IncludeUserPublicRepos = true
 		}
 
 		// PERF: We Query concurrently since Count and List call can be slow
@@ -165,35 +166,11 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 			excludedC <- computeExcludedRepositories(ctx, r.DB, op.Query, options)
 		}()
 
-		userPublicRepos := make(chan []*types.RepoName)
-		go func() {
-			var out []*types.RepoName
-			defer func() { userPublicRepos <- out }()
-			if searchContext == nil || searchContext.UserID == 0 {
-				return
-			}
-			userRepos, err := database.UserPublicRepos(r.DB).ListByUser(ctx, searchContext.UserID)
-			if err != nil {
-				log15.Error("Error fetching user public repos for search context", "error", err)
-				return
-			}
-			for _, repo := range userRepos {
-				name := types.RepoName{
-					ID: repo.RepoID,
-					// this is safe as the SetUserPublicRepo graphql endpoint normalises the repo URI before saving
-					Name: api.RepoName(repo.RepoURI),
-				}
-				out = append(out, &name)
-			}
-		}()
-
 		repos, err = database.Repos(r.DB).ListRepoNames(ctx, options)
 		tr.LazyPrintf("Repos.List - done")
 
 		excluded = <-excludedC
 		tr.LazyPrintf("excluded repos: %+v", excluded)
-
-		repos = append(repos, <-userPublicRepos...)
 
 		if err != nil {
 			return Resolved{}, err
