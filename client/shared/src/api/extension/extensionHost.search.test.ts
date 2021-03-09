@@ -2,13 +2,15 @@ import { initNewExtensionAPI } from './flatExtensionApi'
 import { pretendRemote } from '../util'
 import { MainThreadAPI } from '../contract'
 import { SettingsCascade } from '../../settings/settings'
-import { Observer } from 'rxjs'
+import { BehaviorSubject, Observer } from 'rxjs'
 import { ProxyMarked, proxyMarker, Remote } from 'comlink'
-import { ExtensionDocuments } from './api/documents'
+import { proxySubscribable } from './api/common'
 
-const noopMain = pretendRemote<MainThreadAPI>({})
-const emptySettings: SettingsCascade<object> = { subjects: [], final: {} }
-const noopDocuments = new ExtensionDocuments(() => Promise.resolve())
+const noopMain = pretendRemote<MainThreadAPI>({
+    getEnabledExtensions: () => proxySubscribable(new BehaviorSubject([])),
+    getScriptURLForExtension: () => undefined,
+})
+const initialSettings: SettingsCascade<object> = { subjects: [], final: {} }
 
 const observe = (onValue: (value: string) => void): Remote<Observer<string> & ProxyMarked> =>
     pretendRemote({
@@ -22,7 +24,7 @@ const observe = (onValue: (value: string) => void): Remote<Observer<string> & Pr
 
 describe('QueryTransformers', () => {
     it('returns the same query with no registered transformers', () => {
-        const { exposedToMain } = initNewExtensionAPI(noopMain, emptySettings, noopDocuments)
+        const { exposedToMain } = initNewExtensionAPI(noopMain, { initialSettings, clientApplication: 'sourcegraph' })
 
         const results: string[] = []
         exposedToMain.transformSearchQuery('a').subscribe(observe(value => results.push(value)))
@@ -30,14 +32,20 @@ describe('QueryTransformers', () => {
     })
 
     it('can work with Promise based transformers', async () => {
-        const { exposedToMain, search } = initNewExtensionAPI(noopMain, emptySettings, noopDocuments)
+        const { exposedToMain, search } = initNewExtensionAPI(noopMain, {
+            initialSettings,
+            clientApplication: 'sourcegraph',
+        })
         search.registerQueryTransformer({ transformQuery: query => Promise.resolve(query + '!') })
         const result = await new Promise(resolve => exposedToMain.transformSearchQuery('a').subscribe(observe(resolve)))
         expect(result).toEqual('a!')
     })
 
     it('emits a new transformed value if there is a new transformer', () => {
-        const { exposedToMain, search } = initNewExtensionAPI(noopMain, emptySettings, noopDocuments)
+        const { exposedToMain, search } = initNewExtensionAPI(noopMain, {
+            initialSettings,
+            clientApplication: 'sourcegraph',
+        })
 
         const results: string[] = []
         exposedToMain.transformSearchQuery('a').subscribe(observe(value => results.push(value)))
@@ -48,7 +56,10 @@ describe('QueryTransformers', () => {
     })
 
     it('emits new value if a transformer was removed', () => {
-        const { exposedToMain, search } = initNewExtensionAPI(noopMain, emptySettings, noopDocuments)
+        const { exposedToMain, search } = initNewExtensionAPI(noopMain, {
+            initialSettings,
+            clientApplication: 'sourcegraph',
+        })
 
         const transformerSubscription = search.registerQueryTransformer({ transformQuery: query => query + '!' })
 
@@ -61,7 +72,10 @@ describe('QueryTransformers', () => {
     })
 
     it('emits modified query if there are any transformers registered', () => {
-        const { exposedToMain, search } = initNewExtensionAPI(noopMain, emptySettings, noopDocuments)
+        const { exposedToMain, search } = initNewExtensionAPI(noopMain, {
+            initialSettings,
+            clientApplication: 'sourcegraph',
+        })
         search.registerQueryTransformer({ transformQuery: query => query + '!' })
 
         const results: string[] = []
@@ -70,7 +84,10 @@ describe('QueryTransformers', () => {
     })
 
     it('cancels previous transformer chains', async () => {
-        const { exposedToMain, search } = initNewExtensionAPI(noopMain, emptySettings, noopDocuments)
+        const { exposedToMain, search } = initNewExtensionAPI(noopMain, {
+            initialSettings,
+            clientApplication: 'sourcegraph',
+        })
 
         // collect all pending promises and their triggers from the first transformer
         // to manually manipulate them later

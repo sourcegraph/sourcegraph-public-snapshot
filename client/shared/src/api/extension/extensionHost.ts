@@ -120,11 +120,13 @@ function createExtensionAPI(
     const sync = async (): Promise<void> => {
         await proxy.ping()
     }
-    // const context = new ExtensionContext(proxy.context)
 
-    // const extensions = new Extensions()
-    // subscription.add(extensions)
     // TODO(tj): remember to add new extension activation sub to bag
+
+    // extension host state
+    // create extension host API
+    // create extension API
+    // activate extensions
 
     const {
         configuration,
@@ -180,10 +182,7 @@ function createExtensionAPI(
         content,
 
         internal: {
-            sync: () => {
-                console.warn('Sourcegraph extensions no longer need to call sync to ensure intended behavior') // TODO(tj): better error
-                return sync()
-            },
+            sync: () => sync(),
             updateContext: (updates: sourcegraph.ContextValues) => internal.updateContext(updates),
             sourcegraphURL: new URL(initData.sourcegraphURL),
             clientApplication: initData.clientApplication,

@@ -12,7 +12,7 @@ import { CodeHost } from './codeHost'
 import { trackViews } from './views'
 import { userNeedsToSetupPrivateInstance } from './hoverAlerts'
 import { Controller as ExtensionsController } from '../../../../../shared/src/extensions/controller'
-import { syncSubscription } from '../../../../../shared/src/api/util'
+import { syncRemoteSubscription } from '../../../../../shared/src/api/util'
 
 const NATIVE_TOOLTIP_HIDDEN = 'native-tooltip--hidden'
 const NATIVE_TOOLTIP_TYPE = 'nativeTooltips'
@@ -81,7 +81,7 @@ export function nativeTooltipsEnabledFromSettings(settings: PlatformContext['set
 export function registerNativeTooltipContributions(
     extensionsController: Pick<ExtensionsController, 'extHostAPI'>
 ): Unsubscribable {
-    return syncSubscription(
+    return syncRemoteSubscription(
         extensionsController.extHostAPI.then(extensionHostAPI =>
             extensionHostAPI.registerContributions({
                 actions: [

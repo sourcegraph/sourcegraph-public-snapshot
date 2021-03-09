@@ -25,6 +25,8 @@ export interface TextDocumentIdentifier {
 
 /**
  * Returns whether any of the document selectors match (or "select") the document.
+ *
+ * TODO(tj): move to extension host dir (actually, top level extensions_platform)
  */
 export function match(
     selectors: DocumentSelector | IterableIterator<DocumentSelector>,

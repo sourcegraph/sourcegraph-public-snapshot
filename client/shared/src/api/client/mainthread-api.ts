@@ -1,20 +1,21 @@
 import { Remote, proxy } from 'comlink'
 import { updateSettings } from './services/settings'
-import { Subscription, from, Observable, of, combineLatest } from 'rxjs'
+import { Subscription, from, Observable, of, combineLatest, Subject } from 'rxjs'
 import { PlatformContext } from '../../platform/context'
 import { isSettingsValid } from '../../settings/settings'
 import { catchError, distinctUntilChanged, map, publishReplay, refCount, switchMap } from 'rxjs/operators'
-import { FlatExtensionHostAPI, MainThreadAPI } from '../contract'
+import { FlatExtensionHostAPI, MainThreadAPI, NotificationType, PlainNotification } from '../contract'
 import { ProxySubscription } from './api/common'
 import * as sourcegraph from 'sourcegraph'
 import { proxySubscribable } from '../extension/api/common'
 import { ConfiguredExtension, isExtensionEnabled } from '../../extensions/extension'
 import { viewerConfiguredExtensions } from '../../extensions/helpers'
-import { isErrorLike } from '../../util/errors'
+import { asError, isErrorLike } from '../../util/errors'
 import { fromFetch } from 'rxjs/fetch'
 import { ExtensionManifest } from '../../extensions/extensionManifest'
 import { checkOk } from '../../backend/fetch'
 import { areExtensionsSame } from '../../extensions/extensions'
+import { registerBuiltinClientCommands } from '../../commands/commands'
 
 /** A registered command in the command registry. */
 export interface CommandEntry {
@@ -50,6 +51,20 @@ export interface MainThreadAPIDependencies {
     executeCommand: (parameters: ExecuteCommandParameters) => Promise<any>
 }
 
+/**
+ * For state that needs to live in the main thread.
+ * Returned to Controller for access by client applications.
+ */
+export interface ExposedToClient {
+    registerCommand: (entryToRegister: CommandEntry) => sourcegraph.Unsubscribable
+    executeCommand: (parameters: ExecuteCommandParameters, suppressNotificationOnError?: boolean) => Promise<any>
+
+    /**
+     * Observable of error notifications as a result of client applications executing commands.
+     */
+    commandErrors: Observable<PlainNotification>
+}
+
 export const initMainThreadAPI = (
     extensionHost: Remote<FlatExtensionHostAPI>,
     platformContext: Pick<
@@ -62,11 +77,10 @@ export const initMainThreadAPI = (
         | 'sideloadedExtensionURL'
         | 'getScriptURLForExtension'
         | 'getStaticExtensions'
-    >,
-    mainThreadAPIDependences: MainThreadAPIDependencies
-): { api: MainThreadAPI; subscription: Subscription } => {
+    >
+): { api: MainThreadAPI; exposedToClient: ExposedToClient; subscription: Subscription } => {
     const subscription = new Subscription()
-    // Settings
+
     subscription.add(
         from(platformContext.settings)
             .pipe(
@@ -80,26 +94,44 @@ export const initMainThreadAPI = (
             .subscribe()
     )
 
-    // const enabledExtensions = getEnabledExtensions(platformContext)
+    // Commands
+    const commands = new Map<string, CommandEntry>()
+    const registerCommand = ({ command, run }: CommandEntry): sourcegraph.Unsubscribable => {
+        if (commands.has(command)) {
+            throw new Error(`command is already registered: ${JSON.stringify(command)}`)
+        }
 
-    // const mainThreadAPIDependencies: MainThreadAPIDependencies = {
-    //     registerCommand: ({ command, run }) => {
-    //         if (commands.has(command)) {
-    //             throw new Error(`command is already registered: ${JSON.stringify(command)}`)
-    //         }
-    //         commands.set(command, { command, run })
-    //         return {
-    //             unsubscribe: () => commands.delete(command),
-    //         }
-    //     },
-    //     executeCommand: ({ args, command }) => {
-    //         const commandEntry = commands.get(command)
-    //         if (!commandEntry) {
-    //             throw new Error(`command not found: ${JSON.stringify(command)}`)
-    //         }
-    //         return Promise.resolve(commandEntry.run(...(args || [])))
-    //     },
-    // }
+        commands.set(command, { command, run })
+        return {
+            unsubscribe: () => commands.delete(command),
+        }
+    }
+    const executeCommand = ({ args, command }: ExecuteCommandParameters): Promise<any> => {
+        const commandEntry = commands.get(command)
+        if (!commandEntry) {
+            throw new Error(`command not found: ${JSON.stringify(command)}`)
+        }
+        return Promise.resolve(commandEntry.run(...(args || [])))
+    }
+
+    subscription.add(registerBuiltinClientCommands(platformContext, registerCommand))
+
+    const commandErrors = new Subject<PlainNotification>()
+    const exposedToClient: ExposedToClient = {
+        registerCommand,
+        executeCommand: (parameters, suppressNotificationOnError) =>
+            executeCommand(parameters).catch(error => {
+                if (!suppressNotificationOnError) {
+                    commandErrors.next({
+                        message: asError(error).message,
+                        type: NotificationType.Error,
+                        source: parameters.command,
+                    })
+                }
+                return Promise.reject(error)
+            }),
+        commandErrors,
+    }
 
     const api: MainThreadAPI = {
         applySettingsEdit: edit => updateSettings(platformContext, edit),
@@ -112,10 +144,10 @@ export const initMainThreadAPI = (
                 })
                 .toPromise(),
         // Commands
-        executeCommand: (command, args) => mainThreadAPIDependences.executeCommand({ command, args }),
+        executeCommand: (command, args) => executeCommand({ command, args }),
         registerCommand: (command, run) => {
             const subscription = new Subscription()
-            subscription.add(mainThreadAPIDependences.registerCommand({ command, run }))
+            subscription.add(registerCommand({ command, run }))
             subscription.add(new ProxySubscription(run))
             return proxy(subscription)
         },
@@ -145,7 +177,7 @@ export const initMainThreadAPI = (
         },
     }
 
-    return { api, subscription }
+    return { api, exposedToClient, subscription }
 }
 
 function defaultShowMessage(message: string): Promise<void> {

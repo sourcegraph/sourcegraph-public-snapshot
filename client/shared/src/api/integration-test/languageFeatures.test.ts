@@ -3,7 +3,6 @@ import { Location } from '@sourcegraph/extension-api-types'
 import { asyncScheduler, Observable, of } from 'rxjs'
 import { observeOn, take, toArray, map, first } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
-import { Services } from '../client/services'
 import { assertToJSON, createBarrier, integrationTestContext } from './testHelpers'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { Remote } from 'comlink'
@@ -187,7 +186,7 @@ function testLocationProvider<P>({
         })
 
         it('supplies params to the provideXyz method', async () => {
-            const { services, extensionHost, extensionAPI } = await integrationTestContext()
+            const { extensionHost, extensionAPI } = await integrationTestContext()
             const { wait, done } = createBarrier()
             registerProvider(extensionAPI)(
                 ['*'],

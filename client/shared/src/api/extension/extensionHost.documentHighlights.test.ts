@@ -4,13 +4,17 @@ import { initNewExtensionAPI } from './flatExtensionApi'
 import { pretendRemote } from '../util'
 import { MainThreadAPI } from '../contract'
 import { SettingsCascade } from '../../settings/settings'
-import { Observer } from 'rxjs'
-import { ProxyMarked, proxyMarker, Remote } from 'comlink'
-import { ExtensionDocuments } from './api/documents'
+import { BehaviorSubject, Observer } from 'rxjs'
+import { proxy, ProxyMarked, proxyMarker, Remote } from 'comlink'
+import { proxySubscribable } from './api/common'
 
 describe('getDocumentHighlights from ExtensionHost API, it aims to have more e2e feel', () => {
     // integration(ish) tests for scenarios not covered by providers tests
-    const noopMain = pretendRemote<MainThreadAPI>({})
+    const noopMain = pretendRemote<MainThreadAPI>({
+        // TODO(tj): spread common stubs
+        getEnabledExtensions: () => proxySubscribable(new BehaviorSubject([])),
+        getScriptURLForExtension: proxy(() => undefined),
+    })
     const emptySettings: SettingsCascade<object> = {
         subjects: [],
         final: {},
@@ -32,17 +36,16 @@ describe('getDocumentHighlights from ExtensionHost API, it aims to have more e2e
 
     it('restarts document highlights call if a provider was added or removed', () => {
         const typescriptFileUri = 'file:///f.ts'
-        const documents = new ExtensionDocuments(() => Promise.resolve())
-        documents.$acceptDocumentData([
-            {
-                type: 'added',
-                languageId: 'ts',
-                text: 'body',
-                uri: typescriptFileUri,
-            },
-        ])
 
-        const { exposedToMain, languages } = initNewExtensionAPI(noopMain, emptySettings, documents)
+        const { exposedToMain, languages } = initNewExtensionAPI(noopMain, {
+            initialSettings: emptySettings,
+            clientApplication: 'sourcegraph',
+        })
+        exposedToMain.addTextDocumentIfNotExists({
+            languageId: 'ts',
+            text: 'body',
+            uri: typescriptFileUri,
+        })
 
         let counter = 0
         languages.registerDocumentHighlightProvider([{ pattern: '*.ts' }], {

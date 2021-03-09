@@ -22,7 +22,7 @@ import {
     ProgressNotification,
     ViewProviderResult,
 } from '../contract'
-import { syncSubscription, tryCatchPromise } from '../util'
+import { syncRemoteSubscription, tryCatchPromise } from '../util'
 import {
     switchMap,
     mergeMap,
@@ -86,6 +86,7 @@ export interface ExtensionHostState {
 
     // Workspace
     roots: BehaviorSubject<readonly ExtensionWorkspaceRoot[]>
+    rootChanges: Subject<void>
     versionContext: BehaviorSubject<string | undefined>
 
     // Search
@@ -179,6 +180,7 @@ export const initNewExtensionAPI = (
         haveInitialExtensionsLoaded: new BehaviorSubject<boolean>(false),
 
         roots: new BehaviorSubject<readonly ExtensionWorkspaceRoot[]>([]),
+        rootChanges: new Subject<void>(),
         versionContext: new BehaviorSubject<string | undefined>(undefined),
 
         // Most extensions never call `configuration.get()` synchronously in `activate()` to get
@@ -303,10 +305,14 @@ export const initNewExtensionAPI = (
 
         // Workspace
         getWorkspaceRoots: () => state.roots.value.map(({ uri, inputRevision }) => ({ uri: uri.href, inputRevision })),
-        addWorkspaceRoot: root =>
-            state.roots.next(Object.freeze([...state.roots.value, new ExtensionWorkspaceRoot(root)])),
-        removeWorkspaceRoot: uri =>
-            state.roots.next(Object.freeze(state.roots.value.filter(workspace => workspace.uri.href !== uri))),
+        addWorkspaceRoot: root => {
+            state.roots.next(Object.freeze([...state.roots.value, new ExtensionWorkspaceRoot(root)]))
+            state.rootChanges.next()
+        },
+        removeWorkspaceRoot: uri => {
+            state.roots.next(Object.freeze(state.roots.value.filter(workspace => workspace.uri.href !== uri)))
+            state.rootChanges.next()
+        },
         setVersionContext: context => state.versionContext.next(context),
 
         // Search
@@ -668,7 +674,7 @@ export const initNewExtensionAPI = (
         onDidOpenTextDocument: state.openedTextDocuments.asObservable(),
         openedTextDocuments: state.openedTextDocuments.asObservable(),
         onDidChangeRoots: state.roots.pipe(mapTo(undefined)),
-        rootChanges: state.roots.pipe(mapTo(undefined)),
+        rootChanges: state.rootChanges.asObservable(),
         versionContextChanges: state.versionContext.pipe(mapTo(undefined)),
     }
 
@@ -763,6 +769,7 @@ export const initNewExtensionAPI = (
                 priority: 0,
             })
 
+            // TODO(tj): try proxy?
             const panelView: sourcegraph.PanelView = {
                 get title() {
                     return panelViewData.value.title
@@ -818,8 +825,9 @@ export const initNewExtensionAPI = (
 
     // Commands
     const commands: typeof sourcegraph['commands'] = {
-        executeCommand: (command, ...args) => mainAPI.executeCommand(command, args),
-        registerCommand: (command, callback) => syncSubscription(mainAPI.registerCommand(command, proxy(callback))),
+        executeCommand: async (command, ...args) => await mainAPI.executeCommand(command, args),
+        registerCommand: (command, callback) =>
+            syncRemoteSubscription(mainAPI.registerCommand(command, proxy(callback))),
     }
 
     // Search

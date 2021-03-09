@@ -34,7 +34,9 @@ export function registerComlinkTransferHandlers(): void {
  *
  * @param subscriptionPromise A Promise for a Subscription proxied from the other thread
  */
-export const syncSubscription = (subscriptionPromise: Promise<Remote<Unsubscribable & ProxyMarked>>): Subscription =>
+export const syncRemoteSubscription = (
+    subscriptionPromise: Promise<Remote<Unsubscribable & ProxyMarked>>
+): Subscription =>
     // We cannot pass the proxy subscription directly to Rx because it is a Proxy that looks like a function
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
     new Subscription(async () => {
@@ -42,6 +44,14 @@ export const syncSubscription = (subscriptionPromise: Promise<Remote<Unsubscriba
         await subscriptionProxy.unsubscribe()
         subscriptionProxy[releaseProxy]()
     })
+
+/**
+ * Creates a synchronous Subscription that will unsubscribe the given Promise<Subscription> asynchronously.
+ *
+ * @param subscriptionPromise A Promise for a Subscription
+ */
+export const syncPromiseSubscription = (subscriptionPromise: Promise<Unsubscribable>): Subscription =>
+    new Subscription(() => subscriptionPromise.then(subscription => subscription.unsubscribe()))
 
 /**
  * Runs f and returns a resolved promise with its value or a rejected promise with its exception,

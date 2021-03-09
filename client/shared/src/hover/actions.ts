@@ -21,7 +21,7 @@ import { wrapRemoteObservable } from '../api/client/api/common'
 import { Context } from '../api/client/context/context'
 import { WorkspaceRootWithMetadata } from '../api/extension/flatExtensionApi'
 import { ContributableMenu, TextDocumentPositionParameters } from '../api/protocol'
-import { syncSubscription } from '../api/util'
+import { syncRemoteSubscription } from '../api/util'
 import { isPrivateRepoPublicSourcegraphComErrorLike } from '../backend/errors'
 import { resolveRawRepoName } from '../backend/repo'
 import { getContributedActionItems } from '../contributions/contributions'
@@ -362,7 +362,7 @@ export function registerHoverContributions({
                 },
             }
 
-            subscriptions.add(syncSubscription(extensionHostAPI.registerContributions(contribs)))
+            subscriptions.add(syncRemoteSubscription(extensionHostAPI.registerContributions(contribs)))
 
             subscriptions.add(
                 extensionsController.registerCommand({
@@ -411,7 +411,7 @@ export function registerHoverContributions({
             // because it just needs a URL that can be statically constructed from the current URL (it does not need to
             // query any providers).
             subscriptions.add(
-                syncSubscription(
+                syncRemoteSubscription(
                     extensionHostAPI.registerContributions({
                         actions: [
                             {

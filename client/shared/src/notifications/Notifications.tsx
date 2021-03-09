@@ -1,7 +1,7 @@
 import { uniqueId } from 'lodash'
 import * as React from 'react'
-import { from, Subscription } from 'rxjs'
-import { delay, map, mergeMap, takeWhile } from 'rxjs/operators'
+import { from, merge, Subscription } from 'rxjs'
+import { delay, map, mergeMap, switchMap, takeWhile } from 'rxjs/operators'
 import { wrapRemoteObservable } from '../api/client/api/common'
 import { NotificationType } from '../api/contract'
 import { ExtensionsControllerProps } from '../extensions/controller'
@@ -37,7 +37,13 @@ export class Notifications extends React.PureComponent<Props, State> {
         this.subscriptions.add(
             from(this.props.extensionsController.extHostAPI)
                 .pipe(
-                    mergeMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getPlainNotifications())),
+                    switchMap(extensionHostAPI =>
+                        merge(
+                            wrapRemoteObservable(extensionHostAPI.getPlainNotifications()),
+                            // Subscribe to command error notifications (also plain)
+                            this.props.extensionsController.commandErrors
+                        )
+                    ),
                     map(notification => ({ ...notification, id: uniqueId('n') }))
                 )
                 .subscribe(notification => {

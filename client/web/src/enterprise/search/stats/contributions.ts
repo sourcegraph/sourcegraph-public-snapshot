@@ -1,7 +1,7 @@
 import * as H from 'history'
 import { Subscription, Unsubscribable } from 'rxjs'
 import { ContributableMenu } from '../../../../../shared/src/api/protocol'
-import { syncSubscription } from '../../../../../shared/src/api/util'
+import { syncRemoteSubscription } from '../../../../../shared/src/api/util'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 
 export function registerSearchStatsContributions({
@@ -13,7 +13,7 @@ export function registerSearchStatsContributions({
 
     const ACTION_ID = 'search.stats'
     subscriptions.add(
-        syncSubscription(
+        syncRemoteSubscription(
             extensionsController.extHostAPI.then(extensionHostAPI =>
                 extensionHostAPI.registerContributions({
                     actions: [

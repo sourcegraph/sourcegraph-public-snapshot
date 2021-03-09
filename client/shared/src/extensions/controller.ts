@@ -1,13 +1,13 @@
-import { Subject, Subscription, Unsubscribable } from 'rxjs'
+import { from, Observable, Subject, Subscription, Unsubscribable } from 'rxjs'
 import { InitData } from '../api/extension/extensionHost'
-import { registerBuiltinClientCommands } from '../commands/commands'
-import { Notification } from '../notifications/notification'
 import { PlatformContext } from '../platform/context'
 import { asError } from '../util/errors'
 import { createExtensionHostClientConnection } from '../api/client/connection'
 import { Remote } from 'comlink'
-import { FlatExtensionHostAPI, NotificationType } from '../api/contract'
+import { FlatExtensionHostAPI, NotificationType, PlainNotification } from '../api/contract'
 import { CommandEntry, ExecuteCommandParameters, MainThreadAPIDependencies } from '../api/client/mainthread-api'
+import { switchMap } from 'rxjs/operators'
+import { syncPromiseSubscription } from '../api/util'
 
 export interface Controller extends Unsubscribable {
     /**
@@ -24,6 +24,8 @@ export interface Controller extends Unsubscribable {
     executeCommand(parameters: ExecuteCommandParameters, suppressNotificationOnError?: boolean): Promise<any>
 
     registerCommand(entryToRegister: CommandEntry): Unsubscribable
+
+    commandErrors: Observable<PlainNotification>
 
     /**
      * Frees all resources associated with this client.
@@ -58,54 +60,30 @@ export function createController(context: PlatformContext): Controller {
         clientApplication: context.clientApplication,
     }
 
-    const commands = new Map<string, CommandEntry>()
-    const mainThreadAPIDependencies: MainThreadAPIDependencies = {
-        registerCommand: ({ command, run }) => {
-            if (commands.has(command)) {
-                throw new Error(`command is already registered: ${JSON.stringify(command)}`)
-            }
-            commands.set(command, { command, run })
-            return {
-                unsubscribe: () => commands.delete(command),
-            }
-        },
-        executeCommand: ({ args, command }) => {
-            const commandEntry = commands.get(command)
-            if (!commandEntry) {
-                throw new Error(`command not found: ${JSON.stringify(command)}`)
-            }
-            return Promise.resolve(commandEntry.run(...(args || [])))
-        },
-    }
-
     const extensionHostClientPromise = createExtensionHostClientConnection(
         context.createExtensionHost(),
         initData,
-        context,
-        mainThreadAPIDependencies
+        context
     )
 
     subscriptions.add(() => extensionHostClientPromise.then(({ subscription }) => subscription.unsubscribe()))
-
-    const notifications = new Subject<Notification>()
-
-    subscriptions.add(registerBuiltinClientCommands(context, mainThreadAPIDependencies))
 
     // TODO: Debug helpers, logging
 
     return {
         executeCommand: (parameters, suppressNotificationOnError) =>
-            mainThreadAPIDependencies.executeCommand(parameters).catch(error => {
-                if (!suppressNotificationOnError) {
-                    notifications.next({
-                        message: asError(error).message,
-                        type: NotificationType.Error,
-                        source: parameters.command,
-                    })
-                }
-                return Promise.reject(error)
-            }),
-        registerCommand: entryToRegister => mainThreadAPIDependencies.registerCommand(entryToRegister),
+            extensionHostClientPromise.then(({ exposedToClient }) =>
+                exposedToClient.executeCommand(parameters, suppressNotificationOnError)
+            ),
+        commandErrors: from(extensionHostClientPromise).pipe(
+            switchMap(({ exposedToClient }) => exposedToClient.commandErrors)
+        ),
+        registerCommand: entryToRegister =>
+            syncPromiseSubscription(
+                extensionHostClientPromise.then(({ exposedToClient }) =>
+                    exposedToClient.registerCommand(entryToRegister)
+                )
+            ),
         extHostAPI: extensionHostClientPromise.then(({ api }) => api),
         unsubscribe: () => subscriptions.unsubscribe(),
     }

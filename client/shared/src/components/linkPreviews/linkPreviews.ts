@@ -1,4 +1,6 @@
-import { LinkPreviewMerged, renderMarkupContents } from '../../api/client/services/linkPreview'
+import * as sourcegraph from 'sourcegraph'
+import { LinkPreviewMerged } from '../../api/extension/flatExtensionApi'
+import { renderMarkdown } from '../../util/markdown'
 
 /** Options for {@link applyLinkPreview}. */
 export interface ApplyLinkPreviewOptions {
@@ -81,4 +83,21 @@ function getHoverText(linkPreview: LinkPreviewMerged | null): string | null {
     }
     const hoverValues = linkPreview.hover.map(({ value }) => value).filter(value => !!value)
     return hoverValues.length > 0 ? hoverValues.join(' ') : null
+}
+
+/**
+ * Renders an array of {@link sourcegraph.MarkupContent} to its HTML or plaintext contents. The HTML
+ * contents are wrapped in an object `{ html: string }` so that callers can differentiate them from
+ * plaintext contents.
+ */
+export function renderMarkupContents(contents: sourcegraph.MarkupContent[]): ({ html: string } | string)[] {
+    return contents.map(({ kind, value }) => {
+        if (kind === undefined || kind === 'markdown') {
+            const html = renderMarkdown(value)
+                .replace(/^<p>/, '')
+                .replace(/<\/p>\s*$/, '') // remove <p> wrapper
+            return { html }
+        }
+        return value // plaintext
+    })
 }

@@ -6,11 +6,7 @@ import { assertToJSON, collectSubscribableValues, integrationTestContext } from 
 describe('Selections (integration)', () => {
     describe('editor.selectionsChanged', () => {
         test('reflects changes to the current selections', async () => {
-            const {
-                services: { viewer: viewerService },
-                extensionAPI,
-            } = await integrationTestContext()
-            const editor = viewerService.viewers.get('viewer#0')!
+            const { extensionAPI, extensionHostAPI } = await integrationTestContext()
             const selectionChanges = from(extensionAPI.app.activeWindowChanges).pipe(
                 filter(isDefined),
                 switchMap(window => window.activeViewComponentChanges),
@@ -30,8 +26,8 @@ describe('Selections (integration)', () => {
                 [],
             ]
             for (const selections of testValues) {
-                viewerService.setSelections(
-                    editor,
+                await extensionHostAPI.setEditorSelections(
+                    { viewerId: 'viewer#0' },
                     selections.map(({ start, end }) => ({
                         start: {
                             line: start,
@@ -52,7 +48,6 @@ describe('Selections (integration)', () => {
                         isReversed: false,
                     }))
                 )
-                await extensionAPI.internal.sync()
             }
             assertToJSON(
                 selectionValues.map(selections =>

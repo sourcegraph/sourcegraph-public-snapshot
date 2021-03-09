@@ -7,7 +7,7 @@ import { ExtensionHostAPIFactory } from '../extension/api/api'
 import { InitData } from '../extension/extensionHost'
 import { ClientAPI } from './api/api'
 import { registerComlinkTransferHandlers } from '../util'
-import { initMainThreadAPI, MainThreadAPIDependencies } from './mainthread-api'
+import { ExposedToClient, initMainThreadAPI, MainThreadAPIDependencies } from './mainthread-api'
 import { isSettingsValid } from '../../settings/settings'
 import { FlatExtensionHostAPI, MainThreadAPI } from '../contract'
 
@@ -47,9 +47,13 @@ export async function createExtensionHostClientConnection(
         | 'telemetryService'
         | 'sideloadedExtensionURL'
         | 'getScriptURLForExtension'
-    >,
-    mainThreadAPIDependences: MainThreadAPIDependencies
-): Promise<{ subscription: Unsubscribable; api: comlink.Remote<FlatExtensionHostAPI>; mainThreadAPI: MainThreadAPI }> {
+    >
+): Promise<{
+    subscription: Unsubscribable
+    api: comlink.Remote<FlatExtensionHostAPI>
+    mainThreadAPI: MainThreadAPI
+    exposedToClient: ExposedToClient
+}> {
     const subscription = new Subscription()
 
     // MAIN THREAD
@@ -69,11 +73,7 @@ export async function createExtensionHostClientConnection(
         initialSettings: isSettingsValid(initialSettings) ? initialSettings : { final: {}, subjects: [] },
     })
 
-    const { api: newAPI, subscription: apiSubscriptions } = initMainThreadAPI(
-        proxy,
-        platformContext,
-        mainThreadAPIDependences
-    )
+    const { api: newAPI, exposedToClient, subscription: apiSubscriptions } = initMainThreadAPI(proxy, platformContext)
 
     subscription.add(apiSubscriptions)
 
@@ -86,5 +86,5 @@ export async function createExtensionHostClientConnection(
 
     // TODO(tj): return MainThreadAPI and add to Controller interface
     // to allow app to interact with APIs whose state lives in the main thread
-    return { subscription, api: proxy, mainThreadAPI: newAPI }
+    return { subscription, api: proxy, mainThreadAPI: newAPI, exposedToClient }
 }

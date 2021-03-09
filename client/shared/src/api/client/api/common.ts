@@ -13,7 +13,7 @@ import { from, Observable, observable as symbolObservable, of, Subscription, Uns
 import { mergeMap, finalize } from 'rxjs/operators'
 import { Subscribable } from 'sourcegraph'
 import { ProxySubscribable } from '../../extension/api/common'
-import { isPromiseLike, syncSubscription } from '../../util'
+import { isPromiseLike, syncRemoteSubscription } from '../../util'
 import { asError } from '../../../util/errors'
 import { FeatureProviderRegistry } from '../services/registry'
 
@@ -97,7 +97,7 @@ export const wrapRemoteObservable = <T>(
                                 complete: partialObserver.complete ? () => partialObserver.complete() : noop,
                             }
                         }
-                        return syncSubscription(proxySubscribable.subscribe(proxyObserver))
+                        return syncRemoteSubscription(proxySubscribable.subscribe(proxyObserver))
                     },
                 }
             }

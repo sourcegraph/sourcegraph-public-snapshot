@@ -1,12 +1,12 @@
 import { Remote } from 'comlink'
 import { Unsubscribable } from 'rxjs'
 import { FlatExtensionHostAPI } from '../../../../../shared/src/api/contract'
-import { syncSubscription } from '../../../../../shared/src/api/util'
+import { syncRemoteSubscription } from '../../../../../shared/src/api/util'
 
 export function registerPanelToolbarContributions(
     extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>>
 ): Unsubscribable {
-    return syncSubscription(
+    return syncRemoteSubscription(
         extensionHostAPI.then(extensionHostAPI =>
             extensionHostAPI.registerContributions({
                 actions: [
