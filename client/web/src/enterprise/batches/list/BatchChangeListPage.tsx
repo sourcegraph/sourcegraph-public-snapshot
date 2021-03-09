@@ -119,7 +119,7 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
     return (
         <>
             <PageHeader
-                path={[{ icon: BatchChangesIcon, text: 'Batch changes' }]}
+                path={[{ icon: BatchChangesIcon, text: 'Batch Changes' }]}
                 className="test-batches-list-page mb-3"
                 actions={<NewBatchChangeButton location={location} />}
                 byline="Run custom code over hundreds of repositories and manage the resulting changesets"
