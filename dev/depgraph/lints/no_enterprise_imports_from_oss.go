@@ -9,7 +9,7 @@ import (
 
 // NoEnterpriseImportsFromOSS returns an error for each non-enterprise package that
 // imports an enterprise package.
-func NoEnterpriseImportsFromOSS(graph *graph.DependencyGraph) error {
+func NoEnterpriseImportsFromOSS(graph *graph.DependencyGraph) []lintError {
 	return mapPackageErrors(graph, func(pkg string) (lintError, bool) {
 		if isEnterprise(pkg) {
 			return lintError{}, false
@@ -36,8 +36,10 @@ func makeNoEnterpriseImportsFromOSSError(pkg string, imports []string) lintError
 	}
 
 	return lintError{
-		name:        "NoEnterpriseImportsFromOSS",
-		pkg:         pkg,
-		description: fmt.Sprintf("imports %d enterprise packages:\n%s", len(items), strings.Join(items, "\n")),
+		pkg: pkg,
+		message: []string{
+			fmt.Sprintf("This package imports the following %d enterprise packages:\n%s", len(items), strings.Join(items, "\n")),
+			"To resolve, move this package into enterprise/.",
+		},
 	}
 }
