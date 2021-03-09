@@ -40,7 +40,7 @@ The commands are:
 	config          manages global, org, and user settings
 	extsvc          manages external services
 	extensions,ext  manages extensions (experimental)
-	campaigns       manages campaigns (experimental)
+	batch           manages batch changes
 	lsif            manages LSIF data
 	serve-git       serves your local git repositories over HTTP for Sourcegraph to pull
 	version         display and compare the src-cli version against the recommended version for your instance

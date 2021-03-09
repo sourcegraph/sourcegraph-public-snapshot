@@ -17,7 +17,7 @@ func TestGraphQLError_Code(t *testing.T) {
 					{
 						"message": "The feature \"campaigns\" is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.",
 						"path": [
-							"createCampaignSpec"
+							"createBatchSpec"
 						],
 						"extensions": {
 							"code": 42
@@ -34,7 +34,7 @@ func TestGraphQLError_Code(t *testing.T) {
 					{
 						"message": "The feature \"campaigns\" is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.",
 						"path": [
-							"createCampaignSpec"
+							"createBatchSpec"
 						],
 						"extensions": 42
 					}
@@ -49,7 +49,7 @@ func TestGraphQLError_Code(t *testing.T) {
 					{
 						"message": "The feature \"campaigns\" is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.",
 						"path": [
-							"createCampaignSpec"
+							"createBatchSpec"
 						],
 						"extensions": {}
 					}
@@ -64,7 +64,7 @@ func TestGraphQLError_Code(t *testing.T) {
 					{
 						"message": "The feature \"campaigns\" is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.",
 						"path": [
-							"createCampaignSpec"
+							"createBatchSpec"
 						]
 					}
 				],
@@ -78,16 +78,16 @@ func TestGraphQLError_Code(t *testing.T) {
 					{
 						"message": "The feature \"campaigns\" is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.",
 						"path": [
-							"createCampaignSpec"
+							"createBatchSpec"
 						],
 						"extensions": {
-							"code": "ErrCampaignsUnlicensed"
+							"code": "ErrBatchChangesUnlicensed"
 						}
 					}
 				],
 				"data": null
 			}`,
-			want: "ErrCampaignsUnlicensed",
+			want: "ErrBatchChangesUnlicensed",
 		},
 	} {
 		t.Run(name, func(t *testing.T) {

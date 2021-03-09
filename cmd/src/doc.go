@@ -52,7 +52,7 @@ Examples:
 
 		commanders := map[string]*commander{
 			"":             &commands,
-			"campaigns":    &campaignsCommands,
+			"batch":        &batchCommands,
 			"config":       &configCommands,
 			"extensions":   &extensionsCommands,
 			"extsvc":       &extsvcCommands,

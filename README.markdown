@@ -7,7 +7,7 @@
 - **Search & get results in your terminal**
 - **Search & get JSON** for programmatic consumption
 - Make **GraphQL API requests** with auth easily & get JSON back fast
-- Execute **[campaign actions](https://docs.sourcegraph.com/user/campaigns)**
+- Execute **[batch changes](https://docs.sourcegraph.com/user/batch-changes)**
 - **Manage & administrate** repositories, users, and more
 - **Easily convert src-CLI commands to equivalent curl commands**, just add --get-curl!
 
@@ -103,9 +103,8 @@ Is your Sourcegraph instance behind a custom auth proxy? See [auth proxy configu
 
  - `src login` - authenticate to a Sourcegraph instance with your user credentials
  - `src search` - perform searches and get results in your terminal or as JSON
- - `src actions` - run [campaign actions](https://docs.sourcegraph.com/user/campaigns/actions) to generate patch sets
  - `src api` - run Sourcegraph GraphQL API requests
- - `src campaigns` - manages [campaigns](https://docs.sourcegraph.com/user/campaigns)
+ - `src batch` - execute and manage [batch changes](https://docs.sourcegraph.com/user/batch-changes)
  - `src repos` - manage repositories
  - `src users` - manage users
  - `src orgs` - manages organization

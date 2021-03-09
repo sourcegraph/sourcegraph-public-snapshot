@@ -28,7 +28,7 @@ jobs:
         with:
           platforms: arm64
 
-      - run: ./docker/campaign-volume-workspace/push.py -d ./docker/campaign-volume-workspace/Dockerfile -i sourcegraph/src-campaign-volume-workspace -p linux/amd64,linux/arm64,linux/386
+      - run: ./docker/batch-change-volume-workspace/push.py -d ./docker/batch-change-volume-workspace/Dockerfile -i sourcegraph/src-batch-change-volume-workspace -p linux/amd64,linux/arm64,linux/386
         env:
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
           DOCKER_USERNAME: sourcegraphci
@@ -38,5 +38,5 @@ jobs:
         with:
           username: sourcegraphci
           password: ${{ secrets.DOCKER_PASSWORD }}
-          repository: sourcegraph/src-campaign-volume-workspace
-          readme-filepath: ./docker/campaign-volume-workspace/README.md
+          repository: sourcegraph/src-batch-change-volume-workspace
+          readme-filepath: ./docker/batch-change-volume-workspace/README.md

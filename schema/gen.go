@@ -1,4 +1,4 @@
 package schema
 
-//go:generate env GO111MODULE=on go run stringdata.go -i campaign_spec.schema.json -name CampaignSpecJSON -pkg schema -o campaign_spec_stringdata.go
-//go:generate gofmt -s -w campaign_spec_stringdata.go
+//go:generate env GO111MODULE=on go run stringdata.go -i batch_spec.schema.json -name BatchSpecJSON -pkg schema -o batch_spec_stringdata.go
+//go:generate gofmt -s -w batch_spec_stringdata.go

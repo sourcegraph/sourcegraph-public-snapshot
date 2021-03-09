@@ -15,6 +15,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Changed
 
+- Campaigns are now known as Batch Changes! The `src campaign` set of commands have been renamed to `src batch`; however, `src campaign` and `src campaigns` will be retained as aliases for `src batch` until the next major version of Sourcegraph. There should be no breaking changes as a result of this change. [#489](https://github.com/sourcegraph/src-cli/pull/489)
+
 ### Fixed
 
 ### Removed
