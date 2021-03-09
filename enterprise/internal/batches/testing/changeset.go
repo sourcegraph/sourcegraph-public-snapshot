@@ -16,10 +16,10 @@ import (
 
 type TestChangesetOpts struct {
 	Repo         api.RepoID
-	Campaign     int64
+	BatchChange  int64
 	CurrentSpec  int64
 	PreviousSpec int64
-	Campaigns    []batches.BatchChangeAssoc
+	BatchChanges []batches.BatchChangeAssoc
 
 	ExternalServiceType string
 	ExternalID          string
@@ -38,7 +38,7 @@ type TestChangesetOpts struct {
 	FailureMessage  string
 	NumFailures     int64
 
-	OwnedByCampaign int64
+	OwnedByBatchChange int64
 
 	Closing bool
 
@@ -75,7 +75,7 @@ func BuildChangeset(opts TestChangesetOpts) *batches.Changeset {
 		RepoID:         opts.Repo,
 		CurrentSpecID:  opts.CurrentSpec,
 		PreviousSpecID: opts.PreviousSpec,
-		BatchChanges:   opts.Campaigns,
+		BatchChanges:   opts.BatchChanges,
 
 		ExternalServiceType: opts.ExternalServiceType,
 		ExternalID:          opts.ExternalID,
@@ -85,7 +85,7 @@ func BuildChangeset(opts TestChangesetOpts) *batches.Changeset {
 
 		PublicationState: opts.PublicationState,
 
-		OwnedByBatchChangeID: opts.OwnedByCampaign,
+		OwnedByBatchChangeID: opts.OwnedByBatchChange,
 
 		Closing: opts.Closing,
 
@@ -103,8 +103,8 @@ func BuildChangeset(opts TestChangesetOpts) *batches.Changeset {
 		changeset.FailureMessage = &opts.FailureMessage
 	}
 
-	if opts.Campaign != 0 {
-		changeset.BatchChanges = []batches.BatchChangeAssoc{{BatchChangeID: opts.Campaign}}
+	if opts.BatchChange != 0 {
+		changeset.BatchChanges = []batches.BatchChangeAssoc{{BatchChangeID: opts.BatchChange}}
 	}
 
 	if opts.DiffStatAdded > 0 || opts.DiffStatChanged > 0 || opts.DiffStatDeleted > 0 {
@@ -117,17 +117,17 @@ func BuildChangeset(opts TestChangesetOpts) *batches.Changeset {
 }
 
 type ChangesetAssertions struct {
-	Repo             api.RepoID
-	CurrentSpec      int64
-	PreviousSpec     int64
-	OwnedByCampaign  int64
-	ReconcilerState  batches.ReconcilerState
-	PublicationState batches.ChangesetPublicationState
-	ExternalState    batches.ChangesetExternalState
-	ExternalID       string
-	ExternalBranch   string
-	DiffStat         *diff.Stat
-	Closing          bool
+	Repo               api.RepoID
+	CurrentSpec        int64
+	PreviousSpec       int64
+	OwnedByBatchChange int64
+	ReconcilerState    batches.ReconcilerState
+	PublicationState   batches.ChangesetPublicationState
+	ExternalState      batches.ChangesetExternalState
+	ExternalID         string
+	ExternalBranch     string
+	DiffStat           *diff.Stat
+	Closing            bool
 
 	Title string
 	Body  string
@@ -160,8 +160,8 @@ func AssertChangeset(t *testing.T, c *batches.Changeset, a ChangesetAssertions) 
 		t.Fatalf("changeset PreviousSpecID wrong. want=%d, have=%d", want, have)
 	}
 
-	if have, want := c.OwnedByBatchChangeID, a.OwnedByCampaign; have != want {
-		t.Fatalf("changeset OwnedByCampaignID wrong. want=%d, have=%d", want, have)
+	if have, want := c.OwnedByBatchChangeID, a.OwnedByBatchChange; have != want {
+		t.Fatalf("changeset OwnedByBatchChangeID wrong. want=%d, have=%d", want, have)
 	}
 
 	if have, want := c.ReconcilerState, a.ReconcilerState; have != want {

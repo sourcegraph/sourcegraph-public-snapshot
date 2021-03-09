@@ -124,10 +124,10 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			previousSpec: ct.TestSpecOpts{Published: true},
 			currentSpec:  ct.TestSpecOpts{Published: true},
 			changeset: ct.TestChangesetOpts{
-				PublicationState: batches.ChangesetPublicationStatePublished,
-				ExternalState:    batches.ChangesetExternalStateClosed,
-				OwnedByCampaign:  1234,
-				Campaigns:        []batches.BatchChangeAssoc{{BatchChangeID: 1234}},
+				PublicationState:   batches.ChangesetPublicationStatePublished,
+				ExternalState:      batches.ChangesetExternalStateClosed,
+				OwnedByBatchChange: 1234,
+				BatchChanges:       []batches.BatchChangeAssoc{{BatchChangeID: 1234}},
 			},
 			wantOperations: Operations{
 				batches.ReconcilerOperationReopen,
@@ -138,10 +138,10 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			previousSpec: ct.TestSpecOpts{Published: true},
 			currentSpec:  ct.TestSpecOpts{Published: true},
 			changeset: ct.TestChangesetOpts{
-				PublicationState: batches.ChangesetPublicationStatePublished,
-				ExternalState:    batches.ChangesetExternalStateOpen,
-				OwnedByCampaign:  1234,
-				Campaigns:        []batches.BatchChangeAssoc{{BatchChangeID: 1234}},
+				PublicationState:   batches.ChangesetPublicationStatePublished,
+				ExternalState:      batches.ChangesetExternalStateOpen,
+				OwnedByBatchChange: 1234,
+				BatchChanges:       []batches.BatchChangeAssoc{{BatchChangeID: 1234}},
 				// Important bit:
 				Closing: true,
 			},
@@ -154,10 +154,10 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			previousSpec: ct.TestSpecOpts{Published: true},
 			currentSpec:  ct.TestSpecOpts{Published: true},
 			changeset: ct.TestChangesetOpts{
-				PublicationState: batches.ChangesetPublicationStatePublished,
-				ExternalState:    batches.ChangesetExternalStateClosed,
-				OwnedByCampaign:  1234,
-				Campaigns:        []batches.BatchChangeAssoc{{BatchChangeID: 1234}},
+				PublicationState:   batches.ChangesetPublicationStatePublished,
+				ExternalState:      batches.ChangesetExternalStateClosed,
+				OwnedByBatchChange: 1234,
+				BatchChanges:       []batches.BatchChangeAssoc{{BatchChangeID: 1234}},
 				// Important bit:
 				Closing: true,
 			},
@@ -171,10 +171,10 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			previousSpec: ct.TestSpecOpts{Published: true},
 			currentSpec:  ct.TestSpecOpts{Published: true},
 			changeset: ct.TestChangesetOpts{
-				PublicationState: batches.ChangesetPublicationStatePublished,
-				ExternalState:    batches.ChangesetExternalStateOpen,
-				OwnedByCampaign:  1234,
-				Campaigns:        []batches.BatchChangeAssoc{{BatchChangeID: 1234, Detach: true}},
+				PublicationState:   batches.ChangesetPublicationStatePublished,
+				ExternalState:      batches.ChangesetExternalStateOpen,
+				OwnedByBatchChange: 1234,
+				BatchChanges:       []batches.BatchChangeAssoc{{BatchChangeID: 1234, Detach: true}},
 			},
 			wantOperations: Operations{
 				batches.ReconcilerOperationDetach,
@@ -185,10 +185,10 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			previousSpec: ct.TestSpecOpts{Published: true},
 			currentSpec:  ct.TestSpecOpts{Published: true},
 			changeset: ct.TestChangesetOpts{
-				PublicationState: batches.ChangesetPublicationStatePublished,
-				ExternalState:    batches.ChangesetExternalStateClosed,
-				OwnedByCampaign:  1234,
-				Campaigns:        []batches.BatchChangeAssoc{},
+				PublicationState:   batches.ChangesetPublicationStatePublished,
+				ExternalState:      batches.ChangesetExternalStateClosed,
+				OwnedByBatchChange: 1234,
+				BatchChanges:       []batches.BatchChangeAssoc{},
 			},
 			wantOperations: Operations{
 				// Expect no operations.
@@ -198,10 +198,10 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			name:        "detaching a failed publish changeset",
 			currentSpec: ct.TestSpecOpts{Published: true},
 			changeset: ct.TestChangesetOpts{
-				PublicationState: batches.ChangesetPublicationStateUnpublished,
-				ReconcilerState:  batches.ReconcilerStateFailed,
-				OwnedByCampaign:  1234,
-				Campaigns:        []batches.BatchChangeAssoc{{BatchChangeID: 1234, Detach: true}},
+				PublicationState:   batches.ChangesetPublicationStateUnpublished,
+				ReconcilerState:    batches.ReconcilerStateFailed,
+				OwnedByBatchChange: 1234,
+				BatchChanges:       []batches.BatchChangeAssoc{{BatchChangeID: 1234, Detach: true}},
 			},
 			wantOperations: Operations{
 				batches.ReconcilerOperationDetach,
@@ -213,7 +213,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 				ExternalID:       "123",
 				PublicationState: batches.ChangesetPublicationStateUnpublished,
 				ReconcilerState:  batches.ReconcilerStateFailed,
-				Campaigns:        []batches.BatchChangeAssoc{{BatchChangeID: 1234, Detach: true}},
+				BatchChanges:     []batches.BatchChangeAssoc{{BatchChangeID: 1234, Detach: true}},
 			},
 			wantOperations: Operations{
 				batches.ReconcilerOperationDetach,
@@ -225,7 +225,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 				ExternalID:       "123",
 				PublicationState: batches.ChangesetPublicationStateUnpublished,
 				ReconcilerState:  batches.ReconcilerStateQueued,
-				Campaigns:        []batches.BatchChangeAssoc{{BatchChangeID: 1234}},
+				BatchChanges:     []batches.BatchChangeAssoc{{BatchChangeID: 1234}},
 			},
 			wantOperations: Operations{
 				batches.ReconcilerOperationImport,
@@ -237,7 +237,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 				ExternalID:       "123",
 				PublicationState: batches.ChangesetPublicationStateUnpublished,
 				ReconcilerState:  batches.ReconcilerStateQueued,
-				Campaigns:        []batches.BatchChangeAssoc{{BatchChangeID: 1234, Detach: true}, {BatchChangeID: 2345}},
+				BatchChanges:     []batches.BatchChangeAssoc{{BatchChangeID: 1234, Detach: true}, {BatchChangeID: 2345}},
 			},
 			wantOperations: Operations{
 				batches.ReconcilerOperationDetach,

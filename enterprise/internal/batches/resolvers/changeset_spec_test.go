@@ -210,7 +210,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 			}
 			spec.UserID = userID
 			spec.RepoID = repo.ID
-			spec.CampaignSpecID = batchSpec.ID
+			spec.BatchSpecID = batchSpec.ID
 
 			if err := cstore.CreateChangesetSpec(ctx, spec); err != nil {
 				t.Fatal(err)

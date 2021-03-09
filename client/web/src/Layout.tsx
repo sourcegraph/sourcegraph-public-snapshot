@@ -175,11 +175,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
 
     useEffect(() => {
         const globalContextFilter = findFilter(query, FilterType.context, FilterKind.Global)
-        const searchContextSpec = globalContextFilter?.value
-            ? globalContextFilter.value.type === 'literal'
-                ? globalContextFilter.value.value
-                : globalContextFilter.value.quotedValue
-            : undefined
+        const searchContextSpec = globalContextFilter?.value ? globalContextFilter.value.value : undefined
 
         let finalQuery = query
         if (

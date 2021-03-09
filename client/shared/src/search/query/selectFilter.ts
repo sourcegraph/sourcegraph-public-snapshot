@@ -1,4 +1,4 @@
-import { Quoted, Literal } from './token'
+import { Literal } from './token'
 
 interface Selector {
     kind: string
@@ -68,8 +68,8 @@ export const selectDiscreteValues = (selectors: Selector[], depth: number): stri
     return paths
 }
 
-export const selectorCompletion = (value: Quoted | Literal | undefined): string[] => {
-    if (!value || value.type === 'quoted') {
+export const selectorCompletion = (value: Literal | undefined): string[] => {
+    if (!value) {
         return selectDiscreteValues(SELECTORS, 0)
     }
 

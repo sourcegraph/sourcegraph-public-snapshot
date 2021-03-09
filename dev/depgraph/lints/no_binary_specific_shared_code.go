@@ -7,41 +7,59 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/depgraph/graph"
 )
 
-// NoBinarySpecificSharedCode returns an error for each shared package that is
-// used only by a single binary.
-func NoBinarySpecificSharedCode(graph *graph.DependencyGraph) error {
-	var errors []lintError
-outer:
-	for _, pkg := range graph.Packages {
-		if strings.HasPrefix(pkg, "enterprise/lib") {
-			// May have external/unknown imports
-			continue
-		}
-		if containingCommand(pkg) != "" {
+// NoBinarySpecificSharedCode returns an error for each shared package that is used
+// by a single command.
+func NoBinarySpecificSharedCode(graph *graph.DependencyGraph) []lintError {
+	return mapPackageErrors(graph, func(pkg string) (lintError, bool) {
+		if containingCommand(pkg) != "" || isLibrary(pkg) {
 			// Not shared code
-			continue
+			return lintError{}, false
 		}
 
-		var firstImporter *string
-		for _, p := range graph.Dependents[pkg] {
-			if cmd := containingCommand(p); firstImporter == nil {
-				firstImporter = &cmd
-			} else if cmd != *firstImporter {
-				continue outer
+		allInternal := true
+		allEnterprise := true
+		dependentCommands := map[string]struct{}{}
+		for _, dependent := range graph.Dependents[pkg] {
+			if !isCommandPrivate(dependent) {
+				allInternal = false
 			}
+			if !isEnterprise(dependent) {
+				allEnterprise = false
+			}
+
+			dependentCommands[containingCommand(dependent)] = struct{}{}
+		}
+		if len(dependentCommands) != 1 {
+			// Not a single import
+			return lintError{}, false
 		}
 
-		if firstImporter == nil || *firstImporter == "" {
-			// No or multiple distinct importers
-			continue
+		var importer string
+		for cmd := range dependentCommands {
+			importer = cmd
+		}
+		if importer == "" {
+			// Only imported by other internal packages
+			return lintError{}, false
 		}
 
-		errors = append(errors, lintError{
-			name:        "NoBinarySpecificSharedCode",
-			pkg:         pkg,
-			description: fmt.Sprintf("imported only by %s", *firstImporter),
-		})
-	}
+		var target string
+		for _, importer := range graph.Dependents[pkg] {
+			target = containingCommandPrefix(importer)
+		}
+		if allInternal {
+			target += "/internal"
+		}
+		if !allEnterprise {
+			target = strings.TrimPrefix(target, "enterprise/")
+		}
 
-	return multi(errors)
+		return lintError{
+			pkg: pkg,
+			message: []string{
+				fmt.Sprintf("This package is used exclusively by %s.", importer),
+				fmt.Sprintf("To resolve, move this package to %s/.", target),
+			},
+		}, true
+	})
 }

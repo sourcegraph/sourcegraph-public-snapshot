@@ -18,8 +18,8 @@ var _ graphqlbackend.ChangesetSpecConnectionResolver = &changesetSpecConnectionR
 type changesetSpecConnectionResolver struct {
 	store *store.Store
 
-	opts           store.ListChangesetSpecsOpts
-	campaignSpecID int64
+	opts        store.ListChangesetSpecsOpts
+	batchSpecID int64
 
 	// Cache results because they are used by multiple fields
 	once           sync.Once
@@ -31,7 +31,7 @@ type changesetSpecConnectionResolver struct {
 
 func (r *changesetSpecConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	count, err := r.store.CountChangesetSpecs(ctx, store.CountChangesetSpecsOpts{
-		CampaignSpecID: r.campaignSpecID,
+		BatchSpecID: r.batchSpecID,
 	})
 	if err != nil {
 		return 0, err
@@ -77,7 +77,7 @@ func (r *changesetSpecConnectionResolver) Nodes(ctx context.Context) ([]graphqlb
 func (r *changesetSpecConnectionResolver) compute(ctx context.Context) (batches.ChangesetSpecs, map[api.RepoID]*types.Repo, int64, error) {
 	r.once.Do(func() {
 		opts := r.opts
-		opts.CampaignSpecID = r.campaignSpecID
+		opts.BatchSpecID = r.batchSpecID
 		r.changesetSpecs, r.next, r.err = r.store.ListChangesetSpecs(ctx, opts)
 		if r.err != nil {
 			return

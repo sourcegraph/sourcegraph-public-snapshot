@@ -745,9 +745,9 @@ func (r *searchResolver) evaluateOr(ctx context.Context, scopeParameters []query
 	}
 
 	wantCount := defaultMaxSearchResults
-	query.VisitField(scopeParameters, query.FieldCount, func(value string, _ bool, _ query.Annotation) {
-		wantCount, _ = strconv.Atoi(value) // Invariant: count is validated.
-	})
+	if count := query.Q(scopeParameters).Count(); count != nil {
+		wantCount = *count
+	}
 
 	result, err := r.evaluatePatternExpression(ctx, scopeParameters, operands[0])
 	if err != nil {
@@ -869,9 +869,9 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 	}()
 
 	wantCount := defaultMaxSearchResults
-	query.VisitField(r.Query, query.FieldCount, func(value string, _ bool, _ query.Annotation) {
-		wantCount, _ = strconv.Atoi(value)
-	})
+	if count := r.Query.Count(); count != nil {
+		wantCount = *count
+	}
 
 	if invalidateRepoCache(r.Query) {
 		r.invalidateRepoCache = true
@@ -973,15 +973,11 @@ func (srs *searchResultsStats) Sparkline() []int32             { return srs.JSpa
 
 var (
 	searchResultsStatsCache   = rcache.NewWithTTL("search_results_stats", 3600) // 1h
-	searchResultsStatsCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	searchResultsStatsCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_graphql_search_results_stats_cache_hit",
 		Help: "Counts cache hits and misses for search results stats (e.g. sparklines).",
 	}, []string{"type"})
 )
-
-func init() {
-	prometheus.MustRegister(searchResultsStatsCounter)
-}
 
 func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, err error) {
 	// Override user context to ensure that stats for this query are cached
@@ -1270,20 +1266,16 @@ var (
 )
 
 func (r *searchResolver) searchTimeoutFieldSet() bool {
-	timeout, _ := r.Query.StringValue(query.FieldTimeout)
-	return timeout != "" || r.countIsSet()
+	timeout := r.Query.Timeout()
+	return timeout != nil || r.countIsSet()
 }
 
 func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, context.CancelFunc, error) {
 	d := defaultTimeout
 	maxTimeout := time.Duration(searchrepos.SearchLimits().MaxTimeoutSeconds) * time.Second
-	timeout, _ := r.Query.StringValue(query.FieldTimeout)
-	if timeout != "" {
-		var err error
-		d, err = time.ParseDuration(timeout)
-		if err != nil {
-			return nil, nil, errors.WithMessage(err, `invalid "timeout:" value (examples: "timeout:2s", "timeout:200ms")`)
-		}
+	timeout := r.Query.Timeout()
+	if timeout != nil {
+		d = *timeout
 	} else if r.countIsSet() {
 		// If `count:` is set but `timeout:` is not explicitly set, use the max timeout
 		d = maxTimeout

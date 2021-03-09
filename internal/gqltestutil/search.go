@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
@@ -32,6 +33,15 @@ func (rs SearchRepositoryResults) Exists(names ...string) []string {
 		missing = append(missing, name)
 	}
 	return missing
+}
+
+func (rs SearchRepositoryResults) String() string {
+	var names []string
+	for _, r := range rs {
+		names = append(names, r.Name)
+	}
+	sort.Strings(names)
+	return fmt.Sprintf("%q", names)
 }
 
 // SearchRepositories search repositories with given query.
@@ -524,15 +534,30 @@ func (s *SearchStreamClient) SearchFiles(query string) (*SearchFileResults, erro
 		},
 		OnMatches: func(matches []streamhttp.EventMatch) {
 			for _, m := range matches {
-				fm, ok := m.(*streamhttp.EventFileMatch)
-				if !ok {
-					continue
+				switch v := m.(type) {
+				case *streamhttp.EventRepoMatch:
+					results.Results = append(results.Results, &SearchFileResult{})
+
+				case *streamhttp.EventFileMatch:
+					var r SearchFileResult
+					r.File.Name = v.Path
+					r.Repository.Name = v.Repository
+					r.RevSpec.Expr = v.Branches[0]
+					results.Results = append(results.Results, &r)
+
+				case *streamhttp.EventSymbolMatch:
+					var r SearchFileResult
+					r.File.Name = v.Path
+					r.Repository.Name = v.Repository
+					r.RevSpec.Expr = v.Branches[0]
+					results.Results = append(results.Results, &r)
+
+				case *streamhttp.EventCommitMatch:
+					// The tests don't actually look at the value. We need to
+					// update this client to be more generic, but this will do
+					// for now.
+					results.Results = append(results.Results, &SearchFileResult{})
 				}
-				var r SearchFileResult
-				r.File.Name = fm.Path
-				r.Repository.Name = fm.Repository
-				r.RevSpec.Expr = fm.Branches[0]
-				results.Results = append(results.Results, &r)
 			}
 		},
 		OnAlert: func(alert *streamhttp.EventAlert) {
@@ -569,9 +594,23 @@ func (s *SearchStreamClient) SearchAll(query string) ([]*AnyResult, error) {
 						lms[i].OffsetAndLengths = v.LineMatches[i].OffsetAndLengths
 					}
 					results = append(results, FileResult{
-						File:       struct{ Path string }{Path: v.Path},
-						Repository: RepositoryResult{Name: v.Repository},
+						File:        struct{ Path string }{Path: v.Path},
+						Repository:  RepositoryResult{Name: v.Repository},
+						LineMatches: lms,
 					})
+
+				case *streamhttp.EventSymbolMatch:
+					var r FileResult
+					r.File.Path = v.Path
+					r.Repository.Name = v.Repository
+					r.Symbols = make([]interface{}, len(v.Symbols))
+					results = append(results, &r)
+
+				case *streamhttp.EventCommitMatch:
+					// The tests don't actually look at the value. We need to
+					// update this client to be more generic, but this will do
+					// for now.
+					results = append(results, CommitResult{URL: v.URL})
 				}
 			}
 		},

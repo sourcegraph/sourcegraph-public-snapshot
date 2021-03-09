@@ -20,9 +20,12 @@ Usage: `./dev/depgraph/depgraph lint [pass...]`
 
 This command ensures the following lint passes. Violations of the lint rules will be displayed on standard out, but the utility does not currently exit with a non-zero status.
 
-- **NoDeadPackages**: Report packages with no users (except for cmd roots)
-- **NoReachingIntoCommands**: Report packages that import from a command they are not a part of
-- **NoBinarySpecificSharedCode**: Report shared packages that are imported by a single command
+- **NoBinarySpecificSharedCode**: Report shared packages that are imported only by a single command
+- **NoDeadPackages**: Report unused packages (except for library code and main packages)
+- **NoEnterpriseImportsFromOSS**: Report packages that illegally import enterprise code
+- **NoLooseCommands**: Report main packages outside of known command roots
+- **NoReachingIntoCommands**: Report packages that import code from an unrelated command
+- **NoUnusedSharedCommandCode**: Report packages that could be moved into an internal package
 
 #### trace
 

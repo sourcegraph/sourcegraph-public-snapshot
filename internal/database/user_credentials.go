@@ -48,7 +48,7 @@ const (
 
 // This const block contains the valid domain values for user credentials.
 const (
-	UserCredentialDomainCampaigns = "campaigns"
+	UserCredentialDomainBatches = "batches"
 )
 
 // UserCredentialNotFoundErr is returned when a credential cannot be found from

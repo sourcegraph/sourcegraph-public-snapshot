@@ -58,7 +58,7 @@ func TestBatchSpecResolver(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	changesetSpec.CampaignSpecID = spec.ID
+	changesetSpec.BatchSpecID = spec.ID
 	changesetSpec.UserID = userID
 	changesetSpec.RepoID = repo.ID
 

@@ -3,6 +3,8 @@ package query
 import (
 	"fmt"
 	"regexp"
+	"strconv"
+	"time"
 )
 
 type ExpectedOperand struct {
@@ -32,6 +34,9 @@ const (
 // QueryInfo is an interface for accessing query values that drive our search logic.
 // It will be removed in favor of a cleaner query API to access values.
 type QueryInfo interface {
+	Count() *int
+	Archived() *YesNoOnly
+	Timeout() *time.Duration
 	RegexpPatterns(field string) (values, negatedValues []string)
 	StringValues(field string) (values, negatedValues []string)
 	StringValue(field string) (value, negatedValue string)
@@ -112,6 +117,46 @@ func (q Q) BoolValue(field string) bool {
 		result, _ = parseBool(value) // err was checked during parsing and validation.
 	})
 	return result
+}
+
+func (q Q) Count() *int {
+	var count *int
+	VisitField(q, FieldCount, func(value string, _ bool, _ Annotation) {
+		c, err := strconv.Atoi(value)
+		if err != nil {
+			panic(fmt.Sprintf("Value %q for count cannot be parsed as an int: %s", value, err))
+		}
+		count = &c
+	})
+	return count
+}
+
+func (q Q) Archived() *YesNoOnly {
+	return q.yesNoOnlyValue(FieldArchived)
+}
+
+func (q Q) yesNoOnlyValue(field string) *YesNoOnly {
+	var res *YesNoOnly
+	VisitField(q, field, func(value string, _ bool, _ Annotation) {
+		yno := ParseYesNoOnly(value)
+		if yno == Invalid {
+			panic(fmt.Sprintf("Invalid value %q for field %q", value, field))
+		}
+		res = &yno
+	})
+	return res
+}
+
+func (q Q) Timeout() *time.Duration {
+	var timeout *time.Duration
+	VisitField(q, FieldTimeout, func(value string, _ bool, _ Annotation) {
+		t, err := time.ParseDuration(value)
+		if err != nil {
+			panic(fmt.Sprintf("Value %q for timeout cannot be parsed as an duration: %s", value, err))
+		}
+		timeout = &t
+	})
+	return timeout
 }
 
 func (q Q) IsCaseSensitive() bool {

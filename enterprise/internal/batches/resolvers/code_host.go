@@ -32,27 +32,3 @@ func (c *batchChangesCodeHostResolver) Credential() graphqlbackend.BatchChangesC
 func (c *batchChangesCodeHostResolver) RequiresSSH() bool {
 	return c.codeHost.RequiresSSH
 }
-
-// TODO(campaigns-deprecation): Remove this wrapper type. It just exists to fulfil the interface
-// of graphqlbackend.CampaignsCodeHostConnectionResolver.
-type campaignsCodeHostResolver struct {
-	graphqlbackend.BatchChangesCodeHostResolver
-}
-
-var _ graphqlbackend.CampaignsCodeHostResolver = &campaignsCodeHostResolver{}
-
-func (c *campaignsCodeHostResolver) ExternalServiceKind() string {
-	return c.BatchChangesCodeHostResolver.ExternalServiceKind()
-}
-
-func (c *campaignsCodeHostResolver) ExternalServiceURL() string {
-	return c.BatchChangesCodeHostResolver.ExternalServiceURL()
-}
-
-func (c *campaignsCodeHostResolver) Credential() graphqlbackend.CampaignsCredentialResolver {
-	return c.BatchChangesCodeHostResolver.Credential()
-}
-
-func (c *campaignsCodeHostResolver) RequiresSSH() bool {
-	return c.BatchChangesCodeHostResolver.RequiresSSH()
-}

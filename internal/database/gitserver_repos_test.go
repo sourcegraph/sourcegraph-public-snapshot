@@ -83,6 +83,117 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 	}
 }
 
+func TestGitserverReposGetByID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	db := dbtesting.GetDB(t)
+	ctx := context.Background()
+
+	_, err := GitserverRepos(db).GetByID(ctx, 1)
+	if err == nil {
+		t.Fatal("Expected an error")
+	}
+
+	repo1 := &types.Repo{
+		Name:         "github.com/sourcegraph/repo1",
+		URI:          "github.com/sourcegraph/repo1",
+		Description:  "",
+		ExternalRepo: api.ExternalRepoSpec{},
+		Sources:      nil,
+	}
+
+	// Create one test repo
+	err = Repos(db).Create(ctx, repo1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gitserverRepo := &types.GitserverRepo{
+		RepoID:              repo1.ID,
+		ShardID:             "test",
+		CloneStatus:         types.CloneStatusNotCloned,
+		LastExternalService: 0,
+	}
+
+	// Create GitServerRepo
+	if err := GitserverRepos(db).Upsert(ctx, gitserverRepo); err != nil {
+		t.Fatal(err)
+	}
+
+	// GetByID should now work
+	fromDB, err := GitserverRepos(db).GetByID(ctx, gitserverRepo.RepoID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestSetCloneStatus(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	db := dbtesting.GetDB(t)
+	ctx := context.Background()
+
+	repo1 := &types.Repo{
+		Name:         "github.com/sourcegraph/repo1",
+		URI:          "github.com/sourcegraph/repo1",
+		Description:  "",
+		ExternalRepo: api.ExternalRepoSpec{},
+		Sources:      nil,
+	}
+
+	// Create one test repo
+	err := Repos(db).Create(ctx, repo1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gitserverRepo := &types.GitserverRepo{
+		RepoID:              repo1.ID,
+		ShardID:             "test",
+		CloneStatus:         types.CloneStatusNotCloned,
+		LastExternalService: 0,
+	}
+
+	// Create GitServerRepo
+	if err := GitserverRepos(db).Upsert(ctx, gitserverRepo); err != nil {
+		t.Fatal(err)
+	}
+
+	// Get it back
+	fromDB, err := GitserverRepos(db).GetByID(ctx, gitserverRepo.RepoID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+		t.Fatal(diff)
+	}
+
+	// Set cloned
+	err = GitserverRepos(db).SetCloneStatus(ctx, gitserverRepo.RepoID, types.CloneStatusCloned)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fromDB, err = GitserverRepos(db).GetByID(ctx, gitserverRepo.RepoID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gitserverRepo.CloneStatus = types.CloneStatusCloned
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
 func TestGitserverRepoUpsertNullShard(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

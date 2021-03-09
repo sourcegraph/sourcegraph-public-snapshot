@@ -159,3 +159,25 @@ WHERE repo_id = %s
 
 	return &gr, nil
 }
+
+func (s *GitserverRepoStore) SetCloneStatus(ctx context.Context, id api.RepoID, status types.CloneStatus) error {
+	q := `
+UPDATE gitserver_repos
+SET clone_status = %s
+WHERE repo_id = %s
+`
+
+	result, err := s.ExecResult(ctx, sqlf.Sprintf(q, status, id))
+	if err != nil {
+		return errors.Wrap(err, "setting clone status")
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return errors.Wrap(err, "checking affected rows")
+	}
+	if affected < 1 {
+		return errors.New("no rows updated")
+	}
+
+	return nil
+}

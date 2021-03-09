@@ -12,32 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-type campaignsCodeHostConnectionResolver struct {
-	graphqlbackend.BatchChangesCodeHostConnectionResolver
-}
-
-var _ graphqlbackend.CampaignsCodeHostConnectionResolver = &campaignsCodeHostConnectionResolver{}
-
-func (c *campaignsCodeHostConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	return c.BatchChangesCodeHostConnectionResolver.TotalCount(ctx)
-}
-
-func (c *campaignsCodeHostConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	return c.BatchChangesCodeHostConnectionResolver.PageInfo(ctx)
-}
-
-func (c *campaignsCodeHostConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.CampaignsCodeHostResolver, error) {
-	batchNodes, err := c.BatchChangesCodeHostConnectionResolver.Nodes(ctx)
-	if err != nil {
-		return nil, err
-	}
-	nodes := make([]graphqlbackend.CampaignsCodeHostResolver, len(batchNodes))
-	for i, ch := range batchNodes {
-		nodes[i] = &campaignsCodeHostResolver{BatchChangesCodeHostResolver: ch}
-	}
-	return nodes, nil
-}
-
 type batchChangesCodeHostConnectionResolver struct {
 	userID                int32
 	onlyWithoutCredential bool
@@ -104,7 +78,7 @@ func (c *batchChangesCodeHostConnectionResolver) compute(ctx context.Context) (a
 		}
 
 		// Fetch all user credentials to avoid N+1 per credential resolver.
-		creds, _, err := c.store.UserCredentials().List(ctx, database.UserCredentialsListOpts{Scope: database.UserCredentialScope{Domain: database.UserCredentialDomainCampaigns, UserID: c.userID}})
+		creds, _, err := c.store.UserCredentials().List(ctx, database.UserCredentialsListOpts{Scope: database.UserCredentialScope{Domain: database.UserCredentialDomainBatches, UserID: c.userID}})
 		if err != nil {
 			c.chsErr = err
 			return

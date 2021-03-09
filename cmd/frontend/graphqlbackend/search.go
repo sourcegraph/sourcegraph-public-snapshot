@@ -94,7 +94,7 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 	var q query.Q
 	globbing := getBoolPtr(settings.SearchGlobbing, false)
 	tr.LogFields(otlog.Bool("globbing", globbing))
-	q, err = query.ProcessAndOr(args.Query, query.ParserOptions{SearchType: searchType, Globbing: globbing})
+	q, err = query.Parse(args.Query, query.ParserOptions{SearchType: searchType, Globbing: globbing})
 	if err != nil {
 		return alertForQuery(db, args.Query, err), nil
 	}
@@ -102,6 +102,11 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 		q = query.SearchUppercase(q)
 	}
 	tr.LazyPrintf("parsing done")
+
+	// We do not support stable for streaming
+	if args.Stream != nil && q.BoolValue(query.FieldStable) {
+		return alertForQuery(db, args.Query, errors.New("stable is not supported for the streaming API. Please remove from query")), nil
+	}
 
 	// If stable:truthy is specified, make the query return a stable result ordering.
 	if q.BoolValue(query.FieldStable) {
@@ -164,19 +169,12 @@ func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchIm
 // ordering. The transformed query uses pagination underneath the hood.
 func queryForStableResults(args *SearchArgs, q query.Q) (*SearchArgs, query.Q, error) {
 	if q.BoolValue(query.FieldStable) {
-		var stableResultCount int32
-		if _, countPresent := q.Fields()["count"]; countPresent {
-			count, _ := q.StringValue(query.FieldCount)
-			count64, err := strconv.ParseInt(count, 10, 32)
-			if err != nil {
-				return nil, nil, err
-			}
-			stableResultCount = int32(count64)
+		var stableResultCount int32 = defaultMaxSearchResults
+		if count := q.Count(); count != nil {
+			stableResultCount = int32(*count)
 			if stableResultCount > maxSearchResultsPerPaginatedRequest {
 				return nil, nil, fmt.Errorf("Stable searches are limited to at max count:%d results. Consider removing 'stable:', narrowing the search with 'repo:', or using the paginated search API.", maxSearchResultsPerPaginatedRequest)
 			}
-		} else {
-			stableResultCount = defaultMaxSearchResults
 		}
 		args.First = &stableResultCount
 		fileValue := "file"
@@ -311,9 +309,9 @@ func (r *searchResolver) rawQuery() string {
 }
 
 func (r *searchResolver) countIsSet() bool {
-	count, _ := r.Query.StringValues(query.FieldCount)
+	count := r.Query.Count()
 	max, _ := r.Query.StringValues(query.FieldMax)
-	return len(count) > 0 || len(max) > 0
+	return count != nil || len(max) > 0
 }
 
 const defaultMaxSearchResults = 30
@@ -332,13 +330,11 @@ func (inputs SearchInputs) MaxResults() int {
 	if inputs.Query == nil {
 		return 0
 	}
-	count, _ := inputs.Query.StringValues(query.FieldCount)
-	if len(count) > 0 {
-		n, _ := strconv.Atoi(count[0])
-		if n > 0 {
-			return n
-		}
+
+	if count := inputs.Query.Count(); count != nil {
+		return *count
 	}
+
 	max, _ := inputs.Query.StringValues(query.FieldMax)
 	if len(max) > 0 {
 		n, _ := strconv.Atoi(max[0])
@@ -427,13 +423,15 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		fork = query.No
 	}
 
-	archivedStr, _ := r.Query.StringValue(query.FieldArchived)
-	archived := query.ParseYesNoOnly(archivedStr)
-	if archived == query.Invalid && !searchrepos.ExactlyOneRepo(repoFilters) && !settingArchived {
+	archived := query.No
+	if searchrepos.ExactlyOneRepo(repoFilters) || settingArchived {
 		// archived defaults to No unless either of:
 		// (1) exactly one repo is being searched, or
 		// (2) user/org/global setting includes archives in all searches
-		archived = query.No
+		archived = query.Yes
+	}
+	if setArchived := r.Query.Archived(); setArchived != nil {
+		archived = *setArchived
 	}
 
 	visibilityStr, _ := r.Query.StringValue(query.FieldVisibility)

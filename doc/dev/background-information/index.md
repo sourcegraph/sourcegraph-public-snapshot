@@ -27,7 +27,9 @@
 - [Commit messages](commit_messages.md)
 - [Exposing services](exposing-services.md)
 - [Developing a store](basestore.md)
+- [Developing a worker](workers.md)
 - [Developing an out-of-band migration](oobmigrations.md)
+- [Developing a background routine](backgroundroutine.md)
 
 ## [Languages](languages/index.md)
 

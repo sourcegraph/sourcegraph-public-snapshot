@@ -29,7 +29,7 @@ import (
 )
 
 func init() {
-	dbtesting.DBNameSuffix = "campaignsresolversdb"
+	dbtesting.DBNameSuffix = "batchchangesresolversdb"
 }
 
 var update = flag.Bool("update", false, "update testdata")
@@ -221,10 +221,10 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 	t.Cleanup(func() { git.Mocks.MergeBase = nil })
 }
 
-func addChangeset(t *testing.T, ctx context.Context, s *store.Store, c *batches.Changeset, campaign int64) {
+func addChangeset(t *testing.T, ctx context.Context, s *store.Store, c *batches.Changeset, batchChange int64) {
 	t.Helper()
 
-	c.BatchChanges = append(c.BatchChanges, batches.BatchChangeAssoc{BatchChangeID: campaign})
+	c.BatchChanges = append(c.BatchChanges, batches.BatchChangeAssoc{BatchChangeID: batchChange})
 	if err := s.UpdateChangeset(ctx, c); err != nil {
 		t.Fatal(err)
 	}

@@ -21,9 +21,11 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -466,6 +468,20 @@ func dirSize(d string) int64 {
 	return size
 }
 
+func (s *Server) setCloneStatus(ctx context.Context, name api.RepoName, status types.CloneStatus) (err error) {
+	tx, err := database.Repos(s.DB).Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	repo, err := tx.GetByName(ctx, name)
+	if err != nil {
+		return err
+	}
+	return database.NewGitserverReposWith(tx).SetCloneStatus(ctx, repo.ID, status)
+}
+
 // removeRepoDirectory atomically removes a directory from s.ReposDir.
 //
 // It first moves the directory to a temporary location to avoid leaving
@@ -474,6 +490,7 @@ func dirSize(d string) int64 {
 //
 // Additionally it removes parent empty directories up until s.ReposDir.
 func (s *Server) removeRepoDirectory(gitDir GitDir) error {
+	ctx := context.Background()
 	dir := string(gitDir)
 
 	// Rename out of the location so we can atomically stop using the repo.
@@ -488,6 +505,14 @@ func (s *Server) removeRepoDirectory(gitDir GitDir) error {
 
 	// Everything after this point is just cleanup, so any error that occurs
 	// should not be returned, just logged.
+
+	// Set as not_cloned in the database
+	if s.DB != nil {
+		err := s.setCloneStatus(ctx, s.name(gitDir), types.CloneStatusNotCloned)
+		if err != nil {
+			log15.Error("Setting clone status", "error", err)
+		}
+	}
 
 	// Cleanup empty parent directories. We just attempt to remove and if we
 	// have a failure we assume it's due to the directory having other

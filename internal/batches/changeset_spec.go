@@ -35,9 +35,9 @@ type ChangesetSpec struct {
 	DiffStatChanged int32
 	DiffStatDeleted int32
 
-	CampaignSpecID int64
-	RepoID         api.RepoID
-	UserID         int32
+	BatchSpecID int64
+	RepoID      api.RepoID
+	UserID      int32
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -120,7 +120,7 @@ func (cs *ChangesetSpec) UnmarshalValidate() error {
 // ChangesetSpecTTL specifies the TTL of ChangesetSpecs that haven't been
 // attached to a BatchSpec.
 // It's lower than BatchSpecTTL because ChangesetSpecs should be attached to
-// a CampaignSpec immediately after having been created, whereas a CampaignSpec
+// a BatchSpec immediately after having been created, whereas a BatchSpec
 // might take a while to be complete and might also go through a lengthy review
 // phase.
 const ChangesetSpecTTL = 2 * 24 * time.Hour

@@ -32,11 +32,11 @@ func TestChangesetApplyPreviewConnectionResolver(t *testing.T) {
 
 	cstore := store.New(db)
 
-	campaignSpec := &batches.BatchSpec{
+	batchSpec := &batches.BatchSpec{
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
-	if err := cstore.CreateBatchSpec(ctx, campaignSpec); err != nil {
+	if err := cstore.CreateBatchSpec(ctx, batchSpec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -60,7 +60,7 @@ func TestChangesetApplyPreviewConnectionResolver(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		s.CampaignSpecID = campaignSpec.ID
+		s.BatchSpecID = batchSpec.ID
 		s.UserID = userID
 		s.RepoID = r.ID
 
@@ -76,7 +76,7 @@ func TestChangesetApplyPreviewConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	apiID := string(marshalBatchSpecRandID(campaignSpec.RandID))
+	apiID := string(marshalBatchSpecRandID(batchSpec.RandID))
 
 	tests := []struct {
 		first int
@@ -383,29 +383,29 @@ func TestRewirerMappings(t *testing.T) {
 			if have.mapping != want.mapping {
 				t.Errorf("unexpected mapping: have=%p want=%p", have.mapping, want.mapping)
 			}
-			if have.preloadedCampaign != want.preloadedCampaign {
-				t.Errorf("unexpected campaign: have=%p want=%p", have.preloadedCampaign, want.preloadedCampaign)
+			if have.preloadedBatchChange != want.preloadedBatchChange {
+				t.Errorf("unexpected batch change: have=%p want=%p", have.preloadedBatchChange, want.preloadedBatchChange)
 			}
 			if !have.preloadedNextSync.Equal(want.preloadedNextSync) {
 				t.Errorf("unexpected next sync: have=%s want=%s", have.preloadedNextSync, want.preloadedNextSync)
 			}
-			if have.campaignSpecID != want.campaignSpecID {
-				t.Errorf("unexpected spec ID: have=%d want=%d", have.campaignSpecID, want.campaignSpecID)
+			if have.batchSpecID != want.batchSpecID {
+				t.Errorf("unexpected spec ID: have=%d want=%d", have.batchSpecID, want.batchSpecID)
 			}
 		}
 
 		s := &store.Store{}
 		rmf := newRewirerMappingsFacade(s, 1)
-		rmf.campaign = &batches.BatchChange{}
+		rmf.batchChange = &batches.BatchChange{}
 
 		mapping := &store.RewirerMapping{}
 
 		have := rmf.Resolver(mapping).(*changesetApplyPreviewResolver)
 		want := &changesetApplyPreviewResolver{
-			store:             s,
-			mapping:           mapping,
-			preloadedCampaign: rmf.campaign,
-			campaignSpecID:    1,
+			store:                s,
+			mapping:              mapping,
+			preloadedBatchChange: rmf.batchChange,
+			batchSpecID:          1,
 		}
 		compareResolvers(t, have, want)
 

@@ -171,7 +171,7 @@ func (r *changesetResolver) BatchChanges(ctx context.Context, args *graphqlbacke
 		ChangesetID: r.changeset.ID,
 	}
 
-	state, err := parseCampaignState(args.State)
+	state, err := parseBatchChangeState(args.State)
 	if err != nil {
 		return nil, err
 	}

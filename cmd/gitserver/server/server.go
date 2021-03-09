@@ -137,12 +137,14 @@ type Server struct {
 	GetVCSSyncer func(context.Context, api.RepoName) (VCSSyncer, error)
 
 	// Hostname is how we identify this instance of gitserver. Generally it is the
-	// actual hostname can also be overridden by the NODE_NAME or HOSTNAME
-	// environment variables.
+	// actual hostname but can also be overridden by the HOSTNAME environment variable.
 	Hostname string
 
 	// skipCloneForTests is set by tests to avoid clones.
 	skipCloneForTests bool
+
+	// shared db handle
+	DB dbutil.DB
 
 	// ctx is the context we use for all background jobs. It is done when the
 	// server is stopped. Do not directly call this, rather call
@@ -294,26 +296,41 @@ func (s *Server) SyncRepoState(db dbutil.DB, interval time.Duration, batchSize, 
 	}
 }
 
-var repoSyncStateCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_repo_sync_state_counter",
-	Help: "Incremented each time we check the state of repo",
-}, []string{"type"})
+// hostnameMatch checks whether the hostname matches the given address.
+// If we don't find an exact match, we look at the initial prefix.
+func (s *Server) hostnameMatch(addr string) bool {
+	if !strings.HasPrefix(addr, s.Hostname) {
+		return false
+	}
+	if addr == s.Hostname {
+		return true
+	}
+	// We know that s.Hostname is shorter than addr so we can safely check the next
+	// char
+	next := addr[len(s.Hostname)]
+	return next == '.' || next == ':'
+}
 
-var repoSyncStatePercentComplete = promauto.NewGauge(prometheus.GaugeOpts{
-	Name: "src_repo_sync_state_percent_complete",
-	Help: "Percent complete for the current sync run, from 0 to 100",
-})
-
-var repoStateUpsertCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_repo_sync_state_upsert_counter",
-	Help: "Incremented each time we upsert repo state in the database",
-}, []string{"success"})
+var (
+	repoSyncStateCounter = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_repo_sync_state_counter",
+		Help: "Incremented each time we check the state of repo",
+	}, []string{"type"})
+	repoSyncStatePercentComplete = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "src_repo_sync_state_percent_complete",
+		Help: "Percent complete for the current sync run, from 0 to 100",
+	})
+	repoStateUpsertCounter = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_repo_sync_state_upsert_counter",
+		Help: "Incremented each time we upsert repo state in the database",
+	}, []string{"success"})
+)
 
 func (s *Server) syncRepoState(db dbutil.DB, addrs []string, batchSize, perSecond int) error {
 	// Sanity check our host exists in addrs before starting any work
 	var found bool
 	for _, a := range addrs {
-		if a == s.Hostname {
+		if s.hostnameMatch(a) {
 			found = true
 			break
 		}
@@ -374,7 +391,7 @@ func (s *Server) syncRepoState(db dbutil.DB, addrs []string, batchSize, perSecon
 
 		repoSyncStateCounter.WithLabelValues("check").Inc()
 		// Ensure we're only dealing with repos we are responsible for
-		if addr := gitserver.AddrForRepo(repo.Name, addrs); addr != s.Hostname {
+		if addr := gitserver.AddrForRepo(repo.Name, addrs); !s.hostnameMatch(addr) {
 			repoSyncStateCounter.WithLabelValues("other_shard").Inc()
 			return nil
 		}
@@ -1376,36 +1393,28 @@ func scanCRLF(data []byte, atEOF bool) (advance int, token []byte, err error) {
 var testGitRepoExists func(ctx context.Context, remoteURL *url.URL) error
 
 var (
-	execRunning = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	execRunning = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "src_gitserver_exec_running",
 		Help: "number of gitserver.Command running concurrently.",
 	}, []string{"cmd", "repo"})
-	execDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	execDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name:    "src_gitserver_exec_duration_seconds",
 		Help:    "gitserver.Command latencies in seconds.",
 		Buckets: trace.UserLatencyBuckets,
 	}, []string{"cmd", "repo", "status"})
-	cloneQueue = prometheus.NewGauge(prometheus.GaugeOpts{
+	cloneQueue = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "src_gitserver_clone_queue",
 		Help: "number of repos waiting to be cloned.",
 	})
-	lsRemoteQueue = prometheus.NewGauge(prometheus.GaugeOpts{
+	lsRemoteQueue = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "src_gitserver_lsremote_queue",
 		Help: "number of repos waiting to check existence on remote code host (git ls-remote).",
 	})
-	repoClonedCounter = prometheus.NewCounter(prometheus.CounterOpts{
+	repoClonedCounter = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_gitserver_repo_cloned",
 		Help: "number of successful git clones run",
 	})
 )
-
-func init() {
-	prometheus.MustRegister(execRunning)
-	prometheus.MustRegister(execDuration)
-	prometheus.MustRegister(cloneQueue)
-	prometheus.MustRegister(lsRemoteQueue)
-	prometheus.MustRegister(repoClonedCounter)
-}
 
 // Send 1 in 16 events to honeycomb. This is hardcoded since we only use this
 // for Sourcegraph.com.
