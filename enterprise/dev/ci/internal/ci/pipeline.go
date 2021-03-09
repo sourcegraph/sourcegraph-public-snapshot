@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	bk "github.com/sourcegraph/sourcegraph/internal/buildkite"
+	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 )
 
 // GeneratePipeline is the main pipeline generation function. It defines the build pipeline for each of the
