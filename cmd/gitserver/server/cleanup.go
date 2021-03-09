@@ -469,19 +469,17 @@ func dirSize(d string) int64 {
 }
 
 func (s *Server) setCloneStatus(ctx context.Context, name api.RepoName, status types.CloneStatus) (err error) {
-	rs := database.Repos(s.DB)
-	tx, err := rs.Transact(ctx)
+	tx, err := database.Repos(s.DB).Transact(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	repo, err := rs.GetByName(ctx, name)
+	repo, err := tx.GetByName(ctx, name)
 	if err != nil {
 		return err
 	}
-	gs := database.NewGitserverReposWith(rs)
-	return gs.SetCloneStatus(ctx, repo.ID, status)
+	return database.NewGitserverReposWith(tx).SetCloneStatus(ctx, repo.ID, status)
 }
 
 // removeRepoDirectory atomically removes a directory from s.ReposDir.
