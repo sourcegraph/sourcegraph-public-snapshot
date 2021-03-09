@@ -21,7 +21,6 @@ import { markdownBodyViewResolver } from './contentViews'
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import { getCommandPaletteMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './fileInfo'
-import { commentTextFieldResolver } from './textFields'
 import { setElementTooltip } from './tooltip'
 import { getFileContainers, parseURL } from './util'
 import { defer, of } from 'rxjs'
@@ -288,7 +287,6 @@ export const githubCodeHost: CodeHost = {
     name: checkIsGitHubEnterprise() ? 'GitHub Enterprise' : 'GitHub',
     codeViewResolvers: [genericCodeViewResolver, fileLineContainerResolver, searchResultCodeViewResolver],
     contentViewResolvers: [markdownBodyViewResolver],
-    textFieldResolvers: [commentTextFieldResolver],
     nativeTooltipResolvers: [nativeTooltipResolver],
     getContext: () => {
         const repoHeaderHasPrivateMarker =
