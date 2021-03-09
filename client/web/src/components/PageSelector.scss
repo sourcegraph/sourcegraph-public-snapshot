@@ -2,16 +2,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-
-    &__pages {
-        display: flex;
-        list-style: none;
-        margin-left: 0;
-        margin-right: 0;
-        padding: 0;
-    }
+    list-style: none;
+    margin-left: 0;
+    margin-right: 0;
+    padding: 0;
 
     &__button {
-        min-width: 2.5rem;
+        min-width: 2rem;
+        padding: 0.25rem 0.5rem;
     }
 }

@@ -94,8 +94,8 @@ export const PageSelector: React.FunctionComponent<Props> = ({ currentPage, onPa
     const pages = getPages({ currentPage, maxPages, shrink: shouldShrink })
 
     return (
-        <nav ref={ref} className={classNames('page-selector', className)}>
-            <ul className="page-selector__pages">
+        <nav>
+            <ul ref={ref} className={classNames('page-selector', className)}>
                 <PageButton onClick={() => onPageChange(Math.max(currentPage - 1, 1))}>
                     <ChevronLeftIcon className="icon-inline" aria-label="Previous" aria-hidden={!shouldShrink} />
                     <span className={classNames(shouldShrink && 'd-none')}>Previous</span>
