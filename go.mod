@@ -40,7 +40,7 @@ require (
 	github.com/efritz/go-mockgen v0.0.0-20200916004441-cfcabc111002
 	github.com/efritz/pentimento v0.0.0-20190429011147-ade47d831101
 	github.com/evanphx/json-patch v4.9.0+incompatible // indirect
-	github.com/fatih/astrewrite v0.0.0-20191207154002-9094e544fcef
+	github.com/fatih/astrewrite v0.0.0-20191207154002-9094e544fcef // indirect
 	github.com/fatih/color v1.9.0
 	github.com/fatih/structs v1.1.0
 	github.com/felixge/fgprof v0.9.1
@@ -212,7 +212,7 @@ require (
 // or intentional forks.
 replace (
 	// We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20210225093519-da52e7c141aa
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20210302122048-1e934d0e2521
 	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
 	// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20200727091526-3e856a90b534
