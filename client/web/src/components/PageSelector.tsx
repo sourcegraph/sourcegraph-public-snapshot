@@ -40,12 +40,19 @@ const getPages = (currentPage: number, maxPages: number): Page[] => {
         upperBoundary // Maximum boundary
     )
 
+    console.log(siblingsStart, siblingsEnd)
+
+    console.log(siblingsStart === boundary ? boundary - 1 : '...')
+    console.log(siblingsEnd === upperBoundary ? upperBoundary + 1 : '...')
+
     const middle: Page[] = [
         siblingsStart === boundary ? boundary - 1 : '...',
         ...range(siblingsStart, siblingsEnd),
         siblingsEnd === upperBoundary ? upperBoundary + 1 : '...',
     ]
+    console.log(range(siblingsStart, siblingsEnd))
 
+    console.log([1, ...middle, maxPages])
     return [1, ...middle, maxPages]
 }
 
@@ -61,13 +68,18 @@ export const PageSelector: React.FunctionComponent<Props> = ({ currentPage, onPa
     return (
         <nav>
             <ul className="page-selector">
-                <PageButton onClick={() => onPageChange(currentPage - 1)}>Previous</PageButton>
-                {pages.map((page, i) => (
-                    <PageButton key={i} disabled={page === '...'} onClick={() => page !== '...' && onPageChange(page)}>
+                <PageButton onClick={() => onPageChange(Math.max(currentPage - 1, 1))}>Previous</PageButton>
+                {pages.map((page, index) => (
+                    <PageButton
+                        key={index}
+                        disabled={page === '...'}
+                        onClick={() => page !== '...' && onPageChange(page)}
+                        active={currentPage === page}
+                    >
                         {page}
                     </PageButton>
                 ))}
-                <PageButton onClick={() => onPageChange(currentPage + 1)}>Next</PageButton>
+                <PageButton onClick={() => onPageChange(Math.min(currentPage + 1, maxPages))}>Next</PageButton>
             </ul>
         </nav>
     )

@@ -16,8 +16,8 @@ const { add } = storiesOf('web/PageSelector', module).addDecorator(story => (
 add(
     'Basic',
     () => {
-        const [page, setPage] = useState(5)
-        return <PageSelector currentPage={page} onPageChange={setPage} maxPages={10} />
+        const [page, setPage] = useState(1)
+        return <PageSelector currentPage={page} onPageChange={setPage} maxPages={3} />
     },
     {}
 )
