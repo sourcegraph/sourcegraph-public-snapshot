@@ -19,41 +19,52 @@ const range = (start: number, end: number) => {
 
 type Page = '...' | number
 
-const getPages = (currentPage: number, maxPages: number): Page[] => {
-    const maxSiblingRange = 5
-    const boundary = 3
-    const upperBoundary = maxPages - boundary + 1
+const getMiddlePages = (currentPage: number, maxPages: number): Page[] => {
+    const maximumSiblingRange = 6
+    const minimumBoundary = 2
+    const maximumBoundary = maxPages - 1
 
     const siblingsStart = Math.max(
         Math.min(
-            currentPage - 1,
-            maxPages - maxSiblingRange + 1 // Extend range when page is high
+            currentPage - 2,
+            maxPages - maximumSiblingRange + 1 // Extend range when page is high
         ),
-        boundary // Minimum boundary
+        minimumBoundary
     )
 
     const siblingsEnd = Math.min(
         Math.max(
-            currentPage + 1,
-            maxSiblingRange // Extend range when page is low
+            currentPage + 2,
+            maximumSiblingRange // Extend range when page is low
         ),
-        upperBoundary // Maximum boundary
+        maximumBoundary
     )
 
-    console.log(siblingsStart, siblingsEnd)
+    const middle: Page[] = range(siblingsStart, siblingsEnd)
 
-    console.log(siblingsStart === boundary ? boundary - 1 : '...')
-    console.log(siblingsEnd === upperBoundary ? upperBoundary + 1 : '...')
+    if (middle[0] !== minimumBoundary) {
+        middle[0] = '...'
+    }
 
-    const middle: Page[] = [
-        siblingsStart === boundary ? boundary - 1 : '...',
-        ...range(siblingsStart, siblingsEnd),
-        siblingsEnd === upperBoundary ? upperBoundary + 1 : '...',
-    ]
-    console.log(range(siblingsStart, siblingsEnd))
+    if (middle[middle.length - 1] !== maximumBoundary) {
+        middle[middle.length - 1] = '...'
+    }
 
-    console.log([1, ...middle, maxPages])
-    return [1, ...middle, maxPages]
+    return middle
+}
+
+const getPages = (currentPage: number, maxPages: number): Page[] => {
+    const pages: Page[] = [1]
+
+    if (maxPages > 1) {
+        pages.push(maxPages)
+    }
+
+    if (maxPages > 2) {
+        pages.splice(1, 0, ...getMiddlePages(currentPage, maxPages))
+    }
+
+    return pages
 }
 
 interface Props {

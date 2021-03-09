@@ -1,5 +1,6 @@
 import { storiesOf } from '@storybook/react'
 import React, { useState } from 'react'
+import { number } from '@storybook/addon-knobs'
 
 import webStyles from '../SourcegraphWebApp.scss'
 import { PageSelector } from './PageSelector'
@@ -17,7 +18,7 @@ add(
     'Basic',
     () => {
         const [page, setPage] = useState(1)
-        return <PageSelector currentPage={page} onPageChange={setPage} maxPages={3} />
+        return <PageSelector currentPage={page} onPageChange={setPage} maxPages={number('maxPages', 10)} />
     },
     {}
 )
