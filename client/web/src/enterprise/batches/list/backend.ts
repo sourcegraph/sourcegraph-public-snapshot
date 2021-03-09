@@ -158,11 +158,12 @@ export function areBatchChangesLicensed(): Observable<boolean> {
     return requestGraphQL<AreBatchChangesLicensedResult, AreBatchChangesLicensedVariables>(
         gql`
             query AreBatchChangesLicensed {
-                enterpriseLicenseHasFeature(feature: "campaigns")
+                campaigns: enterpriseLicenseHasFeature(feature: "campaigns")
+                batchChanges: enterpriseLicenseHasFeature(feature: "batch-changes")
             }
         `
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data.enterpriseLicenseHasFeature)
+        map(data => data.campaigns || data.batchChanges)
     )
 }
