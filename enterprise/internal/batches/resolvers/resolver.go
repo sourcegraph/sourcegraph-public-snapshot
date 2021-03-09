@@ -46,8 +46,8 @@ func batchChangesEnabled(ctx context.Context) error {
 		return ErrBatchChangesDotcom{}
 	}
 
-	if enabled := conf.CampaignsEnabled(); enabled {
-		if conf.Get().CampaignsRestrictToAdmins && backend.CheckCurrentUserIsSiteAdmin(ctx) != nil {
+	if enabled := conf.BatchChangesEnabled(); enabled {
+		if conf.BatchChangesRestrictedToAdmins() && backend.CheckCurrentUserIsSiteAdmin(ctx) != nil {
 			return ErrBatchChangesDisabledForUser{}
 		}
 		return nil

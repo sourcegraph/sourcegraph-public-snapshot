@@ -638,7 +638,7 @@ func TestPermissionLevels(t *testing.T) {
 
 							conf.Mock(&conf.Unified{
 								SiteConfiguration: schema.SiteConfiguration{
-									CampaignsRestrictToAdmins: restrict,
+									BatchChangesRestrictToAdmins: &restrict,
 								},
 							})
 							defer conf.Mock(nil)
