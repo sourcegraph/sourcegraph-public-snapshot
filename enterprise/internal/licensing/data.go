@@ -40,8 +40,9 @@ const (
 	// FeatureBranding is whether custom branding of this Sourcegraph instance has been purchased.
 	FeatureBranding Feature = "branding"
 
-	// DEPRECATED: See FeatureBatchChanges.
 	// FeatureCampaigns is whether campaigns (now: batch changes) on this Sourcegraph instance has been purchased.
+	//
+	// DEPRECATED: See FeatureBatchChanges.
 	FeatureCampaigns Feature = "campaigns"
 
 	// FeatureBatchChanges is whether Batch Changes on this Sourcegraph instance has been purchased.
