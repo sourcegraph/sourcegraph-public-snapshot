@@ -158,7 +158,7 @@ add('Legacy badge', () => (
     </>
 ))
 
-add('Aggregated Tags', () => (
+add('Aggregated Labels', () => (
     <>
         <style>{webStyles}</style>
         <HoverOverlay
@@ -166,7 +166,7 @@ add('Aggregated Tags', () => (
             {...webHoverOverlayClassProps}
             hoverOrError={{
                 contents: [FIXTURE_CONTENT],
-                aggregatedTags: [
+                aggregatedLabels: [
                     {
                         text: 'semantic',
                         linkURL:
@@ -371,7 +371,7 @@ add('Bitbucket styles', () => (
             {...bitbucketClassProps}
             hoverOrError={{
                 contents: [FIXTURE_CONTENT],
-                aggregatedTags: [
+                aggregatedLabels: [
                     {
                         text: 'semantic',
                         linkURL:

@@ -59,7 +59,7 @@ describe('HoverMerged', () => {
                 ],
             }))
 
-        test('Tags', () =>
+        test('Aggregated Labels', () =>
             expect(
                 fromHoverMerged([
                     {
@@ -81,7 +81,7 @@ describe('HoverMerged', () => {
                         aggregableLabels: [{ text: 't03' }, { text: 't01' }],
                     },
                 ],
-                aggregatedTags: [{ text: 't01' }, { text: 't02' }, { text: 't03' }],
+                aggregatedLabels: [{ text: 't01' }, { text: 't02' }, { text: 't03' }],
             }))
     })
 })
