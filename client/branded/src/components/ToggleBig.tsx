@@ -85,11 +85,7 @@ export const ToggleBig: React.FunctionComponent<Props> = ({
                     'toggle-big__knob--on': value,
                 })}
             >
-                {value ? (
-                    <Check size={16} className="toggle-big__icon--on" />
-                ) : (
-                    <Close size={16} className="toggle-big__icon" />
-                )}
+                {value && <Check size={16} className="toggle-big__icon--on" />}
             </span>
             <span className={classnames('toggle-big__text', { 'toggle-big__text--on': value })}>
                 {value ? 'Enabled' : 'Disabled'}
