@@ -108,7 +108,7 @@ export const BatchChangesListEmpty: React.FunctionComponent<BatchChangesListEmpt
                     </a>{' '}
                     and more in the{' '}
                     <a href="https://docs.sourcegraph.com/campaigns" rel="noopener">
-                        batch changes documentation
+                        Batch Changes documentation
                     </a>
                     .
                 </p>
