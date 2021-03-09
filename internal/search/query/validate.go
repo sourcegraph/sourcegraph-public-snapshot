@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-enry/go-enry/v2"
 	"github.com/pkg/errors"
@@ -193,6 +194,14 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		return nil
 	}
 
+	isDuration := func() error {
+		_, err := time.ParseDuration(value)
+		if err != nil {
+			return errors.New(`invalid value for field 'timeout' (examples: "timeout:2s", "timeout:200ms")`)
+		}
+		return nil
+	}
+
 	isLanguage := func() error {
 		_, ok := enry.GetLanguageByAlias(value)
 		if !ok {
@@ -283,9 +292,11 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		return satisfies(isSingular, isBoolean, isNotNegated)
 	case
 		FieldMax,
-		FieldTimeout,
 		FieldCombyRule:
 		return satisfies(isSingular, isNotNegated)
+	case
+		FieldTimeout:
+		return satisfies(isSingular, isNotNegated, isDuration)
 	case
 		FieldRev:
 		return satisfies(isSingular, isNotNegated)
