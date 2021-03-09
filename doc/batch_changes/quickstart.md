@@ -45,7 +45,7 @@ A **batch spec** is a YAML file that defines a batch change. It specifies which 
 
 See the ["batch spec YAML reference"](references/batch_spec_yaml_reference.md) for details.
 
-Save the following batch spec as `hello-world.campaign.yaml`:
+Save the following batch spec as `hello-world.batch.yaml`:
 
 ```yaml
 name: hello-world
