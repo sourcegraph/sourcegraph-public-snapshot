@@ -1,6 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { startWith, catchError, tap } from 'rxjs/operators'
@@ -11,6 +11,7 @@ import { useObservable } from '../../../../shared/src/util/useObservable'
 import { AuthenticatedUser } from '../../auth'
 import { PageTitle } from '../../components/PageTitle'
 import { CodeMonitorFields, MonitorEmailPriority } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
 import { CodeMonitorForm } from './components/CodeMonitorForm'
 
 export interface ManageCodeMonitorPageProps
@@ -25,6 +26,8 @@ export const ManageCodeMonitorPage: React.FunctionComponent<ManageCodeMonitorPag
     const LOADING = 'loading' as const
 
     const { authenticatedUser, fetchCodeMonitor, updateCodeMonitor, match } = props
+
+    useEffect(() => eventLogger.logViewEvent('ManageCodeMonitorPage'), [])
 
     const [codeMonitorState, setCodeMonitorState] = React.useState<CodeMonitorFields>({
         id: '',

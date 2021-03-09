@@ -231,6 +231,21 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                         </li>
                     </ul>
                 </li>
+                <li>
+                    Code monitoring usage data
+                    <ul>
+                        <li>Total number of views of the code monitoring page</li>
+                        <li>Total number of views of the create code monitor page</li>
+                        <li>
+                            Total number of views of the create code monitor page with a pre-populated trigger query
+                        </li>
+                        <li>
+                            Total number of views of the create code monitor page without a pre-populated trigger query
+                        </li>
+                        <li>Total number of views of the manage code monitor page</li>
+                        <li>Total number of clicks on the code monitor email search link</li>
+                    </ul>
+                </li>
             </ul>
             {updatesDisabled ? (
                 <p>All telemetry is disabled.</p>

@@ -1,6 +1,6 @@
 import * as H from 'history'
 import classnames from 'classnames'
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState, useEffect } from 'react'
 import { PageHeader } from '../../components/PageHeader'
 import { PageTitle } from '../../components/PageTitle'
 import { AuthenticatedUser } from '../../auth'
@@ -18,6 +18,7 @@ import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { Settings } from '../../schema/settings.schema'
 import { CodeMonitoringLogo } from './CodeMonitoringLogo'
 import { FeedbackBadge } from '../../components/FeedbackBadge'
+import { eventLogger } from '../../tracking/eventLogger'
 
 export interface CodeMonitoringPageProps
     extends Pick<CodeMonitoringProps, 'fetchUserCodeMonitors' | 'toggleCodeMonitorEnabled'>,
@@ -31,6 +32,8 @@ type CodeMonitorFilter = 'all' | 'user'
 
 export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps> = props => {
     const { authenticatedUser, fetchUserCodeMonitors, toggleCodeMonitorEnabled } = props
+
+    useEffect(() => eventLogger.logViewEvent('CodeMonitoringPage'), [])
 
     const queryConnection = useCallback(
         (args: Partial<ListUserCodeMonitorsVariables>) =>
