@@ -5,7 +5,6 @@ import terminalSize from 'term-size'
 import stringWidth from 'string-width'
 import { identity } from 'lodash'
 import { asError } from '../util/errors'
-import { parseBool } from './config'
 
 const colors: Partial<Record<ConsoleMessageType, Chalk>> = {
     error: chalk.red,
@@ -17,8 +16,6 @@ const icons: Partial<Record<ConsoleMessageType, string>> = {
     warning: '⚠',
     info: 'ℹ',
 }
-
-const useSimpleBrowserConsoleLogs = parseBool(process.env.SIMPLE_BROWSER_CONSOLE_LOGS)
 
 /**
  * Formats a console message that was logged in a Puppeteer Chrome instance for
