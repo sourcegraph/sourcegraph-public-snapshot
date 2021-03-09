@@ -20,7 +20,10 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 const (
@@ -471,15 +474,46 @@ func TestRemoveRepoDirectory(t *testing.T) {
 
 	mkFiles(t, root,
 		"github.com/foo/baz/.git/HEAD",
-		"github.com/foo/survior/.git/HEAD",
+		"github.com/foo/survivor/.git/HEAD",
 		"github.com/bam/bam/.git/HEAD",
 		"example.com/repo/.git/HEAD",
 	)
-	s := &Server{
-		ReposDir: root,
+
+	// Set them up in the DB
+	ctx := context.Background()
+	db := dbtesting.GetDB(t)
+
+	idMapping := make(map[api.RepoName]api.RepoID)
+
+	// Set them all as cloned in the DB
+	for _, r := range []string{
+		"github.com/foo/baz",
+		"github.com/foo/survivor",
+		"github.com/bam/bam",
+		"example.com/repo",
+	} {
+		repo := &types.Repo{
+			Name: api.RepoName(r),
+		}
+		if err := database.Repos(db).Create(ctx, repo); err != nil {
+			t.Fatal(err)
+		}
+		if err := database.GitserverRepos(db).Upsert(ctx, &types.GitserverRepo{
+			RepoID:      repo.ID,
+			ShardID:     "test",
+			CloneStatus: types.CloneStatusCloned,
+		}); err != nil {
+			t.Fatal(err)
+		}
+		idMapping[repo.Name] = repo.ID
 	}
 
-	// Remove everything but github.com/foo/survior
+	s := &Server{
+		ReposDir: root,
+		DB:       db,
+	}
+
+	// Remove everything but github.com/foo/survivor
 	for _, d := range []string{
 		"github.com/foo/baz/.git",
 		"github.com/bam/bam/.git",
@@ -491,9 +525,31 @@ func TestRemoveRepoDirectory(t *testing.T) {
 	}
 
 	assertPaths(t, root,
-		"github.com/foo/survior/.git/HEAD",
+		"github.com/foo/survivor/.git/HEAD",
 		".tmp",
 	)
+
+	for _, tc := range []struct {
+		name   api.RepoName
+		status types.CloneStatus
+	}{
+		{"github.com/foo/baz", types.CloneStatusNotCloned},
+		{"github.com/bam/bam", types.CloneStatusNotCloned},
+		{"example.com/repo", types.CloneStatusNotCloned},
+		{"github.com/foo/survivor", types.CloneStatusCloned},
+	} {
+		id, ok := idMapping[tc.name]
+		if !ok {
+			t.Fatal("id mapping not found")
+		}
+		r, err := database.GitserverRepos(db).GetByID(ctx, id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if r.CloneStatus != tc.status {
+			t.Errorf("Want %q, got %q for %q", tc.status, r.CloneStatus, tc.name)
+		}
+	}
 }
 
 func TestRemoveRepoDirectory_Empty(t *testing.T) {

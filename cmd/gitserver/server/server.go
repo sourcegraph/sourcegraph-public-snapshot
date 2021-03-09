@@ -143,6 +143,9 @@ type Server struct {
 	// skipCloneForTests is set by tests to avoid clones.
 	skipCloneForTests bool
 
+	// shared db handle
+	DB dbutil.DB
+
 	// ctx is the context we use for all background jobs. It is done when the
 	// server is stopped. Do not directly call this, rather call
 	// Server.context()
