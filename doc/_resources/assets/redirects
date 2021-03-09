@@ -217,3 +217,11 @@
 /campaigns/how-tos /batch_changes/how-tos 308
 /campaigns/quickstart /batch_changes/quickstart 308
 /campaigns /batch_changes 308
+
+/cli/references/campaigns/apply /cli/references/batch/apply 308
+/cli/references/campaigns/index /cli/references/batch/index 308
+/cli/references/campaigns/new /cli/references/batch/new 308
+/cli/references/campaigns/preview /cli/references/batch/preview 308
+/cli/references/campaigns/repositories /cli/references/batch/repositories 308
+/cli/references/campaigns/validate /cli/references/batch/validate 308
+/cli/references/campaigns /cli/references/batch 308

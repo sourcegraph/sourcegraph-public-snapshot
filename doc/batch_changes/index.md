@@ -104,4 +104,4 @@ Create a batch change by specifying a search query to get a list of repositories
 - [Batch spec YAML reference](references/batch_spec_yaml_reference.md)
 - [Batch spec templating](references/batch_spec_templating.md)
 - [Troubleshooting](references/troubleshooting.md)
-- [CLI](../cli/references/campaigns/index.md)
+- [CLI](../cli/references/batch/index.md)

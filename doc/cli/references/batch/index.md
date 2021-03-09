@@ -1,4 +1,4 @@
-# `src campaigns`
+# `src batch`
 
 ## Subcommands
 
