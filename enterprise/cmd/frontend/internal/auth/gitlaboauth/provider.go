@@ -7,7 +7,7 @@ import (
 	"github.com/dghubble/gologin"
 	"golang.org/x/oauth2"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"

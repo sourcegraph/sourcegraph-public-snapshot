@@ -1,7 +1,7 @@
 package lints
 
 import (
-	"github.com/sourcegraph/sourcegraph/dev/depgraph/graph"
+	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph"
 )
 
 // NoDeadPackages returns an error for any package that is not importable from outside the
