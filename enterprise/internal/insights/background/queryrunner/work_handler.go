@@ -5,9 +5,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
+	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
@@ -84,27 +88,62 @@ func (r *workHandler) Handle(ctx context.Context, workerStore dbworkerstore.Stor
 		log15.Error("insights query issue", "timedout_repos", timedout, "query", job.SearchQuery)
 	}
 
-	// Record the match count to the insights DB.
-	var matchCount int
-	if results != nil {
-		matchCount = results.Data.Search.Results.MatchCount
-	}
-
 	// 🚨 SECURITY: The request is performed without authentication, we get back results from every
 	// repository on Sourcegraph - so we must be careful to only record insightful information that
 	// is OK to expose to every user on Sourcegraph (e.g. total result counts are fine, exposing
-	// that a repository exists may or may not be fine, exposing individual results is definitely
-	// not, etc.)
+	// that a repository exists may just barely be fine, exposing individual results is definitely
+	// not, etc.) OR record only data that we later restrict to only users who have access to those
+	// repositories.
 	recordTime := time.Now()
 	if job.RecordTime != nil {
 		recordTime = *job.RecordTime
 	}
-	return r.insightsStore.RecordSeriesPoint(ctx, store.RecordSeriesPointArgs{
-		SeriesID: job.SeriesID,
-		Point: store.SeriesPoint{
-			Time:  recordTime,
-			Value: float64(matchCount),
-		},
-		// TODO(slimsag): future: determine match count per repository, and store RepoID/RepoName (and maybe Metadata?)
-	})
+
+	// Figure out how many matches we got for every unique repository returned in the search
+	// results.
+	matchesPerRepo := map[string]int{}
+	for _, result := range results.Data.Search.Results.Results {
+		decoded, err := decodeResult(result)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf(`for query "%s"`, job.SearchQuery))
+		}
+		switch r := decoded.(type) {
+		case *fileMatch:
+			matchesPerRepo[r.Repository.ID] = matchesPerRepo[r.Repository.ID] + r.matchCount()
+		case *commitSearchResult:
+			matchesPerRepo[r.Commit.Repository.ID] = matchesPerRepo[r.Commit.Repository.ID] + r.matchCount()
+		case *repository:
+			matchesPerRepo[r.ID] = matchesPerRepo[r.ID] + r.matchCount()
+		default:
+			panic(fmt.Sprintf("never here %T", r))
+		}
+	}
+
+	// Record the number of results we got, one data point per-repository.
+	repoStore := database.Repos(r.workerBaseStore.Handle().DB())
+	for graphQLRepoID, matchCount := range matchesPerRepo {
+		dbRepoID, err := graphqlbackend.UnmarshalRepositoryID(graphql.ID(graphQLRepoID))
+		if err != nil {
+			return errors.Wrap(err, "UnmarshalRepositoryID")
+		}
+		repo, err := repoStore.Get(ctx, dbRepoID)
+		if err != nil {
+			return errors.Wrap(err, "RepoStore.GetByID")
+		}
+
+		repoName := string(repo.Name)
+		err = r.insightsStore.RecordSeriesPoint(ctx, store.RecordSeriesPointArgs{
+			SeriesID: job.SeriesID,
+			Point: store.SeriesPoint{
+				Time:  recordTime,
+				Value: float64(matchCount),
+			},
+			RepoName: &repoName,
+			RepoID:   &repo.ID,
+		})
+		if err != nil {
+			return errors.Wrap(err, "RecordSeriesPoint")
+		}
+	}
+	return nil
 }
