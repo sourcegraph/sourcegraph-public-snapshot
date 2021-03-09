@@ -29,7 +29,7 @@ interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettin
     >
     subject: Pick<GQL.SettingsSubject, 'id' | 'viewerCanAdminister'>
     enabled: boolean
-    settingsURL: string
+    settingsURL: string | undefined
 }
 
 const stopPropagation: React.MouseEventHandler<HTMLElement> = event => {
@@ -80,7 +80,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
     const actionableErrorMessage = (error: Error) => {
         let errorMessage;
 
-        if (error.message.startsWith('invalid settings')) {
+        if (error.message.startsWith('invalid settings') && settingsURL) {
             errorMessage = <>Could not enable / disable {name}. Edit your <a href={settingsURL}>user settings</a> to fix this error.</>
         } else {
             errorMessage = <>{error.message}</>;
