@@ -74,13 +74,21 @@ func batchChangesCreateAccess(ctx context.Context) error {
 // checkLicense returns a user-facing error if the batchChanges feature is not purchased
 // with the current license or any error occurred while validating the license.
 func checkLicense() error {
-	if err := licensing.Check(licensing.FeatureCampaigns); err != nil {
-		if licensing.IsFeatureNotActivated(err) {
-			return err
-		}
-		return errors.New("Unable to check license feature, please refer to logs for actual error message.")
+	batchChangesErr := licensing.Check(licensing.FeatureBatchChanges)
+	if batchChangesErr == nil {
+		return nil
 	}
-	return nil
+
+	if licensing.IsFeatureNotActivated(batchChangesErr) {
+		// Let's fallback and check whether (deprecated) campaigns are enabled:
+		campaignsErr := licensing.Check(licensing.FeatureCampaigns)
+		if campaignsErr == nil {
+			return nil
+		}
+		return batchChangesErr
+	}
+
+	return errors.New("Unable to check license feature, please refer to logs for actual error message.")
 }
 
 // maxUnlicensedChangesets is the maximum number of changesets that can be
