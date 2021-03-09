@@ -25,10 +25,22 @@ func isLibrary(path string) bool { return publicLibraryPrefixPattern.MatchString
 // IsCommandPrivate returns true if the given path is in the internal directory of its command.
 func isCommandPrivate(path string) bool { return cmdInternalPrefixPattern.MatchString(path) }
 
-// containingCommand returns the name of the command the given path resides in, if any.
-// This method returns the same value for packages composing the same binary, regardless
-// if it's part of the OSS or enterprise definition, and different values for different
-// binaries and shared code.
+// containingCommandPrefix returns the path of the command the given path resides in, if any.
+// This method returns the same value for packages composing the same binary, regardless if
+// it's part of the OSS or enterprise definition, and different values for different binaries
+// and shared code.
+func containingCommandPrefix(path string) string {
+	if match := cmdPrefixPattern.FindStringSubmatch(path); len(match) > 0 {
+		return match[0]
+	}
+
+	return ""
+}
+
+// containingCommand returns the name of the command the given path resides in, if any. This
+// method returns the same value for packages composing the same binary, regardless if it's
+// part of the OSS or enterprise definition, and different values for different binaries and
+// shared code.
 func containingCommand(path string) string {
 	if match := cmdPrefixPattern.FindStringSubmatch(path); len(match) > 0 {
 		return match[1]
@@ -50,7 +62,7 @@ func isMain(packageNames map[string][]string, pkg string) bool {
 
 // mapPackageErrors aggregates errors from the given function invoked on each package in
 // the given graph.
-func mapPackageErrors(graph *graph.DependencyGraph, fn func(pkg string) (lintError, bool)) error {
+func mapPackageErrors(graph *graph.DependencyGraph, fn func(pkg string) (lintError, bool)) []lintError {
 	var errors []lintError
 	for _, pkg := range graph.Packages {
 		if err, ok := fn(pkg); ok {
@@ -58,7 +70,7 @@ func mapPackageErrors(graph *graph.DependencyGraph, fn func(pkg string) (lintErr
 		}
 	}
 
-	return multi(errors)
+	return errors
 }
 
 // allDependencies returns an ordered list of transitive dependencies of the given package.
