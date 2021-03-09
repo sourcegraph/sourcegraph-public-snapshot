@@ -12,6 +12,7 @@ linters:
     - nolintlint
     - unconvert
     - goimports
+    - gosimple
 
 run:
   timeout: 5m

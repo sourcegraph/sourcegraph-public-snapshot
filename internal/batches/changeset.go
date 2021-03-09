@@ -457,7 +457,7 @@ func (c *Changeset) URL() (s string, err error) {
 
 // Events returns the deduplicated list of ChangesetEvents from the Changeset's metadata.
 func (c *Changeset) Events() (events []*ChangesetEvent) {
-	uniqueEvents := make(map[string]struct{}, 0)
+	uniqueEvents := make(map[string]struct{})
 
 	appendEvent := func(e *ChangesetEvent) {
 		k := string(e.Kind) + e.Key
