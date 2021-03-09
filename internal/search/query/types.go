@@ -242,7 +242,6 @@ func (q Q) valueToTypedValue(field, value string, label labels) []*Value {
 	case
 		FieldIndex,
 		FieldCount,
-		FieldMax,
 		FieldTimeout,
 		FieldCombyRule:
 		return []*Value{{String: &value}}
