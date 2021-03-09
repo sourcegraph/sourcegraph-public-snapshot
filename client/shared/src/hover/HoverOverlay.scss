@@ -10,8 +10,8 @@
     overflow: hidden;
 
     &__close-button,
-    &__tag {
-        // We want text to wrap around the close button and tags.
+    &__label {
+        // We want text to wrap around the close button and labels.
         float: right;
         margin-left: 0.25rem;
     }

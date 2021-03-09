@@ -1389,13 +1389,13 @@ declare module 'sourcegraph' {
         /** The display text of the label. */
         text: string
 
-        /** If set, the tag becomes a link with this destination URL. */
+        /** If set, the label becomes a link with this destination URL. */
         linkURL?: string
     }
 
     /**
      * A wrapper around a providable type (hover text and locations) with additional context to enable
-     * displaying badge and tags next to the wrapped result value in the UI.
+     * displaying badge and labels next to the wrapped result value in the UI.
      */
     export type Badged<T extends object> = T & Badge
 
