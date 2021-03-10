@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -74,8 +75,8 @@ func TestSearchCommitsInRepo(t *testing.T) {
 		CommitSearchResult: CommitSearchResult{
 			Commit:      git.Commit{ID: "c1", Author: gitSignatureWithDate},
 			RepoName:    types.RepoName{ID: 1, Name: "repo"},
-			DiffPreview: &highlightedString{value: "x", highlights: []*highlightedRange{}},
-			Body:        highlightedString{value: "```diff\nx```", highlights: []*highlightedRange{}},
+			DiffPreview: &result.HighlightedString{Value: "x", Highlights: []result.HighlightedRange{}},
+			Body:        result.HighlightedString{Value: "```diff\nx```", Highlights: []result.HighlightedRange{}},
 		},
 	}}
 
@@ -98,7 +99,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 		t.Errorf("url\ngot  %v\nwant %v", gotURL, wantURL)
 	}
 
-	wantMatches := []*searchResultMatchResolver{{url: "/repo/-/commit/c1", body: "```diff\nx```", highlights: []*highlightedRange{}}}
+	wantMatches := []*searchResultMatchResolver{{url: "/repo/-/commit/c1", body: "```diff\nx```", highlights: []result.HighlightedRange{}}}
 	if gotMatches := want[0].Matches(); !reflect.DeepEqual(gotMatches, wantMatches) {
 		t.Errorf("matches\ngot  %v\nwant %v", gotMatches, wantMatches)
 	}
@@ -154,7 +155,7 @@ func TestHighlightMatches(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *highlightedString
+		want *result.HighlightedString
 	}{
 		{
 			// https://github.com/sourcegraph/sourcegraph/issues/4512
@@ -163,13 +164,13 @@ func TestHighlightMatches(t *testing.T) {
 				pattern: regexp.MustCompile(`白`),
 				data:    []byte(`加一行空白`),
 			},
-			want: &highlightedString{
-				value: "加一行空白",
-				highlights: []*highlightedRange{
+			want: &result.HighlightedString{
+				Value: "加一行空白",
+				Highlights: []result.HighlightedRange{
 					{
-						line:      1,
-						character: 4,
-						length:    1,
+						Line:      1,
+						Character: 4,
+						Length:    1,
 					},
 				},
 			},
@@ -181,13 +182,13 @@ func TestHighlightMatches(t *testing.T) {
 				pattern: regexp.MustCompile(`行空`),
 				data:    []byte(`加一行空白`),
 			},
-			want: &highlightedString{
-				value: "加一行空白",
-				highlights: []*highlightedRange{
+			want: &result.HighlightedString{
+				Value: "加一行空白",
+				Highlights: []result.HighlightedRange{
 					{
-						line:      1,
-						character: 2,
-						length:    2,
+						Line:      1,
+						Character: 2,
+						Length:    2,
 					},
 				},
 			},
@@ -199,13 +200,13 @@ func TestHighlightMatches(t *testing.T) {
 				pattern: regexp.MustCompile(`加`),
 				data:    []byte(`加一行空白`),
 			},
-			want: &highlightedString{
-				value: "加一行空白",
-				highlights: []*highlightedRange{
+			want: &result.HighlightedString{
+				Value: "加一行空白",
+				Highlights: []result.HighlightedRange{
 					{
-						line:      1,
-						character: 0,
-						length:    1,
+						Line:      1,
+						Character: 0,
+						Length:    1,
 					},
 				},
 			},
@@ -217,23 +218,23 @@ func TestHighlightMatches(t *testing.T) {
 				pattern: regexp.MustCompile(`.`),
 				data:    []byte("a\xc5z"),
 			},
-			want: &highlightedString{
-				value: "a\xc5z",
-				highlights: []*highlightedRange{
+			want: &result.HighlightedString{
+				Value: "a\xc5z",
+				Highlights: []result.HighlightedRange{
 					{
-						line:      1,
-						character: 0,
-						length:    1,
+						Line:      1,
+						Character: 0,
+						Length:    1,
 					},
 					{
-						line:      1,
-						character: 1,
-						length:    1,
+						Line:      1,
+						Character: 1,
+						Length:    1,
 					},
 					{
-						line:      1,
-						character: 2,
-						length:    1,
+						Line:      1,
+						Character: 2,
+						Length:    1,
 					},
 				},
 			},
@@ -245,18 +246,18 @@ func TestHighlightMatches(t *testing.T) {
 				pattern: regexp.MustCompile(`行`),
 				data:    []byte("加一行空白\n加一空行白"),
 			},
-			want: &highlightedString{
-				value: "加一行空白\n加一空行白",
-				highlights: []*highlightedRange{
+			want: &result.HighlightedString{
+				Value: "加一行空白\n加一空行白",
+				Highlights: []result.HighlightedRange{
 					{
-						line:      1,
-						character: 2,
-						length:    1,
+						Line:      1,
+						Character: 2,
+						Length:    1,
 					},
 					{
-						line:      2,
-						character: 3,
-						length:    1,
+						Line:      2,
+						Character: 3,
+						Length:    1,
 					},
 				},
 			},
@@ -269,13 +270,13 @@ func TestHighlightMatches(t *testing.T) {
 				pattern: regexp.MustCompile(`İ`),
 				data:    []byte(`İi`),
 			},
-			want: &highlightedString{
-				value: "İi",
-				highlights: []*highlightedRange{
+			want: &result.HighlightedString{
+				Value: "İi",
+				Highlights: []result.HighlightedRange{
 					{
-						line:      1,
-						character: 0,
-						length:    1,
+						Line:      1,
+						Character: 0,
+						Length:    1,
 					},
 				},
 			},
@@ -315,8 +316,8 @@ func searchCommitsInRepo(ctx context.Context, db dbutil.DB, op search.CommitPara
 func TestCommitSearchResult_Limit(t *testing.T) {
 	f := func(nHighlights []int, limitInput uint32) bool {
 		cr := &CommitSearchResult{
-			Body: highlightedString{
-				highlights: make([]*highlightedRange, len(nHighlights)),
+			Body: result.HighlightedString{
+				Highlights: make([]result.HighlightedRange, len(nHighlights)),
 			},
 		}
 
