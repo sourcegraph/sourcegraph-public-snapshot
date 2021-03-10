@@ -279,7 +279,8 @@ func (s *Server) Handler() http.Handler {
 // background goroutine.
 func (s *Server) Janitor(interval time.Duration) {
 	for {
-		s.cleanupRepos()
+		addrs := conf.Get().ServiceConnections.GitServers
+		s.cleanupRepos(addrs)
 		time.Sleep(interval)
 	}
 }
