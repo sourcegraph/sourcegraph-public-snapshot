@@ -1189,6 +1189,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 			return err
 		}
 		defer cancel1()
+
 		ctx, cancel2 := context.WithTimeout(ctx, longGitCommandTimeout)
 		defer cancel2()
 
@@ -1213,6 +1214,23 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		defer os.RemoveAll(tmpPath)
 		tmpPath = filepath.Join(tmpPath, ".git")
 		tmp := GitDir(tmpPath)
+
+		// It may already be cloned
+		if !repoCloned(dir) {
+			if err := s.setCloneStatus(ctx, repo, types.CloneStatusCloning); err != nil {
+				// No need to stop cloning
+				log15.Warn("Setting clone status in DB", "error", err)
+			}
+		}
+		defer func() {
+			status := types.CloneStatusCloned
+			if !repoCloned(dir) {
+				status = types.CloneStatusNotCloned
+			}
+			if err := s.setCloneStatus(ctx, repo, status); err != nil {
+				log15.Warn("Setting clone status in DB", "error", err)
+			}
+		}()
 
 		cmd, err := syncer.CloneCommand(ctx, remoteURL, tmpPath)
 		if err != nil {

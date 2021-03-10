@@ -469,6 +469,9 @@ func dirSize(d string) int64 {
 }
 
 func (s *Server) setCloneStatus(ctx context.Context, name api.RepoName, status types.CloneStatus) (err error) {
+	if s.DB == nil {
+		return nil
+	}
 	tx, err := database.Repos(s.DB).Transact(ctx)
 	if err != nil {
 		return err
@@ -507,11 +510,8 @@ func (s *Server) removeRepoDirectory(gitDir GitDir) error {
 	// should not be returned, just logged.
 
 	// Set as not_cloned in the database
-	if s.DB != nil {
-		err := s.setCloneStatus(ctx, s.name(gitDir), types.CloneStatusNotCloned)
-		if err != nil {
-			log15.Error("Setting clone status", "error", err)
-		}
+	if err := s.setCloneStatus(ctx, s.name(gitDir), types.CloneStatusNotCloned); err != nil {
+		log15.Error("Setting clone status", "error", err)
 	}
 
 	// Cleanup empty parent directories. We just attempt to remove and if we
