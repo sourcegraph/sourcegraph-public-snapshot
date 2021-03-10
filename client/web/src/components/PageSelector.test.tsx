@@ -77,7 +77,7 @@ describe('PageSelector', () => {
             expect(onPageChangeMock).toHaveBeenCalledWith(currentPage + 1)
         })
 
-        describe('rendering near middle', () => {
+        describe('when currently selected near middle', () => {
             beforeAll(() => {
                 currentPage = 5
             })
@@ -88,6 +88,23 @@ describe('PageSelector', () => {
 
             it('will render correct pages', () => {
                 const expectedPages = ['1', '4', '5', '6', '10']
+                expectedPages.forEach(page => {
+                    expect(queries.getByRole('button', { name: page })).toBeInTheDocument()
+                })
+            })
+        })
+
+        describe('when currently selected near end', () => {
+            beforeAll(() => {
+                currentPage = 10
+            })
+
+            it('will render correct elipsis', () => {
+                expect(queries.getAllByRole('button', { name: '...' })).toHaveLength(1)
+            })
+
+            it('will render correct pages', () => {
+                const expectedPages = ['1', '6', '7', '8', '9', '10']
                 expectedPages.forEach(page => {
                     expect(queries.getByRole('button', { name: page })).toBeInTheDocument()
                 })
