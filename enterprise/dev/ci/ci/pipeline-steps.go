@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
@@ -425,6 +426,18 @@ func addFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline)
 			if insiders {
 				images = append(images, fmt.Sprintf("%s:insiders", image))
 			}
+		}
+
+		// these tags are pushed to our dev registry, and are only
+		// used internally
+		for _, tag := range []string{
+			c.version,
+			c.commit,
+			fmt.Sprintf("%s_%s", c.commit, strconv.Itoa(c.buildNumber)),
+			strconv.Itoa(c.buildNumber),
+		} {
+			internalImage := fmt.Sprintf("%s:%s", devImage, tag)
+			images = append(images, internalImage)
 		}
 
 		candidateImage := fmt.Sprintf("%s:%s", devImage, c.candidateImageTag())
