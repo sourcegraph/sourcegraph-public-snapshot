@@ -63,7 +63,7 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 		metrics.WithCountHelp("Total number of insights historical enqueuer executions"),
 	)
 	operation := observationContext.Operation(observation.Op{
-		Name:    fmt.Sprintf("HistoricalEnqueuer.Run"),
+		Name:    "HistoricalEnqueuer.Run",
 		Metrics: metrics,
 	})
 

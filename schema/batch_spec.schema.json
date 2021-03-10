@@ -1,30 +1,30 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "CampaignSpec",
-  "description": "A campaign specification, which describes the campaign and what kinds of changes to make (or what existing changesets to track).",
+  "title": "BatchSpec",
+  "description": "A batch specification, which describes the batch change and what kinds of changes to make (or what existing changesets to track).",
   "type": "object",
   "additionalProperties": false,
   "required": ["name"],
   "properties": {
     "name": {
       "type": "string",
-      "description": "The name of the campaign, which is unique among all campaigns in the namespace. A campaign's name is case-preserving.",
+      "description": "The name of the batch change, which is unique among all batch changes in the namespace. A batch change's name is case-preserving.",
       "pattern": "^[\\w.-]+$"
     },
     "description": {
       "type": "string",
-      "description": "The description of the campaign."
+      "description": "The description of the batch change."
     },
     "on": {
       "type": "array",
-      "description": "The set of repositories (and branches) to run the campaign on, specified as a list of search queries (that match repositories) and/or specific repositories.",
+      "description": "The set of repositories (and branches) to run the batch change on, specified as a list of search queries (that match repositories) and/or specific repositories.",
       "items": {
         "title": "OnQueryOrRepository",
         "oneOf": [
           {
             "title": "OnQuery",
             "type": "object",
-            "description": "A Sourcegraph search query that matches a set of repositories (and branches). Each matched repository branch is added to the list of repositories that the campaign will be run on.",
+            "description": "A Sourcegraph search query that matches a set of repositories (and branches). Each matched repository branch is added to the list of repositories that the batch change will be run on.",
             "additionalProperties": false,
             "required": ["repositoriesMatchingQuery"],
             "properties": {
@@ -38,7 +38,7 @@
           {
             "title": "OnRepository",
             "type": "object",
-            "description": "A specific repository (and branch) that is added to the list of repositories that the campaign will be run on.",
+            "description": "A specific repository (and branch) that is added to the list of repositories that the batch change will be run on.",
             "additionalProperties": false,
             "required": ["repository"],
             "properties": {
@@ -86,11 +86,11 @@
     },
     "steps": {
       "type": "array",
-      "description": "The sequence of commands to run (for each repository branch matched in the `on` property) to produce the campaign's changes.",
+      "description": "The sequence of commands to run (for each repository branch matched in the `on` property) to produce the workspace changes that will be included in the batch change.",
       "items": {
         "title": "Step",
         "type": "object",
-        "description": "A command to run (as part of a sequence) in a repository branch to produce the campaign's changes.",
+        "description": "A command to run (as part of a sequence) in a repository branch to produce the required changes.",
         "additionalProperties": false,
         "required": ["run", "container"],
         "properties": {
@@ -265,11 +265,11 @@
           }
         },
         "published": {
-          "description": "Whether to publish the changeset. An unpublished changeset can be previewed on Sourcegraph by any person who can view the campaign, but its commit, branch, and pull request aren't created on the code host. A published changeset results in a commit, branch, and pull request being created on the code host.",
+          "description": "Whether to publish the changeset. An unpublished changeset can be previewed on Sourcegraph by any person who can view the batch change, but its commit, branch, and pull request aren't created on the code host. A published changeset results in a commit, branch, and pull request being created on the code host.",
           "oneOf": [
             {
               "oneOf": [{ "type": "boolean" }, { "type": "string", "pattern": "^draft$" }],
-              "description": "A single flag to control the publishing state for the entire campaign."
+              "description": "A single flag to control the publishing state for the entire batch change."
             },
             {
               "type": "array",

@@ -16,15 +16,15 @@ import (
 // batchSpecColumns are used by the batchSpec related Store methods to insert,
 // update and query batches.
 var batchSpecColumns = []*sqlf.Query{
-	sqlf.Sprintf("campaign_specs.id"),
-	sqlf.Sprintf("campaign_specs.rand_id"),
-	sqlf.Sprintf("campaign_specs.raw_spec"),
-	sqlf.Sprintf("campaign_specs.spec"),
-	sqlf.Sprintf("campaign_specs.namespace_user_id"),
-	sqlf.Sprintf("campaign_specs.namespace_org_id"),
-	sqlf.Sprintf("campaign_specs.user_id"),
-	sqlf.Sprintf("campaign_specs.created_at"),
-	sqlf.Sprintf("campaign_specs.updated_at"),
+	sqlf.Sprintf("batch_specs.id"),
+	sqlf.Sprintf("batch_specs.rand_id"),
+	sqlf.Sprintf("batch_specs.raw_spec"),
+	sqlf.Sprintf("batch_specs.spec"),
+	sqlf.Sprintf("batch_specs.namespace_user_id"),
+	sqlf.Sprintf("batch_specs.namespace_org_id"),
+	sqlf.Sprintf("batch_specs.user_id"),
+	sqlf.Sprintf("batch_specs.created_at"),
+	sqlf.Sprintf("batch_specs.updated_at"),
 }
 
 // batchSpecInsertColumns is the list of batch_specs columns that are
@@ -53,7 +53,7 @@ func (s *Store) CreateBatchSpec(ctx context.Context, c *batches.BatchSpec) error
 
 var createBatchSpecQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_specs.go:CreateBatchSpec
-INSERT INTO campaign_specs (%s)
+INSERT INTO batch_specs (%s)
 VALUES ` + batchSpecInsertColsFmt + `
 RETURNING %s`
 
@@ -106,7 +106,7 @@ func (s *Store) UpdateBatchSpec(ctx context.Context, c *batches.BatchSpec) error
 
 var updateBatchSpecQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_specs.go:UpdateBatchSpec
-UPDATE campaign_specs
+UPDATE batch_specs
 SET (%s) = ` + batchSpecInsertColsFmt + `
 WHERE id = %s
 RETURNING %s`
@@ -142,7 +142,7 @@ func (s *Store) DeleteBatchSpec(ctx context.Context, id int64) error {
 
 var deleteBatchSpecQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_specs.go:DeleteBatchSpec
-DELETE FROM campaign_specs WHERE id = %s
+DELETE FROM batch_specs WHERE id = %s
 `
 
 // CountBatchSpecs returns the number of code mods in the database.
@@ -153,7 +153,7 @@ func (s *Store) CountBatchSpecs(ctx context.Context) (int, error) {
 var countBatchSpecsQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_specs.go:CountBatchSpecs
 SELECT COUNT(id)
-FROM campaign_specs
+FROM batch_specs
 `
 
 // GetBatchSpecOpts captures the query options needed for getting a BatchSpec
@@ -183,7 +183,7 @@ func (s *Store) GetBatchSpec(ctx context.Context, opts GetBatchSpecOpts) (*batch
 
 var getBatchSpecsQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_specs.go:GetBatchSpec
-SELECT %s FROM campaign_specs
+SELECT %s FROM batch_specs
 WHERE %s
 LIMIT 1
 `
@@ -241,7 +241,7 @@ func (s *Store) GetNewestBatchSpec(ctx context.Context, opts GetNewestBatchSpecO
 
 const getNewestBatchSpecQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_specs.go:GetNewestBatchSpec
-SELECT %s FROM campaign_specs
+SELECT %s FROM batch_specs
 WHERE %s
 ORDER BY id DESC
 LIMIT 1
@@ -305,7 +305,7 @@ func (s *Store) ListBatchSpecs(ctx context.Context, opts ListBatchSpecsOpts) (cs
 
 var listBatchSpecsQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_specs.go:ListBatchSpecs
-SELECT %s FROM campaign_specs
+SELECT %s FROM batch_specs
 WHERE %s
 ORDER BY id ASC
 `
@@ -334,15 +334,15 @@ func (s *Store) DeleteExpiredBatchSpecs(ctx context.Context) error {
 var deleteExpiredBatchSpecsQueryFmtstr = `
 -- source: enterprise/internal/batches/store.go:DeleteExpiredBatchSpecs
 DELETE FROM
-  campaign_specs
+  batch_specs
 WHERE
   created_at < %s
 AND
 NOT EXISTS (
-  SELECT 1 FROM campaigns WHERE campaign_spec_id = campaign_specs.id
+  SELECT 1 FROM batch_changes WHERE batch_spec_id = batch_specs.id
 )
 AND NOT EXISTS (
-  SELECT 1 FROM changeset_specs WHERE campaign_spec_id = campaign_specs.id
+  SELECT 1 FROM changeset_specs WHERE batch_spec_id = batch_specs.id
 );
 `
 

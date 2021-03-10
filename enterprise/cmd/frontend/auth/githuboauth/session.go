@@ -18,10 +18,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	esauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type sessionIssuerHelper struct {
@@ -98,6 +100,47 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	}
 	// On failure, return the first error
 	return nil, fmt.Sprintf("No user exists matching any of the verified emails: %s.\n\nFirst error was: %s", strings.Join(verifiedEmails, ", "), firstSafeErrMsg), firstErr
+}
+
+func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, token *oauth2.Token, providerID string) (safeErrMsg string, err error) {
+	actor := actor.FromContext(ctx)
+	if !actor.IsAuthenticated() {
+		return "Must be authenticated to create code host connection from OAuth flow.", errors.New("unauthenticated request")
+	}
+
+	p := oauth.GetProvider(extsvc.TypeGitHub, providerID)
+	if p == nil {
+		return "Could not find OAuth provider for the state.", errors.Errorf("provider not found for %q", providerID)
+	}
+
+	ghUser, err := github.UserFromContext(ctx)
+	if ghUser == nil {
+		if err != nil {
+			err = errors.Wrap(err, "could not read user from context")
+		} else {
+			err = errors.New("could not read user from context")
+		}
+		return "Could not read GitHub user from callback request.", err
+	}
+
+	err = database.GlobalExternalServices.Create(ctx, conf.Get,
+		&types.ExternalService{
+			Kind:        extsvc.KindGitHub,
+			DisplayName: fmt.Sprintf("GitHub (%s)", deref(ghUser.Login)),
+			Config: fmt.Sprintf(`
+{
+  "url": "%s",
+  "token": "%s",
+  "orgs": []
+}
+`, p.ServiceID, token.AccessToken),
+			NamespaceUserID: actor.UID,
+		},
+	)
+	if err != nil {
+		return "Could not create code host connection.", err
+	}
+	return "", nil // success
 }
 
 func (s *sessionIssuerHelper) DeleteStateCookie(w http.ResponseWriter) {

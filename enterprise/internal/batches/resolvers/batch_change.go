@@ -38,8 +38,8 @@ func marshalBatchChangeID(id int64) graphql.ID {
 	return relay.MarshalID(batchChangeIDKind, id)
 }
 
-func unmarshalBatchChangeID(id graphql.ID) (campaignID int64, err error) {
-	err = relay.UnmarshalSpec(id, &campaignID)
+func unmarshalBatchChangeID(id graphql.ID) (batchChangeID int64, err error) {
+	err = relay.UnmarshalSpec(id, &batchChangeID)
 	return
 }
 

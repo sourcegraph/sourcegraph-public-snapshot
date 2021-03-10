@@ -97,7 +97,7 @@ export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePag
                 <p className="text-muted">
                     Want more help? See{' '}
                     <a href="/help/campaigns" rel="noopener noreferrer" target="_blank">
-                        batch changes documentation
+                        Batch Changes documentation
                     </a>
                     .
                 </p>

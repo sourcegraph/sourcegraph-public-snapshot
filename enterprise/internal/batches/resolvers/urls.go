@@ -9,6 +9,6 @@ func batchChangesApplyURL(n graphqlbackend.Namespace, c graphqlbackend.BatchSpec
 }
 
 func batchChangeURL(n graphqlbackend.Namespace, c graphqlbackend.BatchChangeResolver) string {
-	// This needs to be kept consistent with campaigns.campaignURL().
+	// This needs to be kept consistent with batches.batchChangeURL().
 	return n.URL() + "/batch-changes/" + c.Name()
 }

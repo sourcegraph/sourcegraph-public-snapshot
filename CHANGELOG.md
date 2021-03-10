@@ -16,6 +16,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Opsgenie API keys can now be added via an environment variable. [#18662](https://github.com/sourcegraph/sourcegraph/pull/18662)
+- It's now possible to control where code insights are displayed through the boolean settings `insights.displayLocation.homepage`, `insights.displayLocation.insightsPage` and `insights.displayLocation.directory`. [#18979](https://github.com/sourcegraph/sourcegraph/pull/18979)
 
 ### Changed
 
@@ -23,6 +24,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Repositories and files containing spaces will now render with escaped spaces in the query bar rather than being
   quoted. [#18642](https://github.com/sourcegraph/sourcegraph/pull/18642)
 - Sourcegraph is now built with Go 1.16. [#18447](https://github.com/sourcegraph/sourcegraph/pull/18447)
+- Cursor hover information in the search query bar will now display after 150ms (previously 0ms). [#18916](https://github.com/sourcegraph/sourcegraph/pull/18916)
 
 ### Fixed
 
@@ -33,6 +35,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Removed
 
 - Removed the deprecated GraphQL fields `SearchResults.repositoriesSearched` and `SearchResults.indexedRepositoriesSearched`.
+- Removed the deprecated search field `max`
 
 ## 3.25.2
 

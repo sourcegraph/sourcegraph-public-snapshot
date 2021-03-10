@@ -52,7 +52,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
       <span
         class="inline-block"
       >
-        Batch changes
+        Batch Changes
       </span>
     </a>
   </li>
@@ -138,7 +138,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
             <span
               class="inline-block"
             >
-              Batch changes
+              Batch Changes
             </span>
           </a>
         </button>
@@ -770,7 +770,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
       <span
         class="inline-block"
       >
-        Batch changes
+        Batch Changes
       </span>
     </a>
   </li>
@@ -856,7 +856,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
             <span
               class="inline-block"
             >
-              Batch changes
+              Batch Changes
             </span>
           </a>
         </button>
@@ -1498,7 +1498,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
       <span
         class="inline-block"
       >
-        Batch changes
+        Batch Changes
       </span>
     </a>
   </li>
@@ -1584,7 +1584,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
             <span
               class="inline-block"
             >
-              Batch changes
+              Batch Changes
             </span>
           </a>
         </button>
@@ -2197,7 +2197,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
       <span
         class="inline-block"
       >
-        Batch changes
+        Batch Changes
       </span>
     </a>
   </li>
@@ -2283,7 +2283,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
             <span
               class="inline-block"
             >
-              Batch changes
+              Batch Changes
             </span>
           </a>
         </button>
@@ -2906,7 +2906,7 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
       <span
         class="inline-block"
       >
-        Batch changes
+        Batch Changes
       </span>
     </a>
   </li>
@@ -2992,7 +2992,7 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
             <span
               class="inline-block"
             >
-              Batch changes
+              Batch Changes
             </span>
           </a>
         </button>
@@ -3182,7 +3182,7 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
       <span
         class="inline-block"
       >
-        Batch changes
+        Batch Changes
       </span>
     </a>
   </li>
@@ -3268,7 +3268,7 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
             <span
               class="inline-block"
             >
-              Batch changes
+              Batch Changes
             </span>
           </a>
         </button>
@@ -3468,7 +3468,7 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
       <span
         class="inline-block"
       >
-        Batch changes
+        Batch Changes
       </span>
     </a>
   </li>
@@ -3554,7 +3554,7 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
             <span
               class="inline-block"
             >
-              Batch changes
+              Batch Changes
             </span>
           </a>
         </button>
@@ -3701,7 +3701,7 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
       <span
         class="inline-block"
       >
-        Batch changes
+        Batch Changes
       </span>
     </a>
   </li>
@@ -3787,7 +3787,7 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
             <span
               class="inline-block"
             >
-              Batch changes
+              Batch Changes
             </span>
           </a>
         </button>

@@ -120,6 +120,14 @@ func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.Apply
 }
 
 // TODO(campaigns-deprecation): Remove when campaigns are fully removed
+func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.CloseCampaignArgs) (_ graphqlbackend.BatchChangeResolver, err error) {
+	return r.CloseBatchChange(ctx, &graphqlbackend.CloseBatchChangeArgs{
+		BatchChange:     args.Campaign,
+		CloseChangesets: args.CloseChangesets,
+	})
+}
+
+// TODO(campaigns-deprecation): Remove when campaigns are fully removed
 func (r *batchSpecResolver) ViewerCampaignsCodeHosts(ctx context.Context, args *graphqlbackend.ListViewerCampaignsCodeHostsArgs) (graphqlbackend.CampaignsCodeHostConnectionResolver, error) {
 	res, err := r.ViewerBatchChangesCodeHosts(ctx, &graphqlbackend.ListViewerBatchChangesCodeHostsArgs{
 		First:                 args.First,
