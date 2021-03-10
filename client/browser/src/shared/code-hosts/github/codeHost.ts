@@ -350,13 +350,6 @@ export const githubCodeHost: CodeHost = {
         actionItemPressedClass: 'selected',
         actionItemIconClass: 'icon--github v-align-text-bottom',
     },
-    completionWidgetClassProps: {
-        widgetClassName: 'suggester-container',
-        widgetContainerClassName: 'suggester',
-        listClassName: 'suggestions',
-        selectedListItemClassName: 'navigation-focus',
-        listItemClassName: 'text-normal',
-    },
     hoverOverlayClassProps: {
         className: 'Box',
         actionItemClassName: 'btn btn-secondary',

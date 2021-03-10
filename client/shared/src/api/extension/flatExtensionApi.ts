@@ -825,7 +825,7 @@ export const initNewExtensionAPI = (
 
     // Commands
     const commands: typeof sourcegraph['commands'] = {
-        executeCommand: async (command, ...args) => await mainAPI.executeCommand(command, args),
+        executeCommand: (command, ...args) => mainAPI.executeCommand(command, args),
         registerCommand: (command, callback) =>
             syncRemoteSubscription(mainAPI.registerCommand(command, proxy(callback))),
     }
@@ -996,12 +996,12 @@ export const initNewExtensionAPI = (
                             Promise.all([
                                 toActivate.map(({ id, scriptURL }) =>
                                     activateExtension(id, scriptURL).catch(error =>
-                                        console.error(`Error activating extension ${id}: ${error}`)
+                                        console.error(`Error activating extension ${id}:`, asError(error))
                                     )
                                 ),
                                 [...toDeactivate].map(id =>
                                     deactivateExtension(id).catch(error =>
-                                        console.error(`Error deactivating extension ${id}: ${error}`)
+                                        console.error(`Error deactivating extension ${id}:`, asError(error))
                                     )
                                 ),
                             ])

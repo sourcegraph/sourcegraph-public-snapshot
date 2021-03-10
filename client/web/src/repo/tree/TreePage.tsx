@@ -10,7 +10,7 @@ import UserIcon from 'mdi-react/UserIcon'
 import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { Link, Redirect } from 'react-router-dom'
 import { Observable, EMPTY, from } from 'rxjs'
-import { catchError, map, switchMap, tap } from 'rxjs/operators'
+import { catchError, map, switchMap } from 'rxjs/operators'
 import { ActionItem } from '../../../../shared/src/actions/ActionItem'
 import { ActionsContainer } from '../../../../shared/src/actions/ActionsContainer'
 import { ContributableMenu } from '../../../../shared/src/api/protocol'
@@ -243,6 +243,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                     if (viewerId) {
                         return extensionHostAPI.removeViewer(viewerId)
                     }
+                    return
                 })
                 .catch(error => console.error('Error removing viewer from extension host:', error))
         }

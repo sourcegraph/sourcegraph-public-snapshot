@@ -7,7 +7,7 @@ import {
     MaybeLoadingResult,
     DiffPart,
 } from '@sourcegraph/codeintellify'
-import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
+import { TextDocumentDecoration, WorkspaceRoot } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import * as React from 'react'
 import { render as reactDOMRender } from 'react-dom'
@@ -40,6 +40,7 @@ import {
     distinctUntilChanged,
     retryWhen,
     mapTo,
+    delay,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../../shared/src/actions/ActionItem'
 import { DecorationMapByLine } from '../../../../../shared/src/api/client/services/decoration'
@@ -51,7 +52,6 @@ import {
     CommandListClassProps,
     CommandListPopoverButtonClassProps,
 } from '../../../../../shared/src/commandPalette/CommandList'
-import { CompletionWidgetClassProps } from '../../../../../shared/src/components/completion/CompletionWidget'
 import { asObservable } from '../../../../../shared/src/util/rxjs/asObservable'
 import { ApplyLinkPreviewOptions } from '../../../../../shared/src/components/linkPreviews/linkPreviews'
 import { Controller } from '../../../../../shared/src/extensions/controller'
@@ -76,7 +76,7 @@ import {
 import { observeStorageKey } from '../../../browser-extension/web-extension-api/storage'
 import { isExtension, isInPage } from '../../context'
 import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
-import { toTextDocumentIdentifier, toTextDocumentPositionParameters } from '../../backend/extension-api-conversion'
+import { toTextDocumentPositionParameters } from '../../backend/extension-api-conversion'
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../components/CodeViewToolbar'
 import { resolveRevision, retryWhenCloneInProgressError } from '../../repo/backend'
 import { EventLogger, ConditionalTelemetryService } from '../../tracking/eventLogger'
@@ -103,7 +103,6 @@ import {
     nativeTooltipsEnabledFromSettings,
     registerNativeTooltipContributions,
 } from './nativeTooltips'
-import { handleTextFields, TextField } from './textFields'
 import { delayUntilIntersecting, ViewResolver } from './views'
 import { NotificationType, HoverAlert } from 'sourcegraph'
 import { isHTTPAuthError } from '../../../../../shared/src/backend/fetch'
@@ -116,6 +115,7 @@ import { shouldOverrideSendTelemetry, observeOptionFlag } from '../../util/optio
 import { BackgroundPageApi } from '../../../browser-extension/web-extension-api/types'
 import { background } from '../../../browser-extension/web-extension-api/runtime'
 import { ThemeProps } from '../../../../../shared/src/theme'
+import { CodeEditorData, CodeEditorWithPartialModel } from '../../../../../shared/src/api/viewerTypes'
 
 registerHighlightContributions()
 
@@ -208,11 +208,6 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
     contentViewResolvers?: ViewResolver<ContentView>[]
 
     /**
-     * Resolve {@link TextField}s from the DOM.
-     */
-    textFieldResolvers?: ViewResolver<TextField>[]
-
-    /**
      * Resolves {@link NativeTooltip}s from the DOM.
      */
     nativeTooltipResolvers?: ViewResolver<NativeTooltip>[]
@@ -269,11 +264,6 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      * CSS classes for the code view toolbar to customize styling
      */
     codeViewToolbarClassProps?: CodeViewToolbarClassProps
-
-    /**
-     * CSS classes for the completion widget to customize styling
-     */
-    completionWidgetClassProps?: CompletionWidgetClassProps
 
     /**
      * Whether or not code views need to be tokenized. Defaults to false.
@@ -796,6 +786,8 @@ export function handleCodeHost({
                 mergeMap(diffOrBlobInfo =>
                     resolveRepoNamesForDiffOrFileInfo(diffOrBlobInfo, platformContext.requestGraphQL)
                 ),
+                tap(() => console.log('resolved repo name')),
+                delay(1000),
                 mergeMap(diffOrBlobInfo =>
                     fetchFileContentForDiffOrFileInfo(diffOrBlobInfo, platformContext.requestGraphQL).pipe(
                         map(diffOrBlobInfo => ({
@@ -804,6 +796,7 @@ export function handleCodeHost({
                         }))
                     )
                 ),
+                tap(() => console.log('resolved file content')),
                 catchError(error => {
                     // Ignore PrivateRepoPublicSourcegraph errors (don't initialize those code views)
                     if (isPrivateRepoPublicSourcegraphComErrorLike(error)) {
@@ -861,237 +854,280 @@ export function handleCodeHost({
 
     /**
      * Adds root referenced by a code editor to the worskpace.
-     *
-     * Will only cause `workspace.roots` to emit if no root with
-     * the given `uri` existed.
      */
-    const addRootReference = (uri: string, inputRevision: string | undefined): void => {
+    const addRootReference = async (uri: string, inputRevision: string | undefined): Promise<void> => {
         rootReferenceCounts.set(uri, (rootReferenceCounts.get(uri) || 0) + 1)
         if (rootReferenceCounts.get(uri) === 1) {
-            extensionsController.services.workspace.roots.next([
-                ...extensionsController.services.workspace.roots.value,
-                { uri, inputRevision },
-            ])
+            const workspaceRoot: WorkspaceRoot = { uri, inputRevision }
+            return extensionsController.extHostAPI
+                .then(extensionHostAPI => extensionHostAPI.addWorkspaceRoot({ uri, inputRevision }))
+                .catch(error =>
+                    console.error('Sourcegraph: error adding workspace root', { error: asError(error), workspaceRoot })
+                )
         }
     }
 
     /**
      * Deletes a reference to a workspace root from a code editor.
-     *
-     * Will only cause `workspace.roots` to emit if the root
-     * with the given `uri` has no more references.
      */
-    const deleteRootReference = (uri: string): void => {
+    const deleteRootReference = async (uri: string): Promise<void> => {
         const currentReferenceCount = rootReferenceCounts.get(uri)
         if (!currentReferenceCount) {
             throw new Error(`No preexisting root refs for uri ${uri}`)
         }
         const updatedReferenceCount = currentReferenceCount - 1
+        rootReferenceCounts.set(uri, updatedReferenceCount)
         if (updatedReferenceCount === 0) {
-            extensionsController.services.workspace.roots.next(
-                extensionsController.services.workspace.roots.value.filter(root => root.uri !== uri)
-            )
-        } else {
-            rootReferenceCounts.set(uri, updatedReferenceCount)
+            return extensionsController.extHostAPI
+                .then(extensionHostAPI => extensionHostAPI.removeWorkspaceRoot(uri))
+                .catch(error =>
+                    console.error('Sourcegraph: error removing workspace root', { error: asError(error), uri })
+                )
         }
     }
 
     subscriptions.add(
         codeViews.subscribe(codeViewEvent => {
             console.log('Code view added')
-            codeViewEvent.subscriptions.add(() => console.log('Code view removed'))
 
-            const { element, diffOrBlobInfo, getPositionAdjuster, getToolbarMount, toolbarButtonProps } = codeViewEvent
-            const initializeModelAndViewerForFileInfo = (
-                fileInfo: FileInfoWithContent & FileInfoWithRepoName
-            ): CodeEditorWithPartialModel => {
-                const uri = toURIWithPath(fileInfo)
+            // This code view could have left the DOM between the time that
+            // 1) it entered the DOM
+            // 2) requests to Sourcegraph instance for repo name + file info fulfilled
+            // When the code view leaves the DOM, the codeViewEvent's subscription is
+            // unsubscribed, and new additions to the subscription are immediately invoked.
+            // Check `wasRemoved` to prevent doing unnecessary work
+            let wasRemoved = false
+            codeViewEvent.subscriptions.add(() => {
+                wasRemoved = true
+                console.log('Code view removed')
+            })
 
-                // Add model
-                const languageId = getModeFromPath(fileInfo.filePath)
-                const model = { uri, languageId, text: fileInfo.content }
-                // Only add the model if it doesn't exist
-                // (there may be several code views on the page pointing to the same model)
-                if (!extensionsController.services.model.hasModel(uri)) {
-                    extensionsController.services.model.addModel(model)
-                }
-
-                // Add viewer
-                const editorData: CodeEditorData = {
-                    type: 'CodeEditor' as const,
-                    resource: uri,
-                    selections: codeViewEvent.getSelections ? codeViewEvent.getSelections(codeViewEvent.element) : [],
-                    isActive: true,
-                }
-                const editorId = extensionsController.services.viewer.addViewer(editorData)
-
-                // Add root ref
-                const rootURI = toRootURI(fileInfo)
-                addRootReference(rootURI, fileInfo.revision)
-
-                // Subscribe for removal
-                codeViewEvent.subscriptions.add(() => {
-                    deleteRootReference(rootURI)
-                    extensionsController.services.viewer.removeViewer(editorId)
-                })
-
-                return {
-                    ...editorData,
-                    ...editorId,
-                    model,
-                }
+            if (wasRemoved) {
+                return
             }
 
-            const initializeModelAndViewerForDiffOrFileInfo = (
-                diffOrFileInfo: DiffOrBlobInfo<FileInfoWithContent>
-            ): CodeEditorWithPartialModel => {
-                if ('blob' in diffOrFileInfo) {
-                    return initializeModelAndViewerForFileInfo(diffOrFileInfo.blob)
-                }
-                if (diffOrFileInfo.head && diffOrFileInfo.base) {
-                    // For diffs, both editors are created (for head and base)
-                    // but only one of them is returned and later passed into
-                    // the `scope` of the CodeViewToolbar component.
-                    const editor = initializeModelAndViewerForFileInfo(diffOrFileInfo.head)
-                    initializeModelAndViewerForFileInfo(diffOrFileInfo.base)
-                    return editor
-                }
-                if (diffOrFileInfo.base) {
-                    return initializeModelAndViewerForFileInfo(diffOrFileInfo.base)
-                }
-                return initializeModelAndViewerForFileInfo(diffOrFileInfo.head)
-            }
+            ;(async () => {
+                const {
+                    element,
+                    diffOrBlobInfo,
+                    getPositionAdjuster,
+                    getToolbarMount,
+                    toolbarButtonProps,
+                } = codeViewEvent
+                const initializeModelAndViewerForFileInfo = async (
+                    fileInfo: FileInfoWithContent & FileInfoWithRepoName
+                ): Promise<CodeEditorWithPartialModel> => {
+                    const uri = toURIWithPath(fileInfo)
 
-            const codeEditorWithPartialModel = initializeModelAndViewerForDiffOrFileInfo(diffOrBlobInfo)
+                    // Model
+                    const languageId = getModeFromPath(fileInfo.filePath)
+                    const model = { uri, languageId, text: fileInfo.content }
 
-            const domFunctions = {
-                ...codeViewEvent.dom,
-                // If any parent element has the sourcegraph-extension-element
-                // class then that element does not have any code. We
-                // must check for "any parent element" because extensions
-                // create their DOM changes before the blob is tokenized
-                // into multiple elements.
-                getCodeElementFromTarget: (target: HTMLElement): HTMLElement | null =>
-                    target.closest('.sourcegraph-extension-element') !== null
-                        ? null
-                        : codeViewEvent.dom.getCodeElementFromTarget(target),
-            }
-
-            const applyDecorationsForFileInfo = (fileInfo: FileInfoWithContent, diffPart?: DiffPart): void => {
-                let decorationsByLine: DecorationMapByLine = new Map()
-                let previousIsLightTheme = true
-                const update = (decorations?: TextDocumentDecoration[] | null, isLightTheme?: boolean): void => {
-                    try {
-                        decorationsByLine = applyDecorations(
-                            domFunctions,
-                            element,
-                            decorations ?? [],
-                            decorationsByLine,
-                            isLightTheme ?? true,
-                            previousIsLightTheme,
-                            diffPart
-                        )
-                        previousIsLightTheme = isLightTheme ?? true
-                    } catch (error) {
-                        console.error('Could not apply decorations to code view', codeViewEvent.element, error)
+                    // Viewer
+                    const editorData: CodeEditorData = {
+                        type: 'CodeEditor' as const,
+                        resource: uri,
+                        selections: codeViewEvent.getSelections
+                            ? codeViewEvent.getSelections(codeViewEvent.element)
+                            : [],
+                        isActive: true,
                     }
-                }
-                codeViewEvent.subscriptions.add(
-                    combineLatest([
-                        extensionsController.services.textDocumentDecoration.getDecorations(
-                            toTextDocumentIdentifier(fileInfo)
-                        ),
-                        codeHost.isLightTheme ?? of(true),
+
+                    const extensionHostAPI = await extensionsController.extHostAPI
+
+                    const rootURI = toRootURI(fileInfo)
+                    const [, viewerId] = await Promise.all([
+                        // Only add the model if it doesn't exist
+                        // (there may be several code views on the page pointing to the same model)
+                        extensionHostAPI.addTextDocumentIfNotExists(model),
+                        extensionHostAPI.addViewerIfNotExists(editorData),
+                        addRootReference(rootURI, fileInfo.revision),
                     ])
-                        // Make sure extensions get cleaned up un unsubscription
-                        .pipe(finalize(update))
-                        // The nested subscribe cannot be replaced with a switchMap()
-                        // We manage the subscription correctly.
-                        // eslint-disable-next-line rxjs/no-nested-subscribe
-                        .subscribe(([decorations, isLightTheme]) => update(decorations, isLightTheme))
-                )
-            }
 
-            // Apply decorations coming from extensions
-            if (!minimalUI) {
-                if ('blob' in diffOrBlobInfo) {
-                    applyDecorationsForFileInfo(diffOrBlobInfo.blob)
-                } else {
-                    if (diffOrBlobInfo.head) {
-                        applyDecorationsForFileInfo(diffOrBlobInfo.head, 'head')
-                    }
-                    if (diffOrBlobInfo.base) {
-                        applyDecorationsForFileInfo(diffOrBlobInfo.base, 'base')
-                    }
-                }
-            }
-
-            // Add hover code intelligence
-            const resolveContext: ContextResolver<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec> = ({
-                part,
-            }) => {
-                if ('blob' in diffOrBlobInfo) {
-                    return defaultRevisionToCommitID(diffOrBlobInfo.blob)
-                }
-                if (diffOrBlobInfo.head && part === 'head') {
-                    return defaultRevisionToCommitID(diffOrBlobInfo.head)
-                }
-                if (diffOrBlobInfo.base && part === 'base') {
-                    return defaultRevisionToCommitID(diffOrBlobInfo.base)
-                }
-                throw new Error(`Could not resolve context for diff part ${JSON.stringify(part)}`)
-            }
-
-            const adjustPosition = getPositionAdjuster?.(platformContext.requestGraphQL)
-            let hoverSubscription = new Subscription()
-            codeViewEvent.subscriptions.add(
-                // eslint-disable-next-line rxjs/no-nested-subscribe
-                nativeTooltipsEnabled.subscribe(useNativeTooltips => {
-                    hoverSubscription.unsubscribe()
-                    if (!useNativeTooltips) {
-                        hoverSubscription = hoverifier.hoverify({
-                            dom: domFunctions,
-                            positionEvents: of(element).pipe(
-                                findPositionsFromEvents({
-                                    domFunctions,
-                                    tokenize: codeHost.codeViewsRequireTokenization !== false,
+                    // Subscribe for removal
+                    codeViewEvent.subscriptions.add(() => {
+                        Promise.all([deleteRootReference(rootURI), extensionHostAPI.removeViewer(viewerId)]).catch(
+                            error =>
+                                console.error('Sourcegraph: error removing viewer and workspace root', {
+                                    error: asError(error),
                                 })
-                            ),
-                            resolveContext,
-                            adjustPosition,
-                            scrollBoundaries: codeViewEvent.getScrollBoundaries
-                                ? codeViewEvent.getScrollBoundaries(codeViewEvent.element)
-                                : [],
-                        })
+                        )
+                    })
+
+                    return {
+                        ...editorData,
+                        ...viewerId,
+                        model,
                     }
-                })
-            )
-            codeViewEvent.subscriptions.add(hoverSubscription)
+                }
 
-            element.classList.add('sg-mounted')
+                const initializeModelAndViewerForDiffOrFileInfo = async (
+                    diffOrFileInfo: DiffOrBlobInfo<FileInfoWithContent>
+                ): Promise<CodeEditorWithPartialModel> => {
+                    if ('blob' in diffOrFileInfo) {
+                        return initializeModelAndViewerForFileInfo(diffOrFileInfo.blob)
+                    }
+                    if (diffOrFileInfo.head && diffOrFileInfo.base) {
+                        // For diffs, both editors are created (for head and base)
+                        // but only one of them is returned and later passed into
+                        // the `scope` of the CodeViewToolbar component.
+                        const [editor] = await Promise.all([
+                            initializeModelAndViewerForFileInfo(diffOrFileInfo.head),
+                            initializeModelAndViewerForFileInfo(diffOrFileInfo.base),
+                        ])
+                        return editor
+                    }
+                    if (diffOrFileInfo.base) {
+                        return initializeModelAndViewerForFileInfo(diffOrFileInfo.base)
+                    }
+                    return initializeModelAndViewerForFileInfo(diffOrFileInfo.head)
+                }
 
-            // Render toolbar
-            if (getToolbarMount && !minimalUI) {
-                const mount = getToolbarMount(element)
-                render(
-                    <CodeViewToolbar
-                        {...codeHost.codeViewToolbarClassProps}
-                        hideActions={hideActions}
-                        fileInfoOrError={diffOrBlobInfo}
-                        sourcegraphURL={sourcegraphURL}
-                        telemetryService={telemetryService}
-                        platformContext={platformContext}
-                        extensionsController={extensionsController}
-                        buttonProps={toolbarButtonProps}
-                        location={H.createLocation(window.location)}
-                        scope={codeEditorWithPartialModel}
-                        // The bound function is constant
-                        // eslint-disable-next-line react/jsx-no-bind
-                        onSignInClose={nextSignInClose}
-                    />,
-                    mount
+                const codeEditorWithPartialModel = await initializeModelAndViewerForDiffOrFileInfo(diffOrBlobInfo)
+
+                if (wasRemoved) {
+                    return
+                }
+
+                // everything after this point is synchronous
+
+                const domFunctions = {
+                    ...codeViewEvent.dom,
+                    // If any parent element has the sourcegraph-extension-element
+                    // class then that element does not have any code. We
+                    // must check for "any parent element" because extensions
+                    // create their DOM changes before the blob is tokenized
+                    // into multiple elements.
+                    getCodeElementFromTarget: (target: HTMLElement): HTMLElement | null =>
+                        target.closest('.sourcegraph-extension-element') !== null
+                            ? null
+                            : codeViewEvent.dom.getCodeElementFromTarget(target),
+                }
+
+                const applyDecorationsForFileInfo = (fileInfo: FileInfoWithContent, diffPart?: DiffPart): void => {
+                    let decorationsByLine: DecorationMapByLine = new Map()
+                    let previousIsLightTheme = true
+                    const update = (decorations?: TextDocumentDecoration[] | null, isLightTheme?: boolean): void => {
+                        try {
+                            decorationsByLine = applyDecorations(
+                                domFunctions,
+                                element,
+                                decorations ?? [],
+                                decorationsByLine,
+                                isLightTheme ?? true,
+                                previousIsLightTheme,
+                                diffPart
+                            )
+                            previousIsLightTheme = isLightTheme ?? true
+                        } catch (error) {
+                            console.error('Could not apply decorations to code view', codeViewEvent.element, error)
+                        }
+                    }
+                    codeViewEvent.subscriptions.add(
+                        combineLatest([
+                            from(extensionsController.extHostAPI).pipe(
+                                switchMap(extensionHostAPI =>
+                                    wrapRemoteObservable(
+                                        extensionHostAPI.getTextDecorations({
+                                            viewerId: codeEditorWithPartialModel.viewerId,
+                                        })
+                                    )
+                                )
+                            ),
+                            codeHost.isLightTheme ?? of(true),
+                        ])
+                            // Make sure extensions get cleaned up un unsubscription
+                            .pipe(finalize(update))
+                            // The nested subscribe cannot be replaced with a switchMap()
+                            // We manage the subscription correctly.
+                            // eslint-disable-next-line rxjs/no-nested-subscribe
+                            .subscribe(([decorations, isLightTheme]) => update(decorations, isLightTheme))
+                    )
+                }
+
+                // Apply decorations coming from extensions
+                if (!minimalUI) {
+                    if ('blob' in diffOrBlobInfo) {
+                        applyDecorationsForFileInfo(diffOrBlobInfo.blob)
+                    } else {
+                        if (diffOrBlobInfo.head) {
+                            applyDecorationsForFileInfo(diffOrBlobInfo.head, 'head')
+                        }
+                        if (diffOrBlobInfo.base) {
+                            applyDecorationsForFileInfo(diffOrBlobInfo.base, 'base')
+                        }
+                    }
+                }
+
+                // Add hover code intelligence
+                const resolveContext: ContextResolver<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec> = ({
+                    part,
+                }) => {
+                    if ('blob' in diffOrBlobInfo) {
+                        return defaultRevisionToCommitID(diffOrBlobInfo.blob)
+                    }
+                    if (diffOrBlobInfo.head && part === 'head') {
+                        return defaultRevisionToCommitID(diffOrBlobInfo.head)
+                    }
+                    if (diffOrBlobInfo.base && part === 'base') {
+                        return defaultRevisionToCommitID(diffOrBlobInfo.base)
+                    }
+                    throw new Error(`Could not resolve context for diff part ${JSON.stringify(part)}`)
+                }
+
+                const adjustPosition = getPositionAdjuster?.(platformContext.requestGraphQL)
+                let hoverSubscription = new Subscription()
+                codeViewEvent.subscriptions.add(
+                    // eslint-disable-next-line rxjs/no-nested-subscribe
+                    nativeTooltipsEnabled.subscribe(useNativeTooltips => {
+                        hoverSubscription.unsubscribe()
+                        if (!useNativeTooltips) {
+                            hoverSubscription = hoverifier.hoverify({
+                                dom: domFunctions,
+                                positionEvents: of(element).pipe(
+                                    findPositionsFromEvents({
+                                        domFunctions,
+                                        tokenize: codeHost.codeViewsRequireTokenization !== false,
+                                    })
+                                ),
+                                resolveContext,
+                                adjustPosition,
+                                scrollBoundaries: codeViewEvent.getScrollBoundaries
+                                    ? codeViewEvent.getScrollBoundaries(codeViewEvent.element)
+                                    : [],
+                            })
+                        }
+                    })
                 )
-            }
+                codeViewEvent.subscriptions.add(hoverSubscription)
+
+                element.classList.add('sg-mounted')
+                // Render toolbar
+                if (getToolbarMount && !minimalUI) {
+                    const mount = getToolbarMount(element)
+                    console.log({ mount })
+                    render(
+                        <CodeViewToolbar
+                            {...codeHost.codeViewToolbarClassProps}
+                            hideActions={hideActions}
+                            fileInfoOrError={diffOrBlobInfo}
+                            sourcegraphURL={sourcegraphURL}
+                            telemetryService={telemetryService}
+                            platformContext={platformContext}
+                            extensionsController={extensionsController}
+                            buttonProps={toolbarButtonProps}
+                            location={H.createLocation(window.location)}
+                            scope={codeEditorWithPartialModel}
+                            // The bound function is constant
+                            // eslint-disable-next-line react/jsx-no-bind
+                            onSignInClose={nextSignInClose}
+                        />,
+                        mount
+                    )
+                }
+            })().catch(error => {
+                console.error('Sourcegraph: uncaught error handling code view', asError(error))
+            })
         })
     )
 
@@ -1099,17 +1135,6 @@ export function handleCodeHost({
     subscriptions.add(
         handleContentViews(
             from(featureFlags.isEnabled('experimentalLinkPreviews')).pipe(
-                switchMap(enabled => (enabled ? mutations : []))
-            ),
-            { extensionsController },
-            codeHost
-        )
-    )
-
-    // Show completions in text fields (feature-flagged).
-    subscriptions.add(
-        handleTextFields(
-            from(featureFlags.isEnabled('experimentalTextFieldCompletion')).pipe(
                 switchMap(enabled => (enabled ? mutations : []))
             ),
             { extensionsController },

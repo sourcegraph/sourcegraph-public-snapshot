@@ -42,7 +42,7 @@ import { CodeMonitoringProps } from '../../enterprise/code-monitoring'
 import { wrapRemoteObservable } from '../../../../shared/src/api/client/api/common'
 
 export interface SearchResultsProps
-    extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI' | 'services'>,
+    extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         SettingsCascadeProps,
         TelemetryProps,

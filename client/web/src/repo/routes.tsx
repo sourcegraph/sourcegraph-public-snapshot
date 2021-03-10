@@ -117,8 +117,6 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             const objectType: 'blob' | 'tree' = match.params.objectType || 'tree'
 
             const mode = getModeFromPath(filePath)
-            // TODO(tj): make idempotent synchronous controller method to
-            // kick off extension activation earlier?
 
             // For blob pages with legacy URL fragment hashes like "#L17:19-21:23$foo:bar"
             // redirect to the modern URL fragment hashes like "#L17:19-21:23&tab=foo:bar"

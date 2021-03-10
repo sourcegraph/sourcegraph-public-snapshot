@@ -1,6 +1,6 @@
 import * as H from 'history'
 import React, { useCallback, useEffect, useMemo } from 'react'
-import { BehaviorSubject, from, Observable, ReplaySubject, Subscription } from 'rxjs'
+import { from, Observable, ReplaySubject, Subscription } from 'rxjs'
 import { map, switchMap, tap } from 'rxjs/operators'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { ReferenceParameters, TextDocumentPositionParameters } from '../../../../../shared/src/api/protocol'
@@ -27,7 +27,6 @@ export type BlobPanelTabID = 'info' | 'def' | 'references' | 'impl' | 'typedef' 
 interface PanelSubject extends AbsoluteRepoFile, ModeSpec, Partial<UIPositionSpec> {
     repoID: string
 
-    // TODO(tj): evaluate the use of this (hash to force rerender)
     /**
      * Include the full URI fragment here because it represents the state of panels, and we want
      * panels to be re-rendered when this state changes.
@@ -162,23 +161,18 @@ export function useBlobPanelViews({
                 },
                 {
                     id: 'references',
-                    provider: createLocationProvider<ReferenceParameters>(
-                        'references',
-                        'References',
-                        180,
-                        // TODO(tj): implement extensionHostAPI.getLocations
-                        parameters =>
-                            from(extensionsController.extHostAPI).pipe(
-                                switchMap(extensionHostAPI =>
-                                    wrapRemoteObservable(
-                                        extensionHostAPI.getReferences(parameters, { includeDeclaration: false })
-                                    )
+                    provider: createLocationProvider<ReferenceParameters>('references', 'References', 180, parameters =>
+                        from(extensionsController.extHostAPI).pipe(
+                            switchMap(extensionHostAPI =>
+                                wrapRemoteObservable(
+                                    extensionHostAPI.getReferences(parameters, { includeDeclaration: false })
                                 )
                             )
+                        )
                     ),
                 },
             ],
-            []
+            [createLocationProvider]
         )
     )
 

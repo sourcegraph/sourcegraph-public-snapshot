@@ -1,21 +1,11 @@
-import {
-    Remote,
-    proxyMarker,
-    releaseProxy,
-    ProxyMethods,
-    ProxyMarked,
-    proxy,
-    UnproxyOrClone,
-    ProxyOrClone,
-} from 'comlink'
+import { Remote, proxyMarker, releaseProxy, ProxyMethods, ProxyOrClone } from 'comlink'
 import { noop } from 'lodash'
-import { from, Observable, observable as symbolObservable, of, Subscription, Unsubscribable } from 'rxjs'
+import { from, Observable, observable as symbolObservable, Subscription } from 'rxjs'
 import { mergeMap, finalize } from 'rxjs/operators'
 import { Subscribable } from 'sourcegraph'
 import { ProxySubscribable } from '../../extension/api/common'
 import { isPromiseLike, syncRemoteSubscription } from '../../util'
 import { asError } from '../../../util/errors'
-import { FeatureProviderRegistry } from '../services/registry'
 
 // We subclass because rxjs checks instanceof Subscription.
 // By exposing a Subscription as the interface to release the proxy,
@@ -123,48 +113,4 @@ export const finallyReleaseProxy = <T>() => (source: Observable<T> & Partial<Pro
         return source
     }
     return source.pipe(finalize(() => proxySubscription.unsubscribe()))
-}
-
-/**
- * Helper function to register a remote provider returning an Observable, proxied by comlink, in a provider registry.
- *
- * @param registry The registry to register the provider on.
- * @param registrationOptions The registration options to pass to `registerProvider()`
- * @param remoteProviderFunction The provider function in a remote thread, proxied by `comlink`.
- *
- * @returns A Subscription that can be proxied through comlink which will unregister the provider.
- */
-export function registerRemoteProvider<
-    TRegistrationOptions,
-    TLocalProviderParameters extends UnproxyOrClone<TProviderParameters>,
-    TProviderParameters,
-    TProviderResult
->(
-    registry: FeatureProviderRegistry<
-        TRegistrationOptions,
-        (parameters: TLocalProviderParameters) => Observable<ProxyOrClone<TProviderResult>>
-    >,
-    registrationOptions: TRegistrationOptions,
-    remoteProviderFunction: Remote<
-        ((parameters: TProviderParameters) => ProxySubscribable<TProviderResult>) & ProxyMarked
-    >
-): Unsubscribable & ProxyMarked {
-    // This subscription will unregister the provider when unsubscribed.
-    const subscription = new Subscription()
-
-    subscription.add(
-        registry.registerProvider(registrationOptions, parameters =>
-            // Wrap the remote, proxied Observable in an ordinary Observable
-            // and add its underlying proxy subscription to our subscription
-            // to release the proxy when the provider gets unregistered.
-            wrapRemoteObservable(remoteProviderFunction(parameters), subscription)
-        )
-    )
-
-    // Track the underlying proxy subscription of the provider in our subscription
-    // so that the proxy gets released when the provider gets unregistered.
-    subscription.add(new ProxySubscription(remoteProviderFunction))
-
-    // Prepare the subscription to be proxied to the remote side.
-    return proxy(subscription)
 }

@@ -23,7 +23,7 @@ import { TelemetryProps } from '../telemetry/telemetryService'
 import { EmptyCommandList } from './EmptyCommandList'
 import { SettingsCascadeOrError } from '../settings/settings'
 import { wrapRemoteObservable } from '../api/client/api/common'
-import { map, switchMap } from 'rxjs/operators'
+import { switchMap } from 'rxjs/operators'
 
 /**
  * Customizable CSS classes for elements of the the command list button.
@@ -57,7 +57,7 @@ export interface CommandListClassProps {
 
 export interface CommandListProps
     extends CommandListClassProps,
-        ExtensionsControllerProps<'services' | 'executeCommand' | 'extHostAPI'>,
+        ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         TelemetryProps {
     /** The menu whose commands to display. */

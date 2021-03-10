@@ -2,8 +2,11 @@ import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import { uniqueId } from 'lodash'
 import { concat, Observable, of, Subject, Subscription } from 'rxjs'
 import { first } from 'rxjs/operators'
-import { LinkPreviewMerged } from '../../../../../shared/src/api/client/services/linkPreview'
+import { FlatExtensionHostAPI } from '../../../../../shared/src/api/contract'
+import { proxySubscribable } from '../../../../../shared/src/api/extension/api/common'
+import { LinkPreviewMerged } from '../../../../../shared/src/api/extension/flatExtensionApi'
 import { createBarrier } from '../../../../../shared/src/api/integration-test/testHelpers'
+import { pretendRemote } from '../../../../../shared/src/api/util'
 import { MutationRecordLike } from '../../util/dom'
 import { handleContentViews } from './contentViews'
 
@@ -41,36 +44,40 @@ describe('contentViews', () => {
                     mutations,
                     {
                         extensionsController: {
-                            services: {
-                                linkPreviews: {
-                                    provideLinkPreview: url => {
+                            extHostAPI: Promise.resolve(
+                                pretendRemote<FlatExtensionHostAPI>({
+                                    getLinkPreviews: url => {
                                         wait.next()
+
                                         if (url.includes('bar')) {
-                                            return of(null)
+                                            return proxySubscribable(of(null))
                                         }
-                                        return concat(
-                                            of<LinkPreviewMerged>({
-                                                content: [
-                                                    {
-                                                        kind: MarkupKind.Markdown,
-                                                        value: `**${url.slice(url.lastIndexOf('#') + 1)}** x`,
-                                                    },
-                                                ],
-                                                hover: [
-                                                    {
-                                                        kind: MarkupKind.PlainText,
-                                                        value: url.slice(url.lastIndexOf('#') + 1),
-                                                    },
-                                                ],
-                                            }),
-                                            // Support checking that the provider's observable was unsubscribed.
-                                            new Observable<LinkPreviewMerged>(() => () => {
-                                                unsubscribed.next()
-                                            })
+
+                                        return proxySubscribable(
+                                            concat(
+                                                of<LinkPreviewMerged>({
+                                                    content: [
+                                                        {
+                                                            kind: MarkupKind.Markdown,
+                                                            value: `**${url.slice(url.lastIndexOf('#') + 1)}** x`,
+                                                        },
+                                                    ],
+                                                    hover: [
+                                                        {
+                                                            kind: MarkupKind.PlainText,
+                                                            value: url.slice(url.lastIndexOf('#') + 1),
+                                                        },
+                                                    ],
+                                                }),
+                                                // Support checking that the provider's observable was unsubscribed.
+                                                new Observable<LinkPreviewMerged>(() => () => {
+                                                    unsubscribed.next()
+                                                })
+                                            )
                                         )
                                     },
-                                },
-                            },
+                                })
+                            ),
                         },
                     },
                     {
@@ -80,6 +87,10 @@ describe('contentViews', () => {
                     }
                 )
             )
+            const inners: string[] = []
+            wait.subscribe(() => {
+                inners.push(element.innerHTML)
+            })
 
             // Add content view.
             mutations.next([{ addedNodes: [document.body], removedNodes: [] }])
@@ -98,6 +109,8 @@ describe('contentViews', () => {
             // Remove content view.
             mutations.next([{ addedNodes: [], removedNodes: [element] }])
             await unsubscribed.pipe(first()).toPromise()
+
+            console.log({ inners })
         })
 
         test('handles multiple emissions', async () => {
@@ -112,14 +125,14 @@ describe('contentViews', () => {
                     of([{ addedNodes: [document.body], removedNodes: [] }]),
                     {
                         extensionsController: {
-                            services: {
-                                linkPreviews: {
-                                    provideLinkPreview: url => {
+                            extHostAPI: Promise.resolve(
+                                pretendRemote<FlatExtensionHostAPI>({
+                                    getLinkPreviews: url => {
                                         done()
-                                        return url.includes('bar') ? of(null) : fooLinkPreviewValues
+                                        return proxySubscribable(url.includes('bar') ? of(null) : fooLinkPreviewValues)
                                     },
-                                },
-                            },
+                                })
+                            ),
                         },
                     },
                     {

@@ -49,7 +49,7 @@ export const WithLinkPreviews: React.FunctionComponent<Props> = ({
             )
         }
         return () => subscriptions.unsubscribe()
-    }, [dangerousInnerHTML, setElementTooltip, linkPreviewContentClass, extensionsController.services.linkPreviews])
+    }, [dangerousInnerHTML, setElementTooltip, linkPreviewContentClass, extensionsController])
 
     return children({ dangerousInnerHTML: html })
 }

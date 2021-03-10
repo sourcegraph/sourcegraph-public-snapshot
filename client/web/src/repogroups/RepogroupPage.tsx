@@ -44,7 +44,7 @@ export interface RepogroupPageProps
         PatternTypeProps,
         CaseSensitivityProps,
         KeyboardShortcutsProps,
-        ExtensionsControllerProps<'executeCommand' | 'services'>,
+        ExtensionsControllerProps<'executeCommand'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         CopyQueryButtonProps,
         VersionContextProps,

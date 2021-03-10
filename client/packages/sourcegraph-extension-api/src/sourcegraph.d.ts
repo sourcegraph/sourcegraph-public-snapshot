@@ -912,7 +912,7 @@ declare module 'sourcegraph' {
      */
     export interface DirectoryViewContext {
         /** The directory viewer displaying the view. */
-        viewer: DirectoryViewer
+        viewer: Omit<DirectoryViewer, 'viewerId'>
 
         /** The workspace of the directory. */
         workspace: WorkspaceRoot

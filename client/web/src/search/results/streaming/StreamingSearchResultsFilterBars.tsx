@@ -20,7 +20,7 @@ import { wrapRemoteObservable } from '../../../../../shared/src/api/client/api/c
 
 interface Props
     extends SettingsCascadeProps,
-        ExtensionsControllerProps<'executeCommand' | 'extHostAPI' | 'services'>,
+        ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
         TelemetryProps,
         Pick<PatternTypeProps, 'patternType'>,
         Pick<VersionContextProps, 'versionContext'>,

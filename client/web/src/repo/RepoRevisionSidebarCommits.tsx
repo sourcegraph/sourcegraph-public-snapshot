@@ -51,7 +51,6 @@ interface Props extends Partial<RevisionSpec>, FileSpec {
 
 export class RepoRevisionSidebarCommits extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
-        console.log('rendered repo revision sidebar commits')
         return (
             <FilteredConnection<GitCommitFields, Pick<CommitNodeProps, 'location'>, CommitAncestorsConnectionFields>
                 className="list-group list-group-flush"
