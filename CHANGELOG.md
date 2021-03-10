@@ -20,6 +20,14 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- Campaigns have been renamed to Batch Changes! See [#18771](https://github.com/sourcegraph/sourcegraph/issues/18771) for a detailed log on what has been renamed.
+  - A new [Sourcegraph CLI](https://docs.sourcegraph.com/cli) version will use `src batch [preview|apply]` commands, while keeping the old ones working to be used with older Sourcegraph versions.
+  - Old URLs in the application and in the documentation will redirect.
+  - GraphQL API entities with "campaign" in their name have been deprecated and have new Batch Changes counterparts:
+    - Deprecated GraphQL entities: `CampaignState`, `Campaign`, `CampaignSpec`, `CampaignConnection`, `CampaignsCodeHostConnection`, `CampaignsCodeHost`, `CampaignsCredential`, `CampaignDescription`
+    - Deprecated GraphQL mutations: `createCampaign`, `applyCampaign`, `moveCampaign`, `closeCampaign`, `deleteCampaign`, `createCampaignSpec`, `createCampaignsCredential`, `deleteCampaignsCredential`
+    - Deprecated GraphQL queries: `Org.campaigns`, `User.campaigns`, `User.campaignsCodeHosts`, `camapigns`, `campaign`
+  - Site settings with `campaigns` in their name have been replaced with equivalent `batchChanges` settings.
 - A repository's `remote.origin.url` is not stored on gitserver disk anymore. Note: if you use the experimental feature `customGitFetch` your setting may need to be updated to specify the remote URL. [#18535](https://github.com/sourcegraph/sourcegraph/pull/18535)
 - Repositories and files containing spaces will now render with escaped spaces in the query bar rather than being
   quoted. [#18642](https://github.com/sourcegraph/sourcegraph/pull/18642)
