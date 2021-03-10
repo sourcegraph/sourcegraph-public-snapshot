@@ -824,6 +824,7 @@ func TestSyncRepoState(t *testing.T) {
 			return &GitRepoSyncer{}, nil
 		},
 		Hostname:         hostname,
+		DB:               db,
 		ctx:              ctx,
 		locker:           &RepositoryLocker{},
 		cloneLimiter:     mutablelimiter.New(1),
@@ -853,7 +854,7 @@ func TestSyncRepoState(t *testing.T) {
 		t.Fatal("Expected an error")
 	}
 
-	err = s.syncRepoState(db, []string{hostname}, 10, 10)
+	err = s.syncRepoState([]string{hostname}, 10, 10)
 	if err != nil {
 		t.Fatal(err)
 	}

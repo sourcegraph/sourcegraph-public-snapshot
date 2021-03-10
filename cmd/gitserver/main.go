@@ -140,7 +140,7 @@ func main() {
 
 	go debugserver.Start()
 	go gitserver.Janitor(janitorInterval)
-	go gitserver.SyncRepoState(db, syncRepoStateInterval, syncRepoStateBatchSize, syncRepoStateUpsertPerSecond)
+	go gitserver.SyncRepoState(syncRepoStateInterval, syncRepoStateBatchSize, syncRepoStateUpsertPerSecond)
 
 	port := "3178"
 	host := ""
