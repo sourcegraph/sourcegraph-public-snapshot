@@ -6,8 +6,8 @@ import (
 
 	"github.com/peterbourgon/ff/v3/ffcli"
 
-	"github.com/sourcegraph/sourcegraph/dev/depgraph/graph"
-	"github.com/sourcegraph/sourcegraph/dev/depgraph/lints"
+	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph"
+	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/lints"
 )
 
 var lintFlagSet = flag.NewFlagSet("depgraph lint", flag.ExitOnError)

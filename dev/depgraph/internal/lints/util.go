@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"sort"
 
-	"github.com/sourcegraph/sourcegraph/dev/depgraph/graph"
+	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph"
 )
 
 var (

@@ -3,7 +3,7 @@ package lints
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/dev/depgraph/graph"
+	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph"
 )
 
 // NoLooseCommands returns an error for each main package not declared in a known command root.

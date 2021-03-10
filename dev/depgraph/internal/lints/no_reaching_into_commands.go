@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/dev/depgraph/graph"
+	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph"
 )
 
 // NoReachingIntoCommands returns an error for each shared package that imports a package

@@ -3,7 +3,7 @@ package lints
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/dev/depgraph/graph"
+	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph"
 )
 
 // NoUnusedSharedCommandCode returns an error for each non-private package within

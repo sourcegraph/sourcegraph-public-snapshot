@@ -8,8 +8,8 @@ import (
 
 	"github.com/peterbourgon/ff/v3/ffcli"
 
-	"github.com/sourcegraph/sourcegraph/dev/depgraph/graph"
-	"github.com/sourcegraph/sourcegraph/dev/depgraph/visualization"
+	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph"
+	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/visualization"
 )
 
 var traceInternalFlagSet = flag.NewFlagSet("depgraph trace-internal", flag.ExitOnError)

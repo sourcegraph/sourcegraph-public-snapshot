@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
-	bk "github.com/sourcegraph/sourcegraph/internal/buildkite"
+	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 )
 
 // Verifies the docs formatting and builds the `docsite` command.
