@@ -32,7 +32,11 @@ run_command() {
   echo "--- $dir: $ARGS"
   (
     set -x
-    cd "$dir" && eval "${MAYBE_TIME_PREFIX} ${ARGS}"
+    cd "$dir"
+    eval "${MAYBE_TIME_PREFIX} ${ARGS}"
+    if [[ $? -ne 0 ]]; then
+      echo "^^^ +++"
+    fi
   )
 }
 export -f run_command
