@@ -113,7 +113,7 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
                             platformContext={platformContext}
                             enabled={isExtensionEnabled(settingsCascade.final, extensionId)}
                             isLightTheme={props.isLightTheme}
-                            settingsURL={authenticatedUser.settingsURL!}
+                            settingsURL={authenticatedUser?.settingsURL}
                         />
                     ))}
                 </div>

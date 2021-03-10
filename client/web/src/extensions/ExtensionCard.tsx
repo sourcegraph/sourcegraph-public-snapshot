@@ -29,7 +29,7 @@ interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettin
     >
     subject: Pick<GQL.SettingsSubject, 'id' | 'viewerCanAdminister'>
     enabled: boolean
-    settingsURL: string | undefined
+    settingsURL: string | null | undefined
 }
 
 const stopPropagation: React.MouseEventHandler<HTMLElement> = event => {
