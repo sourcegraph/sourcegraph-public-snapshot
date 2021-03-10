@@ -1,5 +1,6 @@
 import classNames from 'classnames'
 import CalculatorIcon from 'mdi-react/CalculatorIcon'
+import ClipboardPulseOutlineIcon from 'mdi-react/ClipboardPulseOutlineIcon'
 import * as React from 'react'
 import { pluralize } from '../../../../../../shared/src/util/strings'
 import { Progress } from '../../../stream'
@@ -23,21 +24,31 @@ const limitHit = (progress: Progress): boolean => progress.skipped.some(skipped 
 export const StreamingProgressCount: React.FunctionComponent<
     Pick<StreamingProgressProps, 'progress' | 'state'> & { className?: string }
 > = ({ progress, state, className = '' }) => (
-    <div
-        className={classNames(className, 'streaming-progress__count d-flex align-items-center', {
-            'streaming-progress__count--in-progress': state === 'loading',
-        })}
-    >
-        <CalculatorIcon className="mr-2 icon-inline" />
-        {abbreviateNumber(progress.matchCount)}
-        {limitHit(progress) ? '+' : ''} {pluralize('result', progress.matchCount)} in{' '}
-        {(progress.durationMs / 1000).toFixed(2)}s
-        {progress.repositoriesCount !== undefined && (
-            <>
-                {' '}
-                from {abbreviateNumber(progress.repositoriesCount)}{' '}
-                {pluralize('repository', progress.repositoriesCount, 'repositories')}
-            </>
+    <>
+        <div
+            className={classNames(className, 'streaming-progress__count d-flex align-items-center', {
+                'streaming-progress__count--in-progress': state === 'loading',
+            })}
+        >
+            <CalculatorIcon className="mr-2 icon-inline" />
+            {abbreviateNumber(progress.matchCount)}
+            {limitHit(progress) ? '+' : ''} {pluralize('result', progress.matchCount)} in{' '}
+            {(progress.durationMs / 1000).toFixed(2)}s
+            {progress.repositoriesCount !== undefined && (
+                <>
+                    {' '}
+                    from {abbreviateNumber(progress.repositoriesCount)}{' '}
+                    {pluralize('repository', progress.repositoriesCount, 'repositories')}
+                </>
+            )}
+        </div>
+        {progress.trace && (
+            <div className="d-flex">
+                <a href={progress.trace}>
+                    <ClipboardPulseOutlineIcon className="mr-2 icon-inline" />
+                    View trace
+                </a>
+            </div>
         )}
-    </div>
+    </>
 )

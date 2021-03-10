@@ -205,3 +205,44 @@ exports[`StreamingProgressCount should render correctly for limithit 1`] = `
   </div>
 </StreamingProgressCount>
 `;
+
+exports[`StreamingProgressCount should render correctly when a trace url is provided 1`] = `
+<StreamingProgressCount
+  progress={
+    Object {
+      "durationMs": 0,
+      "matchCount": 0,
+      "skipped": Array [],
+      "trace": "https://sourcegraph.test:3443/-/debug/jaeger/trace/abcdefg",
+    }
+  }
+  state="loading"
+>
+  <div
+    className="streaming-progress__count d-flex align-items-center streaming-progress__count--in-progress"
+  >
+    <Memo(CalculatorIcon)
+      className="mr-2 icon-inline"
+    />
+    0
+     
+    results
+     in
+     
+    0.00
+    s
+  </div>
+  <div
+    className="d-flex"
+  >
+    <a
+      href="https://sourcegraph.test:3443/-/debug/jaeger/trace/abcdefg"
+    >
+      <Memo(ClipboardPulseOutlineIcon)
+        className="mr-2 icon-inline"
+      />
+      View trace
+    </a>
+  </div>
+</StreamingProgressCount>
+`;

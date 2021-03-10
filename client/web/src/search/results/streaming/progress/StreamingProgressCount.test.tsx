@@ -75,4 +75,15 @@ describe('StreamingProgressCount', () => {
 
         expect(mount(<StreamingProgressCount state="complete" progress={progress} />)).toMatchSnapshot()
     })
+
+    it('should render correctly when a trace url is provided', () => {
+        const progress: Progress = {
+            durationMs: 0,
+            matchCount: 0,
+            skipped: [],
+            trace: 'https://sourcegraph.test:3443/-/debug/jaeger/trace/abcdefg',
+        }
+
+        expect(mount(<StreamingProgressCount state="loading" progress={progress} />)).toMatchSnapshot()
+    })
 })

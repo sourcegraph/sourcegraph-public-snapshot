@@ -103,6 +103,9 @@ export interface Progress {
      * may appear anywhere in the list.
      */
     skipped: Skipped[]
+
+    // The URL of the trace for this query, if it exists.
+    trace?: string
 }
 
 export interface Skipped {
