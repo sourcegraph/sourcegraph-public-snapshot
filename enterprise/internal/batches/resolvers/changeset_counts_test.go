@@ -127,8 +127,8 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	campaign := &batches.BatchChange{
-		Name:             "Test campaign",
+	batchChange := &batches.BatchChange{
+		Name:             "Test batch change",
 		Description:      "Testing changeset counts",
 		InitialApplierID: userID,
 		NamespaceUserID:  userID,
@@ -137,7 +137,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		BatchSpecID:      spec.ID,
 	}
 
-	err = cstore.CreateBatchChange(ctx, campaign)
+	err = cstore.CreateBatchChange(ctx, batchChange)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -147,14 +147,14 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 			RepoID:              githubRepo.ID,
 			ExternalID:          "5834",
 			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
-			BatchChanges:        []batches.BatchChangeAssoc{{BatchChangeID: campaign.ID}},
+			BatchChanges:        []batches.BatchChangeAssoc{{BatchChangeID: batchChange.ID}},
 			PublicationState:    batches.ChangesetPublicationStatePublished,
 		},
 		{
 			RepoID:              githubRepo.ID,
 			ExternalID:          "5849",
 			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
-			BatchChanges:        []batches.BatchChangeAssoc{{BatchChangeID: campaign.ID}},
+			BatchChanges:        []batches.BatchChangeAssoc{{BatchChangeID: batchChange.ID}},
 			PublicationState:    batches.ChangesetPublicationStatePublished,
 		},
 	}
@@ -186,7 +186,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	}
 
 	input := map[string]interface{}{
-		"batchChange": string(marshalBatchChangeID(campaign.ID)),
+		"batchChange": string(marshalBatchChangeID(batchChange.ID)),
 		"from":        start,
 		"to":          end,
 	}

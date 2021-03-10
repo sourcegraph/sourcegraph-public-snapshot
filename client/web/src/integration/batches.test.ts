@@ -352,7 +352,8 @@ describe('Batches', () => {
 
     const batchChangeLicenseGraphQlResults = {
         AreBatchChangesLicensed: () => ({
-            enterpriseLicenseHasFeature: true,
+            campaigns: true,
+            batchChanges: true,
         }),
     }
 

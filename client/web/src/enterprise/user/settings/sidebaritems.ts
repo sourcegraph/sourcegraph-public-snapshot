@@ -20,7 +20,7 @@ export const enterpriseUserSettingsSideBarItems: UserSettingsSidebarItems = {
         },
         {
             to: '/batch-changes',
-            label: 'Batch changes',
+            label: 'Batch Changes',
             condition: ({ isSourcegraphDotCom, user: { viewerCanAdminister } }) =>
                 !isSourcegraphDotCom && window.context.batchChangesEnabled && viewerCanAdminister,
         },

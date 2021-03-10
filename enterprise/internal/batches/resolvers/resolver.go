@@ -41,13 +41,13 @@ func New(store *store.Store) graphqlbackend.BatchChangesResolver {
 }
 
 func batchChangesEnabled(ctx context.Context) error {
-	// On Sourcegraph.com nobody can read/create campaign entities
+	// On Sourcegraph.com nobody can read/create batch changes entities
 	if envvar.SourcegraphDotComMode() {
 		return ErrBatchChangesDotcom{}
 	}
 
-	if enabled := conf.CampaignsEnabled(); enabled {
-		if conf.Get().CampaignsRestrictToAdmins && backend.CheckCurrentUserIsSiteAdmin(ctx) != nil {
+	if enabled := conf.BatchChangesEnabled(); enabled {
+		if conf.BatchChangesRestrictedToAdmins() && backend.CheckCurrentUserIsSiteAdmin(ctx) != nil {
 			return ErrBatchChangesDisabledForUser{}
 		}
 		return nil
@@ -56,10 +56,10 @@ func batchChangesEnabled(ctx context.Context) error {
 	return ErrBatchChangesDisabled{}
 }
 
-// campaignsCreateAccess returns true if the current user can create
-// campaigns/changesetSpecs/campaignSpecs.
-func campaignsCreateAccess(ctx context.Context) error {
-	// On Sourcegraph.com nobody can create campaigns/patchsets/changesets
+// batchChangesCreateAccess returns true if the current user can create
+// batchChanges/changesetSpecs/batchSpecs.
+func batchChangesCreateAccess(ctx context.Context) error {
+	// On Sourcegraph.com nobody can create batchChanges/patchsets/changesets
 	if envvar.SourcegraphDotComMode() {
 		return ErrBatchChangesDotcom{}
 	}
@@ -71,21 +71,29 @@ func campaignsCreateAccess(ctx context.Context) error {
 	return nil
 }
 
-// checkLicense returns a user-facing error if the campaigns feature is not purchased
+// checkLicense returns a user-facing error if the batchChanges feature is not purchased
 // with the current license or any error occurred while validating the license.
 func checkLicense() error {
-	if err := licensing.Check(licensing.FeatureCampaigns); err != nil {
-		if licensing.IsFeatureNotActivated(err) {
-			return err
-		}
-		return errors.New("Unable to check license feature, please refer to logs for actual error message.")
+	batchChangesErr := licensing.Check(licensing.FeatureBatchChanges)
+	if batchChangesErr == nil {
+		return nil
 	}
-	return nil
+
+	if licensing.IsFeatureNotActivated(batchChangesErr) {
+		// Let's fallback and check whether (deprecated) campaigns are enabled:
+		campaignsErr := licensing.Check(licensing.FeatureCampaigns)
+		if campaignsErr == nil {
+			return nil
+		}
+		return batchChangesErr
+	}
+
+	return errors.New("Unable to check license feature, please refer to logs for actual error message.")
 }
 
 // maxUnlicensedChangesets is the maximum number of changesets that can be
-// attached to a campaign when Sourcegraph is unlicensed or the campaign feature
-// is disabled.
+// attached to a batch change when Sourcegraph is unlicensed or the Batch
+// Changes feature is disabled.
 const maxUnlicensedChangesets = 5
 
 func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetResolver, error) {
@@ -118,36 +126,6 @@ func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 	}
 
 	return NewChangesetResolver(r.store, changeset, repo), nil
-}
-
-// TODO(campaigns-deprecation): Remove when campaigns are fully removed
-func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchChangeResolver, error) {
-	res, err := r.BatchChangeByID(ctx, id)
-	if batchChangeRes, ok := res.(*batchChangeResolver); ok {
-		batchChangeRes.shouldActAsCampaign = true
-		return batchChangeRes, err
-	}
-	return res, err
-}
-
-// TODO(campaigns-deprecation): Remove when campaigns are fully removed
-func (r *Resolver) Campaign(ctx context.Context, args *graphqlbackend.BatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {
-	res, err := r.BatchChange(ctx, args)
-	if batchChangeRes, ok := res.(*batchChangeResolver); ok {
-		batchChangeRes.shouldActAsCampaign = true
-		return batchChangeRes, err
-	}
-	return res, err
-}
-
-// TODO(campaigns-deprecation): Remove when campaigns are fully removed
-func (r *Resolver) CampaignSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchSpecResolver, error) {
-	res, err := r.BatchSpecByID(ctx, id)
-	if batchSpecRes, ok := res.(*batchSpecResolver); ok {
-		batchSpecRes.shouldActAsCampaignSpec = true
-		return batchSpecRes, err
-	}
-	return res, err
 }
 
 func (r *Resolver) BatchChangeByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchChangeResolver, error) {
@@ -203,17 +181,17 @@ func (r *Resolver) BatchSpecByID(ctx context.Context, id graphql.ID) (graphqlbac
 		return nil, err
 	}
 
-	campaignSpecRandID, err := unmarshalBatchSpecID(id)
+	batchSpecRandID, err := unmarshalBatchSpecID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	if campaignSpecRandID == "" {
+	if batchSpecRandID == "" {
 		return nil, nil
 	}
 
-	opts := store.GetBatchSpecOpts{RandID: campaignSpecRandID}
-	campaignSpec, err := r.store.GetBatchSpec(ctx, opts)
+	opts := store.GetBatchSpecOpts{RandID: batchSpecRandID}
+	batchSpec, err := r.store.GetBatchSpec(ctx, opts)
 	if err != nil {
 		if err == store.ErrNoResults {
 			return nil, nil
@@ -221,7 +199,7 @@ func (r *Resolver) BatchSpecByID(ctx context.Context, id graphql.ID) (graphqlbac
 		return nil, err
 	}
 
-	return &batchSpecResolver{store: r.store, batchSpec: campaignSpec}, nil
+	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
 }
 
 func (r *Resolver) ChangesetSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetSpecResolver, error) {
@@ -248,11 +226,6 @@ func (r *Resolver) ChangesetSpecByID(ctx context.Context, id graphql.ID) (graphq
 	}
 
 	return NewChangesetSpecResolver(ctx, r.store, changesetSpec)
-}
-
-// TODO(campaigns-deprecation): Remove when campaigns are fully removed
-func (r *Resolver) CampaignsCredentialByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignsCredentialResolver, error) {
-	return r.BatchChangesCredentialByID(ctx, id)
 }
 
 func (r *Resolver) BatchChangesCredentialByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchChangesCredentialResolver, error) {
@@ -284,12 +257,6 @@ func (r *Resolver) BatchChangesCredentialByID(ctx context.Context, id graphql.ID
 	return &batchChangesCredentialResolver{credential: cred}, nil
 }
 
-// TODO(campaigns-deprecation): Remove when campaigns are fully removed
-func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.CreateCampaignArgs) (graphqlbackend.BatchChangeResolver, error) {
-	newArgs := &graphqlbackend.CreateBatchChangeArgs{BatchSpec: args.CampaignSpec}
-	return r.CreateBatchChange(ctx, newArgs)
-}
-
 func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.CreateBatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {
 	var err error
 	tr, _ := trace.New(ctx, "Resolver.CreateBatchChange", fmt.Sprintf("BatchSpec %s", args.BatchSpec))
@@ -303,7 +270,7 @@ func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.C
 	}
 
 	opts := service.ApplyBatchChangeOpts{
-		// This is what differentiates CreateCampaign from ApplyCampaign
+		// This is what differentiates CreateBatchChange from ApplyBatchChange
 		FailIfBatchChangeExists: true,
 	}
 
@@ -330,14 +297,6 @@ func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.C
 	}
 
 	return &batchChangeResolver{store: r.store, batchChange: batchChange}, nil
-}
-
-// TODO(campaigns-deprecation): Remove when campaigns are fully removed
-func (r *Resolver) ApplyCampaign(ctx context.Context, args *graphqlbackend.ApplyCampaignArgs) (graphqlbackend.BatchChangeResolver, error) {
-	return r.ApplyBatchChange(ctx, &graphqlbackend.ApplyBatchChangeArgs{
-		BatchSpec:         args.CampaignSpec,
-		EnsureBatchChange: args.EnsureCampaign,
-	})
 }
 
 func (r *Resolver) ApplyBatchChange(ctx context.Context, args *graphqlbackend.ApplyBatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {
@@ -371,8 +330,8 @@ func (r *Resolver) ApplyBatchChange(ctx context.Context, args *graphqlbackend.Ap
 	}
 
 	svc := service.New(r.store)
-	// 🚨 SECURITY: ApplyCampaign checks whether the user has permission to
-	// apply the campaign spec
+	// 🚨 SECURITY: ApplyBatchChange checks whether the user has permission to
+	// apply the batch spec
 	batchChange, err := svc.ApplyBatchChange(ctx, opts)
 	if err != nil {
 		if err == service.ErrEnsureBatchChangeFailed {
@@ -388,19 +347,9 @@ func (r *Resolver) ApplyBatchChange(ctx context.Context, args *graphqlbackend.Ap
 	return &batchChangeResolver{store: r.store, batchChange: batchChange}, nil
 }
 
-// TODO(campaigns-deprecation): Remove when campaigns are fully removed
-func (r *Resolver) CreateCampaignSpec(ctx context.Context, args *graphqlbackend.CreateCampaignSpecArgs) (graphqlbackend.BatchSpecResolver, error) {
-	return r.CreateBatchSpec(ctx, &graphqlbackend.CreateBatchSpecArgs{
-		Namespace:      args.Namespace,
-		ChangesetSpecs: args.ChangesetSpecs,
-		// Use the new method by renaming the args field
-		BatchSpec: args.CampaignSpec,
-	})
-}
-
 func (r *Resolver) CreateBatchSpec(ctx context.Context, args *graphqlbackend.CreateBatchSpecArgs) (graphqlbackend.BatchSpecResolver, error) {
 	var err error
-	tr, ctx := trace.New(ctx, "Resolver.CreateCampaignSpec", fmt.Sprintf("Namespace %s, Spec %q", args.Namespace, args.BatchSpec))
+	tr, ctx := trace.New(ctx, "CreateBatchSpec", fmt.Sprintf("Resolver.CreateBatchspace %s, Spec %q", args.Namespace, args.BatchSpec))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -410,7 +359,7 @@ func (r *Resolver) CreateBatchSpec(ctx context.Context, args *graphqlbackend.Cre
 		return nil, err
 	}
 
-	if err := campaignsCreateAccess(ctx); err != nil {
+	if err := batchChangesCreateAccess(ctx); err != nil {
 		return nil, err
 	}
 
@@ -440,25 +389,25 @@ func (r *Resolver) CreateBatchSpec(ctx context.Context, args *graphqlbackend.Cre
 	}
 
 	svc := service.New(r.store)
-	campaignSpec, err := svc.CreateBatchSpec(ctx, opts)
+	batchSpec, err := svc.CreateBatchSpec(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := logCampaignSpecCreated(ctx, r.store.DB(), &opts); err != nil {
+	if err := logBatchSpecCreated(ctx, r.store.DB(), &opts); err != nil {
 		return nil, err
 	}
 
 	specResolver := &batchSpecResolver{
 		store:     r.store,
-		batchSpec: campaignSpec,
+		batchSpec: batchSpec,
 	}
 
 	return specResolver, nil
 }
 
-func logCampaignSpecCreated(ctx context.Context, db dbutil.DB, opts *service.CreateBatchSpecOpts) error {
-	// Log an analytics event when a CampaignSpec has been created.
+func logBatchSpecCreated(ctx context.Context, db dbutil.DB, opts *service.CreateBatchSpecOpts) error {
+	// Log an analytics event when a BatchSpec has been created.
 	// See internal/usagestats/batches.go.
 	actor := actor.FromContext(ctx)
 
@@ -487,14 +436,14 @@ func (r *Resolver) CreateChangesetSpec(ctx context.Context, args *graphqlbackend
 		return nil, err
 	}
 
-	if err := campaignsCreateAccess(ctx); err != nil {
+	if err := batchChangesCreateAccess(ctx); err != nil {
 		return nil, err
 	}
 
 	act := actor.FromContext(ctx)
-	// Actor MUST be logged in at this stage, because campaignsCreateAccess checks that already.
+	// Actor MUST be logged in at this stage, because batchChangesCreateAccess checks that already.
 	// To be extra safe, we'll just do the cheap check again here so if anyone ever modifies
-	// campaignsCreateAccess, we still enforce it here.
+	// batchChangesCreateAccess, we still enforce it here.
 	if !act.IsAuthenticated() {
 		return nil, backend.ErrNotAuthenticated
 	}
@@ -508,18 +457,9 @@ func (r *Resolver) CreateChangesetSpec(ctx context.Context, args *graphqlbackend
 	return NewChangesetSpecResolver(ctx, r.store, spec)
 }
 
-// TODO(campaigns-deprecation): Remove when campaigns are fully removed
-func (r *Resolver) MoveCampaign(ctx context.Context, args *graphqlbackend.MoveCampaignArgs) (graphqlbackend.BatchChangeResolver, error) {
-	return r.MoveBatchChange(ctx, &graphqlbackend.MoveBatchChangeArgs{
-		BatchChange:  args.Campaign,
-		NewName:      args.NewName,
-		NewNamespace: args.NewNamespace,
-	})
-}
-
 func (r *Resolver) MoveBatchChange(ctx context.Context, args *graphqlbackend.MoveBatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {
 	var err error
-	tr, ctx := trace.New(ctx, "Resolver.MoveBatchChange", fmt.Sprintf("Campaign %s", args.BatchChange))
+	tr, ctx := trace.New(ctx, "Resolver.MoveBatchChange", fmt.Sprintf("BatchChange %s", args.BatchChange))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -563,15 +503,8 @@ func (r *Resolver) MoveBatchChange(ctx context.Context, args *graphqlbackend.Mov
 	return &batchChangeResolver{store: r.store, batchChange: batchChange}, nil
 }
 
-// TODO(campaigns-deprecation): Remove when campaigns are fully removed
-func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.DeleteCampaignArgs) (_ *graphqlbackend.EmptyResponse, err error) {
-	return r.DeleteBatchChange(ctx, &graphqlbackend.DeleteBatchChangeArgs{
-		BatchChange: args.Campaign,
-	})
-}
-
 func (r *Resolver) DeleteBatchChange(ctx context.Context, args *graphqlbackend.DeleteBatchChangeArgs) (_ *graphqlbackend.EmptyResponse, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.DeleteCampaign", fmt.Sprintf("BatchChange: %q", args.BatchChange))
+	tr, ctx := trace.New(ctx, "Resolver.DeleteBatchChange", fmt.Sprintf("BatchChange: %q", args.BatchChange))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -590,7 +523,7 @@ func (r *Resolver) DeleteBatchChange(ctx context.Context, args *graphqlbackend.D
 	}
 
 	svc := service.New(r.store)
-	// 🚨 SECURITY: DeleteCampaign checks whether current user is authorized.
+	// 🚨 SECURITY: DeleteBatchChange checks whether current user is authorized.
 	err = svc.DeleteBatchChange(ctx, batchChangeID)
 	return &graphqlbackend.EmptyResponse{}, err
 }
@@ -602,7 +535,7 @@ func (r *Resolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBa
 
 	opts := store.ListBatchChangesOpts{}
 
-	state, err := parseCampaignState(args.State)
+	state, err := parseBatchChangeState(args.State)
 	if err != nil {
 		return nil, err
 	}
@@ -644,24 +577,6 @@ func (r *Resolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBa
 	}, nil
 }
 
-// TODO(campaigns-deprecation): Remove when campaigns are fully removed
-func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListBatchChangesArgs) (graphqlbackend.BatchChangesConnectionResolver, error) {
-	return r.BatchChanges(ctx, args)
-}
-
-// TODO(campaigns-deprecation): Remove when campaigns are fully removed
-func (r *Resolver) CampaignsCodeHosts(ctx context.Context, args *graphqlbackend.ListCampaignsCodeHostsArgs) (graphqlbackend.CampaignsCodeHostConnectionResolver, error) {
-	conn, err := r.BatchChangesCodeHosts(ctx, &graphqlbackend.ListBatchChangesCodeHostsArgs{
-		First:  args.First,
-		After:  args.After,
-		UserID: args.UserID,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &campaignsCodeHostConnectionResolver{BatchChangesCodeHostConnectionResolver: conn}, nil
-}
-
 func (r *Resolver) BatchChangesCodeHosts(ctx context.Context, args *graphqlbackend.ListBatchChangesCodeHostsArgs) (graphqlbackend.BatchChangesCodeHostConnectionResolver, error) {
 	if err := batchChangesEnabled(ctx); err != nil {
 		return nil, err
@@ -701,7 +616,7 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, batchCha
 
 	safe := true
 
-	// TODO: This _could_ become problematic if a user has a campaign with > 10000 changesets, once
+	// TODO: This _could_ become problematic if a user has a batch change with > 10000 changesets, once
 	// we use cursor based pagination in the frontend for ChangesetConnections this problem will disappear.
 	// Currently we cannot enable it, though, because we want to re-fetch the whole list periodically to
 	// check for a change in the changeset states.
@@ -793,7 +708,7 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, batchCha
 	if args.OnlyPublishedByThisCampaign != nil || args.OnlyPublishedByThisBatchChange != nil {
 		published := batches.ChangesetPublicationStatePublished
 
-		opts.OwnedByCampaignID = batchChangeID
+		opts.OwnedByBatchChangeID = batchChangeID
 		opts.PublicationState = &published
 	}
 	if args.Search != nil {
@@ -811,13 +726,6 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, batchCha
 	return opts, safe, nil
 }
 
-func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.CloseCampaignArgs) (_ graphqlbackend.BatchChangeResolver, err error) {
-	return r.CloseBatchChange(ctx, &graphqlbackend.CloseBatchChangeArgs{
-		BatchChange:     args.Campaign,
-		CloseChangesets: args.CloseChangesets,
-	})
-}
-
 func (r *Resolver) CloseBatchChange(ctx context.Context, args *graphqlbackend.CloseBatchChangeArgs) (_ graphqlbackend.BatchChangeResolver, err error) {
 	tr, ctx := trace.New(ctx, "Resolver.CloseBatchChange", fmt.Sprintf("BatchChange: %q", args.BatchChange))
 	defer func() {
@@ -831,7 +739,7 @@ func (r *Resolver) CloseBatchChange(ctx context.Context, args *graphqlbackend.Cl
 
 	batchChangeID, err := unmarshalBatchChangeID(args.BatchChange)
 	if err != nil {
-		return nil, errors.Wrap(err, "unmarshaling campaign id")
+		return nil, errors.Wrap(err, "unmarshaling batch change id")
 	}
 
 	if batchChangeID == 0 {
@@ -839,7 +747,7 @@ func (r *Resolver) CloseBatchChange(ctx context.Context, args *graphqlbackend.Cl
 	}
 
 	svc := service.New(r.store)
-	// 🚨 SECURITY: CloseCampaign checks whether current user is authorized.
+	// 🚨 SECURITY: CloseBatchChange checks whether current user is authorized.
 	batchChange, err := svc.CloseBatchChange(ctx, batchChangeID, args.CloseChangesets)
 	if err != nil {
 		return nil, errors.Wrap(err, "closing batch change")
@@ -905,16 +813,6 @@ func (r *Resolver) ReenqueueChangeset(ctx context.Context, args *graphqlbackend.
 	return NewChangesetResolver(r.store, changeset, repo), nil
 }
 
-// TODO(campaigns-deprecation): Remove when campaigns are fully removed
-func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlbackend.CreateCampaignsCredentialArgs) (_ graphqlbackend.CampaignsCredentialResolver, err error) {
-	return r.CreateBatchChangesCredential(ctx, &graphqlbackend.CreateBatchChangesCredentialArgs{
-		ExternalServiceKind: args.ExternalServiceKind,
-		ExternalServiceURL:  args.ExternalServiceURL,
-		User:                args.User,
-		Credential:          args.Credential,
-	})
-}
-
 func (r *Resolver) CreateBatchChangesCredential(ctx context.Context, args *graphqlbackend.CreateBatchChangesCredentialArgs) (_ graphqlbackend.BatchChangesCredentialResolver, err error) {
 	tr, ctx := trace.New(ctx, "Resolver.CreateBatchChangesCredential", fmt.Sprintf("%q (%q)", args.ExternalServiceKind, args.ExternalServiceURL))
 	defer func() {
@@ -952,7 +850,7 @@ func (r *Resolver) CreateBatchChangesCredential(ctx context.Context, args *graph
 	}
 
 	scope := database.UserCredentialScope{
-		Domain:              database.UserCredentialDomainCampaigns,
+		Domain:              database.UserCredentialDomainBatches,
 		ExternalServiceID:   args.ExternalServiceURL,
 		ExternalServiceType: extsvc.KindToType(kind),
 		UserID:              userID,
@@ -1005,13 +903,6 @@ func (r *Resolver) CreateBatchChangesCredential(ctx context.Context, args *graph
 	return &batchChangesCredentialResolver{credential: cred}, nil
 }
 
-// TODO(campaigns-deprecation): Remove when campaigns are fully removed
-func (r *Resolver) DeleteCampaignsCredential(ctx context.Context, args *graphqlbackend.DeleteCampaignsCredentialArgs) (_ *graphqlbackend.EmptyResponse, err error) {
-	return r.DeleteBatchChangesCredential(ctx, &graphqlbackend.DeleteBatchChangesCredentialArgs{
-		BatchChangesCredential: args.CampaignsCredential,
-	})
-}
-
 func (r *Resolver) DeleteBatchChangesCredential(ctx context.Context, args *graphqlbackend.DeleteBatchChangesCredentialArgs) (_ *graphqlbackend.EmptyResponse, err error) {
 	tr, ctx := trace.New(ctx, "Resolver.DeleteBatchChangesCredential", fmt.Sprintf("Credential: %q", args.BatchChangesCredential))
 	defer func() {
@@ -1050,7 +941,7 @@ func (r *Resolver) DeleteBatchChangesCredential(ctx context.Context, args *graph
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-func parseCampaignState(s *string) (batches.BatchChangeState, error) {
+func parseBatchChangeState(s *string) (batches.BatchChangeState, error) {
 	if s == nil {
 		return batches.BatchChangeStateAny, nil
 	}
@@ -1065,7 +956,7 @@ func parseCampaignState(s *string) (batches.BatchChangeState, error) {
 }
 
 func checkSiteAdminOrSameUser(ctx context.Context, userID int32) (bool, error) {
-	// 🚨 SECURITY: Only site admins or the authors of a campaign have campaign
+	// 🚨 SECURITY: Only site admins or the authors of a batch change have batch change
 	// admin rights.
 	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
 		if _, ok := err.(*backend.InsufficientAuthorizationError); ok {

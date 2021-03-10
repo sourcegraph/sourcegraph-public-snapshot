@@ -7,20 +7,19 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
+	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/hubspot"
-	"github.com/sourcegraph/sourcegraph/internal/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-
-	"golang.org/x/oauth2"
 )
 
 type sessionIssuerHelper struct {

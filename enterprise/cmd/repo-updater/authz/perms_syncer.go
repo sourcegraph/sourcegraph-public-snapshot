@@ -246,7 +246,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			return errors.Wrap(err, "wait for rate limiter")
 		}
 
-		extIDs, _, err := provider.FetchUserPerms(ctx, acct)
+		extIDs, err := provider.FetchUserPerms(ctx, acct)
 		if err != nil {
 			// The "401 Unauthorized" is returned by code hosts when the token is no longer valid
 			unauthorized := errcode.IsUnauthorized(errors.Cause(err))
@@ -279,12 +279,20 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			}
 		}
 
-		for i := range extIDs {
-			repoSpecs = append(repoSpecs, api.ExternalRepoSpec{
-				ID:          string(extIDs[i]),
-				ServiceType: provider.ServiceType(),
-				ServiceID:   provider.ServiceID(),
-			})
+		if extIDs == nil {
+			continue
+		}
+
+		if len(extIDs.Exacts) > 0 {
+			for _, exact := range extIDs.Exacts {
+				repoSpecs = append(repoSpecs,
+					api.ExternalRepoSpec{
+						ID:          string(exact),
+						ServiceType: provider.ServiceType(),
+						ServiceID:   provider.ServiceID(),
+					},
+				)
+			}
 		}
 	}
 

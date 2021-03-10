@@ -99,8 +99,8 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		campaign := &batches.BatchChange{
-			Name:             "Test campaign",
+		batchChange := &batches.BatchChange{
+			Name:             "Test batch changes",
 			Description:      "Testing THE WEBHOOKS",
 			InitialApplierID: userID,
 			NamespaceUserID:  userID,
@@ -109,7 +109,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			BatchSpecID:      spec.ID,
 		}
 
-		err = s.CreateBatchChange(ctx, campaign)
+		err = s.CreateBatchChange(ctx, batchChange)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -119,7 +119,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			RepoID:              githubRepo.ID,
 			ExternalID:          "10156",
 			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
-			BatchChanges:        []batches.BatchChangeAssoc{{BatchChangeID: campaign.ID}},
+			BatchChanges:        []batches.BatchChangeAssoc{{BatchChangeID: batchChange.ID}},
 		}
 
 		err = s.CreateChangeset(ctx, changeset)
@@ -278,8 +278,8 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		campaign := &batches.BatchChange{
-			Name:             "Test campaign",
+		batchChange := &batches.BatchChange{
+			Name:             "Test batch change",
 			Description:      "Testing THE WEBHOOKS",
 			InitialApplierID: userID,
 			NamespaceUserID:  userID,
@@ -288,7 +288,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			BatchSpecID:      spec.ID,
 		}
 
-		err = s.CreateBatchChange(ctx, campaign)
+		err = s.CreateBatchChange(ctx, batchChange)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -298,13 +298,13 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				RepoID:              bitbucketRepo.ID,
 				ExternalID:          "69",
 				ExternalServiceType: bitbucketRepo.ExternalRepo.ServiceType,
-				BatchChanges:        []batches.BatchChangeAssoc{{BatchChangeID: campaign.ID}},
+				BatchChanges:        []batches.BatchChangeAssoc{{BatchChangeID: batchChange.ID}},
 			},
 			{
 				RepoID:              bitbucketRepo.ID,
 				ExternalID:          "19",
 				ExternalServiceType: bitbucketRepo.ExternalRepo.ServiceType,
-				BatchChanges:        []batches.BatchChangeAssoc{{BatchChangeID: campaign.ID}},
+				BatchChanges:        []batches.BatchChangeAssoc{{BatchChangeID: batchChange.ID}},
 			},
 		}
 

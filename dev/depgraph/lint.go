@@ -1,23 +1,33 @@
 package main
 
 import (
-	"os"
+	"context"
+	"flag"
+
+	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"github.com/sourcegraph/sourcegraph/dev/depgraph/graph"
 	"github.com/sourcegraph/sourcegraph/dev/depgraph/lints"
 )
 
-// Handles a command of the following form:
-//
-// depgraph lint [pass...]
-//
-// Runs each of the default lints registered in the lint package and returns
-// any errors that are seen with the current checkout's package import graph.
-func lint(graph *graph.DependencyGraph) error {
-	names := lints.DefaultLints
-	if len(os.Args) > 2 {
-		names = os.Args[2:]
+var lintFlagSet = flag.NewFlagSet("depgraph lint", flag.ExitOnError)
+var lintCommand = &ffcli.Command{
+	Name:       "lint",
+	ShortUsage: "depgraph lint [pass...]",
+	ShortHelp:  "Runs lint passes over the internal Go dependency graph",
+	FlagSet:    lintFlagSet,
+	Exec:       lint,
+}
+
+func lint(ctx context.Context, args []string) error {
+	graph, err := graph.Load()
+	if err != nil {
+		return err
 	}
 
-	return lints.Run(graph, names)
+	if len(args) == 0 {
+		args = lints.DefaultLints
+	}
+
+	return lints.Run(graph, args)
 }

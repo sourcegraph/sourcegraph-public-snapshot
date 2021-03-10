@@ -19,10 +19,10 @@ import (
 type changesetApplyPreviewResolver struct {
 	store *store.Store
 
-	mapping           *store.RewirerMapping
-	preloadedNextSync time.Time
-	preloadedCampaign *batches.BatchChange
-	campaignSpecID    int64
+	mapping              *store.RewirerMapping
+	preloadedNextSync    time.Time
+	preloadedBatchChange *batches.BatchChange
+	batchSpecID          int64
 }
 
 var _ graphqlbackend.ChangesetApplyPreviewResolver = &changesetApplyPreviewResolver{}
@@ -35,11 +35,11 @@ func (r *changesetApplyPreviewResolver) repoAccessible() bool {
 func (r *changesetApplyPreviewResolver) ToVisibleChangesetApplyPreview() (graphqlbackend.VisibleChangesetApplyPreviewResolver, bool) {
 	if r.repoAccessible() {
 		return &visibleChangesetApplyPreviewResolver{
-			store:             r.store,
-			mapping:           r.mapping,
-			preloadedNextSync: r.preloadedNextSync,
-			preloadedCampaign: r.preloadedCampaign,
-			campaignSpecID:    r.campaignSpecID,
+			store:                r.store,
+			mapping:              r.mapping,
+			preloadedNextSync:    r.preloadedNextSync,
+			preloadedBatchChange: r.preloadedBatchChange,
+			batchSpecID:          r.batchSpecID,
 		}, true
 	}
 	return nil, false
@@ -131,18 +131,18 @@ func (r *hiddenApplyPreviewTargetsResolver) Changeset(ctx context.Context) (grap
 type visibleChangesetApplyPreviewResolver struct {
 	store *store.Store
 
-	mapping           *store.RewirerMapping
-	preloadedNextSync time.Time
-	preloadedCampaign *batches.BatchChange
-	campaignSpecID    int64
+	mapping              *store.RewirerMapping
+	preloadedNextSync    time.Time
+	preloadedBatchChange *batches.BatchChange
+	batchSpecID          int64
 
 	planOnce sync.Once
 	plan     *reconciler.Plan
 	planErr  error
 
-	campaignOnce sync.Once
-	campaign     *batches.BatchChange
-	campaignErr  error
+	batchChangeOnce sync.Once
+	batchChange     *batches.BatchChange
+	batchChangeErr  error
 }
 
 var _ graphqlbackend.VisibleChangesetApplyPreviewResolver = &visibleChangesetApplyPreviewResolver{}
@@ -177,7 +177,7 @@ func (r *visibleChangesetApplyPreviewResolver) Targets() graphqlbackend.VisibleA
 
 func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) (*reconciler.Plan, error) {
 	r.planOnce.Do(func() {
-		campaign, err := r.computeCampaign(ctx)
+		batchChange, err := r.computeBatchChange(ctx)
 		if err != nil {
 			r.planErr = err
 			return
@@ -210,7 +210,7 @@ func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) 
 			ChangesetSpec: mappingChangesetSpec,
 			Changeset:     mappingChangeset,
 			Repo:          mappingRepo,
-		}}, campaign.ID)
+		}}, batchChange.ID)
 		changesets, err := rewirer.Rewire()
 		if err != nil {
 			r.planErr = err
@@ -256,22 +256,22 @@ func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) 
 	return r.plan, r.planErr
 }
 
-func (r *visibleChangesetApplyPreviewResolver) computeCampaign(ctx context.Context) (*batches.BatchChange, error) {
-	r.campaignOnce.Do(func() {
-		if r.preloadedCampaign != nil {
-			r.campaign = r.preloadedCampaign
+func (r *visibleChangesetApplyPreviewResolver) computeBatchChange(ctx context.Context) (*batches.BatchChange, error) {
+	r.batchChangeOnce.Do(func() {
+		if r.preloadedBatchChange != nil {
+			r.batchChange = r.preloadedBatchChange
 			return
 		}
 		svc := service.New(r.store)
-		campaignSpec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: r.campaignSpecID})
+		batchSpec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: r.batchSpecID})
 		if err != nil {
 			r.planErr = err
 			return
 		}
-		// Dry-run reconcile the campaign with the new campaign spec.
-		r.campaign, _, r.campaignErr = svc.ReconcileBatchChange(ctx, campaignSpec)
+		// Dry-run reconcile the batch  with the new batch spec.
+		r.batchChange, _, r.batchChangeErr = svc.ReconcileBatchChange(ctx, batchSpec)
 	})
-	return r.campaign, r.campaignErr
+	return r.batchChange, r.batchChangeErr
 }
 
 type visibleApplyPreviewTargetsResolver struct {

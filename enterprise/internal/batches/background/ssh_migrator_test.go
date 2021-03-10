@@ -30,7 +30,7 @@ func TestSSHMigrator(t *testing.T) {
 
 	oauth := &auth.OAuthBearerToken{Token: "test"}
 	credential, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
-		Domain:              database.UserCredentialDomainCampaigns,
+		Domain:              database.UserCredentialDomainBatches,
 		UserID:              user.ID,
 		ExternalServiceType: extsvc.TypeGitHub,
 		ExternalServiceID:   "https://github.com/",

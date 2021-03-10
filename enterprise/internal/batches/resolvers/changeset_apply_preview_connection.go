@@ -22,9 +22,9 @@ var _ graphqlbackend.ChangesetApplyPreviewConnectionResolver = &changesetApplyPr
 type changesetApplyPreviewConnectionResolver struct {
 	store *store.Store
 
-	opts           store.GetRewirerMappingsOpts
-	action         *batches.ReconcilerOperation
-	campaignSpecID int64
+	opts        store.GetRewirerMappingsOpts
+	action      *batches.ReconcilerOperation
+	batchSpecID int64
 
 	once     sync.Once
 	mappings *rewirerMappingsFacade
@@ -228,7 +228,7 @@ func (r *changesetApplyPreviewConnectionResolver) Stats(ctx context.Context) (gr
 
 func (r *changesetApplyPreviewConnectionResolver) compute(ctx context.Context) (*rewirerMappingsFacade, error) {
 	r.once.Do(func() {
-		r.mappings = newRewirerMappingsFacade(r.store, r.campaignSpecID)
+		r.mappings = newRewirerMappingsFacade(r.store, r.batchSpecID)
 		r.err = r.mappings.compute(ctx, r.opts)
 	})
 
@@ -241,11 +241,11 @@ type rewirerMappingsFacade struct {
 	All store.RewirerMappings
 
 	// Inputs from outside the resolver that we need to build other resolvers.
-	campaignSpecID int64
-	store          *store.Store
+	batchSpecID int64
+	store       *store.Store
 
-	// This field is set when ReconcileCampaign is called.
-	campaign *batches.BatchChange
+	// This field is set when ReconcileBatchChange is called.
+	batchChange *batches.BatchChange
 
 	// Cache of filtered pages.
 	pagesMu sync.Mutex
@@ -257,32 +257,32 @@ type rewirerMappingsFacade struct {
 }
 
 // newRewirerMappingsFacade creates a new rewirer mappings object, which
-// includes dry running the campaign reconciliation.
-func newRewirerMappingsFacade(s *store.Store, campaignSpecID int64) *rewirerMappingsFacade {
+// includes dry running the batch change reconciliation.
+func newRewirerMappingsFacade(s *store.Store, batchSpecID int64) *rewirerMappingsFacade {
 	return &rewirerMappingsFacade{
-		campaignSpecID: campaignSpecID,
-		store:          s,
-		pages:          make(map[rewirerMappingPageOpts]*rewirerMappingPage),
-		resolvers:      make(map[*store.RewirerMapping]graphqlbackend.ChangesetApplyPreviewResolver),
+		batchSpecID: batchSpecID,
+		store:       s,
+		pages:       make(map[rewirerMappingPageOpts]*rewirerMappingPage),
+		resolvers:   make(map[*store.RewirerMapping]graphqlbackend.ChangesetApplyPreviewResolver),
 	}
 }
 
 func (rmf *rewirerMappingsFacade) compute(ctx context.Context, opts store.GetRewirerMappingsOpts) error {
 	svc := service.New(rmf.store)
-	campaignSpec, err := rmf.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: rmf.campaignSpecID})
+	batchSpec, err := rmf.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: rmf.batchSpecID})
 	if err != nil {
 		return err
 	}
-	// Dry-run reconcile the campaign with the new campaign spec.
-	if rmf.campaign, _, err = svc.ReconcileBatchChange(ctx, campaignSpec); err != nil {
+	// Dry-run reconcile the batch change with the new batch spec.
+	if rmf.batchChange, _, err = svc.ReconcileBatchChange(ctx, batchSpec); err != nil {
 		return err
 	}
 
 	opts = store.GetRewirerMappingsOpts{
-		CampaignSpecID: rmf.campaignSpecID,
-		CampaignID:     rmf.campaign.ID,
-		TextSearch:     opts.TextSearch,
-		CurrentState:   opts.CurrentState,
+		BatchSpecID:   rmf.batchSpecID,
+		BatchChangeID: rmf.batchChange.ID,
+		TextSearch:    opts.TextSearch,
+		CurrentState:  opts.CurrentState,
 	}
 	if rmf.All, err = rmf.store.GetRewirerMappings(ctx, opts); err != nil {
 		return err
@@ -378,10 +378,10 @@ func (rmf *rewirerMappingsFacade) Resolver(mapping *store.RewirerMapping) graphq
 	// We build the resolver without a preloadedNextSync, since not all callers
 	// will have calculated that.
 	rmf.resolvers[mapping] = &changesetApplyPreviewResolver{
-		store:             rmf.store,
-		mapping:           mapping,
-		preloadedCampaign: rmf.campaign,
-		campaignSpecID:    rmf.campaignSpecID,
+		store:                rmf.store,
+		mapping:              mapping,
+		preloadedBatchChange: rmf.batchChange,
+		batchSpecID:          rmf.batchSpecID,
 	}
 	return rmf.resolvers[mapping]
 }

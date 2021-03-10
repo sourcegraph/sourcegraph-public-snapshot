@@ -287,20 +287,19 @@ func BenchmarkSearchRepositories(b *testing.B) {
 		repo := &types.RepoName{Name: api.RepoName("github.com/org/repo" + strconv.Itoa(i))}
 		repos[i] = &search.RepositoryRevisions{Repo: repo, Revs: []search.RevisionSpecifier{{}}}
 	}
-	q := "context.WithValue"
-	queryInfo, err := query.ProcessAndOr(q, query.ParserOptions{SearchType: query.SearchTypeLiteral, Globbing: false})
+	q, err := query.ParseLiteral("context.WithValue")
 	if err != nil {
 		b.Fatal(err)
 	}
 	options := &getPatternInfoOptions{}
-	textPatternInfo, err := getPatternInfo(queryInfo, options)
+	textPatternInfo, err := getPatternInfo(q, options)
 	if err != nil {
 		b.Fatal(err)
 	}
 	tp := search.TextParameters{
 		PatternInfo: textPatternInfo,
 		RepoPromise: (&search.Promise{}).Resolve(repos),
-		Query:       queryInfo,
+		Query:       q,
 	}
 	for i := 0; i < b.N; i++ {
 		_, _, err = searchRepositoriesBatch(context.Background(), db, &tp, options.fileMatchLimit)

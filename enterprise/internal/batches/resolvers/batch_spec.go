@@ -79,9 +79,9 @@ func (r *batchSpecResolver) ChangesetSpecs(ctx context.Context, args *graphqlbac
 	}
 
 	return &changesetSpecConnectionResolver{
-		store:          r.store,
-		opts:           opts,
-		campaignSpecID: r.batchSpec.ID,
+		store:       r.store,
+		opts:        opts,
+		batchSpecID: r.batchSpec.ID,
 	}, nil
 }
 
@@ -111,14 +111,14 @@ func (r *batchSpecResolver) ApplyPreview(ctx context.Context, args *graphqlbacke
 	}
 
 	return &changesetApplyPreviewConnectionResolver{
-		store:          r.store,
-		opts:           opts,
-		action:         args.Action,
-		campaignSpecID: r.batchSpec.ID,
+		store:       r.store,
+		opts:        opts,
+		action:      args.Action,
+		batchSpecID: r.batchSpec.ID,
 	}, nil
 }
 
-func (r *batchSpecResolver) Description() graphqlbackend.CampaignDescriptionResolver {
+func (r *batchSpecResolver) Description() graphqlbackend.BatchChangeDescriptionResolver {
 	return &batchChangeDescriptionResolver{
 		name:        r.batchSpec.Spec.Name,
 		description: r.batchSpec.Spec.Description,
@@ -156,7 +156,7 @@ func (r *batchSpecResolver) computeNamespace(ctx context.Context) (*graphqlbacke
 
 		if errcode.IsNotFound(err) {
 			r.namespace = nil
-			r.namespaceErr = errors.New("namespace of campaign spec has been deleted")
+			r.namespaceErr = errors.New("namespace of batch spec has been deleted")
 			return
 		}
 
@@ -200,8 +200,8 @@ func (r *batchChangeDescriptionResolver) Description() string {
 
 func (r *batchSpecResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
 	specsConnection := &changesetSpecConnectionResolver{
-		store:          r.store,
-		campaignSpecID: r.batchSpec.ID,
+		store:       r.store,
+		batchSpecID: r.batchSpec.ID,
 	}
 
 	specs, err := specsConnection.Nodes(ctx)
@@ -230,6 +230,7 @@ func (r *batchSpecResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffS
 	return totalStat, nil
 }
 
+// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely.
 func (r *batchSpecResolver) AppliesToCampaign(ctx context.Context) (graphqlbackend.BatchChangeResolver, error) {
 	return r.AppliesToBatchChange(ctx)
 }
@@ -250,6 +251,7 @@ func (r *batchSpecResolver) AppliesToBatchChange(ctx context.Context) (graphqlba
 	}, nil
 }
 
+// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely.
 func (r *batchSpecResolver) SupersedingCampaignSpec(ctx context.Context) (graphqlbackend.BatchSpecResolver, error) {
 	return r.SupersedingBatchSpec(ctx)
 }
@@ -287,19 +289,6 @@ func (r *batchSpecResolver) SupersedingBatchSpec(ctx context.Context) (graphqlba
 	return resolver, nil
 }
 
-// TODO(campaigns-deprecation): Remove when campaigns are fully removed
-func (r *batchSpecResolver) ViewerCampaignsCodeHosts(ctx context.Context, args *graphqlbackend.ListViewerCampaignsCodeHostsArgs) (graphqlbackend.CampaignsCodeHostConnectionResolver, error) {
-	res, err := r.ViewerBatchChangesCodeHosts(ctx, &graphqlbackend.ListViewerBatchChangesCodeHostsArgs{
-		First:                 args.First,
-		After:                 args.After,
-		OnlyWithoutCredential: args.OnlyWithoutCredential,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &campaignsCodeHostConnectionResolver{BatchChangesCodeHostConnectionResolver: res}, nil
-}
-
 func (r *batchSpecResolver) ViewerBatchChangesCodeHosts(ctx context.Context, args *graphqlbackend.ListViewerBatchChangesCodeHostsArgs) (graphqlbackend.BatchChangesCodeHostConnectionResolver, error) {
 	actor := actor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
@@ -316,7 +305,7 @@ func (r *batchSpecResolver) ViewerBatchChangesCodeHosts(ctx context.Context, arg
 		}
 	}
 
-	specs, _, err := r.store.ListChangesetSpecs(ctx, store.ListChangesetSpecsOpts{CampaignSpecID: r.batchSpec.ID})
+	specs, _, err := r.store.ListChangesetSpecs(ctx, store.ListChangesetSpecsOpts{BatchSpecID: r.batchSpec.ID})
 	if err != nil {
 		return nil, err
 	}

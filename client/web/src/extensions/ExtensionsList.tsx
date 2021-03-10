@@ -42,6 +42,7 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
     enablementFilter,
     query,
     showMoreExtensions,
+    authenticatedUser,
     ...props
 }) => {
     /** Categories, but with 'Programming Languages' at the end */
@@ -112,6 +113,7 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
                             platformContext={platformContext}
                             enabled={isExtensionEnabled(settingsCascade.final, extensionId)}
                             isLightTheme={props.isLightTheme}
+                            settingsURL={authenticatedUser?.settingsURL}
                         />
                     ))}
                 </div>
