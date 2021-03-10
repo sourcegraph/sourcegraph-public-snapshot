@@ -28,13 +28,14 @@ func trace(ctx context.Context, args []string) error {
 	if len(args) != 1 {
 		return fmt.Errorf("expected exactly one package")
 	}
+	pkg := args[0]
 
 	graph, err := graph.Load()
 	if err != nil {
 		return err
 	}
 
-	packages, dependencyEdges, dependentEdges := traceWalkGraph(graph, args[0], *dependencyMaxDepthFlag, *dependentMaxDepthFlag)
+	packages, dependencyEdges, dependentEdges := traceWalkGraph(graph, pkg, *dependencyMaxDepthFlag, *dependentMaxDepthFlag)
 	fmt.Printf("%s\n", visualization.Dotify(packages, dependencyEdges, dependentEdges))
 	return nil
 }
