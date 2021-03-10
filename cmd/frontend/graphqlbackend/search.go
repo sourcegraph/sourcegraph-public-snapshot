@@ -107,14 +107,6 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 		return alertForQuery(db, args.Query, errors.New("stable is not supported for the streaming API. Please remove from query")), nil
 	}
 
-	// If stable:truthy is specified, make the query return a stable result ordering.
-	if q.BoolValue(query.FieldStable) {
-		args, q, err = queryForStableResults(args, q)
-		if err != nil {
-			return alertForQuery(db, args.Query, err), nil
-		}
-	}
-
 	// If the request is a paginated one, decode those arguments now.
 	var pagination *searchPaginationInfo
 	if args.First != nil {
@@ -162,28 +154,6 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 
 func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchImplementer, error) {
 	return NewSearchImplementer(ctx, r.db, args)
-}
-
-// queryForStableResults transforms a query that returns a stable result
-// ordering. The transformed query uses pagination underneath the hood.
-func queryForStableResults(args *SearchArgs, q query.Q) (*SearchArgs, query.Q, error) {
-	if q.BoolValue(query.FieldStable) {
-		var stableResultCount int32 = defaultMaxSearchResults
-		if count := q.Count(); count != nil {
-			stableResultCount = int32(*count)
-			if stableResultCount > maxSearchResultsPerPaginatedRequest {
-				return nil, nil, fmt.Errorf("Stable searches are limited to at max count:%d results. Consider removing 'stable:', narrowing the search with 'repo:', or using the paginated search API.", maxSearchResultsPerPaginatedRequest)
-			}
-		}
-		args.First = &stableResultCount
-		fileValue := "file"
-		// Pagination only works for file content searches, and will
-		// raise an error otherwise. If stable is explicitly set, this
-		// is implied. So, force this query to only return file content
-		// results.
-		q = query.OverrideField(q, "type", fileValue)
-	}
-	return args, q, nil
 }
 
 func processPaginationRequest(args *SearchArgs, q query.Q) (*searchPaginationInfo, error) {
