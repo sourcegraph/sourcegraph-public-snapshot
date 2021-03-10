@@ -2,7 +2,7 @@ import React from 'react'
 import classNames from 'classnames'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import useResizeObserver from 'use-resize-observer'
+import useResizeObserver from 'use-resize-observer/polyfilled'
 import { useDebounce } from '../hooks'
 
 type Page = '...' | number
@@ -16,6 +16,7 @@ const PageButton: React.FunctionComponent<PageButton> = ({ children, active, ...
         <button
             type="button"
             className={classNames('btn', 'mx-1', 'page-selector__button', active && 'btn-primary')}
+            aria-current={active}
             {...props}
         >
             {children}
@@ -81,16 +82,41 @@ const getPages = ({ currentPage, maxPages, shrink }: GetPages): Page[] => {
     return pages
 }
 
-interface Props {
+export interface Props {
     currentPage: number
     onPageChange: (page: number) => void
     maxPages: number
     className?: string
 }
 
-export const PageSelector: React.FunctionComponent<Props> = ({ currentPage, onPageChange, maxPages, className }) => {
-    const { ref, width } = useDebounce(useResizeObserver(), 50)
-    const shouldShrink = width !== undefined && width < 576
+const validatePositiveInteger = (name: string, value: number) => {
+    if (value > 0) {
+        return []
+    }
+    return [`${name} must have a value greater than 0`]
+}
+
+const validateProps = (props: Props) => {
+    const errors = [
+        ...validatePositiveInteger('maxPages', props.maxPages),
+        ...validatePositiveInteger('currentPage', props.currentPage),
+    ]
+
+    if (props.currentPage > props.maxPages) {
+        errors.push('currentPage must be not be greater than maxPages')
+    }
+
+    if (errors.length) {
+        throw new Error(`Invalid configuration: ${errors.map(error => `\n — ${error}`)}`)
+    }
+}
+
+export const PageSelector: React.FunctionComponent<Props> = props => {
+    validateProps(props)
+
+    const { maxPages, currentPage, className, onPageChange } = props
+    const { ref, width } = useDebounce(useResizeObserver(), 100)
+    const shouldShrink = width !== undefined && width <= 576
     const pages = getPages({ currentPage, maxPages, shrink: shouldShrink })
 
     return (
