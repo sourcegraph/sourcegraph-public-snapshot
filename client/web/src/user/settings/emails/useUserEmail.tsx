@@ -57,7 +57,7 @@ export const useRemoveUserEmail = (): UseMutationResult<RemoveUserEmailResult> =
     const queryClient = useQueryClient()
     const mutation = useMutation((data: Variables) => fetcher({ queryKey: [REMOVE_EMAIL, data] }), {
         onSuccess: async (data, { user }) => {
-            await queryClient.refetchQueries([GET_USER_EMAIL, { user }])
+            await queryClient.invalidateQueries([GET_USER_EMAIL, { user }])
         },
     })
 
