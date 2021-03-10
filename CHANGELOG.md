@@ -13,15 +13,21 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Removed
+
+## 3.26.0
+
+### Added
+
 - Two new [templating](https://docs.sourcegraph.com/campaigns/references/batch_spec_templating) variables have been added: `batch_change.name` and `batch_change.description`. [#491](https://github.com/sourcegraph/src-cli/pull/491)
 
 ### Changed
 
 - Campaigns are now known as Batch Changes! The `src campaign` set of commands have been renamed to `src batch`; however, `src campaign` and `src campaigns` will be retained as aliases for `src batch` until the next major version of Sourcegraph. There should be no breaking changes as a result of this change. [#489](https://github.com/sourcegraph/src-cli/pull/489)
-
-### Fixed
-
-### Removed
 
 ## 3.25.3
 
