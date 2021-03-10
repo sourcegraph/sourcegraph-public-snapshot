@@ -1227,7 +1227,8 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 			if !repoCloned(dir) {
 				status = types.CloneStatusNotCloned
 			}
-			if err := s.setCloneStatus(ctx, repo, status); err != nil {
+			// Use a different context to ensure we still update the DB
+			if err := s.setCloneStatus(context.Background(), repo, status); err != nil {
 				log15.Warn("Setting clone status in DB", "error", err)
 			}
 		}()
