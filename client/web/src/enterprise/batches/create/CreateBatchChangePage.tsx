@@ -59,7 +59,7 @@ export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePag
                 <p>
                     The batch spec (
                     <a
-                        href="https://docs.sourcegraph.com/user/campaigns#campaign-specs"
+                        href="https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference"
                         rel="noopener noreferrer"
                         target="_blank"
                     >
@@ -96,7 +96,7 @@ export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePag
                 <hr className="mt-4" />
                 <p className="text-muted">
                     Want more help? See{' '}
-                    <a href="/help/campaigns" rel="noopener noreferrer" target="_blank">
+                    <a href="/help/batch_changes" rel="noopener noreferrer" target="_blank">
                         Batch Changes documentation
                     </a>
                     .
