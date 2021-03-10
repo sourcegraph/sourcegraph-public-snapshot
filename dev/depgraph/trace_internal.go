@@ -26,13 +26,14 @@ func traceInternal(ctx context.Context, args []string) error {
 	if len(args) != 1 {
 		return fmt.Errorf("expected exactly one package")
 	}
+	pkg := args[0]
 
 	graph, err := graph.Load()
 	if err != nil {
 		return err
 	}
 
-	packages, dependencyEdges := filterExternalReferences(graph, args[0])
+	packages, dependencyEdges := filterExternalReferences(graph, pkg)
 	fmt.Printf("%s\n", visualization.Dotify(packages, dependencyEdges, nil))
 	return nil
 }
