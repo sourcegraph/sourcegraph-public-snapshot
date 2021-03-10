@@ -45,6 +45,6 @@ If the linter is incorrect, either:
 2) add an exclusion clause in the "git grep" command in  no-alpine-guard.sh
 
 EOF
-
+  echo "^^^ +++"
   exit 1
 fi
