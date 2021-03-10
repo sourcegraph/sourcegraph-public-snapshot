@@ -44,8 +44,15 @@ func TestLoadExternalService(t *testing.T) {
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
+	withTokenNewer := types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GitHub newer token",
+		Config:      `{"url": "https://github.com", "token": "123456", "authorization": {}}`,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
 
-	if err := esStore.Upsert(ctx, &noToken, &userOwnedWithToken, &withToken); err != nil {
+	if err := esStore.Upsert(ctx, &noToken, &userOwnedWithToken, &withToken, &withTokenNewer); err != nil {
 		t.Fatalf("failed to insert external service: %v", err)
 	}
 
@@ -71,6 +78,10 @@ func TestLoadExternalService(t *testing.T) {
 				ID:       withToken.URN(),
 				CloneURL: "https://123@github.com/sourcegraph/sourcegraph",
 			},
+			withTokenNewer.URN(): {
+				ID:       withTokenNewer.URN(),
+				CloneURL: "https://123456@github.com/sourcegraph/sourcegraph",
+			},
 		},
 	}
 
@@ -78,16 +89,19 @@ func TestLoadExternalService(t *testing.T) {
 		t.Fatalf("failed to insert repo: %v", err)
 	}
 
-	// Expect the public external service with a token to be returned.
+	// Expect the newest public external service with a token to be returned.
 	svc, err := loadExternalService(ctx, esStore, repo)
 	if err != nil {
 		t.Fatalf("invalid error, expected nil, got %v", err)
 	}
-	if have, want := svc.ID, withToken.ID; have != want {
+	if have, want := svc.ID, withTokenNewer.ID; have != want {
 		t.Fatalf("invalid external service returned, want=%d have=%d", want, have)
 	}
 
-	// Now delete the global external service and expect the user owned external service to be returned.
+	// Now delete the global external services and expect the user owned external service to be returned.
+	if err := esStore.Delete(ctx, withTokenNewer.ID); err != nil {
+		t.Fatalf("failed to delete external service: %v", err)
+	}
 	if err := esStore.Delete(ctx, withToken.ID); err != nil {
 		t.Fatalf("failed to delete external service: %v", err)
 	}

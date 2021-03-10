@@ -24,8 +24,9 @@ func loadExternalService(ctx context.Context, esStore ExternalServiceStore, repo
 	}
 
 	// Sort the external services so user owned external service go last.
-	sort.Slice(es, func(i, j int) bool {
-		return es[i].NamespaceUserID == 0
+	// This also retains the initial ORDER BY ID DESC.
+	sort.SliceStable(es, func(i, j int) bool {
+		return es[i].NamespaceUserID == 0 && es[i].ID > es[j].ID
 	})
 
 	for _, e := range es {
