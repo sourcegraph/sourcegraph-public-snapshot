@@ -162,6 +162,7 @@ func (r *changesetResolver) Repository(ctx context.Context) *graphqlbackend.Repo
 	return r.repoResolver
 }
 
+// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely.
 func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.ListBatchChangesArgs) (graphqlbackend.BatchChangesConnectionResolver, error) {
 	return r.BatchChanges(ctx, args)
 }

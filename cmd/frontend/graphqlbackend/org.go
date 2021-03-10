@@ -178,13 +178,13 @@ func (o *OrgResolver) NamespaceName() string { return o.org.Name }
 func (o *OrgResolver) Campaigns(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
 	id := o.ID()
 	args.Namespace = &id
-	return EnterpriseResolvers.campaignsResolver.Campaigns(ctx, args)
+	return EnterpriseResolvers.batchChangesResolver.Campaigns(ctx, args)
 }
 
 func (o *OrgResolver) BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
 	id := o.ID()
 	args.Namespace = &id
-	return EnterpriseResolvers.campaignsResolver.BatchChanges(ctx, args)
+	return EnterpriseResolvers.batchChangesResolver.BatchChanges(ctx, args)
 }
 
 func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {

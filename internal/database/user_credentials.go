@@ -427,7 +427,7 @@ RETURNING %s
 // scanUserCredential scans a credential from the given scanner into the given
 // credential.
 //
-// s is inspired by the campaigns scanner type, but also matches sql.Row, which
+// s is inspired by the BatchChange scanner type, but also matches sql.Row, which
 // is generally used directly in this module.
 func scanUserCredential(cred *UserCredential, s interface {
 	Scan(...interface{}) error
