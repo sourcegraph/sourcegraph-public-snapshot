@@ -390,7 +390,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		}
 	}
 
-	repoFilters, minusRepoFilters := r.Query.RegexpPatterns(query.FieldRepo)
+	repoFilters, minusRepoFilters := r.Query.Repositories()
 	if effectiveRepoFieldValues != nil {
 		repoFilters = effectiveRepoFieldValues
 	}

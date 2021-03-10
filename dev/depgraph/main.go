@@ -21,9 +21,10 @@ var rootCommand = &ffcli.Command{
 	ShortUsage: "depgraph [flags] <subcommand>",
 	FlagSet:    rootFlagSet,
 	Subcommands: []*ffcli.Command{
-		lintCommand,
+		summaryCommand,
 		traceCommand,
 		traceInternalCommand,
+		lintCommand,
 	},
 }
 

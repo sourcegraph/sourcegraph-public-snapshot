@@ -449,7 +449,38 @@ func staticGetRemoteURL(remote string) func(context.Context, api.RepoName) (stri
 }
 
 func TestCloneRepo(t *testing.T) {
+	ctx := context.Background()
 	remote := tmpDir(t)
+	repoName := api.RepoName("example.com/foo/bar")
+	db := dbtesting.GetDB(t)
+
+	dbRepo := &types.Repo{
+		Name:        repoName,
+		Description: "Test",
+	}
+	// Insert the repo into our database
+	if err := database.Repos(db).Create(ctx, dbRepo); err != nil {
+		t.Fatal(err)
+	}
+	assertCloneStatus := func(status types.CloneStatus) {
+		t.Helper()
+		fromDB, err := database.GitserverRepos(db).GetByID(ctx, dbRepo.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if fromDB.CloneStatus != status {
+			t.Fatalf("Want %q, got %q", status, fromDB.CloneStatus)
+		}
+	}
+
+	if err := database.GitserverRepos(db).Upsert(ctx, &types.GitserverRepo{
+		RepoID:      dbRepo.ID,
+		ShardID:     "test",
+		CloneStatus: types.CloneStatusNotCloned,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	assertCloneStatus(types.CloneStatusNotCloned)
 
 	repo := remote
 	cmd := func(name string, arg ...string) string {
@@ -474,12 +505,13 @@ func TestCloneRepo(t *testing.T) {
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
 			return &GitRepoSyncer{}, nil
 		},
+		DB:               db,
 		ctx:              context.Background(),
 		locker:           &RepositoryLocker{},
 		cloneLimiter:     mutablelimiter.New(1),
 		cloneableLimiter: mutablelimiter.New(1),
 	}
-	_, err := s.cloneRepo(context.Background(), "example.com/foo/bar", nil)
+	_, err := s.cloneRepo(ctx, repoName, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -487,7 +519,7 @@ func TestCloneRepo(t *testing.T) {
 	// Wait until the clone is done. Please do not use this code snippet
 	// outside of a test. We only know this works since our test only starts
 	// one clone and will have nothing else attempt to lock.
-	dst := s.dir("example.com/foo/bar")
+	dst := s.dir(repoName)
 	for i := 0; i < 1000; i++ {
 		_, cloning := s.locker.Status(dst)
 		if !cloning {
@@ -495,6 +527,7 @@ func TestCloneRepo(t *testing.T) {
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
+	assertCloneStatus(types.CloneStatusCloned)
 
 	repo = filepath.Dir(string(dst))
 	gotCommit := cmd("git", "rev-parse", "HEAD")
@@ -503,18 +536,20 @@ func TestCloneRepo(t *testing.T) {
 	}
 
 	// Test blocking with a failure (already exists since we didn't specify overwrite)
-	_, err = s.cloneRepo(context.Background(), "example.com/foo/bar", &cloneOptions{Block: true})
+	_, err = s.cloneRepo(context.Background(), repoName, &cloneOptions{Block: true})
 	if !os.IsExist(errors.Cause(err)) {
 		t.Fatalf("expected clone repo to fail with already exists: %s", err)
 	}
+	assertCloneStatus(types.CloneStatusCloned)
 
 	// Test blocking with overwrite. First add random file to GIT_DIR. If the
 	// file is missing after cloning we know the directory was replaced
 	mkFiles(t, string(dst), "HELLO")
-	_, err = s.cloneRepo(context.Background(), "example.com/foo/bar", &cloneOptions{Block: true, Overwrite: true})
+	_, err = s.cloneRepo(context.Background(), repoName, &cloneOptions{Block: true, Overwrite: true})
 	if err != nil {
 		t.Fatal(err)
 	}
+	assertCloneStatus(types.CloneStatusCloned)
 
 	if _, err := os.Stat(dst.Path("HELLO")); !os.IsNotExist(err) {
 		t.Fatalf("expected clone to be overwritten: %s", err)
@@ -824,6 +859,7 @@ func TestSyncRepoState(t *testing.T) {
 			return &GitRepoSyncer{}, nil
 		},
 		Hostname:         hostname,
+		DB:               db,
 		ctx:              ctx,
 		locker:           &RepositoryLocker{},
 		cloneLimiter:     mutablelimiter.New(1),
@@ -853,7 +889,7 @@ func TestSyncRepoState(t *testing.T) {
 		t.Fatal("Expected an error")
 	}
 
-	err = s.syncRepoState(db, []string{hostname}, 10, 10)
+	err = s.syncRepoState([]string{hostname}, 10, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
