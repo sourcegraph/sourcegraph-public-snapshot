@@ -749,7 +749,7 @@ func (r *searchResolver) evaluateOr(ctx context.Context, scopeParameters []query
 		wantCount = *count
 	}
 
-	var result *SearchResultsResolver
+	result := &SearchResultsResolver{}
 	for _, term := range operands {
 		new, err := r.evaluatePatternExpression(ctx, scopeParameters, term)
 		if err != nil {
