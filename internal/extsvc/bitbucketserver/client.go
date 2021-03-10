@@ -1,3 +1,4 @@
+//nolint:bodyclose // Body is closed in Client.Do, but the response is still returned to provide access to the headers
 package bitbucketserver
 
 import (

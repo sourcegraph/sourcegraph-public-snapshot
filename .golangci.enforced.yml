@@ -14,6 +14,13 @@ linters:
     - goimports
     - gosimple
     - varcheck
+    - bodyclose
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - bodyclose
 
 run:
   timeout: 5m
