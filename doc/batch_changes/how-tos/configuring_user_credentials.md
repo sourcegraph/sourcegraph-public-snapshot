@@ -21,7 +21,7 @@ You should now see a list of the code hosts that are configured on Sourcegraph. 
 <!---TODO update link-->
 <video width="1920" height="1080" autoplay loop muted playsinline controls style="width: 100%; height: auto; max-width: 50rem">
   <source src="https://sourcegraphstatic.com/docs/images/campaigns/how-tos/user-tokens.webm" type="video/webm">
-  <sourec src="https://sourcegraphstatic.com/docs/images/campaigns/how-tos/user-tokens.mp4" type="video/mp4">
+  <source src="https://sourcegraphstatic.com/docs/images/campaigns/how-tos/user-tokens.mp4" type="video/mp4">
 </video>
 
 To add a token for a code host, click on the **Add token** button next to its name. This will display an input modal like the following:
