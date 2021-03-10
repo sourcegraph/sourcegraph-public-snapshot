@@ -17,10 +17,11 @@ import (
 // Config is the set of configuration parameters that determine the structure of the CI build. These
 // parameters are extracted from the build environment (branch name, commit hash, timestamp, etc.)
 type Config struct {
-	now     time.Time
-	branch  string
-	version string
-	commit  string
+	now         time.Time
+	branch      string
+	version     string
+	commit      string
+	buildNumber int
 
 	// mustIncludeCommit, if non-empty, is a list of commits at least one of which must be present
 	// in the branch. If empty, then no check is enforced.
@@ -53,6 +54,7 @@ func ComputeConfig() Config {
 	if commit == "" {
 		commit = "1234567890123456789012345678901234567890" // for testing
 	}
+	buildNumber, _ := strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
 
 	taggedRelease := true // true if this is a tagged release
 	switch {
@@ -61,8 +63,7 @@ func ComputeConfig() Config {
 		version = strings.TrimPrefix(version, "v")
 	default:
 		taggedRelease = false
-		buildNum, _ := strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
-		version = fmt.Sprintf("%05d_%s_%.7s", buildNum, now.Format("2006-01-02"), commit)
+		version = fmt.Sprintf("%05d_%s_%.7s", buildNumber, now.Format("2006-01-02"), commit)
 	}
 
 	patchNoTest := strings.HasPrefix(branch, "docker-images-patch-notest/")
@@ -99,6 +100,7 @@ func ComputeConfig() Config {
 		commit:            commit,
 		mustIncludeCommit: mustIncludeCommits,
 		changedFiles:      changedFiles,
+		buildNumber:       buildNumber,
 
 		taggedRelease:       taggedRelease,
 		releaseBranch:       lazyregexp.New(`^[0-9]+\.[0-9]+$`).MatchString(branch),
@@ -111,6 +113,15 @@ func ComputeConfig() Config {
 		profilingEnabled:    profilingEnabled,
 		isBextNightly:       os.Getenv("BEXT_NIGHTLY") == "true",
 	}
+}
+
+func (c Config) shortCommit() string {
+	// http://git-scm.com/book/en/v2/Git-Tools-Revision-Selection#Short-SHA-1
+	if len(c.commit) < 12 {
+		return c.commit
+	}
+
+	return c.commit[:12]
 }
 
 func (c Config) ensureCommit() error {

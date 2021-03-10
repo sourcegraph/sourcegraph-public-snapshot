@@ -9,7 +9,7 @@ site_monitoring.go @bobheadxi
 *search*.go @rvantonder
 *zoekt*.go @rvantonder
 
-# Campaigns
+# Batch changes
 batches.go @LawnGnome
 batches.go @eseliger
 

@@ -32,7 +32,7 @@ export type StepID =
     | 'release:status'
     | 'release:create-candidate'
     | 'release:stage'
-    | 'release:add-to-campaign'
+    | 'release:add-to-batch-change'
     | 'release:finalize'
     | 'release:close'
     // util
@@ -471,10 +471,10 @@ Campaign: ${campaignURL}`,
         },
     },
     {
-        id: 'release:add-to-campaign',
-        description: 'Manually add a change to a release campaign',
+        id: 'release:add-to-batch-change',
+        description: 'Manually add a change to a release batch change',
         argNames: ['changeRepo', 'changeID'],
-        // Example: yarn run release release:add-to-campaign sourcegraph/about 1797
+        // Example: yarn run release release:add-to-batch-change sourcegraph/about 1797
         run: async (config, changeRepo, changeID) => {
             const { upcoming: release } = await releaseVersions(config)
             if (!changeRepo || !changeID) {

@@ -17,7 +17,6 @@ ALPINE_MATCHES=$(git grep -e '\salpine\:' --and --not -e '^\s*//' --and --not -e
   ':(exclude)docker-images/README.md' \
   ':(exclude)docker-images/alpine' \
   ':(exclude)doc/campaigns/' \
-  ':(exclude)web/src/enterprise/campaigns/create/CreateCampaignPage.tsx' \
   ':(exclude)*vendor*' \
   ':(exclude)*testdata*')
 set -e
@@ -45,6 +44,6 @@ If the linter is incorrect, either:
 2) add an exclusion clause in the "git grep" command in  no-alpine-guard.sh
 
 EOF
-
+  echo "^^^ +++"
   exit 1
 fi

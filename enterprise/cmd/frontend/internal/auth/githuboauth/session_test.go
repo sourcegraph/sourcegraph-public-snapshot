@@ -2,6 +2,7 @@ package githuboauth
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"reflect"
 	"testing"
@@ -14,10 +15,13 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func init() {
@@ -26,7 +30,7 @@ func init() {
 	spew.Config.SpewKeys = true
 }
 
-func TestGetOrCreateUser(t *testing.T) {
+func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 	ghURL, _ := url.Parse("https://github.com")
 	codeHost := extsvc.NewCodeHost(ghURL, extsvc.TypeGitHub)
 	clientID := "client-id"
@@ -239,6 +243,60 @@ func TestGetOrCreateUser(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+func TestSessionIssuerHelper_CreateCodeHostConnection(t *testing.T) {
+	ctx := context.Background()
+	s := &sessionIssuerHelper{}
+	t.Run("Unauthenticated request", func(t *testing.T) {
+		_, err := s.CreateCodeHostConnection(ctx, nil, "")
+		if err == nil {
+			t.Fatal("Want error but got nil")
+		}
+	})
+
+	mockGitHubCom := newMockProvider(t, "githubcomclient", "githubcomsecret", "https://github.com/")
+	providers.MockProviders = []providers.Provider{mockGitHubCom.Provider}
+	defer func() { providers.MockProviders = nil }()
+
+	var got *types.ExternalService
+	database.Mocks.ExternalServices.Create = func(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error {
+		got = externalService
+		return nil
+	}
+	defer func() { database.Mocks.ExternalServices.Create = nil }()
+
+	act := &actor.Actor{UID: 1}
+	ghUser := &github.User{
+		ID:    github.Int64(101),
+		Login: github.String("alice"),
+	}
+
+	ctx = actor.WithActor(ctx, act)
+	ctx = githublogin.WithUser(ctx, ghUser)
+	tok := &oauth2.Token{
+		AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness",
+	}
+	_, err := s.CreateCodeHostConnection(ctx, tok, mockGitHubCom.ConfigID().ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: fmt.Sprintf("GitHub (%s)", deref(ghUser.Login)),
+		Config: fmt.Sprintf(`
+{
+  "url": "%s",
+  "token": "%s",
+  "orgs": []
+}
+`, mockGitHubCom.ServiceID, tok.AccessToken),
+		NamespaceUserID: act.UID,
+	}
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 }
 
