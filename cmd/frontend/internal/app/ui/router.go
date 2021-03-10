@@ -217,7 +217,7 @@ func initRouter(db dbutil.DB, router *mux.Router) {
 	router.Get(routeLegacyCampaigns).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r.URL.Path = "/batch-changes" + mux.Vars(r)["Path"]
 		// Temporary redirect so at some point we can reuse the /campaigns path, if needed.
-		http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
+		http.Redirect(w, r, auth.SafeRedirectURL(r.URL.String()), http.StatusTemporaryRedirect)
 	}))
 	router.Get(routeBatchChanges).Handler(handler(serveBrandedPageString("Batch Changes", nil)))
 	router.Get(routeCodeMonitoring).Handler(handler(serveBrandedPageString("Code Monitoring", nil)))
