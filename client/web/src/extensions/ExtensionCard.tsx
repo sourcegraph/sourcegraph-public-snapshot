@@ -77,16 +77,22 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
         [extension]
     )
 
-    const actionableErrorMessage = (error: Error) => {
-        let errorMessage;
+    const actionableErrorMessage = (error: Error): JSX.Element => {
+        let errorMessage
 
         if (error.message.startsWith('invalid settings') && settingsURL) {
-            errorMessage = <>Could not enable / disable {name}. Edit your <a href={settingsURL}>user settings</a> to fix this error.</>
+            errorMessage = (
+                <>
+                    Could not enable / disable {name}. Edit your <Link to={settingsURL}>user settings</Link> to fix this
+                    error. <br />
+                    <br /> ({error.message})
+                </>
+            )
         } else {
-            errorMessage = <>{error.message}</>;
+            errorMessage = <>{error.message}</>
         }
 
-        return errorMessage;
+        return errorMessage
     }
 
     /**
@@ -270,7 +276,8 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                 {/* Visual feedback: alert when optimistic update fails */}
                 {optimisticFailure && (
                     <div className="alert alert-danger px-2 py-1 extension-card__disabled-feedback">
-                        <span className="font-weight-semibold">Error:</span> {actionableErrorMessage(optimisticFailure.error)}
+                        <span className="font-weight-semibold">Error:</span>{' '}
+                        {actionableErrorMessage(optimisticFailure.error)}
                     </div>
                 )}
             </div>
