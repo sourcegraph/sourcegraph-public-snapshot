@@ -126,6 +126,8 @@
 // 1528395794_campaigns_rename.up.sql (5.929kB)
 // 1528395795_add_clone_status_index_to_gitserver_repos.down.sql (72B)
 // 1528395795_add_clone_status_index_to_gitserver_repos.up.sql (112B)
+// 1528395796_alter_cloud_default_constraint.down.sql (186B)
+// 1528395796_alter_cloud_default_constraint.up.sql (209B)
 
 package migrations
 
@@ -2714,6 +2716,46 @@ func _1528395795_add_clone_status_index_to_gitserver_reposUpSql() (*asset, error
 	return a, nil
 }
 
+var __1528395796_alter_cloud_default_constraintDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\xcb\xb1\xae\x82\x40\x10\x46\xe1\x7e\x9e\xe2\x2f\xef\x4d\x7c\x83\x8d\x85\xc2\xa8\x53\xb0\xab\xb0\x44\x3a\x42\x60\x4c\x88\x04\x93\x65\xd7\xf8\xf8\xc6\xca\x50\x58\x9f\xf3\xed\xf9\x28\xd6\x10\xe5\xa5\x3b\x43\x6c\xce\x0d\xe4\x00\x6e\xa4\xf2\x15\xee\xe3\x3c\xb4\xfd\xf4\x48\x43\x3b\xe8\xad\x4b\x53\x34\x94\x95\xbc\xf3\x8c\xda\xca\xa5\xe6\xaf\xb0\xce\xff\x56\x70\x16\xfa\x8a\x1a\xe6\x6e\x6a\x17\x0d\xcf\xb1\xd7\x05\x7f\x9f\x71\x83\xd5\xf9\x4f\x00\x70\x3d\x71\xc9\xeb\x80\x2d\x62\x48\x6a\x88\x32\x57\x14\xe2\x0d\xbd\x03\x00\x00\xff\xff\xeb\x87\x6b\x70\xba\x00\x00\x00")
+
+func _1528395796_alter_cloud_default_constraintDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395796_alter_cloud_default_constraintDownSql,
+		"1528395796_alter_cloud_default_constraint.down.sql",
+	)
+}
+
+func _1528395796_alter_cloud_default_constraintDownSql() (*asset, error) {
+	bytes, err := _1528395796_alter_cloud_default_constraintDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395796_alter_cloud_default_constraint.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xc0, 0xdc, 0x97, 0x9, 0xfa, 0x54, 0x10, 0xd1, 0xb0, 0x80, 0xaf, 0xc4, 0x4b, 0x8b, 0xa3, 0x15, 0x8f, 0x9b, 0xc3, 0xbf, 0xf7, 0x71, 0xd4, 0x52, 0xf5, 0xf7, 0xab, 0x31, 0xe5, 0xb, 0x9b, 0x40}}
+	return a, nil
+}
+
+var __1528395796_alter_cloud_default_constraintUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\xcb\xc1\x8a\x83\x30\x14\x46\xe1\x7d\x9e\xe2\x5f\xce\xc0\xbc\x41\x98\x85\xd5\xdb\x36\xa0\x37\xad\x46\xea\x2e\x88\xb9\x05\x69\xb0\xa0\xb1\xf4\xf1\x4b\x57\xc5\x45\xd7\xe7\x7c\x3b\x3a\x18\xd6\x4a\x15\xb5\x3d\xc1\x70\x41\x1d\xcc\x1e\xd4\x99\xc6\x35\xb8\x8d\x53\xf0\x43\xbc\xaf\xc1\x07\xb9\xf6\x6b\x4c\x5a\xe5\x35\x65\x8e\xd0\xb2\x39\xb7\xf4\x11\x6c\xdd\x77\x05\xcb\x90\x67\x92\x79\xea\xa3\x5f\x64\x7e\x8c\x83\x2c\xf8\x79\x8f\x7f\xd8\x9c\xbf\x0a\x00\x2e\x47\xaa\x69\x1b\xf0\x8f\x34\xaf\x82\x8c\x0b\x04\x89\x92\x24\xf8\x3e\xc1\x34\xe0\xb6\x2c\xb5\x52\xb9\xad\x2a\xe3\xb4\x7a\x05\x00\x00\xff\xff\x77\x7c\xc5\x0d\xd1\x00\x00\x00")
+
+func _1528395796_alter_cloud_default_constraintUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395796_alter_cloud_default_constraintUpSql,
+		"1528395796_alter_cloud_default_constraint.up.sql",
+	)
+}
+
+func _1528395796_alter_cloud_default_constraintUpSql() (*asset, error) {
+	bytes, err := _1528395796_alter_cloud_default_constraintUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395796_alter_cloud_default_constraint.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x58, 0x46, 0xbc, 0x6d, 0xdb, 0x24, 0x4f, 0x39, 0x3d, 0x70, 0xaf, 0x1a, 0x30, 0xb, 0xa3, 0xd8, 0x36, 0xc8, 0x17, 0xbf, 0x47, 0x79, 0x30, 0x1f, 0xca, 0x2e, 0x9, 0xa9, 0xfa, 0x56, 0xbe, 0x37}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2931,6 +2973,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395794_campaigns_rename.up.sql":                                                     _1528395794_campaigns_renameUpSql,
 	"1528395795_add_clone_status_index_to_gitserver_repos.down.sql":                          _1528395795_add_clone_status_index_to_gitserver_reposDownSql,
 	"1528395795_add_clone_status_index_to_gitserver_repos.up.sql":                            _1528395795_add_clone_status_index_to_gitserver_reposUpSql,
+	"1528395796_alter_cloud_default_constraint.down.sql":                                     _1528395796_alter_cloud_default_constraintDownSql,
+	"1528395796_alter_cloud_default_constraint.up.sql":                                       _1528395796_alter_cloud_default_constraintUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3103,6 +3147,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395794_campaigns_rename.up.sql":                                                     {_1528395794_campaigns_renameUpSql, map[string]*bintree{}},
 	"1528395795_add_clone_status_index_to_gitserver_repos.down.sql":                          {_1528395795_add_clone_status_index_to_gitserver_reposDownSql, map[string]*bintree{}},
 	"1528395795_add_clone_status_index_to_gitserver_repos.up.sql":                            {_1528395795_add_clone_status_index_to_gitserver_reposUpSql, map[string]*bintree{}},
+	"1528395796_alter_cloud_default_constraint.down.sql":                                     {_1528395796_alter_cloud_default_constraintDownSql, map[string]*bintree{}},
+	"1528395796_alter_cloud_default_constraint.up.sql":                                       {_1528395796_alter_cloud_default_constraintUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
