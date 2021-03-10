@@ -5,7 +5,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-type CommitSearchResult struct {
+type CommitMatch struct {
 	Commit         git.Commit
 	RepoName       types.RepoName
 	Refs           []string
@@ -20,7 +20,7 @@ type CommitSearchResult struct {
 // return a more meaningful result count for streaming while maintaining backward
 // compatibility for our GraphQL API. The GraphQL API calls ResultCount on the
 // resolver, while streaming calls ResultCount on CommitSearchResult.
-func (r *CommitSearchResult) ResultCount() int {
+func (r *CommitMatch) ResultCount() int {
 	if n := len(r.Body.Highlights); n > 0 {
 		return n
 	}
@@ -29,7 +29,7 @@ func (r *CommitSearchResult) ResultCount() int {
 	return 1
 }
 
-func (r *CommitSearchResult) Limit(limit int) int {
+func (r *CommitMatch) Limit(limit int) int {
 	if len(r.Body.Highlights) == 0 {
 		return limit - 1 // just counting the commit
 	} else if len(r.Body.Highlights) > limit {
