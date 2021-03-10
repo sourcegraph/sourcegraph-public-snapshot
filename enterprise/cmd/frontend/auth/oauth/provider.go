@@ -30,7 +30,9 @@ type Provider struct {
 
 var _ providers.Provider = (*Provider)(nil)
 
-func getProvider(serviceType, id string) *Provider {
+// GetProvider returns a provider with given serviceType and ID. It returns nil
+// if no such provider.
+func GetProvider(serviceType, id string) *Provider {
 	p, ok := providers.GetProviderByConfigID(providers.ConfigID{Type: serviceType, ID: id}).(*Provider)
 	if !ok {
 		return nil
@@ -120,6 +122,7 @@ func stateHandler(isLogin bool, providerID string, config gologin.CookieConfig, 
 				Redirect:   redirect,
 				CSRF:       csrf,
 				ProviderID: providerID,
+				Op:         LoginStateOp(req.URL.Query().Get("op")),
 			}.Encode()
 			if err != nil {
 				log15.Error("Could not encode OAuth state", "error", err)
@@ -137,6 +140,14 @@ func stateHandler(isLogin bool, providerID string, config gologin.CookieConfig, 
 	return http.HandlerFunc(fn)
 }
 
+type LoginStateOp string
+
+const (
+	// NOTE: OAuth is almost always used for creating new accounts, therefore we don't need a special name for it.
+	LoginStateOpCreateAccount            LoginStateOp = ""
+	LoginStateOpCreateCodeHostConnection LoginStateOp = "createCodeHostConnection"
+)
+
 type LoginState struct {
 	// Redirect is the URL path to redirect to after login.
 	Redirect string
@@ -147,6 +158,9 @@ type LoginState struct {
 	// CSRF is the random string that ensures the encoded state is sufficiently random to be checked
 	// for CSRF purposes.
 	CSRF string
+
+	// Op is the operation to be done after OAuth flow. The default operation is to create a new account.
+	Op LoginStateOp
 }
 
 func (s LoginState) Encode() (string, error) {

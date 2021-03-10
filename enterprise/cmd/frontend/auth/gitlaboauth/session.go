@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
+	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
@@ -14,11 +15,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-
-	"golang.org/x/oauth2"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type sessionIssuerHelper struct {
@@ -72,6 +73,42 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		})
 	}
 	return actor.FromUser(userID), "", nil
+}
+
+func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, token *oauth2.Token, providerID string) (safeErrMsg string, err error) {
+	actor := actor.FromContext(ctx)
+	if !actor.IsAuthenticated() {
+		return "Must be authenticated to create code host connection from OAuth flow.", errors.New("unauthenticated request")
+	}
+
+	p := oauth.GetProvider(extsvc.TypeGitLab, providerID)
+	if p == nil {
+		return "Could not find OAuth provider for the state.", errors.Errorf("provider not found for %q", providerID)
+	}
+
+	gUser, err := UserFromContext(ctx)
+	if err != nil {
+		return "Could not read GitLab user from callback request.", errors.Wrap(err, "could not read user from context")
+	}
+
+	err = database.GlobalExternalServices.Create(ctx, conf.Get,
+		&types.ExternalService{
+			Kind:        extsvc.KindGitLab,
+			DisplayName: fmt.Sprintf("GitLab (%s)", gUser.Username),
+			Config: fmt.Sprintf(`
+{
+  "url": "%s",
+  "token": "%s",
+  "projectQuery": ["projects?visibility=public"]
+}
+`, p.ServiceID, token.AccessToken),
+			NamespaceUserID: actor.UID,
+		},
+	)
+	if err != nil {
+		return "Could not create code host connection.", err
+	}
+	return "", nil // success
 }
 
 func (s *sessionIssuerHelper) DeleteStateCookie(w http.ResponseWriter) {
