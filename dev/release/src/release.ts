@@ -325,13 +325,10 @@ cc @${config.captainGitHubUsername}
                 }
             }
 
-            const upgradeGuideEntry = `
-## ${previous.major}.${previous.minor} -> ${release.major}.${release.minor}
+            const [prev, next] = [`${previous.major}.${previous.minor}`, `${release.major}.${release.minor}`]
 
-TODO
-
-${hubSpotFeedbackFormStub(`${previous.major}.${previous.minor}`)}
-`.trimStart()
+            // we join with escaped newlines for the 'sed' command
+            const upgradeGuideEntry = [`## ${prev} -> ${next}`, 'TODO', hubSpotFeedbackFormStub(prev)].join('\\n\\n')
 
             // Render changes
             const createdChanges = await createChangesets({
