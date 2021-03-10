@@ -312,7 +312,7 @@ const SettingsSchemaJSON = `{
       "default": false
     },
     "search.uppercase": {
-      "description": "When active, any uppercase characters in the pattern will make the entire query case-sensitive.",
+      "description": "REMOVED. Previously, when active, any uppercase characters in the pattern will make the entire query case-sensitive.",
       "type": "boolean",
       "default": false,
       "!go": {

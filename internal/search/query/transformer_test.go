@@ -210,63 +210,6 @@ func TestHoist(t *testing.T) {
 	}
 }
 
-func TestSearchUppercase(t *testing.T) {
-	cases := []struct {
-		input string
-		want  string
-	}{
-		{
-			input: `TeSt`,
-			want:  `(and "TeSt" "case:yes")`,
-		},
-		{
-			input: `test`,
-			want:  `"test"`,
-		},
-		{
-			input: `content:TeSt`,
-			want:  `(and "TeSt" "case:yes")`,
-		},
-		{
-			input: `content:test`,
-			want:  `"test"`,
-		},
-		{
-			input: `repo:foo TeSt`,
-			want:  `(and "repo:foo" "TeSt" "case:yes")`,
-		},
-		{
-			input: `repo:foo test`,
-			want:  `(and "repo:foo" "test")`,
-		},
-		{
-			input: `repo:foo content:TeSt`,
-			want:  `(and "repo:foo" "TeSt" "case:yes")`,
-		},
-		{
-			input: `repo:foo content:test`,
-			want:  `(and "repo:foo" "test")`,
-		},
-		{
-			input: `TeSt1 TesT2`,
-			want:  `(and (concat "TeSt1" "TesT2") "case:yes")`,
-		},
-		{
-			input: `TeSt1 test2`,
-			want:  `(and (concat "TeSt1" "test2") "case:yes")`,
-		},
-	}
-	for _, c := range cases {
-		t.Run("searchUppercase", func(t *testing.T) {
-			query, _ := ParseAndOr(c.input, SearchTypeRegex)
-			got := toString(SearchUppercase(SubstituteAliases(SearchTypeRegex)(query)))
-			if diff := cmp.Diff(c.want, got); diff != "" {
-				t.Fatal(diff)
-			}
-		})
-	}
-}
-
 func TestSubstituteOrForRegexp(t *testing.T) {
 	cases := []struct {
 		input string
