@@ -62,7 +62,7 @@ Lattice is the service used to do review and goal tracking. These are done quart
 
 ### [LSIF](https://lsif.dev/)
 
-LSIF is a standard format for persisted code analyzer output. It allows a code viewing client (e.g., an editor or code browser) to provide features like autocomplete, go to definition, find references, and similar, without requiring a language analyzer to perform those computations in real-time. Today, several companies are working to support its growth, including Sourcegraph and GitHub/Microsoft, and the protocol is beginning to be used to power a rapidly growing list of language intelligence tools. See below for details on and links to current indexer implementations.
+LSIF is a standard format for persisted code analyzer output. It allows a code viewing client (e.g., an editor or code browser) to provide features like autocomplete, go to definition, find references, and similar, without requiring a language analyzer to perform those computations in real-time. Today, several companies are working to support its growth, including Sourcegraph and GitHub/Microsoft, and the protocol is beginning to be used to power a rapidly growing list of language intelligence tools. Sourcegraph uses LSIF to power it's code intelligence feature.
 
 ### [LSP](https://microsoft.github.io/language-server-protocol/)
 
