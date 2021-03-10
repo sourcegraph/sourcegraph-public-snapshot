@@ -129,7 +129,7 @@ func (r *searchResolver) reposExist(ctx context.Context, options searchrepos.Opt
 func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAlert {
 	globbing := getBoolPtr(r.UserSettings.SearchGlobbing, false)
 
-	repoFilters, minusRepoFilters := r.Query.RegexpPatterns(query.FieldRepo)
+	repoFilters, minusRepoFilters := r.Query.Repositories()
 	repoGroupFilters, _ := r.Query.StringValues(query.FieldRepoGroup)
 	contextFilters, _ := r.Query.StringValues(query.FieldContext)
 	onlyForks, noForks, forksNotSet := false, false, true
@@ -490,7 +490,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 				break
 			}
 			repoParentPattern := "^" + regexp.QuoteMeta(repoParent) + "/"
-			repoFieldValues, _ := r.Query.RegexpPatterns(query.FieldRepo)
+			repoFieldValues, _ := r.Query.Repositories()
 
 			for _, v := range repoFieldValues {
 				if strings.HasPrefix(v, strings.TrimSuffix(repoParentPattern, "/")) {
