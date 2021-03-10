@@ -310,8 +310,6 @@ github.com/facebookgo/stack v0.0.0-20160209184415-751773369052/go.mod h1:UbMTZqL
 github.com/facebookgo/subset v0.0.0-20200203212716-c811ad88dec4 h1:7HZCaLC5+BZpmbhCOZJ293Lz68O7PYrF2EzeiFMwCLk=
 github.com/facebookgo/subset v0.0.0-20200203212716-c811ad88dec4/go.mod h1:5tD+neXqOorC30/tWg0LCSkrqj/AR6gu8yY8/fpw1q0=
 github.com/fasthttp-contrib/websocket v0.0.0-20160511215533-1f3b11f56072/go.mod h1:duJ4Jxv5lDcvg4QuQr0oowTf7dz4/CR8NtyCooz9HL8=
-github.com/fatih/astrewrite v0.0.0-20191207154002-9094e544fcef h1:NQhozma2hi4BWW5q0qxka4G3bRNf+P/UgdmAVahUabM=
-github.com/fatih/astrewrite v0.0.0-20191207154002-9094e544fcef/go.mod h1:Q9oPjZxY7Z0tvrD5KtBTVLiSwATtmhafFD/Lb0fyzOk=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/fatih/color v1.9.0 h1:8xPHl4/q1VyqGIPif1F+1V3Y3lSmrq01EabUW3CoW5s=
 github.com/fatih/color v1.9.0/go.mod h1:eQcE1qtQxscV5RaZvpXrrb8Drkc3/DdQ+uUYCNjL+zU=
@@ -1258,8 +1256,8 @@ github.com/sourcegraph/alertmanager v0.21.1-0.20200727091526-3e856a90b534 h1:2y7
 github.com/sourcegraph/alertmanager v0.21.1-0.20200727091526-3e856a90b534/go.mod h1:h7tJ81NA0VLWvWEayi1QltevFkLF3KxmC/malTcT8Go=
 github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d h1:yKm7XZV6j9Ev6lojP2XaIshpT4ymkqhMeSghO5Ps00E=
 github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d/go.mod h1:UdhH50NIW0fCiwBSr0co2m7BnFLdv4fQTgdqdJTHFeE=
-github.com/sourcegraph/campaignutils v0.0.0-20201124155628-5d86cf20398d h1:BvdJF34dFf+M4anMVVGDaXDoAJbAonWV3SLILngzXds=
-github.com/sourcegraph/campaignutils v0.0.0-20201124155628-5d86cf20398d/go.mod h1:xm6i78Mk2t4DBLQDqEFc/3x6IPf7yYZCgbNaTQGhJHA=
+github.com/sourcegraph/batch-change-utils v0.0.0-20210309183117-206c057cc03e h1:8dpmTar1H4dS4f3WWTtG6FSK/GbjQl7alHRJlzNY0lo=
+github.com/sourcegraph/batch-change-utils v0.0.0-20210309183117-206c057cc03e/go.mod h1:kKNRPN6dxuXwC4UUhPVcAJsvz4EVEfI0jyN5HUJsazA=
 github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81 h1:v4/JVxZSPWifxmICRqgXK7khThjw03RfdGhyeA2S4EQ=
 github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81/go.mod h1:xIvvI5FiHLxhv8prbzVpaMHaaGPFPFQSuTcxC91ryOo=
 github.com/sourcegraph/go-ctags v0.0.0-20201109224903-0e02e034fdb1 h1:di6PFtd0Fp/tvp4PddGk8yDrOwUpu2Y/UBZ39dgvLoc=
@@ -1289,8 +1287,6 @@ github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e/go.mod h1:HuIsMU8RRBOtsCgI77wP899iHVBQpCmg4ErYMZB+2IA=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152 h1:z/MpntplPaW6QW95pzcAR/72Z5TWDyDnSo0EOcyij9o=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152/go.mod h1:GIjDIg/heH5DOkXY3YJ/wNhfHsQHoXGjl8G8amsYQ1I=
-github.com/sourcegraph/zoekt v0.0.0-20210225093519-da52e7c141aa h1:RiKzBMOLlWkKy7MSG1YZx6KTxIjMvHKd9eMR0egv34k=
-github.com/sourcegraph/zoekt v0.0.0-20210225093519-da52e7c141aa/go.mod h1:1Uv3ThqJ+VWQQS1qFIzufLA8jkQ6a+FDk3OFI6qPZVQ=
 github.com/sourcegraph/zoekt v0.0.0-20210302122048-1e934d0e2521 h1:YDT/cYQvg+VSEkekDmpv3boxpJffRiKi/MVBOst0J3E=
 github.com/sourcegraph/zoekt v0.0.0-20210302122048-1e934d0e2521/go.mod h1:1Uv3ThqJ+VWQQS1qFIzufLA8jkQ6a+FDk3OFI6qPZVQ=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
