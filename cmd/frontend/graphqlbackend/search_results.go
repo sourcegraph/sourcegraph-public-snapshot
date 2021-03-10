@@ -781,18 +781,6 @@ func (r *searchResolver) evaluateOr(ctx context.Context, scopeParameters []query
 	return result, nil
 }
 
-func (r *searchResolver) evaluateOperator(ctx context.Context, scopeParameters []query.Node, operator query.Operator) (*SearchResultsResolver, error) {
-	if len(operator.Operands) == 0 {
-		return nil, nil
-	}
-
-	if operator.Kind == query.And {
-		return r.evaluateAndStream(ctx, scopeParameters, operator.Operands)
-	} else {
-		return r.evaluateOr(ctx, scopeParameters, operator.Operands)
-	}
-}
-
 // setQuery sets a new query in the search resolver, for potentially repeated
 // calls in the search pipeline. The important part is it takes care of
 // invalidating cached repo info.
@@ -809,9 +797,16 @@ func (r *searchResolver) setQuery(q []query.Node) {
 func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopeParameters []query.Node, node query.Node) (*SearchResultsResolver, error) {
 	switch term := node.(type) {
 	case query.Operator:
-		if term.Kind == query.And || term.Kind == query.Or {
-			return r.evaluateOperator(ctx, scopeParameters, term)
-		} else if term.Kind == query.Concat {
+		if len(term.Operands) == 0 {
+			return nil, nil
+		}
+
+		switch term.Kind {
+		case query.And:
+			return r.evaluateAndStream(ctx, scopeParameters, term.Operands)
+		case query.Or:
+			return r.evaluateOr(ctx, scopeParameters, term.Operands)
+		case query.Concat:
 			r.setQuery(append(scopeParameters, term))
 			return r.evaluateLeaf(ctx)
 		}
