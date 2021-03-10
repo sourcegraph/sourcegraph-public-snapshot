@@ -1,6 +1,6 @@
 # Batch Changes design
 
-Why is [Batch Changes](../../../batch_changes/index.md) designed the way they are?
+Why is the [Batch Changes](../../../batch_changes/index.md) feature designed the way it is?
 
 ## Principles
 

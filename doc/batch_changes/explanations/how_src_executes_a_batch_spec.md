@@ -8,20 +8,20 @@ It explains what happens under the hood when a user uses applies or previews a b
 
 `src batch apply` and `src batch preview` execute a batch spec the same way:
 
-1. [Parse the batch spec](#parse-batch-spec)
+1. [Parse the batch spec](#parse-the-batch-spec)
 1. [Resolve the namespace](#resolving-namespace)
 1. [Prepare container images](#preparing-container-images)
 1. [Resolve repositories](#resolving-repositories)
 1. [Executing steps](#executing-steps)
 1. [Sending changeset specs](#sending-changeset-specs)
-1. [Sending batch spec](#sending-batch-spec)
+1. [Sending batch spec](#sending-the-batch-spec)
 1. [Preview or apply the batch spec](#preview-or-apply-the-batch-spec)
 
 The difference is the last step: `src batch apply` _applies_ the batch spec where the `src batch preview` only prints a URL at which you can preview what would happen if you apply it.
 
 The rest of the document explains each step in more detail.
 
-## Parse batch spec
+## Parse the batch spec
 
 `src` reads in, parses and validates the batch spec YAML specified with the `-f` flag.
 
@@ -166,7 +166,7 @@ These changeset specs are now uploaded to the connected Sourcegraph instance, on
 
 Each request yields an ID that uniquely identifies the changeset spec on the Sourcegraph instance. These IDs are used for the next step.
 
-## Sending batch spec
+## Sending the batch spec
 
 The IDs of the changeset specs that were created in the previous step, "[Sending changeset specs](#sending-changeset-specs)", are collected into a list and used for the next request with which `src` uploads the batch spec to the connected Sourcegraph instance.
 
