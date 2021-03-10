@@ -121,8 +121,10 @@ export class FileMatch extends React.PureComponent<Props> {
             items.length > 0 ? (
                 <>
                     {aggregateLabels(items).map(label => (
-                        <LinkOrSpan key={label.text} to={label.linkURL}>
-                            <span className="badge badge-secondary text-uppercase">{label.text}</span>
+                        <LinkOrSpan key={label.text} to={label.linkURL} target="_blank" rel="noopener noreferrer">
+                            <span className="badge badge-secondary text-muted text-uppercase file-match__label">
+                                {label.text}
+                            </span>
                         </LinkOrSpan>
                     ))}
                 </>

@@ -184,8 +184,13 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOv
                                             {index !== 0 && <hr />}
 
                                             {(hoverOrError?.aggregatedLabels || []).map(label => (
-                                                <LinkOrSpan key={label.text} to={label.linkURL}>
-                                                    <span className="badge badge-secondary text-uppercase hover-overlay__label test-hover-label">
+                                                <LinkOrSpan
+                                                    key={label.text}
+                                                    to={label.linkURL}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    <span className="badge badge-secondary text-muted text-uppercase hover-overlay__label test-hover-label">
                                                         {label.text}
                                                     </span>
                                                 </LinkOrSpan>
