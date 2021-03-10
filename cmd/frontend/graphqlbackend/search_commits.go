@@ -35,8 +35,7 @@ type CommitSearchResult struct {
 	SourceRefs     []string
 	MessagePreview *highlightedString
 	DiffPreview    *highlightedString
-	Body           string
-	Highlights     []*highlightedRange
+	Body           highlightedString
 }
 
 // ResultCount for CommitSearchResult returns the number of highlights if there
@@ -45,7 +44,7 @@ type CommitSearchResult struct {
 // compatibility for our GraphQL API. The GraphQL API calls ResultCount on the
 // resolver, while streaming calls ResultCount on CommitSearchResult.
 func (r *CommitSearchResult) ResultCount() int {
-	if n := len(r.Highlights); n > 0 {
+	if n := len(r.Body.Highlights()); n > 0 {
 		return n
 	}
 	// Queries such as type:commit after:"1 week ago" don't have highlights. We count
@@ -54,13 +53,13 @@ func (r *CommitSearchResult) ResultCount() int {
 }
 
 func (r *CommitSearchResult) Limit(limit int) int {
-	if len(r.Highlights) == 0 {
+	if len(r.Body.highlights) == 0 {
 		return limit - 1 // just counting the commit
-	} else if len(r.Highlights) > limit {
-		r.Highlights = r.Highlights[:limit]
+	} else if len(r.Body.highlights) > limit {
+		r.Body.highlights = r.Body.highlights[:limit]
 		return 0
 	}
-	return limit - len(r.Highlights)
+	return limit - len(r.Body.highlights)
 }
 
 // CommitSearchResultResolver is a resolver for the GraphQL type `CommitSearchResult`
@@ -121,6 +120,7 @@ func (r *CommitSearchResultResolver) SourceRefs() []*GitRefResolver {
 func (r *CommitSearchResultResolver) MessagePreview() *highlightedString {
 	return r.CommitSearchResult.MessagePreview
 }
+
 func (r *CommitSearchResultResolver) DiffPreview() *highlightedString {
 	return r.CommitSearchResult.DiffPreview
 }
@@ -153,8 +153,8 @@ func (r *CommitSearchResultResolver) Detail() Markdown {
 
 func (r *CommitSearchResultResolver) Matches() []*searchResultMatchResolver {
 	match := &searchResultMatchResolver{
-		body:       r.CommitSearchResult.Body,
-		highlights: r.CommitSearchResult.Highlights,
+		body:       r.CommitSearchResult.Body.Value(),
+		highlights: r.CommitSearchResult.Body.Highlights(),
 		url:        r.Commit().URL(),
 	}
 	matches := []*searchResultMatchResolver{match}
@@ -462,9 +462,11 @@ func logCommitSearchResultsToResolvers(ctx context.Context, db dbutil.DB, op *se
 				SourceRefs:     rawResult.SourceRefs,
 				MessagePreview: messagePreview,
 				DiffPreview:    diffPreview,
-				Body:           matchBody,
-				Highlights:     matchHighlights,
-				RepoName:       repoName,
+				Body: highlightedString{
+					value:      matchBody,
+					highlights: matchHighlights,
+				},
+				RepoName: repoName,
 			},
 		}
 	}

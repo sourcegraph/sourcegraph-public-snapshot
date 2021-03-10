@@ -75,8 +75,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 			Commit:      git.Commit{ID: "c1", Author: gitSignatureWithDate},
 			RepoName:    types.RepoName{ID: 1, Name: "repo"},
 			DiffPreview: &highlightedString{value: "x", highlights: []*highlightedRange{}},
-			Body:        "```diff\nx```",
-			Highlights:  []*highlightedRange{},
+			Body:        highlightedString{value: "```diff\nx```", highlights: []*highlightedRange{}},
 		},
 	}}
 
@@ -316,7 +315,9 @@ func searchCommitsInRepo(ctx context.Context, db dbutil.DB, op search.CommitPara
 func TestCommitSearchResult_Limit(t *testing.T) {
 	f := func(nHighlights []int, limitInput uint32) bool {
 		cr := &CommitSearchResult{
-			Highlights: make([]*highlightedRange, len(nHighlights)),
+			Body: highlightedString{
+				highlights: make([]*highlightedRange, len(nHighlights)),
+			},
 		}
 
 		// It isn't interesting to test limit > ResultCount, so we bound it to
