@@ -22,8 +22,8 @@ const abbreviateNumber = (number: number): string => {
 const limitHit = (progress: Progress): boolean => progress.skipped.some(skipped => skipped.reason.indexOf('-limit') > 0)
 
 export const StreamingProgressCount: React.FunctionComponent<
-    Pick<StreamingProgressProps, 'progress' | 'state'> & { className?: string }
-> = ({ progress, state, className = '' }) => (
+    Pick<StreamingProgressProps, 'progress' | 'state' | 'showTrace'> & { className?: string }
+> = ({ progress, state, showTrace, className = '' }) => (
     <>
         <div
             className={classNames(className, 'streaming-progress__count d-flex align-items-center', {
@@ -42,7 +42,7 @@ export const StreamingProgressCount: React.FunctionComponent<
                 </>
             )}
         </div>
-        {progress.trace && (
+        {showTrace && progress.trace && (
             <div className="d-flex">
                 <a href={progress.trace}>
                     <ClipboardPulseOutlineIcon className="mr-2 icon-inline" />
