@@ -1932,3 +1932,147 @@ func TestRepos_createRepo_dupe(t *testing.T) {
 	// Add another repo with the same name.
 	createRepo(ctx, t, db, &types.Repo{Name: "a/b"})
 }
+
+func TestRepos_ListRepos_UserPublicRepos(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	db := dbtesting.GetDB(t)
+	ctx := actor.WithInternalActor(context.Background())
+
+	// Create a user
+	user, err := Users(db).Create(ctx, NewUser{
+		Email:                 "a1@example.com",
+		Username:              "u1",
+		Password:              "p",
+		EmailVerificationCode: "c",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	otherUser, err := Users(db).Create(ctx, NewUser{
+		Email:                 "a2@example.com",
+		Username:              "u2",
+		Password:              "p",
+		EmailVerificationCode: "c",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx = actor.WithActor(ctx, &actor.Actor{
+		UID: user.ID,
+	})
+
+	now := time.Now()
+
+	// Create an external service
+	service := types.ExternalService{
+		Kind:            extsvc.KindGitHub,
+		DisplayName:     "Github - Test",
+		Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+		CreatedAt:       now,
+		UpdatedAt:       now,
+		NamespaceUserID: user.ID,
+	}
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	err = ExternalServices(db).Create(ctx, confGet, &service)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	otherService := types.ExternalService{
+		Kind:            extsvc.KindGitHub,
+		DisplayName:     "Github - Test2",
+		Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+		CreatedAt:       now,
+		UpdatedAt:       now,
+		NamespaceUserID: otherUser.ID,
+	}
+	err = ExternalServices(db).Create(ctx, confGet, &otherService)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	repo := &types.Repo{
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "r",
+			ServiceType: extsvc.TypeGitHub,
+			ServiceID:   "https://github.com",
+		},
+		Name:        "github.com/sourcegraph/sourcegraph",
+		Private:     false,
+		URI:         "uri",
+		Description: "description",
+		CreatedAt:   now,
+		UpdatedAt:   now,
+		Metadata:    new(github.Repository),
+		Sources: map[string]*types.SourceInfo{
+			service.URN(): {
+				ID:       service.URN(),
+				CloneURL: "git@github.com:foo/bar.git",
+			},
+		},
+	}
+	err = Repos(db).Create(ctx, repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	otherRepo := &types.Repo{
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "b",
+			ServiceType: extsvc.TypeGitHub,
+			ServiceID:   "https://github.com",
+		},
+		Name:        "github.com/kubernetes/kubernetes",
+		Private:     false,
+		URI:         "uri",
+		Description: "description",
+		CreatedAt:   now,
+		UpdatedAt:   now,
+		Sources: map[string]*types.SourceInfo{
+			otherService.URN(): {
+				ID:       otherService.URN(),
+				CloneURL: "git@github.com:foo/bar.git",
+			},
+		},
+	}
+	err = Repos(db).Create(ctx, otherRepo)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = UserPublicRepos(db).SetUserRepo(ctx, UserPublicRepo{UserID: user.ID, RepoURI: otherRepo.URI, RepoID: otherRepo.ID})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []*types.RepoName{
+		{ID: repo.ID, Name: repo.Name},
+	}
+
+	have, err := Repos(db).ListRepoNames(ctx, ReposListOptions{UserID: user.ID})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(have, want); diff != "" {
+		t.Fatalf(diff)
+	}
+
+	want = []*types.RepoName{
+		{ID: repo.ID, Name: repo.Name},
+		{ID: otherRepo.ID, Name: otherRepo.Name},
+	}
+
+	have, err = Repos(db).ListRepoNames(ctx, ReposListOptions{UserID: user.ID, IncludeUserPublicRepos: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(have, want); diff != "" {
+		t.Fatalf(diff)
+	}
+}

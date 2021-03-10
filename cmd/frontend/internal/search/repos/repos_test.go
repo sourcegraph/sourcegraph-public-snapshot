@@ -477,6 +477,18 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 				ID:   3,
 				Name: "example.com/c",
 			},
+			{
+				ID:   4,
+				Name: "external.com/a",
+			},
+			{
+				ID:   5,
+				Name: "external.com/b",
+			},
+			{
+				ID:   6,
+				Name: "external.com/c",
+			},
 		}, nil
 	}
 	database.Mocks.Repos.Count = func(ctx context.Context, op database.ReposListOptions) (int, error) { return 3, nil }
@@ -484,22 +496,6 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 		database.Mocks.Repos.ListRepoNames = nil
 		database.Mocks.Repos.Count = nil
 	}()
-	database.Mocks.UserPublicRepos.ListByUser = func(ctx context.Context, userID int32) ([]database.UserPublicRepo, error) {
-		return []database.UserPublicRepo{
-			{
-				RepoID:  4,
-				RepoURI: "external.com/a",
-			},
-			{
-				RepoID:  5,
-				RepoURI: "external.com/b",
-			},
-			{
-				RepoID:  6,
-				RepoURI: "external.com/c",
-			},
-		}, nil
-	}
 
 	getNamespaceByName := func(ctx context.Context, name string) (*database.Namespace, error) {
 		if name != wantName {

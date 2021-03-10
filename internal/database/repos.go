@@ -673,8 +673,7 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, minimal bool, opt
 		if opt.IncludeUserPublicRepos {
 			conds = append(conds, sqlf.Sprintf("(es.namespace_user_id = %d OR repo.id IN (SELECT repo_id FROM user_public_repos WHERE user_id = %d)) AND es.deleted_at IS NULL", opt.UserID, opt.UserID))
 		} else {
-			conds = append(conds, sqlf.Sprintf("es.namespace_user_id = %d AND es.deleted_at IS NULL", opt.UserID, opt.UserID))
-
+			conds = append(conds, sqlf.Sprintf("es.namespace_user_id = %d AND es.deleted_at IS NULL", opt.UserID))
 		}
 	}
 
