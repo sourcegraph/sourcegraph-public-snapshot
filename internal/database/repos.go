@@ -671,7 +671,7 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, minimal bool, opt
 				JOIN external_services es ON esr.external_service_id = es.id
 		`)
 		if opt.IncludeUserPublicRepos {
-			conds = append(conds, sqlf.Sprintf("(es.namespace_user_id = %d OR repo.id IN (SELECT repo_id FROM user_public_repos WHERE user_id = %d)) AND es.deleted_at IS NULL", opt.UserID, opt.UserID))
+			conds = append(conds, sqlf.Sprintf("(es.namespace_user_id = %d OR EXISTS (SELECT 1 FROM user_public_repos WHERE user_id = %d AND repo_id = repo.id)) AND es.deleted_at IS NULL", opt.UserID, opt.UserID))
 		} else {
 			conds = append(conds, sqlf.Sprintf("es.namespace_user_id = %d AND es.deleted_at IS NULL", opt.UserID))
 		}
@@ -731,7 +731,15 @@ WHERE
       AND es.deleted_at IS NULL
       AND repo.deleted_at IS NULL
       AND %s
-`, cloneClause, cloneClause)
+
+UNION
+
+SELECT repo.id, repo.name FROM repo
+WHERE
+	EXISTS (SELECT 1 FROM user_public_repos WHERE repo_id = repo.id)
+	AND repo.deleted_at IS NULL
+	AND %s
+`, cloneClause, cloneClause, cloneClause)
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
