@@ -1217,20 +1217,11 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 
 		// It may already be cloned
 		if !repoCloned(dir) {
-			if err := s.setCloneStatus(ctx, repo, types.CloneStatusCloning); err != nil {
-				// No need to stop cloning
-				log15.Warn("Setting clone status in DB", "error", err)
-			}
+			s.setCloneStatusNonFatal(ctx, repo, types.CloneStatusCloning)
 		}
 		defer func() {
-			status := types.CloneStatusCloned
-			if !repoCloned(dir) {
-				status = types.CloneStatusNotCloned
-			}
-			// Use a different context to ensure we still update the DB
-			if err := s.setCloneStatus(context.Background(), repo, status); err != nil {
-				log15.Warn("Setting clone status in DB", "error", err)
-			}
+			// Use a different context to ensure we still update the DB even if we time out
+			s.setCloneStatusNonFatal(context.Background(), repo, cloneStatus(repoCloned(dir), false))
 		}()
 
 		cmd, err := syncer.CloneCommand(ctx, remoteURL, tmpPath)

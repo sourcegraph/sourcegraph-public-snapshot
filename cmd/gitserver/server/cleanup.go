@@ -485,6 +485,13 @@ func (s *Server) setCloneStatus(ctx context.Context, name api.RepoName, status t
 	return database.NewGitserverReposWith(tx).SetCloneStatus(ctx, repo.ID, status)
 }
 
+// setCloneStatusNonFatal is the same as setCloneStatus but only logs errors
+func (s *Server) setCloneStatusNonFatal(ctx context.Context, name api.RepoName, status types.CloneStatus) {
+	if err := s.setCloneStatus(ctx, name, status); err != nil {
+		log15.Warn("Setting clone status in DB", "error", err)
+	}
+}
+
 // removeRepoDirectory atomically removes a directory from s.ReposDir.
 //
 // It first moves the directory to a temporary location to avoid leaving
@@ -510,9 +517,7 @@ func (s *Server) removeRepoDirectory(gitDir GitDir) error {
 	// should not be returned, just logged.
 
 	// Set as not_cloned in the database
-	if err := s.setCloneStatus(ctx, s.name(gitDir), types.CloneStatusNotCloned); err != nil {
-		log15.Error("Setting clone status", "error", err)
-	}
+	s.setCloneStatusNonFatal(ctx, s.name(gitDir), types.CloneStatusNotCloned)
 
 	// Cleanup empty parent directories. We just attempt to remove and if we
 	// have a failure we assume it's due to the directory having other
