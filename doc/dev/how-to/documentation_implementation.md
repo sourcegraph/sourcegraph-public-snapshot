@@ -48,6 +48,8 @@ To update documentation content, templates, or assets on https://docs.sourcegrap
 - The sidebar lives in `doc/sidebar.md`. Only important pages belong in the sidebar; use section index page links for other documents.
 - Assets and templates live in `doc/_resources/{templates,assets}`.
 
+Updates to the redirects in `doc/_resources/assets/redirects` require a full reload of the service, which involves deleting the relevant Kubernetes pods. See ["Forcing immediate reload of data"](#forcing-immediate-reload-of-data) for more details.
+
 ## Advanced documentation site
 
 Our documentation site (https://docs.sourcegraph.com) runs [docsite](https://github.com/sourcegraph/docsite).
@@ -58,7 +60,26 @@ See "[Updating documentation](#updating-documentation)" and "[Previewing changes
 
 The docs.sourcegraph.com site reloads content, templates, and assets every 5 minutes. After you push a [documentation update](#updating-documentation), just wait up to 5 minutes to see your changes reflected on docs.sourcegraph.com.
 
-If you can't wait 5 minutes and need to force a reload, you can kill the `docs-sourcegraph-com-*` Kubernetes pod on the Sourcegraph.com Kubernetes cluster. (It will restart and come back online with the latest data.)
+If you need to force a reload — either because your change can't wait 5 minutes, or because you've updated redirects — you can delete the `docs-sourcegraph-com-*` Kubernetes pod on the Sourcegraph.com Kubernetes cluster. (It will restart and come back online with the latest data.)
+
+To do this:
+
+1. Ensure you are [logged into our Google Cloud project](https://about.sourcegraph.com/handbook/engineering/deployments/kubernetes).
+1. List the active pods with `kubectl get pods`. This should produce a list that includes items like the following:
+
+    ```
+    NAME                                     READY   STATUS      RESTARTS   AGE
+    about-sourcegraph-com-74f96c659b-t6lqp   1/1     Running     0          7m49s
+    docs-sourcegraph-com-5f97dd5db-7wrxm     1/1     Running     0          7m49s 
+    ```
+
+    The exact names will differ, but the general format will be the same.
+1. Delete the pods, being careful to copy the exact names from the output in the previous step. For example, with that output, you would run:
+
+    ```sh
+    kubectl delete pod about-sourcegraph-com-74f96c659b-t6lqp docs-sourcegraph-com-5f97dd5db-7wrxm
+    ```
+1. Wait a moment, and check https://docs.sourcegraph.com/. Your changes should be live!
 
 ## Other ways of previewing changes locally (very rare)
 
