@@ -33,11 +33,10 @@ run_command() {
   (
     set -x
     cd "$dir" && eval "${MAYBE_TIME_PREFIX} ${ARGS}"
-    if [[ $? -ne 0 ]]; then
-      set +x
-      echo "^^^ +++"
-    fi
   )
+  if [[ $? -ne 0 ]]; then
+    echo "^^^ +++"
+  fi
 }
 export -f run_command
 
