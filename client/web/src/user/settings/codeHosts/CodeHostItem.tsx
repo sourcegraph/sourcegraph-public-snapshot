@@ -4,6 +4,7 @@ import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { ButtonDropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'reactstrap'
 import { CircleDashedIcon } from '../../../components/CircleDashedIcon'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
 import { AddCodeHostConnectionModal } from './AddCodeHostConnectionModal'
 import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
@@ -51,7 +52,12 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     const [dropdownOpen, setOpen] = useState(false)
     const toggleDropdown = useCallback((): void => setOpen(!dropdownOpen), [dropdownOpen])
 
-    const toAuthProvider = useCallback((): void => navigateToAuthProvider(kind), [kind, navigateToAuthProvider])
+    const [oauthInFlight, setOauthInFlight] = useState(false)
+
+    const toAuthProvider = useCallback((): void => {
+        setOauthInFlight(true)
+        navigateToAuthProvider(kind)
+    }, [kind, navigateToAuthProvider])
 
     return (
         <div className="p-2 d-flex align-items-start">
@@ -105,7 +111,10 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                             Connect
                         </DropdownToggle>
                         <DropdownMenu right={true}>
-                            <DropdownItem onClick={toAuthProvider}>Connect with {name}</DropdownItem>
+                            <DropdownItem toggle={false} onClick={toAuthProvider}>
+                                Connect with {name}
+                                {oauthInFlight && <LoadingSpinner className="icon-inline ml-2" />}
+                            </DropdownItem>
                             <DropdownItem onClick={toggleAddConnectionModal}>Connect with access token</DropdownItem>
                         </DropdownMenu>
                     </ButtonDropdown>

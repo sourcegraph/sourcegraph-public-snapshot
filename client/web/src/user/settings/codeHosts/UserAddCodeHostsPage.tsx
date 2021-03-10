@@ -39,7 +39,6 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 }) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
     const [oauthRequestFor, setOauthRequestFor] = useState<ExternalServiceKind>()
-    const [showAddReposFor, setShowAddReposFor] = useState<string[]>([])
 
     const fetchExternalServices = useCallback(async () => {
         setStatusOrError('loading')
@@ -56,7 +55,6 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             return accumulator
         }, {})
 
-        setShowAddReposFor([])
         setStatusOrError(services)
     }, [userID])
 
@@ -70,33 +68,52 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         })
     }, [fetchExternalServices])
 
-    useEffect(() => {
-        if (isServicesByKind(statusOrError)) {
-            const newNotSyncedCodeHosts = []
+    const getAddReposBanner = (services: string[]): JSX.Element | null =>
+        services.length > 0 ? (
+            <div className="alert alert-success mb-4" role="alert" key="add-repos">
+                Connected with {services.join(', ')}. Next,{' '}
+                <Link className="text-primary" to={`${routingPrefix}/repositories`}>
+                    <b>add your repositories →</b>
+                </Link>
+            </div>
+        ) : null
 
-            for (const [, service] of Object.entries(statusOrError)) {
-                if (service && !service.lastSyncError && !service.warning) {
-                    // don't display user name in service name
-                    const serviceName = service.displayName.split(' ')[0]
+    const getErrorAndSuccessBanners = (status: Status): (JSX.Element | null)[] => {
+        const servicesWithProblems = []
+        const notYetSyncedServiceNames = []
 
-                    // if code host was just added and never synced
-                    if (!service?.lastSyncAt) {
-                        newNotSyncedCodeHosts.push(serviceName)
-                    } else {
-                        const lastSyncTime = new Date(service.lastSyncAt)
-                        const epochTime = new Date(0)
+        // check if services are fetched
+        if (isServicesByKind(status)) {
+            const services = Object.values(status).filter(isDefined)
 
-                        // if code host was just added and has "sync now" timestamp
-                        if (lastSyncTime < epochTime) {
-                            newNotSyncedCodeHosts.push(serviceName)
-                        }
+            for (const service of services) {
+                // if service has warnings or errors
+                if (service.warning || service.lastSyncError) {
+                    servicesWithProblems.push(service)
+                    continue
+                }
+
+                // if service is not synced yet or has a "sync now" timestamp
+                // "sync now" timestamp is always less then the epoch time
+
+                // don't display user name in service name
+                const serviceName = service.displayName.split(' ')[0]
+
+                if (!service?.lastSyncAt) {
+                    notYetSyncedServiceNames.push(serviceName)
+                } else {
+                    const lastSyncTime = new Date(service.lastSyncAt)
+                    const epochTime = new Date(0)
+
+                    if (lastSyncTime < epochTime) {
+                        notYetSyncedServiceNames.push(serviceName)
                     }
                 }
             }
-
-            setShowAddReposFor(newNotSyncedCodeHosts)
         }
-    }, [statusOrError])
+
+        return [...servicesWithProblems.map(getServiceWarningFragment), getAddReposBanner(notYetSyncedServiceNames)]
+    }
 
     const addNewService = useCallback(
         (service: ListExternalServiceFields): void => {
@@ -107,19 +124,14 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         [statusOrError]
     )
 
-    const handleError = useCallback((error: ErrorLike): void => {
-        // reset 'add your repositories banner', we only want one banner at the
-        // time and errors will have it's own
-        setShowAddReposFor([])
-        setStatusOrError(error)
-    }, [])
+    const handleError = useCallback((error: ErrorLike): void => setStatusOrError(error), [])
 
-    const getServiceWarningFragment = ({ id, displayName }: ListExternalServiceFields): React.ReactFragment => (
+    const getServiceWarningFragment = ({ id, displayName }: ListExternalServiceFields): JSX.Element => (
         <div className="alert alert-danger my-4" key={id}>
             <strong className="align-middle">Could not connect to {displayName}.</strong>
             <span className="align-middle">
                 {' '}
-                Please remove {displayName} code host connection and try another token to restore the connection.
+                Please remove {displayName} code host connection and try again to restore the connection.
             </span>
         </div>
     )
@@ -137,7 +149,6 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             const authProvider = authProvidersByKind[kind]
 
             if (authProvider) {
-                setOauthRequestFor(kind)
                 window.location.assign(
                     `${authProvider.authenticationURL as string}&redirect=${
                         window.location.href
@@ -156,9 +167,13 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                           <button
                               key={kind}
                               type="button"
-                              onClick={() => navigateToAuthProvider(kind)}
+                              onClick={() => {
+                                  setOauthRequestFor(kind)
+                                  navigateToAuthProvider(kind)
+                              }}
                               className={`btn mr-2 ${kind === 'GITLAB' ? 'btn-gitlab' : 'btn-dark'}`}
                           >
+                              {/* will use dark theme for the spinner because buttons are dark */}
                               {oauthRequestFor === kind && <LoadingSpinner className="icon-inline mr-2 theme-dark" />}
                               <Icon className="icon-inline " /> {defaultDisplayName}
                           </button>
@@ -187,27 +202,12 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 </p>
             </div>
 
-            {/* display external service errors */}
-            {isServicesByKind(statusOrError) &&
-                Object.values(statusOrError)
-                    .filter(isDefined)
-                    // Services may return warnings/errors immediately or after
-                    // the sync. We want to display an alert for both.
-                    .filter(service => service.warning || service.lastSyncError)
-                    .map(getServiceWarningFragment)}
+            {/* display external service errors and success banners */}
+            {getErrorAndSuccessBanners(statusOrError)}
 
-            {/* display other errors */}
+            {/* display other errors, e.g. network errors */}
             {isErrorLike(statusOrError) && (
                 <ErrorAlert error={statusOrError} prefix="Code host action error" icon={false} />
-            )}
-
-            {showAddReposFor.length > 0 && (
-                <div className="alert alert-success mb-4" role="alert">
-                    Connected with {showAddReposFor.join(', ')}. Next,{' '}
-                    <Link className="text-primary" to={`${routingPrefix}/repositories`}>
-                        <b>add your repositories →</b>
-                    </Link>
-                </div>
             )}
 
             {codeHostExternalServices && isServicesByKind(statusOrError) ? (

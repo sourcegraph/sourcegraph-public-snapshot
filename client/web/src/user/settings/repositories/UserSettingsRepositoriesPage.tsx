@@ -96,7 +96,6 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                             { delay: 2000 }
                         ),
                         map(result => {
-                            debugger
                             const services: FilterValue[] = [
                                 {
                                     value: 'all',
