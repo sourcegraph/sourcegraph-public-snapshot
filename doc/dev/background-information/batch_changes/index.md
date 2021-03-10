@@ -21,9 +21,9 @@ The batch changes feature introduces a lot of new names, GraphQL queries and mut
 
 | GraphQL type        | Go type              | Database table     | Description |
 | ------------------- | -------------------- | -------------------| ----------- |
-| `BatchChange`       | `batches.BatchChange`    | `campaigns`        | A batch change is a collection of changesets. The central entity. |
+| `BatchChange`       | `batches.BatchChange`    | `batch_changes`    | A batch change is a collection of changesets. The central entity. |
 | `ChangesetSpec`     | `batches.ChangesetSpec`  | `changeset_specs`  | A changeset spec describes the desired state of a changeset. |
-| `BatchSpec`         | `batches.BatchSpec`      | `campaign_specs`   | A batch spec describes the desired state of a batch change. |
+| `BatchSpec`         | `batches.BatchSpec`      | `batch_specs`      | A batch spec describes the desired state of a batch change. |
 | `ExternalChangeset` | `batches.Changeset`      | `changesets`       | Changeset is the unified name for pull requests/merge requests/etc. on code hosts.        |
 | `ChangesetEvent`    | `batches.ChangesetEvent` | `changeset_events` | A changeset event is an event on a code host, e.g. a comment or a review on a pull request on GitHub. They are created by syncing the changesets from the code host on a regular basis and by accepting webhook events and turning them into changeset events. |
 

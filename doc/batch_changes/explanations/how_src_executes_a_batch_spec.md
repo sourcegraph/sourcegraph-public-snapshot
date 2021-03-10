@@ -91,7 +91,7 @@ The following is what `src` does _for each repository_:
   * _Volume_ mount mode (the default on Intel macOS): a Docker volume will be created using `docker volume create` and attached to all running containers, then removed before `src` exits
 3. `cd` into the workspace, which now contains the unzipped archive
 4. In the workspace, create a git repository:
-	- Configure `git` to not use local configuration (see [the code for explanations on what each variable does](https://github.com/sourcegraph/src-cli/blob/038180005c9ebf5c0f9e8d3b2eda63c109cea904/internal/campaigns/run_steps.go#L31-L44)):
+	- Configure `git` to not use local configuration (see [the code for explanations on what each variable does](https://github.com/sourcegraph/src-cli/blob/54fedaf3bfcf21ad3a8d89d9d2d361c8c6da6441/internal/batches/git.go#L13-L26)):
 
     ```
     export GIT_CONFIG_NOSYSTEM=1 \

@@ -59,7 +59,7 @@ export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePag
                 <p>
                     The batch spec (
                     <a
-                        href="https://docs.sourcegraph.com/references/batch_spec_yaml_reference"
+                        href="https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference"
                         rel="noopener noreferrer"
                         target="_blank"
                     >

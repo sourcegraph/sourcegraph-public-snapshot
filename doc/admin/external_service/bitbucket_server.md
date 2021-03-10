@@ -15,7 +15,7 @@ Also consider installing the [Sourcegraph Bitbucket Server plugin](../../integra
 
 Sourcegraph requires a Bitbucket Server personal access token with **read** permissions to sync repositories.
 
-When using [batch changes](../../batch_changes/index.md) the access token needs **write** permissions on the project and repository level. See "[Code host interactions in batch changes](../../batch_changes/explanations/permissions_in_batch_changes.md#code-host-interactions-in-campaigns)" for details.
+When using [batch changes](../../batch_changes/index.md) the access token needs **write** permissions on the project and repository level. See "[Code host interactions in batch changes](../../batch_changes/explanations/permissions_in_batch_changes.md#code-host-interactions-in-batch-changes)" for details.
 
 You can create a personal access token at `https://[your-bitbucket-hostname]/plugins/servlet/access-tokens/add`. Also set the corresponding `username` field.
 
@@ -53,7 +53,7 @@ To set up webhooks:
    * **Secret**: The secret you configured in step 4
 1. Confirm that the new webhook is listed under **All webhooks** with a timestamp in the **Last successful** column.
 
-Done! Sourcegraph will now receive webhook events from Bitbucket Server and use them to sync pull request events, used by [campaigns](../../batch_changes/index.md), faster and more efficiently.
+Done! Sourcegraph will now receive webhook events from Bitbucket Server and use them to sync pull request events, used by [batch changes](../../batch_changes/index.md), faster and more efficiently.
 
 ## Repository permissions
 
@@ -96,7 +96,7 @@ Internal rate limiting can be configured to limit the rate at which requests are
 
 If enabled, the default rate is set at 28,800 per hour (8 per second) which can be configured via the `requestsPerHour` field (see below). If rate limiting is configured more than once for the same code host instance, the most restrictive limit will be used.
 
-**NOTE** Internal rate limiting is only currently applied when synchronising [campaign](../../batch_changes/index.md) changesets.
+**NOTE** Internal rate limiting is only currently applied when synchronising changesets in [batch changes](../../batch_changes/index.md).
 
 ## Configuration
 

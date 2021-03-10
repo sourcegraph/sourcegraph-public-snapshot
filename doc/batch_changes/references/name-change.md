@@ -14,8 +14,7 @@ Campaigns has changed name and is  called **batch changes** from Sourcegraph 3.2
 - "campaigns" is replaced by "batch changes" in the GUI, documentation, customer facing and internal material
 - `<sourcegraph-instance>/campaigns/*` URLs are changed to `<sourcegraph-instance>/batch-changes/*`
 - the CLI prompt `src campaigns` is replaced by `src batch`
-- campaigns specs are now called **batch specs**
-
+- campaign specs are now called **batch specs**
 
 ## Deprecation plan
 
