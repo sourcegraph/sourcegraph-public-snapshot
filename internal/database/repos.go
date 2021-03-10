@@ -540,7 +540,7 @@ type ReposListOptions struct {
 	UseOr bool
 
 	// IncludeUserPublicRepos will include repos from the user_public_repos table if this field is true, and the user_id
-	// is non-zero. note that these are not repos owned by this user, just ones they are interested in🔐.
+	// is non-zero. Note that these are not repos owned by this user, just ones they are interested in.
 	IncludeUserPublicRepos bool
 
 	*LimitOffset

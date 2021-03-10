@@ -9,9 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"k8s.io/apimachinery/pkg/util/rand"
-
 	"github.com/google/go-cmp/cmp"
+	"k8s.io/apimachinery/pkg/util/rand"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
