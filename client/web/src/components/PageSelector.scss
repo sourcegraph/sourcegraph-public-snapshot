@@ -10,9 +10,19 @@
     &__button {
         min-width: 2rem;
         padding: 0.25rem 0.5rem;
+        color: var(--web-content-link-color);
 
-        &:hover:not(.btn-primary) {
+        &.btn-primary {
+            color: $white;
+        }
+
+        &:disabled {
+            color: var(--text-muted);
+        }
+
+        &:hover:not(.btn-primary):not(:disabled) {
             background-color: var(--color-bg-2);
+            color: var(--web-content-link-color);
         }
     }
 }
