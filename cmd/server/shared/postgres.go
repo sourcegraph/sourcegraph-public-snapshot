@@ -153,7 +153,7 @@ func postgresProcfile() (string, error) {
 			}
 		}
 	}
-
+	l("Finished initializing the internal database.")
 	return "postgres: su-exec postgres sh -c 'postgres -c listen_addresses=127.0.0.1 -D " + path + "' 2>&1 | grep -v 'database system was shut down' | grep -v 'MultiXact member wraparound' | grep -v 'database system is ready' | grep -v 'autovacuum launcher started' | grep -v 'the database system is starting up' | grep -v 'listening on IPv4 address'", nil
 }
 
