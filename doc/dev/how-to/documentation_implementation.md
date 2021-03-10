@@ -62,24 +62,7 @@ The docs.sourcegraph.com site reloads content, templates, and assets every 5 min
 
 If you need to force a reload — either because your change can't wait 5 minutes, or because you've updated redirects — you can delete the `docs-sourcegraph-com-*` Kubernetes pod on the Sourcegraph.com Kubernetes cluster. (It will restart and come back online with the latest data.)
 
-To do this:
-
-1. Ensure you are [logged into our Google Cloud project](https://about.sourcegraph.com/handbook/engineering/deployments/kubernetes).
-1. List the active pods with `kubectl get pods`. This should produce a list that includes items like the following:
-
-    ```
-    NAME                                     READY   STATUS      RESTARTS   AGE
-    about-sourcegraph-com-74f96c659b-t6lqp   1/1     Running     0          7m49s
-    docs-sourcegraph-com-5f97dd5db-7wrxm     1/1     Running     0          7m49s 
-    ```
-
-    The exact names will differ, but the general format will be the same.
-1. Delete the pods, being careful to copy the exact names from the output in the previous step. For example, with that output, you would run:
-
-    ```sh
-    kubectl delete pod about-sourcegraph-com-74f96c659b-t6lqp docs-sourcegraph-com-5f97dd5db-7wrxm
-    ```
-1. Wait a moment, and check https://docs.sourcegraph.com/. Your changes should be live!
+To do this, follow the ["Restarting about.sourcegraph.com and docs.sourcegraph.com" playbook](https://about.sourcegraph.com/handbook/engineering/deployments/playbooks#restarting-about-sourcegraph-com-and-docs-sourcegraph-com).
 
 ## Other ways of previewing changes locally (very rare)
 
