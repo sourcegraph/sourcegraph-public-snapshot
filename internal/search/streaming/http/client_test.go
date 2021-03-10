@@ -107,6 +107,11 @@ func TestDecoder(t *testing.T) {
 		OnUnknown: func(event, data []byte) {
 			t.Fatalf("got unexpected event: %s %s", event, data)
 		},
+		OnDone: func() {
+			if len(got) != len(want) {
+				t.Fatalf("OnDone was called before the last event was processed.")
+			}
+		},
 	}.ReadAll(resp.Body)
 	if err != nil {
 		t.Fatal(err)
