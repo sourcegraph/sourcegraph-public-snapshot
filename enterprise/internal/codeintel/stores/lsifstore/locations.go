@@ -99,7 +99,7 @@ func (s *Store) locations(ctx context.Context, bundleID int, ids []semantic.ID, 
 	// Filter out all data in rangeIDsByResultID that falls outside of the current page
 	rangeIDsByResultID = limitResultMap(ids, rangeIDsByResultID, limit, offset)
 
-	// gather the set of paths for documents we need to fetch from the limited map
+	// Gather the set of paths for documents we need to fetch from the limited map
 	paths := pathsFromResultMap(rangeIDsByResultID)
 	traceLog(
 		log.Int("numPaths", len(paths)),
@@ -118,21 +118,32 @@ func (s *Store) locations(ctx context.Context, bundleID int, ids []semantic.ID, 
 
 // limitResultMap returns a map symmetric to the given rangeIDsByResultID including only the location results
 // the current page specified by limit and offset.
+//
+// TODO - more here
 func limitResultMap(ids []semantic.ID, rangeIDsByResultID map[semantic.ID]map[string][]semantic.ID, limit, offset int) map[semantic.ID]map[string][]semantic.ID {
+	pathMap := map[string]struct{}{}
+	for _, m := range rangeIDsByResultID {
+		for path := range m {
+			pathMap[path] = struct{}{}
+		}
+	}
+	paths := make([]string, 0, len(pathMap))
+	for path := range pathMap {
+		paths = append(paths, path)
+	}
+	sort.Strings(paths)
+
 	limitedRangeIDsByResultID := make(map[semantic.ID]map[string][]semantic.ID, len(rangeIDsByResultID))
 
 outer:
-	for _, id := range ids {
-		rangeIDsByDocument := map[string][]semantic.ID{}
-		limitedRangeIDsByResultID[id] = rangeIDsByDocument
+	for _, path := range paths {
+		for _, id := range ids {
+			rangeIDsByDocument, ok := limitedRangeIDsByResultID[id]
+			if !ok {
+				rangeIDsByDocument = map[string][]semantic.ID{}
+				limitedRangeIDsByResultID[id] = rangeIDsByDocument
+			}
 
-		paths := make([]string, 0, len(rangeIDsByResultID[id]))
-		for path := range rangeIDsByResultID[id] {
-			paths = append(paths, path)
-		}
-		sort.Strings(paths)
-
-		for _, path := range paths {
 			rangeIDs := rangeIDsByResultID[id][path]
 
 			if offset < len(rangeIDs) {
