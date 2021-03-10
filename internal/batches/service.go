@@ -256,6 +256,8 @@ func (svc *Service) BuildTasks(ctx context.Context, repos []*graphql.Repository,
 
 	var tasks []*Task
 
+	attr := &BatchChangeAttributes{Name: spec.Name, Description: spec.Description}
+
 	for configIndex, repos := range reposByWorkspaceConfig {
 		workspaceConfig := workspaceConfigs[configIndex]
 		repoDirs, err := svc.FindDirectoriesInRepos(ctx, workspaceConfig.RootAtLocationOf, repos...)
@@ -276,12 +278,13 @@ func (svc *Service) BuildTasks(ctx context.Context, repos []*graphql.Repository,
 				}
 
 				tasks = append(tasks, &Task{
-					Repository:         repo,
-					Path:               d,
-					Steps:              spec.Steps,
-					TransformChanges:   spec.TransformChanges,
-					Template:           spec.ChangesetTemplate,
-					OnlyFetchWorkspace: workspaceConfig.OnlyFetchWorkspace,
+					Repository:            repo,
+					Path:                  d,
+					Steps:                 spec.Steps,
+					TransformChanges:      spec.TransformChanges,
+					Template:              spec.ChangesetTemplate,
+					BatchChangeAttributes: attr,
+					OnlyFetchWorkspace:    workspaceConfig.OnlyFetchWorkspace,
 				})
 			}
 		}
@@ -289,11 +292,12 @@ func (svc *Service) BuildTasks(ctx context.Context, repos []*graphql.Repository,
 
 	for r := range rootWorkspace {
 		tasks = append(tasks, &Task{
-			Repository:       r,
-			Path:             "",
-			Steps:            spec.Steps,
-			TransformChanges: spec.TransformChanges,
-			Template:         spec.ChangesetTemplate,
+			Repository:            r,
+			Path:                  "",
+			Steps:                 spec.Steps,
+			TransformChanges:      spec.TransformChanges,
+			Template:              spec.ChangesetTemplate,
+			BatchChangeAttributes: attr,
 		})
 	}
 

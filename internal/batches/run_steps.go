@@ -41,8 +41,9 @@ type executionOpts struct {
 	wc   WorkspaceCreator
 	path string
 
-	repo  *graphql.Repository
-	steps []Step
+	batchChangeAttributes *BatchChangeAttributes
+	repo                  *graphql.Repository
+	steps                 []Step
 
 	tempDir string
 
@@ -74,7 +75,7 @@ func runSteps(ctx context.Context, opts *executionOpts) (result executionResult,
 	for i, step := range opts.steps {
 		opts.reportProgress(fmt.Sprintf("Preparing step %d", i+1))
 
-		stepContext := StepContext{Repository: *opts.repo, Outputs: execResult.Outputs}
+		stepContext := StepContext{BatchChange: *opts.batchChangeAttributes, Repository: *opts.repo, Outputs: execResult.Outputs}
 		if i > 0 {
 			stepContext.PreviousStep = results[i-1]
 		}

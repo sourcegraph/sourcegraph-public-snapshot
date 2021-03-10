@@ -50,6 +50,10 @@ func TestExecutor_Integration(t *testing.T) {
 
 	changesetTemplateBranch := "my-branch"
 	defaultTemplate := &ChangesetTemplate{Branch: changesetTemplateBranch}
+	defaultBatchChangeAttributes := &BatchChangeAttributes{
+		Name:        "integration-test-batch-change",
+		Description: "this is an integration test",
+	}
 
 	type filesByBranch map[string][]string
 	type filesByRepository map[string]filesByBranch
@@ -249,6 +253,9 @@ func TestExecutor_Integration(t *testing.T) {
 						"myOutputName3": Output{
 							Value: "cool-suffix",
 						},
+						"myOutputName4": Output{
+							Value: "${{ batch_change.name }}",
+						},
 					},
 				},
 			},
@@ -262,7 +269,11 @@ modified_files=${{ steps.modified_files }}
 added_files=${{ steps.added_files }}
 deleted_files=${{ steps.deleted_files }}
 renamed_files=${{ steps.renamed_files }}
-repository_name=${{ repository.name }}`,
+repository_name=${{ repository.name }}
+batch_change_name=${{ batch_change.name }}
+batch_change_description=${{ batch_change.description }}
+output4=${{ outputs.myOutputName4 }}
+`,
 						Branch: "templated-branch-${{ outputs.myOutputName3 }}",
 						Commit: ExpandedGitCommitDescription{
 							Message: "myOutputName1=${{ outputs.myOutputName1}},myOutputName2=${{ outputs.myOutputName2.thisStepStdout }}",
@@ -286,7 +297,10 @@ modified_files=[main.go]
 added_files=[]
 deleted_files=[]
 renamed_files=[]
-repository_name=github.com/sourcegraph/src-cli`,
+repository_name=github.com/sourcegraph/src-cli
+batch_change_name=integration-test-batch-change
+batch_change_description=this is an integration test
+output4=integration-test-batch-change`,
 			wantCommitMessage: "myOutputName1=main.go,myOutputName2=Hello World!",
 			wantAuthorName:    "myOutputName1=main.go",
 			wantAuthorEmail:   "myOutputName1=main.go",
@@ -381,7 +395,6 @@ repository_name=github.com/sourcegraph/src-cli`,
 
 			middle := func(next http.Handler) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					fmt.Printf("PATH=%q\n", r.URL.Path)
 					next.ServeHTTP(w, r)
 				})
 			}
@@ -432,6 +445,9 @@ repository_name=github.com/sourcegraph/src-cli`,
 				for _, task := range tc.tasks {
 					if task.Template == nil {
 						task.Template = defaultTemplate
+					}
+					if task.BatchChangeAttributes == nil {
+						task.BatchChangeAttributes = defaultBatchChangeAttributes
 					}
 					if tc.transform != nil {
 						task.TransformChanges = tc.transform
@@ -772,6 +788,10 @@ func TestCreateChangesetSpecs(t *testing.T) {
 	}
 
 	defaultTask := &Task{
+		BatchChangeAttributes: &BatchChangeAttributes{
+			Name:        "the name",
+			Description: "The description",
+		},
 		Template: &ChangesetTemplate{
 			Title:  "The title",
 			Body:   "The body",

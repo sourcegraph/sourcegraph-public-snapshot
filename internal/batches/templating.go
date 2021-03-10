@@ -40,9 +40,16 @@ func renderStepMap(m map[string]string, stepCtx *StepContext) (map[string]string
 	return rendered, nil
 }
 
+type BatchChangeAttributes struct {
+	Name        string
+	Description string
+}
+
 // StepContext represents the contextual information available when rendering a
 // step's fields, such as "run" or "outputs", as templates.
 type StepContext struct {
+	// BatchChange are the attributes in the BatchSpec that are set on the BatchChange.
+	BatchChange BatchChangeAttributes
 	// Outputs are the outputs set by the current and all previous steps.
 	Outputs map[string]interface{}
 	// Step is the result of the current step. Empty when evaluating the "run" field
@@ -115,6 +122,12 @@ func (stepCtx *StepContext) ToFuncMap() template.FuncMap {
 				"name":                stepCtx.Repository.Name,
 			}
 		},
+		"batch_change": func() map[string]interface{} {
+			return map[string]interface{}{
+				"name":        stepCtx.BatchChange.Name,
+				"description": stepCtx.BatchChange.Description,
+			}
+		},
 	}
 }
 
@@ -180,6 +193,10 @@ type StepsContext struct {
 // ChangesetTemplateContext represents the contextual information available
 // when rendering a field of the ChangesetTemplate as a template.
 type ChangesetTemplateContext struct {
+	// BatchChangeAttributes are the attributes of the BatchChange that will be
+	// created/updated.
+	BatchChangeAttributes BatchChangeAttributes
+
 	// Steps are the changes made by all steps that were executed.
 	Steps StepsContext
 
@@ -210,6 +227,12 @@ func (tmplCtx *ChangesetTemplateContext) ToFuncMap() template.FuncMap {
 			return map[string]interface{}{
 				"search_result_paths": tmplCtx.Repository.SearchResultPaths(),
 				"name":                tmplCtx.Repository.Name,
+			}
+		},
+		"batch_change": func() map[string]interface{} {
+			return map[string]interface{}{
+				"name":        tmplCtx.BatchChangeAttributes.Name,
+				"description": tmplCtx.BatchChangeAttributes.Description,
 			}
 		},
 		"outputs": func() map[string]interface{} {

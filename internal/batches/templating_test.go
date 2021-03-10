@@ -55,6 +55,10 @@ func TestRenderStepTemplate(t *testing.T) {
 	}
 
 	stepCtx := &StepContext{
+		BatchChange: BatchChangeAttributes{
+			Name:        "test-batch-change",
+			Description: "This batch change is just an experiment",
+		},
 		PreviousStep: StepResult{
 			files: &StepChanges{
 				Modified: []string{"go.mod"},
@@ -99,6 +103,8 @@ func TestRenderStepTemplate(t *testing.T) {
 			stepCtx: stepCtx,
 			run: `${{ repository.search_result_paths }}
 ${{ repository.name }}
+${{ batch_change.name }}
+${{ batch_change.description }}
 ${{ previous_step.modified_files }}
 ${{ previous_step.added_files }}
 ${{ previous_step.deleted_files }}
@@ -116,6 +122,8 @@ ${{ step.stderr}}
 `,
 			want: `README.md main.go
 github.com/sourcegraph/src-cli
+test-batch-change
+This batch change is just an experiment
 [go.mod]
 [main.go.swp]
 [.DS_Store]
@@ -242,6 +250,10 @@ func TestRenderChangesetTemplateField(t *testing.T) {
 	}
 
 	tmplCtx := &ChangesetTemplateContext{
+		BatchChangeAttributes: BatchChangeAttributes{
+			Name:        "test-batch-change",
+			Description: "This batch change is just an experiment",
+		},
 		Outputs: map[string]interface{}{
 			"lastLine": "lastLine is this",
 			"project":  parsedYaml,
@@ -275,6 +287,8 @@ func TestRenderChangesetTemplateField(t *testing.T) {
 			tmplCtx: tmplCtx,
 			run: `${{ repository.search_result_paths }}
 ${{ repository.name }}
+${{ batch_change.name }}
+${{ batch_change.description }}
 ${{ outputs.lastLine }}
 ${{ index outputs.project.env 1 }}
 ${{ steps.modified_files }}
@@ -285,6 +299,8 @@ ${{ steps.path }}
 `,
 			want: `README.md main.go
 github.com/sourcegraph/src-cli
+test-batch-change
+This batch change is just an experiment
 lastLine is this
 CGO_ENABLED=0
 [modified-file.txt]

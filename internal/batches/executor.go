@@ -69,8 +69,9 @@ type Task struct {
 	Steps   []Step
 	Outputs map[string]interface{}
 
-	Template         *ChangesetTemplate `json:"-"`
-	TransformChanges *TransformChanges  `json:"-"`
+	BatchChangeAttributes *BatchChangeAttributes `json:"-"`
+	Template              *ChangesetTemplate     `json:"-"`
+	TransformChanges      *TransformChanges      `json:"-"`
 
 	Archive RepoZip `json:"-"`
 }
@@ -363,13 +364,14 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 
 	// Actually execute the steps.
 	opts := &executionOpts{
-		archive: task.Archive,
-		wc:      x.creator,
-		repo:    task.Repository,
-		path:    task.Path,
-		steps:   task.Steps,
-		logger:  log,
-		tempDir: x.tempDir,
+		archive:               task.Archive,
+		wc:                    x.creator,
+		batchChangeAttributes: task.BatchChangeAttributes,
+		repo:                  task.Repository,
+		path:                  task.Path,
+		steps:                 task.Steps,
+		logger:                log,
+		tempDir:               x.tempDir,
 		reportProgress: func(currentlyExecuting string) {
 			x.updateTaskStatus(task, func(status *TaskStatus) {
 				status.CurrentlyExecuting = currentlyExecuting
@@ -463,6 +465,7 @@ func createChangesetSpecs(task *Task, result executionResult, features featureFl
 	repo := task.Repository.Name
 
 	tmplCtx := &ChangesetTemplateContext{
+		BatchChangeAttributes: *task.BatchChangeAttributes,
 		Steps: StepsContext{
 			Changes: result.ChangedFiles,
 			Path:    result.Path,
