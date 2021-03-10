@@ -10,5 +10,9 @@
     &__button {
         min-width: 2rem;
         padding: 0.25rem 0.5rem;
+
+        &:hover:not(.btn-primary) {
+            background-color: var(--color-bg-2);
+        }
     }
 }
