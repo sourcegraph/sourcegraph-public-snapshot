@@ -111,6 +111,12 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
 
     const externalAuthProviders = context.authProviders.filter(provider => !provider.isBuiltin)
 
+    const onClickExternalAuthSignup = useCallback(
+        (serviceType: string): React.MouseEventHandler => event => {
+            eventLogger.log('externalAuthSignupClicked', { type: serviceType })
+        },
+        []
+    )
     return (
         <>
             {error && <ErrorAlert className="mt-4 mb-0" error={error} />}
@@ -253,7 +259,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                             // Use index as key because display name may not be unique. This is OK
                             // here because this list will not be updated during this component's lifetime.
                             /* eslint-disable react/no-array-index-key */
-                            <div className="mb-2" key={index}>
+                            <div className="mb-2" key={index} onClick={onClickExternalAuthSignup(provider.serviceType)}>
                                 <a href={provider.authenticationURL} className="btn btn-secondary btn-block">
                                     {provider.serviceType === 'github' ? (
                                         <GithubIcon className="icon-inline" />

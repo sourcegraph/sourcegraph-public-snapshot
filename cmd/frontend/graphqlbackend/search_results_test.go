@@ -27,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -380,8 +379,7 @@ func TestIsPatternNegated(t *testing.T) {
 
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
-			q, err := query.ProcessAndOr(tt.pattern,
-				query.ParserOptions{SearchType: query.SearchTypeLiteral, Globbing: false})
+			q, err := query.ParseLiteral(tt.pattern)
 			if err != nil {
 				t.Fatalf(err.Error())
 			}
@@ -427,7 +425,7 @@ func TestProcessSearchPatternAndOr(t *testing.T) {
 	}
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
-			q, err := query.ProcessAndOr(tt.pattern,
+			q, err := query.Parse(tt.pattern,
 				query.ParserOptions{SearchType: tt.searchType, Globbing: false})
 			if err != nil {
 				t.Fatalf(err.Error())
@@ -792,37 +790,6 @@ func TestLonger(t *testing.T) {
 	}
 }
 
-func TestRoundStr(t *testing.T) {
-	tests := []struct {
-		name string
-		s    string
-		want string
-	}{
-		{
-			name: "empty",
-			s:    "",
-			want: "",
-		},
-		{
-			name: "simple",
-			s:    "19s",
-			want: "19s",
-		},
-		{
-			name: "decimal",
-			s:    "19.99s",
-			want: "20s",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := roundStr(tt.s); got != tt.want {
-				t.Errorf("roundStr() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestSearchResultsHydration(t *testing.T) {
 	db := new(dbtesting.MockDB)
 
@@ -1040,7 +1007,7 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 					&FileMatchResolver{
 						db: db,
 						FileMatch: result.FileMatch{
-							Symbols: []*result.SearchSymbolResult{
+							Symbols: []*result.SymbolMatch{
 								// 1
 								{},
 								// 2
@@ -1060,7 +1027,7 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 					&FileMatchResolver{
 						db: db,
 						FileMatch: result.FileMatch{
-							Symbols: []*result.SearchSymbolResult{
+							Symbols: []*result.SymbolMatch{
 								// 1
 								{},
 								// 2
@@ -1093,7 +1060,7 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 func TestSearchResolver_evaluateWarning(t *testing.T) {
 	db := new(dbtesting.MockDB)
 
-	q, _ := query.ProcessAndOr("file:foo or file:bar", query.ParserOptions{SearchType: query.SearchTypeRegex, Globbing: false})
+	q, _ := query.ParseRegexp("file:foo or file:bar")
 	wantPrefix := "I'm having trouble understanding that query."
 	got, _ := (&searchResolver{db: db}).evaluate(context.Background(), q)
 	t.Run("warn for unsupported and/or query", func(t *testing.T) {
@@ -1102,7 +1069,7 @@ func TestSearchResolver_evaluateWarning(t *testing.T) {
 		}
 	})
 
-	_, err := query.ProcessAndOr("file:foo or or or", query.ParserOptions{SearchType: query.SearchTypeRegex, Globbing: false})
+	_, err := query.ParseRegexp("file:foo or or or")
 	gotAlert := alertForQuery(db, "", err)
 	t.Run("warn for unsupported ambiguous and/or query", func(t *testing.T) {
 		if !strings.HasPrefix(gotAlert.description, wantPrefix) {
@@ -1135,7 +1102,7 @@ func TestGetExactFilePatterns(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.in, func(t *testing.T) {
-			q, err := query.ProcessAndOr(tt.in, query.ParserOptions{Globbing: true, SearchType: query.SearchTypeLiteral})
+			q, err := query.Parse(tt.in, query.ParserOptions{SearchType: query.SearchTypeLiteral, Globbing: true})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1339,7 +1306,7 @@ func TestEvaluateAnd(t *testing.T) {
 			}
 			defer func() { database.Mocks = database.MockStores{} }()
 
-			q, err := query.ProcessAndOr(tt.query, query.ParserOptions{SearchType: query.SearchTypeLiteral})
+			q, err := query.ParseLiteral(tt.query)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1476,7 +1443,7 @@ func repoResult(db dbutil.DB, url string) *RepositoryResolver {
 	})
 }
 
-func fileResult(db dbutil.DB, uri string, lineMatches []*result.LineMatch, symbolMatches []*result.SearchSymbolResult) *FileMatchResolver {
+func fileResult(db dbutil.DB, uri string, lineMatches []*result.LineMatch, symbolMatches []*result.SymbolMatch) *FileMatchResolver {
 	return &FileMatchResolver{
 		db: db,
 		FileMatch: result.FileMatch{
@@ -1615,17 +1582,17 @@ func TestUnionMerge(t *testing.T) {
 		{
 			left: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
-					fileResult(db, "a", nil, []*result.SearchSymbolResult{
-						{Symbol: protocol.Symbol{Name: "a"}},
-						{Symbol: protocol.Symbol{Name: "b"}},
+					fileResult(db, "a", nil, []*result.SymbolMatch{
+						{Symbol: result.Symbol{Name: "a"}},
+						{Symbol: result.Symbol{Name: "b"}},
 					}),
 				},
 			},
 			right: SearchResultsResolver{db: db,
 				SearchResults: []SearchResultResolver{
-					fileResult(db, "a", nil, []*result.SearchSymbolResult{
-						{Symbol: protocol.Symbol{Name: "c"}},
-						{Symbol: protocol.Symbol{Name: "d"}},
+					fileResult(db, "a", nil, []*result.SymbolMatch{
+						{Symbol: result.Symbol{Name: "c"}},
+						{Symbol: result.Symbol{Name: "d"}},
 					}),
 				},
 			},

@@ -4,7 +4,7 @@ import (
 	"context"
 	"html/template"
 
-	"github.com/sourcegraph/sourcegraph/internal/highlight"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 

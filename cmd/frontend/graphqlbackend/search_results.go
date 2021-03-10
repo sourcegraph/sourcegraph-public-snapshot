@@ -33,7 +33,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -746,9 +745,9 @@ func (r *searchResolver) evaluateOr(ctx context.Context, scopeParameters []query
 	}
 
 	wantCount := defaultMaxSearchResults
-	query.VisitField(scopeParameters, query.FieldCount, func(value string, _ bool, _ query.Annotation) {
-		wantCount, _ = strconv.Atoi(value) // Invariant: count is validated.
-	})
+	if count := query.Q(scopeParameters).Count(); count != nil {
+		wantCount = *count
+	}
 
 	result, err := r.evaluatePatternExpression(ctx, scopeParameters, operands[0])
 	if err != nil {
@@ -868,14 +867,16 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 		tr.SetError(err)
 		tr.Finish()
 	}()
+
 	wantCount := defaultMaxSearchResults
-	query.VisitField(r.Query, query.FieldCount, func(value string, _ bool, _ query.Annotation) {
-		wantCount, _ = strconv.Atoi(value)
-	})
+	if count := r.Query.Count(); count != nil {
+		wantCount = *count
+	}
 
 	if invalidateRepoCache(r.Query) {
 		r.invalidateRepoCache = true
 	}
+
 	for _, disjunct := range query.Dnf(r.Query) {
 		disjunct = query.ConcatRevFilters(disjunct)
 		newResult, err := r.evaluate(ctx, disjunct)
@@ -884,17 +885,17 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 			return nil, err
 		}
 		if newResult != nil {
-			newResult.SearchResults = r.selectResults(newResult.SearchResults)
+			newResult.SearchResults = selectResults(newResult.SearchResults, r.Query)
 			srr = union(srr, newResult)
 			if len(srr.SearchResults) > wantCount {
 				srr.SearchResults = srr.SearchResults[:wantCount]
 				break
 			}
-
 		}
 	}
+
 	if srr != nil {
-		r.sortResults(ctx, srr.SearchResults)
+		r.sortResults(srr.SearchResults)
 	}
 	// copy userSettings from searchResolver to SearchResultsResolver
 	if srr != nil {
@@ -956,20 +957,6 @@ func longer(N int, dt time.Duration) time.Duration {
 	return dt2
 }
 
-var decimalRx = lazyregexp.New(`\d+\.\d+`)
-
-// roundStr rounds the first number containing a decimal within a string
-func roundStr(s string) string {
-	return decimalRx.ReplaceAllStringFunc(s, func(ns string) string {
-		f, err := strconv.ParseFloat(ns, 64)
-		if err != nil {
-			return s
-		}
-		f = math.Round(f)
-		return strconv.Itoa(int(f))
-	})
-}
-
 type searchResultsStats struct {
 	JApproximateResultCount string
 	JSparkline              []int32
@@ -986,15 +973,11 @@ func (srs *searchResultsStats) Sparkline() []int32             { return srs.JSpa
 
 var (
 	searchResultsStatsCache   = rcache.NewWithTTL("search_results_stats", 3600) // 1h
-	searchResultsStatsCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	searchResultsStatsCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_graphql_search_results_stats_cache_hit",
 		Help: "Counts cache hits and misses for search results stats (e.g. sparklines).",
 	}, []string{"type"})
 )
-
-func init() {
-	prometheus.MustRegister(searchResultsStatsCounter)
-}
 
 func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, err error) {
 	// Override user context to ensure that stats for this query are cached
@@ -1283,20 +1266,16 @@ var (
 )
 
 func (r *searchResolver) searchTimeoutFieldSet() bool {
-	timeout, _ := r.Query.StringValue(query.FieldTimeout)
-	return timeout != "" || r.countIsSet()
+	timeout := r.Query.Timeout()
+	return timeout != nil || r.countIsSet()
 }
 
 func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, context.CancelFunc, error) {
 	d := defaultTimeout
 	maxTimeout := time.Duration(searchrepos.SearchLimits().MaxTimeoutSeconds) * time.Second
-	timeout, _ := r.Query.StringValue(query.FieldTimeout)
-	if timeout != "" {
-		var err error
-		d, err = time.ParseDuration(timeout)
-		if err != nil {
-			return nil, nil, errors.WithMessage(err, `invalid "timeout:" value (examples: "timeout:2s", "timeout:200ms")`)
-		}
+	timeout := r.Query.Timeout()
+	if timeout != nil {
+		d = *timeout
 	} else if r.countIsSet() {
 		// If `count:` is set but `timeout:` is not explicitly set, use the max timeout
 		d = maxTimeout
@@ -1822,7 +1801,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	tr.LazyPrintf("results=%d %s", len(results), &common)
 
-	r.sortResults(ctx, results)
+	r.sortResults(results)
 
 	resultsResolver := SearchResultsResolver{
 		db:            r.db,
@@ -1926,23 +1905,23 @@ func compareSearchResults(left, right SearchResultResolver, exactFilePatterns ma
 	return arepo < brepo
 }
 
-func (r *searchResolver) selectResults(results []SearchResultResolver) []SearchResultResolver {
-	value, _ := r.Query.StringValue(query.FieldSelect)
-	if value == "" {
+func selectResults(results []SearchResultResolver, q query.Q) []SearchResultResolver {
+	v, _ := q.StringValue(query.FieldSelect)
+	if v == "" {
 		return results
 	}
-	sm, _ := filter.SelectPathFromString(value) // Invariant: select is validated.
+	sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
 
 	dedup := NewDeduper()
 	for _, result := range results {
 		var current SearchResultResolver
 		switch v := result.(type) {
 		case *FileMatchResolver:
-			current = v.Select(sm)
+			current = v.Select(sp)
 		case *RepositoryResolver:
-			current = v.Select(sm)
+			current = v.Select(sp)
 		case *CommitSearchResultResolver:
-			current = v.Select(sm)
+			current = v.Select(sp)
 		default:
 			current = result
 		}
@@ -1955,7 +1934,7 @@ func (r *searchResolver) selectResults(results []SearchResultResolver) []SearchR
 	return dedup.Results()
 }
 
-func (r *searchResolver) sortResults(ctx context.Context, results []SearchResultResolver) {
+func (r *searchResolver) sortResults(results []SearchResultResolver) {
 	var exactPatterns map[string]struct{}
 	if getBoolPtr(r.UserSettings.SearchGlobbing, false) {
 		exactPatterns = r.getExactFilePatterns()

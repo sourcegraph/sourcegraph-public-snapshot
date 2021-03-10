@@ -88,14 +88,14 @@ func alertForTimeout(db dbutil.DB, usedTime time.Duration, suggestTime time.Dura
 			db:             db,
 			prometheusType: "timed_out",
 			title:          "Timed out while searching",
-			description:    fmt.Sprintf("We weren't able to find any results in %s. Try adding timeout: with a higher value.", roundStr(usedTime.String())),
+			description:    fmt.Sprintf("We weren't able to find any results in %s. Try adding timeout: with a higher value.", usedTime.Round(time.Second)),
 		}
 	}
 	return &searchAlert{
 		db:             db,
 		prometheusType: "timed_out",
 		title:          "Timed out while searching",
-		description:    fmt.Sprintf("We weren't able to find any results in %s.", roundStr(usedTime.String())),
+		description:    fmt.Sprintf("We weren't able to find any results in %s.", usedTime.Round(time.Second)),
 		proposedQueries: []*searchQueryDescription{
 			{
 				description: "query with longer timeout",
@@ -132,11 +132,14 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 	repoFilters, minusRepoFilters := r.Query.RegexpPatterns(query.FieldRepo)
 	repoGroupFilters, _ := r.Query.StringValues(query.FieldRepoGroup)
 	contextFilters, _ := r.Query.StringValues(query.FieldContext)
-	fork, _ := r.Query.StringValue(query.FieldFork)
-	onlyForks, noForks := fork == "only", fork == "no"
-	forksNotSet := len(fork) == 0
-	archived, _ := r.Query.StringValue(query.FieldArchived)
-	archivedNotSet := len(archived) == 0
+	onlyForks, noForks, forksNotSet := false, false, true
+	if fork := r.Query.Fork(); fork != nil {
+		onlyForks = *fork == query.Only
+		noForks = *fork == query.No
+		forksNotSet = false
+	}
+	archived := r.Query.Archived()
+	archivedNotSet := archived == nil
 
 	// Handle repogroup-only scenarios.
 	if len(repoFilters) == 0 && len(repoGroupFilters) == 0 {

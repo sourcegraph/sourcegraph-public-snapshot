@@ -21,6 +21,7 @@ import (
 type Interface interface {
 	SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error)
 	RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) error
+	DistinctSeriesWithData(ctx context.Context, from, to time.Time) ([]string, error)
 }
 
 var _ Interface = &Store{}

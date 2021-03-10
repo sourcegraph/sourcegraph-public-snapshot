@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	bk "github.com/sourcegraph/sourcegraph/internal/buildkite"
@@ -28,10 +29,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		"DATE":                             c.now.Format(time.RFC3339),
 		"VERSION":                          c.version,
 		// For Bundlesize
-		"CI_REPO_OWNER":     "sourcegraph",
-		"CI_REPO_NAME":      "sourcegraph",
-		"CI_COMMIT_SHA":     os.Getenv("BUILDKITE_COMMIT"),
-		"CI_COMMIT_MESSAGE": os.Getenv("BUILDKITE_MESSAGE"),
+		"CI_REPO_OWNER": "sourcegraph",
+		"CI_REPO_NAME":  "sourcegraph",
+		"CI_COMMIT_SHA": os.Getenv("BUILDKITE_COMMIT"),
+		// $ in commit messages must be escaped to not attempt interpolation which will fail.
+		"CI_COMMIT_MESSAGE": strings.ReplaceAll(os.Getenv("BUILDKITE_MESSAGE"), "$", "$$"),
 
 		// Add debug flags for scripts to consume
 		"CI_DEBUG_PROFILE": strconv.FormatBool(c.profilingEnabled),
