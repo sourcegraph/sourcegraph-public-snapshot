@@ -14,5 +14,6 @@ export const ExtensionStatusBadge: React.FunctionComponent<{ viewerCanAdminister
                 ? 'Remove "WIP" from the title when this extension is ready for use.'
                 : 'Work in progress (not ready for use)'
         }
+        className="text-uppercase"
     />
 )
