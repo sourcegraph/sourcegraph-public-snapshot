@@ -6,9 +6,9 @@ import (
 	"github.com/gobwas/glob"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/campaignutils/env"
-	"github.com/sourcegraph/campaignutils/overridable"
-	"github.com/sourcegraph/campaignutils/yaml"
+	"github.com/sourcegraph/batch-change-utils/env"
+	"github.com/sourcegraph/batch-change-utils/overridable"
+	"github.com/sourcegraph/batch-change-utils/yaml"
 	"github.com/sourcegraph/src-cli/internal/batches/docker"
 	"github.com/sourcegraph/src-cli/schema"
 )
