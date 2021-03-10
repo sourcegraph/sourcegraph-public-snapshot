@@ -433,7 +433,10 @@ func addFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline)
 		for _, tag := range []string{
 			c.version,
 			c.commit,
-			fmt.Sprintf("%s_%s", c.commit, strconv.Itoa(c.buildNumber)),
+			c.shortCommit(),
+			fmt.Sprintf("%s_%s_%d", c.shortCommit(), c.now.Format("2006-01-02"), c.buildNumber),
+			fmt.Sprintf("%s_%d", c.shortCommit(), c.buildNumber),
+			fmt.Sprintf("%s_%d", c.commit, c.buildNumber),
 			strconv.Itoa(c.buildNumber),
 		} {
 			internalImage := fmt.Sprintf("%s:%s", devImage, tag)

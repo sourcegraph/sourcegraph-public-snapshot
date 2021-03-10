@@ -115,6 +115,15 @@ func ComputeConfig() Config {
 	}
 }
 
+func (c Config) shortCommit() string {
+	// http://git-scm.com/book/en/v2/Git-Tools-Revision-Selection#Short-SHA-1
+	if len(c.commit) < 12 {
+		return c.commit
+	}
+
+	return c.commit[:12]
+}
+
 func (c Config) ensureCommit() error {
 	if len(c.mustIncludeCommit) == 0 {
 		return nil
