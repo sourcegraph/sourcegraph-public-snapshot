@@ -72,7 +72,7 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
 
     return (
         <Dialog
-            className="modal-body modal-body--top-third add-user-code-hosts-page__modal--plain p-4 rounded border"
+            className="modal-body modal-body--top-third user-code-hosts-page__modal--plain p-4 rounded border"
             aria-labelledby={`heading--connect-with-${name}`}
             onDismiss={onDidCancel}
         >
@@ -95,7 +95,7 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
                             />
                             <small>
                                 <ShieldCheckIcon
-                                    className="icon-inline add-user-code-hosts-page__icon--inside text-muted"
+                                    className="icon-inline user-code-hosts-page__icon--inside text-muted"
                                     data-tooltip="Data will be encrypted and will not be visible again."
                                 />
                             </small>

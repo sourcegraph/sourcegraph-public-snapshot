@@ -171,7 +171,9 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                   setOauthRequestFor(kind)
                                   navigateToAuthProvider(kind)
                               }}
-                              className={`btn mr-2 ${kind === 'GITLAB' ? 'btn-gitlab' : 'btn-dark'}`}
+                              className={`btn mr-2 ${
+                                  kind === 'GITLAB' ? 'user-code-hosts-page__btn--gitlab' : 'btn-dark'
+                              }`}
                           >
                               {/* will use dark theme for the spinner because buttons are dark */}
                               {oauthRequestFor === kind && <LoadingSpinner className="icon-inline mr-2 theme-dark" />}
@@ -187,7 +189,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         : []
 
     return (
-        <div className="add-user-code-hosts-page">
+        <div className="user-code-hosts-page">
             <PageTitle title="Code host connections" />
             <div className="mb-4">
                 <div className="d-flex justify-content-between align-items-center mb-3">
