@@ -13,14 +13,18 @@ import { SourcegraphIntegrationURLs } from '../../platform/context'
  * @param onCodeHostFound setup logic to run when a code host is found (e.g. loading stylesheet) to avoid doing
  * such work on unsupported websites
  */
-export async function injectCodeIntelligence(urls: SourcegraphIntegrationURLs, isExtension: boolean, onCodeHostFound?: (codeHost: CodeHost) =>Promise<void> ): Promise<Subscription> {
+export async function injectCodeIntelligence(
+    urls: SourcegraphIntegrationURLs,
+    isExtension: boolean,
+    onCodeHostFound?: (codeHost: CodeHost) => Promise<void>
+): Promise<Subscription> {
     const subscriptions = new Subscription()
     const codeHost = determineCodeHost()
     if (codeHost) {
         console.log('Sourcegraph: Detected code host:', codeHost.type)
 
         if (onCodeHostFound) {
-        await onCodeHostFound(codeHost)
+            await onCodeHostFound(codeHost)
         }
 
         const observeMutations: ObserveMutations = codeHost.observeMutations || defaultObserveMutations
