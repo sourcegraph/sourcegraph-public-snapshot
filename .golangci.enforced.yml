@@ -13,6 +13,7 @@ linters:
     - unconvert
     - goimports
     - gosimple
+    - varcheck
 
 run:
   timeout: 5m
