@@ -2,7 +2,7 @@
 This is a compilation of some common questions about Batch Changes.
 
 ### What happens if my batch change creation breaks down at 900 changesets out of 1,000? Do I have to re-run it all again?
-Batch Changes' default behavior is to stop if creating the diff on a repo errors. You can choose to ignore errors instead by adding the [`-skip-errors`](../../cli/references/batch-change/preview.md) flag to the `src batch preview` command.
+Batch Changes' default behavior is to stop if creating the diff on a repo errors. You can choose to ignore errors instead by adding the [`-skip-errors`](../../cli/references/batch/preview.md) flag to the `src batch preview` command.
 
 ### Can we close a batch change and still leave the changesets open?
 Yes. There is a confirmation page that shows you all the actions that will occur on the various changesets in the batch change after you close it. Open changesets will be marked 'Kept open', which means that batch change won't alter them. See [closing a batch change](../how-tos/closing_or_deleting_a_batch_change.md#closing-a-batch-change).
