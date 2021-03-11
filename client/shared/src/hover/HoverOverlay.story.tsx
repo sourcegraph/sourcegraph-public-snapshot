@@ -274,7 +274,7 @@ add('With alert with icon', () => (
                             kind: MarkupKind.PlainText,
                             value: 'This is a test alert.',
                         },
-                            iconKind: 'info',
+                        iconKind: 'info',
                     },
                 ],
             }}
