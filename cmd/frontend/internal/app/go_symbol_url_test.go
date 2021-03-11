@@ -29,9 +29,12 @@ func TestParseGoSymbolURLPath(t *testing.T) {
 	invalid := map[string]string{
 		"/ts/github.com/foo/bar/-/Bam": "invalid mode",
 		"/go":                          "invalid symbol URL path",
+		"/go/":                         "invalid symbol URL path",
+		"/go/google.golang.org/api/cloudresourcemanager/v1": "invalid symbol URL path",
 	}
 
 	for path, want := range valid {
+		t.Log(path)
 		got, err := parseGoSymbolURLPath(path)
 		if err != nil {
 			t.Errorf("parseGoSymbolURLPath(%q) got error: %v", path, err)
@@ -41,6 +44,7 @@ func TestParseGoSymbolURLPath(t *testing.T) {
 	}
 
 	for path, errSub := range invalid {
+		t.Log(path)
 		got, err := parseGoSymbolURLPath(path)
 		if err == nil {
 			t.Errorf("parseGoSymbolURLPath(%q) expected error got: %v", path, *got)

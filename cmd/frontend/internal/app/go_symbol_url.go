@@ -105,18 +105,26 @@ type goSymbolSpec struct {
 	Symbol   string
 }
 
+type invalidSymbolURLPathError struct {
+	Path string
+}
+
+func (s *invalidSymbolURLPathError) Error() string {
+	return "invalid symbol URL path: " + s.Path
+}
+
 func parseGoSymbolURLPath(path string) (*goSymbolSpec, error) {
-	parts := strings.Split(strings.TrimPrefix(path, "/"), "/")
+	parts := strings.SplitN(strings.Trim(path, "/"), "/", 2)
 	if len(parts) < 2 {
-		return nil, fmt.Errorf("invalid symbol URL path: %q", path)
+		return nil, &invalidSymbolURLPathError{Path: path}
 	}
 	mode := parts[0]
-	symbolID := strings.Join(parts[1:], "/")
+	symbolID := parts[1]
 
 	if mode != "go" {
 		return nil, &errcode.HTTPErr{
 			Status: http.StatusNotFound,
-			Err:    errors.New("invalid mode (only \"go\" is supported)"),
+			Err:    errors.New("invalid mode (only \"go\" is supported"),
 		}
 	}
 
@@ -125,8 +133,12 @@ func parseGoSymbolURLPath(path string) (*goSymbolSpec, error) {
 	// http://sourcegraph.com/go/github.com/gorilla/mux/-/Router/Match
 	//                           ^^^^^^^^^^^^^^^^^^^^^^   ^^^^^^ ^^^^^
 	//                                 importPath      receiver? symbolname
-	importPath := strings.Split(symbolID, "/-/")[0]
-	def := strings.Split(symbolID, "/-/")[1]
+	parts = strings.SplitN(symbolID, "/-/", 2)
+	if len(parts) < 2 {
+		return nil, &invalidSymbolURLPathError{Path: path}
+	}
+	importPath := parts[0]
+	def := parts[1]
 	var symbolName string
 	var receiver *string
 	symbolComponents := strings.Split(def, "/")
