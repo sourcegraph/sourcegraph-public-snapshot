@@ -243,6 +243,28 @@ func TestRecordSeriesPoints(t *testing.T) {
 	autogold.Want("points[1].String()", `SeriesPoint{Time: "2020-02-17 00:00:00 +0000 UTC", Value: 2.2, Metadata: ["some", "data", "two"]}`).Equal(t, points[1].String())
 	autogold.Want("points[2].String()", `SeriesPoint{Time: "2020-02-17 00:00:00 +0000 UTC", Value: 1.1, Metadata: {"some": "data"}}`).Equal(t, points[2].String())
 
-	// Confirm the data point with repository name got recorded correctly.
-	// TODO(slimsag): future: once we support querying by repo ID/names, add tests to ensure that information is inserted properly here.
+	// Confirm querying by repo ID works as expected.
+	forRepoIDPoints, err := store.SeriesPoints(ctx, SeriesPointsOpts{RepoID: optionalRepoID(3)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	autogold.Want("len(forRepoIDPoints)", int(1)).Equal(t, len(forRepoIDPoints))
+	autogold.Want("forRepoIDPoints[0].String()", `SeriesPoint{Time: "2020-02-17 00:00:00 +0000 UTC", Value: 1.1, Metadata: {"some": "data"}}`).Equal(t, forRepoIDPoints[0].String())
+
+	// TODO: future: once querying by RepoName and/or OriginalRepoName is possible, test that here:
+	// // Confirm querying by repo name works as expected.
+	// forRepoNamePoints, err := store.SeriesPoints(ctx, SeriesPointsOpts{RepoName: optionalString("repo1")})
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
+	// autogold.Want("len(forRepoNamePoints)", nil).Equal(t, len(forRepoNamePoints))
+	// autogold.Want("forRepoNamePoints[0].String()", nil).Equal(t, forRepoNamePoints[0].String())
+	//
+	// // Confirm querying by original repo name works as expected.
+	// forOriginalRepoNamePoints, err := store.SeriesPoints(ctx, SeriesPointsOpts{OriginalRepoName: optionalString("repo1")})
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
+	// autogold.Want("len(forOriginalRepoNamePoints)", nil).Equal(t, len(forOriginalRepoNamePoints))
+	// autogold.Want("forOriginalRepoNamePoints[0].String()", nil).Equal(t, forOriginalRepoNamePoints[0].String())
 }

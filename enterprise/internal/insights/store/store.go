@@ -80,7 +80,10 @@ type SeriesPointsOpts struct {
 	// SeriesID is the unique series ID to query, if non-nil.
 	SeriesID *string
 
-	// TODO(slimsag): Add ability to filter based on repo ID, name, original name.
+	// RepoID, if non-nil, indicates to filter results to only points recorded with this repo ID.
+	RepoID *api.RepoID
+
+	// TODO(slimsag): Add ability to filter based on repo name, original name.
 	// TODO(slimsag): Add ability to do limited filtering based on metadata.
 
 	// Time ranges to query from/to, if non-nil, in UTC.
@@ -168,6 +171,9 @@ func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
 
 	if opts.SeriesID != nil {
 		preds = append(preds, sqlf.Sprintf("series_id = %s", *opts.SeriesID))
+	}
+	if opts.RepoID != nil {
+		preds = append(preds, sqlf.Sprintf("repo_id = %d", int32(*opts.RepoID)))
 	}
 	if opts.From != nil {
 		preds = append(preds, sqlf.Sprintf("time >= %s", *opts.From))
