@@ -336,6 +336,7 @@ func ListUsersThisMonth() (*ActiveUsers, error) {
 	return uniques(monthStartDate, &UsageDuration{Months: 1})
 }
 
+//nolint:deadcode // This package is deprecated and will likely be removed anyways, so no use getting rid of this now
 func usersSince(userList []string, dayStart time.Time, userField string) (map[string]bool, error) {
 	c := pool.Get()
 	defer c.Close()
