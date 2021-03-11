@@ -116,7 +116,7 @@ func parseGoSymbolURLPath(path string) (*goSymbolSpec, error) {
 	if mode != "go" {
 		return nil, &errcode.HTTPErr{
 			Status: http.StatusNotFound,
-			Err:    errors.New("invalid mode (only \"go\" is supported"),
+			Err:    errors.New("invalid mode (only \"go\" is supported)"),
 		}
 	}
 

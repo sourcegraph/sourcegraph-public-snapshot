@@ -2,13 +2,53 @@ package app
 
 import (
 	"context"
+	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
+
+func TestParseGoSymbolURLPath(t *testing.T) {
+	valid := map[string]*goSymbolSpec{
+		"/go/github.com/gorilla/mux/-/Router/Match": {
+			Pkg:      "github.com/gorilla/mux",
+			Receiver: strptr("Router"),
+			Symbol:   "Match",
+		},
+
+		"/go/github.com/gorilla/mux/-/Router": {
+			Pkg:    "github.com/gorilla/mux",
+			Symbol: "Router",
+		},
+	}
+
+	invalid := map[string]string{
+		"/ts/github.com/foo/bar/-/Bam": "invalid mode",
+		"/go":                          "invalid symbol URL path",
+	}
+
+	for path, want := range valid {
+		got, err := parseGoSymbolURLPath(path)
+		if err != nil {
+			t.Errorf("parseGoSymbolURLPath(%q) got error: %v", path, err)
+		} else if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("parseGoSymbolURLPath(%q) mismatch (-want, +got):\n%s", path, diff)
+		}
+	}
+
+	for path, errSub := range invalid {
+		got, err := parseGoSymbolURLPath(path)
+		if err == nil {
+			t.Errorf("parseGoSymbolURLPath(%q) expected error got: %v", path, *got)
+		} else if !strings.Contains(err.Error(), errSub) {
+			t.Errorf("parseGoSymbolURLPath(%q) expected error containing %q got: %v", path, errSub, err)
+		}
+	}
+}
 
 type symbolLocationArgs struct {
 	vfs        map[string]string
