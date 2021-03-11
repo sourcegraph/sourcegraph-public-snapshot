@@ -708,10 +708,11 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 		if err != nil {
 			return nil, err
 		}
-		// We have to guard against result = nil because evaluatePatternExpression can
-		// return nil, nil via evaluateOperator.
-		if result == nil || len(result.SearchResults) == 0 {
-			// We return result instead of nil because result might contain an alert.
+		if result == nil {
+			return &SearchResultsResolver{}, nil
+		}
+		if len(result.SearchResults) == 0 {
+			// result might contain an alert.
 			return result, nil
 		}
 		exhausted = !result.IsLimitHit
@@ -729,7 +730,11 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 			if err != nil {
 				return nil, err
 			}
-			if termResult == nil || len(termResult.SearchResults) == 0 {
+			if termResult == nil {
+				return &SearchResultsResolver{}, nil
+			}
+			if len(termResult.SearchResults) == 0 {
+				// termResult might contain an alert.
 				return termResult, nil
 			}
 			exhausted = exhausted && !termResult.IsLimitHit
@@ -759,7 +764,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 // we shortcircuit and return results immediately.
 func (r *searchResolver) evaluateOr(ctx context.Context, scopeParameters []query.Node, operands []query.Node) (*SearchResultsResolver, error) {
 	if len(operands) == 0 {
-		return nil, nil
+		return &SearchResultsResolver{}, nil
 	}
 
 	wantCount := defaultMaxSearchResults
@@ -803,7 +808,7 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopePar
 	switch term := node.(type) {
 	case query.Operator:
 		if len(term.Operands) == 0 {
-			return nil, nil
+			return &SearchResultsResolver{}, nil
 		}
 
 		switch term.Kind {
@@ -820,7 +825,7 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopePar
 		return r.evaluateLeaf(ctx)
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
-		return nil, nil
+		return &SearchResultsResolver{}, nil
 	}
 	// Unreachable.
 	return nil, fmt.Errorf("unrecognized type %T in evaluatePatternExpression", node)
