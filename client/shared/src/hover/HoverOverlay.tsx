@@ -175,16 +175,16 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps> {
                                         <React.Fragment key={index}>
                                             {index !== 0 && <hr />}
 
-                                            {(hoverOrError?.aggregatedLabels || []).map(label => (
+                                            {(hoverOrError?.aggregatedBadges || []).map(badge => (
                                                 <LinkOrSpan
-                                                    key={label.text}
-                                                    to={label.linkURL}
+                                                    key={badge.text}
+                                                    to={badge.linkURL}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    data-tooltip={label.hoverMessage}
-                                                    className="badge badge-secondary text-muted text-uppercase hover-overlay__label test-hover-label"
+                                                    data-tooltip={badge.hoverMessage}
+                                                    className="badge badge-secondary text-muted text-uppercase hover-overlay__badge test-hover-badge"
                                                 >
-                                                    {label.text}
+                                                    {badge.text}
                                                 </LinkOrSpan>
                                             ))}
 
@@ -198,7 +198,13 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps> {
                                     )
                                 } catch (error) {
                                     return (
-                                        <div className={classNames(this.props.errorAlertClassName)} key={index}>
+                                        <div
+                                            className={classNames(
+                                                'hover-overlay__icon',
+                                                this.props.errorAlertClassName
+                                            )}
+                                            key={index}
+                                        >
                                             {upperFirst(asError(error).message)}
                                         </div>
                                     )

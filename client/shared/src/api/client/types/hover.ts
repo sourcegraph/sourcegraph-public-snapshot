@@ -1,6 +1,6 @@
 import { MarkupKind, Range } from '@sourcegraph/extension-api-classes'
 import { Hover as PlainHover, Range as PlainRange } from '@sourcegraph/extension-api-types'
-import { Badged, Hover, MarkupContent, HoverAlert, AggregableLabel } from 'sourcegraph'
+import { Badged, Hover, MarkupContent, HoverAlert, AggregableBadge } from 'sourcegraph'
 
 /** A hover that is merged from multiple Hover results and normalized. */
 export interface HoverMerged {
@@ -8,15 +8,15 @@ export interface HoverMerged {
     alerts?: HoverAlert[]
     range?: PlainRange
 
-    /** Sorted and de-duplicated set of labels in all source hover values. */
-    aggregatedLabels?: AggregableLabel[]
+    /** Sorted and de-duplicated set of badges in all source hover values. */
+    aggregatedBadges?: AggregableBadge[]
 }
 
 /** Create a merged hover from the given individual hovers. */
 export function fromHoverMerged(values: (Badged<Hover | PlainHover> | null | undefined)[]): HoverMerged | null {
     const contents: HoverMerged['contents'] = []
     const alerts: HoverMerged['alerts'] = []
-    const aggregatedLabels = new Map<string, AggregableLabel>()
+    const aggregatedBadges = new Map<string, AggregableBadge>()
     let range: PlainRange | undefined
     for (const result of values) {
         if (result) {
@@ -24,17 +24,14 @@ export function fromHoverMerged(values: (Badged<Hover | PlainHover> | null | und
                 contents.push({
                     value: result.contents.value,
                     kind: result.contents.kind || MarkupKind.PlainText,
-                    badge: result.badge,
                 })
             }
             if (result.alerts) {
                 alerts.push(...result.alerts)
             }
 
-            const labels = [result, ...(result.alerts || [])].flatMap(badged => badged.aggregableLabels || [])
-
-            for (const label of labels) {
-                aggregatedLabels.set(label.text, label)
+            for (const badge of result.aggregableBadges || []) {
+                aggregatedBadges.set(badge.text, badge)
             }
 
             if (result.range && !range) {
@@ -56,8 +53,8 @@ export function fromHoverMerged(values: (Badged<Hover | PlainHover> | null | und
         contents,
         alerts,
         ...(range ? { range } : {}),
-        ...(aggregatedLabels.size > 0
-            ? { aggregatedLabels: [...aggregatedLabels.values()].sort((a, b) => a.text.localeCompare(b.text)) }
+        ...(aggregatedBadges.size > 0
+            ? { aggregatedBadges: [...aggregatedBadges.values()].sort((a, b) => a.text.localeCompare(b.text)) }
             : {}),
     }
 }

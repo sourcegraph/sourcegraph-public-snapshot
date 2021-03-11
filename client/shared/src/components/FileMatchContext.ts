@@ -159,7 +159,6 @@ export const calculateMatchGroups = (
                 line: match.line,
                 character: range.start,
                 highlightLength: range.highlightLength,
-                badge: match.badge,
                 IsInContext: maxMatches === 0 ? false : match.line > highestLineNumberWithinSubsetMatches,
             }))
         )

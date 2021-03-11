@@ -8,7 +8,7 @@ import { FetchFileParameters } from './CodeExcerpt'
 import { EventLogger, FileMatchChildren } from './FileMatchChildren'
 import { RepoFileLink } from './RepoFileLink'
 import { Props as ResultContainerProps, ResultContainer } from './ResultContainer'
-import { AggregableLabel, Badge } from 'sourcegraph'
+import { AggregableBadge, Badge } from 'sourcegraph'
 import { LinkOrSpan } from './LinkOrSpan'
 
 const SUBSET_COUNT_KEY = 'fileMatchSubsetCount'
@@ -92,8 +92,7 @@ export class FileMatch extends React.PureComponent<Props> {
             highlightRanges: match.offsetAndLengths.map(([start, highlightLength]) => ({ start, highlightLength })),
             preview: match.preview,
             line: match.lineNumber,
-            badge: match.badge,
-            aggregableLabels: match.aggregableLabels,
+            aggregableBadges: match.aggregableBadges,
         }))
 
         const { repoAtRevURL, revDisplayName } =
@@ -120,16 +119,16 @@ export class FileMatch extends React.PureComponent<Props> {
         const description =
             items.length > 0 ? (
                 <>
-                    {aggregateLabels(items).map(label => (
+                    {aggregateBadges(items).map(badge => (
                         <LinkOrSpan
-                            key={label.text}
-                            to={label.linkURL}
+                            key={badge.text}
+                            to={badge.linkURL}
                             target="_blank"
                             rel="noopener noreferrer"
-                            data-tooltip={label.hoverMessage}
-                            className="badge badge-secondary text-muted text-uppercase file-match__label"
+                            data-tooltip={badge.hoverMessage}
+                            className="badge badge-secondary text-muted text-uppercase file-match__badge"
                         >
-                            {label.text}
+                            {badge.text}
                         </LinkOrSpan>
                     ))}
                 </>
@@ -185,11 +184,11 @@ export class FileMatch extends React.PureComponent<Props> {
     }
 }
 
-function aggregateLabels(items: MatchItem[]): AggregableLabel[] {
-    const aggregatedLabels = new Map<string, AggregableLabel>()
-    for (const item of items.flatMap(item => item.aggregableLabels || [])) {
-        aggregatedLabels.set(item.text, item)
+function aggregateBadges(items: MatchItem[]): AggregableBadge[] {
+    const aggregatedBadges = new Map<string, AggregableBadge>()
+    for (const badge of items.flatMap(item => item.aggregableBadges || [])) {
+        aggregatedBadges.set(badge.text, badge)
     }
 
-    return [...aggregatedLabels.values()].sort((a, b) => a.text.localeCompare(b.text))
+    return [...aggregatedBadges.values()].sort((a, b) => a.text.localeCompare(b.text))
 }

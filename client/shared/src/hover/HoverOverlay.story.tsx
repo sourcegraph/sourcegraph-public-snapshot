@@ -13,7 +13,7 @@ import { PlatformContext } from '../platform/context'
 import webStyles from '../../../web/src/SourcegraphWebApp.scss'
 import bitbucketStyles from '@atlassian/aui/dist/aui/css/aui.css'
 import browserExtensionStyles from '../../../browser/src/app.scss'
-import { BadgeAttachmentRenderOptions, MarkupContent, Badged } from 'sourcegraph'
+import { MarkupContent, Badged, AggregableBadge } from 'sourcegraph'
 
 registerHighlightContributions()
 
@@ -54,18 +54,17 @@ const bitbucketClassProps: HoverOverlayClassProps = {
     iconClassName: 'aui-icon',
 }
 
-const FIXTURE_BADGE: BadgeAttachmentRenderOptions = {
-    kind: 'info',
-    hoverMessage:
-        'Search-based results - click to see how these results are calculated and how to get precise intelligence with LSIF.',
-    linkURL: 'https://docs.sourcegraph.com/code_intelligence/explanations/search_based_code_intelligence',
-}
-
 const FIXTURE_CONTENT: Badged<MarkupContent> = {
     value:
         '```typescript\nexport interface TestInterface<A, B, C>\n```\n\n' +
         '---\n\nVeniam voluptate quis magna mollit aliqua enim id ea fugiat. Aliqua anim eiusmod nisi excepteur.\n',
     kind: MarkupKind.Markdown,
+}
+
+const FIXTURE_BADGE: AggregableBadge = {
+    text: 'semantic',
+    linkURL: 'https://docs.sourcegraph.com/code_intelligence/explanations/precise_code_intelligence',
+    hoverMessage: 'Sample hover message',
 }
 
 const FIXTURE_CONTENT_LONG_CODE = {
@@ -144,21 +143,7 @@ add('Common content', () => (
     </>
 ))
 
-add('Legacy badge', () => (
-    <>
-        <style>{webStyles}</style>
-        <HoverOverlay
-            {...commonProps()}
-            {...webHoverOverlayClassProps}
-            hoverOrError={{
-                contents: [{ ...FIXTURE_CONTENT, badge: FIXTURE_BADGE }],
-            }}
-            actionsOrError={FIXTURE_ACTIONS}
-        />
-    </>
-))
-
-add('Aggregated Labels', () => (
+add('Aggregated Badges', () => (
     <>
         <style>{webStyles}</style>
         <HoverOverlay
@@ -166,13 +151,7 @@ add('Aggregated Labels', () => (
             {...webHoverOverlayClassProps}
             hoverOrError={{
                 contents: [FIXTURE_CONTENT],
-                aggregatedLabels: [
-                    {
-                        text: 'semantic',
-                        linkURL:
-                            'https://docs.sourcegraph.com/code_intelligence/explanations/precise_code_intelligence',
-                    },
-                ],
+                aggregatedBadges: [FIXTURE_BADGE],
             }}
             actionsOrError={FIXTURE_ACTIONS}
         />
@@ -371,13 +350,7 @@ add('Bitbucket styles', () => (
             {...bitbucketClassProps}
             hoverOrError={{
                 contents: [FIXTURE_CONTENT],
-                aggregatedLabels: [
-                    {
-                        text: 'semantic',
-                        linkURL:
-                            'https://docs.sourcegraph.com/code_intelligence/explanations/precise_code_intelligence',
-                    },
-                ],
+                aggregatedBadges: [FIXTURE_BADGE],
             }}
             actionsOrError={FIXTURE_ACTIONS}
         />

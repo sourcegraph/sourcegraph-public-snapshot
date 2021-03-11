@@ -59,29 +59,27 @@ describe('HoverMerged', () => {
                 ],
             }))
 
-        test('Aggregated Labels', () =>
+        test('Aggregated Badges', () =>
             expect(
                 fromHoverMerged([
                     {
                         contents: { kind: MarkupKind.Markdown, value: 'x' },
-                        alerts: [
-                            {
-                                summary: { kind: MarkupKind.PlainText, value: 'x' },
-                                aggregableLabels: [{ text: 't03' }, { text: 't01' }],
-                            },
-                        ],
-                        aggregableLabels: [{ text: 't02' }],
+                        alerts: [],
+                        aggregableBadges: [{ text: 't01' }, { text: 't03' }],
+                    },
+                    {
+                        contents: { kind: MarkupKind.Markdown, value: 'y' },
+                        alerts: [],
+                        aggregableBadges: [{ text: 't02' }],
                     },
                 ])
             ).toEqual({
-                contents: [{ kind: MarkupKind.Markdown, value: 'x' }],
-                alerts: [
-                    {
-                        summary: { kind: MarkupKind.PlainText, value: 'x' },
-                        aggregableLabels: [{ text: 't03' }, { text: 't01' }],
-                    },
+                contents: [
+                    { kind: MarkupKind.Markdown, value: 'x' },
+                    { kind: MarkupKind.Markdown, value: 'y' },
                 ],
-                aggregatedLabels: [{ text: 't01' }, { text: 't02' }, { text: 't03' }],
+                alerts: [],
+                aggregatedBadges: [{ text: 't01' }, { text: 't02' }, { text: 't03' }],
             }))
     })
 })
