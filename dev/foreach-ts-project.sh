@@ -15,6 +15,7 @@ DIRS=(
   client/shared
   client/branded
   client/browser
+  client/wildcard
   client/packages/sourcegraph-extension-api
   client/packages/@sourcegraph/eslint-plugin-sourcegraph
   client/packages/@sourcegraph/extension-api-types

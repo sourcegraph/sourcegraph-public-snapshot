@@ -21,7 +21,7 @@ import { repeatUntil } from '../../../../../shared/src/util/rxjs/repeatUntil'
 import { ErrorAlert } from '../../../components/alerts'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { catchError, map } from 'rxjs/operators'
-import { PageSelector } from '../../../components/PageSelector'
+import { Pagination } from '@sourcegraph/wildcard'
 
 interface Props extends RouteComponentProps, TelemetryProps {
     userID: string
@@ -244,7 +244,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             ) : (
                 NoResults
             )}
-            <PageSelector className="mx-auto" currentPage={page} onPageChange={setPage} maxPages={10} />
+            <Pagination className="mx-auto" currentPage={page} onPageChange={setPage} maxPages={10} />
         </div>
     )
 }

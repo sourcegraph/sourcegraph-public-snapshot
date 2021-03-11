@@ -3,7 +3,7 @@ import classNames from 'classnames'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import useResizeObserver from 'use-resize-observer/polyfilled'
-import { useDebounce } from '../hooks'
+import { useDebounce } from '@sourcegraph/wildcard'
 
 type Page = '...' | number
 
@@ -18,7 +18,7 @@ const PageButton: React.FunctionComponent<PageButton> = ({ children, active, ...
         <li>
             <button
                 type="button"
-                className={classNames('btn', 'mx-1', 'page-selector__button', active && 'btn-primary')}
+                className={classNames('btn', 'mx-1', 'pagination__button', active && 'btn-primary')}
                 aria-current={active}
                 ref={refocus}
                 {...props}
@@ -116,11 +116,8 @@ const validateProps = (props: Props): void => {
     }
 }
 
-export const PageSelector: React.FunctionComponent<Props> = props => {
+export const Pagination: React.FunctionComponent<Props> = props => {
     validateProps(props)
-
-    // TODO:
-    // 1. Move component into wildcard folder
 
     const { maxPages, currentPage, className, onPageChange } = props
     const { ref, width } = useDebounce(useResizeObserver(), 100)
@@ -145,7 +142,7 @@ export const PageSelector: React.FunctionComponent<Props> = props => {
 
     return (
         <nav>
-            <ul ref={ref} className={classNames('page-selector', className)}>
+            <ul ref={ref} className={classNames('pagination', className)}>
                 <PageButton disabled={currentPage === 1} onClick={goBack} aria-label="Previous page">
                     <ChevronLeftIcon className="icon-inline" aria-label="Previous" aria-hidden={!shouldShrink} />
                     <span className={classNames(shouldShrink && 'd-none')}>Previous</span>

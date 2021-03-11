@@ -1,0 +1,17 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Pagination Invalid configuration will error when currentPage is greater than maxPages 1`] = `
+"Invalid configuration:
+— currentPage must be not be greater than maxPages"
+`;
+
+exports[`Pagination Invalid configuration will error when currentPage is less than 1 1`] = `
+"Invalid configuration:
+— currentPage must have a value greater than 0"
+`;
+
+exports[`Pagination Invalid configuration will error when less than 1 max pages 1`] = `
+"Invalid configuration:
+— maxPages must have a value greater than 0
+— currentPage must have a value greater than 0"
+`;

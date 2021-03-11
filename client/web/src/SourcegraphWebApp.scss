@@ -111,7 +111,6 @@ body,
 @import './components/ModalPage';
 @import './components/RadioButtons';
 @import './components/Dialog';
-@import './components/PageSelector';
 @import '../../branded/src/components/tooltip/Tooltip';
 @import './components/CtaBanner.scss';
 @import './user/settings/UserSettingsArea';
@@ -142,6 +141,7 @@ body,
 @import '../../branded/src/components/LoaderInput';
 
 @import '../../shared/src/index';
+@import '../../wildcard/index';
 
 :root {
     // Skip Reach UI styles. See https://reacttraining.com/reach-ui/styling/.
