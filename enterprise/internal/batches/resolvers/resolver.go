@@ -441,9 +441,9 @@ func (r *Resolver) CreateChangesetSpec(ctx context.Context, args *graphqlbackend
 	}
 
 	act := actor.FromContext(ctx)
-	// Actor MUST be logged in at this stage, because campaignsCreateAccess checks that already.
+	// Actor MUST be logged in at this stage, because batchChangesCreateAccess checks that already.
 	// To be extra safe, we'll just do the cheap check again here so if anyone ever modifies
-	// campaignsCreateAccess, we still enforce it here.
+	// batchChangesCreateAccess, we still enforce it here.
 	if !act.IsAuthenticated() {
 		return nil, backend.ErrNotAuthenticated
 	}

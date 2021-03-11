@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"strconv"
 	"sync"
 
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -108,14 +107,6 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 		return alertForQuery(db, args.Query, errors.New("stable is not supported for the streaming API. Please remove from query")), nil
 	}
 
-	// If stable:truthy is specified, make the query return a stable result ordering.
-	if q.BoolValue(query.FieldStable) {
-		args, q, err = queryForStableResults(args, q)
-		if err != nil {
-			return alertForQuery(db, args.Query, err), nil
-		}
-	}
-
 	// If the request is a paginated one, decode those arguments now.
 	var pagination *searchPaginationInfo
 	if args.First != nil {
@@ -163,28 +154,6 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 
 func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchImplementer, error) {
 	return NewSearchImplementer(ctx, r.db, args)
-}
-
-// queryForStableResults transforms a query that returns a stable result
-// ordering. The transformed query uses pagination underneath the hood.
-func queryForStableResults(args *SearchArgs, q query.Q) (*SearchArgs, query.Q, error) {
-	if q.BoolValue(query.FieldStable) {
-		var stableResultCount int32 = defaultMaxSearchResults
-		if count := q.Count(); count != nil {
-			stableResultCount = int32(*count)
-			if stableResultCount > maxSearchResultsPerPaginatedRequest {
-				return nil, nil, fmt.Errorf("Stable searches are limited to at max count:%d results. Consider removing 'stable:', narrowing the search with 'repo:', or using the paginated search API.", maxSearchResultsPerPaginatedRequest)
-			}
-		}
-		args.First = &stableResultCount
-		fileValue := "file"
-		// Pagination only works for file content searches, and will
-		// raise an error otherwise. If stable is explicitly set, this
-		// is implied. So, force this query to only return file content
-		// results.
-		q = query.OverrideField(q, "type", fileValue)
-	}
-	return args, q, nil
 }
 
 func processPaginationRequest(args *SearchArgs, q query.Q) (*searchPaginationInfo, error) {
@@ -310,8 +279,7 @@ func (r *searchResolver) rawQuery() string {
 
 func (r *searchResolver) countIsSet() bool {
 	count := r.Query.Count()
-	max, _ := r.Query.StringValues(query.FieldMax)
-	return count != nil || len(max) > 0
+	return count != nil
 }
 
 const defaultMaxSearchResults = 30
@@ -333,14 +301,6 @@ func (inputs SearchInputs) MaxResults() int {
 
 	if count := inputs.Query.Count(); count != nil {
 		return *count
-	}
-
-	max, _ := inputs.Query.StringValues(query.FieldMax)
-	if len(max) > 0 {
-		n, _ := strconv.Atoi(max[0])
-		if n > 0 {
-			return n
-		}
 	}
 
 	if inputs.DefaultLimit != 0 {
@@ -400,7 +360,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		}
 	}
 
-	repoFilters, minusRepoFilters := r.Query.RegexpPatterns(query.FieldRepo)
+	repoFilters, minusRepoFilters := r.Query.Repositories()
 	if effectiveRepoFieldValues != nil {
 		repoFilters = effectiveRepoFieldValues
 	}
@@ -414,13 +374,15 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		settingArchived = *v
 	}
 
-	forkStr, _ := r.Query.StringValue(query.FieldFork)
-	fork := query.ParseYesNoOnly(forkStr)
-	if fork == query.Invalid && !searchrepos.ExactlyOneRepo(repoFilters) && !settingForks {
+	fork := query.No
+	if searchrepos.ExactlyOneRepo(repoFilters) || settingForks {
 		// fork defaults to No unless either of:
 		// (1) exactly one repo is being searched, or
 		// (2) user/org/global setting includes forks
-		fork = query.No
+		fork = query.Yes
+	}
+	if setFork := r.Query.Fork(); setFork != nil {
+		fork = *setFork
 	}
 
 	archived := query.No

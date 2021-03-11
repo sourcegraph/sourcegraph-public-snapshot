@@ -440,9 +440,7 @@ func computeExcludedRepositories(ctx context.Context, q query.Q, op database.Rep
 	var wg sync.WaitGroup
 	var numExcludedForks, numExcludedArchived int
 
-	forkStr, _ := q.StringValue(query.FieldFork)
-	fork := query.ParseYesNoOnly(forkStr)
-	if fork == query.Invalid && !ExactlyOneRepo(op.IncludePatterns) {
+	if q.Fork() == nil && !ExactlyOneRepo(op.IncludePatterns) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()

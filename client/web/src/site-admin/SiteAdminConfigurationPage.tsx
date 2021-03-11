@@ -263,6 +263,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                                 // UI to be rendered correctly in the navbar and the sidebar.
                                 const keys: (keyof SiteConfiguration)[] = [
                                     'campaigns.enabled',
+                                    'batchChanges.enabled',
                                     'codeIntelAutoIndexing.enabled',
                                 ]
 

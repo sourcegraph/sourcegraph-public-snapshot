@@ -520,6 +520,17 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 	})
 
+	t.Run("stable search options", func(t *testing.T) {
+		results, err := client.SearchFiles(`router stable:yes count:5001`)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if results.Alert == nil {
+			t.Fatal("Want search alert but got nil")
+		}
+	})
+
 	t.Run("structural search", func(t *testing.T) {
 		tests := []struct {
 			name       string
