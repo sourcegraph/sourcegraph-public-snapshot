@@ -104,7 +104,13 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	location, err := symbolLocation(r.Context(), vfs, commitID, importPath, path.Join("/", dir.RepoPrefix, strings.TrimPrefix(dir.ImportPath, dir.ProjectRoot)), receiver, symbolName)
+	spec := &goSymbolSpec{
+		Pkg:      importPath,
+		Receiver: receiver,
+		Symbol:   symbolName,
+	}
+	pkgPath := path.Join("/", dir.RepoPrefix, strings.TrimPrefix(dir.ImportPath, dir.ProjectRoot))
+	location, err := symbolLocation(r.Context(), vfs, commitID, spec, pkgPath)
 	if err != nil {
 		return err
 	}
@@ -128,22 +134,28 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func symbolLocation(ctx context.Context, vfs ctxvfs.FileSystem, commitID api.CommitID, importPath string, path string, receiver *string, symbol string) (*lsp.Location, error) {
+type goSymbolSpec struct {
+	Pkg      string
+	Receiver *string
+	Symbol   string
+}
+
+func symbolLocation(ctx context.Context, vfs ctxvfs.FileSystem, commitID api.CommitID, symbolSpec *goSymbolSpec, pkgPath string) (*lsp.Location, error) {
 	bctx := buildContextFromVFS(ctx, vfs)
 
 	fileSet := token.NewFileSet()
-	pkg, err := parseFiles(fileSet, &bctx, importPath, path)
+	pkg, err := parseFiles(fileSet, &bctx, symbolSpec.Pkg, pkgPath)
 	if err != nil {
 		return nil, err
 	}
 
 	pos := (func() *token.Pos {
-		docPackage := doc.New(pkg, importPath, doc.AllDecls)
+		docPackage := doc.New(pkg, symbolSpec.Pkg, doc.AllDecls)
 		for _, docConst := range docPackage.Consts {
 			for _, spec := range docConst.Decl.Specs {
 				if valueSpec, ok := spec.(*ast.ValueSpec); ok {
 					for _, ident := range valueSpec.Names {
-						if ident.Name == symbol {
+						if ident.Name == symbolSpec.Symbol {
 							return &ident.NamePos
 						}
 					}
@@ -151,20 +163,20 @@ func symbolLocation(ctx context.Context, vfs ctxvfs.FileSystem, commitID api.Com
 			}
 		}
 		for _, docType := range docPackage.Types {
-			if receiver != nil && docType.Name == *receiver {
+			if symbolSpec.Receiver != nil && docType.Name == *symbolSpec.Receiver {
 				for _, method := range docType.Methods {
-					if method.Name == symbol {
+					if method.Name == symbolSpec.Symbol {
 						return &method.Decl.Name.NamePos
 					}
 				}
 			}
 			for _, fun := range docType.Funcs {
-				if fun.Name == symbol {
+				if fun.Name == symbolSpec.Symbol {
 					return &fun.Decl.Name.NamePos
 				}
 			}
 			for _, spec := range docType.Decl.Specs {
-				if typeSpec, ok := spec.(*ast.TypeSpec); ok && typeSpec.Name.Name == symbol {
+				if typeSpec, ok := spec.(*ast.TypeSpec); ok && typeSpec.Name.Name == symbolSpec.Symbol {
 					return &typeSpec.Name.NamePos
 				}
 			}
@@ -173,7 +185,7 @@ func symbolLocation(ctx context.Context, vfs ctxvfs.FileSystem, commitID api.Com
 			for _, spec := range docVar.Decl.Specs {
 				if valueSpec, ok := spec.(*ast.ValueSpec); ok {
 					for _, ident := range valueSpec.Names {
-						if ident.Name == symbol {
+						if ident.Name == symbolSpec.Symbol {
 							return &ident.NamePos
 						}
 					}
@@ -181,7 +193,7 @@ func symbolLocation(ctx context.Context, vfs ctxvfs.FileSystem, commitID api.Com
 			}
 		}
 		for _, docFunc := range docPackage.Funcs {
-			if docFunc.Name == symbol {
+			if docFunc.Name == symbolSpec.Symbol {
 				return &docFunc.Decl.Name.NamePos
 			}
 		}
@@ -194,7 +206,7 @@ func symbolLocation(ctx context.Context, vfs ctxvfs.FileSystem, commitID api.Com
 
 	position := fileSet.Position(*pos)
 	location := lsp.Location{
-		URI: lsp.DocumentURI("https://" + importPath + "?" + string(commitID) + "#" + position.Filename),
+		URI: lsp.DocumentURI("https://" + symbolSpec.Pkg + "?" + string(commitID) + "#" + position.Filename),
 		Range: lsp.Range{
 			Start: lsp.Position{
 				Line:      position.Line - 1,

@@ -107,7 +107,12 @@ func TestSymbolLocation(t *testing.T) {
 		},
 	}
 	for i, test := range tests {
-		got, _ := symbolLocation(context.Background(), mapFS(test.args.vfs), test.args.commitID, test.args.importPath, test.args.path, test.args.receiver, test.args.symbol)
+		spec := &goSymbolSpec{
+			Pkg:      test.args.importPath,
+			Receiver: test.args.receiver,
+			Symbol:   test.args.symbol,
+		}
+		got, _ := symbolLocation(context.Background(), mapFS(test.args.vfs), test.args.commitID, spec, test.args.path)
 		if got != test.want && (got == nil || test.want == nil || *got != *test.want) {
 			t.Errorf("Test #%d:\ngot  %#v\nwant %#v", i, got, test.want)
 		}
