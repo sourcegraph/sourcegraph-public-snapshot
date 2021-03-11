@@ -1,4 +1,3 @@
-import { BadgeAttachmentRenderOptions } from 'sourcegraph'
 import { flatMap } from 'lodash'
 import { MatchItem } from './FileMatch'
 
@@ -32,7 +31,6 @@ const calculateGroupPositions = (
         line: number
         character: number
         highlightLength: number
-        badge: BadgeAttachmentRenderOptions | undefined
         IsInContext: boolean
     }[],
     context: number,
@@ -88,7 +86,6 @@ interface MatchGroup {
         line: number
         character: number
         highlightLength: number
-        badge: BadgeAttachmentRenderOptions | undefined
         IsInContext: boolean
     }[]
 
