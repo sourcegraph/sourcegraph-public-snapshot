@@ -1391,6 +1391,9 @@ declare module 'sourcegraph' {
 
         /** If set, the label becomes a link with this destination URL. */
         linkURL?: string
+
+        /** Tooltip text to display when hovering over the label. */
+        hoverMessage?: string
     }
 
     /**

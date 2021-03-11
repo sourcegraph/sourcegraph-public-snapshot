@@ -189,10 +189,10 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOv
                                                     to={label.linkURL}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
+                                                    data-tooltip={label.hoverMessage}
+                                                    className="badge badge-secondary text-muted text-uppercase hover-overlay__label test-hover-label"
                                                 >
-                                                    <span className="badge badge-secondary text-muted text-uppercase hover-overlay__label test-hover-label">
-                                                        {label.text}
-                                                    </span>
+                                                    {label.text}
                                                 </LinkOrSpan>
                                             ))}
 
