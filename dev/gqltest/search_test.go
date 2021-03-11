@@ -520,6 +520,17 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 	})
 
+	t.Run("stable search options", func(t *testing.T) {
+		results, err := client.SearchFiles(`router stable:yes count:5001`)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if results.Alert == nil {
+			t.Fatal("Want search alert but got nil")
+		}
+	})
+
 	t.Run("structural search", func(t *testing.T) {
 		tests := []struct {
 			name       string
@@ -656,9 +667,8 @@ func testSearchClient(t *testing.T, client searchClient) {
 				zeroResult: true,
 			},
 			{
-				name:       `Mixed regexp and literal`,
-				query:      `repo:^github\.com/sgtest/go-diff$ func(.*) or does_not_exist_3744 type:file`,
-				skipStream: true,
+				name:  `Mixed regexp and literal`,
+				query: `repo:^github\.com/sgtest/go-diff$ patternType:regexp func(.*) or does_not_exist_3744 type:file`,
 			},
 			{
 				name:  `Mixed regexp and literal heuristic`,
@@ -670,14 +680,12 @@ func testSearchClient(t *testing.T, client searchClient) {
 				zeroResult: true,
 			},
 			{
-				name:       `Escape sequences`,
-				query:      `repo:^github\.com/sgtest/go-diff$ \' and \" and \\ and /`,
-				skipStream: true,
+				name:  `Escape sequences`,
+				query: `repo:^github\.com/sgtest/go-diff$ patternType:regexp \' and \" and \\ and /`,
 			},
 			{
-				name:       `Escaped whitespace sequences with 'and'`,
-				query:      `repo:^github\.com/sgtest/go-diff$ \ and /`,
-				skipStream: true,
+				name:  `Escaped whitespace sequences with 'and'`,
+				query: `repo:^github\.com/sgtest/go-diff$ patternType:regexp \ and /`,
 			},
 			{
 				name:  `Concat converted to spaces for literal search`,

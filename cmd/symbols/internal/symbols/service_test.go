@@ -13,10 +13,10 @@ import (
 
 	ctags "github.com/sourcegraph/go-ctags"
 
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/sqliteutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
 	symbolsclient "github.com/sourcegraph/sourcegraph/internal/symbols"
 )
 

@@ -24,7 +24,7 @@ var changesetSpecInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("rand_id"),
 	sqlf.Sprintf("raw_spec"),
 	sqlf.Sprintf("spec"),
-	sqlf.Sprintf("campaign_spec_id"),
+	sqlf.Sprintf("batch_spec_id"),
 	sqlf.Sprintf("repo_id"),
 	sqlf.Sprintf("user_id"),
 	sqlf.Sprintf("diff_stat_added"),
@@ -48,7 +48,7 @@ var changesetSpecColumns = []*sqlf.Query{
 	sqlf.Sprintf("changeset_specs.rand_id"),
 	sqlf.Sprintf("changeset_specs.raw_spec"),
 	sqlf.Sprintf("changeset_specs.spec"),
-	sqlf.Sprintf("changeset_specs.campaign_spec_id"),
+	sqlf.Sprintf("changeset_specs.batch_spec_id"),
 	sqlf.Sprintf("changeset_specs.repo_id"),
 	sqlf.Sprintf("changeset_specs.user_id"),
 	sqlf.Sprintf("changeset_specs.diff_stat_added"),
@@ -225,7 +225,7 @@ func countChangesetSpecsQuery(opts *CountChangesetSpecsOpts) *sqlf.Query {
 	}
 
 	if opts.BatchSpecID != 0 {
-		cond := sqlf.Sprintf("changeset_specs.campaign_spec_id = %s", opts.BatchSpecID)
+		cond := sqlf.Sprintf("changeset_specs.batch_spec_id = %s", opts.BatchSpecID)
 		preds = append(preds, cond)
 	}
 
@@ -346,7 +346,7 @@ func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
 	}
 
 	if opts.BatchSpecID != 0 {
-		preds = append(preds, sqlf.Sprintf("changeset_specs.campaign_spec_id = %d", opts.BatchSpecID))
+		preds = append(preds, sqlf.Sprintf("changeset_specs.batch_spec_id = %d", opts.BatchSpecID))
 	}
 
 	if len(opts.RandIDs) != 0 {
@@ -392,14 +392,14 @@ WHERE
   created_at < %s
 AND
 (
-  -- It was never attached to a campaign_spec
-  campaign_spec_id IS NULL
+  -- It was never attached to a batch_spec
+  batch_spec_id IS NULL
 
   OR
 
   (
-    -- The campaign_spec is not applied to a campaign
-    NOT EXISTS(SELECT 1 FROM campaigns WHERE campaign_spec_id = cspecs.campaign_spec_id)
+    -- The batch_spec is not applied to a batch_change
+    NOT EXISTS(SELECT 1 FROM batch_changes WHERE batch_spec_id = cspecs.batch_spec_id)
     AND
     -- and the changeset_spec is not attached to a changeset
     NOT EXISTS(SELECT 1 FROM changesets WHERE current_spec_id = cspecs.id OR previous_spec_id = cspecs.id)
@@ -728,34 +728,34 @@ var getRewirerMappingsQueryFmtstr = `
 -- source: enterprise/internal/batches/store_changeset_specs.go:GetRewirerMappings
 
 SELECT mappings.changeset_spec_id, mappings.changeset_id, mappings.repo_id FROM (
-	-- Fetch all changeset specs in the campaign spec that want to import/track an ChangesetSpecDescriptionTypeExisting changeset.
-	-- Match the entries to changesets in the target campaign by external ID and repo.
+	-- Fetch all changeset specs in the batch spec that want to import/track an ChangesetSpecDescriptionTypeExisting changeset.
+	-- Match the entries to changesets in the target batch change by external ID and repo.
 	SELECT
 		changeset_spec_id, changeset_id, repo_id
 	FROM
 		tracking_changeset_specs_and_changesets
 	WHERE
-		campaign_spec_id = %s
+		batch_spec_id = %s
 		%s -- text search query, if provided
 		%s -- current state, if provided
 
 	UNION ALL
 
-	-- Fetch all changeset specs in the campaign spec that are of type ChangesetSpecDescriptionTypeBranch.
-	-- Match the entries to changesets in the target campaign by head ref and repo.
+	-- Fetch all changeset specs in the batch spec that are of type ChangesetSpecDescriptionTypeBranch.
+	-- Match the entries to changesets in the target batch change by head ref and repo.
 	SELECT
-		changeset_spec_id, MAX(CASE WHEN owner_campaign_id = %s THEN changeset_id ELSE 0 END), repo_id
+		changeset_spec_id, MAX(CASE WHEN owner_batch_change_id = %s THEN changeset_id ELSE 0 END), repo_id
 	FROM
 		branch_changeset_specs_and_changesets
 	WHERE
-		campaign_spec_id = %s
+		batch_spec_id = %s
 		%s -- text search query, if provided
 		%s -- current state, if provided
 	GROUP BY changeset_spec_id, repo_id
 
 	UNION ALL
 
-	-- Finally, fetch all changesets that didn't match a changeset spec in the campaign spec and that aren't part of tracked_mappings and branch_mappings. Those are to be closed or detached.
+	-- Finally, fetch all changesets that didn't match a changeset spec in the batch spec and that aren't part of tracked_mappings and branch_mappings. Those are to be closed or detached.
 	SELECT 0 as changeset_spec_id, changesets.id as changeset_id, changesets.repo_id as repo_id
 	FROM changesets
 	INNER JOIN repo ON changesets.repo_id = repo.id
@@ -767,17 +767,17 @@ SELECT mappings.changeset_spec_id, mappings.changeset_id, mappings.repo_id FROM 
 				FROM
 					tracking_changeset_specs_and_changesets
 				WHERE
-					campaign_spec_id = %s
+					batch_spec_id = %s
 			UNION
 				SELECT
-					MAX(CASE WHEN owner_campaign_id = %s THEN changeset_id ELSE 0 END)
+					MAX(CASE WHEN owner_batch_change_id = %s THEN changeset_id ELSE 0 END)
 				FROM
 					branch_changeset_specs_and_changesets
 				WHERE
-					campaign_spec_id = %s
+					batch_spec_id = %s
 				GROUP BY changeset_spec_id, repo_id
 		) AND
-		changesets.campaign_ids ? %s
+		changesets.batch_change_ids ? %s
 		%s -- text search query, if provided
 		%s -- current state, if provided
 ) AS mappings

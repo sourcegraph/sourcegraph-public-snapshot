@@ -24,7 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 
-	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth"
+	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth"
 	enterpriseGraphQL "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/graphqlbackend"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 )
@@ -39,7 +39,7 @@ var initFunctions = map[string]func(ctx context.Context, db dbutil.DB, outOfBand
 	"executor":     executor.Init,
 	"codeintel":    codeintel.Init,
 	"insights":     insights.Init,
-	"campaigns":    batches.InitFrontend,
+	"batches":      batches.InitFrontend,
 	"codemonitors": codemonitors.Init,
 }
 

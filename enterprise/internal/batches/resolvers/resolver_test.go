@@ -11,7 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/campaignutils/overridable"
+	"github.com/sourcegraph/batch-change-utils/overridable"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -130,39 +130,46 @@ func TestCreateBatchSpec(t *testing.T) {
 
 	for name, tc := range map[string]struct {
 		changesetSpecs []*batches.ChangesetSpec
-		disableFeature bool
+		hasLicenseFor  map[licensing.Feature]struct{}
 		wantErr        bool
 	}{
-		"default configuration": {
+		"batch changes license, over the limit": {
 			changesetSpecs: changesetSpecs,
-			disableFeature: false,
-			wantErr:        true,
+			hasLicenseFor: map[licensing.Feature]struct{}{
+				licensing.FeatureBatchChanges: {},
+			},
+			wantErr: false,
+		},
+		"campaigns license, over the limit": {
+			changesetSpecs: changesetSpecs,
+			hasLicenseFor: map[licensing.Feature]struct{}{
+				licensing.FeatureCampaigns: {},
+			},
+			wantErr: false,
 		},
 		"no licence, but under the limit": {
 			changesetSpecs: changesetSpecs[0:maxUnlicensedChangesets],
-			disableFeature: true,
+			hasLicenseFor:  map[licensing.Feature]struct{}{},
 			wantErr:        false,
 		},
 		"no licence, over the limit": {
 			changesetSpecs: changesetSpecs,
-			disableFeature: true,
+			hasLicenseFor:  map[licensing.Feature]struct{}{},
 			wantErr:        true,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			if tc.disableFeature {
-				oldMock := licensing.MockCheckFeature
-				licensing.MockCheckFeature = func(feature licensing.Feature) error {
-					if feature == licensing.FeatureCampaigns {
-						return licensing.NewFeatureNotActivatedError("no batch changes for you!")
-					}
-					return nil
+			oldMock := licensing.MockCheckFeature
+			licensing.MockCheckFeature = func(feature licensing.Feature) error {
+				if _, ok := tc.hasLicenseFor[feature]; !ok {
+					return licensing.NewFeatureNotActivatedError("no batch changes for you!")
 				}
-
-				defer func() {
-					licensing.MockCheckFeature = oldMock
-				}()
+				return nil
 			}
+
+			defer func() {
+				licensing.MockCheckFeature = oldMock
+			}()
 
 			changesetSpecIDs := make([]graphql.ID, len(tc.changesetSpecs))
 			for i, spec := range tc.changesetSpecs {
@@ -347,7 +354,7 @@ func TestApplyBatchChange(t *testing.T) {
 	repoStore := database.ReposWith(cstore)
 	esStore := database.ExternalServicesWith(cstore)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/apply-campaign-test", newGitHubExternalService(t, esStore))
+	repo := newGitHubTestRepo("github.com/sourcegraph/apply-batch-change-test", newGitHubExternalService(t, esStore))
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
@@ -734,7 +741,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 			},
 			wantErr: "changeset check state not valid",
 		},
-		// Setting OnlyPublishedByThisBatchChange true.
+		// Setting OnlyPublishedByThisCampaign true.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
 				OnlyPublishedByThisCampaign: &wantOnlyPublishedByThisBatchChange[0],
@@ -872,7 +879,7 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 	cstore := store.New(db)
 
 	cred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
-		Domain:              database.UserCredentialDomainCampaigns,
+		Domain:              database.UserCredentialDomainBatches,
 		ExternalServiceType: extsvc.TypeGitHub,
 		ExternalServiceID:   "https://github.com/",
 		UserID:              userID,

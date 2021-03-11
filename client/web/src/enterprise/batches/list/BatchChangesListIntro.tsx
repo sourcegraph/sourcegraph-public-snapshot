@@ -32,27 +32,13 @@ export const BatchChangesListIntro: React.FunctionComponent<BatchChangesListIntr
 const BatchChangesChangelogAlert: React.FunctionComponent = () => (
     <DismissibleAlert
         className="batch-changes-list-intro__alert"
-        partialStorageKey="batch-changes-list-intro-changelog-3.25"
+        partialStorageKey="batch-changes-list-intro-changelog-3.26"
     >
         <div className="batch-changes-list-intro__card card h-100 p-2">
             <div className="card-body">
-                <h4>New batch changes features in version 3.25</h4>
+                <h4>New batch changes features in version 3.26</h4>
                 <ul className="text-muted mb-0 pl-3">
-                    <li>
-                        Better monorepo support by{' '}
-                        <a href="https://docs.sourcegraph.com/campaigns/how-tos/creating_changesets_per_project_in_monorepos#1-define-project-locations-with-workspaces">
-                            allowing multiple workspaces to be defined within a single repository
-                        </a>
-                        , and{' '}
-                        <a href="https://docs.sourcegraph.com/campaigns/how-tos/creating_changesets_per_project_in_monorepos#only-downloading-workspace-data-in-large-repositories">
-                            only downloading workspaces that are being updated
-                        </a>
-                    </li>
-                    <li>
-                        When previewing batch changes, changesets can now be filtered by their current state or pending
-                        actions
-                    </li>
-                    <li>Failed changesets can now be retried without re-applying the batch spec</li>
+                    <li>Campaigns have been renamed to Batch Changes!</li>
                 </ul>
             </div>
         </div>

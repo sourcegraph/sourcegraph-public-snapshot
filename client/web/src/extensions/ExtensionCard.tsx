@@ -29,6 +29,7 @@ interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettin
     >
     subject: Pick<GQL.SettingsSubject, 'id' | 'viewerCanAdminister'>
     enabled: boolean
+    settingsURL: string | null | undefined
 }
 
 const stopPropagation: React.MouseEventHandler<HTMLElement> = event => {
@@ -45,6 +46,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
     platformContext,
     subject,
     enabled,
+    settingsURL,
     isLightTheme,
 }) {
     const manifest: ExtensionManifest | undefined =
@@ -74,6 +76,24 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
             ),
         [extension]
     )
+
+    const actionableErrorMessage = (error: Error): JSX.Element => {
+        let errorMessage
+
+        if (error.message.startsWith('invalid settings') && settingsURL) {
+            errorMessage = (
+                <>
+                    Could not enable / disable {name}. Edit your <Link to={settingsURL}>user settings</Link> to fix this
+                    error. <br />
+                    <br /> ({error.message})
+                </>
+            )
+        } else {
+            errorMessage = <>{error.message}</>
+        }
+
+        return errorMessage
+    }
 
     /**
      * When extension enablement state changes, display visual feedback for $delay seconds.
@@ -252,8 +272,8 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                 {/* Visual feedback: alert when optimistic update fails */}
                 {optimisticFailure && (
                     <div className="alert alert-danger px-2 py-1 extension-card__disabled-feedback">
-                        <span className="font-weight-semibold">Network Error:</span> {name} is{' '}
-                        {optimisticFailure.previousValue ? 'enabled' : 'disabled'} again
+                        <span className="font-weight-semibold">Error:</span>{' '}
+                        {actionableErrorMessage(optimisticFailure.error)}
                     </div>
                 )}
             </div>

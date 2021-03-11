@@ -158,6 +158,6 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 		})
 
 		// Clean up database.
-		ct.TruncateTables(t, db, "changeset_events", "changesets", "campaigns", "campaign_specs", "changeset_specs")
+		ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
 	}
 }

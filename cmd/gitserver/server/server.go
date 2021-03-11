@@ -140,6 +140,9 @@ type Server struct {
 	// actual hostname but can also be overridden by the HOSTNAME environment variable.
 	Hostname string
 
+	// shared db handle
+	DB dbutil.DB
+
 	// skipCloneForTests is set by tests to avoid clones.
 	skipCloneForTests bool
 
@@ -276,34 +279,37 @@ func (s *Server) Handler() http.Handler {
 // background goroutine.
 func (s *Server) Janitor(interval time.Duration) {
 	for {
-		s.cleanupRepos()
+		addrs := conf.Get().ServiceConnections.GitServers
+		s.cleanupRepos(addrs)
 		time.Sleep(interval)
 	}
 }
 
 // SyncRepoState syncs state on disk to the database for all repos and is expected to
 // run in a background goroutine.
-func (s *Server) SyncRepoState(db dbutil.DB, interval time.Duration, batchSize, perSecond int) {
+func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int) {
 	for {
 		addrs := conf.Get().ServiceConnections.GitServers
-		if err := s.syncRepoState(db, addrs, batchSize, perSecond); err != nil {
+		if err := s.syncRepoState(addrs, batchSize, perSecond); err != nil {
 			log15.Error("Syncing repo state", "error ", err)
 		}
 		time.Sleep(interval)
 	}
 }
 
-// HostnameMatch checks whether the hostname matches the given address.
+// hostnameMatch checks whether the hostname matches the given address.
 // If we don't find an exact match, we look at the initial prefix.
-func (s *Server) HostnameMatch(addr string) bool {
+func (s *Server) hostnameMatch(addr string) bool {
+	if !strings.HasPrefix(addr, s.Hostname) {
+		return false
+	}
 	if addr == s.Hostname {
 		return true
 	}
-	n := strings.Index(addr, ".")
-	if n == -1 {
-		return false
-	}
-	return addr[:n] == s.Hostname
+	// We know that s.Hostname is shorter than addr so we can safely check the next
+	// char
+	next := addr[len(s.Hostname)]
+	return next == '.' || next == ':'
 }
 
 var (
@@ -321,11 +327,11 @@ var (
 	}, []string{"success"})
 )
 
-func (s *Server) syncRepoState(db dbutil.DB, addrs []string, batchSize, perSecond int) error {
+func (s *Server) syncRepoState(addrs []string, batchSize, perSecond int) error {
 	// Sanity check our host exists in addrs before starting any work
 	var found bool
 	for _, a := range addrs {
-		if s.HostnameMatch(a) {
+		if s.hostnameMatch(a) {
 			found = true
 			break
 		}
@@ -335,7 +341,7 @@ func (s *Server) syncRepoState(db dbutil.DB, addrs []string, batchSize, perSecon
 	}
 
 	ctx := s.ctx
-	store := database.GitserverRepos(db)
+	store := database.GitserverRepos(s.DB)
 
 	// The rate limit should be enforced across all instances
 	perSecond = perSecond / len(addrs)
@@ -374,7 +380,7 @@ func (s *Server) syncRepoState(db dbutil.DB, addrs []string, batchSize, perSecon
 		repoStateUpsertCounter.WithLabelValues("true").Add(float64(len(batch)))
 	}
 
-	totalRepos, err := database.Repos(db).Count(ctx, database.ReposListOptions{})
+	totalRepos, err := database.Repos(s.DB).Count(ctx, database.ReposListOptions{})
 	if err != nil {
 		return errors.Wrap(err, "counting repos")
 	}
@@ -386,7 +392,7 @@ func (s *Server) syncRepoState(db dbutil.DB, addrs []string, batchSize, perSecon
 
 		repoSyncStateCounter.WithLabelValues("check").Inc()
 		// Ensure we're only dealing with repos we are responsible for
-		if addr := gitserver.AddrForRepo(repo.Name, addrs); !s.HostnameMatch(addr) {
+		if addr := gitserver.AddrForRepo(repo.Name, addrs); !s.hostnameMatch(addr) {
 			repoSyncStateCounter.WithLabelValues("other_shard").Inc()
 			return nil
 		}
@@ -1184,6 +1190,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 			return err
 		}
 		defer cancel1()
+
 		ctx, cancel2 := context.WithTimeout(ctx, longGitCommandTimeout)
 		defer cancel2()
 
@@ -1208,6 +1215,15 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		defer os.RemoveAll(tmpPath)
 		tmpPath = filepath.Join(tmpPath, ".git")
 		tmp := GitDir(tmpPath)
+
+		// It may already be cloned
+		if !repoCloned(dir) {
+			s.setCloneStatusNonFatal(ctx, repo, types.CloneStatusCloning)
+		}
+		defer func() {
+			// Use a different context to ensure we still update the DB even if we time out
+			s.setCloneStatusNonFatal(context.Background(), repo, cloneStatus(repoCloned(dir), false))
+		}()
 
 		cmd, err := syncer.CloneCommand(ctx, remoteURL, tmpPath)
 		if err != nil {

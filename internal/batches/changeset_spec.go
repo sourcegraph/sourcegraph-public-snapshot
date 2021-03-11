@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	jsonutil "github.com/sourcegraph/campaignutils/json"
+	jsonutil "github.com/sourcegraph/batch-change-utils/json"
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -120,7 +120,7 @@ func (cs *ChangesetSpec) UnmarshalValidate() error {
 // ChangesetSpecTTL specifies the TTL of ChangesetSpecs that haven't been
 // attached to a BatchSpec.
 // It's lower than BatchSpecTTL because ChangesetSpecs should be attached to
-// a CampaignSpec immediately after having been created, whereas a CampaignSpec
+// a BatchSpec immediately after having been created, whereas a BatchSpec
 // might take a while to be complete and might also go through a lengthy review
 // phase.
 const ChangesetSpecTTL = 2 * 24 * time.Hour

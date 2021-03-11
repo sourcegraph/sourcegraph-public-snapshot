@@ -121,7 +121,12 @@ func alertForStalePermissions(db dbutil.DB) *searchAlert {
 // query does not contain any repos to search.
 func (r *searchResolver) reposExist(ctx context.Context, options searchrepos.Options) bool {
 	options.UserSettings = r.UserSettings
-	repositoryResolver := &searchrepos.Resolver{Zoekt: r.zoekt, DefaultReposFunc: database.GlobalDefaultRepos.List, NamespaceStore: database.Namespaces(r.db)}
+	repositoryResolver := &searchrepos.Resolver{
+		DB:               r.db,
+		Zoekt:            r.zoekt,
+		DefaultReposFunc: database.DefaultRepos(r.db).List,
+		NamespaceStore:   database.Namespaces(r.db),
+	}
 	resolved, err := repositoryResolver.Resolve(ctx, options)
 	return err == nil && len(resolved.RepoRevs) > 0
 }
@@ -129,14 +134,17 @@ func (r *searchResolver) reposExist(ctx context.Context, options searchrepos.Opt
 func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAlert {
 	globbing := getBoolPtr(r.UserSettings.SearchGlobbing, false)
 
-	repoFilters, minusRepoFilters := r.Query.RegexpPatterns(query.FieldRepo)
+	repoFilters, minusRepoFilters := r.Query.Repositories()
 	repoGroupFilters, _ := r.Query.StringValues(query.FieldRepoGroup)
 	contextFilters, _ := r.Query.StringValues(query.FieldContext)
-	fork, _ := r.Query.StringValue(query.FieldFork)
-	onlyForks, noForks := fork == "only", fork == "no"
-	forksNotSet := len(fork) == 0
-	archived, _ := r.Query.StringValue(query.FieldArchived)
-	archivedNotSet := len(archived) == 0
+	onlyForks, noForks, forksNotSet := false, false, true
+	if fork := r.Query.Fork(); fork != nil {
+		onlyForks = *fork == query.Only
+		noForks = *fork == query.No
+		forksNotSet = false
+	}
+	archived := r.Query.Archived()
+	archivedNotSet := archived == nil
 
 	// Handle repogroup-only scenarios.
 	if len(repoFilters) == 0 && len(repoGroupFilters) == 0 {
@@ -487,7 +495,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 				break
 			}
 			repoParentPattern := "^" + regexp.QuoteMeta(repoParent) + "/"
-			repoFieldValues, _ := r.Query.RegexpPatterns(query.FieldRepo)
+			repoFieldValues, _ := r.Query.Repositories()
 
 			for _, v := range repoFieldValues {
 				if strings.HasPrefix(v, strings.TrimSuffix(repoParentPattern, "/")) {

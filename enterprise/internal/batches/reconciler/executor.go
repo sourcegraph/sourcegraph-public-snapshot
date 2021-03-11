@@ -196,7 +196,7 @@ func (e *executor) loadAuthenticator(ctx context.Context) (auth.Authenticator, e
 	}
 
 	cred, err := e.tx.UserCredentials().GetByScope(ctx, database.UserCredentialScope{
-		Domain:              database.UserCredentialDomainCampaigns,
+		Domain:              database.UserCredentialDomainBatches,
 		UserID:              batchChange.LastApplierID,
 		ExternalServiceType: e.repo.ExternalRepo.ServiceType,
 		ExternalServiceID:   e.repo.ExternalRepo.ServiceID,

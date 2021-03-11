@@ -843,7 +843,7 @@ func (s *GithubSource) AffiliatedRepositories(ctx context.Context) ([]types.Code
 		)
 	}()
 	out := make([]types.CodeHostRepository, 0, len(repos))
-	for done == false {
+	for !done {
 		select {
 		case <-ctx.Done():
 			return nil, fmt.Errorf("context canceled")

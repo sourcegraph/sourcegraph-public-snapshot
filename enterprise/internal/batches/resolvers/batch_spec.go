@@ -156,7 +156,7 @@ func (r *batchSpecResolver) computeNamespace(ctx context.Context) (*graphqlbacke
 
 		if errcode.IsNotFound(err) {
 			r.namespace = nil
-			r.namespaceErr = errors.New("namespace of campaign spec has been deleted")
+			r.namespaceErr = errors.New("namespace of batch spec has been deleted")
 			return
 		}
 
@@ -230,6 +230,7 @@ func (r *batchSpecResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffS
 	return totalStat, nil
 }
 
+// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely.
 func (r *batchSpecResolver) AppliesToCampaign(ctx context.Context) (graphqlbackend.BatchChangeResolver, error) {
 	return r.AppliesToBatchChange(ctx)
 }
@@ -250,6 +251,7 @@ func (r *batchSpecResolver) AppliesToBatchChange(ctx context.Context) (graphqlba
 	}, nil
 }
 
+// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely.
 func (r *batchSpecResolver) SupersedingCampaignSpec(ctx context.Context) (graphqlbackend.BatchSpecResolver, error) {
 	return r.SupersedingBatchSpec(ctx)
 }
