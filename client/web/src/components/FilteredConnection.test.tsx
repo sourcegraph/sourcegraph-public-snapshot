@@ -1,16 +1,8 @@
 import React from 'react'
-import * as H from 'history'
+import { createLocation } from 'history'
 import { cleanup, render, screen } from '@testing-library/react'
 
 import { ConnectionNodesForTesting as ConnectionNodes } from './FilteredConnection'
-
-const emptyLocation: H.Location<{}> = {
-    pathname: '',
-    search: '',
-    hash: '',
-    state: {},
-    key: '',
-}
 
 function fakeConnection({ hasNextPage, totalCount }: { hasNextPage: boolean; totalCount: number | null }) {
     return {
@@ -28,7 +20,7 @@ function fakeConnection({ hasNextPage, totalCount }: { hasNextPage: boolean; tot
 const boringConnectionNodesProps = {
     connectionQuery: '',
     first: 0,
-    location: emptyLocation,
+    location: createLocation('/'),
     noSummaryIfAllNodesVisible: true,
     nodeComponent: () => null,
     nodeComponentProps: {},
