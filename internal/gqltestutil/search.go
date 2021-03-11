@@ -48,7 +48,7 @@ func (rs SearchRepositoryResults) String() string {
 func (c *Client) SearchRepositories(query string) (SearchRepositoryResults, error) {
 	const gqlQuery = `
 query Search($query: String!) {
-	search(query: $query) {
+	search(query: $query, version: V2) {
 		results {
 			results {
 				... on Repository {
@@ -114,7 +114,7 @@ type SearchAlert struct {
 func (c *Client) SearchFiles(query string) (*SearchFileResults, error) {
 	const gqlQuery = `
 query Search($query: String!) {
-	search(query: $query) {
+	search(query: $query, version: V2) {
 		results {
 			matchCount
 			alert {
@@ -183,7 +183,7 @@ type SearchCommitResults struct {
 func (c *Client) SearchCommits(query string) (*SearchCommitResults, error) {
 	const gqlQuery = `
 query Search($query: String!) {
-	search(query: $query) {
+	search(query: $query, version: V2) {
 		results {
 			matchCount
 			results {
@@ -277,7 +277,7 @@ type RepositoryResult struct {
 func (c *Client) SearchAll(query string) ([]*AnyResult, error) {
 	const gqlQuery = `
 query Search($query: String!) {
-	search(query: $query) {
+	search(query: $query, version: V2) {
 		results {
 			results {
 				__typename
@@ -337,7 +337,7 @@ type SearchStatsResult struct {
 func (c *Client) SearchStats(query string) (*SearchStatsResult, error) {
 	const gqlQuery = `
 query SearchResultsStats($query: String!) {
-	search(query: $query) {
+	search(query: $query, version: V2) {
 		stats {
 			languages {
 				name
@@ -449,7 +449,7 @@ type LanguageSuggestionResult struct {
 func (c *Client) SearchSuggestions(query string) ([]SearchSuggestionsResult, error) {
 	const gqlQuery = `
 query SearchSuggestions($query: String!) {
-	search(query: $query) {
+	search(query: $query, version: V2) {
 		suggestions {
 			__typename
 			... on Repository {
