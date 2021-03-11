@@ -322,6 +322,16 @@ func ScanBalancedPattern(buf []byte) (scanned string, count int, ok bool) {
 
 	// looks ahead to see if there are any recognized fields or operators.
 	keepScanning := func() bool {
+		// TODO (@camdencheek): The intent here is to continue scanning if
+		// what we're parsing looks like a predicate. This is probably not the best
+		// way to do it, but we need to avoid breaking early if the things in the
+		// parens look like a subquery because predicate filters often look very
+		// much like a subquery. This obviously only works right now for `repo:contains`,
+		// and this will need to be expanded or re-thought when we add more predicates.
+		if string(result) == "contains" {
+			return true
+		}
+
 		if field, _, _ := ScanField(buf); field != "" {
 			// This "pattern" contains a recognized field, reject it.
 			return false
