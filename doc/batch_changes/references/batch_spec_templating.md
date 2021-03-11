@@ -80,6 +80,8 @@ They are evaluated before the execution of each entry in `steps`, except for the
 
 | Template variable | Type | Description |
 | --- | --- | --- |
+| `batch_change.name` | `string` | The `name` of the batch change, as set in the batch spec. </br><i><small>Requires [Sourcegraph CLI](../../cli/index.md) 3.26 or later</small></i>. |
+| `batch_change.description` | `string` | The `description` of the batch change, as set in the batch spec. </br><i><small>Requires [Sourcegraph CLI](../../cli/index.md) 3.26 or later</small></i>. 
 | `repository.search_result_paths` | `list of strings` | Unique list of file paths relative to the repository root directory in which the search results of the `repositoriesMatchingQuery`s have been found. |
 | `repository.name` | `string` | Full name of the repository in which the step is being executed. |
 | `previous_step.modified_files` | `list of strings` | List of files that have been modified by the previous step in `steps`. Empty list if no files have been modified. |
@@ -103,6 +105,8 @@ They are evaluated after the execution of all entries in `steps`.
 
 | Template variable | Type | Description |
 | --- | --- | --- |
+| `batch_change.name` | `string` | The `name` of the batch change, as set in the batch spec. </br><i><small>Requires [Sourcegraph CLI](../../cli/index.md) 3.26 or later</small></i>. |
+| `batch_change.description` | `string` | The `description` of the batch change, as set in the batch spec. </br><i><small>Requires [Sourcegraph CLI](../../cli/index.md) 3.26 or later</small></i>. 
 | `repository.search_result_paths` | `list of strings` | Unique list of file paths relative to the repository root directory in which the search results of the `repositoriesMatchingQuery`s have been found. |
 | `repository.name` | `string` | Full name of the repository in which the step is being executed. |
 | `steps.modified_files` | `list of strings` | List of files that have been modified by the `steps`. Empty list if no files have been modified. |
@@ -132,6 +136,18 @@ steps:
         [sprintf_to_strconv]
         match='fmt.Sprintf("%d", :[v])'
         rewrite='strconv.Itoa(:[v])'
+```
+
+Run a command for each search result file path:
+
+```yaml
+steps:
+  - run: |
+      for file in "${{ join repository.search_result_paths " " }}";
+      do
+        sed -i 's/mydockerhub-user/ci-dockerhub-user/g;' ${file}
+      done
+    container: alpine:3
 ```
 
 Format and fix files after a previous step modified them:
