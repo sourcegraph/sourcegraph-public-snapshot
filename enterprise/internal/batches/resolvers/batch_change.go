@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"sort"
 	"sync"
 	"time"
 
@@ -218,6 +219,14 @@ func (r *batchChangeResolver) ChangesetCountsOverTime(
 		if err != nil {
 			return resolvers, err
 		}
+	}
+
+	// Sort all events once by their timestamps
+	events := state.ChangesetEvents(es)
+	sort.Sort(events)
+
+	if len(events) > 0 {
+		start = events[0].Timestamp().UTC()
 	}
 
 	counts, err := state.CalcCounts(start, end, cs, es...)

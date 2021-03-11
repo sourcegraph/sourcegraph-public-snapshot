@@ -108,10 +108,11 @@ func CalcCounts(start, end time.Time, cs []*batches.Changeset, es ...*batches.Ch
 }
 
 func generateTimestamps(start, end time.Time) []time.Time {
+	timeStep := end.Sub(start) / 150
 	// Walk backwards from `end` to >= `start` in 1 day intervals
 	// Backwards so we always end exactly on `end`
 	ts := []time.Time{}
-	for t := end; !t.Before(start); t = t.AddDate(0, 0, -1) {
+	for t := end; !t.Before(start); t = t.Add(-timeStep) {
 		ts = append(ts, t)
 	}
 

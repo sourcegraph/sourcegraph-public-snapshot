@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import {
     Area,
     ComposedChart,
@@ -78,6 +78,7 @@ export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
     queryChangesetCountsOverTime = _queryChangesetCountsOverTime,
     width = '100%',
 }) => {
+    const [hiddenStates, setHiddenStates] = useState<Set<keyof DisplayableChangesetCounts>>(new Set())
     const changesetCountsOverTime: ChangesetCountsOverTimeFields[] | undefined = useObservable(
         useMemo(() => queryChangesetCountsOverTime({ batchChange: batchChangeID }), [
             batchChangeID,
@@ -119,55 +120,78 @@ export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
         )
     }
     return (
-        <ResponsiveContainer width={width} height={300} className="test-batches-chart">
-            <ComposedChart
-                data={changesetCountsOverTime.map(snapshot => ({ ...snapshot, date: Date.parse(snapshot.date) }))}
-            >
-                <Legend verticalAlign="bottom" iconType="square" />
-                <XAxis
-                    dataKey="date"
-                    domain={[
-                        changesetCountsOverTime[0].date,
-                        changesetCountsOverTime[changesetCountsOverTime.length - 1].date,
-                    ]}
-                    name="Time"
-                    tickFormatter={dateTickFormatter}
-                    type="number"
-                    stroke="var(--text-muted)"
-                    scale="time"
-                />
-                <YAxis
-                    tickFormatter={toLocaleString}
-                    stroke="var(--text-muted)"
-                    type="number"
-                    allowDecimals={false}
-                    domain={[0, 'dataMax']}
-                />
-                <Tooltip
-                    labelFormatter={tooltipLabelFormatter as LabelFormatter}
-                    isAnimationActive={false}
-                    wrapperStyle={{ border: '1px solid var(--border-color)' }}
-                    contentStyle={tooltipStyle}
-                    labelStyle={{ fontWeight: 'bold' }}
-                    itemStyle={tooltipStyle}
-                    itemSorter={tooltipItemSorter}
-                />
+        <>
+            {Object.keys(states).map(key => (
+                <button
+                    type="button"
+                    onClick={() =>
+                        setHiddenStates(current => {
+                            if (current.has(key as keyof DisplayableChangesetCounts)) {
+                                const newSet = new Set<keyof DisplayableChangesetCounts>(current)
+                                newSet.delete(key as keyof DisplayableChangesetCounts)
+                                return newSet
+                            }
+                            return new Set<keyof DisplayableChangesetCounts>(current).add(
+                                key as keyof DisplayableChangesetCounts
+                            )
+                        })
+                    }
+                    key={key}
+                >
+                    {key}
+                </button>
+            ))}
+            <ResponsiveContainer width={width} height={300} className="test-batches-chart">
+                <ComposedChart
+                    data={changesetCountsOverTime.map(snapshot => ({ ...snapshot, date: Date.parse(snapshot.date) }))}
+                >
+                    <Legend verticalAlign="bottom" iconType="square" />
+                    <XAxis
+                        dataKey="date"
+                        domain={[
+                            changesetCountsOverTime[0].date,
+                            changesetCountsOverTime[changesetCountsOverTime.length - 1].date,
+                        ]}
+                        name="Time"
+                        tickFormatter={dateTickFormatter}
+                        type="number"
+                        stroke="var(--text-muted)"
+                        scale="time"
+                    />
+                    <YAxis
+                        tickFormatter={toLocaleString}
+                        stroke="var(--text-muted)"
+                        type="number"
+                        allowDecimals={false}
+                        domain={[0, 'dataMax']}
+                    />
+                    <Tooltip
+                        labelFormatter={tooltipLabelFormatter as LabelFormatter}
+                        isAnimationActive={false}
+                        wrapperStyle={{ border: '1px solid var(--border-color)' }}
+                        contentStyle={tooltipStyle}
+                        labelStyle={{ fontWeight: 'bold' }}
+                        itemStyle={tooltipStyle}
+                        itemSorter={tooltipItemSorter}
+                    />
 
-                {Object.entries(states)
-                    .sort(([, a], [, b]) => b.sortOrder - a.sortOrder)
-                    .map(([dataKey, state]) => (
-                        <Area
-                            key={state.sortOrder}
-                            dataKey={dataKey}
-                            name={state.label}
-                            fill={state.fill}
-                            // The stroke is used to color the legend, which we
-                            // want to match the fill color for each area.
-                            stroke={state.fill}
-                            {...commonAreaProps}
-                        />
-                    ))}
-            </ComposedChart>
-        </ResponsiveContainer>
+                    {Object.entries(states)
+                        .sort(([, a], [, b]) => b.sortOrder - a.sortOrder)
+                        .filter(([dataKey]) => !hiddenStates.has(dataKey as keyof DisplayableChangesetCounts))
+                        .map(([dataKey, state]) => (
+                            <Area
+                                key={state.sortOrder}
+                                dataKey={dataKey}
+                                name={state.label}
+                                fill={state.fill}
+                                // The stroke is used to color the legend, which we
+                                // want to match the fill color for each area.
+                                stroke={state.fill}
+                                {...commonAreaProps}
+                            />
+                        ))}
+                </ComposedChart>
+            </ResponsiveContainer>
+        </>
     )
 }
