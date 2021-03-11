@@ -9,7 +9,7 @@ describe('Pagination', () => {
     const onPageChangeMock = sinon.spy(() => undefined)
 
     beforeEach(() => {
-        onPageChangeMock.restore()
+        onPageChangeMock.resetHistory()
     })
 
     afterEach(cleanup)

@@ -21,7 +21,6 @@ import { repeatUntil } from '../../../../../shared/src/util/rxjs/repeatUntil'
 import { ErrorAlert } from '../../../components/alerts'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { catchError, map } from 'rxjs/operators'
-import { Pagination } from '@sourcegraph/wildcard'
 
 interface Props extends RouteComponentProps, TelemetryProps {
     userID: string
@@ -190,7 +189,6 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         telemetryService.logViewEvent('UserSettingsRepositories')
     }, [telemetryService])
 
-    const [page, setPage] = React.useState(1)
     return (
         <div className="user-settings-repositories-page">
             {pendingOrError === 'pending' && (
@@ -244,7 +242,6 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             ) : (
                 NoResults
             )}
-            <Pagination className="mx-auto" currentPage={page} onPageChange={setPage} maxPages={10} />
         </div>
     )
 }
