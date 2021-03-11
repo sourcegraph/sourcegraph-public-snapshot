@@ -1,14 +1,15 @@
 import React from 'react'
 import { render, RenderResult, cleanup, fireEvent } from '@testing-library/react'
 import { PageSelector, Props } from './PageSelector'
+import sinon from 'sinon'
 
 describe('PageSelector', () => {
     let queries: RenderResult
     const renderWithProps = (props: Props): RenderResult => render(<PageSelector {...props} />)
-    const onPageChangeMock = jest.fn()
+    const onPageChangeMock = sinon.spy(() => undefined)
 
     beforeEach(() => {
-        onPageChangeMock.mockReset()
+        onPageChangeMock.restore()
     })
 
     afterEach(cleanup)
@@ -45,9 +46,9 @@ describe('PageSelector', () => {
 
         it('will render correct pages', () => {
             const expectedPages = ['1', '2', '3', '4', '5', '10']
-            expectedPages.forEach(page => {
+            for (const page of expectedPages) {
                 expect(queries.getByRole('button', { name: page })).toBeInTheDocument()
-            })
+            }
         })
 
         it('will render correct currently selected page', () => {
@@ -88,9 +89,9 @@ describe('PageSelector', () => {
 
             it('will render correct pages', () => {
                 const expectedPages = ['1', '4', '5', '6', '10']
-                expectedPages.forEach(page => {
+                for (const page of expectedPages) {
                     expect(queries.getByRole('button', { name: page })).toBeInTheDocument()
-                })
+                }
             })
         })
 
@@ -105,9 +106,9 @@ describe('PageSelector', () => {
 
             it('will render correct pages', () => {
                 const expectedPages = ['1', '6', '7', '8', '9', '10']
-                expectedPages.forEach(page => {
+                for (const page of expectedPages) {
                     expect(queries.getByRole('button', { name: page })).toBeInTheDocument()
-                })
+                }
             })
         })
     })
@@ -124,9 +125,9 @@ describe('PageSelector', () => {
 
         it('will render correct pages', () => {
             const expectedPages = ['1', '2', '3']
-            expectedPages.forEach(page => {
+            for (const page of expectedPages) {
                 expect(queries.getByRole('button', { name: page })).toBeInTheDocument()
-            })
+            }
         })
 
         it('will render correct currently selected page', () => {
@@ -146,9 +147,9 @@ describe('PageSelector', () => {
 
         it('will render correct pages', () => {
             const expectedPages = ['1', '2', '3', '4', '5', '30']
-            expectedPages.forEach(page => {
+            for (const page of expectedPages) {
                 expect(queries.getByRole('button', { name: page })).toBeInTheDocument()
-            })
+            }
         })
 
         it('will render correct currently selected page', () => {

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 import classNames from 'classnames'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
@@ -11,22 +11,27 @@ interface PageButton extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     active?: boolean
 }
 
-const PageButton: React.FunctionComponent<PageButton> = ({ children, active, ...props }) => (
-    <li>
-        <button
-            type="button"
-            className={classNames('btn', 'mx-1', 'page-selector__button', active && 'btn-primary')}
-            aria-current={active}
-            {...props}
-        >
-            {children}
-        </button>
-    </li>
-)
+const PageButton: React.FunctionComponent<PageButton> = ({ children, active, ...props }) => {
+    const refocus = useCallback((button: HTMLButtonElement | null) => active && button?.focus(), [active])
 
-const range = (start: number, end: number) => {
+    return (
+        <li>
+            <button
+                type="button"
+                className={classNames('btn', 'mx-1', 'page-selector__button', active && 'btn-primary')}
+                aria-current={active}
+                ref={refocus}
+                {...props}
+            >
+                {children}
+            </button>
+        </li>
+    )
+}
+
+const range = (start: number, end: number): number[] => {
     const length = end - start + 1
-    return Array.from({ length }, (_, i) => start + i)
+    return Array.from({ length }, (value, index) => start + index)
 }
 
 const getMiddlePages = ({ currentPage, maxPages, shrink }: GetPages): Page[] => {
@@ -89,14 +94,14 @@ export interface Props {
     className?: string
 }
 
-const validatePositiveInteger = (name: string, value: number) => {
+const validatePositiveInteger = (name: string, value: number): string[] => {
     if (value > 0) {
         return []
     }
     return [`${name} must have a value greater than 0`]
 }
 
-const validateProps = (props: Props) => {
+const validateProps = (props: Props): void => {
     const errors = [
         ...validatePositiveInteger('maxPages', props.maxPages),
         ...validatePositiveInteger('currentPage', props.currentPage),
@@ -106,23 +111,42 @@ const validateProps = (props: Props) => {
         errors.push('currentPage must be not be greater than maxPages')
     }
 
-    if (errors.length) {
-        throw new Error(`Invalid configuration: ${errors.map(error => `\n — ${error}`)}`)
+    if (errors.length > 0) {
+        throw new Error(`Invalid configuration:\n${errors.map(error => `— ${error}`).join('\n')}`)
     }
 }
 
 export const PageSelector: React.FunctionComponent<Props> = props => {
     validateProps(props)
 
+    // TODO:
+    // 1. Move component into wildcard folder
+
     const { maxPages, currentPage, className, onPageChange } = props
     const { ref, width } = useDebounce(useResizeObserver(), 100)
     const shouldShrink = width !== undefined && width <= 576
     const pages = getPages({ currentPage, maxPages, shrink: shouldShrink })
 
+    const goBack = useCallback(() => onPageChange(currentPage - 1), [onPageChange, currentPage])
+    const goForward = useCallback(() => onPageChange(currentPage + 1), [onPageChange, currentPage])
+    const handleClick = useCallback(
+        (page: Page) => (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+            if (page === '...') {
+                return
+            }
+
+            // Blur the clicked page, as it will now shift and refocus
+            event.currentTarget.blur()
+
+            return onPageChange(page)
+        },
+        [onPageChange]
+    )
+
     return (
         <nav>
             <ul ref={ref} className={classNames('page-selector', className)}>
-                <PageButton disabled={currentPage === 1} onClick={() => onPageChange(currentPage - 1)}>
+                <PageButton disabled={currentPage === 1} onClick={goBack} aria-label="Previous page">
                     <ChevronLeftIcon className="icon-inline" aria-label="Previous" aria-hidden={!shouldShrink} />
                     <span className={classNames(shouldShrink && 'd-none')}>Previous</span>
                 </PageButton>
@@ -130,13 +154,14 @@ export const PageSelector: React.FunctionComponent<Props> = props => {
                     <PageButton
                         key={index}
                         disabled={page === '...'}
-                        onClick={() => page !== '...' && onPageChange(page)}
+                        aria-label={`Go to page ${page}`}
+                        onClick={handleClick(page)}
                         active={currentPage === page}
                     >
                         {page}
                     </PageButton>
                 ))}
-                <PageButton disabled={currentPage === maxPages} onClick={() => onPageChange(currentPage + 1)}>
+                <PageButton disabled={currentPage === maxPages} onClick={goForward} aria-label="Next page">
                     <span className={classNames(shouldShrink && 'd-none')}>Next</span>
                     <ChevronRightIcon className="icon-inline" aria-label="Next" aria-hidden={!shouldShrink} />
                 </PageButton>
