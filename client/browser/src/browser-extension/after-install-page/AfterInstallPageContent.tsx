@@ -99,7 +99,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                                     github.com
                                 </h3>
                                 <p className="m-0">
-                                    <CheckIcon className="icon-inline" /> No action required.Your extension works here
+                                    <CheckIcon className="icon-inline" /> No action required. Your extension works here
                                     by default.
                                 </p>
                             </div>
