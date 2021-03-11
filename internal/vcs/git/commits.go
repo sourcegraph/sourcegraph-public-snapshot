@@ -194,10 +194,6 @@ func isBadObjectErr(output, obj string) bool {
 	return output == "fatal: bad object "+obj
 }
 
-func isInvalidRevisionRangeError(output, obj string) bool {
-	return strings.HasPrefix(output, "fatal: Invalid revision range "+obj)
-}
-
 // commitLog returns a list of commits.
 //
 // The caller is responsible for doing checkSpecArgSafety on opt.Head and opt.Base.
