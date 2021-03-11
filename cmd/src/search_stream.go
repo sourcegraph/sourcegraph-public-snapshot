@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"text/template"
 
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/streaming"
@@ -21,20 +23,77 @@ func init() {
 }
 
 func streamSearch(query string, opts streaming.Opts, client api.Client, w io.Writer) error {
-	t, err := parseTemplate(streamingTemplate)
-	if err != nil {
-		panic(err)
+	var d streaming.Decoder
+	if opts.Json {
+		d = jsonDecoder(w)
+	} else {
+		t, err := parseTemplate(streamingTemplate)
+		if err != nil {
+			return err
+		}
+		d = textDecoder(query, t, w)
 	}
-	logError := func(msg string) {
-		_, _ = fmt.Fprintf(os.Stderr, msg)
+	return streaming.Search(query, opts, client, d)
+}
+
+// jsonDecoder streams results as JSON to w.
+func jsonDecoder(w io.Writer) streaming.Decoder {
+	// write json.Marshals data and writes it as one line to w plus a newline.
+	write := func(data interface{}) error {
+		b, err := json.Marshal(data)
+		if err != nil {
+			return err
+		}
+		_, err = w.Write(b)
+		if err != nil {
+			return err
+		}
+		_, err = w.Write([]byte("\n"))
+		if err != nil {
+			return err
+		}
+		return nil
 	}
-	decoder := streaming.Decoder{
+
+	return streaming.Decoder{
+		OnProgress: func(progress *streaming.Progress) {
+			if !progress.Done {
+				return
+			}
+			err := write(progress)
+			if err != nil {
+				logError(err.Error())
+			}
+		},
+		OnMatches: func(matches []streaming.EventMatch) {
+			for _, match := range matches {
+				err := write(match)
+				if err != nil {
+					logError(err.Error())
+				}
+			}
+		},
+		OnAlert: func(alert *streaming.EventAlert) {
+			err := write(alert)
+			if err != nil {
+				logError(err.Error())
+			}
+		},
+		OnError: func(eventError *streaming.EventError) {
+			// Errors are just written to stderr.
+			logError(eventError.Message)
+		},
+	}
+}
+
+func textDecoder(query string, t *template.Template, w io.Writer) streaming.Decoder {
+	return streaming.Decoder{
 		OnProgress: func(progress *streaming.Progress) {
 			// We only show the final progress.
 			if !progress.Done {
 				return
 			}
-			err = t.ExecuteTemplate(w, "progress", progress)
+			err := t.ExecuteTemplate(w, "progress", progress)
 			if err != nil {
 				logError(fmt.Sprintf("error when executing template: %s\n", err))
 			}
@@ -52,7 +111,7 @@ func streamSearch(query string, opts streaming.Opts, client api.Client, w io.Wri
 				})
 			}
 
-			err = t.ExecuteTemplate(w, "alert", searchResultsAlert{
+			err := t.ExecuteTemplate(w, "alert", searchResultsAlert{
 				Title:           alert.Title,
 				Description:     alert.Description,
 				ProposedQueries: proposedQueries,
@@ -66,7 +125,7 @@ func streamSearch(query string, opts streaming.Opts, client api.Client, w io.Wri
 			for _, match := range matches {
 				switch match := match.(type) {
 				case *streaming.EventFileMatch:
-					err = t.ExecuteTemplate(w, "file", struct {
+					err := t.ExecuteTemplate(w, "file", struct {
 						Query string
 						*streaming.EventFileMatch
 					}{
@@ -79,7 +138,7 @@ func streamSearch(query string, opts streaming.Opts, client api.Client, w io.Wri
 						return
 					}
 				case *streaming.EventRepoMatch:
-					err = t.ExecuteTemplate(w, "repo", struct {
+					err := t.ExecuteTemplate(w, "repo", struct {
 						SourcegraphEndpoint string
 						*streaming.EventRepoMatch
 					}{
@@ -91,7 +150,7 @@ func streamSearch(query string, opts streaming.Opts, client api.Client, w io.Wri
 						return
 					}
 				case *streaming.EventCommitMatch:
-					err = t.ExecuteTemplate(w, "commit", struct {
+					err := t.ExecuteTemplate(w, "commit", struct {
 						SourcegraphEndpoint string
 						*streaming.EventCommitMatch
 					}{
@@ -103,7 +162,7 @@ func streamSearch(query string, opts streaming.Opts, client api.Client, w io.Wri
 						return
 					}
 				case *streaming.EventSymbolMatch:
-					err = t.ExecuteTemplate(w, "symbol", struct {
+					err := t.ExecuteTemplate(w, "symbol", struct {
 						SourcegraphEndpoint string
 						*streaming.EventSymbolMatch
 					}{
@@ -119,8 +178,6 @@ func streamSearch(query string, opts streaming.Opts, client api.Client, w io.Wri
 			}
 		},
 	}
-
-	return streaming.Search(query, opts, client, decoder)
 }
 
 const streamingTemplate = `
@@ -361,4 +418,8 @@ func streamConvertMatchToHighlights(m streaming.EventLineMatch, isPreview bool) 
 		highlights = append(highlights, highlight{line: line, character: offset, length: length})
 	}
 	return highlights
+}
+
+func logError(msg string) {
+	_, _ = fmt.Fprintf(os.Stderr, msg)
 }

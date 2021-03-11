@@ -14,6 +14,7 @@ import (
 type Opts struct {
 	Display int
 	Trace   bool
+	Json    bool
 }
 
 // Search calls the streaming search endpoint and uses decoder to decode the
