@@ -1419,8 +1419,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> gitserver: less than 25% disk space remaining by instance
-- <span class="badge badge-critical">critical</span> gitserver: less than 15% disk space remaining by instance
+- <span class="badge badge-critical">critical</span> gitserver: less than 10% disk space remaining by instance
 
 **Possible solutions**
 
@@ -1429,7 +1428,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ```json
 "observability.silenceAlerts": [
-  "warning_gitserver_disk_space_remaining",
   "critical_gitserver_disk_space_remaining"
 ]
 ```
