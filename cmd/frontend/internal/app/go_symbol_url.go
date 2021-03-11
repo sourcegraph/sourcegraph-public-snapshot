@@ -42,49 +42,19 @@ import (
 func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
-	parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/"), "/")
-	if len(parts) < 2 {
-		return fmt.Errorf("invalid symbol URL path: %q", r.URL.Path)
-	}
-	mode := parts[0]
-	symbolID := strings.Join(parts[1:], "/")
-
-	if mode != "go" {
-		return &errcode.HTTPErr{
-			Status: http.StatusNotFound,
-			Err:    errors.New("invalid mode (only \"go\" is supported"),
-		}
+	spec, err := parseGoSymbolURLPath(r.URL.Path)
+	if err != nil {
+		return err
 	}
 
-	//                                                        def
-	//                                                    vvvvvvvvvvvv
-	// http://sourcegraph.com/go/github.com/gorilla/mux/-/Router/Match
-	//                           ^^^^^^^^^^^^^^^^^^^^^^   ^^^^^^ ^^^^^
-	//                                 importPath      receiver? symbolname
-	importPath := strings.Split(symbolID, "/-/")[0]
-	def := strings.Split(symbolID, "/-/")[1]
-	var symbolName string
-	var receiver *string
-	symbolComponents := strings.Split(def, "/")
-	switch len(symbolComponents) {
-	case 1:
-		symbolName = symbolComponents[0]
-	case 2:
-		// This is a method call.
-		receiver = &symbolComponents[0]
-		symbolName = symbolComponents[1]
-	default:
-		return fmt.Errorf("invalid def %s (must have 1 or 2 path components)", def)
-	}
-
-	dir, err := gosrc.ResolveImportPath(httpcli.ExternalDoer(), importPath)
+	dir, err := gosrc.ResolveImportPath(httpcli.ExternalDoer(), spec.Pkg)
 	if err != nil {
 		return err
 	}
 	cloneURL := dir.CloneURL
 
 	if cloneURL == "" || !strings.HasPrefix(cloneURL, "https://github.com") {
-		return fmt.Errorf("non-github clone URL resolved for import path %s", importPath)
+		return fmt.Errorf("non-github clone URL resolved for import path %s", spec.Pkg)
 	}
 
 	repoName := api.RepoName(strings.TrimSuffix(strings.TrimPrefix(cloneURL, "https://"), ".git"))
@@ -104,11 +74,6 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	spec := &goSymbolSpec{
-		Pkg:      importPath,
-		Receiver: receiver,
-		Symbol:   symbolName,
-	}
 	pkgPath := path.Join("/", dir.RepoPrefix, strings.TrimPrefix(dir.ImportPath, dir.ProjectRoot))
 	location, err := symbolLocation(r.Context(), vfs, commitID, spec, pkgPath)
 	if err != nil {
@@ -138,6 +103,49 @@ type goSymbolSpec struct {
 	Pkg      string
 	Receiver *string
 	Symbol   string
+}
+
+func parseGoSymbolURLPath(path string) (*goSymbolSpec, error) {
+	parts := strings.Split(strings.TrimPrefix(path, "/"), "/")
+	if len(parts) < 2 {
+		return nil, fmt.Errorf("invalid symbol URL path: %q", path)
+	}
+	mode := parts[0]
+	symbolID := strings.Join(parts[1:], "/")
+
+	if mode != "go" {
+		return nil, &errcode.HTTPErr{
+			Status: http.StatusNotFound,
+			Err:    errors.New("invalid mode (only \"go\" is supported"),
+		}
+	}
+
+	//                                                        def
+	//                                                    vvvvvvvvvvvv
+	// http://sourcegraph.com/go/github.com/gorilla/mux/-/Router/Match
+	//                           ^^^^^^^^^^^^^^^^^^^^^^   ^^^^^^ ^^^^^
+	//                                 importPath      receiver? symbolname
+	importPath := strings.Split(symbolID, "/-/")[0]
+	def := strings.Split(symbolID, "/-/")[1]
+	var symbolName string
+	var receiver *string
+	symbolComponents := strings.Split(def, "/")
+	switch len(symbolComponents) {
+	case 1:
+		symbolName = symbolComponents[0]
+	case 2:
+		// This is a method call.
+		receiver = &symbolComponents[0]
+		symbolName = symbolComponents[1]
+	default:
+		return nil, fmt.Errorf("invalid def %s (must have 1 or 2 path components)", def)
+	}
+
+	return &goSymbolSpec{
+		Pkg:      importPath,
+		Receiver: receiver,
+		Symbol:   symbolName,
+	}, nil
 }
 
 func symbolLocation(ctx context.Context, vfs ctxvfs.FileSystem, commitID api.CommitID, symbolSpec *goSymbolSpec, pkgPath string) (*lsp.Location, error) {
