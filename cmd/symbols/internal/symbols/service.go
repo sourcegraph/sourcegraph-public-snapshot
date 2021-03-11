@@ -9,10 +9,12 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+
+	ctags "github.com/sourcegraph/go-ctags"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 // Service is the symbols service.
@@ -20,7 +22,7 @@ type Service struct {
 	// FetchTar returns an io.ReadCloser to a tar archive of a repository at the specified Git
 	// remote URL and commit ID. If the error implements "BadRequest() bool", it will be used to
 	// determine if the error is a bad request (eg invalid repo).
-	FetchTar func(context.Context, gitserver.Repo, api.CommitID) (io.ReadCloser, error)
+	FetchTar func(context.Context, api.RepoName, api.CommitID) (io.ReadCloser, error)
 
 	// MaxConcurrentFetchTar is the maximum number of concurrent calls allowed
 	// to FetchTar. It defaults to 15.
@@ -115,17 +117,12 @@ func (s *Service) watchAndEvict() {
 }
 
 var (
-	cacheSizeBytes = prometheus.NewGauge(prometheus.GaugeOpts{
+	cacheSizeBytes = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "symbols_store_cache_size_bytes",
 		Help: "The total size of items in the on disk cache.",
 	})
-	evictions = prometheus.NewCounter(prometheus.CounterOpts{
+	evictions = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "symbols_store_evictions",
 		Help: "The total number of items evicted from the cache.",
 	})
 )
-
-func init() {
-	prometheus.MustRegister(cacheSizeBytes)
-	prometheus.MustRegister(evictions)
-}

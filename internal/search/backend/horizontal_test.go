@@ -20,7 +20,7 @@ func TestHorizontalSearcher(t *testing.T) {
 
 	searcher := &HorizontalSearcher{
 		Map: &endpoints,
-		Dial: func(endpoint string) zoekt.Searcher {
+		Dial: func(endpoint string) zoekt.Streamer {
 			var rle zoekt.RepoListEntry
 			rle.Repository.Name = endpoint
 			client := &mockSearcher{
@@ -28,12 +28,11 @@ func TestHorizontalSearcher(t *testing.T) {
 					Files: []zoekt.FileMatch{{
 						Repository: endpoint,
 					}},
-					RepoURLs: map[string]string{endpoint: endpoint},
 				},
 				listResult: &zoekt.RepoList{Repos: []*zoekt.RepoListEntry{&rle}},
 			}
 			// Return metered searcher to test that codepath
-			return NewMeteredSearcher(endpoint, client)
+			return NewMeteredSearcher(endpoint, &StreamSearchAdapter{client})
 		},
 	}
 	defer searcher.Close()
@@ -86,16 +85,6 @@ func TestHorizontalSearcher(t *testing.T) {
 			t.Errorf("search mismatch (-want +got):\n%s", cmp.Diff(want, got))
 		}
 
-		// repohasfile depends on RepoURLs aggregating
-		got = got[:0]
-		for repo := range sr.RepoURLs {
-			got = append(got, repo)
-		}
-		sort.Strings(got)
-		if !cmp.Equal(want, got, cmpopts.EquateEmpty()) {
-			t.Errorf("search mismatch (-want +got):\n%s", cmp.Diff(want, got))
-		}
-
 		// Our list results should be one per server
 		rle, err := searcher.List(context.Background(), nil)
 		if err != nil {
@@ -114,6 +103,36 @@ func TestHorizontalSearcher(t *testing.T) {
 	searcher.Close()
 }
 
+func TestDoStreamSearch(t *testing.T) {
+	var endpoints atomicMap
+	endpoints.Store(prefixMap{"1"})
+
+	searcher := &HorizontalSearcher{
+		Map: &endpoints,
+		Dial: func(endpoint string) zoekt.Streamer {
+			client := &mockSearcher{
+				searchResult: nil,
+				searchError:  fmt.Errorf("test error"),
+			}
+			// Return metered searcher to test that codepath
+			return NewMeteredSearcher(endpoint, &StreamSearchAdapter{client})
+		},
+	}
+	defer searcher.Close()
+
+	c := make(chan *zoekt.SearchResult)
+	defer close(c)
+	err := searcher.StreamSearch(
+		context.Background(),
+		nil,
+		nil,
+		ZoektStreamFunc(func(event *zoekt.SearchResult) { c <- event }),
+	)
+	if err == nil {
+		t.Fatalf("received non-nil error, but expected an error")
+	}
+}
+
 func TestSyncSearchers(t *testing.T) {
 	// This test exists to ensure we test the slow path for
 	// HorizontalSearcher.searchers. The slow-path is
@@ -130,7 +149,7 @@ func TestSyncSearchers(t *testing.T) {
 	dialNumCounter := 0
 	searcher := &HorizontalSearcher{
 		Map: &endpoints,
-		Dial: func(endpoint string) zoekt.Searcher {
+		Dial: func(endpoint string) zoekt.Streamer {
 			dialNumCounter++
 			return &mock{
 				dialNum: dialNumCounter,
@@ -317,6 +336,10 @@ func (s *mockSearcher) Search(context.Context, query.Q, *zoekt.SearchOptions) (*
 		res = &sr
 	}
 	return res, s.searchError
+}
+
+func (s *mockSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, streamer zoekt.Sender) error {
+	return (&StreamSearchAdapter{s}).StreamSearch(ctx, q, opts, streamer)
 }
 
 func (s *mockSearcher) List(context.Context, query.Q) (*zoekt.RepoList, error) {

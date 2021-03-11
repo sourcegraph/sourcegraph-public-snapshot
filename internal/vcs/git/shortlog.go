@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
@@ -31,7 +32,7 @@ func (p *PersonCount) String() string {
 }
 
 // ShortLog returns the per-author commit statistics of the repo.
-func ShortLog(ctx context.Context, repo gitserver.Repo, opt ShortLogOptions) ([]*PersonCount, error) {
+func ShortLog(ctx context.Context, repo api.RepoName, opt ShortLogOptions) ([]*PersonCount, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: ShortLog")
 	span.SetTag("Opt", opt)
 	defer span.Finish()

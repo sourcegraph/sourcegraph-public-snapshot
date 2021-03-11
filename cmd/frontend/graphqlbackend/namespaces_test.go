@@ -8,15 +8,16 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/gqltesting"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestNamespace(t *testing.T) {
 	t.Run("user", func(t *testing.T) {
 		resetMocks()
 		const wantUserID = 3
-		db.Mocks.Users.GetByID = func(_ context.Context, id int32) (*types.User, error) {
+		database.Mocks.Users.GetByID = func(_ context.Context, id int32) (*types.User, error) {
 			if id != wantUserID {
 				t.Errorf("got %d, want %d", id, wantUserID)
 			}
@@ -48,7 +49,7 @@ func TestNamespace(t *testing.T) {
 	t.Run("organization", func(t *testing.T) {
 		resetMocks()
 		const wantOrgID = 3
-		db.Mocks.Orgs.GetByID = func(_ context.Context, id int32) (*types.Org, error) {
+		database.Mocks.Orgs.GetByID = func(_ context.Context, id int32) (*types.Org, error) {
 			if id != wantOrgID {
 				t.Errorf("got %d, want %d", id, wantOrgID)
 			}
@@ -105,6 +106,114 @@ func TestNamespace(t *testing.T) {
 						ResolverError: wantErr,
 					},
 				},
+			},
+		})
+	})
+}
+
+func TestNamespaceByName(t *testing.T) {
+	t.Run("user", func(t *testing.T) {
+		resetMocks()
+		const (
+			wantName   = "alice"
+			wantUserID = 123
+		)
+		database.Mocks.Namespaces.GetByName = func(ctx context.Context, name string) (*database.Namespace, error) {
+			if name != wantName {
+				t.Errorf("got %q, want %q", name, wantName)
+			}
+			return &database.Namespace{Name: "alice", User: wantUserID}, nil
+		}
+		database.Mocks.Users.GetByID = func(_ context.Context, id int32) (*types.User, error) {
+			if id != wantUserID {
+				t.Errorf("got %d, want %d", id, wantUserID)
+			}
+			return &types.User{ID: wantUserID, Username: wantName}, nil
+		}
+		gqltesting.RunTests(t, []*gqltesting.Test{
+			{
+				Schema: mustParseGraphQLSchema(t),
+				Query: `
+				{
+					namespaceByName(name: "alice") {
+						__typename
+						... on User { username }
+					}
+				}
+			`,
+				ExpectedResult: `
+				{
+					"namespaceByName": {
+						"__typename": "User",
+						"username": "alice"
+					}
+				}
+			`,
+			},
+		})
+	})
+
+	t.Run("organization", func(t *testing.T) {
+		resetMocks()
+		const (
+			wantName  = "acme"
+			wantOrgID = 3
+		)
+		database.Mocks.Namespaces.GetByName = func(ctx context.Context, name string) (*database.Namespace, error) {
+			if name != wantName {
+				t.Errorf("got %q, want %q", name, wantName)
+			}
+			return &database.Namespace{Name: "alice", Organization: wantOrgID}, nil
+		}
+		database.Mocks.Orgs.GetByID = func(_ context.Context, id int32) (*types.Org, error) {
+			if id != wantOrgID {
+				t.Errorf("got %d, want %d", id, wantOrgID)
+			}
+			return &types.Org{ID: wantOrgID, Name: "acme"}, nil
+		}
+		gqltesting.RunTests(t, []*gqltesting.Test{
+			{
+				Schema: mustParseGraphQLSchema(t),
+				Query: `
+				{
+					namespaceByName(name: "acme") {
+						__typename
+						... on Org { name }
+					}
+				}
+			`,
+				ExpectedResult: `
+				{
+					"namespaceByName": {
+						"__typename": "Org",
+						"name": "acme"
+					}
+				}
+			`,
+			},
+		})
+	})
+
+	t.Run("invalid", func(t *testing.T) {
+		resetMocks()
+		database.Mocks.Namespaces.GetByName = func(ctx context.Context, name string) (*database.Namespace, error) {
+			return nil, database.ErrNamespaceNotFound
+		}
+		gqltesting.RunTests(t, []*gqltesting.Test{
+			{
+				Schema: mustParseGraphQLSchema(t),
+				Query: `
+				{
+					namespaceByName(name: "doesntexist") {
+						__typename
+					}
+				}
+			`,
+				ExpectedResult: `
+				{
+					"namespaceByName": null
+				}
+			`,
 			},
 		})
 	})

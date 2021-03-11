@@ -1,0 +1,34 @@
+sequenceDiagram
+  src-cli   ->>+ Frontend: handleEnqueue?repository,commit,root
+  Frontend  ->>+ Store: InsertUpload(repository, commit, root)
+  Store    -->>- Frontend: uploadID
+  Frontend -->>- src-cli: 201 Accepted: {"id": uploadID}
+
+  loop
+    src-cli         ->>+ Frontend: handleEnqueue?uploadID,index
+    Frontend        ->> Store: AddUploadPart(uploadID, index)
+    Frontend        ->> Upload store: SendUploadPart(uploadID, index)
+    Frontend       -->>- src-cli: 204 No Content
+  end
+
+  src-cli        ->>+ Frontend: handleEnqueue?uploadID,done
+  Frontend       ->> Upload store: StitchParts(uploadID)
+  Frontend       ->> Store: MarkQueued(uploadID)
+  Frontend      -->>- src-cli: 204 No Content
+
+  Worker         ->>+ Store: Dequeue
+  Store         -->>- Worker: upload
+  Worker         ->>+ Store: BeginTx
+  Worker         ->>+ Upload store: GetUpload(upload.id)
+  Upload store   ->>- Worker: raw LSIF data
+
+  Note over Store,Worker: Convert data, gather defined/referenced packages
+
+  Worker         ->> Store: UpdatePackages(defined packages)
+  Worker         ->> Store: UpdatePackageReferences(referenced packages)
+  Worker         ->> Store: DeleteOverlappingDumps(upload.repository, upload.commit, upload.root)
+  Worker         ->> Store: MarkRepositoryAsDirty(upload.repository)
+
+  Worker         ->> Upload store: DeleteUpload(upload.id)
+  Worker        -->> Store: Commit
+  Store         -->>- Worker: { }

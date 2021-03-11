@@ -6,7 +6,10 @@ import (
 	"errors"
 	"log"
 	"os"
+	"sort"
 	"strconv"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -14,51 +17,60 @@ import (
 	"github.com/graph-gophers/graphql-go/introspection"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/graph-gophers/graphql-go/trace"
-	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/inconshreveable/log15"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"golang.org/x/sync/errgroup"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-var graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-	Name:    "src_graphql_field_seconds",
-	Help:    "GraphQL field resolver latencies in seconds.",
-	Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
-}, []string{"type", "field", "error", "source", "request_name"})
+var (
+	graphqlFieldHistogram = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_graphql_field_seconds",
+		Help:    "GraphQL field resolver latencies in seconds.",
+		Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+	}, []string{"type", "field", "error", "source", "request_name"})
 
-var codeIntelSearchHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-	Name:    "src_graphql_code_intel_search_seconds",
-	Help:    "Code intel search latencies in seconds.",
-	Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
-}, []string{"exact", "error"})
+	codeIntelSearchHistogram = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_graphql_code_intel_search_seconds",
+		Help:    "Code intel search latencies in seconds.",
+		Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+	}, []string{"exact", "error"})
 
-func init() {
-	prometheus.MustRegister(graphqlFieldHistogram)
-	prometheus.MustRegister(codeIntelSearchHistogram)
-}
+	cf = httpcli.NewExternalHTTPClientFactory()
+)
 
 type prometheusTracer struct {
+	db dbutil.DB
 	trace.OpenTracingTracer
 }
 
-func (prometheusTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]interface{}, varTypes map[string]*introspection.Type) (context.Context, trace.TraceQueryFinishFunc) {
+func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]interface{}, varTypes map[string]*introspection.Type) (context.Context, trace.TraceQueryFinishFunc) {
 	start := time.Now()
 	var finish trace.TraceQueryFinishFunc
 	if ot.ShouldTrace(ctx) {
 		ctx, finish = trace.OpenTracingTracer{}.TraceQuery(ctx, queryString, operationName, variables, varTypes)
 	}
 
+	ctx = context.WithValue(ctx, "graphql-query", queryString)
+
 	_, disableLog := os.LookupEnv("NO_GRAPHQL_LOG")
 
 	// Note: We don't care about the error here, we just extract the username if
 	// we get a non-nil user object.
-	currentUser, _ := CurrentUser(ctx)
+	currentUser, _ := CurrentUser(ctx, t.db)
 	var currentUserName string
 	if currentUser != nil {
 		currentUserName = currentUser.Username()
@@ -325,29 +337,44 @@ func prometheusGraphQLRequestName(requestName string) string {
 	return "other"
 }
 
-func NewSchema(campaigns CampaignsResolver, codeIntel CodeIntelResolver, authz AuthzResolver) (*graphql.Schema, error) {
+func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIntelResolver, insights InsightsResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver, license LicenseResolver) (*graphql.Schema, error) {
 	resolver := &schemaResolver{
-		CampaignsResolver: defaultCampaignsResolver{},
-		AuthzResolver:     defaultAuthzResolver{},
-		CodeIntelResolver: defaultCodeIntelResolver{},
+		db: db,
+
+		BatchChangesResolver: defaultBatchChangesResolver{},
+		AuthzResolver:        defaultAuthzResolver{},
+		CodeIntelResolver:    defaultCodeIntelResolver{},
+		InsightsResolver:     defaultInsightsResolver{},
+		LicenseResolver:      defaultLicenseResolver{},
 	}
-	if campaigns != nil {
-		EnterpriseResolvers.campaignsResolver = campaigns
-		resolver.CampaignsResolver = campaigns
+	if batchChanges != nil {
+		EnterpriseResolvers.batchChangesResolver = batchChanges
+		resolver.BatchChangesResolver = batchChanges
 	}
 	if codeIntel != nil {
 		EnterpriseResolvers.codeIntelResolver = codeIntel
 		resolver.CodeIntelResolver = codeIntel
 	}
+	if insights != nil {
+		EnterpriseResolvers.insightsResolver = insights
+		resolver.InsightsResolver = insights
+	}
 	if authz != nil {
 		EnterpriseResolvers.authzResolver = authz
 		resolver.AuthzResolver = authz
 	}
-
+	if codeMonitors != nil {
+		EnterpriseResolvers.codeMonitorsResolver = codeMonitors
+		resolver.CodeMonitorsResolver = codeMonitors
+	}
+	if license != nil {
+		EnterpriseResolvers.licenseResolver = license
+		resolver.LicenseResolver = license
+	}
 	return graphql.ParseSchema(
 		Schema,
 		resolver,
-		graphql.Tracer(prometheusTracer{}),
+		graphql.Tracer(&prometheusTracer{db: db}),
 		graphql.UseStringDescriptions(),
 	)
 }
@@ -375,9 +402,61 @@ func (r *NodeResolver) ToAccessToken() (*accessTokenResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToCampaign() (CampaignResolver, bool) {
-	n, ok := r.Node.(CampaignResolver)
+func (r *NodeResolver) ToMonitor() (MonitorResolver, bool) {
+	n, ok := r.Node.(MonitorResolver)
 	return n, ok
+}
+
+func (r *NodeResolver) ToMonitorQuery() (MonitorQueryResolver, bool) {
+	n, ok := r.Node.(MonitorQueryResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToMonitorEmail() (MonitorEmailResolver, bool) {
+	n, ok := r.Node.(MonitorEmailResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToMonitorActionEvent() (MonitorActionEventResolver, bool) {
+	n, ok := r.Node.(MonitorActionEventResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToMonitorTriggerEvent() (MonitorTriggerEventResolver, bool) {
+	n, ok := r.Node.(MonitorTriggerEventResolver)
+	return n, ok
+}
+
+// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
+func (r *NodeResolver) ToCampaign() (BatchChangeResolver, bool) {
+	if n, ok := r.Node.(BatchChangeResolver); ok {
+		return n, n.ActAsCampaign()
+	}
+	return nil, false
+}
+
+// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
+func (r *NodeResolver) ToCampaignSpec() (BatchSpecResolver, bool) {
+	if n, ok := r.Node.(BatchSpecResolver); ok {
+		return n, n.ActAsCampaignSpec()
+	}
+	return nil, false
+}
+
+func (r *NodeResolver) ToBatchChange() (BatchChangeResolver, bool) {
+	if n, ok := r.Node.(BatchChangeResolver); ok {
+		// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
+		return n, !n.ActAsCampaign()
+	}
+	return nil, false
+}
+
+func (r *NodeResolver) ToBatchSpec() (BatchSpecResolver, bool) {
+	if n, ok := r.Node.(BatchSpecResolver); ok {
+		// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
+		return n, !n.ActAsCampaignSpec()
+	}
+	return nil, false
 }
 
 func (r *NodeResolver) ToExternalChangeset() (ExternalChangesetResolver, bool) {
@@ -401,11 +480,6 @@ func (r *NodeResolver) ToChangesetEvent() (ChangesetEventResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToCampaignSpec() (CampaignSpecResolver, bool) {
-	n, ok := r.Node.(CampaignSpecResolver)
-	return n, ok
-}
-
 func (r *NodeResolver) ToHiddenChangesetSpec() (HiddenChangesetSpecResolver, bool) {
 	n, ok := r.Node.(ChangesetSpecResolver)
 	if !ok {
@@ -420,6 +494,17 @@ func (r *NodeResolver) ToVisibleChangesetSpec() (VisibleChangesetSpecResolver, b
 		return nil, ok
 	}
 	return n.ToVisibleChangesetSpec()
+}
+
+// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
+func (r *NodeResolver) ToCampaignsCredential() (CampaignsCredentialResolver, bool) {
+	n, ok := r.Node.(CampaignsCredentialResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToBatchChangesCredential() (BatchChangesCredentialResolver, bool) {
+	n, ok := r.Node.(BatchChangesCredentialResolver)
+	return n, ok
 }
 
 func (r *NodeResolver) ToProductLicense() (ProductLicense, bool) {
@@ -484,6 +569,11 @@ func (r *NodeResolver) ToSavedSearch() (*savedSearchResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToSearchContext() (*searchContextResolver, bool) {
+	n, ok := r.Node.(*searchContextResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToSite() (*siteResolver, bool) {
 	n, ok := r.Node.(*siteResolver)
 	return n, ok
@@ -499,8 +589,8 @@ func (r *NodeResolver) ToLSIFIndex() (LSIFIndexResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToVersionContext() (*versionContextResolver, bool) {
-	n, ok := r.Node.(*versionContextResolver)
+func (r *NodeResolver) ToOutOfBandMigration() (*outOfBandMigrationResolver, bool) {
+	n, ok := r.Node.(*outOfBandMigrationResolver)
 	return n, ok
 }
 
@@ -508,26 +598,36 @@ func (r *NodeResolver) ToVersionContext() (*versionContextResolver, bool) {
 // uses subresolvers which are globals. Enterprise-only resolvers are assigned
 // to a field of EnterpriseResolvers.
 type schemaResolver struct {
-	CampaignsResolver
+	BatchChangesResolver
 	AuthzResolver
 	CodeIntelResolver
+	InsightsResolver
+	CodeMonitorsResolver
+	LicenseResolver
+
+	db dbutil.DB
 }
 
 // EnterpriseResolvers holds the instances of resolvers which are enabled only
 // in enterprise mode. These resolver instances are nil when running as OSS.
 var EnterpriseResolvers = struct {
-	codeIntelResolver CodeIntelResolver
-	authzResolver     AuthzResolver
-	campaignsResolver CampaignsResolver
+	codeIntelResolver    CodeIntelResolver
+	insightsResolver     InsightsResolver
+	authzResolver        AuthzResolver
+	batchChangesResolver BatchChangesResolver
+	codeMonitorsResolver CodeMonitorsResolver
+	licenseResolver      LicenseResolver
 }{
-	codeIntelResolver: defaultCodeIntelResolver{},
-	authzResolver:     defaultAuthzResolver{},
-	campaignsResolver: defaultCampaignsResolver{},
+	codeIntelResolver:    defaultCodeIntelResolver{},
+	authzResolver:        defaultAuthzResolver{},
+	batchChangesResolver: defaultBatchChangesResolver{},
+	codeMonitorsResolver: defaultCodeMonitorsResolver{},
+	licenseResolver:      defaultLicenseResolver{},
 }
 
 // DEPRECATED
 func (r *schemaResolver) Root() *schemaResolver {
-	return &schemaResolver{}
+	return &schemaResolver{db: r.db}
 }
 
 func (r *schemaResolver) Node(ctx context.Context, args *struct{ ID graphql.ID }) (*NodeResolver, error) {
@@ -544,51 +644,63 @@ func (r *schemaResolver) Node(ctx context.Context, args *struct{ ID graphql.ID }
 func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, error) {
 	switch relay.UnmarshalKind(id) {
 	case "AccessToken":
-		return accessTokenByID(ctx, id)
+		return accessTokenByID(ctx, r.db, id)
 	case "Campaign":
 		return r.CampaignByID(ctx, id)
+	case "BatchChange":
+		return r.BatchChangeByID(ctx, id)
 	case "CampaignSpec":
 		return r.CampaignSpecByID(ctx, id)
+	case "BatchSpec":
+		return r.BatchSpecByID(ctx, id)
 	case "ChangesetSpec":
 		return r.ChangesetSpecByID(ctx, id)
 	case "Changeset":
 		return r.ChangesetByID(ctx, id)
+	case "CampaignsCredential":
+		return r.CampaignsCredentialByID(ctx, id)
+	case "BatchChangesCredential":
+		return r.BatchChangesCredentialByID(ctx, id)
 	case "ProductLicense":
 		if f := ProductLicenseByID; f != nil {
-			return f(ctx, id)
+			return f(ctx, r.db, id)
 		}
 		return nil, errors.New("not implemented")
 	case "ProductSubscription":
 		if f := ProductSubscriptionByID; f != nil {
-			return f(ctx, id)
+			return f(ctx, r.db, id)
 		}
 		return nil, errors.New("not implemented")
 	case "ExternalAccount":
-		return externalAccountByID(ctx, id)
+		return externalAccountByID(ctx, r.db, id)
 	case externalServiceIDKind:
-		return externalServiceByID(ctx, id)
+		return externalServiceByID(ctx, r.db, id)
 	case "GitRef":
-		return gitRefByID(ctx, id)
+		return r.gitRefByID(ctx, id)
 	case "Repository":
-		return repositoryByID(ctx, id)
+		return r.repositoryByID(ctx, id)
 	case "User":
-		return UserByID(ctx, id)
+		return UserByID(ctx, r.db, id)
 	case "Org":
-		return OrgByID(ctx, id)
+		return OrgByID(ctx, r.db, id)
 	case "OrganizationInvitation":
-		return orgInvitationByID(ctx, id)
+		return orgInvitationByID(ctx, r.db, id)
 	case "GitCommit":
-		return gitCommitByID(ctx, id)
+		return r.gitCommitByID(ctx, id)
 	case "RegistryExtension":
-		return RegistryExtensionByID(ctx, id)
+		return RegistryExtensionByID(ctx, r.db, id)
 	case "SavedSearch":
-		return savedSearchByID(ctx, id)
+		return r.savedSearchByID(ctx, id)
 	case "Site":
-		return siteByGQLID(ctx, id)
+		return r.siteByGQLID(ctx, id)
 	case "LSIFUpload":
 		return r.LSIFUploadByID(ctx, id)
 	case "LSIFIndex":
 		return r.LSIFIndexByID(ctx, id)
+	case "CodeMonitor":
+		return r.MonitorByID(ctx, id)
+	case "OutOfBandMigration":
+		return r.OutOfBandMigrationByID(ctx, id)
 	default:
 		return nil, errors.New("invalid id")
 	}
@@ -649,7 +761,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *struct {
 	} else if args.CloneURL != nil {
 		// Query by git clone URL
 		var err error
-		name, err = reposourceCloneURLToRepoName(ctx, *args.CloneURL)
+		name, err = cloneurls.ReposourceCloneURLToRepoName(ctx, *args.CloneURL)
 		if err != nil {
 			return nil, err
 		}
@@ -671,7 +783,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *struct {
 		}
 		return nil, err
 	}
-	return &repositoryRedirect{repo: &RepositoryResolver{repo: repo}}, nil
+	return &repositoryRedirect{repo: NewRepositoryResolver(r.db, repo)}, nil
 }
 
 func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {
@@ -683,7 +795,7 @@ func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {
 		args.URI = args.Name
 	}
 
-	repo, err := db.Phabricator.GetByName(ctx, api.RepoName(*args.URI))
+	repo, err := database.Phabricator(r.db).GetByName(ctx, api.RepoName(*args.URI))
 	if err != nil {
 		return nil, err
 	}
@@ -691,5 +803,170 @@ func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {
 }
 
 func (r *schemaResolver) CurrentUser(ctx context.Context) (*UserResolver, error) {
-	return CurrentUser(ctx)
+	return CurrentUser(ctx, r.db)
+}
+
+func (r *schemaResolver) AffiliatedRepositories(ctx context.Context, args *struct {
+	User     graphql.ID
+	CodeHost *graphql.ID
+	Query    *string
+}) (*codeHostRepositoryConnectionResolver, error) {
+	userID, err := UnmarshalUserID(args.User)
+	if err != nil {
+		return nil, err
+	}
+	// 🚨 SECURITY: make sure the user is either site admin or the same user being requested
+	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
+		return nil, err
+	}
+	var codeHost int64
+	if args.CodeHost != nil {
+		codeHost, err = unmarshalExternalServiceID(*args.CodeHost)
+		if err != nil {
+			return nil, err
+		}
+	}
+	var query string
+	if args.Query != nil {
+		query = *args.Query
+	}
+
+	return &codeHostRepositoryConnectionResolver{
+		db:       r.db,
+		userID:   userID,
+		codeHost: codeHost,
+		query:    query,
+	}, nil
+}
+
+type codeHostRepositoryConnectionResolver struct {
+	userID   int32
+	codeHost int64
+	query    string
+
+	once  sync.Once
+	nodes []*codeHostRepositoryResolver
+	err   error
+	db    dbutil.DB
+}
+
+func (r *codeHostRepositoryConnectionResolver) Nodes(ctx context.Context) ([]*codeHostRepositoryResolver, error) {
+	r.once.Do(func() {
+		var (
+			svcs []*types.ExternalService
+			err  error
+		)
+		// get all external services for user, or for the specified external service
+		if r.codeHost == 0 {
+			svcs, err = database.GlobalExternalServices.List(ctx, database.ExternalServicesListOptions{NamespaceUserID: r.userID})
+			if err != nil {
+				r.err = err
+				return
+			}
+		} else {
+			svc, err := database.GlobalExternalServices.GetByID(ctx, r.codeHost)
+			if err != nil {
+				r.err = err
+				return
+			}
+			// 🚨 SECURITY: if the user doesn't own this service, check they're site admin
+			if err := backend.CheckUserIsSiteAdmin(ctx, r.userID); svc.NamespaceUserID != r.userID && err != nil {
+				r.err = err
+				return
+			}
+			svcs = []*types.ExternalService{svc}
+		}
+		// get Source for all external services
+		var (
+			results  = make(chan []types.CodeHostRepository)
+			g, ctx   = errgroup.WithContext(ctx)
+			svcsByID = make(map[int64]*types.ExternalService)
+		)
+		for _, svc := range svcs {
+			svcsByID[svc.ID] = svc
+			src, err := repos.NewSource(svc, cf)
+			if err != nil {
+				r.err = err
+				return
+			}
+			if af, ok := src.(repos.AffiliatedRepositorySource); ok {
+				g.Go(func() error {
+					repos, err := af.AffiliatedRepositories(ctx)
+					if err != nil {
+						return err
+					}
+					select {
+					case results <- repos:
+					case <-ctx.Done():
+						return ctx.Err()
+					}
+					return nil
+				})
+			}
+		}
+		go func() {
+			// wait for all sources to return their repos
+			err = g.Wait()
+			// signal the collector to finish
+			close(results)
+		}()
+
+		// are we allowed to show the user private repos?
+		allowPrivate, err := allowPrivate(ctx, r.userID)
+		if err != nil {
+			r.err = err
+			return
+		}
+
+		// collect all results
+		r.nodes = []*codeHostRepositoryResolver{}
+		for repos := range results {
+			for _, repo := range repos {
+				repo := repo
+				if r.query != "" && !strings.Contains(strings.ToLower(repo.Name), r.query) {
+					continue
+				}
+				if !allowPrivate && repo.Private {
+					continue
+				}
+				r.nodes = append(r.nodes, &codeHostRepositoryResolver{
+					db:       r.db,
+					codeHost: svcsByID[repo.CodeHostID],
+					repo:     &repo,
+				})
+			}
+		}
+		sort.Slice(r.nodes, func(i, j int) bool {
+			return r.nodes[i].repo.Name < r.nodes[j].repo.Name
+		})
+	})
+	return r.nodes, r.err
+}
+
+type codeHostRepositoryResolver struct {
+	repo     *types.CodeHostRepository
+	codeHost *types.ExternalService
+	db       dbutil.DB
+}
+
+func (r *codeHostRepositoryResolver) Name() string {
+	return r.repo.Name
+}
+
+func (r *codeHostRepositoryResolver) Private() bool {
+	return r.repo.Private
+}
+
+func (r *codeHostRepositoryResolver) CodeHost(ctx context.Context) *externalServiceResolver {
+	return &externalServiceResolver{
+		db:              r.db,
+		externalService: r.codeHost,
+	}
+}
+
+func allowPrivate(ctx context.Context, userID int32) (bool, error) {
+	if conf.ExternalServiceUserMode() == conf.ExternalServiceModeAll {
+		return true, nil
+	}
+	return database.GlobalUsers.HasTag(ctx, userID, database.TagAllowUserExternalServicePrivate)
 }

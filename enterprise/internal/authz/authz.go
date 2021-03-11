@@ -9,19 +9,19 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/authz/github"
 	"github.com/sourcegraph/sourcegraph/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type ExternalServicesStore interface {
-	List(context.Context, db.ExternalServicesListOptions) ([]*types.ExternalService, error)
+	List(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error)
 }
 
 // ProvidersFromConfig returns the set of permission-related providers derived from the site config.
@@ -46,13 +46,13 @@ func ProvidersFromConfig(
 		}
 	}()
 
-	opt := db.ExternalServicesListOptions{
+	opt := database.ExternalServicesListOptions{
 		Kinds: []string{
 			extsvc.KindGitHub,
 			extsvc.KindGitLab,
 			extsvc.KindBitbucketServer,
 		},
-		LimitOffset: &db.LimitOffset{
+		LimitOffset: &database.LimitOffset{
 			Limit: 500, // The number is randomly chosen
 		},
 	}
@@ -131,15 +131,18 @@ func ProvidersFromConfig(
 
 	// 🚨 SECURITY: Warn the admin when both code host authz provider and the permissions user mapping are configured.
 	if cfg.SiteConfiguration.PermissionsUserMapping != nil &&
-		cfg.SiteConfiguration.PermissionsUserMapping.Enabled && len(providers) > 0 {
-		serviceTypes := make([]string, len(providers))
-		for i := range providers {
-			serviceTypes[i] = strconv.Quote(providers[i].ServiceType())
+		cfg.SiteConfiguration.PermissionsUserMapping.Enabled {
+		allowAccessByDefault = false
+		if len(providers) > 0 {
+			serviceTypes := make([]string, len(providers))
+			for i := range providers {
+				serviceTypes[i] = strconv.Quote(providers[i].ServiceType())
+			}
+			msg := fmt.Sprintf(
+				"The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when %s authorization providers are in use. Blocking access to all repositories until the conflict is resolved.",
+				strings.Join(serviceTypes, ", "))
+			seriousProblems = append(seriousProblems, msg)
 		}
-		msg := fmt.Sprintf(
-			"The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when %s authorization providers are in use. Blocking access to all repositories until the conflict is resolved.",
-			strings.Join(serviceTypes, ", "))
-		seriousProblems = append(seriousProblems, msg)
 	}
 
 	return allowAccessByDefault, providers, seriousProblems, warnings

@@ -8,10 +8,16 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Masterminds/semver"
 	"github.com/pkg/errors"
 	"github.com/segmentio/fasthash/fnv1"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
+
+// PageInfo contains the paging information based on the Redux conventions.
+type PageInfo struct {
+	HasNextPage bool
+	EndCursor   string
+}
 
 // An Actor represents an object which can take actions on GitHub. Typically a User or Bot.
 type Actor struct {
@@ -142,6 +148,7 @@ type PullRequest struct {
 	Labels        struct{ Nodes []Label }
 	TimelineItems []TimelineItem
 	Commits       struct{ Nodes []CommitWithChecks }
+	IsDraft       bool
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }
@@ -357,6 +364,30 @@ func (e ReviewRequestedEvent) ReviewerDeleted() bool {
 	return e.RequestedReviewer.Login == "" && e.RequestedTeam.Name == ""
 }
 
+// ReadyForReviewEvent represents a 'ready_for_review' event on a
+// pull request.
+type ReadyForReviewEvent struct {
+	Actor     Actor
+	CreatedAt time.Time
+}
+
+// Key is a unique key identifying this event in the context of its pull request.
+func (e ReadyForReviewEvent) Key() string {
+	return fmt.Sprintf("%s:%d", e.Actor.Login, e.CreatedAt.UnixNano())
+}
+
+// ConvertToDraftEvent represents a 'convert_to_draft' event on a
+// pull request.
+type ConvertToDraftEvent struct {
+	Actor     Actor
+	CreatedAt time.Time
+}
+
+// Key is a unique key identifying this event in the context of its pull request.
+func (e ConvertToDraftEvent) Key() string {
+	return fmt.Sprintf("%s:%d", e.Actor.Login, e.CreatedAt.UnixNano())
+}
+
 // UnassignedEvent represents an 'unassigned' event on a pull request.
 type UnassignedEvent struct {
 	Actor     Actor
@@ -384,6 +415,11 @@ func (e LabelEvent) Key() string {
 		action = "delete"
 	}
 	return fmt.Sprintf("%s:%s:%d", e.Label.ID, action, e.CreatedAt.UnixNano())
+}
+
+type TimelineItemConnection struct {
+	PageInfo PageInfo
+	Nodes    []TimelineItem
 }
 
 // TimelineItem is a union type of all supported pull request timeline items.
@@ -435,6 +471,10 @@ func (i *TimelineItem) UnmarshalJSON(data []byte) error {
 		i.Item = new(ReviewRequestRemovedEvent)
 	case "ReviewRequestedEvent":
 		i.Item = new(ReviewRequestedEvent)
+	case "ReadyForReviewEvent":
+		i.Item = new(ReadyForReviewEvent)
+	case "ConvertToDraftEvent":
+		i.Item = new(ConvertToDraftEvent)
 	case "UnassignedEvent":
 		i.Item = new(UnassignedEvent)
 	case "LabeledEvent":
@@ -464,12 +504,20 @@ type CreatePullRequestInput struct {
 	Title string `json:"title"`
 	// The body of the pull request (optional).
 	Body string `json:"body"`
+	// When true the PR will be in draft mode initially.
+	Draft bool `json:"draft"`
 }
 
 // CreatePullRequest creates a PullRequest on Github.
-func (c *Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestInput) (*PullRequest, error) {
+func (c *V4Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestInput) (*PullRequest, error) {
+	version := c.determineGitHubVersion(ctx)
+
+	prFragment, err := pullRequestFragments(version)
+	if err != nil {
+		return nil, err
+	}
 	var q strings.Builder
-	q.WriteString(pullRequestFragments)
+	q.WriteString(prFragment)
 	q.WriteString(`mutation	CreatePullRequest($input:CreatePullRequestInput!) {
   createPullRequest(input:$input) {
     pullRequest {
@@ -483,13 +531,27 @@ func (c *Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestInp
 			PullRequest struct {
 				PullRequest
 				Participants  struct{ Nodes []Actor }
-				TimelineItems struct{ Nodes []TimelineItem }
+				TimelineItems TimelineItemConnection
 			} `json:"pullRequest"`
 		} `json:"createPullRequest"`
 	}
 
-	input := map[string]interface{}{"input": in}
-	err := c.requestGraphQL(ctx, q.String(), input, &result)
+	compatibleInput := map[string]interface{}{
+		"repositoryId": in.RepositoryID,
+		"baseRefName":  in.BaseRefName,
+		"headRefName":  in.HeadRefName,
+		"title":        in.Title,
+		"body":         in.Body,
+	}
+
+	if ghe221PlusOrDotComSemver.Check(version) {
+		compatibleInput["draft"] = in.Draft
+	} else if in.Draft {
+		return nil, errors.New("draft PRs not supported by this version of GitHub enterprise. GitHub Enterprise v3.21 is the first version to support draft PRs.\nPotential fix: set `published: true` in your batch spec.")
+	}
+
+	input := map[string]interface{}{"input": compatibleInput}
+	err = c.requestGraphQL(ctx, q.String(), input, &result)
 	if err != nil {
 		if gqlErrs, ok := err.(graphqlErrors); ok && len(gqlErrs) == 1 {
 			e := gqlErrs[0]
@@ -500,9 +562,17 @@ func (c *Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestInp
 		return nil, err
 	}
 
+	ti := result.CreatePullRequest.PullRequest.TimelineItems
 	pr := &result.CreatePullRequest.PullRequest.PullRequest
-	pr.TimelineItems = result.CreatePullRequest.PullRequest.TimelineItems.Nodes
+	pr.TimelineItems = ti.Nodes
 	pr.Participants = result.CreatePullRequest.PullRequest.Participants.Nodes
+
+	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, ti.PageInfo)
+	if err != nil {
+		return nil, err
+	}
+	pr.TimelineItems = append(pr.TimelineItems, items...)
+
 	return pr, nil
 }
 
@@ -519,9 +589,14 @@ type UpdatePullRequestInput struct {
 }
 
 // UpdatePullRequest creates a PullRequest on Github.
-func (c *Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInput) (*PullRequest, error) {
+func (c *V4Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInput) (*PullRequest, error) {
+	version := c.determineGitHubVersion(ctx)
+	prFragment, err := pullRequestFragments(version)
+	if err != nil {
+		return nil, err
+	}
 	var q strings.Builder
-	q.WriteString(pullRequestFragments)
+	q.WriteString(prFragment)
 	q.WriteString(`mutation	UpdatePullRequest($input:UpdatePullRequestInput!) {
   updatePullRequest(input:$input) {
     pullRequest {
@@ -535,13 +610,13 @@ func (c *Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInp
 			PullRequest struct {
 				PullRequest
 				Participants  struct{ Nodes []Actor }
-				TimelineItems struct{ Nodes []TimelineItem }
+				TimelineItems TimelineItemConnection
 			} `json:"pullRequest"`
 		} `json:"updatePullRequest"`
 	}
 
 	input := map[string]interface{}{"input": in}
-	err := c.requestGraphQL(ctx, q.String(), input, &result)
+	err = c.requestGraphQL(ctx, q.String(), input, &result)
 	if err != nil {
 		if gqlErrs, ok := err.(graphqlErrors); ok && len(gqlErrs) == 1 {
 			e := gqlErrs[0]
@@ -552,16 +627,78 @@ func (c *Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInp
 		return nil, err
 	}
 
+	ti := result.UpdatePullRequest.PullRequest.TimelineItems
 	pr := &result.UpdatePullRequest.PullRequest.PullRequest
-	pr.TimelineItems = result.UpdatePullRequest.PullRequest.TimelineItems.Nodes
+	pr.TimelineItems = ti.Nodes
 	pr.Participants = result.UpdatePullRequest.PullRequest.Participants.Nodes
+
+	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, ti.PageInfo)
+	if err != nil {
+		return nil, err
+	}
+	pr.TimelineItems = append(pr.TimelineItems, items...)
+
 	return pr, nil
 }
 
-// ClosePullRequest closes the PullRequest on Github.
-func (c *Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error {
+// MarkPullRequestReadyForReview marks the PullRequest on Github as ready for review.
+func (c *V4Client) MarkPullRequestReadyForReview(ctx context.Context, pr *PullRequest) error {
+	version := c.determineGitHubVersion(ctx)
+	prFragment, err := pullRequestFragments(version)
+	if err != nil {
+		return err
+	}
 	var q strings.Builder
-	q.WriteString(pullRequestFragments)
+	q.WriteString(prFragment)
+	q.WriteString(`mutation	MarkPullRequestReadyForReview($input:MarkPullRequestReadyForReviewInput!) {
+  markPullRequestReadyForReview(input:$input) {
+    pullRequest {
+      ... pr
+    }
+  }
+}`)
+
+	var result struct {
+		MarkPullRequestReadyForReview struct {
+			PullRequest struct {
+				PullRequest
+				Participants  struct{ Nodes []Actor }
+				TimelineItems TimelineItemConnection
+			} `json:"pullRequest"`
+		} `json:"markPullRequestReadyForReview"`
+	}
+
+	input := map[string]interface{}{"input": struct {
+		ID string `json:"pullRequestId"`
+	}{ID: pr.ID}}
+	err = c.requestGraphQL(ctx, q.String(), input, &result)
+	if err != nil {
+		return err
+	}
+
+	ti := result.MarkPullRequestReadyForReview.PullRequest.TimelineItems
+	*pr = result.MarkPullRequestReadyForReview.PullRequest.PullRequest
+	pr.TimelineItems = ti.Nodes
+	pr.Participants = result.MarkPullRequestReadyForReview.PullRequest.Participants.Nodes
+
+	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, ti.PageInfo)
+	if err != nil {
+		return err
+	}
+	pr.TimelineItems = append(pr.TimelineItems, items...)
+
+	return nil
+}
+
+// ClosePullRequest closes the PullRequest on Github.
+func (c *V4Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error {
+	version := c.determineGitHubVersion(ctx)
+	prFragment, err := pullRequestFragments(version)
+	if err != nil {
+		return err
+	}
+	var q strings.Builder
+	q.WriteString(prFragment)
 	q.WriteString(`mutation	ClosePullRequest($input:ClosePullRequestInput!) {
   closePullRequest(input:$input) {
     pullRequest {
@@ -575,7 +712,7 @@ func (c *Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error {
 			PullRequest struct {
 				PullRequest
 				Participants  struct{ Nodes []Actor }
-				TimelineItems struct{ Nodes []TimelineItem }
+				TimelineItems TimelineItemConnection
 			} `json:"pullRequest"`
 		} `json:"closePullRequest"`
 	}
@@ -583,100 +720,136 @@ func (c *Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error {
 	input := map[string]interface{}{"input": struct {
 		ID string `json:"pullRequestId"`
 	}{ID: pr.ID}}
-	err := c.requestGraphQL(ctx, q.String(), input, &result)
+	err = c.requestGraphQL(ctx, q.String(), input, &result)
 	if err != nil {
 		return err
 	}
 
+	ti := result.ClosePullRequest.PullRequest.TimelineItems
 	*pr = result.ClosePullRequest.PullRequest.PullRequest
-	pr.TimelineItems = result.ClosePullRequest.PullRequest.TimelineItems.Nodes
+	pr.TimelineItems = ti.Nodes
 	pr.Participants = result.ClosePullRequest.PullRequest.Participants.Nodes
 
+	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, ti.PageInfo)
+	if err != nil {
+		return err
+	}
+	pr.TimelineItems = append(pr.TimelineItems, items...)
+
 	return nil
 }
 
-// LoadPullRequests loads a list of PullRequests from Github.
-func (c *Client) LoadPullRequests(ctx context.Context, prs ...*PullRequest) error {
-	const batchSize = 15
-	// We load prs in batches to avoid hitting Github's GraphQL node limit
-	for i := 0; i < len(prs); i += batchSize {
-		j := i + batchSize
-		if j > len(prs) {
-			j = len(prs)
-		}
-		if err := c.loadPullRequests(ctx, prs[i:j]...); err != nil {
-			return err
-		}
+// ReopenPullRequest reopens the PullRequest on Github.
+func (c *V4Client) ReopenPullRequest(ctx context.Context, pr *PullRequest) error {
+	version := c.determineGitHubVersion(ctx)
+	prFragment, err := pullRequestFragments(version)
+	if err != nil {
+		return err
 	}
-	return nil
-}
-
-func (c *Client) loadPullRequests(ctx context.Context, prs ...*PullRequest) error {
-	type repository struct {
-		Owner string
-		Name  string
-		PRs   map[string]*PullRequest
-	}
-
-	labeled := map[string]*repository{}
-	for i, pr := range prs {
-		owner, repo, err := SplitRepositoryNameWithOwner(pr.RepoWithOwner)
-		if err != nil {
-			return err
-		}
-
-		repoLabel := fmt.Sprintf("repo_%d", i)
-		r, ok := labeled[repoLabel]
-		if !ok {
-			r = &repository{
-				Owner: owner,
-				Name:  repo,
-				PRs:   map[string]*PullRequest{},
-			}
-			labeled[repoLabel] = r
-		}
-
-		prLabel := repoLabel + "_" + strconv.FormatInt(pr.Number, 10)
-		r.PRs[prLabel] = pr
-	}
-
 	var q strings.Builder
-	q.WriteString(pullRequestFragments)
-	q.WriteString("query {\n")
+	q.WriteString(prFragment)
+	q.WriteString(`mutation	ReopenPullRequest($input:ReopenPullRequestInput!) {
+  reopenPullRequest(input:$input) {
+    pullRequest {
+      ... pr
+    }
+  }
+}`)
 
-	for repoLabel, r := range labeled {
-		q.WriteString(fmt.Sprintf("%s: repository(owner: %q, name: %q) {\n",
-			repoLabel, r.Owner, r.Name))
-
-		for prLabel, pr := range r.PRs {
-			q.WriteString(fmt.Sprintf("%s: pullRequest(number: %d) { ...pr }\n",
-				prLabel, pr.Number,
-			))
-		}
-
-		q.WriteString("}\n")
+	var result struct {
+		ReopenPullRequest struct {
+			PullRequest struct {
+				PullRequest
+				Participants  struct{ Nodes []Actor }
+				TimelineItems TimelineItemConnection
+			} `json:"pullRequest"`
+		} `json:"reopenPullRequest"`
 	}
 
-	q.WriteString("}")
-
-	var results map[string]map[string]*struct {
-		PullRequest
-		Participants  struct{ Nodes []Actor }
-		TimelineItems struct{ Nodes []TimelineItem }
-	}
-
-	err := c.requestGraphQL(ctx, q.String(), nil, &results)
+	input := map[string]interface{}{"input": struct {
+		ID string `json:"pullRequestId"`
+	}{ID: pr.ID}}
+	err = c.requestGraphQL(ctx, q.String(), input, &result)
 	if err != nil {
 		return err
 	}
 
-	for repoLabel, prs := range results {
-		for prLabel, pr := range prs {
-			pr.PullRequest.Participants = pr.Participants.Nodes
-			pr.PullRequest.TimelineItems = pr.TimelineItems.Nodes
-			*labeled[repoLabel].PRs[prLabel] = pr.PullRequest
+	ti := result.ReopenPullRequest.PullRequest.TimelineItems
+	*pr = result.ReopenPullRequest.PullRequest.PullRequest
+	pr.TimelineItems = ti.Nodes
+	pr.Participants = result.ReopenPullRequest.PullRequest.Participants.Nodes
+
+	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, ti.PageInfo)
+	if err != nil {
+		return err
+	}
+	pr.TimelineItems = append(pr.TimelineItems, items...)
+
+	return nil
+}
+
+// LoadPullRequest loads a PullRequest from Github.
+func (c *V4Client) LoadPullRequest(ctx context.Context, pr *PullRequest) error {
+	owner, repo, err := SplitRepositoryNameWithOwner(pr.RepoWithOwner)
+	if err != nil {
+		return err
+	}
+
+	version := c.determineGitHubVersion(ctx)
+
+	prFragment, err := pullRequestFragments(version)
+	if err != nil {
+		return err
+	}
+
+	q := prFragment + `
+query($owner: String!, $name: String!, $number: Int!) {
+	repository(owner: $owner, name: $name) {
+		pullRequest(number: $number) { ...pr }
+	}
+}`
+
+	var result struct {
+		Repository struct {
+			PullRequest struct {
+				PullRequest
+				Participants  struct{ Nodes []Actor }
+				TimelineItems TimelineItemConnection
+			}
 		}
 	}
+
+	err = c.requestGraphQL(ctx, q, map[string]interface{}{"owner": owner, "name": repo, "number": pr.Number}, &result)
+	if err != nil {
+		if gqlErrs, ok := err.(graphqlErrors); ok {
+			for _, err2 := range gqlErrs {
+				if err2.Type == graphqlErrTypeNotFound && len(err2.Path) >= 1 {
+					if repoPath, ok := err2.Path[0].(string); !ok || repoPath != "repository" {
+						continue
+					}
+					if len(err2.Path) == 1 {
+						return ErrRepoNotFound
+					}
+					if prPath, ok := err2.Path[1].(string); !ok || prPath != "pullRequest" {
+						continue
+					}
+					return ErrPullRequestNotFound(pr.Number)
+				}
+			}
+		}
+		return err
+	}
+
+	ti := result.Repository.PullRequest.TimelineItems
+	*pr = result.Repository.PullRequest.PullRequest
+	pr.TimelineItems = ti.Nodes
+	pr.Participants = result.Repository.PullRequest.Participants.Nodes
+
+	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, ti.PageInfo)
+	if err != nil {
+		return err
+	}
+	pr.TimelineItems = append(pr.TimelineItems, items...)
 
 	return nil
 }
@@ -684,14 +857,19 @@ func (c *Client) loadPullRequests(ctx context.Context, prs ...*PullRequest) erro
 // GetOpenPullRequestByRefs fetches the the pull request associated with the supplied
 // refs. GitHub only allows one open PR by ref at a time.
 // If nothing is found an error is returned.
-func (c *Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, baseRef, headRef string) (*PullRequest, error) {
+func (c *V4Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, baseRef, headRef string) (*PullRequest, error) {
+	version := c.determineGitHubVersion(ctx)
+	prFragment, err := pullRequestFragments(version)
+	if err != nil {
+		return nil, err
+	}
 	var q strings.Builder
-	q.WriteString(pullRequestFragments)
+	q.WriteString(prFragment)
 	q.WriteString("query {\n")
 	q.WriteString(fmt.Sprintf("repository(owner: %q, name: %q) {\n",
 		owner, name))
 	q.WriteString(fmt.Sprintf("pullRequests(baseRefName: %q, headRefName: %q, first: 1, states: OPEN) { \n",
-		git.AbbreviateRef(baseRef), git.AbbreviateRef(headRef),
+		abbreviateRef(baseRef), abbreviateRef(headRef),
 	))
 	q.WriteString("nodes{ ... pr }\n}\n}\n}")
 
@@ -701,13 +879,13 @@ func (c *Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, base
 				Nodes []*struct {
 					PullRequest
 					Participants  struct{ Nodes []Actor }
-					TimelineItems struct{ Nodes []TimelineItem }
+					TimelineItems TimelineItemConnection
 				}
 			}
 		}
 	}
 
-	err := c.requestGraphQL(ctx, q.String(), nil, &results)
+	err = c.requestGraphQL(ctx, q.String(), nil, &results)
 	if err != nil {
 		return nil, err
 	}
@@ -715,16 +893,106 @@ func (c *Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, base
 		return nil, fmt.Errorf("expected 1 pull request, got %d instead", len(results.Repository.PullRequests.Nodes))
 	}
 
-	pr := results.Repository.PullRequests.Nodes[0].PullRequest
-	pr.Participants = results.Repository.PullRequests.Nodes[0].Participants.Nodes
-	pr.TimelineItems = results.Repository.PullRequests.Nodes[0].TimelineItems.Nodes
+	node := results.Repository.PullRequests.Nodes[0]
+	pr := node.PullRequest
+	pr.Participants = node.Participants.Nodes
+	pr.TimelineItems = node.TimelineItems.Nodes
+
+	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, node.TimelineItems.PageInfo)
+	if err != nil {
+		return nil, err
+	}
+	pr.TimelineItems = append(pr.TimelineItems, items...)
 
 	return &pr, nil
 }
 
+func (c *V4Client) loadRemainingTimelineItems(ctx context.Context, prID string, pageInfo PageInfo) (items []TimelineItem, err error) {
+	version := c.determineGitHubVersion(ctx)
+	timelineItemTypes, err := timelineItemTypes(version)
+	if err != nil {
+		return nil, err
+	}
+	timelineItemsFragment, err := timelineItemsFragment(version)
+	if err != nil {
+		return nil, err
+	}
+	pi := pageInfo
+	for pi.HasNextPage {
+		var q strings.Builder
+		q.WriteString(prCommonFragments)
+		q.WriteString(timelineItemsFragment)
+		q.WriteString(fmt.Sprintf(`query {
+  node(id: %q) {
+    ... on PullRequest {
+      __typename
+      timelineItems(first: 250, after: %q, itemTypes: [`+timelineItemTypes+`]) {
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+        nodes {
+          __typename
+          ...timelineItems
+        }
+      }
+    }
+  }
+}
+`, prID, pi.EndCursor))
+
+		var results struct {
+			Node struct {
+				TypeName      string `json:"__typename"`
+				TimelineItems TimelineItemConnection
+			}
+		}
+
+		err = c.requestGraphQL(ctx, q.String(), nil, &results)
+		if err != nil {
+			return
+		}
+
+		if results.Node.TypeName != "PullRequest" {
+			return nil, fmt.Errorf("invalid node type received, want PullRequest, got %s", results.Node.TypeName)
+		}
+
+		items = append(items, results.Node.TimelineItems.Nodes...)
+		if !results.Node.TimelineItems.PageInfo.HasNextPage {
+			break
+		}
+		pi = results.Node.TimelineItems.PageInfo
+	}
+	return
+}
+
+// abbreviateRef removes the "refs/heads/" prefix from a given ref. If the ref
+// doesn't have the prefix, it returns it unchanged.
+//
+// Copied from internal/vcs/git to avoid a cyclic import
+func abbreviateRef(ref string) string {
+	return strings.TrimPrefix(ref, "refs/heads/")
+}
+
+// timelineItemTypes contains all the types requested via GraphQL from the timelineItems connection on a pull request.
+const timelineItemTypesFmtStr = `ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW, PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT, REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT, REVIEW_REQUESTED_EVENT, UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT, PULL_REQUEST_COMMIT, READY_FOR_REVIEW_EVENT`
+
+var ghe220Semver, _ = semver.NewConstraint("~2.20.0")
+var ghe221PlusOrDotComSemver, _ = semver.NewConstraint(">= 2.21.0")
+
+func timelineItemTypes(version *semver.Version) (string, error) {
+	if ghe220Semver.Check(version) {
+		return timelineItemTypesFmtStr, nil
+	}
+	if ghe221PlusOrDotComSemver.Check(version) {
+		return timelineItemTypesFmtStr + `, CONVERT_TO_DRAFT_EVENT`, nil
+	}
+	return "", fmt.Errorf("unsupported version of GitHub: %s", version)
+}
+
 // This fragment was formatted using the "prettify" button in the GitHub API explorer:
 // https://developer.github.com/v4/explorer/
-const pullRequestFragments = `
+const prCommonFragments = `
 fragment actor on Actor {
   avatarUrl
   login
@@ -737,7 +1005,11 @@ fragment label on Label {
   description
   id
 }
+`
 
+// This fragment was formatted using the "prettify" button in the GitHub API explorer:
+// https://developer.github.com/v4/explorer/
+const timelineItemsFragmentFmtstr = `
 fragment commit on Commit {
   oid
   message
@@ -752,40 +1024,6 @@ fragment commit on Commit {
     user {
       ...actor
     }
-  }
-}
-
-fragment commitWithChecks on Commit {
-  oid
-  status {
-    state
-    contexts {
-      id
-      context
-      state
-      description
-    }
-  }
-  checkSuites(last: 20){
-    nodes {
-      id
-      status
-      conclusion
-      checkRuns(last: 20){
-        nodes{
-          id
-          status
-          conclusion
-        }
-      }
-    }
-  }
-  committedDate
-}
-
-fragment prCommit on PullRequestCommit {
-  commit {
-    ...commitWithChecks
   }
 }
 
@@ -806,6 +1044,231 @@ fragment review on PullRequestReview {
   includesCreatedEdit
 }
 
+fragment timelineItems on PullRequestTimelineItems {
+  ... on AssignedEvent {
+    actor {
+      ...actor
+    }
+    assignee {
+      ...actor
+    }
+    createdAt
+  }
+  ... on ClosedEvent {
+    actor {
+      ...actor
+    }
+    createdAt
+    url
+  }
+  ... on IssueComment {
+    databaseId
+    author {
+      ...actor
+    }
+    authorAssociation
+    body
+    createdAt
+    editor {
+      ...actor
+    }
+    url
+    updatedAt
+    includesCreatedEdit
+    publishedAt
+  }
+  ... on RenamedTitleEvent {
+    actor {
+      ...actor
+    }
+    previousTitle
+    currentTitle
+    createdAt
+  }
+  ... on MergedEvent {
+    actor {
+      ...actor
+    }
+    mergeRefName
+    url
+    commit {
+      ...commit
+    }
+    createdAt
+  }
+  ... on PullRequestReview {
+    ...review
+  }
+  ... on PullRequestReviewThread {
+    comments(last: 100) {
+      nodes {
+        databaseId
+        author {
+          ...actor
+        }
+        authorAssociation
+        editor {
+          ...actor
+        }
+        commit {
+          ...commit
+        }
+        body
+        state
+        url
+        createdAt
+        updatedAt
+        includesCreatedEdit
+      }
+    }
+  }
+  ... on ReopenedEvent {
+    actor {
+      ...actor
+    }
+    createdAt
+  }
+  ... on ReviewDismissedEvent {
+    actor {
+      ...actor
+    }
+    review {
+      ...review
+    }
+    dismissalMessage
+    createdAt
+  }
+  ... on ReviewRequestRemovedEvent {
+    actor {
+      ...actor
+    }
+    requestedReviewer {
+      ...actor
+    }
+    requestedTeam: requestedReviewer {
+      ... on Team {
+        name
+        url
+        avatarUrl
+      }
+    }
+    createdAt
+  }
+  ... on ReviewRequestedEvent {
+    actor {
+      ...actor
+    }
+    requestedReviewer {
+      ...actor
+    }
+    requestedTeam: requestedReviewer {
+      ... on Team {
+        name
+        url
+        avatarUrl
+      }
+    }
+    createdAt
+  }
+  ... on ReadyForReviewEvent {
+    actor {
+      ...actor
+    }
+    createdAt
+  }
+  ... on UnassignedEvent {
+    actor {
+      ...actor
+    }
+    assignee {
+      ...actor
+    }
+    createdAt
+  }
+  ... on LabeledEvent {
+    actor {
+      ...actor
+    }
+    label {
+      ...label
+    }
+    createdAt
+  }
+  ... on UnlabeledEvent {
+    actor {
+      ...actor
+    }
+    label {
+      ...label
+    }
+    createdAt
+  }
+  ... on PullRequestCommit {
+    commit {
+      ...commit
+    }
+  }
+  %s
+}
+`
+
+const convertToDraftEventFmtstr = `
+  ... on ConvertToDraftEvent {
+    actor {
+	  ...actor
+	}
+	createdAt
+  }
+`
+
+func timelineItemsFragment(version *semver.Version) (string, error) {
+	if ghe220Semver.Check(version) {
+		// GHE 2.20 doesn't know about the ConvertToDraftEvent type.
+		return fmt.Sprintf(timelineItemsFragmentFmtstr, ""), nil
+	}
+	if ghe221PlusOrDotComSemver.Check(version) {
+		return fmt.Sprintf(timelineItemsFragmentFmtstr, convertToDraftEventFmtstr), nil
+	}
+	return "", fmt.Errorf("unsupported version of GitHub: %s", version)
+}
+
+// This fragment was formatted using the "prettify" button in the GitHub API explorer:
+// https://developer.github.com/v4/explorer/
+const pullRequestFragmentsFmtstr = prCommonFragments + `
+fragment commitWithChecks on Commit {
+  oid
+  status {
+    state
+    contexts {
+      id
+      context
+      state
+      description
+    }
+  }
+  checkSuites(last: 20) {
+    nodes {
+      id
+      status
+      conclusion
+      checkRuns(last: 20) {
+        nodes {
+          id
+          status
+          conclusion
+        }
+      }
+    }
+  }
+  committedDate
+}
+
+fragment prCommit on PullRequestCommit {
+  commit {
+    ...commitWithChecks
+  }
+}
+
 fragment pr on PullRequest {
   id
   title
@@ -819,6 +1282,7 @@ fragment pr on PullRequest {
   baseRefOid
   headRefName
   baseRefName
+  %s
   author {
     ...actor
   }
@@ -837,167 +1301,34 @@ fragment pr on PullRequest {
       ...prCommit
     }
   }
-  timelineItems(first: 250, itemTypes: [ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW, PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT, REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT, REVIEW_REQUESTED_EVENT, UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT, PULL_REQUEST_COMMIT]) {
+  timelineItems(first: 250, itemTypes: [%s]) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
     nodes {
       __typename
-      ... on AssignedEvent {
-        actor {
-          ...actor
-        }
-        assignee {
-          ...actor
-        }
-        createdAt
-      }
-      ... on ClosedEvent {
-        actor {
-          ...actor
-        }
-        createdAt
-        url
-      }
-      ... on IssueComment {
-        databaseId
-        author {
-          ...actor
-        }
-        authorAssociation
-        body
-        createdAt
-        editor {
-          ...actor
-        }
-        url
-        updatedAt
-        includesCreatedEdit
-        publishedAt
-      }
-      ... on RenamedTitleEvent {
-        actor {
-          ...actor
-        }
-        previousTitle
-        currentTitle
-        createdAt
-      }
-      ... on MergedEvent {
-        actor {
-          ...actor
-        }
-        mergeRefName
-        url
-        commit {
-          ...commit
-        }
-        createdAt
-      }
-      ... on PullRequestReview {
-        ...review
-      }
-      ... on PullRequestReviewThread {
-        comments(last: 100) {
-          nodes {
-            databaseId
-            author {
-              ...actor
-            }
-            authorAssociation
-            editor {
-              ...actor
-            }
-            commit {
-              ...commit
-            }
-            body
-            state
-            url
-            createdAt
-            updatedAt
-            includesCreatedEdit
-          }
-        }
-      }
-      ... on ReopenedEvent {
-        actor {
-          ...actor
-        }
-        createdAt
-      }
-      ... on ReviewDismissedEvent {
-        actor {
-          ...actor
-        }
-        review {
-          ...review
-        }
-        dismissalMessage
-        createdAt
-      }
-      ... on ReviewRequestRemovedEvent {
-        actor {
-          ...actor
-        }
-        requestedReviewer {
-          ...actor
-        }
-        requestedTeam: requestedReviewer {
-          ... on Team {
-            name
-            url
-            avatarUrl
-          }
-        }
-        createdAt
-      }
-      ... on ReviewRequestedEvent {
-        actor {
-          ...actor
-        }
-        requestedReviewer {
-          ...actor
-        }
-        requestedTeam: requestedReviewer {
-          ... on Team {
-            name
-            url
-            avatarUrl
-          }
-        }
-        createdAt
-      }
-      ... on UnassignedEvent {
-        actor {
-          ...actor
-        }
-        assignee {
-          ...actor
-        }
-        createdAt
-      }
-      ... on LabeledEvent {
-        actor {
-          ...actor
-        }
-        label {
-          ...label
-        }
-        createdAt
-      }
-      ... on UnlabeledEvent {
-        actor {
-          ...actor
-        }
-        label {
-          ...label
-        }
-        createdAt
-      }
-      ... on PullRequestCommit {
-        commit {
-          ...commit
-        }
-      }
+      ...timelineItems
     }
   }
 }
 `
+
+func pullRequestFragments(version *semver.Version) (string, error) {
+	timelineItemTypes, err := timelineItemTypes(version)
+	if err != nil {
+		return "", err
+	}
+	timelineItemsFragment, err := timelineItemsFragment(version)
+	if err != nil {
+		return "", err
+	}
+	if ghe220Semver.Check(version) {
+		// Don't ask for isDraft for ghe 2.20.
+		return fmt.Sprintf(timelineItemsFragment+pullRequestFragmentsFmtstr, "", timelineItemTypes), nil
+	}
+	if ghe221PlusOrDotComSemver.Check(version) {
+		return fmt.Sprintf(timelineItemsFragment+pullRequestFragmentsFmtstr, "isDraft", timelineItemTypes), nil
+	}
+	return "", fmt.Errorf("unsupported version of GitHub: %s", version)
+}

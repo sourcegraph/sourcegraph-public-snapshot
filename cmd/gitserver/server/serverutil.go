@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -18,9 +19,11 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // GitDir is an absolute path to a GIT_DIR.
@@ -60,6 +63,16 @@ func (s *Server) name(dir GitDir) api.RepoName {
 	name = strings.Trim(name, string(filepath.Separator)) // remove /
 	name = filepath.ToSlash(name)                         // filepath -> path
 	return protocol.NormalizeRepo(api.RepoName(name))
+}
+
+func cloneStatus(cloned, cloning bool) types.CloneStatus {
+	switch {
+	case cloned:
+		return types.CloneStatusCloned
+	case cloning:
+		return types.CloneStatusCloning
+	}
+	return types.CloneStatusNotCloned
 }
 
 func isAlwaysCloningTest(name api.RepoName) bool {
@@ -266,42 +279,16 @@ var repoLastChanged = func(dir GitDir) (time.Time, error) {
 	return fi.ModTime(), nil
 }
 
-// repoRemoteURL returns the "origin" remote fetch URL for the Git repository in dir. If the repository
-// doesn't exist or the remote doesn't exist and have a fetch URL, an error is returned. If there are
-// multiple fetch URLs, only the first is returned.
-var repoRemoteURL = func(ctx context.Context, dir GitDir) (string, error) {
-	// We do not pass in context since this command is quick. We do a lot of
-	// logging around what this function does, so having to handle context
-	// failures in each case is verbose. Rather just prevent that.
-	cmd := exec.Command("git", "remote", "get-url", "origin")
-	dir.Set(cmd)
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	_, err := runCommand(ctx, cmd)
-	if err != nil {
-		stderr := stderr.Bytes()
-		if len(stderr) > 200 {
-			stderr = stderr[:200]
-		}
-		return "", fmt.Errorf("git %s failed: %s (%q)", cmd.Args, err, stderr)
-	}
-	remoteURLs := strings.SplitN(strings.TrimSpace(stdout.String()), "\n", 2)
-	if len(remoteURLs) == 0 || remoteURLs[0] == "" {
-		return "", fmt.Errorf("no remote URL for repo %s", dir)
-	}
-	return remoteURLs[0], nil
-}
-
 // repoRemoteRefs returns a map containing ref + commit pairs from the
 // remote Git repository starting with the specified prefix.
 //
 // The ref prefix `ref/<ref type>/` is stripped away from the returned
 // refs.
-var repoRemoteRefs = func(ctx context.Context, url, prefix string) (map[string]string, error) {
+var repoRemoteRefs = func(ctx context.Context, remoteURL *url.URL, prefix string) (map[string]string, error) {
 	// The expected output of this git command is a list of:
 	// <commit hash> <ref name>
-	cmd := exec.Command("git", "ls-remote", url, prefix+"*")
+	cmd := exec.Command("git", "ls-remote", remoteURL.String(), prefix+"*")
+
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
@@ -404,6 +391,8 @@ func newFlushingResponseWriter(w http.ResponseWriter) *flushingResponseWriter {
 		})
 		return nil
 	}
+
+	w.Header().Set("Transfer-Encoding", "chunked")
 
 	f := &flushingResponseWriter{w: w, flusher: flusher}
 	go f.periodicFlush()

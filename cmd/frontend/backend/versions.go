@@ -8,8 +8,9 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // UpgradeError is returned by UpdateServiceVersion when it faces an
@@ -82,11 +83,6 @@ WHERE versions.version = %s`
 func IsValidUpgrade(previous, latest *semver.Version) bool {
 	switch {
 	case previous == nil || latest == nil:
-		return true
-	case previous.Major() == 0 && previous.Minor() == 0 && previous.Patch() == 0:
-		// https://github.com/sourcegraph/sourcegraph/issues/11666
-		//
-		// TODO(slimsag): Remove this switch case Oct, 1st 2020
 		return true
 	case previous.Major() > latest.Major():
 		return true

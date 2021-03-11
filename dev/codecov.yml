@@ -10,14 +10,23 @@ coverage:
           - cmd/symbols
           - enterprise/cmd/precise-code-intel-*
           - enterprise/internal/codeintel
-      campaigns:
+      batches:
         informational: true
         paths:
-          - cmd/frontend/graphqlbackend/campaigns.go
-          - enterprise/cmd/frontend/internal/campaigns
-          - internal/campaigns
-          - enterprise/internal/campaigns
-          - web/src/enterprise/campaigns
+          - cmd/frontend/graphqlbackend/batches.go
+          - internal/batches
+          - enterprise/internal/batches
+          - client/web/src/enterprise/batches
+      search:
+        informational: true
+        paths:
+          - client/shared/src/search
+          - client/web/src/enterprise/search
+          - client/web/src/search
+          - cmd/frontend/graphqlbackend/*search*
+          - cmd/frontend/internal/search
+          - cmd/searcher
+          - internal/search
       typescript:
         informational: true
         flags:
@@ -30,10 +39,7 @@ coverage:
       default:
         only_pulls: true
         target: 5%
-comment:
-  require_changes: yes
-  layout: 'diff, flags, files'
-  show_carryforward_flags: true
+comment: false
 ignore:
   - '**/bindata.go'
 
@@ -42,4 +48,4 @@ flags:
     carryforward: true
 
 github_checks:
-    annotations: false
+  annotations: false

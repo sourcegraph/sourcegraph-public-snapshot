@@ -7,9 +7,9 @@ import (
 	"sync"
 
 	"github.com/neelance/parallel"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
@@ -20,7 +20,7 @@ func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatis
 		return nil, err
 	}
 
-	langs, err := searchResultsStatsLanguages(ctx, srr.Results())
+	langs, err := searchResultsStatsLanguages(ctx, srr.SearchResults)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func searchResultsStatsLanguages(ctx context.Context, results []SearchResultReso
 	}
 
 	var (
-		repos    = map[api.RepoID]*types.Repo{}
+		repos    = map[api.RepoID]*RepositoryResolver{}
 		filesMap = map[repoCommit]*fileStatsWork{}
 
 		run = parallel.NewRun(16)
@@ -56,9 +56,9 @@ func searchResultsStatsLanguages(ctx context.Context, results []SearchResultReso
 	)
 
 	// Track the mapping of repo ID -> repo object as we iterate.
-	sawRepo := func(repo *types.Repo) {
-		if _, ok := repos[repo.ID]; !ok {
-			repos[repo.ID] = repo
+	sawRepo := func(repo *RepositoryResolver) {
+		if _, ok := repos[repo.IDInt32()]; !ok {
+			repos[repo.IDInt32()] = repo
 		}
 	}
 
@@ -74,8 +74,8 @@ func searchResultsStatsLanguages(ctx context.Context, results []SearchResultReso
 
 	for _, res := range results {
 		if fileMatch, ok := res.ToFileMatch(); ok {
-			sawRepo(fileMatch.Repository().repo)
-			key := repoCommit{repo: fileMatch.Repository().repo.ID, commitID: fileMatch.CommitID}
+			sawRepo(fileMatch.Repository())
+			key := repoCommit{repo: fileMatch.Repository().IDInt32(), commitID: fileMatch.CommitID}
 
 			if _, ok := filesMap[key]; !ok {
 				filesMap[key] = &fileStatsWork{}
@@ -95,7 +95,7 @@ func searchResultsStatsLanguages(ctx context.Context, results []SearchResultReso
 				})
 			}
 		} else if repo, ok := res.ToRepository(); ok && !hasNonRepoMatches {
-			sawRepo(repo.repo)
+			sawRepo(repo)
 			run.Acquire()
 			goroutine.Go(func() {
 				defer run.Release()
@@ -113,7 +113,12 @@ func searchResultsStatsLanguages(ctx context.Context, results []SearchResultReso
 					run.Error(err)
 					return
 				}
-				inv, err := backend.Repos.GetInventory(ctx, repo.repo, api.CommitID(target), true)
+				repo, err := repo.repo(ctx)
+				if err != nil {
+					run.Error(err)
+					return
+				}
+				inv, err := backend.Repos.GetInventory(ctx, repo, api.CommitID(target), true)
 				if err != nil {
 					run.Error(err)
 					return
@@ -134,12 +139,7 @@ func searchResultsStatsLanguages(ctx context.Context, results []SearchResultReso
 		goroutine.Go(func() {
 			defer run.Release()
 
-			cachedRepo, err := backend.CachedGitRepo(ctx, repos[key.repo])
-			if err != nil {
-				run.Error(err)
-				return
-			}
-			invCtx, err := backend.InventoryContext(*cachedRepo, key.commitID, true)
+			invCtx, err := backend.InventoryContext(repos[key.repo].name, key.commitID, true)
 			if err != nil {
 				run.Error(err)
 				return

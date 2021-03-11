@@ -18,11 +18,11 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/vfsutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/internal/vfsutil"
 )
 
 // Examples:
@@ -69,7 +69,7 @@ func serveRaw(w http.ResponseWriter, r *http.Request) (err error) {
 		// - Gitserver content updating
 		// - Consistent error handling (permissions, revision not found, repo not found, etc).
 		//
-		common, err = newCommon(w, r, conf.BrandName(), serveError)
+		common, err = newCommon(w, r, globals.Branding().BrandName, serveError)
 		if err != nil {
 			return err
 		}
@@ -231,12 +231,7 @@ func serveRaw(w http.ResponseWriter, r *http.Request) (err error) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 
-		cachedRepo, err := backend.CachedGitRepo(r.Context(), common.Repo)
-		if err != nil {
-			return err
-		}
-
-		fi, err := git.Stat(r.Context(), *cachedRepo, common.CommitID, requestedPath)
+		fi, err := git.Stat(r.Context(), common.Repo.Name, common.CommitID, requestedPath)
 		if err != nil {
 			if os.IsNotExist(err) {
 				requestType = "404"
@@ -248,7 +243,7 @@ func serveRaw(w http.ResponseWriter, r *http.Request) (err error) {
 
 		if fi.IsDir() {
 			requestType = "dir"
-			infos, err := git.ReadDir(r.Context(), *cachedRepo, common.CommitID, requestedPath, false)
+			infos, err := git.ReadDir(r.Context(), common.Repo.Name, common.CommitID, requestedPath, false)
 			if err != nil {
 				return err
 			}
@@ -271,7 +266,7 @@ func serveRaw(w http.ResponseWriter, r *http.Request) (err error) {
 		// File
 		requestType = "file"
 		size = fi.Size()
-		f, err := git.NewFileReader(r.Context(), *cachedRepo, common.CommitID, requestedPath)
+		f, err := git.NewFileReader(r.Context(), common.Repo.Name, common.CommitID, requestedPath)
 		if err != nil {
 			return err
 		}
@@ -287,7 +282,7 @@ func serveRaw(w http.ResponseWriter, r *http.Request) (err error) {
 // use default compression levels on zips (instead of no compression).
 func openArchiveReader(ctx context.Context, opts vfsutil.ArchiveOpts) (io.ReadCloser, error) {
 	cmd := gitserver.DefaultClient.Command("git", "archive", "--format="+string(opts.Format), string(opts.Commit), opts.RelativePath)
-	cmd.Repo = gitserver.Repo{Name: opts.Repo}
+	cmd.Repo = opts.Repo
 	return gitserver.StdoutReader(ctx, cmd)
 }
 

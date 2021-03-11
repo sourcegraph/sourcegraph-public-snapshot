@@ -35,7 +35,7 @@ const SiteSchemaJSON = `{
       "group": "Search"
     },
     "search.largeFiles": {
-      "description": "A list of file glob patterns where matching files will be indexed and searched regardless of their size. The glob pattern syntax can be found here: https://golang.org/pkg/path/filepath/#Match.",
+      "description": "A list of file glob patterns where matching files will be indexed and searched regardless of their size. Files still need to be valid utf-8 to be indexed. The glob pattern syntax can be found here: https://golang.org/pkg/path/filepath/#Match.",
       "type": "array",
       "items": {
         "type": "string"
@@ -72,12 +72,6 @@ const SiteSchemaJSON = `{
             }
           }
         },
-        "automation": {
-          "description": "DEPRECATED: Enables the experimental code change management campaigns feature. This field has been deprecated in favour of campaigns.enabled",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "enabled"
-        },
         "structuralSearch": {
           "description": "Enables structural search.",
           "type": "string",
@@ -101,6 +95,12 @@ const SiteSchemaJSON = `{
           "type": "boolean",
           "default": false,
           "!go": { "pointer": true }
+        },
+        "perforce": {
+          "description": "Allow adding Perforce code host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "enabled"
         },
         "tls.external": {
           "description": "Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.",
@@ -234,6 +234,12 @@ const SiteSchemaJSON = `{
               ]
             }
           ]
+        },
+        "enablePermissionsWebhooks": {
+          "description": "Enables webhook consumers to sync permissions from external services faster than the defaults schedule",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": false }
         }
       },
       "examples": [
@@ -252,24 +258,40 @@ const SiteSchemaJSON = `{
       ],
       "group": "Experimental"
     },
-    "automation.readAccess.enabled": {
-      "description": "DEPRECATED: The automation feature was renamed to campaigns. Use ` + "`" + `campaigns.readAccess.enabled` + "`" + ` instead.",
-      "type": "boolean",
-      "!go": { "pointer": true },
-      "group": "Campaigns"
-    },
     "campaigns.enabled": {
-      "description": "Enables/disables the campaigns feature.",
+      "description": "DEPRECATED: Use batchChanges.enabled instead. Enables/disables the campaigns feature.",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "Campaigns",
       "default": true
     },
-    "campaigns.readAccess.enabled": {
-      "description": "DEPRECATED: Enables read-only access to campaigns for non-site-admin users. This doesn't have an effect anymore.",
+    "campaigns.restrictToAdmins": {
+      "description": "DEPRECATED: Use batchChanges.restrictToAdmins instead. When enabled, only site admins can create and apply campaigns.",
       "type": "boolean",
       "!go": { "pointer": true },
-      "group": "Campaigns"
+      "group": "Campaigns",
+      "default": false
+    },
+    "batchChanges.enabled": {
+      "description": "Enables/disables the Batch Changes feature.",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "BatchChanges",
+      "default": true
+    },
+    "batchChanges.restrictToAdmins": {
+      "description": "When enabled, only site admins can create and apply batch changes.",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "BatchChanges",
+      "default": false
+    },
+    "codeIntelAutoIndexing.enabled": {
+      "description": "Enables/disables the code intel auto indexing feature.",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "Code intelligence",
+      "default": false
     },
     "corsOrigin": {
       "description": "Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.",
@@ -294,6 +316,29 @@ const SiteSchemaJSON = `{
       "description": "Disable periodically fetching git contents for existing repositories.",
       "type": "boolean",
       "default": false,
+      "group": "External services"
+    },
+    "gitUpdateInterval": {
+      "description": "JSON array of repo name patterns and update intervals. If a repo matches a pattern, the associated interval will be used. If it matches no patterns a default backoff heuristic will be used. Pattern matches are attempted in the order they are provided.",
+      "type": "array",
+      "items": {
+        "title": "UpdateIntervalRule",
+        "type": "object",
+        "required": ["pattern", "interval"],
+        "additionalProperties": false,
+        "properties": {
+          "pattern": {
+            "description": "A regular expression matching a repo name",
+            "type": "string",
+            "minLength": 1
+          },
+          "interval": {
+            "description": "An integer representing the number of minutes to wait until the next update",
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
       "group": "External services"
     },
     "disablePublicRepoRedirects": {
@@ -347,6 +392,12 @@ const SiteSchemaJSON = `{
       "default": 1,
       "group": "External services"
     },
+    "repoConcurrentExternalServiceSyncers": {
+      "description": "The number of concurrent external service syncers that can run.",
+      "type": "integer",
+      "default": 3,
+      "group": "External services"
+    },
     "maxReposToSearch": {
       "description": "DEPRECATED: Configure maxRepos in search.limits. The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.",
       "type": "integer",
@@ -371,13 +422,13 @@ const SiteSchemaJSON = `{
           "default": -1
         },
         "commitDiffMaxRepos": {
-          "description": "The maximum number of repositories to search across when doing a \"type:diff\" or \"type:commit\". The user is prompted to narrow their query if exceeded. There is a seperate limit (commitDiffWithTimeFilterMaxRepos) when \"after:\" or \"before:\" is specified since those queries are faster. Value must be positive. Defaults to 50.",
+          "description": "The maximum number of repositories to search across when doing a \"type:diff\" or \"type:commit\". The user is prompted to narrow their query if the limit is exceeded. There is a separate limit (commitDiffWithTimeFilterMaxRepos) when \"after:\" or \"before:\" is specified because those queries are faster. Defaults to 50.",
           "type": "integer",
           "default": 50,
           "minimum": 1
         },
         "commitDiffWithTimeFilterMaxRepos": {
-          "description": "The maximum number of repositories to search across when doing a \"type:diff\" or \"type:commit\" with a \"after:\" or \"before:\" filter. The user is prompted to narrow their query if exceeded. There is a seperate limit (commitDiffMaxRepos) when \"after:\" or \"before:\" is not specified since those queries are slower. Value must be positive. Defaults to 10000.",
+          "description": "The maximum number of repositories to search across when doing a \"type:diff\" or \"type:commit\" with a \"after:\" or \"before:\" filter. The user is prompted to narrow their query if the limit is exceeded. There is a separate limit (commitDiffMaxRepos) when \"after:\" or \"before:\" is not specified because those queries are slower. Defaults to 10000.",
           "type": "integer",
           "default": 10000,
           "minimum": 1
@@ -420,9 +471,9 @@ const SiteSchemaJSON = `{
       "group": "Security"
     },
     "externalService.userMode": {
-      "description": "Enable to allow users to add external services for public reposirories to the Sourcegraph instance.",
+      "description": "Enable to allow users to add external services for public and private repositories to the Sourcegraph instance.",
       "type": "string",
-      "enum": ["public", "disabled"],
+      "enum": ["public", "disabled", "all"],
       "default": "disabled"
     },
     "permissions.userMapping": {
@@ -524,6 +575,10 @@ const SiteSchemaJSON = `{
           "type": "string"
         },
         "disableTLS": {
+          "description": "DEPRECATED: use noVerifyTLS instead, this field will be removed in a future release",
+          "type": "boolean"
+        },
+        "noVerifyTLS": {
           "description": "Disable TLS verification",
           "type": "boolean"
         }
@@ -607,6 +662,11 @@ const SiteSchemaJSON = `{
           "properties": {
             "dsn": {
               "description": "Sentry Data Source Name (DSN). Per the Sentry docs (https://docs.sentry.io/quickstart/#about-the-dsn), it should match the following pattern: '{PROTOCOL}://{PUBLIC_KEY}@{HOST}/{PATH}{PROJECT_ID}'.",
+              "type": "string",
+              "pattern": "^https?://"
+            },
+            "backendDSN": {
+              "description": "Sentry Data Source Name (DSN) for backend errors. Per the Sentry docs (https://docs.sentry.io/quickstart/#about-the-dsn), it should match the following pattern: '{PROTOCOL}://{PUBLIC_KEY}@{HOST}/{PATH}{PROJECT_ID}'.",
               "type": "string",
               "pattern": "^https?://"
             }
@@ -752,7 +812,7 @@ const SiteSchemaJSON = `{
       "group": "Sourcegraph.com"
     },
     "auth.providers": {
-      "description": "The authentication providers to use for identifying and signing in users. See instructions below for configuring SAML, OpenID Connect (including G Suite), and HTTP authentication proxies. Multiple authentication providers are supported (by specifying multiple elements in this array).",
+      "description": "The authentication providers to use for identifying and signing in users. See instructions below for configuring SAML, OpenID Connect (including Google Workspace), and HTTP authentication proxies. Multiple authentication providers are supported (by specifying multiple elements in this array).",
       "type": "array",
       "items": {
         "required": ["type"],
@@ -802,6 +862,12 @@ const SiteSchemaJSON = `{
       "default": 12,
       "group": "Authentication"
     },
+    "auth.passwordResetLinkExpiry": {
+      "description": "The duration (in seconds) that a password reset link is considered valid.",
+      "type": "integer",
+      "default": 14400,
+      "group": "Authentication"
+    },
     "update.channel": {
       "description": "The channel on which to automatically check for Sourcegraph updates.",
       "type": ["string"],
@@ -809,6 +875,80 @@ const SiteSchemaJSON = `{
       "default": "release",
       "examples": ["none"],
       "group": "Misc."
+    },
+    "userRepos.maxPerSite": {
+      "description": "The site wide maximum number of repos that can be added by non site admins",
+      "type": "integer",
+      "default": 200000,
+      "group": "Misc."
+    },
+    "userRepos.maxPerUser": {
+      "description": "The per user maximum number of repos that can be added by non site admins",
+      "type": "integer",
+      "default": 2000,
+      "group": "Misc."
+    },
+    "productResearchPage.enabled": {
+      "description": "Enables users access to the product research page in their settings.",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "Misc.",
+      "default": true
+    },
+    "encryption.keys": {
+      "description": "Configuration for encryption keys used to encrypt data at rest in the database.",
+      "type": "object",
+      "properties": {
+        "externalServiceKey": {
+          "$ref": "#/definitions/EncryptionKey"
+        }
+      }
+    },
+    "api.ratelimit": {
+      "description": "Configuration for API rate limiting",
+      "type": "object",
+      "required": ["enabled", "perUser", "perIP"],
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether API rate limiting is enabled"
+        },
+        "perUser": {
+          "description": "Limit granted per user per hour",
+          "type": "integer",
+          "minimum": 1,
+          "default": 1000000
+        },
+        "perIP": {
+          "description": "Limit granted per IP per hour, only applied to anonymous users",
+          "type": "integer",
+          "minimum": 1,
+          "default": 1000000
+        },
+        "overrides": {
+          "description": "An array of rate limit overrides",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "description": "The key that we want to override for example a username",
+                "type": "string",
+                "minLength": 1
+              },
+              "limit": {
+                "description": "The limit per hour, 'unlimited' or 'blocked'",
+                "oneOf": [
+                  { "type": "string", "const": "unlimited" },
+                  { "type": "string", "const": "blocked" },
+                  { "type": "integer", "minimum": 1 }
+                ]
+              }
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -954,6 +1094,11 @@ const SiteSchemaJSON = `{
           "description": "Whether the Service Provider should (insecurely) accept assertions from the Identity Provider without a valid signature.",
           "type": "boolean",
           "default": false
+        },
+        "allowSignup": {
+          "description": "Allows new visitors to sign up for accounts via SAML authentication. If false, users signing in via SAML must have an existing Sourcegraph account, which will be linked to their SAML identity after sign-in.",
+          "type": "boolean",
+          "!go": { "pointer": true }
         }
       }
     },
@@ -1090,7 +1235,7 @@ const SiteSchemaJSON = `{
     "NotifierPagerduty": {
       "description": "PagerDuty notifier",
       "type": "object",
-      "required": ["type", "routingKey"],
+      "required": ["type", "integrationKey"],
       "properties": {
         "type": {
           "type": "string",
@@ -1140,7 +1285,7 @@ const SiteSchemaJSON = `{
     "NotifierOpsGenie": {
       "description": "OpsGenie notifier",
       "type": "object",
-      "required": ["type", "apiKey"],
+      "required": ["type"],
       "properties": {
         "type": {
           "type": "string",
@@ -1172,6 +1317,46 @@ const SiteSchemaJSON = `{
               { "required": ["type", "username"] }
             ]
           }
+        }
+      }
+    },
+    "EncryptionKey": {
+      "description": "Config for a key",
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["cloudkms", "noop"]
+        }
+      },
+      "oneOf": [{ "$ref": "#/definitions/CloudKMSEncryptionKey" }, { "$ref": "#/definitions/NoOpEncryptionKey" }],
+      "!go": {
+        "taggedUnionType": true
+      }
+    },
+    "CloudKMSEncryptionKey": {
+      "description": "Google Cloud KMS Encryption Key, used to encrypt data in Google Cloud environments",
+      "type": "object",
+      "required": ["type", "keyname"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "cloudkms"
+        },
+        "keyname": {
+          "type": "string"
+        }
+      }
+    },
+    "NoOpEncryptionKey": {
+      "description": "This encryption key is a no op, leaving your data in plaintext (not recommended).",
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "noop"
         }
       }
     }

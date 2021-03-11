@@ -7,7 +7,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -39,11 +38,13 @@ func (r *GitTreeEntryResolver) Files(ctx context.Context, args *gitTreeEntryConn
 }
 
 func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryConnectionArgs, filter func(fi os.FileInfo) bool) ([]*GitTreeEntryResolver, error) {
-	cachedRepo, err := backend.CachedGitRepo(ctx, r.commit.repoResolver.repo)
-	if err != nil {
-		return nil, err
-	}
-	entries, err := git.ReadDir(ctx, *cachedRepo, api.CommitID(r.commit.OID()), r.Path(), r.isRecursive || args.Recursive)
+	entries, err := git.ReadDir(
+		ctx,
+		r.commit.repoResolver.name,
+		api.CommitID(r.commit.OID()),
+		r.Path(),
+		r.isRecursive || args.Recursive,
+	)
 	if err != nil {
 		if strings.Contains(err.Error(), "file does not exist") { // TODO proper error value
 			// empty tree is not an error
@@ -63,6 +64,7 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 	for _, entry := range entries {
 		if filter == nil || filter(entry) {
 			l = append(l, &GitTreeEntryResolver{
+				db:            r.db,
 				commit:        r.commit,
 				stat:          entry,
 				isSingleChild: &hasSingleChild,

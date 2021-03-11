@@ -4,35 +4,39 @@ import (
 	"context"
 	"html/template"
 
-	"github.com/sourcegraph/sourcegraph/internal/highlight"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-type highlightedRange struct {
-	line      int32
-	character int32
-	length    int32
+type highlightedRangeResolver struct {
+	inner result.HighlightedRange
 }
 
-func (h *highlightedRange) Line() int32      { return h.line }
-func (h *highlightedRange) Character() int32 { return h.character }
-func (h *highlightedRange) Length() int32    { return h.length }
+func (h highlightedRangeResolver) Line() int32      { return h.inner.Line }
+func (h highlightedRangeResolver) Character() int32 { return h.inner.Character }
+func (h highlightedRangeResolver) Length() int32    { return h.inner.Length }
 
-type highlightedString struct {
-	value      string
-	highlights []*highlightedRange
+type highlightedStringResolver struct {
+	inner result.HighlightedString
 }
 
-func (s *highlightedString) Value() string                   { return s.value }
-func (s *highlightedString) Highlights() []*highlightedRange { return s.highlights }
+func (s *highlightedStringResolver) Value() string { return s.inner.Value }
+func (s *highlightedStringResolver) Highlights() []highlightedRangeResolver {
+	res := make([]highlightedRangeResolver, len(s.inner.Highlights))
+	for i, hl := range s.inner.Highlights {
+		res[i] = highlightedRangeResolver{hl}
+	}
+	return res
+}
 
-func fromVCSHighlights(vcsHighlights []git.Highlight) []*highlightedRange {
-	highlights := make([]*highlightedRange, len(vcsHighlights))
+func fromVCSHighlights(vcsHighlights []git.Highlight) []result.HighlightedRange {
+	highlights := make([]result.HighlightedRange, len(vcsHighlights))
 	for i, vh := range vcsHighlights {
-		highlights[i] = &highlightedRange{
-			line:      int32(vh.Line),
-			character: int32(vh.Character),
-			length:    int32(vh.Length),
+		highlights[i] = result.HighlightedRange{
+			Line:      int32(vh.Line),
+			Character: int32(vh.Character),
+			Length:    int32(vh.Length),
 		}
 	}
 	return highlights
@@ -46,20 +50,22 @@ type HighlightArgs struct {
 
 type highlightedFileResolver struct {
 	aborted bool
-	html    string
+	html    template.HTML
 }
 
 func (h *highlightedFileResolver) Aborted() bool { return h.aborted }
-func (h *highlightedFileResolver) HTML() string  { return h.html }
+func (h *highlightedFileResolver) HTML() string  { return string(h.html) }
+func (h *highlightedFileResolver) LineRanges(args *struct{ Ranges []highlight.LineRange }) ([][]string, error) {
+	return highlight.SplitLineRanges(h.html, args.Ranges)
+}
 
 func highlightContent(ctx context.Context, args *HighlightArgs, content, path string, metadata highlight.Metadata) (*highlightedFileResolver, error) {
 	var (
-		html            template.HTML
 		result          = &highlightedFileResolver{}
 		err             error
 		simulateTimeout = metadata.RepoName == "github.com/sourcegraph/AlwaysHighlightTimeoutTest"
 	)
-	html, result.aborted, err = highlight.Code(ctx, highlight.Params{
+	result.html, result.aborted, err = highlight.Code(ctx, highlight.Params{
 		Content:            []byte(content),
 		Filepath:           path,
 		DisableTimeout:     args.DisableTimeout,
@@ -71,6 +77,5 @@ func highlightContent(ctx context.Context, args *HighlightArgs, content, path st
 	if err != nil {
 		return nil, err
 	}
-	result.html = string(html)
 	return result, nil
 }

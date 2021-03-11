@@ -2,7 +2,9 @@ package conf
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/url"
+	"regexp"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -59,6 +61,12 @@ func validateCustom(cfg Unified) (problems Problems) {
 			invalid(NewSiteProblem(`externalURL must be a valid URL`))
 		} else if eURL.Path != "/" && eURL.Path != "" {
 			invalid(NewSiteProblem(`externalURL must not be a non-root URL`))
+		}
+	}
+
+	for _, rule := range cfg.GitUpdateInterval {
+		if _, err := regexp.Compile(rule.Pattern); err != nil {
+			invalid(NewSiteProblem(fmt.Sprintf("GitUpdateIntervalRule pattern is not valid regex: %q", rule.Pattern)))
 		}
 	}
 

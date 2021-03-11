@@ -9,15 +9,20 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestSearchResultsStatsLanguages(t *testing.T) {
+	db := new(dbtesting.MockDB)
+
 	wantCommitID := api.CommitID(strings.Repeat("a", 40))
 	rcache.SetupForTest(t)
 
@@ -55,16 +60,16 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 	defer git.ResetMocks()
 
 	fileMatch := func(path string, lineNumbers ...int32) *FileMatchResolver {
-		var lines []*lineMatch
+		var lines []*result.LineMatch
 		for _, n := range lineNumbers {
-			lines = append(lines, &lineMatch{JLineNumber: n})
+			lines = append(lines, &result.LineMatch{LineNumber: n})
 		}
-		return &FileMatchResolver{
-			JPath:        path,
-			JLineMatches: lines,
-			Repo:         &RepositoryResolver{repo: &types.Repo{Name: "r"}},
-			CommitID:     wantCommitID,
-		}
+		return mkFileMatchResolver(db, result.FileMatch{
+			Path:        path,
+			LineMatches: lines,
+			Repo:        &types.RepoName{Name: "r"},
+			CommitID:    wantCommitID,
+		})
 	}
 
 	tests := map[string]struct {
@@ -97,9 +102,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 		},
 		"1 entire repo": {
 			results: []SearchResultResolver{
-				&RepositoryResolver{
-					repo: &types.Repo{Name: "r"},
-				},
+				NewRepositoryResolver(db, &types.Repo{Name: "r", CreatedAt: time.Now()}),
 			},
 			getFiles: []os.FileInfo{
 				fileInfo{path: "two.go"},

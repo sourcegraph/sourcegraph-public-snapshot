@@ -6,7 +6,8 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
 func init() {
@@ -126,12 +127,6 @@ func TestIsValidUpgrade(t *testing.T) {
 		name:     "patch rollback",
 		previous: "v4.1.4",
 		latest:   "v4.1.3",
-		want:     true,
-	}, {
-		// https://github.com/sourcegraph/sourcegraph/issues/11666
-		name:     "issue 11666",
-		previous: "v0.0.0+dev",
-		latest:   "v3.17.1",
 		want:     true,
 	},
 	} {

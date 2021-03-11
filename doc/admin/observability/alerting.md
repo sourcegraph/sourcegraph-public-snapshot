@@ -1,14 +1,24 @@
-# Alerts
+# Alerting
 
 Alerts can be configured to notify site admins when there is something wrong or noteworthy on the Sourcegraph instance.
 
 ## Understanding alerts
 
-See [alert solutions](alert_solutions.md) for possible solutions when alerts are firing, and learn more about alert labels and metrics in our [metrics guide](metrics_guide.md).
+Alerts fall in one of two severity levels:
+
+- <span class="badge badge-critical">critical</span>: something is _definitively_ wrong with Sourcegraph. We suggest using a high-visibility notification channel for these alerts.
+  - **Examples:** Database inaccessible, running out of disk space, running out of memory.
+  - **Suggested action:** Page a site administrator to investigate.
+- <span class="badge badge-warning">warning</span>: something _could_ be wrong with Sourcegraph. We suggest checking in on these periodically, or using a notification channel that will not bother anyone if it is spammed. Over time, as warning alerts become stable and reliable across many Sourcegraph deployments, they will also be promoted to critical alerts in an update by Sourcegraph.
+  - **Examples:** High latency, high search timeouts.
+  - **Suggested action:** Email a site administrator to investigate and monitor when convenient, and please let us know so that we can improve them.
+
+Refer to the [alert solutions reference](alert_solutions.md) for a complete list of Sourcegraph alerts, as well as possible solutions when these alerts are firing.
+Learn more about metrics, dashboards, and alert labels in our [metrics guide](metrics.md).
 
 ## Setting up alerting
 
-Visit your site configuration (e.g. `https://sourcegraph.example.com/site-admin/configuration`) to configure alerts using the `observability.alerts` field. As always, you can use `Ctrl+Space` at any time to get hints about allowed fields as well as relevant documentation inside the configuration editor.
+Visit your site configuration (e.g. `https://sourcegraph.example.com/site-admin/configuration`) to configure alerts using the [`observability.alerts`](../config/site_config.md#observability-alerts) field. As always, you can use `Ctrl+Space` at any time to get hints about allowed fields as well as relevant documentation inside the configuration editor.
 
 Once configured, Sourcegraph alerts will automatically be routed to the appropriate notification channels by severity level.
 
@@ -40,6 +50,30 @@ Once configured, Sourcegraph alerts will automatically be routed to the appropri
       // Routing key for the PagerDuty Events API v2
       "routingKey": "XXXXXXXX"
     }
+  }
+]
+```
+
+#### Opsgenie
+
+```json
+"observability.alerts": [
+  {
+    "level": "critical",
+    "notifier": {
+      "type": "opsgenie",
+      // Opsgenie API key. This API key can also be set by the environment variable OPSGENIE_API_KEY on the prometheus container. Setting here takes precedence over the environment variable.
+      "apiKey": "xxxxxx",
+      "responders": [
+        {
+          "type": "team",
+          "name": "my-team"
+        }
+      ]
+    },
+    "owners": [
+      "my-team",
+    ]
   }
 ]
 ```
@@ -113,7 +147,7 @@ The test alert may take up to a minute to fire. The triggered alert will automat
 
 ### Silencing alerts
 
-If there is an alert you are aware of and you wish to silence notifications for it, add an entry to the `observability.silenceAlerts` field. For example:
+If there is an alert you are aware of and you wish to silence notifications for it, add an entry to the [`observability.silenceAlerts`](../config/site_config.md#observability-silenceAlerts)field. For example:
 
 ```json
 {

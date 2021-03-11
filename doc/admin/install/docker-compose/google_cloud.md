@@ -6,22 +6,14 @@ This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://d
 
 ---
 
-## (optional, recommended) Create a fork for customizations
-
-We **strongly** recommend that you create your own fork of [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/) to track customizations to the [Sourcegraph Docker Compose yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml). This will make upgrades far easier.
-
-See ["Store customizations in a fork"](./index.md#optional-recommended-store-customizations-in-a-fork) for full instructions.
-
 ## Deploy to Google Cloud VM
 
 * [Open your Google Cloud console](https://console.cloud.google.com/compute/instances) to create a new VM instance and click **Create Instance**
 * Choose an appropriate machine type (use the [resource estimator](../resource_estimator.md) to find a good starting point for your deployment).
 * Under the "Boot Disk" options, select the following:
-  
   * **Operating System**: Ubuntu
   * **Version**: Ubuntu 18.04 LTS
   * **Boot disk type**: SSD persistent disk
-
 * Check the boxes for **Allow HTTP traffic** and **Allow HTTPS traffic** in the **Firewall** section
 * Open the **Management, disks, networking, and SSH keys** dropdown section
 * Under the **Management** section, add the following in the **Startup script** field:
@@ -42,7 +34,7 @@ DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/root/deploy-sourcegraph-docker'
 
 # 🚨 Update these variables with the correct values from your fork!
 DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
-DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.14.2'
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.25.2'
 
 # Install git
 sudo apt-get update -y
@@ -119,7 +111,7 @@ docker-compose up -d
 * Create your VM, then navigate to its public IP address.
 * If you have configured a DNS entry for the IP, configure `externalURL` to reflect that.
 * You may have to wait a minute or two for the instance to finish initializing before Sourcegraph becomes accessible. You can monitor the status by SSHing into the instance and running the following diagnostic commands:
-  
+
 ```bash
 # Follow the status of the user data script you provided earlier
 tail -c +0 -f /var/log/syslog | grep startup-script
@@ -155,6 +147,6 @@ The [Sourcegraph Docker Compose definition](https://github.com/sourcegraph/deplo
 
 ## Using an external database for persistence
 
-The Docker Compose configuration has its own internal PostgreSQL and Redis databases. To preserve this data when you kill and recreate the containers, you can [use external databases](../../external_database.md) for persistence, such as Google Cloud's [Cloud SQL for PostgreSQL](https://cloud.google.com/sql/docs/postgres/) and [Cloud Memorystore](https://cloud.google.com/memorystore/).
+The Docker Compose configuration has its own internal PostgreSQL and Redis databases. To preserve this data when you kill and recreate the containers, you can [use external services](../../external_services/index.md) for persistence, such as Google Cloud's [Cloud SQL for PostgreSQL](https://cloud.google.com/sql/docs/postgres/), [Cloud Memorystore](https://cloud.google.com/memorystore/), and [Cloud Storage](https://cloud.google.com/storage) for storing user uploads.
 
 > NOTE: Use of external databases requires [Sourcegraph Enterprise](https://about.sourcegraph.com/pricing).

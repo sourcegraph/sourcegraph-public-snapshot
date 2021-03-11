@@ -11,10 +11,15 @@ cleanup() {
 }
 trap cleanup EXIT
 
-cp -a ./dev/libsqlite3-pcre/install-alpine.sh "$OUTPUT/libsqlite3-pcre-install-alpine.sh"
+# Environment for building linux binaries
+export GO111MODULE=on
+export GOARCH=amd64
+export GOOS=linux
+export CGO_ENABLED=0
 
-# Build go binary into $OUTPUT
-./enterprise/cmd/precise-code-intel-worker/go-build.sh "$OUTPUT"
+echo "--- go build"
+pkg="github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker"
+go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$OUTPUT/$(basename $pkg)" "$pkg"
 
 echo "--- docker build"
 docker build -f enterprise/cmd/precise-code-intel-worker/Dockerfile -t "$IMAGE" "$OUTPUT" \

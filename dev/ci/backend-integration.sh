@@ -17,7 +17,7 @@ if curl --output /dev/null --silent --head --fail $URL; then
 fi
 
 echo "--- Running a daemonized $IMAGE as the test subject..."
-CONTAINER="$(docker container run -d -e DEPLOY_TYPE=dev "$IMAGE")"
+CONTAINER="$(docker container run -d -e GOTRACEBACK=all "$IMAGE")"
 trap 'kill $(jobs -p -r)'" ; docker logs --timestamps $CONTAINER ; docker container rm -f $CONTAINER ; docker image rm -f $IMAGE" EXIT
 
 docker exec "$CONTAINER" apk add --no-cache socat
@@ -42,5 +42,5 @@ fi
 set -e
 echo "Waiting for $URL... done"
 
-echo '--- go test ./dev/gqltest -tags "gqltest" -v'
-go test ./dev/gqltest -tags "gqltest" -v
+echo '--- go test ./dev/gqltest -long -v'
+go test ./dev/gqltest -long -v

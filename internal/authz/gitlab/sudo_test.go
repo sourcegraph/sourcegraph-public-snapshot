@@ -15,11 +15,11 @@ import (
 	"github.com/sergi/go-diff/diffmatchpatch"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func Test_GitLab_FetchAccount(t *testing.T) {
@@ -311,7 +311,7 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 	}
 
 	expRepoIDs := []extsvc.RepoID{"1", "2", "3"}
-	if diff := cmp.Diff(expRepoIDs, repoIDs); diff != "" {
+	if diff := cmp.Diff(expRepoIDs, repoIDs.Exacts); diff != "" {
 		t.Fatal(diff)
 	}
 }

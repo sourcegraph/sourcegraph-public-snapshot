@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/src-d/enry/v2"
+	"github.com/go-enry/go-enry/v2"
 )
 
 func TestGetLang_language(t *testing.T) {

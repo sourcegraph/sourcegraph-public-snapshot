@@ -6,27 +6,31 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSearchFilterSuggestions(t *testing.T) {
-	mockResolveRepoGroups = func() (map[string][]*types.Repo, error) {
-		return map[string][]*types.Repo{
+	db := new(dbtesting.MockDB)
+
+	searchrepos.MockResolveRepoGroups = func() (map[string][]searchrepos.RepoGroupValue, error) {
+		return map[string][]searchrepos.RepoGroupValue{
 			"repogroup1": {},
 			"repogroup2": {},
 		}, nil
 	}
-	defer func() { mockResolveRepoGroups = nil }()
+	defer func() { searchrepos.MockResolveRepoGroups = nil }()
 
-	db.Mocks.Repos.List = func(_ context.Context, _ db.ReposListOptions) ([]*types.Repo, error) {
+	database.Mocks.Repos.List = func(_ context.Context, _ database.ReposListOptions) ([]*types.Repo, error) {
 		return []*types.Repo{
 			{Name: "github.com/foo/repo"},
 			{Name: "bar-repo"},
 		}, nil
 	}
-	defer func() { db.Mocks.Repos.List = nil }()
+	defer func() { database.Mocks.Repos.List = nil }()
 
 	tests := []struct {
 		want     *searchFilterSuggestions
@@ -50,7 +54,7 @@ func TestSearchFilterSuggestions(t *testing.T) {
 	for _, tt := range tests {
 		mockDecodedViewerFinalSettings.SearchGlobbing = &tt.globbing
 
-		r, err := (&schemaResolver{}).SearchFilterSuggestions(context.Background())
+		r, err := (&schemaResolver{db: db}).SearchFilterSuggestions(context.Background())
 		if err != nil {
 			t.Fatal("SearchFilterSuggestions:", err)
 		}

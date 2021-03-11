@@ -6,12 +6,13 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -31,16 +32,17 @@ func TestRepository(t *testing.T) {
 				},
 			}, nil
 		}
-		db.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
+		database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			return nil, errors.New("x")
 		}
-		links, err := Repository(context.Background(), &types.Repo{Name: api.RepoName(repoName)})
+		links, err := Repository(context.Background(), new(dbtesting.MockDB), &types.Repo{Name: api.RepoName(repoName)})
 		if err != nil {
 			t.Fatal(err)
 		}
 		if want := []*Resolver{
 			{
 				url:         "http://example.com/" + repoName,
+				serviceKind: "",
 				serviceType: "",
 			},
 		}; !reflect.DeepEqual(links, want) {
@@ -53,19 +55,20 @@ func TestRepository(t *testing.T) {
 		repoupdater.MockRepoLookup = func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 			return &protocol.RepoLookupResult{}, nil
 		}
-		db.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
+		database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			if want := api.RepoName("myrepo"); repo != want {
 				t.Errorf("got %q, want %q", repo, want)
 			}
 			return &types.PhabricatorRepo{URL: "http://phabricator.example.com/", Callsign: "MYREPO"}, nil
 		}
-		links, err := Repository(context.Background(), &types.Repo{Name: "myrepo"})
+		links, err := Repository(context.Background(), new(dbtesting.MockDB), &types.Repo{Name: "myrepo"})
 		if err != nil {
 			t.Fatal(err)
 		}
 		if want := []*Resolver{
 			{
 				url:         "http://phabricator.example.com/diffusion/MYREPO",
+				serviceKind: extsvc.KindPhabricator,
 				serviceType: extsvc.TypePhabricator,
 			},
 		}; !reflect.DeepEqual(links, want) {
@@ -78,10 +81,10 @@ func TestRepository(t *testing.T) {
 		repoupdater.MockRepoLookup = func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 			return nil, errors.New("x")
 		}
-		db.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
+		database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			return nil, errors.New("x")
 		}
-		links, err := Repository(context.Background(), &types.Repo{Name: "myrepo"})
+		links, err := Repository(context.Background(), new(dbtesting.MockDB), &types.Repo{Name: "myrepo"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -128,17 +131,17 @@ func TestFileOrDir(t *testing.T) {
 						},
 					}, nil
 				}
-				db.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
+				database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 					return nil, errors.New("x")
 				}
-				links, err := FileOrDir(context.Background(), &types.Repo{Name: api.RepoName(repoName)}, rev, path, isDir)
+				links, err := FileOrDir(context.Background(), new(dbtesting.MockDB), &types.Repo{Name: api.RepoName(repoName)}, rev, path, isDir)
 				if err != nil {
 					t.Fatal(err)
 				}
 				if want := []*Resolver{
 					{
 						url:         wantURL,
-						serviceType: "",
+						serviceKind: "",
 					},
 				}; !reflect.DeepEqual(links, want) {
 					t.Errorf("got %+v, want %+v", links, want)
@@ -152,7 +155,7 @@ func TestFileOrDir(t *testing.T) {
 		repoupdater.MockRepoLookup = func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 			return &protocol.RepoLookupResult{}, nil
 		}
-		db.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
+		database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			if want := api.RepoName("myrepo"); repo != want {
 				t.Errorf("got %q, want %q", repo, want)
 			}
@@ -162,13 +165,14 @@ func TestFileOrDir(t *testing.T) {
 			return []byte("mybranch"), nil, 0, nil
 		}
 		defer git.ResetMocks()
-		links, err := FileOrDir(context.Background(), &types.Repo{Name: "myrepo"}, rev, path, true)
+		links, err := FileOrDir(context.Background(), new(dbtesting.MockDB), &types.Repo{Name: "myrepo"}, rev, path, true)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if want := []*Resolver{
 			{
 				url:         "http://phabricator.example.com/source/MYREPO/browse/mybranch/mydir/myfile;myrev",
+				serviceKind: extsvc.KindPhabricator,
 				serviceType: extsvc.TypePhabricator,
 			},
 		}; !reflect.DeepEqual(links, want) {
@@ -181,10 +185,10 @@ func TestFileOrDir(t *testing.T) {
 		repoupdater.MockRepoLookup = func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 			return nil, errors.New("x")
 		}
-		db.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
+		database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			return nil, errors.New("x")
 		}
-		links, err := FileOrDir(context.Background(), &types.Repo{Name: "myrepo"}, rev, path, true)
+		links, err := FileOrDir(context.Background(), new(dbtesting.MockDB), &types.Repo{Name: "myrepo"}, rev, path, true)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -212,16 +216,17 @@ func TestCommit(t *testing.T) {
 				},
 			}, nil
 		}
-		db.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
+		database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			return nil, errors.New("x")
 		}
-		links, err := Commit(context.Background(), &types.Repo{Name: api.RepoName(repoName)}, commit)
+		links, err := Commit(context.Background(), new(dbtesting.MockDB), &types.Repo{Name: api.RepoName(repoName)}, commit)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if want := []*Resolver{
 			{
 				url:         "http://example.com/" + repoName + "/commit/mycommit",
+				serviceKind: "",
 				serviceType: "",
 			},
 		}; !reflect.DeepEqual(links, want) {
@@ -234,19 +239,20 @@ func TestCommit(t *testing.T) {
 		repoupdater.MockRepoLookup = func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 			return &protocol.RepoLookupResult{}, nil
 		}
-		db.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
+		database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			if want := api.RepoName("myrepo"); repo != want {
 				t.Errorf("got %q, want %q", repo, want)
 			}
 			return &types.PhabricatorRepo{URL: "http://phabricator.example.com/", Callsign: "MYREPO"}, nil
 		}
-		links, err := Commit(context.Background(), &types.Repo{Name: "myrepo"}, commit)
+		links, err := Commit(context.Background(), new(dbtesting.MockDB), &types.Repo{Name: "myrepo"}, commit)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if want := []*Resolver{
 			{
 				url:         "http://phabricator.example.com/rMYREPOmycommit",
+				serviceKind: extsvc.KindPhabricator,
 				serviceType: extsvc.TypePhabricator,
 			},
 		}; !reflect.DeepEqual(links, want) {
@@ -259,10 +265,10 @@ func TestCommit(t *testing.T) {
 		repoupdater.MockRepoLookup = func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 			return nil, errors.New("x")
 		}
-		db.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
+		database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			return nil, errors.New("x")
 		}
-		links, err := Commit(context.Background(), &types.Repo{Name: "myrepo"}, commit)
+		links, err := Commit(context.Background(), new(dbtesting.MockDB), &types.Repo{Name: "myrepo"}, commit)
 		if err != nil {
 			t.Fatal(err)
 		}

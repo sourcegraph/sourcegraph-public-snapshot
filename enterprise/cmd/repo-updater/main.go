@@ -8,24 +8,26 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater/authz"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater/internal/authz"
 	frontendAuthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches"
+	codemonitorsBackground "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	insightsBackground "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	ossAuthz "github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	ossDB "github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	ossDB "github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 func main() {
@@ -38,70 +40,27 @@ func main() {
 
 func enterpriseInit(
 	db *sql.DB,
-	repoStore repos.Store,
+	repoStore *repos.Store,
 	cf *httpcli.Factory,
 	server *repoupdater.Server,
 ) (debugDumpers []debugserver.Dumper) {
-	ctx := context.Background()
-	campaignsStore := campaigns.NewStore(db)
+	// NOTE: Internal actor is required to have full visibility of the repo table
+	// 	(i.e. bypass repository authorization).
+	ctx := actor.WithInternalActor(context.Background())
 
-	syncRegistry := campaigns.NewSyncRegistry(ctx, campaignsStore, repoStore, cf)
+	codemonitorsBackground.StartBackgroundJobs(ctx, db)
+	insightsBackground.StartBackgroundJobs(ctx, db)
+
+	syncRegistry := batches.InitBackgroundJobs(ctx, db, cf)
 	if server != nil {
 		server.ChangesetSyncRegistry = syncRegistry
 	}
 
-	clock := func() time.Time {
-		return time.Now().UTC().Truncate(time.Microsecond)
-	}
-
-	sourcer := repos.NewSourcer(cf)
-	go campaigns.RunWorkers(ctx, campaignsStore, gitserver.DefaultClient, sourcer)
-
-	// Set up expired spec deletion
-	go func() {
-		for {
-			// We first need to delete expired ChangesetSpecs...
-			if err := campaignsStore.DeleteExpiredChangesetSpecs(ctx); err != nil {
-				log15.Error("DeleteExpiredChangesetSpecs", "error", err)
-			}
-			// ... and then the CampaignSpecs, due to the campaign_spec_id
-			// foreign key on changeset_specs.
-			if err := campaignsStore.DeleteExpiredCampaignSpecs(ctx); err != nil {
-				log15.Error("DeleteExpiredCampaignSpecs", "error", err)
-			}
-
-			time.Sleep(2 * time.Minute)
-		}
-	}()
-
-	// Migrate pre-spec campaigns. We'll try to do this every five minutes
-	// until it succeeds, at which point it will never happen again.
-	//
-	// This code can be removed in Sourcegraph 3.21 or later.
-	go func() {
-		for {
-			svc := campaigns.NewServiceWithClock(campaignsStore, nil, clock)
-			if err := svc.MigratePreSpecCampaigns(ctx); err != nil {
-				log15.Error("MigratePreSpecCampaigns", "error", err)
-			} else {
-				return
-			}
-
-			time.Sleep(5 * time.Minute)
-		}
-	}()
-
 	// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB.ExternalServices for now.
 	dbconn.Global = db
-	permsStore := edb.NewPermsStore(db, clock)
-	permsSyncer := authz.NewPermsSyncer(repoStore, permsStore, clock, ratelimit.DefaultRegistry)
-	go func() {
-		if err := permsStore.MigrateBinaryToIntarray(ctx, 1000); err != nil {
-			log15.Error("MigrateBinaryToIntarray", "error", err)
-		}
-
-		startBackgroundPermsSync(ctx, permsSyncer)
-	}()
+	permsStore := edb.Perms(db, timeutil.Now)
+	permsSyncer := authz.NewPermsSyncer(repoStore, permsStore, timeutil.Now, ratelimit.DefaultRegistry)
+	go startBackgroundPermsSync(ctx, permsSyncer, db)
 	debugDumpers = append(debugDumpers, permsSyncer)
 	if server != nil {
 		server.PermsSyncer = permsSyncer
@@ -111,13 +70,13 @@ func enterpriseInit(
 }
 
 // startBackgroundPermsSync sets up background permissions syncing.
-func startBackgroundPermsSync(ctx context.Context, syncer *authz.PermsSyncer) {
+func startBackgroundPermsSync(ctx context.Context, syncer *authz.PermsSyncer, db dbutil.DB) {
 	globals.WatchPermissionsUserMapping()
 	go func() {
 		t := time.NewTicker(5 * time.Second)
 		for range t.C {
 			allowAccessByDefault, authzProviders, _, _ :=
-				frontendAuthz.ProvidersFromConfig(ctx, conf.Get(), ossDB.ExternalServices)
+				frontendAuthz.ProvidersFromConfig(ctx, conf.Get(), ossDB.GlobalExternalServices)
 			ossAuthz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()

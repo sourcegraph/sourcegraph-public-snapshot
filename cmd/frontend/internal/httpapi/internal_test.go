@@ -13,11 +13,11 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/gorilla/mux"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestGitServiceHandlers(t *testing.T) {
@@ -55,7 +55,7 @@ func TestGitServiceHandlers(t *testing.T) {
 
 type mockAddrForRepo struct{}
 
-func (mockAddrForRepo) AddrForRepo(_ context.Context, name api.RepoName) string {
+func (mockAddrForRepo) AddrForRepo(name api.RepoName) string {
 	return strings.ReplaceAll(string(name), "/", ".") + ".gitserver"
 }
 
@@ -149,17 +149,17 @@ type mockRepos struct {
 	repos        []string
 }
 
-func (r *mockRepos) ListDefault(context.Context) ([]*types.Repo, error) {
-	var repos []*types.Repo
+func (r *mockRepos) ListDefault(context.Context) ([]*types.RepoName, error) {
+	var repos []*types.RepoName
 	for _, name := range r.defaultRepos {
-		repos = append(repos, &types.Repo{
+		repos = append(repos, &types.RepoName{
 			Name: api.RepoName(name),
 		})
 	}
 	return repos, nil
 }
 
-func (r *mockRepos) List(ctx context.Context, opt db.ReposListOptions) ([]*types.Repo, error) {
+func (r *mockRepos) List(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
 	if opt.Index == nil || !*opt.Index {
 		return nil, errors.New("reposList test expects Index=true options")
 	}

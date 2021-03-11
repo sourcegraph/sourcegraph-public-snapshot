@@ -11,11 +11,11 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // Provider is an implementation of AuthzProvider that provides repository permissions as
@@ -54,8 +54,12 @@ func (p *Provider) Validate() []string {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err := p.client.UserPermissions(ctx, p.client.Username)
+	username, err := p.client.Username()
 	if err != nil {
+		return []string{err.Error()}
+	}
+
+	if _, err := p.client.UserPermissions(ctx, username); err != nil {
 		return []string{err.Error()}
 	}
 
@@ -124,7 +128,7 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 // callers to decide whether to discard.
 //
 // API docs: https://docs.atlassian.com/bitbucket-server/rest/5.16.0/bitbucket-rest.html#idm8296923984
-func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) ([]extsvc.RepoID, error) {
+func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 	switch {
 	case account == nil:
 		return nil, errors.New("no account provided")
@@ -147,7 +151,9 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 		extIDs = append(extIDs, extsvc.RepoID(strconv.FormatUint(uint64(id), 10)))
 	}
 
-	return extIDs, err
+	return &authz.ExternalUserPermissions{
+		Exacts: extIDs,
+	}, err
 }
 
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to

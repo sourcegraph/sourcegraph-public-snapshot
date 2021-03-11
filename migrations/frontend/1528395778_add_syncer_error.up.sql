@@ -1,0 +1,5 @@
+BEGIN;
+
+ALTER TABLE changesets ADD COLUMN IF NOT EXISTS syncer_error TEXT;
+
+COMMIT;

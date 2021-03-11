@@ -11,9 +11,10 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
@@ -53,9 +54,10 @@ func init() {
 // sessionInfo is the information we store in the session. The gorilla/sessions library doesn't appear to
 // enforce the maxAge field in its session store implementations, so we include the expiry here.
 type sessionInfo struct {
-	Actor        *actor.Actor  `json:"actor"`
-	LastActive   time.Time     `json:"lastActive"`
-	ExpiryPeriod time.Duration `json:"expiryPeriod"`
+	Actor         *actor.Actor  `json:"actor"`
+	LastActive    time.Time     `json:"lastActive"`
+	ExpiryPeriod  time.Duration `json:"expiryPeriod"`
+	UserCreatedAt time.Time     `json:"userCreatedAt"`
 }
 
 // SetSessionStore sets the backing store used for storing sessions on the server. It should be called exactly once.
@@ -221,7 +223,7 @@ func GetData(r *http.Request, key string, value interface{}) error {
 // new session is created.
 //
 // If expiryPeriod is 0, the default expiry period is used.
-func SetActor(w http.ResponseWriter, r *http.Request, actor *actor.Actor, expiryPeriod time.Duration) error {
+func SetActor(w http.ResponseWriter, r *http.Request, actor *actor.Actor, expiryPeriod time.Duration, userCreatedAt time.Time) error {
 	var value *sessionInfo
 	if actor != nil {
 		if expiryPeriod == 0 {
@@ -231,7 +233,7 @@ func SetActor(w http.ResponseWriter, r *http.Request, actor *actor.Actor, expiry
 				expiryPeriod = defaultExpiryPeriod
 			}
 		}
-		value = &sessionInfo{Actor: actor, ExpiryPeriod: expiryPeriod, LastActive: time.Now()}
+		value = &sessionInfo{Actor: actor, ExpiryPeriod: expiryPeriod, LastActive: time.Now(), UserCreatedAt: userCreatedAt}
 	}
 	return SetData(w, r, "actor", value)
 }
@@ -265,16 +267,24 @@ func deleteSession(w http.ResponseWriter, r *http.Request) error {
 
 // InvalidateSessionsCurrentUser invalidates all sessions for the current user
 // If an error occurs, return the error
-func InvalidateSessionCurrentUser(r *http.Request) error {
+func InvalidateSessionCurrentUser(w http.ResponseWriter, r *http.Request) error {
 	a := actor.FromContext(r.Context())
-	return db.Users.InvalidateSessionsByID(r.Context(), a.UID)
+	err := database.GlobalUsers.InvalidateSessionsByID(r.Context(), a.UID)
+	if err != nil {
+		return err
+	}
+
+	// We make sure the session is actually removed from the client and from Redis
+	// because SetData actually reuses the client session cookie if it exists.
+	// See https://github.com/sourcegraph/security-issues/issues/136
+	return deleteSession(w, r)
 }
 
 // InvalidateSessionsByID invalidates all sessions for a user
 // If an error occurs, it returns the error
 func InvalidateSessionsByID(ctx context.Context, id int32) error {
 	// Get the user from the request context
-	return db.Users.InvalidateSessionsByID(ctx, id)
+	return database.GlobalUsers.InvalidateSessionsByID(ctx, id)
 }
 
 // CookieMiddleware is an http.Handler middleware that authenticates
@@ -358,7 +368,7 @@ func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Contex
 		}
 
 		// Check that user still exists.
-		usr, err := db.Users.GetByID(r.Context(), info.Actor.UID)
+		usr, err := database.GlobalUsers.GetByID(r.Context(), info.Actor.UID)
 		if err != nil {
 			if errcode.IsNotFound(err) {
 				_ = deleteSession(w, r) // clear the bad value
@@ -373,6 +383,24 @@ func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Contex
 		// Check that the session is still valid
 		if info.LastActive.Before(usr.InvalidatedSessionsAt) {
 			_ = deleteSession(w, r) // Delete the now invalid session
+			return r.Context()
+		}
+
+		// If the session does not have the user's creation date, it's an old (valid)
+		// session from before the check was introduced. In that case, we manually
+		// set the user creation date
+		if info.UserCreatedAt.IsZero() {
+			info.UserCreatedAt = usr.CreatedAt
+			if err := SetData(w, r, "actor", info); err != nil {
+				log15.Error("error setting user creation timestamp", "error", err)
+				return r.Context()
+			}
+		}
+
+		// Verify that the user's creation date in the database matches what is stored
+		// in the session. If not, invalidate the session immediately.
+		if !info.UserCreatedAt.Equal(usr.CreatedAt) {
+			_ = deleteSession(w, r)
 			return r.Context()
 		}
 

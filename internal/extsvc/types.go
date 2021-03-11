@@ -10,10 +10,11 @@ import (
 
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+	"golang.org/x/time/rate"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"golang.org/x/time/rate"
 )
 
 // Account represents a row in the `user_external_accounts` table. See the GraphQL API's
@@ -79,6 +80,7 @@ const (
 	KindGitHub          = "GITHUB"
 	KindGitLab          = "GITLAB"
 	KindGitolite        = "GITOLITE"
+	KindPerforce        = "PERFORCE"
 	KindPhabricator     = "PHABRICATOR"
 	KindOther           = "OTHER"
 )
@@ -110,6 +112,9 @@ const (
 	// TypeGitolite is the (api.ExternalRepoSpec).ServiceType value for Gitolite projects.
 	TypeGitolite = "gitolite"
 
+	// TypePerforce is the (api.ExternalRepoSpec).ServiceType value for Perforce projects.
+	TypePerforce = "perforce"
+
 	// TypePhabricator is the (api.ExternalRepoSpec).ServiceType value for Phabricator projects.
 	TypePhabricator = "phabricator"
 
@@ -135,10 +140,39 @@ func KindToType(kind string) string {
 		return TypeGitolite
 	case KindPhabricator:
 		return TypePhabricator
+	case KindPerforce:
+		return TypePerforce
 	case KindOther:
 		return TypeOther
 	default:
 		panic(fmt.Sprintf("unknown kind: %q", kind))
+	}
+}
+
+// TypeToKind returns a Kind constants given a Type
+// It will panic when given an unknown type.
+func TypeToKind(t string) string {
+	switch t {
+	case TypeAWSCodeCommit:
+		return KindAWSCodeCommit
+	case TypeBitbucketServer:
+		return KindBitbucketServer
+	case TypeBitbucketCloud:
+		return KindBitbucketCloud
+	case TypeGitHub:
+		return KindGitHub
+	case TypeGitLab:
+		return KindGitLab
+	case TypeGitolite:
+		return KindGitolite
+	case TypePerforce:
+		return KindPerforce
+	case TypePhabricator:
+		return KindPhabricator
+	case TypeOther:
+		return KindOther
+	default:
+		panic(fmt.Sprintf("unknown type: %q", t))
 	}
 }
 
@@ -164,10 +198,39 @@ func ParseServiceType(s string) (string, bool) {
 		return TypeGitLab, true
 	case TypeGitolite:
 		return TypeGitolite, true
+	case TypePerforce:
+		return TypePerforce, true
 	case TypePhabricator:
 		return TypePhabricator, true
 	case TypeOther:
 		return TypeOther, true
+	default:
+		return "", false
+	}
+}
+
+// ParseServiceKind will return a ServiceKind constant after doing a case insensitive match on s.
+// It returns ("", false) if no match was found.
+func ParseServiceKind(s string) (string, bool) {
+	switch strings.ToUpper(s) {
+	case KindAWSCodeCommit:
+		return KindAWSCodeCommit, true
+	case KindBitbucketServer:
+		return KindBitbucketServer, true
+	case KindBitbucketCloud:
+		return KindBitbucketCloud, true
+	case KindGitHub:
+		return KindGitHub, true
+	case KindGitLab:
+		return KindGitLab, true
+	case KindGitolite:
+		return KindGitolite, true
+	case KindPerforce:
+		return KindPerforce, true
+	case KindPhabricator:
+		return KindPhabricator, true
+	case KindOther:
+		return KindOther, true
 	default:
 		return "", false
 	}
@@ -182,6 +245,19 @@ type AccountID string
 // code host. It can be the string representation of an integer (e.g. GitLab and Bitbucket
 // Server) or a GraphQL ID (e.g. GitHub) depends on the code host type.
 type RepoID string
+
+// RepoIDType indicates the type of the RepoID.
+type RepoIDType string
+
+const (
+	// RepoIDExact indicates the RepoID is an exact match, e.g.
+	// "github.com/alice/repo" can only identify itself.
+	RepoIDExact RepoIDType = "exact"
+	// RepoIDPrefix indicates the RepoID is a prefix match, e.g. "//Sourcegraph/"
+	// can identify "//Sourcegraph/CoreApp", "//Sourcegraph/Backend" and everything
+	// starts with it.
+	RepoIDPrefix RepoIDType = "prefix"
+)
 
 // ParseConfig attempts to unmarshal the given JSON config into a configuration struct defined in the schema package.
 func ParseConfig(kind, config string) (cfg interface{}, _ error) {
@@ -198,6 +274,8 @@ func ParseConfig(kind, config string) (cfg interface{}, _ error) {
 		cfg = &schema.GitLabConnection{}
 	case KindGitolite:
 		cfg = &schema.GitoliteConnection{}
+	case KindPerforce:
+		cfg = &schema.PerforceConnection{}
 	case KindPhabricator:
 		cfg = &schema.PhabricatorConnection{}
 	case KindOther:
@@ -263,6 +341,8 @@ func ExtractBaseURL(kind, config string) (*url.URL, error) {
 		rawURL = c.Url
 	case *schema.GitoliteConnection:
 		rawURL = c.Host
+	case *schema.PerforceConnection:
+		return nil, errors.New("BaseURL unavailable for Perforce")
 	case *schema.PhabricatorConnection:
 		rawURL = c.Url
 	case *schema.OtherExternalServiceConnection:
@@ -360,4 +440,18 @@ func (e ErrRateLimitUnsupported) Error() string {
 // URN returns a unique resource identifier of an external service by given kind and ID.
 func URN(kind string, id int64) string {
 	return "extsvc:" + strings.ToLower(kind) + ":" + strconv.FormatInt(id, 10)
+}
+
+// DecodeURN returns the kind of the external service and its ID.
+func DecodeURN(urn string) (kind string, id int64) {
+	fields := strings.Split(urn, ":")
+	if len(fields) != 3 {
+		return "", 0
+	}
+
+	id, err := strconv.ParseInt(fields[2], 10, 64)
+	if err != nil {
+		return "", 0
+	}
+	return fields[1], id
 }

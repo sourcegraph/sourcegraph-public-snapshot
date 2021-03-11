@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/efritz/glock"
+
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -25,19 +26,17 @@ func TestWorkerHandlerSuccess(t *testing.T) {
 	handler := NewMockHandler()
 	clock := glock.NewMockClock()
 	options := WorkerOptions{
-		Handler:     handler,
+		Name:        "test",
 		NumHandlers: 1,
 		Interval:    time.Second,
-		Metrics: WorkerMetrics{
-			HandleOperation: observation.TestContext.Operation(observation.Op{}),
-		},
+		Metrics:     NewMetrics(&observation.TestContext, "", nil),
 	}
 
 	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, store, true, nil)
 	store.DequeueFunc.SetDefaultReturn(nil, nil, false, nil)
 	store.MarkCompleteFunc.SetDefaultReturn(true, nil)
 
-	worker := newWorker(context.Background(), store, options, clock)
+	worker := newWorker(context.Background(), store, handler, options, clock)
 	go func() { worker.Start() }()
 	clock.BlockingAdvance(time.Second)
 	worker.Stop()
@@ -66,12 +65,10 @@ func TestWorkerHandlerFailure(t *testing.T) {
 	handler := NewMockHandler()
 	clock := glock.NewMockClock()
 	options := WorkerOptions{
-		Handler:     handler,
+		Name:        "test",
 		NumHandlers: 1,
 		Interval:    time.Second,
-		Metrics: WorkerMetrics{
-			HandleOperation: observation.TestContext.Operation(observation.Op{}),
-		},
+		Metrics:     NewMetrics(&observation.TestContext, "", nil),
 	}
 
 	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, store, true, nil)
@@ -79,7 +76,7 @@ func TestWorkerHandlerFailure(t *testing.T) {
 	store.MarkErroredFunc.SetDefaultReturn(true, nil)
 	handler.HandleFunc.SetDefaultReturn(fmt.Errorf("oops"))
 
-	worker := newWorker(context.Background(), store, options, clock)
+	worker := newWorker(context.Background(), store, handler, options, clock)
 	go func() { worker.Start() }()
 	clock.BlockingAdvance(time.Second)
 	worker.Stop()
@@ -105,6 +102,55 @@ func TestWorkerHandlerFailure(t *testing.T) {
 	}
 }
 
+type nonRetryableTestErr struct{}
+
+func (e nonRetryableTestErr) Error() string      { return "just retry me and see what happens" }
+func (e nonRetryableTestErr) NonRetryable() bool { return true }
+
+func TestWorkerHandlerNonRetryableFailure(t *testing.T) {
+	store := NewMockStore()
+	handler := NewMockHandler()
+	clock := glock.NewMockClock()
+	options := WorkerOptions{
+		Name:        "test",
+		NumHandlers: 1,
+		Interval:    time.Second,
+		Metrics:     NewMetrics(&observation.TestContext, "", nil),
+	}
+
+	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, store, true, nil)
+	store.DequeueFunc.SetDefaultReturn(nil, nil, false, nil)
+	store.MarkFailedFunc.SetDefaultReturn(true, nil)
+
+	testErr := nonRetryableTestErr{}
+	handler.HandleFunc.SetDefaultReturn(testErr)
+
+	worker := newWorker(context.Background(), store, handler, options, clock)
+	go func() { worker.Start() }()
+	clock.BlockingAdvance(time.Second)
+	worker.Stop()
+
+	if callCount := len(handler.HandleFunc.History()); callCount != 1 {
+		t.Errorf("unexpected handle call count. want=%d have=%d", 1, callCount)
+	} else if arg := handler.HandleFunc.History()[0].Arg2; arg.RecordID() != 42 {
+		t.Errorf("unexpected record. want=%d have=%d", 42, arg.RecordID())
+	}
+
+	if callCount := len(store.MarkFailedFunc.History()); callCount != 1 {
+		t.Errorf("unexpected mark failed call count. want=%d have=%d", 1, callCount)
+	} else if id := store.MarkFailedFunc.History()[0].Arg1; id != 42 {
+		t.Errorf("unexpected id argument to mark failed. want=%v have=%v", 42, id)
+	} else if failureMessage := store.MarkFailedFunc.History()[0].Arg2; failureMessage != testErr.Error() {
+		t.Errorf("unexpected failure message argument to mark failed. want=%q have=%q", testErr.Error(), failureMessage)
+	}
+
+	if callCount := len(store.DoneFunc.History()); callCount != 1 {
+		t.Errorf("unexpected done call count. want=%d have=%d", 1, callCount)
+	} else if err := store.DoneFunc.History()[0].Arg0; err != nil {
+		t.Errorf("unexpected error argument to done. want=%v have=%v", nil, err)
+	}
+}
+
 func TestWorkerConcurrent(t *testing.T) {
 	NumTestRecords := 50
 
@@ -116,12 +162,10 @@ func TestWorkerConcurrent(t *testing.T) {
 			handler := NewMockHandlerWithHooks()
 			clock := glock.NewMockClock()
 			options := WorkerOptions{
-				Handler:     handler,
+				Name:        "test",
 				NumHandlers: numHandlers,
 				Interval:    time.Second,
-				Metrics: WorkerMetrics{
-					HandleOperation: observation.TestContext.Operation(observation.Op{}),
-				},
+				Metrics:     NewMetrics(&observation.TestContext, "", nil),
 			}
 
 			for i := 0; i < NumTestRecords; i++ {
@@ -148,7 +192,7 @@ func TestWorkerConcurrent(t *testing.T) {
 				return nil
 			})
 
-			worker := newWorker(context.Background(), store, options, clock)
+			worker := newWorker(context.Background(), store, handler, options, clock)
 			go func() { worker.Start() }()
 			for i := 0; i < NumTestRecords; i++ {
 				clock.BlockingAdvance(time.Second)
@@ -203,12 +247,10 @@ func TestWorkerBlockingPreDequeueHook(t *testing.T) {
 	handler := NewMockHandlerWithPreDequeue()
 	clock := glock.NewMockClock()
 	options := WorkerOptions{
-		Handler:     handler,
+		Name:        "test",
 		NumHandlers: 1,
 		Interval:    time.Second,
-		Metrics: WorkerMetrics{
-			HandleOperation: observation.TestContext.Operation(observation.Op{}),
-		},
+		Metrics:     NewMetrics(&observation.TestContext, "", nil),
 	}
 
 	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, store, true, nil)
@@ -217,7 +259,7 @@ func TestWorkerBlockingPreDequeueHook(t *testing.T) {
 	// Block all dequeues
 	handler.PreDequeueFunc.SetDefaultReturn(false, nil, nil)
 
-	worker := newWorker(context.Background(), store, options, clock)
+	worker := newWorker(context.Background(), store, handler, options, clock)
 	go func() { worker.Start() }()
 	clock.BlockingAdvance(time.Second)
 	worker.Stop()
@@ -232,12 +274,10 @@ func TestWorkerConditionalPreDequeueHook(t *testing.T) {
 	handler := NewMockHandlerWithPreDequeue()
 	clock := glock.NewMockClock()
 	options := WorkerOptions{
-		Handler:     handler,
+		Name:        "test",
 		NumHandlers: 1,
 		Interval:    time.Second,
-		Metrics: WorkerMetrics{
-			HandleOperation: observation.TestContext.Operation(observation.Op{}),
-		},
+		Metrics:     NewMetrics(&observation.TestContext, "", nil),
 	}
 
 	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, store, true, nil)
@@ -250,7 +290,7 @@ func TestWorkerConditionalPreDequeueHook(t *testing.T) {
 	handler.PreDequeueFunc.PushReturn(true, "B", nil)
 	handler.PreDequeueFunc.PushReturn(true, "C", nil)
 
-	worker := newWorker(context.Background(), store, options, clock)
+	worker := newWorker(context.Background(), store, handler, options, clock)
 	go func() { worker.Start() }()
 	clock.BlockingAdvance(time.Second)
 	clock.BlockingAdvance(time.Second)

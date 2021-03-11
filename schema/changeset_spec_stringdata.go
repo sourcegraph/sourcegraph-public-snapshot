@@ -35,6 +35,7 @@ const ChangesetSpecSchemaJSON = `{
         "baseRef": {
           "type": "string",
           "description": "The full name of the Git ref in the base repository that this changeset is based on (and is proposing to be merged into). This ref must exist on the base repository.",
+          "pattern": "^refs\\/heads\\/\\S+$",
           "examples": ["refs/heads/master"]
         },
         "baseRev": {
@@ -50,6 +51,7 @@ const ChangesetSpecSchemaJSON = `{
         "headRef": {
           "type": "string",
           "description": "The full name of the Git ref that holds the changes proposed by this changeset. This ref will be created or updated with the commits.",
+          "pattern": "^refs\\/heads\\/\\S+$",
           "examples": ["refs/heads/fix-foo"]
         },
         "title": { "type": "string", "description": "The title of the changeset on the code host." },
@@ -87,8 +89,8 @@ const ChangesetSpecSchemaJSON = `{
           }
         },
         "published": {
-          "type": "boolean",
-          "description": "Whether to publish the changeset. An unpublished changeset can be previewed on Sourcegraph by any person who can view the campaign, but its commit, branch, and pull request aren't created on the code host. A published changeset results in a commit, branch, and pull request being created on the code host."
+          "oneOf": [{ "type": "boolean" }, { "type": "string", "pattern": "^draft$" }],
+          "description": "Whether to publish the changeset. An unpublished changeset can be previewed on Sourcegraph by any person who can view the batch change, but its commit, branch, and pull request aren't created on the code host. A published changeset results in a commit, branch, and pull request being created on the code host."
         }
       },
       "required": [

@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/graph-gophers/graphql-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -45,7 +46,7 @@ func settingsSubjectForNode(ctx context.Context, n Node) (*settingsSubject, erro
 
 	case *OrgResolver:
 		// 🚨 SECURITY: Check that the current user is a member of the org.
-		if err := backend.CheckOrgAccess(ctx, s.org.ID); err != nil {
+		if err := backend.CheckOrgAccess(ctx, s.db, s.org.ID); err != nil {
 			return nil, err
 		}
 		return &settingsSubject{org: s}, nil

@@ -3,6 +3,7 @@ package git
 import (
 	"context"
 	"fmt"
+	"io"
 	"testing"
 	"time"
 
@@ -10,9 +11,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
-var ctx = context.Background()
-
 func TestRepository_GetCommit(t *testing.T) {
+	ctx := context.Background()
+
 	gitCommands := []string{
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --allow-empty -m bar --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
@@ -25,7 +26,7 @@ func TestRepository_GetCommit(t *testing.T) {
 		Parents:   []api.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
 	}
 	tests := map[string]struct {
-		repo             gitserver.Repo
+		repo             api.RepoName
 		id               api.CommitID
 		wantCommit       *Commit
 		noEnsureRevision bool
@@ -60,7 +61,7 @@ func TestRepository_GetCommit(t *testing.T) {
 		resolveRevisionOptions := ResolveRevisionOptions{
 			NoEnsureRevision: test.noEnsureRevision,
 		}
-		commit, err := GetCommit(ctx, test.repo, nil, test.id, resolveRevisionOptions)
+		commit, err := GetCommit(ctx, test.repo, test.id, resolveRevisionOptions)
 		if err != nil {
 			t.Errorf("%s: GetCommit: %s", label, err)
 			continue
@@ -71,7 +72,7 @@ func TestRepository_GetCommit(t *testing.T) {
 		}
 
 		// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
-		if _, err := GetCommit(ctx, test.repo, nil, NonExistentCommitID, resolveRevisionOptions); !gitserver.IsRevisionNotFound(err) {
+		if _, err := GetCommit(ctx, test.repo, NonExistentCommitID, resolveRevisionOptions); !gitserver.IsRevisionNotFound(err) {
 			t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
 		}
 
@@ -83,6 +84,7 @@ func TestRepository_GetCommit(t *testing.T) {
 
 func TestRepository_HasCommitAfter(t *testing.T) {
 	t.Parallel()
+	ctx := context.Background()
 
 	testCases := []struct {
 		commitDates []string
@@ -156,8 +158,111 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 	}
 }
 
+func TestRepository_FirstEverCommit(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	testCases := []struct {
+		commitDates []string
+		want        string
+	}{
+		{
+			commitDates: []string{
+				"2006-01-02T15:04:05Z",
+				"2007-01-02T15:04:05Z",
+				"2008-01-02T15:04:05Z",
+			},
+			want: "2006-01-02T15:04:05Z",
+		},
+		{
+			commitDates: []string{
+				"2007-01-02T15:04:05Z", // Don't think this is possible, but if it is we still want the first commit (not strictly "oldest")
+				"2006-01-02T15:04:05Z",
+				"2007-01-02T15:04:06Z",
+			},
+			want: "2007-01-02T15:04:05Z",
+		},
+	}
+	for _, tc := range testCases {
+		gitCommands := make([]string, len(tc.commitDates))
+		for i, date := range tc.commitDates {
+			gitCommands[i] = fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit --allow-empty -m foo --author='a <a@a.com>'", date)
+		}
+
+		repo := MakeGitRepository(t, gitCommands...)
+		gotCommit, err := FirstEverCommit(ctx, repo)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := gotCommit.Committer.Date.Format(time.RFC3339)
+		if got != tc.want {
+			t.Errorf("got %q, want %q", got, tc.want)
+		}
+	}
+}
+
+func TestRepository_FindNearestCommit(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	commitDates := []string{
+		"2006-01-02T15:04:05Z",
+		"2007-01-02T15:04:05Z",
+		"2008-01-02T15:04:05Z",
+	}
+	testCases := []struct {
+		name   string
+		target time.Time
+		want   string
+	}{
+		{
+			name:   "exactly first commit",
+			target: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z"),
+			want:   "2006-01-02T15:04:05Z",
+		},
+		{
+			name:   "very far away",
+			target: MustParseTime(time.RFC3339, "2000-01-02T15:04:05Z"),
+			want:   "2006-01-02T15:04:05Z",
+		},
+		{
+			name:   "near second commit",
+			target: MustParseTime(time.RFC3339, "2006-08-02T15:04:05Z"),
+			want:   "2007-01-02T15:04:05Z",
+		},
+		{
+			name:   "exactly third commit",
+			target: MustParseTime(time.RFC3339, "2008-01-02T15:04:05Z"),
+			want:   "2008-01-02T15:04:05Z",
+		},
+		{
+			name:   "past third commit",
+			target: MustParseTime(time.RFC3339, "2008-01-02T20:04:05Z"),
+			want:   "2008-01-02T15:04:05Z",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			gitCommands := make([]string, len(commitDates))
+			for i, date := range commitDates {
+				gitCommands[i] = fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit --allow-empty -m foo --date=%s --author='a <a@a.com>'", date, date)
+			}
+
+			repo := MakeGitRepository(t, gitCommands...)
+			gotCommit, err := FindNearestCommit(ctx, repo, "HEAD", tc.target)
+			if err != nil {
+				t.Fatal(err)
+			}
+			got := gotCommit.Committer.Date.Format(time.RFC3339)
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
 func TestRepository_Commits(t *testing.T) {
 	t.Parallel()
+	ctx := context.Background()
 
 	// TODO(sqs): test CommitsOptions.Base
 
@@ -182,7 +287,7 @@ func TestRepository_Commits(t *testing.T) {
 		},
 	}
 	tests := map[string]struct {
-		repo        gitserver.Repo
+		repo        api.RepoName
 		id          api.CommitID
 		wantCommits []*Commit
 		wantTotal   uint
@@ -238,6 +343,7 @@ func TestRepository_Commits(t *testing.T) {
 
 func TestRepository_Commits_options(t *testing.T) {
 	t.Parallel()
+	ctx := context.Background()
 
 	gitCommands := []string{
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
@@ -263,7 +369,7 @@ func TestRepository_Commits_options(t *testing.T) {
 		},
 	}
 	tests := map[string]struct {
-		repo        gitserver.Repo
+		repo        api.RepoName
 		opt         CommitsOptions
 		wantCommits []*Commit
 		wantTotal   uint
@@ -281,6 +387,24 @@ func TestRepository_Commits_options(t *testing.T) {
 			},
 			wantCommits: wantGitCommits2,
 			wantTotal:   1,
+		},
+		"before": {
+			repo: MakeGitRepository(t, gitCommands...),
+			opt: CommitsOptions{
+				Before: "2006-01-02T15:04:07Z",
+				Range:  "HEAD",
+				N:      1,
+			},
+			wantCommits: []*Commit{
+				{
+					ID:        "b266c7e3ca00b1a17ad0b1449825d0854225c007",
+					Author:    Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+					Committer: &Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+					Message:   "bar",
+					Parents:   []api.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
+				},
+			},
+			wantTotal: 1,
 		},
 	}
 
@@ -322,6 +446,7 @@ func TestRepository_Commits_options(t *testing.T) {
 
 func TestRepository_Commits_options_path(t *testing.T) {
 	t.Parallel()
+	ctx := context.Background()
 
 	gitCommands := []string{
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
@@ -341,7 +466,7 @@ func TestRepository_Commits_options_path(t *testing.T) {
 		},
 	}
 	tests := map[string]struct {
-		repo        gitserver.Repo
+		repo        api.RepoName
 		opt         CommitsOptions
 		wantCommits []*Commit
 		wantTotal   uint
@@ -400,4 +525,173 @@ func TestRepository_Commits_options_path(t *testing.T) {
 			}
 		}
 	}
+}
+
+// Test we return errLogOnelineBatchScannerClosed is returned. It is very
+// complicated to ensure we cover the code paths we care about.
+func TestLogOnelineBatchScanner_batchclosed(t *testing.T) {
+	t.Parallel()
+
+	// We want this flow. This is to ensure we close while doing batch
+	// collection.
+	//
+	// 1. scan
+	// 2. scan
+	// 3. cleanup
+	// 4. scan
+	//
+	// So we use channels to orchestrate it, named after the numbered step
+	// above.
+	step3 := make(chan struct{})
+	step4 := make(chan struct{})
+	scanCount := 0
+	scan := func() (*onelineCommit, error) {
+		// make things a little slower to allow other goroutines to run.
+		time.Sleep(10 * time.Millisecond)
+
+		scanCount++
+		if scanCount == 2 {
+			// allow step3 to run (cleanup)
+			close(step3)
+		} else if scanCount == 3 {
+			// we are step4, wait for step3 to run
+			<-step4
+		}
+		return &onelineCommit{}, nil
+	}
+
+	next, cleanup := logOnelineBatchScanner(scan, 10000, 5*time.Second)
+
+	go func() {
+		<-step3
+		cleanup()
+		close(step4)
+	}()
+
+	var err error
+	for err == nil {
+		_, err = next()
+	}
+	if err != errLogOnelineBatchScannerClosed {
+		t.Fatal("unexpected error:", err)
+	}
+}
+
+// This test is much simpler since we just set the batchsize to 1 to ensure we
+// only ever test the first attempt to read resultC
+func TestLogOnelineBatchScanner_closed(t *testing.T) {
+	t.Parallel()
+
+	scan := func() (*onelineCommit, error) {
+		return &onelineCommit{}, nil
+	}
+
+	next, cleanup := logOnelineBatchScanner(scan, 1, 5*time.Second)
+	cleanup()
+
+	var err error
+	for err == nil {
+		_, err = next()
+	}
+	if err != errLogOnelineBatchScannerClosed {
+		t.Fatal("unexpected error:", err)
+	}
+}
+
+func TestLogOnelineBatchScanner_debounce(t *testing.T) {
+	t.Parallel()
+
+	// used to prevent scan blocking forever.
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// First call return a commit. Second call wait until timeout on ctx.
+	scanCount := 0
+	scan := func() (*onelineCommit, error) {
+		scanCount++
+		if scanCount == 1 {
+			return &onelineCommit{}, nil
+		} else {
+			<-ctx.Done()
+			return nil, ctx.Err()
+		}
+	}
+
+	next, cleanup := logOnelineBatchScanner(scan, 100, time.Millisecond)
+	defer cleanup()
+
+	commits, err := next()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(commits) != 1 {
+		t.Fatalf("expected 1 commit, got %d", len(commits))
+	}
+	if ctx.Err() != nil {
+		t.Fatal("timedout out before debounce timeout")
+	}
+}
+
+func TestLogOnelineBatchScanner_empty(t *testing.T) {
+	t.Parallel()
+
+	scan := func() (*onelineCommit, error) {
+		return nil, io.EOF
+	}
+
+	next, cleanup := logOnelineBatchScanner(scan, 100, 5*time.Second)
+	defer cleanup()
+
+	if _, err := next(); err != io.EOF {
+		t.Fatal("unexpected error:", err)
+	}
+}
+
+func TestLogOnelineBatchScanner_small(t *testing.T) {
+	t.Parallel()
+
+	wantCommits := 20
+	scanCount := 0
+	scan := func() (*onelineCommit, error) {
+		scanCount++
+		if scanCount <= wantCommits {
+			return &onelineCommit{}, nil
+		} else {
+			return nil, io.EOF
+		}
+	}
+
+	// ensure batch size is bigger than number of commits we return.
+	next, cleanup := logOnelineBatchScanner(scan, wantCommits*3, 5*time.Second)
+	defer cleanup()
+
+	if commits, err := next(); err != nil {
+		t.Fatal("expected commits, got err:", err)
+	} else if len(commits) != wantCommits {
+		t.Fatalf("wanted %d commits, got %d", wantCommits, len(commits))
+	}
+
+	if _, err := next(); err != io.EOF {
+		t.Fatal("unexpected error:", err)
+	}
+}
+
+func TestMessage(t *testing.T) {
+	t.Run("Body", func(t *testing.T) {
+		tests := map[Message]string{
+			"hello":                 "",
+			"hello\n":               "",
+			"hello\n\n":             "",
+			"hello\nworld":          "world",
+			"hello\n\nworld":        "world",
+			"hello\n\nworld\nfoo":   "world\nfoo",
+			"hello\n\nworld\nfoo\n": "world\nfoo",
+		}
+		for input, want := range tests {
+			got := input.Body()
+			if got != want {
+				t.Errorf("got %q, want %q", got, want)
+			}
+		}
+	})
 }

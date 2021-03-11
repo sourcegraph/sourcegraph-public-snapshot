@@ -1,26 +1,23 @@
-FROM golang:1.13-alpine@sha256:ed003971a4809c9ae45afe2d318c24b9e3f6b30864a322877c69a46c504d852c AS builder
+# sourcegraph/prometheus - learn more about this image in https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 
-COPY monitoring /go/src/monitoring-generator
-WORKDIR /go/src/monitoring-generator
-RUN CGO_ENABLED=0 go build -o /go/bin/monitoring-generator
-RUN mkdir -p /generated/prometheus
-RUN DOC_SOLUTIONS_FILE='' PROMETHEUS_DIR=/generated/prometheus GRAFANA_DIR='' /go/bin/monitoring-generator
+# Build monitoring definitions
+FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd212d78d7be145adde636d AS monitoring_builder
+RUN mkdir -p '/generated/prometheus'
+COPY ./.bin/monitoring-generator /bin/monitoring-generator
+RUN PROMETHEUS_DIR='/generated/prometheus' GRAFANA_DIR='' DOCS_DIR='' NO_PRUNE=true /bin/monitoring-generator
+RUN ls '/generated/prometheus'
 
-# This Dockerfile is adapted from https://github.com/prometheus/prometheus/blob/v2.15.2/Dockerfile with
-# our own customizations.
-#
-# When upgrading prometheus, be sure to check https://github.com/prometheus/prometheus/blob/master/Dockerfile
-# (replacing master with the version number) to see if any changes (added/removed files, etc.) need to be
-# synchronized with this derivative Dockerfile. Also make sure to update the appropriate com.sourcegraph.*.version
-# labels below.
-FROM prom/prometheus:v2.20.1@sha256:dad37e9735c6a3a8b7cf7fd560ffb287cb5eefdfb297145f0e28c7cccde7a732 AS prom_upstream
+# To upgrade Prometheus or Alertmanager, see https://docs.sourcegraph.com/dev/background-information/observability/prometheus#upgrading-prometheus-or-alertmanager
+FROM prom/prometheus:v2.23.0@sha256:3d4983246977fd7fe398fd65e90c46a68ae7178cfe70912fb689d9aca5468975 AS prom_upstream
+FROM prom/alertmanager:v0.21.0@sha256:913293083cb14085bfc01018bb30d1dcbbc9ed197ae21ef2ca917b0d29265198 AS am_upstream
 
-# Similarly to above, this Dockerfile also extends https://github.com/prometheus/alertmanager/blob/v0.21.0/Dockerfile
-# When upgrading alertmanager, make sure to make similar checks to the one above.
-FROM prom/alertmanager:v0.21.0@sha256:24a5204b418e8fa0214cfb628486749003b039c279c56b5bddb5b10cd100d926 AS am_upstream
-
+# Prepare final image
 # hadolint ignore=DL3007
-FROM quay.io/prometheus/busybox-linux-amd64:latest@sha256:248b7ec76e03e6b4fbb796fc3cdd2f91dad45546a6d7dee61c322475e0e8a08f
+FROM quay.io/prometheus/busybox-linux-amd64:latest@sha256:14d68ca3d69fceaa6224250c83d81d935c053fb13594c811038c461194599973
+
+# Should reflect versions above
+LABEL com.sourcegraph.prometheus.version=v2.23.0
+LABEL com.sourcegraph.alertmanager.version=v0.21.0
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
@@ -33,10 +30,8 @@ LABEL org.opencontainers.image.url=https://sourcegraph.com/
 LABEL org.opencontainers.image.source=https://github.com/sourcegraph/sourcegraph/
 LABEL org.opencontainers.image.documentation=https://docs.sourcegraph.com/
 
-LABEL com.sourcegraph.prometheus.version=v2.16.0
-LABEL com.sourcegraph.alertmanager.version=v0.21.0
-
-# Prometheus
+# Prometheus - extended from https://github.com/prometheus/prometheus/blob/VERSION/Dockerfile
+# Check the upstream image (replacing VERSION with the appropriate Prometheus version) when upgrading
 COPY --from=prom_upstream /bin/prometheus /bin/prometheus
 COPY --from=prom_upstream /bin/promtool /bin/promtoool
 COPY --from=prom_upstream /etc/prometheus/prometheus.yml /etc/prometheus/prometheus.yml
@@ -47,7 +42,8 @@ COPY --from=prom_upstream /NOTICE /NOTICE
 # hadolint ignore=DL3010
 COPY --from=prom_upstream /npm_licenses.tar.bz2 /npm_licenses.tar.bz2
 
-# Alertmanager
+# Alertmanager - extended from https://github.com/prometheus/alertmanager/blob/VERSION/Dockerfile
+# Check the upstream image (replacing VERSION with the appropriate Prometheus version) when upgrading
 COPY --from=am_upstream /bin/alertmanager /bin/alertmanager
 
 RUN ln -s /usr/share/prometheus/console_libraries /usr/share/prometheus/consoles/ /etc/prometheus/
@@ -69,10 +65,12 @@ RUN mkdir -p /prometheus && chown -R sourcegraph:sourcegraph /prometheus
 RUN mkdir -p /alertmanager && chown -R sourcegraph:sourcegraph /alertmanager
 USER sourcegraph
 
-COPY --from=builder /generated/prometheus/* /sg_config_prometheus/
 COPY ./.bin/prom-wrapper /bin/prom-wrapper
 COPY ./prometheus.sh /prometheus.sh
 COPY ./alertmanager.sh /alertmanager.sh
+
+# Copy config
+COPY --from=monitoring_builder /generated/prometheus/* /sg_config_prometheus/
 COPY config/*_rules.yml /sg_config_prometheus/
 COPY config/prometheus.yml /sg_config_prometheus/
 COPY config/alertmanager.yml /sg_config_prometheus/

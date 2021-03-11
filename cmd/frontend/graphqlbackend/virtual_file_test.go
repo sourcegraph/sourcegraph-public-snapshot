@@ -7,7 +7,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/internal/highlight"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 )
 
 func TestVirtualFile(t *testing.T) {

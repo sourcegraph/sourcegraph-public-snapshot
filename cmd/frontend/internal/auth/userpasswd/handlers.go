@@ -7,24 +7,30 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/suspiciousnames"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/hubspot/hubspotutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type credentials struct {
-	Email    string `json:"email"`
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Email           string `json:"email"`
+	Username        string `json:"username"`
+	Password        string `json:"password"`
+	AnonymousUserID string `json:"anonymousUserId"`
+	FirstSourceURL  string `json:"firstSourceUrl"`
 }
 
 // HandleSignUp handles submission of the user signup form.
@@ -50,7 +56,7 @@ func HandleSiteInit(w http.ResponseWriter, r *http.Request) {
 // checkEmailAbuse performs abuse prevention checks to prevent email abuse, i.e. users using emails
 // of other people whom they want to annoy.
 func checkEmailAbuse(ctx context.Context, addr string) (abused bool, reason string, err error) {
-	email, err := db.UserEmails.GetLatestVerificationSentEmail(ctx, addr)
+	email, err := database.GlobalUserEmails.GetLatestVerificationSentEmail(ctx, addr)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return false, "", nil
@@ -97,7 +103,7 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 	// We don't need to check the builtin auth provider's allowSignup because we assume the caller
 	// of doServeSignUp checks it, or else that failIfNewUserIsNotInitialSiteAdmin == true (in which
 	// case the only signup allowed is that of the initial site admin).
-	newUserData := db.NewUser{
+	newUserData := database.NewUser{
 		Email:                 creds.Email,
 		Username:              creds.Username,
 		Password:              creds.Password,
@@ -132,17 +138,17 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 		}
 	}
 
-	usr, err := db.Users.Create(r.Context(), newUserData)
+	usr, err := database.GlobalUsers.Create(r.Context(), newUserData)
 	if err != nil {
 		var (
 			message    string
 			statusCode int
 		)
 		switch {
-		case db.IsUsernameExists(err):
+		case database.IsUsernameExists(err):
 			message = "Username is already in use. Try a different username."
 			statusCode = http.StatusConflict
-		case db.IsEmailExists(err):
+		case database.IsEmailExists(err):
 			message = "Email address is already in use. Try signing into that account instead, or use a different email address."
 			statusCode = http.StatusConflict
 		case errcode.PresentationMessage(err) != "":
@@ -159,7 +165,7 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 		return
 	}
 
-	if err = db.Authz.GrantPendingPermissions(r.Context(), &db.GrantPendingPermissionsArgs{
+	if err = database.GlobalAuthz.GrantPendingPermissions(r.Context(), &database.GrantPendingPermissionsArgs{
 		UserID: usr.ID,
 		Perm:   authz.Read,
 		Type:   authz.PermRepos,
@@ -168,30 +174,30 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 	}
 
 	if conf.EmailVerificationRequired() && !newUserData.EmailIsVerified {
-		if err := backend.SendUserEmailVerificationEmail(r.Context(), creds.Email, newUserData.EmailVerificationCode); err != nil {
+		if err := backend.SendUserEmailVerificationEmail(r.Context(), usr.Username, creds.Email, newUserData.EmailVerificationCode); err != nil {
 			log15.Error("failed to send email verification (continuing, user's email will be unverified)", "email", creds.Email, "err", err)
-		} else if err = db.UserEmails.SetLastVerificationSentAt(r.Context(), usr.ID, creds.Email); err != nil {
+		} else if err = database.GlobalUserEmails.SetLastVerification(r.Context(), usr.ID, creds.Email, newUserData.EmailVerificationCode); err != nil {
 			log15.Error("failed to set email last verification sent at (user's email is verified)", "email", creds.Email, "err", err)
 		}
 	}
 
 	// Write the session cookie
 	actor := &actor.Actor{UID: usr.ID}
-	if err := session.SetActor(w, r, actor, 0); err != nil {
+	if err := session.SetActor(w, r, actor, 0, usr.CreatedAt); err != nil {
 		httpLogAndError(w, "Could not create new user session", http.StatusInternalServerError)
 	}
 
 	// Track user data
 	if r.UserAgent() != "Sourcegraph e2etest-bot" {
-		go tracking.SyncUser(creds.Email, hubspotutil.SignupEventID, nil)
+		go hubspotutil.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{AnonymousUserID: creds.AnonymousUserID, FirstSourceURL: creds.FirstSourceURL})
 	}
 }
 
 func getByEmailOrUsername(ctx context.Context, emailOrUsername string) (*types.User, error) {
 	if strings.Contains(emailOrUsername, "@") {
-		return db.Users.GetByVerifiedEmail(ctx, emailOrUsername)
+		return database.GlobalUsers.GetByVerifiedEmail(ctx, emailOrUsername)
 	}
-	return db.Users.GetByUsername(ctx, emailOrUsername)
+	return database.GlobalUsers.GetByUsername(ctx, emailOrUsername)
 }
 
 // HandleSignIn accepts a POST containing username-password credentials and authenticates the
@@ -220,7 +226,7 @@ func HandleSignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// 🚨 SECURITY: check password
-	correct, err := db.Users.IsPassword(ctx, usr.ID, creds.Password)
+	correct, err := database.GlobalUsers.IsPassword(ctx, usr.ID, creds.Password)
 	if err != nil {
 		httpLogAndError(w, "Error checking password", http.StatusInternalServerError, "err", err)
 		return
@@ -232,9 +238,34 @@ func HandleSignIn(w http.ResponseWriter, r *http.Request) {
 	actor := &actor.Actor{UID: usr.ID}
 
 	// Write the session cookie
-	if err := session.SetActor(w, r, actor, 0); err != nil {
+	if err := session.SetActor(w, r, actor, 0, usr.CreatedAt); err != nil {
 		httpLogAndError(w, "Could not create new user session", http.StatusInternalServerError)
 		return
+	}
+}
+
+// Check availability of username for signup form
+func HandleCheckUsernameTaken(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		username, err := auth.NormalizeUsername(vars["username"])
+
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		_, err = database.Namespaces(db).GetByName(r.Context(), username)
+		if err == database.ErrNamespaceNotFound {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		if err != nil {
+			httpLogAndError(w, "Error checking username uniqueness", http.StatusInternalServerError, "err", err)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
 	}
 }
 

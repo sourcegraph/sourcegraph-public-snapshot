@@ -4,12 +4,13 @@ package mocks
 
 import (
 	"context"
-	sqlf "github.com/keegancsmith/sqlf"
-	basestore "github.com/sourcegraph/sourcegraph/internal/db/basestore"
-	workerutil "github.com/sourcegraph/sourcegraph/internal/workerutil"
-	store "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"sync"
 	"time"
+
+	sqlf "github.com/keegancsmith/sqlf"
+	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	workerutil "github.com/sourcegraph/sourcegraph/internal/workerutil"
+	store "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 // MockStore is a mock implementation of the Store interface (from the
@@ -17,6 +18,9 @@ import (
 // github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store)
 // used for unit testing.
 type MockStore struct {
+	// AddExecutionLogEntryFunc is an instance of a mock function object
+	// controlling the behavior of the method AddExecutionLogEntry.
+	AddExecutionLogEntryFunc *StoreAddExecutionLogEntryFunc
 	// DequeueFunc is an instance of a mock function object controlling the
 	// behavior of the method Dequeue.
 	DequeueFunc *StoreDequeueFunc
@@ -36,6 +40,12 @@ type MockStore struct {
 	// MarkErroredFunc is an instance of a mock function object controlling
 	// the behavior of the method MarkErrored.
 	MarkErroredFunc *StoreMarkErroredFunc
+	// MarkFailedFunc is an instance of a mock function object controlling
+	// the behavior of the method MarkFailed.
+	MarkFailedFunc *StoreMarkFailedFunc
+	// QueuedCountFunc is an instance of a mock function object controlling
+	// the behavior of the method QueuedCount.
+	QueuedCountFunc *StoreQueuedCountFunc
 	// RequeueFunc is an instance of a mock function object controlling the
 	// behavior of the method Requeue.
 	RequeueFunc *StoreRequeueFunc
@@ -48,6 +58,11 @@ type MockStore struct {
 // return zero values for all results, unless overwritten.
 func NewMockStore() *MockStore {
 	return &MockStore{
+		AddExecutionLogEntryFunc: &StoreAddExecutionLogEntryFunc{
+			defaultHook: func(context.Context, int, workerutil.ExecutionLogEntry) error {
+				return nil
+			},
+		},
 		DequeueFunc: &StoreDequeueFunc{
 			defaultHook: func(context.Context, []*sqlf.Query) (workerutil.Record, store.Store, bool, error) {
 				return nil, nil, false, nil
@@ -78,6 +93,16 @@ func NewMockStore() *MockStore {
 				return false, nil
 			},
 		},
+		MarkFailedFunc: &StoreMarkFailedFunc{
+			defaultHook: func(context.Context, int, string) (bool, error) {
+				return false, nil
+			},
+		},
+		QueuedCountFunc: &StoreQueuedCountFunc{
+			defaultHook: func(context.Context, []*sqlf.Query) (int, error) {
+				return 0, nil
+			},
+		},
 		RequeueFunc: &StoreRequeueFunc{
 			defaultHook: func(context.Context, int, time.Time) error {
 				return nil
@@ -95,6 +120,9 @@ func NewMockStore() *MockStore {
 // methods delegate to the given implementation, unless overwritten.
 func NewMockStoreFrom(i store.Store) *MockStore {
 	return &MockStore{
+		AddExecutionLogEntryFunc: &StoreAddExecutionLogEntryFunc{
+			defaultHook: i.AddExecutionLogEntry,
+		},
 		DequeueFunc: &StoreDequeueFunc{
 			defaultHook: i.Dequeue,
 		},
@@ -113,6 +141,12 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		MarkErroredFunc: &StoreMarkErroredFunc{
 			defaultHook: i.MarkErrored,
 		},
+		MarkFailedFunc: &StoreMarkFailedFunc{
+			defaultHook: i.MarkFailed,
+		},
+		QueuedCountFunc: &StoreQueuedCountFunc{
+			defaultHook: i.QueuedCount,
+		},
 		RequeueFunc: &StoreRequeueFunc{
 			defaultHook: i.Requeue,
 		},
@@ -120,6 +154,115 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 			defaultHook: i.ResetStalled,
 		},
 	}
+}
+
+// StoreAddExecutionLogEntryFunc describes the behavior when the
+// AddExecutionLogEntry method of the parent MockStore instance is invoked.
+type StoreAddExecutionLogEntryFunc struct {
+	defaultHook func(context.Context, int, workerutil.ExecutionLogEntry) error
+	hooks       []func(context.Context, int, workerutil.ExecutionLogEntry) error
+	history     []StoreAddExecutionLogEntryFuncCall
+	mutex       sync.Mutex
+}
+
+// AddExecutionLogEntry delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockStore) AddExecutionLogEntry(v0 context.Context, v1 int, v2 workerutil.ExecutionLogEntry) error {
+	r0 := m.AddExecutionLogEntryFunc.nextHook()(v0, v1, v2)
+	m.AddExecutionLogEntryFunc.appendCall(StoreAddExecutionLogEntryFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the AddExecutionLogEntry
+// method of the parent MockStore instance is invoked and the hook queue is
+// empty.
+func (f *StoreAddExecutionLogEntryFunc) SetDefaultHook(hook func(context.Context, int, workerutil.ExecutionLogEntry) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AddExecutionLogEntry method of the parent MockStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *StoreAddExecutionLogEntryFunc) PushHook(hook func(context.Context, int, workerutil.ExecutionLogEntry) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *StoreAddExecutionLogEntryFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int, workerutil.ExecutionLogEntry) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *StoreAddExecutionLogEntryFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int, workerutil.ExecutionLogEntry) error {
+		return r0
+	})
+}
+
+func (f *StoreAddExecutionLogEntryFunc) nextHook() func(context.Context, int, workerutil.ExecutionLogEntry) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreAddExecutionLogEntryFunc) appendCall(r0 StoreAddExecutionLogEntryFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreAddExecutionLogEntryFuncCall objects
+// describing the invocations of this function.
+func (f *StoreAddExecutionLogEntryFunc) History() []StoreAddExecutionLogEntryFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreAddExecutionLogEntryFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreAddExecutionLogEntryFuncCall is an object that describes an
+// invocation of method AddExecutionLogEntry on an instance of MockStore.
+type StoreAddExecutionLogEntryFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 workerutil.ExecutionLogEntry
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreAddExecutionLogEntryFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreAddExecutionLogEntryFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // StoreDequeueFunc describes the behavior when the Dequeue method of the
@@ -146,7 +289,7 @@ func (f *StoreDequeueFunc) SetDefaultHook(hook func(context.Context, []*sqlf.Que
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Dequeue method of the parent MockStore instance inovkes the hook at the
+// Dequeue method of the parent MockStore instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
 func (f *StoreDequeueFunc) PushHook(hook func(context.Context, []*sqlf.Query) (workerutil.Record, store.Store, bool, error)) {
@@ -264,7 +407,7 @@ func (f *StoreDequeueWithIndependentTransactionContextFunc) SetDefaultHook(hook 
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
 // DequeueWithIndependentTransactionContext method of the parent MockStore
-// instance inovkes the hook at the front of the queue and discards it.
+// instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
 func (f *StoreDequeueWithIndependentTransactionContextFunc) PushHook(hook func(context.Context, []*sqlf.Query) (workerutil.Record, store.Store, bool, error)) {
@@ -380,7 +523,7 @@ func (f *StoreDoneFunc) SetDefaultHook(hook func(error) error) {
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Done method of the parent MockStore instance inovkes the hook at the
+// Done method of the parent MockStore instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
 func (f *StoreDoneFunc) PushHook(hook func(error) error) {
@@ -482,7 +625,7 @@ func (f *StoreHandleFunc) SetDefaultHook(hook func() *basestore.TransactableHand
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Handle method of the parent MockStore instance inovkes the hook at the
+// Handle method of the parent MockStore instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
 func (f *StoreHandleFunc) PushHook(hook func() *basestore.TransactableHandle) {
@@ -581,7 +724,7 @@ func (f *StoreMarkCompleteFunc) SetDefaultHook(hook func(context.Context, int) (
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// MarkComplete method of the parent MockStore instance inovkes the hook at
+// MarkComplete method of the parent MockStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
 func (f *StoreMarkCompleteFunc) PushHook(hook func(context.Context, int) (bool, error)) {
@@ -689,7 +832,7 @@ func (f *StoreMarkErroredFunc) SetDefaultHook(hook func(context.Context, int, st
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// MarkErrored method of the parent MockStore instance inovkes the hook at
+// MarkErrored method of the parent MockStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
 func (f *StoreMarkErroredFunc) PushHook(hook func(context.Context, int, string) (bool, error)) {
@@ -776,6 +919,225 @@ func (c StoreMarkErroredFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// StoreMarkFailedFunc describes the behavior when the MarkFailed method of
+// the parent MockStore instance is invoked.
+type StoreMarkFailedFunc struct {
+	defaultHook func(context.Context, int, string) (bool, error)
+	hooks       []func(context.Context, int, string) (bool, error)
+	history     []StoreMarkFailedFuncCall
+	mutex       sync.Mutex
+}
+
+// MarkFailed delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockStore) MarkFailed(v0 context.Context, v1 int, v2 string) (bool, error) {
+	r0, r1 := m.MarkFailedFunc.nextHook()(v0, v1, v2)
+	m.MarkFailedFunc.appendCall(StoreMarkFailedFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the MarkFailed method of
+// the parent MockStore instance is invoked and the hook queue is empty.
+func (f *StoreMarkFailedFunc) SetDefaultHook(hook func(context.Context, int, string) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// MarkFailed method of the parent MockStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *StoreMarkFailedFunc) PushHook(hook func(context.Context, int, string) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *StoreMarkFailedFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *StoreMarkFailedFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context, int, string) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *StoreMarkFailedFunc) nextHook() func(context.Context, int, string) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreMarkFailedFunc) appendCall(r0 StoreMarkFailedFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreMarkFailedFuncCall objects describing
+// the invocations of this function.
+func (f *StoreMarkFailedFunc) History() []StoreMarkFailedFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreMarkFailedFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreMarkFailedFuncCall is an object that describes an invocation of
+// method MarkFailed on an instance of MockStore.
+type StoreMarkFailedFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreMarkFailedFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreMarkFailedFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// StoreQueuedCountFunc describes the behavior when the QueuedCount method
+// of the parent MockStore instance is invoked.
+type StoreQueuedCountFunc struct {
+	defaultHook func(context.Context, []*sqlf.Query) (int, error)
+	hooks       []func(context.Context, []*sqlf.Query) (int, error)
+	history     []StoreQueuedCountFuncCall
+	mutex       sync.Mutex
+}
+
+// QueuedCount delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockStore) QueuedCount(v0 context.Context, v1 []*sqlf.Query) (int, error) {
+	r0, r1 := m.QueuedCountFunc.nextHook()(v0, v1)
+	m.QueuedCountFunc.appendCall(StoreQueuedCountFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the QueuedCount method
+// of the parent MockStore instance is invoked and the hook queue is empty.
+func (f *StoreQueuedCountFunc) SetDefaultHook(hook func(context.Context, []*sqlf.Query) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// QueuedCount method of the parent MockStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *StoreQueuedCountFunc) PushHook(hook func(context.Context, []*sqlf.Query) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *StoreQueuedCountFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, []*sqlf.Query) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *StoreQueuedCountFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, []*sqlf.Query) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *StoreQueuedCountFunc) nextHook() func(context.Context, []*sqlf.Query) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreQueuedCountFunc) appendCall(r0 StoreQueuedCountFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreQueuedCountFuncCall objects describing
+// the invocations of this function.
+func (f *StoreQueuedCountFunc) History() []StoreQueuedCountFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreQueuedCountFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreQueuedCountFuncCall is an object that describes an invocation of
+// method QueuedCount on an instance of MockStore.
+type StoreQueuedCountFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []*sqlf.Query
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreQueuedCountFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreQueuedCountFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // StoreRequeueFunc describes the behavior when the Requeue method of the
 // parent MockStore instance is invoked.
 type StoreRequeueFunc struct {
@@ -800,7 +1162,7 @@ func (f *StoreRequeueFunc) SetDefaultHook(hook func(context.Context, int, time.T
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Requeue method of the parent MockStore instance inovkes the hook at the
+// Requeue method of the parent MockStore instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
 func (f *StoreRequeueFunc) PushHook(hook func(context.Context, int, time.Time) error) {
@@ -908,7 +1270,7 @@ func (f *StoreResetStalledFunc) SetDefaultHook(hook func(context.Context) ([]int
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// ResetStalled method of the parent MockStore instance inovkes the hook at
+// ResetStalled method of the parent MockStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
 func (f *StoreResetStalledFunc) PushHook(hook func(context.Context) ([]int, []int, error)) {

@@ -1,14 +1,15 @@
 package git
 
 import (
+	"context"
 	"reflect"
 	"sort"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 func TestHumanReadableBranchName(t *testing.T) {
@@ -44,7 +45,7 @@ func TestRepository_ListBranches(t *testing.T) {
 		"git checkout -b b1",
 	}
 	tests := map[string]struct {
-		repo         gitserver.Repo
+		repo         api.RepoName
 		wantBranches []*Branch
 	}{
 		"git cmd": {
@@ -54,7 +55,7 @@ func TestRepository_ListBranches(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		branches, err := ListBranches(ctx, test.repo, BranchesOptions{})
+		branches, err := ListBranches(context.Background(), test.repo, BranchesOptions{})
 		if err != nil {
 			t.Errorf("%s: Branches: %s", label, err)
 			continue
@@ -98,7 +99,7 @@ func TestRepository_Branches_MergedInto(t *testing.T) {
 	}
 
 	for label, test := range map[string]struct {
-		repo         gitserver.Repo
+		repo         api.RepoName
 		wantBranches map[string][]*Branch
 	}{
 		"git cmd": {
@@ -107,7 +108,7 @@ func TestRepository_Branches_MergedInto(t *testing.T) {
 		},
 	} {
 		for branch, mergedInto := range test.wantBranches {
-			branches, err := ListBranches(ctx, test.repo, BranchesOptions{MergedInto: branch})
+			branches, err := ListBranches(context.Background(), test.repo, BranchesOptions{MergedInto: branch})
 			if err != nil {
 				t.Errorf("%s: Branches: %s", label, err)
 				continue
@@ -137,7 +138,7 @@ func TestRepository_Branches_ContainsCommit(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		repo                 gitserver.Repo
+		repo                 api.RepoName
 		commitToWantBranches map[string][]*Branch
 	}{
 		"git cmd": {
@@ -148,7 +149,7 @@ func TestRepository_Branches_ContainsCommit(t *testing.T) {
 
 	for label, test := range tests {
 		for commit, wantBranches := range test.commitToWantBranches {
-			branches, err := ListBranches(ctx, test.repo, BranchesOptions{ContainsCommit: commit})
+			branches, err := ListBranches(context.Background(), test.repo, BranchesOptions{ContainsCommit: commit})
 			if err != nil {
 				t.Errorf("%s: Branches: %s", label, err)
 				continue
@@ -188,7 +189,7 @@ func TestRepository_Branches_BehindAheadCounts(t *testing.T) {
 	sort.Sort(Branches(gitBranches))
 
 	tests := map[string]struct {
-		repo         gitserver.Repo
+		repo         api.RepoName
 		wantBranches []*Branch
 	}{
 		"git cmd": {
@@ -198,7 +199,7 @@ func TestRepository_Branches_BehindAheadCounts(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		branches, err := ListBranches(ctx, test.repo, BranchesOptions{BehindAheadBranch: "master"})
+		branches, err := ListBranches(context.Background(), test.repo, BranchesOptions{BehindAheadBranch: "master"})
 		if err != nil {
 			t.Errorf("%s: Branches: %s", label, err)
 			continue
@@ -243,7 +244,7 @@ func TestRepository_Branches_IncludeCommit(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		repo         gitserver.Repo
+		repo         api.RepoName
 		wantBranches []*Branch
 	}{
 		"git cmd": {
@@ -253,7 +254,7 @@ func TestRepository_Branches_IncludeCommit(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		branches, err := ListBranches(ctx, test.repo, BranchesOptions{IncludeCommit: true})
+		branches, err := ListBranches(context.Background(), test.repo, BranchesOptions{IncludeCommit: true})
 		if err != nil {
 			t.Errorf("%s: Branches: %s", label, err)
 			continue
@@ -277,7 +278,7 @@ func TestRepository_ListTags(t *testing.T) {
 		dateEnv + " git tag --annotate -m foo t2",
 	}
 	tests := map[string]struct {
-		repo     gitserver.Repo
+		repo     api.RepoName
 		wantTags []*Tag
 	}{
 		"git cmd": {
@@ -291,17 +292,51 @@ func TestRepository_ListTags(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		tags, err := ListTags(ctx, test.repo)
+		tags, err := ListTags(context.Background(), test.repo)
 		if err != nil {
 			t.Errorf("%s: ListTags: %s", label, err)
 			continue
 		}
+
 		sort.Sort(Tags(tags))
 		sort.Sort(Tags(test.wantTags))
 
 		if !reflect.DeepEqual(tags, test.wantTags) {
 			t.Errorf("%s: got tags == %v, want %v", label, tags, test.wantTags)
 		}
+	}
+}
+
+// See https://github.com/sourcegraph/sourcegraph/issues/5453
+func TestRepository_parseTags_WithoutCreatorDate(t *testing.T) {
+	have, err := parseTags([]byte(
+		"9ee1c939d1cb936b1f98e8d81aeffab57bae46ab\x00v2.6.12\x001119037709\n" +
+			"c39ae07f393806ccf406ef966e9a15afc43cc36a\x00v2.6.11-tree\x00\n" +
+			"c39ae07f393806ccf406ef966e9a15afc43cc36a\x00v2.6.11\x00\n",
+	))
+
+	if err != nil {
+		t.Fatalf("parseTags: have err %v, want nil", err)
+	}
+
+	want := []*Tag{
+		{
+			Name:        "v2.6.12",
+			CommitID:    "9ee1c939d1cb936b1f98e8d81aeffab57bae46ab",
+			CreatorDate: time.Unix(1119037709, 0).UTC(),
+		},
+		{
+			Name:     "v2.6.11-tree",
+			CommitID: "c39ae07f393806ccf406ef966e9a15afc43cc36a",
+		},
+		{
+			Name:     "v2.6.11",
+			CommitID: "c39ae07f393806ccf406ef966e9a15afc43cc36a",
+		},
+	}
+
+	if diff := cmp.Diff(have, want); diff != "" {
+		t.Fatal(diff)
 	}
 }
 

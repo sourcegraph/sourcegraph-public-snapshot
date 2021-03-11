@@ -1,16 +1,22 @@
 package git
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
+
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
@@ -19,9 +25,31 @@ type Commit struct {
 	ID        api.CommitID `json:"ID,omitempty"`
 	Author    Signature    `json:"Author"`
 	Committer *Signature   `json:"Committer,omitempty"`
-	Message   string       `json:"Message,omitempty"`
+	Message   Message      `json:"Message,omitempty"`
 	// Parents are the commit IDs of this commit's parent commits.
 	Parents []api.CommitID `json:"Parents,omitempty"`
+}
+
+type Message string
+
+// Subject returns the first line of the commit message
+func (m Message) Subject() string {
+	message := string(m)
+	i := strings.Index(message, "\n")
+	if i == -1 {
+		return strings.TrimSpace(message)
+	}
+	return strings.TrimSpace(message[:i])
+}
+
+// Body returns the contents of the Git commit message after the subject.
+func (m Message) Body() string {
+	message := string(m)
+	i := strings.Index(message, "\n")
+	if i == -1 {
+		return ""
+	}
+	return strings.TrimSpace(message[i:])
 }
 
 type Signature struct {
@@ -41,14 +69,12 @@ type CommitsOptions struct {
 
 	Author string // include only commits whose author matches this
 	After  string // include only commits after this date
+	Before string // include only commits before this date
+
+	Reverse   bool // Whether or not commits should be given in reverse order (optional)
+	DateOrder bool // Whether or not commits should be sorted by date (optional)
 
 	Path string // only commits modifying the given path are selected (optional)
-
-	// RemoteURLFunc is called to get the Git remote URL if it's not set in
-	// repo and if it is needed. The Git remote URL is only required if the
-	// gitserver doesn't already contain a clone of the repository or if the
-	// commit must be fetched from the remote.
-	RemoteURLFunc func() (string, error)
 
 	// When true we opt out of attempting to fetch missing revisions
 	NoEnsureRevision bool
@@ -58,10 +84,32 @@ type CommitsOptions struct {
 // -sne` command.
 var logEntryPattern = lazyregexp.New(`^\s*([0-9]+)\s+(.*)$`)
 
+var recordGetCommitQueries = os.Getenv("RECORD_GET_COMMIT_QUERIES") == "1"
+
 // getCommit returns the commit with the given id.
-func getCommit(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (string, error), id api.CommitID, opt ResolveRevisionOptions) (*Commit, error) {
+func getCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (_ *Commit, err error) {
 	if Mocks.GetCommit != nil {
 		return Mocks.GetCommit(id)
+	}
+
+	if honey.Enabled() && recordGetCommitQueries {
+		defer func() {
+			ev := honey.Event("getCommit")
+			ev.SampleRate = 10 // 1 in 10
+			ev.AddField("repo", repo)
+			ev.AddField("commit", id)
+			ev.AddField("no_ensure_revision", opt.NoEnsureRevision)
+			ev.AddField("actor", actor.FromContext(ctx).UIDString())
+
+			q, _ := ctx.Value("graphql-query").(string)
+			ev.AddField("query", q)
+
+			if err != nil {
+				ev.AddField("error", err.Error())
+			}
+
+			_ = ev.Send()
+		}()
 	}
 
 	if err := checkSpecArgSafety(string(id)); err != nil {
@@ -71,7 +119,6 @@ func getCommit(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (s
 	commitOptions := CommitsOptions{
 		Range:            string(id),
 		N:                1,
-		RemoteURLFunc:    remoteURLFunc,
 		NoEnsureRevision: opt.NoEnsureRevision,
 	}
 
@@ -93,16 +140,16 @@ func getCommit(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (s
 // The remoteURLFunc is called to get the Git remote URL if it's not set in repo and if it is
 // needed. The Git remote URL is only required if the gitserver doesn't already contain a clone of
 // the repository or if the commit must be fetched from the remote.
-func GetCommit(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (string, error), id api.CommitID, opt ResolveRevisionOptions) (*Commit, error) {
+func GetCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (*Commit, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: GetCommit")
 	span.SetTag("Commit", id)
 	defer span.Finish()
 
-	return getCommit(ctx, repo, remoteURLFunc, id, opt)
+	return getCommit(ctx, repo, id, opt)
 }
 
 // Commits returns all commits matching the options.
-func Commits(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) ([]*Commit, error) {
+func Commits(ctx context.Context, repo api.RepoName, opt CommitsOptions) ([]*Commit, error) {
 	if Mocks.Commits != nil {
 		return Mocks.Commits(repo, opt)
 	}
@@ -120,7 +167,7 @@ func Commits(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) ([]*C
 
 // HasCommitAfter indicates the staleness of a repository. It returns a boolean indicating if a repository
 // contains a commit past a specified date.
-func HasCommitAfter(ctx context.Context, repo gitserver.Repo, date string, revspec string) (bool, error) {
+func HasCommitAfter(ctx context.Context, repo api.RepoName, date string, revspec string) (bool, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: HasCommitAfter")
 	span.SetTag("Date", date)
 	span.SetTag("RevSpec", revspec)
@@ -130,7 +177,7 @@ func HasCommitAfter(ctx context.Context, repo gitserver.Repo, date string, revsp
 		revspec = "HEAD"
 	}
 
-	commitid, err := ResolveRevision(ctx, repo, nil, revspec, ResolveRevisionOptions{NoEnsureRevision: true})
+	commitid, err := ResolveRevision(ctx, repo, revspec, ResolveRevisionOptions{NoEnsureRevision: true})
 	if err != nil {
 		return false, err
 	}
@@ -154,7 +201,7 @@ func isInvalidRevisionRangeError(output, obj string) bool {
 // commitLog returns a list of commits.
 //
 // The caller is responsible for doing checkSpecArgSafety on opt.Head and opt.Base.
-func commitLog(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) (commits []*Commit, err error) {
+func commitLog(ctx context.Context, repo api.RepoName, opt CommitsOptions) (commits []*Commit, err error) {
 	args, err := commitLogArgs([]string{"log", logFormatWithoutRefs}, opt)
 	if err != nil {
 		return nil, err
@@ -165,16 +212,7 @@ func commitLog(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) (co
 	if !opt.NoEnsureRevision {
 		cmd.EnsureRevision = opt.Range
 	}
-	retryer := &commandRetryer{
-		cmd:           cmd,
-		remoteURLFunc: opt.RemoteURLFunc,
-		exec: func() error {
-			commits, err = runCommitLog(ctx, cmd, opt)
-			return err
-		},
-	}
-	err = retryer.run()
-	return
+	return runCommitLog(ctx, cmd, opt)
 }
 
 // runCommitLog sends the git command to gitserver. It interprets missing
@@ -185,7 +223,7 @@ var runCommitLog = func(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOpti
 	if err != nil {
 		data = bytes.TrimSpace(data)
 		if isBadObjectErr(string(stderr), opt.Range) {
-			return nil, &gitserver.RevisionNotFoundError{Repo: cmd.Repo.Name, Spec: opt.Range}
+			return nil, &gitserver.RevisionNotFoundError{Repo: cmd.Repo, Spec: opt.Range}
 		}
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, data))
 	}
@@ -225,6 +263,15 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 	if opt.After != "" {
 		args = append(args, "--after="+opt.After)
 	}
+	if opt.Before != "" {
+		args = append(args, "--before="+opt.Before)
+	}
+	if opt.Reverse {
+		args = append(args, "--reverse")
+	}
+	if opt.DateOrder {
+		args = append(args, "--date-order")
+	}
 
 	if opt.MessageQuery != "" {
 		args = append(args, "--fixed-strings", "--regexp-ignore-case", "--grep="+opt.MessageQuery)
@@ -241,7 +288,7 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 }
 
 // CommitCount returns the number of commits that would be returned by Commits.
-func CommitCount(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) (uint, error) {
+func CommitCount(ctx context.Context, repo api.RepoName, opt CommitsOptions) (uint, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: CommitCount")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
@@ -264,6 +311,93 @@ func CommitCount(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) (
 	out = bytes.TrimSpace(out)
 	n, err := strconv.ParseUint(string(out), 10, 64)
 	return uint(n), err
+}
+
+// FirstEverCommit returns the first commit ever made to the repository.
+func FirstEverCommit(ctx context.Context, repo api.RepoName) (*Commit, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: FirstEverCommit")
+	defer span.Finish()
+
+	args := []string{"rev-list", "--max-count=1", "--max-parents=0", "HEAD"}
+	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd.Repo = repo
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", args, out))
+	}
+	id := api.CommitID(bytes.TrimSpace(out))
+	return GetCommit(ctx, repo, id, ResolveRevisionOptions{NoEnsureRevision: true})
+}
+
+// FindNearestCommit finds the commit in the given repository revSpec (e.g. `HEAD` or `mybranch`)
+// whose author date most closely matches the target time.
+//
+// Can return a commit very far away if no nearby one exists.
+// Can theoretically return nil, nil if no commits at all are found.
+func FindNearestCommit(ctx context.Context, repoName api.RepoName, revSpec string, target time.Time) (*Commit, error) {
+	if revSpec == "" {
+		revSpec = "HEAD"
+	}
+	// Resolve e.g. the branch we're looking at.
+	branchCommit, err := ResolveRevision(ctx, repoName, revSpec, ResolveRevisionOptions{NoEnsureRevision: true})
+	if err != nil {
+		return nil, err
+	}
+
+	// Find the next closest commit on or after our target time.
+	commitsAfter, err := Commits(ctx, repoName, CommitsOptions{
+		After:     target.Add(-1 * time.Second).Format(time.RFC3339),
+		Range:     string(branchCommit),
+		Reverse:   true,
+		DateOrder: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+	var commitOnOrAfter *Commit
+	if len(commitsAfter) > 0 {
+		commitOnOrAfter = commitsAfter[0]
+	}
+
+	// Find the next closest commit before our target time.
+	commitsBefore, err := Commits(ctx, repoName, CommitsOptions{
+		N:         1,
+		Before:    target.Format(time.RFC3339),
+		Range:     string(branchCommit),
+		DateOrder: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+	var commitBefore *Commit
+	if len(commitsBefore) > 0 {
+		commitBefore = commitsBefore[0]
+	}
+
+	switch {
+	case commitOnOrAfter == nil && commitBefore == nil:
+		return nil, nil
+	case commitOnOrAfter == nil:
+		return commitBefore, nil
+	case commitBefore == nil:
+		return commitOnOrAfter, nil
+	default:
+		// Get absolute distance of each commit to target.
+		distanceToAfter := commitOnOrAfter.Author.Date.Sub(target)
+		if distanceToAfter < 0 {
+			distanceToAfter = -distanceToAfter
+		}
+		distanceToBefore := commitBefore.Author.Date.Sub(target)
+		if distanceToBefore < 0 {
+			distanceToBefore = -distanceToBefore
+		}
+
+		// Return whichever commit is closer.
+		if distanceToAfter < distanceToBefore {
+			return commitOnOrAfter, nil
+		}
+		return commitBefore, nil
+	}
 }
 
 const (
@@ -316,7 +450,7 @@ func parseCommitFromLog(data []byte) (commit *Commit, refs []string, rest []byte
 		ID:        commitID,
 		Author:    Signature{Name: string(parts[2]), Email: string(parts[3]), Date: time.Unix(authorTime, 0).UTC()},
 		Committer: &Signature{Name: string(parts[5]), Email: string(parts[6]), Date: time.Unix(committerTime, 0).UTC()},
-		Message:   string(bytes.TrimSuffix(parts[8], []byte{'\n'})),
+		Message:   Message(strings.TrimSuffix(string(parts[8]), "\n")),
 		Parents:   parents,
 	}
 
@@ -334,30 +468,165 @@ type onelineCommit struct {
 	sourceRef string // `git log --source` source ref
 }
 
-// parseCommitsFromOnelineLog parses the commits from the output of:
+// errLogOnelineBatchScannerClosed is returned if a read is attempted on a
+// closed logOnelineBatchScanner.
+var errLogOnelineBatchScannerClosed = errors.New("logOnelineBatchScanner closed")
+
+// logOnelineBatchScanner wraps logOnelineScanner to batch up reads.
 //
-//   git log --oneline -z --source --no-patch
-func parseCommitsFromOnelineLog(data []byte) (commits []*onelineCommit, err error) {
-	entries := bytes.Split(data, []byte{'\x00'})
-	for _, e := range entries {
-		if len(e) == 0 {
-			continue
+// next will return at least 1 commit and at most maxBatchSize entries. After
+// debounce time it will return what has been batched so far (or wait until an
+// entry is available). The last response from next will return a non-nil
+// error.
+//
+// cleanup must be called when done. This function creates a goroutine to
+// batch up calls to scan.
+func logOnelineBatchScanner(scan func() (*onelineCommit, error), maxBatchSize int, debounce time.Duration) (next func() ([]*onelineCommit, error), cleanup func()) {
+	// done is closed to indicate cleaning up
+	done := make(chan struct{})
+	cleanup = func() {
+		close(done)
+	}
+
+	// We can't call scan with a timeout. So we start a goroutine which sends
+	// the output of scan down a channel. When done is closed, this goroutine
+	// will stop running.
+	type result struct {
+		commit *onelineCommit
+		err    error
+	}
+	// have a cap of maxBatchSize so we potentially have maxBatchSize ready to
+	// send.
+	resultC := make(chan result, maxBatchSize)
+	go func() {
+		defer close(resultC)
+		for {
+			commit, err := scan()
+			select {
+			case resultC <- result{commit: commit, err: err}:
+			case <-done:
+				return
+			}
+			if err != nil {
+				return
+			}
+		}
+	}()
+
+	var err error
+	next = func() ([]*onelineCommit, error) {
+		// The previous call may have had an error but also had commits to
+		// return. In that case we didn't return the error, so need to return
+		// it now.
+		if err != nil {
+			return nil, err
 		}
 
-		// Format: (40-char SHA) \t (source ref)? 'log size '
-		if len(e) <= 40 {
-			return commits, fmt.Errorf("parsing git oneline commit: short entry: %q", e)
+		// Stop scanning if we haven't found maxBatchSize by deadline.
+		deadline := time.NewTimer(debounce)
+		defer deadline.Stop()
+
+		// We always want 1 result. Ignore deadline for the first result.
+		r, ok := <-resultC
+		if !ok {
+			return nil, errLogOnelineBatchScannerClosed
+		} else if r.err != nil {
+			err = r.err
+			return nil, r.err
+		}
+
+		// Add to commits until we hit maxBatchSize or we are passed
+		// deadline. If we encounter an error set err.
+		commits := []*onelineCommit{r.commit}
+		timedout := false
+		for err == nil && len(commits) < maxBatchSize && !timedout {
+			select {
+			case r, ok := <-resultC:
+				if !ok {
+					err = errLogOnelineBatchScannerClosed
+				} else if r.err != nil {
+					err = r.err
+				} else {
+					commits = append(commits, r.commit)
+				}
+			case <-deadline.C:
+				timedout = true
+			}
+		}
+
+		// Note: err can be non-nil here. The next call to this
+		// function will return err.
+		return commits, nil
+	}
+
+	return next, cleanup
+}
+
+// logOnelineScanner parses the commits from the reader of:
+//
+//   git log --pretty='format:%H %S' -z --source --no-patch
+//
+// Once it returns an error the scanner should be disregarded. io.EOF is
+// returned when there is no more data to read.
+func logOnelineScanner(r io.Reader) func() (*onelineCommit, error) {
+	// Each "log line" contains a source ref. I could not find a bound on the
+	// size of a git ref, so each line can get arbitrarily large. So we use a
+	// bufio.Scanner instead of a bufio.Reader since a Scanner allows growing
+	// the buffer to accomodate the "token" size. This makes the
+	// implementation slightly more complicated (needs a split function
+	// instead of just using ReadBytes).
+	//
+	// Note: Not all source refs correspond to direct arguments, eg if you use
+	// --glob=refs/* any possible ref can be a source ref.
+	//
+	// Note: I check the git source for ref limits, there are none I
+	// found. Linux does have PATH_MAX (4096), but its quite easy to work
+	// around that.
+	//
+	// Note: Scanner does have a max size it will grow to (64kb). If a repo
+	// contains a ref this big, we treat it as an error. This shouldn't happen
+	// in practice, but that is likely famous last words.
+	scanNull := func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+		if atEOF && len(data) == 0 {
+			return 0, nil, nil
+		}
+		if i := bytes.IndexByte(data, '\x00'); i >= 0 {
+			return i + 1, data[:i], nil
+		}
+		if atEOF {
+			return len(data), data, nil
+		}
+		// Request more data.
+		return 0, nil, nil
+	}
+	scanner := bufio.NewScanner(r)
+	scanner.Split(scanNull)
+	return func() (*onelineCommit, error) {
+		if !scanner.Scan() {
+			err := scanner.Err()
+			if err == nil {
+				return nil, io.EOF
+			} else if strings.Contains(err.Error(), "does not have any commits yet") {
+				// Treat empty repositories as having no commits without failing
+				return nil, io.EOF
+			}
+			return nil, err
+		}
+
+		e := scanner.Bytes()
+
+		// Format: (40-char SHA) (source ref)
+		if len(e) <= 42 {
+			return nil, fmt.Errorf("parsing git oneline commit: short entry: %q", e)
 		}
 		sha1 := e[:40]
-		i := bytes.Index(e, []byte{' '})
-		if i == -1 {
-			return commits, fmt.Errorf("parsing git oneline commit: no ' ': %q", e)
+		if e[40] != ' ' {
+			return nil, fmt.Errorf("parsing git oneline commit: no ' ': %q", e)
 		}
-		sourceRef := e[41:i]
-		commits = append(commits, &onelineCommit{
+		sourceRef := e[41:]
+		return &onelineCommit{
 			sha1:      string(sha1),
 			sourceRef: string(sourceRef),
-		})
+		}, nil
 	}
-	return commits, nil
 }

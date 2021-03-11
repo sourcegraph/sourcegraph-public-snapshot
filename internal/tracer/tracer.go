@@ -9,15 +9,17 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"strings"
 	"sync"
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"go.uber.org/automaxprocs/maxprocs"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"go.uber.org/automaxprocs/maxprocs"
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/uber/jaeger-client-go"
@@ -165,7 +167,7 @@ func newTracer(opts *jaegerOpts) (opentracing.Tracer, func(span opentracing.Span
 	}
 
 	// We proxy jaeger so we can construct URLs to traces.
-	jaegerURL := opts.ExternalURL + "/-/debug/jaeger/trace/"
+	jaegerURL := strings.TrimSuffix(opts.ExternalURL, "/") + "/-/debug/jaeger/trace/"
 
 	spanURL := func(span opentracing.Span) string {
 		if span == nil {

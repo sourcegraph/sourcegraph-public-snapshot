@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/search"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
@@ -187,6 +186,7 @@ main.go:7:}
 			IncludePatterns: []string{"file++.plus"},
 			IsStructuralPat: true,
 			IsRegExp:        true, // To test for a regression, imply that IsStructuralPat takes precedence.
+			CombyRule:       `where "backcompat" == "backcompat"`,
 		}, `
 file++.plus:1:filename contains regex metachars
 `},
@@ -216,7 +216,7 @@ milton.png
 	if err != nil {
 		t.Fatal(err)
 	}
-	s.FilterTar = func(_ context.Context, _ gitserver.Repo, _ api.CommitID) (store.FilterFunc, error) {
+	s.FilterTar = func(_ context.Context, _ api.RepoName, _ api.CommitID) (store.FilterFunc, error) {
 		return func(hdr *tar.Header) bool {
 			return hdr.Name == "ignore.me"
 		}, nil
@@ -401,12 +401,13 @@ func TestSearch_badrequest(t *testing.T) {
 func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
 	form := url.Values{
 		"Repo":            []string{string(p.Repo)},
-		"URL":             []string{string(p.URL)},
+		"URL":             []string{p.URL},
 		"Commit":          []string{string(p.Commit)},
 		"Pattern":         []string{p.Pattern},
 		"FetchTimeout":    []string{p.FetchTimeout},
 		"IncludePatterns": p.IncludePatterns,
 		"ExcludePattern":  []string{p.ExcludePattern},
+		"CombyRule":       []string{p.CombyRule},
 	}
 	if p.IsRegExp {
 		form.Set("IsRegExp", "true")
@@ -488,7 +489,7 @@ func newStore(files map[string]string) (*store.Store, func(), error) {
 		return nil, nil, err
 	}
 	return &store.Store{
-		FetchTar: func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error) {
+		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 			return ioutil.NopCloser(bytes.NewReader(buf.Bytes())), nil
 		},
 		Path: d,

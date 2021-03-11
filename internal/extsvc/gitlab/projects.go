@@ -11,6 +11,7 @@ import (
 
 	"github.com/peterhellberg/link"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 type Visibility string
@@ -98,7 +99,7 @@ func (c *Client) cachedGetProject(ctx context.Context, key string, forceFetch bo
 		if cached := c.getProjectFromCache(ctx, key); cached != nil {
 			projectsGitLabCacheCounter.WithLabelValues("hit").Inc()
 			if cached.NotFound {
-				return nil, ErrNotFound
+				return nil, ErrProjectNotFound
 			}
 			return &cached.Project, nil
 		}
@@ -122,14 +123,10 @@ func (c *Client) cachedGetProject(ctx context.Context, key string, forceFetch bo
 	return proj, nil
 }
 
-var projectsGitLabCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+var projectsGitLabCacheCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "src_projs_gitlab_cache_hit",
 	Help: "Counts cache hits and misses for GitLab project metadata.",
 }, []string{"type"})
-
-func init() {
-	prometheus.MustRegister(projectsGitLabCacheCounter)
-}
 
 type cachedProj struct {
 	Project

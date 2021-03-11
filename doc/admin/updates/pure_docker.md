@@ -1,8 +1,93 @@
 # Updating a pure-Docker Sourcegraph cluster
 
 This document describes the exact changes needed to update a [pure-Docker Sourcegraph cluster](https://github.com/sourcegraph/deploy-sourcegraph-docker).
-
 Each section comprehensively describes the changes needed in Docker images, environment variables, and added/removed services.
+
+A new version of Sourcegraph is released every month (with patch releases in between, released as needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) or the site admin updates page to learn about updates. We actively maintain the two most recent monthly releases of Sourcegraph.
+
+Upgrades should happen across consecutive minor versions of Sourcegraph. For example, if you are running Sourcegraph 3.1 and want to upgrade to 3.3, you should upgrade to 3.2 and then 3.3.
+
+**Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
+
+## 3.24 -> 3.25
+
+Confirm that `codeinsights-db-disk` has the correct file permissions:
+
+```
+sudo chown -R 999:999 ~/sourcegraph-docker/codeinsights-db-disk/
+```
+
+- **If your are connecting to an external Postgres database using SSL/TLS:** Go `1.15` introduced changes to SSL/TLS connection validation which requires certificates to include a `SAN`. This field was not included in older certificates and clients relied on the `CN` field. You might see an error like `x509: certificate relies on legacy Common Name field`. We recommend that customers using Sourcegraph with an external database and connecting to it using SSL/TLS check whether the certificate is up to date.
+  - AWS RDS customers please reference [AWS' documentation on updating the SSL/TLS certificate](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL-certificate-rotation.html) for steps to rotate your certificate.
+
+To upgrade, please perform the changes in the following diff:
+
+https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/ee2cbb59c80a382fb6cc649d4547b044d9a8b28d
+
+## 3.23.0 -> 3.24.0
+
+To upgrade, please perform the changes in the following diff:
+
+https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/4acc4c7ed5d49ce41b1f68d654a3f4e2f35bd622
+
+## 3.22.0 -> 3.23.0
+
+To upgrade, please perform the changes in the following diff:
+
+https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/10de1a4e34ab2c716bd63e52a68a6af896bd81b7
+
+## 3.21.2 -> 3.22.0
+
+To upgrade, please perform the changes in the following diff:
+
+https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/223c11dacffafb985c2d29b6c6a9b84bcc8255be
+
+This upgrade removes the `code intel bundle manager`. This service has been deprecated and all references to it have been removed.
+
+This upgrade also adds a MinIO container that doesn't require any custom configuration. You can find more detailed documentation in https://docs.sourcegraph.com/admin/external_services/object_storage.
+
+
+## 3.20.1 -> 3.21.2
+
+To upgrade, please perform the changes in the following diff:
+
+https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/4629ddfcdfd070b41801106199817ae903ead510
+
+### Note new services
+
+This upgrade includes a new code-intel DB (`deploy-codeintel-db.sh`) and a new service `minio` (`deploy-minio.sh`)
+to store LSIF indices.
+There is a new environment variable for frontend and frontend-internal called `CODEINTEL_PGHOST`.
+
+(both of these changes are described exactly in the diff above)
+
+## 3.19.1 -> 3.20.1
+
+To upgrade, please perform the changes in the following diff:
+
+https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/7c57315a1ce05981d436860d79ca01553931e274
+
+### Confirm file permissions
+
+Confirm that `lsif-server-disk` has the correct file permissions:
+
+```
+sudo chown -R 100:101 ~/sourcegraph-docker/lsif-server-disk/ ~/sourcegraph-docker/lsif-server-disk/
+```
+
+## 3.18.0 -> 3.19.1
+
+To upgrade, please perform the changes in the following diff:
+
+https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/a1648452c6f7c16637b0e069776df12604c27f73
+
+### Confirm file permissions
+
+Confirm that `lsif-server-disk` has the correct file permissions:
+
+```
+sudo chown -R 100:101 ~/sourcegraph-docker/lsif-server-disk/ ~/sourcegraph-docker/lsif-server-disk/
+```
 
 ## 3.17.2 -> 3.18.0 changes
 

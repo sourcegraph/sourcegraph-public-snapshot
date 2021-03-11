@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/keegancsmith/sqlf"
+
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
@@ -23,6 +24,16 @@ func newStoreShim(store store.Store) workerutil.Store {
 	}
 
 	return &storeShim{Store: store}
+}
+
+// QueuedCount calls into the inner store.
+func (s *storeShim) QueuedCount(ctx context.Context, extraArguments interface{}) (int, error) {
+	conditions, err := convertArguments(extraArguments)
+	if err != nil {
+		return 0, err
+	}
+
+	return s.Store.QueuedCount(ctx, conditions)
 }
 
 // Dequeue calls into the inner store.

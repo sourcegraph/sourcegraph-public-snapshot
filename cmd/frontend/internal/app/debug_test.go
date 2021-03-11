@@ -1,15 +1,24 @@
 package app
 
 import (
+	"context"
+	"errors"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/gorilla/mux"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func Test_prometheusValidator(t *testing.T) {
-	// test some simple problem cases
 	type args struct {
 		prometheusURL string
 		config        conf.Unified
@@ -46,7 +55,7 @@ func Test_prometheusValidator(t *testing.T) {
 					},
 				},
 			},
-			wantProblemSubstring: "",
+			wantProblemSubstring: "misconfigured",
 		},
 		{
 			name: "prometheus not found (with only observability.alerts configured)",
@@ -60,7 +69,7 @@ func Test_prometheusValidator(t *testing.T) {
 					},
 				},
 			},
-			wantProblemSubstring: "Unable to fetch configuration status",
+			wantProblemSubstring: "failed to fetch alerting configuration",
 		},
 		{
 			name: "prometheus not found (with only observability.silenceAlerts configured)",
@@ -72,13 +81,13 @@ func Test_prometheusValidator(t *testing.T) {
 					},
 				},
 			},
-			wantProblemSubstring: "Unable to fetch configuration status",
+			wantProblemSubstring: "failed to fetch alerting configuration",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fn := newPrometheusValidator(tt.args.prometheusURL)
-			problems := fn(tt.args.config)
+			validate := newPrometheusValidator(srcprometheus.NewClient(tt.args.prometheusURL))
+			problems := validate(tt.args.config)
 			if tt.wantProblemSubstring == "" {
 				if len(problems) > 0 {
 					t.Errorf("expected no problems, got %+v", problems)
@@ -97,4 +106,53 @@ func Test_prometheusValidator(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGrafanaLicensing(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Run("licensed requests succeed", func(t *testing.T) {
+		database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+			return &types.User{ID: 1, SiteAdmin: true}, nil
+		}
+		defer func() { database.Mocks.Users.GetByCurrentAuthUser = nil }()
+
+		PreMountGrafanaHook = func() error { return nil }
+		defer func() { PreMountGrafanaHook = nil }()
+
+		router := mux.NewRouter()
+		addGrafana(router)
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, httptest.NewRequest("GET", "/grafana", nil))
+
+		if got, want := rec.Code, http.StatusOK; got != want {
+			t.Fatalf("status code: got %d, want %d", got, want)
+		}
+	})
+
+	t.Run("non-licensed requests fail", func(t *testing.T) {
+		database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+			return &types.User{ID: 1, SiteAdmin: true}, nil
+		}
+		defer func() { database.Mocks.Users.GetByCurrentAuthUser = nil }()
+
+		PreMountGrafanaHook = func() error { return errors.New("test fail") }
+		defer func() { PreMountGrafanaHook = nil }()
+
+		router := mux.NewRouter()
+		addGrafana(router)
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, httptest.NewRequest("GET", "/grafana", nil))
+
+		if got, want := rec.Code, http.StatusUnauthorized; got != want {
+			t.Fatalf("status code: got %d, want %d", got, want)
+		}
+		// http.Error appends a trailing newline that won't be present in
+		// the error message itself, so we need to remove it.
+		if diff := cmp.Diff(strings.TrimSuffix(rec.Body.String(), "\n"), errMonitoringNotLicensed); diff != "" {
+			t.Fatal(diff)
+		}
+	})
 }

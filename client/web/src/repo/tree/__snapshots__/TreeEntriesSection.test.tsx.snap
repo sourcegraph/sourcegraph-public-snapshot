@@ -1,0 +1,203 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`TreeEntriesSection should render a grid of tree entries at the root 1`] = `
+<div>
+  <a
+    class="tree-entry test-page-file-decorable font-weight-bold test-tree-entry-directory tree-entry--no-columns"
+    href="/github.com/sourcegraph/codeintellify/-/tree/src"
+    title="src"
+  >
+    <div
+      class="d-flex align-items-center justify-content-between test-file-decorable-name overflow-hidden"
+    >
+      <span>
+        src/
+      </span>
+      <div
+        class="d-flex align-items-center text-nowrap pl-1 test-file-decoration-container"
+      >
+        <div
+          class="file-decoration d-flex align-items-center"
+        >
+          <small
+            class="file-decoration__after text-monospace font-weight-normal test-file-decoration-text"
+            data-placement="bottom"
+          >
+            src decoration
+          </small>
+        </div>
+      </div>
+    </div>
+  </a>
+  <a
+    class="tree-entry test-page-file-decorable font-weight-bold test-tree-entry-directory tree-entry--no-columns"
+    href="/github.com/sourcegraph/codeintellify/-/tree/testdata"
+    title="testdata"
+  >
+    <div
+      class="d-flex align-items-center justify-content-between test-file-decorable-name overflow-hidden"
+    >
+      <span>
+        testdata/
+      </span>
+      <div
+        class="d-flex align-items-center text-nowrap pl-1 test-file-decoration-container"
+      >
+        <div
+          class="file-decoration d-flex align-items-center"
+        >
+          <small
+            class="file-decoration__after text-monospace font-weight-normal test-file-decoration-text"
+            data-placement="bottom"
+          >
+            testdata decoration
+          </small>
+        </div>
+      </div>
+    </div>
+  </a>
+  <a
+    class="tree-entry test-page-file-decorable test-tree-entry-file tree-entry--no-columns"
+    href="/github.com/sourcegraph/codeintellify/-/blob/.editorconfig"
+    title=".editorconfig"
+  >
+    <div
+      class="d-flex align-items-center justify-content-between test-file-decorable-name overflow-hidden"
+    >
+      <span>
+        .editorconfig
+      </span>
+    </div>
+  </a>
+  <a
+    class="tree-entry test-page-file-decorable test-tree-entry-file tree-entry--no-columns"
+    href="/github.com/sourcegraph/codeintellify/-/blob/.eslintrc.json"
+    title=".eslintrc.json"
+  >
+    <div
+      class="d-flex align-items-center justify-content-between test-file-decorable-name overflow-hidden"
+    >
+      <span>
+        .eslintrc.json
+      </span>
+    </div>
+  </a>
+</div>
+`;
+
+exports[`TreeEntriesSection should render a grid of tree entries in a subdirectory 1`] = `
+<div>
+  <a
+    class="tree-entry test-page-file-decorable font-weight-bold test-tree-entry-directory tree-entry--no-columns"
+    href="/github.com/sourcegraph/codeintellify/-/tree/src/testutils"
+    title="src/testutils"
+  >
+    <div
+      class="d-flex align-items-center justify-content-between test-file-decorable-name overflow-hidden"
+    >
+      <span>
+        testutils/
+      </span>
+      <div
+        class="d-flex align-items-center text-nowrap pl-1 test-file-decoration-container"
+      >
+        <div
+          class="file-decoration d-flex align-items-center"
+        >
+          <small
+            class="file-decoration__after text-monospace font-weight-normal test-file-decoration-text"
+            data-placement="bottom"
+          >
+            testutils decoration
+          </small>
+        </div>
+      </div>
+    </div>
+  </a>
+  <a
+    class="tree-entry test-page-file-decorable font-weight-bold test-tree-entry-directory tree-entry--no-columns"
+    href="/github.com/sourcegraph/codeintellify/-/tree/src/typings"
+    title="src/typings"
+  >
+    <div
+      class="d-flex align-items-center justify-content-between test-file-decorable-name overflow-hidden"
+    >
+      <span>
+        typings/
+      </span>
+      <div
+        class="d-flex align-items-center text-nowrap pl-1 test-file-decoration-container"
+      >
+        <div
+          class="file-decoration d-flex align-items-center"
+        >
+          <small
+            class="file-decoration__after text-monospace font-weight-normal test-file-decoration-text"
+            data-placement="bottom"
+          >
+            typings decoration
+          </small>
+        </div>
+      </div>
+    </div>
+  </a>
+  <a
+    class="tree-entry test-page-file-decorable test-tree-entry-file tree-entry--no-columns"
+    href="/github.com/sourcegraph/codeintellify/-/blob/src/errors.ts"
+    title="src/errors.ts"
+  >
+    <div
+      class="d-flex align-items-center justify-content-between test-file-decorable-name overflow-hidden"
+    >
+      <span>
+        errors.ts
+      </span>
+    </div>
+  </a>
+  <a
+    class="tree-entry test-page-file-decorable test-tree-entry-file tree-entry--no-columns"
+    href="/github.com/sourcegraph/codeintellify/-/blob/src/helpers.ts"
+    title="src/helpers.ts"
+  >
+    <div
+      class="d-flex align-items-center justify-content-between test-file-decorable-name overflow-hidden"
+    >
+      <span>
+        helpers.ts
+      </span>
+    </div>
+  </a>
+</div>
+`;
+
+exports[`TreeEntriesSection should render only direct children 1`] = `
+<div>
+  <a
+    class="tree-entry test-page-file-decorable font-weight-bold test-tree-entry-directory tree-entry--no-columns"
+    href="/github.com/vanadium/core/-/tree/x/ref"
+    title="x/ref"
+  >
+    <div
+      class="d-flex align-items-center justify-content-between test-file-decorable-name overflow-hidden"
+    >
+      <span>
+        ref/
+      </span>
+      <div
+        class="d-flex align-items-center text-nowrap pl-1 test-file-decoration-container"
+      >
+        <div
+          class="file-decoration d-flex align-items-center"
+        >
+          <small
+            class="file-decoration__after text-monospace font-weight-normal test-file-decoration-text"
+            data-placement="bottom"
+          >
+            ref decoration
+          </small>
+        </div>
+      </div>
+    </div>
+  </a>
+</div>
+`;

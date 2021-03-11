@@ -17,59 +17,125 @@ const SettingsSchemaJSON = `{
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "splitSearchModes": {
-          "description": "Enables toggling between the current omni search mode, and experimental interactive search mode.",
-          "type": "boolean",
-          "default": true,
-          "!go": { "pointer": true }
-        },
         "codeInsights": {
           "description": "Enables code insights on directory pages.",
           "type": "boolean",
           "default": false,
-          "!go": { "pointer": true }
+          "!go": {
+            "pointer": true
+          }
+        },
+        "codeMonitoring": {
+          "description": "Enables code monitoring on directory pages.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "showCodeMonitoringTestEmailButton": {
+          "description": "Enables the 'Send test email' debugging button for code monitoring.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
         },
         "searchStats": {
           "description": "Enables a new page that shows language statistics about the results for a search query.",
           "type": "boolean",
           "default": false,
-          "!go": { "pointer": true }
+          "!go": {
+            "pointer": true
+          }
         },
         "searchStreaming": {
           "description": "Enables experimental streaming support.",
           "type": "boolean",
           "default": false,
-          "!go": { "pointer": true }
+          "!go": {
+            "pointer": true
+          }
         },
         "showBadgeAttachments": {
           "description": "Enables the UI indicators for code intelligence precision.",
           "type": "boolean",
           "default": true,
-          "!go": { "pointer": true }
+          "!go": {
+            "pointer": true
+          }
         },
         "copyQueryButton": {
           "description": "Enables displaying the copy query button in the search bar when hovering over the global navigation bar.",
           "type": "boolean",
           "default": false,
-          "!go": { "pointer": true }
+          "!go": {
+            "pointer": true
+          }
         },
         "showRepogroupHomepage": {
           "description": "Enables the repository group homepage ",
           "type": "boolean",
           "default": false,
-          "!go": { "pointer": true }
+          "!go": {
+            "pointer": true
+          }
         },
         "showOnboardingTour": {
           "description": "Enables the onboarding tour.",
           "type": "boolean",
+          "default": true,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "showSearchContext": {
+          "description": "Enables the search context dropdown.",
+          "type": "boolean",
           "default": false,
-          "!go": { "pointer": true }
+          "!go": {
+            "pointer": true
+          }
         },
         "showEnterpriseHomePanels": {
           "description": "Enabled the homepage panels in the Enterprise homepage",
           "type": "boolean",
+          "default": true,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "showMultilineSearchConsole": {
+          "description": "Enables the multiline search console at search/console",
+          "type": "boolean",
           "default": false,
-          "!go": { "pointer": true }
+          "!go": {
+            "pointer": true
+          }
+        },
+        "showQueryBuilder": {
+          "description": "Enables the search query builder page at search/query-builder",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "enableSmartQuery": {
+          "description": "Enables contextual syntax highlighting and hovers for search queries in the web app",
+          "type": "boolean",
+          "default": true,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "enableFastResultLoading": {
+          "description": "Enables optimized search result loading (syntax highlighting / file contents fetching)",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
         }
       },
       "group": "Experimental"
@@ -113,7 +179,9 @@ const SettingsSchemaJSON = `{
       "description": "Enables globbing for supported field values",
       "type": "boolean",
       "default": false,
-      "!go": { "pointer": true }
+      "!go": {
+        "pointer": true
+      }
     },
     "search.scopes": {
       "description": "Predefined search scopes",
@@ -123,11 +191,21 @@ const SettingsSchemaJSON = `{
       }
     },
     "search.repositoryGroups": {
-      "description": "Named groups of repositories that can be referenced in a search query using the repogroup: operator.",
+      "description": "Named groups of repositories that can be referenced in a search query using the ` + "`" + `repogroup:` + "`" + ` operator. The list can contain string literals (to include single repositories) and JSON objects with a \"regex\" field (to include all repositories matching the regular expression). Retrieving repogroups via the GQL interface will currently exclude repositories matched by regex patterns. #14208.",
       "type": "object",
       "additionalProperties": {
         "type": "array",
-        "items": { "type": "string" }
+        "items": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": ["regex"]
+            },
+            {
+              "type": "string"
+            }
+          ]
+        }
       }
     },
     "search.contextLines": {
@@ -145,13 +223,17 @@ const SettingsSchemaJSON = `{
       "description": "Whether searches should include searching forked repositories.",
       "type": "boolean",
       "default": false,
-      "!go": { "pointer": true }
+      "!go": {
+        "pointer": true
+      }
     },
     "search.includeArchived": {
       "description": "Whether searches should include searching archived repositories.",
       "type": "boolean",
       "default": false,
-      "!go": { "pointer": true }
+      "!go": {
+        "pointer": true
+      }
     },
     "quicklinks": {
       "description": "Links that should be accessible quickly from the home and search pages.",
@@ -163,7 +245,9 @@ const SettingsSchemaJSON = `{
     "motd": {
       "description": "DEPRECATED: Use ` + "`" + `notices` + "`" + ` instead.\n\nAn array (often with just one element) of messages to display at the top of all pages, including for unauthenticated users. Users may dismiss a message (and any message with the same string value will remain dismissed for the user).\n\nMarkdown formatting is supported.\n\nUsually this setting is used in global and organization settings. If set in user settings, the message will only be displayed to that user. (This is useful for testing the correctness of the message's Markdown formatting.)\n\nMOTD stands for \"message of the day\" (which is the conventional Unix name for this type of message).",
       "type": "array",
-      "items": { "type": "string" }
+      "items": {
+        "type": "string"
+      }
     },
     "notices": {
       "description": "Custom informational messages to display to users at specific locations in the Sourcegraph user interface.\n\nUsually this setting is used in global and organization settings. If set in user settings, the message will only be displayed to that single user.",
@@ -199,7 +283,15 @@ const SettingsSchemaJSON = `{
       "description": "Disables observability-related site alert banners.",
       "type": "boolean",
       "default": true,
-      "!go": { "pointer": true }
+      "!go": {
+        "pointer": true
+      }
+    },
+    "alerts.codeHostIntegrationMessaging": {
+      "description": "What in-app messaging to use around availability of Sourcegraph's code intelligence on code hosts. If the native code host integration is installed, this should be set to \"native-integration\" and users won't need to install the Sourcegraph browser extension to get code intelligence on code hosts.",
+      "type": "string",
+      "enum": ["browser-extension", "native-integration"],
+      "default": "browser-extension"
     },
     "extensions": {
       "description": "The Sourcegraph extensions to use. Enable an extension by adding a property ` + "`" + `\"my/extension\": true` + "`" + ` (where ` + "`" + `my/extension` + "`" + ` is the extension ID). Override a previously enabled extension and disable it by setting its value to ` + "`" + `false` + "`" + `.",
@@ -223,31 +315,106 @@ const SettingsSchemaJSON = `{
       "description": "When active, any uppercase characters in the pattern will make the entire query case-sensitive.",
       "type": "boolean",
       "default": false,
-      "!go": { "pointer": true }
+      "!go": {
+        "pointer": true
+      }
     },
     "search.migrateParser": {
-      "description": "If false, disables the new and/or-compatible parser for all search queries. It is a flag to aid transition to the new parser.",
+      "description": "REMOVED. Previously, a flag to enable and/or-expressions in queries as an aid transition to new language features in versions <= 3.24.0.",
       "type": "boolean",
       "default": true,
-      "!go": { "pointer": true }
+      "!go": {
+        "pointer": true
+      }
     },
     "search.hideSuggestions": {
       "description": "Disable search suggestions below the search bar when constructing queries. Defaults to false.",
       "type": "boolean",
       "default": false,
-      "!go": { "pointer": true }
+      "!go": {
+        "pointer": true
+      }
+    },
+    "insights.displayLocation.insightsPage": {
+      "type": "boolean",
+      "default": true,
+      "!go": {
+        "pointer": true
+      }
+    },
+    "insights.displayLocation.directory": {
+      "type": "boolean",
+      "default": true,
+      "!go": {
+        "pointer": true
+      }
+    },
+    "insights.displayLocation.homepage": {
+      "type": "boolean",
+      "default": true,
+      "!go": {
+        "pointer": true
+      }
+    },
+    "insights": {
+      "description": "EXPERIMENTAL: Code Insights",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Insight"
+      }
     }
   },
   "definitions": {
+    "Insight": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "description", "series"],
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "The short title of this insight"
+        },
+        "description": {
+          "type": "string",
+          "description": "The description of this insight"
+        },
+        "series": {
+          "type": "array",
+          "description": "Series of data to show for this insight",
+          "items": {
+            "$ref": "#/definitions/InsightSeries"
+          }
+        }
+      }
+    },
+    "InsightSeries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label"],
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "The label to use for the series in the graph."
+        },
+        "repositoriesList": {
+          "type": "array",
+          "description": "Performs a search query and shows the number of results returned."
+        },
+        "search": {
+          "type": "string",
+          "description": "Performs a search query and shows the number of results returned."
+        },
+        "webhook": {
+          "type": "string",
+          "description": "(not yet supported) Fetch data from a webhook URL."
+        }
+      }
+    },
     "SearchScope": {
       "type": "object",
       "additionalProperties": false,
       "required": ["name", "value"],
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "A unique identifier for the search scope.\n\nIf set, a scoped search page is available at https://[sourcegraph-hostname]/search/scope/ID, where ID is this value."
-        },
         "name": {
           "type": "string",
           "description": "The human-readable name for this search scope"
@@ -255,10 +422,6 @@ const SettingsSchemaJSON = `{
         "value": {
           "type": "string",
           "description": "The query string of this search scope"
-        },
-        "description": {
-          "type": "string",
-          "description": "A description for this search scope"
         }
       }
     },
@@ -273,7 +436,8 @@ const SettingsSchemaJSON = `{
         },
         "url": {
           "type": "string",
-          "description": "The URL of this quick link (absolute or relative)"
+          "description": "The URL of this quick link (absolute or relative)",
+          "pattern": "^(https?://|/)"
         },
         "description": {
           "type": "string",

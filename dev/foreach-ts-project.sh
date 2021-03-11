@@ -11,11 +11,13 @@ parallel_run() {
 export ARGS=$*
 
 DIRS=(
-  web
-  shared
-  browser
-  packages/sourcegraph-extension-api
-  packages/@sourcegraph/extension-api-types
+  client/web
+  client/shared
+  client/branded
+  client/browser
+  client/packages/sourcegraph-extension-api
+  client/packages/@sourcegraph/eslint-plugin-sourcegraph
+  client/packages/@sourcegraph/extension-api-types
   dev/release
   dev/ts-morph
 )
@@ -32,6 +34,12 @@ run_command() {
     set -x
     cd "$dir" && eval "${MAYBE_TIME_PREFIX} ${ARGS}"
   )
+
+  # shellcheck disable=SC2181
+  # We are checking the sub-shell, following SC2181 would make this unreadable
+  if [[ $? -ne 0 ]]; then
+    echo "^^^ +++"
+  fi
 }
 export -f run_command
 

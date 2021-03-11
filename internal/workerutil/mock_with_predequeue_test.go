@@ -65,7 +65,7 @@ func (f *WithPreDequeuePreDequeueFunc) SetDefaultHook(hook func(context.Context)
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// PreDequeue method of the parent MockWithPreDequeue instance inovkes the
+// PreDequeue method of the parent MockWithPreDequeue instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
 func (f *WithPreDequeuePreDequeueFunc) PushHook(hook func(context.Context) (bool, interface{}, error)) {

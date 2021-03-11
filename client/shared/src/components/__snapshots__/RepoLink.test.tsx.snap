@@ -1,0 +1,30 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`RepoLink renders a fragment when "to" is null 1`] = `
+<span
+  className=""
+>
+   
+  my/
+  <span>
+    repo
+  </span>
+</span>
+`;
+
+exports[`RepoLink renders a link when "to" is set 1`] = `
+<a
+  className=""
+  href="http://example.com"
+>
+  <span
+    className=""
+  >
+     
+    my/
+    <span>
+      repo
+    </span>
+  </span>
+</a>
+`;

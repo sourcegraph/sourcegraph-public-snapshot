@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 // settingsCascade implements the GraphQL type SettingsCascade (and the deprecated type ConfigurationCascade).
@@ -19,6 +22,7 @@ import (
 // - Organization settings
 // - Current user settings
 type settingsCascade struct {
+	db dbutil.DB
 	// At most 1 of these fields is set.
 	unauthenticatedActor bool
 	subject              *settingsSubject
@@ -31,7 +35,7 @@ func (r *settingsCascade) Subjects(ctx context.Context) ([]*settingsSubject, err
 		return mockSettingsCascadeSubjects()
 	}
 
-	subjects := []*settingsSubject{{defaultSettings: singletonDefaultSettingsResolver}, {site: singletonSiteResolver}}
+	subjects := []*settingsSubject{{defaultSettings: &defaultSettingsResolver{db: r.db, gqlID: singletonDefaultSettingsGQLID}}, {site: &siteResolver{db: r.db, gqlID: singletonSiteGQLID}}}
 
 	if r.unauthenticatedActor {
 		return subjects, nil
@@ -45,7 +49,7 @@ func (r *settingsCascade) Subjects(ctx context.Context) ([]*settingsSubject, err
 		subjects = append(subjects, r.subject)
 
 	case r.subject.user != nil:
-		orgs, err := db.Orgs.GetByUserID(ctx, r.subject.user.user.ID)
+		orgs, err := database.GlobalOrgs.GetByUserID(ctx, r.subject.user.user.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -55,7 +59,7 @@ func (r *settingsCascade) Subjects(ctx context.Context) ([]*settingsSubject, err
 		})
 		// Apply the user's orgs' settings.
 		for _, org := range orgs {
-			subjects = append(subjects, &settingsSubject{org: &OrgResolver{org}})
+			subjects = append(subjects, &settingsSubject{org: &OrgResolver{db: r.db, org: org}})
 		}
 		// Apply the user's own settings last (it has highest priority).
 		subjects = append(subjects, r.subject)
@@ -68,8 +72,8 @@ func (r *settingsCascade) Subjects(ctx context.Context) ([]*settingsSubject, err
 }
 
 // viewerFinalSettings returns the final (merged) settings for the viewer.
-func viewerFinalSettings(ctx context.Context) (*configurationResolver, error) {
-	cascade, err := (&schemaResolver{}).ViewerSettings(ctx)
+func viewerFinalSettings(ctx context.Context, db dbutil.DB) (*configurationResolver, error) {
+	cascade, err := (&schemaResolver{db: db}).ViewerSettings(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -77,32 +81,52 @@ func viewerFinalSettings(ctx context.Context) (*configurationResolver, error) {
 }
 
 func (r *settingsCascade) Final(ctx context.Context) (string, error) {
-	var allSettings []string
 	subjects, err := r.Subjects(ctx)
 	if err != nil {
 		return "", err
 	}
-	for _, s := range subjects {
-		settings, err := s.LatestSettings(ctx)
-		if err != nil {
-			return "", err
-		}
-		if settings != nil {
-			allSettings = append(allSettings, settings.settings.Contents)
-		}
+
+	// Each LatestSettings is a roundtrip to the database. So we do the
+	// requests concurrently. If the subject has no settings, then
+	// allSettings[i] will be the empty string. mergeSettings ignores empty
+	// strings.
+	allSettings := make([]string, len(subjects))
+	bounded := goroutine.NewBounded(8)
+	for i := range subjects {
+		i := i
+		bounded.Go(func() error {
+			settings, err := subjects[i].LatestSettings(ctx)
+			if err != nil {
+				return err
+			}
+			if settings != nil {
+				allSettings[i] = settings.settings.Contents
+			}
+			return nil
+		})
 	}
+
+	if err := bounded.Wait(); err != nil {
+		return "", err
+	}
+
 	final, err := mergeSettings(allSettings)
 	return string(final), err
 }
 
 // Deprecated: in the GraphQL API
-func (r *settingsCascade) Merged(ctx context.Context) (*configurationResolver, error) {
+func (r *settingsCascade) Merged(ctx context.Context) (_ *configurationResolver, err error) {
+	tr, ctx := trace.New(ctx, "Merged", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 	var messages []string
 	s, err := r.Final(ctx)
 	if err != nil {
 		messages = append(messages, err.Error())
 	}
-	return &configurationResolver{contents: string(s), messages: messages}, nil
+	return &configurationResolver{contents: s, messages: messages}, nil
 }
 
 // deeplyMergedSettingsFields contains the names of top-level settings fields whose values should be
@@ -170,18 +194,18 @@ func mergeSettingsValues(dst map[string]interface{}, field string, value interfa
 	dst[field] = value
 }
 
-func (schemaResolver) ViewerSettings(ctx context.Context) (*settingsCascade, error) {
-	user, err := CurrentUser(ctx)
+func (r schemaResolver) ViewerSettings(ctx context.Context) (*settingsCascade, error) {
+	user, err := CurrentUser(ctx, r.db)
 	if err != nil {
 		return nil, err
 	}
 	if user == nil {
-		return &settingsCascade{unauthenticatedActor: true}, nil
+		return &settingsCascade{db: r.db, unauthenticatedActor: true}, nil
 	}
-	return &settingsCascade{subject: &settingsSubject{user: user}}, nil
+	return &settingsCascade{db: r.db, subject: &settingsSubject{user: user}}, nil
 }
 
 // Deprecated: in the GraphQL API
-func (schemaResolver) ViewerConfiguration(ctx context.Context) (*settingsCascade, error) {
-	return schemaResolver{}.ViewerSettings(ctx)
+func (r *schemaResolver) ViewerConfiguration(ctx context.Context) (*settingsCascade, error) {
+	return schemaResolver{db: r.db}.ViewerSettings(ctx)
 }

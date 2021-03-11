@@ -16,6 +16,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 const combyPath = "comby"
@@ -157,6 +159,9 @@ func PipeTo(ctx context.Context, args Args, w io.Writer) (err error) {
 
 // Matches returns all matches in all files for which comby finds matches.
 func Matches(ctx context.Context, args Args) (matches []FileMatch, err error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "Comby.Matches")
+	defer span.Finish()
+
 	b := new(bytes.Buffer)
 	w := bufio.NewWriter(b)
 

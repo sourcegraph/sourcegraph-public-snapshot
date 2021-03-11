@@ -7,7 +7,7 @@ TLS, enabling code intelligence, and exposing Sourcegraph to external traffic be
 
 ## Fork this repository
 
-We recommend you fork the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository to track your configuration changes in Git.
+We **strongly** recommend you fork the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository to track your configuration changes in Git.
 This will make upgrades far easier and is a good practice not just for Sourcegraph, but for any Kubernetes application.
 
 - Create a fork of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository.
@@ -15,21 +15,22 @@ This will make upgrades far easier and is a good practice not just for Sourcegra
    - The fork can be public **unless** you plan to store secrets in the repository itself.
    - We recommend not storing secrets in the repository itself and these instructions document how.
 
-- Create a release branch to track all of your customizations to Sourcegraph.
+- Create a `release` branch to track all of your customizations to Sourcegraph.
    When you upgrade Sourcegraph, you will merge upstream into this branch.
 
    ```bash
-   git checkout HEAD -b release
+   SOURCEGRAPH_VERSION="3.24"
+   git checkout $SOURCEGRAPH_VERSION -b release
    ```
 
-   If you followed the installation instructions, `HEAD` should point at the Git tag you've deployed to your running Kubernetes cluster.
+   If you followed the installation instructions, `SOURCEGRAPH_VERSION` should point at the Git tag you've deployed to your running Kubernetes cluster.
 
 - Commit customizations to your release branch:
 
    - Commit manual modifications to Kubernetes YAML files.
    - Commit commands that should be run on every update (e.g. `kubectl apply`) to [kubectl-apply-all.sh](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/kubectl-apply-all.sh).
    - Commit commands that generally only need to be run once per cluster to (e.g. `kubectl create secret`, `kubectl expose`) to [create-new-cluster.sh](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/create-new-cluster.sh).
-   
+
 - When you upgrade, merge the corresponding upstream release tag into your release branch. E.g., `git remote add upstream https://github.com/sourcegraph/deploy-sourcegraph` to add the upstream remote and `git checkout release && git merge v3.15.0` to merge the upstream release tag into your release branch.
 
 ## Dependencies
@@ -49,7 +50,6 @@ you need the [kustomize](https://kustomize.io/) tool installed.
 - [Update site configuration](#update-site-configuration)
 - [Configure TLS/SSL](#configure-tlsssl)
 - [Configure repository cloning via SSH](#configure-repository-cloning-via-ssh)
-- [Configure language servers](#configure-language-servers)
 - [Configure SSDs to boost performance](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/ssd/README.md).
 - [Increase memory or CPU limits](#increase-memory-or-cpu-limits)
 
@@ -219,7 +219,7 @@ If you exposed your Sourcegraph instance via an ingress controller as described 
 
 - Change your `externalURL` in [the site configuration](https://docs.sourcegraph.com/admin/config/site_config) to e.g. `https://sourcegraph.example.com`:
 
-  Update the ingress controller with the previous changes with the following command. 
+  Update the ingress controller with the previous changes with the following command.
 
   ```bash
   kubectl apply -f base/frontend/sourcegraph-frontend.Ingress.yaml
@@ -280,7 +280,7 @@ Sourcegraph will clone repositories using SSH credentials if they are mounted at
    ```
 
    If you run your installation with non-root users (the non-root overlay) then use the mount path `/home/sourcegraph/.ssh` instead of `/root/.ssh`:
-      
+
    ```yaml
    # base/gitserver/gitserver.StatefulSet.yaml
    spec:
@@ -303,8 +303,8 @@ Sourcegraph will clone repositories using SSH credentials if they are mounted at
    cat $GS | yj | jq '.spec.template.spec.containers[].volumeMounts += [{mountPath: "/home/sourcegraph/.ssh", name: "ssh"}]' | jy -o $GS
    cat $GS | yj | jq '.spec.template.spec.volumes += [{name: "ssh", secret: {defaultMode: 384, secretName:"gitserver-ssh"}}]' | jy -o $GS
    ```
-   
-   
+
+
 3. Apply the updated `gitserver` configuration to your cluster.
 
    ```bash
@@ -313,17 +313,6 @@ Sourcegraph will clone repositories using SSH credentials if they are mounted at
 
 **WARNING:** Do NOT commit the actual `id_rsa` and `known_hosts` files to your fork (unless
 your fork is private **and** you are okay with storing secrets in it).
-
-## Configure language servers
-
-Code intelligence is provided through [Sourcegraph extensions](https://docs.sourcegraph.com/extensions). These language extensions communicate with language servers that are deployed inside your Sourcegraph cluster. See the README.md for each language for configuration information:
-
-- Go: [configure/lang/go/README.md](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/lang/go/README.md)
-- JavaScript/TypeScript: [configure/lang/typescript/README.md](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/lang/typescript/README.md)
-
-## Increase memory or CPU limits
-
-If your instance contains a large number of repositories or monorepos, changing the compute resources allocated to containers can improve performance. See [Kubernetes' official documentation](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/) for information about compute resources and how to specify then, and see [scale.md](scale.md) for specific advice about what resources to tune.
 
 ## Configure gitserver replica count
 
@@ -399,7 +388,7 @@ Sourcegraph expects there to be storage class named `sourcegraph` that it uses f
 
 Create `base/sourcegraph.StorageClass.yaml` with the appropriate configuration for your cloud provider and commit the file to your fork.
 
-The sourceraph storageclass will retain any persistent volumes created in the event of an accidental deletion of a persistent volume claim. 
+The sourceraph storageclass will retain any persistent volumes created in the event of an accidental deletion of a persistent volume claim.
 
 This cannot be changed once the storage class has been created. Persistent volumes not created with the reclaimPolicy set to `Retain` can be patched with the following command:
 
@@ -422,7 +411,7 @@ metadata:
 provisioner: kubernetes.io/gce-pd
 parameters:
   type: pd-ssd # This configures SSDs (recommended).
-reclaimPolicy: Retain  
+reclaimPolicy: Retain
 ```
 
 [Additional documentation](https://kubernetes.io/docs/concepts/storage/storage-classes/#gce-pd).
@@ -440,7 +429,7 @@ metadata:
 provisioner: kubernetes.io/aws-ebs
 parameters:
   type: gp2 # This configures SSDs (recommended).
-reclaimPolicy: Retain  
+reclaimPolicy: Retain
 ```
 
 [Additional documentation](https://kubernetes.io/docs/concepts/storage/storage-classes/#aws-ebs).
@@ -458,7 +447,7 @@ metadata:
 provisioner: kubernetes.io/azure-disk
 parameters:
   storageaccounttype: Premium_LRS # This configures SSDs (recommended). A Premium VM is required.
-reclaimPolicy: Retain  
+reclaimPolicy: Retain
 ```
 
 [Additional documentation](https://kubernetes.io/docs/concepts/storage/storage-classes/#azure-disk).
@@ -473,7 +462,7 @@ metadata:
   name: sourcegraph
   labels:
     deploy: sourcegraph
-reclaimPolicy: Retain  
+reclaimPolicy: Retain
 # Read https://kubernetes.io/docs/concepts/storage/storage-classes/ to configure the "provisioner" and "parameters" fields for your cloud provider.
 # SSDs are highly recommended!
 # provisioner:
@@ -564,13 +553,13 @@ metadata:
 If the namespace already exists you can still label it like so
 
 ```shell script
-kubectl label namespace ns-sourcegraph name=ns-sourcegraph 
+kubectl label namespace ns-sourcegraph name=ns-sourcegraph
 ```
 
-> Note: You will need to augment this example NetworkPolicy to allow traffic to external services 
+> Note: You will need to augment this example NetworkPolicy to allow traffic to external services
 > you plan to use (like github.com) and ingress traffic from
 > the outside to the frontend for the users of the Sourcegraph installation.
-> Check out this [collection](https://github.com/ahmetb/kubernetes-network-policy-recipes) of NetworkPolicies to get started. 
+> Check out this [collection](https://github.com/ahmetb/kubernetes-network-policy-recipes) of NetworkPolicies to get started.
 
 ```yaml
 kind: NetworkPolicy
@@ -604,19 +593,19 @@ spec:
 ### Overlay basic principles
 
 An overlay specifies customizations for a base directory of Kubernetes manifests. The base has no knowledge of the overlay.
-Overlays can be used for example to change the number of replicas, change a namespace, add a label etc. Overlays can refer to 
+Overlays can be used for example to change the number of replicas, change a namespace, add a label etc. Overlays can refer to
 other overlays that eventually refer to the base forming a directed acyclic graph with the base as the root.
 
 An overlay is defined in a `kustomization.yaml` file (the name of the file is fixed and there can be only one kustomization
  file in one directory). To avoid complications with reference cycles an overlay can only reference resources inside the
  directory subtree of the directory it resides in (symlinks are not allowed either).
- 
+
 For more details about overlays please consult the `kustomize` [documentation](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/).
 
 Using overlays and applying them to the cluster
 can be done in two ways: by using `kubectl` or with the `kustomize` tool.
 
-Starting with `kubectl` client version 1.14 `kubectl` can handle `kustomization.yaml` files directly. 
+Starting with `kubectl` client version 1.14 `kubectl` can handle `kustomization.yaml` files directly.
 When using `kubectl` there is no intermediate step that generates actual manifest files. Instead the combined resources from the
 overlays and the base are directly sent to the cluster. This is done with the `kubectl apply -k` command. The argument to the
 command is a directory containing a `kustomization.yaml` file.
@@ -680,8 +669,3 @@ This overlays goes one step further than the `non-root` overlay by also removing
 
 If you are starting a fresh installation use the overlay `non-privileged-create-cluster`. After creation you can use the overlay
 `non-privileged`.
-
-
-
-  
-

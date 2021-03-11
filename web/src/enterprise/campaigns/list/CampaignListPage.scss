@@ -1,9 +1,0 @@
-.campaign-list-page {
-    &__grid {
-        display: grid;
-        grid-template-columns: [state] min-content [info] minmax(auto, 1fr) [open] min-content [closed] min-content [merged] min-content [end];
-        row-gap: 1rem;
-        column-gap: 1.5rem;
-        align-items: center;
-    }
-}

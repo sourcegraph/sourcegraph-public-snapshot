@@ -1,0 +1,21 @@
+.user-area-header {
+    &__title {
+        display: flex;
+        align-items: center;
+
+        margin-bottom: 0.75rem;
+        font-weight: normal;
+
+        &-subtitle {
+            opacity: 0.75;
+            font-size: 1.25rem;
+        }
+    }
+
+    &__avatar {
+        width: 3rem;
+        height: auto;
+        max-height: 10rem;
+        margin-right: 1rem;
+    }
+}

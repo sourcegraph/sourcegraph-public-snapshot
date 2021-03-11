@@ -10,9 +10,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+
+	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 )
 
 // dbExtension describes an extension in the extension registry.
@@ -186,7 +187,7 @@ type dbExtensionsListOptions struct {
 	Category               string // matches the latest release's manifest's categories array
 	Tag                    string // matches the latest release's manifest's tags array
 	PrioritizeExtensionIDs []string
-	*db.LimitOffset
+	*database.LimitOffset
 }
 
 // extensionIsWIPExpr is the SQL expression for whether the extension is a WIP extension.
@@ -238,7 +239,7 @@ func (o dbExtensionsListOptions) sqlConditions() []*sqlf.Query {
 func (o dbExtensionsListOptions) sqlOrder() []*sqlf.Query {
 	ids := make([]*sqlf.Query, len(o.PrioritizeExtensionIDs)+1)
 	for i, id := range o.PrioritizeExtensionIDs {
-		ids[i] = sqlf.Sprintf("%v", string(id))
+		ids[i] = sqlf.Sprintf("%v", id)
 	}
 	ids[len(o.PrioritizeExtensionIDs)] = sqlf.Sprintf("NULL")
 	return []*sqlf.Query{sqlf.Sprintf(extensionIDExpr+` IN (%v) ASC`, sqlf.Join(ids, ","))}
@@ -269,7 +270,7 @@ WHERE (%s)
 		sqlf.Join(conds, ") AND ("))
 }
 
-func (s dbExtensions) list(ctx context.Context, conds, order []*sqlf.Query, limitOffset *db.LimitOffset) ([]*dbExtension, error) {
+func (s dbExtensions) list(ctx context.Context, conds, order []*sqlf.Query, limitOffset *database.LimitOffset) ([]*dbExtension, error) {
 	order = append(order, sqlf.Sprintf("TRUE"))
 	q := sqlf.Sprintf(`
 SELECT x.id, x.uuid, x.publisher_user_id, x.publisher_org_id, x.name, x.created_at, x.updated_at,

@@ -9,68 +9,80 @@ import (
 
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
+	"github.com/google/zoekt/stream"
+	"golang.org/x/sync/errgroup"
 )
 
-// HorizontalSearcher is a zoekt.Searcher which aggregates searches over
+// HorizontalSearcher is a Streamer which aggregates searches over
 // Map. It manages the connections to Map as the endpoints come and go.
 type HorizontalSearcher struct {
-	Map  EndpointMap
-	Dial func(endpoint string) zoekt.Searcher
+	// Map is a subset of EndpointMap only using the Endpoints function. We
+	// use this to find the endpoints to dial over time.
+	Map interface {
+		Endpoints() (map[string]struct{}, error)
+	}
+	Dial func(endpoint string) zoekt.Streamer
 
 	mu      sync.RWMutex
-	clients map[string]zoekt.Searcher // addr -> client
+	clients map[string]zoekt.Streamer // addr -> client
+}
+
+// StreamSearch does a search which merges the stream from every endpoint in Map.
+func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, streamer zoekt.Sender) error {
+	clients, err := s.searchers()
+	if err != nil {
+		return err
+	}
+
+	// During rebalancing a repository can appear on more than one replica.
+	var mu sync.Mutex
+	dedupper := dedupper{}
+
+	g, ctx := errgroup.WithContext(ctx)
+	for _, c := range clients {
+		c := c
+		g.Go(func() error {
+			return c.StreamSearch(ctx, q, opts, stream.SenderFunc(func(sr *zoekt.SearchResult) {
+				// This shouldn't happen, but skip event if sr is nil.
+				if sr == nil {
+					return
+				}
+
+				mu.Lock()
+				sr.Files = dedupper.Dedup(sr.Files)
+				mu.Unlock()
+
+				streamer.Send(sr)
+			}))
+		})
+	}
+	return g.Wait()
 }
 
 // Search aggregates search over every endpoint in Map.
 func (s *HorizontalSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
+	return AggregateStreamSearch(ctx, s.StreamSearch, q, opts)
+}
+
+// AggregateStreamSearch aggregates the stream events into a single batch
+// result.
+func AggregateStreamSearch(ctx context.Context, streamSearch func(context.Context, query.Q, *zoekt.SearchOptions, zoekt.Sender) error, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
 	start := time.Now()
 
-	clients, err := s.searchers()
-	if err != nil {
-		return nil, err
-	}
+	var mu sync.Mutex
+	aggregate := &zoekt.SearchResult{}
 
-	var cancel context.CancelFunc
-	ctx, cancel = context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	type result struct {
-		sr  *zoekt.SearchResult
-		err error
-	}
-	results := make(chan result, len(clients))
-	for _, c := range clients {
-		go func(c zoekt.Searcher) {
-			sr, err := c.Search(ctx, q, opts)
-			results <- result{sr: sr, err: err}
-		}(c)
-	}
-
-	// During rebalancing a repository can appear on more than one replica.
-	dedupper := dedupper{}
-
-	aggregate := &zoekt.SearchResult{
-		RepoURLs:      map[string]string{},
-		LineFragments: map[string]string{},
-	}
-
-	for range clients {
-		r := <-results
-		if r.err != nil {
-			return nil, r.err
-		}
-
-		aggregate.Files = append(aggregate.Files, dedupper.Dedup(r.sr.Files)...)
-		aggregate.Stats.Add(r.sr.Stats)
-
-		if len(r.sr.Files) > 0 {
-			for k, v := range r.sr.RepoURLs {
-				aggregate.RepoURLs[k] = v
-			}
-			for k, v := range r.sr.LineFragments {
-				aggregate.LineFragments[k] = v
-			}
-		}
+	err := streamSearch(ctx, q, opts, ZoektStreamFunc(func(event *zoekt.SearchResult) {
+		mu.Lock()
+		defer mu.Unlock()
+		aggregate.Files = append(aggregate.Files, event.Files...)
+		aggregate.Stats.Add(event.Stats)
+	}))
+	if err != nil {
+		return nil, err
 	}
 
 	aggregate.Duration = time.Since(start)
@@ -95,7 +107,7 @@ func (s *HorizontalSearcher) List(ctx context.Context, q query.Q) (*zoekt.RepoLi
 	}
 	results := make(chan result, len(clients))
 	for _, c := range clients {
-		go func(c zoekt.Searcher) {
+		go func(c zoekt.Streamer) {
 			rl, err := c.List(ctx, q)
 			results <- result{rl: rl, err: err}
 		}(c)
@@ -142,7 +154,7 @@ func (s *HorizontalSearcher) String() string {
 }
 
 // searchers returns the list of clients to aggregate over.
-func (s *HorizontalSearcher) searchers() (map[string]zoekt.Searcher, error) {
+func (s *HorizontalSearcher) searchers() (map[string]zoekt.Streamer, error) {
 	eps, err := s.Map.Endpoints()
 	if err != nil {
 		return nil, err
@@ -166,7 +178,7 @@ func (s *HorizontalSearcher) searchers() (map[string]zoekt.Searcher, error) {
 // syncSearchers syncs the set of clients with the set of endpoints. It is the
 // slow-path of "searchers" since it obtains an write lock on the state before
 // proceeding.
-func (s *HorizontalSearcher) syncSearchers() (map[string]zoekt.Searcher, error) {
+func (s *HorizontalSearcher) syncSearchers() (map[string]zoekt.Streamer, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -187,7 +199,7 @@ func (s *HorizontalSearcher) syncSearchers() (map[string]zoekt.Searcher, error) 
 	}
 
 	// Use new map to avoid read conflicts
-	clients := make(map[string]zoekt.Searcher, len(eps))
+	clients := make(map[string]zoekt.Streamer, len(eps))
 	for addr := range eps {
 		// Try re-use
 		client, ok := s.clients[addr]
@@ -201,7 +213,7 @@ func (s *HorizontalSearcher) syncSearchers() (map[string]zoekt.Searcher, error) 
 	return s.clients, nil
 }
 
-func equalKeys(a map[string]zoekt.Searcher, b map[string]struct{}) bool {
+func equalKeys(a map[string]zoekt.Streamer, b map[string]struct{}) bool {
 	if len(a) != len(b) {
 		return false
 	}

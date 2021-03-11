@@ -1,6 +1,8 @@
-# Grafana image
+# Sourcegraph Grafana
 
-Vanilla Grafana image with provisioned Sourcegraph dashboards and config. For more details, refer to [the handbook](https://about.sourcegraph.com/handbook/engineering/distribution/observability/monitoring#grafana).
+Vanilla Grafana image with provisioned Sourcegraph dashboards and config.
+
+To learn more, refer to the [Sourcegraph observability developer guide](https://docs.sourcegraph.com/dev/background-information/observability) and [monitoring architecture](https://about.sourcegraph.com/handbook/engineering/observability/monitoring_architecture#sourcegraph-grafana).
 
 ## Image API
 

@@ -1,8 +1,76 @@
 # Updating a Docker Compose Sourcegraph instance
 
-This document describes the exact changes needed to update a Docker Compose Sourcegraph instance.
-
+This document describes the exact changes needed to update a [Docker Compose Sourcegraph instance](../install/docker-compose.md).
 Each section comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
+
+A new version of Sourcegraph is released every month (with patch releases in between, released as needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) or the site admin updates page to learn about updates. We actively maintain the two most recent monthly releases of Sourcegraph.
+
+Upgrades should happen across consecutive minor versions of Sourcegraph. For example, if you are running Sourcegraph 3.1 and want to upgrade to 3.3, you should upgrade to 3.2 and then 3.3.
+
+**Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
+
+<!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
+
+## 3.24 -> 3.25
+
+TODO
+
+## 3.24 -> 3.25
+
+- Go `1.15` introduced changes to SSL/TLS connection validation which requires certificates to include a `SAN`. This field was not included in older certificates and clients relied on the `CN` field. You might see an error like `x509: certificate relies on legacy Common Name field`. We recommend that customers using Sourcegraph with an external database and and connecting to it using SSL/TLS check whether the certificate is up to date.
+    - AWS RDS customers please reference [AWS' documentation on updating the SSL/TLS certificate](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL-certificate-rotation.html) for steps to rotate your certificate.
+
+## 3.23 -> 3.24
+
+Please upgrade to the [`v3.24.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.24.0/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
+
+## 3.22 -> 3.23
+
+No manual migration required.
+
+Please upgrade to the [`v3.23.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.23.0/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
+
+## 3.21 -> 3.22
+
+No manual migration required.
+
+Please upgrade to the [`v3.22.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.22.0/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
+
+This upgrade removes the `code intel bundle manager`. This service has been deprecated and all references to it have been removed.
+
+This upgrade also adds a MinIO container that doesn't require any custom configuration. You can find more detailed documentation in https://docs.sourcegraph.com/admin/external_services/object_storage.
+
+## 3.21.0 -> 3.21.1
+
+No manual migration required.
+
+Please upgrade to the [`v3.20.1` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.20.1/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
+
+## 3.20.1 -> 3.21.0
+
+Please upgrade to the [`v3.21.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.21.0/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
+
+This release introduces a second database instance, `codeintel-db`. If you have configured Sourcegraph with an external database, then update the `CODEINTEL_PG*` environment variables to point to a new external database as described in the [external database documentation](../external_services/postgres.md). Again, these must not point to the same database or the Sourcegraph instance will refuse to start.
+
+### If you wish to keep existing LSIF data
+
+> Warning: **Do not upgrade out of the 3.21.x release branch** until you have seen the log message indicating the completion of the LSIF data migration, or verified that the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume is empty. Otherwise, you risk data loss for precise code intelligence.
+
+If you had LSIF data uploaded prior to upgrading to 3.21.0, there is a background migration that moves all existing LSIF data into the `codeintel-db` upon upgrade. Once this process completes, the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume should be empty, and the bundle manager should print the following log message:
+
+> Migration to Postgres has completed. All existing LSIF bundles have moved to the path /lsif-storage/db-backups and can be removed from the filesystem to reclaim space.
+
+**Wait for the above message to be printed in `docker logs precise-code-intel-bundle-manager` before upgrading to the next Sourcegraph version**, then if everything is working you can free up disk space by deleting the backup bundle files using this command:
+
+```sh
+docker exec -it precise-code-intel-bundle-manager sh -c 'rm -rf /lsif-storage/db-backups'
+```
+
+## 3.19.2 -> 3.20.1
+
+No manual migration required.
+
+Please upgrade to the [`v3.20.1` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.20.1/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
 
 ## 3.19.1 -> 3.19.2
 
@@ -30,19 +98,19 @@ Please upgrade to the [`v3.18.0` tag of deploy-sourcegraph-docker](https://githu
 
 ## v3.16.0 -> v3.17.2
 
-No manual migration is required. 
+No manual migration is required.
 
 Please upgrade to the [`v3.17.2` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.16.0/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
 
 ## v3.15.1 -> v3.16.0
 
-No manual migration is required. 
+No manual migration is required.
 
 Please upgrade to the [`v3.16.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.16.0/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
 
 ## (v3.14.2, v3.14.4) -> v3.15.1
 
-No manual migration is required. 
+No manual migration is required.
 
 Please upgrade to the [`v3.15.1` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.15.1/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
 
@@ -63,13 +131,13 @@ docker restart precise-code-intel-bundle-manager
 
 ## v3.14.2 -> v3.14.4
 
-No manual migration is required. 
+No manual migration is required.
 
 Please upgrade to the [`v3.14.4` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.14.4/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
 
 ## v3.14.0 -> v3.14.2
 
-No manual migration is required. 
+No manual migration is required.
 
 Please upgrade to the [`v3.14.2` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.14.2/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
 
@@ -113,7 +181,7 @@ Then on your server:
 
 ```sh
 cd deploy-sourcegraph-docker/docker-compose/
-docker-compose down
+docker-compose down --remove-orphans
 git pull
 docker-compose up -d
 ```

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/jsonx"
 )
 
@@ -34,7 +36,7 @@ func Parse(text string) ([]byte, error) {
 // Normalize is like Parse, except it ignores errors and always returns valid JSON, even if that
 // JSON is a subset of the input.
 func Normalize(input string) []byte {
-	output, _ := jsonx.Parse(string(input), jsonx.ParseOptions{Comments: true, TrailingCommas: true})
+	output, _ := jsonx.Parse(input, jsonx.ParseOptions{Comments: true, TrailingCommas: true})
 	if len(output) == 0 {
 		return []byte("{}")
 	}
@@ -69,6 +71,17 @@ func Edit(input string, v interface{}, path ...string) (string, error) {
 	}
 
 	return jsonx.ApplyEdits(input, edits...)
+}
+
+// ReadProperty attempts to read the value of the specified path, ignoring parse errors. it will only error if the path
+// doesn't exist
+func ReadProperty(input, path string) (interface{}, error) {
+	root, _ := jsonx.ParseTree(input, jsonx.ParseOptions{Comments: true, TrailingCommas: true})
+	node := jsonx.FindNodeAtLocation(root, jsonx.PropertyPath(path))
+	if node == nil {
+		return nil, errors.Errorf("couldn't find node: %s", path)
+	}
+	return node.Value, nil
 }
 
 // Format returns the input JSON formatted with the given options.

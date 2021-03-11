@@ -6,8 +6,9 @@ import (
 	"fmt"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 )
 
 // dbPublisher is a publisher of extensions to the registry.
@@ -37,7 +38,7 @@ func (err publisherNotFoundError) Error() string {
 // dbPublishersListOptions contains options for listing publishers of extensions in the
 // registry.
 type dbPublishersListOptions struct {
-	*db.LimitOffset
+	*database.LimitOffset
 }
 
 func (o dbPublishersListOptions) sqlConditions() []*sqlf.Query {
@@ -64,7 +65,7 @@ func (dbExtensions) publishersSQLCTE() *sqlf.Query {
 ) `)
 }
 
-func (s dbExtensions) listPublishers(ctx context.Context, conds []*sqlf.Query, limitOffset *db.LimitOffset) ([]*dbPublisher, error) {
+func (s dbExtensions) listPublishers(ctx context.Context, conds []*sqlf.Query, limitOffset *database.LimitOffset) ([]*dbPublisher, error) {
 	conds = append(conds, sqlf.Sprintf("TRUE"))
 	q := sqlf.Sprintf(`%s
 SELECT user_id, org_id, COALESCE(users.username, orgs.name) AS non_canonical_name FROM publishers

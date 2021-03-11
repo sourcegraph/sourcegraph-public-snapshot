@@ -10,35 +10,29 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/highlight"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var metricLabels = []string{"origin"}
-var codeIntelRequests = prometheus.NewCounterVec(prometheus.CounterOpts{
+var codeIntelRequests = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "src_lsif_requests",
 	Help: "Counts LSIF requests.",
 }, metricLabels)
 
-func init() {
-	prometheus.MustRegister(codeIntelRequests)
-}
-
 // GitTreeEntryResolver resolves an entry in a Git tree in a repository. The entry can be any Git
 // object type that is valid in a tree.
 type GitTreeEntryResolver struct {
+	db     dbutil.DB
 	commit *GitCommitResolver
 
 	contentOnce sync.Once
@@ -53,8 +47,8 @@ type GitTreeEntryResolver struct {
 	isSingleChild *bool // whether this is the single entry in its parent. Only set by the (&GitTreeEntryResolver) entries.
 }
 
-func NewGitTreeEntryResolver(commit *GitCommitResolver, stat os.FileInfo) *GitTreeEntryResolver {
-	return &GitTreeEntryResolver{commit: commit, stat: stat}
+func NewGitTreeEntryResolver(commit *GitCommitResolver, db dbutil.DB, stat os.FileInfo) *GitTreeEntryResolver {
+	return &GitTreeEntryResolver{db: db, commit: commit, stat: stat}
 }
 
 func (r *GitTreeEntryResolver) Path() string { return r.stat.Name() }
@@ -78,12 +72,13 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
 
-		cachedRepo, err := backend.CachedGitRepo(ctx, r.commit.repoResolver.repo)
-		if err != nil {
-			r.contentErr = err
-		}
-
-		r.content, r.contentErr = git.ReadFile(ctx, *cachedRepo, api.CommitID(r.commit.OID()), r.Path(), 0)
+		r.content, r.contentErr = git.ReadFile(
+			ctx,
+			r.commit.repoResolver.name,
+			api.CommitID(r.commit.OID()),
+			r.Path(),
+			0,
+		)
 	})
 
 	return string(r.content), r.contentErr
@@ -111,7 +106,7 @@ func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArg
 		return nil, err
 	}
 	return highlightContent(ctx, args, content, r.Path(), highlight.Metadata{
-		RepoName: string(r.commit.repoResolver.repo.Name),
+		RepoName: r.commit.repoResolver.Name(),
 		Revision: string(r.commit.oid),
 	})
 }
@@ -168,7 +163,11 @@ func (r *GitTreeEntryResolver) urlPath(prefix string) (string, error) {
 func (r *GitTreeEntryResolver) IsDirectory() bool { return r.stat.Mode().IsDir() }
 
 func (r *GitTreeEntryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
-	return externallink.FileOrDir(ctx, r.commit.repoResolver.repo, r.commit.inputRevOrImmutableRev(), r.Path(), r.stat.Mode().IsDir())
+	repo, err := r.commit.repoResolver.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return externallink.FileOrDir(ctx, r.db, repo, r.commit.inputRevOrImmutableRev(), r.Path(), r.stat.Mode().IsDir())
 }
 
 func (r *GitTreeEntryResolver) RawZipArchiveURL() string {
@@ -186,7 +185,7 @@ func (r *GitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
 }
 
 func cloneURLToRepoName(ctx context.Context, cloneURL string) (string, error) {
-	repoName, err := reposourceCloneURLToRepoName(ctx, cloneURL)
+	repoName, err := cloneurls.ReposourceCloneURLToRepoName(ctx, cloneURL)
 	if err != nil {
 		return "", err
 	}
@@ -194,84 +193,6 @@ func cloneURLToRepoName(ctx context.Context, cloneURL string) (string, error) {
 		return "", fmt.Errorf("No matching code host found for %s", cloneURL)
 	}
 	return string(repoName), nil
-}
-
-// reposourceCloneURLToRepoName maps a Git clone URL (format documented here:
-// https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a) to the corresponding repo name if there
-// exists a code host configuration that matches the clone URL. Implicitly, it includes a code host
-// configuration for github.com, even if one is not explicitly specified. Returns the empty string and nil
-// error if a matching code host could not be found. This function does not actually check the code
-// host to see if the repository actually exists.
-func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoName api.RepoName, err error) {
-	if repoName := reposource.CustomCloneURLToRepoName(cloneURL); repoName != "" {
-		return repoName, nil
-	}
-
-	opt := db.ExternalServicesListOptions{
-		Kinds: []string{
-			extsvc.KindGitHub,
-			extsvc.KindGitLab,
-			extsvc.KindBitbucketServer,
-			extsvc.KindAWSCodeCommit,
-			extsvc.KindGitolite,
-		},
-		LimitOffset: &db.LimitOffset{
-			Limit: 500, // The number is randomly chosen
-		},
-	}
-	for {
-		svcs, err := db.ExternalServices.List(ctx, opt)
-		if err != nil {
-			return "", errors.Wrap(err, "list")
-		}
-		if len(svcs) == 0 {
-			break // No more results, exiting
-		}
-		opt.AfterID = svcs[len(svcs)-1].ID // Advance the cursor
-
-		for _, svc := range svcs {
-			cfg, err := extsvc.ParseConfig(svc.Kind, svc.Config)
-			if err != nil {
-				return "", errors.Wrap(err, "parse config")
-			}
-
-			var rs reposource.RepoSource
-			switch c := cfg.(type) {
-			case *schema.GitHubConnection:
-				rs = reposource.GitHub{GitHubConnection: c}
-			case *schema.GitLabConnection:
-				rs = reposource.GitLab{GitLabConnection: c}
-			case *schema.BitbucketServerConnection:
-				rs = reposource.BitbucketServer{BitbucketServerConnection: c}
-			case *schema.AWSCodeCommitConnection:
-				rs = reposource.AWS{AWSCodeCommitConnection: c}
-			case *schema.GitoliteConnection:
-				rs = reposource.Gitolite{GitoliteConnection: c}
-			default:
-				return "", errors.Errorf("unexpected connection type: %T", cfg)
-			}
-
-			repoName, err := rs.CloneURLToRepoName(cloneURL)
-			if err != nil {
-				return "", err
-			}
-			if repoName != "" {
-				return repoName, nil
-			}
-		}
-
-		if len(svcs) < opt.Limit {
-			break // Less results than limit means we've reached end
-		}
-	}
-
-	// Fallback for github.com
-	rs := reposource.GitHub{
-		GitHubConnection: &schema.GitHubConnection{
-			Url: "https://github.com",
-		},
-	}
-	return rs.CloneURLToRepoName(cloneURL)
 }
 
 func CreateFileInfo(path string, isDir bool) os.FileInfo {
@@ -285,11 +206,13 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	if r.isSingleChild != nil {
 		return *r.isSingleChild, nil
 	}
-	cachedRepo, err := backend.CachedGitRepo(ctx, r.commit.repoResolver.repo)
-	if err != nil {
-		return false, err
-	}
-	entries, err := git.ReadDir(ctx, *cachedRepo, api.CommitID(r.commit.OID()), path.Dir(r.Path()), false)
+	entries, err := git.ReadDir(
+		ctx,
+		r.commit.repoResolver.name,
+		api.CommitID(r.commit.OID()),
+		path.Dir(r.Path()),
+		false,
+	)
 	if err != nil {
 		return false, err
 	}
@@ -304,8 +227,13 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName 
 		toolName = *args.ToolName
 	}
 
+	repo, err := r.commit.repoResolver.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	return EnterpriseResolvers.codeIntelResolver.GitBlobLSIFData(ctx, &GitBlobLSIFDataArgs{
-		Repo:      r.Repository().Type(),
+		Repo:      repo,
 		Commit:    api.CommitID(r.Commit().OID()),
 		Path:      r.Path(),
 		ExactPath: !r.stat.IsDir(),

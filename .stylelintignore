@@ -2,4 +2,5 @@
 **/*.jsx
 **/*.ts
 **/*.tsx
+**/*.svg
 node_modules/

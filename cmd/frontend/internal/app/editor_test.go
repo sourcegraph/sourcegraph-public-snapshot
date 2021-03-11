@@ -7,39 +7,11 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
-
-func TestGuessRepoNameFromRemoteURL(t *testing.T) {
-	cases := []struct {
-		url               string
-		hostnameToPattern map[string]string
-		expName           api.RepoName
-	}{
-		{"github.com:a/b", nil, "github.com/a/b"},
-		{"github.com:a/b.git", nil, "github.com/a/b"},
-		{"git@github.com:a/b", nil, "github.com/a/b"},
-		{"git@github.com:a/b.git", nil, "github.com/a/b"},
-		{"ssh://git@github.com/a/b.git", nil, "github.com/a/b"},
-		{"ssh://github.com/a/b.git", nil, "github.com/a/b"},
-		{"ssh://github.com:1234/a/b.git", nil, "github.com/a/b"},
-		{"https://github.com:1234/a/b.git", nil, "github.com/a/b"},
-		{"http://alice@foo.com:1234/a/b", nil, "foo.com/a/b"},
-		{"github.com:a/b", map[string]string{"github.com": "{hostname}/{path}"}, "github.com/a/b"},
-		{"github.com:a/b", map[string]string{"asdf.com": "{hostname}-----{path}"}, "github.com/a/b"},
-		{"github.com:a/b", map[string]string{"github.com": "{hostname}-{path}"}, "github.com-a/b"},
-		{"github.com:a/b", map[string]string{"github.com": "{path}"}, "a/b"},
-		{"github.com:a/b", map[string]string{"github.com": "{hostname}"}, "github.com"},
-		{"github.com:a/b", map[string]string{"github.com": "github/{path}", "asdf.com": "asdf/{path}"}, "github/a/b"},
-		{"asdf.com:a/b", map[string]string{"github.com": "github/{path}", "asdf.com": "asdf/{path}"}, "asdf/a/b"},
-	}
-	for _, c := range cases {
-		if got, want := guessRepoNameFromRemoteURL(c.url, c.hostnameToPattern), c.expName; got != want {
-			t.Errorf("%+v: got %q, want %q", c, got, want)
-		}
-	}
-}
 
 func TestEditorRev(t *testing.T) {
 	repoName := api.RepoName("myRepo")
@@ -87,6 +59,45 @@ func TestEditorRev(t *testing.T) {
 }
 
 func TestEditorRedirect(t *testing.T) {
+	database.Mocks.ExternalServices.List = func(database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+		return []*types.ExternalService{
+			{
+				ID:          1,
+				Kind:        extsvc.KindGitHub,
+				DisplayName: "GITHUB #1",
+				Config:      `{"url": "https://github.example.com", "repositoryQuery": ["none"], "token": "abc"}`,
+			},
+			{
+				ID:          2,
+				Kind:        extsvc.KindOther,
+				DisplayName: "OtherPretty",
+				Config:      `{"url": "https://somecodehost.com/bar", "repositoryPathPattern": "pretty/{repo}"}`,
+			},
+			{
+				ID:          3,
+				Kind:        extsvc.KindOther,
+				DisplayName: "OtherDefault",
+				Config:      `{"url": "https://default.com"}`,
+			},
+			// This service won't be used, but is included to prevent regression where ReposourceCloneURLToRepoName returned an error when
+			// Phabricator was iterated over before the actual code host (e.g. The clone URL is handled by reposource.GitLab).
+			{
+				ID:          4,
+				Kind:        extsvc.KindPhabricator,
+				DisplayName: "PHABRICATOR #1",
+				Config:      `{"repos": [{"path": "default.com/foo/bar", "callsign": "BAR"}], "token": "abc", "url": "https://phabricator.example.com"}`,
+			},
+			// Code host with SCP-style remote URLs
+			{
+				ID:          5,
+				Kind:        extsvc.KindOther,
+				DisplayName: "OtherSCP",
+				Config:      `{"url":"ssh://git@git.codehost.com"}`,
+			},
+		}, nil
+	}
+	defer func() { database.Mocks.ExternalServices = database.MockExternalServices{} }()
+
 	cases := []struct {
 		name            string
 		q               url.Values
@@ -121,6 +132,86 @@ func TestEditorRedirect(t *testing.T) {
 				"file":       []string{"mux.go"},
 			},
 			wantRedirectURL: "/github.com/a/b@0ad12f/-/blob/mux.go?utm_source=Atom-v1.2.1#L1:1", // L1:1 is expected (but could be nicer by omitting it)
+		},
+		{
+			name: "open file in repository (Phabricator mirrored)",
+			q: url.Values{
+				"editor":     []string{"Atom"},
+				"version":    []string{"v1.2.1"},
+				"remote_url": []string{"https://default.com/foo/bar"},
+				"branch":     []string{"dev"},
+				"revision":   []string{"0ad12f"},
+				"file":       []string{"mux.go"},
+				"start_row":  []string{"123"},
+				"start_col":  []string{"1"},
+				"end_row":    []string{"123"},
+				"end_col":    []string{"10"},
+			},
+			wantRedirectURL: "/default.com/foo/bar@0ad12f/-/blob/mux.go?utm_source=Atom-v1.2.1#L124:2-124:11",
+		},
+		{
+			name: "open file (generic code host with repositoryPathPattern)",
+			q: url.Values{
+				"editor":     []string{"Atom"},
+				"version":    []string{"v1.2.1"},
+				"remote_url": []string{"https://somecodehost.com/bar/a/b"},
+				"branch":     []string{"dev"},
+				"revision":   []string{"0ad12f"},
+				"file":       []string{"mux.go"},
+				"start_row":  []string{"123"},
+				"start_col":  []string{"1"},
+				"end_row":    []string{"123"},
+				"end_col":    []string{"10"},
+			},
+			wantRedirectURL: "/pretty/a/b@0ad12f/-/blob/mux.go?utm_source=Atom-v1.2.1#L124:2-124:11",
+		},
+		{
+			name: "open file (generic code host without repositoryPathPattern)",
+			q: url.Values{
+				"editor":     []string{"Atom"},
+				"version":    []string{"v1.2.1"},
+				"remote_url": []string{"https://default.com/a/b"},
+				"branch":     []string{"dev"},
+				"revision":   []string{"0ad12f"},
+				"file":       []string{"mux.go"},
+				"start_row":  []string{"123"},
+				"start_col":  []string{"1"},
+				"end_row":    []string{"123"},
+				"end_col":    []string{"10"},
+			},
+			wantRedirectURL: "/default.com/a/b@0ad12f/-/blob/mux.go?utm_source=Atom-v1.2.1#L124:2-124:11",
+		},
+		{
+			name: "open file (generic git host with slash prefix in path)",
+			q: url.Values{
+				"editor":     []string{"Atom"},
+				"version":    []string{"v1.2.1"},
+				"remote_url": []string{"git@git.codehost.com:/owner/repo"},
+				"branch":     []string{"dev"},
+				"revision":   []string{"0ad12f"},
+				"file":       []string{"mux.go"},
+				"start_row":  []string{"123"},
+				"start_col":  []string{"1"},
+				"end_row":    []string{"123"},
+				"end_col":    []string{"10"},
+			},
+			wantRedirectURL: "/git.codehost.com/owner/repo@0ad12f/-/blob/mux.go?utm_source=Atom-v1.2.1#L124:2-124:11",
+		},
+		{
+			name: "open file (generic git host without slash prefix in path)",
+			q: url.Values{
+				"editor":     []string{"Atom"},
+				"version":    []string{"v1.2.1"},
+				"remote_url": []string{"git@git.codehost.com:owner/repo"},
+				"branch":     []string{"dev"},
+				"revision":   []string{"0ad12f"},
+				"file":       []string{"mux.go"},
+				"start_row":  []string{"123"},
+				"start_col":  []string{"1"},
+				"end_row":    []string{"123"},
+				"end_col":    []string{"10"},
+			},
+			wantRedirectURL: "/git.codehost.com/owner/repo@0ad12f/-/blob/mux.go?utm_source=Atom-v1.2.1#L124:2-124:11",
 		},
 		{
 			name: "search",
@@ -170,6 +261,16 @@ func TestEditorRedirect(t *testing.T) {
 				"search_revision":   []string{"0ad12f"},
 			},
 			wantRedirectURL: "/search?patternType=literal&q=repo%3Agithub%5C.com%2Fa%2Fb%24%400ad12f+foobar&utm_source=Atom-v1.2.1",
+		},
+		{
+			name: "search in repository with generic code host (with repositoryPathPattern)",
+			q: url.Values{
+				"editor":            []string{"Atom"},
+				"version":           []string{"v1.2.1"},
+				"search":            []string{"foobar"},
+				"search_remote_url": []string{"https://somecodehost.com/bar/a/b"},
+			},
+			wantRedirectURL: "/search?patternType=literal&q=repo%3Apretty%2Fa%2Fb%24+foobar&utm_source=Atom-v1.2.1",
 		},
 		{
 			name: "search in repository file",

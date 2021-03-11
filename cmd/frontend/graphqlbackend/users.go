@@ -7,9 +7,10 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
 
 func (r *schemaResolver) Users(args *struct {
@@ -18,7 +19,7 @@ func (r *schemaResolver) Users(args *struct {
 	Tag          *string
 	ActivePeriod *string
 }) *userConnectionResolver {
-	var opt db.UsersListOptions
+	var opt database.UsersListOptions
 	if args.Query != nil {
 		opt.Query = *args.Query
 	}
@@ -26,7 +27,7 @@ func (r *schemaResolver) Users(args *struct {
 		opt.Tag = *args.Tag
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
-	return &userConnectionResolver{opt: opt, activePeriod: args.ActivePeriod}
+	return &userConnectionResolver{db: r.db, opt: opt, activePeriod: args.ActivePeriod}
 }
 
 type UserConnectionResolver interface {
@@ -38,7 +39,8 @@ type UserConnectionResolver interface {
 var _ UserConnectionResolver = &userConnectionResolver{}
 
 type userConnectionResolver struct {
-	opt          db.UsersListOptions
+	db           dbutil.DB
+	opt          database.UsersListOptions
 	activePeriod *string
 
 	// cache results because they are used by multiple fields
@@ -61,11 +63,11 @@ func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, in
 		var err error
 		switch *r.activePeriod {
 		case "TODAY":
-			r.opt.UserIDs, err = usagestats.ListRegisteredUsersToday(ctx)
+			r.opt.UserIDs, err = usagestats.ListRegisteredUsersToday(ctx, r.db)
 		case "THIS_WEEK":
-			r.opt.UserIDs, err = usagestats.ListRegisteredUsersThisWeek(ctx)
+			r.opt.UserIDs, err = usagestats.ListRegisteredUsersThisWeek(ctx, r.db)
 		case "THIS_MONTH":
-			r.opt.UserIDs, err = usagestats.ListRegisteredUsersThisMonth(ctx)
+			r.opt.UserIDs, err = usagestats.ListRegisteredUsersThisMonth(ctx, r.db)
 		default:
 			err = fmt.Errorf("unknown user active period %s", *r.activePeriod)
 		}
@@ -74,12 +76,12 @@ func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, in
 			return
 		}
 
-		r.users, err = db.Users.List(ctx, &r.opt)
+		r.users, err = database.GlobalUsers.List(ctx, &r.opt)
 		if err != nil {
 			r.err = err
 			return
 		}
-		r.totalCount, r.err = db.Users.Count(ctx, &r.opt)
+		r.totalCount, r.err = database.GlobalUsers.Count(ctx, &r.opt)
 	})
 	return r.users, r.totalCount, r.err
 }
@@ -90,7 +92,7 @@ func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*UserResolver, er
 	if r.useCache() {
 		users, _, err = r.compute(ctx)
 	} else {
-		users, err = db.Users.List(ctx, &r.opt)
+		users, err = database.GlobalUsers.List(ctx, &r.opt)
 	}
 	if err != nil {
 		return nil, err
@@ -99,6 +101,7 @@ func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*UserResolver, er
 	var l []*UserResolver
 	for _, user := range users {
 		l = append(l, &UserResolver{
+			db:   r.db,
 			user: user,
 		})
 	}
@@ -111,7 +114,7 @@ func (r *userConnectionResolver) TotalCount(ctx context.Context) (int32, error) 
 	if r.useCache() {
 		_, count, err = r.compute(ctx)
 	} else {
-		count, err = db.Users.Count(ctx, &r.opt)
+		count, err = database.GlobalUsers.Count(ctx, &r.opt)
 	}
 	return int32(count), err
 }
@@ -131,13 +134,14 @@ func (r *userConnectionResolver) useCache() bool {
 // staticUserConnectionResolver implements the GraphQL type UserConnection based on an underlying
 // list of users that is computed statically.
 type staticUserConnectionResolver struct {
+	db    dbutil.DB
 	users []*types.User
 }
 
 func (r *staticUserConnectionResolver) Nodes() []*UserResolver {
 	resolvers := make([]*UserResolver, len(r.users))
 	for i, user := range r.users {
-		resolvers[i] = &UserResolver{user: user}
+		resolvers[i] = NewUserResolver(r.db, user)
 	}
 	return resolvers
 }

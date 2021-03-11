@@ -14,14 +14,21 @@ import (
 type ExecRequest struct {
 	Repo api.RepoName `json:"repo"`
 
-	// URL is the repository's Git remote URL. If the gitserver already has cloned the repository,
-	// this field is optional (it will use the last-used Git remote URL). If the repository is not
-	// cloned on the gitserver, the request will fail.
-	URL string `json:"url,omitempty"`
-
 	EnsureRevision string      `json:"ensureRevision"`
 	Args           []string    `json:"args"`
 	Opt            *RemoteOpts `json:"opt"`
+}
+
+// P4ExecRequest is a request to execute a p4 command with given arguments.
+//
+// Note that this request is deserialized by both gitserver and the frontend's
+// internal proxy route and any major change to this structure will need to be
+// reconciled in both places.
+type P4ExecRequest struct {
+	P4Port   string   `json:"p4port"`
+	P4User   string   `json:"p4user"`
+	P4Passwd string   `json:"p4passwd"`
+	Args     []string `json:"args"`
 }
 
 // RemoteOpts configures interactions with a remote repository.
@@ -46,7 +53,6 @@ type HTTPSConfig struct {
 // RepoUpdateRequest is a request to update the contents of a given repo, or clone it if it doesn't exist.
 type RepoUpdateRequest struct {
 	Repo  api.RepoName  `json:"repo"`  // identifying URL for repo
-	URL   string        `json:"url"`   // repo's remote URL
 	Since time.Duration `json:"since"` // debounce interval for queries, used only with request-repo-update
 }
 
@@ -79,9 +85,6 @@ type NotFoundPayload struct {
 type IsRepoCloneableRequest struct {
 	// Repo is the repository to check.
 	Repo api.RepoName `json:"Repo"`
-
-	// URL is the repository's Git remote URL.
-	URL string `json:"url"`
 }
 
 // IsRepoCloneableResponse is the response type for the IsRepoCloneableRequest.
@@ -176,8 +179,9 @@ type CreateCommitFromPatchRequest struct {
 	UniqueRef bool
 	// CommitInfo is the information that will be used when creating the commit from a patch
 	CommitInfo PatchCommitInfo
-	// Push specifies whether the target ref will be pushed to the code host
-	Push bool
+	// Push specifies whether the target ref will be pushed to the code host: if
+	// nil, no push will be attempted, if non-nil, a push will be attempted.
+	Push *PushConfig
 	// GitApplyArgs are the arguments that will be passed to `git apply` along
 	// with `--cached`.
 	GitApplyArgs []string
@@ -191,6 +195,24 @@ type PatchCommitInfo struct {
 	CommitterName  string
 	CommitterEmail string
 	Date           time.Time
+}
+
+// PushConfig provides the configuration required to push one or more commits to
+// a code host.
+type PushConfig struct {
+	// RemoteURL is the git remote URL to which to push the commits.
+	// The URL needs to include HTTP basic auth credentials if no
+	// unauthenticated requests are allowed by the remote host.
+	RemoteURL string
+
+	// PrivateKey is used when the remote URL uses scheme `ssh`. If set,
+	// this value is used as the content of the private key. Needs to be
+	// set in conjunction with a passphrase.
+	PrivateKey string
+
+	// Passphrase is the passphrase to decrypt the private key. It is required
+	// when passing PrivateKey.
+	Passphrase string
 }
 
 // CreateCommitFromPatchResponse is the response type returned after creating
