@@ -1,10 +1,10 @@
 import React from 'react'
-import '@testing-library/jest-dom/extend-expect'
+import * as H from 'history'
 import { cleanup, render, screen } from '@testing-library/react'
 
 import { ConnectionNodesForTesting as ConnectionNodes } from './FilteredConnection'
 
-const emptyLocation = {
+const emptyLocation: H.Location<{}> = {
     pathname: '',
     search: '',
     hash: '',
