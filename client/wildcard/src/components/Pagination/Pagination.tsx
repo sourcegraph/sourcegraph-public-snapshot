@@ -147,17 +147,21 @@ export const Pagination: React.FunctionComponent<Props> = props => {
                     <ChevronLeftIcon className="icon-inline" aria-label="Previous" aria-hidden={!shouldShrink} />
                     <span className={classNames(shouldShrink && 'd-none')}>Previous</span>
                 </PageButton>
-                {pages.map((page, index) => (
-                    <PageButton
-                        key={index}
-                        disabled={page === '...'}
-                        aria-label={`Go to page ${page}`}
-                        onClick={handleClick(page)}
-                        active={currentPage === page}
-                    >
-                        {page}
-                    </PageButton>
-                ))}
+                {pages.map((page, index) => {
+                    const isConnector = page === '...'
+                    return (
+                        <PageButton
+                            key={index}
+                            disabled={isConnector}
+                            aria-hidden={isConnector}
+                            aria-label={`Go to page ${page}`}
+                            onClick={handleClick(page)}
+                            active={currentPage === page}
+                        >
+                            {page}
+                        </PageButton>
+                    )
+                })}
                 <PageButton disabled={currentPage === maxPages} onClick={goForward} aria-label="Next page">
                     <span className={classNames(shouldShrink && 'd-none')}>Next</span>
                     <ChevronRightIcon className="icon-inline" aria-label="Next" aria-hidden={!shouldShrink} />

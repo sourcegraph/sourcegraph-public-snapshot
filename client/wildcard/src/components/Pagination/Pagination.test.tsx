@@ -6,7 +6,7 @@ import sinon from 'sinon'
 describe('Pagination', () => {
     let queries: RenderResult
     const renderWithProps = (props: Props): RenderResult => render(<Pagination {...props} />)
-    const onPageChangeMock = sinon.spy(() => undefined)
+    const onPageChangeMock = sinon.spy()
 
     beforeEach(() => {
         onPageChangeMock.resetHistory()
@@ -41,18 +41,21 @@ describe('Pagination', () => {
         })
 
         it('will render correct elipsis', () => {
-            expect(queries.getAllByRole('button', { name: '...' })).toHaveLength(1)
+            expect(queries.getAllByText('...', { selector: 'button' })).toHaveLength(1)
         })
 
         it('will render correct pages', () => {
             const expectedPages = ['1', '2', '3', '4', '5', '10']
             for (const page of expectedPages) {
-                expect(queries.getByRole('button', { name: page })).toBeInTheDocument()
+                expect(queries.getByRole('button', { name: `Go to page ${page}` })).toBeInTheDocument()
             }
         })
 
         it('will render correct currently selected page', () => {
-            expect(queries.getByRole('button', { name: String(currentPage) })).toHaveAttribute('aria-current', 'true')
+            expect(queries.getByRole('button', { name: `Go to page ${currentPage}` })).toHaveAttribute(
+                'aria-current',
+                'true'
+            )
         })
 
         it('will render previous and next buttons', () => {
@@ -61,21 +64,21 @@ describe('Pagination', () => {
         })
 
         it('calls onPageChange correctly when page is individually selected', () => {
-            fireEvent.click(queries.getByRole('button', { name: '5' }))
-            expect(onPageChangeMock).toHaveBeenCalledTimes(1)
-            expect(onPageChangeMock).toHaveBeenCalledWith(5)
+            fireEvent.click(queries.getByRole('button', { name: 'Go to page 5' }))
+            sinon.assert.calledOnce(onPageChangeMock)
+            sinon.assert.calledWith(onPageChangeMock, 5)
         })
 
         it('calls onPageChange correctly when previous button is selected', () => {
             fireEvent.click(queries.getByText('Previous'))
-            expect(onPageChangeMock).toHaveBeenCalledTimes(1)
-            expect(onPageChangeMock).toHaveBeenCalledWith(currentPage - 1)
+            sinon.assert.calledOnce(onPageChangeMock)
+            sinon.assert.calledWith(onPageChangeMock, currentPage - 1)
         })
 
         it('calls onPageChange correctly when next button is selected', () => {
             fireEvent.click(queries.getByText('Next'))
-            expect(onPageChangeMock).toHaveBeenCalledTimes(1)
-            expect(onPageChangeMock).toHaveBeenCalledWith(currentPage + 1)
+            sinon.assert.calledOnce(onPageChangeMock)
+            sinon.assert.calledWith(onPageChangeMock, currentPage + 1)
         })
 
         describe('when currently selected near middle', () => {
@@ -84,13 +87,13 @@ describe('Pagination', () => {
             })
 
             it('will render correct elipsis', () => {
-                expect(queries.getAllByRole('button', { name: '...' })).toHaveLength(2)
+                expect(queries.getAllByText('...', { selector: 'button' })).toHaveLength(2)
             })
 
             it('will render correct pages', () => {
                 const expectedPages = ['1', '4', '5', '6', '10']
                 for (const page of expectedPages) {
-                    expect(queries.getByRole('button', { name: page })).toBeInTheDocument()
+                    expect(queries.getByRole('button', { name: `Go to page ${page}` })).toBeInTheDocument()
                 }
             })
         })
@@ -101,13 +104,13 @@ describe('Pagination', () => {
             })
 
             it('will render correct elipsis', () => {
-                expect(queries.getAllByRole('button', { name: '...' })).toHaveLength(1)
+                expect(queries.getAllByText('...', { selector: 'button' })).toHaveLength(1)
             })
 
             it('will render correct pages', () => {
                 const expectedPages = ['1', '6', '7', '8', '9', '10']
                 for (const page of expectedPages) {
-                    expect(queries.getByRole('button', { name: page })).toBeInTheDocument()
+                    expect(queries.getByRole('button', { name: `Go to page ${page}` })).toBeInTheDocument()
                 }
             })
         })
@@ -120,18 +123,21 @@ describe('Pagination', () => {
         })
 
         it('will render no elipsis', () => {
-            expect(queries.queryAllByRole('button', { name: '...' })).toHaveLength(0)
+            expect(queries.queryAllByText('...', { selector: 'button' })).toHaveLength(0)
         })
 
         it('will render correct pages', () => {
             const expectedPages = ['1', '2', '3']
             for (const page of expectedPages) {
-                expect(queries.getByRole('button', { name: page })).toBeInTheDocument()
+                expect(queries.getByRole('button', { name: `Go to page ${page}` })).toBeInTheDocument()
             }
         })
 
         it('will render correct currently selected page', () => {
-            expect(queries.getByRole('button', { name: String(currentPage) })).toHaveAttribute('aria-current', 'true')
+            expect(queries.getByRole('button', { name: `Go to page ${currentPage}` })).toHaveAttribute(
+                'aria-current',
+                'true'
+            )
         })
     })
 
@@ -142,18 +148,21 @@ describe('Pagination', () => {
         })
 
         it('will render correct elipsis', () => {
-            expect(queries.getAllByRole('button', { name: '...' })).toHaveLength(1)
+            expect(queries.getAllByText('...', { selector: 'button' })).toHaveLength(1)
         })
 
         it('will render correct pages', () => {
             const expectedPages = ['1', '2', '3', '4', '5', '30']
             for (const page of expectedPages) {
-                expect(queries.getByRole('button', { name: page })).toBeInTheDocument()
+                expect(queries.getByRole('button', { name: `Go to page ${page}` })).toBeInTheDocument()
             }
         })
 
         it('will render correct currently selected page', () => {
-            expect(queries.getByRole('button', { name: String(currentPage) })).toHaveAttribute('aria-current', 'true')
+            expect(queries.getByRole('button', { name: `Go to page ${currentPage}` })).toHaveAttribute(
+                'aria-current',
+                'true'
+            )
         })
     })
 })
