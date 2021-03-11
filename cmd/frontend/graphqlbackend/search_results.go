@@ -155,6 +155,9 @@ func (sr *SearchResultsResolver) ApproximateResultCount() string {
 func (sr *SearchResultsResolver) Alert() *searchAlert { return sr.alert }
 
 func (sr *SearchResultsResolver) ElapsedMilliseconds() int32 {
+	if sr.start.IsZero() {
+		return 0
+	}
 	return int32(time.Since(sr.start).Milliseconds())
 }
 
