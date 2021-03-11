@@ -134,7 +134,7 @@ const githubInstructions = (isEnterprise: boolean): JSX.Element => (
                 Specify which repositories Sourcegraph should index using one of the following fields:
                 <ul>
                     <li>
-                        <Field>organizations</Field>: a list of GitHub organizations.
+                        <Field>orgs</Field>: a list of GitHub organizations.
                     </li>
                     <li>
                         <Field>repositoryQuery</Field>: a list of GitHub search queries.
