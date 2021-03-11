@@ -31,6 +31,33 @@ type Status = undefined | 'loading' | ServicesByKind | ErrorLike
 const isServicesByKind = (status: Status): status is ServicesByKind =>
     typeof status === 'object' && Object.keys(status).every(key => keyExistsIn(key, ExternalServiceKind))
 
+export const ifNotNavigated = (callback: () => void, waitMS: number = 2000, intervalMS: number = 500): void => {
+    let intervalID = 0
+    let willNavigate = false
+
+    // current iterations
+    let iterations = 0
+    // max iterations
+    const totalIterations = Math.ceil(waitMS / intervalMS)
+
+    const unloadListener = (): void => {
+        willNavigate = true
+    }
+
+    window.addEventListener('unload', unloadListener)
+
+    intervalID = window.setInterval(() => {
+        // if we waited waitMS and the navigation didn't happen - run the callback
+        if (++iterations === totalIterations && !willNavigate) {
+            // cleanup
+            window.removeEventListener('unload', unloadListener)
+            clearInterval(intervalID)
+
+            return callback()
+        }
+    }, intervalMS)
+}
+
 export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageProps> = ({
     userID,
     codeHostExternalServices,
@@ -169,6 +196,9 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                               type="button"
                               onClick={() => {
                                   setOauthRequestFor(kind)
+                                  ifNotNavigated(() => {
+                                      setOauthRequestFor(undefined)
+                                  })
                                   navigateToAuthProvider(kind)
                               }}
                               className={`btn mr-2 ${

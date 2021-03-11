@@ -11,6 +11,7 @@ import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
 import { hints } from './modalHints'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 import { ErrorLike } from '../../../../../shared/src/util/errors'
+import { ifNotNavigated } from './UserAddCodeHostsPage'
 
 interface CodeHostItemProps {
     userID: Scalars['ID']
@@ -56,6 +57,9 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
 
     const toAuthProvider = useCallback((): void => {
         setOauthInFlight(true)
+        ifNotNavigated(() => {
+            setOauthInFlight(false)
+        })
         navigateToAuthProvider(kind)
     }, [kind, navigateToAuthProvider])
 
