@@ -65,6 +65,9 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 		repoCount++
 		if repo.GitserverRepo != nil {
 			statusCount++
+			if repo.GitserverRepo.RepoID == 0 {
+				t.Fatal("GitServerRepo has zero id")
+			}
 		}
 		return nil
 	})

@@ -108,6 +108,7 @@ FROM repo
 		// gitserver_repos
 		if cloneStatus != "" {
 			gr.CloneStatus = types.ParseCloneStatus(cloneStatus)
+			gr.RepoID = rgs.ID
 			rgs.GitserverRepo = &gr
 		}
 
