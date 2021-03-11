@@ -260,7 +260,7 @@ add('With one-line alert', () => (
     </>
 ))
 
-add('With badged alert', () => (
+add('With alert with icon', () => (
     <>
         <style>{webStyles}</style>
         <HoverOverlay
@@ -274,9 +274,7 @@ add('With badged alert', () => (
                             kind: MarkupKind.PlainText,
                             value: 'This is a test alert.',
                         },
-                        badge: {
-                            kind: 'info',
-                        },
+                            iconKind: 'info',
                     },
                 ],
             }}
@@ -286,7 +284,7 @@ add('With badged alert', () => (
     </>
 ))
 
-add('With badged dismissible alert', () => (
+add('With dismissible alert with icon', () => (
     <>
         <style>{webStyles}</style>
         <HoverOverlay
@@ -301,9 +299,7 @@ add('With badged dismissible alert', () => (
                             value: 'This is a test alert.',
                         },
                         type: 'test-alert-type',
-                        badge: {
-                            kind: 'info',
-                        },
+                        iconKind: 'info',
                     },
                 ],
             }}
@@ -313,7 +309,7 @@ add('With badged dismissible alert', () => (
     </>
 ))
 
-add('With long markdown text badged dismissible alert.', () => (
+add('With long markdown text dismissible alert with icon.', () => (
     <>
         <style>{webStyles}</style>
         <HoverOverlay
@@ -329,9 +325,7 @@ add('With long markdown text badged dismissible alert.', () => (
                                 'This is a test alert. [It uses Markdown.](https://sourcegraph.com) `To render things easily`. *Cool!*',
                         },
                         type: 'test-alert-type',
-                        badge: {
-                            kind: 'info',
-                        },
+                        iconKind: 'info',
                     },
                 ],
             }}
