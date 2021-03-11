@@ -5,7 +5,7 @@ import { Badged, Hover, MarkupContent, HoverAlert, AggregableLabel } from 'sourc
 /** A hover that is merged from multiple Hover results and normalized. */
 export interface HoverMerged {
     contents: Badged<MarkupContent>[]
-    alerts?: Badged<HoverAlert>[]
+    alerts?: HoverAlert[]
     range?: PlainRange
 
     /** Sorted and de-duplicated set of labels in all source hover values. */

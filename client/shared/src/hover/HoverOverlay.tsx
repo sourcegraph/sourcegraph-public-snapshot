@@ -2,21 +2,25 @@ import { HoverOverlayProps as GenericHoverOverlayProps } from '@sourcegraph/code
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import classNames from 'classnames'
 import { isEqual, upperFirst } from 'lodash'
+import { MdiReactIconComponentType } from 'mdi-react'
+import WarningIcon from 'mdi-react/AlertCircleOutlineIcon'
+import ErrorIcon from 'mdi-react/AlertDecagramOutlineIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
+import InformationIcon from 'mdi-react/InfoCircleOutlineIcon'
 import * as React from 'react'
+import { Subscription } from 'rxjs'
+import { HoverAlert } from 'sourcegraph'
 import { ActionItem, ActionItemAction, ActionItemComponentProps } from '../actions/ActionItem'
 import { HoverMerged } from '../api/client/types/hover'
+import { LinkOrSpan } from '../components/LinkOrSpan'
+import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
-import { isErrorLike, asError } from '../util/errors'
+import { ThemeProps } from '../theme'
+import { asError, isErrorLike } from '../util/errors'
 import { renderMarkdown } from '../util/markdown'
 import { sanitizeClass } from '../util/strings'
 import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '../util/url'
 import { toNativeEvent } from './helpers'
-import { BadgeAttachment } from '../components/BadgeAttachment'
-import { ThemeProps } from '../theme'
-import { PlatformContextProps } from '../platform/context'
-import { Subscription } from 'rxjs'
-import { LinkOrSpan } from '../components/LinkOrSpan'
 
 const LOADING = 'loading' as const
 
@@ -55,8 +59,18 @@ export interface HoverOverlayProps
     onAlertDismissed?: (alertType: string) => void
 }
 
-interface HoverOverlayState {
-    showBadges: boolean
+const hoverAlertIconComponents: Record<Required<HoverAlert>['iconKind'], MdiReactIconComponentType> = {
+    info: InformationIcon,
+    warning: WarningIcon,
+    error: ErrorIcon,
+}
+
+function hoverAlertIconComponent(
+    iconKind?: Required<HoverAlert>['iconKind'],
+    className?: string
+): JSX.Element | undefined {
+    const PredefinedIcon = iconKind && hoverAlertIconComponents[iconKind]
+    return PredefinedIcon && <PredefinedIcon className={classNames('mr-1', className)} />
 }
 
 const isEmptyHover = ({
@@ -68,33 +82,11 @@ const isEmptyHover = ({
     ((!hoverOrError || hoverOrError === LOADING || isErrorLike(hoverOrError)) &&
         (!actionsOrError || actionsOrError === LOADING || isErrorLike(actionsOrError)))
 
-export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOverlayState> {
+export class HoverOverlay extends React.PureComponent<HoverOverlayProps> {
     private subscription = new Subscription()
-
-    constructor(props: HoverOverlayProps) {
-        super(props)
-        this.state = {
-            showBadges: false,
-        }
-    }
 
     public componentDidMount(): void {
         this.logTelemetryEvent()
-
-        this.subscription.add(
-            this.props.platformContext.settings.subscribe(settingsCascadeOrError => {
-                if (settingsCascadeOrError.final && !isErrorLike(settingsCascadeOrError.final)) {
-                    // Default to true if experimentalFeatures or showBadgeAttachments are not set
-                    this.setState({
-                        showBadges:
-                            !settingsCascadeOrError.final.experimentalFeatures ||
-                            settingsCascadeOrError.final.experimentalFeatures.showBadgeAttachments !== false,
-                    })
-                } else {
-                    this.setState({ showBadges: false })
-                }
-            })
-        )
     }
 
     public componentDidUpdate(previousProps: HoverOverlayProps): void {
@@ -196,16 +188,6 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOv
                                                 </LinkOrSpan>
                                             ))}
 
-                                            {content.badge && this.state.showBadges && (
-                                                <BadgeAttachment
-                                                    className="hover-overlay__badge test-hover-badge"
-                                                    iconClassName={this.props.iconClassName}
-                                                    iconButtonClassName={this.props.iconButtonClassName}
-                                                    attachment={content.badge}
-                                                    isLightTheme={this.props.isLightTheme}
-                                                />
-                                            )}
-
                                             <span
                                                 className="hover-overlay__content test-tooltip-content"
                                                 dangerouslySetInnerHTML={{
@@ -236,21 +218,12 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOv
                     hoverOrError.alerts &&
                     hoverOrError.alerts.length > 0 && (
                         <div className="hover-overlay__alerts">
-                            {hoverOrError.alerts.map(({ summary, badge, type }, index) => (
+                            {hoverOrError.alerts.map(({ summary, iconKind, type }, index) => (
                                 <div
                                     className={classNames('hover-overlay__alert', this.props.infoAlertClassName)}
                                     key={index}
                                 >
-                                    {/* Show badge in the top-right */}
-                                    {badge && (
-                                        <BadgeAttachment
-                                            className="hover-overlay__badge test-hover-badge"
-                                            iconClassName={this.props.iconClassName}
-                                            iconButtonClassName={this.props.iconButtonClassName}
-                                            attachment={badge}
-                                            isLightTheme={this.props.isLightTheme}
-                                        />
-                                    )}
+                                    {hoverAlertIconComponent(iconKind, this.props.iconClassName)}
 
                                     {summary.kind === 'plaintext' ? (
                                         <span className="hover-overlay__content">{summary.value}</span>

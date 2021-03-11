@@ -1368,9 +1368,6 @@ declare module 'sourcegraph' {
 
     /** A badge holds the extra fields that can be attached to a providable type T via Badged<T>. */
     export interface Badge {
-        /** Badges are displayed next to each result. */
-        badge?: BadgeAttachmentRenderOptions
-
         /**
          * Aggregable labels are concatenated and de-duplicated within a particular result set. These
          * values can briefly be used to describe some common property of the underlying result set.
@@ -1379,6 +1376,13 @@ declare module 'sourcegraph' {
          * only precise or only search-based code intelligence results.
          */
         aggregableLabels?: AggregableLabel[]
+
+        /**
+         * Badges are displayed next to each result.
+         *
+         * @deprecated These badges are no longer displayed. Use {@link Badge#aggregableLabels} instead.
+         */
+        badge?: never
     }
 
     /**
@@ -1421,7 +1425,7 @@ declare module 'sourcegraph' {
         /**
          * Alerts that should be shown in this hover.
          */
-        alerts?: Badged<HoverAlert>[]
+        alerts?: HoverAlert[]
     }
 
     export interface HoverAlert {
@@ -1439,6 +1443,9 @@ declare module 'sourcegraph' {
          * dismissible.
          */
         type?: string
+
+        /** Predefined icons to display next ot the summary. */
+        iconKind?: 'info' | 'error' | 'warning'
     }
 
     export interface HoverProvider {
