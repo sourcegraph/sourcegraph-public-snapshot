@@ -137,4 +137,4 @@ If a project fails to clone in Sourcegraph, you may need to change its `reposito
 - Go to the Project > **Settings** > **General**
 - Expand **Visibility, project features, permissions**
 - Change **Repository Access** from "Only Project Members" to “Everyone with Access”
-Done! Sourcegraph will now receive webhook events from GitLab and use them to sync merge request events, used by [batch changes](../../batch_changes/index.md), faster and more efficiently.
+
