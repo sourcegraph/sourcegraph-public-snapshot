@@ -32,7 +32,7 @@ Ultimately, if you're reading this you should view this code as a "take it or le
 
 The following architecture diagram shows how the backend fits into the two Sourcegraph services "frontend" (the Sourcegraph monolithic service) and "repo-updater" (the Sourcegraph "background-worker" service), click to expand:
 
-[![](diagrams/architecture.svg)](diagrams/architecture.svg)
+[![](diagrams/architecture.svg)](https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/doc/dev/background-information/insights/diagrams/architecture.svg)
 
 ## Life of an insight
 
@@ -112,7 +112,7 @@ Once the web client gets data points back, it renders them! Contact @felixfbecke
 
 ## Debugging
 
-This being a pretty complex and slow-moving system, debugging can be tricky. This is definitely one area we need to improve especially from a user experience point of view ([#18964](https://github.com/sourcegraph/sourcegraph/issues/18964)) and general customer debugging point of view ([#18399]((https://github.com/sourcegraph/sourcegraph/issues/18399)).
+This being a pretty complex and slow-moving system, debugging can be tricky. This is definitely one area we need to improve especially from a user experience point of view ([#18964](https://github.com/sourcegraph/sourcegraph/issues/18964)) and general customer debugging point of view ([#18399](https://github.com/sourcegraph/sourcegraph/issues/18399)).
 
 In this section, I'll cover useful tips I have for debugging the system when developing it or otherwise using it.
 
