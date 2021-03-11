@@ -12,14 +12,14 @@ const emptyLocation = {
     key: '',
 }
 
-function fakeConnection(pageInfoProps: { hasNextPage: boolean }) {
+function fakeConnection({ hasNextPage, totalCount }: { hasNextPage: boolean; totalCount: number | null }) {
     return {
-        nodes: [],
+        nodes: [{}],
         pageInfo: {
             endCursor: '',
-            ...pageInfoProps,
+            hasNextPage,
         },
-        totalCount: 1,
+        totalCount,
     }
 }
 
@@ -41,30 +41,42 @@ const boringConnectionNodesProps = {
 describe('ConnectionNodes', () => {
     afterAll(cleanup)
 
-    it('pdubroy it should have a "Show more" button when not loading', () => {
+    it('should have a "Show more" button when *not* loading', () => {
         render(
             <ConnectionNodes
-                connection={fakeConnection({ hasNextPage: true })}
+                connection={fakeConnection({ hasNextPage: true, totalCount: 2 })}
                 loading={false}
                 {...boringConnectionNodesProps}
             />
         )
         expect(screen.getByRole('button')).toHaveTextContent('Show more')
-        expect(screen.queryByText('1 cat total')).toBeNull()
-        expect(screen.queryByText('(showing first 0)')).toBeNull()
+        expect(screen.getByText('2 cats total')).toBeVisible()
+        expect(screen.getByText('(showing first 1)')).toBeVisible()
     })
 
-    it('pdubroy it should have no button text when loading', () => {
+    it("should *not* have a 'Show more' button when loading", () => {
         render(
             <ConnectionNodes
-                connection={fakeConnection({ hasNextPage: true })}
+                connection={fakeConnection({ hasNextPage: true, totalCount: 2 })}
                 loading={true}
                 {...boringConnectionNodesProps}
             />
         )
         expect(screen.queryByRole('button')).toBeNull()
-        expect(screen.getByText('1 cat total')).toBeVisible()
-        expect(screen.getByText('(showing first 0)')).toBeVisible()
+        expect(screen.getByText('2 cats total')).toBeVisible()
+        expect(screen.getByText('(showing first 1)')).toBeVisible()
         // NOTE: we also expect a LoadingSpinner, but that is not provided by ConnectionNodes.
+    })
+
+    it("it doesn't show summary info if totalCount is null", () => {
+        render(
+            <ConnectionNodes
+                connection={fakeConnection({ hasNextPage: true, totalCount: null })}
+                loading={true}
+                {...boringConnectionNodesProps}
+            />
+        )
+        expect(screen.queryByText('2 cats total')).toBeNull()
+        expect(screen.queryByText('(showing first 1)')).toBeNull()
     })
 })
