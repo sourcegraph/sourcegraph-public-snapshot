@@ -15,6 +15,8 @@ import { WebActionsNavItems as ActionsNavItems } from '../../components/shared'
 import { CodeMonitoringProps } from '../../code-monitoring'
 import { FilterKind, findFilter } from '../../../../shared/src/search/query/validate'
 import { Link } from '../../../../shared/src/components/Link'
+import { CodeMonitoringLogo } from '../../enterprise/code-monitoring/CodeMonitoringLogo'
+import DownloadIcon from 'mdi-react/DownloadIcon'
 
 export interface SearchResultsInfoBarProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
@@ -85,7 +87,8 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         return (
             <li className="nav-item">
                 <Link to={toURL} className="btn btn-sm btn-link nav-link text-decoration-none">
-                    Create code monitor
+                    <CodeMonitoringLogo className="icon-inline mr-2" />
+                    Monitor
                 </Link>
             </li>
         )
@@ -108,6 +111,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                         showLoadingSpinnerDuringExecution={true}
                         actionItemClass="btn btn-sm btn-link nav-link text-decoration-none"
                     />
+                    <li className="search-results-info-bar__divider" aria-hidden="true" />
                     {CreateCodeMonitorButton}
                     {props.showSavedQueryButton !== false && props.authenticatedUser && (
                         <li className="nav-item">
@@ -116,25 +120,29 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                                 onClick={props.onSaveQueryClick}
                                 className="btn btn-sm btn-link nav-link text-decoration-none test-save-search-link"
                             >
+                                <DownloadIcon className="icon-inline mr-2" />
                                 Save search
                             </button>
                         </li>
                     )}
                     {props.resultsFound && (
-                        <li className="nav-item">
-                            <button
-                                type="button"
-                                onClick={props.onExpandAllResultsToggle}
-                                className="btn btn-sm btn-link nav-link text-decoration-none"
-                                data-tooltip={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
-                            >
-                                {props.allExpanded ? (
-                                    <ArrowCollapseVerticalIcon className="icon-inline" />
-                                ) : (
-                                    <ArrowExpandVerticalIcon className="icon-inline" />
-                                )}
-                            </button>
-                        </li>
+                        <>
+                            <li className="search-results-info-bar__divider" aria-hidden="true" />
+                            <li className="nav-item">
+                                <button
+                                    type="button"
+                                    onClick={props.onExpandAllResultsToggle}
+                                    className="btn btn-sm btn-link nav-link text-decoration-none"
+                                    data-tooltip={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
+                                >
+                                    {props.allExpanded ? (
+                                        <ArrowCollapseVerticalIcon className="icon-inline" />
+                                    ) : (
+                                        <ArrowExpandVerticalIcon className="icon-inline" />
+                                    )}
+                                </button>
+                            </li>
+                        </>
                     )}
                 </ul>
             </small>
