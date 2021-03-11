@@ -500,7 +500,7 @@ func (s *Server) setCloneStatus(ctx context.Context, name api.RepoName, status t
 	if err != nil {
 		return err
 	}
-	return database.NewGitserverReposWith(tx).SetCloneStatus(ctx, repo.ID, status)
+	return database.NewGitserverReposWith(tx).SetCloneStatus(ctx, repo.ID, status, s.Hostname)
 }
 
 // setCloneStatusNonFatal is the same as setCloneStatus but only logs errors
