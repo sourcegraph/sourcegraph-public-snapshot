@@ -64,7 +64,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e
 	github.com/gomodule/oauth1 v0.0.0-20181215000758-9a59ed3b0a84
 	github.com/gomodule/redigo v2.0.0+incompatible
-	github.com/google/go-cmp v0.5.4
+	github.com/google/go-cmp v0.5.5
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-github/v28 v28.1.1
 	github.com/google/go-github/v31 v31.0.0
@@ -161,6 +161,7 @@ require (
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
 	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-00010101000000-000000000000
 	github.com/sourcegraph/sourcegraph/enterprise/lib v0.0.0-00010101000000-000000000000
+	github.com/sourcegraph/sourcegraph/lib v0.0.0-00010101000000-000000000000
 	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/stretchr/objx v0.3.0 // indirect
@@ -219,6 +220,9 @@ replace (
 	// We publish 'enterprise/lib' as a package for import in other tooling.
 	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
 	github.com/sourcegraph/sourcegraph/enterprise/lib => ./enterprise/lib
+	// We publish 'lib' as a package for import in other tooling.
+	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
+	github.com/sourcegraph/sourcegraph/lib => ./lib
 )
 
 // Temporary replace directives
