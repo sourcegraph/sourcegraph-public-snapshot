@@ -667,9 +667,8 @@ func testSearchClient(t *testing.T, client searchClient) {
 				zeroResult: true,
 			},
 			{
-				name:       `Mixed regexp and literal`,
-				query:      `repo:^github\.com/sgtest/go-diff$ func(.*) or does_not_exist_3744 type:file`,
-				skipStream: true,
+				name:  `Mixed regexp and literal`,
+				query: `repo:^github\.com/sgtest/go-diff$ patternType:regexp func(.*) or does_not_exist_3744 type:file`,
 			},
 			{
 				name:  `Mixed regexp and literal heuristic`,
@@ -681,14 +680,12 @@ func testSearchClient(t *testing.T, client searchClient) {
 				zeroResult: true,
 			},
 			{
-				name:       `Escape sequences`,
-				query:      `repo:^github\.com/sgtest/go-diff$ \' and \" and \\ and /`,
-				skipStream: true,
+				name:  `Escape sequences`,
+				query: `repo:^github\.com/sgtest/go-diff$ patternType:regexp \' and \" and \\ and /`,
 			},
 			{
-				name:       `Escaped whitespace sequences with 'and'`,
-				query:      `repo:^github\.com/sgtest/go-diff$ \ and /`,
-				skipStream: true,
+				name:  `Escaped whitespace sequences with 'and'`,
+				query: `repo:^github\.com/sgtest/go-diff$ patternType:regexp \ and /`,
 			},
 			{
 				name:  `Concat converted to spaces for literal search`,

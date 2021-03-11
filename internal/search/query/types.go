@@ -31,6 +31,19 @@ const (
 	SearchTypeStructural
 )
 
+func (s SearchType) String() string {
+	switch s {
+	case SearchTypeRegex:
+		return "regex"
+	case SearchTypeLiteral:
+		return "literal"
+	case SearchTypeStructural:
+		return "structural"
+	default:
+		return fmt.Sprintf("unknown{%d}", s)
+	}
+}
+
 // QueryInfo is an interface for accessing query values that drive our search logic.
 // It will be removed in favor of a cleaner query API to access values.
 type QueryInfo interface {
