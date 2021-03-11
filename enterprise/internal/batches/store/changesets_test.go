@@ -444,68 +444,6 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			}
 		}
 
-		{
-			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{WithoutDeleted: true})
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if len(have) != len(changesets) {
-				t.Fatalf("have 0 changesets. want %d", len(changesets))
-			}
-
-			for _, c := range changesets {
-				c.SetDeleted()
-				c.UpdatedAt = clock.Now()
-
-				if err := s.UpdateChangeset(ctx, c); err != nil {
-					t.Fatal(err)
-				}
-			}
-
-			have, _, err = s.ListChangesets(ctx, ListChangesetsOpts{WithoutDeleted: true})
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if len(have) != 0 {
-				t.Fatalf("have %d changesets. want 0", len(changesets))
-			}
-		}
-
-		{
-			gitlabMR := &gitlab.MergeRequest{
-				ID:        gitlab.ID(1),
-				Title:     "Fix a bunch of bugs",
-				CreatedAt: gitlab.Time{Time: clock.Now()},
-				UpdatedAt: gitlab.Time{Time: clock.Now()},
-			}
-			gitlabChangeset := &batches.Changeset{
-				Metadata:            gitlabMR,
-				RepoID:              gitlabRepo.ID,
-				ExternalServiceType: extsvc.TypeGitLab,
-			}
-			if err := s.CreateChangeset(ctx, gitlabChangeset); err != nil {
-				t.Fatal(err)
-			}
-			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{ExternalServiceID: "https://gitlab.com/"})
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			want := 1
-			if len(have) != want {
-				t.Fatalf("have %d changesets; want %d", len(have), want)
-			}
-
-			if have[0].ID != gitlabChangeset.ID {
-				t.Fatalf("unexpected changeset: have %+v; want %+v", have[0], gitlabChangeset)
-			}
-			if err := s.DeleteChangeset(ctx, gitlabChangeset.ID); err != nil {
-				t.Fatal(err)
-			}
-		}
-
 		// No Limit should return all Changesets
 		{
 			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{})
