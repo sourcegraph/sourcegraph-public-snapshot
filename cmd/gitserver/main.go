@@ -37,7 +37,7 @@ import (
 
 var (
 	reposDir                     = env.Get("SRC_REPOS_DIR", "/data/repos", "Root dir containing repos.")
-	wantPctFree                  = env.MustGetInt("SRC_REPOS_DESIRED_PERCENT_FREE", server.SRC_REPOS_DESIRED_PERCENT_FREE_DEFAULT, "Target percentage of free space on disk.")
+	wantPctFree                  = env.MustGetInt("SRC_REPOS_DESIRED_PERCENT_FREE", server.SrcReposDesiredPercentFreeDefault, "Target percentage of free space on disk.")
 	janitorInterval              = env.MustGetDuration("SRC_REPOS_JANITOR_INTERVAL", 1*time.Minute, "Interval between cleanup runs")
 	syncRepoStateInterval        = env.MustGetDuration("SRC_REPOS_SYNC_STATE_INTERVAL", 10*time.Minute, "Interval between state syncs")
 	syncRepoStateBatchSize       = env.MustGetInt("SRC_REPOS_SYNC_STATE_BATCH_SIZE", 500, "Number of upserts to perform per batch")
