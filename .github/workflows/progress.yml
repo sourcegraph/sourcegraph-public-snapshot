@@ -1,5 +1,6 @@
 name: Progress bot
 on:
+  workflow_dispatch:
   schedule:
   - cron: "0 0 * * *"   # Every day 00:00 UTC (4pm PST)
 jobs:
