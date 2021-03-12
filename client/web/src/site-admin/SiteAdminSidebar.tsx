@@ -33,9 +33,9 @@ export const SiteAdminSidebar: React.FunctionComponent<SiteAdminSidebarProps> = 
                             >
                                 <SidebarGroupItems>
                                     {items.map(
-                                        ({ label, to, exact, condition = () => true }) =>
+                                        ({ label, to, source = 'client', condition = () => true }) =>
                                             condition({}) && (
-                                                <SidebarNavItem to={to} exact={exact} key={label}>
+                                                <SidebarNavItem to={to} exact={true} key={label} source={source}>
                                                     {label}
                                                 </SidebarNavItem>
                                             )
