@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React, { useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import {
     Area,
     ComposedChart,
@@ -14,6 +14,7 @@ import { ChangesetCountsOverTimeFields, Scalars } from '../../../graphql-operati
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { queryChangesetCountsOverTime as _queryChangesetCountsOverTime } from './backend'
+import { getYear, parseISO } from 'date-fns'
 
 interface Props {
     batchChangeID: Scalars['ID']
@@ -84,8 +85,17 @@ export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
 
     const dateTickFormatter = useMemo(() => {
         let dateTickFormat = new Intl.DateTimeFormat(undefined, { month: 'long', day: 'numeric' })
-        if (changesetCountsOverTime && changesetCountsOverTime.length > 0 && changesetCountsOverTime[0].date) {
-            dateTickFormat = new Intl.DateTimeFormat(undefined, { month: 'long', day: 'numeric', year: 'numeric' })
+        if (changesetCountsOverTime?.length > 1) {
+            const start = parseISO(changesetCountsOverTime[0].date)
+            const end = parseISO(changesetCountsOverTime[changesetCountsOverTime.length - 1].date)
+            // If the range spans multiple years, we want to display the year as well.
+            if (getYear(start) !== getYear(end)) {
+                dateTickFormat = new Intl.DateTimeFormat(undefined, {
+                    month: 'short',
+                    day: 'numeric',
+                    year: '2-digit',
+                })
+            }
         }
         return (timestamp: number): string => dateTickFormat.format(timestamp)
     }, [changesetCountsOverTime])
@@ -105,7 +115,6 @@ export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
                 <ComposedChart
                     data={changesetCountsOverTime.map(snapshot => ({ ...snapshot, date: Date.parse(snapshot.date) }))}
                 >
-                    {/* <Legend verticalAlign="bottom" iconType="square" /> */}
                     <XAxis
                         dataKey="date"
                         domain={[
@@ -154,37 +163,52 @@ export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
             </ResponsiveContainer>
             <div className="flex-grow-0 btn-group-vertical ml-2">
                 {Object.entries(states).map(([key, state]) => (
-                    <div className="d-flex align-items-center text-nowrap p-2" key={key}>
-                        <div
-                            style={{
-                                backgroundColor: state.fill,
-                                width: '1rem',
-                                height: '1rem',
-                                display: 'inline-block',
-                            }}
-                            className="mr-1"
-                        />
-                        <input
-                            type="checkbox"
-                            className="mr-1"
-                            checked={!hiddenStates.has(key as keyof DisplayableChangesetCounts)}
-                            onClick={() =>
-                                setHiddenStates(current => {
-                                    if (current.has(key as keyof DisplayableChangesetCounts)) {
-                                        const newSet = new Set<keyof DisplayableChangesetCounts>(current)
-                                        newSet.delete(key as keyof DisplayableChangesetCounts)
-                                        return newSet
-                                    }
-                                    return new Set<keyof DisplayableChangesetCounts>(current).add(
-                                        key as keyof DisplayableChangesetCounts
-                                    )
-                                })
-                            }
-                        />
-                        {state.label}
-                    </div>
+                    <LegendLabel
+                        key={key}
+                        stateKey={key as keyof DisplayableChangesetCounts}
+                        label={state.label}
+                        fill={state.fill}
+                        hiddenStates={hiddenStates}
+                        setHiddenStates={setHiddenStates}
+                    />
                 ))}
             </div>
+        </div>
+    )
+}
+
+const LegendLabel: React.FunctionComponent<{
+    stateKey: keyof DisplayableChangesetCounts
+    label: string
+    fill: string
+    hiddenStates: Set<keyof DisplayableChangesetCounts>
+    setHiddenStates: (
+        setter: (currentValue: Set<keyof DisplayableChangesetCounts>) => Set<keyof DisplayableChangesetCounts>
+    ) => void
+}> = ({ stateKey, label, fill, hiddenStates, setHiddenStates }) => {
+    const onChangeCheckbox = useCallback(() => {
+        setHiddenStates(current => {
+            if (current.has(stateKey)) {
+                const newSet = new Set<keyof DisplayableChangesetCounts>(current)
+                newSet.delete(stateKey)
+                return newSet
+            }
+            return new Set<keyof DisplayableChangesetCounts>(current).add(stateKey)
+        })
+    }, [setHiddenStates, stateKey])
+    const checked = useMemo(() => !hiddenStates.has(stateKey), [hiddenStates, stateKey])
+    return (
+        <div className="d-flex align-items-center text-nowrap p-2">
+            <div
+                // We want to set the fill based on the state config.
+                // eslint-disable-next-line react/forbid-dom-props
+                style={{
+                    backgroundColor: fill,
+                }}
+                className="batch-change-burndown-chart-legend__color-box mr-2"
+            />
+            <input type="checkbox" className="mr-2" checked={checked} onChange={onChangeCheckbox} />
+            {label}
         </div>
     )
 }
