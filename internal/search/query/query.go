@@ -72,6 +72,21 @@ func Init(in string, searchType SearchType) step {
 	return sequence(parser, For(searchType))
 }
 
+// InitLiteral is Init where SearchType is Literal.
+func InitLiteral(in string) step {
+	return Init(in, SearchTypeLiteral)
+}
+
+// InitRegexp is Init where SearchType is Regex.
+func InitRegexp(in string) step {
+	return Init(in, SearchTypeRegex)
+}
+
+// InitStructural is Init where SearchType is Structural.
+func InitStructural(in string) step {
+	return Init(in, SearchTypeStructural)
+}
+
 // Pipeline processes zero or more steps to produce a query. The first step must
 // be Init, otherwise this function is a no-op.
 func Pipeline(steps ...step) (Q, error) {

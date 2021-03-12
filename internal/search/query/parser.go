@@ -1058,53 +1058,14 @@ func ParseAndOr(in string, searchType SearchType) ([]Node, error) {
 	return newOperator(nodes, And), nil
 }
 
-type ParserOptions struct {
-	SearchType SearchType
-
-	// treat repo, file, or repohasfile values as glob syntax if true.
-	Globbing bool
-}
-
-// Parse parses and validates an and/or query for a given search type.
-func Parse(in string, options ParserOptions) (Q, error) {
-	var query []Node
-	var err error
-
-	query, err = ParseAndOr(in, options.SearchType)
-	if err != nil {
-		return nil, err
-	}
-	query = Map(query, LowercaseFieldNames, SubstituteAliases(options.SearchType))
-
-	switch options.SearchType {
-	case SearchTypeLiteral:
-		query = Map(query, substituteConcat(space))
-	case SearchTypeStructural:
-		query = Map(query, labelStructural, ellipsesForHoles, substituteConcat(space))
-	case SearchTypeRegex:
-		query = Map(query, escapeParensHeuristic, substituteConcat(fuzzyRegexp))
-	}
-
-	if options.Globbing {
-		query, err = Globbing(query)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	for _, disjunct := range Dnf(query) {
-		err = validate(disjunct)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return query, nil
-}
-
 func ParseLiteral(in string) (Q, error) {
-	return Parse(in, ParserOptions{SearchType: SearchTypeLiteral})
+	return Pipeline(Init(in, SearchTypeLiteral))
 }
 
 func ParseRegexp(in string) (Q, error) {
-	return Parse(in, ParserOptions{SearchType: SearchTypeRegex})
+	return Pipeline(Init(in, SearchTypeRegex))
+}
+
+func ParseSearchType(in string, searchType SearchType) (Q, error) {
+	return Pipeline(Init(in, searchType))
 }
