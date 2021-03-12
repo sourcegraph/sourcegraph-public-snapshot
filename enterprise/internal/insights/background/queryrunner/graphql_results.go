@@ -15,6 +15,60 @@ import (
 //    API (we need per-repository match counts) we have to calculate this information ourselves
 //    in the same way the search backend does (see the matchCount() methods) in order to get the
 //    correct value. Yuck.
+//
+// Consider this GraphQL query snippet, which is *required* and *the only way* to count the total
+// number of matches (or as our UI calls them, "results"):
+//
+// 	results {
+// 		__typename
+// 		... on FileMatch {
+// 			repository {
+// 				id
+// 			}
+// 			lineMatches {
+// 				offsetAndLengths
+// 			}
+// 			symbols {
+// 				name
+// 			}
+// 		}
+// 		... on CommitSearchResult {
+// 			matches {
+// 				highlights {
+// 					line
+// 				}
+// 			}
+// 			commit {
+// 				repository {
+// 					id
+// 				}
+// 			}
+// 		}
+// 		... on Repository {
+// 			id
+// 		}
+// 	}
+//
+// In this case:
+//
+// * A `FileMatch` result (I can't believe it's called a _match_ and yet it's a _result_) actually
+//   can contain _several matches_ described by `lineMatches`. `lineMatches` describes the individual
+//   lines matched within the file, and `offsetAndLengths` describes the matches _within a single line_.
+//   The frontend tallies all of these together to say "we found this many results."
+//   This is the result type for regular text searches.
+// * A `FileMatch` result can ALSO contain `symbols` matches, in the case of a `type:symbol` search. In
+//   this case, `lineMatches` will be empty.
+// * A `CommitSearchResult` is the result type returned for `type:commit` and `type:diff` searches. It
+//   can be either a single commit result (in which case `matches` will be empty..) or it can contain
+//   `matches` indicating it found several matching lines within the contents of a diff.
+// * A `type:repository` search will result in just a `Repository` result type.
+//
+// And, to be clear, ALL of these at the same time can be returned - since it is possible to combine multiple
+// `type:` parameters in a search query and AFAIK that is also the default (some get mixed in _sometimes_.)
+//
+// If you are disgusted/shocked by this, astonished at how hard this makes it to count the number of individual
+// matches, about the extremely poor usage of the terms "matches" and "results" in our codebase - just know
+// that so am I and this is some of the oldest "tech debt" in all of Sourcegraph :)
 
 type result interface {
 	matchCount() int
