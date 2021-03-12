@@ -230,7 +230,7 @@ func (s *Server) cleanupRepos(addrs []string) {
 			return false, nil
 		}
 		addr := gitserver.AddrForRepo(s.name(dir), addrs)
-		if s.hostnameMatch(addr) {
+		if s.shardIDMatch(addr) {
 			return false, nil
 		}
 		log15.Info("removing repo for wrong shard", "repo", dir)
@@ -500,7 +500,7 @@ func (s *Server) setCloneStatus(ctx context.Context, name api.RepoName, status t
 	if err != nil {
 		return err
 	}
-	return database.NewGitserverReposWith(tx).SetCloneStatus(ctx, repo.ID, status, s.Hostname)
+	return database.NewGitserverReposWith(tx).SetCloneStatus(ctx, repo.ID, status, s.ShardID)
 }
 
 // setCloneStatusNonFatal is the same as setCloneStatus but only logs errors

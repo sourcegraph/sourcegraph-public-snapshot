@@ -136,9 +136,10 @@ type Server struct {
 	// usually set to return a GitRepoSyncer.
 	GetVCSSyncer func(context.Context, api.RepoName) (VCSSyncer, error)
 
-	// Hostname is how we identify this instance of gitserver. Generally it is the
-	// actual hostname but can also be overridden by the HOSTNAME environment variable.
-	Hostname string
+	// ShardID is how we identify this instance of gitserver. Generally it is the
+	// actual hostname but can also be overridden by the SRC_GIT_SERVER_SHARD_ID
+	// environment variable.
+	ShardID string
 
 	// shared db handle
 	DB dbutil.DB
@@ -297,18 +298,18 @@ func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int)
 	}
 }
 
-// hostnameMatch checks whether the hostname matches the given address.
-// If we don't find an exact match, we look at the initial prefix.
-func (s *Server) hostnameMatch(addr string) bool {
-	if !strings.HasPrefix(addr, s.Hostname) {
+// shardIDMatch checks whether the shard id matches the given address. If we
+// don't find an exact match, we look at the initial prefix.
+func (s *Server) shardIDMatch(addr string) bool {
+	if !strings.HasPrefix(addr, s.ShardID) {
 		return false
 	}
-	if addr == s.Hostname {
+	if addr == s.ShardID {
 		return true
 	}
-	// We know that s.Hostname is shorter than addr so we can safely check the next
+	// We know that s.ShardID is shorter than addr so we can safely check the next
 	// char
-	next := addr[len(s.Hostname)]
+	next := addr[len(s.ShardID)]
 	return next == '.' || next == ':'
 }
 
@@ -331,13 +332,13 @@ func (s *Server) syncRepoState(addrs []string, batchSize, perSecond int) error {
 	// Sanity check our host exists in addrs before starting any work
 	var found bool
 	for _, a := range addrs {
-		if s.hostnameMatch(a) {
+		if s.shardIDMatch(a) {
 			found = true
 			break
 		}
 	}
 	if !found {
-		return fmt.Errorf("gitserver hostname, %q, not found in list", s.Hostname)
+		return fmt.Errorf("gitserver hostname, %q, not found in list", s.ShardID)
 	}
 
 	ctx := s.ctx
@@ -392,7 +393,7 @@ func (s *Server) syncRepoState(addrs []string, batchSize, perSecond int) error {
 
 		repoSyncStateCounter.WithLabelValues("check").Inc()
 		// Ensure we're only dealing with repos we are responsible for
-		if addr := gitserver.AddrForRepo(repo.Name, addrs); !s.hostnameMatch(addr) {
+		if addr := gitserver.AddrForRepo(repo.Name, addrs); !s.shardIDMatch(addr) {
 			repoSyncStateCounter.WithLabelValues("other_shard").Inc()
 			return nil
 		}
@@ -409,8 +410,8 @@ func (s *Server) syncRepoState(addrs []string, batchSize, perSecond int) error {
 			}
 			shouldUpdate = true
 		}
-		if repo.ShardID != s.Hostname {
-			repo.ShardID = s.Hostname
+		if repo.ShardID != s.ShardID {
+			repo.ShardID = s.ShardID
 			shouldUpdate = true
 		}
 		cloneStatus := cloneStatus(cloned, cloning)

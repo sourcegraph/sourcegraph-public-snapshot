@@ -823,8 +823,8 @@ func TestHostnameMatch(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run("", func(t *testing.T) {
-			s := Server{Hostname: tc.hostname}
-			have := s.hostnameMatch(tc.addr)
+			s := Server{ShardID: tc.hostname}
+			have := s.shardIDMatch(tc.addr)
 			if have != tc.shouldMatch {
 				t.Fatalf("Want %v, got %v", tc.shouldMatch, have)
 			}
@@ -858,7 +858,7 @@ func TestSyncRepoState(t *testing.T) {
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
 			return &GitRepoSyncer{}, nil
 		},
-		Hostname:         hostname,
+		ShardID:          hostname,
 		DB:               db,
 		ctx:              ctx,
 		locker:           &RepositoryLocker{},

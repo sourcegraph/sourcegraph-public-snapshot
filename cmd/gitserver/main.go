@@ -42,7 +42,7 @@ var (
 	syncRepoStateInterval        = env.MustGetDuration("SRC_REPOS_SYNC_STATE_INTERVAL", 10*time.Minute, "Interval between state syncs")
 	syncRepoStateBatchSize       = env.MustGetInt("SRC_REPOS_SYNC_STATE_BATCH_SIZE", 500, "Number of upserts to perform per batch")
 	syncRepoStateUpsertPerSecond = env.MustGetInt("SRC_REPOS_SYNC_STATE_UPSERT_PER_SEC", 500, "The number of upserted rows allowed per second across all gitserver instances")
-	envHostname                  = env.Get("HOSTNAME", "", "Hostname override")
+	envShardID                   = env.Get("SRC_GIT_SERVER_SHARD_ID", "", "This gitserver instance's shard id")
 )
 
 func main() {
@@ -122,8 +122,8 @@ func main() {
 			}
 			return &server.GitRepoSyncer{}, nil
 		},
-		Hostname: hostnameBestEffort(),
-		DB:       db,
+		ShardID: shardIDBestEffort(),
+		DB:      db,
 	}
 	gitserver.RegisterMetrics()
 
@@ -179,9 +179,9 @@ func main() {
 	gitserver.Stop()
 }
 
-func hostnameBestEffort() string {
-	if envHostname != "" {
-		return envHostname
+func shardIDBestEffort() string {
+	if envShardID != "" {
+		return envShardID
 	}
 	h, _ := os.Hostname()
 	return h

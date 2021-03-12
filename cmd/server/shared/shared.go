@@ -129,9 +129,9 @@ func Main() {
 
 	postgresExporterLine := fmt.Sprintf(`postgres_exporter: env DATA_SOURCE_NAME="%s" postgres_exporter --log.level=%s`, dbutil.PostgresDSN("", "postgres", os.Getenv), convertLogLevel(os.Getenv("SRC_LOG_LEVEL")))
 
-	// TODO: This should be fixed properly.
-	// Tell `gitserver` that its `hostname` is what the others think of as gitserver hostnames.
-	gitserverLine := fmt.Sprintf(`gitserver: env HOSTNAME=%q gitserver`, os.Getenv("SRC_GIT_SERVERS"))
+	// Tell `gitserver` that its `shard id` is what the others think of as gitserver
+	// hostname so that our sharding logic on both frontend and gitserver match.
+	gitserverLine := fmt.Sprintf(`gitserver: env SRC_GIT_SERVER_SHARD_ID=%q gitserver`, os.Getenv("SRC_GIT_SERVERS"))
 
 	procfile := []string{
 		nginx,

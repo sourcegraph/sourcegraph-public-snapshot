@@ -136,7 +136,7 @@ func TestCleanupWrongShard(t *testing.T) {
 	repo1 := mkRepo("repo1")
 	repo2 := mkRepo("repo2")
 	s := &Server{
-		Hostname: "addr1",
+		ShardID:  "addr1",
 		ReposDir: root,
 	}
 	s.Handler() // Handler as a side-effect sets up Server
