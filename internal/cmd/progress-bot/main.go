@@ -61,7 +61,9 @@ func main() {
 
 	slackClient := NewSlackClient(slack.New(os.Getenv("SLACK_API_TOKEN")))
 
-	msg, err := changelog.ToSlackMessage(slackClient, gcsClient, *gcsBucket)
+	bucket := gcsClient.Bucket(*gcsBucket)
+
+	msg, err := changelog.ToSlackMessage(slackClient, bucket)
 	if err != nil {
 		log.Printf("Failed to generate Slack message: %v", err)
 		os.Exit(0)
@@ -120,7 +122,7 @@ func (r Release) IsEmpty() bool {
 
 type Changelog []Release
 
-func (cl Changelog) ToSlackMessage(cli *SlackClient, gcs *storage.Client, bucket string) (*slack.Message, error) {
+func (cl Changelog) ToSlackMessage(cli *SlackClient, bucket *storage.BucketHandle) (*slack.Message, error) {
 	var merged Release
 	for _, r := range cl {
 		merged.Added = append(merged.Added, r.Added...)
@@ -158,7 +160,7 @@ func (cl Changelog) ToSlackMessage(cli *SlackClient, gcs *storage.Client, bucket
 		}
 
 		if len(avatarURLs) > 0 {
-			imageURL, err := NewGroupAvatarImageURL(gcs, bucket, avatarURLs)
+			imageURL, err := NewGroupAvatarImageURL(bucket, avatarURLs)
 			if err != nil {
 				log.Printf("Failed to generate group avatar: %v", err)
 			} else {
@@ -250,7 +252,7 @@ func (c *SlackClient) GetUserByEmail(email string) (*slack.User, error) {
 	return u, nil
 }
 
-func NewGroupAvatarImageURL(gcs *storage.Client, bucket string, urls map[string]struct{}) (string, error) {
+func NewGroupAvatarImageURL(bucket *storage.BucketHandle, urls map[string]struct{}) (string, error) {
 	sorted := make([]string, 0, len(urls))
 
 	for url := range urls {
@@ -318,7 +320,7 @@ func NewGroupAvatarImageURL(gcs *storage.Client, bucket string, urls map[string]
 	digest := sha256.Sum256(buf.Bytes())
 
 	ctx := context.Background()
-	obj := gcs.Bucket(bucket).Object(hex.EncodeToString(digest[:]))
+	obj := bucket.Object(hex.EncodeToString(digest[:]))
 	attrs, err := obj.Attrs(ctx)
 	if err == storage.ErrObjectNotExist {
 		w := obj.If(storage.Conditions{DoesNotExist: true}).NewWriter(ctx)
