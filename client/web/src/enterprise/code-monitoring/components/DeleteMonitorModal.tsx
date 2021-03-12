@@ -62,7 +62,7 @@ export const DeleteMonitorModal: React.FunctionComponent<DeleteModalProps> = ({
                 and all actions will immediately be removed.
             </p>
             {(!deleteCompletedOrError || isErrorLike(deleteCompletedOrError)) && (
-                <div>
+                <div className="text-right">
                     <button type="button" className="btn btn-outline-secondary mr-2" onClick={toggleDeleteModal}>
                         Cancel
                     </button>
