@@ -11,8 +11,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"image/jpeg"
-	_ "image/jpeg"
+	"image/png"
 	"io"
 	"log"
 	"net/http"
@@ -288,7 +287,7 @@ func NewGroupAvatarImageURL(bucket *storage.BucketHandle, urls map[string]struct
 				return
 			}
 
-			grids[i] = &gim.Grid{Image: &avatar, BackgroundColor: color.White}
+			grids[i] = &gim.Grid{Image: &avatar, BackgroundColor: color.Transparent}
 		}()
 	}
 
@@ -306,14 +305,14 @@ func NewGroupAvatarImageURL(bucket *storage.BucketHandle, urls map[string]struct
 	}
 
 	merged, err := gim.New(filtered, 3, 3, func(m *gim.MergeImage) {
-		m.BackgroundColor = color.White
+		m.BackgroundColor = color.Transparent
 	}).Merge()
 	if err != nil {
 		return "", err
 	}
 
 	var buf bytes.Buffer
-	if err = jpeg.Encode(&buf, merged, &jpeg.Options{Quality: 100}); err != nil {
+	if err = png.Encode(&buf, merged); err != nil {
 		return "", err
 	}
 
