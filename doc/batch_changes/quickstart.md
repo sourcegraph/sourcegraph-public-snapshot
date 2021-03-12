@@ -1,6 +1,6 @@
 # Quickstart for Batch Changes
 
-Get started and create your first [Sourcegraph batch change](index.md) in 10 minutes or less.
+Get started and create your first [batch change](index.md) in 10 minutes or less.
 
 ## Introduction
 
