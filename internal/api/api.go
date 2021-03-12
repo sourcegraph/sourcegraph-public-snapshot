@@ -16,7 +16,7 @@ import (
 	ioaux "github.com/jig/teereadcloser"
 	"github.com/kballard/go-shellquote"
 	"github.com/mattn/go-isatty"
-	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/utils"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/utils"
 )
 
 // Client instances provide methods to create API requests.

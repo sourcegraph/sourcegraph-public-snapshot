@@ -7,8 +7,7 @@ require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/efritz/pentimento v0.0.0-20190429011147-ade47d831101
 	github.com/gobwas/glob v0.2.3
-	github.com/google/go-cmp v0.5.4
-	github.com/hashicorp/errwrap v1.1.0 // indirect
+	github.com/google/go-cmp v0.5.5
 	github.com/hashicorp/go-multierror v1.1.0
 	github.com/jig/teereadcloser v0.0.0-20181016160506-953720c48e05
 	github.com/json-iterator/go v1.1.10
@@ -23,7 +22,7 @@ require (
 	github.com/sourcegraph/batch-change-utils v0.0.0-20210309183117-206c057cc03e
 	github.com/sourcegraph/go-diff v0.6.1
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
-	github.com/sourcegraph/sourcegraph/enterprise/lib v0.0.0-20210301223818-d8082f761977
+	github.com/sourcegraph/sourcegraph/lib v0.0.0-20210312004335-4dae89dd19bc
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	golang.org/x/net v0.0.0-20200625001655-4c5254603344
