@@ -623,6 +623,11 @@ func unixMilliToTime(ms int64) time.Time {
 	return time.Unix(0, ms*int64(time.Millisecond))
 }
 
+var ComputeLabelsRequiredEventTypes = []batches.ChangesetEventKind{
+	batches.ChangesetEventKindGitHubLabeled,
+	batches.ChangesetEventKindGitHubUnlabeled,
+}
+
 // ComputeLabels returns a sorted list of current labels based the starting set
 // of labels found in the Changeset and looking at ChangesetEvents that have
 // occurred after the Changeset.UpdatedAt.
