@@ -277,7 +277,11 @@ func (h *historicalEnqueuer) buildFrame(
 		// Lookup the repository (we need its database ID)
 		repo, err := h.repoStore.GetByName(ctx, api.RepoName(repoName))
 		if err != nil {
-			return err // hard DB error
+			// Ignore RepoNotFoundErr because it could just be that the repository was actually
+			// deleted and allReposIterator had it cached.
+			if _, ok := err.(*database.RepoNotFoundErr); !ok {
+				return err // hard DB error
+			}
 		}
 
 		// Find the first commit made to the repository on the default branch.
