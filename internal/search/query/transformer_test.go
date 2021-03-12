@@ -111,7 +111,7 @@ func TestSubstituteAliases(t *testing.T) {
 func TestLowercaseFieldNames(t *testing.T) {
 	input := "rEpO:foo PATTERN"
 	want := `(and "repo:foo" "PATTERN")`
-	query, _ := ParseAndOr(input, SearchTypeRegex)
+	query, _ := Parse(input, SearchTypeRegex)
 	got := toString(LowercaseFieldNames(query))
 	if diff := cmp.Diff(got, want); diff != "" {
 		t.Fatal(diff)
@@ -246,7 +246,7 @@ func TestSubstituteOrForRegexp(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run("Map query", func(t *testing.T) {
-			query, _ := ParseAndOr(c.input, SearchTypeRegex)
+			query, _ := Parse(c.input, SearchTypeRegex)
 			got := toString(substituteOrForRegexp(query))
 			if diff := cmp.Diff(c.want, got); diff != "" {
 				t.Fatal(diff)
@@ -304,7 +304,7 @@ func TestSubstituteConcat(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run("Map query", func(t *testing.T) {
-			query, _ := ParseAndOr(c.input, SearchTypeRegex)
+			query, _ := Parse(c.input, SearchTypeRegex)
 			got := toString(Map(query, substituteConcat(c.concat)))
 			if diff := cmp.Diff(c.want, got); diff != "" {
 				t.Fatal(diff)
@@ -379,7 +379,7 @@ func TestConvertEmptyGroupsToLiteral(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run("Map query", func(t *testing.T) {
-			query, _ := ParseAndOr(c.input, SearchTypeRegex)
+			query, _ := Parse(c.input, SearchTypeRegex)
 			got := escapeParensHeuristic(query)[0].(Pattern)
 			if diff := cmp.Diff(c.want, toString([]Node{got})); diff != "" {
 				t.Error(diff)
@@ -431,7 +431,7 @@ func TestExpandOr(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run("Map query", func(t *testing.T) {
-			query, _ := ParseAndOr(c.input, SearchTypeRegex)
+			query, _ := Parse(c.input, SearchTypeRegex)
 			queries := Dnf(query)
 			var queriesStr []string
 			for _, q := range queries {
@@ -464,7 +464,7 @@ func TestMap(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run("Map query", func(t *testing.T) {
-			query, _ := ParseAndOr(c.input, SearchTypeRegex)
+			query, _ := Parse(c.input, SearchTypeRegex)
 			got := toString(Map(query, c.fns...))
 			if diff := cmp.Diff(c.want, got); diff != "" {
 				t.Fatal(diff)
@@ -720,7 +720,7 @@ func TestFuzzifyRegexPatterns(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.in, func(t *testing.T) {
-			query, _ := ParseAndOr(tt.in, SearchTypeRegex)
+			query, _ := Parse(tt.in, SearchTypeRegex)
 			got := toString(FuzzifyRegexPatterns(query))
 			if got != tt.want {
 				t.Fatalf("got = %v, want %v", got, tt.want)
@@ -863,7 +863,7 @@ func TestMapGlobToRegex(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
-			query, _ := ParseAndOr(c.input, SearchTypeRegex)
+			query, _ := Parse(c.input, SearchTypeRegex)
 			regexQuery, _ := Globbing(query)
 			got := toString(regexQuery)
 			if diff := cmp.Diff(c.want, got); diff != "" {
@@ -905,7 +905,7 @@ func TestConcatRevFilters(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
-			query, _ := ParseAndOr(c.input, SearchTypeRegex)
+			query, _ := Parse(c.input, SearchTypeRegex)
 			queries := Dnf(query)
 
 			var queriesStr []string
@@ -941,7 +941,7 @@ func TestConcatRevFiltersTopLevelAnd(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
-			query, _ := ParseAndOr(c.input, SearchTypeRegex)
+			query, _ := Parse(c.input, SearchTypeRegex)
 			qConcat := ConcatRevFilters(query)
 			if diff := cmp.Diff(c.want, toString(qConcat)); diff != "" {
 				t.Error(diff)
