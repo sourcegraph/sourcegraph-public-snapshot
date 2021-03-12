@@ -32,6 +32,6 @@ jobs:
         env:
           SINCE: ${{ github.event.inputs.since }}
           DRY: ${{ github.event.inputs.dry }}
-          CHANNEL: ${{ github.events.inputs.channel }}
+          CHANNEL: ${{ github.event.inputs.channel }}
           GOOGLE_APPLICATION_CREDENTIALS: progress-bot-credentials.json
           SLACK_API_TOKEN: ${{ secrets.PROGRESS_BOT_SLACK_API_TOKEN }}
