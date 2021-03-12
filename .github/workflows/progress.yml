@@ -1,6 +1,18 @@
 name: Progress bot
 on:
   workflow_dispatch:
+    inputs:
+      since:
+        description: 'Time period to report'
+        required: false
+        default: '24h'
+      dry:
+        description: 'Only output message that would be sent to Slack'
+        required: false
+        default: 'true'
+      channel:
+        description: 'Slack channel to send message to'
+        required: false
   schedule:
   - cron: "0 0 * * *"   # Every day 00:00 UTC (4pm PST)
 jobs:
