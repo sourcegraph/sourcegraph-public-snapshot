@@ -97,9 +97,6 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 	if err != nil {
 		return alertForQuery(db, args.Query, err), nil
 	}
-	if getBoolPtr(settings.SearchUppercase, false) {
-		q = query.SearchUppercase(q)
-	}
 	tr.LazyPrintf("parsing done")
 
 	// If the request is a paginated one, decode those arguments now.

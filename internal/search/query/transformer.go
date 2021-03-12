@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"unicode"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
@@ -339,30 +338,6 @@ func Hoist(nodes []Node) ([]Node, error) {
 		return Pattern{Value: value, Negated: negated, Annotation: annotation}
 	})
 	return append(scopeParameters, newOperator(pattern, expression.Kind)...), nil
-}
-
-// SearchUppercase adds case:yes to queries if any pattern is mixed-case.
-func SearchUppercase(nodes []Node) []Node {
-	var foundMixedCase bool
-	VisitPattern(nodes, func(value string, _ bool, _ Annotation) {
-		if match := containsUppercase(value); match {
-			foundMixedCase = true
-		}
-	})
-	if foundMixedCase {
-		nodes = append(nodes, Parameter{Field: "case", Value: "yes"})
-		return newOperator(nodes, And)
-	}
-	return nodes
-}
-
-func containsUppercase(s string) bool {
-	for _, r := range s {
-		if unicode.IsUpper(r) && unicode.IsLetter(r) {
-			return true
-		}
-	}
-	return false
 }
 
 // partition partitions nodes into left and right groups. A node is put in the
