@@ -288,7 +288,7 @@ func (h *historicalEnqueuer) buildFrame(
 	lastIteration := h.now()
 	yield := func() {
 		if diff := h.timeSince(lastIteration); diff < 100*time.Millisecond {
-			h.sleep(diff)
+			h.sleep(100*time.Millisecond - diff)
 			lastIteration = h.now()
 		}
 	}
