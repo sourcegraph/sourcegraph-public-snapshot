@@ -101,7 +101,7 @@ func (r *workHandler) Handle(ctx context.Context, workerStore dbworkerstore.Stor
 
 	// Figure out how many matches we got for every unique repository returned in the search
 	// results.
-	matchesPerRepo := map[string]int{}
+	matchesPerRepo := make(map[string]int, len(results.Data.Search.Results.Results)*4)
 	for _, result := range results.Data.Search.Results.Results {
 		decoded, err := decodeResult(result)
 		if err != nil {
