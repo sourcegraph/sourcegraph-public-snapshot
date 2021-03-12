@@ -465,6 +465,9 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 			// there is a next cursor, and more results may exist.
 			result.Stats.IsLimitHit = true
 		}
+		if r.stream != nil {
+			r.stream.Send(SearchEvent{result.SearchResults, result.Stats})
+		}
 		return result, err
 	}
 
