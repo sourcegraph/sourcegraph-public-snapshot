@@ -86,6 +86,7 @@ describe('StreamingProgressCount', () => {
 
         expect(mount(<StreamingProgressCount state="loading" progress={progress} showTrace={true} />)).toMatchSnapshot()
     })
+
     it('should not render a trace link when not opted into with &trace=1', () => {
         const progress: Progress = {
             durationMs: 0,
