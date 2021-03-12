@@ -110,7 +110,7 @@ export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
     }
 
     return (
-        <div className="d-flex align-items-center">
+        <div className="d-flex batch-change-burndown-chart__container align-items-center">
             <ResponsiveContainer width={width} height={300} className="test-batches-chart">
                 <ComposedChart
                     data={changesetCountsOverTime.map(snapshot => ({ ...snapshot, date: Date.parse(snapshot.date) }))}
