@@ -28,9 +28,10 @@ jobs:
         run: |
           echo ${{ secrets.PROGRESS_BOT_GCP_ACCOUNT_KEY }} | base64 -d > progress-bot-credentials.json
       - name: Report to Slack
-        uses: ./internal/cmd/progress-bot/.
-        with:
-          args: --since ${{ github.event.inputs.since }} --dry ${{ github.event.inputs.dry }} --channel ${{ github.event.inputs.channel }}
+        uses: docker://sourcegraph/progress-bot:latest
         env:
+          SINCE: ${{ github.event.inputs.since }}
+          DRY: ${{ github.event.inputs.dry }}
+          CHANNEL: ${{ github.events.inputs.channel }}
           GOOGLE_APPLICATION_CREDENTIALS: progress-bot-credentials.json
           SLACK_API_TOKEN: ${{ secrets.PROGRESS_BOT_SLACK_API_TOKEN }}

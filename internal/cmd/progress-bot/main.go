@@ -35,7 +35,7 @@ import (
 func main() {
 	since := flag.Duration("since", 24*time.Hour, "Report new changelog entries since this period")
 	dry := flag.Bool("dry", false, "If true, print out the JSON payload that would be sent to the Slack API")
-	channel := flag.String("channel", "progress-bot-v2-wip-dont-join", "Slack channel to post message to")
+	channel := flag.String("channel", "progress-bot-test", "Slack channel to post message to")
 
 	flag.Parse()
 
@@ -48,7 +48,6 @@ func main() {
 	changelog, err := parseChangelog(blame, func(c *Change) bool {
 		return !c.GitCommit.Author.Time.Before(from)
 	})
-
 	if err != nil {
 		log.Fatalf("failed to parse CHANGELOG: %v", err)
 	}

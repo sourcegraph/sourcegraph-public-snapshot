@@ -14,8 +14,14 @@ FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd2
 USER root
 
 # hadolint ignore=DL3018
-RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache ca-certificates git bash
+
+WORKDIR /
 
 COPY --from=builder /bin/progress-bot /usr/local/bin/
+COPY run.sh .
+RUN chmod +x run.sh
 
-ENTRYPOINT ["progress-bot"]
+ENV SINCE=24h DRY=false CHANNEL=progress
+
+ENTRYPOINT ["/run.sh"]
