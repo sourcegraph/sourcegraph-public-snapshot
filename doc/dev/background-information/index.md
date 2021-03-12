@@ -17,7 +17,7 @@
   - [Developing the code host integrations](web/code_host_integrations.md)
   - [Styling UI](web/styling.md)
 - [Developing the GraphQL API](graphql_api.md)
-- [Developing campaigns](campaigns/index.md)
+- [Developing batch changes](batch_changes/index.md)
 - [Developing code intelligence](codeintel/index.md)
 - [Developing code monitoring](codemonitoring/index.md)
 - [Developing observability](observability/index.md)

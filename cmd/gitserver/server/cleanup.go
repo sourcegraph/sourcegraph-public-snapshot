@@ -52,10 +52,6 @@ var (
 		Name: "src_gitserver_repos_removed",
 		Help: "number of repos removed during cleanup",
 	})
-	reposRemovedWrongShard = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "src_gitserver_repos_removed_wrong_shard",
-		Help: "number of repos removed during cleanup because they are on the wrong shard",
-	})
 	reposRecloned = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_gitserver_repos_recloned",
 		Help: "number of repos removed and recloned due to age",
@@ -229,10 +225,6 @@ func (s *Server) cleanupRepos(addrs []string) {
 		return false, gitGC(dir)
 	}
 
-	var wrongshardCount int
-	defer func() {
-		reposRemovedWrongShard.Set(float64(wrongshardCount))
-	}()
 	removeWrongShard := func(dir GitDir) (done bool, err error) {
 		if len(addrs) == 0 {
 			return false, nil
@@ -241,14 +233,11 @@ func (s *Server) cleanupRepos(addrs []string) {
 		if s.hostnameMatch(addr) {
 			return false, nil
 		}
-		// TODO: Enable this once we've confirmed it's safe and remove reposRemovedWrongShard gauge.
-		//
-		//log15.Info("removing repo for wrong shard", "repo", dir)
-		//if err := s.removeRepoDirectory(dir); err != nil {
-		//	return true, err
-		//}
-		//reposRemoved.Inc()
-		wrongshardCount++
+		log15.Info("removing repo for wrong shard", "repo", dir)
+		if err := s.removeRepoDirectory(dir); err != nil {
+			return true, err
+		}
+		reposRemoved.Inc()
 		return false, nil
 	}
 
@@ -511,7 +500,7 @@ func (s *Server) setCloneStatus(ctx context.Context, name api.RepoName, status t
 	if err != nil {
 		return err
 	}
-	return database.NewGitserverReposWith(tx).SetCloneStatus(ctx, repo.ID, status)
+	return database.NewGitserverReposWith(tx).SetCloneStatus(ctx, repo.ID, status, s.Hostname)
 }
 
 // setCloneStatusNonFatal is the same as setCloneStatus but only logs errors

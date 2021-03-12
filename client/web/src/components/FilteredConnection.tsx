@@ -318,6 +318,8 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
     private onClickShowMore = (): void => this.props.onShowMore()
 }
 
+export const ConnectionNodesForTesting = ConnectionNodes
+
 /**
  * Fields that belong in FilteredConnectionProps and that don't depend on the type parameters. These are the fields
  * that are most likely to be needed by callers, and it's simpler for them if they are in a parameter-less type.

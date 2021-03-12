@@ -26,6 +26,7 @@ import (
 )
 
 func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+	user := ct.CreateTestUser(t, s.DB(), false)
 	githubActor := github.Actor{
 		AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
 		Login:     "mrnugget",
@@ -350,6 +351,61 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			}
 		})
 
+		t.Run("PublicationState", func(t *testing.T) {
+			published := batches.ChangesetPublicationStatePublished
+			countPublished, err := s.CountChangesets(ctx, CountChangesetsOpts{PublicationState: &published})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := countPublished, 1; have != want {
+				t.Fatalf("have countPublished: %d, want: %d", have, want)
+			}
+
+			unpublished := batches.ChangesetPublicationStateUnpublished
+			countUnpublished, err := s.CountChangesets(ctx, CountChangesetsOpts{PublicationState: &unpublished})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := countUnpublished, len(changesets)-1; have != want {
+				t.Fatalf("have countUnpublished: %d, want: %d", have, want)
+			}
+		})
+
+		t.Run("TextSearch", func(t *testing.T) {
+			countMatchingString, err := s.CountChangesets(ctx, CountChangesetsOpts{TextSearch: []search.TextSearchTerm{{Term: "Fix a bunch"}}})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := countMatchingString, len(changesets); have != want {
+				t.Fatalf("have countMatchingString: %d, want: %d", have, want)
+			}
+
+			countNotMatchingString, err := s.CountChangesets(ctx, CountChangesetsOpts{TextSearch: []search.TextSearchTerm{{Term: "Very not in the title"}}})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := countNotMatchingString, 0; have != want {
+				t.Fatalf("have countNotMatchingString: %d, want: %d", have, want)
+			}
+		})
+
+		t.Run("EnforceAuthz", func(t *testing.T) {
+			// No access to repos.
+			ct.MockRepoPermissions(t, s.DB(), user.ID)
+			countAccessible, err := s.CountChangesets(ctx, CountChangesetsOpts{EnforceAuthz: true})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := countAccessible, 0; have != want {
+				t.Fatalf("have countAccessible: %d, want: %d", have, want)
+			}
+		})
+
 		t.Run("OwnedByBatchChangeID", func(t *testing.T) {
 			count, err := s.CountChangesets(ctx, CountChangesetsOpts{OwnedByBatchChangeID: int64(1)})
 			if err != nil {
@@ -363,58 +419,62 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 	})
 
 	t.Run("List", func(t *testing.T) {
-		for i := 1; i <= len(changesets); i++ {
-			opts := ListChangesetsOpts{BatchChangeID: int64(i)}
+		t.Run("BatchChangeID", func(t *testing.T) {
+			for i := 1; i <= len(changesets); i++ {
+				opts := ListChangesetsOpts{BatchChangeID: int64(i)}
 
-			ts, next, err := s.ListChangesets(ctx, opts)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if have, want := next, int64(0); have != want {
-				t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
-			}
-
-			have, want := ts, changesets[i-1:i]
-			if len(have) != len(want) {
-				t.Fatalf("listed %d changesets, want: %d", len(have), len(want))
-			}
-
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatalf("opts: %+v, diff: %s", opts, diff)
-			}
-		}
-
-		for i := 1; i <= len(changesets); i++ {
-			ts, next, err := s.ListChangesets(ctx, ListChangesetsOpts{LimitOpts: LimitOpts{Limit: i}})
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			{
-				have, want := next, int64(0)
-				if i < len(changesets) {
-					want = changesets[i].ID
+				ts, next, err := s.ListChangesets(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
 				}
 
-				if have != want {
-					t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
+				if have, want := next, int64(0); have != want {
+					t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
 				}
-			}
 
-			{
-				have, want := ts, changesets[:i]
+				have, want := ts, changesets[i-1:i]
 				if len(have) != len(want) {
 					t.Fatalf("listed %d changesets, want: %d", len(have), len(want))
 				}
 
 				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatal(diff)
+					t.Fatalf("opts: %+v, diff: %s", opts, diff)
 				}
 			}
-		}
+		})
 
-		{
+		t.Run("Limit", func(t *testing.T) {
+			for i := 1; i <= len(changesets); i++ {
+				ts, next, err := s.ListChangesets(ctx, ListChangesetsOpts{LimitOpts: LimitOpts{Limit: i}})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				{
+					have, want := next, int64(0)
+					if i < len(changesets) {
+						want = changesets[i].ID
+					}
+
+					if have != want {
+						t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
+					}
+				}
+
+				{
+					have, want := ts, changesets[:i]
+					if len(have) != len(want) {
+						t.Fatalf("listed %d changesets, want: %d", len(have), len(want))
+					}
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
+					}
+				}
+			}
+		})
+
+		t.Run("IDs", func(t *testing.T) {
 			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{IDs: changesets.IDs()})
 			if err != nil {
 				t.Fatal(err)
@@ -424,9 +484,9 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			if diff := cmp.Diff(have, want); diff != "" {
 				t.Fatal(diff)
 			}
-		}
+		})
 
-		{
+		t.Run("Cursor pagination", func(t *testing.T) {
 			var cursor int64
 			for i := 1; i <= len(changesets); i++ {
 				opts := ListChangesetsOpts{Cursor: cursor, LimitOpts: LimitOpts{Limit: 1}}
@@ -442,72 +502,10 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 				cursor = next
 			}
-		}
-
-		{
-			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{WithoutDeleted: true})
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if len(have) != len(changesets) {
-				t.Fatalf("have 0 changesets. want %d", len(changesets))
-			}
-
-			for _, c := range changesets {
-				c.SetDeleted()
-				c.UpdatedAt = clock.Now()
-
-				if err := s.UpdateChangeset(ctx, c); err != nil {
-					t.Fatal(err)
-				}
-			}
-
-			have, _, err = s.ListChangesets(ctx, ListChangesetsOpts{WithoutDeleted: true})
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if len(have) != 0 {
-				t.Fatalf("have %d changesets. want 0", len(changesets))
-			}
-		}
-
-		{
-			gitlabMR := &gitlab.MergeRequest{
-				ID:        gitlab.ID(1),
-				Title:     "Fix a bunch of bugs",
-				CreatedAt: gitlab.Time{Time: clock.Now()},
-				UpdatedAt: gitlab.Time{Time: clock.Now()},
-			}
-			gitlabChangeset := &batches.Changeset{
-				Metadata:            gitlabMR,
-				RepoID:              gitlabRepo.ID,
-				ExternalServiceType: extsvc.TypeGitLab,
-			}
-			if err := s.CreateChangeset(ctx, gitlabChangeset); err != nil {
-				t.Fatal(err)
-			}
-			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{ExternalServiceID: "https://gitlab.com/"})
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			want := 1
-			if len(have) != want {
-				t.Fatalf("have %d changesets; want %d", len(have), want)
-			}
-
-			if have[0].ID != gitlabChangeset.ID {
-				t.Fatalf("unexpected changeset: have %+v; want %+v", have[0], gitlabChangeset)
-			}
-			if err := s.DeleteChangeset(ctx, gitlabChangeset.ID); err != nil {
-				t.Fatal(err)
-			}
-		}
+		})
 
 		// No Limit should return all Changesets
-		{
+		t.Run("No limit", func(t *testing.T) {
 			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{})
 			if err != nil {
 				t.Fatal(err)
@@ -516,7 +514,20 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			if len(have) != 3 {
 				t.Fatalf("have %d changesets. want 3", len(have))
 			}
-		}
+		})
+
+		t.Run("EnforceAuthz", func(t *testing.T) {
+			// No access to repos.
+			ct.MockRepoPermissions(t, s.DB(), user.ID)
+			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{EnforceAuthz: true})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if len(have) != 0 {
+				t.Fatalf("have %d changesets. want 0", len(have))
+			}
+		})
 
 		statePublished := batches.ChangesetPublicationStatePublished
 		stateUnpublished := batches.ChangesetPublicationStateUnpublished
@@ -616,7 +627,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		}
 
 		for i, tc := range filterCases {
-			t.Run(strconv.Itoa(i), func(t *testing.T) {
+			t.Run("States_"+strconv.Itoa(i), func(t *testing.T) {
 				have, _, err := s.ListChangesets(ctx, tc.opts)
 				if err != nil {
 					t.Fatal(err)

@@ -181,6 +181,7 @@ Referenced by:
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
+    "changesets_batch_change_ids" gin (batch_change_ids)
     "changesets_external_state_idx" btree (external_state)
     "changesets_publication_state_idx" btree (publication_state)
     "changesets_reconciler_state_idx" btree (reconciler_state)

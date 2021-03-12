@@ -328,7 +328,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 			zeroResult    bool
 			minMatchCount int64
 			wantAlert     *gqltestutil.SearchAlert
-			skipStream    bool
 		}{
 			// Global search
 			{
@@ -384,9 +383,8 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query: `repo:^github\.com/sgtest/java-langserver$@v1 void sendPartialResult(Object requestId, JsonPatch jsonPatch); patterntype:literal type:file`,
 			},
 			{
-				name:       "non-master branch, nonzero result stable",
-				query:      `repo:^github\.com/sgtest/java-langserver$@v1 void sendPartialResult(Object requestId, JsonPatch jsonPatch); patterntype:literal count:1 stable:yes type:file`,
-				skipStream: true,
+				name:  "non-master branch, nonzero result stable",
+				query: `repo:^github\.com/sgtest/java-langserver$@v1 void sendPartialResult(Object requestId, JsonPatch jsonPatch); patterntype:literal count:1 stable:yes type:file`,
 			},
 			{
 				name:  "indexed multiline search, nonzero result",
@@ -479,10 +477,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				if test.skipStream && isStreaming {
-					t.Skip("streaming not supported yet")
-				}
-
 				results, err := client.SearchFiles(test.query)
 				if err != nil {
 					t.Fatal(err)
@@ -511,6 +505,17 @@ func testSearchClient(t *testing.T, client searchClient) {
 
 	t.Run("timeout search options", func(t *testing.T) {
 		results, err := client.SearchFiles(`router index:no timeout:1ns`)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if results.Alert == nil {
+			t.Fatal("Want search alert but got nil")
+		}
+	})
+
+	t.Run("stable search options", func(t *testing.T) {
+		results, err := client.SearchFiles(`router stable:yes count:5001`)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -604,17 +609,14 @@ func testSearchClient(t *testing.T, client searchClient) {
 			query      string
 			zeroResult bool
 			wantAlert  *gqltestutil.SearchAlert
-
-			skipStream bool
 		}{
 			{
 				name:  `And operator, basic`,
 				query: `repo:^github\.com/sgtest/go-diff$ func and main type:file`,
 			},
 			{
-				name:       `And operator, basic with stable`,
-				query:      `repo:^github\.com/sgtest/go-diff$ func and main stable:yes type:file`,
-				skipStream: true,
+				name:  `And operator, basic with stable`,
+				query: `repo:^github\.com/sgtest/go-diff$ func and main stable:yes type:file`,
 			},
 			{
 				name:  `Or operator, single and double quoted`,
@@ -656,9 +658,8 @@ func testSearchClient(t *testing.T, client searchClient) {
 				zeroResult: true,
 			},
 			{
-				name:       `Mixed regexp and literal`,
-				query:      `repo:^github\.com/sgtest/go-diff$ func(.*) or does_not_exist_3744 type:file`,
-				skipStream: true,
+				name:  `Mixed regexp and literal`,
+				query: `repo:^github\.com/sgtest/go-diff$ patternType:regexp func(.*) or does_not_exist_3744 type:file`,
 			},
 			{
 				name:  `Mixed regexp and literal heuristic`,
@@ -670,14 +671,12 @@ func testSearchClient(t *testing.T, client searchClient) {
 				zeroResult: true,
 			},
 			{
-				name:       `Escape sequences`,
-				query:      `repo:^github\.com/sgtest/go-diff$ \' and \" and \\ and /`,
-				skipStream: true,
+				name:  `Escape sequences`,
+				query: `repo:^github\.com/sgtest/go-diff$ patternType:regexp \' and \" and \\ and /`,
 			},
 			{
-				name:       `Escaped whitespace sequences with 'and'`,
-				query:      `repo:^github\.com/sgtest/go-diff$ \ and /`,
-				skipStream: true,
+				name:  `Escaped whitespace sequences with 'and'`,
+				query: `repo:^github\.com/sgtest/go-diff$ patternType:regexp \ and /`,
 			},
 			{
 				name:  `Concat converted to spaces for literal search`,
@@ -793,10 +792,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				if test.skipStream && isStreaming {
-					t.Skip("streaming not supported yet")
-				}
-
 				results, err := client.SearchFiles(test.query)
 				if err != nil {
 					t.Fatal(err)

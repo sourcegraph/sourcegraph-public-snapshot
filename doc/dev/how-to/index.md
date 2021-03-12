@@ -1,5 +1,9 @@
 # How to guides
 
+## Documentation
+
+- [How to write great docs](https://documentation.divio.com/) (watch the video)
+ 
 ## Local development
 
 - [How to debug live code](debug_live_code.md)

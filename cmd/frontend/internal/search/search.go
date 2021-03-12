@@ -310,7 +310,7 @@ func parseURLQuery(q url.Values) (*args, error) {
 	a := args{
 		Query:          get("q", ""),
 		Version:        get("v", "V2"),
-		PatternType:    get("t", "literal"),
+		PatternType:    get("t", ""),
 		VersionContext: get("vc", ""),
 	}
 

@@ -322,6 +322,12 @@ func ScanBalancedPattern(buf []byte) (scanned string, count int, ok bool) {
 
 	// looks ahead to see if there are any recognized fields or operators.
 	keepScanning := func() bool {
+		// Keep scanning in case we see a reserved predicate keyword, which may
+		// contain subsequent parantheses. TODO (@camdencheek) See #19075 for more info
+		if string(result) == "contains" {
+			return true
+		}
+
 		if field, _, _ := ScanField(buf); field != "" {
 			// This "pattern" contains a recognized field, reject it.
 			return false

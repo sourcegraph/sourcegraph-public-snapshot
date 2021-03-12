@@ -121,7 +121,12 @@ func alertForStalePermissions(db dbutil.DB) *searchAlert {
 // query does not contain any repos to search.
 func (r *searchResolver) reposExist(ctx context.Context, options searchrepos.Options) bool {
 	options.UserSettings = r.UserSettings
-	repositoryResolver := &searchrepos.Resolver{Zoekt: r.zoekt, DefaultReposFunc: database.GlobalDefaultRepos.List, NamespaceStore: database.Namespaces(r.db)}
+	repositoryResolver := &searchrepos.Resolver{
+		DB:               r.db,
+		Zoekt:            r.zoekt,
+		DefaultReposFunc: database.DefaultRepos(r.db).List,
+		NamespaceStore:   database.Namespaces(r.db),
+	}
 	resolved, err := repositoryResolver.Resolve(ctx, options)
 	return err == nil && len(resolved.RepoRevs) > 0
 }

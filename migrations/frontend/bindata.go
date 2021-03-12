@@ -128,6 +128,8 @@
 // 1528395795_add_clone_status_index_to_gitserver_repos.up.sql (112B)
 // 1528395796_alter_cloud_default_constraint.down.sql (186B)
 // 1528395796_alter_cloud_default_constraint.up.sql (209B)
+// 1528395797_faster_changeset_lookups.down.sql (50B)
+// 1528395797_faster_changeset_lookups.up.sql (122B)
 
 package migrations
 
@@ -2756,6 +2758,46 @@ func _1528395796_alter_cloud_default_constraintUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395797_faster_changeset_lookupsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x09\xf2\x0f\x50\xf0\xf4\x73\x71\x8d\x50\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x29\x8e\x4f\x4a\x2c\x49\xce\x88\x87\x08\xc4\x67\xa6\x14\x5b\x73\x01\x02\x00\x00\xff\xff\x6e\x26\xb0\xa2\x32\x00\x00\x00")
+
+func _1528395797_faster_changeset_lookupsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395797_faster_changeset_lookupsDownSql,
+		"1528395797_faster_changeset_lookups.down.sql",
+	)
+}
+
+func _1528395797_faster_changeset_lookupsDownSql() (*asset, error) {
+	bytes, err := _1528395797_faster_changeset_lookupsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395797_faster_changeset_lookups.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x77, 0xe4, 0x35, 0xb7, 0x4a, 0x87, 0xe8, 0xfa, 0x97, 0xf3, 0x40, 0x98, 0x2, 0xda, 0x0, 0xd8, 0xe1, 0x53, 0x51, 0x17, 0xf2, 0x79, 0x98, 0x23, 0x99, 0x4f, 0xdf, 0xd0, 0x4a, 0xfc, 0xf6, 0x6c}}
+	return a, nil
+}
+
+var __1528395797_faster_changeset_lookupsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x0e\x72\x75\x0c\x71\x55\xf0\xf4\x73\x71\x8d\x50\x70\xf6\xf7\x73\x0e\x0d\x0a\x72\xf5\x0b\xf1\x89\x54\xf0\x74\x53\xf0\xf3\x0f\x51\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x29\x8e\x4f\x4a\x2c\x49\xce\x88\x87\x08\xc4\x67\xa6\x14\x2b\xf8\xfb\x21\x49\x2b\x84\x06\x7b\xfa\xb9\x2b\xb8\x7b\xfa\x29\x68\x60\xa8\xcc\x2a\xce\xcf\x4b\x8a\xcf\x2f\x28\xd6\xb4\xe6\x02\x04\x00\x00\xff\xff\x81\x66\x57\x59\x7a\x00\x00\x00")
+
+func _1528395797_faster_changeset_lookupsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395797_faster_changeset_lookupsUpSql,
+		"1528395797_faster_changeset_lookups.up.sql",
+	)
+}
+
+func _1528395797_faster_changeset_lookupsUpSql() (*asset, error) {
+	bytes, err := _1528395797_faster_changeset_lookupsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395797_faster_changeset_lookups.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x4, 0x16, 0x32, 0xba, 0x62, 0x3, 0x2f, 0x6e, 0x89, 0xf3, 0x83, 0x5a, 0x7f, 0x84, 0xbd, 0xa4, 0x28, 0x7f, 0xff, 0x85, 0xf4, 0xef, 0x50, 0x31, 0xfc, 0x5b, 0x81, 0x50, 0x7d, 0xe, 0x94, 0x10}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2975,6 +3017,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395795_add_clone_status_index_to_gitserver_repos.up.sql":                            _1528395795_add_clone_status_index_to_gitserver_reposUpSql,
 	"1528395796_alter_cloud_default_constraint.down.sql":                                     _1528395796_alter_cloud_default_constraintDownSql,
 	"1528395796_alter_cloud_default_constraint.up.sql":                                       _1528395796_alter_cloud_default_constraintUpSql,
+	"1528395797_faster_changeset_lookups.down.sql":                                           _1528395797_faster_changeset_lookupsDownSql,
+	"1528395797_faster_changeset_lookups.up.sql":                                             _1528395797_faster_changeset_lookupsUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3149,6 +3193,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395795_add_clone_status_index_to_gitserver_repos.up.sql":                            {_1528395795_add_clone_status_index_to_gitserver_reposUpSql, map[string]*bintree{}},
 	"1528395796_alter_cloud_default_constraint.down.sql":                                     {_1528395796_alter_cloud_default_constraintDownSql, map[string]*bintree{}},
 	"1528395796_alter_cloud_default_constraint.up.sql":                                       {_1528395796_alter_cloud_default_constraintUpSql, map[string]*bintree{}},
+	"1528395797_faster_changeset_lookups.down.sql":                                           {_1528395797_faster_changeset_lookupsDownSql, map[string]*bintree{}},
+	"1528395797_faster_changeset_lookups.up.sql":                                             {_1528395797_faster_changeset_lookupsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
