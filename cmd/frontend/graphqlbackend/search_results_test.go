@@ -1743,3 +1743,10 @@ func TestIsGlobalSearch(t *testing.T) {
 	}
 
 }
+
+func TestZeroElapsedMilliseconds(t *testing.T) {
+	r := &SearchResultsResolver{}
+	if got := r.ElapsedMilliseconds(); got != 0 {
+		t.Fatalf("got %d, want %d", got, 0)
+	}
+}
