@@ -9,10 +9,11 @@ on:
       dry:
         description: 'Only output message that would be sent to Slack'
         required: false
-        default: 'true'
+        default: 'false'
       channel:
         description: 'Slack channel to send message to'
         required: false
+        default: 'progress'
   schedule:
   - cron: "0 0 * * *"   # Every day 00:00 UTC (4pm PST)
 jobs:
@@ -29,7 +30,7 @@ jobs:
       - name: Report to Slack
         uses: ./internal/cmd/progress-bot/.
         with:
-          args: --channel progress-bot-v2-wip-dont-join
+          args: --since ${{ github.event.inputs.since }} --dry ${{ github.event.inputs.dry }} --channel ${{ github.event.inputs.channel }}
         env:
           GOOGLE_APPLICATION_CREDENTIALS: progress-bot-credentials.json
           SLACK_API_TOKEN: ${{ secrets.PROGRESS_BOT_SLACK_API_TOKEN }}
