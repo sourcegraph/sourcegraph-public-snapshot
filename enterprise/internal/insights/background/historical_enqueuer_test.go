@@ -166,7 +166,8 @@ func Test_historicalEnqueuer(t *testing.T) {
 	t.Run("no_work", func(t *testing.T) {
 		want := autogold.Want("no_work", &testResults{
 			allReposIteratorCalls: 2, sleeps: 20,
-			reposGetByName: 4,
+			reposGetByName:   4,
+			totalSleepTimeMS: 2000,
 			operations: []string{
 				"sleep()",
 				"sleep()",
@@ -209,7 +210,8 @@ func Test_historicalEnqueuer(t *testing.T) {
 	t.Run("no_data", func(t *testing.T) {
 		want := autogold.Want("no_data", &testResults{
 			allReposIteratorCalls: 2, sleeps: 20,
-			reposGetByName: 4,
+			reposGetByName:   4,
+			totalSleepTimeMS: 2000,
 			operations: []string{
 				"sleep()",
 				"sleep()",
