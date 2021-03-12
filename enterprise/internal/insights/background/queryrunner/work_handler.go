@@ -107,7 +107,7 @@ func (r *workHandler) Handle(ctx context.Context, workerStore dbworkerstore.Stor
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf(`for query "%s"`, job.SearchQuery))
 		}
-		matchesPerRepo[decoded.repoID()] = matchesPerRepo[decoded.repoID()] + r.matchCount()
+		matchesPerRepo[decoded.repoID()] = matchesPerRepo[decoded.repoID()] + decoded.matchCount()
 	}
 
 	// Record the number of results we got, one data point per-repository.
