@@ -67,11 +67,11 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Log events to trace
 	eventWriter.StatHook = eventStreamOTHook(tr.LogFields)
-
+	args.start = time.Now()
 	events, inputs, results := h.startSearch(ctx, args)
 
 	progress := progressAggregator{
-		Start: time.Now(),
+		Start: args.start,
 		Limit: inputs.MaxResults(),
 	}
 
@@ -251,9 +251,12 @@ func (h *streamHandler) startSearch(ctx context.Context, a *args) (events <-chan
 		PatternType:    strPtr(a.PatternType),
 		VersionContext: strPtr(a.VersionContext),
 
-		Stream: graphqlbackend.StreamFunc(func(event graphqlbackend.SearchEvent) {
-			eventsC <- event
-		}),
+		Stream: graphqlbackend.WithTimer(
+			graphqlbackend.StreamFunc(
+				func(event graphqlbackend.SearchEvent) {
+					eventsC <- event
+				}),
+			a.start),
 	})
 	if err != nil {
 		close(eventsC)
@@ -296,6 +299,8 @@ type args struct {
 	PatternType    string
 	VersionContext string
 	Display        int
+
+	start time.Time
 }
 
 func parseURLQuery(q url.Values) (*args, error) {

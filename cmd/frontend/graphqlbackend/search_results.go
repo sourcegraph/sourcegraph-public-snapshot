@@ -513,6 +513,11 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 			act = *a
 		}
 
+		var streamLatency int64
+		if ts, ok := r.stream.(TimerSender); ok {
+			streamLatency = ts.Latency().Milliseconds()
+		}
+
 		ev := honey.Event("search")
 		ev.AddField("query", r.rawQuery())
 		ev.AddField("actor_uid", act.UID)
@@ -522,6 +527,7 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 		ev.AddField("status", status)
 		ev.AddField("alert_type", alertType)
 		ev.AddField("duration_ms", time.Since(start).Milliseconds())
+		ev.AddField("stream_latency_ms", streamLatency)
 		if rr != nil {
 			ev.AddField("result_size", len(rr.SearchResults))
 		}

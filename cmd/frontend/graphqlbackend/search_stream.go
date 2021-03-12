@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"sync"
+	"time"
 
 	"go.uber.org/atomic"
 
@@ -21,6 +22,17 @@ type SearchEvent struct {
 // mutate the event.
 type Sender interface {
 	Send(SearchEvent)
+}
+
+// Timer is the interface that wraps methods that return useful time-based
+// tracking information.
+type Timer interface {
+	Latency() time.Duration
+}
+
+type TimerSender interface {
+	Timer
+	Sender
 }
 
 type limitStream struct {
@@ -67,6 +79,34 @@ func WithLimit(ctx context.Context, parent Sender, limit int) (context.Context, 
 	stream := &limitStream{cancel: cancel, s: parent}
 	stream.remaining.Store(int64(limit))
 	return ctx, stream, cancel
+}
+
+// timedSender wraps a Sender and tracks the time of interesting events.
+type timedSender struct {
+	Sender
+
+	start            time.Time
+	timeToFirstEvent atomic.Duration
+}
+
+func (t *timedSender) Send(event SearchEvent) {
+	// The condition t.timeToFirstEvent.Load() == 0 improves performance by avoiding
+	// calling CAS most of the time. Concurrent calls to Send might still cause CAS
+	// to be called more than once. According to local benchmarks, including the
+	// condition improves performance by a factor 5 (8ns vs 44ns).
+	if len(event.Results) > 0 && t.timeToFirstEvent.Load() == 0 {
+		t.timeToFirstEvent.CAS(0, time.Since(t.start))
+	}
+	t.Sender.Send(event)
+}
+
+func (t *timedSender) Latency() time.Duration {
+	return t.timeToFirstEvent.Load()
+}
+
+// WithTimer wraps a parent Sender in a timedSender.
+func WithTimer(parent Sender, start time.Time) TimerSender {
+	return &timedSender{start: start, Sender: parent}
 }
 
 // WithSelect returns a child Stream of parent that runs the select operation
