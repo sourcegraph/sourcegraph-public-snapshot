@@ -4,7 +4,6 @@ import {
     Area,
     ComposedChart,
     LabelFormatter,
-    Legend,
     ResponsiveContainer,
     Tooltip,
     XAxis,
@@ -24,9 +23,6 @@ interface Props {
     /** For testing only. */
     queryChangesetCountsOverTime?: typeof _queryChangesetCountsOverTime
 }
-
-const dateTickFormat = new Intl.DateTimeFormat(undefined, { month: 'long', day: 'numeric' })
-const dateTickFormatter = (timestamp: number): string => dateTickFormat.format(timestamp)
 
 // const tooltipLabelFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' })
 const tooltipLabelFormat = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
@@ -60,9 +56,9 @@ type DisplayableChangesetCounts = Pick<
 
 const states: Record<keyof DisplayableChangesetCounts, StateDefinition> = {
     draft: { fill: 'var(--text-muted)', label: 'Draft', sortOrder: 5 },
-    openPending: { fill: 'var(--warning)', label: 'Open & awaiting review', sortOrder: 4 },
-    openChangesRequested: { fill: 'var(--danger)', label: 'Open & changes requested', sortOrder: 3 },
-    openApproved: { fill: 'var(--success)', label: 'Open & approved', sortOrder: 2 },
+    openPending: { fill: 'var(--warning)', label: 'Awaiting review', sortOrder: 4 },
+    openChangesRequested: { fill: 'var(--danger)', label: 'Changes requested', sortOrder: 3 },
+    openApproved: { fill: 'var(--success)', label: 'Approved', sortOrder: 2 },
     closed: { fill: 'var(--secondary)', label: 'Closed', sortOrder: 1 },
     merged: { fill: 'var(--merged)', label: 'Merged', sortOrder: 0 },
 }
@@ -86,6 +82,14 @@ export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
         ])
     )
 
+    const dateTickFormatter = useMemo(() => {
+        let dateTickFormat = new Intl.DateTimeFormat(undefined, { month: 'long', day: 'numeric' })
+        if (changesetCountsOverTime && changesetCountsOverTime.length > 0 && changesetCountsOverTime[0].date) {
+            dateTickFormat = new Intl.DateTimeFormat(undefined, { month: 'long', day: 'numeric', year: 'numeric' })
+        }
+        return (timestamp: number): string => dateTickFormat.format(timestamp)
+    }, [changesetCountsOverTime])
+
     // Is loading.
     if (changesetCountsOverTime === undefined) {
         return (
@@ -95,57 +99,13 @@ export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
         )
     }
 
-    if (changesetCountsOverTime.length <= 1) {
-        return (
-            <div className="col-md-8 offset-md-2 col-sm-12 card mt-5">
-                <div className="card-body p-5">
-                    <h2 className="text-center mb-4">The burndown chart requires 2 days of data</h2>
-                    <p>
-                        Come back in a few days and we'll be able to show you data on how your batch change is
-                        progressing!
-                    </p>
-                </div>
-            </div>
-        )
-    }
-    const hasEntries = changesetCountsOverTime.some(counts => counts.total > 0)
-    if (!hasEntries) {
-        return (
-            <div className="col-md-8 offset-md-2 col-sm-12 card mt-5">
-                <div className="card-body p-5">
-                    <h2 className="text-center mb-4">Burndown chart is not available</h2>
-                    <p>The burndown chart will be shown when data is available.</p>
-                </div>
-            </div>
-        )
-    }
     return (
-        <>
-            {Object.keys(states).map(key => (
-                <button
-                    type="button"
-                    onClick={() =>
-                        setHiddenStates(current => {
-                            if (current.has(key as keyof DisplayableChangesetCounts)) {
-                                const newSet = new Set<keyof DisplayableChangesetCounts>(current)
-                                newSet.delete(key as keyof DisplayableChangesetCounts)
-                                return newSet
-                            }
-                            return new Set<keyof DisplayableChangesetCounts>(current).add(
-                                key as keyof DisplayableChangesetCounts
-                            )
-                        })
-                    }
-                    key={key}
-                >
-                    {key}
-                </button>
-            ))}
+        <div className="d-flex align-items-center">
             <ResponsiveContainer width={width} height={300} className="test-batches-chart">
                 <ComposedChart
                     data={changesetCountsOverTime.map(snapshot => ({ ...snapshot, date: Date.parse(snapshot.date) }))}
                 >
-                    <Legend verticalAlign="bottom" iconType="square" />
+                    {/* <Legend verticalAlign="bottom" iconType="square" /> */}
                     <XAxis
                         dataKey="date"
                         domain={[
@@ -192,6 +152,39 @@ export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
                         ))}
                 </ComposedChart>
             </ResponsiveContainer>
-        </>
+            <div className="flex-grow-0 btn-group-vertical ml-2">
+                {Object.entries(states).map(([key, state]) => (
+                    <div className="d-flex align-items-center text-nowrap p-2" key={key}>
+                        <div
+                            style={{
+                                backgroundColor: state.fill,
+                                width: '1rem',
+                                height: '1rem',
+                                display: 'inline-block',
+                            }}
+                            className="mr-1"
+                        />
+                        <input
+                            type="checkbox"
+                            className="mr-1"
+                            checked={!hiddenStates.has(key as keyof DisplayableChangesetCounts)}
+                            onClick={() =>
+                                setHiddenStates(current => {
+                                    if (current.has(key as keyof DisplayableChangesetCounts)) {
+                                        const newSet = new Set<keyof DisplayableChangesetCounts>(current)
+                                        newSet.delete(key as keyof DisplayableChangesetCounts)
+                                        return newSet
+                                    }
+                                    return new Set<keyof DisplayableChangesetCounts>(current).add(
+                                        key as keyof DisplayableChangesetCounts
+                                    )
+                                })
+                            }
+                        />
+                        {state.label}
+                    </div>
+                ))}
+            </div>
+        </div>
     )
 }
