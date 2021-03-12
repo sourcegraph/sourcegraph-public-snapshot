@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import classNames from 'classnames'
-import { formatDistance, parseISO } from 'date-fns'
+import { formatDistance, isBefore, parseISO } from 'date-fns'
 import { syncChangeset } from '../backend'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import SyncIcon from 'mdi-react/SyncIcon'
@@ -48,8 +48,15 @@ export const ChangesetLastSynced: React.FunctionComponent<Props> = ({ changeset,
     if (changeset.updatedAt === lastUpdatedAt) {
         tooltipText = 'Currently refreshing'
     } else {
+        // If no nextSyncAt is set, the syncer won't pick it up for now.
         if (!changeset.nextSyncAt) {
             tooltipText = 'Not scheduled for syncing.'
+            // If the nextSyncAt date is in the past, the syncer couldn't catch up
+            // but it will be synced as soon as it can.
+        } else if (isBefore(parseISO(changeset.nextSyncAt), _now ?? new Date())) {
+            tooltipText = 'Next refresh soon.'
+            // Else, nextSyncAt is set and in the future, so we can tell the approximate
+            // time when the changeset will be synced again.
         } else {
             tooltipText = `Next refresh in ${formatDistance(parseISO(changeset.nextSyncAt), _now ?? new Date())}.`
         }
