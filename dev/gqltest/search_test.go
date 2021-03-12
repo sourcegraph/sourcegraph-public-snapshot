@@ -384,9 +384,8 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query: `repo:^github\.com/sgtest/java-langserver$@v1 void sendPartialResult(Object requestId, JsonPatch jsonPatch); patterntype:literal type:file`,
 			},
 			{
-				name:       "non-master branch, nonzero result stable",
-				query:      `repo:^github\.com/sgtest/java-langserver$@v1 void sendPartialResult(Object requestId, JsonPatch jsonPatch); patterntype:literal count:1 stable:yes type:file`,
-				skipStream: true,
+				name:  "non-master branch, nonzero result stable",
+				query: `repo:^github\.com/sgtest/java-langserver$@v1 void sendPartialResult(Object requestId, JsonPatch jsonPatch); patterntype:literal count:1 stable:yes type:file`,
 			},
 			{
 				name:  "indexed multiline search, nonzero result",
@@ -623,9 +622,8 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query: `repo:^github\.com/sgtest/go-diff$ func and main type:file`,
 			},
 			{
-				name:       `And operator, basic with stable`,
-				query:      `repo:^github\.com/sgtest/go-diff$ func and main stable:yes type:file`,
-				skipStream: true,
+				name:  `And operator, basic with stable`,
+				query: `repo:^github\.com/sgtest/go-diff$ func and main stable:yes type:file`,
 			},
 			{
 				name:  `Or operator, single and double quoted`,

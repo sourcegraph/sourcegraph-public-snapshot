@@ -102,11 +102,6 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 	}
 	tr.LazyPrintf("parsing done")
 
-	// We do not support stable for streaming
-	if args.Stream != nil && q.BoolValue(query.FieldStable) {
-		return alertForQuery(db, args.Query, errors.New("stable is not supported for the streaming API. Please remove from query")), nil
-	}
-
 	// If the request is a paginated one, decode those arguments now.
 	var pagination *searchPaginationInfo
 	if args.First != nil {
