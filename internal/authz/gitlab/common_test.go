@@ -2,7 +2,6 @@ package gitlab
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net/url"
 	"sort"
@@ -13,11 +12,9 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -416,31 +413,12 @@ func acct(t *testing.T, userID int32, serviceType, serviceID, accountID, oauthTo
 	}
 }
 
-func repo(uri, serviceType, serviceID, id string) *types.Repo {
-	return &types.Repo{
-		Name: api.RepoName(uri),
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          id,
-			ServiceType: serviceType,
-			ServiceID:   serviceID,
-		},
-	}
-}
-
 func mustURL(t *testing.T, u string) *url.URL {
 	parsed, err := url.Parse(u)
 	if err != nil {
 		t.Fatal(err)
 	}
 	return parsed
-}
-
-func asJSON(t *testing.T, v interface{}) string {
-	b, err := json.MarshalIndent(v, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	return string(b)
 }
 
 func getIntOrDefault(str string, def int) (int, error) {

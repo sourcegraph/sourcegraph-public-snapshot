@@ -337,7 +337,7 @@ func prometheusGraphQLRequestName(requestName string) string {
 	return "other"
 }
 
-func NewSchema(db dbutil.DB, campaigns BatchChangesResolver, codeIntel CodeIntelResolver, insights InsightsResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver, license LicenseResolver) (*graphql.Schema, error) {
+func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIntelResolver, insights InsightsResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver, license LicenseResolver) (*graphql.Schema, error) {
 	resolver := &schemaResolver{
 		db: db,
 
@@ -347,9 +347,9 @@ func NewSchema(db dbutil.DB, campaigns BatchChangesResolver, codeIntel CodeIntel
 		InsightsResolver:     defaultInsightsResolver{},
 		LicenseResolver:      defaultLicenseResolver{},
 	}
-	if campaigns != nil {
-		EnterpriseResolvers.campaignsResolver = campaigns
-		resolver.BatchChangesResolver = campaigns
+	if batchChanges != nil {
+		EnterpriseResolvers.batchChangesResolver = batchChanges
+		resolver.BatchChangesResolver = batchChanges
 	}
 	if codeIntel != nil {
 		EnterpriseResolvers.codeIntelResolver = codeIntel
@@ -614,13 +614,13 @@ var EnterpriseResolvers = struct {
 	codeIntelResolver    CodeIntelResolver
 	insightsResolver     InsightsResolver
 	authzResolver        AuthzResolver
-	campaignsResolver    BatchChangesResolver
+	batchChangesResolver BatchChangesResolver
 	codeMonitorsResolver CodeMonitorsResolver
 	licenseResolver      LicenseResolver
 }{
 	codeIntelResolver:    defaultCodeIntelResolver{},
 	authzResolver:        defaultAuthzResolver{},
-	campaignsResolver:    defaultBatchChangesResolver{},
+	batchChangesResolver: defaultBatchChangesResolver{},
 	codeMonitorsResolver: defaultCodeMonitorsResolver{},
 	licenseResolver:      defaultLicenseResolver{},
 }

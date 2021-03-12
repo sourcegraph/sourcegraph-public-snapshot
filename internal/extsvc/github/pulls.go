@@ -547,7 +547,7 @@ func (c *V4Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestI
 	if ghe221PlusOrDotComSemver.Check(version) {
 		compatibleInput["draft"] = in.Draft
 	} else if in.Draft {
-		return nil, errors.New("draft PRs not supported by this version of GitHub enterprise. GitHub Enterprise v3.21 is the first version to support draft PRs.\nPotential fix: set `published: true` in your campaign spec.")
+		return nil, errors.New("draft PRs not supported by this version of GitHub enterprise. GitHub Enterprise v3.21 is the first version to support draft PRs.\nPotential fix: set `published: true` in your batch spec.")
 	}
 
 	input := map[string]interface{}{"input": compatibleInput}

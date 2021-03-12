@@ -31,6 +31,19 @@ const (
 	SearchTypeStructural
 )
 
+func (s SearchType) String() string {
+	switch s {
+	case SearchTypeRegex:
+		return "regex"
+	case SearchTypeLiteral:
+		return "literal"
+	case SearchTypeStructural:
+		return "structural"
+	default:
+		return fmt.Sprintf("unknown{%d}", s)
+	}
+}
+
 // QueryInfo is an interface for accessing query values that drive our search logic.
 // It will be removed in favor of a cleaner query API to access values.
 type QueryInfo interface {
@@ -38,6 +51,7 @@ type QueryInfo interface {
 	Archived() *YesNoOnly
 	Fork() *YesNoOnly
 	Timeout() *time.Duration
+	Repositories() (repos []string, negated []string)
 	RegexpPatterns(field string) (values, negatedValues []string)
 	StringValues(field string) (values, negatedValues []string)
 	StringValue(field string) (value, negatedValue string)
@@ -166,6 +180,17 @@ func (q Q) Timeout() *time.Duration {
 
 func (q Q) IsCaseSensitive() bool {
 	return q.BoolValue("case")
+}
+
+func (q Q) Repositories() (repos []string, negatedRepos []string) {
+	VisitField(q, FieldRepo, func(value string, negated bool, _ Annotation) {
+		if negated {
+			negatedRepos = append(negatedRepos, value)
+			return
+		}
+		repos = append(repos, value)
+	})
+	return repos, negatedRepos
 }
 
 func parseRegexpOrPanic(field, value string) *regexp.Regexp {

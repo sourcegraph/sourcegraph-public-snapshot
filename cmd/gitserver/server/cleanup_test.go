@@ -61,7 +61,7 @@ func TestCleanup_computeStats(t *testing.T) {
 	// the correct file in the correct place.
 	s := &Server{ReposDir: root}
 	s.Handler() // Handler as a side-effect sets up Server
-	s.cleanupRepos()
+	s.cleanupRepos(nil)
 
 	// we hardcode the name here so the tests break if someone changes the
 	// value of reposStatsName. We don't want it to change without good reason
@@ -108,13 +108,49 @@ func TestCleanupInactive(t *testing.T) {
 
 	s := &Server{ReposDir: root}
 	s.Handler() // Handler as a side-effect sets up Server
-	s.cleanupRepos()
+	s.cleanupRepos(nil)
 
 	if _, err := os.Stat(repoA); os.IsNotExist(err) {
 		t.Error("expected repoA not to be removed")
 	}
 	if _, err := os.Stat(repoC); err == nil {
 		t.Error("expected corrupt repoC to be removed during clean up")
+	}
+}
+
+func TestCleanupWrongShard(t *testing.T) {
+	root, err := ioutil.TempDir("", "gitserver-test-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(root)
+
+	mkRepo := func(name string) string {
+		repo := path.Join(root, name, ".git")
+		cmd := exec.Command("git", "--bare", "init", repo)
+		if err := cmd.Run(); err != nil {
+			t.Fatal(err)
+		}
+		return repo
+	}
+	repo1 := mkRepo("repo1")
+	repo2 := mkRepo("repo2")
+	s := &Server{
+		Hostname: "addr1",
+		ReposDir: root,
+	}
+	s.Handler() // Handler as a side-effect sets up Server
+	s.cleanupRepos([]string{"addr1", "addr2"})
+
+	// repo1 maps to addr1
+	// repo2 maps to addr2
+
+	// We therefore expect repo1 to be retained and repo2 should be removed
+	if _, err := os.Stat(repo1); os.IsNotExist(err) {
+		t.Error("expected repo1 not to be removed")
+	}
+	if _, err := os.Stat(repo2); err == nil {
+		t.Error("expected repo2 to be removed during clean up")
 	}
 }
 
@@ -165,7 +201,7 @@ func TestGitGCAuto(t *testing.T) {
 	// Handler must be invoked for Server side-effects.
 	s := &Server{ReposDir: root}
 	s.Handler()
-	s.cleanupRepos()
+	s.cleanupRepos(nil)
 
 	// Verify that there are no more GC-able objects in the repository.
 	if !strings.Contains(countObjects(), "count: 0") {
@@ -279,7 +315,7 @@ func TestCleanupExpired(t *testing.T) {
 		},
 	}
 	s.Handler() // Handler as a side-effect sets up Server
-	s.cleanupRepos()
+	s.cleanupRepos(nil)
 
 	// repos that shouldn't be recloned
 	if repoNewTime.Before(modTime(repoNew)) {
@@ -363,7 +399,7 @@ func TestCleanupOldLocks(t *testing.T) {
 
 	s := &Server{ReposDir: root}
 	s.Handler() // Handler as a side-effect sets up Server
-	s.cleanupRepos()
+	s.cleanupRepos(nil)
 
 	assertPaths(t, root,
 		"repos-stats.json",

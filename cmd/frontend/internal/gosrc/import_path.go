@@ -179,6 +179,7 @@ func fetchMeta(client httpcli.Doer, importPath string) (scheme string, im *impor
 			resp.Body.Close()
 		}
 		scheme = "http"
+		//nolint:bodyclose // False positive: https://github.com/timakin/bodyclose/issues/29
 		resp, err = get()
 		if err != nil {
 			return scheme, nil, nil, err

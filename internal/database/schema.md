@@ -549,7 +549,7 @@ Foreign-key constraints:
  encryption_key_id | text                     | not null default ''::text
 Indexes:
     "external_services_pkey" PRIMARY KEY, btree (id)
-    "kind_cloud_default" UNIQUE, btree (kind, cloud_default) WHERE cloud_default = true
+    "kind_cloud_default" UNIQUE, btree (kind, cloud_default) WHERE cloud_default = true AND deleted_at IS NULL
     "external_services_namespace_user_id_idx" btree (namespace_user_id)
 Check constraints:
     "check_non_empty_config" CHECK (btrim(config) <> ''::text)
