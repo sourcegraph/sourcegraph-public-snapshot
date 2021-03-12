@@ -169,6 +169,15 @@ func TestParseParameterList(t *testing.T) {
 		ResultLabels: "HeuristicDanglingParens,Regexp",
 		ResultRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":14}}`,
 	}).Equal(t, test(`Search(xxx)\\(`))
+
+	autogold.Want("Repo contains predicate", value{
+		Result:      `{"field":"repo","value":"contains(file:test)","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":24}}`,
+	}).Equal(t, test(`repo:contains(file:test)`))
+
+	autogold.Want("Pattern looks like predicate", value{
+		Result: `{"Kind":2,"Operands":[{"value":"abc","negated":false},{"value":"contains(file:test)","negated":false}],"Annotation":{"labels":0,"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":0}}}}`,
+	}).Equal(t, test(`abc contains(file:test)`))
 }
 
 func TestScanField(t *testing.T) {
