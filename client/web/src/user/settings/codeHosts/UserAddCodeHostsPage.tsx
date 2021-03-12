@@ -14,6 +14,10 @@ import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { SourcegraphContext } from '../../../jscontext'
+// import { Subject, Subscription } from 'rxjs'
+// import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
+import { takeUntil } from 'rxjs/operators'
+import { timer, fromEvent } from 'rxjs'
 
 type AuthProvider = SourcegraphContext['authProviders'][0]
 type AuthProvidersByKind = Partial<Record<ExternalServiceKind, AuthProvider>>
@@ -31,14 +35,9 @@ type Status = undefined | 'loading' | ServicesByKind | ErrorLike
 const isServicesByKind = (status: Status): status is ServicesByKind =>
     typeof status === 'object' && Object.keys(status).every(key => keyExistsIn(key, ExternalServiceKind))
 
-export const ifNotNavigated = (callback: () => void, waitMS: number = 2000, intervalMS: number = 500): void => {
-    let intervalID = 0
+export const ifNotNavigated = (callback: () => void, waitMS: number = 2000): void => {
+    let timeoutID = 0
     let willNavigate = false
-
-    // current iterations
-    let iterations = 0
-    // max iterations
-    const totalIterations = Math.ceil(waitMS / intervalMS)
 
     const unloadListener = (): void => {
         willNavigate = true
@@ -46,16 +45,16 @@ export const ifNotNavigated = (callback: () => void, waitMS: number = 2000, inte
 
     window.addEventListener('unload', unloadListener)
 
-    intervalID = window.setInterval(() => {
+    timeoutID = window.setTimeout(() => {
         // if we waited waitMS and the navigation didn't happen - run the callback
-        if (++iterations === totalIterations && !willNavigate) {
+        if (!willNavigate) {
             // cleanup
             window.removeEventListener('unload', unloadListener)
-            clearInterval(intervalID)
+            window.clearTimeout(timeoutID)
 
             return callback()
         }
-    }, intervalMS)
+    }, waitMS)
 }
 
 export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageProps> = ({
