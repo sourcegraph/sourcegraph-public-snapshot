@@ -426,8 +426,7 @@ func TestProcessSearchPatternAndOr(t *testing.T) {
 	}
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
-			q, err := query.Parse(tt.pattern,
-				query.ParserOptions{SearchType: tt.searchType, Globbing: false})
+			q, err := query.ParseSearchType(tt.pattern, tt.searchType)
 			if err != nil {
 				t.Fatalf(err.Error())
 			}
@@ -1103,7 +1102,7 @@ func TestGetExactFilePatterns(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.in, func(t *testing.T) {
-			q, err := query.Parse(tt.in, query.ParserOptions{SearchType: query.SearchTypeLiteral, Globbing: true})
+			q, err := query.Pipeline(query.InitLiteral(tt.in), query.Globbing)
 			if err != nil {
 				t.Fatal(err)
 			}
