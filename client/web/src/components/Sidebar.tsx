@@ -18,7 +18,8 @@ export const SidebarNavItem: React.FunctionComponent<{
     source?: string
 }> = ({ icon: Icon, children, className, to, exact, source }) =>
     source === 'server' ? (
-        <a href={to} className="list-group-item list-group-item-action py-2">
+        <a href={to} className={classNames('list-group-item list-group-item-action py-2', className)}>
+            {Icon && <Icon className="icon-inline mr-2" />}
             {children}
         </a>
     ) : (
