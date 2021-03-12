@@ -47,6 +47,8 @@ import {
     UserPublicRepositoriesResult,
     UserPublicRepositoriesVariables,
     UserPublicRepositoriesFields,
+    SetUserPublicRepositoriesResult,
+    SetUserPublicRepositoriesVariables,
 } from '../graphql-operations'
 
 /**
@@ -827,8 +829,11 @@ export function queryUserPublicRepositories(
     )
 }
 
-export function setUserPublicRepositories(userId: Scalars['ID'], repos: string[]): Promise<void> {
-    return requestGraphQL<SetUserPublicReposResult, SetUserPublicReposVariables>(
+export function setUserPublicRepositories(
+    userId: Scalars['ID'],
+    repos: string[]
+): Observable<SetUserPublicRepositoriesResult> {
+    return requestGraphQL<SetUserPublicRepositoriesResult, SetUserPublicRepositoriesVariables>(
         gql`
             mutation SetUserPublicRepositories($userId: ID!, $repos: [String!]!) {
                 SetUserPublicRepos(userID: $userId, repoURIs: $repos) {
@@ -837,7 +842,5 @@ export function setUserPublicRepositories(userId: Scalars['ID'], repos: string[]
             }
         `,
         { userId, repos }
-    )
-        .pipe(map(dataOrThrowErrors))
-        .toPromise<void>()
+    ).pipe(map(dataOrThrowErrors))
 }

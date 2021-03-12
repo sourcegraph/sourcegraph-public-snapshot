@@ -330,9 +330,16 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             if (!publicRepoState.enabled) {
                 publicRepos = []
             }
-            await setUserPublicRepositories(userID, publicRepos).catch(error => {
-                setRepoState({ ...repoState, error: String(error) })
-            })
+            let didError = false
+            await setUserPublicRepositories(userID, publicRepos)
+                .toPromise()
+                .catch(error => {
+                    setRepoState({ ...repoState, error: String(error) })
+                    didError = true
+                })
+            if (didError) {
+                return
+            }
 
             if (!selectionState.radio) {
                 history.push(routingPrefix + '/repositories')
@@ -663,7 +670,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                             selectionState.radio === 'selected' && (
                                 <div className="ml-4">
                                     {filterControls}
-                                    {repoState.error !== '' && <ErrorAlert error={repoState.error} />}
                                     <table role="grid" className="table">
                                         {
                                             // if we're selecting repos, and the repos are still loading, display the loading animation
@@ -690,8 +696,8 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 </li>
                 {window.context.sourcegraphDotComMode && (
                     <li className="list-group-item p-0 user-settings-repos__container" key="add-textarea">
-                        <div className="p-4 text-muted">
-                            <h3 className="text-muted">Other public repositories</h3>
+                        <div className="p-4">
+                            <h3>Other public repositories</h3>
                             <p className="text-muted">Public repositories on GitHub and GitLab</p>
                             <input
                                 id="add-public-repos"
@@ -720,6 +726,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     </li>
                 )}
             </ul>
+            {repoState.error !== '' && <ErrorAlert className="mt-4" error={repoState.error} />}
             <Form className="mt-4 d-flex" onSubmit={submit}>
                 <LoaderButton
                     loading={isLoading(fetchingRepos)}
