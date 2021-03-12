@@ -693,15 +693,16 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, minimal bool, opt
 	return s.getReposBySQL(ctx, minimal, fromClause, queryConds, querySuffix, scanRepo)
 }
 
-type ListDefaultReposOptions struct {
-	// If true, will only include uncloned default repos
+type ListIndexableReposOptions struct {
+	// If true, will only include uncloned indexable repos
 	OnlyUncloned bool
 }
 
-// ListDefaultRepos returns a list of default repos. Default repos are a union of
-// repos in our default_repos table and repos owned by users.
-func (s *RepoStore) ListDefaultRepos(ctx context.Context, opts ListDefaultReposOptions) (results []*types.RepoName, err error) {
-	tr, ctx := trace.New(ctx, "repos.ListDefaultRepos", "")
+// ListIndexableRepos returns a list of repos that should be indexed. Indexable
+// repos are a union of repos in our default_repos table, repos owned by users
+// and public repos added by users.
+func (s *RepoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableReposOptions) (results []*types.RepoName, err error) {
+	tr, ctx := trace.New(ctx, "repos.ListIndexableRepos", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -714,7 +715,7 @@ func (s *RepoStore) ListDefaultRepos(ctx context.Context, opts ListDefaultReposO
 	}
 
 	q := sqlf.Sprintf(`
--- source: internal/database/repos.go:RepoStore.ListDefaultRepos
+-- source: internal/database/repos.go:RepoStore.ListIndexableRepos
 SELECT repo.id, repo.name FROM repo
 JOIN default_repos dr ON repo.id = dr.repo_id
 WHERE
@@ -754,7 +755,7 @@ WHERE
 		results = append(results, &r)
 	}
 	if err = rows.Err(); err != nil {
-		return nil, errors.Wrap(err, "scanning rows for default repos")
+		return nil, errors.Wrap(err, "scanning rows for indexable repos")
 	}
 
 	return results, nil

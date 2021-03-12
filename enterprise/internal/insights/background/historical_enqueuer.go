@@ -86,7 +86,7 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 		frameLength:      7 * 24 * time.Hour,
 
 		allReposIterator: (&discovery.AllReposIterator{
-			DefaultRepoStore:      database.DefaultRepos(workerBaseStore.Handle().DB()),
+			IndexableRepoStore:    database.IndexableRepos(workerBaseStore.Handle().DB()),
 			RepoStore:             database.Repos(workerBaseStore.Handle().DB()),
 			Clock:                 time.Now,
 			SourcegraphDotComMode: envvar.SourcegraphDotComMode(),

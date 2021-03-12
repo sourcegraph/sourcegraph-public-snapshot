@@ -415,11 +415,11 @@ func syncScheduler(ctx context.Context, sched scheduler, gitserverClient *gitser
 			return
 		}
 
-		// Fetch all default repos that are NOT cloned so that we can add them to the
+		// Fetch all indexable repos that are NOT cloned so that we can add them to the
 		// scheduler
-		repos, err := baseRepoStore.ListDefaultRepos(ctx, database.ListDefaultReposOptions{OnlyUncloned: true})
+		repos, err := baseRepoStore.ListIndexableRepos(ctx, database.ListIndexableReposOptions{OnlyUncloned: true})
 		if err != nil {
-			log15.Error("Listing default repos", "error", err)
+			log15.Error("Listing indexable repos", "error", err)
 			return
 		}
 

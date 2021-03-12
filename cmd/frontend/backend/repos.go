@@ -150,7 +150,7 @@ func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos 
 	return database.GlobalRepos.List(ctx, opt)
 }
 
-// ListDefault calls database.DefaultRepos.List, with tracing.
+// ListDefault calls database.IndexableRepos.List, with tracing.
 func (s *repos) ListDefault(ctx context.Context) (repos []*types.RepoName, err error) {
 	ctx, done := trace(ctx, "Repos", "ListDefault", nil, &err)
 	defer func() {
@@ -160,7 +160,7 @@ func (s *repos) ListDefault(ctx context.Context) (repos []*types.RepoName, err e
 		}
 		done()
 	}()
-	return database.GlobalDefaultRepos.List(ctx)
+	return database.GlobalIndexableRepos.List(ctx)
 }
 
 func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID, forceEnhancedLanguageDetection bool) (res *inventory.Inventory, err error) {

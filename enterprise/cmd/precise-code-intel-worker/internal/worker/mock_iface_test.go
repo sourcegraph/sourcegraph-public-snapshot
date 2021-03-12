@@ -4,10 +4,9 @@ package worker
 
 import (
 	"context"
-	"sync"
-
 	semantic "github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"sync"
 )
 
 // MockDBStore is a mock implementation of the DBStore interface (from the

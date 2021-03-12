@@ -4,27 +4,26 @@ package discovery
 
 import (
 	"context"
-	"sync"
-
 	types "github.com/sourcegraph/sourcegraph/internal/types"
+	"sync"
 )
 
-// MockDefaultRepoStore is a mock implementation of the DefaultRepoStore
+// MockIndexableRepoStore is a mock implementation of the IndexableRepoStore
 // interface (from the package
 // github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery)
 // used for unit testing.
-type MockDefaultRepoStore struct {
+type MockIndexableRepoStore struct {
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.
-	ListFunc *DefaultRepoStoreListFunc
+	ListFunc *IndexableRepoStoreListFunc
 }
 
-// NewMockDefaultRepoStore creates a new mock of the DefaultRepoStore
+// NewMockIndexableRepoStore creates a new mock of the IndexableRepoStore
 // interface. All methods return zero values for all results, unless
 // overwritten.
-func NewMockDefaultRepoStore() *MockDefaultRepoStore {
-	return &MockDefaultRepoStore{
-		ListFunc: &DefaultRepoStoreListFunc{
+func NewMockIndexableRepoStore() *MockIndexableRepoStore {
+	return &MockIndexableRepoStore{
+		ListFunc: &IndexableRepoStoreListFunc{
 			defaultHook: func(context.Context) ([]*types.RepoName, error) {
 				return nil, nil
 			},
@@ -32,46 +31,46 @@ func NewMockDefaultRepoStore() *MockDefaultRepoStore {
 	}
 }
 
-// NewMockDefaultRepoStoreFrom creates a new mock of the
-// MockDefaultRepoStore interface. All methods delegate to the given
+// NewMockIndexableRepoStoreFrom creates a new mock of the
+// MockIndexableRepoStore interface. All methods delegate to the given
 // implementation, unless overwritten.
-func NewMockDefaultRepoStoreFrom(i DefaultRepoStore) *MockDefaultRepoStore {
-	return &MockDefaultRepoStore{
-		ListFunc: &DefaultRepoStoreListFunc{
+func NewMockIndexableRepoStoreFrom(i IndexableRepoStore) *MockIndexableRepoStore {
+	return &MockIndexableRepoStore{
+		ListFunc: &IndexableRepoStoreListFunc{
 			defaultHook: i.List,
 		},
 	}
 }
 
-// DefaultRepoStoreListFunc describes the behavior when the List method of
-// the parent MockDefaultRepoStore instance is invoked.
-type DefaultRepoStoreListFunc struct {
+// IndexableRepoStoreListFunc describes the behavior when the List method of
+// the parent MockIndexableRepoStore instance is invoked.
+type IndexableRepoStoreListFunc struct {
 	defaultHook func(context.Context) ([]*types.RepoName, error)
 	hooks       []func(context.Context) ([]*types.RepoName, error)
-	history     []DefaultRepoStoreListFuncCall
+	history     []IndexableRepoStoreListFuncCall
 	mutex       sync.Mutex
 }
 
 // List delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockDefaultRepoStore) List(v0 context.Context) ([]*types.RepoName, error) {
+func (m *MockIndexableRepoStore) List(v0 context.Context) ([]*types.RepoName, error) {
 	r0, r1 := m.ListFunc.nextHook()(v0)
-	m.ListFunc.appendCall(DefaultRepoStoreListFuncCall{v0, r0, r1})
+	m.ListFunc.appendCall(IndexableRepoStoreListFuncCall{v0, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the List method of the
-// parent MockDefaultRepoStore instance is invoked and the hook queue is
+// parent MockIndexableRepoStore instance is invoked and the hook queue is
 // empty.
-func (f *DefaultRepoStoreListFunc) SetDefaultHook(hook func(context.Context) ([]*types.RepoName, error)) {
+func (f *IndexableRepoStoreListFunc) SetDefaultHook(hook func(context.Context) ([]*types.RepoName, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// List method of the parent MockDefaultRepoStore instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *DefaultRepoStoreListFunc) PushHook(hook func(context.Context) ([]*types.RepoName, error)) {
+// List method of the parent MockIndexableRepoStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *IndexableRepoStoreListFunc) PushHook(hook func(context.Context) ([]*types.RepoName, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -79,7 +78,7 @@ func (f *DefaultRepoStoreListFunc) PushHook(hook func(context.Context) ([]*types
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *DefaultRepoStoreListFunc) SetDefaultReturn(r0 []*types.RepoName, r1 error) {
+func (f *IndexableRepoStoreListFunc) SetDefaultReturn(r0 []*types.RepoName, r1 error) {
 	f.SetDefaultHook(func(context.Context) ([]*types.RepoName, error) {
 		return r0, r1
 	})
@@ -87,13 +86,13 @@ func (f *DefaultRepoStoreListFunc) SetDefaultReturn(r0 []*types.RepoName, r1 err
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *DefaultRepoStoreListFunc) PushReturn(r0 []*types.RepoName, r1 error) {
+func (f *IndexableRepoStoreListFunc) PushReturn(r0 []*types.RepoName, r1 error) {
 	f.PushHook(func(context.Context) ([]*types.RepoName, error) {
 		return r0, r1
 	})
 }
 
-func (f *DefaultRepoStoreListFunc) nextHook() func(context.Context) ([]*types.RepoName, error) {
+func (f *IndexableRepoStoreListFunc) nextHook() func(context.Context) ([]*types.RepoName, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -106,26 +105,26 @@ func (f *DefaultRepoStoreListFunc) nextHook() func(context.Context) ([]*types.Re
 	return hook
 }
 
-func (f *DefaultRepoStoreListFunc) appendCall(r0 DefaultRepoStoreListFuncCall) {
+func (f *IndexableRepoStoreListFunc) appendCall(r0 IndexableRepoStoreListFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of DefaultRepoStoreListFuncCall objects
+// History returns a sequence of IndexableRepoStoreListFuncCall objects
 // describing the invocations of this function.
-func (f *DefaultRepoStoreListFunc) History() []DefaultRepoStoreListFuncCall {
+func (f *IndexableRepoStoreListFunc) History() []IndexableRepoStoreListFuncCall {
 	f.mutex.Lock()
-	history := make([]DefaultRepoStoreListFuncCall, len(f.history))
+	history := make([]IndexableRepoStoreListFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// DefaultRepoStoreListFuncCall is an object that describes an invocation of
-// method List on an instance of MockDefaultRepoStore.
-type DefaultRepoStoreListFuncCall struct {
+// IndexableRepoStoreListFuncCall is an object that describes an invocation
+// of method List on an instance of MockIndexableRepoStore.
+type IndexableRepoStoreListFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -139,12 +138,12 @@ type DefaultRepoStoreListFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c DefaultRepoStoreListFuncCall) Args() []interface{} {
+func (c IndexableRepoStoreListFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c DefaultRepoStoreListFuncCall) Results() []interface{} {
+func (c IndexableRepoStoreListFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }

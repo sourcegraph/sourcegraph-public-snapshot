@@ -16,7 +16,7 @@ import (
 // TestAllReposIterator tests the AllReposIterator in the common use cases.
 func TestAllReposIterator(t *testing.T) {
 	ctx := context.Background()
-	defaultRepoStore := NewMockDefaultRepoStore()
+	indexableRepoStore := NewMockIndexableRepoStore()
 	repoStore := NewMockRepoStore()
 	var timeOffset time.Duration
 	clock := func() time.Time { return time.Now().Add(timeOffset) }
@@ -40,7 +40,7 @@ func TestAllReposIterator(t *testing.T) {
 	})
 
 	iter := &AllReposIterator{
-		DefaultRepoStore:        defaultRepoStore,
+		IndexableRepoStore:      indexableRepoStore,
 		RepoStore:               repoStore,
 		Clock:                   clock,
 		RepositoryListCacheTime: 15 * time.Minute,
@@ -158,18 +158,18 @@ func TestAllReposIterator(t *testing.T) {
 // this cruft.)
 func TestAllReposIterator_DotCom(t *testing.T) {
 	ctx := context.Background()
-	defaultRepoStore := NewMockDefaultRepoStore()
+	indexableRepoStore := NewMockIndexableRepoStore()
 	repoStore := NewMockRepoStore()
 	var timeOffset time.Duration
 	clock := func() time.Time { return time.Now().Add(timeOffset) }
 
-	// Mock the _default_ ("Sourcegraph.com") repo store listing, and confirm calls to it are cached.
+	// Mock the _indexable_ ("Sourcegraph.com") repo store listing, and confirm calls to it are cached.
 	var (
-		defaultRepoStoreListCalls int // There is no pagination with this store! We'll probably want that, eventually.
-		nextRepoID                api.RepoID
+		indexableRepoStoreListCalls int // There is no pagination with this store! We'll probably want that, eventually.
+		nextRepoID                  api.RepoID
 	)
-	defaultRepoStore.ListFunc.SetDefaultHook(func(ctx context.Context) ([]*types.RepoName, error) {
-		defaultRepoStoreListCalls++
+	indexableRepoStore.ListFunc.SetDefaultHook(func(ctx context.Context) ([]*types.RepoName, error) {
+		indexableRepoStoreListCalls++
 		var result []*types.RepoName
 		for i := 0; i < 9; i++ {
 			nextRepoID++
@@ -179,7 +179,7 @@ func TestAllReposIterator_DotCom(t *testing.T) {
 	})
 
 	iter := &AllReposIterator{
-		DefaultRepoStore:        defaultRepoStore,
+		IndexableRepoStore:      indexableRepoStore,
 		RepoStore:               repoStore,
 		Clock:                   clock,
 		SourcegraphDotComMode:   true,
@@ -196,11 +196,11 @@ func TestAllReposIterator_DotCom(t *testing.T) {
 		autogold.Want("items0", []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}).Equal(t, each)
 	}
 
-	// Were the DefaultRepoStore.List calls as we expected?
-	autogold.Want("defaultRepoStoreListCalls0", int(1)).Equal(t, defaultRepoStoreListCalls)
+	// Were the IndexableRepoStore.List calls as we expected?
+	autogold.Want("defaultRepoStoreListCalls0", int(1)).Equal(t, indexableRepoStoreListCalls)
 
-	// Again: do we get all 9 repositories, but this time all DefaultRepoStore.List calls were cached?
-	defaultRepoStoreListCalls = 0
+	// Again: do we get all 9 repositories, but this time all IndexableRepoStore.List calls were cached?
+	indexableRepoStoreListCalls = 0
 	nextRepoID = 0
 	{
 		var each []string
@@ -209,12 +209,12 @@ func TestAllReposIterator_DotCom(t *testing.T) {
 			return nil
 		})
 		autogold.Want("items1", []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}).Equal(t, each)
-		autogold.Want("defaultRepoStoreListCalls1", int(0)).Equal(t, defaultRepoStoreListCalls)
+		autogold.Want("defaultRepoStoreListCalls1", int(0)).Equal(t, indexableRepoStoreListCalls)
 	}
 
-	// If the clock moves forward, does the cache expire and new DefaultRepoStore.List calls are made?
+	// If the clock moves forward, does the cache expire and new IndexableRepoStore.List calls are made?
 	timeOffset += iter.RepositoryListCacheTime
-	defaultRepoStoreListCalls = 0
+	indexableRepoStoreListCalls = 0
 	nextRepoID = 0
 	{
 		var each []string
@@ -223,6 +223,6 @@ func TestAllReposIterator_DotCom(t *testing.T) {
 			return nil
 		})
 		autogold.Want("items2", []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}).Equal(t, each)
-		autogold.Want("repoStoreListCalls2", int(1)).Equal(t, defaultRepoStoreListCalls)
+		autogold.Want("repoStoreListCalls2", int(1)).Equal(t, indexableRepoStoreListCalls)
 	}
 }

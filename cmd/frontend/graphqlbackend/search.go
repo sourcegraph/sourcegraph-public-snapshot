@@ -425,10 +425,10 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		Query:              r.Query,
 	}
 	repositoryResolver := &searchrepos.Resolver{
-		DB:               r.db,
-		Zoekt:            r.zoekt,
-		DefaultReposFunc: database.DefaultRepos(r.db).List,
-		NamespaceStore:   database.Namespaces(r.db),
+		DB:                 r.db,
+		Zoekt:              r.zoekt,
+		IndexableReposFunc: database.IndexableRepos(r.db).List,
+		NamespaceStore:     database.Namespaces(r.db),
 	}
 	resolved, err := repositoryResolver.Resolve(ctx, options)
 	tr.LazyPrintf("resolveRepositories - done")

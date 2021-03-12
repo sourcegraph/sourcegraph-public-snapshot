@@ -16,28 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// defaultReposMaxAge is how long we cache the list of default repos. The list
-// changes very rarely, so we can cache for a while.
-const defaultReposMaxAge = time.Minute
-
-type cachedRepos struct {
-	repos   []*types.RepoName
-	fetched time.Time
-}
-
-// Repos returns the current cached repos and boolean value indicating
-// whether an update is required
-func (c *cachedRepos) Repos() ([]*types.RepoName, bool) {
-	if c == nil {
-		return nil, true
-	}
-	if c.repos == nil {
-		return nil, true
-	}
-	return append([]*types.RepoName{}, c.repos...), time.Since(c.fetched) > defaultReposMaxAge
-}
-
-type DefaultRepoStore struct {
+type IndexableRepoStore struct {
 	*basestore.Store
 
 	cache atomic.Value
@@ -46,29 +25,29 @@ type DefaultRepoStore struct {
 	mu sync.Mutex
 }
 
-// DefaultRepos instantiates and returns a new DefaultRepoStore with prepared statements.
-func DefaultRepos(db dbutil.DB) *DefaultRepoStore {
-	return &DefaultRepoStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+// IndexableRepos instantiates and returns a new IndexableRepoStore with prepared statements.
+func IndexableRepos(db dbutil.DB) *IndexableRepoStore {
+	return &IndexableRepoStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
-// NewDefaultRepoStoreWithDB instantiates and returns a new DefaultRepoStore using the other store handle.
-func DefaultReposWith(other basestore.ShareableStore) *DefaultRepoStore {
-	return &DefaultRepoStore{Store: basestore.NewWithHandle(other.Handle())}
+// IndexableReposWith instantiates and returns a new IndexableRepoStore using the other store handle.
+func IndexableReposWith(other basestore.ShareableStore) *IndexableRepoStore {
+	return &IndexableRepoStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
-func (s *DefaultRepoStore) With(other basestore.ShareableStore) *DefaultRepoStore {
-	return &DefaultRepoStore{Store: s.Store.With(other)}
+func (s *IndexableRepoStore) With(other basestore.ShareableStore) *IndexableRepoStore {
+	return &IndexableRepoStore{Store: s.Store.With(other)}
 }
 
-func (s *DefaultRepoStore) Transact(ctx context.Context) (*DefaultRepoStore, error) {
+func (s *IndexableRepoStore) Transact(ctx context.Context) (*IndexableRepoStore, error) {
 	txBase, err := s.Store.Transact(ctx)
-	return &DefaultRepoStore{Store: txBase}, err
+	return &IndexableRepoStore{Store: txBase}, err
 }
 
 // ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
 // This function ensures access to dbconn happens after the rest of the code or tests have
 // initialized it.
-func (s *DefaultRepoStore) ensureStore() {
+func (s *IndexableRepoStore) ensureStore() {
 	s.once.Do(func() {
 		if s.Store == nil {
 			s.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
@@ -76,7 +55,7 @@ func (s *DefaultRepoStore) ensureStore() {
 	})
 }
 
-func (s *DefaultRepoStore) List(ctx context.Context) (results []*types.RepoName, err error) {
+func (s *IndexableRepoStore) List(ctx context.Context) (results []*types.RepoName, err error) {
 	s.ensureStore()
 
 	cached, _ := s.cache.Load().(*cachedRepos)
@@ -97,13 +76,13 @@ func (s *DefaultRepoStore) List(ctx context.Context) (results []*types.RepoName,
 
 		_, err := s.refreshCache(newCtx)
 		if err != nil {
-			log15.Error("Refreshing default repos cache", "error", err)
+			log15.Error("Refreshing indexable repos cache", "error", err)
 		}
 	}()
 	return repos, nil
 }
 
-func (s *DefaultRepoStore) refreshCache(ctx context.Context) ([]*types.RepoName, error) {
+func (s *IndexableRepoStore) refreshCache(ctx context.Context) ([]*types.RepoName, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -114,9 +93,9 @@ func (s *DefaultRepoStore) refreshCache(ctx context.Context) ([]*types.RepoName,
 		return repos, nil
 	}
 
-	repos, err := ReposWith(s).ListDefaultRepos(ctx, ListDefaultReposOptions{})
+	repos, err := ReposWith(s).ListIndexableRepos(ctx, ListIndexableReposOptions{})
 	if err != nil {
-		return nil, errors.Wrap(err, "querying for default repos")
+		return nil, errors.Wrap(err, "querying for indexable repos")
 	}
 
 	s.cache.Store(&cachedRepos{
@@ -128,6 +107,27 @@ func (s *DefaultRepoStore) refreshCache(ctx context.Context) ([]*types.RepoName,
 	return repos, nil
 }
 
-func (s *DefaultRepoStore) resetCache() {
+func (s *IndexableRepoStore) resetCache() {
 	s.cache.Store(&cachedRepos{})
+}
+
+// indexableReposMaxAge is how long we cache the list of indexable repos. The list
+// changes very rarely, so we can cache for a while.
+const indexableReposMaxAge = time.Minute
+
+type cachedRepos struct {
+	repos   []*types.RepoName
+	fetched time.Time
+}
+
+// Repos returns the current cached repos and boolean value indicating
+// whether an update is required
+func (c *cachedRepos) Repos() ([]*types.RepoName, bool) {
+	if c == nil {
+		return nil, true
+	}
+	if c.repos == nil {
+		return nil, true
+	}
+	return append([]*types.RepoName{}, c.repos...), time.Since(c.fetched) > indexableReposMaxAge
 }

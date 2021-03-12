@@ -296,7 +296,7 @@ func TestSearchRevspecs(t *testing.T) {
 	}
 }
 
-func TestDefaultRepositories(t *testing.T) {
+func TestIndexableRepositories(t *testing.T) {
 	tcs := []struct {
 		name             string
 		defaultsInDb     []string
@@ -349,7 +349,7 @@ func TestDefaultRepositories(t *testing.T) {
 				}
 				drs = append(drs, r)
 			}
-			getRawDefaultRepos := func(ctx context.Context) ([]*types.RepoName, error) {
+			getRawIndexableRepos := func(ctx context.Context) ([]*types.RepoName, error) {
 				return drs, nil
 			}
 
@@ -363,7 +363,7 @@ func TestDefaultRepositories(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			drs, err := defaultRepositories(ctx, getRawDefaultRepos, z, tc.excludePatterns)
+			drs, err := indexableRepositories(ctx, getRawIndexableRepos, z, tc.excludePatterns)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -372,13 +372,13 @@ func TestDefaultRepositories(t *testing.T) {
 				drNames = append(drNames, string(dr.Name))
 			}
 			if !reflect.DeepEqual(drNames, tc.want) {
-				t.Errorf("names of default repos = %v, want %v", drNames, tc.want)
+				t.Errorf("names of indexable repos = %v, want %v", drNames, tc.want)
 			}
 		})
 	}
 }
 
-func TestUseDefaultReposIfMissingOrGlobalSearchContext(t *testing.T) {
+func TestUseIndexableReposIfMissingOrGlobalSearchContext(t *testing.T) {
 	orig := envvar.SourcegraphDotComMode()
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(orig)
@@ -388,19 +388,19 @@ func TestUseDefaultReposIfMissingOrGlobalSearchContext(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	wantDefaultRepoNames := []string{
+	wantIndexableRepoNames := []string{
 		"default/one",
 		"default/two",
 		"default/three",
 	}
-	defaultRepos := make([]*types.RepoName, len(wantDefaultRepoNames))
-	zoektRepoListEntries := make([]*zoekt.RepoListEntry, len(wantDefaultRepoNames))
-	mockDefaultReposFunc := func(_ context.Context) ([]*types.RepoName, error) {
-		return defaultRepos, nil
+	indexableRepos := make([]*types.RepoName, len(wantIndexableRepoNames))
+	zoektRepoListEntries := make([]*zoekt.RepoListEntry, len(wantIndexableRepoNames))
+	mockIndexableReposFunc := func(_ context.Context) ([]*types.RepoName, error) {
+		return indexableRepos, nil
 	}
 
-	for idx, name := range wantDefaultRepoNames {
-		defaultRepos[idx] = &types.RepoName{Name: api.RepoName(name)}
+	for idx, name := range wantIndexableRepoNames {
+		indexableRepos[idx] = &types.RepoName{Name: api.RepoName(name)}
 		zoektRepoListEntries[idx] = &zoekt.RepoListEntry{
 			Repository: zoekt.Repository{
 				Name:     name,
@@ -418,8 +418,8 @@ func TestUseDefaultReposIfMissingOrGlobalSearchContext(t *testing.T) {
 		name              string
 		searchContextSpec string
 	}{
-		{name: "use default repos if missing search context", searchContextSpec: ""},
-		{name: "use default repos with global search context", searchContextSpec: "global"},
+		{name: "use indexable repos if missing search context", searchContextSpec: ""},
+		{name: "use indexable repos with global search context", searchContextSpec: "global"},
 	}
 
 	for _, tt := range tests {
@@ -428,7 +428,7 @@ func TestUseDefaultReposIfMissingOrGlobalSearchContext(t *testing.T) {
 				SearchContextSpec: tt.searchContextSpec,
 				Query:             queryInfo,
 			}
-			repositoryResolver := &Resolver{Zoekt: mockZoekt, DefaultReposFunc: mockDefaultReposFunc, NamespaceStore: &mockNamespaceStore{}}
+			repositoryResolver := &Resolver{Zoekt: mockZoekt, IndexableReposFunc: mockIndexableReposFunc, NamespaceStore: &mockNamespaceStore{}}
 			resolved, err := repositoryResolver.Resolve(context.Background(), op)
 			if err != nil {
 				t.Fatal(err)
@@ -437,8 +437,8 @@ func TestUseDefaultReposIfMissingOrGlobalSearchContext(t *testing.T) {
 			for _, repoRev := range resolved.RepoRevs {
 				repoNames = append(repoNames, string(repoRev.Repo.Name))
 			}
-			if !reflect.DeepEqual(repoNames, wantDefaultRepoNames) {
-				t.Errorf("names of default repos = %v, want %v", repoNames, wantDefaultRepoNames)
+			if !reflect.DeepEqual(repoNames, wantIndexableRepoNames) {
+				t.Errorf("names of indexable repos = %v, want %v", repoNames, wantIndexableRepoNames)
 			}
 		})
 	}

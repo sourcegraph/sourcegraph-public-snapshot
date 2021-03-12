@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestListDefaultRepos(t *testing.T) {
+func TestListIndexableRepos(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -87,9 +87,9 @@ func TestListDefaultRepos(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			DefaultRepos(db).resetCache()
+			IndexableRepos(db).resetCache()
 
-			repos, err := DefaultRepos(db).List(ctx)
+			repos, err := IndexableRepos(db).List(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -138,9 +138,9 @@ func TestListDefaultRepos(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		DefaultRepos(db).resetCache()
+		IndexableRepos(db).resetCache()
 
-		repos, err := DefaultRepos(db).List(ctx)
+		repos, err := IndexableRepos(db).List(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -159,14 +159,14 @@ func TestListDefaultRepos(t *testing.T) {
 				Name: "github.com/foo/bar14",
 			},
 		}
-		// expect 2 repos, the user added repo and the one that is referenced in the default repos table
+		// expect 2 repos, the user added repo and the one that is referenced in the indexable repos table
 		if diff := cmp.Diff(want, repos, cmpopts.EquateEmpty()); diff != "" {
 			t.Errorf("mismatch (-want +got):\n%s", diff)
 		}
 	})
 }
 
-func TestListDefaultReposUncloned(t *testing.T) {
+func TestListIndexableReposUncloned(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -206,7 +206,7 @@ func TestListDefaultReposUncloned(t *testing.T) {
 		}
 	}
 
-	repos, err := Repos(db).ListDefaultRepos(ctx, ListDefaultReposOptions{
+	repos, err := Repos(db).ListIndexableRepos(ctx, ListIndexableReposOptions{
 		OnlyUncloned: true,
 	})
 	if err != nil {
@@ -220,7 +220,7 @@ func TestListDefaultReposUncloned(t *testing.T) {
 	}
 }
 
-func BenchmarkDefaultRepos_List_Empty(b *testing.B) {
+func BenchmarkIndexableRepos_List_Empty(b *testing.B) {
 	db := dbtest.NewDB(b, "")
 
 	ctx := context.Background()
@@ -231,7 +231,7 @@ func BenchmarkDefaultRepos_List_Empty(b *testing.B) {
 	}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_, err := DefaultRepos(db).List(ctx)
+		_, err := IndexableRepos(db).List(ctx)
 		if err != nil {
 			b.Fatal(err)
 		}
