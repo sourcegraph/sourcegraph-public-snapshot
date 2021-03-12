@@ -250,8 +250,8 @@ func fuzzifyGlobPattern(value string) string {
 	return "**" + value + "**"
 }
 
-// mapGlobToRegex translates glob to regexp for fields repo, file, and repohasfile.
-func mapGlobToRegex(nodes []Node) ([]Node, error) {
+// Globbing translates glob to regexp for fields repo, file, and repohasfile.
+func Globbing(nodes []Node) ([]Node, error) {
 	var globErrors []globError
 
 	nodes = MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
@@ -716,4 +716,8 @@ func AddRegexpField(q Q, field, pattern string) string {
 		q = newOperator(append(q, Parameter{Field: field, Value: pattern}), And)
 	}
 	return StringHuman(q)
+}
+
+func identity(nodes []Node) ([]Node, error) {
+	return nodes, nil
 }

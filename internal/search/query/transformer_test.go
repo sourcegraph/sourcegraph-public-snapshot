@@ -864,7 +864,7 @@ func TestMapGlobToRegex(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
 			query, _ := ParseAndOr(c.input, SearchTypeRegex)
-			regexQuery, _ := mapGlobToRegex(query)
+			regexQuery, _ := Globbing(query)
 			got := toString(regexQuery)
 			if diff := cmp.Diff(c.want, got); diff != "" {
 				t.Fatal(diff)
