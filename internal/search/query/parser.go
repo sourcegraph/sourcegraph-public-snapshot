@@ -1086,7 +1086,7 @@ func Parse(in string, options ParserOptions) (Q, error) {
 	}
 
 	if options.Globbing {
-		query, err = mapGlobToRegex(query)
+		query, err = Globbing(query)
 		if err != nil {
 			return nil, err
 		}
