@@ -44,6 +44,9 @@ func TestSearchProgress(t *testing.T) {
 			LimitHit:            true,
 			SuggestedLimit:      1000,
 		},
+		"traced": {
+			Trace: "abcd",
+		},
 	}
 
 	for name, c := range cases {
