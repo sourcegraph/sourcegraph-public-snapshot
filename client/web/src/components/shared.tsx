@@ -8,7 +8,7 @@ import {
 } from '../../../shared/src/components/completion/EditorCompletionWidget'
 import { isErrorLike } from '../../../shared/src/util/errors'
 import { HoverOverlay, HoverOverlayProps } from '../../../shared/src/hover/HoverOverlay'
-import { useLocalStorage } from '../util/useLocalStorage'
+import { useLocalStorage } from '../../../shared/src/util/useLocalStorage'
 import { HoverThresholdProps } from '../repo/RepoContainer'
 
 // Components from shared with web-styling class names applied

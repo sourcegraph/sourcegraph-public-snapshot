@@ -17,7 +17,7 @@ import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import { VersionContext } from '../schema/site.schema'
 import { PatternTypeProps, CaseSensitivityProps, SearchContextProps } from '../search'
 import { submitSearch } from '../search/helpers'
-import { useLocalStorage } from '../util/useLocalStorage'
+import { useLocalStorage } from '../../../shared/src/util/useLocalStorage'
 
 const HAS_DISMISSED_INFO_KEY = 'sg-has-dismissed-version-context-info'
 
