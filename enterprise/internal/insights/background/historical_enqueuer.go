@@ -226,27 +226,8 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, uniqueSeries map[s
 			to = to.Add(-24 * time.Hour)
 		}
 
-		// Build a function which tells if a given series has data in this timeframe for a specific
-		// repository.
-		seriesIDsWithData, err := h.insightsStore.DistinctSeriesWithData(ctx, from, to)
-		if err != nil {
-			return multierror.Append(multi, errors.Wrap(err, "DistinctSeriesWithData")) // DB error, no point in continuing.
-		}
-		haveData := map[string]struct{}{}
-		for _, id := range seriesIDsWithData {
-			haveData[id] = struct{}{}
-		}
-		haveDataForRepo := func(seriesID string, id api.RepoID, from, to time.Time) bool {
-			// TODO(slimsag): future: actually check if the insight is missing data for the given
-			// repo ID. In the meantime, if there is *any* datapoint in this timeframe we won't do
-			// backfilling. e.g., if a new repository is added to Sourcegraph after we built
-			// historical data for an insight, it will not be accounted for.
-			_, haveData := haveData[seriesID]
-			return haveData
-		}
-
 		// Build historical data for this timeframe.
-		softErr, hardErr := h.buildFrame(ctx, uniqueSeries, sortedSeriesIDs, from, to, haveDataForRepo)
+		softErr, hardErr := h.buildFrame(ctx, uniqueSeries, sortedSeriesIDs, from, to)
 		if softErr != nil {
 			multi = multierror.Append(multi, softErr)
 			continue
@@ -264,9 +245,6 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, uniqueSeries map[s
 // It is expected to backfill data for all unique series that are missing data, across all repos
 // (using h.allReposIterator.)
 //
-// It should not backfill data for series that already have data recorded for a given repo, checked
-// via haveDataForRepo().
-//
 // It may return both hard errors (e.g. DB connection failure, future frames are unlikely to build)
 // and soft errors (e.g. user made a mistake or we did partial work, future frames will likely
 // succeed.)
@@ -276,7 +254,6 @@ func (h *historicalEnqueuer) buildFrame(
 	sortedSeriesIDs []string,
 	from time.Time,
 	to time.Time,
-	haveDataForRepo func(seriesID string, id api.RepoID, from, to time.Time) bool,
 ) (hardErr, softErr error) {
 	// We yield frequently for a small period of time for a few reasons:
 	//
@@ -300,7 +277,11 @@ func (h *historicalEnqueuer) buildFrame(
 		// Lookup the repository (we need its database ID)
 		repo, err := h.repoStore.GetByName(ctx, api.RepoName(repoName))
 		if err != nil {
-			return err // hard DB error
+			// Ignore RepoNotFoundErr because it could just be that the repository was actually
+			// deleted and allReposIterator had it cached.
+			if _, ok := err.(*database.RepoNotFoundErr); !ok {
+				return err // hard DB error
+			}
 		}
 
 		// Find the first commit made to the repository on the default branch.
@@ -323,7 +304,17 @@ func (h *historicalEnqueuer) buildFrame(
 			yield()
 
 			// If we already have data for this frame+repo+series, then there's nothing to do.
-			if haveDataForRepo(seriesID, repo.ID, from, to) {
+			var numDataPoints int
+			numDataPoints, hardErr = h.insightsStore.CountData(ctx, store.CountDataOpts{
+				From:     &from,
+				To:       &to,
+				SeriesID: &seriesID,
+				RepoID:   &repo.ID,
+			})
+			if err != nil {
+				return multierror.Append(softErr, hardErr)
+			}
+			if numDataPoints > 0 {
 				continue
 			}
 
