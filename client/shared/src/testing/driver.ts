@@ -44,6 +44,17 @@ export const percySnapshot = readEnvironmentBoolean({ variable: 'PERCY_ON', defa
 export const BROWSER_EXTENSION_DEV_ID = 'bmfbcejdknlknpncfpeloejonjoledha'
 
 /**
+ * The browser revision used by Puppeteer, which is downloaded by BrowserFetcher.
+ */
+const BROWSER_REVISION = {
+    chrome: '818858',
+
+    // TODO: When support is added for downloading Firefox revisions, pin this
+    // to an exact revision.
+    firefox: 'latest',
+}
+
+/**
  * Specifies how to select the content of the element. No
  * single method works in all cases:
  *
@@ -750,7 +761,8 @@ export async function createDriverForTest(options?: DriverOptions): Promise<Driv
         timeout: 30000,
     }
     let browser: puppeteer.Browser
-    if (options.browser === 'firefox') {
+    const browserName = options.browser || 'chrome'
+    if (browserName === 'firefox') {
         // Make sure CSP is disabled in FF preferences,
         // because Puppeteer uses new Function() to evaluate code
         // which is not allowed by the github.com CSP.
@@ -801,7 +813,16 @@ export async function createDriverForTest(options?: DriverOptions): Promise<Driv
             }
             args.push(`--disable-extensions-except=${chromeExtensionPath}`, `--load-extension=${chromeExtensionPath}`)
         }
-        browser = await puppeteer.launch(launchOptions)
+
+        const revision = BROWSER_REVISION[browserName]
+        const browserFetcher = puppeteer.createBrowserFetcher({ product: browserName })
+
+        // The download step takes time and requires a network connection.
+        console.log(`Downloading browser: ${browserName} revision ${revision}`)
+        const revisionInfo = await browserFetcher.download(revision)
+
+        console.log(`Using ${browserName} executable path:`, revisionInfo.executablePath)
+        browser = await puppeteer.launch({ ...launchOptions, executablePath: revisionInfo.executablePath })
     }
 
     const page = await browser.newPage()
