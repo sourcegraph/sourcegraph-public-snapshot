@@ -224,7 +224,7 @@ export const Panel = React.memo<Props>(props => {
                         {...props}
                         // TODO remove references to Bootstrap from shared, get class name from prop
                         // This is okay for now because the Panel is currently only used in the webapp
-                        listClass="d-flex justify-content-end list-unstyled m-0"
+                        listClass="d-flex justify-content-end list-unstyled m-0 align-items-center"
                         listItemClass="pr-4"
                         // actionItemClass="d-flex flex-nowrap"
                         actionItemIconClass="icon-inline"
@@ -242,10 +242,11 @@ export const Panel = React.memo<Props>(props => {
                     />
                     <Button
                         onClick={handlePanelClose}
-                        close={true}
-                        className="bg-transparent border-0 close ml-auto"
+                        className="bg-transparent border-0 ml-auto p-1 position-relative"
                         title="Close panel"
-                    />
+                    >
+                        <CloseIcon className="icon-inline" />
+                    </Button>
                 </div>
             </div>
             <TabPanels>
