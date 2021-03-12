@@ -328,7 +328,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 			zeroResult    bool
 			minMatchCount int64
 			wantAlert     *gqltestutil.SearchAlert
-			skipStream    bool
 		}{
 			// Global search
 			{
@@ -478,10 +477,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				if test.skipStream && isStreaming {
-					t.Skip("streaming not supported yet")
-				}
-
 				results, err := client.SearchFiles(test.query)
 				if err != nil {
 					t.Fatal(err)
@@ -614,8 +609,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 			query      string
 			zeroResult bool
 			wantAlert  *gqltestutil.SearchAlert
-
-			skipStream bool
 		}{
 			{
 				name:  `And operator, basic`,
@@ -799,10 +792,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				if test.skipStream && isStreaming {
-					t.Skip("streaming not supported yet")
-				}
-
 				results, err := client.SearchFiles(test.query)
 				if err != nil {
 					t.Fatal(err)
