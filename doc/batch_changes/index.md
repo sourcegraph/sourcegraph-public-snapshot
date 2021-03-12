@@ -48,7 +48,7 @@ Create a batch change by specifying a search query to get a list of repositories
 <a class="btn" href="references/requirements">Requirements</a>
 </div>
 
-> NOTE: We highly recommend using the latest versions of Sourcegraph and src-cli with Batch Changes, since we're steadily shipping new features and improvements.
+> NOTE: Batch Changes requires Sourcegraph version 3.24 or later. We highly recommend using the latest versions of Sourcegraph and src-cli with Batch Changes, since we're steadily shipping new features and improvements.
 
 ## Getting started
 
