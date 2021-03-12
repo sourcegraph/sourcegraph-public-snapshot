@@ -11,28 +11,6 @@ const { add } = storiesOf('web/batches/BurndownChart', module).addDecorator(stor
     <div className="p-3 container web-content">{story()}</div>
 ))
 
-// tzs := state.GenerateTimestamps(start, end)
-// 	wantCounts := make([]apitest.ChangesetCounts, 0, len(tzs))
-// 	idx := 0
-// 	for _, tz := range tzs {
-// 		currentWant := wantEntries[idx]
-// 		for len(wantEntries) > idx+1 && !tz.Before(wantEntries[idx+1].Time) {
-// 			idx++
-// 			currentWant = wantEntries[idx]
-// 		}
-// 		wantCounts = append(wantCounts, apitest.ChangesetCounts{
-// 			Date:                 marshalDateTime(t, tz),
-// 			Total:                currentWant.Total,
-// 			Merged:               currentWant.Merged,
-// 			Closed:               currentWant.Closed,
-// 			Open:                 currentWant.Open,
-// 			Draft:                currentWant.Draft,
-// 			OpenApproved:         currentWant.OpenApproved,
-// 			OpenChangesRequested: currentWant.OpenChangesRequested,
-// 			OpenPending:          currentWant.OpenPending,
-// 		})
-// 	}
-
 add('All states', () => {
     const changesetCounts = useMemo<ChangesetCountsOverTimeFields[]>(() => {
         const timeMarks = [
@@ -157,21 +135,24 @@ add('All states', () => {
                 open: 0,
             },
         ]
-        let index_ = 0
+        let timeMarkIndex = 0
         return new Array(150).fill(undefined).map((value, index) => {
-            let currentMark = timeMarks[index_]
-            const tz = addSeconds(
+            let currentMark = timeMarks[timeMarkIndex]
+            const currentDate = addSeconds(
                 new Date('2019-11-13T12:00:00Z'),
                 // 10 days of data
                 index * Math.round((10 * 24 * 60 * 60) / 150)
             )
-            while (timeMarks.length > index_ + 1 && !isBefore(tz, new Date(timeMarks[index_ + 1].date))) {
-                index_++
-                currentMark = timeMarks[index_]
+            while (
+                timeMarks.length > timeMarkIndex + 1 &&
+                !isBefore(currentDate, new Date(timeMarks[timeMarkIndex + 1].date))
+            ) {
+                timeMarkIndex++
+                currentMark = timeMarks[timeMarkIndex]
             }
             return {
                 __typename: 'ChangesetCounts',
-                date: tz.toISOString(),
+                date: currentDate.toISOString(),
                 closed: currentMark.closed,
                 draft: currentMark.draft,
                 merged: currentMark.merged,
