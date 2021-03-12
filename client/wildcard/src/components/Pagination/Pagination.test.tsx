@@ -1,11 +1,11 @@
 import React from 'react'
 import { render, RenderResult, cleanup, fireEvent } from '@testing-library/react'
-import { Pagination, Props } from './Pagination'
+import { Pagination, PaginationProps } from './Pagination'
 import sinon from 'sinon'
 
 describe('Pagination', () => {
     let queries: RenderResult
-    const renderWithProps = (props: Props): RenderResult => render(<Pagination {...props} />)
+    const renderWithProps = (props: PaginationProps): RenderResult => render(<Pagination {...props} />)
     const onPageChangeMock = sinon.spy()
 
     beforeEach(() => {
@@ -17,19 +17,19 @@ describe('Pagination', () => {
     describe('Invalid configuration', () => {
         it('will error when less than 1 max pages', () => {
             expect(() => {
-                renderWithProps({ currentPage: 0, maxPages: 0, onPageChange: onPageChangeMock })
+                renderWithProps({ currentPage: 0, totalPages: 0, onPageChange: onPageChangeMock })
             }).toThrowErrorMatchingSnapshot()
         })
 
         it('will error when currentPage is less than 1', () => {
             expect(() => {
-                renderWithProps({ currentPage: -1, maxPages: 10, onPageChange: onPageChangeMock })
+                renderWithProps({ currentPage: -1, totalPages: 10, onPageChange: onPageChangeMock })
             }).toThrowErrorMatchingSnapshot()
         })
 
-        it('will error when currentPage is greater than maxPages', () => {
+        it('will error when currentPage is greater than totalPages', () => {
             expect(() => {
-                renderWithProps({ currentPage: 11, maxPages: 10, onPageChange: onPageChangeMock })
+                renderWithProps({ currentPage: 11, totalPages: 10, onPageChange: onPageChangeMock })
             }).toThrowErrorMatchingSnapshot()
         })
     })
@@ -37,7 +37,7 @@ describe('Pagination', () => {
     describe('Typical pagination', () => {
         let currentPage = 2
         beforeEach(() => {
-            queries = renderWithProps({ currentPage, maxPages: 10, onPageChange: onPageChangeMock })
+            queries = renderWithProps({ currentPage, totalPages: 10, onPageChange: onPageChangeMock })
         })
 
         it('will render correct elipsis', () => {
@@ -119,7 +119,7 @@ describe('Pagination', () => {
     describe('Small pagination', () => {
         const currentPage = 2
         beforeEach(() => {
-            queries = renderWithProps({ currentPage, maxPages: 3, onPageChange: onPageChangeMock })
+            queries = renderWithProps({ currentPage, totalPages: 3, onPageChange: onPageChangeMock })
         })
 
         it('will render no elipsis', () => {
@@ -144,7 +144,7 @@ describe('Pagination', () => {
     describe('Large pagination', () => {
         const currentPage = 1
         beforeEach(() => {
-            queries = renderWithProps({ currentPage, maxPages: 30, onPageChange: onPageChangeMock })
+            queries = renderWithProps({ currentPage, totalPages: 30, onPageChange: onPageChangeMock })
         })
 
         it('will render correct elipsis', () => {
