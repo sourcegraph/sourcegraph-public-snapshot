@@ -217,7 +217,7 @@ func (c *Client) AuthenticatedUserID() string {
 	return c.userID
 }
 
-var graphqlQueryNameRe = lazyregexp.New(`query +(\w)+`)
+var graphqlQueryNameRe = lazyregexp.New(`(query|mutation) +(\w)+`)
 
 // GraphQL makes a GraphQL request to the server on behalf of the user authenticated by the client.
 // An optional token can be passed to impersonate other users. A nil target will skip unmarshalling
@@ -232,8 +232,8 @@ func (c *Client) GraphQL(token, query string, variables map[string]interface{}, 
 	}
 
 	var name string
-	if matches := graphqlQueryNameRe.FindStringSubmatch(query); len(matches) >= 1 {
-		name = matches[1]
+	if matches := graphqlQueryNameRe.FindStringSubmatch(query); len(matches) >= 2 {
+		name = matches[2]
 	}
 
 	req, err := http.NewRequest("POST", fmt.Sprintf("%s/.api/graphql?%s", c.baseURL, name), bytes.NewReader(body))
