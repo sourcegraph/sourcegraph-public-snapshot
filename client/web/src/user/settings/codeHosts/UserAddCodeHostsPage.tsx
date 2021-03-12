@@ -7,17 +7,11 @@ import { AddExternalServiceOptions } from '../../../components/externalServices/
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import { ErrorAlert } from '../../../components/alerts'
 import { Link } from '../../../../../shared/src/components/Link'
-
 import { isDefined, keyExistsIn } from '../../../../../shared/src/util/types'
-
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { SourcegraphContext } from '../../../jscontext'
-// import { Subject, Subscription } from 'rxjs'
-// import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
-import { takeUntil } from 'rxjs/operators'
-import { timer, fromEvent } from 'rxjs'
 
 type AuthProvider = SourcegraphContext['authProviders'][0]
 type AuthProvidersByKind = Partial<Record<ExternalServiceKind, AuthProvider>>
