@@ -53,6 +53,6 @@ export function fromHoverMerged(values: (Badged<Hover | PlainHover> | null | und
         contents,
         alerts,
         ...(range ? { range } : {}),
-        aggregatedBadges: [...aggregatedBadges.values()].sort((a, b) => a.text.localeCompare(b.text))
+        aggregatedBadges: [...aggregatedBadges.values()].sort((a, b) => a.text.localeCompare(b.text)),
     }
 }
