@@ -44,15 +44,15 @@ func (s *UserPublicRepoStore) SetUserRepos(ctx context.Context, userID int32, re
 	if err != nil {
 		return err
 	}
+	if len(repos) == 0 {
+		return nil
+	}
 	values := make([]*sqlf.Query, 0, len(repos))
 	for _, repo := range repos {
 		values = append(values, sqlf.Sprintf(
 			"(%s, %s, %s)",
 			userID, repo.RepoURI, repo.RepoID,
 		))
-	}
-	if len(values) == 0 {
-		return nil
 	}
 	return tx.Exec(ctx, sqlf.Sprintf(
 		"INSERT INTO user_public_repos(user_id, repo_uri, repo_id) VALUES %s",
