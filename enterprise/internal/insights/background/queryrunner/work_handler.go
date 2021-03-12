@@ -107,16 +107,7 @@ func (r *workHandler) Handle(ctx context.Context, workerStore dbworkerstore.Stor
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf(`for query "%s"`, job.SearchQuery))
 		}
-		switch r := decoded.(type) {
-		case *fileMatch:
-			matchesPerRepo[r.Repository.ID] = matchesPerRepo[r.Repository.ID] + r.matchCount()
-		case *commitSearchResult:
-			matchesPerRepo[r.Commit.Repository.ID] = matchesPerRepo[r.Commit.Repository.ID] + r.matchCount()
-		case *repository:
-			matchesPerRepo[r.ID] = matchesPerRepo[r.ID] + r.matchCount()
-		default:
-			panic(fmt.Sprintf("never here %T", r))
-		}
+		matchesPerRepo[decoded.repoID()] = matchesPerRepo[decoded.repoID()] + r.matchCount()
 	}
 
 	// Record the number of results we got, one data point per-repository.

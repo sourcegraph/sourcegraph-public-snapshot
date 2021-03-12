@@ -71,6 +71,7 @@ import (
 // that so am I and this is some of the oldest "tech debt" in all of Sourcegraph :)
 
 type result interface {
+	repoID() string
 	matchCount() int
 }
 
@@ -128,6 +129,10 @@ func (r *fileMatch) matchCount() int {
 	return matches
 }
 
+func (r *fileMatch) repoID() string {
+	return r.Repository.ID
+}
+
 type commitSearchResult struct {
 	Matches struct {
 		Highlights []struct {
@@ -141,6 +146,10 @@ type commitSearchResult struct {
 	}
 }
 
+func (r *commitSearchResult) repoID() string {
+	return r.Commit.Repository.ID
+}
+
 func (r *commitSearchResult) matchCount() int {
 	matches := 1
 	if len(r.Matches.Highlights) > 0 {
@@ -151,6 +160,10 @@ func (r *commitSearchResult) matchCount() int {
 
 type repository struct {
 	ID string
+}
+
+func (r *repository) repoID() string {
+	return r.ID
 }
 
 func (r *repository) matchCount() int {
