@@ -85,7 +85,7 @@ export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
 
     const dateTickFormatter = useMemo(() => {
         let dateTickFormat = new Intl.DateTimeFormat(undefined, { month: 'long', day: 'numeric' })
-        if (changesetCountsOverTime?.length > 1) {
+        if (changesetCountsOverTime && changesetCountsOverTime?.length > 1) {
             const start = parseISO(changesetCountsOverTime[0].date)
             const end = parseISO(changesetCountsOverTime[changesetCountsOverTime.length - 1].date)
             // If the range spans multiple years, we want to display the year as well.
