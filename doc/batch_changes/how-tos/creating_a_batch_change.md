@@ -49,7 +49,6 @@ After writing a batch spec you use the [Sourcegraph CLI (`src`)](https://github.
     > NOTE: Batch Changes's default behavior is to stop if computing changes in a repository errors. You can choose to ignore errors instead by adding the [`skip-errors`](../../cli/references/batch/preview.md) flag : `src batch preview -f spec.batch.yml -skip-errors`
 
 1. Wait for it to run and compute the changes for each repository (using the repositories and commands in the batch spec).
-    <!---TODO update link-->
     <img src="https://sourcegraphstatic.com/docs/images/batch_changes/src_batch_preview_waiting.png" class="screenshot">
 1. Open the preview URL that the command printed out.
     <img src="https://sourcegraphstatic.com/docs/images/batch_changes/src_batch_preview_link.png" class="screenshot">
