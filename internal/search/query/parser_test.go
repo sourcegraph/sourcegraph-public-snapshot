@@ -243,7 +243,7 @@ func TestParse(t *testing.T) {
 			resultGrammar = toString(queryGrammar)
 		}
 
-		queryHeuristic, err = ParseAndOr(input, SearchTypeRegex)
+		queryHeuristic, err = Parse(input, SearchTypeRegex)
 		if err != nil {
 			resultHeuristic = err.Error()
 		} else {
@@ -540,7 +540,7 @@ func TestMatchUnaryKeyword(t *testing.T) {
 
 func TestParseAndOrLiteral(t *testing.T) {
 	test := func(input string) string {
-		result, err := ParseAndOr(input, SearchTypeLiteral)
+		result, err := Parse(input, SearchTypeLiteral)
 		if err != nil {
 			return fmt.Sprintf("ERROR: %s", err.Error())
 		}

@@ -67,7 +67,7 @@ func For(searchType SearchType) step {
 // initial input string.
 func Init(in string, searchType SearchType) step {
 	parser := func([]Node) ([]Node, error) {
-		return ParseAndOr(in, searchType)
+		return Parse(in, searchType)
 	}
 	return sequence(parser, For(searchType))
 }

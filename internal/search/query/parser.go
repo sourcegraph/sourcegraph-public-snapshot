@@ -1010,8 +1010,8 @@ func (p *parser) tryFallbackParser(in string) ([]Node, error) {
 	return newOperator(nodes, And), nil
 }
 
-// ParseAndOr a raw input string into a parse tree comprising Nodes.
-func ParseAndOr(in string, searchType SearchType) ([]Node, error) {
+// Parse parses a raw input string into a parse tree comprising Nodes.
+func Parse(in string, searchType SearchType) ([]Node, error) {
 	if strings.TrimSpace(in) == "" {
 		return nil, nil
 	}
