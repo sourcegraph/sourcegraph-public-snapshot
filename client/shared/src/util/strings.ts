@@ -22,7 +22,8 @@ export function numberWithCommas(number: string | number): string {
 }
 
 export function pluralize(string: string, count: number | bigint, plural = string + 's'): string {
-    return count === 1 || count === 1n ? string : plural
+    // eslint-disable-next-line eqeqeq
+    return count == 1 ? string : plural
 }
 
 /**

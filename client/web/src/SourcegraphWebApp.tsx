@@ -3,7 +3,6 @@ import 'focus-visible'
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import ServerIcon from 'mdi-react/ServerIcon'
 import * as React from 'react'
-import { hot } from 'react-hot-loader/root'
 import { Route } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
 import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
@@ -238,7 +237,7 @@ const LayoutWithActivation = window.context.sourcegraphDotComMode ? Layout : wit
  * This is the non-hot-reload component. It is wrapped in `hot(...)` below to make it
  * hot-reloadable in development.
  */
-class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, SourcegraphWebAppState> {
+export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, SourcegraphWebAppState> {
     private readonly subscriptions = new Subscription()
     private readonly userRepositoriesUpdates = new Subject<void>()
     private readonly darkThemeMediaList = window.matchMedia('(prefers-color-scheme: dark)')
@@ -574,5 +573,3 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         localStorage.setItem(LAST_SEARCH_CONTEXT_KEY, resolvedSearchContextSpec)
     }
 }
-
-export const SourcegraphWebApp = hot(ColdSourcegraphWebApp)
