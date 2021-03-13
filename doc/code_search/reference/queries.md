@@ -44,7 +44,7 @@ Literal search interprets search patterns literally to simplify searching for wo
 
 | Search pattern syntax                                                             | Description                                                                                                                                                                                                                           |
 | ---                                                                               | ---                                                                                                                                                                                                                                   |
-| [`foo bar`](https://sourcegraph.com/search?q=foo+bar&patternType=literal)         | Match the string `foo bar`. Matching is ordered: match `foo` followed by `bar`. Matching is case-_insensitive_ (toggle the <span class="toggle-container"><img class="toggle" src=../img/case.png alt="case"></span> button to change). |
+| [`foo bar`](https://sourcegraph.com/search?q=foo+bar&patternType=literal)         | Match the string `foo bar`. Matching is ordered: match `foo` followed by `bar`, with exactly one space between the terms. Matching is case-_insensitive_ (toggle the <span class="toggle-container"><img class="toggle" src=../img/case.png alt="case"></span> button to change). |
 | [`"foo bar"`](https://sourcegraph.com/search?q=%22foo+bar%22&patternType=literal) | Match the string `"foo bar"`. The quotes are matched literally.                                                                                                                                                                       |
 
 ### Regular expression search
