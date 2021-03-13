@@ -62,13 +62,13 @@ const config = {
   },
   devtool,
   plugins: [
+    new ESBuildPlugin(),
     // Needed for React
     new webpack.DefinePlugin({
       'process.env': {
         NODE_ENV: JSON.stringify(mode),
       },
     }),
-    new ESBuildPlugin(),
     new MiniCssExtractPlugin({ filename: 'styles/[name].bundle.css' }),
     new OptimizeCssAssetsPlugin(),
     new MonacoWebpackPlugin({
@@ -114,6 +114,7 @@ const config = {
       },
       {
         test: /\.(sass|scss)$/,
+        exclude: /node_modules/,
         use: [
           mode === 'production' ? MiniCssExtractPlugin.loader : 'style-loader',
           'css-loader',
@@ -136,6 +137,7 @@ const config = {
       },
       {
         test: extensionHostWorker,
+        exclude: /node_modules/,
         use: [
           { loader: 'worker-loader', options: { inline: 'no-fallback' } },
           {
@@ -147,7 +149,7 @@ const config = {
           },
         ],
       },
-      { test: /\.ya?ml$/, use: ['raw-loader'] },
+      { test: /\.ya?ml$/, exclude: /node_modules/, use: ['raw-loader'] },
     ],
   },
 }
