@@ -12,7 +12,7 @@ const { ESBuildPlugin, ESBuildMinifyPlugin } = require('esbuild-loader')
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
 logger.info('Using mode', mode)
 
-const devtool = mode === 'production' ? 'source-map' : 'cheap-module-eval-source-map'
+const devtool = mode === 'production' ? 'source-map' : 'eval'
 
 const shouldAnalyze = process.env.WEBPACK_ANALYZER === '1'
 if (shouldAnalyze) {
@@ -28,13 +28,15 @@ const enterpriseDirectory = path.resolve(__dirname, 'src', 'enterprise')
 
 const extensionHostWorker = /main\.worker\.ts$/
 
+const esbuildTarget = ['chrome87', 'chrome86', 'edge87', 'firefox84', 'firefox83', 'safari14', 'safari13.1', 'safari13']
+
 /** @type {import('webpack').Configuration} */
 const config = {
   context: __dirname, // needed when running `gulp webpackDevServer` from the root dir
   mode,
   optimization: {
     minimize: mode === 'production',
-    minimizer: [new ESBuildMinifyPlugin({ target: 'es2019' })],
+    minimizer: [new ESBuildMinifyPlugin()],
     namedModules: false,
     ...(mode === 'development'
       ? {
@@ -48,9 +50,6 @@ const config = {
     // Enterprise vs. OSS builds use different entrypoints. The enterprise entrypoint imports a
     // strict superset of the OSS entrypoint.
     app: isEnterpriseBuild ? path.join(enterpriseDirectory, 'main.tsx') : path.join(__dirname, 'src', 'main.tsx'),
-
-    'editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',
-    'json.worker': 'monaco-editor/esm/vs/language/json/json.worker',
   },
   output: {
     path: path.join(rootDirectory, 'ui', 'assets'),
@@ -105,16 +104,21 @@ const config = {
     rules: [
       {
         test: /\.tsx?$/,
-        exclude: /(node_modules|main\.worker\.ts$)/,
-        loader: 'esbuild-loader',
-        options: {
-          loader: 'tsx',
-          target: 'es2019',
-        },
+        include: path.resolve(__dirname, '..'),
+        exclude: extensionHostWorker,
+        use: [
+          {
+            loader: 'esbuild-loader',
+            options: {
+              loader: 'tsx',
+              target: esbuildTarget,
+            },
+          },
+        ],
       },
       {
         test: /\.(sass|scss)$/,
-        exclude: /node_modules/,
+        include: path.resolve(__dirname, 'src'),
         use: [
           mode === 'production' ? MiniCssExtractPlugin.loader : 'style-loader',
           'css-loader',
@@ -144,7 +148,7 @@ const config = {
             loader: 'esbuild-loader',
             options: {
               loader: 'ts',
-              target: 'es2019',
+              target: esbuildTarget,
             },
           },
         ],
