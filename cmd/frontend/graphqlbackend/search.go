@@ -93,12 +93,12 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 	var q query.Q
 	globbing := getBoolPtr(settings.SearchGlobbing, false)
 	tr.LogFields(otlog.Bool("globbing", globbing))
-	q, err = query.Parse(args.Query, query.ParserOptions{SearchType: searchType, Globbing: globbing})
+	q, err = query.Pipeline(
+		query.Init(args.Query, searchType),
+		query.With(globbing, query.Globbing),
+	)
 	if err != nil {
 		return alertForQuery(db, args.Query, err), nil
-	}
-	if getBoolPtr(settings.SearchUppercase, false) {
-		q = query.SearchUppercase(q)
 	}
 	tr.LazyPrintf("parsing done")
 
@@ -203,7 +203,7 @@ func detectSearchType(version string, patternType *string) (query.SearchType, er
 }
 
 func overrideSearchType(input string, searchType query.SearchType) query.SearchType {
-	q, err := query.ParseAndOr(input, query.SearchTypeLiteral)
+	q, err := query.Parse(input, query.SearchTypeLiteral)
 	q = query.LowercaseFieldNames(q)
 	if err != nil {
 		// If parsing fails, return the default search type. Any actual

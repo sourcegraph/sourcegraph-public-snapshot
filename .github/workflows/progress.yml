@@ -30,8 +30,8 @@ jobs:
       - name: Report to Slack
         uses: docker://sourcegraph/progress-bot:latest
         env:
-          SINCE: ${{ github.event.inputs.since }}
-          DRY: ${{ github.event.inputs.dry }}
-          CHANNEL: ${{ github.event.inputs.channel }}
+          SINCE: ${{ github.event.inputs.since || '24h' }}
+          DRY: ${{ github.event.inputs.dry || 'false' }}
+          CHANNEL: ${{ github.event.inputs.channel || 'progress' }}
           GOOGLE_APPLICATION_CREDENTIALS: progress-bot-credentials.json
           SLACK_API_TOKEN: ${{ secrets.PROGRESS_BOT_SLACK_API_TOKEN }}
