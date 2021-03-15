@@ -576,7 +576,9 @@ Triggers:
  updated_at            | timestamp with time zone | not null default now()
 Indexes:
     "gitserver_repos_pkey" PRIMARY KEY, btree (repo_id)
-    "gitserver_repos_clone_status_idx" btree (clone_status)
+    "gitserver_repos_cloned_status_idx" btree (repo_id) WHERE clone_status = 'cloned'::text
+    "gitserver_repos_cloning_status_idx" btree (repo_id) WHERE clone_status = 'cloning'::text
+    "gitserver_repos_not_cloned_status_idx" btree (repo_id) WHERE clone_status = 'not_cloned'::text
 Foreign-key constraints:
     "gitserver_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id)
 
@@ -1931,6 +1933,53 @@ Indexes:
              LEFT JOIN users namespace_user ON ((batch_changes.namespace_user_id = namespace_user.id)))
              LEFT JOIN orgs namespace_org ON ((batch_changes.namespace_org_id = namespace_org.id)))
           WHERE ((c.batch_change_ids ? (batch_changes.id)::text) AND (namespace_user.deleted_at IS NULL) AND (namespace_org.deleted_at IS NULL)))));
+```
+
+# View "public.repo_with_cloned"
+```
+        Column         |           Type           | Modifiers 
+-----------------------+--------------------------+-----------
+ id                    | integer                  | 
+ name                  | citext                   | 
+ description           | text                     | 
+ fork                  | boolean                  | 
+ created_at            | timestamp with time zone | 
+ updated_at            | timestamp with time zone | 
+ external_id           | text                     | 
+ external_service_type | text                     | 
+ external_service_id   | text                     | 
+ archived              | boolean                  | 
+ uri                   | citext                   | 
+ deleted_at            | timestamp with time zone | 
+ metadata              | jsonb                    | 
+ private               | boolean                  | 
+ cloned                | boolean                  | 
+
+```
+
+## View query:
+
+```sql
+ SELECT repo.id,
+    repo.name,
+    repo.description,
+    repo.fork,
+    repo.created_at,
+    repo.updated_at,
+    repo.external_id,
+    repo.external_service_type,
+    repo.external_service_id,
+    repo.archived,
+    repo.uri,
+    repo.deleted_at,
+    repo.metadata,
+    repo.private,
+        CASE
+            WHEN (gr.clone_status IS NULL) THEN repo.cloned
+            ELSE (gr.clone_status = 'cloned'::text)
+        END AS cloned
+   FROM (repo
+     LEFT JOIN gitserver_repos gr ON ((repo.id = gr.repo_id)));
 ```
 
 # View "public.site_config"
