@@ -66,6 +66,7 @@ export function activateExtensions(
 
     const previouslyActivatedExtensions = new Set<string>()
     const extensionContributions = new Map<string, Contributions>()
+    const contributionsToAdd = new Map<string, Contributions>()
     const extensionsSubscription = state.activeExtensions
         .pipe(
             // TODO(tj): combine latest?
@@ -118,8 +119,6 @@ export function activateExtensions(
                     })
                 ).pipe(
                     tap(({ toActivate }) => {
-                        // Register extension contributions before loading extensions
-                        // so that contributed UI elements are visible ASAP
                         for (const extension of toActivate) {
                             if (
                                 extension.manifest &&
@@ -128,7 +127,8 @@ export function activateExtensions(
                             ) {
                                 const parsedContributions = parseContributionExpressions(extension.manifest.contributes)
                                 extensionContributions.set(extension.id, parsedContributions)
-                                state.contributions.next([...state.contributions.value, parsedContributions])
+                                // Extension contributions additions and removals are batched
+                                contributionsToAdd.set(extension.id, parsedContributions)
                             }
                         }
                     }),
@@ -167,6 +167,10 @@ export function activateExtensions(
 
             for (const [id] of activated) {
                 previouslyActivatedExtensions.add(id)
+            }
+            if (contributionsToAdd.size > 0) {
+                state.contributions.next([...state.contributions.value, ...contributionsToAdd.values()])
+                contributionsToAdd.clear()
             }
 
             if (contributionsToRemove.length > 0) {
