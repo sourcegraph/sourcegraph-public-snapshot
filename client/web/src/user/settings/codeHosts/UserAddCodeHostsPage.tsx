@@ -241,8 +241,9 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                         <div className="border rounded p-4 mb-4">
                             <b>Connect with code host</b>
                             <div className="container">
-                                <div className="row py-3">{codeHostOAuthButtons}</div>
-                                <div className="row">
+                                <div className="row pt-3">{codeHostOAuthButtons}</div>
+                                {/* temporarily hide the link until the docs are ready */}
+                                <div className="row d-none">
                                     <span className="text-muted">
                                         Learn more about{' '}
                                         <Link className="text-primary" to="/will-be-added-soon">
