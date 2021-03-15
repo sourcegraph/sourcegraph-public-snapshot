@@ -9,14 +9,23 @@ const { add } = storiesOf('wildcard/PageSelector', module).addDecorator(story =>
     <BrandedStory styles={webStyles}>{() => <div className="container web-content mt-3">{story()}</div>}</BrandedStory>
 ))
 
-add('Short typical', () => {
+add('Short', () => {
     const [page, setPage] = useState(1)
     return <PageSelector currentPage={page} onPageChange={setPage} totalPages={number('maxPages', 5)} />
 })
 
-add('Long typical', () => {
+add('Long', () => {
     const [page, setPage] = useState(1)
     return <PageSelector currentPage={page} onPageChange={setPage} totalPages={number('maxPages', 10)} />
+})
+
+add('Long on mobile', () => {
+    const [page, setPage] = useState(1)
+    return (
+        <div style={{ width: 320 }}>
+            <PageSelector currentPage={page} onPageChange={setPage} totalPages={number('maxPages', 10)} />
+        </div>
+    )
 })
 
 add('Long active', () => {
