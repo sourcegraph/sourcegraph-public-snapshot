@@ -4,7 +4,7 @@ Site configuration defines how various Sourcegraph features behave. See the [ful
 
 ## Configuration overview
 
-[Go here](../index.md) for an overview of configuration options.
+[Go here](index.md) for an overview of configuring Sourcegraph.
 
 ## View and edit site configuration
 
