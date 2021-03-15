@@ -889,6 +889,12 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, q query.Q) (srr *
 	r.setQuery(q)
 
 	expanded, err := substitutePredicates(r.Query, func(p query.Predicate) (*SearchResultsResolver, error) {
+		// Disable streaming for subqueries so we can use
+		// the results rather than sending them back to the caller
+		orig := r.stream
+		r.stream = nil
+		defer func() { r.stream = orig }()
+
 		r.invalidateRepoCache = true
 		return r.resultsRecursive(ctx, p.Query(r.Query))
 	})
@@ -993,11 +999,6 @@ func substitutePredicates(q query.Q, evaluate func(query.Predicate) (*SearchResu
 			return orig
 		}
 
-		if neg {
-			topErr = errors.New("predicates do not currently support negation")
-			return nil
-		}
-
 		name, params, err := query.ParseAsPredicate(value)
 		if err != nil {
 			// This doesn't look like a predicate, so skip it
@@ -1008,6 +1009,11 @@ func substitutePredicates(q query.Q, evaluate func(query.Predicate) (*SearchResu
 		if err != nil {
 			topErr = err
 			return orig
+		}
+
+		if neg {
+			topErr = errors.New("predicates do not currently support negation")
+			return nil
 		}
 
 		srr, err := evaluate(predicate)

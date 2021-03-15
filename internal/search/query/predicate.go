@@ -82,7 +82,7 @@ type RepoContainsPredicate struct {
 }
 
 func (f *RepoContainsPredicate) ParseParams(params string) error {
-	nodes, err := ParseAndOr(params, SearchTypeRegex)
+	nodes, err := Parse(params, SearchTypeRegex)
 	if err != nil {
 		return err
 	}

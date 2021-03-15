@@ -934,8 +934,8 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}{
 			{
 				`repo contains file`,
-				`repo:contains(file:zoekt_search.go)`,
-				counts{Repo: 1},
+				`repo:contains(file:go\.mod)`,
+				counts{Repo: 2},
 			},
 			{
 				`no repo contains file`,
@@ -943,39 +943,44 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts{},
 			},
 			{
-				`no predicate match, return no results`,
+				`no repo contains file with pattern`,
 				`repo:contains(file:noexist.go) test`,
 				counts{},
 			},
 			{
 				`repo contains content`,
-				`repo:contains(content:searchZoekt)`,
-				counts{Repo: 2},
-			},
-			{
-				`repo contains content default`,
-				`repo:contains(searchZoekt)`,
-				counts{Repo: 2},
-			},
-			{
-				`repo contains then search`,
-				`repo:contains(file:go.mod) #whatever`,
-				counts{Content: 5},
-			},
-			{
-				`repo contains with extra repo filter`,
-				`repo:gorilla repo:contains(file:mux.go)`,
+				`repo:contains(content:nextFileFirstLine)`,
 				counts{Repo: 1},
 			},
 			{
-				`repo contains type commit`,
-				`repo:contains(file:go.mod) type:commit Woho`,
-				counts{Commit: 1},
+				`repo contains content default`,
+				`repo:contains(nextFileFirstLine)`,
+				counts{Repo: 1},
 			},
 			{
-				`repo contains many results`,
-				`repo:contains(file:go.mod)`,
-				counts{Repo: 26},
+				`repo contains file then search common`,
+				`repo:contains(file:go.mod) count:100 fmt`,
+				counts{Content: 61},
+			},
+			{
+				`repo contains with matching repo filter`,
+				`repo:go-diff repo:contains(file:diff.proto)`,
+				counts{Repo: 1},
+			},
+			{
+				`repo contains with non-matching repo filter`,
+				`repo:nonexist repo:contains(file:diff.proto)`,
+				counts{Repo: 0},
+			},
+			{
+				`commit results without repo filter`,
+				`type:commit LSIF`,
+				counts{Commit: 9},
+			},
+			{
+				`commit results with repo filter`,
+				`repo:contains(file:diff.pb.go) type:commit LSIF`,
+				counts{Commit: 1},
 			},
 		}
 
