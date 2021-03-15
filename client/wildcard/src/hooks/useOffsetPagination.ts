@@ -46,14 +46,13 @@ const smallest = ({ values, minimum }: { values: number[]; minimum: number }): n
 const highest = ({ values, maximum }: { values: number[]; maximum: number }): number =>
     Math.min(Math.max(...values), maximum)
 
-interface UsePaginationParameters {
-    currentPage: number
+interface GetPagesParameters {
+    activePage: number
     totalPages: number
     maxDisplayed: number
-    onChange?: (page: number) => void
 }
 
-const getPages = ({ currentPage, totalPages, maxDisplayed }: UsePaginationParameters): Page[] => {
+const getPages = ({ activePage, totalPages, maxDisplayed }: GetPagesParameters): Page[] => {
     const pages: Page[] = [1]
 
     if (totalPages > 1) {
@@ -69,11 +68,11 @@ const getPages = ({ currentPage, totalPages, maxDisplayed }: UsePaginationParame
     const maximumBoundary = totalPages - 1
 
     const siblingsStart = smallest({
-        values: [currentPage - minDisplayed / 2, totalPages - maxDisplayed],
+        values: [activePage - minDisplayed / 2, totalPages - maxDisplayed],
         minimum: minimumBoundary,
     })
     const siblingsEnd = highest({
-        values: [currentPage + minDisplayed / 2, maxDisplayed + 1],
+        values: [activePage + minDisplayed / 2, maxDisplayed + 1],
         maximum: maximumBoundary,
     })
 
@@ -92,17 +91,32 @@ const getPages = ({ currentPage, totalPages, maxDisplayed }: UsePaginationParame
     return pages
 }
 
-export const usePagination = ({
-    currentPage,
+interface UseOffsetPaginationParameters {
+    page: number
+    onChange?: (page: number) => void
+    totalPages: number
+    maxDisplayed: number
+}
+
+/**
+ * useOffsetPagination is a hook to easily manage offset-pagination logic.
+ * This hook is capable of controlling its own state, however it is possible to override this
+ * by listening to the component state with `onChange` and updating `page` manually
+ */
+export function useOffsetPagination({
+    page,
     onChange,
     totalPages,
     maxDisplayed = totalPages,
-}: UsePaginationParameters): PaginationItem[] => {
-    const [activePage, setActivePage] = useControlledState({ value: currentPage, onChange })
+}: UseOffsetPaginationParameters): PaginationItem[] {
+    const [activePage, setActivePage] = useControlledState({
+        value: page,
+        onChange,
+    })
 
     const goTo = useCallback((page: number) => () => setActivePage(page), [setActivePage])
 
-    const pages: PaginationItem[] = getPages({ currentPage: activePage, totalPages, maxDisplayed }).map(page => {
+    const pages: PaginationItem[] = getPages({ activePage, totalPages, maxDisplayed }).map(page => {
         if (page === '...') {
             return {
                 content: page,
@@ -115,7 +129,7 @@ export const usePagination = ({
         return {
             content: page,
             type: 'page',
-            active: currentPage === page,
+            active: activePage === page,
             'aria-label': `Go to page ${page}`,
             disabled: false,
             onClick: goTo(page),

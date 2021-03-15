@@ -2,64 +2,73 @@ import React from 'react'
 import classNames from 'classnames'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import useResizeObserver from 'use-resize-observer/polyfilled'
+import useResizeObserver from 'use-resize-observer'
 import { useDebounce } from '../../hooks/useDebounce'
 import { omit } from 'lodash'
-import { usePagination } from '../../hooks/usePagination'
+import { useOffsetPagination } from '../../hooks'
+import { createAggregateError } from '../../../../shared/src/util/errors'
 
 interface PageButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     active?: boolean
 }
 
-const PageButton = React.forwardRef<HTMLButtonElement, PageButtonProps>(({ children, active, ...props }, reference) => (
+const PageButton: React.FunctionComponent<PageButtonProps> = ({ children, active, ...props }) => (
     <button
         type="button"
-        className={classNames('btn', 'mx-1', 'pagination__button', active && 'btn-primary')}
+        className={classNames('btn', 'mx-1', 'page-selector__button', active && 'btn-primary')}
         aria-current={active}
-        ref={reference}
         {...props}
     >
         {children}
     </button>
-))
+)
 
-export interface PaginationProps {
+const isMobileViewport = (width: number): boolean => width < 576
+
+export interface PageSelectorProps {
+    /** Current active page */
     currentPage: number
+    /** Fired on page change */
     onPageChange: (page: number) => void
+    /** Maximum pages to use */
     totalPages: number
     className?: string
 }
 
-const validatePositiveInteger = (name: string, value: number): string[] => {
+const validatePositiveInteger = (name: string, value: number): Error[] => {
     if (value > 0) {
         return []
     }
-    return [`${name} must have a value greater than 0`]
+    return [new Error(`${name} must have a value greater than 0`)]
 }
 
-const validateProps = (props: PaginationProps): void => {
+const validateProps = (props: PageSelectorProps): void => {
     const errors = [
         ...validatePositiveInteger('totalPages', props.totalPages),
         ...validatePositiveInteger('currentPage', props.currentPage),
     ]
 
     if (props.currentPage > props.totalPages) {
-        errors.push('currentPage must be not be greater than totalPages')
+        errors.push(new Error('currentPage must be not be greater than totalPages'))
     }
 
     if (errors.length > 0) {
-        throw new Error(`Invalid configuration:\n${errors.map(error => `— ${error}`).join('\n')}`)
+        throw createAggregateError(errors)
     }
 }
 
-export const Pagination: React.FunctionComponent<PaginationProps> = props => {
+/**
+ * PageSelector should be used to render offset-pagination controls.
+ * It is a controlled-component, the `currentPage` should be controlled by the consumer.
+ */
+export const PageSelector: React.FunctionComponent<PageSelectorProps> = props => {
     validateProps(props)
 
     const { totalPages, currentPage, className, onPageChange } = props
     const { ref, width } = useDebounce(useResizeObserver(), 100)
-    const shouldShrink = width !== undefined && width <= 576
-    const pages = usePagination({
-        currentPage,
+    const shouldShrink = width !== undefined && isMobileViewport(width)
+    const pages = useOffsetPagination({
+        page: currentPage,
         onChange: onPageChange,
         totalPages,
         maxDisplayed: shouldShrink ? 3 : 5,
@@ -67,7 +76,7 @@ export const Pagination: React.FunctionComponent<PaginationProps> = props => {
 
     return (
         <nav>
-            <ul ref={ref} className={classNames('pagination', className)}>
+            <ul ref={ref} className={classNames('page-selector', className)}>
                 {pages.map((page, index) => {
                     if (page.type === 'previous' || page.type === 'next') {
                         return (

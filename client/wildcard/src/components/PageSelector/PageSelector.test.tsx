@@ -1,11 +1,11 @@
 import React from 'react'
 import { render, RenderResult, cleanup, fireEvent } from '@testing-library/react'
-import { Pagination, PaginationProps } from './Pagination'
+import { PageSelector, PageSelectorProps } from './PageSelector'
 import sinon from 'sinon'
 
-describe('Pagination', () => {
+describe('PageSelector', () => {
     let queries: RenderResult
-    const renderWithProps = (props: PaginationProps): RenderResult => render(<Pagination {...props} />)
+    const renderWithProps = (props: PageSelectorProps): RenderResult => render(<PageSelector {...props} />)
     const onPageChangeMock = sinon.spy()
 
     beforeEach(() => {
