@@ -122,6 +122,46 @@ func TestMarkRepositoryAsDirty(t *testing.T) {
 	}
 }
 
+func TestSkipsDeletedRepositories(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore()
+
+	for _, repositoryID := range []int{50, 51} {
+		if err := store.MarkRepositoryAsDirty(context.Background(), repositoryID); err != nil {
+			t.Errorf("unexpected error marking repository as dirty: %s", err)
+		}
+	}
+
+	createQuery := sqlf.Sprintf(`INSERT INTO repo (id, name, deleted_at) VALUES (51, 'should be dirty', NULL)`)
+	if err := store.Exec(context.Background(), createQuery); err != nil {
+		t.Errorf("Failed to create repo: %s", err)
+	}
+
+	deleteQuery := sqlf.Sprintf(`INSERT INTO repo (id, name, deleted_at) VALUES (50, 'should not be dirty', %s)`, time.Now())
+	if err := store.Exec(context.Background(), deleteQuery); err != nil {
+		t.Errorf("Failed to delete repo: %s", err)
+	}
+
+	repositoryIDs, err := store.DirtyRepositories(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error listing dirty repositories: %s", err)
+	}
+
+	var keys []int
+	for repositoryID := range repositoryIDs {
+		keys = append(keys, repositoryID)
+	}
+	sort.Ints(keys)
+
+	if diff := cmp.Diff([]int{51}, keys); diff != "" {
+		t.Errorf("unexpected repository ids (-want +got):\n%s", diff)
+	}
+}
+
 func TestCommitGraphMetadata(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
