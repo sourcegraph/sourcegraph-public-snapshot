@@ -24,7 +24,7 @@ If you're deploying a new Enterprise instance, this page covers our most frequen
 - [Digital Ocean installation](../admin/install/docker-compose/digitalocean.md)
 - [Google Cloud installlation](../admin/install/docker-compose/google_cloud.md)
 
-### Kube admin
+### Kubernetes admin
 - [Basic installation guide](../admin/install/kubernetes/index.md)
 - [Provisioning a Kubernetes cluster](../admin/install/kubernetes/configure.md#configuring-sourcegraph)
 - [Amazon EKS](../admin/install/kubernetes/eks.md)
@@ -32,6 +32,8 @@ If you're deploying a new Enterprise instance, this page covers our most frequen
 - [Google Kubernetes Engine](https://cloud.google.com/kubernetes-engine/docs/quickstart)
 - [Azure](../admin/install/kubernetes/azure.md)
 - [Scaling](../admin/install/kubernetes/scale.md#improving-performance-with-a-large-number-of-repositories) 
+- [Ingress controller](../admin/install/kubernetes/configure.md#ingress-controller-recommended)
+- [Common configuration](../admin/install/kubernetes/configure.md#common-configuration)
 
 ## User articles
 - [Search syntax](../code_search/reference/queries.md)
