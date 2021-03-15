@@ -33,6 +33,7 @@ All notable changes to Sourcegraph are documented in this file.
   quoted. [#18642](https://github.com/sourcegraph/sourcegraph/pull/18642)
 - Sourcegraph is now built with Go 1.16. [#18447](https://github.com/sourcegraph/sourcegraph/pull/18447)
 - Cursor hover information in the search query bar will now display after 150ms (previously 0ms). [#18916](https://github.com/sourcegraph/sourcegraph/pull/18916)
+- The `repo.cloned` column is being deprecated in favour of `gitserver_repos.clone_status`. It will be removed in a subsequent release.
 
 ### Fixed
 

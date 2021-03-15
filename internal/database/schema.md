@@ -1935,53 +1935,6 @@ Indexes:
           WHERE ((c.batch_change_ids ? (batch_changes.id)::text) AND (namespace_user.deleted_at IS NULL) AND (namespace_org.deleted_at IS NULL)))));
 ```
 
-# View "public.repo_with_cloned"
-```
-        Column         |           Type           | Modifiers 
------------------------+--------------------------+-----------
- id                    | integer                  | 
- name                  | citext                   | 
- description           | text                     | 
- fork                  | boolean                  | 
- created_at            | timestamp with time zone | 
- updated_at            | timestamp with time zone | 
- external_id           | text                     | 
- external_service_type | text                     | 
- external_service_id   | text                     | 
- archived              | boolean                  | 
- uri                   | citext                   | 
- deleted_at            | timestamp with time zone | 
- metadata              | jsonb                    | 
- private               | boolean                  | 
- cloned                | boolean                  | 
-
-```
-
-## View query:
-
-```sql
- SELECT repo.id,
-    repo.name,
-    repo.description,
-    repo.fork,
-    repo.created_at,
-    repo.updated_at,
-    repo.external_id,
-    repo.external_service_type,
-    repo.external_service_id,
-    repo.archived,
-    repo.uri,
-    repo.deleted_at,
-    repo.metadata,
-    repo.private,
-        CASE
-            WHEN (gr.clone_status IS NULL) THEN repo.cloned
-            ELSE (gr.clone_status = 'cloned'::text)
-        END AS cloned
-   FROM (repo
-     LEFT JOIN gitserver_repos gr ON ((repo.id = gr.repo_id)));
-```
-
 # View "public.site_config"
 ```
    Column    |  Type   | Modifiers 
