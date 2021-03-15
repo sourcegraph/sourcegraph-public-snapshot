@@ -1,6 +1,9 @@
 package semantic
 
-import "sort"
+import (
+	"context"
+	"sort"
+)
 
 // FindRanges filters the given ranges and returns those that contain the position constructed
 // from line and character. The order of the output slice is "outside-in", so that earlier
@@ -103,4 +106,121 @@ func ComparePosition(r RangeData, line, character int) int {
 // given start and end lines.
 func RangeIntersectsSpan(r RangeData, startLine, endLine int) bool {
 	return (startLine <= r.StartLine && r.StartLine < endLine) || (startLine <= r.EndLine && r.EndLine < endLine)
+}
+
+// CAUTION: Data is not deep copied.
+func GroupedBundleDataMapsToChans(ctx context.Context, maps *GroupedBundleDataMaps) *GroupedBundleDataChans {
+	documentChan := make(chan KeyedDocumentData, len(maps.Documents))
+	go func() {
+		defer close(documentChan)
+		for path, doc := range maps.Documents {
+			select {
+			case documentChan <- KeyedDocumentData{
+				Path:     path,
+				Document: doc,
+			}:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+	resultChunkChan := make(chan IndexedResultChunkData, len(maps.ResultChunks))
+	go func() {
+		defer close(resultChunkChan)
+
+		for idx, chunk := range maps.ResultChunks {
+			select {
+			case resultChunkChan <- IndexedResultChunkData{
+				Index:       idx,
+				ResultChunk: chunk,
+			}:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+	monikerDefsChan := make(chan MonikerLocations)
+	go func() {
+		defer close(monikerDefsChan)
+
+		for scheme, identMap := range maps.Definitions {
+			for ident, locations := range identMap {
+				select {
+				case monikerDefsChan <- MonikerLocations{
+					Scheme:     scheme,
+					Identifier: ident,
+					Locations:  locations,
+				}:
+				case <-ctx.Done():
+					return
+				}
+			}
+		}
+	}()
+	monikerRefsChan := make(chan MonikerLocations)
+	go func() {
+		defer close(monikerRefsChan)
+
+		for scheme, identMap := range maps.References {
+			for ident, locations := range identMap {
+				select {
+				case monikerRefsChan <- MonikerLocations{
+					Scheme:     scheme,
+					Identifier: ident,
+					Locations:  locations,
+				}:
+				case <-ctx.Done():
+					return
+				}
+			}
+		}
+	}()
+
+	return &GroupedBundleDataChans{
+		Meta:              maps.Meta,
+		Documents:         documentChan,
+		ResultChunks:      resultChunkChan,
+		Definitions:       monikerDefsChan,
+		References:        monikerRefsChan,
+		Packages:          maps.Packages,
+		PackageReferences: maps.PackageReferences,
+	}
+}
+
+// CAUTION: Data is not deep copied.
+func GroupedBundleDataChansToMaps(chans *GroupedBundleDataChans) *GroupedBundleDataMaps {
+	documentMap := make(map[string]DocumentData)
+	for keyedDocumentData := range chans.Documents {
+		documentMap[keyedDocumentData.Path] = keyedDocumentData.Document
+	}
+	resultChunkMap := make(map[int]ResultChunkData)
+	for indexedResultChunk := range chans.ResultChunks {
+		resultChunkMap[indexedResultChunk.Index] = indexedResultChunk.ResultChunk
+	}
+	monikerDefsMap := make(map[string]map[string][]LocationData)
+	for monikerDefs := range chans.Definitions {
+		identMap, exists := monikerDefsMap[monikerDefs.Scheme]
+		if !exists {
+			identMap = make(map[string][]LocationData)
+		}
+		identMap[monikerDefs.Identifier] = monikerDefs.Locations
+	}
+	monikerRefsMap := make(map[string]map[string][]LocationData)
+	for monikerRefs := range chans.References {
+		identMap, exists := monikerRefsMap[monikerRefs.Scheme]
+		if !exists {
+			identMap = make(map[string][]LocationData)
+		}
+		identMap[monikerRefs.Identifier] = monikerRefs.Locations
+	}
+
+	return &GroupedBundleDataMaps{
+		Meta:              chans.Meta,
+		Documents:         documentMap,
+		ResultChunks:      resultChunkMap,
+		Definitions:       monikerDefsMap,
+		References:        monikerRefsMap,
+		Packages:          chans.Packages,
+		PackageReferences: chans.PackageReferences,
+	}
 }

@@ -11,11 +11,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/datastructures"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/pathexistence"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 )
 
 // Correlate reads LSIF data from the given reader and returns a correlation state object with
 // the same data canonicalized and pruned for storage.
-func Correlate(ctx context.Context, r io.Reader, dumpID int, root string, getChildren pathexistence.GetChildrenFunc) (*GroupedBundleDataChans, error) {
+func Correlate(ctx context.Context, r io.Reader, dumpID int, root string, getChildren pathexistence.GetChildrenFunc) (*semantic.GroupedBundleDataChans, error) {
 	// Read raw upload stream and return a correlation state
 	state, err := correlateFromReader(ctx, r, root)
 	if err != nil {
