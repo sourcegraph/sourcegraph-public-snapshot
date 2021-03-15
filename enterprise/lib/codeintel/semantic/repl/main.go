@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -129,8 +130,6 @@ func main() {
 
 			break
 
-		case "?", "h", "help":
-			fmt.Println(helpMsg)
 		default:
 			fmt.Println(helpMsg)
 		}
@@ -176,9 +175,9 @@ func queryBundle(bundle *semantic.GroupedBundleDataMaps, path string, line, char
 	return nil
 }
 
-func makeExistenceFunc(path string) pathexistence.GetChildrenFunc {
+func makeExistenceFunc(root string) pathexistence.GetChildrenFunc {
 	return func(ctx context.Context, dirnames []string) (map[string][]string, error) {
-		cmd := exec.Command("git", append([]string{"ls-tree", "--name-only", "HEAD"}, cleanDirectoriesForLsTree(dirnames)...)...)
+		cmd := exec.Command("git", append([]string{"-C", root, "ls-tree", "--name-only", "HEAD"}, cleanDirectoriesForLsTree(dirnames)...)...)
 		out, err := cmd.CombinedOutput()
 		if err != nil {
 			fmt.Printf("git ls-tree failed with output %v\n", string(out))
@@ -190,8 +189,24 @@ func makeExistenceFunc(path string) pathexistence.GetChildrenFunc {
 }
 
 func readBundle(dumpID int, root string) (*semantic.GroupedBundleDataMaps, error) {
+	root, err := filepath.Abs(root)
+	if err != nil {
+		fmt.Printf("Couldn't get absolute path of root %v\n", root)
+		return nil, err
+	}
 	dumpPath := path.Join(root, "dump.lsif")
 	getChildrenFunc := makeExistenceFunc(root)
+
+	gitRoot, err := gitRoot(root)
+	if err != nil {
+		return nil, err
+	}
+
+	relRoot, err := filepath.Rel(gitRoot, root)
+	// workaround: filepath.Rel returns a path starting with '../' if gitRoot and root are equal
+	if gitRoot == root {
+		relRoot = ""
+	}
 
 	file, err := os.Open(dumpPath)
 	if err != nil {
@@ -200,13 +215,23 @@ func readBundle(dumpID int, root string) (*semantic.GroupedBundleDataMaps, error
 	}
 	defer file.Close()
 
-	bundle, err := conversion.Correlate(context.Background(), file, dumpID, "", getChildrenFunc)
+	bundle, err := conversion.Correlate(context.Background(), file, dumpID, relRoot, getChildrenFunc)
 	if err != nil {
 		fmt.Println("Conversion failed")
 		return nil, err
 	}
 
 	return semantic.GroupedBundleDataChansToMaps(bundle), nil
+}
+
+func gitRoot(path string) (string, error) {
+	cmd := exec.Command("git", "-C", path, "rev-parse", "--show-toplevel")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Printf("git rev-parse --show-toplevel failed with output %v\n", string(out))
+		return "", err
+	}
+	return strings.Split(string(out), "\n")[0], nil
 }
 
 // finds all documents which have definition edges pointing into the argument list
