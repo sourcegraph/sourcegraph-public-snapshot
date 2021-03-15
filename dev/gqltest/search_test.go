@@ -897,6 +897,108 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 	})
 
+	t.Run("Predicate Queries", func(t *testing.T) {
+		type counts struct {
+			Repo    int
+			Commit  int
+			Content int
+			Symbol  int
+			File    int
+		}
+
+		countResults := func(results []*gqltestutil.AnyResult) counts {
+			var count counts
+			for _, res := range results {
+				switch v := res.Inner.(type) {
+				case gqltestutil.CommitResult:
+					count.Commit += 1
+				case gqltestutil.RepositoryResult:
+					count.Repo += 1
+				case gqltestutil.FileResult:
+					count.Symbol += len(v.Symbols)
+					for _, lm := range v.LineMatches {
+						count.Content += len(lm.OffsetAndLengths)
+					}
+					if len(v.Symbols) == 0 && len(v.LineMatches) == 0 {
+						count.File += 1
+					}
+				}
+			}
+			return count
+		}
+
+		tests := []struct {
+			name   string
+			query  string
+			counts counts
+		}{
+			{
+				`repo contains file`,
+				`repo:contains(file:go\.mod)`,
+				counts{Repo: 2},
+			},
+			{
+				`no repo contains file`,
+				`repo:contains(file:noexist.go)`,
+				counts{},
+			},
+			{
+				`no repo contains file with pattern`,
+				`repo:contains(file:noexist.go) test`,
+				counts{},
+			},
+			{
+				`repo contains content`,
+				`repo:contains(content:nextFileFirstLine)`,
+				counts{Repo: 1},
+			},
+			{
+				`repo contains content default`,
+				`repo:contains(nextFileFirstLine)`,
+				counts{Repo: 1},
+			},
+			{
+				`repo contains file then search common`,
+				`repo:contains(file:go.mod) count:100 fmt`,
+				counts{Content: 61},
+			},
+			{
+				`repo contains with matching repo filter`,
+				`repo:go-diff repo:contains(file:diff.proto)`,
+				counts{Repo: 1},
+			},
+			{
+				`repo contains with non-matching repo filter`,
+				`repo:nonexist repo:contains(file:diff.proto)`,
+				counts{Repo: 0},
+			},
+			{
+				`commit results without repo filter`,
+				`type:commit LSIF`,
+				counts{Commit: 9},
+			},
+			{
+				`commit results with repo filter`,
+				`repo:contains(file:diff.pb.go) type:commit LSIF`,
+				counts{Commit: 1},
+			},
+		}
+
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				results, err := client.SearchAll(test.query)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				count := countResults(results)
+				if diff := cmp.Diff(test.counts, count); diff != "" {
+					t.Fatalf("mismatch (-want +got):\n%s", diff)
+				}
+			})
+		}
+	})
+
 	t.Run("Select Queries", func(t *testing.T) {
 		type counts struct {
 			Repo    int
