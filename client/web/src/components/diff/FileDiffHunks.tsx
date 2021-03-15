@@ -13,7 +13,7 @@ import { FileDiffFields } from '../../graphql-operations'
 import { ViewerId } from '../../../../shared/src/api/viewerTypes'
 import { ExtensionInfo } from './FileDiffConnection'
 import { wrapRemoteObservable } from '../../../../shared/src/api/client/api/common'
-import useDeepCompareEffect from 'use-deep-compare-effect'
+import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 
 export interface FileHunksProps extends ThemeProps {
@@ -82,8 +82,9 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
     ])
 
     const extensionInfoChanges = useMemo(() => new ReplaySubject<FileHunksProps['extensionInfo'] | undefined>(1), [])
-    useDeepCompareEffect(() => {
+    useDeepCompareEffectNoCheck(() => {
         extensionInfoChanges.next(extensionInfo)
+        // Use `useDeepCompareEffectNoCheck` since extensionInfo can be undefined
     }, [extensionInfo])
 
     // Listen for line decorations from extensions

@@ -16,7 +16,7 @@ import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { Controller as ExtensionsController } from '../../../../shared/src/extensions/controller'
 import { isDefined, property } from '../../../../shared/src/util/types'
 import { TextDocumentData } from '../../../../shared/src/api/contract'
-import useDeepCompareEffect from 'use-deep-compare-effect'
+import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
 class FilteredFileDiffConnection extends FilteredConnection<FileDiffFields, NodeComponentProps> {}
 
@@ -83,8 +83,9 @@ export const FileDiffConnection: React.FunctionComponent<FileDiffConnectionProps
     ])
 
     const extensionInfoChanges = useMemo(() => new ReplaySubject<ExtensionInfo | undefined>(1), [])
-    useDeepCompareEffect(() => {
+    useDeepCompareEffectNoCheck(() => {
         extensionInfoChanges.next(props.nodeComponentProps?.extensionInfo)
+        // Use `useDeepCompareEffectNoCheck` since extensionInfo can be undefined
     }, [props.nodeComponentProps?.extensionInfo])
 
     // On unmount, get rid of all viewers
@@ -133,9 +134,8 @@ export const FileDiffConnection: React.FunctionComponent<FileDiffConnectionProps
                                 // 1: Collect all base and head into uri -> initData (both document and viewer)
                                 // 2: Iterate over existing uris w/ viewerIds, if not included in new record, schedule for removal.
                                 // 3: Add all new text documents
-                                // 4: Add new viewers (parallel)
-                                // 5: Remove old viewers (parallel)
-                                // const currentViewerIdByUri = getCurrentViewerIdByUri()
+                                // 4: Remove old viewers
+                                // 5: Add new viewers
                                 return from(
                                     setViewerIds(async currentViewerIdByUri => {
                                         const textDocumentDataByUri: Record<string, TextDocumentData> = {}
@@ -228,13 +228,6 @@ export const FileDiffConnection: React.FunctionComponent<FileDiffConnectionProps
                                         for (const { uri, viewerId } of viewerIdsWithUri) {
                                             currentViewerIdByUri.set(uri, viewerId)
                                         }
-                                        console.log({
-                                            textDocumentDataByUri,
-                                            viewerDataByUri,
-                                            viewersToRemove,
-                                            currentViewerIdByUri,
-                                            viewerIdsWithUri,
-                                        })
 
                                         return new Map([...currentViewerIdByUri])
                                     })
