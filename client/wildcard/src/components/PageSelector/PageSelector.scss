@@ -10,6 +10,7 @@
     &__button {
         min-width: 2rem;
         padding: 0.25rem 0.5rem;
+        transition: none; // Remove transitions to improve pagination layout shifting
 
         &:focus,
         &:hover {

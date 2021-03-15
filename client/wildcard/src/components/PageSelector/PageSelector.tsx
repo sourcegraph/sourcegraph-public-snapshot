@@ -78,9 +78,10 @@ export const PageSelector: React.FunctionComponent<PageSelectorProps> = props =>
         <nav>
             <ul ref={ref} className={classNames('page-selector', className)}>
                 {pages.map((page, index) => {
+                    const key = page.type === 'page' ? page.content : `${page.type}${index}`
                     if (page.type === 'previous' || page.type === 'next') {
                         return (
-                            <li key={index}>
+                            <li key={key}>
                                 <PageButton {...omit(page, 'type')}>
                                     {page.type === 'previous' && (
                                         <ChevronLeftIcon className="icon-inline" aria-hidden={true} />
@@ -95,7 +96,7 @@ export const PageSelector: React.FunctionComponent<PageSelectorProps> = props =>
                     }
 
                     return (
-                        <li key={index}>
+                        <li key={key}>
                             <PageButton {...omit(page, 'type')}>{page.content}</PageButton>
                         </li>
                     )
