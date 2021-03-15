@@ -344,6 +344,13 @@ func (p *Provider) getGroupMembers(ctx context.Context, group string) ([]string,
 // FetchRepoPerms returns a list of users that have access to the given
 // repository on the Perforce Server.
 func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error) {
+	if repo == nil {
+		return nil, errors.New("no repository provided")
+	} else if !extsvc.IsHostOfRepo(p.codeHost, &repo.ExternalRepoSpec) {
+		return nil, fmt.Errorf("not a code host of the repository: want %q but have %q",
+			repo.ServiceID, p.codeHost.ServiceID)
+	}
+
 	rc, _, err := gitserver.DefaultClient.P4Exec(ctx, p.host, p.user, p.password, "protects", "-a", repo.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "list ACLs by depot")
