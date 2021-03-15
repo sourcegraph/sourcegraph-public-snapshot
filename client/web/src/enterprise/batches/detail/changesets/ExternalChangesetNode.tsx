@@ -115,7 +115,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
             </span>
             <div
                 className={classNames(
-                    'align-self-stretch d-none d-md-flex justify-content-center',
+                    'align-self-center d-none d-md-flex justify-content-center',
                     node.diffStat && 'p-2'
                 )}
             >
