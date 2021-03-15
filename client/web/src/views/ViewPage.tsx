@@ -25,7 +25,9 @@ export const ViewPage: React.FunctionComponent<Props> = ({ viewID, extraPath, lo
         [extraPath, location.search]
     )
 
-    const view = useObservable(useMemo(() => getViewForID(viewID, queryParameters), [queryParameters, viewID]))
+    const view = useObservable(
+        useMemo(() => getViewForID(viewID, queryParameters), [queryParameters, viewID, getViewForID])
+    )
 
     if (view === undefined) {
         return <LoadingSpinner className="icon-inline" />

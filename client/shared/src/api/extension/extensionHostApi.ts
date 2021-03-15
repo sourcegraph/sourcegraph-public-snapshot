@@ -91,7 +91,10 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
             state.roots.next(Object.freeze(state.roots.value.filter(workspace => workspace.uri.href !== uri)))
             state.rootChanges.next()
         },
-        setVersionContext: context => state.versionContext.next(context),
+        setVersionContext: context => {
+            state.versionContext = context
+            state.versionContextChanges.next(context)
+        },
 
         // Search
         transformSearchQuery: query =>

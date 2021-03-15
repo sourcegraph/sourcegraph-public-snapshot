@@ -42,7 +42,7 @@ import {
     mapTo,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../../shared/src/actions/ActionItem'
-import { DecorationMapByLine } from '../../../../../shared/src/api/client/services/decoration'
+import { DecorationMapByLine } from '../../../../../shared/src/api/extension/api/decorations'
 import {
     isPrivateRepoPublicSourcegraphComErrorLike,
     isRepoNotFoundErrorLike,

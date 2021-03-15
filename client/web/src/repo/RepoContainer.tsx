@@ -253,20 +253,26 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
             })
 
         if (workspaceRootUri) {
-            props.extensionsController.extHostAPI.then(extHostAPI =>
-                extHostAPI.addWorkspaceRoot({
-                    uri: workspaceRootUri,
-                    inputRevision: revision || '',
+            props.extensionsController.extHostAPI
+                .then(extensionHostAPI =>
+                    extensionHostAPI.addWorkspaceRoot({
+                        uri: workspaceRootUri,
+                        inputRevision: revision || '',
+                    })
+                )
+                .catch(error => {
+                    console.error('Error adding workspace root', error)
                 })
-            )
         }
 
         // Clear the Sourcegraph extensions model's roots when navigating away.
         return () => {
             if (workspaceRootUri) {
-                props.extensionsController.extHostAPI.then(extHostAPI =>
-                    extHostAPI.removeWorkspaceRoot(workspaceRootUri)
-                )
+                props.extensionsController.extHostAPI
+                    .then(extensionHostAPI => extensionHostAPI.removeWorkspaceRoot(workspaceRootUri))
+                    .catch(error => {
+                        console.error('Error removing workspace root', error)
+                    })
             }
         }
     }, [props.extensionsController, repoName, resolvedRevisionOrError, revision])

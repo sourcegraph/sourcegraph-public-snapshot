@@ -19,6 +19,7 @@ describe('ActionItem', () => {
 
     test('Renders contributed action items', async () => {
         let component!: ReactTestRenderer
+        // eslint-disable-next-line @typescript-eslint/require-await
         await act(async () => {
             component = renderer.create(
                 <ActionsNavItems

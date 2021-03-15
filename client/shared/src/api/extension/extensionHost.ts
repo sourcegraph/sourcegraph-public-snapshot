@@ -122,7 +122,7 @@ function createExtensionAndExtensionHostAPIs(
     /** Proxy to main thread */
     const proxy = comlink.wrap<ClientAPI>(endpoints.proxy)
 
-    // For debugging/tests. TODO(tj): can deprecate
+    // For debugging/tests.
     const sync = async (): Promise<void> => {
         await proxy.ping()
     }

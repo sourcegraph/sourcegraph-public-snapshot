@@ -51,13 +51,13 @@ export function createExtensionAPI(state: ExtensionHostState, mainAPI: Remote<Ma
             return state.roots.value
         },
         get versionContext() {
-            return state.versionContext.value
+            return state.versionContext
         },
         onDidOpenTextDocument: state.openedTextDocuments.asObservable(),
         openedTextDocuments: state.openedTextDocuments.asObservable(),
         onDidChangeRoots: state.roots.pipe(mapTo(undefined)),
         rootChanges: state.rootChanges.asObservable(),
-        versionContextChanges: state.versionContext.pipe(mapTo(undefined)),
+        versionContextChanges: state.versionContextChanges.asObservable(),
     }
 
     const createProgressReporter = async (

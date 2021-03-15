@@ -213,7 +213,7 @@ describe('Windows (integration)', () => {
 
         test('Window#showInputBox', async () => {
             const { extensionAPI } = await integrationTestContext({
-                showInputBox: options => Promise.resolve(`default value: ${options?.value}`),
+                showInputBox: options => Promise.resolve('default value: ' + (options?.value || '')),
             })
 
             expect(await extensionAPI.app.activeWindow!.showInputBox({ prompt: 'a', value: 'b' })).toBe(

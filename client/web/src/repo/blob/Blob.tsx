@@ -119,9 +119,9 @@ const domFunctions = {
  *
  * - blobInfoChanges: emits when document info has loaded from the backend (including raw HTML)
  * - viewerUpdates: emits when the extension host confirms that it knows about the current viewer.
- *  message to extension host is sent on each blobInfo change, and when that message receives a response
- *  with the viewerId (handle to viewer on extension host side), viewerUpdates emits it along with
- *  other data (such as subscriptions, extension host API) relevant to observers for this viewer.
+ * message to extension host is sent on each blobInfo change, and when that message receives a response
+ * with the viewerId (handle to viewer on extension host side), viewerUpdates emits it along with
+ * other data (such as subscriptions, extension host API) relevant to observers for this viewer.
  *
  * The possible states that Blob can be in:
  * - "extension host bootstrapping": Initial page load, the initial set of extensions

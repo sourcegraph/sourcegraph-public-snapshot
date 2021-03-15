@@ -32,7 +32,8 @@ export function createExtensionHostState(
 
         roots: new BehaviorSubject<readonly ExtensionWorkspaceRoot[]>([]),
         rootChanges: new Subject<void>(),
-        versionContext: new BehaviorSubject<string | undefined>(undefined),
+        versionContextChanges: new Subject<string | undefined>(),
+        versionContext: undefined,
 
         // Most extensions never call `configuration.get()` synchronously in `activate()` to get
         // the initial settings data, and instead only subscribe to configuration changes.
@@ -105,7 +106,8 @@ export interface ExtensionHostState {
     // Workspace
     roots: BehaviorSubject<readonly ExtensionWorkspaceRoot[]>
     rootChanges: Subject<void>
-    versionContext: BehaviorSubject<string | undefined>
+    versionContextChanges: Subject<string | undefined>
+    versionContext: string | undefined
 
     // Search
     queryTransformers: BehaviorSubject<readonly sourcegraph.QueryTransformer[]>

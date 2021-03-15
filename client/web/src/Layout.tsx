@@ -203,7 +203,9 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             }
 
             if (versionContext !== currentVersionContext) {
-                setVersionContext(versionContext)
+                setVersionContext(versionContext).catch(error => {
+                    console.error('Error sending version context to extensions', error)
+                })
             }
 
             if (searchContextSpec && searchContextSpec !== selectedSearchContextSpec) {

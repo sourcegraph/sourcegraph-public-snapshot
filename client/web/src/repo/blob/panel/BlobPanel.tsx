@@ -1,10 +1,10 @@
 import * as H from 'history'
-import React, { useCallback, useEffect, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 import { from, Observable, ReplaySubject, Subscription } from 'rxjs'
 import { map, switchMap, tap } from 'rxjs/operators'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { ReferenceParameters, TextDocumentPositionParameters } from '../../../../../shared/src/api/protocol'
-import { ActivationProps } from '../../../../../shared/src/components/activation/Activation'
+import { Activation, ActivationProps } from '../../../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { AbsoluteRepoFile, ModeSpec, parseHash, UIPositionSpec } from '../../../../../shared/src/util/url'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
@@ -54,6 +54,10 @@ export function useBlobPanelViews({
 }: Props): void {
     const subscriptions = useMemo(() => new Subscription(), [])
 
+    // Activation props are not stable
+    const activationReference = useRef<Activation | undefined>(activation)
+    activationReference.current = activation
+
     // Creates source for definition and reference panels
     const createLocationProvider = useCallback(
         <P extends TextDocumentPositionParameters>(
@@ -89,41 +93,41 @@ export function useBlobPanelViews({
                             ...extraParameters,
                         } as P).pipe(
                             tap(({ result: locations }) => {
-                                if (activation && id === 'references' && locations.length > 0) {
-                                    activation.update({ FoundReferences: true })
+                                if (activationReference.current && id === 'references' && locations.length > 0) {
+                                    activationReference.current.update({ FoundReferences: true })
                                 }
                             })
                         ),
                     }
                 })
             ),
-        [extensionsController, activation, subscriptions]
+        [extensionsController, subscriptions]
     )
 
     // Source for history panel
     const panelSubject = useMemo(() => {
         const parsedHash = parseHash(location.hash)
         return {
-            repoID: repoID,
-            repoName: repoName,
-            commitID: commitID,
-            revision: revision,
-            filePath: filePath,
-            mode: mode,
+            repoID,
+            repoName,
+            commitID,
+            revision,
+            filePath,
+            mode,
             position:
                 parsedHash.line !== undefined
                     ? { line: parsedHash.line, character: parsedHash.character || 0 }
                     : undefined,
             hash: location.hash,
-            history: history,
-            location: location,
+            history,
+            location,
         }
-    }, [location, repoID])
+    }, [commitID, filePath, history, location, mode, repoID, repoName, revision])
 
     const panelSubjectChanges = useMemo(() => new ReplaySubject<PanelSubject>(1), [])
     useEffect(() => {
         panelSubjectChanges.next(panelSubject)
-    }, [panelSubject])
+    }, [panelSubject, panelSubjectChanges])
 
     useBuiltinPanelViews(
         useMemo(
@@ -172,9 +176,9 @@ export function useBlobPanelViews({
                     ),
                 },
             ],
-            [] // Activation props are not stable
+            [createLocationProvider, extensionsController.extHostAPI, panelSubjectChanges]
         )
     )
 
-    useEffect(() => () => subscriptions.unsubscribe(), [])
+    useEffect(() => () => subscriptions.unsubscribe(), [subscriptions])
 }
