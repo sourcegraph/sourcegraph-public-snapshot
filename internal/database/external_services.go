@@ -855,17 +855,17 @@ func (e *ExternalServiceStore) Delete(ctx context.Context, id int64) error {
 	}
 	e.ensureStore()
 
-	res, err := e.Handle().DB().ExecContext(ctx, "UPDATE external_services SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
+	// Delete the external service, its associations with repos and any repos that would remain orphan.
+	var deleted bool
+	err := e.QueryRow(ctx, sqlf.Sprintf("SELECT delete_external_service(%d)", id)).Scan(&deleted)
 	if err != nil {
 		return err
 	}
-	nrows, err := res.RowsAffected()
-	if err != nil {
-		return err
+
+	if !deleted {
+		return &externalServiceNotFoundError{id: id}
 	}
-	if nrows == 0 {
-		return externalServiceNotFoundError{id: id}
-	}
+
 	return nil
 }
 

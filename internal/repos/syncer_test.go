@@ -2148,8 +2148,7 @@ func testDeleteExternalService(db *sql.DB) func(t *testing.T, store *repos.Store
 			}
 
 			// Delete the first service
-			svc1.DeletedAt = now
-			if err := store.ExternalServiceStore.Upsert(ctx, svc1); err != nil {
+			if err := store.ExternalServiceStore.Delete(ctx, svc1.ID); err != nil {
 				t.Fatal(err)
 			}
 
@@ -2160,8 +2159,7 @@ func testDeleteExternalService(db *sql.DB) func(t *testing.T, store *repos.Store
 			assertDeletedRepoCount(ctx, t, db, 0)
 
 			// Delete the second service
-			svc2.DeletedAt = now
-			if err := store.ExternalServiceStore.Upsert(ctx, svc2); err != nil {
+			if err := store.ExternalServiceStore.Delete(ctx, svc2.ID); err != nil {
 				t.Fatal(err)
 			}
 
