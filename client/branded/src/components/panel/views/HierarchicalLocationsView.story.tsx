@@ -6,7 +6,7 @@ import { BrandedStory } from '../../BrandedStory'
 import * as H from 'history'
 import { Location } from '@sourcegraph/extension-api-types'
 import { of } from 'rxjs'
-import { pretendRemote } from '../../../../../shared/src/api/util'
+import { extensionsController } from '../../../../../shared/src/util/searchTestHelpers'
 
 const { add } = storiesOf('branded/HierarchicalLocationsView', module).addDecorator(story => (
     <BrandedStory styles={webStyles}>{() => <div className="p-5">{story()}</div>}</BrandedStory>
@@ -81,9 +81,7 @@ const LOCATIONS: Location[] = [
 ]
 
 const PROPS: HierarchicalLocationsViewProps = {
-    extensionsController: {
-        extHostAPI: pretendRemote({}),
-    },
+    extensionsController,
     settingsCascade: { subjects: null, final: null },
     location: H.createLocation('/'),
     locations: of({ isLoading: false, result: LOCATIONS }),

@@ -158,17 +158,15 @@ export const pretendRemote = <T>(object: Partial<T>): Remote<T> =>
  * be on the same thread, so comlink won't be involved to intercept symbol methods (e.g. [releaseProxy]).
  * We have to add them ourselves to prevent TypeErrors when unsubscribing from proxySubscribables.
  */
-export const pretendProxySubscribable = <T>(subscribable: Subscribable<T>): ProxySubscribable<T> => {
-    return {
-        [proxyMarker]: true,
-        subscribe(observer): Unsubscribable & ProxyMarked {
-            const subscription = subscribable.subscribe((observer as unknown) as PartialObserver<T>)
+export const pretendProxySubscribable = <T>(subscribable: Subscribable<T>): ProxySubscribable<T> => ({
+    [proxyMarker]: true,
+    subscribe(observer): Unsubscribable & ProxyMarked {
+        const subscription = subscribable.subscribe((observer as unknown) as PartialObserver<T>)
 
-            return {
-                [proxyMarker]: true,
-                unsubscribe: () => subscription.unsubscribe(),
-                [releaseProxy]: () => undefined,
-            } as Unsubscribable & ProxyMarked
-        },
-    }
-}
+        return {
+            [proxyMarker]: true,
+            unsubscribe: () => subscription.unsubscribe(),
+            [releaseProxy]: () => undefined,
+        } as Unsubscribable & ProxyMarked
+    },
+})

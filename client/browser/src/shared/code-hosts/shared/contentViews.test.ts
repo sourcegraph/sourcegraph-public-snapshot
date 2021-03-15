@@ -1,13 +1,16 @@
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import { uniqueId } from 'lodash'
-import { concat, Observable, of, Subject, Subscription } from 'rxjs'
-import { first } from 'rxjs/operators'
+import { nextTick } from 'process'
+import { concat, Observable, of, ReplaySubject, Subject, Subscription } from 'rxjs'
+import { first, tap } from 'rxjs/operators'
+import { promisify } from 'util'
 import { FlatExtensionHostAPI } from '../../../../../shared/src/api/contract'
-import { LinkPreviewMerged } from '../../../../../shared/src/api/extension/flatExtensionApi'
-import { createBarrier } from '../../../../../shared/src/api/integration-test/testHelpers'
+import { LinkPreviewMerged } from '../../../../../shared/src/api/extension/extensionHostApi'
 import { pretendProxySubscribable, pretendRemote } from '../../../../../shared/src/api/util'
 import { MutationRecordLike } from '../../util/dom'
 import { handleContentViews } from './contentViews'
+
+const tick = promisify(nextTick)
 
 describe('contentViews', () => {
     beforeEach(() => {
@@ -34,7 +37,7 @@ describe('contentViews', () => {
             element.id = 'content-view'
             element.innerHTML = '0 <a href=#foo>foo</a> 1 <a href=#bar>bar</a> 2 <a href=#qux>qux</a> 3'
 
-            const wait = new Subject<void>()
+            const waitSubject = new Subject<void>()
             const unsubscribed = new Subject<void>()
             const mutations = new Subject<MutationRecordLike[]>()
 
@@ -46,7 +49,7 @@ describe('contentViews', () => {
                             extHostAPI: Promise.resolve(
                                 pretendRemote<FlatExtensionHostAPI>({
                                     getLinkPreviews: url => {
-                                        wait.next()
+                                        waitSubject.next()
 
                                         if (url.includes('bar')) {
                                             return pretendProxySubscribable(of(null))
@@ -86,21 +89,19 @@ describe('contentViews', () => {
                     }
                 )
             )
-            const inners: string[] = []
-            wait.subscribe(() => {
-                inners.push(element.innerHTML)
-            })
-
             // Add content view.
             mutations.next([{ addedNodes: [document.body], removedNodes: [] }])
-            await wait.pipe(first()).toPromise()
+            await waitSubject.pipe(first()).toPromise()
+            await tick()
             expect(element.innerHTML).toBe(
                 '0 <a href="#foo" data-tooltip="foo">foo</a><span class="sg-link-preview-content" data-tooltip="foo"><strong>foo</strong> x</span> 1 <a href="#bar">bar</a> 2 <a href="#qux" data-tooltip="qux">qux</a><span class="sg-link-preview-content" data-tooltip="qux"><strong>qux</strong> x</span> 3'
             )
 
             // Mutate content view.
             element.innerHTML = '4 <a href=#zip>zip</a> 5'
-            await Promise.all([unsubscribed.pipe(first()).toPromise(), wait.pipe(first()).toPromise()])
+            await Promise.all([unsubscribed.pipe(first()).toPromise(), waitSubject.pipe(first()).toPromise()])
+            await tick()
+
             expect(element.innerHTML).toBe(
                 '4 <a href="#zip" data-tooltip="zip">zip</a><span class="sg-link-preview-content" data-tooltip="zip"><strong>zip</strong> x</span> 5'
             )
@@ -108,8 +109,7 @@ describe('contentViews', () => {
             // Remove content view.
             mutations.next([{ addedNodes: [], removedNodes: [element] }])
             await unsubscribed.pipe(first()).toPromise()
-
-            console.log({ inners })
+            await tick()
         })
 
         test('handles multiple emissions', async () => {
@@ -117,8 +117,8 @@ describe('contentViews', () => {
             element.id = 'content-view'
             element.innerHTML = '0 <a href=#foo>foo</a> 1 <a href=#bar>bar</a> 2'
             const originalInnerHTML = element.innerHTML
-            const fooLinkPreviewValues = new Subject<LinkPreviewMerged>()
-            const { wait, done } = createBarrier()
+            const fooLinkPreviewValues = new ReplaySubject<LinkPreviewMerged>(1)
+            const waitSubject = new Subject<void>()
             subscriptions.add(
                 handleContentViews(
                     of([{ addedNodes: [document.body], removedNodes: [] }]),
@@ -127,9 +127,11 @@ describe('contentViews', () => {
                             extHostAPI: Promise.resolve(
                                 pretendRemote<FlatExtensionHostAPI>({
                                     getLinkPreviews: url => {
-                                        done()
+                                        waitSubject.next()
                                         return pretendProxySubscribable(
-                                            url.includes('bar') ? of(null) : fooLinkPreviewValues
+                                            url.includes('bar')
+                                                ? of(null)
+                                                : fooLinkPreviewValues.pipe(tap(() => waitSubject.next()))
                                         )
                                     },
                                 })
@@ -144,9 +146,11 @@ describe('contentViews', () => {
                 )
             )
 
+            let wait: Promise<void> = waitSubject.pipe(first()).toPromise()
             await wait
             expect(element.innerHTML).toBe(originalInnerHTML)
 
+            wait = waitSubject.pipe(first()).toPromise()
             fooLinkPreviewValues.next({
                 content: [
                     {
@@ -161,10 +165,12 @@ describe('contentViews', () => {
                     },
                 ],
             })
+            await wait
             expect(element.innerHTML).toBe(
                 '0 <a href="#foo" data-tooltip="foo">foo</a><span class="sg-link-preview-content" data-tooltip="foo"><strong>foo</strong></span> 1 <a href="#bar">bar</a> 2'
             )
 
+            wait = waitSubject.pipe(first()).toPromise()
             fooLinkPreviewValues.next({
                 content: [
                     {
@@ -179,10 +185,12 @@ describe('contentViews', () => {
                     },
                 ],
             })
+            await wait
             expect(element.innerHTML).toBe(
                 '0 <a href="#foo" data-tooltip="foo2">foo</a><span class="sg-link-preview-content" data-tooltip="foo2"><strong>foo2</strong></span> 1 <a href="#bar">bar</a> 2'
             )
 
+            wait = waitSubject.pipe(first()).toPromise()
             fooLinkPreviewValues.next({
                 content: [],
                 hover: [
@@ -192,12 +200,15 @@ describe('contentViews', () => {
                     },
                 ],
             })
+            await wait
             expect(element.innerHTML).toBe('0 <a href="#foo" data-tooltip="foo2">foo</a> 1 <a href="#bar">bar</a> 2')
 
+            wait = waitSubject.pipe(first()).toPromise()
             fooLinkPreviewValues.next({
                 content: [],
                 hover: [],
             })
+            await wait
             expect(element.innerHTML).toBe('0 <a href="#foo">foo</a> 1 <a href="#bar">bar</a> 2')
         })
     })

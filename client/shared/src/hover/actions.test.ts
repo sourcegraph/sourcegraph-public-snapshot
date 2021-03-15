@@ -33,7 +33,7 @@ import { FlatExtensionHostAPI } from '../api/contract'
 import { Remote } from 'comlink'
 import { integrationTestContext } from '../api/integration-test/testHelpers'
 import { ExposedToClient } from '../api/client/mainthread-api'
-import { WorkspaceRootWithMetadata } from '../api/extension/flatExtensionApi'
+import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
 import * as sourcegraph from 'sourcegraph'
 import { Position, Range } from '@sourcegraph/extension-api-classes'
 

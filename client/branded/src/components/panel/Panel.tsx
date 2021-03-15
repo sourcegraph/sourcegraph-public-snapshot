@@ -23,9 +23,9 @@ import { Location } from '@sourcegraph/extension-api-types'
 import { isDefined } from '../../../../shared/src/util/types'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { wrapRemoteObservable } from '../../../../shared/src/api/client/api/common'
-import { PanelViewData } from '../../../../shared/src/api/extension/flatExtensionApi'
 import { ExtensionsLoadingPanelView } from './views/ExtensionsLoadingView'
 import { haveInitialExtensionsLoaded } from '../../../../shared/src/api/features'
+import { PanelViewData } from '../../../../shared/src/api/extension/extensionHostApi'
 
 interface Props
     extends ExtensionsControllerProps,

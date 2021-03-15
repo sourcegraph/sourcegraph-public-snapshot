@@ -2,8 +2,8 @@ import { DiffPart } from '@sourcegraph/codeintellify'
 import { Range } from '@sourcegraph/extension-api-classes'
 import { uniqueId, noop, isEmpty, pick } from 'lodash'
 import renderer from 'react-test-renderer'
-import { BehaviorSubject, from, NEVER, of, Subject, Subscription, throwError } from 'rxjs'
-import { filter, switchMap, take, first, skip } from 'rxjs/operators'
+import { BehaviorSubject, NEVER, of, Subject, Subscription, throwError } from 'rxjs'
+import { filter, take, first } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
 import { integrationTestContext } from '../../../../../shared/src/api/integration-test/testHelpers'
@@ -13,7 +13,7 @@ import { SuccessGraphQLResult } from '../../../../../shared/src/graphql/graphql'
 import { IQuery } from '../../../../../shared/src/graphql/schema'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
 import { resetAllMemoizationCaches } from '../../../../../shared/src/util/memoizeObservable'
-import { isDefined, subtypeOf, allOf, check, isTaggedUnionMember } from '../../../../../shared/src/util/types'
+import { subtypeOf, allOf, check, isTaggedUnionMember } from '../../../../../shared/src/util/types'
 import { DEFAULT_SOURCEGRAPH_URL } from '../../util/context'
 import { MutationRecordLike } from '../../util/dom'
 import {
@@ -30,13 +30,14 @@ import { DEFAULT_GRAPHQL_RESPONSES, mockRequestGraphQL } from './testHelpers'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { toPrettyBlobURL } from '../../../../../shared/src/util/url'
 import { MockIntersectionObserver } from './MockIntersectionObserver'
-import { FlatExtensionHostAPI, NotificationType } from '../../../../../shared/src/api/contract'
+import { FlatExtensionHostAPI } from '../../../../../shared/src/api/contract'
 import { wrapRemoteObservable } from '../../../../../shared/src/api/client/api/common'
-import { CodeEditor } from 'sourcegraph'
 import { Remote } from 'comlink'
 import { ExtensionCodeEditor } from '../../../../../shared/src/api/extension/api/codeEditor'
 import * as sourcegraph from 'sourcegraph'
 import { promisify } from 'util'
+import { nextTick } from 'process'
+import { NotificationType } from '../../../../../shared/src/api/extension/extensionHostApi'
 
 const RENDER = sinon.spy()
 
@@ -111,7 +112,7 @@ function getEditors(
         .map(editor => pick(editor, 'viewerId', 'isActive', 'resource', 'selections', 'type'))
 }
 
-const nextTick = promisify(process.nextTick)
+const tick = promisify(nextTick)
 
 describe('codeHost', () => {
     // Mock the global IntersectionObserver constructor with an implementation that
@@ -286,7 +287,7 @@ describe('codeHost', () => {
                 },
             ])
 
-            await nextTick()
+            await tick()
             expect(codeView).toHaveClass('sg-mounted')
             const toolbar = elementRenderedAtMount(toolbarMount)
             expect(toolbar).not.toBeUndefined()
@@ -368,7 +369,7 @@ describe('codeHost', () => {
                     },
                 ])
                 await decorated(editor)
-                await nextTick()
+                await tick()
                 expect(line.querySelectorAll('.line-decoration-attachment')).toHaveLength(1)
                 expect(line.querySelector('.line-decoration-attachment')!).toHaveTextContent('test decoration')
 
@@ -536,7 +537,7 @@ describe('codeHost', () => {
                 headEditor.setDecorations(decorationType, headDecorations)
 
                 await Promise.all([decorated(baseEditor), decorated(headEditor)])
-                await nextTick()
+                await tick()
 
                 expect(codeView).toMatchSnapshot()
 
@@ -546,7 +547,7 @@ describe('codeHost', () => {
                 baseEditor.setDecorations(decorationType, baseDecorations.slice(2))
 
                 await decorated(baseEditor)
-                await nextTick()
+                await tick()
                 expect(codeView).toMatchSnapshot()
 
                 // Change decoration in first line
@@ -566,7 +567,7 @@ describe('codeHost', () => {
                 //     headDecs: headEditor.mergedDecorations.value,
                 //     baseDecs: baseEditor.mergedDecorations.value,
                 // })
-                await nextTick()
+                await tick()
                 expect(codeView).toMatchSnapshot()
             })
         })
@@ -708,7 +709,7 @@ describe('codeHost', () => {
             )
             await wrapRemoteObservable(extensionHostAPI.viewerUpdates()).pipe(first()).toPromise()
             expect(getEditors(extensionAPI).length).toEqual(1)
-            await nextTick()
+            await tick()
             codeView.dispatchEvent(new MouseEvent('mouseover'))
             sinon.assert.called(dom.getCodeElementFromTarget)
         })
@@ -769,7 +770,7 @@ describe('codeHost', () => {
             await wrapRemoteObservable(extensionHostAPI.viewerUpdates()).pipe(first()).toPromise()
 
             expect(getEditors(extensionAPI).length).toEqual(1)
-            await nextTick()
+            await tick()
 
             codeView.dispatchEvent(new MouseEvent('mouseover'))
             sinon.assert.notCalled(dom.getCodeElementFromTarget)
@@ -832,7 +833,7 @@ describe('codeHost', () => {
             )
             await wrapRemoteObservable(extensionHostAPI.viewerUpdates()).pipe(first()).toPromise()
             expect(getEditors(extensionAPI).length).toEqual(1)
-            await nextTick()
+            await tick()
             codeView.dispatchEvent(new MouseEvent('mouseover'))
             sinon.assert.called(dom.getCodeElementFromTarget)
             expect(nativeTooltip).toHaveClass('native-tooltip--hidden')

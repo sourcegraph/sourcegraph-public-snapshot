@@ -3,8 +3,8 @@ import { from, of } from 'rxjs'
 import { switchMap, take, toArray, first } from 'rxjs/operators'
 import { ViewComponent, Window } from 'sourcegraph'
 import { wrapRemoteObservable } from '../client/api/common'
-import { NotificationType } from '../contract'
-import { TextModel } from '../viewerTypes'
+import { NotificationType } from '../extension/extensionHostApi'
+import { TextDocumentData } from '../viewerTypes'
 import { assertToJSON, integrationTestContext } from './testHelpers'
 
 describe('Windows (integration)', () => {
@@ -12,7 +12,7 @@ describe('Windows (integration)', () => {
         test('returns the active window', async () => {
             const { extensionAPI } = await integrationTestContext()
             const viewComponent: Pick<ViewComponent, 'type'> & {
-                document: TextModel
+                document: TextDocumentData
             } = {
                 type: 'CodeEditor' as const,
                 document: { uri: 'file:///f', languageId: 'l', text: 't' },
@@ -52,7 +52,7 @@ describe('Windows (integration)', () => {
         test('lists windows', async () => {
             const { extensionAPI } = await integrationTestContext()
             const viewComponent: Pick<ViewComponent, 'type'> & {
-                document: TextModel
+                document: TextDocumentData
             } = {
                 type: 'CodeEditor' as const,
                 document: { uri: 'file:///f', languageId: 'l', text: 't' },
@@ -83,7 +83,7 @@ describe('Windows (integration)', () => {
             })
 
             const viewComponent: Pick<ViewComponent, 'type'> & {
-                document: TextModel
+                document: TextDocumentData
             } = {
                 type: 'CodeEditor' as const,
                 document: { uri: 'file:///f2', languageId: 'l2', text: 't2' },

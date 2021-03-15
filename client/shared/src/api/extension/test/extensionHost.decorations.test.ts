@@ -1,9 +1,10 @@
 import { ProxyMarked, proxyMarker, Remote } from 'comlink'
 import { Observer, of } from 'rxjs'
-import { SettingsCascade } from '../../settings/settings'
-import { MainThreadAPI } from '../contract'
-import { pretendProxySubscribable, pretendRemote } from '../util'
-import { FileDecorationsByPath, initNewExtensionAPI } from './flatExtensionApi'
+import { SettingsCascade } from '../../../settings/settings'
+import { MainThreadAPI } from '../../contract'
+import { pretendProxySubscribable, pretendRemote } from '../../util'
+import { FileDecorationsByPath } from '../extensionHostApi'
+import { initializeExtensionHostTest } from './test-helpers'
 
 describe('extensionHostAPI.getFileDecorations()', () => {
     // integration(ish) tests for scenarios not covered by providers tests
@@ -27,18 +28,21 @@ describe('extensionHostAPI.getFileDecorations()', () => {
         })
 
     it('restarts hover call if a provider was added or removed', () => {
-        const { exposedToMain, app } = initNewExtensionAPI(noopMain, {
-            initialSettings: emptySettings,
-            clientApplication: 'sourcegraph',
-        })
+        const { extensionAPI, extensionHostAPI } = initializeExtensionHostTest(
+            {
+                initialSettings: emptySettings,
+                clientApplication: 'sourcegraph',
+            },
+            noopMain
+        )
 
         let counter = 0
-        app.registerFileDecorationProvider({
+        extensionAPI.app.registerFileDecorationProvider({
             provideFileDecorations: ({ files }) => [{ uri: files[0]?.uri, after: { contentText: `a${++counter}` } }],
         })
 
         let results: FileDecorationsByPath[] = []
-        exposedToMain
+        extensionHostAPI
             .getFileDecorations({
                 uri: 'git://gitlab.sgdev.org/sourcegraph/code-intel-extensions?1111#extensions/typescript/src/',
                 files: [
@@ -69,7 +73,7 @@ describe('extensionHostAPI.getFileDecorations()', () => {
         ])
         results = []
 
-        const subscription = app.registerFileDecorationProvider({
+        const subscription = extensionAPI.app.registerFileDecorationProvider({
             provideFileDecorations: ({ files }) => [{ uri: files[0]?.uri, after: { contentText: 'b' } }],
         })
 

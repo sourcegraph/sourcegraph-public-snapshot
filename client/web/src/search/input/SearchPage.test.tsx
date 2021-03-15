@@ -6,8 +6,8 @@ import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemet
 import { of } from 'rxjs'
 import { SearchPage, SearchPageProps } from './SearchPage'
 import { SearchPatternType } from '../../graphql-operations'
-import { Services } from '../../../../shared/src/api/client/services'
 import { ThemePreference } from '../../theme'
+import { extensionsController } from '../../../../shared/src/util/searchTestHelpers'
 
 // Mock the Monaco input box to make this a shallow test
 jest.mock('./SearchPageInput', () => ({
@@ -28,14 +28,12 @@ describe('SearchPage', () => {
         },
         location: history.location,
         history,
-        extensionsController: {
-            services: {} as Services,
-        } as any,
+        extensionsController,
         telemetryService: NOOP_TELEMETRY_SERVICE,
         themePreference: ThemePreference.Light,
         onThemePreferenceChange: () => undefined,
         authenticatedUser: authUser,
-        setVersionContext: () => undefined,
+        setVersionContext: () => Promise.resolve(),
         availableVersionContexts: [],
         globbing: false,
         enableSmartQuery: false,

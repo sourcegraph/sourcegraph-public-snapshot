@@ -21,7 +21,6 @@ import {
     ParsedSearchQueryProps,
     SearchContextProps,
 } from '..'
-import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import { VersionContext } from '../../schema/site.schema'

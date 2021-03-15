@@ -1,7 +1,7 @@
 import { Range, Selection } from '@sourcegraph/extension-api-classes'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { from } from 'rxjs'
-import { distinctUntilChanged, first, switchMap, take, toArray, filter, map } from 'rxjs/operators'
+import { distinctUntilChanged, first, switchMap, take, toArray, filter } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { isDefined, isTaggedUnionMember } from '../../util/types'
 import { wrapRemoteObservable } from '../client/api/common'

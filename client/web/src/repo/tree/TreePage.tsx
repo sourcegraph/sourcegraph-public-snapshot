@@ -46,7 +46,7 @@ import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryServic
 import { TreeEntriesSection } from './TreeEntriesSection'
 import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
 import { getFileDecorations } from '../../backend/features'
-import { FileDecorationsByPath } from '../../../../shared/src/api/extension/flatExtensionApi'
+import { FileDecorationsByPath } from '../../../../shared/src/api/extension/extensionHostApi'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import { getCombinedViews } from '../../insights/backend'
 import { wrapRemoteObservable } from '../../../../shared/src/api/client/api/common'

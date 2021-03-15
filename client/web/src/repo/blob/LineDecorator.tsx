@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useMemo, useState } from 'react'
+import React, { useLayoutEffect } from 'react'
 import ReactDOM from 'react-dom'
 import isAbsoluteUrl from 'is-absolute-url'
 import {
@@ -9,9 +9,7 @@ import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { isDefined, property } from '../../../../shared/src/util/types'
-import { Observable, ReplaySubject } from 'rxjs'
-import { useObservable } from '../../../../shared/src/util/useObservable'
-import { filter, finalize, map, tap } from 'rxjs/operators'
+import { ReplaySubject } from 'rxjs'
 
 export interface LineDecoratorProps extends ThemeProps {
     /** 1-based line number */

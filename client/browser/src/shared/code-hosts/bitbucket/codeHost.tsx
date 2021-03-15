@@ -1,7 +1,7 @@
 import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { of } from 'rxjs'
 import { Omit } from 'utility-types'
-import { NotificationType } from '../../../../../shared/src/api/contract'
+import { NotificationType } from '../../../../../shared/src/api/extension/extensionHostApi'
 import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '../../../../../shared/src/util/url'
 import { querySelectorOrSelf } from '../../util/dom'
 import { CodeHost, MountGetter } from '../shared/codeHost'

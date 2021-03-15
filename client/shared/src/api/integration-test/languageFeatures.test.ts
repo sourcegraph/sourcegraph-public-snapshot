@@ -167,12 +167,12 @@ function testLocationProvider<P>({
             const subscription = registerProvider(extensionAPI)(['*'], labeledProvider('a'))
             await extensionAPI.internal.sync()
 
-            extensionHostAPI.addTextDocumentIfNotExists({
+            await extensionHostAPI.addTextDocumentIfNotExists({
                 uri: 'file:///f2',
                 languageId: 'l1',
                 text: 't1',
             })
-            extensionHostAPI.addViewerIfNotExists({
+            await extensionHostAPI.addViewerIfNotExists({
                 type: 'CodeEditor',
                 resource: 'file:///f2',
                 selections: [],

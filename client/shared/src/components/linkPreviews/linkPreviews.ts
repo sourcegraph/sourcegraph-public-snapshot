@@ -1,5 +1,5 @@
 import * as sourcegraph from 'sourcegraph'
-import { LinkPreviewMerged } from '../../api/extension/flatExtensionApi'
+import { LinkPreviewMerged } from '../../api/extension/extensionHostApi'
 import { renderMarkdown } from '../../util/markdown'
 
 /** Options for {@link applyLinkPreview}. */

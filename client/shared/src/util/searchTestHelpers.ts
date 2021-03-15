@@ -260,7 +260,7 @@ export const NOOP_SETTINGS_CASCADE = {
     final: null,
 }
 
-export const extensionsController: Pick<Controller, 'executeCommand' | 'registerCommand' | 'extHostAPI'> = {
+export const extensionsController: Controller = {
     executeCommand: () => Promise.resolve(),
     registerCommand: () => new Subscription(),
     extHostAPI: Promise.resolve(
@@ -269,4 +269,6 @@ export const extensionsController: Pick<Controller, 'executeCommand' | 'register
             registerContributions: () => pretendProxySubscribable(EMPTY).subscribe(noop as any),
         })
     ),
+    commandErrors: EMPTY,
+    unsubscribe: noop,
 }

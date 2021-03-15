@@ -5,7 +5,7 @@ import { tryCatch } from './errors'
 import { SearchPatternType } from '../graphql-operations'
 import { findFilter, FilterKind } from '../search/query/validate'
 import { appendContextFilter } from '../search/query/transformer'
-import { WorkspaceRootWithMetadata } from '../api/extension/flatExtensionApi'
+import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
 
 export interface RepoSpec {
     /**

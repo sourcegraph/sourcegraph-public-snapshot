@@ -57,16 +57,16 @@ export interface CodeEditorWithPartialModel extends CodeEditor {
 /**
  * A text model is a text document and associated metadata.
  *
- * How does this relate to editors? A model is the file, an editor is the
+ * How does this relate to editors? A text document is the file, an editor is the
  * window that the file is shown in. Things like the content and language are properties of the
- * model; things like decorations and the selection ranges are properties of the editor.
+ * text document; things like decorations and the selection ranges are properties of the editor.
  */
-export interface TextModel extends Pick<TextDocument, 'uri' | 'languageId' | 'text'> {}
+export interface TextDocumentData extends Pick<TextDocument, 'uri' | 'languageId' | 'text'> {}
 
 /**
- * A partial {@link TextModel}, containing only the fields that are
+ * A partial {@link TextDocumentData}, containing only the fields that are
  * guaranteed to never be updated.
  */
-export interface PartialModel extends Pick<TextModel, 'languageId'> {}
+export interface PartialModel extends Pick<TextDocumentData, 'languageId'> {}
 
 export type ViewerUpdate = ViewerId & { action: 'removal' | 'addition'; type: 'DirectoryViewer' | 'CodeEditor' }

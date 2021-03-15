@@ -79,7 +79,7 @@ import { aggregateStreamingSearch } from './search/stream'
 import { ISearchContext } from '../../shared/src/graphql/schema'
 import { logCodeInsightsChanges } from './insights/analytics'
 import { listUserRepositories } from './site-admin/backend'
-import { NotificationType } from '../../shared/src/api/contract'
+import { NotificationType } from '../../shared/src/api/extension/extensionHostApi'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]

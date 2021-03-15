@@ -10,7 +10,7 @@ import { isObject } from 'lodash'
 import { hasProperty } from '../util/types'
 import { Scalars } from '../graphql-operations'
 import { ErrorLike } from '../util/errors'
-import { ExecutableExtension } from '../api/extension/flatExtensionApi'
+import { ExecutableExtension } from '../api/extension/activation'
 import { InputBoxOptions } from 'sourcegraph'
 
 export interface EndpointPair {

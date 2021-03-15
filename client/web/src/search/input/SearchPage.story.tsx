@@ -5,11 +5,11 @@ import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemet
 import { parseISO } from 'date-fns'
 import { SearchPage, SearchPageProps } from './SearchPage'
 import { SearchPatternType } from '../../graphql-operations'
-import { Services } from '../../../../shared/src/api/client/services'
 import { storiesOf } from '@storybook/react'
 import { ThemePreference } from '../../theme'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { WebStory } from '../../components/WebStory'
+import { extensionsController } from '../../../../shared/src/util/searchTestHelpers'
 
 const history = createMemoryHistory()
 const defaultProps = (props: ThemeProps): SearchPageProps => ({
@@ -20,14 +20,12 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     },
     location: history.location,
     history,
-    extensionsController: {
-        services: {} as Services,
-    } as any,
+    extensionsController,
     telemetryService: NOOP_TELEMETRY_SERVICE,
     themePreference: ThemePreference.Light,
     onThemePreferenceChange: () => undefined,
     authenticatedUser: authUser,
-    setVersionContext: () => undefined,
+    setVersionContext: () => Promise.resolve(undefined),
     availableVersionContexts: [],
     globbing: false,
     enableSmartQuery: false,

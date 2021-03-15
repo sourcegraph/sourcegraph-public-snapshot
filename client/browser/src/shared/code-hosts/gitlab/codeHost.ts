@@ -9,7 +9,7 @@ import { resolveCommitFileInfo, resolveDiffFileInfo, resolveFileInfo } from './f
 import { getPageInfo, GitLabPageKind, getFilePathsFromCodeView } from './scrape'
 import { subtypeOf } from '../../../../../shared/src/util/types'
 import { toAbsoluteBlobURL } from '../../../../../shared/src/util/url'
-import { NotificationType } from '../../../../../shared/src/api/contract'
+import { NotificationType } from '../../../../../shared/src/api/extension/extensionHostApi'
 
 const toolbarButtonProps = {
     className: 'btn btn-default btn-sm',

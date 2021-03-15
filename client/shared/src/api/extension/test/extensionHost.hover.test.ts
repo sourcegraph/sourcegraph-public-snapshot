@@ -1,13 +1,13 @@
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import { Hover } from 'sourcegraph'
-import { HoverMerged } from '../client/types/hover'
-import { initNewExtensionAPI } from './flatExtensionApi'
-import { pretendProxySubscribable, pretendRemote } from '../util'
-import { MainThreadAPI } from '../contract'
-import { SettingsCascade } from '../../settings/settings'
+import { HoverMerged } from '../../client/types/hover'
+import { pretendProxySubscribable, pretendRemote } from '../../util'
+import { MainThreadAPI } from '../../contract'
+import { SettingsCascade } from '../../../settings/settings'
 import { Observer, of } from 'rxjs'
 import { ProxyMarked, proxyMarker, Remote } from 'comlink'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import { initializeExtensionHostTest } from './test-helpers'
 
 describe('getHover from ExtensionHost API, it aims to have more e2e feel', () => {
     // integration(ish) tests for scenarios not covered by providers tests
@@ -15,7 +15,7 @@ describe('getHover from ExtensionHost API, it aims to have more e2e feel', () =>
         getEnabledExtensions: () => pretendProxySubscribable(of([])),
         getScriptURLForExtension: () => undefined,
     })
-    const emptySettings: SettingsCascade<object> = {
+    const initialSettings: SettingsCascade<object> = {
         subjects: [],
         final: {},
     }
@@ -37,24 +37,24 @@ describe('getHover from ExtensionHost API, it aims to have more e2e feel', () =>
     it('restarts hover call if a provider was added or removed', () => {
         const typescriptFileUri = 'file:///f.ts'
 
-        const { exposedToMain, languages } = initNewExtensionAPI(noopMain, {
-            initialSettings: emptySettings,
-            clientApplication: 'sourcegraph',
-        })
+        const { extensionHostAPI, extensionAPI } = initializeExtensionHostTest(
+            { initialSettings, clientApplication: 'sourcegraph' },
+            noopMain
+        )
 
-        exposedToMain.addTextDocumentIfNotExists({
+        extensionHostAPI.addTextDocumentIfNotExists({
             languageId: 'ts',
             text: 'body',
             uri: typescriptFileUri,
         })
 
         let counter = 0
-        languages.registerHoverProvider([{ pattern: '*.ts' }], {
+        extensionAPI.languages.registerHoverProvider([{ pattern: '*.ts' }], {
             provideHover: () => textHover(`a${++counter}`),
         })
 
         let results: any[] = []
-        exposedToMain
+        extensionHostAPI
             .getHover({
                 position: { line: 1, character: 2 },
                 textDocument: { uri: typescriptFileUri },
@@ -71,7 +71,7 @@ describe('getHover from ExtensionHost API, it aims to have more e2e feel', () =>
         ])
         results = []
 
-        const subscription = languages.registerHoverProvider([{ pattern: '*.ts' }], {
+        const subscription = extensionAPI.languages.registerHoverProvider([{ pattern: '*.ts' }], {
             provideHover: () => textHover('b'),
         })
 

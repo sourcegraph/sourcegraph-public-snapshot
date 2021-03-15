@@ -7,9 +7,12 @@ import { ClientAPI } from '../client/api/api'
 import { ExtensionHostAPI, ExtensionHostAPIFactory } from './api/api'
 import { DocumentHighlightKind } from './api/documentHighlights'
 import { registerComlinkTransferHandlers } from '../util'
-import { initNewExtensionAPI } from './flatExtensionApi'
 import { SettingsCascade } from '../../settings/settings'
-import { NotificationType } from '../contract'
+import { isMatch } from 'lodash'
+import { createExtensionHostState, ExtensionHostState } from './extensionHostState'
+import { createExtensionHostAPI, NotificationType } from './extensionHostApi'
+import { createExtensionAPI } from './extensionApi'
+import { activateExtensions } from './activation'
 
 /**
  * Required information when initializing an extension host.
@@ -80,7 +83,10 @@ function initializeExtensionHost(
 ): { extensionHostAPI: ExtensionHostAPI; extensionAPI: typeof sourcegraph; subscription: Subscription } {
     const subscription = new Subscription()
 
-    const { extensionAPI, extensionHostAPI, subscription: apiSubscription } = createExtensionAPI(initData, endpoints)
+    const { extensionAPI, extensionHostAPI, subscription: apiSubscription } = createExtensionAndExtensionHostAPIs(
+        initData,
+        endpoints
+    )
     subscription.add(apiSubscription)
 
     // Make `import 'sourcegraph'` or `require('sourcegraph')` return the extension API.
@@ -103,7 +109,7 @@ function initializeExtensionHost(
     return { subscription, extensionAPI, extensionHostAPI }
 }
 
-function createExtensionAPI(
+function createExtensionAndExtensionHostAPIs(
     initData: InitData,
     endpoints: Pick<EndpointPair, 'proxy'>
 ): { extensionHostAPI: ExtensionHostAPI; extensionAPI: typeof sourcegraph; subscription: Subscription } {
@@ -121,32 +127,24 @@ function createExtensionAPI(
         await proxy.ping()
     }
 
-    // TODO(tj): remember to add new extension activation sub to bag
-
-    // extension host state
-    // create extension host API
-    // create extension API
-    // activate extensions
-
-    const {
-        configuration,
-        exposedToMain,
-        workspace,
-        commands,
-        search,
-        languages,
-        graphQL,
-        content,
-        app,
-        internal,
-    } = initNewExtensionAPI(proxy, initData)
+    // Create extension host state
+    const extensionHostState = createExtensionHostState(initData, proxy)
+    // Create extension host API
+    const extensionHostAPINew = createExtensionHostAPI(extensionHostState)
+    // Create extension API
+    const { configuration, workspace, commands, search, languages, graphQL, content, app } = createExtensionAPI(
+        extensionHostState,
+        proxy
+    )
+    // Activate extensions
+    subscription.add(activateExtensions(extensionHostState, proxy))
 
     // Expose the extension host API to the client (main thread)
     const extensionHostAPI: ExtensionHostAPI = {
         [comlink.proxyMarker]: true,
 
         ping: () => 'pong',
-        ...exposedToMain,
+        ...extensionHostAPINew,
     }
 
     // Expose the extension API to extensions
@@ -183,10 +181,30 @@ function createExtensionAPI(
 
         internal: {
             sync: () => sync(),
-            updateContext: (updates: sourcegraph.ContextValues) => internal.updateContext(updates),
+            updateContext: (updates: sourcegraph.ContextValues) => updateContext(updates, extensionHostState),
             sourcegraphURL: new URL(initData.sourcegraphURL),
             clientApplication: initData.clientApplication,
         },
     }
     return { extensionHostAPI, extensionAPI, subscription }
+}
+
+// Context (TODO(tj): move to extension/api/context)
+// Same implementation is exposed to main and extensions
+export function updateContext(update: { [k: string]: unknown }, state: ExtensionHostState): void {
+    if (isMatch(state.context.value, update)) {
+        return
+    }
+    const result: any = {}
+    for (const [key, oldValue] of Object.entries(state.context.value)) {
+        if (update[key] !== null) {
+            result[key] = oldValue
+        }
+    }
+    for (const [key, value] of Object.entries(update)) {
+        if (value !== null) {
+            result[key] = value
+        }
+    }
+    state.context.next(result)
 }

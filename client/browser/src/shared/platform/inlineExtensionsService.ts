@@ -3,7 +3,7 @@ import { isFirefox } from '../util/context'
 import { Subscribable, from } from 'rxjs'
 import { checkOk } from '../../../../shared/src/backend/fetch'
 import { ExtensionManifest } from '../../../../shared/src/extensions/extensionManifest'
-import { ExecutableExtension } from '../../../../shared/src/api/extension/flatExtensionApi'
+import { ExecutableExtension } from '../../../../shared/src/api/extension/activation'
 
 /**
  * Determine if inline extensions should be loaded.

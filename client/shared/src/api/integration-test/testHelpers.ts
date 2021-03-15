@@ -5,10 +5,10 @@ import * as sourcegraph from 'sourcegraph'
 import { EndpointPair, PlatformContext } from '../../platform/context'
 import { createExtensionHostClientConnection } from '../client/connection'
 import { InitData, startExtensionHost } from '../extension/extensionHost'
-import { FlatExtensionHostAPI, MainThreadAPI, TextDocumentData } from '../contract'
+import { FlatExtensionHostAPI, MainThreadAPI } from '../contract'
 import { Remote } from 'comlink'
-import { ViewerData } from '../viewerTypes'
-import { WorkspaceRootWithMetadata } from '../extension/flatExtensionApi'
+import { TextDocumentData, ViewerData } from '../viewerTypes'
+import { WorkspaceRootWithMetadata } from '../extension/extensionHostApi'
 import { ExposedToClient } from '../client/mainthread-api'
 
 export function assertToJSON(a: any, expected: any): void {

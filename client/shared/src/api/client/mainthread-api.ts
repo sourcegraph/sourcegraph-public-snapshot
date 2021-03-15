@@ -4,7 +4,7 @@ import { Subscription, from, Observable, of, combineLatest, Subject } from 'rxjs
 import { PlatformContext } from '../../platform/context'
 import { isSettingsValid } from '../../settings/settings'
 import { catchError, distinctUntilChanged, map, publishReplay, refCount, switchMap } from 'rxjs/operators'
-import { FlatExtensionHostAPI, MainThreadAPI, NotificationType, PlainNotification } from '../contract'
+import { FlatExtensionHostAPI, MainThreadAPI } from '../contract'
 import { ProxySubscription } from './api/common'
 import * as sourcegraph from 'sourcegraph'
 import { proxySubscribable } from '../extension/api/common'
@@ -16,6 +16,7 @@ import { ExtensionManifest } from '../../extensions/extensionManifest'
 import { checkOk } from '../../backend/fetch'
 import { areExtensionsSame } from '../../extensions/extensions'
 import { registerBuiltinClientCommands } from '../../commands/commands'
+import { NotificationType, PlainNotification } from '../extension/extensionHostApi'
 
 /** A registered command in the command registry. */
 export interface CommandEntry {

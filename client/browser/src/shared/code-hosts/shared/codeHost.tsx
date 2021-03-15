@@ -40,7 +40,6 @@ import {
     distinctUntilChanged,
     retryWhen,
     mapTo,
-    delay,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../../shared/src/actions/ActionItem'
 import { DecorationMapByLine } from '../../../../../shared/src/api/client/services/decoration'

@@ -25,7 +25,7 @@ import { setElementTooltip } from './tooltip'
 import { getFileContainers, parseURL } from './util'
 import { defer, of } from 'rxjs'
 import { observeSystemIsLightTheme } from '../../../../../shared/src/theme'
-import { NotificationType } from '../../../../../shared/src/api/contract'
+import { NotificationType } from '../../../../../shared/src/api/extension/extensionHostApi'
 
 /**
  * Creates the mount element for the CodeViewToolbar on code views containing

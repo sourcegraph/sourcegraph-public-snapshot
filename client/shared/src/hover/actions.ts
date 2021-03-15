@@ -16,13 +16,12 @@ import {
     takeUntil,
     scan,
     mapTo,
-    tap,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../actions/ActionItem'
 import { wrapRemoteObservable } from '../api/client/api/common'
 import { Context } from '../api/client/context/context'
 import { FlatExtensionHostAPI } from '../api/contract'
-import { WorkspaceRootWithMetadata } from '../api/extension/flatExtensionApi'
+import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
 import { ContributableMenu, TextDocumentPositionParameters } from '../api/protocol'
 import { syncRemoteSubscription } from '../api/util'
 import { isPrivateRepoPublicSourcegraphComErrorLike } from '../backend/errors'

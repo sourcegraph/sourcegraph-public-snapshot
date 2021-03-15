@@ -1,12 +1,12 @@
 import { DocumentHighlight } from 'sourcegraph'
 import { Range } from '@sourcegraph/extension-api-classes'
-import { initNewExtensionAPI } from './flatExtensionApi'
-import { pretendRemote } from '../util'
-import { MainThreadAPI } from '../contract'
-import { SettingsCascade } from '../../settings/settings'
+import { pretendRemote } from '../../util'
+import { MainThreadAPI } from '../../contract'
+import { SettingsCascade } from '../../../settings/settings'
 import { BehaviorSubject, Observer } from 'rxjs'
 import { ProxyMarked, proxyMarker, Remote } from 'comlink'
-import { proxySubscribable } from './api/common'
+import { proxySubscribable } from '../api/common'
+import { initializeExtensionHostTest } from './test-helpers'
 
 describe('getDocumentHighlights from ExtensionHost API, it aims to have more e2e feel', () => {
     // integration(ish) tests for scenarios not covered by providers tests
@@ -14,7 +14,7 @@ describe('getDocumentHighlights from ExtensionHost API, it aims to have more e2e
         getEnabledExtensions: () => proxySubscribable(new BehaviorSubject([])),
         getScriptURLForExtension: () => undefined,
     })
-    const emptySettings: SettingsCascade<object> = {
+    const initialSettings: SettingsCascade<object> = {
         subjects: [],
         final: {},
     }
@@ -36,23 +36,24 @@ describe('getDocumentHighlights from ExtensionHost API, it aims to have more e2e
     it('restarts document highlights call if a provider was added or removed', () => {
         const typescriptFileUri = 'file:///f.ts'
 
-        const { exposedToMain, languages } = initNewExtensionAPI(noopMain, {
-            initialSettings: emptySettings,
-            clientApplication: 'sourcegraph',
-        })
-        exposedToMain.addTextDocumentIfNotExists({
+        const { extensionHostAPI, extensionAPI } = initializeExtensionHostTest(
+            { initialSettings, clientApplication: 'sourcegraph' },
+            noopMain
+        )
+
+        extensionHostAPI.addTextDocumentIfNotExists({
             languageId: 'ts',
             text: 'body',
             uri: typescriptFileUri,
         })
 
         let counter = 0
-        languages.registerDocumentHighlightProvider([{ pattern: '*.ts' }], {
+        extensionAPI.languages.registerDocumentHighlightProvider([{ pattern: '*.ts' }], {
             provideDocumentHighlights: () => [documentHighlight(++counter)],
         })
 
         let results: DocumentHighlight[][] = []
-        exposedToMain
+        extensionHostAPI
             .getDocumentHighlights({
                 position: { line: 1, character: 2 },
                 textDocument: { uri: typescriptFileUri },
@@ -63,7 +64,7 @@ describe('getDocumentHighlights from ExtensionHost API, it aims to have more e2e
         expect(results).toEqual([[], [documentHighlight(1)]])
         results = []
 
-        const subscription = languages.registerDocumentHighlightProvider([{ pattern: '*.ts' }], {
+        const subscription = extensionAPI.languages.registerDocumentHighlightProvider([{ pattern: '*.ts' }], {
             provideDocumentHighlights: () => [documentHighlight(0)],
         })
 

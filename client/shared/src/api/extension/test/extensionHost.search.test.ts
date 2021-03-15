@@ -1,10 +1,10 @@
-import { initNewExtensionAPI } from './flatExtensionApi'
-import { pretendRemote } from '../util'
-import { MainThreadAPI } from '../contract'
-import { SettingsCascade } from '../../settings/settings'
+import { pretendRemote } from '../../util'
+import { MainThreadAPI } from '../../contract'
+import { SettingsCascade } from '../../../settings/settings'
 import { BehaviorSubject, Observer } from 'rxjs'
 import { ProxyMarked, proxyMarker, Remote } from 'comlink'
-import { proxySubscribable } from './api/common'
+import { proxySubscribable } from '../api/common'
+import { initializeExtensionHostTest } from './test-helpers'
 
 const noopMain = pretendRemote<MainThreadAPI>({
     getEnabledExtensions: () => proxySubscribable(new BehaviorSubject([])),
@@ -24,47 +24,54 @@ const observe = (onValue: (value: string) => void): Remote<Observer<string> & Pr
 
 describe('QueryTransformers', () => {
     it('returns the same query with no registered transformers', () => {
-        const { exposedToMain } = initNewExtensionAPI(noopMain, { initialSettings, clientApplication: 'sourcegraph' })
+        const { extensionHostAPI } = initializeExtensionHostTest(
+            { initialSettings, clientApplication: 'sourcegraph' },
+            noopMain
+        )
 
         const results: string[] = []
-        exposedToMain.transformSearchQuery('a').subscribe(observe(value => results.push(value)))
+        extensionHostAPI.transformSearchQuery('a').subscribe(observe(value => results.push(value)))
         expect(results).toEqual(['a'])
     })
 
     it('can work with Promise based transformers', async () => {
-        const { exposedToMain, search } = initNewExtensionAPI(noopMain, {
-            initialSettings,
-            clientApplication: 'sourcegraph',
-        })
-        search.registerQueryTransformer({ transformQuery: query => Promise.resolve(query + '!') })
-        const result = await new Promise(resolve => exposedToMain.transformSearchQuery('a').subscribe(observe(resolve)))
+        const { extensionHostAPI, extensionAPI } = initializeExtensionHostTest(
+            { initialSettings, clientApplication: 'sourcegraph' },
+            noopMain
+        )
+        extensionAPI.search.registerQueryTransformer({ transformQuery: query => Promise.resolve(query + '!') })
+        const result = await new Promise(resolve =>
+            extensionHostAPI.transformSearchQuery('a').subscribe(observe(resolve))
+        )
         expect(result).toEqual('a!')
     })
 
     it('emits a new transformed value if there is a new transformer', () => {
-        const { exposedToMain, search } = initNewExtensionAPI(noopMain, {
-            initialSettings,
-            clientApplication: 'sourcegraph',
-        })
+        const { extensionHostAPI, extensionAPI } = initializeExtensionHostTest(
+            { initialSettings, clientApplication: 'sourcegraph' },
+            noopMain
+        )
 
         const results: string[] = []
-        exposedToMain.transformSearchQuery('a').subscribe(observe(value => results.push(value)))
+        extensionHostAPI.transformSearchQuery('a').subscribe(observe(value => results.push(value)))
         expect(results).toEqual(['a'])
 
-        search.registerQueryTransformer({ transformQuery: query => query + '!' })
+        extensionAPI.search.registerQueryTransformer({ transformQuery: query => query + '!' })
         expect(results).toEqual(['a', 'a!'])
     })
 
     it('emits new value if a transformer was removed', () => {
-        const { exposedToMain, search } = initNewExtensionAPI(noopMain, {
-            initialSettings,
-            clientApplication: 'sourcegraph',
+        const { extensionHostAPI, extensionAPI } = initializeExtensionHostTest(
+            { initialSettings, clientApplication: 'sourcegraph' },
+            noopMain
+        )
+
+        const transformerSubscription = extensionAPI.search.registerQueryTransformer({
+            transformQuery: query => query + '!',
         })
 
-        const transformerSubscription = search.registerQueryTransformer({ transformQuery: query => query + '!' })
-
         const results: string[] = []
-        exposedToMain.transformSearchQuery('a').subscribe(observe(value => results.push(value)))
+        extensionHostAPI.transformSearchQuery('a').subscribe(observe(value => results.push(value)))
         expect(results).toEqual(['a!'])
         transformerSubscription.unsubscribe()
 
@@ -72,29 +79,30 @@ describe('QueryTransformers', () => {
     })
 
     it('emits modified query if there are any transformers registered', () => {
-        const { exposedToMain, search } = initNewExtensionAPI(noopMain, {
-            initialSettings,
-            clientApplication: 'sourcegraph',
-        })
-        search.registerQueryTransformer({ transformQuery: query => query + '!' })
+        const { extensionHostAPI, extensionAPI } = initializeExtensionHostTest(
+            { initialSettings, clientApplication: 'sourcegraph' },
+            noopMain
+        )
+
+        extensionAPI.search.registerQueryTransformer({ transformQuery: query => query + '!' })
 
         const results: string[] = []
-        exposedToMain.transformSearchQuery('a').subscribe(observe(value => results.push(value)))
+        extensionHostAPI.transformSearchQuery('a').subscribe(observe(value => results.push(value)))
         expect(results).toEqual(['a!'])
     })
 
     it('cancels previous transformer chains', async () => {
-        const { exposedToMain, search } = initNewExtensionAPI(noopMain, {
-            initialSettings,
-            clientApplication: 'sourcegraph',
-        })
+        const { extensionHostAPI, extensionAPI } = initializeExtensionHostTest(
+            { initialSettings, clientApplication: 'sourcegraph' },
+            noopMain
+        )
 
         // collect all pending promises and their triggers from the first transformer
         // to manually manipulate them later
         const resolves: ((q: string) => void)[] = []
         const promises: Promise<string>[] = []
 
-        search.registerQueryTransformer({
+        extensionAPI.search.registerQueryTransformer({
             transformQuery: () => {
                 const promise = new Promise<string>(resolve => {
                     resolves.push(resolve)
@@ -105,7 +113,7 @@ describe('QueryTransformers', () => {
         })
 
         let secondTransformerCallCount = 0
-        search.registerQueryTransformer({
+        extensionAPI.search.registerQueryTransformer({
             transformQuery: query => {
                 secondTransformerCallCount++
                 return query
@@ -114,12 +122,12 @@ describe('QueryTransformers', () => {
 
         const results: string[] = []
 
-        exposedToMain.transformSearchQuery('a').subscribe(observe(value => results.push(value)))
+        extensionHostAPI.transformSearchQuery('a').subscribe(observe(value => results.push(value)))
         // we hanged in the first transformer
         expect(results).toEqual([])
         expect(promises.length).toBe(1)
 
-        search.registerQueryTransformer({ transformQuery: query => query + '!' })
+        extensionAPI.search.registerQueryTransformer({ transformQuery: query => query + '!' })
 
         // we reissued the transformation and waiting for a new promise to resolve
         expect(promises.length).toBe(2)

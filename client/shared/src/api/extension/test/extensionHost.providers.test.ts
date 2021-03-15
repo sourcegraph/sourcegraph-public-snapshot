@@ -1,11 +1,11 @@
 import { TestScheduler } from 'rxjs/testing'
-import { RegisteredProvider, callProviders, providersForDocument, mergeProviderResults } from './flatExtensionApi'
 import { Observable } from 'rxjs'
 import { LOADING } from '@sourcegraph/codeintellify'
-import { TextDocumentIdentifier } from '../client/types/textDocument'
-import { fromHoverMerged, HoverMerged } from '../client/types/hover'
+import { TextDocumentIdentifier } from '../../client/types/textDocument'
+import { fromHoverMerged, HoverMerged } from '../../client/types/hover'
 import { DocumentHighlight, Hover } from 'sourcegraph'
 import { MarkupKind, Range } from '@sourcegraph/extension-api-classes'
+import { callProviders, mergeProviderResults, providersForDocument, RegisteredProvider } from '../extensionHostApi'
 
 const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
