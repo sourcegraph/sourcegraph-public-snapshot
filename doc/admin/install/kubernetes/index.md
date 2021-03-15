@@ -86,6 +86,10 @@ See the [Upgrading Howto](update.md) on how to upgrade.
 See the [Upgrading docs](../../updates/kubernetes.md) for details on what changed in a version and if manual migration steps
 are necessary.
 
+### Restarting
+
+Some updates, such as changing the `externalURL` for an instance, will require restarting the instance using `kubectl`. To restart, run `kubectl get pods` and then `kubectl rollout restart deployment/sourcegraph-frontend-0`, replacing `deployment/sourcegraph-frontend-0` with the pod name from the previous command. If updating the `externalURL` for the instance, only the frontend pods will need to be restarted.
+
 ### Cluster-admin privileges
 
 > Note: Not all organizations have this split in admin privileges. If your organization does not then you don't need to
