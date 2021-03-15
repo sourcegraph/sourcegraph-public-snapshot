@@ -3,7 +3,8 @@
 // Light theme badge variants
 .theme-light {
     @each $color, $value in $theme-colors-light {
-        .badge-#{$color} {
+        .badge-#{$color},
+        a.badge-#{$color} {
             @include badge-variant($value);
         }
     }
