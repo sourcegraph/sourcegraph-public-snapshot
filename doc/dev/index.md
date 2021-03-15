@@ -97,7 +97,7 @@ Clarification and discussion about key concepts, architecture, and development s
 ### [Languages](background-information/languages/index.md)
 
 - [Go](background-information/languages/go.md)
-  - [Testing Go code](background-information/languages/testing_go_code.md).
+  - [Testing Go code](background-information/languages/testing_go_code.md)
 - [TypeScript](background-information/languages/typescript.md)
 - [Bash](background-information/languages/bash.md)
 - [Terraform](background-information/languages/terraform.md)
@@ -126,6 +126,6 @@ Clarification and discussion about key concepts, architecture, and development s
 
 ## Guidelines
 
-- [Code reviews](https://about.sourcegraph.com/handbook/engineering/code_reviews)
+- [Code reviews](background-information/code_reviews.md)
 - [Open source FAQ](https://about.sourcegraph.com/community/faq)
 - [Code of conduct](https://about.sourcegraph.com/community/code_of_conduct)
