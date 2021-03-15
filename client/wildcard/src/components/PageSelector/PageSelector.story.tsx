@@ -6,7 +6,7 @@ import { PageSelector } from './PageSelector'
 import { BrandedStory } from '../../../../branded/src/components/BrandedStory'
 
 const { add } = storiesOf('wildcard/PageSelector', module).addDecorator(story => (
-    <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
+    <BrandedStory styles={webStyles}>{() => <div className="container web-content mt-3">{story()}</div>}</BrandedStory>
 ))
 
 add('Short typical', () => {

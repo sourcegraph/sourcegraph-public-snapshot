@@ -15,7 +15,7 @@ interface PageButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> 
 const PageButton: React.FunctionComponent<PageButtonProps> = ({ children, active, ...props }) => (
     <button
         type="button"
-        className={classNames('btn', 'mx-1', 'page-selector__button', active && 'btn-primary')}
+        className={classNames('btn', active ? 'btn-primary' : 'btn-link', 'mx-1', 'page-selector__button')}
         aria-current={active}
         {...props}
     >
