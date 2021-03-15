@@ -197,6 +197,21 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		serviceToAccounts[acct.ServiceType+":"+acct.ServiceID] = acct
 	}
 
+	userEmails, err := database.GlobalUserEmails.ListByUser(ctx,
+		database.UserEmailsListOptions{
+			UserID:       user.ID,
+			OnlyVerified: true,
+		},
+	)
+	if err != nil {
+		return errors.Wrap(err, "list user verified emails")
+	}
+
+	emails := make([]string, len(userEmails))
+	for i := range userEmails {
+		emails[i] = userEmails[i].Email
+	}
+
 	providers := s.providersByServiceID()
 
 	// Check if the user has an external account for every authz provider respectively,
@@ -207,7 +222,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			continue
 		}
 
-		acct, err := provider.FetchAccount(ctx, user, accts)
+		acct, err := provider.FetchAccount(ctx, user, accts, emails)
 		if err != nil {
 			log15.Error("Could not fetch account from authz provider",
 				"userID", user.ID,
