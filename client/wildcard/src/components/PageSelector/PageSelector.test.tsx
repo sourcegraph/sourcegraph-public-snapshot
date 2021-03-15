@@ -3,6 +3,11 @@ import { render, RenderResult, cleanup, fireEvent } from '@testing-library/react
 import { PageSelector, PageSelectorProps } from './PageSelector'
 import sinon from 'sinon'
 
+jest.mock('use-resize-observer', () => ({
+    __esModule: true,
+    default: jest.requireActual('use-resize-observer/polyfilled'),
+}))
+
 describe('PageSelector', () => {
     let queries: RenderResult
     const renderWithProps = (props: PageSelectorProps): RenderResult => render(<PageSelector {...props} />)
