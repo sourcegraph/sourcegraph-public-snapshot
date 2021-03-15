@@ -33,6 +33,11 @@ type Provider struct {
 	host     string
 	user     string
 	password string
+
+	// NOTE: We do not need mutex because there is no concurrent access to these
+	// 	fields in the current implementation.
+	cachedAllUserEmails map[string]string   // username <-> email
+	cachedGroupMembers  map[string][]string // group <-> members
 }
 
 // NewProvider returns a new Perforce authorization provider that uses the given
@@ -42,11 +47,12 @@ type Provider struct {
 func NewProvider(urn, host, user, password string) *Provider {
 	baseURL, _ := url.Parse(host)
 	return &Provider{
-		urn:      urn,
-		codeHost: extsvc.NewCodeHost(baseURL, extsvc.TypePerforce),
-		host:     host,
-		user:     user,
-		password: password,
+		urn:                urn,
+		codeHost:           extsvc.NewCodeHost(baseURL, extsvc.TypePerforce),
+		host:               host,
+		user:               user,
+		password:           password,
+		cachedGroupMembers: make(map[string][]string),
 	}
 }
 
@@ -126,6 +132,41 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 	return nil, nil
 }
 
+// canRevokeReadAccess returns true if the given access level is able to revoke
+// read account for a depot prefix.
+func (p *Provider) canRevokeReadAccess(level string) bool {
+	_, canRevokeReadAccess := map[string]struct{}{
+		"list":   {},
+		"read":   {},
+		"=read":  {},
+		"open":   {},
+		"write":  {},
+		"review": {},
+		"owner":  {},
+		"admin":  {},
+		"super":  {},
+	}[level]
+	return canRevokeReadAccess
+}
+
+// canGrantReadAccess returns true if the given access level is able to grant
+// read account for a depot prefix.
+func (p *Provider) canGrantReadAccess(level string) bool {
+	_, canGrantReadAccess := map[string]struct{}{
+		"read":   {},
+		"=read":  {},
+		"open":   {},
+		"=open":  {},
+		"write":  {},
+		"=write": {},
+		"review": {},
+		"owner":  {},
+		"admin":  {},
+		"super":  {},
+	}[level]
+	return canGrantReadAccess
+}
+
 // FetchUserPerms returns a list of depot prefixes that the given user has
 // access to on the Perforce Server.
 func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) (*authz.ExternalUserPermissions, error) {
@@ -172,19 +213,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 		if strings.HasPrefix(depotPrefix, "-") {
 			depotPrefix = depotPrefix[1:]
 
-			// Check if the access level is able to revoke read access.
-			_, canRevokeReadAccess := map[string]struct{}{
-				"list":   {},
-				"read":   {},
-				"=read":  {},
-				"open":   {},
-				"write":  {},
-				"review": {},
-				"owner":  {},
-				"admin":  {},
-				"super":  {},
-			}[level]
-			if !canRevokeReadAccess {
+			if !p.canRevokeReadAccess(level) {
 				continue
 			}
 
@@ -205,20 +234,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 			}
 
 		} else {
-			// Check if the access level is able to grant read access.
-			_, canGrantReadAccess := map[string]struct{}{
-				"read":   {},
-				"=read":  {},
-				"open":   {},
-				"=open":  {},
-				"write":  {},
-				"=write": {},
-				"review": {},
-				"owner":  {},
-				"admin":  {},
-				"super":  {},
-			}[level]
-			if !canGrantReadAccess {
+			if !p.canGrantReadAccess(level) {
 				continue
 			}
 
@@ -234,6 +250,97 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 	}, errors.Wrap(scanner.Err(), "scanner.Err")
 }
 
+// getAllUserEmails returns a set of username <-> email pairs of all users in the Perforce server.
+func (p *Provider) getAllUserEmails(ctx context.Context) (map[string]string, error) {
+	if p.cachedAllUserEmails != nil {
+		return p.cachedAllUserEmails, nil
+	}
+
+	userEmails := make(map[string]string)
+	rc, _, err := gitserver.DefaultClient.P4Exec(ctx, p.host, p.user, p.password, "users")
+	if err != nil {
+		return nil, errors.Wrap(err, "list users")
+	}
+	defer func() { _ = rc.Close() }()
+
+	scanner := bufio.NewScanner(rc)
+	for scanner.Scan() {
+		// e.g. alice <alice@example.com> (Alice) accessed 2020/12/04
+		fields := strings.Split(scanner.Text(), " ")
+		if len(fields) < 2 {
+			continue
+		}
+		username := fields[0]                  // e.g. alice
+		email := strings.Trim(fields[1], "<>") // e.g. alice@example.com
+
+		userEmails[username] = email
+	}
+	if err = scanner.Err(); err != nil {
+		return nil, errors.Wrap(err, "scanner.Err")
+	}
+
+	p.cachedAllUserEmails = userEmails
+	return p.cachedAllUserEmails, nil
+}
+
+// getAllUsers returns a list of usernames of all users in the Perforce server.
+func (p *Provider) getAllUsers(ctx context.Context) ([]string, error) {
+	userEmails, err := p.getAllUserEmails(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "get all user emails")
+	}
+
+	users := make([]string, 0, len(userEmails))
+	for name := range userEmails {
+		users = append(users, name)
+	}
+	return users, nil
+}
+
+// getGroupMembers returns all members of the given group in the Perforce server.
+func (p *Provider) getGroupMembers(ctx context.Context, group string) ([]string, error) {
+	if p.cachedGroupMembers[group] != nil {
+		return p.cachedGroupMembers[group], nil
+	}
+
+	rc, _, err := gitserver.DefaultClient.P4Exec(ctx, p.host, p.user, p.password, "group", "-o", group)
+	if err != nil {
+		return nil, errors.Wrap(err, "list group members")
+	}
+	defer func() { _ = rc.Close() }()
+
+	var members []string
+	startScan := false
+	scanner := bufio.NewScanner(rc)
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		// Only start scan when we encounter the "Users:" line
+		if !startScan {
+			if strings.HasPrefix(line, "Users:") {
+				startScan = true
+			}
+			continue
+		}
+
+		// Lines for users always start with a tab "\t"
+		if !strings.HasPrefix(line, "\t") {
+			break
+		}
+
+		members = append(members, strings.TrimSpace(line))
+	}
+	if err = scanner.Err(); err != nil {
+		return nil, errors.Wrap(err, "scanner.Err")
+	}
+
+	// Drain remaining body
+	_, _ = io.Copy(ioutil.Discard, rc)
+
+	p.cachedGroupMembers[group] = members
+	return p.cachedGroupMembers[group], nil
+}
+
 // FetchRepoPerms returns a list of users that have access to the given
 // repository on the Perforce Server.
 func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error) {
@@ -242,89 +349,6 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) 
 		return nil, errors.Wrap(err, "list ACLs by depot")
 	}
 	defer func() { _ = rc.Close() }()
-
-	var cachedUserEmails map[string]string
-	getAllUserEmails := func() (map[string]string, error) {
-		if cachedUserEmails != nil {
-			return cachedUserEmails, nil
-		}
-
-		userEmails := make(map[string]string)
-		rc, _, err := gitserver.DefaultClient.P4Exec(ctx, p.host, p.user, p.password, "users")
-		if err != nil {
-			return nil, errors.Wrap(err, "list users")
-		}
-		defer func() { _ = rc.Close() }()
-
-		scanner := bufio.NewScanner(rc)
-		for scanner.Scan() {
-			// e.g. alice <alice@example.com> (Alice) accessed 2020/12/04
-			fields := strings.Split(scanner.Text(), " ")
-			if len(fields) < 2 {
-				continue
-			}
-			username := fields[0]                  // e.g. alice
-			email := strings.Trim(fields[1], "<>") // e.g. alice@example.com
-
-			userEmails[username] = email
-		}
-		if err = scanner.Err(); err != nil {
-			return nil, errors.Wrap(err, "scanner.Err")
-		}
-		fmt.Println("getAllUsers", userEmails)
-
-		cachedUserEmails = userEmails
-		return userEmails, nil
-	}
-	getAllUsers := func() ([]string, error) {
-		userEmails, err := getAllUserEmails()
-		if err != nil {
-			return nil, errors.Wrap(err, "get all user emails")
-		}
-
-		users := make([]string, 0, len(userEmails))
-		for name := range userEmails {
-			users = append(users, name)
-		}
-		return users, nil
-	}
-	getGroupMembers := func(group string) ([]string, error) {
-		rc, _, err := gitserver.DefaultClient.P4Exec(ctx, p.host, p.user, p.password, "group", "-o", group)
-		if err != nil {
-			return nil, errors.Wrap(err, "list group members")
-		}
-		defer func() { _ = rc.Close() }()
-
-		var members []string
-		startScan := false
-		scanner := bufio.NewScanner(rc)
-		for scanner.Scan() {
-			line := scanner.Text()
-
-			// Only start scan when we encounter the "Users:" line
-			if !startScan {
-				if strings.HasPrefix(line, "Users:") {
-					startScan = true
-				}
-				continue
-			}
-
-			// Lines for users always start with a tab "\t"
-			if !strings.HasPrefix(line, "\t") {
-				break
-			}
-
-			members = append(members, strings.TrimSpace(line))
-		}
-		if err = scanner.Err(); err != nil {
-			return nil, errors.Wrap(err, "scanner.Err")
-		}
-
-		// Drain remaining body
-		_, _ = io.Copy(ioutil.Discard, rc)
-		fmt.Println("getGroupMembers", group, members)
-		return members, nil
-	}
 
 	users := make(map[string]struct{})
 	scanner := bufio.NewScanner(rc)
@@ -349,18 +373,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) 
 
 		// Rule that starts with a "-" in depot prefix means exclusion (i.e. revoke access)
 		if strings.HasPrefix(depotPrefix, "-") {
-			_, canRevokeReadAccess := map[string]struct{}{
-				"list":   {},
-				"read":   {},
-				"=read":  {},
-				"open":   {},
-				"write":  {},
-				"review": {},
-				"owner":  {},
-				"admin":  {},
-				"super":  {},
-			}[level]
-			if !canRevokeReadAccess {
+			if !p.canRevokeReadAccess(level) {
 				continue
 			}
 
@@ -372,7 +385,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) 
 					delete(users, name)
 				}
 			case "group":
-				members, err := getGroupMembers(name)
+				members, err := p.getGroupMembers(ctx, name)
 				if err != nil {
 					return nil, errors.Wrapf(err, "list members of group %q", name)
 				}
@@ -385,26 +398,14 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) 
 			}
 
 		} else {
-			_, canGrantReadAccess := map[string]struct{}{
-				"read":   {},
-				"=read":  {},
-				"open":   {},
-				"=open":  {},
-				"write":  {},
-				"=write": {},
-				"review": {},
-				"owner":  {},
-				"admin":  {},
-				"super":  {},
-			}[level]
-			if !canGrantReadAccess {
+			if !p.canGrantReadAccess(level) {
 				continue
 			}
 
 			switch typ {
 			case "user":
 				if name == "*" {
-					all, err := getAllUsers()
+					all, err := p.getAllUsers(ctx)
 					if err != nil {
 						return nil, errors.Wrap(err, "list all users")
 					}
@@ -415,7 +416,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) 
 					users[name] = struct{}{}
 				}
 			case "group":
-				members, err := getGroupMembers(name)
+				members, err := p.getGroupMembers(ctx, name)
 				if err != nil {
 					return nil, errors.Wrapf(err, "list members of group %q", name)
 				}
@@ -433,7 +434,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) 
 		return nil, errors.Wrap(err, "scanner.Err")
 	}
 
-	userEmails, err := getAllUserEmails()
+	userEmails, err := p.getAllUserEmails(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "get all user emails")
 	}
@@ -445,7 +446,6 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) 
 		}
 		extIDs = append(extIDs, extsvc.AccountID(email))
 	}
-	fmt.Println("extIDs", extIDs)
 	return extIDs, nil
 }
 
