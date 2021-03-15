@@ -139,8 +139,8 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	}
 
 	// Check if batch changes are enabled for this user.
-	batchChangesEnabled := conf.CampaignsEnabled()
-	if conf.Get().CampaignsRestrictToAdmins && backend.CheckCurrentUserIsSiteAdmin(req.Context()) != nil {
+	batchChangesEnabled := conf.BatchChangesEnabled()
+	if conf.BatchChangesRestrictedToAdmins() && backend.CheckCurrentUserIsSiteAdmin(req.Context()) != nil {
 		batchChangesEnabled = false
 	}
 

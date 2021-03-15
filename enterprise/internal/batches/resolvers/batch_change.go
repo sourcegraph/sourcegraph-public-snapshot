@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"sort"
 	"sync"
 	"time"
 
@@ -38,8 +39,8 @@ func marshalBatchChangeID(id int64) graphql.ID {
 	return relay.MarshalID(batchChangeIDKind, id)
 }
 
-func unmarshalBatchChangeID(id graphql.ID) (campaignID int64, err error) {
-	err = relay.UnmarshalSpec(id, &campaignID)
+func unmarshalBatchChangeID(id graphql.ID) (batchChangeID int64, err error) {
+	err = relay.UnmarshalSpec(id, &batchChangeID)
 	return
 }
 
@@ -153,7 +154,7 @@ func (r *batchChangeResolver) ClosedAt() *graphqlbackend.DateTime {
 
 func (r *batchChangeResolver) ChangesetsStats(ctx context.Context) (graphqlbackend.ChangesetsStatsResolver, error) {
 	stats, err := r.store.GetChangesetsStats(ctx, store.GetChangesetsStatsOpts{
-		CampaignID: r.batchChange.ID,
+		BatchChangeID: r.batchChange.ID,
 	})
 	if err != nil {
 		return nil, err
@@ -169,7 +170,7 @@ func (r *batchChangeResolver) Changesets(
 	if err != nil {
 		return nil, err
 	}
-	opts.CampaignID = r.batchChange.ID
+	opts.BatchChangeID = r.batchChange.ID
 	return &changesetsConnectionResolver{
 		store:    r.store,
 		opts:     opts,
@@ -181,33 +182,15 @@ func (r *batchChangeResolver) ChangesetCountsOverTime(
 	ctx context.Context,
 	args *graphqlbackend.ChangesetCountsArgs,
 ) ([]graphqlbackend.ChangesetCountsResolver, error) {
-	resolvers := []graphqlbackend.ChangesetCountsResolver{}
-
 	publishedState := batches.ChangesetPublicationStatePublished
 	opts := store.ListChangesetsOpts{
-		CampaignID: r.batchChange.ID,
+		BatchChangeID: r.batchChange.ID,
 		// Only load fully-synced changesets, so that the data we use for computing the changeset counts is complete.
 		PublicationState: &publishedState,
 	}
 	cs, _, err := r.store.ListChangesets(ctx, opts)
 	if err != nil {
-		return resolvers, err
-	}
-
-	now := r.store.Clock()()
-
-	weekAgo := now.Add(-7 * 24 * time.Hour)
-	start := r.batchChange.CreatedAt.UTC()
-	if start.After(weekAgo) {
-		start = weekAgo
-	}
-	if args.From != nil {
-		start = args.From.Time.UTC()
-	}
-
-	end := now.UTC()
-	if args.To != nil && args.To.Time.Before(end) {
-		end = args.To.Time.UTC()
+		return nil, err
 	}
 
 	var es []*batches.ChangesetEvent
@@ -216,15 +199,37 @@ func (r *batchChangeResolver) ChangesetCountsOverTime(
 		eventsOpts := store.ListChangesetEventsOpts{ChangesetIDs: changesetIDs, Kinds: state.RequiredEventTypesForHistory}
 		es, _, err = r.store.ListChangesetEvents(ctx, eventsOpts)
 		if err != nil {
-			return resolvers, err
+			return nil, err
 		}
+	}
+	// Sort all events once by their timestamps, CalcCounts depends on it.
+	events := state.ChangesetEvents(es)
+	sort.Sort(events)
+
+	// Determine timeframe.
+	now := r.store.Clock()()
+	weekAgo := now.Add(-7 * 24 * time.Hour)
+	start := r.batchChange.CreatedAt.UTC()
+	// At least a week lookback, more if the batch change was created earlier.
+	if start.After(weekAgo) {
+		start = weekAgo
+	}
+	if args.From != nil {
+		start = args.From.Time.UTC()
+	} else if len(events) > 0 {
+		start = events[0].Timestamp().UTC()
+	}
+	end := now.UTC()
+	if args.To != nil && args.To.Time.Before(end) {
+		end = args.To.Time.UTC()
 	}
 
 	counts, err := state.CalcCounts(start, end, cs, es...)
 	if err != nil {
-		return resolvers, err
+		return nil, err
 	}
 
+	resolvers := make([]graphqlbackend.ChangesetCountsResolver, 0, len(counts))
 	for _, c := range counts {
 		resolvers = append(resolvers, &changesetCountsResolver{counts: c})
 	}
@@ -233,7 +238,7 @@ func (r *batchChangeResolver) ChangesetCountsOverTime(
 }
 
 func (r *batchChangeResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
-	diffStat, err := r.store.GetBatchChangeDiffStat(ctx, store.GetBatchChangeDiffStatOpts{CampaignID: r.batchChange.ID})
+	diffStat, err := r.store.GetBatchChangeDiffStat(ctx, store.GetBatchChangeDiffStatOpts{BatchChangeID: r.batchChange.ID})
 	if err != nil {
 		return nil, err
 	}
@@ -241,11 +246,11 @@ func (r *batchChangeResolver) DiffStat(ctx context.Context) (*graphqlbackend.Dif
 }
 
 func (r *batchChangeResolver) CurrentSpec(ctx context.Context) (graphqlbackend.BatchSpecResolver, error) {
-	campaignSpec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: r.batchChange.BatchSpecID})
+	batchSpec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: r.batchChange.BatchSpecID})
 	if err != nil {
 		// This spec should always exist, so fail hard on not found errors as well.
 		return nil, err
 	}
 
-	return &batchSpecResolver{store: r.store, batchSpec: campaignSpec}, nil
+	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
 }

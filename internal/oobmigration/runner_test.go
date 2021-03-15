@@ -226,6 +226,8 @@ func TestRunMigratorMigrationFinishesDown(t *testing.T) {
 }
 
 func TestRunMigratorMigrationChangesDirection(t *testing.T) {
+	t.Skip("this test has a race condition. See: https://github.com/sourcegraph/sourcegraph/issues/19127")
+
 	store := NewMockStoreIface()
 	tickClock := glock.NewMockClock()
 

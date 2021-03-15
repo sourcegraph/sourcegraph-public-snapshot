@@ -10,7 +10,7 @@ export interface BatchChangesDotComPageProps {
 export const BatchChangesDotComPage: React.FunctionComponent<BatchChangesDotComPageProps> = () => (
     <>
         <section className="mb-5">
-            <PageHeader path={[{ icon: BatchChangesIcon, text: 'Batch changes' }]} className="mb-3" />
+            <PageHeader path={[{ icon: BatchChangesIcon, text: 'Batch Changes' }]} className="mb-3" />
             <h2 className="mb-5">Make and track large-scale changes across all code</h2>
 
             <div className="text-center">
@@ -46,7 +46,7 @@ export const BatchChangesDotComPage: React.FunctionComponent<BatchChangesDotComP
                     </li>
                     <li>
                         Follow the{' '}
-                        <a href="https://docs.sourcegraph.com/campaigns/quickstart" rel="noopener">
+                        <a href="https://docs.sourcegraph.com/batch_changes/quickstart" rel="noopener">
                             quickstart guide for batch changes
                         </a>{' '}
                         to enable batch changes on your instance and start using them.
@@ -55,7 +55,7 @@ export const BatchChangesDotComPage: React.FunctionComponent<BatchChangesDotComP
 
                 <p>
                     Learn more about batch changes{' '}
-                    <a href="https://docs.sourcegraph.com/campaigns" rel="noopener">
+                    <a href="https://docs.sourcegraph.com/batch_changes" rel="noopener">
                         in the documentation
                     </a>
                     .

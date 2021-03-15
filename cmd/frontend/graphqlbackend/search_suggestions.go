@@ -16,7 +16,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -227,7 +226,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		if len(r.Query.Values(query.FieldDefault)) == 1 && (len(r.Query.Fields()) == 1 || (len(r.Query.Fields()) == 2 && len(r.Query.Values(query.FieldRepoGroup)) == 1)) {
 			effectiveRepoFieldValues = append(effectiveRepoFieldValues, r.Query.Values(query.FieldDefault)[0].ToString())
 		} else if len(r.Query.Values(query.FieldRepo)) > 0 && ((len(r.Query.Values(query.FieldRepoGroup)) > 0 && len(r.Query.Fields()) == 2) || (len(r.Query.Values(query.FieldRepoGroup)) == 0 && len(r.Query.Fields()) == 1)) {
-			effectiveRepoFieldValues, _ = r.Query.RegexpPatterns(query.FieldRepo)
+			effectiveRepoFieldValues, _ = r.Query.Repositories()
 		}
 
 		// If we have a query which is not valid, just ignore it since this is for a suggestion.
@@ -287,7 +286,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		if len(r.Query.Values(query.FieldRepo)) == 0 {
 			return nil, nil
 		}
-		effectiveRepoFieldValues, _ := r.Query.RegexpPatterns(query.FieldRepo)
+		effectiveRepoFieldValues, _ := r.Query.Repositories()
 
 		validValues := effectiveRepoFieldValues[:0]
 		for _, v := range effectiveRepoFieldValues {
@@ -333,7 +332,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		resolvers := make([]SearchSuggestionResolver, 0, len(inventory.Languages))
 		for _, l := range inventory.Languages {
 			resolvers = append(resolvers, languageSuggestionResolver{
-				lang:  &languageResolver{db: r.db, name: strings.ToLower(l.Name)},
+				lang:  &languageResolver{name: strings.ToLower(l.Name)},
 				score: math.MaxInt32,
 			})
 		}
@@ -528,7 +527,6 @@ func allEmptyStrings(ss1, ss2 []string) bool {
 }
 
 type languageResolver struct {
-	db   dbutil.DB
 	name string
 }
 

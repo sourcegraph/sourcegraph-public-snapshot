@@ -43,7 +43,7 @@ For other options, please refer to [the Windows specific `src` documentation](ex
 
 `src` needs to be authenticated against your Sourcegraph instance. The quickest way to do this is to run `src login https://YOUR-SOURCEGRAPH-INSTANCE` and follow the instructions:
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/src_login_success.png" class="screenshot" alt="Output from src login showing success">
+<img src="https://sourcegraphstatic.com/docs/images/batch_changes/src_login_success.png" class="screenshot" alt="Output from src login showing success">
 
 Once complete, you should have two new environment variables set: `SRC_ENDPOINT` and `SRC_ACCESS_TOKEN`.
 
@@ -63,6 +63,6 @@ This should result in this output:
 
 You've run your first search from the command line! 🎉🎉
 
-You can now explore the [range of commands `src` provides](references/index.md), including the extensive support for [campaigns](../../campaigns/index.md).
+You can now explore the [range of commands `src` provides](references/index.md), including the extensive support for [batch changes](../../batch_changes/index.md).
 
 To learn what else you can do with `src`, see "[CLI](index.md)" in the Sourcegraph documentation.

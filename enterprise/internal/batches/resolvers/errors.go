@@ -15,7 +15,7 @@ func (e ErrIDIsZero) Extensions() map[string]interface{} {
 type ErrBatchChangesDisabled struct{}
 
 func (e ErrBatchChangesDisabled) Error() string {
-	return "batch changes are disabled. Set 'campaigns.enabled' in the site configuration to enable the feature."
+	return "batch changes are disabled. Set 'batchChanges.enabled' in the site configuration to enable the feature."
 }
 
 func (e ErrBatchChangesDisabled) Extensions() map[string]interface{} {

@@ -3,9 +3,9 @@ package batches
 import (
 	"time"
 
-	"github.com/sourcegraph/campaignutils/env"
-	"github.com/sourcegraph/campaignutils/overridable"
-	"github.com/sourcegraph/campaignutils/yaml"
+	"github.com/sourcegraph/batch-change-utils/env"
+	"github.com/sourcegraph/batch-change-utils/overridable"
+	"github.com/sourcegraph/batch-change-utils/yaml"
 
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -41,7 +41,7 @@ func (cs *BatchSpec) Clone() *BatchSpec {
 // UnmarshalValidate unmarshals the RawSpec into Spec and validates it against
 // the BatchSpec schema and does additional semantic validation.
 func (cs *BatchSpec) UnmarshalValidate() error {
-	return yaml.UnmarshalValidate(schema.CampaignSpecSchemaJSON, []byte(cs.RawSpec), &cs.Spec)
+	return yaml.UnmarshalValidate(schema.BatchSpecSchemaJSON, []byte(cs.RawSpec), &cs.Spec)
 }
 
 // BatchSpecTTL specifies the TTL of BatchSpecs that haven't been applied

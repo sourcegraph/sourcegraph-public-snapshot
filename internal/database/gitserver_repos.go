@@ -108,6 +108,7 @@ FROM repo
 		// gitserver_repos
 		if cloneStatus != "" {
 			gr.CloneStatus = types.ParseCloneStatus(cloneStatus)
+			gr.RepoID = rgs.ID
 			rgs.GitserverRepo = &gr
 		}
 
@@ -158,4 +159,30 @@ WHERE repo_id = %s
 	gr.CloneStatus = types.ParseCloneStatus(cloneStatus)
 
 	return &gr, nil
+}
+
+// SetCloneStatus will attempt to update ONLY the clone status of a
+// GitServerRepo. If a matching row does not yet exist a new one will be created.
+func (s *GitserverRepoStore) SetCloneStatus(ctx context.Context, id api.RepoID, status types.CloneStatus, shardID string) error {
+	result, err := s.ExecResult(ctx, sqlf.Sprintf(`
+INSERT INTO gitserver_repos(repo_id, clone_status, shard_id, updated_at)
+VALUES (%s, %s, %s, now())
+ON CONFLICT (repo_id) DO UPDATE
+SET (clone_status, shard_id, updated_at) =
+    (EXCLUDED.clone_status, EXCLUDED.shard_id, now())
+`, id, status, shardID))
+
+	if err != nil {
+		return errors.Wrap(err, "setting clone status")
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return errors.Wrap(err, "checking affected rows")
+	}
+	if affected < 1 {
+		return errors.New("no rows updated")
+	}
+
+	return nil
 }

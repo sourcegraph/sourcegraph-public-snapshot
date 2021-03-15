@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/batches"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -32,7 +33,7 @@ var ChangesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.created_at"),
 	sqlf.Sprintf("changesets.updated_at"),
 	sqlf.Sprintf("changesets.metadata"),
-	sqlf.Sprintf("changesets.campaign_ids"),
+	sqlf.Sprintf("changesets.batch_change_ids"),
 	sqlf.Sprintf("changesets.external_id"),
 	sqlf.Sprintf("changesets.external_service_type"),
 	sqlf.Sprintf("changesets.external_branch"),
@@ -45,7 +46,7 @@ var ChangesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.diff_stat_changed"),
 	sqlf.Sprintf("changesets.diff_stat_deleted"),
 	sqlf.Sprintf("changesets.sync_state"),
-	sqlf.Sprintf("changesets.owned_by_campaign_id"),
+	sqlf.Sprintf("changesets.owned_by_batch_change_id"),
 	sqlf.Sprintf("changesets.current_spec_id"),
 	sqlf.Sprintf("changesets.previous_spec_id"),
 	sqlf.Sprintf("changesets.publication_state"),
@@ -67,7 +68,7 @@ var changesetInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
 	sqlf.Sprintf("metadata"),
-	sqlf.Sprintf("campaign_ids"),
+	sqlf.Sprintf("batch_change_ids"),
 	sqlf.Sprintf("external_id"),
 	sqlf.Sprintf("external_service_type"),
 	sqlf.Sprintf("external_branch"),
@@ -80,7 +81,7 @@ var changesetInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("diff_stat_changed"),
 	sqlf.Sprintf("diff_stat_deleted"),
 	sqlf.Sprintf("sync_state"),
-	sqlf.Sprintf("owned_by_campaign_id"),
+	sqlf.Sprintf("owned_by_batch_change_id"),
 	sqlf.Sprintf("current_spec_id"),
 	sqlf.Sprintf("previous_spec_id"),
 	sqlf.Sprintf("publication_state"),
@@ -106,7 +107,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *batches.Changes
 		assocsAsMap[assoc.BatchChangeID] = assoc
 	}
 
-	campaigns, err := json.Marshal(assocsAsMap)
+	batchChanges, err := json.Marshal(assocsAsMap)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +123,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *batches.Changes
 		c.CreatedAt,
 		c.UpdatedAt,
 		metadata,
-		campaigns,
+		batchChanges,
 		nullStringColumn(c.ExternalID),
 		c.ExternalServiceType,
 		nullStringColumn(c.ExternalBranch),
@@ -204,17 +205,24 @@ DELETE FROM changesets WHERE id = %s
 // CountChangesetsOpts captures the query options needed for
 // counting changesets.
 type CountChangesetsOpts struct {
-	CampaignID          int64
-	ExternalState       *batches.ChangesetExternalState
-	ExternalReviewState *batches.ChangesetReviewState
-	ExternalCheckState  *batches.ChangesetCheckState
-	ReconcilerStates    []batches.ReconcilerState
-	OwnedByCampaignID   int64
+	BatchChangeID        int64
+	ExternalState        *batches.ChangesetExternalState
+	ExternalReviewState  *batches.ChangesetReviewState
+	ExternalCheckState   *batches.ChangesetCheckState
+	ReconcilerStates     []batches.ReconcilerState
+	OwnedByBatchChangeID int64
+	PublicationState     *batches.ChangesetPublicationState
+	TextSearch           []search.TextSearchTerm
+	EnforceAuthz         bool
 }
 
 // CountChangesets returns the number of changesets in the database.
 func (s *Store) CountChangesets(ctx context.Context, opts CountChangesetsOpts) (int, error) {
-	return s.queryCount(ctx, countChangesetsQuery(&opts))
+	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
+	if err != nil {
+		return 0, errors.Wrap(err, "CountChangesets generating authz query conds")
+	}
+	return s.queryCount(ctx, countChangesetsQuery(&opts, authzConds))
 }
 
 var countChangesetsQueryFmtstr = `
@@ -222,17 +230,20 @@ var countChangesetsQueryFmtstr = `
 SELECT COUNT(changesets.id)
 FROM changesets
 INNER JOIN repo ON repo.id = changesets.repo_id
+%s -- optional LEFT JOIN to changeset_specs if required
 WHERE %s
 `
 
-func countChangesetsQuery(opts *CountChangesetsOpts) *sqlf.Query {
+func countChangesetsQuery(opts *CountChangesetsOpts, authzConds *sqlf.Query) *sqlf.Query {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
-	if opts.CampaignID != 0 {
-		preds = append(preds, sqlf.Sprintf("changesets.campaign_ids ? %s", strconv.Itoa(int(opts.CampaignID))))
+	if opts.BatchChangeID != 0 {
+		preds = append(preds, sqlf.Sprintf("changesets.batch_change_ids ? %s", strconv.Itoa(int(opts.BatchChangeID))))
 	}
-
+	if opts.PublicationState != nil {
+		preds = append(preds, sqlf.Sprintf("changesets.publication_state = %s", *opts.PublicationState))
+	}
 	if opts.ExternalState != nil {
 		preds = append(preds, sqlf.Sprintf("changesets.external_state = %s", *opts.ExternalState))
 	}
@@ -249,11 +260,34 @@ func countChangesetsQuery(opts *CountChangesetsOpts) *sqlf.Query {
 		}
 		preds = append(preds, sqlf.Sprintf("changesets.reconciler_state IN (%s)", sqlf.Join(states, ",")))
 	}
-	if opts.OwnedByCampaignID != 0 {
-		preds = append(preds, sqlf.Sprintf("changesets.owned_by_campaign_id = %s", opts.OwnedByCampaignID))
+	if opts.OwnedByBatchChangeID != 0 {
+		preds = append(preds, sqlf.Sprintf("changesets.owned_by_batch_change_id = %s", opts.OwnedByBatchChangeID))
+	}
+	if opts.EnforceAuthz {
+		preds = append(preds, authzConds)
 	}
 
-	return sqlf.Sprintf(countChangesetsQueryFmtstr, sqlf.Join(preds, "\n AND "))
+	join := sqlf.Sprintf("")
+	if len(opts.TextSearch) != 0 {
+		// TextSearch predicates require changeset_specs to be joined into the
+		// query as well.
+		join = sqlf.Sprintf("LEFT JOIN changeset_specs ON changesets.current_spec_id = changeset_specs.id")
+
+		for _, term := range opts.TextSearch {
+			preds = append(preds, textSearchTermToClause(
+				term,
+				// The COALESCE() is required to handle the actual title on the
+				// changeset, if it has been published or if it's tracked.
+				// Unfortunately, the metadata field isn't standard, so we have
+				// to get both variations that exist between the code hosts we
+				// support.
+				sqlf.Sprintf("COALESCE(changesets.metadata->>'Title', changesets.metadata->>'title', changeset_specs.spec->>'title')"),
+				sqlf.Sprintf("repo.name"),
+			))
+		}
+	}
+
+	return sqlf.Sprintf(countChangesetsQueryFmtstr, join, sqlf.Join(preds, "\n AND "))
 }
 
 // GetChangesetByID is a convenience method if only the ID needs to be passed in. It's also used for abstraction in
@@ -378,7 +412,7 @@ SELECT changesets.id,
 	r.external_service_id
 FROM changesets
 LEFT JOIN changeset_events ce ON changesets.id = ce.changeset_id
-JOIN campaigns ON changesets.campaign_ids ? campaigns.id::TEXT
+JOIN batch_changes ON changesets.batch_change_ids ? batch_changes.id::TEXT
 JOIN repo r ON changesets.repo_id = r.id
 WHERE %s
 GROUP BY changesets.id, r.id
@@ -387,7 +421,7 @@ ORDER BY changesets.id ASC
 
 func listChangesetSyncDataQuery(opts ListChangesetSyncDataOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
-		sqlf.Sprintf("campaigns.closed_at IS NULL"),
+		sqlf.Sprintf("batch_changes.closed_at IS NULL"),
 		sqlf.Sprintf("r.deleted_at IS NULL"),
 		sqlf.Sprintf("changesets.publication_state = %s", batches.ChangesetPublicationStatePublished),
 		sqlf.Sprintf("changesets.reconciler_state = %s", batches.ReconcilerStateCompleted.ToDB()),
@@ -412,26 +446,29 @@ func listChangesetSyncDataQuery(opts ListChangesetSyncDataOpts) *sqlf.Query {
 // ListChangesetsOpts captures the query options needed for listing changesets.
 //
 // Note that TextSearch is potentially expensive, and should only be specified
-// in conjunction with at least one other option (most likely, CampaignID).
+// in conjunction with at least one other option (most likely, BatchChangeID).
 type ListChangesetsOpts struct {
 	LimitOpts
-	Cursor              int64
-	CampaignID          int64
-	IDs                 []int64
-	WithoutDeleted      bool
-	PublicationState    *batches.ChangesetPublicationState
-	ReconcilerStates    []batches.ReconcilerState
-	ExternalState       *batches.ChangesetExternalState
-	ExternalReviewState *batches.ChangesetReviewState
-	ExternalCheckState  *batches.ChangesetCheckState
-	OwnedByCampaignID   int64
-	ExternalServiceID   string
-	TextSearch          []search.TextSearchTerm
+	Cursor               int64
+	BatchChangeID        int64
+	IDs                  []int64
+	PublicationState     *batches.ChangesetPublicationState
+	ReconcilerStates     []batches.ReconcilerState
+	ExternalState        *batches.ChangesetExternalState
+	ExternalReviewState  *batches.ChangesetReviewState
+	ExternalCheckState   *batches.ChangesetCheckState
+	OwnedByBatchChangeID int64
+	TextSearch           []search.TextSearchTerm
+	EnforceAuthz         bool
 }
 
 // ListChangesets lists Changesets with the given filters.
 func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs batches.Changesets, next int64, err error) {
-	q := listChangesetsQuery(&opts)
+	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
+	if err != nil {
+		return nil, 0, errors.Wrap(err, "ListChangesets generating authz query conds")
+	}
+	q := listChangesetsQuery(&opts, authzConds)
 
 	cs = make([]*batches.Changeset, 0, opts.DBLimit())
 	err = s.query(ctx, q, func(sc scanner) (err error) {
@@ -460,14 +497,14 @@ WHERE %s
 ORDER BY id ASC
 `
 
-func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
+func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf.Query {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("changesets.id >= %s", opts.Cursor),
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
 
-	if opts.CampaignID != 0 {
-		preds = append(preds, sqlf.Sprintf("changesets.campaign_ids ? %s", strconv.Itoa(int(opts.CampaignID))))
+	if opts.BatchChangeID != 0 {
+		preds = append(preds, sqlf.Sprintf("changesets.batch_change_ids ? %s", strconv.Itoa(int(opts.BatchChangeID))))
 	}
 
 	if len(opts.IDs) > 0 {
@@ -478,10 +515,6 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 			}
 		}
 		preds = append(preds, sqlf.Sprintf("changesets.id IN (%s)", sqlf.Join(ids, ",")))
-	}
-
-	if opts.WithoutDeleted {
-		preds = append(preds, sqlf.Sprintf("changesets.external_deleted_at IS NULL"))
 	}
 
 	if opts.PublicationState != nil {
@@ -503,11 +536,11 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 	if opts.ExternalCheckState != nil {
 		preds = append(preds, sqlf.Sprintf("changesets.external_check_state = %s", *opts.ExternalCheckState))
 	}
-	if opts.OwnedByCampaignID != 0 {
-		preds = append(preds, sqlf.Sprintf("changesets.owned_by_campaign_id = %s", opts.OwnedByCampaignID))
+	if opts.OwnedByBatchChangeID != 0 {
+		preds = append(preds, sqlf.Sprintf("changesets.owned_by_batch_change_id = %s", opts.OwnedByBatchChangeID))
 	}
-	if opts.ExternalServiceID != "" {
-		preds = append(preds, sqlf.Sprintf("repo.external_service_id = %s", opts.ExternalServiceID))
+	if opts.EnforceAuthz {
+		preds = append(preds, authzConds)
 	}
 
 	join := sqlf.Sprintf("")
@@ -595,14 +628,14 @@ func (s *Store) GetChangesetExternalIDs(ctx context.Context, spec api.ExternalRe
 // applying the new batch spec.
 var CanceledChangesetFailureMessage = "Canceled"
 
-func (s *Store) CancelQueuedBatchChangeChangesets(ctx context.Context, campaignID int64) error {
+func (s *Store) CancelQueuedBatchChangeChangesets(ctx context.Context, batchChangeID int64) error {
 	// Note that we don't cancel queued "syncing" changesets, since their
-	// owned_by_campaign_id is not set. That's on purpose. It's okay if they're
+	// owned_by_batch_change_id is not set. That's on purpose. It's okay if they're
 	// being processed after this, since they only pull data and not create
 	// changesets on the code hosts.
 	q := sqlf.Sprintf(
 		cancelQueuedBatchChangeChangesetsFmtstr,
-		campaignID,
+		batchChangeID,
 		CanceledChangesetFailureMessage,
 	)
 	return s.Store.Exec(ctx, q)
@@ -613,7 +646,7 @@ const cancelQueuedBatchChangeChangesetsFmtstr = `
 WITH changeset_ids AS (
   SELECT id FROM changesets
   WHERE
-    owned_by_campaign_id = %s
+    owned_by_batch_change_id = %s
   AND
     reconciler_state IN ('queued', 'processing', 'errored')
   FOR UPDATE
@@ -634,11 +667,11 @@ WHERE id IN (SELECT id FROM changeset_ids);
 // closed/merged.
 //
 // This method will *block* if some of the changesets are currently being processed.
-func (s *Store) EnqueueChangesetsToClose(ctx context.Context, campaignID int64) error {
+func (s *Store) EnqueueChangesetsToClose(ctx context.Context, batchChangeID int64) error {
 	q := sqlf.Sprintf(
 		enqueueChangesetsToCloseFmtstr,
-		batches.ReconcilerStateQueued,
-		campaignID,
+		batches.ReconcilerStateQueued.ToDB(),
+		batchChangeID,
 		batches.ChangesetPublicationStatePublished,
 		batches.ChangesetExternalStateClosed,
 		batches.ChangesetExternalStateMerged,
@@ -653,11 +686,12 @@ UPDATE
 SET
   reconciler_state = %s,
   failure_message = NULL,
+  num_resets = 0,
   num_failures = 0,
   closing = TRUE,
   syncer_error = NULL
 WHERE
-  owned_by_campaign_id = %d AND
+  owned_by_batch_change_id = %d AND
   publication_state = %s AND
   NOT (
     reconciler_state = 'completed'
@@ -691,16 +725,16 @@ func scanChangesets(rows *sql.Rows, queryErr error) ([]*batches.Changeset, error
 	})
 }
 
-// jsonCampaignChangesetSet represents a "join table" set as a JSONB object
+// jsonBatchChangeChangesetSet represents a "join table" set as a JSONB object
 // where the keys are the ids and the values are json objects holding the properties.
 // It implements the sql.Scanner interface so it can be used as a scan destination,
 // similar to sql.NullString.
-type jsonCampaignChangesetSet struct {
+type jsonBatchChangeChangesetSet struct {
 	Assocs *[]batches.BatchChangeAssoc
 }
 
 // Scan implements the Scanner interface.
-func (n *jsonCampaignChangesetSet) Scan(value interface{}) error {
+func (n *jsonBatchChangeChangesetSet) Scan(value interface{}) error {
 	m := make(map[int64]batches.BatchChangeAssoc)
 
 	switch value := value.(type) {
@@ -727,7 +761,7 @@ func (n *jsonCampaignChangesetSet) Scan(value interface{}) error {
 }
 
 // Value implements the driver Valuer interface.
-func (n jsonCampaignChangesetSet) Value() (driver.Value, error) {
+func (n jsonBatchChangeChangesetSet) Value() (driver.Value, error) {
 	if n.Assocs == nil {
 		return nil, nil
 	}
@@ -751,7 +785,7 @@ func scanChangeset(t *batches.Changeset, s scanner) error {
 		&t.CreatedAt,
 		&t.UpdatedAt,
 		&metadata,
-		&jsonCampaignChangesetSet{Assocs: &t.BatchChanges},
+		&jsonBatchChangeChangesetSet{Assocs: &t.BatchChanges},
 		&dbutil.NullString{S: &t.ExternalID},
 		&t.ExternalServiceType,
 		&dbutil.NullString{S: &t.ExternalBranch},
@@ -817,10 +851,10 @@ func scanChangeset(t *batches.Changeset, s scanner) error {
 // GetChangesetsStatsOpts captures the query options needed for
 // retrieving changesets stats.
 type GetChangesetsStatsOpts struct {
-	CampaignID int64
+	BatchChangeID int64
 }
 
-// GetChangesetsStats returns statistics on all the changesets associated to the given campaign,
+// GetChangesetsStats returns statistics on all the changesets associated to the given batch change,
 // or all changesets across the instance.
 func (s *Store) GetChangesetsStats(ctx context.Context, opts GetChangesetsStatsOpts) (stats batches.ChangesetsStats, err error) {
 	q := getChangesetsStatsQuery(opts)
@@ -870,8 +904,8 @@ func getChangesetsStatsQuery(opts GetChangesetsStatsOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
-	if opts.CampaignID != 0 {
-		preds = append(preds, sqlf.Sprintf("changesets.campaign_ids ? %s", strconv.Itoa(int(opts.CampaignID))))
+	if opts.BatchChangeID != 0 {
+		preds = append(preds, sqlf.Sprintf("changesets.batch_change_ids ? %s", strconv.Itoa(int(opts.BatchChangeID))))
 	}
 	return sqlf.Sprintf(getChangesetStatsFmtstr, sqlf.Join(preds, " AND "))
 }

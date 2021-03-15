@@ -354,13 +354,13 @@ func (r *UserResolver) ViewerCanChangeUsername(ctx context.Context) bool {
 func (r *UserResolver) Campaigns(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
 	id := r.ID()
 	args.Namespace = &id
-	return EnterpriseResolvers.campaignsResolver.Campaigns(ctx, args)
+	return EnterpriseResolvers.batchChangesResolver.Campaigns(ctx, args)
 }
 
 func (r *UserResolver) BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
 	id := r.ID()
 	args.Namespace = &id
-	return EnterpriseResolvers.campaignsResolver.BatchChanges(ctx, args)
+	return EnterpriseResolvers.batchChangesResolver.BatchChanges(ctx, args)
 }
 
 type ListUserRepositoriesArgs struct {
@@ -402,22 +402,10 @@ func (r *UserResolver) Repositories(ctx context.Context, args *ListUserRepositor
 			Descending: args.Descending,
 		}}
 	}
-	extSvcs, err := database.GlobalExternalServices.List(ctx, database.ExternalServicesListOptions{
-		NamespaceUserID: r.user.ID,
-	})
-	if err != nil {
-		return nil, err
-	}
 
 	if args.ExternalServiceID == nil {
-		ids := make([]int64, 0, len(extSvcs))
-		for _, svc := range extSvcs {
-			ids = append(ids, svc.ID)
-		}
-		if len(ids) == 0 {
-			ids = []int64{-1}
-		}
-		opt.ExternalServiceIDs = ids
+		opt.UserID = r.user.ID
+		opt.IncludeUserPublicRepos = true
 	} else {
 		id, err := unmarshalExternalServiceID(*args.ExternalServiceID)
 		if err != nil {
@@ -438,12 +426,12 @@ func (r *UserResolver) Repositories(ctx context.Context, args *ListUserRepositor
 
 func (r *UserResolver) CampaignsCodeHosts(ctx context.Context, args *ListCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error) {
 	args.UserID = r.user.ID
-	return EnterpriseResolvers.campaignsResolver.CampaignsCodeHosts(ctx, args)
+	return EnterpriseResolvers.batchChangesResolver.CampaignsCodeHosts(ctx, args)
 }
 
 func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error) {
 	args.UserID = r.user.ID
-	return EnterpriseResolvers.campaignsResolver.BatchChangesCodeHosts(ctx, args)
+	return EnterpriseResolvers.batchChangesResolver.BatchChangesCodeHosts(ctx, args)
 }
 
 func viewerCanChangeUsername(ctx context.Context, userID int32) bool {

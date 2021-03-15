@@ -1,16 +1,12 @@
 import { selectorCompletion } from './selectFilter'
-import { Literal } from './token'
+import { Literal, createLiteral } from './token'
 
 expect.addSnapshotSerializer({
     serialize: (value: string[]): string => value.join(',\n'),
     test: () => true,
 })
 
-const create = (value: string): Literal => ({
-    type: 'literal',
-    value,
-    range: { start: 0, end: 0 },
-})
+const create = (value: string): Literal => createLiteral(value, { start: 0, end: 0 })
 
 describe('selectorCompletion', () => {
     test('suggest depth 0 completions', () => {

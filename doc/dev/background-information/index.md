@@ -17,8 +17,9 @@
   - [Developing the code host integrations](web/code_host_integrations.md)
   - [Styling UI](web/styling.md)
 - [Developing the GraphQL API](graphql_api.md)
-- [Developing campaigns](campaigns/index.md)
+- [Developing batch changes](batch_changes/index.md)
 - [Developing code intelligence](codeintel/index.md)
+- [Developing code insights](insights/index.md)
 - [Developing code monitoring](codemonitoring/index.md)
 - [Developing observability](observability/index.md)
 - [Developing Sourcegraph extensions](sourcegraph_extensions.md)
@@ -27,7 +28,9 @@
 - [Commit messages](commit_messages.md)
 - [Exposing services](exposing-services.md)
 - [Developing a store](basestore.md)
+- [Developing a worker](workers.md)
 - [Developing an out-of-band migration](oobmigrations.md)
+- [Developing a background routine](backgroundroutine.md)
 
 ## [Languages](languages/index.md)
 

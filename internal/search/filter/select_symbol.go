@@ -87,9 +87,6 @@ func pick(symbols []*result.SymbolMatch, satisfy func(*result.SymbolMatch) bool)
 
 func SelectSymbolKind(symbols []*result.SymbolMatch, field string) []*result.SymbolMatch {
 	return pick(symbols, func(s *result.SymbolMatch) bool {
-		if field == toSelectKind[strings.ToLower(s.Symbol.Kind)] {
-			return true
-		}
-		return false
+		return field == toSelectKind[strings.ToLower(s.Symbol.Kind)]
 	})
 }
