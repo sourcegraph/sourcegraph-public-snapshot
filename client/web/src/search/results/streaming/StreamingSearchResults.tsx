@@ -222,6 +222,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                                 state={results?.state || 'loading'}
                                 history={props.history}
                                 onSearchAgain={onSearchAgain}
+                                showTrace={!!trace}
                             />
                         }
                     />

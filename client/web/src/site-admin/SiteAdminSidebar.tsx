@@ -24,18 +24,13 @@ export const SiteAdminSidebar: React.FunctionComponent<SiteAdminSidebarProps> = 
                 ({ header, items, condition = () => true }, index) =>
                     condition({}) &&
                     (items.length > 1 ? (
-                        <ListGroupItem className="p-0">
-                            <SidebarCollapseItems
-                                icon={header?.icon}
-                                label={header?.label}
-                                key={index}
-                                openByDefault={true}
-                            >
+                        <ListGroupItem className="p-0" key={index}>
+                            <SidebarCollapseItems icon={header?.icon} label={header?.label} openByDefault={true}>
                                 <SidebarGroupItems>
                                     {items.map(
-                                        ({ label, to, exact, condition = () => true }) =>
+                                        ({ label, to, source = 'client', condition = () => true }) =>
                                             condition({}) && (
-                                                <SidebarNavItem to={to} exact={exact} key={label}>
+                                                <SidebarNavItem to={to} exact={true} key={label} source={source}>
                                                     {label}
                                                 </SidebarNavItem>
                                             )
@@ -44,12 +39,8 @@ export const SiteAdminSidebar: React.FunctionComponent<SiteAdminSidebarProps> = 
                             </SidebarCollapseItems>
                         </ListGroupItem>
                     ) : (
-                        <ListGroupItem className="p-0">
-                            <Link
-                                key={items[0].label}
-                                to={items[0].to}
-                                className="bg-2 border-0 d-flex list-group-item-action p-2 w-100"
-                            >
+                        <ListGroupItem className="p-0" key={items[0].label}>
+                            <Link to={items[0].to} className="bg-2 border-0 d-flex list-group-item-action p-2 w-100">
                                 <span>
                                     {header?.icon && <header.icon className="sidebar__icon icon-inline mr-1" />}{' '}
                                     {items[0].label}

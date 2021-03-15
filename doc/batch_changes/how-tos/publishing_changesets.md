@@ -2,8 +2,7 @@
 
 After you've [created a batch change](creating_a_batch_change.md) with `published: false` in its batch spec, you can see a preview of the changesets (e.g., GitHub pull requests) that will be created on the code host once they're published:
 
-<!---TODO update link-->
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/publishing_changesets_preview_unpublished.png" class="screenshot center">
+<img src="https://sourcegraphstatic.com/docs/images/batch_changes/browser_batch_created.png" class="screenshot center">
 
 In order to create these changesets on the code hosts, you need to publish them.
 
@@ -44,7 +43,7 @@ Publishing a changesets will:
 
 In the Sourcegraph web UI you'll see a progress indicator for the changesets that are being published and any possible errors:
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/publishing_changesets_viewing_progress_and_errors.png" class="screenshot center">
+<img src="https://sourcegraphstatic.com/docs/images/batch_changes/publishing_changesets_viewing_progress_and_errors.png" class="screenshot center">
 
 If you run into any errors, you can retry publishing after you've resolved the problem by running `src batch apply` again.
 

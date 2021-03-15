@@ -16,7 +16,7 @@ export const BatchChangesListEmpty: React.FunctionComponent<BatchChangesListEmpt
                         <div>
                             <h4>
                                 <a
-                                    href="https://docs.sourcegraph.com/campaigns/tutorials/search_and_replace_specific_terms"
+                                    href="https://docs.sourcegraph.com/batch_changes/tutorials/search_and_replace_specific_terms"
                                     rel="noopener"
                                 >
                                     Finding and replacing code and text
@@ -37,7 +37,7 @@ export const BatchChangesListEmpty: React.FunctionComponent<BatchChangesListEmpt
                         <div>
                             <h4>
                                 <a
-                                    href="https://docs.sourcegraph.com/campaigns/tutorials/updating_go_import_statements"
+                                    href="https://docs.sourcegraph.com/batch_changes/tutorials/updating_go_import_statements"
                                     rel="noopener"
                                 >
                                     Refactoring with language aware search
@@ -57,7 +57,7 @@ export const BatchChangesListEmpty: React.FunctionComponent<BatchChangesListEmpt
             </div>
             <div className="col-12 mb-4">
                 <p>
-                    <a href="https://docs.sourcegraph.com/campaigns/tutorials" rel="noopener">
+                    <a href="https://docs.sourcegraph.com/batch_changes/tutorials" rel="noopener">
                         More tutorials
                     </a>
                 </p>
@@ -70,7 +70,7 @@ export const BatchChangesListEmpty: React.FunctionComponent<BatchChangesListEmpt
                     <strong>Quickstart</strong>
                 </p>
                 <p>Create your first Sourcegraph batch change in 10 minutes or less.</p>
-                <a href="https://docs.sourcegraph.com/campaigns/quickstart" rel="noopener">
+                <a href="https://docs.sourcegraph.com/batch_changes/quickstart" rel="noopener">
                     Batch changes quickstart
                 </a>
             </div>
@@ -78,9 +78,12 @@ export const BatchChangesListEmpty: React.FunctionComponent<BatchChangesListEmpt
                 <p>
                     <strong>Introduction</strong>
                 </p>
-                <p>Learn how batch changes enables large-scale code changes across many repositories and code hosts.</p>
-                <a href="https://docs.sourcegraph.com/campaigns/explanations/introduction_to_campaigns" rel="noopener">
-                    Introduction to batch changes
+                <p>Learn how Batch Changes enables large-scale code changes across many repositories and code hosts.</p>
+                <a
+                    href="https://docs.sourcegraph.com/batch_changes/explanations/introduction_to_batch_changes"
+                    rel="noopener"
+                >
+                    Introduction to Batch Changes
                 </a>
             </div>
             <div className="col-12 col-md-4 mb-3">
@@ -90,24 +93,24 @@ export const BatchChangesListEmpty: React.FunctionComponent<BatchChangesListEmpt
                 <p>
                     Take a look at the{' '}
                     <a
-                        href="https://docs.sourcegraph.com/campaigns/references/campaign_spec_yaml_reference"
+                        href="https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference"
                         rel="noopener"
                     >
                         batch spec YAML reference
                     </a>
                     , learn about its powerful{' '}
-                    <a href="https://docs.sourcegraph.com/campaigns/references/campaign_spec_templating">
+                    <a href="https://docs.sourcegraph.com/batch_changes/references/batch_spec_templating">
                         templating language
                     </a>
                     ,{' '}
                     <a
-                        href="https://docs.sourcegraph.com/campaigns/explanations/permissions_in_campaigns"
+                        href="https://docs.sourcegraph.com/batch_changes/explanations/permissions_in_batch_changes"
                         rel="noopener"
                     >
                         permissions
                     </a>{' '}
                     and more in the{' '}
-                    <a href="https://docs.sourcegraph.com/campaigns" rel="noopener">
+                    <a href="https://docs.sourcegraph.com/batch_changes" rel="noopener">
                         Batch Changes documentation
                     </a>
                     .

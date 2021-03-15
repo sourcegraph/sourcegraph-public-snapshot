@@ -15,12 +15,19 @@ export const SidebarNavItem: React.FunctionComponent<{
     icon?: React.ComponentType<{ className?: string }>
     className?: string
     exact?: boolean
-}> = ({ icon: Icon, children, className, to, exact }) => (
-    <NavLink to={to} exact={exact} className={classNames('list-group-item list-group-item-action py-2', className)}>
-        {Icon && <Icon className="icon-inline mr-2" />}
-        {children}
-    </NavLink>
-)
+    source?: string
+}> = ({ icon: Icon, children, className, to, exact, source }) =>
+    source === 'server' ? (
+        <a href={to} className={classNames('list-group-item list-group-item-action py-2', className)}>
+            {Icon && <Icon className="icon-inline mr-2" />}
+            {children}
+        </a>
+    ) : (
+        <NavLink to={to} exact={exact} className={classNames('list-group-item list-group-item-action py-2', className)}>
+            {Icon && <Icon className="icon-inline mr-2" />}
+            {children}
+        </NavLink>
+    )
 
 /**
  * Header of a `SideBarGroup`

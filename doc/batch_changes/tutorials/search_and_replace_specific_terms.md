@@ -16,7 +16,7 @@ This tutorial shows you how to create [a batch spec](../explanations/introductio
 
 The batch spec can be easily changed to search and replace other terms in other file types.
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tutorials/use_allowlist_denylist_wording_teaser.png" class="screenshot center">
+<img src="https://sourcegraphstatic.com/docs/images/batch_changes/use_allowlist_denylist_wording_teaser.png" class="screenshot center">
 
 ### Prerequisites
 
@@ -62,12 +62,12 @@ changesetTemplate:
 1. In your terminal, run this command:
 
     <pre>src batch preview -f use-allowlist-denylist-wording.batch.yaml</pre>
-1. Wait for it to run and compute the changes for each repository. <!---TODO update link-->
-    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tutorials/use_allowlist_denylist_wording_wait_run.png" class="screenshot">
-1. Open the preview URL that the command printed out. <!---TODO update link-->
-    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tutorials/use_allowlist_denylist_wording_click_url.png" class="screenshot">
-1. Examine the preview. Confirm that the changes are what you intended. If not, edit your batch spec and then rerun the command above. <!---TODO update link-->
-    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tutorials/use_allowlist_denylist_wording_preview.png" class="screenshot">
+1. Wait for it to run and compute the changes for each repository.
+    <img src="https://sourcegraphstatic.com/docs/images/batch_changes/use_allowlist_denylist_wording_wait_run.png" class="screenshot">
+1. Open the preview URL that the command printed out.
+    <img src="https://sourcegraphstatic.com/docs/images/batch_changes/use_allowlist_denylist_wording_click_url.png" class="screenshot">
+1. Examine the preview. Confirm that the changes are what you intended. If not, edit your batch spec and then rerun the command above.
+    <img src="https://sourcegraphstatic.com/docs/images/batch_changes/use_allowlist_denylist_wording_preview.png" class="screenshot">
 1. Click the **Apply spec** button to create the batch change.
 1. Feel free to then publish the changesets (i.e. create pull requests and merge requests) by [modifying the `published` attribute in the batch spec](../references/batch_spec_yaml_reference.md#changesettemplate-published) and re-running the `src batch preview` command.
 

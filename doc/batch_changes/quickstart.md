@@ -34,7 +34,7 @@ In order to create batch changes we need to [install the Sourcegraph CLI](../cli
     ```
     src login https://YOUR-SOURCEGRAPH-INSTANCE
     ```
-    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/src_login_success.png" class="screenshot">
+    <img src="https://sourcegraphstatic.com/docs/images/batch_changes/src_login_success.png" class="screenshot">
 
 
 Once `src login` reports that you're authenticated, we're ready for the next step.
@@ -78,16 +78,16 @@ Let's see the changes that will be made. Don't worry---no commits, branches, or 
 
     <pre>src batch preview -f hello-world.batch.yaml</pre>
 1. Wait for it to run and compute the changes for each repository.
-    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/src_campaign_preview_waiting.png" class="screenshot">
+    <img src="https://sourcegraphstatic.com/docs/images/batch_changes/src_batch_preview_waiting.png" class="screenshot">
 1. When it's done, click the displayed link to see all of the changes that will be made.
-    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/src_campaign_preview_link.png" class="screenshot">
+    <img src="https://sourcegraphstatic.com/docs/images/batch_changes/src_batch_preview_link.png" class="screenshot">
 1. Make sure the changes look right.
-    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/browser_campaign_preview.png" class="screenshot">
+    <img src="https://sourcegraphstatic.com/docs/images/batch_changes/browser_batch_preview.png" class="screenshot">
 1. If you want to modify which changes are made, edit the `hello-world.batch.yaml` file, rerun the `src batch preview` command and open the newly generated preview URL.
 
     >NOTE: If you want to run the batch change on fewer repositories, change the `repositoriesMatchingQuery` in `hello-world.batch.yaml` to something like `file:README.md repo:myproject` (to only match repositories whose name contains `myproject`).
 1. Click the **Apply spec** button to create the batch change. You should see something like this:
-    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/browser_campaign_created.png" class="screenshot">
+    <img src="https://sourcegraphstatic.com/docs/images/batch_changes/browser_batch_created.png" class="screenshot">
 
 You created your first batch change! The batch change's changesets are still unpublished, which means they exist only on Sourcegraph and haven't been pushed to your code host yet.
 
@@ -121,15 +121,15 @@ The red circle next to the code host will now change to a green tick. Sourcegrap
 Now that you have credentials set up, you can publish the changesets in the batch change. On a real batch change, you would do the following:
 
 1. Change the `published: false` in `hello-world.batch.yaml` to `published: true`.
-    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/campaign_publish_true.png" class="screenshot">
+    <img src="https://sourcegraphstatic.com/docs/images/batch_changes/batch_publish_true.png" class="screenshot">
 
     > NOTE: Change [`published` to an array](references/batch_spec_yaml_reference.md#publishing-only-specific-changesets) to publish only some of the changesets, or set [`'draft'` to create changesets as drafts on code hosts that support drafts](references/batch_spec_yaml_reference.md#changesettemplate-published).
 1. Run the `src batch preview` command again and open the URL.
-    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/src_rerun_preview.png" class="screenshot">
+    <img src="https://sourcegraphstatic.com/docs/images/batch_changes/src_rerun_preview.png" class="screenshot">
 1. On the preview page you can confirm that changesets will be published when the spec is applied.
-    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/browser_campaign_preview_publish.png" class="screenshot">
+    <img src="https://sourcegraphstatic.com/docs/images/batch_changes/browser_batch_preview_publish.png" class="screenshot">
 1. Click the **Apply spec** button and those changesets will be published on the code host.
-    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/browser_campaign_async.png" class="screenshot">
+    <img src="https://sourcegraphstatic.com/docs/images/batch_changes/browser_batch_async.png" class="screenshot">
 
     > NOTE: You can also create or update a batch change by running `src batch apply`. This skips the preview stage, and is especially useful when updating an existing batch change.
 
