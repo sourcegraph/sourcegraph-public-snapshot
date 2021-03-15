@@ -129,9 +129,18 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 // FetchUserPerms returns a list of depot prefixes that the given user has
 // access to on the Perforce Server.
 func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) (*authz.ExternalUserPermissions, error) {
+	if account == nil {
+		return nil, errors.New("no account provided")
+	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
+		return nil, fmt.Errorf("not a code host of the account: want %q but have %q",
+			account.AccountSpec.ServiceID, p.codeHost.ServiceID)
+	}
+
 	user, err := perforce.GetExternalAccountData(&account.AccountData)
 	if err != nil {
 		return nil, errors.Wrap(err, "get external account data")
+	} else if user == nil {
+		return nil, errors.New("no user found in the external account data")
 	}
 
 	rc, _, err := gitserver.DefaultClient.P4Exec(ctx, p.host, p.user, p.password, "protects", "-u", user.Username)
@@ -161,6 +170,9 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 
 		// Rule that starts with a "-" in depot prefix means exclusion (i.e. revoke access)
 		if strings.HasPrefix(depotPrefix, "-") {
+			depotPrefix = depotPrefix[1:]
+
+			// Check if the access level is able to revoke read access.
 			_, canRevokeReadAccess := map[string]struct{}{
 				"list":   {},
 				"read":   {},
@@ -177,18 +189,23 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 			}
 
 			for i, prefix := range includePrefixes {
-				if !strings.HasPrefix(depotPrefix[1:], string(prefix)) {
+				if !strings.HasPrefix(depotPrefix, string(prefix)) {
 					continue
-				} else if depotPrefix[1:] == string(prefix) {
+				}
+
+				// Perforce ACLs can have conflict rules and the later one wins. So if there is
+				// an exact match for an include prefix, we take it out.
+				if depotPrefix == string(prefix) {
 					includePrefixes = append(includePrefixes[:i], includePrefixes[i+1:]...)
 					break
 				}
 
-				excludePrefixes = append(excludePrefixes, extsvc.RepoID(depotPrefix[1:]))
+				excludePrefixes = append(excludePrefixes, extsvc.RepoID(depotPrefix))
 				break
 			}
 
 		} else {
+			// Check if the access level is able to grant read access.
 			_, canGrantReadAccess := map[string]struct{}{
 				"read":   {},
 				"=read":  {},
