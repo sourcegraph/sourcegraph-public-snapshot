@@ -8,7 +8,7 @@ import { Contributions, Evaluated, Raw, TextDocumentPositionParameters } from '.
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { HoverMerged } from './client/types/hover'
 import { GraphQLResult } from '../graphql/graphql'
-import { Context, ContributionScope } from './client/context/context'
+import { Context, ContributionScope } from './extension/api/context/context'
 import { ErrorLike } from '../util/errors'
 import { ConfiguredExtension } from '../extensions/extension'
 import { DeepReplace } from '../util/types'

@@ -1,4 +1,4 @@
-import { decorationAttachmentStyleForTheme, decorationStyleForTheme, fileDecorationColorForTheme } from './decoration'
+import { decorationAttachmentStyleForTheme, decorationStyleForTheme, fileDecorationColorForTheme } from './decorations'
 
 describe('decorationStyleForTheme', () => {
     const FIXTURE_RANGE = { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } }

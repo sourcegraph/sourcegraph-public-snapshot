@@ -28,8 +28,8 @@ import {
     filterContributions,
     mergeContributions,
     parseContributionExpressions,
-} from '../client/services/contribution'
-import { computeContext, Context } from '../client/context/context'
+} from './api/contribution'
+import { computeContext, Context } from './api/context/context'
 import { proxy } from 'comlink'
 import { ExtensionCodeEditor } from './api/codeEditor'
 import { ExtensionDirectoryViewer } from './api/directoryViewer'

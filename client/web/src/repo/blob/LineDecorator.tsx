@@ -4,7 +4,7 @@ import isAbsoluteUrl from 'is-absolute-url'
 import {
     decorationAttachmentStyleForTheme,
     decorationStyleForTheme,
-} from '../../../../shared/src/api/client/services/decoration'
+} from '../../../../shared/src/api/extension/api/decorations'
 import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'

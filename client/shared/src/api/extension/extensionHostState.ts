@@ -6,7 +6,7 @@ import { MainThreadAPI } from '../contract'
 import { ExtensionWorkspaceRoot } from './api/workspaceRoot'
 import { Contributions } from '../protocol'
 import { ExtensionViewer, ViewerUpdate } from '../viewerTypes'
-import { Context } from '../client/context/context'
+import { Context } from './api/context/context'
 import { ExtensionDocument } from './api/textDocument'
 import { ReferenceCounter } from '../../util/ReferenceCounter'
 import {

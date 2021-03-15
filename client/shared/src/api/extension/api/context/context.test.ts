@@ -1,6 +1,6 @@
-import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../settings/settings'
+import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../../settings/settings'
+import { CodeEditorWithPartialModel } from '../../../viewerTypes'
 import { computeContext } from './context'
-import { CodeEditorWithPartialModel } from '../../viewerTypes'
 
 describe('computeContext', () => {
     test('provides config', () => {

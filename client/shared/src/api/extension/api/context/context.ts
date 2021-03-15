@@ -1,6 +1,6 @@
 import { basename, dirname, extname } from 'path'
-import { isSettingsValid, SettingsCascadeOrError } from '../../../settings/settings'
-import { ViewerWithPartialModel } from '../../viewerTypes'
+import { SettingsCascadeOrError, isSettingsValid } from '../../../../settings/settings'
+import { ViewerWithPartialModel } from '../../../viewerTypes'
 
 /**
  * Context is an arbitrary, immutable set of key-value pairs. Its value can be any JSON object.
