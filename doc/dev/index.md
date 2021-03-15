@@ -48,7 +48,7 @@ Guides to help with troubleshooting, configuring test instances, debugging, and 
 ### Implementing Sourcegraph
 
 - [Developing the product documentation](how-to/documentation_implementation.md)
-- [Observability](../background-information/observability/index.md)
+- [Observability](background-information/observability/index.md)
   - [How to find monitoring](how-to/find_monitoring.md)
   - [How to add monitoring](how-to/add_monitoring.md)
   - [Set up local Sourcegraph monitoring development](how-to/monitoring_local_dev.md)
