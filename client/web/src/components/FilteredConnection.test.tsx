@@ -3,6 +3,7 @@ import { createLocation } from 'history'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 import { ConnectionNodesForTesting as ConnectionNodes } from './FilteredConnection'
+import sinon from 'sinon'
 
 function fakeConnection<N>({
     hasNextPage,
@@ -94,7 +95,7 @@ describe('ConnectionNodes', () => {
     })
 
     it('calls the onShowMore callback', async () => {
-        const showMoreCallback = jest.fn(() => {})
+        const showMoreCallback = sinon.spy(() => undefined)
         render(
             <ConnectionNodes
                 {...defaultConnectionNodesProps}
@@ -104,7 +105,7 @@ describe('ConnectionNodes', () => {
             />
         )
         fireEvent.click(screen.getByRole('button')!)
-        await waitFor(() => expect(showMoreCallback).toHaveBeenCalledTimes(1))
+        await waitFor(() => sinon.assert.calledOnce(showMoreCallback))
     })
 
     it("doesn't show summary info if totalCount is null", () => {
@@ -177,7 +178,7 @@ describe('ConnectionNodes', () => {
                 {...defaultConnectionNodesProps}
                 connection={fakeConnection({ hasNextPage: true, totalCount: 2, nodes: [{}] })}
                 loading={true}
-                connectionQuery={'meow?'}
+                connectionQuery="meow?"
             />
         )
         // Summary should come _before_ the nodes.
@@ -192,7 +193,7 @@ describe('ConnectionNodes', () => {
                 {...defaultConnectionNodesProps}
                 connection={fakeConnection({ hasNextPage: true, totalCount: 2, nodes: [{}] })}
                 loading={true}
-                connectionQuery={'meow?'}
+                connectionQuery="meow?"
             />
         )
         // Summary should come _before_ the nodes.
