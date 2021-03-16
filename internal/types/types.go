@@ -1405,6 +1405,15 @@ type InsightUsageStatistics struct {
 	DataPointClicks  *int32
 }
 
+type CodeMonitoringUsageStatistics struct {
+	CodeMonitoringPageViews                       *int32
+	CreateCodeMonitorPageViews                    *int32
+	CreateCodeMonitorPageViewsWithTriggerQuery    *int32
+	CreateCodeMonitorPageViewsWithoutTriggerQuery *int32
+	ManageCodeMonitorPageViews                    *int32
+	CodeMonitorEmailLinkClicks                    *int32
+}
+
 // Secret represents the secrets table
 type Secret struct {
 	ID int32

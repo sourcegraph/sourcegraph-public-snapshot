@@ -90,6 +90,13 @@ By default, Sourcegraph also aggregates usage and performance metrics for some p
   - Total counts of edits, additions, and removals of insights by type
   - Total count of clicks on the "Add more insights" and "Configure insights" buttons on the insights page
   - Weekly count of users that have created an insight, and count of users that have created their first insight this week                  
+- Code monitoring usage data
+  - Total number of views of the code monitoring page
+  - Total number of views of the create code monitor page
+  - Total number of views of the create code monitor page with a pre-populated trigger query
+  - Total number of views of the create code monitor page without a pre-populated trigger query
+  - Total number of views of the manage code monitor page
+  - Total number of clicks on the code monitor email search link
 
 ## CIDR Range for Sourcegraph
 
