@@ -53,10 +53,8 @@ func IsNotFound(err error) bool {
 	if err == ErrNotFound || errors.Cause(err) == ErrNotFound {
 		return true
 	}
-	if errors.As(err, &codecommittypes.RepositoryDoesNotExistException{}) {
-		return true
-	}
-	return false
+	var rdnee codecommittypes.RepositoryDoesNotExistException
+	return errors.As(err, &rdnee)
 }
 
 // IsUnauthorized reports whether err is a AWS CodeCommit API unauthorized error.
