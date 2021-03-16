@@ -162,12 +162,7 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                                     Published on
                                 </dt>
                                 <dd>
-                                    <LinkOrSpan
-                                        to={extension.registryExtension.remoteURL}
-                                        target={extension.registryExtension.isLocal ? undefined : '_self'}
-                                    >
-                                        {extension.registryExtension.registryName}
-                                    </LinkOrSpan>
+                                    <span>{extension.registryExtension.registryName}</span>
                                 </dd>
                             </>
                         )}
