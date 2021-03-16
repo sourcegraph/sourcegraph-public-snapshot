@@ -8,7 +8,7 @@ import {
     mergeMap,
     switchMap,
 } from 'rxjs/operators'
-import { isDefined, isExactly, isNot, property } from '../../util/types'
+import { allOf, isDefined, isExactly, isNot, property } from '../../util/types'
 import { FlatExtensionHostAPI } from '../contract'
 import { providerResultToObservable, ProxySubscribable, proxySubscribable } from './api/common'
 import { updateContext } from './extensionHost'
@@ -626,6 +626,7 @@ function callViewProviders<W extends ContributableViewContainer>(
                     concat(
                         [undefined],
                         providerResultToObservable(viewProvider.provideView(context)).pipe(
+                            defaultIfEmpty<sourcegraph.View | null | undefined>(null),
                             catchError((error): [ErrorLike] => {
                                 console.error('View provider errored:', error)
                                 return [asError(error)]
@@ -635,7 +636,7 @@ function callViewProviders<W extends ContributableViewContainer>(
                 ),
             ])
         ),
-        map(views => views.filter(isDefined))
+        map(views => views.filter(allOf(isDefined, property('view', isNot(isExactly(null))))))
     )
 }
 
