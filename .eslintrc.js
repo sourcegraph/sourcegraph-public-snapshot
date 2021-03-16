@@ -1,7 +1,7 @@
 // @ts-check
 
 const config = {
-  extends: '@sourcegraph/eslint-config',
+  extends: ['@sourcegraph/eslint-config', 'plugin:jsx-a11y/recommended'],
   env: {
     browser: true,
     node: true,
@@ -31,7 +31,7 @@ const config = {
       },
     ],
   },
-  plugins: ['@sourcegraph/sourcegraph'],
+  plugins: ['@sourcegraph/sourcegraph', 'jsx-a11y'],
   rules: {
     // Rules that are specific to this repo
     // All other rules should go into https://github.com/sourcegraph/eslint-config
