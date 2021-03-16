@@ -6,8 +6,8 @@ import (
 	"encoding/hex"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/aws/awserr"
-	"github.com/aws/aws-sdk-go-v2/service/codecommit"
+	codecommittypes "github.com/aws/aws-sdk-go-v2/service/codecommit/types"
+	"github.com/aws/smithy-go"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -53,16 +53,17 @@ func IsNotFound(err error) bool {
 	if err == ErrNotFound || errors.Cause(err) == ErrNotFound {
 		return true
 	}
-	if e, ok := err.(awserr.Error); ok {
-		return e.Code() == codecommit.ErrCodeRepositoryDoesNotExistException
+	if _, ok := err.(*codecommittypes.RepositoryDoesNotExistException); ok {
+		return true
 	}
 	return false
 }
 
 // IsUnauthorized reports whether err is a AWS CodeCommit API unauthorized error.
 func IsUnauthorized(err error) bool {
-	if e, ok := err.(awserr.Error); ok {
-		return e.Code() == "SignatureDoesNotMatch"
+	var ae smithy.APIError
+	if errors.As(err, &ae) {
+		return ae.ErrorCode() == "SignatureDoesNotMatch"
 	}
 	return false
 }
