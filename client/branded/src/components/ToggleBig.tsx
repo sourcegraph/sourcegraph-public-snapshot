@@ -1,5 +1,4 @@
 import * as React from 'react'
-import Close from 'mdi-react/CloseIcon'
 import Check from 'mdi-react/CheckIcon'
 import classnames from 'classnames'
 
