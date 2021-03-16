@@ -53,7 +53,7 @@ func IsNotFound(err error) bool {
 	if err == ErrNotFound || errors.Cause(err) == ErrNotFound {
 		return true
 	}
-	if _, ok := err.(*codecommittypes.RepositoryDoesNotExistException); ok {
+	if errors.As(err, &codecommittypes.RepositoryDoesNotExistException{}) {
 		return true
 	}
 	return false
