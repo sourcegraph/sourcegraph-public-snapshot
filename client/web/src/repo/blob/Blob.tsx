@@ -507,7 +507,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 ref={nextCodeViewElement}
                 dangerouslySetInnerHTML={{ __html: blobInfo.html }}
             />
-            )
             {hoverState.hoverOverlayProps && (
                 <WebHoverOverlay
                     {...props}
