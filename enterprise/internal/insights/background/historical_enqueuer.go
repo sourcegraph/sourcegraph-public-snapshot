@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -80,7 +81,7 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 			_, err := queryrunner.EnqueueJob(ctx, workerBaseStore, job)
 			return err
 		},
-		gitFirstEverCommit:   git.FirstEverCommit,
+		gitFirstEverCommit:   (&cachedGitFirstEverCommit{impl: git.FirstEverCommit}).gitFirstEverCommit,
 		gitFindNearestCommit: git.FindNearestCommit,
 
 		// Fill e.g. the last 52 weeks of data, recording 1 point per week.
@@ -465,4 +466,31 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 		State:       "queued",
 	})
 	return
+}
+
+// cachedGitFirstEverCommit is a simple in-memory cache for gitFirstEverCommit calls. It does so
+// using a map, and entries are never evicted because they are expected to be small and in general
+// unchanging.
+type cachedGitFirstEverCommit struct {
+	impl func(ctx context.Context, repoName api.RepoName) (*git.Commit, error)
+
+	mu    sync.Mutex
+	cache map[api.RepoName]*git.Commit
+}
+
+func (c *cachedGitFirstEverCommit) gitFirstEverCommit(ctx context.Context, repoName api.RepoName) (*git.Commit, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.cache == nil {
+		c.cache = map[api.RepoName]*git.Commit{}
+	}
+	if cached, ok := c.cache[repoName]; ok {
+		return cached, nil
+	}
+	entry, err := c.impl(ctx, repoName)
+	if err != nil {
+		return nil, err
+	}
+	c.cache[repoName] = entry
+	return entry, nil
 }
