@@ -189,7 +189,6 @@ SET (clone_status, shard_id, updated_at) =
 
 // SetLastError will attempt to update ONLY the last error of a GitServerRepo. If
 // a matching row does not yet exist a new one will be created.
-// TODO: Add a test
 func (s *GitserverRepoStore) SetLastError(ctx context.Context, id api.RepoID, error string, shardID string) error {
 	result, err := s.ExecResult(ctx, sqlf.Sprintf(`
 INSERT INTO gitserver_repos(repo_id, last_error, shard_id, updated_at)

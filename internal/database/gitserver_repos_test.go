@@ -224,6 +224,71 @@ func TestSetCloneStatus(t *testing.T) {
 	}
 }
 
+func TestSetLastError(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	db := dbtesting.GetDB(t)
+	ctx := context.Background()
+	const shardID = "test"
+
+	repo1 := &types.Repo{
+		Name:         "github.com/sourcegraph/repo1",
+		URI:          "github.com/sourcegraph/repo1",
+		ExternalRepo: api.ExternalRepoSpec{},
+	}
+
+	// Create one test repo
+	err := Repos(db).Create(ctx, repo1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gitserverRepo := &types.GitserverRepo{
+		RepoID:      repo1.ID,
+		ShardID:     shardID,
+		CloneStatus: types.CloneStatusNotCloned,
+	}
+
+	// Create GitServerRepo
+	if err := GitserverRepos(db).Upsert(ctx, gitserverRepo); err != nil {
+		t.Fatal(err)
+	}
+
+	// Set error
+	err = GitserverRepos(db).SetLastError(ctx, gitserverRepo.RepoID, "oops", shardID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fromDB, err := GitserverRepos(db).GetByID(ctx, gitserverRepo.RepoID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gitserverRepo.LastError = "oops"
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+		t.Fatal(diff)
+	}
+
+	// Remove error
+	err = GitserverRepos(db).SetLastError(ctx, gitserverRepo.RepoID, "", shardID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fromDB, err = GitserverRepos(db).GetByID(ctx, gitserverRepo.RepoID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gitserverRepo.LastError = ""
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
 func TestGitserverRepoUpsertNullShard(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
