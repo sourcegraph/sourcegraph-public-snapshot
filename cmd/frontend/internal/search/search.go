@@ -207,7 +207,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			first = false
 			matchesFlush()
 
-			streamingLatencyHistogram.WithLabelValues(string(GuessSource(r))).
+			metricLatency.WithLabelValues(string(GuessSource(r))).
 				Observe(time.Since(start).Seconds())
 		}
 	}
@@ -504,7 +504,7 @@ func (j *jsonArrayBuf) Len() int {
 	return j.buf.Len()
 }
 
-var streamingLatencyHistogram = promauto.NewHistogramVec(prometheus.HistogramOpts{
+var metricLatency = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Name:    "src_search_streaming_latency_seconds",
 	Help:    "Histogram with time to first result in seconds",
 	Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
