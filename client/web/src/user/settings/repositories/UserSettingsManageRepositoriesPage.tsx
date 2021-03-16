@@ -737,7 +737,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         (!fetchingRepos && 'Save') ||
                         (fetchingRepos === 'loading' && 'Saving...') ||
                         (fetchingRepos === 'slow' && 'Still saving...') ||
-                        "Any time now..."
+                        'Any time now...'
                     }
                     disabled={isLoading(fetchingRepos)}
                 />
