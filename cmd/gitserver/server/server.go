@@ -1464,7 +1464,12 @@ func honeySampleRate(cmd string) uint {
 
 var headBranchPattern = lazyregexp.New(`HEAD branch: (.+?)\n`)
 
+var doRepoUpdateMock func(context.Context, api.RepoName) error
+
 func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName) error {
+	if doRepoUpdateMock != nil {
+		return doRepoUpdateMock(ctx, repo)
+	}
 	span, ctx := ot.StartSpanFromContext(ctx, "Server.doRepoUpdate")
 	span.SetTag("repo", repo)
 	defer span.Finish()
