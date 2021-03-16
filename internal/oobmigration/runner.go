@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/efritz/glock"
+	"github.com/derision-test/glock"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
@@ -18,13 +18,12 @@ import (
 // and will run each migration that has no yet completed: either reached 100% in the forward
 // direction or 0% in the reverse direction.
 type Runner struct {
-	store           storeIface
-	refreshInterval time.Duration
-	refreshClock    glock.Clock
-	migrators       map[int]migratorAndOption
-	ctx             context.Context    // root context passed to the handler
-	cancel          context.CancelFunc // cancels the root context
-	finished        chan struct{}      // signals that Start has finished
+	store         storeIface
+	refreshTicker glock.Ticker
+	migrators     map[int]migratorAndOption
+	ctx           context.Context    // root context passed to the handler
+	cancel        context.CancelFunc // cancels the root context
+	finished      chan struct{}      // signals that Start has finished
 }
 
 type migratorAndOption struct {
@@ -35,20 +34,19 @@ type migratorAndOption struct {
 var _ goroutine.BackgroundRoutine = &Runner{}
 
 func NewRunnerWithDB(db dbutil.DB, refreshInterval time.Duration) *Runner {
-	return newRunner(NewStoreWithDB(dbconn.Global), refreshInterval, glock.NewRealClock())
+	return newRunner(NewStoreWithDB(dbconn.Global), glock.NewRealTicker(refreshInterval))
 }
 
-func newRunner(store storeIface, refreshInterval time.Duration, refreshClock glock.Clock) *Runner {
+func newRunner(store storeIface, refreshTicker glock.Ticker) *Runner {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &Runner{
-		store:           store,
-		refreshInterval: refreshInterval,
-		refreshClock:    refreshClock,
-		migrators:       map[int]migratorAndOption{},
-		ctx:             ctx,
-		cancel:          cancel,
-		finished:        make(chan struct{}),
+		store:         store,
+		refreshTicker: refreshTicker,
+		migrators:     map[int]migratorAndOption{},
+		ctx:           ctx,
+		cancel:        cancel,
+		finished:      make(chan struct{}),
 	}
 }
 
@@ -61,8 +59,8 @@ type MigratorOptions struct {
 	// Interval specifies the time between invocations of an active migration.
 	Interval time.Duration
 
-	// clock mocks periodic behavior for tests.
-	clock glock.Clock
+	// ticker mocks periodic behavior for tests.
+	ticker glock.Ticker
 }
 
 // Register correlates the given migrator with the given migration identifier. An error is
@@ -75,13 +73,12 @@ func (r *Runner) Register(id int, migrator Migrator, options MigratorOptions) er
 	if options.Interval == 0 {
 		options.Interval = time.Second
 	}
-	if options.clock == nil {
-		options.clock = glock.NewRealClock()
+	if options.ticker == nil {
+		options.ticker = glock.NewRealTicker(options.Interval)
 	}
 
 	r.migrators[id] = migratorAndOption{migrator, migratorOptions{
-		interval: options.Interval,
-		clock:    options.clock,
+		ticker: options.ticker,
 	}}
 	return nil
 }
@@ -161,7 +158,7 @@ func (r *Runner) listMigrations(ctx context.Context) <-chan []Migration {
 			}
 
 			select {
-			case <-r.refreshClock.After(r.refreshInterval):
+			case <-r.refreshTicker.Chan():
 			case <-ctx.Done():
 				return
 			}
@@ -198,8 +195,7 @@ func (r *Runner) Stop() {
 }
 
 type migratorOptions struct {
-	interval time.Duration
-	clock    glock.Clock
+	ticker glock.Ticker
 }
 
 // runMigrator runs the given migrator function periodically (on each read from ticker)
@@ -223,7 +219,7 @@ func runMigrator(ctx context.Context, store storeIface, migrator Migrator, migra
 		case migration = <-migrations:
 			// Refreshed our migration state
 
-		case <-options.clock.After(options.interval):
+		case <-options.ticker.Chan():
 			if !migration.Complete() {
 				// Run the migration only if there's something left to do
 				if err := runMigrationFunction(ctx, store, &migration, migrator); err != nil {
