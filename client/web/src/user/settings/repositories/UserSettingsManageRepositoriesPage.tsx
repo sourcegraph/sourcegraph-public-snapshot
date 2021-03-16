@@ -342,7 +342,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             }
 
             if (!selectionState.radio) {
-                history.push(routingPrefix + '/repositories')
+                return history.push(routingPrefix + '/repositories')
             }
 
             const syncTimes = new Map<string, string>()
