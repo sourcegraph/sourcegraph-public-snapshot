@@ -60,26 +60,29 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     routingPrefix,
     telemetryService,
 }) => {
-    const [hasRepos, setHasRepos] = useState(false)
+    const [hasRepos, setHasRepos] = useState<boolean | null>(null)
     const [externalServices, setExternalServices] = useState<ListExternalServiceFields[]>()
     const [pendingOrError, setPendingOrError] = useState<Status>()
 
+    const noReposState = (
+        <div className="border rounded p-3">
+            <h3>You have not added any repositories to Sourcegraph</h3>
+            <small>
+                <Link className="text-primary" to={`${routingPrefix}/code-hosts`}>
+                    Connect code hosts
+                </Link>{' '}
+                to start searching your own repositories, or{' '}
+                <Link className="text-primary" to={`${routingPrefix}/repositories/manage`}>
+                    add public repositories
+                </Link>{' '}
+                from GitHub or GitLab.
+            </small>
+        </div>
+    )
     const showResults = (): JSX.Element => {
-        // no code hosts added
         const emptyState = (
             <div className="border rounded p-3">
-                <h3>No repositories found</h3>
-                <small>
-                    Try changing your search filter, or if you've not yet added any code, you can: <br />
-                    <Link className="text-primary" to={`${routingPrefix}/code-hosts`}>
-                        Connect code hosts
-                    </Link>{' '}
-                    to start searching your own repositories, or{' '}
-                    <Link className="text-primary" to={`${routingPrefix}/repositories/manage`}>
-                        add public repositories
-                    </Link>{' '}
-                    from GitHub or GitLab.
-                </small>
+                <small>No repositories matched.</small>
             </div>
         )
         return (
@@ -215,6 +218,8 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             const conn = value as Connection<SiteAdminRepositoryFields>
             if (conn.totalCount !== 0) {
                 setHasRepos(true)
+            } else {
+                setHasRepos(false)
             }
         }
     }, [])
@@ -253,7 +258,10 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 </Link>
             </p>
             {externalServices ? (
-                showResults()
+                <>
+                    {hasRepos === false && noReposState}
+                    {(hasRepos || hasRepos === null) && showResults()}
+                </>
             ) : (
                 <div className="d-flex justify-content-center mt-4">
                     <LoadingSpinner className="icon-inline" />
