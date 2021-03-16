@@ -83,12 +83,6 @@ add('no results', () => {
     return <WebStory>{() => <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />}</WebStory>
 })
 
-add('diffs tab selected', () => (
-    <WebStory>
-        {() => <StreamingSearchResults {...defaultProps} parsedSearchQuery="r:golang/oauth2 test f:travis type:diff" />}
-    </WebStory>
-))
-
 add('diffs tab selected, code monitoring enabled, user logged in', () => (
     <WebStory>
         {() => (
