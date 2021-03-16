@@ -4,21 +4,15 @@ import { Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { EndpointPair } from '../../platform/context'
 import { ClientAPI } from '../client/api/api'
-import { NotificationType } from '../client/services/notifications'
 import { ExtensionHostAPI, ExtensionHostAPIFactory } from './api/api'
-import { ExtensionContent } from './api/content'
-import { ExtensionContext } from './api/context'
-import { createDecorationType } from './api/decorations'
-import { ExtensionDocuments } from './api/documents'
 import { DocumentHighlightKind } from './api/documentHighlights'
-import { Extensions } from './api/extensions'
-import { ExtensionLanguageFeatures } from './api/languageFeatures'
-import { ExtensionViewsApi } from './api/views'
-import { ExtensionWindows } from './api/windows'
-
 import { registerComlinkTransferHandlers } from '../util'
-import { initNewExtensionAPI } from './flatExtensionApi'
 import { SettingsCascade } from '../../settings/settings'
+import { isMatch } from 'lodash'
+import { createExtensionHostState, ExtensionHostState } from './extensionHostState'
+import { createExtensionHostAPI, NotificationType } from './extensionHostApi'
+import { createExtensionAPI } from './extensionApi'
+import { activateExtensions } from './activation'
 
 /**
  * Required information when initializing an extension host.
@@ -89,7 +83,10 @@ function initializeExtensionHost(
 ): { extensionHostAPI: ExtensionHostAPI; extensionAPI: typeof sourcegraph; subscription: Subscription } {
     const subscription = new Subscription()
 
-    const { extensionAPI, extensionHostAPI, subscription: apiSubscription } = createExtensionAPI(initData, endpoints)
+    const { extensionAPI, extensionHostAPI, subscription: apiSubscription } = createExtensionAndExtensionHostAPIs(
+        initData,
+        endpoints
+    )
     subscription.add(apiSubscription)
 
     // Make `import 'sourcegraph'` or `require('sourcegraph')` return the extension API.
@@ -112,7 +109,7 @@ function initializeExtensionHost(
     return { subscription, extensionAPI, extensionHostAPI }
 }
 
-function createExtensionAPI(
+function createExtensionAndExtensionHostAPIs(
     initData: InitData,
     endpoints: Pick<EndpointPair, 'proxy'>
 ): { extensionHostAPI: ExtensionHostAPI; extensionAPI: typeof sourcegraph; subscription: Subscription } {
@@ -129,39 +126,25 @@ function createExtensionAPI(
     const sync = async (): Promise<void> => {
         await proxy.ping()
     }
-    const context = new ExtensionContext(proxy.context)
-    const documents = new ExtensionDocuments(sync)
 
-    const extensions = new Extensions()
-    subscription.add(extensions)
-
-    const windows = new ExtensionWindows(proxy, documents)
-    const views = new ExtensionViewsApi(proxy.views)
-    const languageFeatures = new ExtensionLanguageFeatures(proxy.languageFeatures, documents)
-    const content = new ExtensionContent(proxy.content)
-
-    const {
-        configuration,
-        exposedToMain,
-        workspace,
-        state,
-        commands,
-        search,
-        languages: { registerHoverProvider, registerDocumentHighlightProvider, registerDefinitionProvider },
-        registerFileDecorationProvider,
-        graphQL,
-    } = initNewExtensionAPI(proxy, initData.initialSettings, documents)
+    // Create extension host state
+    const extensionHostState = createExtensionHostState(initData, proxy)
+    // Create extension host API
+    const extensionHostAPINew = createExtensionHostAPI(extensionHostState)
+    // Create extension API
+    const { configuration, workspace, commands, search, languages, graphQL, content, app } = createExtensionAPI(
+        extensionHostState,
+        proxy
+    )
+    // Activate extensions
+    subscription.add(activateExtensions(extensionHostState, proxy))
 
     // Expose the extension host API to the client (main thread)
     const extensionHostAPI: ExtensionHostAPI = {
         [comlink.proxyMarker]: true,
 
         ping: () => 'pong',
-
-        documents,
-        extensions,
-        windows,
-        ...exposedToMain,
+        ...extensionHostAPINew,
     }
 
     // Expose the extension API to extensions
@@ -184,91 +167,44 @@ function createExtensionAPI(
         MarkupKind,
         NotificationType,
         DocumentHighlightKind,
-        app: {
-            activeWindowChanges: windows.activeWindowChanges,
-            get activeWindow(): sourcegraph.Window | undefined {
-                return windows.activeWindow
-            },
-            get windows(): sourcegraph.Window[] {
-                return windows.getAll()
-            },
-            createPanelView: (id: string) => views.createPanelView(id),
-            createDecorationType,
-            registerViewProvider: (id, provider) => views.registerViewProvider(id, provider),
-            registerFileDecorationProvider,
-        },
+        app,
 
-        workspace: {
-            get textDocuments(): sourcegraph.TextDocument[] {
-                return documents.getAll()
-            },
-            onDidOpenTextDocument: documents.openedTextDocuments,
-            openedTextDocuments: documents.openedTextDocuments,
-            ...workspace,
-            // we use state here directly because of getters
-            // getter are not preserved as functions via {...obj} syntax
-            // thus expose state until we migrate documents to the new model according RFC 155
-            get roots() {
-                return state.roots
-            },
-            get versionContext() {
-                return state.versionContext
-            },
-        },
-
+        workspace,
         configuration,
 
-        languages: {
-            registerHoverProvider,
-            registerDocumentHighlightProvider,
-            registerDefinitionProvider,
-
-            // These were removed, but keep them here so that calls from old extensions do not throw
-            // an exception and completely break.
-            registerTypeDefinitionProvider: () => {
-                console.warn(
-                    'sourcegraph.languages.registerTypeDefinitionProvider was removed. Use sourcegraph.languages.registerLocationProvider instead.'
-                )
-                return { unsubscribe: () => undefined }
-            },
-            registerImplementationProvider: () => {
-                console.warn(
-                    'sourcegraph.languages.registerImplementationProvider was removed. Use sourcegraph.languages.registerLocationProvider instead.'
-                )
-                return { unsubscribe: () => undefined }
-            },
-
-            registerReferenceProvider: (
-                selector: sourcegraph.DocumentSelector,
-                provider: sourcegraph.ReferenceProvider
-            ) => languageFeatures.registerReferenceProvider(selector, provider),
-
-            registerLocationProvider: (
-                id: string,
-                selector: sourcegraph.DocumentSelector,
-                provider: sourcegraph.LocationProvider
-            ) => languageFeatures.registerLocationProvider(id, selector, provider),
-
-            registerCompletionItemProvider: (
-                selector: sourcegraph.DocumentSelector,
-                provider: sourcegraph.CompletionItemProvider
-            ) => languageFeatures.registerCompletionItemProvider(selector, provider),
-        },
+        languages,
 
         search,
         commands,
         graphQL,
-        content: {
-            registerLinkPreviewProvider: (urlMatchPattern: string, provider: sourcegraph.LinkPreviewProvider) =>
-                content.registerLinkPreviewProvider(urlMatchPattern, provider),
-        },
+        content,
 
         internal: {
-            sync,
-            updateContext: (updates: sourcegraph.ContextValues) => context.updateContext(updates),
+            sync: () => sync(),
+            updateContext: (updates: sourcegraph.ContextValues) => updateContext(updates, extensionHostState),
             sourcegraphURL: new URL(initData.sourcegraphURL),
             clientApplication: initData.clientApplication,
         },
     }
     return { extensionHostAPI, extensionAPI, subscription }
+}
+
+// Context (TODO(tj): move to extension/api/context)
+// Same implementation is exposed to main and extensions
+export function updateContext(update: { [k: string]: unknown }, state: ExtensionHostState): void {
+    if (isMatch(state.context.value, update)) {
+        return
+    }
+    const result: any = {}
+    for (const [key, oldValue] of Object.entries(state.context.value)) {
+        if (update[key] !== null) {
+            result[key] = oldValue
+        }
+    }
+    for (const [key, value] of Object.entries(update)) {
+        if (value !== null) {
+            result[key] = value
+        }
+    }
+    state.context.next(result)
 }

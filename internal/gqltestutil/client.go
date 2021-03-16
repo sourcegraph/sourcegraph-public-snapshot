@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 // NeedsSiteInit returns true if the instance hasn't done "Site admin init" step.
@@ -203,7 +204,7 @@ func (c *Client) CurrentUserID(token string) (string, error) {
 			} `json:"currentUser"`
 		} `json:"data"`
 	}
-	err := c.GraphQL("", token, query, nil, &resp)
+	err := c.GraphQL(token, query, nil, &resp)
 	if err != nil {
 		return "", errors.Wrap(err, "request GraphQL")
 	}
@@ -216,16 +217,23 @@ func (c *Client) AuthenticatedUserID() string {
 	return c.userID
 }
 
+var graphqlQueryNameRe = lazyregexp.New(`(query|mutation) +(\w)+`)
+
 // GraphQL makes a GraphQL request to the server on behalf of the user authenticated by the client.
 // An optional token can be passed to impersonate other users. A nil target will skip unmarshalling
 // the returned JSON response.
-func (c *Client) GraphQL(name, token, query string, variables map[string]interface{}, target interface{}) error {
+func (c *Client) GraphQL(token, query string, variables map[string]interface{}, target interface{}) error {
 	body, err := jsoniter.Marshal(map[string]interface{}{
 		"query":     query,
 		"variables": variables,
 	})
 	if err != nil {
 		return err
+	}
+
+	var name string
+	if matches := graphqlQueryNameRe.FindStringSubmatch(query); len(matches) >= 2 {
+		name = matches[2]
 	}
 
 	req, err := http.NewRequest("POST", fmt.Sprintf("%s/.api/graphql?%s", c.baseURL, name), bytes.NewReader(body))
@@ -292,8 +300,12 @@ func (c *Client) Get(url string) (*http.Response, error) {
 		return nil, err
 	}
 
-	req.AddCookie(c.csrfCookie)
-	req.AddCookie(c.sessionCookie)
+	c.addCookies(req)
 
 	return http.DefaultClient.Do(req)
+}
+
+func (c *Client) addCookies(req *http.Request) {
+	req.AddCookie(c.csrfCookie)
+	req.AddCookie(c.sessionCookie)
 }

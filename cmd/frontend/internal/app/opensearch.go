@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 )
 

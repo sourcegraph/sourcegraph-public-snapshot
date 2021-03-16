@@ -128,7 +128,7 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 // callers to decide whether to discard.
 //
 // API docs: https://docs.atlassian.com/bitbucket-server/rest/5.16.0/bitbucket-rest.html#idm8296923984
-func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) ([]extsvc.RepoID, error) {
+func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 	switch {
 	case account == nil:
 		return nil, errors.New("no account provided")
@@ -151,7 +151,9 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 		extIDs = append(extIDs, extsvc.RepoID(strconv.FormatUint(uint64(id), 10)))
 	}
 
-	return extIDs, err
+	return &authz.ExternalUserPermissions{
+		Exacts: extIDs,
+	}, err
 }
 
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to

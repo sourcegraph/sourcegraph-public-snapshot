@@ -1,6 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { PageTitle } from '../../../components/PageTitle'
-import { RepositoriesResult, SiteAdminRepositoryFields, UserRepositoriesResult } from '../../../graphql-operations'
+import {
+    RepositoriesResult,
+    SiteAdminRepositoryFields,
+    UserRepositoriesResult,
+    ListExternalServiceFields,
+} from '../../../graphql-operations'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import {
     Connection,
@@ -44,6 +50,13 @@ const Row: React.FunctionComponent<RowProps> = props => (
 type Status = undefined | 'pending' | ErrorLike
 const emptyFilters: FilteredConnectionFilter[] = []
 
+const getHelpfulBanner = (MessageLink: JSX.Element): JSX.Element => (
+    <div className="border rounded p-3">
+        <h3>You have not added any repositories to Sourcegraph</h3>
+        <small>{MessageLink} to start searching your code with Sourcegraph.</small>
+    </div>
+)
+
 /**
  * A page displaying the repositories for this user.
  */
@@ -55,20 +68,52 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     telemetryService,
 }) => {
     const [hasRepos, setHasRepos] = useState(false)
+    const [externalServices, setExternalServices] = useState<ListExternalServiceFields[]>()
     const [pendingOrError, setPendingOrError] = useState<Status>()
-    const [showFilteredConnection, setShowFilteredConnection] = useState(true)
 
-    const NoResults: JSX.Element = (
-        <div className="border rounded p-3">
-            <h3>You have not added any repositories to Sourcegraph</h3>
-            <small>
+    const showResults = (services: ListExternalServiceFields[] | undefined): JSX.Element => {
+        // no code hosts added
+        if (!services || services.length === 0) {
+            const ConnectCodeHostsLink = (
+                <Link className="text-primary" to={`${routingPrefix}/code-hosts`}>
+                    Connect code hosts
+                </Link>
+            )
+            return getHelpfulBanner(ConnectCodeHostsLink)
+        }
+
+        // code hosts added but don't have any repos
+        if (services.every(({ repoCount }) => repoCount === 0)) {
+            const AddReposLink = (
                 <Link className="text-primary" to={`${routingPrefix}/repositories/manage`}>
                     Add repositories
-                </Link>{' '}
-                to start searching your code with Sourcegraph.
-            </small>
-        </div>
-    )
+                </Link>
+            )
+            return getHelpfulBanner(AddReposLink)
+        }
+
+        // otherwise, if we have connected code hosts and they have repos - list repositories
+        return (
+            <FilteredConnection<SiteAdminRepositoryFields, Omit<UserRepositoriesResult, 'node'>>
+                className="table mt-3"
+                defaultFirst={15}
+                compact={false}
+                noun="repository"
+                pluralNoun="repositories"
+                queryConnection={queryRepositories}
+                nodeComponent={Row}
+                listComponent="table"
+                listClassName="w-100"
+                onUpdate={updated}
+                filters={filters}
+                history={history}
+                location={location}
+                totalCountSummaryComponent={TotalCountSummary}
+                hideControlsWhenEmpty={true}
+                inputClassName="user-settings-repos__filter-input"
+            />
+        )
+    }
 
     const filters =
         useObservable<FilteredConnectionFilter[]>(
@@ -78,14 +123,21 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                         repeatUntil(
                             result => {
                                 let pending: Status
-                                const now = new Date().getTime()
+                                const now = new Date()
 
-                                // show filtered connection if any code hosts has at least one repo
-                                setShowFilteredConnection(result.nodes.some(({ repoCount }) => repoCount !== 0))
+                                setExternalServices(result.nodes)
 
                                 for (const node of result.nodes) {
-                                    // if the next sync time is not blank, or in the future we must not be syncing
-                                    if (node.nextSyncAt !== '' && now - new Date(node.nextSyncAt).getTime() > 0) {
+                                    const nextSyncAt = new Date(node.nextSyncAt)
+
+                                    // when the service was just added both
+                                    // createdAt and updatedAt will have the same timestamp
+                                    if (node.createdAt === node.updatedAt) {
+                                        continue
+                                    }
+
+                                    // if the next sync is in the future we must not be syncing
+                                    if (now > nextSyncAt) {
                                         pending = 'pending'
                                     }
                                 }
@@ -104,7 +156,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                                 },
                                 ...result.nodes.map(node => ({
                                     value: node.id,
-                                    label: node.displayName,
+                                    label: node.displayName.split(' ')[0],
                                     tooltip: '',
                                     args: { externalServiceID: node.id },
                                 })),
@@ -197,7 +249,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                     repositories may not appear up-to-date in the list of repositories.
                 </div>
             )}
-            {isErrorLike(pendingOrError) && <ErrorAlert error={pendingOrError} icon={true} history={history} />}
+            {isErrorLike(pendingOrError) && <ErrorAlert error={pendingOrError} icon={true} />}
             <PageTitle title="Repositories" />
             <div className="d-flex justify-content-between align-items-center">
                 <h2 className="mb-2">Repositories</h2>
@@ -220,27 +272,12 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                     connected code hosts
                 </Link>
             </p>
-            {showFilteredConnection ? (
-                <FilteredConnection<SiteAdminRepositoryFields, Omit<UserRepositoriesResult, 'node'>>
-                    className="table mt-3"
-                    defaultFirst={15}
-                    compact={false}
-                    noun="repository"
-                    pluralNoun="repositories"
-                    queryConnection={queryRepositories}
-                    nodeComponent={Row}
-                    listComponent="table"
-                    listClassName="w-100"
-                    onUpdate={updated}
-                    filters={filters}
-                    history={history}
-                    location={location}
-                    totalCountSummaryComponent={TotalCountSummary}
-                    hideControlsWhenEmpty={true}
-                    inputClassName="user-settings-repos__filter-input"
-                />
+            {externalServices ? (
+                showResults(externalServices)
             ) : (
-                NoResults
+                <div className="d-flex justify-content-center mt-4">
+                    <LoadingSpinner className="icon-inline" />
+                </div>
             )}
         </div>
     )

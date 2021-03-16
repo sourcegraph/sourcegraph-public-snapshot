@@ -103,6 +103,9 @@ export interface Progress {
      * may appear anywhere in the list.
      */
     skipped: Skipped[]
+
+    // The URL of the trace for this query, if it exists.
+    trace?: string
 }
 
 export interface Skipped {
@@ -258,7 +261,7 @@ export function toGQLRepositoryMatch(repo: RepositoryMatch): GQL.IRepository {
         icon: repoIcon,
         label: toMarkdown(`[${label}](${url})`),
         url: '/' + url,
-        detail: toMarkdown('Repository name match'),
+        detail: toMarkdown('Repository match'),
         matches: [],
         name: repo.repository,
     }

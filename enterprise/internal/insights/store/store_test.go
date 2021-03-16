@@ -72,8 +72,8 @@ SELECT time,
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("SeriesPoints(2).len", int(305)).Equal(t, len(points))
-		autogold.Want("SeriesPoints(2)[len()-1].String()", `SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Value: 1.6014089781904772, Metadata: {"hello": "world", "languages": ["Go", "Python", "Java"]}}`).Equal(t, points[len(points)-1].String())
+		autogold.Want("SeriesPoints(2).len", int(12)).Equal(t, len(points))
+		autogold.Want("SeriesPoints(2)[len()-1].String()", `SeriesPoint{Time: "2019-12-19 00:00:00 +0000 UTC", Value: 38.50014526394119, Metadata: {"hello": "world", "languages": ["Go", "Python", "Java"]}}`).Equal(t, points[len(points)-1].String())
 		autogold.Want("SeriesPoints(2)[0].String()", `SeriesPoint{Time: "2020-06-01 00:00:00 +0000 UTC", Value: -37.8750440811433, Metadata: {"hello": "world", "languages": ["Go", "Python", "Java"]}}`).Equal(t, points[0].String())
 	})
 
@@ -86,9 +86,9 @@ SELECT time,
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("SeriesPoints(3).len", int(185)).Equal(t, len(points))
+		autogold.Want("SeriesPoints(3).len", int(8)).Equal(t, len(points))
 		autogold.Want("SeriesPoints(3)[0].String()", `SeriesPoint{Time: "2020-06-01 00:00:00 +0000 UTC", Value: -37.8750440811433, Metadata: {"hello": "world", "languages": ["Go", "Python", "Java"]}}`).Equal(t, points[0].String())
-		autogold.Want("SeriesPoints(3)[len()-1].String()", `SeriesPoint{Time: "2020-03-01 00:00:00 +0000 UTC", Value: 35.85710033014749, Metadata: {"hello": "world", "languages": ["Go", "Python", "Java"]}}`).Equal(t, points[len(points)-1].String())
+		autogold.Want("SeriesPoints(3)[len()-1].String()", `SeriesPoint{Time: "2020-02-17 00:00:00 +0000 UTC", Value: 36.186608083675935, Metadata: {"hello": "world", "languages": ["Go", "Python", "Java"]}}`).Equal(t, points[len(points)-1].String())
 	})
 
 	t.Run("latest 3 points", func(t *testing.T) {
@@ -101,13 +101,13 @@ SELECT time,
 		}
 		autogold.Want("SeriesPoints(4).len", int(3)).Equal(t, len(points))
 		autogold.Want("SeriesPoints(4)[0].String()", `SeriesPoint{Time: "2020-06-01 00:00:00 +0000 UTC", Value: -37.8750440811433, Metadata: {"hello": "world", "languages": ["Go", "Python", "Java"]}}`).Equal(t, points[0].String())
-		autogold.Want("SeriesPoints(4)[1].String()", `SeriesPoint{Time: "2020-05-31 12:00:00 +0000 UTC", Value: 17.838503552871998, Metadata: {"hello": "world", "languages": ["Go", "Python", "Java"]}}`).Equal(t, points[1].String())
-		autogold.Want("SeriesPoints(4)[2].String()", `SeriesPoint{Time: "2020-05-31 00:00:00 +0000 UTC", Value: 1.7062065176514807, Metadata: {"hello": "world", "languages": ["Go", "Python", "Java"]}}`).Equal(t, points[2].String())
+		autogold.Want("SeriesPoints(4)[1].String()", `SeriesPoint{Time: "2020-05-17 00:00:00 +0000 UTC", Value: 39.775432350908204, Metadata: {"hello": "world", "languages": ["Go", "Python", "Java"]}}`).Equal(t, points[1].String())
+		autogold.Want("SeriesPoints(4)[2].String()", `SeriesPoint{Time: "2020-05-02 00:00:00 +0000 UTC", Value: 39.61012571588327, Metadata: {"hello": "world", "languages": ["Go", "Python", "Java"]}}`).Equal(t, points[2].String())
 	})
 
 }
 
-func TestDistinctSeriesWithData(t *testing.T) {
+func TestCountData(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -119,12 +119,16 @@ func TestDistinctSeriesWithData(t *testing.T) {
 	defer cleanup()
 	store := NewWithClock(timescale, clock)
 
-	time := func(s string) time.Time {
+	timeValue := func(s string) time.Time {
 		v, err := time.Parse(time.RFC3339, s)
 		if err != nil {
 			t.Fatal(err)
 		}
 		return v
+	}
+	timePtr := func(s string) *time.Time {
+		t := timeValue(s)
+		return &t
 	}
 	optionalString := func(v string) *string { return &v }
 	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
@@ -133,29 +137,29 @@ func TestDistinctSeriesWithData(t *testing.T) {
 	for _, record := range []RecordSeriesPointArgs{
 		{
 			SeriesID: "one",
-			Point:    SeriesPoint{Time: time("2020-03-01T00:00:00Z"), Value: 1.1},
+			Point:    SeriesPoint{Time: timeValue("2020-03-01T00:00:00Z"), Value: 1.1},
 			RepoName: optionalString("repo1"),
 			RepoID:   optionalRepoID(3),
 			Metadata: map[string]interface{}{"some": "data"},
 		},
 		{
 			SeriesID: "two",
-			Point:    SeriesPoint{Time: time("2020-03-02T00:00:00Z"), Value: 2.2},
+			Point:    SeriesPoint{Time: timeValue("2020-03-02T00:00:00Z"), Value: 2.2},
 			Metadata: []interface{}{"some", "data", "two"},
 		},
 		{
 			SeriesID: "two",
-			Point:    SeriesPoint{Time: time("2020-03-02T00:01:00Z"), Value: 2.2},
+			Point:    SeriesPoint{Time: timeValue("2020-03-02T00:01:00Z"), Value: 2.2},
 			Metadata: []interface{}{"some", "data", "two"},
 		},
 		{
 			SeriesID: "three",
-			Point:    SeriesPoint{Time: time("2020-03-03T00:00:00Z"), Value: 3.3},
+			Point:    SeriesPoint{Time: timeValue("2020-03-03T00:00:00Z"), Value: 3.3},
 			Metadata: nil,
 		},
 		{
 			SeriesID: "three",
-			Point:    SeriesPoint{Time: time("2020-03-03T00:01:00Z"), Value: 3.3},
+			Point:    SeriesPoint{Time: timeValue("2020-03-03T00:01:00Z"), Value: 3.3},
 			Metadata: nil,
 		},
 	} {
@@ -164,26 +168,35 @@ func TestDistinctSeriesWithData(t *testing.T) {
 		}
 	}
 
-	// Which series on 02-29 have data?
-	withData, err := store.DistinctSeriesWithData(ctx, time("2020-02-29T00:00:00Z"), time("2020-02-29T23:59:59Z"))
+	// How many data points on 02-29?
+	numDataPoints, err := store.CountData(ctx, CountDataOpts{
+		From: timePtr("2020-02-29T00:00:00Z"),
+		To:   timePtr("2020-02-29T23:59:59Z"),
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Want("first", []string{}).Equal(t, withData)
+	autogold.Want("first", int(0)).Equal(t, numDataPoints)
 
-	// Which series on 03-01 have data?
-	withData, err = store.DistinctSeriesWithData(ctx, time("2020-03-01T00:00:00Z"), time("2020-03-01T23:59:59Z"))
+	// How many data points on 03-01?
+	numDataPoints, err = store.CountData(ctx, CountDataOpts{
+		From: timePtr("2020-03-01T00:00:00Z"),
+		To:   timePtr("2020-03-01T23:59:59Z"),
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Want("second", []string{"one"}).Equal(t, withData)
+	autogold.Want("second", int(1)).Equal(t, numDataPoints)
 
-	// Which series from 03-01 to 03-04 have data?
-	withData, err = store.DistinctSeriesWithData(ctx, time("2020-03-01T00:00:00Z"), time("2020-03-04T23:59:59Z"))
+	// How many data points from 03-01 to 03-04?
+	numDataPoints, err = store.CountData(ctx, CountDataOpts{
+		From: timePtr("2020-03-01T00:00:00Z"),
+		To:   timePtr("2020-03-04T23:59:59Z"),
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Want("third", []string{"one", "three", "two"}).Equal(t, withData)
+	autogold.Want("third", int(5)).Equal(t, numDataPoints)
 }
 
 func TestRecordSeriesPoints(t *testing.T) {
@@ -240,9 +253,31 @@ func TestRecordSeriesPoints(t *testing.T) {
 	}
 	autogold.Want("len(points)", int(3)).Equal(t, len(points))
 	autogold.Want("points[0].String()", `SeriesPoint{Time: "2020-03-03 00:00:00 +0000 UTC", Value: 3.3, Metadata: }`).Equal(t, points[0].String())
-	autogold.Want("points[1].String()", `SeriesPoint{Time: "2020-03-02 00:00:00 +0000 UTC", Value: 2.2, Metadata: ["some", "data", "two"]}`).Equal(t, points[1].String())
-	autogold.Want("points[2].String()", `SeriesPoint{Time: "2020-03-01 00:00:00 +0000 UTC", Value: 1.1, Metadata: {"some": "data"}}`).Equal(t, points[2].String())
+	autogold.Want("points[1].String()", `SeriesPoint{Time: "2020-02-17 00:00:00 +0000 UTC", Value: 2.2, Metadata: ["some", "data", "two"]}`).Equal(t, points[1].String())
+	autogold.Want("points[2].String()", `SeriesPoint{Time: "2020-02-17 00:00:00 +0000 UTC", Value: 1.1, Metadata: {"some": "data"}}`).Equal(t, points[2].String())
 
-	// Confirm the data point with repository name got recorded correctly.
-	// TODO(slimsag): future: once we support querying by repo ID/names, add tests to ensure that information is inserted properly here.
+	// Confirm querying by repo ID works as expected.
+	forRepoIDPoints, err := store.SeriesPoints(ctx, SeriesPointsOpts{RepoID: optionalRepoID(3)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	autogold.Want("len(forRepoIDPoints)", int(1)).Equal(t, len(forRepoIDPoints))
+	autogold.Want("forRepoIDPoints[0].String()", `SeriesPoint{Time: "2020-02-17 00:00:00 +0000 UTC", Value: 1.1, Metadata: {"some": "data"}}`).Equal(t, forRepoIDPoints[0].String())
+
+	// TODO: future: once querying by RepoName and/or OriginalRepoName is possible, test that here:
+	// // Confirm querying by repo name works as expected.
+	// forRepoNamePoints, err := store.SeriesPoints(ctx, SeriesPointsOpts{RepoName: optionalString("repo1")})
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
+	// autogold.Want("len(forRepoNamePoints)", nil).Equal(t, len(forRepoNamePoints))
+	// autogold.Want("forRepoNamePoints[0].String()", nil).Equal(t, forRepoNamePoints[0].String())
+	//
+	// // Confirm querying by original repo name works as expected.
+	// forOriginalRepoNamePoints, err := store.SeriesPoints(ctx, SeriesPointsOpts{OriginalRepoName: optionalString("repo1")})
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
+	// autogold.Want("len(forOriginalRepoNamePoints)", nil).Equal(t, len(forOriginalRepoNamePoints))
+	// autogold.Want("forOriginalRepoNamePoints[0].String()", nil).Equal(t, forOriginalRepoNamePoints[0].String())
 }

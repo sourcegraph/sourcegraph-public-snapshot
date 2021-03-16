@@ -5,13 +5,18 @@ import (
 	"errors"
 	"time"
 
-	"github.com/efritz/glock"
+	"github.com/derision-test/glock"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // PeriodicGoroutine represents a goroutine whose main behavior is reinvoked periodically.
+//
+// See
+// https://docs.sourcegraph.com/dev/background-information/backgroundroutine
+// for more information and a step-by-step guide on how to implement a
+// PeriodicBackgroundRoutine.
 type PeriodicGoroutine struct {
 	interval  time.Duration
 	handler   Handler

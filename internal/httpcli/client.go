@@ -10,6 +10,7 @@ import (
 	"github.com/gregjones/httpcache"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )

@@ -12,6 +12,7 @@ import (
 	"strconv"
 
 	"github.com/jordan-wright/email"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 )

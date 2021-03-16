@@ -2,12 +2,57 @@ package app
 
 import (
 	"context"
+	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
+
+func TestParseGoSymbolURLPath(t *testing.T) {
+	valid := map[string]*goSymbolSpec{
+		"/go/github.com/gorilla/mux/-/Router/Match": {
+			Pkg:      "github.com/gorilla/mux",
+			Receiver: strptr("Router"),
+			Symbol:   "Match",
+		},
+
+		"/go/github.com/gorilla/mux/-/Router": {
+			Pkg:    "github.com/gorilla/mux",
+			Symbol: "Router",
+		},
+	}
+
+	invalid := map[string]string{
+		"/ts/github.com/foo/bar/-/Bam": "invalid mode",
+		"/go":                          "invalid symbol URL path",
+		"/go/":                         "invalid symbol URL path",
+		"/go/google.golang.org/api/cloudresourcemanager/v1": "invalid symbol URL path",
+	}
+
+	for path, want := range valid {
+		t.Log(path)
+		got, err := parseGoSymbolURLPath(path)
+		if err != nil {
+			t.Errorf("parseGoSymbolURLPath(%q) got error: %v", path, err)
+		} else if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("parseGoSymbolURLPath(%q) mismatch (-want, +got):\n%s", path, diff)
+		}
+	}
+
+	for path, errSub := range invalid {
+		t.Log(path)
+		got, err := parseGoSymbolURLPath(path)
+		if err == nil {
+			t.Errorf("parseGoSymbolURLPath(%q) expected error got: %v", path, *got)
+		} else if !strings.Contains(err.Error(), errSub) {
+			t.Errorf("parseGoSymbolURLPath(%q) expected error containing %q got: %v", path, errSub, err)
+		}
+	}
+}
 
 type symbolLocationArgs struct {
 	vfs        map[string]string
@@ -106,7 +151,12 @@ func TestSymbolLocation(t *testing.T) {
 		},
 	}
 	for i, test := range tests {
-		got, _ := symbolLocation(context.Background(), mapFS(test.args.vfs), test.args.commitID, test.args.importPath, test.args.path, test.args.receiver, test.args.symbol)
+		spec := &goSymbolSpec{
+			Pkg:      test.args.importPath,
+			Receiver: test.args.receiver,
+			Symbol:   test.args.symbol,
+		}
+		got, _ := symbolLocation(context.Background(), mapFS(test.args.vfs), test.args.commitID, spec, test.args.path)
 		if got != test.want && (got == nil || test.want == nil || *got != *test.want) {
 			t.Errorf("Test #%d:\ngot  %#v\nwant %#v", i, got, test.want)
 		}

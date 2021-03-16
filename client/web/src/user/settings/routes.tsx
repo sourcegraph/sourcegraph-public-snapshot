@@ -112,10 +112,8 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         render: props => (
             <UserAddCodeHostsPageContainer
                 userID={props.user.id}
+                context={window.context}
                 routingPrefix={props.user.url + '/settings'}
-                history={props.history}
-                match={props.match}
-                location={props.location}
             />
         ),
         exact: true,

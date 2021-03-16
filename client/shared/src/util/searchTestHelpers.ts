@@ -1,7 +1,8 @@
-import { of } from 'rxjs'
+import { noop } from 'lodash'
+import { EMPTY, NEVER, of, Subscription } from 'rxjs'
 import sinon from 'sinon'
 import { FlatExtensionHostAPI } from '../api/contract'
-import { pretendRemote } from '../api/util'
+import { pretendProxySubscribable, pretendRemote } from '../api/util'
 import { Controller } from '../extensions/controller'
 import {
     IFileMatch,
@@ -259,18 +260,15 @@ export const NOOP_SETTINGS_CASCADE = {
     final: null,
 }
 
-const services = {
-    contribution: {
-        getContributions: () => of({}),
-        registerContributions: () => {},
-    },
-    commands: {
-        registerCommand: () => {},
-    },
-}
-
-export const extensionsController: Pick<Controller, 'executeCommand' | 'services' | 'extHostAPI'> = {
+export const extensionsController: Controller = {
     executeCommand: () => Promise.resolve(),
-    services: services as any,
-    extHostAPI: Promise.resolve(pretendRemote<FlatExtensionHostAPI>({})),
+    registerCommand: () => new Subscription(),
+    extHostAPI: Promise.resolve(
+        pretendRemote<FlatExtensionHostAPI>({
+            getContributions: () => pretendProxySubscribable(NEVER),
+            registerContributions: () => pretendProxySubscribable(EMPTY).subscribe(noop as any),
+        })
+    ),
+    commandErrors: EMPTY,
+    unsubscribe: noop,
 }

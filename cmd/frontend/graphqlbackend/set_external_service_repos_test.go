@@ -4,17 +4,19 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"reflect"
+	"testing"
+
 	"github.com/graph-gophers/graphql-go/gqltesting"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"io/ioutil"
-	"net/http"
-	"reflect"
-	"testing"
 )
 
 func TestSetExternalServiceRepos(t *testing.T) {
@@ -67,6 +69,7 @@ func TestSetExternalServiceRepos(t *testing.T) {
 		UID:      1,
 	})
 
+	oldClient := repoupdater.DefaultClient.HTTPClient
 	repoupdater.DefaultClient.HTTPClient = &http.Client{
 		Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
 			return &http.Response{
@@ -75,6 +78,11 @@ func TestSetExternalServiceRepos(t *testing.T) {
 			}, nil
 		}),
 	}
+
+	defer func() {
+		database.Mocks = database.MockStores{}
+		repoupdater.DefaultClient.HTTPClient = oldClient
+	}()
 
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{

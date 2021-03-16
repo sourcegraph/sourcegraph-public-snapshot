@@ -11,6 +11,7 @@ import (
 
 	"github.com/gorilla/schema"
 	"github.com/hashicorp/go-multierror"
+
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 

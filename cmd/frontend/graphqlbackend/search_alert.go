@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -87,14 +88,14 @@ func alertForTimeout(db dbutil.DB, usedTime time.Duration, suggestTime time.Dura
 			db:             db,
 			prometheusType: "timed_out",
 			title:          "Timed out while searching",
-			description:    fmt.Sprintf("We weren't able to find any results in %s. Try adding timeout: with a higher value.", roundStr(usedTime.String())),
+			description:    fmt.Sprintf("We weren't able to find any results in %s. Try adding timeout: with a higher value.", usedTime.Round(time.Second)),
 		}
 	}
 	return &searchAlert{
 		db:             db,
 		prometheusType: "timed_out",
 		title:          "Timed out while searching",
-		description:    fmt.Sprintf("We weren't able to find any results in %s.", roundStr(usedTime.String())),
+		description:    fmt.Sprintf("We weren't able to find any results in %s.", usedTime.Round(time.Second)),
 		proposedQueries: []*searchQueryDescription{
 			{
 				description: "query with longer timeout",
@@ -120,7 +121,12 @@ func alertForStalePermissions(db dbutil.DB) *searchAlert {
 // query does not contain any repos to search.
 func (r *searchResolver) reposExist(ctx context.Context, options searchrepos.Options) bool {
 	options.UserSettings = r.UserSettings
-	repositoryResolver := &searchrepos.Resolver{Zoekt: r.zoekt, DefaultReposFunc: database.GlobalDefaultRepos.List, NamespaceStore: database.Namespaces(r.db)}
+	repositoryResolver := &searchrepos.Resolver{
+		DB:               r.db,
+		Zoekt:            r.zoekt,
+		DefaultReposFunc: database.DefaultRepos(r.db).List,
+		NamespaceStore:   database.Namespaces(r.db),
+	}
 	resolved, err := repositoryResolver.Resolve(ctx, options)
 	return err == nil && len(resolved.RepoRevs) > 0
 }
@@ -128,13 +134,17 @@ func (r *searchResolver) reposExist(ctx context.Context, options searchrepos.Opt
 func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAlert {
 	globbing := getBoolPtr(r.UserSettings.SearchGlobbing, false)
 
-	repoFilters, minusRepoFilters := r.Query.RegexpPatterns(query.FieldRepo)
+	repoFilters, minusRepoFilters := r.Query.Repositories()
 	repoGroupFilters, _ := r.Query.StringValues(query.FieldRepoGroup)
-	fork, _ := r.Query.StringValue(query.FieldFork)
-	onlyForks, noForks := fork == "only", fork == "no"
-	forksNotSet := len(fork) == 0
-	archived, _ := r.Query.StringValue(query.FieldArchived)
-	archivedNotSet := len(archived) == 0
+	contextFilters, _ := r.Query.StringValues(query.FieldContext)
+	onlyForks, noForks, forksNotSet := false, false, true
+	if fork := r.Query.Fork(); fork != nil {
+		onlyForks = *fork == query.Only
+		noForks = *fork == query.No
+		forksNotSet = false
+	}
+	archived := r.Query.Archived()
+	archivedNotSet := archived == nil
 
 	// Handle repogroup-only scenarios.
 	if len(repoFilters) == 0 && len(repoGroupFilters) == 0 {
@@ -159,6 +169,21 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			prometheusType: "no_resolved_repos__repogroup_none_in_common",
 			title:          "Repository groups have no repositories in common",
 			description:    "No repository exists in all of the specified repository groups.",
+		}
+	}
+	if len(contextFilters) == 1 && !searchcontexts.IsGlobalSearchContextSpec(contextFilters[0]) && (len(repoFilters) > 0 || len(repoGroupFilters) > 0) {
+		withoutContextFilter := query.OmitField(r.Query, query.FieldContext)
+		proposedQueries := []*searchQueryDescription{{
+			description: "search in the global context",
+			query:       fmt.Sprintf("context:%s %s", searchcontexts.GlobalSearchContextName, withoutContextFilter),
+			patternType: r.PatternType,
+		}}
+
+		return &searchAlert{
+			db:              r.db,
+			prometheusType:  "no_resolved_repos__context_none_in_common",
+			title:           fmt.Sprintf("No repositories found for your query within the context %s", contextFilters[0]),
+			proposedQueries: proposedQueries,
 		}
 	}
 
@@ -470,7 +495,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 				break
 			}
 			repoParentPattern := "^" + regexp.QuoteMeta(repoParent) + "/"
-			repoFieldValues, _ := r.Query.RegexpPatterns(query.FieldRepo)
+			repoFieldValues, _ := r.Query.Repositories()
 
 			for _, v := range repoFieldValues {
 				if strings.HasPrefix(v, strings.TrimSuffix(repoParentPattern, "/")) {
@@ -661,20 +686,6 @@ func alertForError(db dbutil.DB, err error, inputs *SearchInputs) *searchAlert {
 			description:    `Running your structural search requires more memory. You could try reducing the number of repositories with the "repo:" filter. If you are an administrator, try double the memory allocated for the "searcher" service. If you're unsure, reach out to us at support@sourcegraph.com.`,
 		}
 		a.priority = 4
-	} else if strings.Contains(err.Error(), "no indexed repositories for structural search") {
-		var msg string
-		if envvar.SourcegraphDotComMode() {
-			msg = "The good news is you can index any repository you like in a self-install. It takes less than 5 minutes to set up: https://docs.sourcegraph.com/#quickstart"
-		} else {
-			msg = "Learn more about managing indexed repositories in our documentation: https://docs.sourcegraph.com/admin/search#indexed-search."
-		}
-		alert = &searchAlert{
-			db:             db,
-			prometheusType: "structural_search_on_zero_indexed_repos",
-			title:          "Unindexed repositories or repository revisions with structural search",
-			description:    fmt.Sprintf("Structural search currently only works on indexed repositories or revisions. Some of the repositories or revisions to search are not indexed, so we can't return results for them. %s", msg),
-		}
-		alert.priority = 3
 	} else if errors.As(err, &rErr) {
 		alert = &searchAlert{
 			db:             db,

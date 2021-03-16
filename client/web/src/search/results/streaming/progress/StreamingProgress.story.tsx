@@ -38,6 +38,29 @@ add('0 results, in progress', () => {
     )
 })
 
+add('0 results, in progress, traced', () => {
+    const progress: Progress = {
+        durationMs: 0,
+        matchCount: 0,
+        skipped: [],
+        trace: 'https://sourcegraph.test:3443/-/debug/jaeger/trace/abcdefg',
+    }
+
+    return (
+        <WebStory>
+            {() => (
+                <StreamingProgress
+                    progress={progress}
+                    state="loading"
+                    onSearchAgain={onSearchAgain}
+                    history={history}
+                    showTrace={true}
+                />
+            )}
+        </WebStory>
+    )
+})
+
 add('1 result from 1 repository, in progress', () => {
     const progress: Progress = {
         durationMs: 500,
@@ -76,6 +99,30 @@ add('big numbers, done', () => {
                     state="complete"
                     onSearchAgain={onSearchAgain}
                     history={history}
+                />
+            )}
+        </WebStory>
+    )
+})
+
+add('big numbers, done, traced', () => {
+    const progress: Progress = {
+        durationMs: 52500,
+        matchCount: 1234567,
+        repositoriesCount: 8901,
+        skipped: [],
+        trace: 'https://sourcegraph.test:3443/-/debug/jaeger/trace/abcdefg',
+    }
+
+    return (
+        <WebStory>
+            {() => (
+                <StreamingProgress
+                    progress={progress}
+                    state="complete"
+                    onSearchAgain={onSearchAgain}
+                    history={history}
+                    showTrace={true}
                 />
             )}
         </WebStory>

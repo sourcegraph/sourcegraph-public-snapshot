@@ -16,7 +16,6 @@ func (c *Client) WaitForReposToBeCloned(repos ...string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	var name string
 	var missing []string
 	for {
 		select {
@@ -35,18 +34,12 @@ query Repositories {
 }
 `
 		var err error
-		missing, err = c.waitForReposByQuery(name, query, repos...)
+		missing, err = c.waitForReposByQuery(query, repos...)
 		if err != nil {
 			return errors.Wrap(err, "wait for repos")
 		}
 		if len(missing) == 0 {
 			break
-		}
-
-		// We want to log the very fist query of this kind, but don't want to create log spam
-		// for subsequent queries.
-		if name == "" {
-			name = "WaitForReposToBeCloned"
 		}
 
 		time.Sleep(100 * time.Millisecond)
@@ -63,7 +56,6 @@ func (c *Client) WaitForReposToBeIndex(repos ...string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	var name string
 	var missing []string
 	for {
 		select {
@@ -82,7 +74,7 @@ query Repositories {
 }
 `
 		var err error
-		missing, err = c.waitForReposByQuery(name, query, repos...)
+		missing, err = c.waitForReposByQuery(query, repos...)
 		if err != nil {
 			return errors.Wrap(err, "wait for repos")
 		}
@@ -90,18 +82,12 @@ query Repositories {
 			break
 		}
 
-		// We want to log the very fist query of this kind, but don't want to create log spam
-		// for subsequent queries.
-		if name == "" {
-			name = "WaitForReposToBeIndex"
-		}
-
 		time.Sleep(100 * time.Millisecond)
 	}
 	return nil
 }
 
-func (c *Client) waitForReposByQuery(name, query string, repos ...string) ([]string, error) {
+func (c *Client) waitForReposByQuery(query string, repos ...string) ([]string, error) {
 	var resp struct {
 		Data struct {
 			Repositories struct {
@@ -111,7 +97,7 @@ func (c *Client) waitForReposByQuery(name, query string, repos ...string) ([]str
 			} `json:"repositories"`
 		} `json:"data"`
 	}
-	err := c.GraphQL(name, "", query, nil, &resp)
+	err := c.GraphQL("", query, nil, &resp)
 	if err != nil {
 		return nil, errors.Wrap(err, "request GraphQL")
 	}
@@ -176,7 +162,7 @@ query FileExternalLinks($repoName: String!, $revision: String!, $filePath: Strin
 			} `json:"repository"`
 		} `json:"data"`
 	}
-	err := c.GraphQL("", "", query, variables, &resp)
+	err := c.GraphQL("", query, variables, &resp)
 	if err != nil {
 		return nil, errors.Wrap(err, "request GraphQL")
 	}
@@ -206,7 +192,7 @@ query Repository($name: String!) {
 			*Repository `json:"repository"`
 		} `json:"data"`
 	}
-	err := c.GraphQL("", "", query, variables, &resp)
+	err := c.GraphQL("", query, variables, &resp)
 	if err != nil {
 		return nil, errors.Wrap(err, "request GraphQL")
 	}

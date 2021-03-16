@@ -141,7 +141,7 @@ export interface LayoutProps
     showQueryBuilder: boolean
     enableSmartQuery: boolean
     isSourcegraphDotCom: boolean
-    showCampaigns: boolean
+    showBatchChanges: boolean
     fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>
     children?: never
 }
@@ -175,11 +175,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
 
     useEffect(() => {
         const globalContextFilter = findFilter(query, FilterType.context, FilterKind.Global)
-        const searchContextSpec = globalContextFilter?.value
-            ? globalContextFilter.value.type === 'literal'
-                ? globalContextFilter.value.value
-                : globalContextFilter.value.quotedValue
-            : undefined
+        const searchContextSpec = globalContextFilter?.value ? globalContextFilter.value.value : undefined
 
         let finalQuery = query
         if (
@@ -207,7 +203,9 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             }
 
             if (versionContext !== currentVersionContext) {
-                setVersionContext(versionContext)
+                setVersionContext(versionContext).catch(error => {
+                    console.error('Error sending version context to extensions', error)
+                })
             }
 
             if (searchContextSpec && searchContextSpec !== selectedSearchContextSpec) {
@@ -315,7 +313,13 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             )}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
             <ErrorBoundary location={props.location}>
-                <Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
+                <Suspense
+                    fallback={
+                        <div className="flex flex-1">
+                            <LoadingSpinner className="icon-inline m-2" />
+                        </div>
+                    }
+                >
                     <Switch>
                         {/* eslint-disable react/jsx-no-bind */}
                         {props.routes.map(

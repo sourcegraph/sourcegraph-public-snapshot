@@ -1,8 +1,9 @@
 package gitlab
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"golang.org/x/oauth2"
+
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 // GetExternalAccountData returns the deserialized user and token from the external account data

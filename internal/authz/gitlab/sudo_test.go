@@ -311,7 +311,7 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 	}
 
 	expRepoIDs := []extsvc.RepoID{"1", "2", "3"}
-	if diff := cmp.Diff(expRepoIDs, repoIDs); diff != "" {
+	if diff := cmp.Diff(expRepoIDs, repoIDs.Exacts); diff != "" {
 		t.Fatal(diff)
 	}
 }

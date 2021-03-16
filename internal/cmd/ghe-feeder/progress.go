@@ -6,6 +6,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	_ "github.com/mattn/go-sqlite3"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 

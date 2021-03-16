@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/graph-gophers/graphql-go"
+
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"

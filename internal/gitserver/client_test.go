@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -282,6 +283,90 @@ func TestAddrForRepo(t *testing.T) {
 			got := gitserver.AddrForRepo(tc.repo, addrs)
 			if got != tc.want {
 				t.Fatalf("Want %q, got %q", tc.want, got)
+			}
+		})
+	}
+}
+
+func TestClient_P4Exec(t *testing.T) {
+	root, err := ioutil.TempDir("", t.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = os.RemoveAll(root) }()
+
+	tests := []struct {
+		name     string
+		host     string
+		user     string
+		password string
+		args     []string
+		handler  http.HandlerFunc
+		wantBody string
+		wantErr  string
+	}{
+		{
+			name:     "check request body",
+			host:     "ssl:111.222.333.444:1666",
+			user:     "admin",
+			password: "pa$$word",
+			args:     []string{"protects"},
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				body, err := io.ReadAll(r.Body)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				wantBody := `{"p4port":"ssl:111.222.333.444:1666","p4user":"admin","p4passwd":"pa$$word","args":["protects"]}`
+				if diff := cmp.Diff(wantBody, string(body)); diff != "" {
+					t.Fatalf("Mismatch (-want +got):\n%s", diff)
+				}
+
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte("example output"))
+			},
+			wantBody: "example output",
+			wantErr:  "<nil>",
+		},
+		{
+			name: "error response",
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusBadRequest)
+				_, _ = w.Write([]byte("example error"))
+			},
+			wantErr: "unexpected status code: 400 - example error",
+		},
+	}
+
+	ctx := context.Background()
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			server := httptest.NewServer(test.handler)
+			defer server.Close()
+
+			cli := gitserver.NewClient(&http.Client{})
+			cli.Addrs = func() []string {
+				u, _ := url.Parse(server.URL)
+				return []string{u.Host}
+			}
+
+			rc, _, err := cli.P4Exec(ctx, test.host, test.user, test.password, test.args...)
+			if diff := cmp.Diff(test.wantErr, fmt.Sprintf("%v", err)); diff != "" {
+				t.Fatalf("Mismatch (-want +got):\n%s", diff)
+			}
+
+			var body []byte
+			if rc != nil {
+				defer func() { _ = rc.Close() }()
+
+				body, err = io.ReadAll(rc)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			if diff := cmp.Diff(test.wantBody, string(body)); diff != "" {
+				t.Fatalf("Mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}

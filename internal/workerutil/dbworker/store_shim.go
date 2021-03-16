@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/keegancsmith/sqlf"
+
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )

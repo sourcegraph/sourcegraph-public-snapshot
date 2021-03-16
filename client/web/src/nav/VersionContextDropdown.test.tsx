@@ -6,7 +6,7 @@ import sinon from 'sinon'
 import { SearchPatternType } from '../graphql-operations'
 
 const commonProps: VersionContextDropdownProps = {
-    setVersionContext: sinon.spy((_versionContext: string | undefined) => {}),
+    setVersionContext: sinon.spy((_versionContext: string | undefined) => Promise.resolve()),
     availableVersionContexts: [
         { name: '3.0', description: '3.0', revisions: [{ repo: 'github.com/sourcegraph/sourcegraph', rev: '3.0' }] },
         { name: '3.15', description: '3.15', revisions: [{ repo: 'github.com/sourcegraph/sourcegraph', rev: '3.15' }] },

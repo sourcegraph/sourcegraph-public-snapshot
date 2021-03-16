@@ -12,6 +12,9 @@ import (
 // github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store)
 // used for unit testing.
 type MockInterface struct {
+	// CountDataFunc is an instance of a mock function object controlling
+	// the behavior of the method CountData.
+	CountDataFunc *InterfaceCountDataFunc
 	// RecordSeriesPointFunc is an instance of a mock function object
 	// controlling the behavior of the method RecordSeriesPoint.
 	RecordSeriesPointFunc *InterfaceRecordSeriesPointFunc
@@ -24,6 +27,11 @@ type MockInterface struct {
 // methods return zero values for all results, unless overwritten.
 func NewMockInterface() *MockInterface {
 	return &MockInterface{
+		CountDataFunc: &InterfaceCountDataFunc{
+			defaultHook: func(context.Context, CountDataOpts) (int, error) {
+				return 0, nil
+			},
+		},
 		RecordSeriesPointFunc: &InterfaceRecordSeriesPointFunc{
 			defaultHook: func(context.Context, RecordSeriesPointArgs) error {
 				return nil
@@ -41,6 +49,9 @@ func NewMockInterface() *MockInterface {
 // All methods delegate to the given implementation, unless overwritten.
 func NewMockInterfaceFrom(i Interface) *MockInterface {
 	return &MockInterface{
+		CountDataFunc: &InterfaceCountDataFunc{
+			defaultHook: i.CountData,
+		},
 		RecordSeriesPointFunc: &InterfaceRecordSeriesPointFunc{
 			defaultHook: i.RecordSeriesPoint,
 		},
@@ -48,6 +59,114 @@ func NewMockInterfaceFrom(i Interface) *MockInterface {
 			defaultHook: i.SeriesPoints,
 		},
 	}
+}
+
+// InterfaceCountDataFunc describes the behavior when the CountData method
+// of the parent MockInterface instance is invoked.
+type InterfaceCountDataFunc struct {
+	defaultHook func(context.Context, CountDataOpts) (int, error)
+	hooks       []func(context.Context, CountDataOpts) (int, error)
+	history     []InterfaceCountDataFuncCall
+	mutex       sync.Mutex
+}
+
+// CountData delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockInterface) CountData(v0 context.Context, v1 CountDataOpts) (int, error) {
+	r0, r1 := m.CountDataFunc.nextHook()(v0, v1)
+	m.CountDataFunc.appendCall(InterfaceCountDataFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CountData method of
+// the parent MockInterface instance is invoked and the hook queue is empty.
+func (f *InterfaceCountDataFunc) SetDefaultHook(hook func(context.Context, CountDataOpts) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CountData method of the parent MockInterface instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *InterfaceCountDataFunc) PushHook(hook func(context.Context, CountDataOpts) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *InterfaceCountDataFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, CountDataOpts) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *InterfaceCountDataFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, CountDataOpts) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *InterfaceCountDataFunc) nextHook() func(context.Context, CountDataOpts) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InterfaceCountDataFunc) appendCall(r0 InterfaceCountDataFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InterfaceCountDataFuncCall objects
+// describing the invocations of this function.
+func (f *InterfaceCountDataFunc) History() []InterfaceCountDataFuncCall {
+	f.mutex.Lock()
+	history := make([]InterfaceCountDataFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InterfaceCountDataFuncCall is an object that describes an invocation of
+// method CountData on an instance of MockInterface.
+type InterfaceCountDataFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 CountDataOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InterfaceCountDataFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InterfaceCountDataFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // InterfaceRecordSeriesPointFunc describes the behavior when the

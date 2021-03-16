@@ -25,8 +25,7 @@ import { VersionContext } from '../../schema/site.schema'
 import { ViewGrid } from '../../repo/tree/ViewGrid'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { isErrorLike } from '../../../../shared/src/util/errors'
-import { ContributableViewContainer } from '../../../../shared/src/api/protocol'
-import { EMPTY } from 'rxjs'
+import { EMPTY, from } from 'rxjs'
 import classNames from 'classnames'
 import { repogroupList, homepageLanguageList } from '../../repogroups/HomepageConfig'
 import { SearchPageInput } from './SearchPageInput'
@@ -38,6 +37,8 @@ import { HomePanels } from '../panels/HomePanels'
 import { SearchPageFooter } from './SearchPageFooter'
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 import { getCombinedViews } from '../../insights/backend'
+import { switchMap } from 'rxjs/operators'
+import { wrapRemoteObservable } from '../../../../shared/src/api/client/api/common'
 
 export interface SearchPageProps
     extends SettingsCascadeProps<Settings>,
@@ -49,7 +50,7 @@ export interface SearchPageProps
         CaseSensitivityProps,
         KeyboardShortcutsProps,
         TelemetryProps,
-        ExtensionsControllerProps<'executeCommand' | 'services'>,
+        ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         CopyQueryButtonProps,
         VersionContextProps,
@@ -62,7 +63,7 @@ export interface SearchPageProps
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
-    setVersionContext: (versionContext: string | undefined) => void
+    setVersionContext: (versionContext: string | undefined) => Promise<void>
     availableVersionContexts: VersionContext[] | undefined
     autoFocus?: boolean
 
@@ -88,20 +89,22 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
 
     useEffect(() => props.telemetryService.logViewEvent('Home'), [props.telemetryService])
 
-    const codeInsightsEnabled =
-        !isErrorLike(props.settingsCascade.final) && !!props.settingsCascade.final?.experimentalFeatures?.codeInsights
+    const showCodeInsights =
+        !isErrorLike(props.settingsCascade.final) &&
+        !!props.settingsCascade.final?.experimentalFeatures?.codeInsights &&
+        props.settingsCascade.final['insights.displayLocation.homepage'] !== false
 
     const views = useObservable(
         useMemo(
             () =>
-                codeInsightsEnabled
-                    ? getCombinedViews(
-                          ContributableViewContainer.Homepage,
-                          {},
-                          props.extensionsController.services.view
+                showCodeInsights
+                    ? getCombinedViews(() =>
+                          from(props.extensionsController.extHostAPI).pipe(
+                              switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getHomepageViews({})))
+                          )
                       )
                     : EMPTY,
-            [codeInsightsEnabled, props.extensionsController.services.view]
+            [showCodeInsights, props.extensionsController]
         )
     )
     return (

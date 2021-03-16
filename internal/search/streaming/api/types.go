@@ -22,6 +22,9 @@ type Progress struct {
 	// same.  However, within a search stream when a new skipped reason is
 	// found, it may appear anywhere in the list.
 	Skipped []Skipped `json:"skipped"`
+
+	// Trace is the URL of an associated trace if the query is logging one.
+	Trace string `json:"trace,omitempty"`
 }
 
 // Skipped is a description of shards or documents that were skipped.

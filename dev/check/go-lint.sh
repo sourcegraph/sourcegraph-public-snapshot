@@ -2,6 +2,8 @@
 
 echo "--- lint dependencies"
 
+trap "echo ^^^ +++" ERR
+
 set -ex
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
@@ -14,10 +16,6 @@ if [ $# -eq 0 ]; then
 else
   pkgs=("$@")
 fi
-
-echo "--- go install"
-go install -tags=dev -buildmode=archive "${pkgs[@]}"
-asdf reshim
 
 echo "--- lint"
 "./dev/golangci-lint.sh" --config .golangci.enforced.yml run "${pkgs[@]}"
