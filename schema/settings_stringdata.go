@@ -57,14 +57,6 @@ const SettingsSchemaJSON = `{
             "pointer": true
           }
         },
-        "showBadgeAttachments": {
-          "description": "Enables the UI indicators for code intelligence precision.",
-          "type": "boolean",
-          "default": true,
-          "!go": {
-            "pointer": true
-          }
-        },
         "copyQueryButton": {
           "description": "Enables displaying the copy query button in the search bar when hovering over the global navigation bar.",
           "type": "boolean",

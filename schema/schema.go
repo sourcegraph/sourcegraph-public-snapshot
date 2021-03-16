@@ -1247,8 +1247,6 @@ type SettingsExperimentalFeatures struct {
 	SearchStats *bool `json:"searchStats,omitempty"`
 	// SearchStreaming description: Enables experimental streaming support.
 	SearchStreaming *bool `json:"searchStreaming,omitempty"`
-	// ShowBadgeAttachments description: Enables the UI indicators for code intelligence precision.
-	ShowBadgeAttachments *bool `json:"showBadgeAttachments,omitempty"`
 	// ShowCodeMonitoringTestEmailButton description: Enables the 'Send test email' debugging button for code monitoring.
 	ShowCodeMonitoringTestEmailButton *bool `json:"showCodeMonitoringTestEmailButton,omitempty"`
 	// ShowEnterpriseHomePanels description: Enabled the homepage panels in the Enterprise homepage
