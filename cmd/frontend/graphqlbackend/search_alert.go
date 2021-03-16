@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type searchAlert struct {
@@ -121,10 +122,15 @@ func alertForStalePermissions(db dbutil.DB) *searchAlert {
 // query does not contain any repos to search.
 func (r *searchResolver) reposExist(ctx context.Context, options searchrepos.Options) bool {
 	options.UserSettings = r.UserSettings
+
+	defaultReposFunc := defaultReposCache.Wrap(func(ctx context.Context) ([]*types.RepoName, error) {
+		return database.Repos(r.db).ListDefaultRepos(ctx, database.ListDefaultReposOptions{})
+	})
+
 	repositoryResolver := &searchrepos.Resolver{
 		DB:               r.db,
 		Zoekt:            r.zoekt,
-		DefaultReposFunc: database.DefaultRepos(r.db).List,
+		DefaultReposFunc: defaultReposFunc,
 		NamespaceStore:   database.Namespaces(r.db),
 	}
 	resolved, err := repositoryResolver.Resolve(ctx, options)
