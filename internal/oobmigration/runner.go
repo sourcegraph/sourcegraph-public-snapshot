@@ -34,7 +34,7 @@ type migratorAndOption struct {
 var _ goroutine.BackgroundRoutine = &Runner{}
 
 func NewRunnerWithDB(db dbutil.DB, refreshInterval time.Duration) *Runner {
-	return newRunner(NewStoreWithDB(dbconn.Global), glock.NewRealClock().NewTicker(refreshInterval))
+	return newRunner(NewStoreWithDB(dbconn.Global), glock.NewRealTicker(refreshInterval))
 }
 
 func newRunner(store storeIface, refreshTicker glock.Ticker) *Runner {
@@ -74,7 +74,7 @@ func (r *Runner) Register(id int, migrator Migrator, options MigratorOptions) er
 		options.Interval = time.Second
 	}
 	if options.ticker == nil {
-		options.ticker = glock.NewRealClock().NewTicker(options.Interval)
+		options.ticker = glock.NewRealTicker(options.Interval)
 	}
 
 	r.migrators[id] = migratorAndOption{migrator, migratorOptions{

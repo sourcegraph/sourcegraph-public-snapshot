@@ -29,7 +29,7 @@ require (
 	github.com/dave/jennifer v1.4.1 // indirect
 	github.com/davecgh/go-spew v1.1.1
 	github.com/daviddengcn/go-colortext v1.0.0
-	github.com/derision-test/glock v0.0.0-20210316020736-b1b7e6668174
+	github.com/derision-test/glock v0.0.0-20210316025514-dbdcbc7883a3
 	github.com/dghubble/gologin v2.2.0+incompatible
 	github.com/dgraph-io/ristretto v0.0.3
 	github.com/dgryski/go-farm v0.0.0-20200201041132-a6ae2369ad13 // indirect
