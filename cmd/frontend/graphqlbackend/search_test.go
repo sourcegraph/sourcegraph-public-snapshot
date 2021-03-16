@@ -344,7 +344,7 @@ func TestQuoteSuggestions(t *testing.T) {
 
 	t.Run("regex error", func(t *testing.T) {
 		raw := "*"
-		_, err := query.ParseRegexp(raw)
+		_, err := query.Pipeline(query.InitRegexp(raw))
 		if err == nil {
 			t.Fatalf("error returned from query.ParseRegexp(%q) is nil", raw)
 		}
@@ -465,7 +465,7 @@ func TestVersionContext(t *testing.T) {
 	}}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			q, err := query.ParseLiteral(tc.searchQuery)
+			plan, err := query.Pipeline(query.InitLiteral(tc.searchQuery))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -473,7 +473,8 @@ func TestVersionContext(t *testing.T) {
 			resolver := searchResolver{
 				db: db,
 				SearchInputs: &SearchInputs{
-					Query:          q,
+					Plan:           plan,
+					Query:          plan.ToParseTree(),
 					VersionContext: &tc.versionContext,
 					UserSettings:   &schema.Settings{},
 				},
