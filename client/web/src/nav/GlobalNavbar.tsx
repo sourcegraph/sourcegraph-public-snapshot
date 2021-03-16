@@ -74,7 +74,7 @@ interface Props
      */
     variant: 'default' | 'low-profile' | 'low-profile-with-logo' | 'no-search-input'
 
-    setVersionContext: (versionContext: string | undefined) => void
+    setVersionContext: (versionContext: string | undefined) => Promise<void>
     availableVersionContexts: VersionContext[] | undefined
 
     minimalNavLinks?: boolean

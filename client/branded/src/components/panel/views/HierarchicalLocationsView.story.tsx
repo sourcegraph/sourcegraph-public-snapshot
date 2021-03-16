@@ -6,12 +6,7 @@ import { BrandedStory } from '../../BrandedStory'
 import * as H from 'history'
 import { Location } from '@sourcegraph/extension-api-types'
 import { of } from 'rxjs'
-import { createContextService } from '../../../../../shared/src/api/client/context/contextService'
-import {
-    ContributionsEntry,
-    ContributionUnsubscribable,
-} from '../../../../../shared/src/api/client/services/contribution'
-import { noop } from 'lodash'
+import { extensionsController } from '../../../../../shared/src/util/searchTestHelpers'
 
 const { add } = storiesOf('branded/HierarchicalLocationsView', module).addDecorator(story => (
     <BrandedStory styles={webStyles}>{() => <div className="p-5">{story()}</div>}</BrandedStory>
@@ -86,17 +81,7 @@ const LOCATIONS: Location[] = [
 ]
 
 const PROPS: HierarchicalLocationsViewProps = {
-    extensionsController: {
-        services: {
-            context: createContextService({ clientApplication: 'other' }),
-            contribution: {
-                registerContributions: (entry: ContributionsEntry): ContributionUnsubscribable => ({
-                    entry,
-                    unsubscribe: noop,
-                }),
-            },
-        },
-    },
+    extensionsController,
     settingsCascade: { subjects: null, final: null },
     location: H.createLocation('/'),
     locations: of({ isLoading: false, result: LOCATIONS }),

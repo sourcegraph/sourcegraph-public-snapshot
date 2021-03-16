@@ -4,7 +4,6 @@ import * as H from 'history'
 import * as React from 'react'
 import { from, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators'
-import { ExecuteCommandParameters } from '../api/client/services/command'
 import { ActionContribution, Evaluated } from '../api/protocol'
 import { urlForOpenPanel } from '../commands/commands'
 import { ButtonLink } from '../components/LinkOrButton'
@@ -14,6 +13,7 @@ import { TelemetryProps } from '../telemetry/telemetryService'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import { isExternalLink } from '../util/url'
+import { ExecuteCommandParameters } from '../api/client/mainthread-api'
 
 export interface ActionItemAction {
     /**
@@ -280,7 +280,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
 
         this.commandExecutions.next({
             command: action.command,
-            arguments: action.commandArguments,
+            args: action.commandArguments,
         })
     }
 }
