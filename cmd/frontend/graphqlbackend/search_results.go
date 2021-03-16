@@ -338,13 +338,13 @@ var searchResponseCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 // function may only be called after a search result is performed, because it
 // relies on the invariant that query and pattern error checking has already
 // been performed.
-func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32) {
+func logSearchLatency(ctx context.Context, db dbutil.DB, si *SearchInputs, durationMs int32) {
 	tr, ctx := trace.New(ctx, "logSearchLatency", "")
 	defer func() {
 		tr.Finish()
 	}()
 	var types []string
-	resultTypes, _ := r.Query.StringValues(query.FieldType)
+	resultTypes, _ := si.Query.StringValues(query.FieldType)
 	for _, typ := range resultTypes {
 		switch typ {
 		case "repo", "symbol", "diff", "commit":
@@ -354,11 +354,11 @@ func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32)
 			types = append(types, "file")
 		case "file":
 			switch {
-			case r.PatternType == query.SearchTypeStructural:
+			case si.PatternType == query.SearchTypeStructural:
 				types = append(types, "structural")
-			case r.PatternType == query.SearchTypeLiteral:
+			case si.PatternType == query.SearchTypeLiteral:
 				types = append(types, "literal")
-			case r.PatternType == query.SearchTypeRegex:
+			case si.PatternType == query.SearchTypeRegex:
 				types = append(types, "regexp")
 			}
 		}
@@ -372,27 +372,27 @@ func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32)
 	}
 
 	options := &getPatternInfoOptions{}
-	if r.PatternType == query.SearchTypeStructural {
+	if si.PatternType == query.SearchTypeStructural {
 		options = &getPatternInfoOptions{performStructuralSearch: true}
 	}
-	if r.PatternType == query.SearchTypeLiteral {
+	if si.PatternType == query.SearchTypeLiteral {
 		options = &getPatternInfoOptions{performLiteralSearch: true}
 	}
-	p, _ := r.getPatternInfo(options)
+	pattern, _, _, _ := processSearchPattern(si.Query, options)
 
 	// If no type: was explicitly specified, infer the result type.
 	if len(types) == 0 {
 		// If a pattern was specified, a content search happened.
-		if p.Pattern != "" {
+		if pattern != "" {
 			switch {
-			case r.PatternType == query.SearchTypeStructural:
+			case si.PatternType == query.SearchTypeStructural:
 				types = append(types, "structural")
-			case r.PatternType == query.SearchTypeLiteral:
+			case si.PatternType == query.SearchTypeLiteral:
 				types = append(types, "literal")
-			case r.PatternType == query.SearchTypeRegex:
+			case si.PatternType == query.SearchTypeRegex:
 				types = append(types, "regexp")
 			}
-		} else if len(r.Query.Fields()["file"]) > 0 {
+		} else if len(si.Query.Fields()["file"]) > 0 {
 			// No search pattern specified and file: is specified.
 			types = append(types, "file")
 		} else {
@@ -405,12 +405,12 @@ func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32)
 
 	// Only log the time if we successfully resolved one search type.
 	if len(types) == 1 {
-		actor := actor.FromContext(ctx)
-		if actor.IsAuthenticated() {
+		a := actor.FromContext(ctx)
+		if a.IsAuthenticated() {
 			value := fmt.Sprintf(`{"durationMs": %d}`, durationMs)
 			eventName := fmt.Sprintf("search.latencies.%s", types[0])
 			go func() {
-				err := usagestats.LogBackendEvent(r.db, actor.UID, eventName, json.RawMessage(value))
+				err := usagestats.LogBackendEvent(db, a.UID, eventName, json.RawMessage(value))
 				if err != nil {
 					log15.Warn("Could not log search latency", "err", err)
 				}
@@ -479,7 +479,7 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 
 	rr, err := r.resultsWithTimeoutSuggestion(ctx)
 	if rr != nil {
-		r.logSearchLatency(ctx, rr.ElapsedMilliseconds())
+		logSearchLatency(ctx, r.db, r.SearchInputs, rr.ElapsedMilliseconds())
 	}
 
 	// Record what type of response we sent back via Prometheus.
