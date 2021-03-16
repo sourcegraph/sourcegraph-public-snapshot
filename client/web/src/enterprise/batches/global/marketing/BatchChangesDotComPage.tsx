@@ -15,6 +15,7 @@ export const BatchChangesDotComPage: React.FunctionComponent<BatchChangesDotComP
 
             <div className="text-center">
                 <iframe
+                    title="Batch changes demo"
                     className="percy-hide chromatic-ignore"
                     width="560"
                     height="315"
