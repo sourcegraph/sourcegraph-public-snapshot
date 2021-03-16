@@ -285,8 +285,8 @@ func (h *historicalEnqueuer) buildFrame(
 		if factor := conf.Get().InsightsHistoricalSpeedFactor; factor != nil {
 			yieldTime = time.Duration(float64(yieldTime) * *factor)
 		}
-		if diff := h.timeSince(lastIteration); diff < 100*time.Millisecond {
-			h.sleep(100*time.Millisecond - diff)
+		if diff := h.timeSince(lastIteration); diff < yieldTime {
+			h.sleep(yieldTime - diff)
 			lastIteration = h.now()
 		}
 	}
