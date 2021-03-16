@@ -510,6 +510,23 @@ func (s *Server) setCloneStatusNonFatal(ctx context.Context, name api.RepoName, 
 	}
 }
 
+func (s *Server) setLastError(ctx context.Context, name api.RepoName, error string) (err error) {
+	if s.DB == nil {
+		return nil
+	}
+	tx, err := database.Repos(s.DB).Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	repo, err := tx.GetByName(ctx, name)
+	if err != nil {
+		return err
+	}
+	return database.NewGitserverReposWith(tx).SetLastError(ctx, repo.ID, error, s.Hostname)
+}
+
 // removeRepoDirectory atomically removes a directory from s.ReposDir.
 //
 // It first moves the directory to a temporary location to avoid leaving
