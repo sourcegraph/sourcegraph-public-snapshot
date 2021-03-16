@@ -420,7 +420,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		Query:              r.Query,
 	}
 	repositoryResolver := &searchrepos.Resolver{
-		DB:               r.db,
+		RepoStore:        database.Repos(r.db),
 		Zoekt:            r.zoekt,
 		DefaultReposFunc: database.DefaultRepos(r.db).List,
 		NamespaceStore:   database.Namespaces(r.db),

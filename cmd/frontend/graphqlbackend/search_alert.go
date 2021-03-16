@@ -122,7 +122,7 @@ func alertForStalePermissions(db dbutil.DB) *searchAlert {
 func (r *searchResolver) reposExist(ctx context.Context, options searchrepos.Options) bool {
 	options.UserSettings = r.UserSettings
 	repositoryResolver := &searchrepos.Resolver{
-		DB:               r.db,
+		RepoStore:        database.Repos(r.db),
 		Zoekt:            r.zoekt,
 		DefaultReposFunc: database.DefaultRepos(r.db).List,
 		NamespaceStore:   database.Namespaces(r.db),

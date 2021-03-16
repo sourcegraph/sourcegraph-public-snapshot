@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
@@ -61,10 +60,11 @@ func TestRevisionValidation(t *testing.T) {
 	}
 	defer func() { git.Mocks.ResolveRevision = nil }()
 
-	database.Mocks.Repos.ListRepoNames = func(ctx context.Context, opts database.ReposListOptions) ([]*types.RepoName, error) {
+	repoStore := &database.RepoStore{}
+
+	repoStore.Mock.ListRepoNames = func(ctx context.Context, opts database.ReposListOptions) ([]*types.RepoName, error) {
 		return []*types.RepoName{{Name: "repoFoo"}}, nil
 	}
-	defer func() { database.Mocks.Repos.List = nil }()
 
 	tests := []struct {
 		repoFilters              []string
@@ -173,7 +173,10 @@ func TestRevisionValidation(t *testing.T) {
 		t.Run(tt.repoFilters[0], func(t *testing.T) {
 
 			op := Options{RepoFilters: tt.repoFilters}
-			repositoryResolver := &Resolver{NamespaceStore: &mockNamespaceStore{}}
+			repositoryResolver := &Resolver{
+				RepoStore:      repoStore,
+				NamespaceStore: &mockNamespaceStore{},
+			}
 			resolved, err := repositoryResolver.Resolve(context.Background(), op)
 
 			if diff := cmp.Diff(tt.wantRepoRevs, resolved.RepoRevs); diff != "" {
@@ -449,8 +452,6 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(orig)
 
-	db := dbtest.NewDB(t, *dsn)
-
 	const (
 		wantName   = "alice"
 		wantUserID = 123
@@ -460,7 +461,9 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	database.Mocks.Repos.ListRepoNames = func(ctx context.Context, op database.ReposListOptions) ([]*types.RepoName, error) {
+	repoStore := &database.RepoStore{}
+
+	repoStore.Mock.ListRepoNames = func(ctx context.Context, op database.ReposListOptions) ([]*types.RepoName, error) {
 		if op.UserID != wantUserID {
 			t.Errorf("got %q, want %q", op.UserID, wantUserID)
 		}
@@ -491,11 +494,7 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 			},
 		}, nil
 	}
-	database.Mocks.Repos.Count = func(ctx context.Context, op database.ReposListOptions) (int, error) { return 3, nil }
-	defer func() {
-		database.Mocks.Repos.ListRepoNames = nil
-		database.Mocks.Repos.Count = nil
-	}()
+	repoStore.Mock.Count = func(ctx context.Context, op database.ReposListOptions) (int, error) { return 3, nil }
 
 	getNamespaceByName := func(ctx context.Context, name string) (*database.Namespace, error) {
 		if name != wantName {
@@ -509,7 +508,7 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 		Query:             queryInfo,
 		SearchContextSpec: "@" + wantName,
 	}
-	repositoryResolver := &Resolver{DB: db, NamespaceStore: namespaceStore}
+	repositoryResolver := &Resolver{RepoStore: repoStore, NamespaceStore: namespaceStore}
 	resolved, err := repositoryResolver.Resolve(context.Background(), op)
 	if err != nil {
 		t.Fatal(err)
