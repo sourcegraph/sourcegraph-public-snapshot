@@ -14,10 +14,6 @@ import {
     MonitorEmailPriority,
 } from '../../../../shared/src/graphql-operations'
 
-jest.mock('../../tracking/eventLogger', () => ({
-    eventLogger: { logViewEvent: () => undefined },
-}))
-
 describe('ManageCodeMonitorPage', () => {
     const mockUser = {
         id: 'userID',

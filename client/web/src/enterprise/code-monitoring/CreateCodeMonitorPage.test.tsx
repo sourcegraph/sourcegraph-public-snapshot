@@ -9,10 +9,6 @@ import { mockCodeMonitor } from './testing/util'
 import { CreateCodeMonitorVariables } from '../../graphql-operations'
 import { act } from 'react-dom/test-utils'
 
-jest.mock('../../tracking/eventLogger', () => ({
-    eventLogger: { logViewEvent: () => undefined },
-}))
-
 describe('CreateCodeMonitorPage', () => {
     const mockUser = {
         id: 'userID',

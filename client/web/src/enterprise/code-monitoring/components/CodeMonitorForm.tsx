@@ -30,8 +30,6 @@ export interface CodeMonitorFormProps extends Partial<Pick<CodeMonitoringProps, 
     codeMonitor?: CodeMonitorFields
     /* Whether to show the delete button */
     showDeleteButton?: boolean
-    /* Optional trigger query to pre-populate the trigger form */
-    triggerQuery?: string
 }
 
 interface FormCompletionSteps {
@@ -47,16 +45,21 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
     codeMonitor,
     showDeleteButton,
     deleteCodeMonitor,
-    triggerQuery,
+    location,
 }) => {
     const LOADING = 'loading' as const
+
+    const triggerQueryFromURL = useMemo(
+        () => (codeMonitor ? undefined : new URLSearchParams(location.search).get('trigger-query')),
+        [codeMonitor, location.search]
+    )
 
     const [currentCodeMonitorState, setCodeMonitor] = useState<CodeMonitorFields>(
         codeMonitor ?? {
             id: '',
             description: '',
             enabled: true,
-            trigger: { id: '', query: triggerQuery ?? '' },
+            trigger: { id: '', query: triggerQueryFromURL ?? '' },
             actions: {
                 nodes: [],
             },
@@ -187,7 +190,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                         onQueryChange={onQueryChange}
                         triggerCompleted={formCompletion.triggerCompleted}
                         setTriggerCompleted={setTriggerCompleted}
-                        startExpanded={!!triggerQuery}
+                        startExpanded={!!triggerQueryFromURL}
                     />
                 </div>
                 <div

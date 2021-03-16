@@ -19,8 +19,10 @@ const PROPS: CodeMonitorFormProps = {
 }
 
 describe('CodeMonitorForm', () => {
-    test('Uses trigger query when present', () => {
-        const component = mount(<CodeMonitorForm {...PROPS} triggerQuery="foo" />)
+    test('Uses trigger-query when present in URL search params', () => {
+        const component = mount(
+            <CodeMonitorForm {...PROPS} location={createLocation('/code-monitoring/new?trigger-query=foo')} />
+        )
         const triggerQuery = component.find('[data-testid="trigger-query-edit"]')
         expect(triggerQuery.length).toStrictEqual(1)
         expect(triggerQuery.at(0).prop('value')).toStrictEqual('foo')
