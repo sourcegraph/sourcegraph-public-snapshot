@@ -150,19 +150,6 @@ func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos 
 	return database.GlobalRepos.List(ctx, opt)
 }
 
-// ListDefault calls database.DefaultRepos.List, with tracing.
-func (s *repos) ListDefault(ctx context.Context) (repos []*types.RepoName, err error) {
-	ctx, done := trace(ctx, "Repos", "ListDefault", nil, &err)
-	defer func() {
-		if err == nil {
-			span := opentracing.SpanFromContext(ctx)
-			span.LogFields(otlog.Int("result.len", len(repos)))
-		}
-		done()
-	}()
-	return database.GlobalDefaultRepos.List(ctx)
-}
-
 func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID, forceEnhancedLanguageDetection bool) (res *inventory.Inventory, err error) {
 	if Mocks.Repos.GetInventory != nil {
 		return Mocks.Repos.GetInventory(ctx, repo, commitID)

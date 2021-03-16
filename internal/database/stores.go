@@ -4,7 +4,6 @@ package database
 // Deprecated: Use store constructors instead.
 var (
 	GlobalExternalServices            = &ExternalServiceStore{}
-	GlobalDefaultRepos                = &DefaultRepoStore{}
 	GlobalRepos                       = &RepoStore{}
 	GlobalOrgs                        = &OrgStore{}
 	GlobalSettings                    = &SettingStore{}

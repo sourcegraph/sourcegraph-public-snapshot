@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -327,6 +328,11 @@ func decodedViewerFinalSettings(ctx context.Context, db dbutil.DB) (_ *schema.Se
 	return &settings, nil
 }
 
+// defaultReposCache is a global cache on the repositories we search in global
+// searches. This is a performance optimization. On sourcegraph.com this takes
+// executation time of the function from 3s to a few milliseconds.
+var defaultReposCache = &searchrepos.CachedList{}
+
 // resolveRepositories calls ResolveRepositories, caching the result for the common case
 // where effectiveRepoFieldValues == nil.
 func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (searchrepos.Resolved, error) {
@@ -402,6 +408,10 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		versionContextName = *r.VersionContext
 	}
 
+	defaultReposFunc := defaultReposCache.Wrap(func(ctx context.Context) ([]*types.RepoName, error) {
+		return database.Repos(r.db).ListDefaultRepos(ctx, database.ListDefaultReposOptions{})
+	})
+
 	tr.LazyPrintf("resolveRepositories - start")
 	options := searchrepos.Options{
 		RepoFilters:        repoFilters,
@@ -422,8 +432,8 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	repositoryResolver := &searchrepos.Resolver{
 		DB:               r.db,
 		Zoekt:            r.zoekt,
-		DefaultReposFunc: database.DefaultRepos(r.db).List,
 		NamespaceStore:   database.Namespaces(r.db),
+		DefaultReposFunc: defaultReposFunc,
 	}
 	resolved, err := repositoryResolver.Resolve(ctx, options)
 	tr.LazyPrintf("resolveRepositories - done")

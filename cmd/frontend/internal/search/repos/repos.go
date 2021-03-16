@@ -44,7 +44,7 @@ type Resolved struct {
 type Resolver struct {
 	DB               dbutil.DB
 	Zoekt            *searchbackend.Zoekt
-	DefaultReposFunc defaultReposFunc
+	DefaultReposFunc DefaultReposFunc
 	NamespaceStore   interface {
 		GetByName(context.Context, string) (*database.Namespace, error)
 	}
@@ -575,9 +575,9 @@ func findPatternRevs(includePatterns []string) (includePatternRevs []patternRevs
 	return
 }
 
-type defaultReposFunc func(ctx context.Context) ([]*types.RepoName, error)
+type DefaultReposFunc func(ctx context.Context) ([]*types.RepoName, error)
 
-func defaultRepositories(ctx context.Context, getRawDefaultRepos defaultReposFunc, z *searchbackend.Zoekt, excludePatterns []string) ([]*types.RepoName, error) {
+func defaultRepositories(ctx context.Context, getRawDefaultRepos DefaultReposFunc, z *searchbackend.Zoekt, excludePatterns []string) ([]*types.RepoName, error) {
 	// Get the list of default repos from the database.
 	defaultRepos, err := getRawDefaultRepos(ctx)
 	if err != nil {
