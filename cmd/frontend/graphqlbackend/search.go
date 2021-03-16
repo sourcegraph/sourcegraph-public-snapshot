@@ -91,10 +91,10 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 		return nil, errors.New("Structural search is disabled in the site configuration.")
 	}
 
-	var q query.Q
+	var plan query.Plan
 	globbing := getBoolPtr(settings.SearchGlobbing, false)
 	tr.LogFields(otlog.Bool("globbing", globbing))
-	q, err = query.Pipeline(
+	plan, err = query.Pipeline(
 		query.Init(args.Query, searchType),
 		query.With(globbing, query.Globbing),
 	)
@@ -106,7 +106,7 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 	// If the request is a paginated one, decode those arguments now.
 	var pagination *searchPaginationInfo
 	if args.First != nil {
-		pagination, err = processPaginationRequest(args, q)
+		pagination, err = processPaginationRequest(args, plan.ToParseTree())
 		if err != nil {
 			return nil, err
 		}
@@ -121,7 +121,7 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 		defaultLimit = defaultMaxSearchResults
 	}
 
-	if sp, _ := q.StringValue(query.FieldSelect); sp != "" && args.Stream != nil {
+	if sp, _ := plan.ToParseTree().StringValue(query.FieldSelect); sp != "" && args.Stream != nil {
 		// Invariant: error already checked
 		selectPath, _ := filter.SelectPathFromString(sp)
 		args.Stream = WithSelect(args.Stream, selectPath)
@@ -130,7 +130,8 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 	return &searchResolver{
 		db: db,
 		SearchInputs: &SearchInputs{
-			Query:          q,
+			Plan:           plan,
+			Query:          plan.ToParseTree(),
 			OriginalQuery:  args.Query,
 			VersionContext: args.VersionContext,
 			UserSettings:   settings,
@@ -233,7 +234,8 @@ func getBoolPtr(b *bool, def bool) bool {
 
 // SearchInputs contains fields we set before kicking off search.
 type SearchInputs struct {
-	Query          query.Q               // the query
+	Plan           query.Plan            // the comprehensive query plan
+	Query          query.Q               // the current basic query being evaluated, one part of query.Plan
 	OriginalQuery  string                // the raw string of the original search query
 	Pagination     *searchPaginationInfo // pagination information, or nil if the request is not paginated.
 	PatternType    query.SearchType
