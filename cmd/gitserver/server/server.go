@@ -1091,6 +1091,47 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 	w.Header().Set("X-Exec-Stderr", stderr)
 }
 
+func (s *Server) setLastError(ctx context.Context, name api.RepoName, error string) (err error) {
+	if s.DB == nil {
+		return nil
+	}
+	tx, err := database.Repos(s.DB).Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	repo, err := tx.GetByName(ctx, name)
+	if err != nil {
+		return err
+	}
+	return database.NewGitserverReposWith(tx).SetLastError(ctx, repo.ID, error, s.Hostname)
+}
+
+func (s *Server) setCloneStatus(ctx context.Context, name api.RepoName, status types.CloneStatus) (err error) {
+	if s.DB == nil {
+		return nil
+	}
+	tx, err := database.Repos(s.DB).Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	repo, err := tx.GetByName(ctx, name)
+	if err != nil {
+		return err
+	}
+	return database.NewGitserverReposWith(tx).SetCloneStatus(ctx, repo.ID, status, s.Hostname)
+}
+
+// setCloneStatusNonFatal is the same as setCloneStatus but only logs errors
+func (s *Server) setCloneStatusNonFatal(ctx context.Context, name api.RepoName, status types.CloneStatus) {
+	if err := s.setCloneStatus(ctx, name, status); err != nil {
+		log15.Warn("Setting clone status in DB", "error", err)
+	}
+}
+
 // setGitAttributes writes our global gitattributes to
 // gitDir/info/attributes. This will override .gitattributes inside of
 // repositories. It is used to unset attributes such as export-ignore.
