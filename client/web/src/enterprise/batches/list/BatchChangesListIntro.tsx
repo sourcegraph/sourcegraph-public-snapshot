@@ -7,26 +7,33 @@ export interface BatchChangesListIntroProps {
 }
 
 export const BatchChangesListIntro: React.FunctionComponent<BatchChangesListIntroProps> = ({ licensed }) => (
-    <div className="row mb-2">
-        {licensed === true ? (
+    <>
+        <div className="row">
             <div className="col-12">
-                <BatchChangesChangelogAlert />
+                <BatchChangesRenameAlert />
             </div>
-        ) : (
-            <>
-                {licensed === false && (
-                    <>
-                        <div className="col-12 col-md-6">
-                            <BatchChangesUnlicensedAlert />
-                        </div>
-                        <div className="col-12 col-md-6">
-                            <BatchChangesChangelogAlert />
-                        </div>
-                    </>
-                )}
-            </>
-        )}
-    </div>
+        </div>
+        <div className="row mb-2">
+            {licensed === true ? (
+                <div className="col-12">
+                    <BatchChangesChangelogAlert />
+                </div>
+            ) : (
+                <>
+                    {licensed === false && (
+                        <>
+                            <div className="col-12 col-md-6">
+                                <BatchChangesUnlicensedAlert />
+                            </div>
+                            <div className="col-12 col-md-6">
+                                <BatchChangesChangelogAlert />
+                            </div>
+                        </>
+                    )}
+                </>
+            )}
+        </div>
+    </>
 )
 
 const BatchChangesChangelogAlert: React.FunctionComponent = () => (
@@ -43,6 +50,29 @@ const BatchChangesChangelogAlert: React.FunctionComponent = () => (
                 <ul className="text-muted mb-0 pl-3">
                     <li>Batch Changes now supports SSH cloned repos. Users can configure SSH access in settings.</li>
                 </ul>
+            </div>
+        </div>
+    </DismissibleAlert>
+)
+
+const BatchChangesRenameAlert: React.FunctionComponent = () => (
+    // Unlike the other alerts in this file, the spacing below the alert is
+    // handled as padding within the element here to avoid extra margin being
+    // included once this alert is dismissed. (The other alerts in this file
+    // have margin that is used for more than just the alerts. Structural
+    // margin?)
+    <DismissibleAlert
+        className="batch-changes-list-intro__alert pb-4"
+        partialStorageKey="batch-changes-list-intro-rename"
+    >
+        <div className="batch-changes-list-intro__card card h-100 p-2">
+            <div className="card-body">
+                <h4>Campaigns is now Batch Changes</h4>
+                <p className="text-muted mb-0">
+                    Campaigns was renamed to Sourcegraph Batch Changes in version 3.26. If you were already using it
+                    under the previous name (campaigns), backwards compatibility has been preserved.{' '}
+                    <a href="https://docs.sourcegraph.com/batch_changes/references/name-change">Read more.</a>
+                </p>
             </div>
         </div>
     </DismissibleAlert>
