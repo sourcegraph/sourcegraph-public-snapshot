@@ -140,7 +140,7 @@ const dirtyRepositoriesQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/commits.go:DirtyRepositories
 SELECT lsif_dirty_repositories.repository_id, lsif_dirty_repositories.dirty_token
   FROM lsif_dirty_repositories
-    LEFT JOIN repo ON repo.id = lsif_dirty_repositories.repository_id
+    INNER JOIN repo ON repo.id = lsif_dirty_repositories.repository_id
   WHERE dirty_token > update_token
     AND repo.deleted_at IS NULL
 `

@@ -100,6 +100,10 @@ func TestMarkRepositoryAsDirty(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	store := testStore()
 
+	for _, id := range []int{50, 51, 52} {
+		insertRepo(t, dbconn.Global, id, "")
+	}
+
 	for _, repositoryID := range []int{50, 51, 52, 51, 52} {
 		if err := store.MarkRepositoryAsDirty(context.Background(), repositoryID); err != nil {
 			t.Errorf("unexpected error marking repository as dirty: %s", err)
@@ -130,20 +134,17 @@ func TestSkipsDeletedRepositories(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	store := testStore()
 
-	for _, repositoryID := range []int{50, 51} {
+	insertRepo(t, dbconn.Global, 50, "should not be dirty")
+	deleteRepo(t, dbconn.Global, 50, time.Now())
+
+	insertRepo(t, dbconn.Global, 51, "should be dirty")
+
+	// NOTE: We did not insert 52, so it should not show up as dirty, even though we mark it below.
+
+	for _, repositoryID := range []int{50, 51, 52} {
 		if err := store.MarkRepositoryAsDirty(context.Background(), repositoryID); err != nil {
-			t.Errorf("unexpected error marking repository as dirty: %s", err)
+			t.Fatalf("unexpected error marking repository as dirty: %s", err)
 		}
-	}
-
-	createQuery := sqlf.Sprintf(`INSERT INTO repo (id, name, deleted_at) VALUES (51, 'should be dirty', NULL)`)
-	if err := store.Exec(context.Background(), createQuery); err != nil {
-		t.Errorf("Failed to create repo: %s", err)
-	}
-
-	deleteQuery := sqlf.Sprintf(`INSERT INTO repo (id, name, deleted_at) VALUES (50, 'should not be dirty', %s)`, time.Now())
-	if err := store.Exec(context.Background(), deleteQuery); err != nil {
-		t.Errorf("Failed to delete repo: %s", err)
 	}
 
 	repositoryIDs, err := store.DirtyRepositories(context.Background())
