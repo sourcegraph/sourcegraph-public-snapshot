@@ -25,9 +25,13 @@ const SampleTabHeader: React.FunctionComponent<SampleTabHeaderProps> = ({ sample
     )
     return (
         <li className="nav-item">
-            <a href="" onClick={onClick} className={classNames('nav-link', active && 'active')}>
+            <button
+                type="button"
+                onClick={onClick}
+                className={classNames('btn', 'text-decoration-none', active ? 'btn-primary' : 'btn-link')}
+            >
                 {sample.name}
-            </a>
+            </button>
         </li>
     )
 }

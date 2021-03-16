@@ -99,31 +99,43 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
             <div className="overflow-auto mb-2">
                 <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
                     <li className="nav-item">
-                        <a
-                            href=""
+                        <button
+                            type="button"
                             onClick={onSelectChangesets}
-                            className={classNames('nav-link', selectedTab === 'changesets' && 'active')}
+                            className={classNames(
+                                'btn',
+                                'text-decoration-none',
+                                selectedTab === 'changesets' ? 'btn-primary' : 'btn-link'
+                            )}
                         >
                             <SourceBranchIcon className="icon-inline text-muted mr-1" /> Changesets
-                        </a>
+                        </button>
                     </li>
                     <li className="nav-item test-batches-chart-tab">
-                        <a
-                            href=""
+                        <button
+                            type="button"
                             onClick={onSelectChart}
-                            className={classNames('nav-link', selectedTab === 'chart' && 'active')}
+                            className={classNames(
+                                'btn',
+                                'text-decoration-none',
+                                selectedTab === 'chart' ? 'btn-primary' : 'btn-link'
+                            )}
                         >
                             <ChartLineVariantIcon className="icon-inline text-muted mr-1" /> Burndown chart
-                        </a>
+                        </button>
                     </li>
                     <li className="nav-item test-batches-spec-tab">
-                        <a
-                            href=""
+                        <button
+                            type="button"
                             onClick={onSelectSpec}
-                            className={classNames('nav-link', selectedTab === 'spec' && 'active')}
+                            className={classNames(
+                                'btn',
+                                'text-decoration-none',
+                                selectedTab === 'spec' ? 'btn-primary' : 'btn-link'
+                            )}
                         >
                             <FileDocumentIcon className="icon-inline text-muted mr-1" /> Spec
-                        </a>
+                        </button>
                     </li>
                 </ul>
             </div>
