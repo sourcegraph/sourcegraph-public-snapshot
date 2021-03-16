@@ -201,17 +201,14 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                         <small className="form-text text-muted d-block mt-1">
                             Set to{' '}
                             {DURATION_LINKS.map(({ label, days }) => (
-                                <a
-                                    href="#"
+                                <button
+                                    type="button"
                                     key={days}
-                                    className="mr-2"
-                                    onClick={event => {
-                                        event.preventDefault()
-                                        setValidDays(days)
-                                    }}
+                                    className="btn btn-link p-0 mr-2 site-admin-create-product-subscription-page__duration-button"
+                                    onClick={() => setValidDays(days)}
                                 >
                                     {label}
-                                </a>
+                                </button>
                             ))}
                         </small>
                     </div>

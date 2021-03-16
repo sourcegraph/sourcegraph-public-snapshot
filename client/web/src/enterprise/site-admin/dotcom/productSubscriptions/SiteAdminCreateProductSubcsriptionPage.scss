@@ -1,0 +1,6 @@
+.site-admin-create-product-subscription-page {
+    &__duration-button {
+        // Override default btn font size to inherit from <small> wrapper
+        font-size: inherit;
+    }
+}
