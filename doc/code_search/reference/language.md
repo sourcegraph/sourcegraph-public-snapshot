@@ -439,37 +439,37 @@ A pattern to search. By default the pattern is searched literally. The kind of s
         <td class="ks"></td>
         <td class="d"><code class="c"><a href="#repogroup">repogroup</a></code></td>
         <td class="ke"></td>
-        <tr class="r">
-          <td class="ks"></td>
-          <td class="d"><code class="c"><a href="#repo-has-file">repo has file</a></code></td>
-          <td class="ke"></td>
-        </tr>
-        <tr class="r">
-          <td class="ks"></td>
-          <td class="d"><code class="c"><a href="#repo-has-commit-after">repo has commit after</a></code></td>
-          <td class="ke"></td>
-        </tr>
-        <tr class="r">
-          <td class="ks"></td>
-          <td class="d"><code class="c"><a href="#count">count</a></code></td>
-          <td class="ke"></td>
-        </tr>
-        <tr class="r">
-          <td class="ks"></td>
-          <td class="d"><code class="c"><a href="#timeout">timeout</a></code></td>
-          <td class="ke"></td>
-        </tr>
-        <tr class="r">
-          <td class="ks"></td>
-          <td class="d"><code class="c"><a href="#visibility">visibility</a></code></td>
-          <td class="ke"></td>
-        </tr>
-        <tr class="r">
-          <td class="ls"></td>
-          <td class="d"><code class="c"><a href="#pattern-type">pattern type</a></code></td>
-          <td class="le"></td>
-        </tr>
       </tr>
+	  <tr class="r">
+	    <td class="ks"></td>
+	    <td class="d"><code class="c"><a href="#repo-has-file">repo has file</a></code></td>
+	    <td class="ke"></td>
+	  </tr>
+	  <tr class="r">
+	    <td class="ks"></td>
+	    <td class="d"><code class="c"><a href="#repo-has-commit-after">repo has commit after</a></code></td>
+	    <td class="ke"></td>
+	  </tr>
+	  <tr class="r">
+	    <td class="ks"></td>
+	    <td class="d"><code class="c"><a href="#count">count</a></code></td>
+	    <td class="ke"></td>
+	  </tr>
+	  <tr class="r">
+	    <td class="ks"></td>
+	    <td class="d"><code class="c"><a href="#timeout">timeout</a></code></td>
+	    <td class="ke"></td>
+	  </tr>
+	  <tr class="r">
+	    <td class="ks"></td>
+	    <td class="d"><code class="c"><a href="#visibility">visibility</a></code></td>
+	    <td class="ke"></td>
+	  </tr>
+	  <tr class="r">
+	    <td class="ls"></td>
+	    <td class="d"><code class="c"><a href="#pattern-type">pattern type</a></code></td>
+	    <td class="le"></td>
+	  </tr>
     </tbody>
   </table>
 </div>
