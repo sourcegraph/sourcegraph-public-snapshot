@@ -412,7 +412,6 @@ func logSearchLatency(ctx context.Context, db dbutil.DB, si *SearchInputs, durat
 			go func() {
 				err := usagestats.LogBackendEvent(db, a.UID, eventName, json.RawMessage(value))
 				if err != nil {
-					tr.SetError(err)
 					log15.Warn("Could not log search latency", "err", err)
 				}
 			}()
