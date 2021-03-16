@@ -50,7 +50,7 @@ Note that the extension host execution context varies depending on the client ap
 
 ### Testing
 
-- [Sideload](../../../extensions/authoring/local_development) an extension that uses the new feature to manually test it.
+- [Sideload](../../../extensions/authoring/local_development.md) an extension that uses the new feature to manually test it.
 	- [npm](https://docs.npmjs.com/cli/v7/commands/npm-link)/[yarn](https://classic.yarnpkg.com/en/docs/cli/link/) link to use the latest type definitions in your extension project
 - Write the appropriate automated tests to help prevent regresssions. Refer to our [general](http://localhost:5080/dev/background-information/testing_web_code) and [extensions platform](#how-we-test-the-extensions-platform) testing guides.
 
