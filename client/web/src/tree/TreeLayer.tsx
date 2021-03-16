@@ -287,6 +287,12 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
         // Every other layer is a row in the file tree, and will fetch and render its children (if any) when expanded.
         return (
             <div>
+                {/*
+                    TODO: Improve accessibility here.
+                    We should support onFocus here but we currently do not let users focus directly on the actual items in this list.
+                    Issue: https://github.com/sourcegraph/sourcegraph/issues/19167
+                */}
+                {/* eslint-disable-next-line jsx-a11y/mouse-events-have-key-events */}
                 <table className="tree-layer" onMouseOver={entryInfo.isDirectory ? this.invokeOnHover : undefined}>
                     <tbody>
                         {entryInfo.isDirectory ? (

@@ -192,6 +192,12 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                         error={treeOrError}
                     />
                 ) : (
+                    /**
+                     * TODO: Improve accessibility here.
+                     * We should not be stealing focus here, we should let the user focus on the actual items listed.
+                     * Issue: https://github.com/sourcegraph/sourcegraph/issues/19167
+                     */
+                    // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
                     <table className="tree-layer" tabIndex={0}>
                         <tbody>
                             <tr>
