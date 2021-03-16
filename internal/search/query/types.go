@@ -67,7 +67,7 @@ type Plan []Q
 
 // ToParseTree models a plan as a parse tree of an Or-expression on plan queries.
 func (p Plan) ToParseTree() Q {
-	var nodes []Node
+	nodes := make([]Node, 0, len(p))
 	for _, q := range p {
 		nodes = append(nodes, Operator{Kind: And, Operands: q})
 	}

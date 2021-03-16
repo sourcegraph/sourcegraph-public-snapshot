@@ -99,7 +99,7 @@ func Pipeline(steps ...step) (Plan, error) {
 		return nil, err
 	}
 
-	var plan Plan
+	plan := make([]Q, 0, len(nodes))
 	for _, disjunct := range Dnf(nodes) {
 		err = validate(disjunct)
 		if err != nil {
