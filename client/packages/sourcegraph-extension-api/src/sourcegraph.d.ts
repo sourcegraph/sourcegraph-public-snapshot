@@ -1324,13 +1324,6 @@ declare module 'sourcegraph' {
          * only precise or only search-based code intelligence results.
          */
         aggregableBadges?: AggregableBadge[]
-
-        /**
-         * Badges are displayed next to each result.
-         *
-         * @deprecated These badges are no longer displayed. Use {@link Badge#aggregableBadges} instead.
-         */
-        badge?: never
     }
 
     /**
