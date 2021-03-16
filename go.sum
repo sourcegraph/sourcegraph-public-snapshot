@@ -241,6 +241,8 @@ github.com/derision-test/glock v0.0.0-20210316020736-b1b7e6668174 h1:UBd72rH4c8O
 github.com/derision-test/glock v0.0.0-20210316020736-b1b7e6668174/go.mod h1:jKtLdBMrF+XQatqvg46wiWdDfDSSDjdhO4dOM2FX9H4=
 github.com/derision-test/glock v0.0.0-20210316025514-dbdcbc7883a3 h1:CxxyxWhj74NsnGVjAKRpkKUZCsBSEAFQXQRDg/K0DJE=
 github.com/derision-test/glock v0.0.0-20210316025514-dbdcbc7883a3/go.mod h1:jKtLdBMrF+XQatqvg46wiWdDfDSSDjdhO4dOM2FX9H4=
+github.com/derision-test/glock v0.0.0-20210316032053-f5b74334bb29 h1:O07j7ewg0eFHRx+7bxCA/7z86HJexl7HLY9kyVMmPDo=
+github.com/derision-test/glock v0.0.0-20210316032053-f5b74334bb29/go.mod h1:jKtLdBMrF+XQatqvg46wiWdDfDSSDjdhO4dOM2FX9H4=
 github.com/dgraph-io/badger v1.6.0/go.mod h1:zwt7syl517jmP8s94KqSxTlM6IMsdhYy6psNgSztDR4=
 github.com/dgraph-io/ristretto v0.0.3 h1:jh22xisGBjrEVnRZ1DVTpBVQm0Xndu8sMl0CWDzSIBI=
 github.com/dgraph-io/ristretto v0.0.3/go.mod h1:KPxhHT9ZxKefz+PCeOGsrHpl1qZ7i70dGTu2u+Ahh6E=
