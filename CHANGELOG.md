@@ -33,6 +33,7 @@ All notable changes to Sourcegraph are documented in this file.
   quoted. [#18642](https://github.com/sourcegraph/sourcegraph/pull/18642)
 - Sourcegraph is now built with Go 1.16. [#18447](https://github.com/sourcegraph/sourcegraph/pull/18447)
 - Cursor hover information in the search query bar will now display after 150ms (previously 0ms). [#18916](https://github.com/sourcegraph/sourcegraph/pull/18916)
+- Precision class indicators have been improved for code intelligence results in both the hover overlay as well as the definition and references locations panel. [#18843](https://github.com/sourcegraph/sourcegraph/pull/18843)
 
 ### Fixed
 
@@ -44,6 +45,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Removed the deprecated GraphQL fields `SearchResults.repositoriesSearched` and `SearchResults.indexedRepositoriesSearched`.
 - Removed the deprecated search field `max`
+- Removed the `experimentalFeatures.showBadgeAttachments` setting
 
 ## 3.25.2
 
