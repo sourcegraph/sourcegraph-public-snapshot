@@ -130,6 +130,8 @@
 // 1528395796_alter_cloud_default_constraint.up.sql (209B)
 // 1528395797_faster_changeset_lookups.down.sql (50B)
 // 1528395797_faster_changeset_lookups.up.sql (122B)
+// 1528395798_changeset_title.down.sql (130B)
+// 1528395798_changeset_title.up.sql (417B)
 
 package migrations
 
@@ -2798,6 +2800,46 @@ func _1528395797_faster_changeset_lookupsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395798_changeset_titleDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\xf0\xf4\x73\x71\x8d\x50\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x29\x8e\x4f\xad\x28\x49\x2d\xca\x4b\xcc\x89\x2f\xc9\x2c\xc9\x49\x8d\xcf\x4c\xa9\xb0\xe6\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x45\x52\xaa\x00\x36\xca\xd9\xdf\x27\xd4\xd7\x0f\xc9\x2c\x54\x03\xac\xb9\xb8\x9c\xfd\x7d\x7d\x3d\x43\xac\xb9\x00\x01\x00\x00\xff\xff\x31\x9e\x9c\x3c\x82\x00\x00\x00")
+
+func _1528395798_changeset_titleDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395798_changeset_titleDownSql,
+		"1528395798_changeset_title.down.sql",
+	)
+}
+
+func _1528395798_changeset_titleDownSql() (*asset, error) {
+	bytes, err := _1528395798_changeset_titleDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395798_changeset_title.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xc0, 0xc4, 0x36, 0x38, 0xc8, 0x5e, 0x76, 0xdb, 0x8c, 0xa6, 0x30, 0x38, 0xac, 0xcf, 0xff, 0xbd, 0x9a, 0xdd, 0xa5, 0xd0, 0xdc, 0x71, 0x25, 0x27, 0x1e, 0x49, 0xe3, 0xb8, 0x3b, 0x2e, 0xc7, 0x9d}}
+	return a, nil
+}
+
+var __1528395798_changeset_titleUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\x90\xd1\x6a\x83\x40\x10\x45\xdf\xf7\x2b\xe6\xcd\x04\xda\xfc\x80\x34\x60\xd6\x69\x58\x58\x77\x8b\xbb\x42\xde\x64\xa9\x83\x15\x8c\x06\x9d\x16\xdb\xaf\x2f\x86\x86\x44\xa1\xcf\x33\xf7\xdc\xc3\x3d\xe0\x51\x99\x58\x88\x44\x7b\xcc\xc1\x27\x07\x8d\xf0\xfe\x11\xba\x9a\x46\xe2\x11\x92\x34\x05\x69\x75\x91\x19\x50\xaf\x60\xac\x07\x3c\x29\xe7\x1d\xd0\xc4\x34\x74\xa1\x2d\xb9\xe1\x96\x80\x69\xe2\x58\x48\x9b\x65\x68\x3c\x58\x73\x0b\xdd\x51\xbb\x55\x42\x39\x88\x4c\x3f\x9c\x43\xdb\xfc\x50\x05\x97\xa1\xbf\xd0\xc0\xdf\x50\x53\x47\x43\x60\xaa\xa0\xef\x60\x0c\x5f\x04\x9f\x63\xd3\xd5\x20\x6f\xa4\x9d\x9f\xf3\x9b\x6d\x14\x0b\x51\xbc\xa5\x89\x5f\x08\x3b\xf4\x6b\xb7\x17\x90\x36\xd1\xe8\x24\x6e\x1e\x74\xce\xc4\xa1\x0a\x1c\x9e\xf7\xfb\xe8\x4a\x8c\x9e\xe0\x9f\x33\xff\x9d\x4d\xa1\xf5\x36\x16\x42\xe6\x38\xb7\x2a\x93\xe2\x69\x35\xcb\x9d\x50\x2e\x2d\xca\xa6\x9a\xe6\x5d\x1e\x54\x0b\xa7\xcc\x11\x0e\x3e\x47\xdc\x2c\x9f\xaf\x25\x36\xcb\x94\x8f\xc5\x6f\x00\x00\x00\xff\xff\x23\xb6\x16\xe3\xa1\x01\x00\x00")
+
+func _1528395798_changeset_titleUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395798_changeset_titleUpSql,
+		"1528395798_changeset_title.up.sql",
+	)
+}
+
+func _1528395798_changeset_titleUpSql() (*asset, error) {
+	bytes, err := _1528395798_changeset_titleUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395798_changeset_title.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x8e, 0xbf, 0xc9, 0x7a, 0x53, 0x0, 0x6c, 0xe3, 0x57, 0x3b, 0x92, 0x3a, 0x70, 0xb5, 0xaf, 0x20, 0xc2, 0x3e, 0xb, 0xce, 0x37, 0x77, 0x5f, 0xe7, 0xab, 0x1, 0x7, 0x31, 0xde, 0x35, 0xd1, 0xf1}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -3019,6 +3061,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395796_alter_cloud_default_constraint.up.sql":                                       _1528395796_alter_cloud_default_constraintUpSql,
 	"1528395797_faster_changeset_lookups.down.sql":                                           _1528395797_faster_changeset_lookupsDownSql,
 	"1528395797_faster_changeset_lookups.up.sql":                                             _1528395797_faster_changeset_lookupsUpSql,
+	"1528395798_changeset_title.down.sql":                                                    _1528395798_changeset_titleDownSql,
+	"1528395798_changeset_title.up.sql":                                                      _1528395798_changeset_titleUpSql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -3195,6 +3239,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395796_alter_cloud_default_constraint.up.sql":                                       {_1528395796_alter_cloud_default_constraintUpSql, map[string]*bintree{}},
 	"1528395797_faster_changeset_lookups.down.sql":                                           {_1528395797_faster_changeset_lookupsDownSql, map[string]*bintree{}},
 	"1528395797_faster_changeset_lookups.up.sql":                                             {_1528395797_faster_changeset_lookupsUpSql, map[string]*bintree{}},
+	"1528395798_changeset_title.down.sql":                                                    {_1528395798_changeset_titleDownSql, map[string]*bintree{}},
+	"1528395798_changeset_title.up.sql":                                                      {_1528395798_changeset_titleUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
