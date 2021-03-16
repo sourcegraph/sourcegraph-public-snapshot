@@ -97,7 +97,7 @@ var changesetInsertColumns = []*sqlf.Query{
 	// We additionally store the result of changeset.Title() in a column, so
 	// the business logic for determining it is in one place and the field is
 	// indexable for searching.
-	sqlf.Sprintf("title"),
+	sqlf.Sprintf("external_title"),
 }
 
 func (s *Store) changesetWriteQuery(q string, includeID bool, c *batches.Changeset) (*sqlf.Query, error) {
@@ -286,7 +286,7 @@ func countChangesetsQuery(opts *CountChangesetsOpts, authzConds *sqlf.Query) *sq
 				term,
 				// The COALESCE() is required to handle the actual title on the
 				// changeset, if it has been published or if it's tracked.
-				sqlf.Sprintf("COALESCE(changesets.title, changeset_specs.title)"),
+				sqlf.Sprintf("COALESCE(changesets.external_title, changeset_specs.title)"),
 				sqlf.Sprintf("repo.name"),
 			))
 		}
@@ -559,7 +559,7 @@ func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf
 				term,
 				// The COALESCE() is required to handle the actual title on the
 				// changeset, if it has been published or if it's tracked.
-				sqlf.Sprintf("COALESCE(changesets.title, changeset_specs.title)"),
+				sqlf.Sprintf("COALESCE(changesets.external_title, changeset_specs.title)"),
 				sqlf.Sprintf("repo.name"),
 			))
 		}
