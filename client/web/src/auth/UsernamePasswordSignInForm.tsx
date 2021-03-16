@@ -103,7 +103,8 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({
                         disabled={loading}
                         autoCapitalize="off"
                         autoFocus={true}
-                        autoComplete="username email"
+                        // TODO: fix
+                        autoComplete="username"
                     />
                 </div>
                 <div className="form-group d-flex flex-column align-content-start">
