@@ -59,6 +59,8 @@ type RepoStore struct {
 	*basestore.Store
 
 	once sync.Once
+
+	Mock MockRepos
 }
 
 // Repos instantiates and returns a new RepoStore with prepared statements.
@@ -98,6 +100,9 @@ func (s *RepoStore) ensureStore() {
 // stale, the caller is responsible for fetching data from any
 // external services.
 func (s *RepoStore) Get(ctx context.Context, id api.RepoID) (*types.Repo, error) {
+	if s.Mock.Get != nil {
+		return s.Mock.Get(ctx, id)
+	}
 	if Mocks.Repos.Get != nil {
 		return Mocks.Repos.Get(ctx, id)
 	}
@@ -122,6 +127,9 @@ func (s *RepoStore) Get(ctx context.Context, id api.RepoID) (*types.Repo, error)
 // the same as URI, unless the user configures a non-default
 // repositoryPathPattern.
 func (s *RepoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (*types.Repo, error) {
+	if s.Mock.GetByName != nil {
+		return s.Mock.GetByName(ctx, nameOrURI)
+	}
 	if Mocks.Repos.GetByName != nil {
 		return Mocks.Repos.GetByName(ctx, nameOrURI)
 	}
@@ -154,6 +162,9 @@ func (s *RepoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (*typ
 // GetByIDs returns a list of repositories by given IDs. The number of results list could be less
 // than the candidate list due to no repository is associated with some IDs.
 func (s *RepoStore) GetByIDs(ctx context.Context, ids ...api.RepoID) ([]*types.Repo, error) {
+	if s.Mock.GetByIDs != nil {
+		return s.Mock.GetByIDs(ctx, ids...)
+	}
 	if Mocks.Repos.GetByIDs != nil {
 		return Mocks.Repos.GetByIDs(ctx, ids...)
 	}
@@ -202,6 +213,9 @@ func (s *RepoStore) GetReposSetByIDs(ctx context.Context, ids ...api.RepoID) (ma
 }
 
 func (s *RepoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, err error) {
+	if s.Mock.Count != nil {
+		return s.Mock.Count(ctx, opt)
+	}
 	if Mocks.Repos.Count != nil {
 		return Mocks.Repos.Count(ctx, opt)
 	}
@@ -593,6 +607,9 @@ func (s *RepoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 		tr.Finish()
 	}()
 
+	if s.Mock.List != nil {
+		return s.Mock.List(ctx, opt)
+	}
 	if Mocks.Repos.List != nil {
 		return Mocks.Repos.List(ctx, opt)
 	}
@@ -622,6 +639,9 @@ func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (re
 		tr.SetError(err)
 		tr.Finish()
 	}()
+	if s.Mock.ListRepoNames != nil {
+		return s.Mock.ListRepoNames(ctx, opt)
+	}
 	if Mocks.Repos.ListRepoNames != nil {
 		return Mocks.Repos.ListRepoNames(ctx, opt)
 	}
