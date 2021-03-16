@@ -119,9 +119,9 @@ add('Failed Upload', () => (
                 fetchLsifUpload={fetch({
                     state: LSIFUploadState.ERRORED,
                     uploadedAt: '2020-06-15T12:20:30+00:00',
-                    failure: 'Upload failed to complete: object store error:\n * XMinioStorageFull etc etc',
-                    finishedAt: '2020-06-15T:13:00:00+00:00',
                     startedAt: null,
+                    finishedAt: '2020-06-15T12:30:30+00:00',
+                    failure: 'Upload failed to complete: object store error:\n * XMinioStorageFull etc etc',
                     placeInQueue: null,
                 })}
                 now={now}

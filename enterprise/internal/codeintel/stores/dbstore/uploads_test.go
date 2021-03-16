@@ -545,7 +545,7 @@ func TestMarkQueued(t *testing.T) {
 		t.Fatal("expected record to exist")
 	} else if upload.State != "queued" {
 		t.Errorf("unexpected state. want=%q have=%q", "queued", upload.State)
-	} else if upload.UploadSize == nil || *upload.UploadSize != 301 {
+	} else if upload.UploadSize == nil || *upload.UploadSize != 300 {
 		if upload.UploadSize == nil {
 			t.Errorf("unexpected upload size. want=%v have=%v", 300, upload.UploadSize)
 		} else {

@@ -443,12 +443,15 @@ func (s *Store) MarkFailed(ctx context.Context, id int, reason string) (err erro
 
 const markFailedQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:MarkFailed
-UPDATE lsif_uploads
-SET state = 'failed',
+UPDATE
+	lsif_uploads
+SET
+	state = 'failed',
 	finished_at = clock_timestamp(),
 	failure_message = %s,
 	num_failures = num_failures + 1
-WHERE id = %s
+WHERE
+	id = %s
 `
 
 var uploadColumnsWithNullRank = []*sqlf.Query{

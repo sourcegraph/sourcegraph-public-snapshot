@@ -3,7 +3,6 @@ import ErrorIcon from 'mdi-react/ErrorIcon'
 import FileUploadIcon from 'mdi-react/FileUploadIcon'
 import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
 import React, { FunctionComponent, useMemo } from 'react'
-import { Maybe } from '../../../../../shared/src/graphql-operations'
 import { Timeline, TimelineStage } from '../../../components/Timeline'
 import { LsifUploadFields, LSIFUploadState } from '../../../graphql-operations'
 
@@ -18,55 +17,59 @@ export const CodeIntelUploadTimeline: FunctionComponent<CodeIntelUploadTimelineP
     now,
     className,
 }) => {
-    const stages = useMemo(() => {
-        const stages = [...dumpUploadStage(upload), ...processingStage(upload)]
-        if (upload.state === LSIFUploadState.COMPLETED) {
-            stages.push({ icon: <CheckIcon />, text: 'Finished', date: upload.finishedAt, className: 'bg-success' })
-        }
-        return stages
-    }, [upload])
+    const stages = useMemo(
+        () => [uploadStages, processingStages, terminalStages].flatMap(stageConstructor => stageConstructor(upload)),
+        [upload]
+    )
+
     return <Timeline stages={stages} now={now} className={className} />
 }
 
-const dumpUploadStage = (upload: LsifUploadFields): TimelineStage[] => {
-    const stage: TimelineStage[] = [
-        {
-            icon: <FileUploadIcon />,
-            text: 'Upload started',
-            date: upload.uploadedAt,
-            className: upload.startedAt !== null ? 'bg-success' : 'bg-danger',
-        },
-    ]
+const uploadStages = (upload: LsifUploadFields): TimelineStage[] => [
+    {
+        icon: <FileUploadIcon />,
+        text: upload.state === LSIFUploadState.UPLOADING ? 'Upload started' : 'Uploaded',
+        date: upload.uploadedAt,
+        className:
+            upload.state === LSIFUploadState.UPLOADING
+                ? 'bg-primary'
+                : upload.state === LSIFUploadState.ERRORED
+                ? 'bg-danger'
+                : 'bg-success',
+    },
+]
 
-    if (upload.startedAt === null) {
-        // not 100% accurate, as we don't store the time of failure, only the start time of upload
-        stage.push(failedStage(upload.uploadedAt))
-    }
+const processingStages = (upload: LsifUploadFields): TimelineStage[] => [
+    {
+        icon: <ProgressClockIcon />,
+        text: upload.state === LSIFUploadState.PROCESSING ? 'Processing started' : 'Processed',
+        date: upload.startedAt,
+        className:
+            upload.state === LSIFUploadState.PROCESSING
+                ? 'bg-primary'
+                : upload.state === LSIFUploadState.ERRORED
+                ? 'bg-danger'
+                : 'bg-success',
+    },
+]
 
-    return stage
-}
-
-const processingStage = (upload: LsifUploadFields): TimelineStage[] => {
-    const stage: TimelineStage[] = [
-        {
-            icon: <ProgressClockIcon />,
-            text: 'Began processing',
-            date: upload.startedAt,
-            className: 'bg-success',
-        },
-    ]
-
-    if (upload.state === LSIFUploadState.ERRORED) {
-        // ok because finishedAt is set when processing fails
-        stage.push(failedStage(upload.finishedAt))
-    }
-
-    return stage
-}
-
-const failedStage = (date: Maybe<string>): TimelineStage => ({
-    icon: <ErrorIcon />,
-    text: 'Failed',
-    date,
-    className: 'bg-danger',
-})
+const terminalStages = (upload: LsifUploadFields): TimelineStage[] =>
+    upload.state === LSIFUploadState.COMPLETED
+        ? [
+              {
+                  icon: <CheckIcon />,
+                  text: 'Finished',
+                  date: upload.finishedAt,
+                  className: 'bg-success',
+              },
+          ]
+        : upload.state === LSIFUploadState.ERRORED
+        ? [
+              {
+                  icon: <ErrorIcon />,
+                  text: 'Failed',
+                  date: upload.finishedAt,
+                  className: 'bg-danger',
+              },
+          ]
+        : []
