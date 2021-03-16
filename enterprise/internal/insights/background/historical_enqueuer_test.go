@@ -121,8 +121,8 @@ func testHistoricalEnqueuer(t *testing.T, p *testParams) *testResults {
 		gitFirstEverCommit:    gitFirstEverCommit,
 		gitFindNearestCommit:  gitFindNearestCommit,
 
-		framesToBackfill: p.frames,
-		frameLength:      7 * 24 * time.Hour,
+		framesToBackfill: func() int { return p.frames },
+		frameLength:      func() time.Duration { return 7 * 24 * time.Hour },
 	}
 
 	// If we do an iteration without any insights or repos, we should expect no sleep calls to be made.

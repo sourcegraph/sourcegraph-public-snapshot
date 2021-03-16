@@ -8,13 +8,16 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	str2duration "github.com/xhit/go-str2duration/v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -80,10 +83,23 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 		gitFirstEverCommit:   git.FirstEverCommit,
 		gitFindNearestCommit: git.FindNearestCommit,
 
-		// Fill the last 52 weeks of data, recording 1 point per week.
-		//
-		framesToBackfill: 52,
-		frameLength:      7 * 24 * time.Hour,
+		// Fill e.g. the last 52 weeks of data, recording 1 point per week.
+		framesToBackfill: func() int {
+			if frames := conf.Get().InsightsHistoricalFrames; frames != 0 {
+				return frames
+			}
+			return 6 // 6 one-month frames.
+		},
+		frameLength: func() time.Duration {
+			if s := conf.Get().InsightsHistoricalFrameLength; s != "" {
+				parsed, err := str2duration.ParseDuration(s)
+				if err != nil {
+					log15.Error("insights: failed to parse site config insights.historical.frameLength", "error", err)
+				}
+				return parsed
+			}
+			return 30 * 24 * time.Hour // 6 one-month frames.
+		},
 
 		allReposIterator: (&discovery.AllReposIterator{
 			DefaultRepoStore:      database.DefaultRepos(workerBaseStore.Handle().DB()),
@@ -157,10 +173,10 @@ type historicalEnqueuer struct {
 	gitFindNearestCommit  func(ctx context.Context, repoName api.RepoName, revSpec string, target time.Time) (*git.Commit, error)
 
 	// framesToBackfill describes the number of historical timeframes to backfill data for.
-	framesToBackfill int
+	framesToBackfill func() int
 
 	// frameLength describes the length of each timeframe to backfill data for.
-	frameLength time.Duration
+	frameLength func() time.Duration
 
 	// The iterator to use for walking over all repositories on Sourcegraph.
 	allReposIterator func(ctx context.Context, each func(repoName string) error) error
@@ -217,10 +233,10 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, uniqueSeries map[s
 		return nil // nothing to do.
 	}
 	var multi error
-	for frame := 0; frame < h.framesToBackfill; frame++ {
+	for frame := 0; frame < h.framesToBackfill(); frame++ {
 		// Determine the exact start and end time of this timeframe.
-		from := h.now().Add(-time.Duration(frame+1) * h.frameLength)
-		to := h.now().Add(-time.Duration(frame) * h.frameLength)
+		from := h.now().Add(-time.Duration(frame+1) * h.frameLength())
+		to := h.now().Add(-time.Duration(frame) * h.frameLength())
 		if h.now().After(h.now().Add(24 * time.Hour)) {
 			// We exclude today because it is the regular enqueuer's job to enqueue work for today.
 			to = to.Add(-24 * time.Hour)
@@ -264,6 +280,10 @@ func (h *historicalEnqueuer) buildFrame(
 	//
 	lastIteration := h.now()
 	yield := func() {
+		yieldTime := 100 * time.Millisecond
+		if factor := conf.Get().InsightsHistoricalSpeedFactor; factor != nil {
+			yieldTime = time.Duration(float64(yieldTime) * *factor)
+		}
 		if diff := h.timeSince(lastIteration); diff < 100*time.Millisecond {
 			h.sleep(100*time.Millisecond - diff)
 			lastIteration = h.now()
