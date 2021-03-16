@@ -14,8 +14,11 @@ require (
 	github.com/aphistic/sweet-junit v0.2.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20200907205600-7a23bdc65eef // indirect
 	github.com/avelino/slugify v0.0.0-20180501145920-855f152bd774
-	github.com/aws/aws-sdk-go v1.29.15
-	github.com/aws/aws-sdk-go-v2 v0.20.0
+	github.com/aws/aws-sdk-go-v2 v1.2.1
+	github.com/aws/aws-sdk-go-v2/config v1.1.2 // indirect
+	github.com/aws/aws-sdk-go-v2/credentials v1.1.2 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.0.3 // indirect
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.2.1 // indirect
 	github.com/beevik/etree v1.1.0
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/certifi/gocertifi v0.0.0-20200211180108-c7c1fbc02894 // indirect
@@ -96,7 +99,6 @@ require (
 	github.com/inconshreveable/log15 v0.0.0-20200109203555-b30bc20e4fd1
 	github.com/jackc/pgconn v1.8.0
 	github.com/jackc/pgx/v4 v4.10.0
-	github.com/jmespath/go-jmespath v0.3.0 // indirect
 	github.com/jmoiron/sqlx v1.2.1-0.20190826204134-d7d95172beb5
 	github.com/joho/godotenv v1.3.0
 	github.com/jordan-wright/email v4.0.1-0.20200824153738-3f5bafa1cd84+incompatible

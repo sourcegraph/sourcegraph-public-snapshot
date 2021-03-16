@@ -12,10 +12,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	s3 "github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	s3 "github.com/aws/aws-sdk-go-v2/service/s3"
+	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 
@@ -43,9 +42,9 @@ func TestS3Init(t *testing.T) {
 }
 
 func TestS3InitBucketExists(t *testing.T) {
-	for _, code := range []string{s3.ErrCodeBucketAlreadyExists, s3.ErrCodeBucketAlreadyOwnedByYou} {
+	for _, err := range []error{&s3types.BucketAlreadyExists{}, &s3types.BucketAlreadyOwnedByYou{}} {
 		s3Client := NewMockS3API()
-		s3Client.CreateBucketFunc.SetDefaultReturn(nil, awserr.New(code, "", nil))
+		s3Client.CreateBucketFunc.SetDefaultReturn(nil, err)
 
 		client := testS3Client(s3Client, nil)
 		if err := client.Init(context.Background()); err != nil {
@@ -213,7 +212,7 @@ func fullContentsS3API() *MockS3API {
 func TestS3Upload(t *testing.T) {
 	s3Client := NewMockS3API()
 	uploaderClient := NewMockS3Uploader()
-	uploaderClient.UploadFunc.SetDefaultHook(func(ctx context.Context, input *s3manager.UploadInput) error {
+	uploaderClient.UploadFunc.SetDefaultHook(func(ctx context.Context, input *s3.PutObjectInput) error {
 		// Synchronously read the reader so that we trigger the
 		// counting reader inside the Upload method and test the
 		// count.
@@ -257,13 +256,13 @@ func TestS3Combine(t *testing.T) {
 
 	s3Client.UploadPartCopyFunc.SetDefaultHook(func(ctx context.Context, input *s3.UploadPartCopyInput) (*s3.UploadPartCopyOutput, error) {
 		return &s3.UploadPartCopyOutput{
-			CopyPartResult: &s3.CopyPartResult{
+			CopyPartResult: &s3types.CopyPartResult{
 				ETag: aws.String(fmt.Sprintf("etag-%s", *input.CopySource)),
 			},
 		}, nil
 	})
 
-	s3Client.HeadObjectFunc.SetDefaultReturn(&s3.HeadObjectOutput{ContentLength: aws.Int64(42)}, nil)
+	s3Client.HeadObjectFunc.SetDefaultReturn(&s3.HeadObjectOutput{ContentLength: int64(42)}, nil)
 
 	client := testS3Client(s3Client, nil)
 
@@ -277,7 +276,7 @@ func TestS3Combine(t *testing.T) {
 	if calls := s3Client.UploadPartCopyFunc.History(); len(calls) != 3 {
 		t.Fatalf("unexpected number of UploadPartCopy calls. want=%d have=%d", 3, len(calls))
 	} else {
-		parts := map[int64]string{}
+		parts := map[int32]string{}
 		for _, call := range calls {
 			if value := *call.Arg1.Bucket; value != "test-bucket" {
 				t.Errorf("unexpected bucket argument. want=%s have=%s", "test-bucket", value)
@@ -289,10 +288,10 @@ func TestS3Combine(t *testing.T) {
 				t.Errorf("unexpected key argument. want=%s have=%s", "uid", value)
 			}
 
-			parts[*call.Arg1.PartNumber] = *call.Arg1.CopySource
+			parts[call.Arg1.PartNumber] = *call.Arg1.CopySource
 		}
 
-		expectedParts := map[int64]string{
+		expectedParts := map[int32]string{
 			1: "test-bucket/test-src1",
 			2: "test-bucket/test-src2",
 			3: "test-bucket/test-src3",
@@ -319,12 +318,12 @@ func TestS3Combine(t *testing.T) {
 	} else if value := *calls[0].Arg1.UploadId; value != "uid" {
 		t.Errorf("unexpected uploadId argument. want=%s have=%s", "uid", value)
 	} else {
-		parts := map[int64]string{}
+		parts := map[int32]string{}
 		for _, part := range calls[0].Arg1.MultipartUpload.Parts {
-			parts[*part.PartNumber] = *part.ETag
+			parts[part.PartNumber] = *part.ETag
 		}
 
-		expectedParts := map[int64]string{
+		expectedParts := map[int32]string{
 			1: "etag-test-bucket/test-src1",
 			2: "etag-test-bucket/test-src2",
 			3: "etag-test-bucket/test-src3",
@@ -388,32 +387,24 @@ func TestS3Lifecycle(t *testing.T) {
 	if lifecycle := client.lifecycle(); lifecycle == nil || len(lifecycle.Rules) != 2 {
 		t.Fatalf("unexpected lifecycle rules")
 	} else {
-		var objectExpiration *int64
+		var objectExpiration int32
 		for _, rule := range lifecycle.Rules {
 			if rule.Expiration != nil {
-				if value := rule.Expiration.Days; value != nil {
-					objectExpiration = value
-				}
+				objectExpiration = rule.Expiration.Days
 			}
 		}
-		if objectExpiration == nil {
-			t.Fatalf("expected object expiration to be configured")
-		} else if *objectExpiration != 3 {
-			t.Errorf("unexpected ttl for object expiration. want=%d have=%d", 3, *objectExpiration)
+		if objectExpiration != 3 {
+			t.Errorf("unexpected ttl for object expiration. want=%d have=%d", 3, objectExpiration)
 		}
 
-		var multipartExpiration *int64
+		var multipartExpiration int32
 		for _, rule := range lifecycle.Rules {
 			if rule.AbortIncompleteMultipartUpload != nil {
-				if value := rule.AbortIncompleteMultipartUpload.DaysAfterInitiation; value != nil {
-					multipartExpiration = value
-				}
+				multipartExpiration = rule.AbortIncompleteMultipartUpload.DaysAfterInitiation
 			}
 		}
-		if multipartExpiration == nil {
-			t.Fatalf("expected multipart upload expiration to be configured")
-		} else if *multipartExpiration != 3 {
-			t.Errorf("unexpected ttl for multipart upload expiration. want=%d have=%d", 3, *multipartExpiration)
+		if multipartExpiration != 3 {
+			t.Errorf("unexpected ttl for multipart upload expiration. want=%d have=%d", 3, multipartExpiration)
 		}
 	}
 }

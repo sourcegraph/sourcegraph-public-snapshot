@@ -9,12 +9,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
@@ -53,14 +53,14 @@ func (c *S3Config) load(parent *env.BaseConfig) {
 
 // newS3FromConfig creates a new store backed by AWS Simple Storage Service.
 func newS3FromConfig(ctx context.Context, config *Config, operations *operations) (Store, error) {
-	sess, err := session.NewSessionWithOptions(s3SessionOptions(config.Backend, config.S3))
+	cfg, err := s3ClientConfig(ctx, config.S3)
 	if err != nil {
 		return nil, err
 	}
 
-	s3Client := s3.New(sess)
+	s3Client := s3.NewFromConfig(cfg, s3ClientOptions(config.Backend, config.S3))
 	api := &s3APIShim{s3Client}
-	uploader := &s3UploaderShim{s3manager.NewUploaderWithClient(s3Client)}
+	uploader := &s3UploaderShim{manager.NewUploader(s3Client)}
 	return newS3WithClients(api, uploader, config.Bucket, config.TTL, config.ManageBucket, operations), nil
 }
 
@@ -166,7 +166,7 @@ func (s *s3Store) Upload(ctx context.Context, key string, r io.Reader) (_ int64,
 
 	cr := &countingReader{r: r}
 
-	if err := s.uploader.Upload(ctx, &s3manager.UploadInput{
+	if err := s.uploader.Upload(ctx, &s3.PutObjectInput{
 		Bucket: aws.String(s.bucket),
 		Key:    aws.String(key),
 		Body:   cr,
@@ -220,7 +220,7 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 			Bucket:     multipartUpload.Bucket,
 			Key:        multipartUpload.Key,
 			UploadId:   multipartUpload.UploadId,
-			PartNumber: aws.Int64(int64(partNumber)),
+			PartNumber: int32(partNumber),
 			CopySource: aws.String(fmt.Sprintf("%s/%s", s.bucket, source)),
 		})
 		if err != nil {
@@ -236,13 +236,13 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 		return 0, err
 	}
 
-	var parts []*s3.CompletedPart
+	var parts []s3types.CompletedPart
 	for i := 0; i < len(sources); i++ {
 		partNumber := i + 1
 
-		parts = append(parts, &s3.CompletedPart{
+		parts = append(parts, s3types.CompletedPart{
 			ETag:       etags[partNumber],
-			PartNumber: aws.Int64(int64(partNumber)),
+			PartNumber: int32(partNumber),
 		})
 	}
 
@@ -250,7 +250,7 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 		Bucket:          multipartUpload.Bucket,
 		Key:             multipartUpload.Key,
 		UploadId:        multipartUpload.UploadId,
-		MultipartUpload: &s3.CompletedMultipartUpload{Parts: parts},
+		MultipartUpload: &s3types.CompletedMultipartUpload{Parts: parts},
 	}); err != nil {
 		return 0, errors.Wrap(err, "failed to complete multipart upload")
 	}
@@ -263,7 +263,7 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 		return 0, errors.Wrap(err, "failed to stat composed object")
 	}
 
-	return *obj.ContentLength, nil
+	return obj.ContentLength, nil
 }
 
 func (s *s3Store) Delete(ctx context.Context, key string) (err error) {
@@ -285,15 +285,11 @@ func (s *s3Store) create(ctx context.Context) error {
 		Bucket: aws.String(s.bucket),
 	})
 
-	codes := []string{
-		s3.ErrCodeBucketAlreadyExists,
-		s3.ErrCodeBucketAlreadyOwnedByYou,
+	if _, ok := err.(*s3types.BucketAlreadyExists); ok {
+		return nil
 	}
-
-	for _, code := range codes {
-		if aerr, ok := err.(awserr.Error); ok && aerr.Code() == code {
-			return nil
-		}
+	if _, ok := err.(*s3types.BucketAlreadyOwnedByYou); ok {
+		return nil
 	}
 
 	return err
@@ -309,22 +305,22 @@ func (s *s3Store) update(ctx context.Context) error {
 	return err
 }
 
-func (s *s3Store) lifecycle() *s3.BucketLifecycleConfiguration {
-	days := aws.Int64(int64(s.ttl / (time.Hour * 24)))
+func (s *s3Store) lifecycle() *s3types.BucketLifecycleConfiguration {
+	days := int32(s.ttl / (time.Hour * 24))
 
-	return &s3.BucketLifecycleConfiguration{
-		Rules: []*s3.LifecycleRule{
+	return &s3types.BucketLifecycleConfiguration{
+		Rules: []s3types.LifecycleRule{
 			{
 				ID:         aws.String("Expiration Rule"),
-				Status:     aws.String("Enabled"),
-				Filter:     &s3.LifecycleRuleFilter{Prefix: aws.String("")},
-				Expiration: &s3.LifecycleExpiration{Days: days},
+				Status:     s3types.ExpirationStatusEnabled,
+				Filter:     &s3types.LifecycleRuleFilterMemberPrefix{Value: ""},
+				Expiration: &s3types.LifecycleExpiration{Days: days},
 			},
 			{
 				ID:                             aws.String("Abort Incomplete Multipart Upload Rule"),
-				Status:                         aws.String("Enabled"),
-				Filter:                         &s3.LifecycleRuleFilter{Prefix: aws.String("")},
-				AbortIncompleteMultipartUpload: &s3.AbortIncompleteMultipartUpload{DaysAfterInitiation: days},
+				Status:                         s3types.ExpirationStatusEnabled,
+				Filter:                         &s3types.LifecycleRuleFilterMemberPrefix{Value: ""},
+				AbortIncompleteMultipartUpload: &s3types.AbortIncompleteMultipartUpload{DaysAfterInitiation: days},
 			},
 		},
 	}
@@ -356,24 +352,26 @@ func (r *countingReader) Read(p []byte) (n int, err error) {
 	return n, err
 }
 
-func s3SessionOptions(backend string, config S3Config) session.Options {
-	creds := credentials.NewStaticCredentials(
-		config.AccessKeyID,
-		config.SecretAccessKey,
-		config.SessionToken,
-	)
-
-	awsConfig := aws.Config{
-		Credentials: creds,
-		Region:      aws.String(config.Region),
+func s3ClientConfig(ctx context.Context, s3config S3Config) (aws.Config, error) {
+	optFns := []func(*awsconfig.LoadOptions) error{
+		awsconfig.WithRegion(s3config.Region),
+		awsconfig.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
+			s3config.AccessKeyID,
+			s3config.SecretAccessKey,
+			s3config.SessionToken,
+		)),
 	}
 
-	if backend == "minio" {
-		awsConfig.Endpoint = aws.String(config.Endpoint)
-		awsConfig.S3ForcePathStyle = aws.Bool(true)
-	}
+	return awsconfig.LoadDefaultConfig(ctx, optFns...)
+}
 
-	return session.Options{Config: awsConfig}
+func s3ClientOptions(backend string, config S3Config) func(o *s3.Options) {
+	return func(o *s3.Options) {
+		if backend == "minio" {
+			o.EndpointResolver = s3.EndpointResolverFromURL(config.Endpoint)
+			o.UsePathStyle = true
+		}
+	}
 }
 
 // writeToPipe invokes the given function with a pipe writer in a goroutine
