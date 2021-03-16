@@ -657,11 +657,6 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := s.setLastError(context.Background(), req.Repo, resp.Error); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -850,7 +845,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 
 		cloneProgress, err := s.cloneRepo(ctx, req.Repo, nil)
 		if err != nil {
-			log15.Debug("error cloning repo", "repo", req.Repo, "err", err)
+			log15.Debug("error starting repo clone", "repo", req.Repo, "err", err)
 			status = "repo-not-found"
 			w.WriteHeader(http.StatusNotFound)
 			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{CloneInProgress: false})
@@ -1108,6 +1103,17 @@ func (s *Server) setLastError(ctx context.Context, name api.RepoName, error stri
 	return database.NewGitserverReposWith(tx).SetLastError(ctx, repo.ID, error, s.Hostname)
 }
 
+// setLastErrorNonFatal is the same as setLastError but only logs errors
+func (s *Server) setLastErrorNonFatal(ctx context.Context, name api.RepoName, err error) {
+	var errString string
+	if err != nil {
+		errString = err.Error()
+	}
+	if err := s.setLastError(ctx, name, errString); err != nil {
+		log15.Warn("Setting last error in DB", "error", err)
+	}
+}
+
 func (s *Server) setCloneStatus(ctx context.Context, name api.RepoName, status types.CloneStatus) (err error) {
 	if s.DB == nil {
 		return nil
@@ -1268,7 +1274,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 			s.setCloneStatusNonFatal(ctx, repo, types.CloneStatusCloning)
 		}
 		defer func() {
-			// Use a different context to ensure we still update the DB even if we time out
+			// Use a background context to ensure we still update the DB even if we time out
 			s.setCloneStatusNonFatal(context.Background(), repo, cloneStatus(repoCloned(dir), false))
 		}()
 
@@ -1340,19 +1346,23 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 
 	if opts != nil && opts.Block {
 		// We are blocking, so use the passed in context.
-		if err := doClone(ctx); err != nil {
-			return "", errors.Wrapf(err, "failed to clone %s", repo)
-		}
-		return "", nil
+		err := doClone(ctx)
+		err = errors.Wrapf(err, "failed to clone %s", repo)
+		// Use a background context to ensure we still update the DB even if we time out
+		s.setLastErrorNonFatal(context.Background(), repo, err)
+		return "", err
 	}
 
 	go func() {
 		// Create a new context because this is in a background goroutine.
 		ctx, cancel := s.serverContext()
 		defer cancel()
-		if err := doClone(ctx); err != nil {
+		err := doClone(ctx)
+		if err != nil {
 			log15.Error("failed to clone repo", "repo", repo, "error", err)
 		}
+		// Use a background context to ensure we still update the DB even if we time out
+		s.setLastErrorNonFatal(context.Background(), repo, err)
 	}()
 
 	return "", nil
@@ -1505,12 +1515,7 @@ func honeySampleRate(cmd string) uint {
 
 var headBranchPattern = lazyregexp.New(`HEAD branch: (.+?)\n`)
 
-var doRepoUpdateMock func(context.Context, api.RepoName) error
-
 func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName) error {
-	if doRepoUpdateMock != nil {
-		return doRepoUpdateMock(ctx, repo)
-	}
 	span, ctx := ot.StartSpanFromContext(ctx, "Server.doRepoUpdate")
 	span.SetTag("repo", repo)
 	defer span.Finish()
@@ -1544,6 +1549,8 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName) error {
 			s.repoUpdateLocksMu.Unlock()
 
 			err = s.doRepoUpdate2(repo)
+			// Use a background context to ensure we still update the DB even if we time out
+			s.setLastErrorNonFatal(context.Background(), repo, err)
 		})
 	}()
 
@@ -1786,7 +1793,12 @@ func computeRefHash(dir GitDir) ([]byte, error) {
 	return hash, nil
 }
 
+var doRepoUpdate2Mock func(api.RepoName) error
+
 func (s *Server) doRepoUpdate2(repo api.RepoName) error {
+	if doRepoUpdate2Mock != nil {
+		return doRepoUpdate2Mock(repo)
+	}
 	// background context.
 	ctx, cancel1 := s.serverContext()
 	defer cancel1()

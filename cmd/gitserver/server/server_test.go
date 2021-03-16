@@ -610,6 +610,8 @@ func TestHandleRepoUpdate(t *testing.T) {
 		cloneLimiter:     mutablelimiter.New(1),
 		cloneableLimiter: mutablelimiter.New(1),
 	}
+	// We need some of the side effects here
+	_ = s.Handler()
 
 	rr := httptest.NewRecorder()
 
@@ -642,10 +644,10 @@ func TestHandleRepoUpdate(t *testing.T) {
 
 	// Now we'll call again and with an update that fails
 
-	doRepoUpdateMock = func(ctx context.Context, name api.RepoName) error {
+	doRepoUpdate2Mock = func(name api.RepoName) error {
 		return errors.New("fail")
 	}
-	t.Cleanup(func() { doRepoUpdateMock = nil })
+	t.Cleanup(func() { doRepoUpdate2Mock = nil })
 
 	// This will an update since the repo is already cloned
 	req = httptest.NewRequest("GET", "/repo-update", bytes.NewReader(body))
