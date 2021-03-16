@@ -148,7 +148,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                                 },
                                 ...result.nodes.map(node => ({
                                     value: node.id,
-                                    label: node.displayName,
+                                    label: node.displayName.split(' ')[0],
                                     tooltip: '',
                                     args: { externalServiceID: node.id },
                                 })),

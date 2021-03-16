@@ -2,26 +2,28 @@ import React, { useState, useCallback } from 'react'
 
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import { ButtonDropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'reactstrap'
 import { CircleDashedIcon } from '../../../components/CircleDashedIcon'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
 import { AddCodeHostConnectionModal } from './AddCodeHostConnectionModal'
 import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
-import { UpdateCodeHostConnectionModal } from './UpdateCodeHostConnectionModal'
 import { hints } from './modalHints'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 import { ErrorLike } from '../../../../../shared/src/util/errors'
+import { ifNotNavigated } from './UserAddCodeHostsPage'
 
 interface CodeHostItemProps {
     userID: Scalars['ID']
     kind: ExternalServiceKind
     name: string
     icon: React.ComponentType<{ className?: string }>
-    isUpdateModalOpen: boolean
-    toggleUpdateModal: () => void
+    navigateToAuthProvider: (kind: ExternalServiceKind) => void
+
     // optional service object fields when the code host connection is active
     service?: ListExternalServiceFields
 
-    onDidUpsert: (service: ListExternalServiceFields) => void
+    onDidAdd: (service: ListExternalServiceFields) => void
     onDidRemove: () => void
     onDidError: (error: ErrorLike) => void
 }
@@ -32,9 +34,8 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     kind,
     name,
     icon: Icon,
-    isUpdateModalOpen,
-    toggleUpdateModal,
-    onDidUpsert,
+    navigateToAuthProvider,
+    onDidAdd,
     onDidRemove,
     onDidError,
 }) => {
@@ -49,6 +50,19 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
         [isRemoveConnectionModalOpen]
     )
 
+    const [dropdownOpen, setOpen] = useState(false)
+    const toggleDropdown = useCallback((): void => setOpen(!dropdownOpen), [dropdownOpen])
+
+    const [oauthInFlight, setOauthInFlight] = useState(false)
+
+    const toAuthProvider = useCallback((): void => {
+        setOauthInFlight(true)
+        ifNotNavigated(() => {
+            setOauthInFlight(false)
+        })
+        navigateToAuthProvider(kind)
+    }, [kind, navigateToAuthProvider])
+
     return (
         <div className="p-2 d-flex align-items-start">
             {isAddConnectionModalOpen && (
@@ -57,7 +71,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                     kind={kind}
                     name={name}
                     hintFragment={hints[kind]}
-                    onDidAdd={onDidUpsert}
+                    onDidAdd={onDidAdd}
                     onDidCancel={toggleAddConnectionModal}
                     onDidError={onDidError}
                 />
@@ -73,25 +87,13 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                     onDidError={onDidError}
                 />
             )}
-            {service && isUpdateModalOpen && (
-                <UpdateCodeHostConnectionModal
-                    serviceId={service.id}
-                    serviceConfig={service.config}
-                    name={service.displayName}
-                    kind={kind}
-                    hintFragment={hints[kind]}
-                    onDidCancel={toggleUpdateModal}
-                    onDidUpdate={onDidUpsert}
-                    onDidError={onDidError}
-                />
-            )}
             <div className="align-self-center">
                 {service?.warning || service?.lastSyncError ? (
                     <AlertCircleIcon className="icon-inline mb-0 mr-2 text-danger" />
                 ) : service?.id ? (
                     <CheckCircleIcon className="icon-inline mb-0 mr-2 text-success" />
                 ) : (
-                    <CircleDashedIcon className="icon-inline mb-0 mr-2 add-user-code-hosts-page__icon--dashed" />
+                    <CircleDashedIcon className="icon-inline mb-0 mr-2 user-code-hosts-page__icon--dashed" />
                 )}
                 <Icon className="icon-inline mb-0 mr-1" />
             </div>
@@ -100,26 +102,26 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
             </div>
             <div className="align-self-center">
                 {service?.id ? (
-                    <>
-                        <button
-                            type="button"
-                            className="btn btn-link text-primary px-0 mr-2 shadow-none"
-                            onClick={toggleUpdateModal}
-                        >
-                            Edit
-                        </button>
-                        <button
-                            type="button"
-                            className="btn btn-link text-danger px-0 shadow-none"
-                            onClick={toggleRemoveConnectionModal}
-                        >
-                            Remove
-                        </button>
-                    </>
-                ) : (
-                    <button type="button" className="btn btn-success shadow-none" onClick={toggleAddConnectionModal}>
-                        Connect
+                    <button
+                        type="button"
+                        className="btn btn-link btn-sm text-danger px-0 shadow-none"
+                        onClick={toggleRemoveConnectionModal}
+                    >
+                        Remove
                     </button>
+                ) : (
+                    <ButtonDropdown isOpen={dropdownOpen} toggle={toggleDropdown} direction="down">
+                        <DropdownToggle className="btn-sm" color="outline-secondary" caret={true}>
+                            Connect
+                        </DropdownToggle>
+                        <DropdownMenu right={true}>
+                            <DropdownItem toggle={false} onClick={toAuthProvider}>
+                                Connect with {name}
+                                {oauthInFlight && <LoadingSpinner className="icon-inline ml-2" />}
+                            </DropdownItem>
+                            <DropdownItem onClick={toggleAddConnectionModal}>Connect with access token</DropdownItem>
+                        </DropdownMenu>
+                    </ButtonDropdown>
                 )}
             </div>
         </div>
