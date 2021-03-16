@@ -86,7 +86,6 @@ describe('Code intelligence regression test suite', () => {
         }
         await setUserSiteAdmin(gqlClient, user.id, true)
 
-        outerResourceManager.add('Global setting', 'showBadgeAttachments', await enableBadgeAttachments(gqlClient))
         outerResourceManager.add('Global setting', 'codeIntel.includeForks', await setIncludeForks(gqlClient, true))
     })
 
@@ -172,30 +171,17 @@ describe('Code intelligence regression test suite', () => {
                 page: `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go`,
                 line: 225,
                 token: 'SamplePair',
-                precise: false,
                 expectedHoverContains: 'SamplePair pairs a SampleValue with a Timestamp.',
                 // TODO(efritz) - determine why reference panel shows up during this test,
                 // but only when automated - doing the same flow manually works correctly.
                 expectedDefinition: [
                     // Replace array with this single definition
-                    // {
-                    //     url: `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go#L78:1`,
-                    //     precise: false,
-                    // },
+                    // `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go#L78:1`,
                 ],
                 expectedReferences: [
-                    {
-                        url: `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go?subtree=true#L97:10`,
-                        precise: false,
-                    },
-                    {
-                        url: `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go?subtree=true#L225:11`,
-                        precise: false,
-                    },
-                    {
-                        url: `/github.com/sourcegraph-testing/prometheus-redefinitions@${prometheusRedefinitionsHeadCommit}/-/blob/sample.go?subtree=true#L7:6`,
-                        precise: false,
-                    },
+                    `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go?subtree=true#L97:10`,
+                    `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go?subtree=true#L225:11`,
+                    `/github.com/sourcegraph-testing/prometheus-redefinitions@${prometheusRedefinitionsHeadCommit}/-/blob/sample.go?subtree=true#L7:6`,
                 ],
             }))
     })
@@ -221,11 +207,6 @@ interface CodeNavigationTestCase {
     token: string
 
     /**
-     * Whether or not definition/hover results are precise
-     */
-    precise: boolean
-
-    /**
      * A substring of the expected hover text
      */
     expectedHoverContains: string
@@ -233,21 +214,12 @@ interface CodeNavigationTestCase {
     /**
      * A locations (if unambiguous), or a subset of locations that must occur within the definitions panel.
      */
-    expectedDefinition: TestLocation | TestLocation[]
+    expectedDefinition: string | string[]
 
     /**
      * A subset of locations that must occur within the references panel.
      */
-    expectedReferences?: TestLocation[]
-}
-
-interface TestLocation {
-    url: string
-
-    /**
-     * Whether or not this location should be accompanied by a UI badge indicating imprecise code intel. Precise = no badge.
-     */
-    precise: boolean
+    expectedReferences?: string[]
 }
 
 /**
@@ -260,15 +232,7 @@ interface TestLocation {
 async function testCodeNavigation(
     driver: Driver,
     config: Pick<Config, 'sourcegraphBaseUrl'>,
-    {
-        page,
-        line,
-        token,
-        precise,
-        expectedHoverContains,
-        expectedDefinition,
-        expectedReferences,
-    }: CodeNavigationTestCase
+    { page, line, token, expectedHoverContains, expectedDefinition, expectedReferences }: CodeNavigationTestCase
 ): Promise<void> {
     await driver.page.goto(config.sourcegraphBaseUrl + page)
     await driver.page.waitForSelector('.test-blob')
@@ -276,7 +240,7 @@ async function testCodeNavigation(
 
     // Check hover
     await tokenElement.hover()
-    await waitForHover(driver, expectedHoverContains, precise)
+    await waitForHover(driver, expectedHoverContains)
 
     // Check click
     await clickOnEmptyPartOfCodeView(driver)
@@ -314,7 +278,7 @@ async function testCodeNavigation(
         await driver.page.waitForFunction(
             defURL => document.location.href.endsWith(defURL),
             { timeout: 2000 },
-            expectedDefinition.url
+            expectedDefinition
         )
 
         await driver.page.goBack()
@@ -328,7 +292,7 @@ async function testCodeNavigation(
  * panel. This will click on each repository and collect the visible links in a
  * sequence.
  */
-async function collectLinks(driver: Driver): Promise<Set<TestLocation>> {
+async function collectLinks(driver: Driver): Promise<Set<string>> {
     await driver.page.waitForSelector('.test-loading-spinner', { hidden: true })
 
     const panelTabTitles = await getPanelTabTitles(driver)
@@ -336,7 +300,7 @@ async function collectLinks(driver: Driver): Promise<Set<TestLocation>> {
         return new Set(await collectVisibleLinks(driver))
     }
 
-    const links = new Set<TestLocation>()
+    const links = new Set<string>()
     for (const title of panelTabTitles) {
         const tabElement = await driver.page.$$(`.test-hierarchical-locations-view-list span[title="${title}"]`)
         if (tabElement.length > 0) {
@@ -369,12 +333,11 @@ async function getPanelTabTitles(driver: Driver): Promise<string[]> {
  * Return a list of locations (and their precision) that are current visible in a
  * file list panel. This may be definitions or references.
  */
-function collectVisibleLinks(driver: Driver): Promise<TestLocation[]> {
+function collectVisibleLinks(driver: Driver): Promise<string[]> {
     return driver.page.evaluate(() =>
-        [...document.querySelectorAll<HTMLElement>('.test-file-match-children-item-wrapper')].map(a => ({
-            url: a.querySelector('.test-file-match-children-item')?.getAttribute('href') || '',
-            precise: a.querySelector('.test-badge-row')?.childElementCount === 0,
-        }))
+        [...document.querySelectorAll<HTMLElement>('.test-file-match-children-item-wrapper')].map(
+            a => a.querySelector('.test-file-match-children-item')?.getAttribute('href') || ''
+        )
     )
 }
 
@@ -410,19 +373,12 @@ async function findTokenElement(driver: Driver, line: number, token: string): Pr
 
 /**
  * Wait for the hover tooltip to become visible. Compare the visible text with the expected
- * contents (expected contents must be a substring of the visible contents). If precise is
- * supplied, ensure that the presence of the UI indicator matches this value.
+ * contents (expected contents must be a substring of the visible contents).
  */
-async function waitForHover(driver: Driver, expectedHoverContains: string, precise?: boolean): Promise<void> {
+async function waitForHover(driver: Driver, expectedHoverContains: string): Promise<void> {
     await driver.page.waitForSelector('.test-tooltip-go-to-definition')
     await driver.page.waitForSelector('.test-tooltip-content')
     expect(normalizeWhitespace(await getTooltip(driver))).toContain(normalizeWhitespace(expectedHoverContains))
-
-    if (precise !== undefined) {
-        expect(
-            await driver.page.evaluate(() => document.querySelectorAll<HTMLElement>('.test-hover-badge').length)
-        ).toEqual(precise ? 0 : 1)
-    }
 }
 
 /**
@@ -443,11 +399,6 @@ function normalizeWhitespace(string: string): string {
 
 //
 // LSIF utilities
-
-/** Show badge attachments in the UI to distinguish precise and search-based results. */
-async function enableBadgeAttachments(gqlClient: GraphQLClient): Promise<() => Promise<void>> {
-    return writeSetting(gqlClient, ['experimentalFeatures', 'showBadgeAttachments'], true)
-}
 
 /** Replace the codeIntel.includeForks setting with the given value. */
 async function setIncludeForks(gqlClient: GraphQLClient, enabled: boolean): Promise<() => Promise<void>> {
