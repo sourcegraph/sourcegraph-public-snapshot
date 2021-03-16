@@ -237,6 +237,12 @@ github.com/daviddengcn/go-colortext v1.0.0 h1:ANqDyC0ys6qCSvuEK7l3g5RaehL/Xck9EX
 github.com/daviddengcn/go-colortext v1.0.0/go.mod h1:zDqEI5NVUop5QPpVJUxE9UO10hRnmkD5G4Pmri9+m4c=
 github.com/dchest/uniuri v0.0.0-20160212164326-8902c56451e9/go.mod h1:GgB8SF9nRG+GqaDtLcwJZsQFhcogVCJ79j4EdT0c2V4=
 github.com/denisenkom/go-mssqldb v0.0.0-20190515213511-eb9f6a1743f3/go.mod h1:zAg7JM8CkOJ43xKXIj7eRO9kmWm/TW578qo+oDO6tuM=
+github.com/derision-test/glock v0.0.0-20210316020736-b1b7e6668174 h1:UBd72rH4c8OrRF8futSk0gkGm+Iuzep37uWaGCSgpGs=
+github.com/derision-test/glock v0.0.0-20210316020736-b1b7e6668174/go.mod h1:jKtLdBMrF+XQatqvg46wiWdDfDSSDjdhO4dOM2FX9H4=
+github.com/derision-test/glock v0.0.0-20210316025514-dbdcbc7883a3 h1:CxxyxWhj74NsnGVjAKRpkKUZCsBSEAFQXQRDg/K0DJE=
+github.com/derision-test/glock v0.0.0-20210316025514-dbdcbc7883a3/go.mod h1:jKtLdBMrF+XQatqvg46wiWdDfDSSDjdhO4dOM2FX9H4=
+github.com/derision-test/glock v0.0.0-20210316032053-f5b74334bb29 h1:O07j7ewg0eFHRx+7bxCA/7z86HJexl7HLY9kyVMmPDo=
+github.com/derision-test/glock v0.0.0-20210316032053-f5b74334bb29/go.mod h1:jKtLdBMrF+XQatqvg46wiWdDfDSSDjdhO4dOM2FX9H4=
 github.com/dgraph-io/badger v1.6.0/go.mod h1:zwt7syl517jmP8s94KqSxTlM6IMsdhYy6psNgSztDR4=
 github.com/dgraph-io/ristretto v0.0.3 h1:jh22xisGBjrEVnRZ1DVTpBVQm0Xndu8sMl0CWDzSIBI=
 github.com/dgraph-io/ristretto v0.0.3/go.mod h1:KPxhHT9ZxKefz+PCeOGsrHpl1qZ7i70dGTu2u+Ahh6E=
@@ -272,8 +278,6 @@ github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21/go.mod h1
 github.com/eapache/queue v1.1.0/go.mod h1:6eCeP0CKFpHLu8blIFXhExK/dRa7WDZfr6jVFPTqq+I=
 github.com/edsrzf/mmap-go v0.0.0-20170320065105-0bce6a688712/go.mod h1:YO35OhQPt3KJa3ryjFM5Bs14WD66h8eGKpfaBNrHW5M=
 github.com/edsrzf/mmap-go v1.0.0/go.mod h1:YO35OhQPt3KJa3ryjFM5Bs14WD66h8eGKpfaBNrHW5M=
-github.com/efritz/glock v0.0.0-20181228234553-f184d69dff2c h1:Q3HKbZogL9GGZVdO3PiVCOxZmRCsQAgV1xfelXJF/dY=
-github.com/efritz/glock v0.0.0-20181228234553-f184d69dff2c/go.mod h1:4behwg5YZ7amYrI5VDO/1s68YXZQHklcyFQpVDDgB2w=
 github.com/efritz/go-genlib v0.0.0-20200420163202-9c3914df9594/go.mod h1:aMnaM7yzn10TOdj5sGpElY90l/XT3eL+Sj7z7D1V8q8=
 github.com/efritz/go-genlib v0.0.0-20200616012750-c21aae2e13ac h1:ljlPUOusK67MXhpecRpvFmvjtEHZycGmCJlWhApBTXg=
 github.com/efritz/go-genlib v0.0.0-20200616012750-c21aae2e13ac/go.mod h1:aMnaM7yzn10TOdj5sGpElY90l/XT3eL+Sj7z7D1V8q8=
@@ -1600,7 +1604,6 @@ golang.org/x/sys v0.0.0-20181107165924-66b7b1311ac8/go.mod h1:STP8DvDyc/dI5b8T5h
 golang.org/x/sys v0.0.0-20181116152217-5ac8a444bdc5/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20181122145206-62eef0e2fa9b/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20181205085412-a5c9d58dba9a/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
-golang.org/x/sys v0.0.0-20181228144115-9a3f9b0469bb/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20190209173611-3b5209105503/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20190221075227-b4e8571b14e0/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=

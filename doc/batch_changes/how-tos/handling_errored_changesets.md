@@ -6,12 +6,11 @@ Sometimes the problem can be fixed by automatically retrying to publish the chan
 
 Errored changesets that are marked as **Retrying** are being automatically retried:
 
-<!---TODO update link-->
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/retrying_changeset.png" class="screenshot">
+<img src="https://sourcegraphstatic.com/docs/images/batch_changes/retrying_changeset.png" class="screenshot">
 
 Changesets that are marked as **Failed** can be [retried manually](#manual-retrying-of-errored-changesets):
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/failed_changeset_retry.png" class="screenshot">
+<img src="https://sourcegraphstatic.com/docs/images/batch_changes/failed_changeset_retry.png" class="screenshot">
 
 ## Types of errors
 

@@ -56,25 +56,11 @@ func testHistoricalEnqueuer(t *testing.T, p *testParams) *testResults {
 	}
 
 	insightsStore := store.NewMockInterface()
-	insightsStore.DistinctSeriesWithDataFunc.SetDefaultHook(func(ctx context.Context, from time.Time, to time.Time) ([]string, error) {
+	insightsStore.CountDataFunc.SetDefaultHook(func(ctx context.Context, opts store.CountDataOpts) (int, error) {
 		if p.haveData {
-			insights, err := discovery.Discover(ctx, settingStore)
-			if err != nil {
-				panic(err)
-			}
-			var haveData []string
-			for _, insight := range insights {
-				for _, series := range insight.Series {
-					seriesID, err := discovery.EncodeSeriesID(series)
-					if err != nil {
-						panic(err)
-					}
-					haveData = append(haveData, seriesID)
-				}
-			}
-			return haveData, nil
+			return 100, nil
 		}
-		return []string{}, nil
+		return 0, nil
 	})
 	insightsStore.RecordSeriesPointFunc.SetDefaultHook(func(ctx context.Context, args store.RecordSeriesPointArgs) error {
 		r.operations = append(r.operations, fmt.Sprintf("recordSeriesPoint(point=%v, repoName=%v)", args.Point.String(), *args.RepoName))
@@ -166,7 +152,8 @@ func Test_historicalEnqueuer(t *testing.T) {
 	t.Run("no_work", func(t *testing.T) {
 		want := autogold.Want("no_work", &testResults{
 			allReposIteratorCalls: 2, sleeps: 20,
-			reposGetByName: 4,
+			reposGetByName:   4,
+			totalSleepTimeMS: 2000,
 			operations: []string{
 				"sleep()",
 				"sleep()",
@@ -209,7 +196,8 @@ func Test_historicalEnqueuer(t *testing.T) {
 	t.Run("no_data", func(t *testing.T) {
 		want := autogold.Want("no_data", &testResults{
 			allReposIteratorCalls: 2, sleeps: 20,
-			reposGetByName: 4,
+			reposGetByName:   4,
+			totalSleepTimeMS: 2000,
 			operations: []string{
 				"sleep()",
 				"sleep()",

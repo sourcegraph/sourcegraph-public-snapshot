@@ -143,13 +143,12 @@ func TestSetCloneStatus(t *testing.T) {
 
 	db := dbtesting.GetDB(t)
 	ctx := context.Background()
+	const shardID = "test"
 
 	repo1 := &types.Repo{
 		Name:         "github.com/sourcegraph/repo1",
 		URI:          "github.com/sourcegraph/repo1",
-		Description:  "",
 		ExternalRepo: api.ExternalRepoSpec{},
-		Sources:      nil,
 	}
 
 	// Create one test repo
@@ -159,10 +158,9 @@ func TestSetCloneStatus(t *testing.T) {
 	}
 
 	gitserverRepo := &types.GitserverRepo{
-		RepoID:              repo1.ID,
-		ShardID:             "test",
-		CloneStatus:         types.CloneStatusNotCloned,
-		LastExternalService: 0,
+		RepoID:      repo1.ID,
+		ShardID:     shardID,
+		CloneStatus: types.CloneStatusNotCloned,
 	}
 
 	// Create GitServerRepo
@@ -181,7 +179,7 @@ func TestSetCloneStatus(t *testing.T) {
 	}
 
 	// Set cloned
-	err = GitserverRepos(db).SetCloneStatus(ctx, gitserverRepo.RepoID, types.CloneStatusCloned)
+	err = GitserverRepos(db).SetCloneStatus(ctx, gitserverRepo.RepoID, types.CloneStatusCloned, shardID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -193,6 +191,35 @@ func TestSetCloneStatus(t *testing.T) {
 
 	gitserverRepo.CloneStatus = types.CloneStatusCloned
 	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+		t.Fatal(diff)
+	}
+
+	// Setting clone status should work even if no row exists
+	repo2 := &types.Repo{
+		Name:         "github.com/sourcegraph/repo2",
+		URI:          "github.com/sourcegraph/repo2",
+		ExternalRepo: api.ExternalRepoSpec{},
+	}
+
+	// Create one test repo
+	err = Repos(db).Create(ctx, repo2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := GitserverRepos(db).SetCloneStatus(ctx, repo2.ID, types.CloneStatusCloned, shardID); err != nil {
+		t.Fatal(err)
+	}
+	fromDB, err = GitserverRepos(db).GetByID(ctx, repo2.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gitserverRepo2 := &types.GitserverRepo{
+		RepoID:      repo2.ID,
+		ShardID:     shardID,
+		CloneStatus: types.CloneStatusCloned,
+	}
+	if diff := cmp.Diff(gitserverRepo2, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
 		t.Fatal(diff)
 	}
 }

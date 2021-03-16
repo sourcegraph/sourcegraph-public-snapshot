@@ -155,6 +155,9 @@ func (sr *SearchResultsResolver) ApproximateResultCount() string {
 func (sr *SearchResultsResolver) Alert() *searchAlert { return sr.alert }
 
 func (sr *SearchResultsResolver) ElapsedMilliseconds() int32 {
+	if sr.start.IsZero() {
+		return 0
+	}
 	return int32(time.Since(sr.start).Milliseconds())
 }
 
@@ -462,6 +465,9 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 			// there is a next cursor, and more results may exist.
 			result.Stats.IsLimitHit = true
 		}
+		if r.stream != nil {
+			r.stream.Send(SearchEvent{result.SearchResults, result.Stats})
+		}
 		return result, err
 	}
 
@@ -708,10 +714,11 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 		if err != nil {
 			return nil, err
 		}
-		// We have to guard against result = nil because evaluatePatternExpression can
-		// return nil, nil via evaluateOperator.
-		if result == nil || len(result.SearchResults) == 0 {
-			// We return result instead of nil because result might contain an alert.
+		if result == nil {
+			return &SearchResultsResolver{}, nil
+		}
+		if len(result.SearchResults) == 0 {
+			// result might contain an alert.
 			return result, nil
 		}
 		exhausted = !result.IsLimitHit
@@ -729,7 +736,11 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 			if err != nil {
 				return nil, err
 			}
-			if termResult == nil || len(termResult.SearchResults) == 0 {
+			if termResult == nil {
+				return &SearchResultsResolver{}, nil
+			}
+			if len(termResult.SearchResults) == 0 {
+				// termResult might contain an alert.
 				return termResult, nil
 			}
 			exhausted = exhausted && !termResult.IsLimitHit
@@ -759,7 +770,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 // we shortcircuit and return results immediately.
 func (r *searchResolver) evaluateOr(ctx context.Context, scopeParameters []query.Node, operands []query.Node) (*SearchResultsResolver, error) {
 	if len(operands) == 0 {
-		return nil, nil
+		return &SearchResultsResolver{}, nil
 	}
 
 	wantCount := defaultMaxSearchResults
@@ -803,7 +814,7 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopePar
 	switch term := node.(type) {
 	case query.Operator:
 		if len(term.Operands) == 0 {
-			return nil, nil
+			return &SearchResultsResolver{}, nil
 		}
 
 		switch term.Kind {
@@ -820,7 +831,7 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopePar
 		return r.evaluateLeaf(ctx)
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
-		return nil, nil
+		return &SearchResultsResolver{}, nil
 	}
 	// Unreachable.
 	return nil, fmt.Errorf("unrecognized type %T in evaluatePatternExpression", node)
@@ -862,19 +873,41 @@ func invalidateRepoCache(q []query.Node) bool {
 }
 
 func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolver, err error) {
+	return r.resultsRecursive(ctx, r.Query)
+}
+
+func (r *searchResolver) resultsRecursive(ctx context.Context, q query.Q) (srr *SearchResultsResolver, err error) {
 	tr, ctx := trace.New(ctx, "Results", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
+	if invalidateRepoCache(q) {
+		r.invalidateRepoCache = true
+	}
+	r.setQuery(q)
+
+	expanded, err := substitutePredicates(r.Query, func(p query.Predicate) (*SearchResultsResolver, error) {
+		// Disable streaming for subqueries so we can use
+		// the results rather than sending them back to the caller
+		orig := r.stream
+		r.stream = nil
+		defer func() { r.stream = orig }()
+
+		r.invalidateRepoCache = true
+		return r.resultsRecursive(ctx, p.Query(r.Query))
+	})
+	if err != nil && errors.Is(err, ErrPredicateNoResults) {
+		return &SearchResultsResolver{}, nil
+	} else if err != nil {
+		return nil, err
+	}
+	r.setQuery(expanded)
+
 	wantCount := defaultMaxSearchResults
 	if count := r.Query.Count(); count != nil {
 		wantCount = *count
-	}
-
-	if invalidateRepoCache(r.Query) {
-		r.invalidateRepoCache = true
 	}
 
 	for _, disjunct := range query.Dnf(r.Query) {
@@ -907,6 +940,25 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 	return srr, err
 }
 
+// searchResultsToRepoNodes converts a set of search results into repository nodes
+// such that they can be used to replace a repository predicate
+func searchResultsToRepoNodes(srs []SearchResultResolver) ([]query.Node, error) {
+	nodes := make([]query.Node, 0, len(srs))
+	for _, rs := range srs {
+		repoResolver, ok := rs.(*RepositoryResolver)
+		if !ok {
+			return nil, fmt.Errorf("expected type %T, but got %T", &RepositoryResolver{}, rs)
+		}
+
+		nodes = append(nodes, query.Parameter{
+			Field: query.FieldRepo,
+			Value: "^" + regexp.QuoteMeta(repoResolver.Name()) + "$",
+		})
+	}
+
+	return nodes, nil
+}
+
 // resultsWithTimeoutSuggestion calls doResults, and in case of deadline
 // exceeded returns a search alert with a did-you-mean link for the same
 // query with a longer timeout.
@@ -931,6 +983,81 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 	}
 	return rr, err
 }
+
+// substitutePredicates replaces all the predicates in a query with their expanded form. The predicates
+// are expanded using the doExpand function.
+func substitutePredicates(q query.Q, evaluate func(query.Predicate) (*SearchResultsResolver, error)) (newQ query.Q, topErr error) {
+	newQ = query.MapParameter(q, func(field, value string, neg bool, ann query.Annotation) query.Node {
+		orig := query.Parameter{
+			Field:      field,
+			Value:      value,
+			Negated:    neg,
+			Annotation: ann,
+		}
+
+		if topErr != nil {
+			return orig
+		}
+
+		name, params, err := query.ParseAsPredicate(value)
+		if err != nil {
+			// This doesn't look like a predicate, so skip it
+			return orig
+		}
+
+		predicate, err := query.DefaultPredicateRegistry.Get(field, name, params)
+		if err != nil {
+			topErr = err
+			return orig
+		}
+
+		if neg {
+			topErr = errors.New("predicates do not currently support negation")
+			return nil
+		}
+
+		srr, err := evaluate(predicate)
+		if err != nil {
+			topErr = err
+			return nil
+		}
+
+		var nodes []query.Node
+		switch predicate.Field() {
+		case query.FieldRepo:
+			nodes, err = searchResultsToRepoNodes(srr.SearchResults)
+			if err != nil {
+				topErr = err
+				return nil
+			}
+		default:
+			topErr = fmt.Errorf("unsupported predicate result type %q", predicate.Field())
+			return nil
+		}
+
+		// If no results are returned, we need to return a sentinel error rather
+		// than an empty expansion because an empty expansion means "everything"
+		// rather than "nothing".
+		if len(nodes) == 0 {
+			topErr = ErrPredicateNoResults
+			return nil
+		}
+
+		// No need to return an operator for only one result
+		if len(nodes) == 1 {
+			return nodes[0]
+		}
+
+		return query.Operator{
+			Kind:     query.Or,
+			Operands: nodes,
+		}
+	})
+
+	return newQ, topErr
+}
+
+var ErrPredicateNoResults = errors.New("no results returned for predicate")
 
 // longer returns a suggested longer time to wait if the given duration wasn't long enough.
 func longer(N int, dt time.Duration) time.Duration {

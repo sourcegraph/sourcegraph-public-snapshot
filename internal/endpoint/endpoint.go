@@ -180,6 +180,9 @@ func inform(client v1.EndpointsInterface, m *Map, u *k8sURL) error {
 	watcher, err := client.Watch(metav1.ListOptions{
 		FieldSelector: "metadata.name=" + u.Service,
 	})
+	if err != nil {
+		return errors.Wrap(err, "could not create watcher")
+	}
 
 	defer watcher.Stop()
 

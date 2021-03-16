@@ -402,22 +402,10 @@ func (r *UserResolver) Repositories(ctx context.Context, args *ListUserRepositor
 			Descending: args.Descending,
 		}}
 	}
-	extSvcs, err := database.GlobalExternalServices.List(ctx, database.ExternalServicesListOptions{
-		NamespaceUserID: r.user.ID,
-	})
-	if err != nil {
-		return nil, err
-	}
 
 	if args.ExternalServiceID == nil {
-		ids := make([]int64, 0, len(extSvcs))
-		for _, svc := range extSvcs {
-			ids = append(ids, svc.ID)
-		}
-		if len(ids) == 0 {
-			ids = []int64{-1}
-		}
-		opt.ExternalServiceIDs = ids
+		opt.UserID = r.user.ID
+		opt.IncludeUserPublicRepos = true
 	} else {
 		id, err := unmarshalExternalServiceID(*args.ExternalServiceID)
 		if err != nil {

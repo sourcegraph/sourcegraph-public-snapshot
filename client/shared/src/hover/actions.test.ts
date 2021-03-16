@@ -1,22 +1,15 @@
 import { HoveredToken, LOADER_DELAY, MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { Location } from '@sourcegraph/extension-api-types'
 import { createMemoryHistory, MemoryHistory, createPath } from 'history'
-import { BehaviorSubject, from, Observable, of, throwError, Subscription } from 'rxjs'
-import { first, map } from 'rxjs/operators'
+import { from, Observable, of, throwError, Subscription } from 'rxjs'
+import { first } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
 import { ActionItemAction } from '../actions/ActionItem'
-import { CommandRegistry } from '../api/client/services/command'
-import { ContributionRegistry } from '../api/client/services/contribution'
-import { createTestViewerService } from '../api/client/services/viewerService.test'
-import { ProvideTextDocumentLocationSignature } from '../api/client/services/location'
-import { WorkspaceRootWithMetadata, WorkspaceService } from '../api/client/services/workspaceService'
-import { ContributableMenu, ReferenceParameters, TextDocumentPositionParameters } from '../api/protocol'
+import { TextDocumentPositionParameters } from '../api/protocol'
 import { PrivateRepoPublicSourcegraphComError } from '../backend/errors'
-import { getContributedActionItems } from '../contributions/contributions'
 import { SuccessGraphQLResult } from '../graphql/graphql'
 import { PlatformContext, URLToFileContext } from '../platform/context'
-import { EMPTY_SETTINGS_CASCADE } from '../settings/settings'
 import { resetAllMemoizationCaches } from '../util/memoizeObservable'
 import {
     FileSpec,
@@ -28,11 +21,21 @@ import {
     toAbsoluteBlobURL,
     toPrettyBlobURL,
 } from '../util/url'
-import { getDefinitionURL, getHoverActionsContext, HoverActionsContext, registerHoverContributions } from './actions'
+import {
+    getDefinitionURL,
+    getHoverActionItems,
+    getHoverActionsContext,
+    HoverActionsContext,
+    registerHoverContributions,
+} from './actions'
 import { HoverContext } from './HoverOverlay'
-import { pretendRemote } from '../api/util'
 import { FlatExtensionHostAPI } from '../api/contract'
-import { proxySubscribable } from '../api/extension/api/common'
+import { Remote } from 'comlink'
+import { integrationTestContext } from '../api/integration-test/testHelpers'
+import { ExposedToClient } from '../api/client/mainthread-api'
+import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
+import * as sourcegraph from 'sourcegraph'
+import { Position, Range } from '@sourcegraph/extension-api-classes'
 
 const FIXTURE_PARAMS: TextDocumentPositionParameters & URLToFileContext = {
     textDocument: { uri: 'git://r?c#f' },
@@ -40,7 +43,12 @@ const FIXTURE_PARAMS: TextDocumentPositionParameters & URLToFileContext = {
     part: undefined,
 }
 
-const FIXTURE_LOCATION: Location = {
+const FIXTURE_LOCATION: sourcegraph.Location = {
+    uri: new URL('git://r2?c2#f2'),
+    range: new Range(new Position(2, 2), new Position(3, 3)),
+}
+
+const FIXTURE_LOCATION_CLIENT: Location = {
     uri: 'git://r2?c2#f2',
     range: {
         start: { line: 2, character: 2 },
@@ -57,12 +65,7 @@ const FIXTURE_HOVER_CONTEXT: HoveredToken & HoverContext = {
     character: 2,
 }
 
-function testWorkspaceService(
-    roots: readonly WorkspaceRootWithMetadata[] = [{ uri: 'git://r3?c3', inputRevision: 'v3' }],
-    versionContext: string | undefined = undefined
-): WorkspaceService {
-    return { roots: new BehaviorSubject(roots), versionContext: new BehaviorSubject(versionContext) }
-}
+const FIXTURE_WORKSPACE: WorkspaceRootWithMetadata = { uri: 'git://r3?c3', inputRevision: 'v3' }
 
 // Use toPrettyBlobURL as the urlToFile passed to these functions because it results in the most readable/familiar
 // expected test output.
@@ -98,21 +101,10 @@ describe('getHoverActionsContext', () => {
                             getDefinition: () =>
                                 cold<MaybeLoadingResult<Location[]>>(`l ${LOADER_DELAY + 100}ms r`, {
                                     l: { isLoading: true, result: [] },
-                                    r: { isLoading: false, result: [FIXTURE_LOCATION] },
+                                    r: { isLoading: false, result: [FIXTURE_LOCATION_CLIENT] },
                                 }),
-                            extensionsController: {
-                                services: {
-                                    workspace: testWorkspaceService(),
-
-                                    textDocumentReferences: {
-                                        providersForDocument: () =>
-                                            cold<ProvideTextDocumentLocationSignature<ReferenceParameters, Location>[]>(
-                                                'a',
-                                                { a: [() => of(null)] }
-                                            ),
-                                    },
-                                },
-                            },
+                            getWorkspaceRoots: () => cold<WorkspaceRootWithMetadata[]>('w', { w: [FIXTURE_WORKSPACE] }),
+                            hasReferenceProvidersForDocument: () => cold<boolean>('a', { a: true }),
                             platformContext: { urlToFile, requestGraphQL },
                         },
                         FIXTURE_HOVER_CONTEXT
@@ -174,20 +166,10 @@ describe('getHoverActionsContext', () => {
                                 cold<MaybeLoadingResult<Location[]>>(`l e 50ms l ${LOADER_DELAY}ms r`, {
                                     l: { isLoading: true, result: [] },
                                     e: { isLoading: false, result: [] },
-                                    r: { isLoading: false, result: [FIXTURE_LOCATION] },
+                                    r: { isLoading: false, result: [FIXTURE_LOCATION_CLIENT] },
                                 }),
-                            extensionsController: {
-                                services: {
-                                    workspace: testWorkspaceService(),
-                                    textDocumentReferences: {
-                                        providersForDocument: () =>
-                                            cold<ProvideTextDocumentLocationSignature<ReferenceParameters, Location>[]>(
-                                                'a',
-                                                { a: [() => of(null)] }
-                                            ),
-                                    },
-                                },
-                            },
+                            getWorkspaceRoots: () => cold<WorkspaceRootWithMetadata[]>('w', { w: [FIXTURE_WORKSPACE] }),
+                            hasReferenceProvidersForDocument: () => cold<boolean>('a', { a: true }),
                             platformContext: { urlToFile, requestGraphQL },
                         },
                         FIXTURE_HOVER_CONTEXT
@@ -254,20 +236,10 @@ describe('getHoverActionsContext', () => {
                         {
                             getDefinition: () =>
                                 cold<MaybeLoadingResult<Location[]>>('-b', {
-                                    b: { isLoading: false, result: [FIXTURE_LOCATION] },
+                                    b: { isLoading: false, result: [FIXTURE_LOCATION_CLIENT] },
                                 }),
-                            extensionsController: {
-                                services: {
-                                    workspace: testWorkspaceService(),
-                                    textDocumentReferences: {
-                                        providersForDocument: () =>
-                                            cold<ProvideTextDocumentLocationSignature<ReferenceParameters, Location>[]>(
-                                                'e 10ms p',
-                                                { e: [], p: [() => of(null)] }
-                                            ),
-                                    },
-                                },
-                            },
+                            getWorkspaceRoots: () => cold<WorkspaceRootWithMetadata[]>('w', { w: [FIXTURE_WORKSPACE] }),
+                            hasReferenceProvidersForDocument: () => cold<boolean>('a 10ms b', { a: false, b: true }),
                             platformContext: { urlToFile, requestGraphQL },
                         },
                         FIXTURE_HOVER_CONTEXT
@@ -316,20 +288,10 @@ describe('getHoverActionsContext', () => {
                         {
                             getDefinition: () =>
                                 cold<MaybeLoadingResult<Location[]>>('-b', {
-                                    b: { isLoading: false, result: [FIXTURE_LOCATION] },
+                                    b: { isLoading: false, result: [FIXTURE_LOCATION_CLIENT] },
                                 }),
-                            extensionsController: {
-                                services: {
-                                    workspace: testWorkspaceService(),
-                                    textDocumentReferences: {
-                                        providersForDocument: () =>
-                                            cold<ProvideTextDocumentLocationSignature<ReferenceParameters, Location>[]>(
-                                                'a',
-                                                { a: [() => of(null)] }
-                                            ),
-                                    },
-                                },
-                            },
+                            getWorkspaceRoots: () => cold<WorkspaceRootWithMetadata[]>('w', { w: [FIXTURE_WORKSPACE] }),
+                            hasReferenceProvidersForDocument: () => cold<boolean>('a', { a: true }),
                             platformContext: { urlToFile, requestGraphQL },
                         },
                         FIXTURE_HOVER_CONTEXT
@@ -380,7 +342,9 @@ describe('getDefinitionURL', () => {
                 .pipe(
                     getDefinitionURL(
                         { urlToFile, requestGraphQL },
-                        { workspace: testWorkspaceService() },
+                        {
+                            getWorkspaceRoots: () => of([FIXTURE_WORKSPACE]),
+                        },
                         FIXTURE_PARAMS
                     ),
                     first(({ isLoading }) => !isLoading)
@@ -419,7 +383,9 @@ describe('getDefinitionURL', () => {
                 .pipe(
                     getDefinitionURL(
                         { urlToFile, requestGraphQL },
-                        { workspace: testWorkspaceService() },
+                        {
+                            getWorkspaceRoots: () => of([FIXTURE_WORKSPACE]),
+                        },
                         FIXTURE_PARAMS
                     ),
                     first(({ isLoading }) => !isLoading)
@@ -447,7 +413,7 @@ describe('getDefinitionURL', () => {
                     getDefinitionURL(
                         { urlToFile, requestGraphQL },
                         {
-                            workspace: testWorkspaceService(),
+                            getWorkspaceRoots: () => of([FIXTURE_WORKSPACE]),
                         },
                         FIXTURE_PARAMS
                     ),
@@ -476,7 +442,9 @@ describe('getDefinitionURL', () => {
                         .pipe(
                             getDefinitionURL(
                                 { urlToFile, requestGraphQL },
-                                { workspace: testWorkspaceService() },
+                                {
+                                    getWorkspaceRoots: () => of([FIXTURE_WORKSPACE]),
+                                },
                                 FIXTURE_PARAMS
                             ),
                             first(({ isLoading }) => !isLoading)
@@ -490,13 +458,13 @@ describe('getDefinitionURL', () => {
                 expect(
                     of<MaybeLoadingResult<Location[]>>({
                         isLoading: false,
-                        result: [FIXTURE_LOCATION],
+                        result: [FIXTURE_LOCATION_CLIENT],
                     })
                         .pipe(
                             getDefinitionURL(
                                 { urlToFile, requestGraphQL },
                                 {
-                                    workspace: testWorkspaceService(),
+                                    getWorkspaceRoots: () => of([FIXTURE_WORKSPACE]),
                                 },
                                 FIXTURE_PARAMS
                             ),
@@ -509,12 +477,14 @@ describe('getDefinitionURL', () => {
                 expect(
                     of<MaybeLoadingResult<Location[]>>({
                         isLoading: false,
-                        result: [{ ...FIXTURE_LOCATION, range: undefined }],
+                        result: [{ ...FIXTURE_LOCATION_CLIENT, range: undefined }],
                     })
                         .pipe(
                             getDefinitionURL(
                                 { urlToFile, requestGraphQL },
-                                { workspace: testWorkspaceService() },
+                                {
+                                    getWorkspaceRoots: () => of([FIXTURE_WORKSPACE]),
+                                },
                                 FIXTURE_PARAMS
                             ),
                             first(({ isLoading }) => !isLoading)
@@ -528,12 +498,14 @@ describe('getDefinitionURL', () => {
         expect(
             of<MaybeLoadingResult<Location[]>>({
                 isLoading: false,
-                result: [FIXTURE_LOCATION, { ...FIXTURE_LOCATION, uri: 'other' }],
+                result: [FIXTURE_LOCATION_CLIENT, { ...FIXTURE_LOCATION, uri: 'other' }],
             })
                 .pipe(
                     getDefinitionURL(
                         { urlToFile, requestGraphQL },
-                        { workspace: testWorkspaceService([{ uri: 'git://r?c', inputRevision: 'v' }]) },
+                        {
+                            getWorkspaceRoots: () => of([{ uri: 'git://r?c', inputRevision: 'v' }]),
+                        },
                         FIXTURE_PARAMS
                     ),
                     first()
@@ -545,52 +517,45 @@ describe('getDefinitionURL', () => {
 describe('registerHoverContributions()', () => {
     const subscription = new Subscription()
     let history!: MemoryHistory
-    let contribution!: ContributionRegistry
-    let commands!: CommandRegistry
-    let extensionHostAPI!: Pick<FlatExtensionHostAPI, 'getDefinition'>
+
+    let extensionHostAPI!: Promise<Remote<FlatExtensionHostAPI>>
+    let extensionAPI!: typeof sourcegraph
+    let exposedToClient!: ExposedToClient
     let locationAssign!: sinon.SinonSpy<[string], void>
-    beforeEach(() => {
+    beforeEach(async () => {
         resetAllMemoizationCaches()
-        contribution = new ContributionRegistry(
-            createTestViewerService({}),
-            {
-                getPartialModel: () => ({ languageId: 'x' }),
-            },
-            of(EMPTY_SETTINGS_CASCADE),
-            of({})
-        )
-        commands = new CommandRegistry()
-        extensionHostAPI = {
-            getDefinition: () => proxySubscribable(of({ isLoading: false, result: [] })),
-        }
+
+        const context = await integrationTestContext(undefined, {
+            textDocuments: [
+                {
+                    languageId: 'x',
+                    uri: 'git://r?c#f',
+                    text: undefined,
+                },
+            ],
+            roots: [],
+            viewers: [],
+        })
+        subscription.add(() => context.unsubscribe())
+        extensionHostAPI = Promise.resolve(context.extensionHostAPI)
+        extensionAPI = context.extensionAPI
+        exposedToClient = context.exposedToClient
+
         history = createMemoryHistory()
         locationAssign = sinon.spy((_url: string) => undefined)
-        subscription.add(
-            registerHoverContributions({
-                extensionsController: {
-                    services: {
-                        contribution,
-                        commands,
-                        workspace: testWorkspaceService(),
-                    },
-                    extHostAPI: Promise.resolve(pretendRemote<FlatExtensionHostAPI>(extensionHostAPI)),
-                },
-                platformContext: { urlToFile, requestGraphQL },
-                history,
-                locationAssign,
-            })
-        )
+        const contributionsSubscription = registerHoverContributions({
+            extensionsController: {
+                extHostAPI: Promise.resolve(extensionHostAPI),
+                registerCommand: exposedToClient.registerCommand,
+            },
+            platformContext: { urlToFile, requestGraphQL },
+            history,
+            locationAssign,
+        })
+        subscription.add(contributionsSubscription)
+        await contributionsSubscription.contributionsPromise
     })
     afterAll(() => subscription.unsubscribe())
-
-    const getHoverActions = (context: HoverActionsContext): Promise<ActionItemAction[]> =>
-        contribution
-            .getContributions(undefined, context)
-            .pipe(
-                first(),
-                map(contributions => getContributedActionItems(contributions, ContributableMenu.Hover))
-            )
-            .toPromise()
 
     describe('getHoverActions()', () => {
         const GO_TO_DEFINITION_ACTION: ActionItemAction = {
@@ -627,119 +592,153 @@ describe('registerHoverContributions()', () => {
 
         it('shows goToDefinition (non-preloaded) when the definition is loading', () =>
             expect(
-                getHoverActions({
-                    'goToDefinition.showLoading': true,
-                    'goToDefinition.url': null,
-                    'goToDefinition.notFound': false,
-                    'goToDefinition.error': false,
-                    'findReferences.url': null,
-                    hoverPosition: FIXTURE_PARAMS,
-                })
+                getHoverActionItems(
+                    {
+                        'goToDefinition.showLoading': true,
+                        'goToDefinition.url': null,
+                        'goToDefinition.notFound': false,
+                        'goToDefinition.error': false,
+                        'findReferences.url': null,
+                        hoverPosition: FIXTURE_PARAMS,
+                    },
+                    extensionHostAPI
+                ).toPromise()
             ).resolves.toEqual([GO_TO_DEFINITION_ACTION]))
 
         it('shows goToDefinition (non-preloaded) when the definition had an error', () =>
             expect(
-                getHoverActions({
-                    'goToDefinition.showLoading': false,
-                    'goToDefinition.url': null,
-                    'goToDefinition.notFound': false,
-                    'goToDefinition.error': true,
-                    'findReferences.url': null,
-                    hoverPosition: FIXTURE_PARAMS,
-                })
+                getHoverActionItems(
+                    {
+                        'goToDefinition.showLoading': false,
+                        'goToDefinition.url': null,
+                        'goToDefinition.notFound': false,
+                        'goToDefinition.error': true,
+                        'findReferences.url': null,
+                        hoverPosition: FIXTURE_PARAMS,
+                    },
+                    extensionHostAPI
+                ).toPromise()
             ).resolves.toEqual([GO_TO_DEFINITION_ACTION]))
 
         it('hides goToDefinition when the definition was not found', () =>
             expect(
-                getHoverActions({
-                    'goToDefinition.showLoading': false,
-                    'goToDefinition.url': null,
-                    'goToDefinition.notFound': true,
-                    'goToDefinition.error': false,
-                    'findReferences.url': null,
-                    hoverPosition: FIXTURE_PARAMS,
-                })
+                getHoverActionItems(
+                    {
+                        'goToDefinition.showLoading': false,
+                        'goToDefinition.url': null,
+                        'goToDefinition.notFound': true,
+                        'goToDefinition.error': false,
+                        'findReferences.url': null,
+                        hoverPosition: FIXTURE_PARAMS,
+                    },
+                    extensionHostAPI
+                ).toPromise()
             ).resolves.toEqual([]))
 
         it('shows goToDefinition.preloaded when goToDefinition.url is available', () =>
             expect(
-                getHoverActions({
-                    'goToDefinition.showLoading': false,
-                    'goToDefinition.url': '/r2@c2/-/blob/f2#L3:3',
-                    'goToDefinition.notFound': false,
-                    'goToDefinition.error': false,
-                    'findReferences.url': null,
-                    hoverPosition: FIXTURE_PARAMS,
-                })
+                getHoverActionItems(
+                    {
+                        'goToDefinition.showLoading': false,
+                        'goToDefinition.url': '/r2@c2/-/blob/f2#L3:3',
+                        'goToDefinition.notFound': false,
+                        'goToDefinition.error': false,
+                        'findReferences.url': null,
+                        hoverPosition: FIXTURE_PARAMS,
+                    },
+                    extensionHostAPI
+                ).toPromise()
             ).resolves.toEqual([GO_TO_DEFINITION_PRELOADED_ACTION]))
 
         it('shows findReferences when the definition exists', () =>
             expect(
-                getHoverActions({
-                    'goToDefinition.showLoading': false,
-                    'goToDefinition.url': '/r2@c2/-/blob/f2#L3:3',
-                    'goToDefinition.notFound': false,
-                    'goToDefinition.error': false,
-                    'findReferences.url': '/r@v/-/blob/f#L2:2&tab=references',
-                    hoverPosition: FIXTURE_PARAMS,
-                })
+                getHoverActionItems(
+                    {
+                        'goToDefinition.showLoading': false,
+                        'goToDefinition.url': '/r2@c2/-/blob/f2#L3:3',
+                        'goToDefinition.notFound': false,
+                        'goToDefinition.error': false,
+                        'findReferences.url': '/r@v/-/blob/f#L2:2&tab=references',
+                        hoverPosition: FIXTURE_PARAMS,
+                    },
+                    extensionHostAPI
+                ).toPromise()
             ).resolves.toEqual([GO_TO_DEFINITION_PRELOADED_ACTION, FIND_REFERENCES_ACTION]))
 
         it('hides findReferences when the definition might exist (and is still loading)', () =>
             expect(
-                getHoverActions({
-                    'goToDefinition.showLoading': true,
-                    'goToDefinition.url': null,
-                    'goToDefinition.notFound': false,
-                    'goToDefinition.error': false,
-                    'findReferences.url': '/r@v/-/blob/f#L2:2&tab=references',
-                    hoverPosition: FIXTURE_PARAMS,
-                })
+                getHoverActionItems(
+                    {
+                        'goToDefinition.showLoading': true,
+                        'goToDefinition.url': null,
+                        'goToDefinition.notFound': false,
+                        'goToDefinition.error': false,
+                        'findReferences.url': '/r@v/-/blob/f#L2:2&tab=references',
+                        hoverPosition: FIXTURE_PARAMS,
+                    },
+                    extensionHostAPI
+                ).toPromise()
             ).resolves.toEqual([GO_TO_DEFINITION_ACTION, FIND_REFERENCES_ACTION]))
 
         it('shows findReferences when the definition had an error', () =>
             expect(
-                getHoverActions({
-                    'goToDefinition.showLoading': false,
-                    'goToDefinition.url': null,
-                    'goToDefinition.notFound': false,
-                    'goToDefinition.error': true,
-                    'findReferences.url': '/r@v/-/blob/f#L2:2&tab=references',
-                    hoverPosition: FIXTURE_PARAMS,
-                })
+                getHoverActionItems(
+                    {
+                        'goToDefinition.showLoading': false,
+                        'goToDefinition.url': null,
+                        'goToDefinition.notFound': false,
+                        'goToDefinition.error': true,
+                        'findReferences.url': '/r@v/-/blob/f#L2:2&tab=references',
+                        hoverPosition: FIXTURE_PARAMS,
+                    },
+                    extensionHostAPI
+                ).toPromise()
             ).resolves.toEqual([GO_TO_DEFINITION_ACTION, FIND_REFERENCES_ACTION]))
 
         it('does not show findReferences when the definition was not found', () =>
             expect(
-                getHoverActions({
-                    'goToDefinition.showLoading': false,
-                    'goToDefinition.url': null,
-                    'goToDefinition.notFound': true,
-                    'goToDefinition.error': false,
-                    'findReferences.url': '/r@v/-/blob/f#L2:2&tab=references',
-                    hoverPosition: FIXTURE_PARAMS,
-                })
+                getHoverActionItems(
+                    {
+                        'goToDefinition.showLoading': false,
+                        'goToDefinition.url': null,
+                        'goToDefinition.notFound': true,
+                        'goToDefinition.error': false,
+                        'findReferences.url': '/r@v/-/blob/f#L2:2&tab=references',
+                        hoverPosition: FIXTURE_PARAMS,
+                    },
+                    extensionHostAPI
+                ).toPromise()
             ).resolves.toEqual([]))
     })
 
     describe('goToDefinition command', () => {
         test('reports no definition found', async () => {
-            extensionHostAPI.getDefinition = () => proxySubscribable(of({ isLoading: false, result: [] })) // mock
+            const definitionSubscription = extensionAPI.languages.registerDefinitionProvider(['*'], {
+                provideDefinition: () => of([]),
+            })
+
             await expect(
-                commands.executeCommand({ command: 'goToDefinition', arguments: [JSON.stringify(FIXTURE_PARAMS)] })
+                exposedToClient.executeCommand({ command: 'goToDefinition', args: [JSON.stringify(FIXTURE_PARAMS)] })
             ).rejects.toMatchObject({ message: 'No definition found.' })
+
+            definitionSubscription.unsubscribe()
         })
 
         test('navigates to an in-app URL using the passed history object', async () => {
             jsdom.reconfigure({ url: 'https://sourcegraph.test/r2@c2/-/blob/f1' })
             history.replace('/r2@c2/-/blob/f1')
             expect(history).toHaveLength(1)
-            extensionHostAPI.getDefinition = () =>
-                proxySubscribable(of({ isLoading: false, result: [FIXTURE_LOCATION] })) // mock
-            await commands.executeCommand({ command: 'goToDefinition', arguments: [JSON.stringify(FIXTURE_PARAMS)] })
+
+            const definitionSubscription = extensionAPI.languages.registerDefinitionProvider(['*'], {
+                provideDefinition: () => of(FIXTURE_LOCATION),
+            })
+
+            await exposedToClient.executeCommand({ command: 'goToDefinition', args: [JSON.stringify(FIXTURE_PARAMS)] })
             sinon.assert.notCalled(locationAssign)
             expect(history).toHaveLength(2)
             expect(createPath(history.location)).toBe('/r2@c2/-/blob/f2#L3:3')
+
+            definitionSubscription.unsubscribe()
         })
 
         test('navigates to an external URL using the global location object', async () => {
@@ -747,34 +746,45 @@ describe('registerHoverContributions()', () => {
             history.replace('/r2@c2/-/blob/f1')
             expect(history).toHaveLength(1)
             urlToFile.callsFake(toAbsoluteBlobURL.bind(null, 'https://sourcegraph.test'))
-            extensionHostAPI.getDefinition = () =>
-                proxySubscribable(
-                    of({ isLoading: false, result: [FIXTURE_LOCATION, { ...FIXTURE_LOCATION, uri: 'git://r3?v3#f3' }] })
-                ) // mock
-            await commands.executeCommand({ command: 'goToDefinition', arguments: [JSON.stringify(FIXTURE_PARAMS)] })
+
+            const definitionSubscription = extensionAPI.languages.registerDefinitionProvider(['*'], {
+                provideDefinition: () =>
+                    of([FIXTURE_LOCATION, { ...FIXTURE_LOCATION, uri: new URL('git://r3?v3#f3') }]),
+            })
+
+            await exposedToClient.executeCommand({ command: 'goToDefinition', args: [JSON.stringify(FIXTURE_PARAMS)] })
             sinon.assert.calledOnce(locationAssign)
             sinon.assert.calledWith(locationAssign, 'https://sourcegraph.test/r@c/-/blob/f#L2:2&tab=def')
             expect(history).toHaveLength(1)
+
+            definitionSubscription.unsubscribe()
         })
 
         test('reports panel already visible', async () => {
-            extensionHostAPI.getDefinition = () =>
-                proxySubscribable(
-                    of({ isLoading: false, result: [FIXTURE_LOCATION, { ...FIXTURE_LOCATION, uri: 'git://r3?v3#f3' }] })
-                ) // mock
+            const definitionSubscription = extensionAPI.languages.registerDefinitionProvider(['*'], {
+                provideDefinition: () =>
+                    of([FIXTURE_LOCATION, { ...FIXTURE_LOCATION, uri: new URL('git://r3?v3#f3') }]),
+            })
+
             history.push('/r@c/-/blob/f#L2:2&tab=def')
             await expect(
-                commands.executeCommand({ command: 'goToDefinition', arguments: [JSON.stringify(FIXTURE_PARAMS)] })
+                exposedToClient.executeCommand({ command: 'goToDefinition', args: [JSON.stringify(FIXTURE_PARAMS)] })
             ).rejects.toMatchObject({ message: 'Multiple definitions shown in panel below.' })
+
+            definitionSubscription.unsubscribe()
         })
 
         test('reports already at the definition', async () => {
-            extensionHostAPI.getDefinition = () =>
-                proxySubscribable(of({ isLoading: false, result: [FIXTURE_LOCATION] })) // mock
+            const definitionSubscription = extensionAPI.languages.registerDefinitionProvider(['*'], {
+                provideDefinition: () => of([FIXTURE_LOCATION]),
+            })
+
             history.push('/r2@c2/-/blob/f2#L3:3')
             await expect(
-                commands.executeCommand({ command: 'goToDefinition', arguments: [JSON.stringify(FIXTURE_PARAMS)] })
+                exposedToClient.executeCommand({ command: 'goToDefinition', args: [JSON.stringify(FIXTURE_PARAMS)] })
             ).rejects.toMatchObject({ message: 'Already at the definition.' })
+
+            definitionSubscription.unsubscribe()
         })
     })
 })

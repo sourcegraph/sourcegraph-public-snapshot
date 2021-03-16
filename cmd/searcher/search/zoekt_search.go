@@ -121,16 +121,6 @@ type zoektSearchStreamEvent struct {
 	err      error
 }
 
-func zoektSearchStream(ctx context.Context, args *search.TextPatternInfo, repoBranches map[string][]string, since func(t time.Time) time.Duration, endpoints []string, useFullDeadline bool) <-chan zoektSearchStreamEvent {
-	c := make(chan zoektSearchStreamEvent)
-	go func() {
-		defer close(c)
-		_, _, _, _ = zoektSearch(ctx, args, repoBranches, since, endpoints, useFullDeadline, c)
-	}()
-
-	return c
-}
-
 const defaultMaxSearchResults = 30
 
 // zoektSearch searches repositories using zoekt, returning file contents for

@@ -10,6 +10,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -93,19 +94,14 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 	var q query.Q
 	globbing := getBoolPtr(settings.SearchGlobbing, false)
 	tr.LogFields(otlog.Bool("globbing", globbing))
-	q, err = query.Parse(args.Query, query.ParserOptions{SearchType: searchType, Globbing: globbing})
+	q, err = query.Pipeline(
+		query.Init(args.Query, searchType),
+		query.With(globbing, query.Globbing),
+	)
 	if err != nil {
 		return alertForQuery(db, args.Query, err), nil
 	}
-	if getBoolPtr(settings.SearchUppercase, false) {
-		q = query.SearchUppercase(q)
-	}
 	tr.LazyPrintf("parsing done")
-
-	// We do not support stable for streaming
-	if args.Stream != nil && q.BoolValue(query.FieldStable) {
-		return alertForQuery(db, args.Query, errors.New("stable is not supported for the streaming API. Please remove from query")), nil
-	}
 
 	// If the request is a paginated one, decode those arguments now.
 	var pagination *searchPaginationInfo
@@ -208,7 +204,7 @@ func detectSearchType(version string, patternType *string) (query.SearchType, er
 }
 
 func overrideSearchType(input string, searchType query.SearchType) query.SearchType {
-	q, err := query.ParseAndOr(input, query.SearchTypeLiteral)
+	q, err := query.Parse(input, query.SearchTypeLiteral)
 	q = query.LowercaseFieldNames(q)
 	if err != nil {
 		// If parsing fails, return the default search type. Any actual
@@ -427,7 +423,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	repositoryResolver := &searchrepos.Resolver{
 		DB:               r.db,
 		Zoekt:            r.zoekt,
-		DefaultReposFunc: database.DefaultRepos(r.db).List,
+		DefaultReposFunc: backend.Repos.ListDefault,
 		NamespaceStore:   database.Namespaces(r.db),
 	}
 	resolved, err := repositoryResolver.Resolve(ctx, options)

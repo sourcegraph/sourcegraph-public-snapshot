@@ -146,13 +146,13 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		wantOpen        int
 		wantNodes       []apitest.Changeset
 	}{
-		{firstParam: 1, wantHasNextPage: true, wantEndCursor: "1", wantTotalCount: 4, wantOpen: 2, wantNodes: nodes[:1]},
-		{firstParam: 2, wantHasNextPage: true, wantEndCursor: "2", wantTotalCount: 4, wantOpen: 2, wantNodes: nodes[:2]},
-		{firstParam: 3, wantHasNextPage: true, wantEndCursor: "3", wantTotalCount: 4, wantOpen: 2, wantNodes: nodes[:3]},
+		{firstParam: 1, wantHasNextPage: true, wantEndCursor: "2", wantTotalCount: 4, wantOpen: 2, wantNodes: nodes[:1]},
+		{firstParam: 2, wantHasNextPage: true, wantEndCursor: "3", wantTotalCount: 4, wantOpen: 2, wantNodes: nodes[:2]},
+		{firstParam: 3, wantHasNextPage: true, wantEndCursor: "4", wantTotalCount: 4, wantOpen: 2, wantNodes: nodes[:3]},
 		{firstParam: 4, wantHasNextPage: false, wantTotalCount: 4, wantOpen: 2, wantNodes: nodes[:4]},
 		// Expect only 3 changesets to be returned when an unsafe filter is applied.
-		{firstParam: 1, useUnsafeOpts: true, wantEndCursor: "1", wantHasNextPage: true, wantTotalCount: 3, wantOpen: 1, wantNodes: nodes[:1]},
-		{firstParam: 2, useUnsafeOpts: true, wantEndCursor: "2", wantHasNextPage: true, wantTotalCount: 3, wantOpen: 1, wantNodes: nodes[:2]},
+		{firstParam: 1, useUnsafeOpts: true, wantEndCursor: "2", wantHasNextPage: true, wantTotalCount: 3, wantOpen: 1, wantNodes: nodes[:1]},
+		{firstParam: 2, useUnsafeOpts: true, wantEndCursor: "3", wantHasNextPage: true, wantTotalCount: 3, wantOpen: 1, wantNodes: nodes[:2]},
 		{firstParam: 3, useUnsafeOpts: true, wantHasNextPage: false, wantTotalCount: 3, wantOpen: 1, wantNodes: nodes[:3]},
 	}
 

@@ -44,7 +44,7 @@ export interface RepogroupPageProps
         PatternTypeProps,
         CaseSensitivityProps,
         KeyboardShortcutsProps,
-        ExtensionsControllerProps<'executeCommand' | 'services'>,
+        ExtensionsControllerProps<'executeCommand'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         CopyQueryButtonProps,
         VersionContextProps,
@@ -55,7 +55,7 @@ export interface RepogroupPageProps
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
-    setVersionContext: (versionContext: string | undefined) => void
+    setVersionContext: (versionContext: string | undefined) => Promise<void>
     availableVersionContexts: VersionContext[] | undefined
 
     // Repogroup page metadata

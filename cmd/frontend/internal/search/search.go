@@ -12,9 +12,12 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
+	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -70,9 +73,20 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	events, inputs, results := h.startSearch(ctx, args)
 
+	traceURL := ""
+	if span := opentracing.SpanFromContext(ctx); span != nil {
+		spanURL := trace.SpanURL(span)
+		// URLs starting with # don't have a trace. eg
+		// "#tracer-not-enabled"
+		if !strings.HasPrefix(spanURL, "#") {
+			traceURL = spanURL
+		}
+	}
+
 	progress := progressAggregator{
 		Start: time.Now(),
 		Limit: inputs.MaxResults(),
+		Trace: traceURL,
 	}
 
 	// Display is the number of results we send down. If display is < 0 we

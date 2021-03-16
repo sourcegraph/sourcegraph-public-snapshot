@@ -92,7 +92,10 @@ func (r *schemaResolver) ParseSearchQuery(ctx context.Context, args *struct {
 
 	globbing := getBoolPtr(settings.SearchGlobbing, false)
 
-	q, err := query.Parse(args.Query, query.ParserOptions{SearchType: searchType, Globbing: globbing})
+	q, err := query.Pipeline(
+		query.Init(args.Query, searchType),
+		query.With(globbing, query.Globbing),
+	)
 	if err != nil {
 		return nil, err
 	}

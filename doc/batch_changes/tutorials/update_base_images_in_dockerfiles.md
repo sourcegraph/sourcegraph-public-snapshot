@@ -21,8 +21,7 @@ This tutorial shows you how to create [a batch spec](../explanations/introductio
 
 The batch spec and instructions here can [easily be adapted to update other base images](#updating-other-base-images).
 
-<!---TODO update link-->
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tutorials/update_base_images_in_dockerfiles_teaser.png" class="screenshot center">
+<img src="https://sourcegraphstatic.com/docs/images/batch_changes/update_base_images_in_dockerfiles_teaser.png" class="screenshot center">
 
 ### Prerequisites
 
@@ -79,11 +78,11 @@ changesetTemplate:
 
     <pre>src batch preview -f update-dart-base-images-2-10.batch.yaml</pre>
 1. Wait for it to run and compute the changes for each repository.
-    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tutorials/update_base_images_in_dockerfiles_wait_run.png" class="screenshot">
+    <img src="https://sourcegraphstatic.com/docs/images/batch_changes/update_base_images_in_dockerfiles_wait_run.png" class="screenshot">
 1. Open the preview URL that the command printed out.
-    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tutorials/update_base_images_in_dockerfiles_click_url.png" class="screenshot">
+    <img src="https://sourcegraphstatic.com/docs/images/batch_changes/update_base_images_in_dockerfiles_click_url.png" class="screenshot">
 1. Examine the preview. Confirm that the changesets are the ones you intended to track. If not, edit the batch spec and then rerun the command above.
-    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/tutorials/update_base_images_in_dockerfiles_preview.png" class="screenshot">
+    <img src="https://sourcegraphstatic.com/docs/images/batch_changes/update_base_images_in_dockerfiles_preview.png" class="screenshot">
 1. Click the **Apply spec** button to create the batch change.
 1. Feel free to then publish the changesets (i.e. create pull requests and merge requests) by [modifying the `published` attribute in the batch spec](../references/batch_spec_yaml_reference.md#changesettemplate-published) and re-running the `src batch preview` command.
 

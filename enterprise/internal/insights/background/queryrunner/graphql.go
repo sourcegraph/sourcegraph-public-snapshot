@@ -26,13 +26,42 @@ type graphQLQuery struct {
 const gqlSearchQuery = `query Search(
 	$query: String!,
 ) {
-	search(query: $query, ) {
+	search(query: $query, version: V2, patternType:literal) {
 		results {
 			limitHit
 			cloning { name }
 			missing { name }
 			timedout { name }
 			matchCount
+			results {
+				__typename
+				... on FileMatch {
+					repository {
+						id
+					}
+					lineMatches {
+						offsetAndLengths
+					}
+					symbols {
+						name
+					}
+				}
+				... on CommitSearchResult {
+					matches {
+						highlights {
+							line
+						}
+					}
+					commit {
+						repository {
+							id
+						}
+					}
+				}
+				... on Repository {
+					id
+				}
+			}
 			alert {
 				title
 				description
@@ -54,6 +83,7 @@ type gqlSearchResponse struct {
 				Missing    []*api.Repo
 				Timedout   []*api.Repo
 				MatchCount int
+				Results    []json.RawMessage
 				Alert      *struct {
 					Title       string
 					Description string

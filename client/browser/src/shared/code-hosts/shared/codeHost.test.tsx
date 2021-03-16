@@ -1,12 +1,11 @@
 import { DiffPart } from '@sourcegraph/codeintellify'
 import { Range } from '@sourcegraph/extension-api-classes'
-import { uniqueId, noop, isEmpty } from 'lodash'
+import { uniqueId, noop, isEmpty, pick } from 'lodash'
 import renderer from 'react-test-renderer'
-import { BehaviorSubject, from, NEVER, of, Subject, Subscription, throwError } from 'rxjs'
-import { filter, skip, switchMap, take, first } from 'rxjs/operators'
+import { BehaviorSubject, NEVER, of, Subject, Subscription, throwError } from 'rxjs'
+import { filter, take, first } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
-import { Services } from '../../../../../shared/src/api/client/services'
 import { integrationTestContext } from '../../../../../shared/src/api/integration-test/testHelpers'
 import { PrivateRepoPublicSourcegraphComError } from '../../../../../shared/src/backend/errors'
 import { Controller } from '../../../../../shared/src/extensions/controller'
@@ -14,7 +13,7 @@ import { SuccessGraphQLResult } from '../../../../../shared/src/graphql/graphql'
 import { IQuery } from '../../../../../shared/src/graphql/schema'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
 import { resetAllMemoizationCaches } from '../../../../../shared/src/util/memoizeObservable'
-import { isDefined, subtypeOf, allOf, check, isTaggedUnionMember } from '../../../../../shared/src/util/types'
+import { subtypeOf, allOf, check, isTaggedUnionMember } from '../../../../../shared/src/util/types'
 import { DEFAULT_SOURCEGRAPH_URL } from '../../util/context'
 import { MutationRecordLike } from '../../util/dom'
 import {
@@ -29,11 +28,16 @@ import {
 import { toCodeViewResolver } from './codeViews'
 import { DEFAULT_GRAPHQL_RESPONSES, mockRequestGraphQL } from './testHelpers'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
-import { NotificationType } from '../../../../../shared/src/api/client/services/notifications'
 import { toPrettyBlobURL } from '../../../../../shared/src/util/url'
 import { MockIntersectionObserver } from './MockIntersectionObserver'
-import { pretendRemote } from '../../../../../shared/src/api/util'
 import { FlatExtensionHostAPI } from '../../../../../shared/src/api/contract'
+import { wrapRemoteObservable } from '../../../../../shared/src/api/client/api/common'
+import { Remote } from 'comlink'
+import { ExtensionCodeEditor } from '../../../../../shared/src/api/extension/api/codeEditor'
+import * as sourcegraph from 'sourcegraph'
+import { promisify } from 'util'
+import { nextTick } from 'process'
+import { NotificationType } from '../../../../../shared/src/api/extension/extensionHostApi'
 
 const RENDER = sinon.spy()
 
@@ -63,12 +67,12 @@ jest.mock('uuid', () => ({
     v4: () => 'uuid',
 }))
 
-const createMockController = (services: Services): Controller => ({
-    services,
-    notifications: NEVER,
+const createMockController = (extensionHostAPI: Remote<FlatExtensionHostAPI>): Controller => ({
     executeCommand: () => Promise.resolve(),
+    registerCommand: () => new Subscription(),
+    commandErrors: NEVER,
     unsubscribe: noop,
-    extHostAPI: Promise.resolve(pretendRemote<FlatExtensionHostAPI>({})),
+    extHostAPI: Promise.resolve(extensionHostAPI),
 })
 
 const createMockPlatformContext = (
@@ -99,6 +103,16 @@ const commonArguments = () =>
             openOptionsPage: () => Promise.resolve(),
         },
     })
+
+function getEditors(
+    extensionAPI: typeof sourcegraph
+): Pick<ExtensionCodeEditor, 'type' | 'viewerId' | 'isActive' | 'resource' | 'selections'>[] {
+    return [...extensionAPI.app.activeWindow!.visibleViewComponents]
+        .filter((viewer): viewer is ExtensionCodeEditor => viewer.type === 'CodeEditor')
+        .map(editor => pick(editor, 'viewerId', 'isActive', 'resource', 'selections', 'type'))
+}
+
+const tick = promisify(nextTick)
 
 describe('codeHost', () => {
     // Mock the global IntersectionObserver constructor with an implementation that
@@ -139,7 +153,7 @@ describe('codeHost', () => {
         })
 
         test('renders the hover overlay mount', async () => {
-            const { services } = await integrationTestContext()
+            const { extensionHostAPI } = await integrationTestContext()
             subscriptions.add(
                 handleCodeHost({
                     ...commonArguments(),
@@ -150,7 +164,7 @@ describe('codeHost', () => {
                         codeViewResolvers: [],
                         notificationClassNames,
                     },
-                    extensionsController: createMockController(services),
+                    extensionsController: createMockController(extensionHostAPI),
                 })
             )
             const overlayMount = document.body.querySelector('.hover-overlay-mount')
@@ -161,7 +175,7 @@ describe('codeHost', () => {
         })
 
         test('renders the command palette if codeHost.getCommandPaletteMount is defined', async () => {
-            const { services } = await integrationTestContext()
+            const { extensionHostAPI } = await integrationTestContext()
             const commandPaletteMount = createTestElement()
             subscriptions.add(
                 handleCodeHost({
@@ -174,7 +188,7 @@ describe('codeHost', () => {
                         codeViewResolvers: [],
                         notificationClassNames,
                     },
-                    extensionsController: createMockController(services),
+                    extensionsController: createMockController(extensionHostAPI),
                 })
             )
             const renderedCommandPalette = elementRenderedAtMount(commandPaletteMount)
@@ -182,7 +196,7 @@ describe('codeHost', () => {
         })
 
         test('creates a .global-debug element and renders the debug menu if showGlobalDebug is true', async () => {
-            const { services } = await integrationTestContext()
+            const { extensionHostAPI } = await integrationTestContext()
             subscriptions.add(
                 handleCodeHost({
                     ...commonArguments(),
@@ -193,7 +207,7 @@ describe('codeHost', () => {
                         codeViewResolvers: [],
                         notificationClassNames,
                     },
-                    extensionsController: createMockController(services),
+                    extensionsController: createMockController(extensionHostAPI),
                     showGlobalDebug: true,
                 })
             )
@@ -204,7 +218,10 @@ describe('codeHost', () => {
         })
 
         test('detects code views based on selectors', async () => {
-            const { services } = await integrationTestContext(undefined, { roots: [], viewers: [] })
+            const { extensionHostAPI, extensionAPI } = await integrationTestContext(undefined, {
+                roots: [],
+                viewers: [],
+            })
             const codeView = createTestElement()
             codeView.id = 'code'
             const toolbarMount = document.createElement('div')
@@ -237,7 +254,7 @@ describe('codeHost', () => {
                             }),
                         ],
                     },
-                    extensionsController: createMockController(services),
+                    extensionsController: createMockController(extensionHostAPI),
                     showGlobalDebug: true,
                     platformContext: createMockPlatformContext({
                         // Simulate an instance with repositoryPathPattern
@@ -257,8 +274,9 @@ describe('codeHost', () => {
                     }),
                 })
             )
-            await from(services.viewer.viewerUpdates).pipe(first()).toPromise()
-            expect([...services.viewer.viewers.values()]).toEqual([
+            await wrapRemoteObservable(extensionHostAPI.viewerUpdates()).pipe(first()).toPromise()
+
+            expect(getEditors(extensionAPI)).toEqual([
                 {
                     viewerId: 'viewer#0',
                     isActive: true,
@@ -268,6 +286,8 @@ describe('codeHost', () => {
                     type: 'CodeEditor',
                 },
             ])
+
+            await tick()
             expect(codeView).toHaveClass('sg-mounted')
             const toolbar = elementRenderedAtMount(toolbarMount)
             expect(toolbar).not.toBeUndefined()
@@ -275,7 +295,7 @@ describe('codeHost', () => {
 
         describe('Decorations', () => {
             it('decorates a code view', async () => {
-                const { extensionAPI, services } = await integrationTestContext(undefined, {
+                const { extensionAPI, extensionHostAPI } = await integrationTestContext(undefined, {
                     roots: [],
                     viewers: [],
                 })
@@ -311,33 +331,36 @@ describe('codeHost', () => {
                                 }),
                             ],
                         },
-                        extensionsController: createMockController(services),
+                        extensionsController: createMockController(extensionHostAPI),
                         showGlobalDebug: true,
                     })
                 )
-                const activeEditor = await from(extensionAPI.app.activeWindowChanges)
-                    .pipe(
-                        filter(isDefined),
-                        switchMap(window => window.activeViewComponentChanges),
-                        filter(isDefined),
-                        take(1)
-                    )
-                    .toPromise()
-                if (activeEditor.type !== 'CodeEditor') {
-                    throw new Error(`Expected active editor to be CodeEditor, got ${activeEditor.type}`)
+                // const activeEditor = await from(extensionAPI.app.activeWindowChanges)
+                //     .pipe(
+                //         filter(isDefined),
+                //         switchMap(window => window.activeViewComponentChanges),
+                //         filter(isDefined),
+                //         take(1)
+                //     )
+                //     .toPromise()
+
+                await wrapRemoteObservable(extensionHostAPI.viewerUpdates()).pipe(first()).toPromise()
+                const editor = extensionAPI.app.activeWindow!.visibleViewComponents.find(
+                    (viewer): viewer is ExtensionCodeEditor => viewer.type === 'CodeEditor'
+                )
+
+                if (!editor) {
+                    throw new Error('Expected editor to be defined')
                 }
+
                 const decorationType = extensionAPI.app.createDecorationType()
-                const decorated = (): Promise<TextDocumentDecoration[] | null> =>
-                    services.textDocumentDecoration
-                        .getDecorations({ uri: 'git://foo?1#/bar.ts' })
-                        .pipe(
-                            filter(decorations => Boolean(decorations && decorations.length > 0)),
-                            take(1)
-                        )
+                const decorated = (editor: ExtensionCodeEditor): Promise<TextDocumentDecoration[] | null> =>
+                    wrapRemoteObservable(extensionHostAPI.getTextDecorations({ viewerId: editor.viewerId }))
+                        .pipe(first(decorations => !isEmpty(decorations)))
                         .toPromise()
 
                 // Set decorations and verify that a decoration attachment has been added
-                activeEditor.setDecorations(decorationType, [
+                editor.setDecorations(decorationType, [
                     {
                         range: new Range(0, 0, 0, 0),
                         after: {
@@ -345,13 +368,14 @@ describe('codeHost', () => {
                         },
                     },
                 ])
-                await decorated()
+                await decorated(editor)
+                await tick()
                 expect(line.querySelectorAll('.line-decoration-attachment')).toHaveLength(1)
                 expect(line.querySelector('.line-decoration-attachment')!).toHaveTextContent('test decoration')
 
                 // Decorate the code view again, and verify that previous decorations
                 // are cleaned up and replaced by the new decorations.
-                activeEditor.setDecorations(decorationType, [
+                editor.setDecorations(decorationType, [
                     {
                         range: new Range(0, 0, 0, 0),
                         after: {
@@ -359,8 +383,7 @@ describe('codeHost', () => {
                         },
                     },
                 ])
-                await services.textDocumentDecoration
-                    .getDecorations({ uri: 'git://foo?1#/bar.ts' })
+                await wrapRemoteObservable(extensionHostAPI.getTextDecorations({ viewerId: editor.viewerId }))
                     .pipe(
                         filter(
                             decorations =>
@@ -376,7 +399,7 @@ describe('codeHost', () => {
             })
 
             it('decorates a diff code view', async () => {
-                const { extensionAPI, services } = await integrationTestContext(undefined, {
+                const { extensionAPI, extensionHostAPI } = await integrationTestContext(undefined, {
                     roots: [],
                     viewers: [],
                 })
@@ -424,23 +447,20 @@ describe('codeHost', () => {
                                 }),
                             ],
                         },
-                        extensionsController: createMockController(services),
+                        extensionsController: createMockController(extensionHostAPI),
                         showGlobalDebug: true,
                         platformContext: createMockPlatformContext({}),
                     })
                 )
-                await from(extensionAPI.app.activeWindowChanges)
+                await wrapRemoteObservable(extensionHostAPI.viewerUpdates())
                     .pipe(
-                        filter(isDefined),
-                        switchMap(window => window.activeViewComponentChanges),
-                        filter(isDefined),
+                        filter(({ action }) => action === 'addition'),
                         take(2)
                     )
                     .toPromise()
                 const decorationType = extensionAPI.app.createDecorationType()
-                const decorated = (commit: string): Promise<TextDocumentDecoration[] | null> =>
-                    services.textDocumentDecoration
-                        .getDecorations({ uri: `git://foo?${commit}#/bar.ts` })
+                const decorated = (editor: ExtensionCodeEditor): Promise<TextDocumentDecoration[] | null> =>
+                    wrapRemoteObservable(extensionHostAPI.getTextDecorations({ viewerId: editor.viewerId }))
                         .pipe(first(decorations => !isEmpty(decorations)))
                         .toPromise()
 
@@ -453,7 +473,8 @@ describe('codeHost', () => {
                         isTaggedUnionMember('type', 'CodeEditor' as const),
                         check(editor => editor.document.uri === 'git://foo?1#/bar.ts')
                     )
-                )!
+                ) as ExtensionCodeEditor
+
                 const baseDecorations = [
                     {
                         range: new Range(0, 0, 0, 0),
@@ -487,7 +508,7 @@ describe('codeHost', () => {
                         isTaggedUnionMember('type', 'CodeEditor' as const),
                         check(editor => editor.document.uri === 'git://foo?2#/bar.ts')
                     )
-                )!
+                ) as ExtensionCodeEditor
                 const headDecorations = [
                     {
                         range: new Range(0, 0, 0, 0),
@@ -495,6 +516,7 @@ describe('codeHost', () => {
                         after: {
                             contentText: 'test decoration head line 1',
                         },
+                        baze: true,
                     },
                     {
                         range: new Range(1, 0, 1, 0),
@@ -514,7 +536,8 @@ describe('codeHost', () => {
                 ]
                 headEditor.setDecorations(decorationType, headDecorations)
 
-                await Promise.all([decorated('1'), decorated('2')])
+                await Promise.all([decorated(baseEditor), decorated(headEditor)])
+                await tick()
 
                 expect(codeView).toMatchSnapshot()
 
@@ -522,7 +545,9 @@ describe('codeHost', () => {
                 // are cleaned up and replaced by the new decorations.
                 // Remove decoration in first and second line
                 baseEditor.setDecorations(decorationType, baseDecorations.slice(2))
-                await decorated('1')
+
+                await decorated(baseEditor)
+                await tick()
                 expect(codeView).toMatchSnapshot()
 
                 // Change decoration in first line
@@ -537,13 +562,18 @@ describe('codeHost', () => {
                     },
                     headDecorations[2],
                 ])
-                await decorated('2')
+                await decorated(headEditor)
+                // console.log({
+                //     headDecs: headEditor.mergedDecorations.value,
+                //     baseDecs: baseEditor.mergedDecorations.value,
+                // })
+                await tick()
                 expect(codeView).toMatchSnapshot()
             })
         })
 
         test('removes code views and models', async () => {
-            const { services } = await integrationTestContext(undefined, {
+            const { extensionAPI, extensionHostAPI } = await integrationTestContext(undefined, {
                 roots: [],
                 viewers: [],
             })
@@ -578,17 +608,26 @@ describe('codeHost', () => {
                                     getLineElementFromLineNumber: sinon.spy(),
                                     getLineNumberFromCodeElement: sinon.spy(),
                                 },
-                                resolveFileInfo: codeView => of(blobInfo),
+                                resolveFileInfo: codeView =>
+                                    codeView === codeView1
+                                        ? of(blobInfo)
+                                        : of({
+                                              blob: {
+                                                  ...blobInfo.blob,
+                                                  filePath: '/bar2.ts',
+                                              },
+                                          }),
                             }),
                         ],
                     },
-                    extensionsController: createMockController(services),
+                    extensionsController: createMockController(extensionHostAPI),
                     showGlobalDebug: true,
                     platformContext: createMockPlatformContext(),
                 })
             )
-            await from(services.viewer.viewerUpdates).pipe(skip(1), take(1)).toPromise()
-            expect([...services.viewer.viewers.values()]).toEqual([
+            await wrapRemoteObservable(extensionHostAPI.viewerUpdates()).pipe(take(2)).toPromise()
+
+            expect(getEditors(extensionAPI)).toEqual([
                 {
                     viewerId: 'viewer#0',
                     isActive: true,
@@ -599,36 +638,38 @@ describe('codeHost', () => {
                 {
                     viewerId: 'viewer#1',
                     isActive: true,
-                    resource: 'git://foo?1#/bar.ts',
+                    resource: 'git://foo?1#/bar2.ts',
                     selections: [],
                     type: 'CodeEditor',
                 },
             ])
-            expect(services.model.hasModel('git://foo?1#/bar.ts')).toBe(true)
-            // Simulate codeView1 removal
+
+            // // Simulate codeView1 removal
             mutations.next([{ addedNodes: [], removedNodes: [codeView1] }])
             // One editor should have been removed, model should still exist
-            await from(services.viewer.viewerUpdates).pipe(first()).toPromise()
-            expect([...services.viewer.viewers.values()]).toEqual([
+            await wrapRemoteObservable(extensionHostAPI.viewerUpdates()).pipe(first()).toPromise()
+
+            expect(getEditors(extensionAPI)).toEqual([
                 {
                     viewerId: 'viewer#1',
                     isActive: true,
-                    resource: 'git://foo?1#/bar.ts',
+                    resource: 'git://foo?1#/bar2.ts',
                     selections: [],
                     type: 'CodeEditor',
                 },
             ])
-            expect(services.model.hasModel('git://foo?1#/bar.ts')).toBe(true)
-            // Simulate codeView2 removal
+            // // Simulate codeView2 removal
             mutations.next([{ addedNodes: [], removedNodes: [codeView2] }])
-            // Second editor and model should have been removed
-            await from(services.viewer.viewerUpdates).pipe(first()).toPromise()
-            expect([...services.viewer.viewers.values()]).toEqual([])
-            expect(services.model.hasModel('git://foo?1#/bar.ts')).toBe(false)
+            // // Second editor and model should have been removed
+            await wrapRemoteObservable(extensionHostAPI.viewerUpdates()).pipe(first()).toPromise()
+            expect(getEditors(extensionAPI)).toEqual([])
         })
 
         test('Hoverifies a view if the code host has no nativeTooltipResolvers', async () => {
-            const { services } = await integrationTestContext(undefined, { roots: [], viewers: [] })
+            const { extensionHostAPI, extensionAPI } = await integrationTestContext(undefined, {
+                roots: [],
+                viewers: [],
+            })
             const codeView = createTestElement()
             codeView.id = 'code'
             const codeElement = document.createElement('span')
@@ -662,18 +703,22 @@ describe('codeHost', () => {
                             }),
                         ],
                     },
-                    extensionsController: createMockController(services),
+                    extensionsController: createMockController(extensionHostAPI),
                     showGlobalDebug: true,
                 })
             )
-            await from(services.viewer.viewerUpdates).pipe(first()).toPromise()
-            expect(services.viewer.viewers.size).toEqual(1)
+            await wrapRemoteObservable(extensionHostAPI.viewerUpdates()).pipe(first()).toPromise()
+            expect(getEditors(extensionAPI).length).toEqual(1)
+            await tick()
             codeView.dispatchEvent(new MouseEvent('mouseover'))
             sinon.assert.called(dom.getCodeElementFromTarget)
         })
 
         test('Does not hoverify a view if the code host has nativeTooltipResolvers and they are enabled from settings', async () => {
-            const { services } = await integrationTestContext(undefined, { roots: [], viewers: [] })
+            const { extensionHostAPI, extensionAPI } = await integrationTestContext(undefined, {
+                roots: [],
+                viewers: [],
+            })
             const codeView = createTestElement()
             codeView.id = 'code'
             const codeElement = document.createElement('span')
@@ -708,7 +753,7 @@ describe('codeHost', () => {
                             }),
                         ],
                     },
-                    extensionsController: createMockController(services),
+                    extensionsController: createMockController(extensionHostAPI),
                     showGlobalDebug: true,
                     platformContext: {
                         ...createMockPlatformContext(),
@@ -722,15 +767,20 @@ describe('codeHost', () => {
                     },
                 })
             )
-            await from(services.viewer.viewerUpdates).pipe(first()).toPromise()
+            await wrapRemoteObservable(extensionHostAPI.viewerUpdates()).pipe(first()).toPromise()
 
-            expect(services.viewer.viewers.size).toEqual(1)
+            expect(getEditors(extensionAPI).length).toEqual(1)
+            await tick()
+
             codeView.dispatchEvent(new MouseEvent('mouseover'))
             sinon.assert.notCalled(dom.getCodeElementFromTarget)
         })
 
         test('Hides native tooltips if they are disabled from settings', async () => {
-            const { services } = await integrationTestContext(undefined, { roots: [], viewers: [] })
+            const { extensionHostAPI, extensionAPI } = await integrationTestContext(undefined, {
+                roots: [],
+                viewers: [],
+            })
             const codeView = createTestElement()
             codeView.id = 'code'
             const codeElement = document.createElement('span')
@@ -767,7 +817,7 @@ describe('codeHost', () => {
                             }),
                         ],
                     },
-                    extensionsController: createMockController(services),
+                    extensionsController: createMockController(extensionHostAPI),
                     showGlobalDebug: true,
                     platformContext: {
                         ...createMockPlatformContext(),
@@ -781,15 +831,19 @@ describe('codeHost', () => {
                     },
                 })
             )
-            await from(services.viewer.viewerUpdates).pipe(first()).toPromise()
-            expect(services.viewer.viewers.size).toEqual(1)
+            await wrapRemoteObservable(extensionHostAPI.viewerUpdates()).pipe(first()).toPromise()
+            expect(getEditors(extensionAPI).length).toEqual(1)
+            await tick()
             codeView.dispatchEvent(new MouseEvent('mouseover'))
             sinon.assert.called(dom.getCodeElementFromTarget)
             expect(nativeTooltip).toHaveClass('native-tooltip--hidden')
         })
 
         test('gracefully handles viewing private repos on a public Sourcegraph instance', async () => {
-            const { services } = await integrationTestContext(undefined, { roots: [], viewers: [] })
+            const { extensionHostAPI, extensionAPI } = await integrationTestContext(undefined, {
+                roots: [],
+                viewers: [],
+            })
             const codeView = createTestElement()
             codeView.id = 'code'
             const blobInfo: DiffOrBlobInfo = {
@@ -819,7 +873,7 @@ describe('codeHost', () => {
                             }),
                         ],
                     },
-                    extensionsController: createMockController(services),
+                    extensionsController: createMockController(extensionHostAPI),
                     showGlobalDebug: true,
                     platformContext: createMockPlatformContext({
                         // Simulate an instance where all repo-specific graphQL requests error with
@@ -833,8 +887,8 @@ describe('codeHost', () => {
                     }),
                 })
             )
-            await from(services.viewer.viewerUpdates).pipe(first()).toPromise()
-            expect([...services.viewer.viewers.values()]).toEqual([
+            await wrapRemoteObservable(extensionHostAPI.viewerUpdates()).pipe(first()).toPromise()
+            expect(getEditors(extensionAPI)).toEqual([
                 {
                     viewerId: 'viewer#0',
                     isActive: true,
