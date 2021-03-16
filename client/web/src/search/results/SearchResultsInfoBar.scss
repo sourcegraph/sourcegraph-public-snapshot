@@ -31,9 +31,8 @@
     }
 
     &__divider {
-        width: 1px;
-        height: 1.5rem;
-        background-color: var(--border-color);
+        height: 1rem;
+        border-right: 1px solid var(--border-color);
         margin: 0 0.5rem;
     }
 }
