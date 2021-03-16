@@ -25,7 +25,7 @@ Note that the extension host execution context varies depending on the client ap
 | [Native Integration](../web/code_host_integrations.md#how-code-host-integrations-are-delivered) | Web Worker spawned in an `<iframe/>`. Messages are forwarded from the content script to the worker. |
 
 
-<!-- TODO(tj|p=2) future topics: 1) workbench views, 2) code tour/onboarding help 3) how to add APIs -->
+<!-- TODO(tj|p=2) future topics: 1) code tour/onboarding help -->
 
 ## How to add extension features
 
