@@ -104,6 +104,10 @@ export JAEGER_SERVER_URL=http://localhost:16686
 export SOURCEGRAPH_HTTPS_DOMAIN="${SOURCEGRAPH_HTTPS_DOMAIN:-"sourcegraph.test"}"
 export SOURCEGRAPH_HTTPS_PORT="${SOURCEGRAPH_HTTPS_PORT:-"3443"}"
 
+# Disable the code insights historical enqueuer by default, as it is expected to take up a
+# significant amount of resources and most devs at Sourcegraph will not care about it.
+export DISABLE_CODE_INSIGHTS_HISTORICAL="${DISABLE_CODE_INSIGHTS_HISTORICAL:-"true"}"
+
 # Enable sharded indexed search mode
 [ -n "${DISABLE_SEARCH_SHARDING-}" ] || export INDEXED_SEARCH_SERVERS="localhost:3070 localhost:3071"
 
