@@ -297,29 +297,36 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
         getActiveCodeEditorPosition: () =>
             proxySubscribable(
                 state.activeViewComponentChanges.pipe(
-                    map(activeViewer => {
+                    switchMap(activeViewer => {
                         if (activeViewer?.type !== 'CodeEditor') {
-                            return null
+                            return of(null)
                         }
-                        const sel = activeViewer.selections[0]
-                        if (!sel) {
-                            return null
-                        }
-                        // TODO(sqs): Return null for empty selections (but currently all selected tokens are treated as an empty
-                        // selection at the beginning of the token, so this would break a lot of things, so we only do this for empty
-                        // selections when the start character is -1). HACK(sqs): Character === -1 means that the whole line is
-                        // selected (this is a bug in the caller, but it is useful here).
-                        const isEmpty =
-                            sel.start.line === sel.end.line &&
-                            sel.start.character === sel.end.character &&
-                            sel.start.character === -1
-                        if (isEmpty) {
-                            return null
-                        }
-                        return {
-                            textDocument: { uri: activeViewer.resource },
-                            position: { line: sel.start.line, character: sel.start.character },
-                        }
+
+                        return activeViewer.selectionsChanges.pipe(
+                            map(selections => {
+                                const sel = selections[0]
+                                if (!sel) {
+                                    return null
+                                }
+
+                                // TODO(sqs): Return null for empty selections (but currently all selected tokens are treated as an empty
+                                // selection at the beginning of the token, so this would break a lot of things, so we only do this for empty
+                                // selections when the start character is -1). HACK(sqs): Character === -1 means that the whole line is
+                                // selected (this is a bug in the caller, but it is useful here).
+                                const isEmpty =
+                                    sel.start.line === sel.end.line &&
+                                    sel.start.character === sel.end.character &&
+                                    sel.start.character === -1
+                                if (isEmpty) {
+                                    return null
+                                }
+
+                                return {
+                                    textDocument: { uri: activeViewer.resource },
+                                    position: { line: sel.start.line, character: sel.start.character },
+                                }
+                            })
+                        )
                     })
                 )
             ),

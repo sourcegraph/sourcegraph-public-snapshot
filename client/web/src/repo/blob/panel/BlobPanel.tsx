@@ -1,7 +1,7 @@
 import * as H from 'history'
 import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 import { from, Observable, ReplaySubject, Subscription } from 'rxjs'
-import { map, switchMap, tap } from 'rxjs/operators'
+import { map, mapTo, switchMap, tap } from 'rxjs/operators'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { ReferenceParameters, TextDocumentPositionParameters } from '../../../../../shared/src/api/protocol'
 import { Activation, ActivationProps } from '../../../../../shared/src/components/activation/Activation'
@@ -9,9 +9,10 @@ import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/
 import { AbsoluteRepoFile, ModeSpec, parseHash, UIPositionSpec } from '../../../../../shared/src/util/url'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
-import { finallyReleaseProxy, wrapRemoteObservable } from '../../../../../shared/src/api/client/api/common'
+import { wrapRemoteObservable } from '../../../../../shared/src/api/client/api/common'
 import { Scalars } from '../../../../../shared/src/graphql-operations'
 import { useBuiltinPanelViews } from '../../../../../branded/src/components/panel/Panel'
+import { useObservable } from '../../../../../shared/src/util/useObservable'
 
 interface Props extends AbsoluteRepoFile, ModeSpec, ExtensionsControllerProps, ActivationProps {
     location: H.Location
@@ -58,6 +59,21 @@ export function useBlobPanelViews({
     const activationReference = useRef<Activation | undefined>(activation)
     activationReference.current = activation
 
+    // Keep active code editor position subscription active to prevent empty loading state
+    // (for main thread -> ext host -> main thread roundtrip for editor position)
+    const activeCodeEditorPositions = useMemo(() => new ReplaySubject<TextDocumentPositionParameters | null>(1), [])
+    useObservable(
+        useMemo(
+            () =>
+                from(extensionsController.extHostAPI).pipe(
+                    switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getActiveCodeEditorPosition())),
+                    tap(parameters => activeCodeEditorPositions.next(parameters)),
+                    mapTo(undefined)
+                ),
+            [activeCodeEditorPositions, extensionsController]
+        )
+    )
+
     // Creates source for definition and reference panels
     const createLocationProvider = useCallback(
         <P extends TextDocumentPositionParameters>(
@@ -67,13 +83,7 @@ export function useBlobPanelViews({
             provideLocations: (parameters: P) => Observable<MaybeLoadingResult<clientType.Location[]>>,
             extraParameters?: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParameters>>
         ) =>
-            from(extensionsController.extHostAPI).pipe(
-                // Get TextDocumentPositionParams from selection of active viewer
-                switchMap(extensionHostAPI =>
-                    wrapRemoteObservable(extensionHostAPI.getActiveCodeEditorPosition(), subscriptions).pipe(
-                        finallyReleaseProxy()
-                    )
-                ),
+            activeCodeEditorPositions.pipe(
                 map(textDocumentPositionParameters => {
                     if (!textDocumentPositionParameters) {
                         return null
@@ -101,7 +111,7 @@ export function useBlobPanelViews({
                     }
                 })
             ),
-        [extensionsController, subscriptions]
+        [activeCodeEditorPositions]
     )
 
     // Source for history panel
