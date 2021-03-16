@@ -72,7 +72,7 @@ const QuotesInterpretedLiterallyNotice: React.FunctionComponent<SearchResultsInf
  */
 export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarProps> = props => {
     const CreateCodeMonitorButton = useMemo(() => {
-        if (!props.enableCodeMonitoring || !props.query) {
+        if (!props.enableCodeMonitoring || !props.query || !props.authenticatedUser) {
             return null
         }
         const globalTypeFilterInQuery = findFilter(props.query, 'type', FilterKind.Global)
@@ -111,7 +111,9 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                         showLoadingSpinnerDuringExecution={true}
                         actionItemClass="btn btn-sm btn-link nav-link text-decoration-none"
                     />
-                    <li className="search-results-info-bar__divider" aria-hidden="true" />
+                    {(CreateCodeMonitorButton || (props.showSavedQueryButton !== false && props.authenticatedUser)) && (
+                        <li className="search-results-info-bar__divider" aria-hidden="true" />
+                    )}
                     {CreateCodeMonitorButton}
                     {props.showSavedQueryButton !== false && props.authenticatedUser && (
                         <li className="nav-item">

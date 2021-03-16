@@ -51,4 +51,19 @@ describe('SearchResultsInfoBar', () => {
                 .toJSON()
         ).toMatchSnapshot()
     })
+
+    test('code monitoring feature flag enabled, can create monitor from query, user not logged in', () => {
+        expect(
+            renderer
+                .create(
+                    <SearchResultsInfoBar
+                        {...COMMON_PROPS}
+                        enableCodeMonitoring={true}
+                        query="foo type:diff"
+                        authenticatedUser={null}
+                    />
+                )
+                .toJSON()
+        ).toMatchSnapshot()
+    })
 })
