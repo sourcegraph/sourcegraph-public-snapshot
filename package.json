@@ -34,11 +34,6 @@
     "release": "cd dev/release && yarn run release",
     "docsite:serve": "./dev/docsite.sh -config doc/docsite.json serve -http=localhost:5080"
   },
-  "workspaces": {
-    "packages": [
-      "client/wildcard"
-    ]
-  },
   "browserslist": [
     "last 1 version",
     ">1%",
@@ -333,6 +328,7 @@
     "ts-key-enum": "^2.0.7",
     "tslib": "^2.1.0",
     "use-deep-compare-effect": "^1.6.1",
+    "use-resize-observer": "^7.0.0",
     "utility-types": "^3.10.0",
     "uuid": "^8.3.0",
     "webext-domain-permission-toggle": "^1.0.1",
