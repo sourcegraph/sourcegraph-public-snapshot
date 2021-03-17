@@ -52,7 +52,7 @@ export const PUPPETEER_BROWSER_REVISION = {
 
     // TODO: When support is added for downloading Firefox revisions, pin this
     // to an exact revision.
-    firefox: 'latest'
+    firefox: 'latest',
 }
 
 /**
@@ -835,8 +835,10 @@ function getPuppeteerBrowser(browserName: string, revision: string): RevisionInf
     const browserFetcher = puppeteer.createBrowserFetcher({ product: browserName })
     const revisionInfo = browserFetcher.revisionInfo(revision)
     if (!revisionInfo.local) {
-        throw new Error(`No local executable found for Puppeteer browser: expected ${browserName} revision "${revision}"`)
+        throw new Error(
+            `No local executable found for Puppeteer browser: expected ${browserName} revision "${revision}"`
+        )
     }
 
-    return revisionInfo;
+    return revisionInfo
 }
