@@ -296,6 +296,23 @@ func TestSearchRevspecs(t *testing.T) {
 	}
 }
 
+func BenchmarkGetRevsForMatchedRepo(b *testing.B) {
+	b.Run("2 conflicting", func(b *testing.B) {
+		pats, _ := findPatternRevs([]string{".*o@123456", "foo@234567"})
+		for i := 0; i < b.N; i++ {
+			_, _ = getRevsForMatchedRepo("foo", pats)
+		}
+	})
+
+	b.Run("multiple overlapping", func(b *testing.B) {
+		pats, _ := findPatternRevs([]string{".*o@a:b:c:d", "foo@b:c:d:e", "foo@c:d:e:f"})
+		for i := 0; i < b.N; i++ {
+			_, _ = getRevsForMatchedRepo("foo", pats)
+		}
+	})
+}
+
+
 func TestDefaultRepositories(t *testing.T) {
 	tcs := []struct {
 		name             string
