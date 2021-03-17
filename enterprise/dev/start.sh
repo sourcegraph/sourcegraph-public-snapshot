@@ -9,9 +9,17 @@ if [ ! -d "$DEV_PRIVATE_PATH" ]; then
   exit 1
 fi
 
+function has_commit() {
+  git -C "$DEV_PRIVATE_PATH" merge-base --is-ancestor "$1" HEAD &> /dev/null
+}
+
 # Warn if dev-private needs to be updated.
 required_commit="158d265ddcc7c7233421e35d4997b27300de39b8"
-if ! git -C "$DEV_PRIVATE_PATH" merge-base --is-ancestor $required_commit HEAD; then
+if ! has_commit "$required_commit"; then
+  echo "Warn: $required_commit is missing from dev-private. Trying a --ff-only pull..."
+  git -C "$DEV_PRIVATE_PATH" pull --ff-only
+fi
+if ! has_commit "$required_commit"; then
   echo "Error: You need to update dev-private to a commit that incorporates https://github.com/sourcegraph/dev-private/commit/$required_commit."
   echo
   echo "Try running:"
