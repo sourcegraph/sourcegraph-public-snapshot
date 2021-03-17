@@ -1084,76 +1084,128 @@ type SiteActivityPeriod struct {
 // NOTE: DO NOT alter this struct without making a symmetric change
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
-type CampaignsUsageStatistics struct {
-	// ViewCampaignApplyPageCount is the number of page views on the apply page
+type BatchChangesUsageStatistics struct {
+	// ViewBatchChangeApplyPageCount is the number of page views on the apply page
 	// ("preview" page).
-	ViewCampaignApplyPageCount int32
-	// ViewCampaignDetailsPageAfterCreateCount is the number of page views on
-	// the campaigns details page *after creating* the campaign on the apply
+	ViewBatchChangeApplyPageCount int32
+	// ViewBatchChangeDetailsPageAfterCreateCount is the number of page views on
+	// the batch changes details page *after creating* the batch change on the apply
 	// page by clicking "Apply spec".
-	ViewCampaignDetailsPageAfterCreateCount int32
-	// ViewCampaignDetailsPageAfterUpdateCount is the number of page views on
-	// the campaigns details page *after updating* a campaign on the apply page
+	ViewBatchChangeDetailsPageAfterCreateCount int32
+	// ViewBatchChangeDetailsPageAfterUpdateCount is the number of page views on
+	// the batch changes details page *after updating* a batch change on the apply page
 	// by clicking "Apply spec".
-	ViewCampaignDetailsPageAfterUpdateCount int32
+	ViewBatchChangeDetailsPageAfterUpdateCount int32
 
-	// CampaignsCount is the number of campaigns on the instance. This can go
-	// down when users delete a campaign.
-	CampaignsCount int32
-	// CampaignsClosedCount is the number of *closed* campaigns on the
-	// instance. This can go down when users delete a campaign.
-	CampaignsClosedCount int32
+	// BatchChangesCount is the number of batch changes on the instance. This can go
+	// down when users delete a batch change.
+	BatchChangesCount int32
+	// BatchChangesClosedCount is the number of *closed* batch changes on the
+	// instance. This can go down when users delete a batch change.
+	BatchChangesClosedCount int32
 
-	// CampaignSpecsCreatedCount is the number of campaign specs that have been
-	// created by running `src campaign [preview|apply]`. This number never
-	// goes down since it's based on event logs, even if the campaign specs
+	// BatchSpecsCreatedCount is the number of batch change specs that have been
+	// created by running `src batch [preview|apply]`. This number never
+	// goes down since it's based on event logs, even if the batch specs
 	// were not used and cleaned up.
-	CampaignSpecsCreatedCount int32
+	BatchSpecsCreatedCount int32
 	// ChangesetSpecsCreatedCount is the number of changeset specs that have
-	// been created by running `src campaign [preview|apply]`. This number
+	// been created by running `src batch [preview|apply]`. This number
 	// never goes down since it's based on event logs, even if the changeset
 	// specs were not used and cleaned up.
 	ChangesetSpecsCreatedCount int32
 
-	// ActionChangesetsCount is the number of changesets published on code hosts by campaigns. This number
-	// *could* go down, since it's not based on event logs, but so far
-	// (Nov 2020) we never cleaned up changesets in the database.
-	ActionChangesetsCount int32
-	// ActionChangesetsDiffStatAddedSum is the total sum of lines added by
-	// changesets published on the code host by campaigns.
-	ActionChangesetsDiffStatAddedSum int32
-	// ActionChangesetsDiffStatChangedSum is the total sum of lines changed by
-	// changesets published on the code host by campaigns.
-	ActionChangesetsDiffStatChangedSum int32
-	// ActionChangesetsDiffStatDeletedSum is the total sum of lines deleted by
-	// changesets published on the code host by campaigns.
-	ActionChangesetsDiffStatDeletedSum int32
+	// PublishedChangesetsUnpublishedCount is the number of changesets in the
+	// database that have not been published but belong to a batch change.
+	// This number *could* go down, since it's not
+	// based on event logs, but so far (Mar 2021) we never cleaned up
+	// changesets in the database.
+	PublishedChangesetsUnpublishedCount int32
 
-	// ActionChangesetsMergedCount is the number of changesets published on
-	// code hosts by campaigns that have also been *merged*.
-	// This number *could* go down, since it's not based on event logs, but
-	// so far (Nov 2020) we never cleaned up changesets in the database.
-	ActionChangesetsMergedCount int32
-	// ActionChangesetsMergedDiffStatAddedSum is the total sum of lines added by
-	// changesets published on the code host by campaigns and merged.
-	ActionChangesetsMergedDiffStatAddedSum int32
-	// ActionChangesetsMergedDiffStatChangedSum is the total sum of lines changed by
-	// changesets published on the code host by campaigns and merged.
-	ActionChangesetsMergedDiffStatChangedSum int32
-	// ActionChangesetsMergedDiffStatDeletedSum is the total sum of lines deleted by
-	// changesets published on the code host by campaigns and merged.
-	ActionChangesetsMergedDiffStatDeletedSum int32
+	// PublishedChangesetsCount is the number of changesets published on code hosts
+	// by batch changes. This number *could* go down, since it's not based on
+	// event logs, but so far (Mar 2021) we never cleaned up changesets in the
+	// database.
+	PublishedChangesetsCount int32
+	// PublishedChangesetsDiffStatAddedSum is the total sum of lines added by
+	// changesets published on the code host by batch changes.
+	PublishedChangesetsDiffStatAddedSum int32
+	// PublishedChangesetsDiffStatChangedSum is the total sum of lines changed by
+	// changesets published on the code host by batch changes.
+	PublishedChangesetsDiffStatChangedSum int32
+	// PublishedChangesetsDiffStatDeletedSum is the total sum of lines deleted by
+	// changesets published on the code host by batch changes.
+	PublishedChangesetsDiffStatDeletedSum int32
 
-	// ManualChangesetsCount is the total number of changesets that have been
-	// imported by a campaign to be tracked.
+	// PublishedChangesetsMergedCount is the number of changesets published on
+	// code hosts by batch changes that have also been *merged*.
 	// This number *could* go down, since it's not based on event logs, but
-	// so far (Nov 2020) we never cleaned up changesets in the database.
-	ManualChangesetsCount int32
+	// so far (Mar 2021) we never cleaned up changesets in the database.
+	PublishedChangesetsMergedCount int32
+	// PublishedChangesetsMergedDiffStatAddedSum is the total sum of lines added by
+	// changesets published on the code host by batch changes and merged.
+	PublishedChangesetsMergedDiffStatAddedSum int32
+	// PublishedChangesetsMergedDiffStatChangedSum is the total sum of lines changed by
+	// changesets published on the code host by batch changes and merged.
+	PublishedChangesetsMergedDiffStatChangedSum int32
+	// PublishedChangesetsMergedDiffStatDeletedSum is the total sum of lines deleted by
+	// changesets published on the code host by batch changes and merged.
+	PublishedChangesetsMergedDiffStatDeletedSum int32
+
+	// ImportedChangesetsCount is the total number of changesets that have been
+	// imported by a batch change to be tracked.
+	// This number *could* go down, since it's not based on event logs, but
+	// so far (Mar 2021) we never cleaned up changesets in the database.
+	ImportedChangesetsCount int32
 	// ManualChangesetsCount is the total number of *merged* changesets that
-	// have been imported by a campaign to be tracked.
+	// have been imported by a batch change to be tracked.
 	// This number *could* go down, since it's not based on event logs, but
-	// so far (Nov 2020) we never cleaned up changesets in the database.
-	ManualChangesetsMergedCount int32
+	// so far (Mar 2021) we never cleaned up changesets in the database.
+	ImportedChangesetsMergedCount int32
+
+	// CurrentMonthContributorsCount is the count of unique users that have logged a
+	// "contributing" batch changes event, such as "BatchChangeCreated".
+	//
+	// See `contributorsEvents` in `GetBatchChangesUsageStatistics` for a full list
+	// of events.
+	CurrentMonthContributorsCount int64
+
+	// CurrentMonthUsersCount is the count of unique users that have logged a
+	// "using" batch changes event, such as "ViewBatchChangesListPage" and also "BatchChangeCreated".
+	//
+	// See `contributorsEvents` in `GetBatchChangesUsageStatistics` for a full
+	// list of events.
+	CurrentMonthUsersCount int64
+
+	BatchChangesCohorts []*BatchChangesCohort
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type BatchChangesCohort struct {
+	// Week is the week of this cohort and is used to group batch changes by
+	// their creation date.
+	Week string
+
+	// BatchChangesClosed is the number of batch changes that were created in Week and
+	// are currently closed.
+	BatchChangesClosed int64
+
+	// BatchChangesOpen is the number of batch changes that were created in Week and
+	// are currently open.
+	BatchChangesOpen int64
+
+	// The following are the counts of the changesets that are currently
+	// attached to the batch changes in this cohort.
+
+	ChangesetsImported        int64
+	ChangesetsUnpublished     int64
+	ChangesetsPublished       int64
+	ChangesetsPublishedOpen   int64
+	ChangesetsPublishedDraft  int64
+	ChangesetsPublishedMerged int64
+	ChangesetsPublishedClosed int64
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
