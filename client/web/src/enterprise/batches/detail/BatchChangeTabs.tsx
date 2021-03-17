@@ -49,6 +49,7 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
     queryChangesetCountsOverTime,
     queryExternalChangesetWithFileDiffs,
 }) => {
+    const archiveEnabled = window.context.experimentalFeatures.archiveBatchChangeChangesets
     const [selectedTab, setSelectedTab] = useState<SelectedTab>(() => {
         const urlParameters = new URLSearchParams(location.search)
         if (urlParameters.get('tab') === 'chart') {
@@ -58,10 +59,11 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
             return 'spec'
         }
         if (urlParameters.get('tab') === 'archived') {
-            return 'archived'
+            return archiveEnabled ? 'archived' : 'changesets'
         }
         return 'changesets'
     })
+
     const onSelectChangesets = useCallback<React.MouseEventHandler>(
         event => {
             event.preventDefault()
@@ -110,6 +112,7 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
         },
         [history, location]
     )
+
     return (
         <>
             <div className="overflow-auto mb-2">
@@ -141,15 +144,17 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
                             <FileDocumentIcon className="icon-inline text-muted mr-1" /> Spec
                         </a>
                     </li>
-                    <li className="nav-item test-batches-spec-tab">
-                        <a
-                            href=""
-                            onClick={onSelectArchived}
-                            className={classNames('nav-link', selectedTab === 'archived' && 'active')}
-                        >
-                            <ArchiveIcon className="icon-inline text-muted mr-1" /> Archived
-                        </a>
-                    </li>
+                    {archiveEnabled && (
+                        <li className="nav-item test-batches-spec-tab">
+                            <a
+                                href=""
+                                onClick={onSelectArchived}
+                                className={classNames('nav-link', selectedTab === 'archived' && 'active')}
+                            >
+                                <ArchiveIcon className="icon-inline text-muted mr-1" /> Archived
+                            </a>
+                        </li>
+                    )}
                 </ul>
             </div>
             {selectedTab === 'chart' && (

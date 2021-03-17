@@ -192,7 +192,7 @@ func (r *ChangesetRewirer) closeChangeset(changeset *batches.Changeset) {
 	// Disassociate the changeset with the batch change.
 	// TODO: Should we make this `if r.ArchiveInsteadOfDetach && r.OwnedByBatchChangeID == r.batchChangeID`?
 	// Because that's the point of archiving imported changesets?
-	if r.ArchiveInsteadOfDetach {
+	if r.ArchiveInsteadOfDetach && changeset.Published() {
 		if newlyArchived := changeset.Archive(r.batchChangeID); newlyArchived {
 			reset = true
 		}

@@ -9173,6 +9173,10 @@ enum ChangesetSpecOperation {
     The changeset is removed from some of the associated batch changes.
     """
     DETACH
+    """
+    The changeset stays attached to the associated batch change that published it, but it's marked as archived.
+    """
+    ARCHIVE
 }
 
 """

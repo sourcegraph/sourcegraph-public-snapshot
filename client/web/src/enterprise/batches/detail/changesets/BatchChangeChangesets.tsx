@@ -27,6 +27,7 @@ import { BatchChangeChangesetsHeader } from './BatchChangeChangesetsHeader'
 import { ChangesetFilters, ChangesetFilterRow } from './ChangesetFilterRow'
 import { EmptyChangesetListElement } from './EmptyChangesetListElement'
 import { EmptyChangesetSearchElement } from './EmptyChangesetSearchElement'
+import { EmptyArchivedChangesetListElement } from './EmptyArchivedChangesetListElement'
 
 interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
     batchChangeID: Scalars['ID']
@@ -181,6 +182,8 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                     emptyElement={
                         filtersSelected(changesetFilters) ? (
                             <EmptyChangesetSearchElement />
+                        ) : onlyArchived ? (
+                            <EmptyArchivedChangesetListElement />
                         ) : (
                             <EmptyChangesetListElement />
                         )
