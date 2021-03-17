@@ -25,9 +25,15 @@ const GitLabSchemaJSON = `{
       "examples": ["https://gitlab.com", "https://gitlab.example.com"]
     },
     "token": {
-      "description": "A GitLab access token with \"api\" scope. If you are enabling permissions with identity provider type \"external\", this token should also have \"sudo\" scope.",
+      "description": "A GitLab access token with \"api\" scope. Can be a personal access token (PAT) or an OAuth token. If you are enabling permissions with identity provider type \"external\", this token should also have \"sudo\" scope.",
       "type": "string",
       "minLength": 1
+    },
+    "token.type": {
+      "description": "The type of the token",
+      "type": "string",
+      "enum": ["pat", "oauth"],
+      "default": "pat"
     },
     "rateLimit": {
       "description": "Rate limit applied when making background API requests to GitLab.",
