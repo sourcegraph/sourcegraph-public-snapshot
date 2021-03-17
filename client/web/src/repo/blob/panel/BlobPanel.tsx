@@ -1,49 +1,25 @@
 import * as H from 'history'
-import { isEqual } from 'lodash'
-import * as React from 'react'
-import { from, Observable, Subject, Subscription } from 'rxjs'
-import { distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
-import { getActiveCodeEditorPosition } from '../../../../../shared/src/api/client/services/viewerService'
+import React, { useCallback, useEffect, useMemo, useRef } from 'react'
+import { from, Observable, ReplaySubject, Subscription } from 'rxjs'
+import { map, mapTo, switchMap, tap } from 'rxjs/operators'
 import * as clientType from '@sourcegraph/extension-api-types'
-import { Entry } from '../../../../../shared/src/api/client/services/registry'
-import {
-    ProvidePanelViewSignature,
-    PanelViewProviderRegistrationOptions,
-} from '../../../../../shared/src/api/client/services/panelViews'
-import {
-    ContributableViewContainer,
-    ReferenceParameters,
-    TextDocumentPositionParameters,
-} from '../../../../../shared/src/api/protocol'
-import { ActivationProps } from '../../../../../shared/src/components/activation/Activation'
+import { ReferenceParameters, TextDocumentPositionParameters } from '../../../../../shared/src/api/protocol'
+import { Activation, ActivationProps } from '../../../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
-import { PlatformContextProps } from '../../../../../shared/src/platform/context'
-import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
 import { AbsoluteRepoFile, ModeSpec, parseHash, UIPositionSpec } from '../../../../../shared/src/util/url'
-import { RepoHeaderContributionsLifecycleProps } from '../../RepoHeader'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
-import { ThemeProps } from '../../../../../shared/src/theme'
-import { AuthenticatedUser } from '../../../auth'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { wrapRemoteObservable } from '../../../../../shared/src/api/client/api/common'
 import { Scalars } from '../../../../../shared/src/graphql-operations'
+import { useBuiltinPanelViews } from '../../../../../branded/src/components/panel/Panel'
+import { useObservable } from '../../../../../shared/src/util/useObservable'
 
-interface Props
-    extends AbsoluteRepoFile,
-        Partial<UIPositionSpec>,
-        ModeSpec,
-        RepoHeaderContributionsLifecycleProps,
-        SettingsCascadeProps,
-        PlatformContextProps,
-        ExtensionsControllerProps,
-        ThemeProps,
-        ActivationProps {
+interface Props extends AbsoluteRepoFile, ModeSpec, ExtensionsControllerProps, ActivationProps {
     location: H.Location
     history: H.History
     repoID: Scalars['ID']
     repoName: string
     commitID: string
-    authenticatedUser: AuthenticatedUser | null
 }
 
 export type BlobPanelTabID = 'info' | 'def' | 'references' | 'impl' | 'typedef' | 'history'
@@ -57,65 +33,62 @@ interface PanelSubject extends AbsoluteRepoFile, ModeSpec, Partial<UIPositionSpe
      * panels to be re-rendered when this state changes.
      */
     hash: string
-}
 
-function toSubject(props: Props): PanelSubject {
-    const parsedHash = parseHash(props.location.hash)
-    return {
-        repoName: props.repoName,
-        repoID: props.repoID,
-        commitID: props.commitID,
-        revision: props.revision,
-        filePath: props.filePath,
-        mode: props.mode,
-        position:
-            parsedHash.line !== undefined ? { line: parsedHash.line, character: parsedHash.character || 0 } : undefined,
-        hash: props.location.hash,
-    }
+    history: H.History
+    location: H.Location
 }
 
 /**
- * A null-rendered component that registers panel views for the blob.
+ * A React hook that registers panel views for the blob.
  */
-export class BlobPanel extends React.PureComponent<Props> {
-    private componentUpdates = new Subject<Props>()
-    private subscriptions = new Subscription()
+export function useBlobPanelViews({
+    extensionsController,
+    activation,
+    repoName,
+    commitID,
+    revision,
+    mode,
+    filePath,
+    repoID,
+    location,
+    history,
+}: Props): void {
+    const subscriptions = useMemo(() => new Subscription(), [])
 
-    constructor(props: Props) {
-        super(props)
+    // Activation props are not stable
+    const activationReference = useRef<Activation | undefined>(activation)
+    activationReference.current = activation
 
-        const componentUpdates = this.componentUpdates.pipe(startWith(this.props))
-
-        // Changes to the subject, including upon the initial mount.
-        const subjectChanges = componentUpdates.pipe(
-            map(toSubject),
-            distinctUntilChanged((a, b) => isEqual(a, b))
+    // Keep active code editor position subscription active to prevent empty loading state
+    // (for main thread -> ext host -> main thread roundtrip for editor position)
+    const activeCodeEditorPositions = useMemo(() => new ReplaySubject<TextDocumentPositionParameters | null>(1), [])
+    useObservable(
+        useMemo(
+            () =>
+                from(extensionsController.extHostAPI).pipe(
+                    switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getActiveCodeEditorPosition())),
+                    tap(parameters => activeCodeEditorPositions.next(parameters)),
+                    mapTo(undefined)
+                ),
+            [activeCodeEditorPositions, extensionsController]
         )
+    )
 
-        const entryForViewProviderRegistration = <P extends TextDocumentPositionParameters>(
+    // Creates source for definition and reference panels
+    const createLocationProvider = useCallback(
+        <P extends TextDocumentPositionParameters>(
             id: string,
             title: string,
             priority: number,
             provideLocations: (parameters: P) => Observable<MaybeLoadingResult<clientType.Location[]>>,
             extraParameters?: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParameters>>
-        ): Entry<PanelViewProviderRegistrationOptions, ProvidePanelViewSignature> => ({
-            registrationOptions: { id, container: ContributableViewContainer.Panel },
-            provider: from(this.props.extensionsController.services.viewer.activeViewerUpdates).pipe(
-                map(activeEditor =>
-                    activeEditor && activeEditor.type === 'CodeEditor'
-                        ? {
-                              ...activeEditor,
-                              model: this.props.extensionsController.services.model.getPartialModel(
-                                  activeEditor.resource
-                              ),
-                          }
-                        : undefined
-                ),
-                map(activeEditor => {
-                    const parameters: TextDocumentPositionParameters | null = getActiveCodeEditorPosition(activeEditor)
-                    if (!parameters) {
+        ) =>
+            activeCodeEditorPositions.pipe(
+                map(textDocumentPositionParameters => {
+                    if (!textDocumentPositionParameters) {
                         return null
                     }
+
                     return {
                         title,
                         content: '',
@@ -125,40 +98,54 @@ export class BlobPanel extends React.PureComponent<Props> {
                         // enough to know that (typeof params & typeof extraParams) is P.
                         //
                         // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-                        locationProvider: provideLocations({ ...parameters, ...extraParameters } as P).pipe(
+                        locationProvider: provideLocations({
+                            ...textDocumentPositionParameters,
+                            ...extraParameters,
+                        } as P).pipe(
                             tap(({ result: locations }) => {
-                                if (this.props.activation && id === 'references' && locations.length > 0) {
-                                    this.props.activation.update({ FoundReferences: true })
+                                if (activationReference.current && id === 'references' && locations.length > 0) {
+                                    activationReference.current.update({ FoundReferences: true })
                                 }
                             })
                         ),
                     }
                 })
             ),
-        })
+        [activeCodeEditorPositions]
+    )
 
-        this.subscriptions.add(
-            this.props.extensionsController.services.panelViews.registerProviders([
-                entryForViewProviderRegistration('def', 'Definition', 190, parameters =>
-                    from(this.props.extensionsController.extHostAPI).pipe(
-                        switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getDefinition(parameters)))
-                    )
-                ),
-                entryForViewProviderRegistration<ReferenceParameters>(
-                    'references',
-                    'References',
-                    180,
-                    parameters =>
-                        this.props.extensionsController.services.textDocumentReferences.getLocations(parameters),
-                    {
-                        context: { includeDeclaration: false },
-                    }
-                ),
+    // Source for history panel
+    const panelSubject = useMemo(() => {
+        const parsedHash = parseHash(location.hash)
+        return {
+            repoID,
+            repoName,
+            commitID,
+            revision,
+            filePath,
+            mode,
+            position:
+                parsedHash.line !== undefined
+                    ? { line: parsedHash.line, character: parsedHash.character || 0 }
+                    : undefined,
+            hash: location.hash,
+            history,
+            location,
+        }
+    }, [commitID, filePath, history, location, mode, repoID, repoName, revision])
+
+    const panelSubjectChanges = useMemo(() => new ReplaySubject<PanelSubject>(1), [])
+    useEffect(() => {
+        panelSubjectChanges.next(panelSubject)
+    }, [panelSubject, panelSubjectChanges])
+
+    useBuiltinPanelViews(
+        useMemo(
+            () => [
                 {
-                    // File history view.
-                    registrationOptions: { id: 'history', container: ContributableViewContainer.Panel },
-                    provider: subjectChanges.pipe(
-                        map((subject: PanelSubject) => ({
+                    id: 'history',
+                    provider: panelSubjectChanges.pipe(
+                        map(({ repoID, revision, filePath, history, location }) => ({
                             title: 'History',
                             content: '',
                             priority: 150,
@@ -166,29 +153,42 @@ export class BlobPanel extends React.PureComponent<Props> {
                             reactElement: (
                                 <RepoRevisionSidebarCommits
                                     key="commits"
-                                    repoID={this.props.repoID}
-                                    revision={subject.revision}
-                                    filePath={subject.filePath}
-                                    history={this.props.history}
-                                    location={this.props.location}
+                                    repoID={repoID}
+                                    revision={revision}
+                                    filePath={filePath}
+                                    history={history}
+                                    location={location}
                                 />
                             ),
                         }))
                     ),
                 },
-            ])
+                {
+                    id: 'def',
+                    provider: createLocationProvider('def', 'Definition', 190, parameters =>
+                        from(extensionsController.extHostAPI).pipe(
+                            switchMap(extensionHostAPI =>
+                                wrapRemoteObservable(extensionHostAPI.getDefinition(parameters))
+                            )
+                        )
+                    ),
+                },
+                {
+                    id: 'references',
+                    provider: createLocationProvider<ReferenceParameters>('references', 'References', 180, parameters =>
+                        from(extensionsController.extHostAPI).pipe(
+                            switchMap(extensionHostAPI =>
+                                wrapRemoteObservable(
+                                    extensionHostAPI.getReferences(parameters, { includeDeclaration: false })
+                                )
+                            )
+                        )
+                    ),
+                },
+            ],
+            [createLocationProvider, extensionsController.extHostAPI, panelSubjectChanges]
         )
-    }
+    )
 
-    public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
-    }
-
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    public render(): JSX.Element | null {
-        return null
-    }
+    useEffect(() => () => subscriptions.unsubscribe(), [subscriptions])
 }

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/efritz/glock"
+	"github.com/derision-test/glock"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )

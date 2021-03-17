@@ -1,5 +1,5 @@
 import { Primitive } from 'utility-types'
-import { Expression, TemplateExpression } from '../client/context/expr/evaluator'
+import { Expression, TemplateExpression } from '../extension/api/context/expr/evaluator'
 import { KeyPath } from '../client/services/settings'
 
 // NOTE: You must manually keep this file in sync with extension.schema.json#/properties/contributes (and possibly

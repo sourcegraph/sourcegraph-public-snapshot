@@ -1,20 +1,18 @@
-import { Hoverifier } from '@sourcegraph/codeintellify'
 import * as H from 'history'
 import prettyBytes from 'pretty-bytes'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import React, { useState, useCallback } from 'react'
-import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
-import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
-import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '../../../../shared/src/util/url'
 import { DiffStat } from './DiffStat'
 import { FileDiffHunks } from './FileDiffHunks'
 import { ThemeProps } from '../../../../shared/src/theme'
-import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import classNames from 'classnames'
 import { dirname } from '../../util/path'
-import { FileDiffFields, Scalars } from '../../graphql-operations'
+import { FileDiffFields } from '../../graphql-operations'
 import { Link } from '../../../../shared/src/components/Link'
+import { Observable } from 'rxjs'
+import { ViewerId } from '../../../../shared/src/api/viewerTypes'
+import { ExtensionInfo } from './FileDiffConnection'
 
 export interface FileDiffNodeProps extends ThemeProps {
     node: FileDiffFields
@@ -23,15 +21,18 @@ export interface FileDiffNodeProps extends ThemeProps {
     location: H.Location
     history: H.History
 
-    extensionInfo?: {
-        /** The base repository and revision. */
-        base: RepoSpec & RevisionSpec & ResolvedRevisionSpec & { repoID: Scalars['ID'] }
+    // extensionInfo?: {
+    //     /** The base repository and revision. */
+    //     base: RepoSpec & RevisionSpec & ResolvedRevisionSpec & { repoID: Scalars['ID'] }
 
-        /** The head repository and revision. */
-        head: RepoSpec & RevisionSpec & ResolvedRevisionSpec & { repoID: Scalars['ID'] }
+    //     /** The head repository and revision. */
+    //     head: RepoSpec & RevisionSpec & ResolvedRevisionSpec & { repoID: Scalars['ID'] }
 
-        hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
-    } & ExtensionsControllerProps
+    //     hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
+    // } & ExtensionsControllerProps
+    extensionInfo?: ExtensionInfo<{
+        observeViewerId?: (uri: string) => Observable<ViewerId | undefined>
+    }>
 
     /** Reflect selected line in url */
     persistLines?: boolean
@@ -153,7 +154,9 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
                             persistLines={persistLines}
                             extensionInfo={
                                 extensionInfo && {
-                                    ...extensionInfo,
+                                    extensionsController: extensionInfo.extensionsController,
+                                    observeViewerId: extensionInfo.observeViewerId,
+                                    hoverifier: extensionInfo.hoverifier,
                                     base: {
                                         ...extensionInfo.base,
                                         filePath: node.oldPath,

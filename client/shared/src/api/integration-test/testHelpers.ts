@@ -1,18 +1,15 @@
 import 'message-port-polyfill'
 
-import { BehaviorSubject, from, throwError, of, Subscription } from 'rxjs'
-import { filter, first, switchMap, take } from 'rxjs/operators'
+import { BehaviorSubject, throwError, of, Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { EndpointPair, PlatformContext } from '../../platform/context'
-import { isDefined } from '../../util/types'
 import { createExtensionHostClientConnection } from '../client/connection'
-import { Services } from '../client/services'
-import { ViewerData } from '../client/services/viewerService'
-import { TextModel } from '../client/services/modelService'
-import { WorkspaceRootWithMetadata } from '../client/services/workspaceService'
 import { InitData, startExtensionHost } from '../extension/extensionHost'
-import { FlatExtensionHostAPI } from '../contract'
+import { FlatExtensionHostAPI, MainThreadAPI } from '../contract'
 import { Remote } from 'comlink'
+import { TextDocumentData, ViewerData } from '../viewerTypes'
+import { WorkspaceRootWithMetadata } from '../extension/extensionHostApi'
+import { ExposedToClient } from '../client/mainthread-api'
 
 export function assertToJSON(a: any, expected: any): void {
     const raw = JSON.stringify(a)
@@ -22,13 +19,13 @@ export function assertToJSON(a: any, expected: any): void {
 
 interface TestInitData {
     roots: readonly WorkspaceRootWithMetadata[]
-    models?: readonly TextModel[]
+    textDocuments?: readonly TextDocumentData[]
     viewers: readonly ViewerData[]
 }
 
 const FIXTURE_INIT_DATA: TestInitData = {
     roots: [{ uri: 'file:///' }],
-    models: [{ uri: 'file:///f', text: 't', languageId: 'l' }],
+    textDocuments: [{ uri: 'file:///f', text: 't', languageId: 'l' }],
     viewers: [
         {
             type: 'CodeEditor',
@@ -48,13 +45,15 @@ interface Mocks
         | 'getScriptURLForExtension'
         | 'clientApplication'
         | 'sideloadedExtensionURL'
+        | 'showMessage'
+        | 'showInputBox'
     > {}
 
 const NOOP_MOCKS: Mocks = {
     settings: of({ final: {}, subjects: [] }),
     updateSettings: () => Promise.reject(new Error('Mocks#updateSettings not implemented')),
     requestGraphQL: () => throwError(new Error('Mocks#queryGraphQL not implemented')),
-    getScriptURLForExtension: scriptURL => scriptURL,
+    getScriptURLForExtension: () => undefined,
     clientApplication: 'sourcegraph',
     sideloadedExtensionURL: new BehaviorSubject<string | null>(null),
 }
@@ -67,11 +66,14 @@ const NOOP_MOCKS: Mocks = {
 export async function integrationTestContext(
     partialMocks: Partial<Mocks> = NOOP_MOCKS,
     initModel: TestInitData = FIXTURE_INIT_DATA
-): Promise<{
-    extensionAPI: typeof sourcegraph
-    services: Services
-    extensionHost: Remote<FlatExtensionHostAPI>
-}> {
+): Promise<
+    {
+        extensionAPI: typeof sourcegraph
+        extensionHostAPI: Remote<FlatExtensionHostAPI>
+        mainThreadAPI: MainThreadAPI
+        exposedToClient: ExposedToClient
+    } & Unsubscribable
+> {
     const mocks = partialMocks ? { ...NOOP_MOCKS, ...partialMocks } : NOOP_MOCKS
 
     const clientAPIChannel = new MessageChannel()
@@ -87,55 +89,32 @@ export async function integrationTestContext(
 
     const extensionHost = startExtensionHost(extensionHostEndpoints)
 
-    const services = new Services(mocks)
     const initData: Omit<InitData, 'initialSettings'> = {
         sourcegraphURL: 'https://example.com/',
         clientApplication: 'sourcegraph',
     }
 
-    const { api } = await createExtensionHostClientConnection(
+    const { api: extensionHostAPI, mainThreadAPI, exposedToClient } = await createExtensionHostClientConnection(
         Promise.resolve({
             endpoints: clientEndpoints,
             subscription: new Subscription(),
         }),
-        services,
         initData,
         mocks
     )
 
     const extensionAPI = await extensionHost.extensionAPI
-    if (initModel.models) {
-        for (const model of initModel.models) {
-            services.model.addModel(model)
-        }
-    }
-    for (const editor of initModel.viewers) {
-        services.viewer.addViewer(editor)
-    }
-    services.workspace.roots.next(initModel.roots)
 
-    // Wait for initModel to be initialized
-    if (initModel.viewers.length > 0) {
-        await Promise.all([
-            from(extensionAPI.workspace.openedTextDocuments).pipe(take(initModel.viewers.length)).toPromise(),
-            from(extensionAPI.app.activeWindowChanges)
-                .pipe(
-                    first(isDefined),
-                    switchMap(activeWindow =>
-                        from(activeWindow.activeViewComponentChanges).pipe(
-                            filter(isDefined),
-                            take(initModel.viewers.length)
-                        )
-                    )
-                )
-                .toPromise(),
-        ])
-    }
+    await Promise.all((initModel.textDocuments || []).map(model => extensionHostAPI.addTextDocumentIfNotExists(model)))
+    await Promise.all(initModel.viewers.map(viewer => extensionHostAPI.addViewerIfNotExists(viewer)))
+    await Promise.all(initModel.roots.map(root => extensionHostAPI.addWorkspaceRoot(root)))
 
     return {
         extensionAPI,
-        services,
-        extensionHost: api,
+        extensionHostAPI,
+        mainThreadAPI,
+        exposedToClient,
+        unsubscribe: () => extensionHost.unsubscribe(),
     }
 }
 

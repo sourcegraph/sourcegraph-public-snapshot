@@ -42,7 +42,7 @@ export interface StreamingSearchResultsProps
         Pick<MutableVersionContextProps, 'versionContext' | 'availableVersionContexts' | 'previousVersionContext'>,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
         SettingsCascadeProps,
-        ExtensionsControllerProps<'executeCommand' | 'extHostAPI' | 'services'>,
+        ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         TelemetryProps,
         ThemeProps,
@@ -222,6 +222,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                                 state={results?.state || 'loading'}
                                 history={props.history}
                                 onSearchAgain={onSearchAgain}
+                                showTrace={!!trace}
                             />
                         }
                     />

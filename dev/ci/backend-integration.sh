@@ -18,7 +18,28 @@ fi
 
 echo "--- Running a daemonized $IMAGE as the test subject..."
 CONTAINER="$(docker container run -d -e GOTRACEBACK=all "$IMAGE")"
-trap 'kill $(jobs -p -r)'" ; docker logs --timestamps $CONTAINER ; docker container rm -f $CONTAINER ; docker image rm -f $IMAGE" EXIT
+function cleanup() {
+  exit_status=$?
+  if [ $exit_status -ne 0 ]; then
+    # Expand the output if our run failed.
+    echo "^^^ +++"
+  fi
+
+  jobs -p -r | xargs kill
+  echo "--- server logs"
+  docker logs --timestamps "$CONTAINER"
+  echo "--- docker cleanup"
+  docker container rm -f "$CONTAINER"
+  docker image rm -f "$IMAGE"
+
+  if [ $exit_status -ne 0 ]; then
+    # This command will fail, so our last step will be expanded. We don't want
+    # to expand "docker cleanup" so we add in a dummy section.
+    echo "--- gqltest failed"
+    echo "See go test section for test runner logs."
+  fi
+}
+trap cleanup EXIT
 
 docker exec "$CONTAINER" apk add --no-cache socat
 # Connect the server container's port 7080 to localhost:7080 so that integration tests
@@ -42,5 +63,5 @@ fi
 set -e
 echo "Waiting for $URL... done"
 
-echo '--- go test ./dev/gqltest -long -v'
-go test ./dev/gqltest -long -v
+echo '--- go test ./dev/gqltest -long'
+go test ./dev/gqltest -long

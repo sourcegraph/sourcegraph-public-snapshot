@@ -16,7 +16,7 @@ import {
     DecorationMapByLine,
     decorationStyleForTheme,
     groupDecorationsByLine,
-} from '../../../../../shared/src/api/client/services/decoration'
+} from '../../../../../shared/src/api/extension/api/decorations'
 import {
     createController as createExtensionsController,
     ExtensionsControllerProps,

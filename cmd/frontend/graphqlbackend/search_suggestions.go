@@ -16,7 +16,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -333,7 +332,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		resolvers := make([]SearchSuggestionResolver, 0, len(inventory.Languages))
 		for _, l := range inventory.Languages {
 			resolvers = append(resolvers, languageSuggestionResolver{
-				lang:  &languageResolver{db: r.db, name: strings.ToLower(l.Name)},
+				lang:  &languageResolver{name: strings.ToLower(l.Name)},
 				score: math.MaxInt32,
 			})
 		}
@@ -528,7 +527,6 @@ func allEmptyStrings(ss1, ss2 []string) bool {
 }
 
 type languageResolver struct {
-	db   dbutil.DB
 	name string
 }
 

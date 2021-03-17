@@ -13,6 +13,7 @@ describe('HoverMerged', () => {
             expect(fromHoverMerged([{ contents: { kind: MarkupKind.Markdown, value: 'x' } }])).toEqual({
                 contents: [{ kind: MarkupKind.Markdown, value: 'x' }],
                 alerts: [],
+                aggregatedBadges: [],
             }))
         test('2 MarkupContents', () =>
             expect(
@@ -27,6 +28,7 @@ describe('HoverMerged', () => {
                 ],
                 range: FIXTURE_RANGE,
                 alerts: [],
+                aggregatedBadges: [],
             }))
         test('1 Alert', () =>
             expect(
@@ -39,6 +41,7 @@ describe('HoverMerged', () => {
             ).toEqual({
                 contents: [{ kind: MarkupKind.Markdown, value: 'x' }],
                 alerts: [{ summary: { kind: MarkupKind.PlainText, value: 'x' } }],
+                aggregatedBadges: [],
             }))
         test('2 Alerts', () =>
             expect(
@@ -57,6 +60,30 @@ describe('HoverMerged', () => {
                     { summary: { kind: MarkupKind.PlainText, value: 'x' } },
                     { summary: { kind: MarkupKind.PlainText, value: 'y' } },
                 ],
+                aggregatedBadges: [],
+            }))
+
+        test('Aggregated Badges', () =>
+            expect(
+                fromHoverMerged([
+                    {
+                        contents: { kind: MarkupKind.Markdown, value: 'x' },
+                        alerts: [],
+                        aggregableBadges: [{ text: 't01' }, { text: 't03' }],
+                    },
+                    {
+                        contents: { kind: MarkupKind.Markdown, value: 'y' },
+                        alerts: [],
+                        aggregableBadges: [{ text: 't02' }],
+                    },
+                ])
+            ).toEqual({
+                contents: [
+                    { kind: MarkupKind.Markdown, value: 'x' },
+                    { kind: MarkupKind.Markdown, value: 'y' },
+                ],
+                alerts: [],
+                aggregatedBadges: [{ text: 't01' }, { text: 't02' }, { text: 't03' }],
             }))
     })
 })

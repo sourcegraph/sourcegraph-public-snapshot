@@ -18,12 +18,10 @@ A batch change tracks all of its changesets (a generic term for pull requests or
 - Checks: passed (green), failed (red), or pending (yellow)
 - Review status: approved, changes requested, pending, or other statuses (depending on your code host or code review tool)
 
-<!---TODO update link-->
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/campaign_tracking_sourcegraph_prs.png" class="screenshot">
+<img src="https://sourcegraphstatic.com/docs/images/batch_changes/batch_tracking_sourcegraph_prs.png" class="screenshot">
 
 You can see the overall trend of a batch change in the burndown chart, which shows the proportion of changesets that have been merged over time since the batch change was created.
-<!---TODO update link-->
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/campaign_tracking_sourcegraph_prs_burndown.png" class="screenshot">
+<img src="https://sourcegraphstatic.com/docs/images/batch_changes/batch_tracking_sourcegraph_prs_burndown.png" class="screenshot">
 
 ## Supported code hosts and changeset types
 
