@@ -1873,7 +1873,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 		})
 	}
 
-	if resultTypes.Has(result.TypeFile) || resultTypes.Has(result.TypePath) {
+	if resultTypes.Has(result.TypeFile | result.TypePath) {
 		if args.Mode != search.NoFilePath {
 			wg := waitGroup(true)
 			wg.Add(1)
