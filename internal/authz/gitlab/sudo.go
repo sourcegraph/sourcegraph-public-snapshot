@@ -104,7 +104,7 @@ func (p *SudoProvider) ServiceType() string {
 // FetchAccount satisfies the authz.Provider interface. It iterates through the current list of
 // linked external accounts, find the one (if it exists) that matches the authn provider specified
 // in the SudoProvider struct, and fetches the user account from the GitLab API using that identity.
-func (p *SudoProvider) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account) (mine *extsvc.Account, err error) {
+func (p *SudoProvider) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account, _ []string) (mine *extsvc.Account, err error) {
 	if user == nil {
 		return nil, nil
 	}

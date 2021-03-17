@@ -67,7 +67,7 @@ func (p *OAuthProvider) ServiceType() string {
 	return p.codeHost.ServiceType
 }
 
-func (p *OAuthProvider) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account) (mine *extsvc.Account, err error) {
+func (p *OAuthProvider) FetchAccount(context.Context, *types.User, []*extsvc.Account, []string) (mine *extsvc.Account, err error) {
 	return nil, nil
 }
 

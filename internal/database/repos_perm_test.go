@@ -25,11 +25,7 @@ type fakeProvider struct {
 	extAcct  *extsvc.Account
 }
 
-func (p *fakeProvider) FetchAccount(
-	ctx context.Context,
-	user *types.User,
-	current []*extsvc.Account,
-) (mine *extsvc.Account, err error) {
+func (p *fakeProvider) FetchAccount(context.Context, *types.User, []*extsvc.Account, []string) (mine *extsvc.Account, err error) {
 	return p.extAcct, nil
 }
 
