@@ -134,10 +134,19 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                         <li>Searches using each search filter (e.g. "type:", "repo:", "file:", "lang:", etc.)</li>
                     </ul>
                 </li>
-                <li>Total number of code intelligence queries (e.g., hover tooltips) per week grouped by language</li>
                 <li>
-                    Number of users performing code intelligence queries (e.g., hover tooltips) per week grouped by
-                    language
+                    Code intelligence usage data
+                    <ul>
+                        <li>Total number of repositories with and without an uploaded LSIF index</li>
+                        <li>
+                            Total number of code intelligence queries (e.g., hover tooltips) per week grouped by
+                            language
+                        </li>
+                        <li>
+                            Number of users performing code intelligence queries (e.g., hover tooltips) per week grouped
+                            by language
+                        </li>
+                    </ul>
                 </li>
                 <li>
                     Batch changes usage data

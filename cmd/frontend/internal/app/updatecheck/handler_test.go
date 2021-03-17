@@ -333,6 +333,8 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 	waus1 := int32(25)
 	waus2 := int32(10)
 	waus3 := int32(40)
+	withUploads := int32(50)
+	withoutUploads := int32(85)
 
 	testUsage, err := json.Marshal(types.NewCodeIntelUsageStatistics{
 		StartOfWeek:                now,
@@ -389,6 +391,8 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 				TotalActions:    3,
 			},
 		},
+		NumRepositoriesWithUploadRecords:    &withUploads,
+		NumRepositoriesWithoutUploadRecords: &withoutUploads,
 	})
 	if err != nil {
 		t.Fatalf("unexpected error %s", err)
@@ -492,7 +496,9 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 					"waus": 6,
 					"total_actions": 3
 				}
-			]
+			],
+			"num_repositories_with_upload_records": 50,
+			"num_repositories_without_upload_records": 85
 		},
 		"dependency_versions": null,
 		"extensions_usage": null,
@@ -643,7 +649,9 @@ func TestSerializeOldCodeIntelUsage(t *testing.T) {
 					"waus": 6,
 					"total_actions": 3
 				}
-			]
+			],
+			"num_repositories_with_upload_records": null,
+			"num_repositories_without_upload_records": null
 		},
 		"dependency_versions": null,
 		"extensions_usage": null,
