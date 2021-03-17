@@ -56,10 +56,19 @@ class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
         return (
             <Form className="survey-form" onSubmit={this.handleSubmit}>
                 {this.state.error && <p className="survey-form__error">{this.state.error.message}</p>}
-                <label className="survey-form__label">
+                {/* TODO: Fix SurveyForm accessibiliy by using form controls.
+                We're using buttons here when we should be using <input type="radio"/>
+                Issue: https://github.com/sourcegraph/sourcegraph/issues/19219 */}
+                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                <label className="survey-form__label" id="survey-form-score-value">
                     How likely is it that you would recommend Sourcegraph to a friend?
                 </label>
-                <SurveyCTA className="survey-form__scores" onClick={this.onScoreChange} score={this.props.score} />
+                <SurveyCTA
+                    aria-labelledby="survey-form-score-value"
+                    className="survey-form__scores"
+                    onClick={this.onScoreChange}
+                    score={this.props.score}
+                />
                 {!this.props.authenticatedUser && (
                     <div className="form-group">
                         <input
@@ -73,10 +82,11 @@ class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
                     </div>
                 )}
                 <div className="form-group">
-                    <label className="survey-form__label">
+                    <label className="survey-form__label" htmlFor="survey-form-score-reason">
                         What is the most important reason for the score you gave Sourcegraph?
                     </label>
                     <textarea
+                        id="survey-form-score-reason"
                         className="form-control survey-form__input"
                         onChange={this.onReasonFieldChange}
                         value={this.state.reason}
@@ -85,8 +95,11 @@ class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
                     />
                 </div>
                 <div className="form-group">
-                    <label className="survey-form__label">What could Sourcegraph do to provide a better product?</label>
+                    <label className="survey-form__label" htmlFor="survey-form-better-product">
+                        What could Sourcegraph do to provide a better product?
+                    </label>
                     <textarea
+                        id="survey-form-better-product"
                         className="form-control survey-form__input"
                         onChange={this.onBetterProductFieldChange}
                         value={this.state.betterProduct}

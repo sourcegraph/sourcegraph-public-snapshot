@@ -14,12 +14,13 @@ interface SurveyCTAProps {
     score?: number
     onClick?: (score: number) => void
     openSurveyInNewTab?: boolean
+    'aria-labelledby'?: string
 }
 
 export class SurveyCTA extends React.PureComponent<SurveyCTAProps> {
     public render(): JSX.Element | null {
         return (
-            <div className={this.props.className}>
+            <div aria-labelledby={this.props['aria-labelledby']} className={this.props.className}>
                 {range(0, 11).map(score => {
                     const pressed = score === this.props.score
                     return (
