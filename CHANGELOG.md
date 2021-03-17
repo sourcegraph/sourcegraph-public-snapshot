@@ -17,6 +17,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+- Directly applying a batch change with `src batch apply` against Sourcegraph 3.25 or older would fail in 3.26.0. This has been fixed. [#495](https://github.com/sourcegraph/src-cli/issues/495)
+
 ### Removed
 
 ## 3.26.0

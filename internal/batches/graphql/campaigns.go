@@ -30,7 +30,7 @@ func (cb *campaignsBackend) ApplyBatchChange(ctx context.Context, batchSpecID Ba
 	var result struct {
 		BatchChange *BatchChange `json:"applyCampaign"`
 	}
-	if ok, err := cb.newRequest(applyBatchChangeMutation, map[string]interface{}{
+	if ok, err := cb.newRequest(applyCampaignMutation, map[string]interface{}{
 		"campaignSpec": batchSpecID,
 	}).Do(ctx, &result); err != nil || !ok {
 		return nil, err
