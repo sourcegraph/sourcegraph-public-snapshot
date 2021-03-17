@@ -156,6 +156,7 @@ func (r *ChangesetRewirer) attachTrackingChangeset(changeset *batches.Changeset)
 
 func (r *ChangesetRewirer) closeChangeset(changeset *batches.Changeset) {
 	reset := false
+	archive := false
 	if changeset.CurrentSpecID != 0 && changeset.OwnedByBatchChangeID == r.batchChangeID {
 		// If we have a current spec ID and the changeset was created by
 		// _this_ batch change that means we should detach and close it.
@@ -184,19 +185,19 @@ func (r *ChangesetRewirer) closeChangeset(changeset *batches.Changeset) {
 			if changeset.ReconcilerState == batches.ReconcilerStateCompleted {
 				changeset.PreviousSpecID = changeset.CurrentSpecID
 			}
+
+			if r.ArchiveInsteadOfDetach {
+				changeset.Archive(r.batchChangeID)
+				archive = true
+			}
+
 			changeset.Closing = true
 			reset = true
 		}
 	}
 
 	// Disassociate the changeset with the batch change.
-	// TODO: Should we make this `if r.ArchiveInsteadOfDetach && r.OwnedByBatchChangeID == r.batchChangeID`?
-	// Because that's the point of archiving imported changesets?
-	if r.ArchiveInsteadOfDetach && changeset.Published() {
-		if newlyArchived := changeset.Archive(r.batchChangeID); newlyArchived {
-			reset = true
-		}
-	} else {
+	if !archive {
 		if wasAttached := changeset.Detach(r.batchChangeID); wasAttached {
 			reset = true
 		}
