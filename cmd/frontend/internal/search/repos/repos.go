@@ -512,18 +512,15 @@ func getRevsForMatchedRepo(repo api.RepoName, pats []patternRevspec) (matched []
 	// if two repo specs match, and both provided non-empty rev lists,
 	// we want their intersection
 	allowedRevs := make(map[search.RevisionSpecifier]struct{}, len(revLists[0]))
-	allRevs := make(map[search.RevisionSpecifier]struct{}, len(revLists[0]))
 	// starting point: everything is "true" if it is currently allowed
 	for _, rev := range revLists[0] {
 		allowedRevs[rev] = struct{}{}
-		allRevs[rev] = struct{}{}
 	}
 	// in theory, "master-by-default" entries won't even be participating
 	// in this.
 	for _, revList := range revLists[1:] {
 		restrictedRevs := make(map[search.RevisionSpecifier]struct{}, len(revList))
 		for _, rev := range revList {
-			allRevs[rev] = struct{}{}
 			if _, ok := allowedRevs[rev]; ok {
 				restrictedRevs[rev] = struct{}{}
 			}
@@ -538,8 +535,15 @@ func getRevsForMatchedRepo(repo api.RepoName, pats []patternRevspec) (matched []
 		sort.Slice(matched, func(i, j int) bool { return matched[i].Less(matched[j]) })
 		return
 	}
+
 	// build a list of the revspecs which broke this, return it
 	// as the "clashing" list.
+	allRevs := make(map[search.RevisionSpecifier]struct{}, len(revLists[0]))
+	for _, revList := range revLists {
+		for _, rev := range revList {
+			allRevs[rev] = struct{}{}
+		}
+	}
 	clashing = make([]search.RevisionSpecifier, 0, len(allRevs))
 	for rev := range allRevs {
 		clashing = append(clashing, rev)
