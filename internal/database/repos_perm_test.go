@@ -207,7 +207,7 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
-		},
+		}, types.CloneStatusNotCloned,
 	)[0]
 	alicePrivateRepo := mustCreate(internalCtx, t, db,
 		&types.Repo{
@@ -218,7 +218,7 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
-		},
+		}, types.CloneStatusNotCloned,
 	)[0]
 	bobPublicRepo := mustCreate(internalCtx, t, db,
 		&types.Repo{
@@ -228,7 +228,7 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
-		},
+		}, types.CloneStatusNotCloned,
 	)[0]
 	bobPrivateRepo := mustCreate(internalCtx, t, db,
 		&types.Repo{
@@ -239,7 +239,7 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
-		},
+		}, types.CloneStatusNotCloned,
 	)[0]
 
 	// Set up another unrestricted private repo from cindy
@@ -266,7 +266,7 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
-		},
+		}, types.CloneStatusNotCloned,
 	)[0]
 	cindyPrivateRepo.Sources = map[string]*types.SourceInfo{
 		cindyExternalService.URN(): {ID: cindyExternalService.URN()},
@@ -402,7 +402,7 @@ func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
-		},
+		}, types.CloneStatusNotCloned,
 	)[0]
 	alicePrivateRepo := mustCreate(internalCtx, t, db,
 		&types.Repo{
@@ -413,7 +413,7 @@ func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
-		},
+		}, types.CloneStatusNotCloned,
 	)[0]
 	bobPublicRepo := mustCreate(internalCtx, t, db,
 		&types.Repo{
@@ -423,7 +423,7 @@ func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
-		},
+		}, types.CloneStatusNotCloned,
 	)[0]
 	bobPrivateRepo := mustCreate(internalCtx, t, db,
 		&types.Repo{
@@ -434,7 +434,7 @@ func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
-		},
+		}, types.CloneStatusNotCloned,
 	)[0]
 
 	// Set up permissions: alice and bob have access to their own private repositories

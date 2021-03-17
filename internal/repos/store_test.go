@@ -322,41 +322,6 @@ func testStoreUpsertRepos(t *testing.T, store *repos.Store) func(*testing.T) {
 				t.Fatalf("ListRepos:\n%s", diff)
 			}
 		}))
-
-		t.Run("it shouldn't modify the cloned column", transact(ctx, store, func(t testing.TB, tx *repos.Store) {
-			// UpsertRepos shouldn't set the cloned column to true
-			r := mkRepos(1, repositories...)[0]
-			r.Cloned = true
-			if err := tx.UpsertRepos(ctx, r); err != nil {
-				t.Fatalf("UpsertRepos error: %s", err)
-			}
-
-			count, err := tx.RepoStore.Count(ctx, database.ReposListOptions{NoCloned: true})
-			if err != nil {
-				t.Fatalf("CountNotClonedRepos error: %s", err)
-			}
-			if count != 1 {
-				t.Fatalf("Wrong number of not cloned repos: %d", count)
-			}
-
-			// UpsertRepos shouldn't set the cloned column to false either
-			if err := tx.SetClonedRepos(ctx, string(r.Name)); err != nil {
-				t.Fatalf("SetClonedRepos error: %s", err)
-			}
-			r = r.Clone()
-			r.Cloned = false
-			if err := tx.UpsertRepos(ctx, r); err != nil {
-				t.Fatalf("UpsertRepos error: %s", err)
-			}
-
-			count, err = tx.RepoStore.Count(ctx, database.ReposListOptions{NoCloned: true})
-			if err != nil {
-				t.Fatalf("CountNotClonedRepos error: %s", err)
-			}
-			if count != 0 {
-				t.Fatalf("Wrong number of not cloned repos: %d", count)
-			}
-		}))
 	}
 }
 
@@ -559,10 +524,6 @@ func testStoreUpsertSources(t *testing.T, store *repos.Store) func(*testing.T) {
 	}
 }
 
-func isCloned(r *types.Repo) bool {
-	return r.Cloned
-}
-
 func testStoreSetClonedRepos(t *testing.T, store *repos.Store) func(*testing.T) {
 	servicesPerKind := createExternalServices(t, store)
 
@@ -570,9 +531,8 @@ func testStoreSetClonedRepos(t *testing.T, store *repos.Store) func(*testing.T) 
 		var repositories types.Repos
 		for i := 0; i < 3; i++ {
 			repositories = append(repositories, &types.Repo{
-				Name:   api.RepoName(fmt.Sprintf("github.com/%d/%d", i, i)),
-				URI:    fmt.Sprintf("github.com/%d/%d", i, i),
-				Cloned: false,
+				Name: api.RepoName(fmt.Sprintf("github.com/%d/%d", i, i)),
+				URI:  fmt.Sprintf("github.com/%d/%d", i, i),
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          strconv.Itoa(i),
 					ServiceType: extsvc.TypeGitHub,
@@ -591,12 +551,12 @@ func testStoreSetClonedRepos(t *testing.T, store *repos.Store) func(*testing.T) 
 		check := func(t testing.TB, ctx context.Context, tx *repos.Store, wantNames []string) {
 			t.Helper()
 
-			res, err := tx.RepoStore.List(ctx, database.ReposListOptions{})
+			res, err := tx.RepoStore.List(ctx, database.ReposListOptions{OnlyCloned: true})
 			if err != nil {
 				t.Fatalf("ListRepos error: %s", err)
 			}
 
-			cloned := types.Repos(res).Filter(isCloned).Names()
+			cloned := types.Repos(res).Names()
 			sort.Strings(cloned)
 
 			if got, want := cloned, wantNames; !cmp.Equal(got, want) {
@@ -684,9 +644,8 @@ func testStoreCountNotClonedRepos(t *testing.T, store *repos.Store) func(*testin
 		var repositories types.Repos
 		for i := 0; i < 3; i++ {
 			repositories = append(repositories, &types.Repo{
-				Name:   api.RepoName(fmt.Sprintf("github.com/%d/%d", i, i)),
-				URI:    fmt.Sprintf("github.com/%d/%d", i, i),
-				Cloned: false,
+				Name: api.RepoName(fmt.Sprintf("github.com/%d/%d", i, i)),
+				URI:  fmt.Sprintf("github.com/%d/%d", i, i),
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          strconv.Itoa(i),
 					ServiceType: extsvc.TypeGitHub,
