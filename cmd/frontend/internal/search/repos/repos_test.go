@@ -312,7 +312,6 @@ func BenchmarkGetRevsForMatchedRepo(b *testing.B) {
 	})
 }
 
-
 func TestDefaultRepositories(t *testing.T) {
 	tcs := []struct {
 		name             string
