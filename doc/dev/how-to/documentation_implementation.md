@@ -60,7 +60,9 @@ See "[Updating documentation](#updating-documentation)" and "[Previewing changes
 
 The docs.sourcegraph.com site reloads content, templates, and assets every 5 minutes. After you push a [documentation update](#updating-documentation), just wait up to 5 minutes to see your changes reflected on docs.sourcegraph.com.
 
-If you need to force a reload — either because your change can't wait 5 minutes, or because you've updated redirects — you can delete the `docs-sourcegraph-com-*` Kubernetes pod on the Sourcegraph.com Kubernetes cluster. (It will restart and come back online with the latest data.)
+If you need to force a reload — either because your change is _extremely_ urgent and can't wait 5 minutes, or because you've updated redirects — you can delete the `docs-sourcegraph-com-*` Kubernetes pod on the Sourcegraph.com Kubernetes cluster. Once done, it will restart and come back online with the latest data.
+
+>WARNING: There may be a few seconds of downtime when restarting the docs cluster this way. This shouldn't be a routine part of your workflow!
 
 To do this, follow the ["Restarting about.sourcegraph.com and docs.sourcegraph.com" playbook](https://about.sourcegraph.com/handbook/engineering/deployments/playbooks#restarting-about-sourcegraph-com-and-docs-sourcegraph-com).
 
