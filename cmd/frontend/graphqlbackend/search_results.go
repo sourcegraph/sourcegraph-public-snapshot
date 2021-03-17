@@ -888,39 +888,44 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, q query.Q) (srr *
 	if invalidateRepoCache(q) {
 		r.invalidateRepoCache = true
 	}
-	r.setQuery(q)
-
-	expanded, err := substitutePredicates(r.Query, func(p query.Predicate) (*SearchResultsResolver, error) {
-		// Disable streaming for subqueries so we can use
-		// the results rather than sending them back to the caller
-		orig := r.stream
-		r.stream = nil
-		defer func() { r.stream = orig }()
-
-		r.invalidateRepoCache = true
-		return r.resultsRecursive(ctx, p.Query(r.Query))
-	})
-	if err != nil && errors.Is(err, ErrPredicateNoResults) {
-		return &SearchResultsResolver{}, nil
-	} else if err != nil {
-		return nil, err
-	}
-	r.setQuery(expanded)
 
 	wantCount := defaultMaxSearchResults
 	if count := r.Query.Count(); count != nil {
 		wantCount = *count
 	}
 
-	for _, disjunct := range query.Dnf(r.Query) {
+	for _, disjunct := range query.Dnf(q) {
+		expanded, err := substitutePredicates(disjunct, func(p query.Predicate) (*SearchResultsResolver, error) {
+			// Disable streaming for subqueries so we can use
+			// the results rather than sending them back to the caller
+			orig := r.stream
+			r.stream = nil
+			defer func() { r.stream = orig }()
+
+			r.invalidateRepoCache = true
+			return r.resultsRecursive(ctx, p.Query(disjunct))
+		})
+		if err != nil && errors.Is(err, ErrPredicateNoResults) {
+			continue
+		}
+		if err != nil {
+			// Fail if predicate processing fails.
+			return nil, err
+		}
+		if expanded != nil {
+			// If a predicate filter generated a new query, evaluate that query.
+			return r.resultsRecursive(ctx, expanded)
+		}
+
 		disjunct = query.ConcatRevFilters(disjunct)
 		newResult, err := r.evaluate(ctx, disjunct)
 		if err != nil {
-			// Fail if any subquery fails.
+			// Fail if any subexpression fails.
 			return nil, err
 		}
+
 		if newResult != nil {
-			newResult.SearchResults = selectResults(newResult.SearchResults, r.Query)
+			newResult.SearchResults = selectResults(newResult.SearchResults, q)
 			srr = union(srr, newResult)
 			if len(srr.SearchResults) > wantCount {
 				srr.SearchResults = srr.SearchResults[:wantCount]
@@ -989,6 +994,7 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 // substitutePredicates replaces all the predicates in a query with their expanded form. The predicates
 // are expanded using the doExpand function.
 func substitutePredicates(q query.Q, evaluate func(query.Predicate) (*SearchResultsResolver, error)) (newQ query.Q, topErr error) {
+	success := false
 	newQ = query.MapParameter(q, func(field, value string, neg bool, ann query.Annotation) query.Node {
 		orig := query.Parameter{
 			Field:      field,
@@ -1045,6 +1051,9 @@ func substitutePredicates(q query.Q, evaluate func(query.Predicate) (*SearchResu
 			return nil
 		}
 
+		// A predicate was successfully evaluated and has results.
+		success = true
+
 		// No need to return an operator for only one result
 		if len(nodes) == 1 {
 			return nodes[0]
@@ -1056,6 +1065,9 @@ func substitutePredicates(q query.Q, evaluate func(query.Predicate) (*SearchResu
 		}
 	})
 
+	if topErr != nil || !success {
+		return nil, topErr
+	}
 	return newQ, topErr
 }
 
