@@ -23,6 +23,15 @@ func Default() Ring {
 	return defaultRing
 }
 
+// SetDefault overrides the default keyring.
+// Note: This function is defined for testing purpose.
+// Use Init to correctly setup a keyring.
+func SetDefault(r Ring) {
+	mu.Lock()
+	defer mu.Unlock()
+	defaultRing = r
+}
+
 func Init(ctx context.Context) error {
 	config := conf.Get().EncryptionKeys
 	ring, err := NewRing(ctx, config)
@@ -83,6 +92,8 @@ func NewKey(ctx context.Context, k *schema.EncryptionKey) (encryption.Key, error
 		return cloudkms.NewKey(ctx, k.Cloudkms.Keyname)
 	case k.Noop != nil:
 		return &encryption.NoopKey{}, nil
+	case k.Base64 != nil:
+		return &encryption.Base64Key{}, nil
 	default:
 		return nil, fmt.Errorf("couldn't configure key: %v", *k)
 	}
