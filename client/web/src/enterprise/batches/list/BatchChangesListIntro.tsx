@@ -43,12 +43,15 @@ const BatchChangesChangelogAlert: React.FunctionComponent = () => (
     >
         <div className="batch-changes-list-intro__card card h-100 p-2">
             <div className="card-body">
-                <h4>New batch changes features in version 3.26</h4>
-                <ul className="text-muted mb-0 pl-3">
-                    <li>Campaigns have been renamed to Batch Changes!</li>
-                </ul>
+                <h4>New Batch Changes features in version 3.26</h4>
                 <ul className="text-muted mb-0 pl-3">
                     <li>Batch Changes now supports SSH cloned repos. Users can configure SSH access in settings.</li>
+                </ul>
+                <ul className="text-muted mb-0 pl-3">
+                    <li>
+                        Burndown charts have been improved: changeset progress is now shown with greater resolution
+                        across the entire lifespan of the batch change.
+                    </li>
                 </ul>
             </div>
         </div>
