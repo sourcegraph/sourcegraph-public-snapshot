@@ -214,6 +214,7 @@ DELETE FROM changesets WHERE id = %s
 // counting changesets.
 type CountChangesetsOpts struct {
 	BatchChangeID        int64
+	OnlyArchived         bool
 	IncludeArchived      bool
 	ExternalState        *batches.ChangesetExternalState
 	ExternalReviewState  *batches.ChangesetReviewState
@@ -250,9 +251,9 @@ func countChangesetsQuery(opts *CountChangesetsOpts, authzConds *sqlf.Query) *sq
 	if opts.BatchChangeID != 0 {
 		batchChangeID := strconv.Itoa(int(opts.BatchChangeID))
 		preds = append(preds, sqlf.Sprintf("changesets.batch_change_ids ? %s", batchChangeID))
-		if opts.IncludeArchived {
+		if opts.OnlyArchived {
 			preds = append(preds, sqlf.Sprintf("batch_change_ids->%s ? 'archived' AND batch_change_ids->%s->>'archived' = 'true'", batchChangeID, batchChangeID))
-		} else {
+		} else if !opts.IncludeArchived {
 			preds = append(preds, sqlf.Sprintf("NOT (batch_change_ids->%s ? 'archived' AND batch_change_ids->%s->>'archived' = 'true')", batchChangeID, batchChangeID))
 		}
 	}
@@ -463,6 +464,7 @@ type ListChangesetsOpts struct {
 	LimitOpts
 	Cursor               int64
 	BatchChangeID        int64
+	OnlyArchived         bool
 	IncludeArchived      bool
 	IDs                  []int64
 	PublicationState     *batches.ChangesetPublicationState
@@ -520,9 +522,9 @@ func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf
 		batchChangeID := strconv.Itoa(int(opts.BatchChangeID))
 		preds = append(preds, sqlf.Sprintf("changesets.batch_change_ids ? %s", batchChangeID))
 
-		if opts.IncludeArchived {
+		if opts.OnlyArchived {
 			preds = append(preds, sqlf.Sprintf("batch_change_ids->%s ? 'archived' AND batch_change_ids->%s->>'archived' = 'true'", batchChangeID, batchChangeID))
-		} else {
+		} else if !opts.IncludeArchived {
 			preds = append(preds, sqlf.Sprintf("NOT (batch_change_ids->%s ? 'archived' AND batch_change_ids->%s->>'archived' = 'true')", batchChangeID, batchChangeID))
 		}
 	}
@@ -870,6 +872,7 @@ func scanChangeset(t *batches.Changeset, s scanner) error {
 // retrieving changesets stats.
 type GetChangesetsStatsOpts struct {
 	BatchChangeID   int64
+	OnlyArchived    bool
 	IncludeArchived bool
 }
 
@@ -927,9 +930,9 @@ func getChangesetsStatsQuery(opts GetChangesetsStatsOpts) *sqlf.Query {
 		batchChangeID := strconv.Itoa(int(opts.BatchChangeID))
 		preds = append(preds, sqlf.Sprintf("changesets.batch_change_ids ? %s", batchChangeID))
 
-		if opts.IncludeArchived {
+		if opts.OnlyArchived {
 			preds = append(preds, sqlf.Sprintf("batch_change_ids->%s ? 'archived' AND batch_change_ids->%s->>'archived' = 'true'", batchChangeID, batchChangeID))
-		} else {
+		} else if !opts.IncludeArchived {
 			preds = append(preds, sqlf.Sprintf("NOT (batch_change_ids->%s ? 'archived' AND batch_change_ids->%s->>'archived' = 'true')", batchChangeID, batchChangeID))
 		}
 	}
