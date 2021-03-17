@@ -511,22 +511,23 @@ func getRevsForMatchedRepo(repo api.RepoName, pats []patternRevspec) (matched []
 	}
 	// if two repo specs match, and both provided non-empty rev lists,
 	// we want their intersection
-	allowedRevs := make(map[search.RevisionSpecifier]struct{}, len(revLists[0]))
-	// starting point: everything is "true" if it is currently allowed
-	for _, rev := range revLists[0] {
-		allowedRevs[rev] = struct{}{}
-	}
+	allowedRevs := make(map[search.RevisionSpecifier]int, len(revLists[0]))
+
 	// in theory, "master-by-default" entries won't even be participating
 	// in this.
-	for _, revList := range revLists[1:] {
-		restrictedRevs := make(map[search.RevisionSpecifier]struct{}, len(revList))
+	for _, revList := range revLists {
 		for _, rev := range revList {
-			if _, ok := allowedRevs[rev]; ok {
-				restrictedRevs[rev] = struct{}{}
-			}
+			allowedRevs[rev] += 1
 		}
-		allowedRevs = restrictedRevs
 	}
+
+	// remove any revs that didn't exist in every rev list
+	for rev, seenCount := range allowedRevs {
+		if seenCount != len(revLists) {
+			delete(allowedRevs, rev)
+		}
+	}
+
 	if len(allowedRevs) > 0 {
 		matched = make([]search.RevisionSpecifier, 0, len(allowedRevs))
 		for rev := range allowedRevs {
