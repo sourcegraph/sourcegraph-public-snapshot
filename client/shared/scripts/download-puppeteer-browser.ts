@@ -1,11 +1,12 @@
 import puppeteer from 'puppeteer'
 import signale from 'signale'
-import { PUPPETEER_BROWSER_REVISION } from '../src/testing/driver'
+import { PUPPETEER_BROWSER_REVISION } from '../src/testing/puppeteer-browser-revision'
 
-async function downloadPuppeteerBrowser(): Promise<void> {
+async function main(): Promise<void> {
     const browserName = process.env.BROWSER || 'chrome'
     if (browserName !== 'chrome' && browserName !== 'firefox') {
-        throw new Error(`Puppeteer browser must be "chrome" or "firefox", but got: "${browserName}"`)
+        signale.error(`Puppeteer browser must be "chrome" or "firefox", but got: "${browserName}"`)
+        process.exit(1)
     }
     const browserFetcher = puppeteer.createBrowserFetcher({ product: browserName })
     const revision = PUPPETEER_BROWSER_REVISION[browserName]
@@ -19,7 +20,7 @@ async function downloadPuppeteerBrowser(): Promise<void> {
     }
 }
 
-downloadPuppeteerBrowser().catch(error => {
+main().catch(error => {
     console.error(error)
     process.exit(1)
 })

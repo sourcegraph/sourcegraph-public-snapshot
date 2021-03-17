@@ -31,6 +31,7 @@ import { isDefined } from '../util/types'
 import { getConfig } from './config'
 import { ExternalServiceKind } from '../graphql-operations'
 import delay from 'delay'
+import { PUPPETEER_BROWSER_REVISION } from './puppeteer-browser-revision'
 
 /**
  * Returns a Promise for the next emission of the given event on the given Puppeteer page.
@@ -43,17 +44,6 @@ export const percySnapshot = readEnvironmentBoolean({ variable: 'PERCY_ON', defa
     : () => Promise.resolve()
 
 export const BROWSER_EXTENSION_DEV_ID = 'bmfbcejdknlknpncfpeloejonjoledha'
-
-/**
- * The browser revision used by Puppeteer, which is downloaded by BrowserFetcher.
- */
-export const PUPPETEER_BROWSER_REVISION = {
-    chrome: '818858',
-
-    // TODO: When support is added for downloading Firefox revisions, pin this
-    // to an exact revision.
-    firefox: 'latest',
-}
 
 /**
  * Specifies how to select the content of the element. No
