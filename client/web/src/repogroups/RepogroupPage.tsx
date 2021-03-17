@@ -247,7 +247,7 @@ interface RepogroupPageLogoProps extends Exclude<React.ImgHTMLAttributes<HTMLIma
  */
 const RepogroupPageLogo: React.FunctionComponent<RepogroupPageLogoProps> = props => (
     <div className="repogroup-page__logo-container d-flex align-items-center">
-        <img {...props} src={props.icon} />
+        <img {...props} src={props.icon} alt="" />
         <span className="h3 font-weight-normal mb-0 ml-1">{props.text}</span>
     </div>
 )

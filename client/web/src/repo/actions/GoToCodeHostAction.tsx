@@ -194,6 +194,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props> = props => {
 
     return (
         <>
+            {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
             <a
                 className="nav-link test-go-to-code-host"
                 // empty href is OK because we always set tabindex=0
