@@ -30,6 +30,7 @@ import { isDefined } from '../util/types'
 import { getConfig } from './config'
 import { ExternalServiceKind } from '../graphql-operations'
 import delay from 'delay'
+import { getPuppeteerBrowser } from './puppeteer-browser'
 
 /**
  * Returns a Promise for the next emission of the given event on the given Puppeteer page.
@@ -815,13 +816,9 @@ export async function createDriverForTest(options?: DriverOptions): Promise<Driv
         }
 
         const revision = BROWSER_REVISION[browserName]
-        const browserFetcher = puppeteer.createBrowserFetcher({ product: browserName })
+        const revisionInfo = await getPuppeteerBrowser(browserName, revision)
 
-        // The download step takes time and requires a network connection.
-        console.log(`Downloading browser: ${browserName} revision ${revision}`)
-        const revisionInfo = await browserFetcher.download(revision)
-
-        console.log(`Using ${browserName} executable path:`, revisionInfo.executablePath)
+        console.log(`Using ${browserName} (revision ${revision}) executable path:`, revisionInfo.executablePath)
         browser = await puppeteer.launch({ ...launchOptions, executablePath: revisionInfo.executablePath })
     }
 
