@@ -163,6 +163,7 @@ WHERE repo_id = %s
 
 // SetCloneStatus will attempt to update ONLY the clone status of a
 // GitServerRepo. If a matching row does not yet exist a new one will be created.
+// If the status value hasn't changed, the row will not be updated.
 func (s *GitserverRepoStore) SetCloneStatus(ctx context.Context, id api.RepoID, status types.CloneStatus, shardID string) error {
 	err := s.Exec(ctx, sqlf.Sprintf(`
 INSERT INTO gitserver_repos(repo_id, clone_status, shard_id, updated_at)
