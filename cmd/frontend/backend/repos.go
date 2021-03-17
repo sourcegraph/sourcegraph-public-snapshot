@@ -36,9 +36,13 @@ func (e ErrRepoSeeOther) Error() string {
 	return fmt.Sprintf("repo not found at this location, but might exist at %s", e.RedirectURL)
 }
 
-var Repos = &repos{}
+var Repos = &repos{
+	store: database.GlobalRepos,
+}
 
-type repos struct{}
+type repos struct {
+	store *database.RepoStore
+}
 
 func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err error) {
 	if Mocks.Repos.Get != nil {
@@ -48,7 +52,7 @@ func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err er
 	ctx, done := trace(ctx, "Repos", "Get", repo, &err)
 	defer done()
 
-	return database.GlobalRepos.Get(ctx, repo)
+	return s.store.Get(ctx, repo)
 }
 
 // GetByName retrieves the repository with the given name. On sourcegraph.com,
@@ -63,7 +67,7 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 	ctx, done := trace(ctx, "Repos", "GetByName", name, &err)
 	defer done()
 
-	switch repo, err := database.GlobalRepos.GetByName(ctx, name); {
+	switch repo, err := s.store.GetByName(ctx, name); {
 	case err == nil:
 		return repo, nil
 	case !errcode.IsNotFound(err):
@@ -74,7 +78,7 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 		if err != nil {
 			return nil, err
 		}
-		return database.GlobalRepos.GetByName(ctx, newName)
+		return s.store.GetByName(ctx, newName)
 	case shouldRedirect(name):
 		return nil, ErrRepoSeeOther{RedirectURL: (&url.URL{
 			Scheme:   "https",
@@ -147,7 +151,7 @@ func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos 
 		done()
 	}()
 
-	return database.GlobalRepos.List(ctx, opt)
+	return s.store.List(ctx, opt)
 }
 
 // ListDefault calls database.DefaultRepos.List, with tracing.

@@ -178,11 +178,13 @@ Referenced by:
  log_contents             | text                     | 
  execution_logs           | json[]                   | 
  syncer_error             | text                     | 
+ external_title           | text                     | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
     "changesets_batch_change_ids" gin (batch_change_ids)
     "changesets_external_state_idx" btree (external_state)
+    "changesets_external_title_idx" btree (external_title)
     "changesets_publication_state_idx" btree (publication_state)
     "changesets_reconciler_state_idx" btree (reconciler_state)
 Check constraints:
@@ -200,6 +202,8 @@ Referenced by:
     TABLE "changeset_events" CONSTRAINT "changeset_events_changeset_id_fkey" FOREIGN KEY (changeset_id) REFERENCES changesets(id) ON DELETE CASCADE DEFERRABLE
 
 ```
+
+**external_title**: Normalized property generated on save using Changeset.Title()
 
 # Table "public.cm_action_jobs"
 ```

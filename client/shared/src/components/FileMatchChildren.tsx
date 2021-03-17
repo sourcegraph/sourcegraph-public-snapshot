@@ -10,7 +10,6 @@ import { CodeExcerptUnhighlighted } from './CodeExcerptUnhighlighted'
 import { FileLineMatch, MatchItem } from './FileMatch'
 import { calculateMatchGroups } from './FileMatchContext'
 import { Link } from './Link'
-import { BadgeAttachment } from './BadgeAttachment'
 import { isErrorLike } from '../util/errors'
 import { ISymbol, IHighlightLineRange } from '../graphql/schema'
 import { map } from 'rxjs/operators'
@@ -45,13 +44,6 @@ interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
 const NO_SEARCH_HIGHLIGHTING = localStorage.getItem('noSearchHighlighting') !== null
 
 export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props => {
-    const showBadges =
-        props.settingsCascade.final &&
-        !isErrorLike(props.settingsCascade.final) &&
-        props.settingsCascade.final.experimentalFeatures &&
-        // Enabled if true or null
-        props.settingsCascade.final.experimentalFeatures.showBadgeAttachments !== false
-
     // The number of lines of context to show before and after each match.
     let context = 1
 
@@ -175,17 +167,6 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                             isFirst={index === 0}
                         />
                     </Link>
-
-                    <div className="file-match-children__item-badge-row test-badge-row">
-                        {group.matches[0].badge && showBadges && (
-                            // This div is necessary: it has block display, where the badge row
-                            // has flex display and would cause the hover tooltip to be offset
-                            // in a weird way (centered in the code context, not on the icon).
-                            <div>
-                                <BadgeAttachment attachment={group.matches[0].badge} isLightTheme={isLightTheme} />
-                            </div>
-                        )}
-                    </div>
                 </div>
             ))}
         </div>

@@ -123,13 +123,21 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                         repeatUntil(
                             result => {
                                 let pending: Status
-                                const now = new Date().getTime()
+                                const now = new Date()
 
                                 setExternalServices(result.nodes)
 
                                 for (const node of result.nodes) {
-                                    // if the next sync time is not blank, or in the future we must not be syncing
-                                    if (node.nextSyncAt !== '' && now - new Date(node.nextSyncAt).getTime() > 0) {
+                                    const nextSyncAt = new Date(node.nextSyncAt)
+
+                                    // when the service was just added both
+                                    // createdAt and updatedAt will have the same timestamp
+                                    if (node.createdAt === node.updatedAt) {
+                                        continue
+                                    }
+
+                                    // if the next sync is in the future we must not be syncing
+                                    if (now > nextSyncAt) {
                                         pending = 'pending'
                                     }
                                 }
@@ -148,7 +156,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                                 },
                                 ...result.nodes.map(node => ({
                                     value: node.id,
-                                    label: node.displayName,
+                                    label: node.displayName.split(' ')[0],
                                     tooltip: '',
                                     args: { externalServiceID: node.id },
                                 })),

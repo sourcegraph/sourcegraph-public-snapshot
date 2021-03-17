@@ -1102,11 +1102,17 @@ func TestGetExactFilePatterns(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.in, func(t *testing.T) {
-			q, err := query.Pipeline(query.InitLiteral(tt.in), query.Globbing)
+			plan, err := query.Pipeline(query.InitLiteral(tt.in), query.Globbing)
 			if err != nil {
 				t.Fatal(err)
 			}
-			r := searchResolver{SearchInputs: &SearchInputs{Query: q, OriginalQuery: tt.in}}
+			r := searchResolver{
+				SearchInputs: &SearchInputs{
+					Plan:          plan,
+					Query:         plan.ToParseTree(),
+					OriginalQuery: tt.in,
+				},
+			}
 			if got := r.getExactFilePatterns(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("getExactFilePatterns() = %v, want %v", got, tt.want)
 			}

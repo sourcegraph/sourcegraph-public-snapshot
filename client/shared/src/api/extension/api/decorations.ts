@@ -6,8 +6,6 @@ import {
     DecorationAttachmentRenderOptions,
     ThemableDecorationAttachmentStyle,
     ThemableDecorationStyle,
-    BadgeAttachmentRenderOptions,
-    ThemableBadgeAttachmentStyle,
     FileDecoration,
 } from 'sourcegraph'
 
@@ -38,19 +36,6 @@ export function decorationAttachmentStyleForTheme(
     const overrides = isLightTheme ? attachment.light : attachment.dark
     // Discard non-ThemableDecorationAttachmentStyle properties so they aren't included in result.
     const { contentText, hoverMessage, linkURL, light, dark, ...base } = attachment
-    return { ...base, ...overrides }
-}
-
-/**
- * Resolves the actual styles to use for the badge attachment based on the current theme.
- */
-export function badgeAttachmentStyleForTheme(
-    attachment: BadgeAttachmentRenderOptions,
-    isLightTheme: boolean
-): ThemableBadgeAttachmentStyle {
-    const overrides = isLightTheme ? attachment.light : attachment.dark
-    // Discard non-ThemableDecorationAttachmentStyle properties so they aren't included in result.
-    const { hoverMessage, linkURL, light, dark, ...base } = attachment
     return { ...base, ...overrides }
 }
 

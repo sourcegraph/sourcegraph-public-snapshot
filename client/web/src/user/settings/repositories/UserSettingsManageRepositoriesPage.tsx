@@ -342,7 +342,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             }
 
             if (!selectionState.radio) {
-                history.push(routingPrefix + '/repositories')
+                return history.push(routingPrefix + '/repositories')
             }
 
             const syncTimes = new Map<string, string>()
@@ -734,10 +734,10 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     alwaysShowLabel={true}
                     type="submit"
                     label={
-                        (!fetchingRepos && 'Save changes') ||
-                        (fetchingRepos === 'loading' && 'Saving changes...') ||
-                        (fetchingRepos === 'slow' && 'Still working...') ||
-                        "That's a lot of code..."
+                        (!fetchingRepos && 'Save') ||
+                        (fetchingRepos === 'loading' && 'Saving...') ||
+                        (fetchingRepos === 'slow' && 'Still saving...') ||
+                        'Any time now...'
                     }
                     disabled={isLoading(fetchingRepos)}
                 />

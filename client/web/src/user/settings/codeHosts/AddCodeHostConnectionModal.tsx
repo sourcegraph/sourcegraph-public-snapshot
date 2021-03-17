@@ -72,13 +72,13 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
 
     return (
         <Dialog
-            className="modal-body modal-body--top-third p-4 rounded border"
+            className="modal-body modal-body--top-third user-code-hosts-page__modal--plain p-4 rounded border"
             aria-labelledby={`heading--connect-with-${name}`}
             onDismiss={onDidCancel}
         >
             <div className="web-content">
                 <h3 id={`heading--connect-with-${name}`} className="mb-4">
-                    Connect with {name}
+                    Connect with {name}.com
                 </h3>
                 <Form onSubmit={onTokenSubmit}>
                     <div className="form-group mb-4">
@@ -93,13 +93,15 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
                                 className="form-control pr-4"
                                 autoComplete="off"
                             />
-                            <ShieldCheckIcon
-                                className="icon-inline add-user-code-hosts-page__icon--inside text-muted"
-                                data-tooltip="Data will be encrypted and will not be visible again."
-                            />
+                            <small>
+                                <ShieldCheckIcon
+                                    className="icon-inline user-code-hosts-page__icon--inside text-muted"
+                                    data-tooltip="Data will be encrypted and will not be visible again."
+                                />
+                            </small>
                         </div>
 
-                        {hintFragment}
+                        <p className="mt-1">{hintFragment}</p>
                     </div>
                     <div className="d-flex justify-content-end">
                         <button type="button" className="btn btn-outline-secondary mr-2" onClick={onDidCancel}>

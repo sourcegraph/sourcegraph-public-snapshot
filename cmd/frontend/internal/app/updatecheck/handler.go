@@ -417,14 +417,16 @@ func reserializeNewCodeIntelUsage(payload json.RawMessage) (json.RawMessage, err
 	}
 
 	return json.Marshal(jsonCodeIntelUsage{
-		StartOfWeek:                    codeIntelUsage.StartOfWeek,
-		WAUs:                           codeIntelUsage.WAUs,
-		PreciseWAUs:                    codeIntelUsage.PreciseWAUs,
-		SearchBasedWAUs:                codeIntelUsage.SearchBasedWAUs,
-		CrossRepositoryWAUs:            codeIntelUsage.CrossRepositoryWAUs,
-		PreciseCrossRepositoryWAUs:     codeIntelUsage.PreciseCrossRepositoryWAUs,
-		SearchBasedCrossRepositoryWAUs: codeIntelUsage.SearchBasedCrossRepositoryWAUs,
-		EventSummaries:                 eventSummaries,
+		StartOfWeek:                         codeIntelUsage.StartOfWeek,
+		WAUs:                                codeIntelUsage.WAUs,
+		PreciseWAUs:                         codeIntelUsage.PreciseWAUs,
+		SearchBasedWAUs:                     codeIntelUsage.SearchBasedWAUs,
+		CrossRepositoryWAUs:                 codeIntelUsage.CrossRepositoryWAUs,
+		PreciseCrossRepositoryWAUs:          codeIntelUsage.PreciseCrossRepositoryWAUs,
+		SearchBasedCrossRepositoryWAUs:      codeIntelUsage.SearchBasedCrossRepositoryWAUs,
+		EventSummaries:                      eventSummaries,
+		NumRepositoriesWithUploadRecords:    codeIntelUsage.NumRepositoriesWithUploadRecords,
+		NumRepositoriesWithoutUploadRecords: codeIntelUsage.NumRepositoriesWithoutUploadRecords,
 	})
 }
 
@@ -449,34 +451,40 @@ func reserializeOldCodeIntelUsage(payload json.RawMessage) (json.RawMessage, err
 	definitions := week.Definitions
 	references := week.References
 
+	eventSummaries := []jsonEventSummary{
+		{Action: "hover", Source: "precise", WAUs: hover.LSIF.UsersCount, TotalActions: unwrap(hover.LSIF.EventsCount)},
+		{Action: "hover", Source: "search", WAUs: hover.Search.UsersCount, TotalActions: unwrap(hover.Search.EventsCount)},
+		{Action: "definitions", Source: "precise", WAUs: definitions.LSIF.UsersCount, TotalActions: unwrap(definitions.LSIF.EventsCount)},
+		{Action: "definitions", Source: "search", WAUs: definitions.Search.UsersCount, TotalActions: unwrap(definitions.Search.EventsCount)},
+		{Action: "references", Source: "precise", WAUs: references.LSIF.UsersCount, TotalActions: unwrap(references.LSIF.EventsCount)},
+		{Action: "references", Source: "search", WAUs: references.Search.UsersCount, TotalActions: unwrap(references.Search.EventsCount)},
+	}
+
 	return json.Marshal(jsonCodeIntelUsage{
-		StartOfWeek:                    week.StartTime,
-		WAUs:                           nil,
-		PreciseWAUs:                    nil,
-		SearchBasedWAUs:                nil,
-		CrossRepositoryWAUs:            nil,
-		PreciseCrossRepositoryWAUs:     nil,
-		SearchBasedCrossRepositoryWAUs: nil,
-		EventSummaries: []jsonEventSummary{
-			{Action: "hover", Source: "precise", WAUs: hover.LSIF.UsersCount, TotalActions: unwrap(hover.LSIF.EventsCount)},
-			{Action: "hover", Source: "search", WAUs: hover.Search.UsersCount, TotalActions: unwrap(hover.Search.EventsCount)},
-			{Action: "definitions", Source: "precise", WAUs: definitions.LSIF.UsersCount, TotalActions: unwrap(definitions.LSIF.EventsCount)},
-			{Action: "definitions", Source: "search", WAUs: definitions.Search.UsersCount, TotalActions: unwrap(definitions.Search.EventsCount)},
-			{Action: "references", Source: "precise", WAUs: references.LSIF.UsersCount, TotalActions: unwrap(references.LSIF.EventsCount)},
-			{Action: "references", Source: "search", WAUs: references.Search.UsersCount, TotalActions: unwrap(references.Search.EventsCount)},
-		},
+		StartOfWeek:                         week.StartTime,
+		WAUs:                                nil,
+		PreciseWAUs:                         nil,
+		SearchBasedWAUs:                     nil,
+		CrossRepositoryWAUs:                 nil,
+		PreciseCrossRepositoryWAUs:          nil,
+		SearchBasedCrossRepositoryWAUs:      nil,
+		EventSummaries:                      eventSummaries,
+		NumRepositoriesWithUploadRecords:    nil,
+		NumRepositoriesWithoutUploadRecords: nil,
 	})
 }
 
 type jsonCodeIntelUsage struct {
-	StartOfWeek                    time.Time          `json:"start_time"`
-	WAUs                           *int32             `json:"waus"`
-	PreciseWAUs                    *int32             `json:"precise_waus"`
-	SearchBasedWAUs                *int32             `json:"search_waus"`
-	CrossRepositoryWAUs            *int32             `json:"xrepo_waus"`
-	PreciseCrossRepositoryWAUs     *int32             `json:"precise_xrepo_waus"`
-	SearchBasedCrossRepositoryWAUs *int32             `json:"search_xrepo_waus"`
-	EventSummaries                 []jsonEventSummary `json:"event_summaries"`
+	StartOfWeek                         time.Time          `json:"start_time"`
+	WAUs                                *int32             `json:"waus"`
+	PreciseWAUs                         *int32             `json:"precise_waus"`
+	SearchBasedWAUs                     *int32             `json:"search_waus"`
+	CrossRepositoryWAUs                 *int32             `json:"xrepo_waus"`
+	PreciseCrossRepositoryWAUs          *int32             `json:"precise_xrepo_waus"`
+	SearchBasedCrossRepositoryWAUs      *int32             `json:"search_xrepo_waus"`
+	EventSummaries                      []jsonEventSummary `json:"event_summaries"`
+	NumRepositoriesWithUploadRecords    *int32             `json:"num_repositories_with_upload_records"`
+	NumRepositoriesWithoutUploadRecords *int32             `json:"num_repositories_without_upload_records"`
 }
 
 type jsonEventSummary struct {

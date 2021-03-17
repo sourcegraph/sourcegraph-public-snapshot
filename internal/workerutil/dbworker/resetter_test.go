@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/efritz/glock"
+	"github.com/derision-test/glock"
 	"github.com/prometheus/client_golang/prometheus"
 
 	storemocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"

@@ -17,6 +17,8 @@ import (
 
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -83,8 +85,9 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	start := time.Now()
 	progress := progressAggregator{
-		Start: time.Now(),
+		Start: start,
 		Limit: inputs.MaxResults(),
 		Trace: traceURL,
 	}
@@ -203,6 +206,9 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if first && matchesBuf.Len() > 0 {
 			first = false
 			matchesFlush()
+
+			metricLatency.WithLabelValues(string(GuessSource(r))).
+				Observe(time.Since(start).Seconds())
 		}
 	}
 
@@ -496,4 +502,29 @@ func (j *jsonArrayBuf) Flush() error {
 
 func (j *jsonArrayBuf) Len() int {
 	return j.buf.Len()
+}
+
+var metricLatency = promauto.NewHistogramVec(prometheus.HistogramOpts{
+	Name:    "src_search_streaming_latency_seconds",
+	Help:    "Histogram with time to first result in seconds",
+	Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+}, []string{"source"})
+
+// GuessSource guesses the source the request came from (browser, other HTTP client, etc.)
+func GuessSource(r *http.Request) trace.SourceType {
+	userAgent := r.UserAgent()
+	for _, guess := range []string{
+		"Mozilla",
+		"WebKit",
+		"Gecko",
+		"Chrome",
+		"Firefox",
+		"Safari",
+		"Edge",
+	} {
+		if strings.Contains(userAgent, guess) {
+			return trace.SourceBrowser
+		}
+	}
+	return trace.SourceOther
 }
