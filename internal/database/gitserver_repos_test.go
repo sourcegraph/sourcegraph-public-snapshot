@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -314,6 +315,16 @@ func TestSetLastError(t *testing.T) {
 	gitserverRepo.LastError = ""
 	if diff := cmp.Diff(fromDB, after); diff != "" {
 		t.Fatal(diff)
+	}
+
+	// Setting to empty error should set the column to null
+	count, _, err := basestore.ScanFirstInt(db.QueryContext(ctx, "SELECT COUNT(*) FROM gitserver_repos WHERE last_error IS NULL"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if count != 1 {
+		t.Fatalf("Want %d, got %d", 1, count)
 	}
 }
 

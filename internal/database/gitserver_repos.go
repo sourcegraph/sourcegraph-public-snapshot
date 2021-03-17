@@ -181,6 +181,7 @@ SET (clone_status, shard_id, updated_at) =
 // a matching row does not yet exist a new one will be created.
 // If the error value hasn't changed, the row will not be updated.
 func (s *GitserverRepoStore) SetLastError(ctx context.Context, id api.RepoID, error string, shardID string) error {
+	ns := dbutil.NewNullString(error)
 	err := s.Exec(ctx, sqlf.Sprintf(`
 INSERT INTO gitserver_repos(repo_id, last_error, shard_id, updated_at)
 VALUES (%s, %s, %s, now())
@@ -188,7 +189,7 @@ ON CONFLICT (repo_id) DO UPDATE
 SET (last_error, shard_id, updated_at) =
     (EXCLUDED.last_error, EXCLUDED.shard_id, now())
     WHERE gitserver_repos.last_error IS DISTINCT FROM EXCLUDED.last_error
-`, id, error, shardID))
+`, id, ns, shardID))
 
 	return errors.Wrap(err, "setting last error")
 }
