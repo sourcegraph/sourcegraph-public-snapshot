@@ -31,7 +31,7 @@ func Resolve(bundle *GroupedBundleDataMaps, document DocumentData, rng RangeData
 	for _, monikerID := range rng.MonikerIDs {
 		moniker := document.Monikers[monikerID]
 		monikers = append(monikers, QualifiedMonikerData{
-			MonikerData: moniker,
+			MonikerData:            moniker,
 			PackageInformationData: document.PackageInformation[moniker.PackageInformationID],
 		})
 	}

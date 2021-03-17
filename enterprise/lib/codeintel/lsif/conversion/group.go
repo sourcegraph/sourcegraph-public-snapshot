@@ -20,7 +20,7 @@ func getDefinitionResultID(r Range) int { return r.DefinitionResultID }
 func getReferenceResultID(r Range) int  { return r.ReferenceResultID }
 
 // groupBundleData converts a raw (but canonicalized) correlation State into a GroupedBundleData.
-func groupBundleData(ctx context.Context, state *State, dumpID int) (*semantic.GroupedBundleDataChans, error) {
+func groupBundleData(ctx context.Context, state *State) (*semantic.GroupedBundleDataChans, error) {
 	numResults := len(state.DefinitionData) + len(state.ReferenceData)
 	numResultChunks := int(math.Min(
 		MaxNumResultChunks,
@@ -35,8 +35,8 @@ func groupBundleData(ctx context.Context, state *State, dumpID int) (*semantic.G
 	resultChunks := serializeResultChunks(ctx, state, numResultChunks)
 	definitionRows := gatherMonikersLocations(ctx, state, state.DefinitionData, getDefinitionResultID)
 	referenceRows := gatherMonikersLocations(ctx, state, state.ReferenceData, getReferenceResultID)
-	packages := gatherPackages(state, dumpID)
-	packageReferences, err := gatherPackageReferences(state, dumpID)
+	packages := gatherPackages(state)
+	packageReferences, err := gatherPackageReferences(state)
 	if err != nil {
 		return nil, err
 	}
@@ -355,7 +355,7 @@ func (s sortableLocations) Less(i, j int) bool {
 	return s[i].StartCharacter < s[j].StartCharacter
 }
 
-func gatherPackages(state *State, dumpID int) []semantic.Package {
+func gatherPackages(state *State) []semantic.Package {
 	uniques := make(map[string]semantic.Package, state.ExportedMonikers.Len())
 	state.ExportedMonikers.Each(func(id int) {
 		source := state.MonikerData[id]
@@ -376,7 +376,7 @@ func gatherPackages(state *State, dumpID int) []semantic.Package {
 	return packages
 }
 
-func gatherPackageReferences(state *State, dumpID int) ([]semantic.PackageReference, error) {
+func gatherPackageReferences(state *State) ([]semantic.PackageReference, error) {
 	type ExpandedPackageReference struct {
 		Scheme      string
 		Name        string
