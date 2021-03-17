@@ -90,6 +90,13 @@ func GetAggregatedCodeIntelStats(ctx context.Context, db dbutil.DB) (*types.NewC
 		*pair.target = &v
 	}
 
+	withUploads, withoutUploads, err := database.EventLogs(db).CodeIntelligenceRepositoryCounts(ctx)
+	if err != nil {
+		return nil, err
+	}
+	stats.NumRepositoriesWithUploadRecords = int32Ptr(withUploads)
+	stats.NumRepositoriesWithoutUploadRecords = int32Ptr(withoutUploads)
+
 	return stats, nil
 }
 
@@ -254,4 +261,9 @@ func newSearchCountStatistics() *types.SearchCountStatistics {
 
 func newSearchModeUsageStatistics() *types.SearchModeUsageStatistics {
 	return &types.SearchModeUsageStatistics{Interactive: &types.SearchCountStatistics{}, PlainText: &types.SearchCountStatistics{}}
+}
+
+func int32Ptr(v int) *int32 {
+	v32 := int32(v)
+	return &v32
 }

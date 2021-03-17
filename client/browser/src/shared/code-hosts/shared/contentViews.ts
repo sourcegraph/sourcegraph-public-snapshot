@@ -1,6 +1,6 @@
-import { asyncScheduler, merge, Observable, of, Subject, Subscription, Unsubscribable } from 'rxjs'
-import { distinctUntilChanged, map, mapTo, mergeMap, observeOn, tap, throttleTime } from 'rxjs/operators'
-import { LinkPreviewProviderRegistry } from '../../../../../shared/src/api/client/services/linkPreview'
+import { asyncScheduler, from, merge, Observable, of, Subject, Subscription, Unsubscribable } from 'rxjs'
+import { distinctUntilChanged, map, mapTo, mergeMap, observeOn, switchMap, tap, throttleTime } from 'rxjs/operators'
+import { wrapRemoteObservable } from '../../../../../shared/src/api/client/api/common'
 import { applyLinkPreview } from '../../../../../shared/src/components/linkPreviews/linkPreviews'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { MutationRecordLike, observeMutations } from '../../util/dom'
@@ -20,15 +20,7 @@ export interface ContentView {
  */
 export function handleContentViews(
     mutations: Observable<MutationRecordLike[]>,
-    {
-        extensionsController,
-    }:
-        | ExtensionsControllerProps
-        | {
-              extensionsController: {
-                  services: { linkPreviews: Pick<LinkPreviewProviderRegistry, 'provideLinkPreview'> }
-              }
-          },
+    { extensionsController }: ExtensionsControllerProps<'extHostAPI'>,
     {
         contentViewResolvers,
         linkPreviewContentClass,
@@ -101,8 +93,12 @@ export function handleContentViews(
                 // Add link preview content.
                 for (const link of element.querySelectorAll<HTMLAnchorElement>('a[href]')) {
                     subscriptions.add(
-                        extensionsController.services.linkPreviews
-                            .provideLinkPreview(link.href)
+                        from(extensionsController.extHostAPI)
+                            .pipe(
+                                switchMap(extensionHostAPI =>
+                                    wrapRemoteObservable(extensionHostAPI.getLinkPreviews(link.href))
+                                )
+                            )
                             // The nested subscribe cannot be replaced with a switchMap()
                             // because we are managing a stateful Map. The subscription is
                             // managed correctly.

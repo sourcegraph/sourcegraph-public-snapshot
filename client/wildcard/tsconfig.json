@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.json",
+  "references": [{ "path": "../shared" }, { "path": "../branded" }, { "path": "../../schema" }],
+  "compilerOptions": {
+    "module": "esnext",
+    "sourceRoot": "src",
+    "rootDir": ".",
+    "outDir": "./out",
+    "baseUrl": "./src",
+    "jsx": "react",
+  },
+  "include": ["**/*", ".*"],
+  "exclude": ["../../node_modules", "./node_modules", "./out"],
+}

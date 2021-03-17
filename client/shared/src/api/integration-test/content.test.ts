@@ -1,10 +1,11 @@
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
-import { take } from 'rxjs/operators'
+import { take, toArray } from 'rxjs/operators'
+import { wrapRemoteObservable } from '../client/api/common'
 import { integrationTestContext } from './testHelpers'
 
 describe('content (integration)', () => {
     test('registers a link preview provider', async () => {
-        const { services, extensionAPI } = await integrationTestContext()
+        const { extensionAPI, extensionHostAPI } = await integrationTestContext()
 
         // Register the provider and call it.
         extensionAPI.content.registerLinkPreviewProvider('http://example.com', {
@@ -14,15 +15,20 @@ describe('content (integration)', () => {
         })
         await extensionAPI.internal.sync()
         expect(
-            await services.linkPreviews.provideLinkPreview('http://example.com/foo').pipe(take(1)).toPromise()
-        ).toEqual({
-            content: [{ value: 'xyz http://example.com/foo', kind: MarkupKind.PlainText }],
-            hover: [],
-        })
+            await wrapRemoteObservable(extensionHostAPI.getLinkPreviews('http://example.com/foo'))
+                .pipe(take(2), toArray())
+                .toPromise()
+        ).toEqual([
+            null,
+            {
+                content: [{ value: 'xyz http://example.com/foo', kind: MarkupKind.PlainText }],
+                hover: [],
+            },
+        ])
     })
 
     test('unregisters a link preview provider', async () => {
-        const { services, extensionAPI } = await integrationTestContext()
+        const { extensionAPI, extensionHostAPI } = await integrationTestContext()
 
         // Register the provider and call it.
         const subscription = extensionAPI.content.registerLinkPreviewProvider('http://example.com', {
@@ -34,12 +40,14 @@ describe('content (integration)', () => {
         subscription.unsubscribe()
         await extensionAPI.internal.sync()
         expect(
-            await services.linkPreviews.provideLinkPreview('http://example.com/foo').pipe(take(1)).toPromise()
+            await wrapRemoteObservable(extensionHostAPI.getLinkPreviews('http://example.com/foo'))
+                .pipe(take(1))
+                .toPromise()
         ).toEqual(null)
     })
 
     test('supports multiple link preview providers', async () => {
-        const { services, extensionAPI } = await integrationTestContext()
+        const { extensionAPI, extensionHostAPI } = await integrationTestContext()
 
         // Register the provider and call it
         extensionAPI.content.registerLinkPreviewProvider('http://example.com', {
@@ -50,13 +58,18 @@ describe('content (integration)', () => {
         })
         await extensionAPI.internal.sync()
         expect(
-            await services.linkPreviews.provideLinkPreview('http://example.com/foo').pipe(take(1)).toPromise()
-        ).toEqual({
-            content: [
-                { value: 'qux', kind: MarkupKind.PlainText },
-                { value: 'zip', kind: MarkupKind.PlainText },
-            ],
-            hover: [],
-        })
+            await wrapRemoteObservable(extensionHostAPI.getLinkPreviews('http://example.com/foo'))
+                .pipe(take(2), toArray())
+                .toPromise()
+        ).toEqual([
+            null,
+            {
+                content: [
+                    { value: 'qux', kind: MarkupKind.PlainText },
+                    { value: 'zip', kind: MarkupKind.PlainText },
+                ],
+                hover: [],
+            },
+        ])
     })
 })

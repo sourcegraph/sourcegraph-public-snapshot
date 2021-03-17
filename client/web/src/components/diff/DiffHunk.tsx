@@ -4,7 +4,7 @@ import {
     decorationAttachmentStyleForTheme,
     DecorationMapByLine,
     decorationStyleForTheme,
-} from '../../../../shared/src/api/client/services/decoration'
+} from '../../../../shared/src/api/extension/api/decorations'
 import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
 import { property, isDefined } from '../../../../shared/src/util/types'
 import { ThemeProps } from '../../../../shared/src/theme'

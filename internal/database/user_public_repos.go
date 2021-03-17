@@ -44,6 +44,9 @@ func (s *UserPublicRepoStore) SetUserRepos(ctx context.Context, userID int32, re
 	if err != nil {
 		return err
 	}
+	if len(repos) == 0 {
+		return nil
+	}
 	values := make([]*sqlf.Query, 0, len(repos))
 	for _, repo := range repos {
 		values = append(values, sqlf.Sprintf(

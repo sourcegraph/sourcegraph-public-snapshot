@@ -21,7 +21,7 @@ import (
 type Interface interface {
 	SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error)
 	RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) error
-	DistinctSeriesWithData(ctx context.Context, from, to time.Time) ([]string, error)
+	CountData(ctx context.Context, opts CountDataOpts) (int, error)
 }
 
 var _ Interface = &Store{}
@@ -80,7 +80,10 @@ type SeriesPointsOpts struct {
 	// SeriesID is the unique series ID to query, if non-nil.
 	SeriesID *string
 
-	// TODO(slimsag): Add ability to filter based on repo ID, name, original name.
+	// RepoID, if non-nil, indicates to filter results to only points recorded with this repo ID.
+	RepoID *api.RepoID
+
+	// TODO(slimsag): Add ability to filter based on repo name, original name.
 	// TODO(slimsag): Add ability to do limited filtering based on metadata.
 
 	// Time ranges to query from/to, if non-nil, in UTC.
@@ -169,6 +172,9 @@ func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
 	if opts.SeriesID != nil {
 		preds = append(preds, sqlf.Sprintf("series_id = %s", *opts.SeriesID))
 	}
+	if opts.RepoID != nil {
+		preds = append(preds, sqlf.Sprintf("repo_id = %d", int32(*opts.RepoID)))
+	}
 	if opts.From != nil {
 		preds = append(preds, sqlf.Sprintf("time >= %s", *opts.From))
 	}
@@ -189,26 +195,55 @@ func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
 	)
 }
 
-// DistinctSeriesWithData returns the distinct Series IDs that have at least one data point recorded
-// in the given time range.
-func (s *Store) DistinctSeriesWithData(ctx context.Context, from, to time.Time) ([]string, error) {
-	query := sqlf.Sprintf(distinctSeriesWithDataFmtstr, from, to)
-	var seriesIDs []string
-	err := s.query(ctx, query, func(sc scanner) error {
-		var seriesID string
-		err := sc.Scan(&seriesID)
-		if err != nil {
-			return err
-		}
-		seriesIDs = append(seriesIDs, seriesID)
-		return nil
-	})
-	return seriesIDs, err
+type CountDataOpts struct {
+	// The time range to look for data, if non-nil.
+	From, To *time.Time
+
+	// SeriesID, if non-nil, indicates to look for data with this series ID only.
+	SeriesID *string
+
+	// RepoID, if non-nil, indicates to look for data with this repo ID only.
+	RepoID *api.RepoID
 }
 
-const distinctSeriesWithDataFmtstr = `
-SELECT DISTINCT series_id FROM series_points WHERE time >= %s AND time <= %s;
+// CountData counts the amount of data points in a given time range.
+func (s *Store) CountData(ctx context.Context, opts CountDataOpts) (int, error) {
+	count, ok, err := basestore.ScanFirstInt(s.Store.Query(ctx, countDataQuery(opts)))
+	if err != nil {
+		return 0, errors.Wrap(err, "ScanFirstInt")
+	}
+	if !ok {
+		return 0, errors.Wrap(err, "count row not found (this should never happen)")
+	}
+	return count, nil
+}
+
+const countDataFmtstr = `
+SELECT COUNT(*) FROM series_points WHERE %s
 `
+
+func countDataQuery(opts CountDataOpts) *sqlf.Query {
+	preds := []*sqlf.Query{}
+	if opts.From != nil {
+		preds = append(preds, sqlf.Sprintf("time >= %s", *opts.From))
+	}
+	if opts.To != nil {
+		preds = append(preds, sqlf.Sprintf("time <= %s", *opts.To))
+	}
+	if opts.SeriesID != nil {
+		preds = append(preds, sqlf.Sprintf("series_id = %s", *opts.SeriesID))
+	}
+	if opts.RepoID != nil {
+		preds = append(preds, sqlf.Sprintf("repo_id = %d", int32(*opts.RepoID)))
+	}
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
+	}
+	return sqlf.Sprintf(
+		countDataFmtstr,
+		sqlf.Join(preds, "\n AND "),
+	)
+}
 
 // RecordSeriesPointArgs describes arguments for the RecordSeriesPoint method.
 type RecordSeriesPointArgs struct {

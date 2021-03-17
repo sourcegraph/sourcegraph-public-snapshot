@@ -44,19 +44,6 @@ export const proxySubscribable = <T>(subscribable: Subscribable<T>): ProxySubscr
     },
 })
 
-/**
- * Returns a Subscribable that can be proxied by comlink.
- *
- * @param result The result returned by the provider
- * @param mapFunc A function to map the result into a value to be transmitted to the other thread
- */
-export function toProxyableSubscribable<T, R>(
-    result: ProviderResult<T>,
-    mapFunc: (value: T | undefined | null) => R = identity
-): ProxySubscribable<R> {
-    return proxySubscribable(providerResultToObservable(result, mapFunc))
-}
-
 export function providerResultToObservable<T, R = T>(
     result: ProviderResult<T>,
     mapFunc: (value: T | undefined | null) => R = identity

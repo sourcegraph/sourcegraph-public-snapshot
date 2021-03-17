@@ -112,14 +112,17 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
         {
             label: 'Instrumentation',
             to: '/-/debug/',
+            source: 'server',
         },
         {
             label: 'Monitoring',
             to: '/-/debug/grafana',
+            source: 'server',
         },
         {
             label: 'Tracing',
-            to: '/-/jaeger',
+            to: '/-/debug/jaeger',
+            source: 'server',
         },
     ],
 }

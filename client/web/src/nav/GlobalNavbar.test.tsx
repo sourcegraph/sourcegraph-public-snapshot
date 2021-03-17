@@ -4,7 +4,7 @@ import { setLinkComponent } from '../../../shared/src/components/Link'
 import { ThemePreference } from '../theme'
 import { GlobalNavbar } from './GlobalNavbar'
 import { createLocation, createMemoryHistory } from 'history'
-import { NOOP_SETTINGS_CASCADE } from '../../../shared/src/util/searchTestHelpers'
+import { extensionsController, NOOP_SETTINGS_CASCADE } from '../../../shared/src/util/searchTestHelpers'
 import { SearchPatternType } from '../graphql-operations'
 
 jest.mock('../search/input/SearchNavbarItem', () => ({ SearchNavbarItem: 'SearchNavbarItem' }))
@@ -13,7 +13,7 @@ jest.mock('../components/branding/BrandLogo', () => ({ BrandLogo: 'BrandLogo' })
 const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     authenticatedUser: null,
     authRequired: false,
-    extensionsController: {} as any,
+    extensionsController,
     location: createLocation('/'),
     history: createMemoryHistory(),
     keyboardShortcuts: [],
@@ -37,7 +37,7 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     isSearchRelatedPage: true,
     copyQueryButton: false,
     versionContext: undefined,
-    setVersionContext: () => undefined,
+    setVersionContext: () => Promise.resolve(),
     availableVersionContexts: [],
     showSearchContext: false,
     selectedSearchContextSpec: '',

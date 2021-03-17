@@ -225,7 +225,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                         supported={[ExternalServiceKind.GITHUB, ExternalServiceKind.GITLAB]}
                         accounts={accountsByType(this.state.accounts.fetched)}
                         authProviders={this.authProvidersByType}
-                        onDidError={console.log}
+                        onDidError={this.handleError}
                         onDidRemove={this.onAccountRemoval}
                     />
                 )}
@@ -344,7 +344,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
         this.submits.next(event)
     }
 
-    private handleError = (error: Error): [] => {
+    private handleError = (error: ErrorLike): [] => {
         this.setState({ loading: false, saved: false, error })
         return []
     }

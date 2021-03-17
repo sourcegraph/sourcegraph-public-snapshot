@@ -21,6 +21,7 @@ func BuildProgressEvent(stats ProgressStats) Progress {
 		MatchCount:        stats.MatchCount,
 		DurationMs:        stats.ElapsedMilliseconds,
 		Skipped:           skipped,
+		Trace:             stats.Trace,
 	}
 }
 
@@ -43,6 +44,8 @@ type ProgressStats struct {
 
 	// SuggestedLimit is what to suggest to the user for count if needed.
 	SuggestedLimit int
+
+	Trace string // only filled if requested
 }
 
 func skippedReposHandler(repos []Namer, titleVerb, messageReason string, base Skipped) (Skipped, bool) {

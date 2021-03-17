@@ -33,11 +33,6 @@ type changesetResolver struct {
 	repo         *types.Repo
 	repoResolver *graphqlbackend.RepositoryResolver
 
-	// cache changeset events as they are used more than once
-	eventsOnce sync.Once
-	events     state.ChangesetEvents
-	eventsErr  error
-
 	attemptedPreloadNextSyncAt bool
 	// When the next sync is scheduled
 	preloadedNextSyncAt time.Time
@@ -109,21 +104,6 @@ func (r *changesetResolver) computeSpec(ctx context.Context) (*batches.Changeset
 		r.spec, r.specErr = r.store.GetChangesetSpecByID(ctx, r.changeset.CurrentSpecID)
 	})
 	return r.spec, r.specErr
-}
-
-func (r *changesetResolver) computeEvents(ctx context.Context) ([]*batches.ChangesetEvent, error) {
-	r.eventsOnce.Do(func() {
-		opts := store.ListChangesetEventsOpts{
-			ChangesetIDs: []int64{r.changeset.ID},
-		}
-		es, _, err := r.store.ListChangesetEvents(ctx, opts)
-
-		r.events = es
-		sort.Sort(r.events)
-
-		r.eventsErr = err
-	})
-	return r.events, r.eventsErr
 }
 
 func (r *changesetResolver) computeNextSyncAt(ctx context.Context) (time.Time, error) {
@@ -417,10 +397,16 @@ func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.Change
 		return []graphqlbackend.ChangesetLabelResolver{}, nil
 	}
 
-	es, err := r.computeEvents(ctx)
+	opts := store.ListChangesetEventsOpts{
+		ChangesetIDs: []int64{r.changeset.ID},
+		Kinds:        state.ComputeLabelsRequiredEventTypes,
+	}
+	es, _, err := r.store.ListChangesetEvents(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
+	// ComputeLabels expects the events to be pre-sorted.
+	sort.Sort(state.ChangesetEvents(es))
 
 	// We use changeset labels as the source of truth as they can be renamed
 	// or removed but we'll also take into account any changeset events that

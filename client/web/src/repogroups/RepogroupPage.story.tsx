@@ -7,7 +7,6 @@ import { NEVER } from 'rxjs'
 import { NOOP_SETTINGS_CASCADE } from '../../../shared/src/util/searchTestHelpers'
 import { ThemePreference } from '../theme'
 import { ActionItemComponentProps } from '../../../shared/src/actions/ActionItem'
-import { Services } from '../../../shared/src/api/client/services'
 import { AuthenticatedUser } from '../auth'
 import { SearchPatternType } from '../graphql-operations'
 import { WebStory } from '../components/WebStory'
@@ -77,14 +76,17 @@ const commonProps = () =>
         setPatternType: action('setPatternType'),
         caseSensitive: false,
         copyQueryButton: false,
-        extensionsController: { ...EXTENSIONS_CONTROLLER, services: {} as Services },
+        extensionsController: { ...EXTENSIONS_CONTROLLER },
         platformContext: PLATFORM_CONTEXT,
         keyboardShortcuts: [],
         setCaseSensitivity: action('setCaseSensitivity'),
         versionContext: undefined,
         activation: undefined,
         isSourcegraphDotCom: true,
-        setVersionContext: action('setVersionContext'),
+        setVersionContext: () => {
+            action('setVersionContext')
+            return Promise.resolve()
+        },
         availableVersionContexts: [],
         showSearchContext: false,
         selectedSearchContextSpec: '',

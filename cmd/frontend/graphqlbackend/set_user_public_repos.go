@@ -47,7 +47,7 @@ func (r *schemaResolver) SetUserPublicRepos(ctx context.Context, args struct {
 		eg.Go(func() error {
 			repo, err := getRepo(ctx, repoStore, repoURI)
 			if err != nil {
-				return errors.Wrapf(err, "getting ID for repo %s", repoURI)
+				return errors.Wrapf(err, "Adding repo %s", repoURI)
 			}
 			repos[i] = database.UserPublicRepo{
 				UserID:  userID,

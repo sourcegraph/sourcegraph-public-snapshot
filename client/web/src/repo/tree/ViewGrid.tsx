@@ -5,8 +5,8 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ErrorAlert } from '../../components/alerts'
 import { ViewContent, ViewContentProps } from '../../views/ViewContent'
 import { WidthProvider, Responsive, Layout as ReactGridLayout, Layouts as ReactGridLayouts } from 'react-grid-layout'
-import { ViewProviderResult } from '../../../../shared/src/api/client/services/viewService'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { ViewProviderResult } from '../../../../shared/src/api/extension/extensionHostApi'
 
 // TODO use a method to get width that also triggers when file explorer is closed
 // (WidthProvider only listens to window resize events)
