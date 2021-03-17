@@ -37,10 +37,6 @@ export const optionFlagDefinitions: OptionFlagDefinition[] = [
         key: 'experimentalLinkPreviews',
         label: 'Experimental link previews',
     },
-    {
-        key: 'experimentalTextFieldCompletion',
-        label: 'Experimental text field completion',
-    },
 ]
 
 const optionFlagDefaults: OptionFlagValues = {

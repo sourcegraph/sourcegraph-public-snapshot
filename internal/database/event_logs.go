@@ -743,6 +743,48 @@ WHERE
   AND name IN (%s);
 `
 
+// CodeIntelligenceRepositoryCounts returns the number of repositories with and without an associated
+// and up-to-date code intelligence upload.
+func (l *EventLogStore) CodeIntelligenceRepositoryCounts(ctx context.Context) (withUploads int, withoutUploads int, err error) {
+	l.ensureStore()
+
+	var totalRepositories int
+
+	rows, err := l.Query(ctx, sqlf.Sprintf(codeIntelligenceRepositoryCountsQuery))
+	if err != nil {
+		return 0, 0, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		if err := rows.Scan(&totalRepositories, &withUploads); err != nil {
+			return 0, 0, err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return 0, 0, err
+	}
+
+	return withUploads, totalRepositories - withUploads, nil
+}
+
+var codeIntelligenceRepositoryCountsQuery = `
+-- source: internal/database/event_logs.go:CodeIntelligenceRepositoryCounts
+WITH active_repositories AS (
+	SELECT count(*) AS count FROM repo WHERE deleted_at IS NULL
+),
+active_repositories_with_upload AS (
+	SELECT count(DISTINCT repository_id) AS count
+	FROM lsif_dumps u
+	JOIN repo r ON r.id = u.repository_id
+	WHERE r.deleted_at IS NULL
+)
+SELECT
+	(SELECT count FROM active_repositories) AS total_repositories,
+	(SELECT count FROM active_repositories_with_upload) AS repositories_with_uploads
+`
+
 // AggregatedCodeIntelEvents calculates AggregatedEvent for each every unique event type related to code intel.
 func (l *EventLogStore) AggregatedCodeIntelEvents(ctx context.Context) ([]types.CodeIntelAggregatedEvent, error) {
 	return l.aggregatedCodeIntelEvents(ctx, time.Now().UTC())

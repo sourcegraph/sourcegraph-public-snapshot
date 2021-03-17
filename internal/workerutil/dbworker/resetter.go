@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/efritz/glock"
+	"github.com/derision-test/glock"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 

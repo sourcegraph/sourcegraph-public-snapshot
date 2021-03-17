@@ -121,7 +121,12 @@ func alertForStalePermissions(db dbutil.DB) *searchAlert {
 // query does not contain any repos to search.
 func (r *searchResolver) reposExist(ctx context.Context, options searchrepos.Options) bool {
 	options.UserSettings = r.UserSettings
-	repositoryResolver := &searchrepos.Resolver{Zoekt: r.zoekt, DefaultReposFunc: database.GlobalDefaultRepos.List, NamespaceStore: database.Namespaces(r.db)}
+	repositoryResolver := &searchrepos.Resolver{
+		DB:               r.db,
+		Zoekt:            r.zoekt,
+		DefaultReposFunc: database.DefaultRepos(r.db).List,
+		NamespaceStore:   database.Namespaces(r.db),
+	}
 	resolved, err := repositoryResolver.Resolve(ctx, options)
 	return err == nil && len(resolved.RepoRevs) > 0
 }
@@ -129,7 +134,7 @@ func (r *searchResolver) reposExist(ctx context.Context, options searchrepos.Opt
 func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAlert {
 	globbing := getBoolPtr(r.UserSettings.SearchGlobbing, false)
 
-	repoFilters, minusRepoFilters := r.Query.RegexpPatterns(query.FieldRepo)
+	repoFilters, minusRepoFilters := r.Query.Repositories()
 	repoGroupFilters, _ := r.Query.StringValues(query.FieldRepoGroup)
 	contextFilters, _ := r.Query.StringValues(query.FieldContext)
 	onlyForks, noForks, forksNotSet := false, false, true
@@ -490,7 +495,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 				break
 			}
 			repoParentPattern := "^" + regexp.QuoteMeta(repoParent) + "/"
-			repoFieldValues, _ := r.Query.RegexpPatterns(query.FieldRepo)
+			repoFieldValues, _ := r.Query.Repositories()
 
 			for _, v := range repoFieldValues {
 				if strings.HasPrefix(v, strings.TrimSuffix(repoParentPattern, "/")) {

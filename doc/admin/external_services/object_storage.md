@@ -22,10 +22,13 @@ To target an S3 bucket you've already provisioned, set the following environment
 
 - `PRECISE_CODE_INTEL_UPLOAD_BACKEND=S3`
 - `PRECISE_CODE_INTEL_UPLOAD_BUCKET=<my bucket name>`
+- `PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT=https://s3.us-east-1.amazonaws.com`
 - `PRECISE_CODE_INTEL_UPLOAD_AWS_ACCESS_KEY_ID=<your access key>`
 - `PRECISE_CODE_INTEL_UPLOAD_AWS_SECRET_ACCESS_KEY=<your secret key>`
 - `PRECISE_CODE_INTEL_UPLOAD_AWS_SESSION_TOKEN=<your session token>` (optional)
 - `PRECISE_CODE_INTEL_UPLOAD_AWS_REGION=us-east-1` (default)
+
+If a non-default region is supplied, ensure that the subdomain of the endpoint URL matches the target region.
 
 ### Using GCS
 

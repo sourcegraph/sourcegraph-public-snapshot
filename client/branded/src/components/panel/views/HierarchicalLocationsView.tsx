@@ -21,7 +21,10 @@ import { VersionContextProps } from '../../../../../shared/src/search/util'
 /** The maximum number of results we'll receive from a provider before we truncate and display a banner. */
 const MAXIMUM_LOCATION_RESULTS = 500
 
-export interface HierarchicalLocationsViewProps extends SettingsCascadeProps, VersionContextProps {
+export interface HierarchicalLocationsViewProps
+    extends SettingsCascadeProps,
+        VersionContextProps,
+        ExtensionsControllerProps<'extHostAPI'> {
     location: H.Location
     /**
      * The observable that emits the locations.
@@ -46,15 +49,6 @@ export interface HierarchicalLocationsViewProps extends SettingsCascadeProps, Ve
     isLightTheme: boolean
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
-
-    extensionsController: {
-        services: Pick<ExtensionsControllerProps['extensionsController']['services'], 'context'> & {
-            contribution: Pick<
-                ExtensionsControllerProps['extensionsController']['services']['contribution'],
-                'registerContributions'
-            >
-        }
-    }
 }
 
 interface State {
@@ -113,9 +107,15 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                             }),
                             tap(({ result }) => {
                                 const hasResults = !isErrorLike(result) && result.locations.length > 0
-                                this.props.extensionsController.services.context.updateContext({
-                                    'panel.locations.hasResults': hasResults,
-                                })
+                                this.props.extensionsController.extHostAPI
+                                    .then(extensionHostAPI =>
+                                        extensionHostAPI.updateContext({
+                                            'panel.locations.hasResults': hasResults,
+                                        })
+                                    )
+                                    .catch(() => {
+                                        // noop
+                                    })
                             }),
                             endWith({ isLoading: false })
                         )
@@ -131,7 +131,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                 )
         )
 
-        this.subscriptions.add(registerPanelToolbarContributions(this.props.extensionsController.services.contribution))
+        this.subscriptions.add(registerPanelToolbarContributions(this.props.extensionsController.extHostAPI))
 
         this.componentUpdates.next(this.props)
     }

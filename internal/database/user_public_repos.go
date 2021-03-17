@@ -44,6 +44,9 @@ func (s *UserPublicRepoStore) SetUserRepos(ctx context.Context, userID int32, re
 	if err != nil {
 		return err
 	}
+	if len(repos) == 0 {
+		return nil
+	}
 	values := make([]*sqlf.Query, 0, len(repos))
 	for _, repo := range repos {
 		values = append(values, sqlf.Sprintf(
@@ -72,6 +75,9 @@ func (s *UserPublicRepoStore) SetUserRepo(ctx context.Context, upr UserPublicRep
 }
 
 func (s *UserPublicRepoStore) ListByUser(ctx context.Context, userID int32) ([]UserPublicRepo, error) {
+	if mock := Mocks.UserPublicRepos.ListByUser; mock != nil {
+		return mock(ctx, userID)
+	}
 	rows, err := s.store.Query(ctx, sqlf.Sprintf(
 		"SELECT user_id, repo_uri, repo_id FROM user_public_repos WHERE user_id = %v",
 		userID,

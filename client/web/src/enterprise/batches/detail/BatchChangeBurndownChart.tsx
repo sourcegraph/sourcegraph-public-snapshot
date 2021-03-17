@@ -1,10 +1,9 @@
 import * as H from 'history'
-import React, { useMemo } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import {
     Area,
     ComposedChart,
     LabelFormatter,
-    Legend,
     ResponsiveContainer,
     Tooltip,
     XAxis,
@@ -15,6 +14,7 @@ import { ChangesetCountsOverTimeFields, Scalars } from '../../../graphql-operati
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { queryChangesetCountsOverTime as _queryChangesetCountsOverTime } from './backend'
+import { getYear, parseISO } from 'date-fns'
 
 interface Props {
     batchChangeID: Scalars['ID']
@@ -24,9 +24,6 @@ interface Props {
     /** For testing only. */
     queryChangesetCountsOverTime?: typeof _queryChangesetCountsOverTime
 }
-
-const dateTickFormat = new Intl.DateTimeFormat(undefined, { month: 'long', day: 'numeric' })
-const dateTickFormatter = (timestamp: number): string => dateTickFormat.format(timestamp)
 
 // const tooltipLabelFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' })
 const tooltipLabelFormat = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
@@ -60,9 +57,9 @@ type DisplayableChangesetCounts = Pick<
 
 const states: Record<keyof DisplayableChangesetCounts, StateDefinition> = {
     draft: { fill: 'var(--text-muted)', label: 'Draft', sortOrder: 5 },
-    openPending: { fill: 'var(--warning)', label: 'Open & awaiting review', sortOrder: 4 },
-    openChangesRequested: { fill: 'var(--danger)', label: 'Open & changes requested', sortOrder: 3 },
-    openApproved: { fill: 'var(--success)', label: 'Open & approved', sortOrder: 2 },
+    openPending: { fill: 'var(--warning)', label: 'Awaiting review', sortOrder: 4 },
+    openChangesRequested: { fill: 'var(--danger)', label: 'Changes requested', sortOrder: 3 },
+    openApproved: { fill: 'var(--success)', label: 'Approved', sortOrder: 2 },
     closed: { fill: 'var(--secondary)', label: 'Closed', sortOrder: 1 },
     merged: { fill: 'var(--merged)', label: 'Merged', sortOrder: 0 },
 }
@@ -78,12 +75,30 @@ export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
     queryChangesetCountsOverTime = _queryChangesetCountsOverTime,
     width = '100%',
 }) => {
+    const [hiddenStates, setHiddenStates] = useState<Set<keyof DisplayableChangesetCounts>>(new Set())
     const changesetCountsOverTime: ChangesetCountsOverTimeFields[] | undefined = useObservable(
         useMemo(() => queryChangesetCountsOverTime({ batchChange: batchChangeID }), [
             batchChangeID,
             queryChangesetCountsOverTime,
         ])
     )
+
+    const dateTickFormatter = useMemo(() => {
+        let dateTickFormat = new Intl.DateTimeFormat(undefined, { month: 'long', day: 'numeric' })
+        if (changesetCountsOverTime && changesetCountsOverTime?.length > 1) {
+            const start = parseISO(changesetCountsOverTime[0].date)
+            const end = parseISO(changesetCountsOverTime[changesetCountsOverTime.length - 1].date)
+            // If the range spans multiple years, we want to display the year as well.
+            if (getYear(start) !== getYear(end)) {
+                dateTickFormat = new Intl.DateTimeFormat(undefined, {
+                    month: 'short',
+                    day: 'numeric',
+                    year: '2-digit',
+                })
+            }
+        }
+        return (timestamp: number): string => dateTickFormat.format(timestamp)
+    }, [changesetCountsOverTime])
 
     // Is loading.
     if (changesetCountsOverTime === undefined) {
@@ -94,80 +109,106 @@ export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
         )
     }
 
-    if (changesetCountsOverTime.length <= 1) {
-        return (
-            <div className="col-md-8 offset-md-2 col-sm-12 card mt-5">
-                <div className="card-body p-5">
-                    <h2 className="text-center mb-4">The burndown chart requires 2 days of data</h2>
-                    <p>
-                        Come back in a few days and we'll be able to show you data on how your batch change is
-                        progressing!
-                    </p>
-                </div>
-            </div>
-        )
-    }
-    const hasEntries = changesetCountsOverTime.some(counts => counts.total > 0)
-    if (!hasEntries) {
-        return (
-            <div className="col-md-8 offset-md-2 col-sm-12 card mt-5">
-                <div className="card-body p-5">
-                    <h2 className="text-center mb-4">Burndown chart is not available</h2>
-                    <p>The burndown chart will be shown when data is available.</p>
-                </div>
-            </div>
-        )
-    }
     return (
-        <ResponsiveContainer width={width} height={300} className="test-batches-chart">
-            <ComposedChart
-                data={changesetCountsOverTime.map(snapshot => ({ ...snapshot, date: Date.parse(snapshot.date) }))}
-            >
-                <Legend verticalAlign="bottom" iconType="square" />
-                <XAxis
-                    dataKey="date"
-                    domain={[
-                        changesetCountsOverTime[0].date,
-                        changesetCountsOverTime[changesetCountsOverTime.length - 1].date,
-                    ]}
-                    name="Time"
-                    tickFormatter={dateTickFormatter}
-                    type="number"
-                    stroke="var(--text-muted)"
-                    scale="time"
-                />
-                <YAxis
-                    tickFormatter={toLocaleString}
-                    stroke="var(--text-muted)"
-                    type="number"
-                    allowDecimals={false}
-                    domain={[0, 'dataMax']}
-                />
-                <Tooltip
-                    labelFormatter={tooltipLabelFormatter as LabelFormatter}
-                    isAnimationActive={false}
-                    wrapperStyle={{ border: '1px solid var(--border-color)' }}
-                    contentStyle={tooltipStyle}
-                    labelStyle={{ fontWeight: 'bold' }}
-                    itemStyle={tooltipStyle}
-                    itemSorter={tooltipItemSorter}
-                />
+        <div className="d-flex batch-change-burndown-chart__container align-items-center">
+            <ResponsiveContainer width={width} height={300} className="test-batches-chart">
+                <ComposedChart
+                    data={changesetCountsOverTime.map(snapshot => ({ ...snapshot, date: Date.parse(snapshot.date) }))}
+                >
+                    <XAxis
+                        dataKey="date"
+                        domain={[
+                            changesetCountsOverTime[0].date,
+                            changesetCountsOverTime[changesetCountsOverTime.length - 1].date,
+                        ]}
+                        name="Time"
+                        tickFormatter={dateTickFormatter}
+                        type="number"
+                        stroke="var(--text-muted)"
+                        scale="time"
+                    />
+                    <YAxis
+                        tickFormatter={toLocaleString}
+                        stroke="var(--text-muted)"
+                        type="number"
+                        allowDecimals={false}
+                        domain={[0, 'dataMax']}
+                    />
+                    <Tooltip
+                        labelFormatter={tooltipLabelFormatter as LabelFormatter}
+                        isAnimationActive={false}
+                        wrapperStyle={{ border: '1px solid var(--border-color)' }}
+                        contentStyle={tooltipStyle}
+                        labelStyle={{ fontWeight: 'bold' }}
+                        itemStyle={tooltipStyle}
+                        itemSorter={tooltipItemSorter}
+                    />
 
-                {Object.entries(states)
-                    .sort(([, a], [, b]) => b.sortOrder - a.sortOrder)
-                    .map(([dataKey, state]) => (
-                        <Area
-                            key={state.sortOrder}
-                            dataKey={dataKey}
-                            name={state.label}
-                            fill={state.fill}
-                            // The stroke is used to color the legend, which we
-                            // want to match the fill color for each area.
-                            stroke={state.fill}
-                            {...commonAreaProps}
-                        />
-                    ))}
-            </ComposedChart>
-        </ResponsiveContainer>
+                    {Object.entries(states)
+                        .sort(([, a], [, b]) => b.sortOrder - a.sortOrder)
+                        .filter(([dataKey]) => !hiddenStates.has(dataKey as keyof DisplayableChangesetCounts))
+                        .map(([dataKey, state]) => (
+                            <Area
+                                key={state.sortOrder}
+                                dataKey={dataKey}
+                                name={state.label}
+                                fill={state.fill}
+                                // The stroke is used to color the legend, which we
+                                // want to match the fill color for each area.
+                                stroke={state.fill}
+                                {...commonAreaProps}
+                            />
+                        ))}
+                </ComposedChart>
+            </ResponsiveContainer>
+            <div className="flex-grow-0 btn-group-vertical ml-2">
+                {Object.entries(states).map(([key, state]) => (
+                    <LegendLabel
+                        key={key}
+                        stateKey={key as keyof DisplayableChangesetCounts}
+                        label={state.label}
+                        fill={state.fill}
+                        hiddenStates={hiddenStates}
+                        setHiddenStates={setHiddenStates}
+                    />
+                ))}
+            </div>
+        </div>
+    )
+}
+
+const LegendLabel: React.FunctionComponent<{
+    stateKey: keyof DisplayableChangesetCounts
+    label: string
+    fill: string
+    hiddenStates: Set<keyof DisplayableChangesetCounts>
+    setHiddenStates: (
+        setter: (currentValue: Set<keyof DisplayableChangesetCounts>) => Set<keyof DisplayableChangesetCounts>
+    ) => void
+}> = ({ stateKey, label, fill, hiddenStates, setHiddenStates }) => {
+    const onChangeCheckbox = useCallback(() => {
+        setHiddenStates(current => {
+            if (current.has(stateKey)) {
+                const newSet = new Set<keyof DisplayableChangesetCounts>(current)
+                newSet.delete(stateKey)
+                return newSet
+            }
+            return new Set<keyof DisplayableChangesetCounts>(current).add(stateKey)
+        })
+    }, [setHiddenStates, stateKey])
+    const checked = useMemo(() => !hiddenStates.has(stateKey), [hiddenStates, stateKey])
+    return (
+        <div className="d-flex align-items-center text-nowrap p-2">
+            <div
+                // We want to set the fill based on the state config.
+                // eslint-disable-next-line react/forbid-dom-props
+                style={{
+                    backgroundColor: fill,
+                }}
+                className="batch-change-burndown-chart-legend__color-box mr-2"
+            />
+            <input type="checkbox" className="mr-2" checked={checked} onChange={onChangeCheckbox} />
+            {label}
+        </div>
     )
 }

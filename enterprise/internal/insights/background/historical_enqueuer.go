@@ -5,16 +5,20 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	str2duration "github.com/xhit/go-str2duration/v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -77,13 +81,26 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 			_, err := queryrunner.EnqueueJob(ctx, workerBaseStore, job)
 			return err
 		},
-		gitFirstEverCommit:   git.FirstEverCommit,
+		gitFirstEverCommit:   (&cachedGitFirstEverCommit{impl: git.FirstEverCommit}).gitFirstEverCommit,
 		gitFindNearestCommit: git.FindNearestCommit,
 
-		// Fill the last 52 weeks of data, recording 1 point per week.
-		//
-		framesToBackfill: 52,
-		frameLength:      7 * 24 * time.Hour,
+		// Fill e.g. the last 52 weeks of data, recording 1 point per week.
+		framesToBackfill: func() int {
+			if frames := conf.Get().InsightsHistoricalFrames; frames != 0 {
+				return frames
+			}
+			return 6 // 6 one-month frames.
+		},
+		frameLength: func() time.Duration {
+			if s := conf.Get().InsightsHistoricalFrameLength; s != "" {
+				parsed, err := str2duration.ParseDuration(s)
+				if err != nil {
+					log15.Error("insights: failed to parse site config insights.historical.frameLength", "error", err)
+				}
+				return parsed
+			}
+			return 30 * 24 * time.Hour // 6 one-month frames.
+		},
 
 		allReposIterator: (&discovery.AllReposIterator{
 			DefaultRepoStore:      database.DefaultRepos(workerBaseStore.Handle().DB()),
@@ -157,10 +174,10 @@ type historicalEnqueuer struct {
 	gitFindNearestCommit  func(ctx context.Context, repoName api.RepoName, revSpec string, target time.Time) (*git.Commit, error)
 
 	// framesToBackfill describes the number of historical timeframes to backfill data for.
-	framesToBackfill int
+	framesToBackfill func() int
 
 	// frameLength describes the length of each timeframe to backfill data for.
-	frameLength time.Duration
+	frameLength func() time.Duration
 
 	// The iterator to use for walking over all repositories on Sourcegraph.
 	allReposIterator func(ctx context.Context, each func(repoName string) error) error
@@ -217,36 +234,17 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, uniqueSeries map[s
 		return nil // nothing to do.
 	}
 	var multi error
-	for frame := 0; frame < h.framesToBackfill; frame++ {
+	for frame := 0; frame < h.framesToBackfill(); frame++ {
 		// Determine the exact start and end time of this timeframe.
-		from := h.now().Add(-time.Duration(frame+1) * h.frameLength)
-		to := h.now().Add(-time.Duration(frame) * h.frameLength)
+		from := h.now().Add(-time.Duration(frame+1) * h.frameLength())
+		to := h.now().Add(-time.Duration(frame) * h.frameLength())
 		if h.now().After(h.now().Add(24 * time.Hour)) {
 			// We exclude today because it is the regular enqueuer's job to enqueue work for today.
 			to = to.Add(-24 * time.Hour)
 		}
 
-		// Build a function which tells if a given series has data in this timeframe for a specific
-		// repository.
-		seriesIDsWithData, err := h.insightsStore.DistinctSeriesWithData(ctx, from, to)
-		if err != nil {
-			return multierror.Append(multi, errors.Wrap(err, "DistinctSeriesWithData")) // DB error, no point in continuing.
-		}
-		haveData := map[string]struct{}{}
-		for _, id := range seriesIDsWithData {
-			haveData[id] = struct{}{}
-		}
-		haveDataForRepo := func(seriesID string, id api.RepoID, from, to time.Time) bool {
-			// TODO(slimsag): future: actually check if the insight is missing data for the given
-			// repo ID. In the meantime, if there is *any* datapoint in this timeframe we won't do
-			// backfilling. e.g., if a new repository is added to Sourcegraph after we built
-			// historical data for an insight, it will not be accounted for.
-			_, haveData := haveData[seriesID]
-			return haveData
-		}
-
 		// Build historical data for this timeframe.
-		softErr, hardErr := h.buildFrame(ctx, uniqueSeries, sortedSeriesIDs, from, to, haveDataForRepo)
+		softErr, hardErr := h.buildFrame(ctx, uniqueSeries, sortedSeriesIDs, from, to)
 		if softErr != nil {
 			multi = multierror.Append(multi, softErr)
 			continue
@@ -264,9 +262,6 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, uniqueSeries map[s
 // It is expected to backfill data for all unique series that are missing data, across all repos
 // (using h.allReposIterator.)
 //
-// It should not backfill data for series that already have data recorded for a given repo, checked
-// via haveDataForRepo().
-//
 // It may return both hard errors (e.g. DB connection failure, future frames are unlikely to build)
 // and soft errors (e.g. user made a mistake or we did partial work, future frames will likely
 // succeed.)
@@ -276,7 +271,6 @@ func (h *historicalEnqueuer) buildFrame(
 	sortedSeriesIDs []string,
 	from time.Time,
 	to time.Time,
-	haveDataForRepo func(seriesID string, id api.RepoID, from, to time.Time) bool,
 ) (hardErr, softErr error) {
 	// We yield frequently for a small period of time for a few reasons:
 	//
@@ -287,8 +281,12 @@ func (h *historicalEnqueuer) buildFrame(
 	//
 	lastIteration := h.now()
 	yield := func() {
-		if diff := h.timeSince(lastIteration); diff < 100*time.Millisecond {
-			h.sleep(diff)
+		yieldTime := 100 * time.Millisecond
+		if factor := conf.Get().InsightsHistoricalSpeedFactor; factor != nil {
+			yieldTime = time.Duration(float64(yieldTime) * *factor)
+		}
+		if diff := h.timeSince(lastIteration); diff < yieldTime {
+			h.sleep(yieldTime - diff)
 			lastIteration = h.now()
 		}
 	}
@@ -300,7 +298,11 @@ func (h *historicalEnqueuer) buildFrame(
 		// Lookup the repository (we need its database ID)
 		repo, err := h.repoStore.GetByName(ctx, api.RepoName(repoName))
 		if err != nil {
-			return err // hard DB error
+			// Ignore RepoNotFoundErr because it could just be that the repository was actually
+			// deleted and allReposIterator had it cached.
+			if _, ok := err.(*database.RepoNotFoundErr); !ok {
+				return err // hard DB error
+			}
 		}
 
 		// Find the first commit made to the repository on the default branch.
@@ -323,7 +325,17 @@ func (h *historicalEnqueuer) buildFrame(
 			yield()
 
 			// If we already have data for this frame+repo+series, then there's nothing to do.
-			if haveDataForRepo(seriesID, repo.ID, from, to) {
+			var numDataPoints int
+			numDataPoints, hardErr = h.insightsStore.CountData(ctx, store.CountDataOpts{
+				From:     &from,
+				To:       &to,
+				SeriesID: &seriesID,
+				RepoID:   &repo.ID,
+			})
+			if err != nil {
+				return multierror.Append(softErr, hardErr)
+			}
+			if numDataPoints > 0 {
 				continue
 			}
 
@@ -454,4 +466,31 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 		State:       "queued",
 	})
 	return
+}
+
+// cachedGitFirstEverCommit is a simple in-memory cache for gitFirstEverCommit calls. It does so
+// using a map, and entries are never evicted because they are expected to be small and in general
+// unchanging.
+type cachedGitFirstEverCommit struct {
+	impl func(ctx context.Context, repoName api.RepoName) (*git.Commit, error)
+
+	mu    sync.Mutex
+	cache map[api.RepoName]*git.Commit
+}
+
+func (c *cachedGitFirstEverCommit) gitFirstEverCommit(ctx context.Context, repoName api.RepoName) (*git.Commit, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.cache == nil {
+		c.cache = map[api.RepoName]*git.Commit{}
+	}
+	if cached, ok := c.cache[repoName]; ok {
+		return cached, nil
+	}
+	entry, err := c.impl(ctx, repoName)
+	if err != nil {
+		return nil, err
+	}
+	c.cache[repoName] = entry
+	return entry, nil
 }

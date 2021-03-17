@@ -33,3 +33,22 @@ export function getEnabledExtensionsForSubject(
 
     return undefined
 }
+
+export function areExtensionsSame(oldExtensions: { id: string }[], newExtensions: { id: string }[]): boolean {
+    const oldSet = new Set<string>(oldExtensions.map(({ id }) => id))
+    const newSet = new Set<string>(newExtensions.map(({ id }) => id))
+
+    for (const oldId of oldSet) {
+        if (!newSet.has(oldId)) {
+            return false
+        }
+    }
+
+    for (const newId of newSet) {
+        if (!oldSet.has(newId)) {
+            return false
+        }
+    }
+
+    return true
+}

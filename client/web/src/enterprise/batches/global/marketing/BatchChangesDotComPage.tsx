@@ -46,7 +46,7 @@ export const BatchChangesDotComPage: React.FunctionComponent<BatchChangesDotComP
                     </li>
                     <li>
                         Follow the{' '}
-                        <a href="https://docs.sourcegraph.com/campaigns/quickstart" rel="noopener">
+                        <a href="https://docs.sourcegraph.com/batch_changes/quickstart" rel="noopener">
                             quickstart guide for batch changes
                         </a>{' '}
                         to enable batch changes on your instance and start using them.
@@ -55,7 +55,7 @@ export const BatchChangesDotComPage: React.FunctionComponent<BatchChangesDotComP
 
                 <p>
                     Learn more about batch changes{' '}
-                    <a href="https://docs.sourcegraph.com/campaigns" rel="noopener">
+                    <a href="https://docs.sourcegraph.com/batch_changes" rel="noopener">
                         in the documentation
                     </a>
                     .

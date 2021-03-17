@@ -90,7 +90,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                     !isErrorLike(userHasCodeMonitors) && (
                         <Link to="/code-monitoring/new" className="btn btn-secondary">
                             <PlusIcon className="icon-inline" />
-                            Create new code monitor
+                            Create code monitor
                         </Link>
                     )
                 }
