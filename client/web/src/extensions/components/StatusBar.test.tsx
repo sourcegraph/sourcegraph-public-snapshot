@@ -1,7 +1,7 @@
 import React from 'react'
 import { render } from '@testing-library/react'
 import { StatusBar } from './StatusBar'
-import { StatusBarItemWithKey } from '../../../../shared/src/api/client/api/codeEditor'
+import { StatusBarItemWithKey } from '../../../../shared/src/api/extension/api/codeEditor'
 import { BehaviorSubject } from 'rxjs'
 
 describe('StatusBar', () => {
@@ -17,4 +17,8 @@ describe('StatusBar', () => {
                 .baseElement
         ).toMatchSnapshot()
     })
+
+    // executes commands
+
+    // empty state (no extensions)
 })

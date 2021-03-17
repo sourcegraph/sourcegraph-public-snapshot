@@ -23,6 +23,7 @@ import {
     ContributionOptions,
 } from './extension/extensionHostApi'
 import { ExecutableExtension } from './extension/activation'
+import { StatusBarItemWithKey } from './extension/api/codeEditor'
 
 /**
  * This is exposed from the extension host thread to the main thread
@@ -151,6 +152,8 @@ export interface FlatExtensionHostAPI {
         // Construct URL object on host from string provided by main thread
         context: DeepReplace<ViewContexts['directory'], URL, string>
     ) => ProxySubscribable<ViewProviderResult[]>
+
+    getStatusBarItems: (viewerId: ViewerId) => ProxySubscribable<StatusBarItemWithKey[]>
 
     // Content
     getLinkPreviews: (url: string) => ProxySubscribable<LinkPreviewMerged | null>

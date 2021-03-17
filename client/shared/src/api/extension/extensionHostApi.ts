@@ -437,6 +437,15 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                 )
             ),
 
+        getStatusBarItems: ({ viewerId }) => {
+            const viewer = getViewer(viewerId)
+            if (viewer.type !== 'CodeEditor') {
+                return proxySubscribable(EMPTY)
+            }
+
+            return proxySubscribable(viewer.mergedStatusBarItems.pipe(debounceTime(0)))
+        },
+
         // Content
         getLinkPreviews: (url: string) =>
             proxySubscribable(

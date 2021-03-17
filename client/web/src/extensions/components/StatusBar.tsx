@@ -1,9 +1,7 @@
 import React, { useMemo } from 'react'
-import { StatusBarItemWithKey } from '../../../../shared/src/api/client/api/codeEditor'
-import { AbsoluteRepoFile } from '../../../../shared/src/util/url'
+import { StatusBarItemWithKey } from '../../../../shared/src/api/extension/api/codeEditor'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import classNames from 'classnames'
-import { TextDocumentIdentifier } from '../../../../shared/src/api/client/types/textDocument'
 import { Observable, timer } from 'rxjs'
 import { useCarousel } from '../../components/useCarousel'
 import MenuLeftIcon from 'mdi-react/MenuLeftIcon'
@@ -11,27 +9,13 @@ import MenuRightIcon from 'mdi-react/MenuRightIcon'
 import { mapTo } from 'rxjs/operators'
 import { Link } from 'react-router-dom'
 
-interface StatusBarProps extends Omit<AbsoluteRepoFile, 'revision'> {
-    getStatusBarItems: (parameters: TextDocumentIdentifier) => Observable<StatusBarItemWithKey[] | null>
+interface StatusBarProps {
+    getStatusBarItems: () => Observable<StatusBarItemWithKey[] | 'loading'>
+    className?: string
 }
 
-export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
-    getStatusBarItems,
-    repoName,
-    filePath,
-    commitID,
-}) => {
-    const uri = `git://${repoName}?${commitID}#${filePath}`
-
-    const statusBarItems = useObservable(
-        useMemo(
-            () =>
-                getStatusBarItems({
-                    uri,
-                }),
-            [getStatusBarItems, uri]
-        )
-    )
+export const StatusBar: React.FunctionComponent<StatusBarProps> = ({ getStatusBarItems, className }) => {
+    const statusBarItems = useObservable(useMemo(() => getStatusBarItems(), [getStatusBarItems]))
 
     // Wait 3 seconds to show "no information from extensions avaiable"
     // to avoid UI jitter during initial extension activation.
@@ -39,7 +23,7 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
     // Restart timer whenever uri changes, since new extensions could be activated,
     // or could be fetching new data, so we include an unnecessary dependency.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    const hadTimeToLoad = useObservable(useMemo(() => timer(3000).pipe(mapTo(true)), [uri]))
+    const hadTimeToLoad = useObservable(useMemo(() => timer(3000).pipe(mapTo(true)), [])) // TODO(tj): use 'extneeons loaded'
 
     const {
         carouselReference,
@@ -50,14 +34,14 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
     } = useCarousel({ direction: 'leftToRight' })
 
     return (
-        <div className="status-bar w-100 border-top d-flex">
+        <div className={classNames('status-bar w-100 border-top d-flex', className)}>
             {canScrollNegative && (
                 <button type="button" className="btn btn-link status-bar__scroll border-0" onClick={onNegativeClicked}>
                     <MenuLeftIcon className="icon-inline" />
                 </button>
             )}
             <div className="status-bar__items d-flex px-2" ref={carouselReference}>
-                {statusBarItems
+                {!!statusBarItems && statusBarItems !== 'loading'
                     ? statusBarItems.map(statusBarItem => (
                           <StatusBarItem key={statusBarItem.key} statusBarItem={statusBarItem} />
                       ))
@@ -94,6 +78,7 @@ const StatusBarItem: React.FunctionComponent<{
     className?: string
     component?: JSX.Element
 }> = ({ statusBarItem, className = 'status-bar', component }) => {
+    // TODO(tj): send command name and command args from ext host, exec thru mainthread api
     const handleCommand = () => {}
 
     return (

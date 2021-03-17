@@ -11,6 +11,7 @@ import { NotificationType, PanelViewData } from './extensionHostApi'
 import { createDecorationType } from './api/decorations'
 import { syncRemoteSubscription } from '../util'
 import { asError } from '../../util/errors'
+import { createStatusBarItemType } from './api/codeEditor'
 
 export interface InitResult {
     configuration: sourcegraph.ConfigurationService
@@ -130,7 +131,15 @@ export function createExtensionAPI(state: ExtensionHostState, mainAPI: Remote<Ma
         showMessage: message => mainAPI.showMessage(message),
         showInputBox: options => mainAPI.showInputBox(options),
     }
-
+    // TODO(tj): REMOVE TEST EXT
+    window.activeViewComponentChanges.subscribe(activeViewComponent => {
+        if (activeViewComponent?.type === 'CodeEditor') {
+            activeViewComponent.setStatusBarItem(createStatusBarItemType(), {
+                text: 'test status bar item',
+                tooltip: 'test tooltip',
+            })
+        }
+    })
     const app: typeof sourcegraph['app'] = {
         get activeWindow() {
             return window
@@ -201,6 +210,7 @@ export function createExtensionAPI(state: ExtensionHostState, mainAPI: Remote<Ma
             }
         },
         createDecorationType,
+        createStatusBarItemType,
     }
 
     // Commands

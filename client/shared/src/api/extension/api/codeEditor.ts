@@ -6,22 +6,13 @@ import * as sourcegraph from 'sourcegraph'
 import { createDecorationType } from './decorations'
 import { ExtensionDocument } from './textDocument'
 import { CodeEditorData, ViewerId } from '../../viewerTypes'
-import { isEqual } from 'lodash'
+import { isEqual, uniqueId } from 'lodash'
+
+export const createStatusBarItemType = (): sourcegraph.StatusBarItemType => ({ key: uniqueId('StatusBarItemType') })
+
+export type StatusBarItemWithKey = sourcegraph.StatusBarItem & sourcegraph.StatusBarItemType
 
 const DEFAULT_DECORATION_TYPE = createDecorationType()
-
-/**
- * Returns true if all of the objects properties are empty null, undefined, empty strings or objects that are also empty.
- */
-const isEmptyObjectDeep = (value: any): boolean =>
-    Array.isArray(value)
-        ? value.every(isEmptyObjectDeep)
-        : typeof value === 'object' && value !== null
-        ? Object.values(value).every(isEmptyObjectDeep)
-        : !value
-
-const isDecorationEmpty = ({ range, isWholeLine, ...contents }: clientType.TextDocumentDecoration): boolean =>
-    isEmptyObjectDeep(contents)
 
 /** @internal */
 export class ExtensionCodeEditor implements sourcegraph.CodeEditor, ProxyMarked {
@@ -75,14 +66,22 @@ export class ExtensionCodeEditor implements sourcegraph.CodeEditor, ProxyMarked 
         )
     }
 
-    // TODO(tj): Add status bar items
-    // public setStatusBarItem(
-    //     statusBarItemType: sourcegraph.StatusBarItemType,
-    //     statusBarItem: sourcegraph.StatusBarItem
-    // ): void {
-    //     // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    //     this.proxy.$setStatusBarItem(this.resource, { ...statusBarItem, ...statusBarItemType })
-    // }
+    private _statusBarItemsByType = new Map<sourcegraph.StatusBarItemType, StatusBarItemWithKey>()
+
+    private _mergedStatusBarItems = new BehaviorSubject<StatusBarItemWithKey[]>([])
+    public get mergedStatusBarItems(): Observable<StatusBarItemWithKey[]> {
+        return this._mergedStatusBarItems
+    }
+
+    public setStatusBarItem(
+        statusBarItemType: sourcegraph.StatusBarItemType,
+        statusBarItem: sourcegraph.StatusBarItem
+    ): void {
+        this._statusBarItemsByType.set(statusBarItemType, { ...statusBarItem, ...statusBarItemType })
+        this._mergedStatusBarItems.next(
+            [...this._statusBarItemsByType.values()].flat().filter(statusBarItem => isValidStatusBarItem(statusBarItem))
+        )
+    }
 
     public update(data: Pick<CodeEditorData, 'selections'>): void {
         const newSelections = data.selections.map(selection => Selection.fromPlain(selection))
@@ -97,37 +96,24 @@ export class ExtensionCodeEditor implements sourcegraph.CodeEditor, ProxyMarked 
     }
 }
 
+/**
+ * Returns true if all of the objects properties are empty null, undefined, empty strings or objects that are also empty.
+ */
+const isEmptyObjectDeep = (value: any): boolean =>
+    Array.isArray(value)
+        ? value.every(isEmptyObjectDeep)
+        : typeof value === 'object' && value !== null
+        ? Object.values(value).every(isEmptyObjectDeep)
+        : !value
+
+const isDecorationEmpty = ({ range, isWholeLine, ...contents }: clientType.TextDocumentDecoration): boolean =>
+    isEmptyObjectDeep(contents)
+
+const isValidStatusBarItem = ({ key, text }: StatusBarItemWithKey): boolean => !!key && !!text
+
 function fromTextDocumentDecoration(decoration: sourcegraph.TextDocumentDecoration): clientType.TextDocumentDecoration {
     return {
         ...decoration,
         range: (decoration.range as Range).toJSON(),
     }
 }
-
-// interface PreviousStatusBarItems {
-//     [resource: string]: {
-//         [decorationType: string]: StatusBarItemWithKey
-//     }
-// }
-// export type StatusBarItemWithKey = StatusBarItem & StatusBarItemType
-
-// private getStatusBarItemsSubject(
-//     resource: string,
-//     statusBarItem?: StatusBarItemWithKey
-// ): BehaviorSubject<StatusBarItemWithKey[]> {
-//     let subject = this.statusBarItems.get(resource)
-//     if (!subject) {
-//         subject = new BehaviorSubject<StatusBarItemWithKey[]>(statusBarItem ? [statusBarItem] : [])
-//         this.statusBarItems.set(resource, subject)
-//         this.previousStatusBarItems[resource] = {}
-//     }
-//     if (statusBarItem !== undefined) {
-//         // Replace previous status bar item for this resource + statusBarItemType
-//         this.previousStatusBarItems[resource][statusBarItem.key] = statusBarItem
-
-//         // Emit all status bar items for this resource
-//         const nextStatusBarItems = Object.values(this.previousStatusBarItems[resource])
-//         subject.next(nextStatusBarItems)
-//     }
-//     return subject
-// }
