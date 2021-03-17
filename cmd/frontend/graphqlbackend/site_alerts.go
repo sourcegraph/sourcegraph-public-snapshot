@@ -237,7 +237,7 @@ func deprecationAlert(args AlertFuncArgs) []*Alert {
 		log15.Error("cannot determine version", "error", err)
 	}
 
-	if cv.Minor() == 26 {
+	if cv.Minor() == 26 && args.IsSiteAdmin {
 		return []*Alert{{TypeValue: AlertTypeInfo, MessageValue: "Support for Postgres v11.x and below will be deprecated from Sourcegraph v3.27. Please reach out to support@sourcegraph.com if you require assistance upgrading.", IsDismissibleWithKeyValue: "true"}}
 	}
 
