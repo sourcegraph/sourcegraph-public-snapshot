@@ -1235,6 +1235,8 @@ type Settings struct {
 
 // SettingsExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type SettingsExperimentalFeatures struct {
+	// ArchiveBatchChangeChangesets description: Enables the archiving of changesets instead of detaching them when applying a new batch spec that doesn't include these changesets
+	ArchiveBatchChangeChangesets *bool `json:"archiveBatchChangeChangesets,omitempty"`
 	// CodeInsights description: Enables code insights on directory pages.
 	CodeInsights *bool `json:"codeInsights,omitempty"`
 	// CodeMonitoring description: Enables code monitoring on directory pages.
