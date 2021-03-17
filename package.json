@@ -34,11 +34,6 @@
     "release": "cd dev/release && yarn run release",
     "docsite:serve": "./dev/docsite.sh -config doc/docsite.json serve -http=localhost:5080"
   },
-  "workspaces": {
-    "packages": [
-      "client/wildcard"
-    ]
-  },
   "browserslist": [
     "last 1 version",
     ">1%",
@@ -258,6 +253,7 @@
     "ts-morph": "^8.1.0",
     "ts-node": "^9.1.0",
     "typescript": "^4.1.3",
+    "use-resize-observer": "^7.0.0",
     "utc-version": "^2.0.2",
     "web-ext": "^4.2.0",
     "webpack": "^4.44.2",
