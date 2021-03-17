@@ -11,7 +11,10 @@ const { add } = storiesOf('web/VersionContextDropdown', module).addDecorator(sto
     <WebStory>{() => story()}</WebStory>
 ))
 
-const setVersionContext = action('setVersionContext')
+const setVersionContext = () => {
+    action('setVersionContext')
+    return Promise.resolve()
+}
 const history = H.createMemoryHistory({ keyLength: 0 })
 const commonProps = subtypeOf<Partial<VersionContextDropdownProps>>()({
     alwaysShow: true,

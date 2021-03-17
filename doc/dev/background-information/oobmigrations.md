@@ -173,7 +173,7 @@ const BatchSize = 500
 func (m *migrator) Up(ctx context.Context) (err error) {
 	tx, err := m.store.Transact(ctx)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
@@ -187,7 +187,7 @@ func (m *migrator) Up(ctx context.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	defer func() { err = basestore.CloseROws(err) }()
+	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
 		var id int
@@ -196,10 +196,10 @@ func (m *migrator) Up(ctx context.Context) (err error) {
 			return err
 		}
 
-		if err := tx.Exec(sqlf.Sprintf(
+		if err := tx.Exec(ctx, sqlf.Sprintf(
 			"UPDATE skunk_payloads SET payload2 = %s WHERE id = %s", 
 			oldToNew(payload), 
-			ids,
+			id,
 		)); err != nil {
 			return err
 		}
@@ -214,7 +214,7 @@ In the reverse migration direction, we may think we can take a few short-cuts be
 ```go
 func (m *migrator) Down(ctx context.Context) (err error) {
   // Drop migrated records that still have the old payload
-	if err := m.store.Exec(sqlf.Sprintf(
+	if err := m.store.Exec(ctx, sqlf.Sprintf(
 		"UPDATE skunk_payloads SET payload2 = NULL WHERE payload IS NOT NULL AND payload2 IS NOT NULL LIMIT %s",
 		BatchSize,
 	)); err != nil {
@@ -226,7 +226,7 @@ func (m *migrator) Down(ctx context.Context) (err error) {
 	// of the forward migration.
 	tx, err := m.store.Transact(ctx)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
@@ -237,7 +237,7 @@ func (m *migrator) Down(ctx context.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	defer func() { err = basestore.CloseROws(err) }()
+	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
 		var id int
@@ -246,10 +246,10 @@ func (m *migrator) Down(ctx context.Context) (err error) {
 			return err
 		}
 
-		if err := tx.Exec(sqlf.Sprintf(
+		if err := tx.Exec(ctx, sqlf.Sprintf(
 			"UPDATE skunk_payloads SET payload = %s WHERE id = %s",
 			newToOld(payload),
-			ids,
+			id,
 		)); err != nil{
 			return err
 		}

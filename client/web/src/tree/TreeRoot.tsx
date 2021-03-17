@@ -24,7 +24,7 @@ import { TreeFields } from '../graphql-operations'
 import { getFileDecorations } from '../backend/features'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { ThemeProps } from '../../../shared/src/theme'
-import { FileDecorationsByPath } from '../../../shared/src/api/extension/flatExtensionApi'
+import { FileDecorationsByPath } from '../../../shared/src/api/extension/extensionHostApi'
 
 const maxEntries = 2500
 

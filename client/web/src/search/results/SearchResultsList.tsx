@@ -49,7 +49,7 @@ const isSearchResults = (value: unknown): value is GQL.ISearchResults =>
     value.__typename === 'SearchResults'
 
 export interface SearchResultsListProps
-    extends ExtensionsControllerProps<'executeCommand' | 'services'>,
+    extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         TelemetryProps,
         SettingsCascadeProps,

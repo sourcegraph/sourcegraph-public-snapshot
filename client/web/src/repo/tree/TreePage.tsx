@@ -9,11 +9,11 @@ import TagIcon from 'mdi-react/TagIcon'
 import UserIcon from 'mdi-react/UserIcon'
 import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { Link, Redirect } from 'react-router-dom'
-import { Observable, EMPTY } from 'rxjs'
-import { catchError, map } from 'rxjs/operators'
+import { Observable, EMPTY, from } from 'rxjs'
+import { catchError, map, switchMap } from 'rxjs/operators'
 import { ActionItem } from '../../../../shared/src/actions/ActionItem'
 import { ActionsContainer } from '../../../../shared/src/actions/ActionsContainer'
-import { ContributableMenu, ContributableViewContainer } from '../../../../shared/src/api/protocol'
+import { ContributableMenu } from '../../../../shared/src/api/protocol'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import { displayRepoName } from '../../../../shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
@@ -46,9 +46,10 @@ import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryServic
 import { TreeEntriesSection } from './TreeEntriesSection'
 import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
 import { getFileDecorations } from '../../backend/features'
-import { FileDecorationsByPath } from '../../../../shared/src/api/extension/flatExtensionApi'
+import { FileDecorationsByPath } from '../../../../shared/src/api/extension/extensionHostApi'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import { getCombinedViews } from '../../insights/backend'
+import { wrapRemoteObservable } from '../../../../shared/src/api/client/api/common'
 
 const fetchTreeCommits = memoizeObservable(
     (args: {
@@ -211,8 +212,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
             )
         ) ?? {}
 
-    const { services } = props.extensionsController
-
     const showCodeInsights =
         !isErrorLike(settingsCascade.final) &&
         !!settingsCascade.final?.experimentalFeatures?.codeInsights &&
@@ -224,37 +223,68 @@ export const TreePage: React.FunctionComponent<Props> = ({
         if (!showCodeInsights) {
             return
         }
-        const viewerId = services.viewer.addViewer({
-            type: 'DirectoryViewer',
-            isActive: true,
-            resource: uri,
-        })
-        return () => services.viewer.removeViewer(viewerId)
-    }, [services.viewer, services.model, uri, showCodeInsights])
+
+        const viewerIdPromise = props.extensionsController.extHostAPI
+            .then(extensionHostAPI =>
+                extensionHostAPI.addViewerIfNotExists({
+                    type: 'DirectoryViewer',
+                    isActive: true,
+                    resource: uri,
+                })
+            )
+            .catch(error => {
+                console.error('Error adding viewer to extension host:', error)
+                return null
+            })
+
+        return () => {
+            Promise.all([props.extensionsController.extHostAPI, viewerIdPromise])
+                .then(([extensionHostAPI, viewerId]) => {
+                    if (viewerId) {
+                        return extensionHostAPI.removeViewer(viewerId)
+                    }
+                    return
+                })
+                .catch(error => console.error('Error removing viewer from extension host:', error))
+        }
+    }, [uri, showCodeInsights, props.extensionsController])
 
     // Observe directory views
-    const workspaceUri = services.workspace.roots.value[0]?.uri
+    const workspaceUri = useObservable(
+        useMemo(
+            () =>
+                from(props.extensionsController.extHostAPI).pipe(
+                    switchMap(extensionHostAPI => extensionHostAPI.getWorkspaceRoots()),
+                    map(workspaceRoots => workspaceRoots[0]?.uri)
+                ),
+            [props.extensionsController]
+        )
+    )
     const views = useObservable(
         useMemo(
             () =>
                 showCodeInsights && workspaceUri
-                    ? getCombinedViews(
-                          ContributableViewContainer.Directory,
-                          {
-                              viewer: {
-                                  type: 'DirectoryViewer',
-                                  directory: {
-                                      uri,
-                                  },
-                              },
-                              workspace: {
-                                  uri: workspaceUri,
-                              },
-                          },
-                          services.view
+                    ? getCombinedViews(() =>
+                          from(props.extensionsController.extHostAPI).pipe(
+                              switchMap(extensionHostAPI =>
+                                  wrapRemoteObservable(
+                                      extensionHostAPI.getDirectoryViews({
+                                          viewer: {
+                                              type: 'DirectoryViewer',
+                                              directory: {
+                                                  uri,
+                                              },
+                                          },
+                                          workspace: {
+                                              uri: workspaceUri,
+                                          },
+                                      })
+                                  )
+                              )
+                          )
                       )
                     : EMPTY,
-            [showCodeInsights, workspaceUri, uri, services.view]
+            [showCodeInsights, workspaceUri, uri, props.extensionsController]
         )
     )
 

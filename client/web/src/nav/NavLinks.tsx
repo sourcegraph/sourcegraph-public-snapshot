@@ -33,7 +33,7 @@ import { LinkWithIcon } from '../components/LinkWithIcon'
 interface Props
     extends SettingsCascadeProps<Settings>,
         KeyboardShortcutsProps,
-        ExtensionsControllerProps<'executeCommand' | 'services'>,
+        ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         ThemeProps,
         ThemePreferenceProps,

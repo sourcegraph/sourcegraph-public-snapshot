@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -16,6 +15,7 @@ import (
 	"github.com/throttled/throttled/v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -35,7 +35,7 @@ func serveGraphQL(schema *graphql.Schema, rlw *graphqlbackend.RateLimitWatcher, 
 		if r.URL.RawQuery != "" {
 			requestName = r.URL.RawQuery
 		}
-		requestSource := guessSource(r)
+		requestSource := search.GuessSource(r)
 
 		// Used by the prometheus tracer
 		r = r.WithContext(trace.WithGraphQLRequestName(r.Context(), requestName))
@@ -199,23 +199,4 @@ func getUID(r *http.Request) (uid string, ip bool, anonymous bool) {
 		return ip, true, anonymous
 	}
 	return "unknown", false, anonymous
-}
-
-// guessSource guesses the source the request came from (browser, other HTTP client, etc.)
-func guessSource(r *http.Request) trace.SourceType {
-	userAgent := r.UserAgent()
-	for _, guess := range []string{
-		"Mozilla",
-		"WebKit",
-		"Gecko",
-		"Chrome",
-		"Firefox",
-		"Safari",
-		"Edge",
-	} {
-		if strings.Contains(userAgent, guess) {
-			return trace.SourceBrowser
-		}
-	}
-	return trace.SourceOther
 }

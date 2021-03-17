@@ -334,17 +334,17 @@ var searchResponseCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "Number of searches that have ended in the given status (success, error, timeout, partial_timeout).",
 }, []string{"status", "alert_type", "source", "request_name"})
 
-// logSearchLatency records search durations in the event database. This
+// LogSearchLatency records search durations in the event database. This
 // function may only be called after a search result is performed, because it
 // relies on the invariant that query and pattern error checking has already
 // been performed.
-func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32) {
+func LogSearchLatency(ctx context.Context, db dbutil.DB, si *SearchInputs, durationMs int32) {
 	tr, ctx := trace.New(ctx, "logSearchLatency", "")
 	defer func() {
 		tr.Finish()
 	}()
 	var types []string
-	resultTypes, _ := r.Query.StringValues(query.FieldType)
+	resultTypes, _ := si.Query.StringValues(query.FieldType)
 	for _, typ := range resultTypes {
 		switch typ {
 		case "repo", "symbol", "diff", "commit":
@@ -354,11 +354,11 @@ func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32)
 			types = append(types, "file")
 		case "file":
 			switch {
-			case r.PatternType == query.SearchTypeStructural:
+			case si.PatternType == query.SearchTypeStructural:
 				types = append(types, "structural")
-			case r.PatternType == query.SearchTypeLiteral:
+			case si.PatternType == query.SearchTypeLiteral:
 				types = append(types, "literal")
-			case r.PatternType == query.SearchTypeRegex:
+			case si.PatternType == query.SearchTypeRegex:
 				types = append(types, "regexp")
 			}
 		}
@@ -372,27 +372,27 @@ func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32)
 	}
 
 	options := &getPatternInfoOptions{}
-	if r.PatternType == query.SearchTypeStructural {
+	if si.PatternType == query.SearchTypeStructural {
 		options = &getPatternInfoOptions{performStructuralSearch: true}
 	}
-	if r.PatternType == query.SearchTypeLiteral {
+	if si.PatternType == query.SearchTypeLiteral {
 		options = &getPatternInfoOptions{performLiteralSearch: true}
 	}
-	p, _ := r.getPatternInfo(options)
+	pattern, _, _, _ := processSearchPattern(si.Query, options)
 
 	// If no type: was explicitly specified, infer the result type.
 	if len(types) == 0 {
 		// If a pattern was specified, a content search happened.
-		if p.Pattern != "" {
+		if pattern != "" {
 			switch {
-			case r.PatternType == query.SearchTypeStructural:
+			case si.PatternType == query.SearchTypeStructural:
 				types = append(types, "structural")
-			case r.PatternType == query.SearchTypeLiteral:
+			case si.PatternType == query.SearchTypeLiteral:
 				types = append(types, "literal")
-			case r.PatternType == query.SearchTypeRegex:
+			case si.PatternType == query.SearchTypeRegex:
 				types = append(types, "regexp")
 			}
-		} else if len(r.Query.Fields()["file"]) > 0 {
+		} else if len(si.Query.Fields()["file"]) > 0 {
 			// No search pattern specified and file: is specified.
 			types = append(types, "file")
 		} else {
@@ -405,12 +405,12 @@ func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32)
 
 	// Only log the time if we successfully resolved one search type.
 	if len(types) == 1 {
-		actor := actor.FromContext(ctx)
-		if actor.IsAuthenticated() {
+		a := actor.FromContext(ctx)
+		if a.IsAuthenticated() {
 			value := fmt.Sprintf(`{"durationMs": %d}`, durationMs)
 			eventName := fmt.Sprintf("search.latencies.%s", types[0])
 			go func() {
-				err := usagestats.LogBackendEvent(r.db, actor.UID, eventName, json.RawMessage(value))
+				err := usagestats.LogBackendEvent(db, a.UID, eventName, json.RawMessage(value))
 				if err != nil {
 					log15.Warn("Could not log search latency", "err", err)
 				}
@@ -478,8 +478,10 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 	}
 
 	rr, err := r.resultsWithTimeoutSuggestion(ctx)
-	if rr != nil {
-		r.logSearchLatency(ctx, rr.ElapsedMilliseconds())
+	// Log latency for batch searches. For streams we interpret latency differently
+	// and it makes more sense to log it in streamHandler.
+	if rr != nil && r.stream == nil {
+		LogSearchLatency(ctx, r.db, r.SearchInputs, rr.ElapsedMilliseconds())
 	}
 
 	// Record what type of response we sent back via Prometheus.
@@ -873,19 +875,41 @@ func invalidateRepoCache(q []query.Node) bool {
 }
 
 func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolver, err error) {
+	return r.resultsRecursive(ctx, r.Query)
+}
+
+func (r *searchResolver) resultsRecursive(ctx context.Context, q query.Q) (srr *SearchResultsResolver, err error) {
 	tr, ctx := trace.New(ctx, "Results", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
+	if invalidateRepoCache(q) {
+		r.invalidateRepoCache = true
+	}
+	r.setQuery(q)
+
+	expanded, err := substitutePredicates(r.Query, func(p query.Predicate) (*SearchResultsResolver, error) {
+		// Disable streaming for subqueries so we can use
+		// the results rather than sending them back to the caller
+		orig := r.stream
+		r.stream = nil
+		defer func() { r.stream = orig }()
+
+		r.invalidateRepoCache = true
+		return r.resultsRecursive(ctx, p.Query(r.Query))
+	})
+	if err != nil && errors.Is(err, ErrPredicateNoResults) {
+		return &SearchResultsResolver{}, nil
+	} else if err != nil {
+		return nil, err
+	}
+	r.setQuery(expanded)
+
 	wantCount := defaultMaxSearchResults
 	if count := r.Query.Count(); count != nil {
 		wantCount = *count
-	}
-
-	if invalidateRepoCache(r.Query) {
-		r.invalidateRepoCache = true
 	}
 
 	for _, disjunct := range query.Dnf(r.Query) {
@@ -918,6 +942,25 @@ func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolve
 	return srr, err
 }
 
+// searchResultsToRepoNodes converts a set of search results into repository nodes
+// such that they can be used to replace a repository predicate
+func searchResultsToRepoNodes(srs []SearchResultResolver) ([]query.Node, error) {
+	nodes := make([]query.Node, 0, len(srs))
+	for _, rs := range srs {
+		repoResolver, ok := rs.(*RepositoryResolver)
+		if !ok {
+			return nil, fmt.Errorf("expected type %T, but got %T", &RepositoryResolver{}, rs)
+		}
+
+		nodes = append(nodes, query.Parameter{
+			Field: query.FieldRepo,
+			Value: "^" + regexp.QuoteMeta(repoResolver.Name()) + "$",
+		})
+	}
+
+	return nodes, nil
+}
+
 // resultsWithTimeoutSuggestion calls doResults, and in case of deadline
 // exceeded returns a search alert with a did-you-mean link for the same
 // query with a longer timeout.
@@ -942,6 +985,81 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 	}
 	return rr, err
 }
+
+// substitutePredicates replaces all the predicates in a query with their expanded form. The predicates
+// are expanded using the doExpand function.
+func substitutePredicates(q query.Q, evaluate func(query.Predicate) (*SearchResultsResolver, error)) (newQ query.Q, topErr error) {
+	newQ = query.MapParameter(q, func(field, value string, neg bool, ann query.Annotation) query.Node {
+		orig := query.Parameter{
+			Field:      field,
+			Value:      value,
+			Negated:    neg,
+			Annotation: ann,
+		}
+
+		if topErr != nil {
+			return orig
+		}
+
+		name, params, err := query.ParseAsPredicate(value)
+		if err != nil {
+			// This doesn't look like a predicate, so skip it
+			return orig
+		}
+
+		predicate, err := query.DefaultPredicateRegistry.Get(field, name, params)
+		if err != nil {
+			topErr = err
+			return orig
+		}
+
+		if neg {
+			topErr = errors.New("predicates do not currently support negation")
+			return nil
+		}
+
+		srr, err := evaluate(predicate)
+		if err != nil {
+			topErr = err
+			return nil
+		}
+
+		var nodes []query.Node
+		switch predicate.Field() {
+		case query.FieldRepo:
+			nodes, err = searchResultsToRepoNodes(srr.SearchResults)
+			if err != nil {
+				topErr = err
+				return nil
+			}
+		default:
+			topErr = fmt.Errorf("unsupported predicate result type %q", predicate.Field())
+			return nil
+		}
+
+		// If no results are returned, we need to return a sentinel error rather
+		// than an empty expansion because an empty expansion means "everything"
+		// rather than "nothing".
+		if len(nodes) == 0 {
+			topErr = ErrPredicateNoResults
+			return nil
+		}
+
+		// No need to return an operator for only one result
+		if len(nodes) == 1 {
+			return nodes[0]
+		}
+
+		return query.Operator{
+			Kind:     query.Or,
+			Operands: nodes,
+		}
+	})
+
+	return newQ, topErr
+}
+
+var ErrPredicateNoResults = errors.New("no results returned for predicate")
 
 // longer returns a suggested longer time to wait if the given duration wasn't long enough.
 func longer(N int, dt time.Duration) time.Duration {

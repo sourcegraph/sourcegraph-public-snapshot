@@ -35,6 +35,8 @@ export const externalServiceFragment = gql`
         webhookURL
         lastSyncAt
         nextSyncAt
+        updatedAt
+        createdAt
     }
 `
 
@@ -187,6 +189,8 @@ export const listExternalServiceFragment = gql`
         repoCount
         lastSyncAt
         nextSyncAt
+        updatedAt
+        createdAt
     }
 `
 

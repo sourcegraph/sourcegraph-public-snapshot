@@ -169,21 +169,32 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		}
 	}
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, New(cstore), nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Date when PR #5834 was created: "2019-10-02T14:49:31Z"
-	// We start exactly one day earlier
-	// Date when PR #5849 was created: "2019-10-03T15:03:21Z"
+	// We start exactly one day earlier than the first PR
 	start := parseJSONTime(t, "2019-10-01T14:49:31Z")
-	// Date when PR #5834 was merged:  "2019-10-07T13:13:45Z"
-	// Date when PR #5849 was merged:  "2019-10-04T08:55:21Z"
+	// Date when PR #5834 was created
+	pr1Create := parseJSONTime(t, "2019-10-02T14:49:31Z")
+	// Date when PR #5834 was closed
+	pr1Close := parseJSONTime(t, "2019-10-03T14:02:51Z")
+	// Date when PR #5834 was reopened
+	pr1Reopen := parseJSONTime(t, "2019-10-03T14:02:54Z")
+	// Date when PR #5834 was marked as ready for review
+	pr1ReadyForReview := parseJSONTime(t, "2019-10-03T14:04:10Z")
+	// Date when PR #5849 was created
+	pr2Create := parseJSONTime(t, "2019-10-03T15:03:21Z")
+	// Date when PR #5849 was approved
+	pr2Approve := parseJSONTime(t, "2019-10-04T08:25:53Z")
+	// Date when PR #5849 was merged
+	pr2Merged := parseJSONTime(t, "2019-10-04T08:55:21Z")
+	pr1Approved := parseJSONTime(t, "2019-10-07T12:45:49Z")
+	// Date when PR #5834 was merged
+	pr1Merged := parseJSONTime(t, "2019-10-07T13:13:45Z")
+	// End time is when PR1 was merged
 	end := parseJSONTime(t, "2019-10-07T13:13:45Z")
-	daysBeforeEnd := func(days int) time.Time {
-		return end.AddDate(0, 0, -days)
-	}
 
 	input := map[string]interface{}{
 		"batchChange": string(marshalBatchChangeID(batchChange.ID)),
@@ -195,13 +206,39 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 
 	apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryChangesetCountsConnection)
 
-	wantCounts := []apitest.ChangesetCounts{
-		{Date: marshalDateTime(t, daysBeforeEnd(5)), Total: 0, Open: 0, OpenPending: 0},
-		{Date: marshalDateTime(t, daysBeforeEnd(4)), Total: 1, Draft: 1},
-		{Date: marshalDateTime(t, daysBeforeEnd(3)), Total: 2, Open: 1, OpenPending: 1, Merged: 1},
-		{Date: marshalDateTime(t, daysBeforeEnd(2)), Total: 2, Open: 1, OpenPending: 1, Merged: 1},
-		{Date: marshalDateTime(t, daysBeforeEnd(1)), Total: 2, Open: 1, OpenPending: 1, Merged: 1},
-		{Date: marshalDateTime(t, end), Total: 2, Merged: 2},
+	wantEntries := []*state.ChangesetCounts{
+		{Time: start},
+		{Time: pr1Create, Total: 1, Draft: 1},
+		{Time: pr1Close, Total: 1, Closed: 1},
+		{Time: pr1Reopen, Total: 1, Draft: 1},
+		{Time: pr1ReadyForReview, Total: 1, Open: 1, OpenPending: 1},
+		{Time: pr2Create, Total: 2, Open: 2, OpenPending: 2},
+		{Time: pr2Approve, Total: 2, Open: 2, OpenPending: 1, OpenApproved: 1},
+		{Time: pr2Merged, Total: 2, Open: 1, OpenPending: 1, Merged: 1},
+		{Time: pr1Approved, Total: 2, Open: 1, OpenApproved: 1, Merged: 1},
+		{Time: pr1Merged, Total: 2, Merged: 2},
+		{Time: end, Total: 2, Merged: 2},
+	}
+	tzs := state.GenerateTimestamps(start, end)
+	wantCounts := make([]apitest.ChangesetCounts, 0, len(tzs))
+	idx := 0
+	for _, tz := range tzs {
+		currentWant := wantEntries[idx]
+		for len(wantEntries) > idx+1 && !tz.Before(wantEntries[idx+1].Time) {
+			idx++
+			currentWant = wantEntries[idx]
+		}
+		wantCounts = append(wantCounts, apitest.ChangesetCounts{
+			Date:                 marshalDateTime(t, tz),
+			Total:                currentWant.Total,
+			Merged:               currentWant.Merged,
+			Closed:               currentWant.Closed,
+			Open:                 currentWant.Open,
+			Draft:                currentWant.Draft,
+			OpenApproved:         currentWant.OpenApproved,
+			OpenChangesRequested: currentWant.OpenChangesRequested,
+			OpenPending:          currentWant.OpenPending,
+		})
 	}
 
 	if !reflect.DeepEqual(response.Node.ChangesetCountsOverTime, wantCounts) {

@@ -40,6 +40,9 @@ const BatchChangesChangelogAlert: React.FunctionComponent = () => (
                 <ul className="text-muted mb-0 pl-3">
                     <li>Campaigns have been renamed to Batch Changes!</li>
                 </ul>
+                <ul className="text-muted mb-0 pl-3">
+                    <li>Batch Changes now supports SSH cloned repos. Users can configure SSH access in settings.</li>
+                </ul>
             </div>
         </div>
     </DismissibleAlert>

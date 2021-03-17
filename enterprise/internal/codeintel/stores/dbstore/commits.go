@@ -138,7 +138,11 @@ func (s *Store) DirtyRepositories(ctx context.Context) (_ map[int]int, err error
 
 const dirtyRepositoriesQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/commits.go:DirtyRepositories
-SELECT repository_id, dirty_token FROM lsif_dirty_repositories WHERE dirty_token > update_token
+SELECT lsif_dirty_repositories.repository_id, lsif_dirty_repositories.dirty_token
+  FROM lsif_dirty_repositories
+    INNER JOIN repo ON repo.id = lsif_dirty_repositories.repository_id
+  WHERE dirty_token > update_token
+    AND repo.deleted_at IS NULL
 `
 
 // CommitGraphMetadata returns whether or not the commit graph for the given repository is stale, along with the date of

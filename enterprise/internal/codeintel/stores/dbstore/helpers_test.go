@@ -203,6 +203,18 @@ func insertRepo(t testing.TB, db *sql.DB, id int, name string) {
 	}
 }
 
+// Marks a repo as deleted
+func deleteRepo(t testing.TB, db *sql.DB, id int, deleted_at time.Time) {
+	query := sqlf.Sprintf(
+		`UPDATE repo SET deleted_at = %s WHERE id = %s`,
+		deleted_at,
+		id,
+	)
+	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		t.Fatalf("unexpected error while deleting repository: %s", err)
+	}
+}
+
 // insertPackageReferences populates the lsif_references table with the given package references.
 func insertPackageReferences(t testing.TB, store *Store, packageReferences []lsifstore.PackageReference) {
 	for _, packageReference := range packageReferences {

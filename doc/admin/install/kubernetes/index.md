@@ -40,6 +40,8 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
 
 - Configure the `sourcegraph` storage class for the cluster by reading through ["Configure a storage class"](./configure.md#configure-a-storage-class).
 
+- By default `sourcegraph` will be deployed in the `default` kubernetes namespace. If you wish to deploy `sourcegraph` in a non-default namespace, it is highly recommended you use the provided overlays to ensure updates are made in all manifests correctly. Read through ["Use non-default namespace"](./configure.md#use-non-default-namespace) for full instructions on how to configure this.
+
 - If you want to add a large number of repositories to your instance, you should [configure the number of gitserver replicas](configure.md#configure-gitserver-replica-count) and [the number of indexed-search replicas](configure.md#configure-indexed-search-replica-count) _before_ you continue with the next step. (See ["Tuning replica counts for horizontal scalability"](scale.md#tuning-replica-counts-for-horizontal-scalability) for guidelines.)
 
 - Deploy the desired version of Sourcegraph to your cluster:
@@ -85,6 +87,10 @@ See the [Troubleshooting docs](troubleshoot.md).
 See the [Upgrading Howto](update.md) on how to upgrade.
 See the [Upgrading docs](../../updates/kubernetes.md) for details on what changed in a version and if manual migration steps
 are necessary.
+
+### Restarting
+
+Some updates, such as changing the `externalURL` for an instance, will require restarting the instance using `kubectl`. To restart, run `kubectl get pods` and then `kubectl rollout restart deployment/sourcegraph-frontend-0`, replacing `deployment/sourcegraph-frontend-0` with the pod name from the previous command. If updating the `externalURL` for the instance, only the frontend pods will need to be restarted.
 
 ### Cluster-admin privileges
 

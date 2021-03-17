@@ -105,6 +105,11 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":jest: Test shared client code",
 			bk.Cmd("dev/ci/yarn-test.sh client/shared"),
 			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
+
+		// Wildcard tests
+		pipeline.AddStep(":jest: Test wildcard client code",
+			bk.Cmd("dev/ci/yarn-test.sh client/wildcard"),
+			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 	}
 }
 

@@ -208,42 +208,35 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
         const FootComponent = this.props.footComponent
         const TotalCountSummaryComponent = this.props.totalCountSummaryComponent
 
-        const hasNextPage = this.props.connection
-            ? this.props.connection.pageInfo
-                ? this.props.connection.pageInfo.hasNextPage
-                : typeof this.props.connection.totalCount === 'number' &&
-                  this.props.connection.nodes.length < this.props.connection.totalCount
-            : false
+        const hasNextPage = this.props.connection.pageInfo
+            ? this.props.connection.pageInfo.hasNextPage
+            : typeof this.props.connection.totalCount === 'number' &&
+              this.props.connection.nodes.length < this.props.connection.totalCount
 
         let totalCount: number | null = null
-        if (this.props.connection) {
-            if (typeof this.props.connection.totalCount === 'number') {
-                totalCount = this.props.connection.totalCount
-            } else if (
-                // TODO(sqs): this line below is wrong because this.props.first might've just been changed and
-                // this.props.connection.nodes is still the data fetched from before this.props.first was changed.
-                // this causes the UI to incorrectly show "N items total" even when the count is indeterminate right
-                // after the user clicks "Show more" but before the new data is loaded.
-                this.props.connection.nodes.length < this.props.first ||
-                (this.props.connection.nodes.length === this.props.first &&
-                    this.props.connection.pageInfo &&
-                    typeof this.props.connection.pageInfo.hasNextPage === 'boolean' &&
-                    !this.props.connection.pageInfo.hasNextPage)
-            ) {
-                totalCount = this.props.connection.nodes.length
-            }
+        if (typeof this.props.connection.totalCount === 'number') {
+            totalCount = this.props.connection.totalCount
+        } else if (
+            // TODO(sqs): this line below is wrong because this.props.first might've just been changed and
+            // this.props.connection.nodes is still the data fetched from before this.props.first was changed.
+            // this causes the UI to incorrectly show "N items total" even when the count is indeterminate right
+            // after the user clicks "Show more" but before the new data is loaded.
+            this.props.connection.nodes.length < this.props.first ||
+            (this.props.connection.nodes.length === this.props.first &&
+                this.props.connection.pageInfo &&
+                typeof this.props.connection.pageInfo.hasNextPage === 'boolean' &&
+                !this.props.connection.pageInfo.hasNextPage)
+        ) {
+            totalCount = this.props.connection.nodes.length
         }
 
         let summary: React.ReactFragment | undefined
-        if (
-            this.props.connection &&
-            (!this.props.noSummaryIfAllNodesVisible || this.props.connection.nodes.length === 0 || hasNextPage)
-        ) {
+        if (!this.props.noSummaryIfAllNodesVisible || this.props.connection.nodes.length === 0 || hasNextPage) {
             if (totalCount !== null && totalCount > 0) {
                 summary = TotalCountSummaryComponent ? (
                     <TotalCountSummaryComponent totalCount={totalCount} />
                 ) : (
-                    <p className="filtered-connection__summary">
+                    <p className="filtered-connection__summary" data-testid="summary">
                         <small>
                             <span>
                                 {totalCount} {pluralize(this.props.noun, totalCount, this.props.pluralNoun)}{' '}
@@ -265,7 +258,7 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
                 // No total count to show, but it will show a 'Show more' button.
             } else if (totalCount === 0) {
                 summary = this.props.emptyElement || (
-                    <p className="filtered-connection__summary">
+                    <p className="filtered-connection__summary" data-testid="summary">
                         <small>
                             No {this.props.pluralNoun}{' '}
                             {this.props.connectionQuery && (
@@ -286,8 +279,11 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
         return (
             <>
                 {this.props.connectionQuery && summary}
-                {this.props.connection && this.props.connection.nodes.length > 0 && (
-                    <ListComponent className={classNames('filtered-connection__nodes', this.props.listClassName)}>
+                {this.props.connection.nodes.length > 0 && (
+                    <ListComponent
+                        className={classNames('filtered-connection__nodes', this.props.listClassName)}
+                        data-testid="nodes"
+                    >
                         {HeadComponent && (
                             <HeadComponent
                                 nodes={this.props.connection.nodes}
@@ -299,7 +295,7 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
                     </ListComponent>
                 )}
                 {!this.props.connectionQuery && summary}
-                {!this.props.loading && !this.props.noShowMore && this.props.connection && hasNextPage && (
+                {!this.props.loading && !this.props.noShowMore && hasNextPage && (
                     <button
                         type="button"
                         className={classNames(

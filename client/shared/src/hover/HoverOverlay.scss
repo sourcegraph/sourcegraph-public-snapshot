@@ -3,7 +3,7 @@
 .hover-overlay {
     position: absolute;
     min-width: 6rem;
-    max-width: 32rem;
+    max-width: 34rem; // was 32rem; + 2rem to fit maximum code intel alert text
     z-index: 100;
     transition: opacity 100ms ease-in-out;
     // Make sure content doesn't leak behind border-radius
@@ -14,6 +14,11 @@
         // We want text to wrap around the close button and badges.
         float: right;
         margin-left: 0.25rem;
+    }
+
+    &__icon {
+        float: left;
+        margin-right: 0.25rem;
     }
 
     &__close-button {

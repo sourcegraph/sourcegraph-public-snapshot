@@ -28,6 +28,8 @@ const fetchExternalService: typeof _fetchExternalService = () =>
         repoCount: 0,
         lastSyncAt: '0001-01-01T00:00:00Z',
         nextSyncAt: '0001-01-01T00:00:00Z',
+        updatedAt: '2021-03-15T19:39:11Z',
+        createdAt: '2021-03-15T19:39:11Z',
     })
 
 add('View external service config', () => (
