@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -463,6 +464,21 @@ func makeSingleCommitRepo(cmd func(string, ...string) string) string {
 	return cmd("git", "rev-parse", "HEAD")
 }
 
+func makeTestServer(ctx context.Context, repoDir, remote string, db dbutil.DB) *Server {
+	return &Server{
+		ReposDir:         repoDir,
+		GetRemoteURLFunc: staticGetRemoteURL(remote),
+		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
+			return &GitRepoSyncer{}, nil
+		},
+		DB:               db,
+		ctx:              ctx,
+		locker:           &RepositoryLocker{},
+		cloneLimiter:     mutablelimiter.New(1),
+		cloneableLimiter: mutablelimiter.New(1),
+	}
+}
+
 func TestCloneRepo(t *testing.T) {
 	ctx := context.Background()
 	remote := tmpDir(t)
@@ -507,19 +523,8 @@ func TestCloneRepo(t *testing.T) {
 	cmd("git", "tag", "HEAD")
 
 	reposDir := tmpDir(t)
+	s := makeTestServer(ctx, reposDir, remote, db)
 
-	s := &Server{
-		ReposDir:         reposDir,
-		GetRemoteURLFunc: staticGetRemoteURL(remote),
-		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
-			return &GitRepoSyncer{}, nil
-		},
-		DB:               db,
-		ctx:              context.Background(),
-		locker:           &RepositoryLocker{},
-		cloneLimiter:     mutablelimiter.New(1),
-		cloneableLimiter: mutablelimiter.New(1),
-	}
 	_, err := s.cloneRepo(ctx, repoName, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -597,18 +602,9 @@ func TestHandleRepoUpdate(t *testing.T) {
 
 	reposDir := tmpDir(t)
 
-	s := &Server{
-		ReposDir:         reposDir,
-		GetRemoteURLFunc: staticGetRemoteURL(remote),
-		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
-			return &GitRepoSyncer{}, nil
-		},
-		DB:               db,
-		ctx:              context.Background(),
-		locker:           &RepositoryLocker{},
-		cloneLimiter:     mutablelimiter.New(1),
-		cloneableLimiter: mutablelimiter.New(1),
-	}
+	s := makeTestServer(ctx, reposDir, remote, db)
+	s.ctx = context.Background()
+
 	// We need some of the side effects here
 	_ = s.Handler()
 
@@ -727,18 +723,8 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		cmd("git", "init", ".")
 		cmd("rm", ".git/HEAD")
 
-		server := &Server{
-			ReposDir:         reposDir,
-			GetRemoteURLFunc: staticGetRemoteURL(remote),
-			GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
-				return &GitRepoSyncer{}, nil
-			},
-			ctx:              ctx,
-			locker:           &RepositoryLocker{},
-			cloneLimiter:     mutablelimiter.New(1),
-			cloneableLimiter: mutablelimiter.New(1),
-		}
-		if _, err := server.cloneRepo(ctx, "example.com/foo/bar", nil); err == nil {
+		s := makeTestServer(ctx, reposDir, remote, nil)
+		if _, err := s.cloneRepo(ctx, "example.com/foo/bar", nil); err == nil {
 			t.Fatal("expected an error, got none")
 		}
 	})
@@ -755,18 +741,8 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		cmd("git", "init", ".")
 		cmd("sh", "-c", ": > .git/HEAD")
 
-		server := &Server{
-			ReposDir:         reposDir,
-			GetRemoteURLFunc: staticGetRemoteURL(remote),
-			GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
-				return &GitRepoSyncer{}, nil
-			},
-			ctx:              ctx,
-			locker:           &RepositoryLocker{},
-			cloneLimiter:     mutablelimiter.New(1),
-			cloneableLimiter: mutablelimiter.New(1),
-		}
-		if _, err := server.cloneRepo(ctx, "example.com/foo/bar", nil); err == nil {
+		s := makeTestServer(ctx, reposDir, remote, nil)
+		if _, err := s.cloneRepo(ctx, "example.com/foo/bar", nil); err == nil {
 			t.Fatal("expected an error, got none")
 		}
 	})
@@ -780,22 +756,9 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 			}
 		)
 
-		cmd("git", "init", ".")
-		cmd("sh", "-c", "echo hello world > hello.txt")
-		cmd("git", "add", "hello.txt")
-		cmd("git", "commit", "-m", "hello")
+		_ = makeSingleCommitRepo(cmd)
+		s := makeTestServer(ctx, reposDir, remote, nil)
 
-		s := &Server{
-			ReposDir:         reposDir,
-			GetRemoteURLFunc: staticGetRemoteURL(remote),
-			GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
-				return &GitRepoSyncer{}, nil
-			},
-			ctx:              ctx,
-			locker:           &RepositoryLocker{},
-			cloneLimiter:     mutablelimiter.New(1),
-			cloneableLimiter: mutablelimiter.New(1),
-		}
 		testRepoCorrupter = func(_ context.Context, tmpDir GitDir) {
 			cmd("sh", "-c", fmt.Sprintf("rm %s/HEAD", tmpDir))
 		}
@@ -831,22 +794,9 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 			}
 		)
 
-		cmd("git", "init", ".")
-		cmd("sh", "-c", "echo hello world > hello.txt")
-		cmd("git", "add", "hello.txt")
-		cmd("git", "commit", "-m", "hello")
+		_ = makeSingleCommitRepo(cmd)
+		s := makeTestServer(ctx, reposDir, remote, nil)
 
-		s := &Server{
-			ReposDir:         reposDir,
-			GetRemoteURLFunc: staticGetRemoteURL(remote),
-			GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
-				return &GitRepoSyncer{}, nil
-			},
-			ctx:              ctx,
-			locker:           &RepositoryLocker{},
-			cloneLimiter:     mutablelimiter.New(1),
-			cloneableLimiter: mutablelimiter.New(1),
-		}
 		testRepoCorrupter = func(_ context.Context, tmpDir GitDir) {
 			cmd("sh", "-c", fmt.Sprintf(": > %s/HEAD", tmpDir))
 		}
@@ -953,19 +903,9 @@ func TestSyncRepoState(t *testing.T) {
 	repoName := api.RepoName("example.com/foo/bar")
 	hostname := "test"
 
-	s := &Server{
-		ReposDir:         reposDir,
-		GetRemoteURLFunc: staticGetRemoteURL(remoteDir),
-		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
-			return &GitRepoSyncer{}, nil
-		},
-		Hostname:         hostname,
-		DB:               db,
-		ctx:              ctx,
-		locker:           &RepositoryLocker{},
-		cloneLimiter:     mutablelimiter.New(1),
-		cloneableLimiter: mutablelimiter.New(1),
-	}
+	s := makeTestServer(ctx, reposDir, remoteDir, db)
+	s.Hostname = hostname
+	s.ctx = ctx
 
 	_, err := s.cloneRepo(ctx, repoName, &cloneOptions{Block: true})
 	if err != nil {
