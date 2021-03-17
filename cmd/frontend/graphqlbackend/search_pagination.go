@@ -160,10 +160,10 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 		return nil, &badRequestError{err}
 	}
 
-	resultTypes := r.determineResultTypes(args, 0)
+	resultTypes := r.determineResultTypes(args, searchresult.TypeEmpty)
 	tr.LazyPrintf("resultTypes: %v", resultTypes)
 
-	if resultTypes != searchresult.Types(searchresult.TypeFile) {
+	if resultTypes != searchresult.TypeFile {
 		return nil, fmt.Errorf("experimental paginated search currently only supports 'file' (text match) result types. Found %q", resultTypes)
 	}
 

@@ -8,7 +8,7 @@ import (
 
 func (srs *searchResultsStats) getResults(ctx context.Context) (*SearchResultsResolver, error) {
 	srs.once.Do(func() {
-		srs.srs, srs.srsErr = srs.sr.doResults(ctx, result.Types(0))
+		srs.srs, srs.srsErr = srs.sr.doResults(ctx, result.TypeEmpty)
 	})
 	return srs.srs, srs.srsErr
 }

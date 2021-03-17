@@ -965,7 +965,7 @@ func searchResultsToRepoNodes(srs []SearchResultResolver) ([]query.Node, error) 
 // query with a longer timeout.
 func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*SearchResultsResolver, error) {
 	start := time.Now()
-	rr, err := r.doResults(ctx, result.Types(0))
+	rr, err := r.doResults(ctx, result.TypeEmpty)
 
 	// If we encountered a context timeout, it indicates one of the many result
 	// type searchers (file, diff, symbol, etc) completely timed out and could not
@@ -1138,7 +1138,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	for {
 		// Query search results.
 		var err error
-		v, err = r.doResults(ctx, result.Types(0))
+		v, err = r.doResults(ctx, result.TypeEmpty)
 		if err != nil {
 			return nil, err // do not cache errors.
 		}
@@ -1423,7 +1423,7 @@ func (r *searchResolver) determineResultTypes(args search.TextParameters, forceT
 	} else {
 		stringTypes, _ := r.Query.StringValues(query.FieldType)
 		if len(stringTypes) == 0 {
-			rts = result.Types(result.TypeFile | result.TypePath | result.TypeRepo)
+			rts = result.TypeFile | result.TypePath | result.TypeRepo
 		} else {
 			for _, stringType := range stringTypes {
 				rts = rts.With(result.TypeFromString[stringType])
@@ -1722,7 +1722,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 	options.fileMatchLimit = int32(limit)
 	if r.PatternType == query.SearchTypeStructural {
 		options = &getPatternInfoOptions{performStructuralSearch: true}
-		forceResultTypes = result.Types(result.TypeFile)
+		forceResultTypes = result.TypeFile
 	}
 	if r.PatternType == query.SearchTypeLiteral {
 		options = &getPatternInfoOptions{performLiteralSearch: true}

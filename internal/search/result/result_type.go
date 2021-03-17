@@ -2,11 +2,16 @@ package result
 
 import "strings"
 
-// Type represents a single, named result type.
-type Type uint8
+// Types represents a set of result types.
+// It's a bitset corresponding to the disjunction of types it represents.
+//
+// For example, the set of file and repo results
+// is represented as Types(TypeFile|TypeRepo)
+type Types uint8
 
 const (
-	TypeRepo Type = 1 << iota
+	TypeEmpty Types = 0
+	TypeRepo  Types = 1 << (iota - 1)
 	TypeSymbol
 	TypeFile
 	TypePath
@@ -14,25 +19,7 @@ const (
 	TypeCommit
 )
 
-func (r Type) String() string {
-	switch r {
-	case TypeRepo:
-		return "repo"
-	case TypeSymbol:
-		return "symbol"
-	case TypeFile:
-		return "file"
-	case TypePath:
-		return "path"
-	case TypeDiff:
-		return "diff"
-	case TypeCommit:
-		return "commit"
-	}
-	return ""
-}
-
-var TypeFromString = map[string]Type{
+var TypeFromString = map[string]Types{
 	"repo":   TypeRepo,
 	"symbol": TypeSymbol,
 	"file":   TypeFile,
@@ -41,29 +28,22 @@ var TypeFromString = map[string]Type{
 	"commit": TypeCommit,
 }
 
-// Types represents a set of result types.
-// It's a bitset corresponding to the disjunction of types it represents.
-//
-// For example, the set of file and repo results
-// is represented as Types(TypeFile|TypeRepo)
-type Types uint32
-
-func (r Types) Has(t Type) bool {
-	return r&Types(t) != 0
+func (r Types) Has(t Types) bool {
+	return r&t != 0
 }
 
-func (r Types) With(t Type) Types {
-	return r | Types(t)
+func (r Types) With(t Types) Types {
+	return r | t
 }
 
-func (r Types) Without(t Type) Types {
-	return r &^ Types(t)
+func (r Types) Without(t Types) Types {
+	return r &^ t
 }
 
 func (r Types) String() string {
 	var s strings.Builder
 	first := true
-	for _, t := range []Type{TypeRepo, TypeSymbol, TypePath, TypeDiff, TypeCommit} {
+	for name, t := range TypeFromString {
 		if !r.Has(t) {
 			continue
 		}
@@ -71,7 +51,7 @@ func (r Types) String() string {
 			s.WriteByte('|')
 			first = false
 		}
-		s.WriteString(t.String())
+		s.WriteString(name)
 	}
 	return s.String()
 }

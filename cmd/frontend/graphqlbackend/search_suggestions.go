@@ -428,7 +428,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
 		defer cancel()
 		if len(r.Query.Values(query.FieldDefault)) > 0 {
-			results, err := r.doResults(ctx, result.Types(result.TypeFile)) // only "file" result type
+			results, err := r.doResults(ctx, result.TypeFile) // only "file" result type
 			if err == context.DeadlineExceeded {
 				err = nil // don't log as error below
 			}
