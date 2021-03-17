@@ -17,6 +17,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Opsgenie API keys can now be added via an environment variable. [#18662](https://github.com/sourcegraph/sourcegraph/pull/18662)
 - It's now possible to control where code insights are displayed through the boolean settings `insights.displayLocation.homepage`, `insights.displayLocation.insightsPage` and `insights.displayLocation.directory`. [#18979](https://github.com/sourcegraph/sourcegraph/pull/18979)
+- Users can now create changesets in batch changes on repositories that are cloned using SSH. [#16888](https://github.com/sourcegraph/sourcegraph/issues/16888)
 
 ### Changed
 
