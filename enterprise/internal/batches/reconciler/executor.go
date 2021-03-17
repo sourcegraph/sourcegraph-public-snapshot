@@ -123,6 +123,9 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 		case batches.ReconcilerOperationDetach:
 			e.detachChangeset()
 
+		case batches.ReconcilerOperationArchive:
+			e.archiveChangeset()
+
 		default:
 			err = fmt.Errorf("executor operation %q not implemented", op)
 		}
@@ -372,6 +375,15 @@ func (e *executor) detachChangeset() {
 	for _, assoc := range e.ch.BatchChanges {
 		if assoc.Detach {
 			e.ch.RemoveBatchChangeID(assoc.BatchChangeID)
+		}
+	}
+}
+
+func (e *executor) archiveChangeset() {
+	for _, assoc := range e.ch.BatchChanges {
+		if assoc.Archive {
+			assoc.Archived = true
+			assoc.Archive = false
 		}
 	}
 }

@@ -289,7 +289,7 @@ func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.C
 	opts := service.ApplyBatchChangeOpts{
 		// This is what differentiates CreateBatchChange from ApplyBatchChange
 		FailIfBatchChangeExists: true,
-		ArchiveChangesets: conf.ArchiveBatchChangeChangesets(),
+		ArchiveChangesets:       conf.ArchiveBatchChangeChangesets(),
 	}
 
 	opts.BatchSpecRandID, err = unmarshalBatchSpecID(args.BatchSpec)
@@ -334,7 +334,9 @@ func (r *Resolver) ApplyBatchChange(ctx context.Context, args *graphqlbackend.Ap
 		return nil, err
 	}
 
-	opts := service.ApplyBatchChangeOpts{}
+	opts := service.ApplyBatchChangeOpts{
+		ArchiveChangesets: conf.ArchiveBatchChangeChangesets(),
+	}
 
 	opts.BatchSpecRandID, err = unmarshalBatchSpecID(args.BatchSpec)
 	if err != nil {

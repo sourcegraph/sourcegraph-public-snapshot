@@ -198,6 +198,8 @@ func (s ChangesetCheckState) Valid() bool {
 type BatchChangeAssoc struct {
 	BatchChangeID int64 `json:"-"`
 	Detach        bool  `json:"detach"`
+	Archive       bool  `json:"archive"`
+	Archived      bool  `json:"archived"`
 }
 
 // A Changeset is a changeset on a code host belonging to a Repository and many
@@ -640,6 +642,8 @@ func (c *Changeset) Attach(batchChangeID int64) {
 	for i := range c.BatchChanges {
 		if c.BatchChanges[i].BatchChangeID == batchChangeID {
 			c.BatchChanges[i].Detach = false
+			c.BatchChanges[i].Archived = false
+			c.BatchChanges[i].Archive = false
 			return
 		}
 	}
@@ -653,6 +657,19 @@ func (c *Changeset) Detach(batchChangeID int64) bool {
 	for i := range c.BatchChanges {
 		if c.BatchChanges[i].BatchChangeID == batchChangeID {
 			c.BatchChanges[i].Detach = true
+			return true
+		}
+	}
+	return false
+}
+
+// Archive marks the given batch change as to-be-archived. Returns true, if the
+// batch change currently is attached to the batch change and *not* archived.
+// This function is a noop, if the given changeset was already archived
+func (c *Changeset) Archive(batchChangeID int64) bool {
+	for i := range c.BatchChanges {
+		if c.BatchChanges[i].BatchChangeID == batchChangeID && !c.BatchChanges[i].Archived {
+			c.BatchChanges[i].Archive = true
 			return true
 		}
 	}
