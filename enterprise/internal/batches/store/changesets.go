@@ -214,6 +214,7 @@ DELETE FROM changesets WHERE id = %s
 // counting changesets.
 type CountChangesetsOpts struct {
 	BatchChangeID        int64
+	IncludeArchived      bool
 	ExternalState        *batches.ChangesetExternalState
 	ExternalReviewState  *batches.ChangesetReviewState
 	ExternalCheckState   *batches.ChangesetCheckState
@@ -247,7 +248,13 @@ func countChangesetsQuery(opts *CountChangesetsOpts, authzConds *sqlf.Query) *sq
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
 	if opts.BatchChangeID != 0 {
-		preds = append(preds, sqlf.Sprintf("changesets.batch_change_ids ? %s", strconv.Itoa(int(opts.BatchChangeID))))
+		batchChangeID := strconv.Itoa(int(opts.BatchChangeID))
+		preds = append(preds, sqlf.Sprintf("changesets.batch_change_ids ? %s", batchChangeID))
+		if opts.IncludeArchived {
+			preds = append(preds, sqlf.Sprintf("batch_change_ids->%s ? 'archived' AND batch_change_ids->%s->>'archived' = 'true'", batchChangeID, batchChangeID))
+		} else {
+			preds = append(preds, sqlf.Sprintf("NOT (batch_change_ids->%s ? 'archived' AND batch_change_ids->%s->>'archived' = 'true')", batchChangeID, batchChangeID))
+		}
 	}
 	if opts.PublicationState != nil {
 		preds = append(preds, sqlf.Sprintf("changesets.publication_state = %s", *opts.PublicationState))
@@ -456,6 +463,7 @@ type ListChangesetsOpts struct {
 	LimitOpts
 	Cursor               int64
 	BatchChangeID        int64
+	IncludeArchived      bool
 	IDs                  []int64
 	PublicationState     *batches.ChangesetPublicationState
 	ReconcilerStates     []batches.ReconcilerState
@@ -509,7 +517,14 @@ func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf
 	}
 
 	if opts.BatchChangeID != 0 {
-		preds = append(preds, sqlf.Sprintf("changesets.batch_change_ids ? %s", strconv.Itoa(int(opts.BatchChangeID))))
+		batchChangeID := strconv.Itoa(int(opts.BatchChangeID))
+		preds = append(preds, sqlf.Sprintf("changesets.batch_change_ids ? %s", batchChangeID))
+
+		if opts.IncludeArchived {
+			preds = append(preds, sqlf.Sprintf("batch_change_ids->%s ? 'archived' AND batch_change_ids->%s->>'archived' = 'true'", batchChangeID, batchChangeID))
+		} else {
+			preds = append(preds, sqlf.Sprintf("NOT (batch_change_ids->%s ? 'archived' AND batch_change_ids->%s->>'archived' = 'true')", batchChangeID, batchChangeID))
+		}
 	}
 
 	if len(opts.IDs) > 0 {
@@ -756,7 +771,8 @@ func (n *jsonBatchChangeChangesetSet) Scan(value interface{}) error {
 	}
 
 	for id, assoc := range m {
-		*n.Assocs = append(*n.Assocs, batches.BatchChangeAssoc{BatchChangeID: id, Detach: assoc.Detach})
+		assoc.BatchChangeID = id
+		*n.Assocs = append(*n.Assocs, assoc)
 	}
 
 	return nil
@@ -853,7 +869,8 @@ func scanChangeset(t *batches.Changeset, s scanner) error {
 // GetChangesetsStatsOpts captures the query options needed for
 // retrieving changesets stats.
 type GetChangesetsStatsOpts struct {
-	BatchChangeID int64
+	BatchChangeID   int64
+	IncludeArchived bool
 }
 
 // GetChangesetsStats returns statistics on all the changesets associated to the given batch change,
@@ -907,7 +924,14 @@ func getChangesetsStatsQuery(opts GetChangesetsStatsOpts) *sqlf.Query {
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
 	if opts.BatchChangeID != 0 {
-		preds = append(preds, sqlf.Sprintf("changesets.batch_change_ids ? %s", strconv.Itoa(int(opts.BatchChangeID))))
+		batchChangeID := strconv.Itoa(int(opts.BatchChangeID))
+		preds = append(preds, sqlf.Sprintf("changesets.batch_change_ids ? %s", batchChangeID))
+
+		if opts.IncludeArchived {
+			preds = append(preds, sqlf.Sprintf("batch_change_ids->%s ? 'archived' AND batch_change_ids->%s->>'archived' = 'true'", batchChangeID, batchChangeID))
+		} else {
+			preds = append(preds, sqlf.Sprintf("NOT (batch_change_ids->%s ? 'archived' AND batch_change_ids->%s->>'archived' = 'true')", batchChangeID, batchChangeID))
+		}
 	}
 	return sqlf.Sprintf(getChangesetStatsFmtstr, sqlf.Join(preds, " AND "))
 }

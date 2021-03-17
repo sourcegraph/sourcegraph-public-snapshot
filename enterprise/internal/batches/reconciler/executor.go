@@ -380,10 +380,10 @@ func (e *executor) detachChangeset() {
 }
 
 func (e *executor) archiveChangeset() {
-	for _, assoc := range e.ch.BatchChanges {
+	for i, assoc := range e.ch.BatchChanges {
 		if assoc.Archive {
-			assoc.Archived = true
-			assoc.Archive = false
+			e.ch.BatchChanges[i].Archived = true
+			e.ch.BatchChanges[i].Archive = false
 		}
 	}
 }
