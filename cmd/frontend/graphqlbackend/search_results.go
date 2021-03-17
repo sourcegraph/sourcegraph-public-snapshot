@@ -334,11 +334,11 @@ var searchResponseCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "Number of searches that have ended in the given status (success, error, timeout, partial_timeout).",
 }, []string{"status", "alert_type", "source", "request_name"})
 
-// logSearchLatency records search durations in the event database. This
+// LogSearchLatency records search durations in the event database. This
 // function may only be called after a search result is performed, because it
 // relies on the invariant that query and pattern error checking has already
 // been performed.
-func logSearchLatency(ctx context.Context, db dbutil.DB, si *SearchInputs, durationMs int32) {
+func LogSearchLatency(ctx context.Context, db dbutil.DB, si *SearchInputs, durationMs int32) {
 	tr, ctx := trace.New(ctx, "logSearchLatency", "")
 	defer func() {
 		tr.Finish()
@@ -478,8 +478,10 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 	}
 
 	rr, err := r.resultsWithTimeoutSuggestion(ctx)
-	if rr != nil {
-		logSearchLatency(ctx, r.db, r.SearchInputs, rr.ElapsedMilliseconds())
+	// Log latency for batch searches. For streams we interpret latency differently
+	// and it makes more sense to log it in streamHandler.
+	if rr != nil && r.stream == nil {
+		LogSearchLatency(ctx, r.db, r.SearchInputs, rr.ElapsedMilliseconds())
 	}
 
 	// Record what type of response we sent back via Prometheus.

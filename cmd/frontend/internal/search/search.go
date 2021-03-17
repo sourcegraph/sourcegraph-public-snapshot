@@ -209,6 +209,8 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			metricLatency.WithLabelValues(string(GuessSource(r))).
 				Observe(time.Since(start).Seconds())
+
+			graphqlbackend.LogSearchLatency(ctx, h.db, &inputs, int32(time.Since(start).Milliseconds()))
 		}
 	}
 
