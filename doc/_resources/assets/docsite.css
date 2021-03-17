@@ -51,6 +51,15 @@ body.theme-light {
   --table-row-bg-2: #f2f4f8; /* should be slightly different from var(--table-row-bg-1) */
   --text-muted: #888888;
   --search-result-path-color: green;
+
+  /*
+   * TODO (@camdencheek): These variables are also defined in colors.scss, and
+   * shouldn't be defined here, but we have no SCSS compilation process for the docsite,
+   * so we can't use them directly.
+   * https://github.com/sourcegraph/sourcegraph/issues/19234
+   */
+  --search-filter-keyword-color: #268bd2;
+  --search-keyword-color: #ae3ec9;
 }
 
 body.theme-dark {
@@ -70,6 +79,9 @@ body.theme-dark {
   --table-row-bg-2: #080820;
   --text-muted: #7c7c9f;
   --search-result-path-color: #e89fff;
+
+  --search-filter-keyword-color: #569cd6;
+  --search-keyword-color: #da77f2;
 }
 
 * {
@@ -805,6 +817,18 @@ body.theme-light .markdown-body .chroma .vg { color: #dd7700 } /* Name.Variable.
 body.theme-light .markdown-body .chroma .vi { color: #3333bb } /* Name.Variable.Instance */
 body.theme-light .markdown-body .chroma .vm { color: #336699 } /* Name.Variable.Magic */
 body.theme-light .markdown-body .chroma .il { color: #0000DD; font-weight: bold } /* Literal.Number.Integer.Long */
+
+/* Light query colors */
+body.theme-light .markdown-body .chroma.sgquery .c { color: #d9480f } /* Comment */
+body.theme-light .markdown-body .chroma.sgquery .k { color: var(--search-keyword-color); font-weight: bold } /* Keyword */
+body.theme-light .markdown-body .chroma.sgquery .nb { color: var(--search-filter-keyword-color) } /* Name.Builtin */
+body.theme-light .markdown-body .chroma.sgquery .nf { color: #ae3ec9; font-weight: bold } /* Name.Function */
+body.theme-light .markdown-body .chroma.sgquery .se { color: #af5200; background-color: transparent } /* Literal.String.Escape */
+body.theme-light .markdown-body .chroma.sgquery .sr { color: #c92a2a; background-color: transparent } /* Literal.String.Regex */
+body.theme-light .markdown-body .chroma.sgquery .dl { color: #d9480f; background-color: transparent } /* Literal.String.Delimiter */
+body.theme-light .markdown-body .chroma.sgquery .sa { color: #1098ad } /* Literal.String.Affix */
+body.theme-light .markdown-body .chroma.sgquery .ss { color: #c92a2a; background-color: transparent } /* Literal.String.Symbol */
+
 /* Dark theme */
 body.theme-dark .markdown-body .chroma .c { color: #75715e } /* Comment */
 body.theme-dark .markdown-body .chroma .err { color: #960050; background-color: #1e0010 } /* Error */
@@ -874,6 +898,18 @@ body.theme-dark .markdown-body .chroma .vg { color: #f8f8f2 } /* Name.Variable.G
 body.theme-dark .markdown-body .chroma .vi { color: #f8f8f2 } /* Name.Variable.Instance */
 body.theme-dark .markdown-body .chroma .vm { color: #f8f8f2 } /* Name.Variable.Magic */
 body.theme-dark .markdown-body .chroma .il { color: #ae81ff } /* Literal.Number.Integer.Long */
+
+/* Dark query colors */
+body.theme-dark .markdown-body .chroma.sgquery .c { color: #ffa94d } /* Comment */
+body.theme-dark .markdown-body .chroma.sgquery .k { color: var(--search-keyword-color); font-weight: bold } /* Keyword */
+body.theme-dark .markdown-body .chroma.sgquery .nb { color: var(--search-filter-keyword-color) } /* Name.Builtin */
+body.theme-dark .markdown-body .chroma.sgquery .nf { color: #da77f2; font-weight: bold } /* Name.Function */
+body.theme-dark .markdown-body .chroma.sgquery .se { color: #ffa8a8; background-color: transparent } /* Literal.String.Escape */
+body.theme-dark .markdown-body .chroma.sgquery .sr { color: #ff6b6b; background-color: transparent } /* Literal.String.Regex */
+body.theme-dark .markdown-body .chroma.sgquery .dl { color: #ffa94d; background-color: transparent } /* Literal.String.Delimiter */
+body.theme-dark .markdown-body .chroma.sgquery .sa { color: #3bc9db } /* Literal.String.Affix */
+body.theme-dark .markdown-body .chroma.sgquery .ss { color: #ff6b6b; background-color: transparent } /* Literal.String.Symbol */
+
 
 /* Getting started links */
 /* See campaign docs for examles */
