@@ -222,6 +222,18 @@ func TestSetCloneStatus(t *testing.T) {
 	if diff := cmp.Diff(gitserverRepo2, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
 		t.Fatal(diff)
 	}
+
+	// Setting the same status again should not touch the row
+	if err := GitserverRepos(db).SetCloneStatus(ctx, repo2.ID, types.CloneStatusCloned, shardID); err != nil {
+		t.Fatal(err)
+	}
+	after, err := GitserverRepos(db).GetByID(ctx, repo2.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if diff := cmp.Diff(fromDB, after); diff != "" {
+		t.Fatal(diff)
+	}
 }
 
 func TestSetLastError(t *testing.T) {
@@ -285,6 +297,22 @@ func TestSetLastError(t *testing.T) {
 
 	gitserverRepo.LastError = ""
 	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+		t.Fatal(diff)
+	}
+
+	// Set again to same value, updated_at should not change
+	err = GitserverRepos(db).SetLastError(ctx, gitserverRepo.RepoID, "", shardID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	after, err := GitserverRepos(db).GetByID(ctx, gitserverRepo.RepoID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gitserverRepo.LastError = ""
+	if diff := cmp.Diff(fromDB, after); diff != "" {
 		t.Fatal(diff)
 	}
 }
