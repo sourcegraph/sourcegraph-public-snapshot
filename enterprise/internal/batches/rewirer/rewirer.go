@@ -13,6 +13,9 @@ type ChangesetRewirer struct {
 	// The mappings need to be hydrated for the ChangesetRewirer to consume them.
 	mappings      store.RewirerMappings
 	batchChangeID int64
+
+	// Feature flag that can be removed once this is the default behaviour
+	ArchiveInsteadOfDetach bool
 }
 
 func New(mappings store.RewirerMappings, batchChangeID int64) *ChangesetRewirer {

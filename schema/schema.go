@@ -483,6 +483,8 @@ type ExpandedGitCommitDescription struct {
 type ExperimentalFeatures struct {
 	// AndOrQuery description: DEPRECATED: Interpret a search input query as an and/or query.
 	AndOrQuery string `json:"andOrQuery,omitempty"`
+	// ArchiveBatchChangeChangesets description: Enables the archiving of changesets instead of detaching them when applying a new batch spec that doesn't include these changesets
+	ArchiveBatchChangeChangesets *bool `json:"archiveBatchChangeChangesets,omitempty"`
 	// BitbucketServerFastPerm description: DEPRECATED: Configure in Bitbucket Server config.
 	BitbucketServerFastPerm string `json:"bitbucketServerFastPerm,omitempty"`
 	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command.
@@ -1235,8 +1237,6 @@ type Settings struct {
 
 // SettingsExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type SettingsExperimentalFeatures struct {
-	// ArchiveBatchChangeChangesets description: Enables the archiving of changesets instead of detaching them when applying a new batch spec that doesn't include these changesets
-	ArchiveBatchChangeChangesets *bool `json:"archiveBatchChangeChangesets,omitempty"`
 	// CodeInsights description: Enables code insights on directory pages.
 	CodeInsights *bool `json:"codeInsights,omitempty"`
 	// CodeMonitoring description: Enables code monitoring on directory pages.

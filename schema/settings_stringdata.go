@@ -128,14 +128,6 @@ const SettingsSchemaJSON = `{
           "!go": {
             "pointer": true
           }
-        },
-        "archiveBatchChangeChangesets": {
-          "description": "Enables the archiving of changesets instead of detaching them when applying a new batch spec that doesn't include these changesets",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
         }
       },
       "group": "Experimental"
