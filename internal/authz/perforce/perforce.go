@@ -241,9 +241,6 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 			includePrefixes = append(includePrefixes, extsvc.RepoID(depotPrefix))
 		}
 	}
-	if err = scanner.Err(); err != nil {
-		return nil, errors.Wrap(err, "scanner.Err")
-	}
 
 	// As per interface definition for this method, implementation should return
 	// partial but valid results even when something went wrong.
