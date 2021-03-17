@@ -3,7 +3,7 @@ package result
 import "strings"
 
 // Type represents a single, named result type.
-type Type uint32
+type Type uint8
 
 const (
 	TypeRepo Type = 1 << iota
