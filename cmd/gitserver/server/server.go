@@ -1361,8 +1361,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		if err != nil {
 			log15.Error("failed to clone repo", "repo", repo, "error", err)
 		}
-		// Use a background context to ensure we still update the DB even if we time out
-		s.setLastErrorNonFatal(context.Background(), repo, err)
+		s.setLastErrorNonFatal(ctx, repo, err)
 	}()
 
 	return "", nil
