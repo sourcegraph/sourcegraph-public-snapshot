@@ -471,6 +471,10 @@ type ReposListOptions struct {
 	// through external services. Mutually exclusive with the ExternalServiceIDs option.
 	UserID int32
 
+	// SearchContextID, if non zero, will limit the set of results to repositories listed in
+	// the search context.
+	SearchContextID int32
+
 	// ServiceTypes of repos to list. When zero-valued, this is omitted from the predicate set.
 	ServiceTypes []string
 
@@ -675,6 +679,13 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, minimal bool, opt
 		} else {
 			conds = append(conds, sqlf.Sprintf("es.namespace_user_id = %d AND es.deleted_at IS NULL", opt.UserID))
 		}
+	} else if opt.SearchContextID != 0 {
+		fromClause = sqlf.Sprintf(`
+			repo
+				JOIN (SELECT DISTINCT repo_id, search_context_id FROM search_context_repos) dscr -- to avoid repo duplicates
+				ON repo.id = dscr.repo_id
+		`)
+		conds = append(conds, sqlf.Sprintf("dscr.search_context_id = %d", opt.SearchContextID))
 	}
 
 	queryConds := sqlf.Sprintf("TRUE")

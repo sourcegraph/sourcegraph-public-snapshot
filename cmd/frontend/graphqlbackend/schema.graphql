@@ -721,6 +721,11 @@ type Mutation {
     exist and are cloned
     """
     SetUserPublicRepos(userID: ID!, repoURIs: [String!]!): EmptyResponse!
+
+    """
+    Converts a version context to an equivalent instance-level search context. Only available to site admins.
+    """
+    convertVersionContextToSearchContext(name: String!): SearchContext!
 }
 
 """
@@ -3220,6 +3225,19 @@ type SearchContext implements Node {
     default organization search context ("@org").
     """
     autoDefined: Boolean!
+    """
+    Repositories with its revisions contained in the search context to be searched. and the requesting user has
+    access to.
+    """
+    repositories: [SearchContextRepository!]!
+}
+
+"""
+Repository with its revisions.
+"""
+type SearchContextRepository {
+    repository: Repository!
+    revisions: [String!]!
 }
 
 """

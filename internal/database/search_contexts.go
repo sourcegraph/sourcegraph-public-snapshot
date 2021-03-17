@@ -57,10 +57,16 @@ func (s *SearchContextsStore) listSearchContexts(ctx context.Context, cond *sqlf
 }
 
 func (s *SearchContextsStore) ListSearchContextsByUserID(ctx context.Context, userID int32) ([]*types.SearchContext, error) {
+	if Mocks.SearchContexts.ListSearchContextsByUserID != nil {
+		return Mocks.SearchContexts.ListSearchContextsByUserID(ctx, userID)
+	}
 	return s.listSearchContexts(ctx, sqlf.Sprintf("namespace_user_id = %d", userID))
 }
 
 func (s *SearchContextsStore) ListInstanceLevelSearchContexts(ctx context.Context) ([]*types.SearchContext, error) {
+	if Mocks.SearchContexts.ListInstanceLevelSearchContexts != nil {
+		return Mocks.SearchContexts.ListInstanceLevelSearchContexts(ctx)
+	}
 	return s.listSearchContexts(ctx, sqlf.Sprintf("namespace_user_id IS NULL AND namespace_org_id IS NULL"))
 }
 
@@ -78,6 +84,10 @@ type GetSearchContextOptions struct {
 }
 
 func (s *SearchContextsStore) GetSearchContext(ctx context.Context, opts GetSearchContextOptions) (*types.SearchContext, error) {
+	if Mocks.SearchContexts.GetSearchContext != nil {
+		return Mocks.SearchContexts.GetSearchContext(ctx, opts)
+	}
+
 	conds := []*sqlf.Query{}
 
 	if opts.NamespaceUserID != 0 && opts.NamespaceOrgID != 0 {
