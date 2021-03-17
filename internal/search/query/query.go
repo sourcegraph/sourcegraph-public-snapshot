@@ -100,10 +100,12 @@ func Validate(disjuncts [][]Node) error {
 	return nil
 }
 
+// MapPlan applies a pass to all queries in a plan. It expects a valid plan.
+// guarantee transformation succeeds.
 func MapPlan(plan Plan, pass pass) (Plan, error) {
-	var updated Plan
+	updated := make([]Q, 0, len(plan))
 	for _, query := range plan {
-		updated = append(updated, pass(query)) // requires valid query to guarantee transformation suceeds
+		updated = append(updated, pass(query))
 	}
 	return updated, nil
 }
@@ -129,9 +131,5 @@ func Pipeline(steps ...step) (Plan, error) {
 		return nil, err
 	}
 
-	plan, err := MapPlan(ToPlan(disjuncts), ConcatRevFilters)
-	if err != nil {
-		return nil, err
-	}
-	return plan, nil
+	return MapPlan(ToPlan(disjuncts), ConcatRevFilters)
 }
