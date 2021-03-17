@@ -158,7 +158,7 @@ export interface CaseSensitivityProps {
 }
 
 export interface MutableVersionContextProps extends VersionContextProps {
-    setVersionContext: (versionContext: string | undefined) => void
+    setVersionContext: (versionContext: string | undefined) => Promise<void>
     availableVersionContexts: VersionContext[] | undefined
     previousVersionContext: string | null
 }

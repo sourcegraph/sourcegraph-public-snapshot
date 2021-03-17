@@ -18,7 +18,6 @@ const commonProps = () =>
         optionFlags: [
             { key: 'allowErrorReporting', label: 'Allow error reporting', value: false },
             { key: 'experimentalLinkPreviews', label: 'Experimental link previews', value: false },
-            { key: 'experimentalTextFieldCompletion', label: 'Experimental text field completion', value: false },
         ],
         version: text('version', '0.0.0'),
         onChangeSourcegraphUrl: action('onChangeSourcegraphUrl'),

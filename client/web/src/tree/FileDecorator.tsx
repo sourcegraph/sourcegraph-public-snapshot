@@ -1,7 +1,7 @@
 import React from 'react'
 import classNames from 'classnames'
 import { FileDecoration } from 'sourcegraph'
-import { fileDecorationColorForTheme } from '../../../shared/src/api/client/services/decoration'
+import { fileDecorationColorForTheme } from '../../../shared/src/api/extension/api/decorations'
 
 interface FileDecoratorProps {
     /** Array of file decorations to render */

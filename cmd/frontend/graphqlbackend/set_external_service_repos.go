@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 func (r *schemaResolver) SetExternalServiceRepos(ctx context.Context, args struct {
@@ -59,6 +60,7 @@ func (r *schemaResolver) SetExternalServiceRepos(ctx context.Context, args struc
 
 	// set to time.Zero to sync ASAP
 	es.NextSyncAt = time.Time{}
+	es.UpdatedAt = timeutil.Now()
 
 	err = database.GlobalExternalServices.Upsert(ctx, es)
 	if err != nil {

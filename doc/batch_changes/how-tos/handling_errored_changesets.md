@@ -6,12 +6,11 @@ Sometimes the problem can be fixed by automatically retrying to publish the chan
 
 Errored changesets that are marked as **Retrying** are being automatically retried:
 
-<!---TODO update link-->
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/retrying_changeset.png" class="screenshot">
+<img src="https://sourcegraphstatic.com/docs/images/batch_changes/retrying_changeset.png" class="screenshot">
 
 Changesets that are marked as **Failed** can be [retried manually](#manual-retrying-of-errored-changesets):
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/failed_changeset_retry.png" class="screenshot">
+<img src="https://sourcegraphstatic.com/docs/images/batch_changes/failed_changeset_retry.png" class="screenshot">
 
 ## Types of errors
 
@@ -25,7 +24,7 @@ Examples of errors that can be fixed by [automatically retrying](#automatic-retr
 Examples of errors that requires [manual retrying](#manual-retrying-by-re-applying-the-batch-change-spec):
 
 - No [Batch Changes credentials](configuring_user_credentials.md) have been setup for the affected code host
-- The configured code host connection needs a different type of credentials (e.g. SSH keys, which are currently not supported)
+- The configured code host connection needs a different type of credentials (e.g. with SSH keys)
 - A pull request for the specified branch already exists in another batch change
 - ...
 

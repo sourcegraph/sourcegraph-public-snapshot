@@ -16,6 +16,7 @@ type progressAggregator struct {
 	MatchCount int
 	Stats      streaming.Stats
 	Limit      int
+	Trace      string // may be enmpty
 
 	// Dirty is true if p has changed since the last call to Current.
 	Dirty bool
@@ -58,6 +59,7 @@ func (p *progressAggregator) currentStats() api.ProgressStats {
 		Cloning:             getNames(p.Stats, searchshared.RepoStatusCloning),
 		LimitHit:            p.Stats.IsLimitHit,
 		SuggestedLimit:      suggestedLimit,
+		Trace:               p.Trace,
 	}
 }
 

@@ -310,7 +310,6 @@ func testServerSetRepoEnabled(t *testing.T, store *repos.Store) func(t *testing.
 							Description:  k.repo.Description,
 							Fork:         k.repo.Fork,
 							Archived:     k.repo.Archived,
-							Cloned:       k.repo.Cloned,
 							CreatedAt:    k.repo.CreatedAt,
 							UpdatedAt:    k.repo.UpdatedAt,
 							DeletedAt:    k.repo.DeletedAt,

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/efritz/glock"
+	"github.com/derision-test/glock"
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"

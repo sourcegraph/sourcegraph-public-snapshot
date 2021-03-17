@@ -659,7 +659,7 @@ declare module 'sourcegraph' {
      */
     export interface CodeEditor {
         /** The type tag for this kind of {@link ViewComponent}. */
-        readonly type: 'CodeEditor'
+        readonly type: 'CodeEditor' /** The internal ID of this code editor. */
 
         /**
          * The text document that is open in this editor. The document remains the same for the entire lifetime of
@@ -1181,7 +1181,7 @@ declare module 'sourcegraph' {
          * The current version context of the workspace, if any.
          *
          * A version context is a set of repositories and revisions on a Sourcegraph instance.
-         * when set, extensions use it to scope search queries, code intelligence actions, etc.
+         * When set, extensions use it to scope search queries, code intelligence actions, etc.
          *
          * See more information at http://docs.sourcegraph.com/user/search#version-contexts.
          */
@@ -1314,65 +1314,38 @@ declare module 'sourcegraph' {
         Success = 5,
     }
 
-    /**
-     * A style for {@link BadgeAttachmentRenderOptions}.
-     */
-    export interface ThemableBadgeAttachmentStyle {
+    /** A badge holds the extra fields that can be attached to a providable type T via Badged<T>. */
+    export interface Badge {
         /**
-         * The icon (a base64-encoded image icon) to display next to the wrapped value.
+         * Aggregable badges are concatenated and de-duplicated within a particular result set. These
+         * values can briefly be used to describe some common property of the underlying result set.
          *
-         * @deprecated Use {@link BadgeAttachmentRenderOptions#kind} to pick a predefined icon
+         * We currently use this to display whether a file in the file match locations pane contains
+         * only precise or only search-based code intelligence results.
          */
-        icon?: string
-
-        /**
-         * The CSS background-color property value for the attachment.
-         *
-         * @deprecated Use {@link BadgeAttachmentRenderOptions#kind} to pick a predefined icon
-         */
-        backgroundColor?: string
-
-        /**
-         * The CSS color property value for the attachment.
-         *
-         * @deprecated Use {@link BadgeAttachmentRenderOptions#kind} to pick a predefined icon
-         */
-        color?: string
+        aggregableBadges?: AggregableBadge[]
     }
 
-    /** An attachment adds content to a hover tooltip or result in a locations panel. */
-    export interface BadgeAttachmentRenderOptions extends ThemableBadgeAttachmentStyle {
-        /** Predefined icons for badge attachments */
-        kind: 'info' | 'error' | 'warning'
+    /**
+     * Aggregable badges are concatenated and de-duplicated within a particular result set. These
+     * values can briefly be used to describe some common property of the underlying result set.
+     */
+    export interface AggregableBadge {
+        /** The display text of the badge. */
+        text: string
 
-        /** Tooltip text to display when hovering over the attachment. */
-        hoverMessage?: string
-
-        /** If set, the attachment becomes a link with this destination URL. */
+        /** If set, the badge becomes a link with this destination URL. */
         linkURL?: string
 
-        /**
-         * Overwrite style for light themes.
-         *
-         * @deprecated Use {@link BadgeAttachmentRenderOptions#kind} to pick a predefined icon
-         */
-        light?: ThemableBadgeAttachmentStyle
-
-        /**
-         * Overwrite style for dark themes.
-         *
-         * @deprecated Use {@link BadgeAttachmentRenderOptions#kind} to pick a predefined icon
-         */
-        dark?: ThemableBadgeAttachmentStyle
+        /** Tooltip text to display when hovering over the badge. */
+        hoverMessage?: string
     }
 
     /**
-     * A wrapper around a providable type (currently hover and locations) with additional
-     * context to enable displaying badges next to the wrapped result value in the UI.
+     * A wrapper around a providable type (hover text and locations) with additional context to enable
+     * displaying badges next to the wrapped result value in the UI.
      */
-    export type Badged<T extends object> = T & {
-        badge?: BadgeAttachmentRenderOptions
-    }
+    export type Badged<T extends object> = T & Badge
 
     /**
      * A hover represents additional information for a symbol or word. Hovers are rendered in a tooltip-like
@@ -1393,7 +1366,7 @@ declare module 'sourcegraph' {
         /**
          * Alerts that should be shown in this hover.
          */
-        alerts?: Badged<HoverAlert>[]
+        alerts?: HoverAlert[]
     }
 
     export interface HoverAlert {
@@ -1411,6 +1384,9 @@ declare module 'sourcegraph' {
          * dismissible.
          */
         type?: string
+
+        /** Predefined icons to display next ot the summary. */
+        iconKind?: 'info' | 'error' | 'warning'
     }
 
     export interface HoverProvider {
@@ -1484,6 +1460,8 @@ declare module 'sourcegraph' {
      * A completion item is a suggestion to complete text that the user has typed.
      *
      * @see {@link CompletionItemProvider#provideCompletionItems}
+     *
+     * @deprecated
      */
     export interface CompletionItem {
         /**
@@ -1508,6 +1486,8 @@ declare module 'sourcegraph' {
 
     /**
      * A collection of [completion items](#CompletionItem) to be presented in the editor.
+     *
+     * @deprecated
      */
     export interface CompletionList {
         /**
@@ -1522,6 +1502,8 @@ declare module 'sourcegraph' {
      *
      * Providers are queried for completions as the user types in any document matching the document
      * selector specified at registration time.
+     *
+     * @deprecated
      */
     export interface CompletionItemProvider {
         /**
@@ -1658,6 +1640,8 @@ declare module 'sourcegraph' {
          * @param selector A selector that defines the documents this provider applies to.
          * @param provider A completion item provider.
          * @returns An unsubscribable to unregister this provider.
+         *
+         * @deprecated
          */
         export function registerCompletionItemProvider(
             selector: DocumentSelector,
