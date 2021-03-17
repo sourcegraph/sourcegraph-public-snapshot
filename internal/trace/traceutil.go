@@ -135,6 +135,17 @@ func (t *Trace) SetError(err error) {
 	ext.Error.Set(t.span, true)
 }
 
+// SetErrorIfNotContext calls SetError unless err is context.Canceled or
+// context.DeadlineExceeded.
+func (t *Trace) SetErrorIfNotContext(err error) {
+	if err == context.Canceled || err == context.DeadlineExceeded {
+		t.trace.LazyPrintf("error: %v", err)
+		t.span.LogFields(log.Error(err))
+		return
+	}
+	t.SetError(err)
+}
+
 // Finish declares that this trace and span is complete.
 // The trace should not be used after calling this method.
 func (t *Trace) Finish() {
