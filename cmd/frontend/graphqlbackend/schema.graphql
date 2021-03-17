@@ -10043,6 +10043,14 @@ type BatchChange implements Node {
         Search for changesets matching this query. Queries may include quoted substrings to match phrases, and words may be preceded by - to negate them.
         """
         search: String
+        """
+        Only return changesets that are archived in this campaign. Default is false.
+        """
+        onlyArchived: Boolean
+        """
+        Include changesets that are archived in this campaign. Default is false.
+        """
+        includeArchived: Boolean
     ): ChangesetConnection!
 
     """

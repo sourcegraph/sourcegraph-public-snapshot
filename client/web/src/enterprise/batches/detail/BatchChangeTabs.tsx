@@ -16,9 +16,10 @@ import ChartLineVariantIcon from 'mdi-react/ChartLineVariantIcon'
 import { BatchChangeBurndownChart } from './BatchChangeBurndownChart'
 import { BatchChangeChangesets } from './changesets/BatchChangeChangesets'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
+import ArchiveIcon from 'mdi-react/ArchiveIcon'
 import { BatchSpecTab } from './BatchSpecTab'
 
-type SelectedTab = 'changesets' | 'chart' | 'spec'
+type SelectedTab = 'changesets' | 'chart' | 'spec' | 'archived'
 
 export interface BatchChangeTabsProps
     extends ExtensionsControllerProps,
@@ -55,6 +56,9 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
         }
         if (urlParameters.get('tab') === 'spec') {
             return 'spec'
+        }
+        if (urlParameters.get('tab') === 'archived') {
+            return 'archived'
         }
         return 'changesets'
     })
@@ -94,6 +98,18 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
         },
         [history, location]
     )
+    const onSelectArchived = useCallback<React.MouseEventHandler>(
+        event => {
+            event.preventDefault()
+            setSelectedTab('archived')
+            const urlParameters = new URLSearchParams(location.search)
+            urlParameters.set('tab', 'archived')
+            if (location.search !== urlParameters.toString()) {
+                history.replace({ ...location, search: urlParameters.toString() })
+            }
+        },
+        [history, location]
+    )
     return (
         <>
             <div className="overflow-auto mb-2">
@@ -125,6 +141,15 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
                             <FileDocumentIcon className="icon-inline text-muted mr-1" /> Spec
                         </a>
                     </li>
+                    <li className="nav-item test-batches-spec-tab">
+                        <a
+                            href=""
+                            onClick={onSelectArchived}
+                            className={classNames('nav-link', selectedTab === 'archived' && 'active')}
+                        >
+                            <ArchiveIcon className="icon-inline text-muted mr-1" /> Archived
+                        </a>
+                    </li>
                 </ul>
             </div>
             {selectedTab === 'chart' && (
@@ -146,10 +171,26 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
                     telemetryService={telemetryService}
                     queryChangesets={queryChangesets}
                     queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
+                    onlyArchived={false}
                 />
             )}
             {selectedTab === 'spec' && (
                 <BatchSpecTab batchChange={batchChange} originalInput={batchChange.currentSpec.originalInput} />
+            )}
+            {selectedTab === 'archived' && (
+                <BatchChangeChangesets
+                    batchChangeID={batchChange.id}
+                    viewerCanAdminister={batchChange.viewerCanAdminister}
+                    history={history}
+                    location={location}
+                    isLightTheme={isLightTheme}
+                    extensionsController={extensionsController}
+                    platformContext={platformContext}
+                    telemetryService={telemetryService}
+                    queryChangesets={queryChangesets}
+                    queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
+                    onlyArchived={true}
+                />
             )}
         </>
     )

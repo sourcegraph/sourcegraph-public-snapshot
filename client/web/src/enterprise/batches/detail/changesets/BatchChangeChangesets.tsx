@@ -35,6 +35,7 @@ interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, Extens
     location: H.Location
 
     hideFilters?: boolean
+    onlyArchived?: boolean
 
     /** For testing only. */
     queryChangesets?: typeof _queryChangesets
@@ -60,6 +61,7 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
     queryChangesets = _queryChangesets,
     queryExternalChangesetWithFileDiffs,
     expandByDefault,
+    onlyArchived,
 }) => {
     const [changesetFilters, setChangesetFilters] = useState<ChangesetFilters>({
         checkState: null,
@@ -78,6 +80,8 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                 batchChange: batchChangeID,
                 onlyPublishedByThisBatchChange: null,
                 search: changesetFilters.search,
+                onlyArchived: !!onlyArchived,
+                includeArchived: false,
             }).pipe(repeatWhen(notifier => notifier.pipe(delay(5000)))),
         [
             batchChangeID,
@@ -86,6 +90,7 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
             changesetFilters.checkState,
             changesetFilters.search,
             queryChangesets,
+            onlyArchived,
         ]
     )
 

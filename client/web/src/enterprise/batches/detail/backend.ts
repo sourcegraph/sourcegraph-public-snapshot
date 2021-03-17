@@ -202,6 +202,8 @@ export const queryChangesets = ({
     checkState,
     onlyPublishedByThisBatchChange,
     search,
+    onlyArchived,
+    includeArchived,
 }: BatchChangeChangesetsVariables): Observable<
     (BatchChangeChangesetsResult['node'] & { __typename: 'BatchChange' })['changesets']
 > =>
@@ -216,6 +218,8 @@ export const queryChangesets = ({
                 $checkState: ChangesetCheckState
                 $onlyPublishedByThisBatchChange: Boolean
                 $search: String
+                $onlyArchived: Boolean
+                $includeArchived: Boolean
             ) {
                 node(id: $batchChange) {
                     __typename
@@ -228,6 +232,8 @@ export const queryChangesets = ({
                             checkState: $checkState
                             onlyPublishedByThisBatchChange: $onlyPublishedByThisBatchChange
                             search: $search
+                            onlyArchived: $onlyArchived
+                            includeArchived: $includeArchived
                         ) {
                             totalCount
                             pageInfo {
@@ -253,6 +259,8 @@ export const queryChangesets = ({
             checkState,
             onlyPublishedByThisBatchChange,
             search,
+            onlyArchived,
+            includeArchived,
         }
     ).pipe(
         map(dataOrThrowErrors),
