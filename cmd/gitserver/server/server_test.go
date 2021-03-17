@@ -644,10 +644,10 @@ func TestHandleRepoUpdate(t *testing.T) {
 
 	// Now we'll call again and with an update that fails
 
-	doRepoUpdate2Mock = func(name api.RepoName) error {
+	doBackgroundRepoUpdateMock = func(name api.RepoName) error {
 		return errors.New("fail")
 	}
-	t.Cleanup(func() { doRepoUpdate2Mock = nil })
+	t.Cleanup(func() { doBackgroundRepoUpdateMock = nil })
 
 	// This will an update since the repo is already cloned
 	req = httptest.NewRequest("GET", "/repo-update", bytes.NewReader(body))

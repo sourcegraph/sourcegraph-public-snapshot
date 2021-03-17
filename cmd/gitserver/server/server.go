@@ -1532,7 +1532,7 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName) error {
 	mu := l.mu
 	s.repoUpdateLocksMu.Unlock()
 
-	// doRepoUpdate2 can block longer than our context deadline. done will
+	// doBackgroundRepoUpdate can block longer than our context deadline. done will
 	// close when its done. We can return when either done is closed or our
 	// deadline has passed.
 	done := make(chan struct{})
@@ -1547,9 +1547,10 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName) error {
 			l.once = new(sync.Once) // Make new requests wait for next update.
 			s.repoUpdateLocksMu.Unlock()
 
-			err = s.doRepoUpdate2(repo)
-			// Use a background context to ensure we still update the DB even if we time out
-			s.setLastErrorNonFatal(context.Background(), repo, err)
+			err = s.doBackgroundRepoUpdate(repo)
+			ctx, cancel := s.serverContext()
+			defer cancel()
+			s.setLastErrorNonFatal(ctx, repo, err)
 		})
 	}()
 
@@ -1560,6 +1561,72 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName) error {
 		span.LogFields(otlog.String("event", "context canceled"))
 		return ctx.Err()
 	}
+}
+
+var doBackgroundRepoUpdateMock func(api.RepoName) error
+
+func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
+	if doBackgroundRepoUpdateMock != nil {
+		return doBackgroundRepoUpdateMock(repo)
+	}
+	// background context.
+	ctx, cancel1 := s.serverContext()
+	defer cancel1()
+
+	ctx, cancel2, err := s.acquireCloneLimiter(ctx)
+	if err != nil {
+		return err
+	}
+	defer cancel2()
+
+	repo = protocol.NormalizeRepo(repo)
+	dir := s.dir(repo)
+
+	remoteURL, err := s.getRemoteURL(ctx, repo)
+	if err != nil {
+		return errors.Wrap(err, "failed to determine Git remote URL")
+	}
+
+	syncer, err := s.GetVCSSyncer(ctx, repo)
+	if err != nil {
+		return errors.Wrap(err, "get VCS syncer")
+	}
+
+	cmd, configRemoteOpts, err := syncer.FetchCommand(ctx, remoteURL)
+	if err != nil {
+		return errors.Wrap(err, "get fetch command")
+	}
+
+	dir.Set(cmd)
+
+	// drop temporary pack files after a fetch. this function won't
+	// return until this fetch has completed or definitely-failed,
+	// either way they can't still be in use. we don't care exactly
+	// when the cleanup happens, just that it does.
+	defer s.cleanTmpFiles(dir)
+
+	if output, err := runWith(ctx, cmd, configRemoteOpts, nil); err != nil {
+		log15.Error("Failed to update", "repo", repo, "error", err, "output", string(output))
+		return errors.Wrap(err, "failed to update")
+	}
+
+	removeBadRefs(ctx, dir)
+
+	if err := setHEAD(ctx, dir, syncer, repo, remoteURL); err != nil {
+		log15.Error("Failed to ensure HEAD exists", "repo", repo, "error", err)
+		return errors.Wrap(err, "failed to ensure HEAD exists")
+	}
+
+	if err := setRepositoryType(dir, syncer.Type()); err != nil {
+		return errors.Wrap(err, `git config set "sourcegraph.type"`)
+	}
+
+	// Update the last-changed stamp.
+	if err := setLastChanged(dir); err != nil {
+		log15.Warn("Failed to update last changed time", "repo", repo, "error", err)
+	}
+
+	return nil
 }
 
 var (
@@ -1790,72 +1857,6 @@ func computeRefHash(dir GitDir) ([]byte, error) {
 	hash := make([]byte, hex.EncodedLen(hasher.Size()))
 	hex.Encode(hash, hasher.Sum(nil))
 	return hash, nil
-}
-
-var doRepoUpdate2Mock func(api.RepoName) error
-
-func (s *Server) doRepoUpdate2(repo api.RepoName) error {
-	if doRepoUpdate2Mock != nil {
-		return doRepoUpdate2Mock(repo)
-	}
-	// background context.
-	ctx, cancel1 := s.serverContext()
-	defer cancel1()
-
-	ctx, cancel2, err := s.acquireCloneLimiter(ctx)
-	if err != nil {
-		return err
-	}
-	defer cancel2()
-
-	repo = protocol.NormalizeRepo(repo)
-	dir := s.dir(repo)
-
-	remoteURL, err := s.getRemoteURL(ctx, repo)
-	if err != nil {
-		return errors.Wrap(err, "failed to determine Git remote URL")
-	}
-
-	syncer, err := s.GetVCSSyncer(ctx, repo)
-	if err != nil {
-		return errors.Wrap(err, "get VCS syncer")
-	}
-
-	cmd, configRemoteOpts, err := syncer.FetchCommand(ctx, remoteURL)
-	if err != nil {
-		return errors.Wrap(err, "get fetch command")
-	}
-
-	dir.Set(cmd)
-
-	// drop temporary pack files after a fetch. this function won't
-	// return until this fetch has completed or definitely-failed,
-	// either way they can't still be in use. we don't care exactly
-	// when the cleanup happens, just that it does.
-	defer s.cleanTmpFiles(dir)
-
-	if output, err := runWith(ctx, cmd, configRemoteOpts, nil); err != nil {
-		log15.Error("Failed to update", "repo", repo, "error", err, "output", string(output))
-		return errors.Wrap(err, "failed to update")
-	}
-
-	removeBadRefs(ctx, dir)
-
-	if err := setHEAD(ctx, dir, syncer, repo, remoteURL); err != nil {
-		log15.Error("Failed to ensure HEAD exists", "repo", repo, "error", err)
-		return errors.Wrap(err, "failed to ensure HEAD exists")
-	}
-
-	if err := setRepositoryType(dir, syncer.Type()); err != nil {
-		return errors.Wrap(err, `git config set "sourcegraph.type"`)
-	}
-
-	// Update the last-changed stamp.
-	if err := setLastChanged(dir); err != nil {
-		log15.Warn("Failed to update last changed time", "repo", repo, "error", err)
-	}
-
-	return nil
 }
 
 func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, rev string, repoDir GitDir) (didUpdate bool) {
