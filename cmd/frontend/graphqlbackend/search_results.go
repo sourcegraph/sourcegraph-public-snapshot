@@ -857,8 +857,9 @@ func (r *searchResolver) evaluate(ctx context.Context, q query.Q) (*SearchResult
 // or repogroup field, we should invalidate resolved repos, since multiple
 // repos, revisions, or repogroups imply that different repos may need to be
 // resolved.
-func invalidateRepoCache(q []query.Node) bool {
+func invalidateRepoCache(plan query.Plan) bool {
 	var seenRepo, seenRevision, seenRepoGroup, seenContext int
+	q := plan.ToParseTree()
 	query.VisitField(q, query.FieldRepo, func(_ string, _ bool, _ query.Annotation) {
 		seenRepo += 1
 	})
@@ -875,17 +876,17 @@ func invalidateRepoCache(q []query.Node) bool {
 }
 
 func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolver, err error) {
-	return r.resultsRecursive(ctx, r.Query)
+	return r.resultsRecursive(ctx, r.Plan)
 }
 
-func (r *searchResolver) resultsRecursive(ctx context.Context, q query.Q) (srr *SearchResultsResolver, err error) {
+func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) (srr *SearchResultsResolver, err error) {
 	tr, ctx := trace.New(ctx, "Results", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	if invalidateRepoCache(q) {
+	if invalidateRepoCache(plan) {
 		r.invalidateRepoCache = true
 	}
 
@@ -894,8 +895,8 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, q query.Q) (srr *
 		wantCount = *count
 	}
 
-	for _, disjunct := range query.Dnf(q) {
-		expanded, err := substitutePredicates(disjunct, func(p query.Predicate) (*SearchResultsResolver, error) {
+	for _, q := range plan {
+		predicatePlan, err := substitutePredicates(q, func(pred query.Predicate) (*SearchResultsResolver, error) {
 			// Disable streaming for subqueries so we can use
 			// the results rather than sending them back to the caller
 			orig := r.stream
@@ -903,7 +904,7 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, q query.Q) (srr *
 			defer func() { r.stream = orig }()
 
 			r.invalidateRepoCache = true
-			return r.resultsRecursive(ctx, p.Query(disjunct))
+			return r.resultsRecursive(ctx, pred.Plan(q))
 		})
 		if err != nil && errors.Is(err, ErrPredicateNoResults) {
 			continue
@@ -912,13 +913,12 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, q query.Q) (srr *
 			// Fail if predicate processing fails.
 			return nil, err
 		}
-		if expanded != nil {
-			// If a predicate filter generated a new query, evaluate that query.
-			return r.resultsRecursive(ctx, expanded)
+		if predicatePlan != nil {
+			// If a predicate filter generated a new plan, evaluate that plan.
+			return r.resultsRecursive(ctx, predicatePlan)
 		}
 
-		disjunct = query.ConcatRevFilters(disjunct)
-		newResult, err := r.evaluate(ctx, disjunct)
+		newResult, err := r.evaluate(ctx, q)
 		if err != nil {
 			// Fail if any subexpression fails.
 			return nil, err
@@ -993,9 +993,10 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 
 // substitutePredicates replaces all the predicates in a query with their expanded form. The predicates
 // are expanded using the doExpand function.
-func substitutePredicates(q query.Q, evaluate func(query.Predicate) (*SearchResultsResolver, error)) (newQ query.Q, topErr error) {
+func substitutePredicates(q query.Q, evaluate func(query.Predicate) (*SearchResultsResolver, error)) (query.Plan, error) {
+	var topErr error
 	success := false
-	newQ = query.MapParameter(q, func(field, value string, neg bool, ann query.Annotation) query.Node {
+	newQ := query.MapParameter(q, func(field, value string, neg bool, ann query.Annotation) query.Node {
 		orig := query.Parameter{
 			Field:      field,
 			Value:      value,
@@ -1068,7 +1069,7 @@ func substitutePredicates(q query.Q, evaluate func(query.Predicate) (*SearchResu
 	if topErr != nil || !success {
 		return nil, topErr
 	}
-	return newQ, topErr
+	return query.ToPlan(query.Dnf(newQ)), topErr
 }
 
 var ErrPredicateNoResults = errors.New("no results returned for predicate")
