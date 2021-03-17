@@ -680,11 +680,10 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, minimal bool, opt
 			conds = append(conds, sqlf.Sprintf("es.namespace_user_id = %d AND es.deleted_at IS NULL", opt.UserID))
 		}
 	} else if opt.SearchContextID != 0 {
-		fromClause = sqlf.Sprintf(`
-			repo
+		joins = append(joins, sqlf.Sprintf(`
 				JOIN (SELECT DISTINCT repo_id, search_context_id FROM search_context_repos) dscr -- to avoid repo duplicates
 				ON repo.id = dscr.repo_id
-		`)
+		`))
 		conds = append(conds, sqlf.Sprintf("dscr.search_context_id = %d", opt.SearchContextID))
 	}
 

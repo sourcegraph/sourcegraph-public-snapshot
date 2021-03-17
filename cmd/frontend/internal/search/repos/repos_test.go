@@ -173,7 +173,7 @@ func TestRevisionValidation(t *testing.T) {
 		t.Run(tt.repoFilters[0], func(t *testing.T) {
 
 			op := Options{RepoFilters: tt.repoFilters}
-			repositoryResolver := &Resolver{NamespaceStore: &mockNamespaceStore{}}
+			repositoryResolver := &Resolver{}
 			resolved, err := repositoryResolver.Resolve(context.Background(), op)
 
 			if diff := cmp.Diff(tt.wantRepoRevs, resolved.RepoRevs); diff != "" {
@@ -428,7 +428,7 @@ func TestUseDefaultReposIfMissingOrGlobalSearchContext(t *testing.T) {
 				SearchContextSpec: tt.searchContextSpec,
 				Query:             queryInfo,
 			}
-			repositoryResolver := &Resolver{Zoekt: mockZoekt, DefaultReposFunc: mockDefaultReposFunc, NamespaceStore: &mockNamespaceStore{}}
+			repositoryResolver := &Resolver{Zoekt: mockZoekt, DefaultReposFunc: mockDefaultReposFunc}
 			resolved, err := repositoryResolver.Resolve(context.Background(), op)
 			if err != nil {
 				t.Fatal(err)
@@ -492,24 +492,23 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 		}, nil
 	}
 	database.Mocks.Repos.Count = func(ctx context.Context, op database.ReposListOptions) (int, error) { return 3, nil }
-	defer func() {
-		database.Mocks.Repos.ListRepoNames = nil
-		database.Mocks.Repos.Count = nil
-	}()
-
-	getNamespaceByName := func(ctx context.Context, name string) (*database.Namespace, error) {
+	database.Mocks.Namespaces.GetByName = func(ctx context.Context, name string) (*database.Namespace, error) {
 		if name != wantName {
 			t.Errorf("got %q, want %q", name, wantName)
 		}
 		return &database.Namespace{Name: wantName, User: wantUserID}, nil
 	}
-	namespaceStore := &mockNamespaceStore{GetByNameMock: getNamespaceByName}
+	defer func() {
+		database.Mocks.Repos.ListRepoNames = nil
+		database.Mocks.Repos.Count = nil
+		database.Mocks.Namespaces.GetByName = nil
+	}()
 
 	op := Options{
 		Query:             queryInfo,
 		SearchContextSpec: "@" + wantName,
 	}
-	repositoryResolver := &Resolver{DB: db, NamespaceStore: namespaceStore}
+	repositoryResolver := &Resolver{DB: db}
 	resolved, err := repositoryResolver.Resolve(context.Background(), op)
 	if err != nil {
 		t.Fatal(err)
