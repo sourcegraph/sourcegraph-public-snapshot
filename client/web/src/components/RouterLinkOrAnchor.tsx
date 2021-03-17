@@ -8,5 +8,17 @@ import { LinkProps } from '../../../shared/src/components/Link'
  * absolute URL to <Link> will create an (almost certainly invalid) URL where the absolute URL is resolved to the
  * current URL, such as https://example.com/a/b/https://example.com/c/d.
  */
-export const RouterLinkOrAnchor: React.FunctionComponent<ReactRouterLinkProps & LinkProps> = props =>
-    typeof props.to === 'string' && isAbsoluteUrl(props.to) ? <a href={props.to} {...props} /> : <Link {...props} />
+export const RouterLinkOrAnchor: React.FunctionComponent<ReactRouterLinkProps & LinkProps> = ({
+    children,
+    to,
+    ...props
+}) =>
+    typeof to === 'string' && isAbsoluteUrl(to) ? (
+        <a href={to} {...props}>
+            {children}
+        </a>
+    ) : (
+        <Link to={to} {...props}>
+            {children}
+        </Link>
+    )
