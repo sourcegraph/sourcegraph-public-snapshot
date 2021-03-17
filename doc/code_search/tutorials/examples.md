@@ -35,8 +35,10 @@ repo:@*refs/heads/:^master type:diff after:"1 week ago" (eslint-disable)
 file:package.json type:diff after:"1 week ago"
 ```
 
-- [Files that are Apache licensed](https://sourcegraph.com/search?q=licensed+to+the+apache+software+foundation+select:file&patternType=literal)<br/>
-`licensed to the apache software foundation select:file`
+[Files that are Apache licensed](https://sourcegraph.com/search?q=licensed+to+the+apache+software+foundation+select:file&patternType=literal)<br/>
+```sgquery
+licensed to the apache software foundation select:file
+```
 
 ## When to use regex search mode
 
