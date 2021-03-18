@@ -519,10 +519,9 @@ func getRevsForMatchedRepo(repo api.RepoName, pats []patternRevspec) (matched []
 	for i, revList := range revLists {
 		aliveCount = 0
 		for _, rev := range revList {
-			seenCount := revCounts[rev]
-			if seenCount == i {
+			if revCounts[rev] == i {
 				aliveCount += 1
-				revCounts[rev] = seenCount + 1
+				revCounts[rev] += 1
 			}
 		}
 	}
