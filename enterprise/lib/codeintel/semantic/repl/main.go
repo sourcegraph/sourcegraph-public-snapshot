@@ -5,16 +5,13 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/exec"
-	"path"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/conversion"
-	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/pathexistence"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic/diff"
 )
 
 const helpMsg string = `
@@ -97,38 +94,61 @@ func main() {
 			}
 
 		case "index":
-			if len(fields) != 2 {
-				fmt.Println("expected 1 argument to index")
+			if len(fields) != 2 && len(fields) != 3 {
+				fmt.Println("expected 1 or 2 arguments to index")
 				break
 			}
-			root := fields[1]
+			dumpPath := fields[1]
+			projectRoot := filepath.Dir(dumpPath)
+			if len(fields) == 3 {
+				projectRoot = fields[2]
+			}
 
-			bundle, err := readBundle(len(bundles), root)
+			bundle, err := conversion.CorrelateLocalGit(context.Background(), dumpPath, projectRoot)
 			if err != nil {
 			}
-			bundles = append(bundles, bundle)
-			fmt.Println("indexing finished")
+			bundles = append(bundles, semantic.GroupedBundleDataChansToMaps(bundle))
+			fmt.Printf("finished indexing dump %v\n", len(bundles)-1)
+			break
+
+		case "diff":
+			if len(fields) != 3 {
+				fmt.Printf("expected 2 arguments to diff, got %v\n", len(fields))
+				break
+			}
+			gotID, err := strconv.Atoi(fields[1])
+			if err != nil || gotID >= len(bundles) {
+				fmt.Println("first argument should be bundle ID")
+				break
+			}
+			wantID, err := strconv.Atoi(fields[2])
+			if err != nil || wantID >= len(bundles) {
+				fmt.Println("second argument should be bundle ID")
+				break
+			}
+
+			fmt.Println(diff.Diff(bundles[gotID], bundles[wantID]))
 			break
 
 		case "patch":
 			// TODO
-			if len(fields) != 3 {
-				fmt.Println("expected 2 arguments to patch")
-				break
-			}
-			root := fields[1]
-			baseID, err := strconv.Atoi(fields[2])
-			if err != nil {
-				fmt.Println("second argument should be int")
-			}
+			// if len(fields) != 3 {
+			// 	fmt.Println("expected 2 arguments to patch")
+			// 	break
+			// }
+			// root := fields[1]
+			// baseID, err := strconv.Atoi(fields[2])
+			// if err != nil {
+			// 	fmt.Println("second argument should be int")
+			// }
 
-			_, err = readBundle(baseID, root)
-			if err != nil {
-				fmt.Println(helpMsg)
-				break
-			}
+			// _, err = readBundle(root)
+			// if err != nil {
+			// 	fmt.Println(helpMsg)
+			// 	break
+			// }
 
-			break
+			// break
 
 		default:
 			fmt.Println(helpMsg)

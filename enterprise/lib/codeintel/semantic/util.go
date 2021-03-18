@@ -79,6 +79,45 @@ func CompareRanges(a RangeData, b RangeData) int {
 	return 0
 }
 
+// CompareLocations compares two locations.
+// Returns -1 if the range A starts before range B, or starts at the same place but ends earlier.
+// Returns 0 if they're exactly equal. Returns 1 otherwise.
+func CompareLocations(a LocationData, b LocationData) int {
+	if a.StartLine < b.StartLine {
+		return -1
+	}
+
+	if a.StartLine > b.StartLine {
+		return 1
+	}
+
+	if a.StartCharacter < b.StartCharacter {
+		return -1
+	}
+
+	if a.StartCharacter > b.StartCharacter {
+		return 1
+	}
+
+	if a.EndLine < b.EndLine {
+		return -1
+	}
+
+	if a.EndLine > b.EndLine {
+		return 1
+	}
+
+	if a.EndCharacter < b.EndCharacter {
+		return -1
+	}
+
+	if a.EndCharacter > b.EndCharacter {
+		return 1
+	}
+
+	return 0
+}
+
 // ComparePosition compres the range r with the position constructed from line and character.
 // Returns -1 if the position occurs before the range, +1 if it occurs after, and 0 if the
 // position is inside of the range.
@@ -199,19 +238,17 @@ func GroupedBundleDataChansToMaps(chans *GroupedBundleDataChans) *GroupedBundleD
 	}
 	monikerDefsMap := make(map[string]map[string][]LocationData)
 	for monikerDefs := range chans.Definitions {
-		identMap, exists := monikerDefsMap[monikerDefs.Scheme]
-		if !exists {
-			identMap = make(map[string][]LocationData)
+		if _, exists := monikerDefsMap[monikerDefs.Scheme]; !exists {
+			monikerDefsMap[monikerDefs.Scheme] = make(map[string][]LocationData)
 		}
-		identMap[monikerDefs.Identifier] = monikerDefs.Locations
+		monikerDefsMap[monikerDefs.Scheme][monikerDefs.Identifier] = monikerDefs.Locations
 	}
 	monikerRefsMap := make(map[string]map[string][]LocationData)
 	for monikerRefs := range chans.References {
-		identMap, exists := monikerRefsMap[monikerRefs.Scheme]
-		if !exists {
-			identMap = make(map[string][]LocationData)
+		if _, exists := monikerRefsMap[monikerRefs.Scheme]; !exists {
+			monikerRefsMap[monikerRefs.Scheme] = make(map[string][]LocationData)
 		}
-		identMap[monikerRefs.Identifier] = monikerRefs.Locations
+		monikerRefsMap[monikerRefs.Scheme][monikerRefs.Identifier] = monikerRefs.Locations
 	}
 
 	return &GroupedBundleDataMaps{

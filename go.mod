@@ -39,7 +39,7 @@ require (
 	github.com/efritz/go-mockgen v0.0.0-20200916004441-cfcabc111002
 	github.com/efritz/pentimento v0.0.0-20190429011147-ade47d831101
 	github.com/evanphx/json-patch v4.9.0+incompatible // indirect
-	github.com/fatih/color v1.9.0
+	github.com/fatih/color v1.10.0
 	github.com/fatih/structs v1.1.0
 	github.com/felixge/fgprof v0.9.1
 	github.com/felixge/httpsnoop v1.0.1
