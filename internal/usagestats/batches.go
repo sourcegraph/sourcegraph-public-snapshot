@@ -163,7 +163,8 @@ SELECT to_char(batch_change_counts.creation_week, 'yyyy-mm-dd')           AS cre
        COALESCE(SUM(changeset_counts.changesets_published_closed), 0) AS changesets_published_closed
 FROM batch_change_counts
 LEFT JOIN changeset_counts ON batch_change_counts.creation_week = changeset_counts.creation_week
-GROUP BY batch_change_counts.creation_week;
+GROUP BY batch_change_counts.creation_week
+ORDER BY batch_change_counts.creation_week ASC
 `
 
 	stats.BatchChangesCohorts = []*types.BatchChangesCohort{}

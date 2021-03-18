@@ -4,7 +4,7 @@ import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react'
 import { escapeRegExp } from 'lodash'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { NEVER, ObservableInput, of } from 'rxjs'
-import { catchError } from 'rxjs/operators'
+import { catchError, switchMap } from 'rxjs/operators'
 import { redirectToExternalHost } from '.'
 import {
     isRepoNotFoundErrorLike,
@@ -170,18 +170,28 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     )
 
     const resolvedRevisionOrError = useObservable(
-        React.useMemo(
+        useMemo(
             () =>
-                resolveRevision({ repoName, revision }).pipe(
-                    catchError(error => {
-                        if (isCloneInProgressErrorLike(error)) {
-                            return of<ErrorLike>(asError(error))
-                        }
-                        throw error
-                    }),
-                    repeatUntil(value => !isCloneInProgressErrorLike(value), { delay: 1000 }),
-                    catchError(error => of<ErrorLike>(asError(error)))
-                ),
+                of(undefined)
+                    .pipe(
+                        // Wrap in switchMap so we don't break the observable chain when
+                        // catchError returns a new observable, so repeatUntil will
+                        // properly resubscribe to the outer observable and re-fetch.
+                        switchMap(() =>
+                            resolveRevision({ repoName, revision }).pipe(
+                                catchError(error => {
+                                    if (isCloneInProgressErrorLike(error)) {
+                                        return of<ErrorLike>(asError(error))
+                                    }
+                                    throw error
+                                })
+                            )
+                        )
+                    )
+                    .pipe(
+                        repeatUntil(value => !isCloneInProgressErrorLike(value), { delay: 1000 }),
+                        catchError(error => of<ErrorLike>(asError(error)))
+                    ),
             [repoName, revision]
         )
     )
