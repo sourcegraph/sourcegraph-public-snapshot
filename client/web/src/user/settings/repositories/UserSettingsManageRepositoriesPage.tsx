@@ -499,10 +499,17 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     type="radio"
                     value="selected"
                     checked={selectionState.radio === 'selected'}
+                    disabled={codeHosts.hosts.length === 0}
                     onChange={handleRadioSelect}
                 />
                 <div className="d-flex flex-column ml-2">
-                    <p className="mb-0">Sync selected public repositories</p>
+                    <p
+                        className={
+                            'mb-0 ' + ((codeHosts.hosts.length === 0 && 'user-settings-repos__text-coming-soon') || '')
+                        }
+                    >
+                        Sync selected public repositories
+                    </p>
                 </div>
             </label>
         </Form>
@@ -661,6 +668,14 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                 Get updated when this feature launches
                             </Link>
                         </div>
+                        {codeHosts.hosts.length === 0 && (
+                            <div className="alert alert-warning">
+                                <Link to={`${routingPrefix}/code-hosts`} target="_blank" rel="noopener noreferrer">
+                                    Connect with a code host
+                                </Link>{' '}
+                                to add your own repositories to Sourcegraph.
+                            </div>
+                        )}
                         {
                             // display radio button for 'all' or 'selected' repos
                             modeSelect

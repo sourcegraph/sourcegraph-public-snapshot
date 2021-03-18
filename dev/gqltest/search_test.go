@@ -958,6 +958,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts{Repo: 1},
 			},
 			{
+				`or-expression on repo:contains`,
+				`repo:contains(content:does-not-exist-D2E1E74C7279) or repo:contains(content:nextFileFirstLine)`,
+				counts{Repo: 1},
+			},
+			{
 				`repo contains file then search common`,
 				`repo:contains(file:go.mod) count:100 fmt`,
 				counts{Content: 61},

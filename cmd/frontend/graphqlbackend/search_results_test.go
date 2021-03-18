@@ -858,14 +858,15 @@ func TestSearchResultsHydration(t *testing.T) {
 
 	ctx := context.Background()
 
-	q, err := query.ParseLiteral(`foobar index:only count:350`)
+	p, err := query.Pipeline(query.InitLiteral(`foobar index:only count:350`))
 	if err != nil {
 		t.Fatal(err)
 	}
 	resolver := &searchResolver{
 		db: db,
 		SearchInputs: &SearchInputs{
-			Query:        q,
+			Plan:         p,
+			Query:        p.ToParseTree(),
 			UserSettings: &schema.Settings{},
 		},
 		zoekt:    z,
@@ -1312,16 +1313,20 @@ func TestEvaluateAnd(t *testing.T) {
 			}
 			defer func() { database.Mocks = database.MockStores{} }()
 
-			q, err := query.ParseLiteral(tt.query)
+			p, err := query.Pipeline(query.InitLiteral(tt.query))
 			if err != nil {
 				t.Fatal(err)
 			}
 			resolver := &searchResolver{
-				db:           db,
-				SearchInputs: &SearchInputs{Query: q, UserSettings: &schema.Settings{}},
-				zoekt:        z,
-				reposMu:      &sync.Mutex{},
-				resolved:     &searchrepos.Resolved{},
+				db: db,
+				SearchInputs: &SearchInputs{
+					Plan:         p,
+					Query:        p.ToParseTree(),
+					UserSettings: &schema.Settings{},
+				},
+				zoekt:    z,
+				reposMu:  &sync.Mutex{},
+				resolved: &searchrepos.Resolved{},
 			}
 			results, err := resolver.Results(ctx)
 			if err != nil {
@@ -1377,14 +1382,15 @@ func TestSearchContext(t *testing.T) {
 
 	for _, tt := range tts {
 		t.Run(tt.name, func(t *testing.T) {
-			qinfo, err := query.ParseLiteral(tt.searchQuery)
+			p, err := query.Pipeline(query.InitLiteral(tt.searchQuery))
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			resolver := searchResolver{
 				SearchInputs: &SearchInputs{
-					Query:        qinfo,
+					Plan:         p,
+					Query:        p.ToParseTree(),
 					UserSettings: &schema.Settings{},
 				},
 				reposMu:  &sync.Mutex{},

@@ -235,6 +235,7 @@ func deprecationAlert(args AlertFuncArgs) []*Alert {
 	cv, err := semver.NewVersion(version.Version())
 	if err != nil {
 		log15.Error("cannot determine version", "error", err)
+		return nil
 	}
 
 	if cv.Minor() == 26 && args.IsSiteAdmin {

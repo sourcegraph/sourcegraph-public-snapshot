@@ -71,7 +71,7 @@ type mockProvider struct {
 	fetchRepoPerms func(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error)
 }
 
-func (*mockProvider) FetchAccount(context.Context, *types.User, []*extsvc.Account) (*extsvc.Account, error) {
+func (*mockProvider) FetchAccount(context.Context, *types.User, []*extsvc.Account, []string) (*extsvc.Account, error) {
 	return nil, nil
 }
 
@@ -129,11 +129,12 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		}
 		return []*types.Repo{{ID: 1}}, nil
 	}
+	database.Mocks.UserEmails.ListByUser = func(ctx context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
+		return nil, nil
+	}
 	defer func() {
-		database.Mocks.Users = database.MockUsers{}
-		database.Mocks.ExternalAccounts = database.MockExternalAccounts{}
+		database.Mocks = database.MockStores{}
 		edb.Mocks.Perms = edb.MockPerms{}
-		database.Mocks.Repos = database.MockRepos{}
 	}()
 
 	permsStore := edb.Perms(nil, timeutil.Now)
@@ -200,11 +201,12 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 		}
 		return []*types.Repo{{ID: 1}}, nil
 	}
+	database.Mocks.UserEmails.ListByUser = func(ctx context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
+		return nil, nil
+	}
 	defer func() {
-		database.Mocks.Users = database.MockUsers{}
-		database.Mocks.ExternalAccounts = database.MockExternalAccounts{}
+		database.Mocks = database.MockStores{}
 		edb.Mocks.Perms = edb.MockPerms{}
-		database.Mocks.Repos = database.MockRepos{}
 	}()
 
 	permsStore := edb.Perms(nil, timeutil.Now)

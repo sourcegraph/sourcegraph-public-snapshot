@@ -99,7 +99,8 @@ func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, toke
 {
   "url": "%s",
   "token": "%s",
-  "projectQuery": ["projects?visibility=public"]
+  "token.type": "oauth",
+  "projectQuery": ["projects?id_before=0"]
 }
 `, p.ServiceID, token.AccessToken),
 			NamespaceUserID: actor.UID,
