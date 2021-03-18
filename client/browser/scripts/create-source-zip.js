@@ -18,16 +18,19 @@ const signale = require('signale')
  */
 
 // Configuration
-const commitId = '350764282631014ea24ccd88fda459a4b19a5669'
+const commitId = '7e2ff053035368dd90801e358515f7dd7dc2d823'
 const includeCodeIntelExtensions = true
 const rootDirectoryNameForZip = 'sourcegraph-source'
 
+// Clean up
 shelljs.rm('-f', 'sourcegraph.zip')
+shelljs.rm('-rf', rootDirectoryNameForZip)
+shelljs.rm('-rf', `sourcegraph-${commitId}/`)
+
 signale.await(`Downloading sourcegraph/sourcegraph at revision ${commitId}`)
 shelljs.exec(
   `curl -Ls https://github.com/sourcegraph/sourcegraph/archive/${commitId}.zip -o sourcegraph-downloaded.zip`
 )
-shelljs.rm('-rf', `sourcegraph-${commitId}/`)
 shelljs.exec('unzip -q sourcegraph-downloaded.zip')
 shelljs.rm('-f', 'sourcegraph-downloaded.zip')
 shelljs.mv(`sourcegraph-${commitId}`, rootDirectoryNameForZip)
@@ -36,11 +39,16 @@ signale.success('Downloaded and unzipped sourcegraph/sourcegraph repository')
 if (includeCodeIntelExtensions) {
   shelljs.pushd(rootDirectoryNameForZip)
   shelljs.exec('yarn install')
-  shelljs.exec('yarn --cwd browser run fetch-code-intel-extensions')
+  shelljs.exec('yarn --cwd client/browser run fetch-code-intel-extensions')
   shelljs.popd()
 }
 
+// Delete all unnecessary directories
+shelljs.pushd(rootDirectoryNameForZip)
+shelljs.rm('-rf', ['dev', 'doc', 'docker-images', 'enterprise', 'internal', 'migrations', 'monitoring', 'node_modules'])
+shelljs.popd()
+
 signale.await('Producing sourcegraph.zip')
 shelljs.exec(`zip -qr sourcegraph.zip ${rootDirectoryNameForZip} --exclude "${rootDirectoryNameForZip}/node_modules/*"`)
-shelljs.rm('-rf', rootDirectoryNameForZip)
+// shelljs.rm('-rf', rootDirectoryNameForZip)
 signale.success('Done producing sourcegraph.zip')
