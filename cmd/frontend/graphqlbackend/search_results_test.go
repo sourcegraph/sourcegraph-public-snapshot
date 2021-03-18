@@ -255,27 +255,6 @@ func TestSearchResults(t *testing.T) {
 			t.Error("calledSearchSymbols")
 		}
 	})
-
-	t.Run("test start time is not null when alert thrown", func(t *testing.T) {
-		mockDecodedViewerFinalSettings = &schema.Settings{}
-		defer func() { mockDecodedViewerFinalSettings = nil }()
-
-		for _, v := range searchVersions {
-			r, err := (&schemaResolver{db: db}).Search(context.Background(), &SearchArgs{Query: `repo:*`, Version: v})
-			if err != nil {
-				t.Fatal("Search:", err)
-			}
-
-			results, err := r.Results(context.Background())
-			if err != nil {
-				t.Fatal("Search: ", err)
-			}
-
-			if results.start.IsZero() {
-				t.Error("Start value is not set")
-			}
-		}
-	})
 }
 
 func TestOrderedFuzzyRegexp(t *testing.T) {
@@ -1049,7 +1028,6 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 				SearchResults: tt.fields.results,
 				Stats:         tt.fields.searchResultsCommon,
 				alert:         tt.fields.alert,
-				start:         tt.fields.start,
 			}
 			if got := sr.ApproximateResultCount(); got != tt.want {
 				t.Errorf("searchResultsResolver.ApproximateResultCount() = %v, want %v", got, tt.want)
