@@ -89,19 +89,19 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 			(10, 'BatchChangeClosed', '{"batch_change_id": 1}', '', 23, '', 'backend', 'version', date_trunc('month', CURRENT_DATE) - INTERVAL '2 days'),
 			(11, 'BatchChangeDeleted', '{"batch_change_id": 1}', '', 23, '', 'backend', 'version', date_trunc('month', CURRENT_DATE) - INTERVAL '2 days'),
 		-- User 24, created a batch change today and closes it
-			(14, 'BatchSpecCreated', '{}', '', 24, '', 'backend', 'version', now()),
-			(15, 'ViewBatchChangeApplyPage', '{}', 'https://sourcegraph.test:3443/users/mrnugget/batch-changes/apply/RANDID-2', 24, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', now()),
-			(16, 'BatchChangeCreated', '{"batch_change_id": 2}', '', 24, '', 'backend', 'version', now()),
-			(17, 'ViewBatchChangeDetailsPageAfterCreate', '{}', 'https://sourcegraph.test:3443/users/mrnugget/batch-changes/foobar-files', 24, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', now()),
-			(18, 'ViewBatchChangeDetailsPageAfterUpdate', '{}', 'https://sourcegraph.test:3443/users/mrnugget/batch-changes/foobar-files', 24, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', now()),
-			(19, 'BatchChangeCreatedOrUpdated', '{"batch_change_id": 2}', '', 24, '', 'backend', 'version', now()),
-			(20, 'BatchChangeClosed', '{"batch_change_id": 2}', '', 24, '', 'backend', 'version', now()),
-			(21, 'BatchChangeDeleted', '{"batch_change_id": 2}', '', 24, '', 'backend', 'version', now()),
+			(14, 'BatchSpecCreated', '{}', '', 24, '', 'backend', 'version', $1::timestamp),
+			(15, 'ViewBatchChangeApplyPage', '{}', 'https://sourcegraph.test:3443/users/mrnugget/batch-changes/apply/RANDID-2', 24, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', $1::timestamp),
+			(16, 'BatchChangeCreated', '{"batch_change_id": 2}', '', 24, '', 'backend', 'version', $1::timestamp),
+			(17, 'ViewBatchChangeDetailsPageAfterCreate', '{}', 'https://sourcegraph.test:3443/users/mrnugget/batch-changes/foobar-files', 24, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', $1::timestamp),
+			(18, 'ViewBatchChangeDetailsPageAfterUpdate', '{}', 'https://sourcegraph.test:3443/users/mrnugget/batch-changes/foobar-files', 24, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', $1::timestamp),
+			(19, 'BatchChangeCreatedOrUpdated', '{"batch_change_id": 2}', '', 24, '', 'backend', 'version', $1::timestamp),
+			(20, 'BatchChangeClosed', '{"batch_change_id": 2}', '', 24, '', 'backend', 'version', $1::timestamp),
+			(21, 'BatchChangeDeleted', '{"batch_change_id": 2}', '', 24, '', 'backend', 'version', $1::timestamp),
 		-- User 25, only views the batch change, today
-			(27, 'ViewBatchChangeDetailsPage', '{}', 'https://sourcegraph.test:3443/users/mrnugget/batch-changes/gitignore-files', 25, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', now()),
-			(28, 'ViewBatchChangesListPage', '{}', 'https://sourcegraph.test:3443/users/mrnugget/batch-changes', 25, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', now()),
-			(29, 'ViewBatchChangeDetailsPage', '{}', 'https://sourcegraph.test:3443/users/mrnugget/batch-changes/foobar-files', 25, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', now())
-	`)
+			(27, 'ViewBatchChangeDetailsPage', '{}', 'https://sourcegraph.test:3443/users/mrnugget/batch-changes/gitignore-files', 25, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', $1::timestamp),
+			(28, 'ViewBatchChangesListPage', '{}', 'https://sourcegraph.test:3443/users/mrnugget/batch-changes', 25, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', $1::timestamp),
+			(29, 'ViewBatchChangeDetailsPage', '{}', 'https://sourcegraph.test:3443/users/mrnugget/batch-changes/foobar-files', 25, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', $1::timestamp)
+	`, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -115,10 +115,10 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 		INSERT INTO batch_changes
 			(id, name, batch_spec_id, created_at, last_applied_at, namespace_user_id, closed_at)
 		VALUES
-			(1, 'test',   1, $2::timestamp, NOW(), $1, NULL),
-			(2, 'test-2', 2, $3::timestamp, NOW(), $1, NOW()),
-			(3, 'test-3', 3, $4::timestamp, NOW(), $1, NULL)
-	`, user.ID, batchChangeCreationDate1, batchChangeCreationDate2, batchChangeCreationDate3)
+			(1, 'test',   1, $2::timestamp, $5::timestamp, $1, NULL),
+			(2, 'test-2', 2, $3::timestamp, $5::timestamp, $1, $5::timestamp),
+			(3, 'test-3', 3, $4::timestamp, $5::timestamp, $1, NULL)
+	`, user.ID, batchChangeCreationDate1, batchChangeCreationDate2, batchChangeCreationDate3, now)
 	if err != nil {
 		t.Fatal(err)
 	}
