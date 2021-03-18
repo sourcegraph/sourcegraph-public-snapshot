@@ -64,6 +64,9 @@ const config = {
       },
     ],
     'react/jsx-no-target-blank': ['error', { allowReferrer: true }],
+    'jsx-a11y/no-onchange': 'off',
+    'jsx-a11y/no-autofocus': 'off',
+    'jsx-a11y/accessible-emoji': 'off',
   },
   overrides: [
     {
