@@ -12,7 +12,7 @@ jobs:
     name: Assign to one project
     steps:
     - name: Assign issues with 'team/frontend-platform' label to the Frontend Platform team board
-      uses: srggrs/assign-one-project-github-action@1.2.1
+      uses: pdubroy/assign-one-project-github-action@1.2.1
       if: |
         contains(github.event.issue.labels.*.name, 'team/frontend-platform')
       with:
