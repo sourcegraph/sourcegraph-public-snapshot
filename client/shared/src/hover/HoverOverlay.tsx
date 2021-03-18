@@ -259,6 +259,9 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOv
                                                     isLightTheme={this.props.isLightTheme}
                                                 />
                                             )}
+                                            {/* TODO: This should be a button to be fully accessible
+                                            Issue: https://github.com/sourcegraph/sourcegraph/issues/19273 */}
+                                            {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                                             <a href="" onClick={this.onAlertDismissedCallback(type)}>
                                                 <small>Dismiss</small>
                                             </a>

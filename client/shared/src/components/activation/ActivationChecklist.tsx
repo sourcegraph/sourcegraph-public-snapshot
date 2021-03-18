@@ -30,9 +30,7 @@ export const ActivationChecklistItem: React.FunctionComponent<ActivationChecklis
             <span className="activation-checklist-item__icon-container icon-inline icon-right">
                 <ChevronRightIcon className="activation-checklist-item__icon" />
             </span>
-            <a href="" className="activation-checklist__title">
-                {props.title}
-            </a>
+            <span className="activation-checklist__title">{props.title}</span>
         </div>
         <div>
             {props.done ? (

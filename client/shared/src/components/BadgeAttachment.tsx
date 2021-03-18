@@ -33,6 +33,7 @@ export const BadgeAttachment: React.FunctionComponent<{
             to={attachment.linkURL}
             data-tooltip={attachment.hoverMessage}
             data-placement="left"
+            aria-label={attachment.hoverMessage}
             // Use target to open external URLs
             target={attachment.linkURL && isExternalLink(attachment.linkURL) ? '_blank' : undefined}
             // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
@@ -51,6 +52,7 @@ export const BadgeAttachment: React.FunctionComponent<{
                             backgroundColor: style.backgroundColor,
                         }}
                         src={style.icon}
+                        alt=""
                     />
                 )
             )}
