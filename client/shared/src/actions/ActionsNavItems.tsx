@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useRef } from 'react'
 import { combineLatest, from, ReplaySubject } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { getContributedActionItems } from '../contributions/contributions'
@@ -77,11 +77,14 @@ export const ActionsNavItems: React.FunctionComponent<ActionsNavItemsProps> = pr
         )
     )
 
+    const actionItems = useRef<JSX.Element[] | null>(null)
+
     if (!contributions) {
-        return null // loading
+        // Show last known list while loading, or empty if nothing has been loaded yet
+        return <>{actionItems.current}</>
     }
 
-    const actionItems = getContributedActionItems(contributions, menu).map(item => (
+    actionItems.current = getContributedActionItems(contributions, menu).map(item => (
         <React.Fragment key={item.action.id}>
             {' '}
             <li className={props.listItemClass}>
@@ -99,7 +102,7 @@ export const ActionsNavItems: React.FunctionComponent<ActionsNavItemsProps> = pr
     ))
 
     if (wrapInList) {
-        return actionItems.length > 0 ? <ul className={props.listClass}>{actionItems}</ul> : null
+        return actionItems.current.length > 0 ? <ul className={props.listClass}>{actionItems.current}</ul> : null
     }
-    return <>{actionItems}</>
+    return <>{actionItems.current}</>
 }
