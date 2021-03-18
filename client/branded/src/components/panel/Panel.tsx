@@ -1,19 +1,17 @@
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
 import * as H from 'history'
-import React, { useCallback, useEffect, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { BehaviorSubject, from, Observable } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import { FetchFileParameters } from '../../../../shared/src/components/CodeExcerpt'
 import { Resizable } from '../../../../shared/src/components/Resizable'
-import { Tab as Tab1 } from '../Tabs'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { ThemeProps } from '../../../../shared/src/theme'
-
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { combineLatestOrDefault } from '../../../../shared/src/util/rxjs/combineLatestOrDefault'
 import { Location } from '@sourcegraph/extension-api-types'
@@ -23,9 +21,13 @@ import { wrapRemoteObservable } from '../../../../shared/src/api/client/api/comm
 import { ExtensionsLoadingPanelView } from './views/ExtensionsLoadingView'
 import { haveInitialExtensionsLoaded } from '../../../../shared/src/api/features'
 import { PanelViewData } from '../../../../shared/src/api/extension/extensionHostApi'
-
-import { useLocalStorage } from '../../../../shared/src/util/useLocalStorage'
 import { Button } from 'reactstrap'
+import { ContributableMenu } from '../../../../shared/src/api/protocol'
+import { ActionsNavItems } from '../../../../shared/src/actions/ActionsNavItems'
+import { useHistory, useLocation } from 'react-router'
+import { EmptyPanelView } from './views/EmptyPanelView'
+import CloseIcon from 'mdi-react/CloseIcon'
+import { PanelView } from './views/PanelView'
 
 interface Props
     extends ExtensionsControllerProps,
@@ -117,7 +119,6 @@ export const Panel = React.memo<Props>(props => {
         useMemo(() => haveInitialExtensionsLoaded(props.extensionsController.extHostAPI), [props.extensionsController])
     )
 
-    const [panels, setPanels] = useState<PanelItem[]>([])
     const [tabIndex, setTabIndex] = useState(0)
     const { hash, pathname } = useLocation()
     const history = useHistory()
@@ -139,19 +140,6 @@ export const Panel = React.memo<Props>(props => {
             []
         )
     )
-    console.log(items)
-    console.log(panels)
-
-    const handleActiveTab = useCallback(
-        (index: number): void => {
-            history.replace(`${pathname}${hash.split('=')[0]}=${panels[index].id}`)
-        },
-        [hash, history, panels, pathname]
-    )
-
-    useEffect(() => {
-        setTabIndex(panels.findIndex(({ id }) => id === `${hash.split('=')[1]}`))
-    }, [hash, panels])
 
     const extensionPanels: PanelViewWithComponent[] | undefined = useObservable(
         useMemo(
@@ -206,13 +194,24 @@ export const Panel = React.memo<Props>(props => {
                       hasLocations: !!panelView.locationProvider,
                   })
               )
-              .sort(byPriority)
+              .sort((a, b) => b.priority - a.priority)
         : []
+
+    const handleActiveTab = useCallback(
+        (index: number): void => {
+            history.replace(`${pathname}${hash.split('=')[0]}=${items[index].id}`)
+        },
+        [hash, history, items, pathname]
+    )
+
+    useEffect(() => {
+        setTabIndex(items.findIndex(({ id }) => id === `${hash.split('=')[1]}`))
+    }, [items, hash])
 
     return !areExtensionsReady ? (
         <ExtensionsLoadingPanelView />
     ) : items ? (
-        <Tabs className="w-100" defaultIndex={tabIndex} onChange={handleTabsChange}>
+        <Tabs className="w-100" defaultIndex={tabIndex} onChange={handleActiveTab}>
             <div className="d-flex">
                 <TabList>
                     {items.map(({ label, id }) => (
@@ -230,11 +229,11 @@ export const Panel = React.memo<Props>(props => {
                         actionItemIconClass="icon-inline"
                         menu={ContributableMenu.PanelToolbar}
                         scope={
-                            panels[tabIndex]
+                            items[tabIndex]
                                 ? {
                                       type: 'panelView',
-                                      id: panels[tabIndex].id,
-                                      hasLocations: Boolean(panels[tabIndex].hasLocations),
+                                      id: items[tabIndex].id,
+                                      hasLocations: Boolean(items[tabIndex].hasLocations),
                                   }
                                 : undefined
                         }
@@ -260,19 +259,10 @@ export const Panel = React.memo<Props>(props => {
     )
 })
 
-function byPriority(a: { priority: number }, b: { priority: number }): number {
-    return b.priority - a.priority
-}
-
 /** A wrapper around Panel that makes it resizable. */
 export const ResizablePanel: React.FunctionComponent<Props> = props => (
-    <div className="w-100 h-100">
-        <Resizable
-            // className="resizable-panel"
-            position="top"
-            defaultSize={350}
-            // storageKey="panel-size"
-        >
+    <div className="w-100">
+        <Resizable position="top" defaultSize={350} storageKey="panel-size">
             <Panel {...props} />
         </Resizable>
     </div>
