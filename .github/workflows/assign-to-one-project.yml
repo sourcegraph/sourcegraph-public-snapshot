@@ -1,4 +1,4 @@
-name: Assign to one project
+name: frontend-platform-project-inbox
 
 on:
   issues:
