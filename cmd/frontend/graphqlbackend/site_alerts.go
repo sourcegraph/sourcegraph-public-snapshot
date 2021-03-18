@@ -105,6 +105,9 @@ func init() {
 	// Notify when updates are available, if the instance can access the public internet.
 	AlertFuncs = append(AlertFuncs, updateAvailableAlert)
 
+	// Notify about postgres deprecation
+	AlertFuncs = append(AlertFuncs, deprecationAlert)
+
 	// Notify admins if critical alerts are firing, if Prometheus is configured.
 	prom, err := srcprometheus.NewClient(srcprometheus.PrometheusURL)
 	if err == nil {
@@ -225,6 +228,20 @@ func outOfDateAlert(args AlertFuncArgs) []*Alert {
 		return nil
 	}
 	return []*Alert{alert}
+}
+
+// This should be removed from 3.27
+func deprecationAlert(args AlertFuncArgs) []*Alert {
+	cv, err := semver.NewVersion(version.Version())
+	if err != nil {
+		log15.Error("cannot determine version", "error", err)
+	}
+
+	if cv.Minor() == 26 && args.IsSiteAdmin {
+		return []*Alert{{TypeValue: AlertTypeInfo, MessageValue: "Support for Postgres v11.x and below will be deprecated from Sourcegraph v3.27. Please reach out to support@sourcegraph.com if you require assistance upgrading.", IsDismissibleWithKeyValue: "true"}}
+	}
+
+	return nil
 }
 
 func determineOutOfDateAlert(isAdmin bool, months int, offline bool) *Alert {
