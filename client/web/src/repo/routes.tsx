@@ -2,6 +2,7 @@ import React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { getModeFromPath } from '../../../shared/src/languages'
 import { isLegacyFragment, parseHash, toRepoURL } from '../../../shared/src/util/url'
+import { ErrorBoundary } from '../components/ErrorBoundary'
 import { lazyComponent } from '../util/lazyComponent'
 import { formatHash } from '../util/url'
 import { RepoContainerRoute } from './RepoContainer'
@@ -154,20 +155,22 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                     />
                     {!hideRepoRevisionContent && (
                         <div className="repo-revision-container__content">
-                            {objectType === 'blob' ? (
-                                <BlobPage
-                                    {...context}
-                                    {...repoRevisionProps}
-                                    repoID={repo.id}
-                                    repoName={repo.name}
-                                    mode={mode}
-                                    repoHeaderContributionsLifecycleProps={
-                                        context.repoHeaderContributionsLifecycleProps
-                                    }
-                                />
-                            ) : (
-                                <TreePage {...context} {...repoRevisionProps} repo={repo} />
-                            )}
+                            <ErrorBoundary location={context.location}>
+                                {objectType === 'blob' ? (
+                                    <BlobPage
+                                        {...context}
+                                        {...repoRevisionProps}
+                                        repoID={repo.id}
+                                        repoName={repo.name}
+                                        mode={mode}
+                                        repoHeaderContributionsLifecycleProps={
+                                            context.repoHeaderContributionsLifecycleProps
+                                        }
+                                    />
+                                ) : (
+                                    <TreePage {...context} {...repoRevisionProps} repo={repo} />
+                                )}
+                            </ErrorBoundary>
                         </div>
                     )}
                 </>

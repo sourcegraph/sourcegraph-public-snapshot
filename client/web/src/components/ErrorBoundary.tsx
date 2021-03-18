@@ -1,4 +1,5 @@
 import * as sentry from '@sentry/browser'
+import classNames from 'classnames'
 import * as H from 'history'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import ReloadIcon from 'mdi-react/ReloadIcon'
@@ -12,6 +13,16 @@ interface Props {
      * react-router component).
      */
     location: H.Location | null
+
+    /**
+     * Extra context to aid with debugging
+     */
+    extraContext?: JSX.Element
+
+    /**
+     * Classname to pass to <HeroPage>
+     */
+    className?: string
 }
 
 interface State {
@@ -76,6 +87,7 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
                 <HeroPage
                     icon={ErrorIcon}
                     title="Error"
+                    className={this.props.className}
                     subtitle={
                         <div className="container">
                             <p>
@@ -85,6 +97,7 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
                             <p>
                                 <code className="text-wrap">{this.state.error.message}</code>
                             </p>
+                            {this.props.extraContext}
                         </div>
                     }
                 />
