@@ -3,18 +3,18 @@ package dbconn
 import (
 	"database/sql"
 	"fmt"
+	"io/fs"
+	"net/http"
 	"os"
 	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
-	bindata "github.com/golang-migrate/migrate/v4/source/go_bindata"
+	"github.com/golang-migrate/migrate/v4/source/httpfs"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
-	codeinsightsMigrations "github.com/sourcegraph/sourcegraph/migrations/codeinsights"
-	codeintelMigrations "github.com/sourcegraph/sourcegraph/migrations/codeintel"
-	frontendMigrations "github.com/sourcegraph/sourcegraph/migrations/frontend"
+	"github.com/sourcegraph/sourcegraph/migrations"
 )
 
 // Database describes one of our Postgres (or Postgres-like) databases.
@@ -25,9 +25,9 @@ type Database struct {
 	// MigrationsTable is the migrations SQL table name.
 	MigrationsTable string
 
-	// Resource describes the raw migration assets to run to migrate the target schema to a new
+	// FS describes the raw migration assets to run to migrate the target schema to a new
 	// version.
-	Resource *bindata.AssetSource
+	FS fs.FS
 
 	// TargetsTimescaleDB indicates if the database targets TimescaleDB. Otherwise, Postgres.
 	TargetsTimescaleDB bool
@@ -37,20 +37,20 @@ var (
 	Frontend = &Database{
 		Name:            "frontend",
 		MigrationsTable: "schema_migrations",
-		Resource:        bindata.Resource(frontendMigrations.AssetNames(), frontendMigrations.Asset),
+		FS:              migrations.Frontend,
 	}
 
 	CodeIntel = &Database{
 		Name:            "codeintel",
 		MigrationsTable: "codeintel_schema_migrations",
-		Resource:        bindata.Resource(codeintelMigrations.AssetNames(), codeintelMigrations.Asset),
+		FS:              migrations.CodeIntel,
 	}
 
 	CodeInsights = &Database{
 		Name:               "codeinsights",
 		TargetsTimescaleDB: true,
 		MigrationsTable:    "codeinsights_schema_migrations",
-		Resource:           bindata.Resource(codeinsightsMigrations.AssetNames(), codeinsightsMigrations.Asset),
+		FS:                 migrations.CodeInsights,
 	}
 )
 
@@ -76,12 +76,12 @@ func NewMigrate(db *sql.DB, database *Database) (*migrate.Migrate, error) {
 		return nil, err
 	}
 
-	d, err := bindata.WithInstance(database.Resource)
+	d, err := httpfs.New(http.FS(database.FS), ".")
 	if err != nil {
 		return nil, err
 	}
 
-	m, err := migrate.NewWithInstance("go-bindata", d, "postgres", driver)
+	m, err := migrate.NewWithInstance("httpfs", d, "postgres", driver)
 	if err != nil {
 		return nil, err
 	}
