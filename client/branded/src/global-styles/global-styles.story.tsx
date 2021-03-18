@@ -66,7 +66,7 @@ const TextStory: React.FunctionComponent = () => (
         </p>
 
         <p>
-            Text can contain links, which <a href="">trigger a navigation to a different page</a>.
+            Text can contain links, which <a href="/">trigger a navigation to a different page</a>.
         </p>
 
         <p>
@@ -428,7 +428,7 @@ add(
             {semanticColors.map(semantic => (
                 <div key={semantic} className={classNames('alert', `alert-${semantic}`)}>
                     A simple {semantic} alert — check it out! It can also contain{' '}
-                    <a href="" className="alert-link" onClick={flow(preventDefault, action('alert link clicked'))}>
+                    <a href="/" className="alert-link" onClick={flow(preventDefault, action('alert link clicked'))}>
                         links like this
                     </a>
                     .
@@ -579,12 +579,12 @@ add(
             <div>
                 <ul className="nav nav-tabs">
                     <li className="nav-item">
-                        <a className="nav-link active" href="#" onClick={preventDefault}>
+                        <a className="nav-link active" href="/" onClick={preventDefault}>
                             Comments <span className="badge badge-pill badge-secondary">14</span>
                         </a>
                     </li>
                     <li className="nav-item">
-                        <a className="nav-link" href="#" onClick={preventDefault}>
+                        <a className="nav-link" href="/" onClick={preventDefault}>
                             Changed files <span className="badge badge-pill badge-secondary">6</span>
                         </a>
                     </li>

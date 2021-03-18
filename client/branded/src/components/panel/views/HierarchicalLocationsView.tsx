@@ -242,10 +242,11 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                                         element={
                                             <div className="list-group list-group-flush hierarchical-locations-view__list test-hierarchical-locations-view-list">
                                                 {groups[index].map((group, innerIndex) => (
-                                                    <span
+                                                    <button
                                                         key={innerIndex}
-                                                        className={`list-group-item hierarchical-locations-view__item ${
-                                                            selectedGroups[index] === group.key ? 'active' : ''
+                                                        type="button"
+                                                        className={`btn list-group-item hierarchical-locations-view__item ${
+                                                            selectedGroups[index] === group.key ? 'btn-primary' : ''
                                                         }`}
                                                         onClick={event =>
                                                             this.onSelectTree(event, selectedGroups, index, group.key)
@@ -256,13 +257,13 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                                                             title={group.key}
                                                         >
                                                             <span className="hierarchical-locations-view__item-name-text">
-                                                                <RepoLink to={null} repoName={group.key} />
+                                                                {group.key}
                                                             </span>
                                                         </span>
                                                         <span className="badge badge-secondary badge-pill hierarchical-locations-view__item-badge">
                                                             {group.count}
                                                         </span>
-                                                    </span>
+                                                    </button>
                                                 ))}
                                                 {this.state.locationsOrError.isLoading && (
                                                     <LoadingSpinner className="icon-inline m-2 flex-shrink-0 test-loading-spinner" />

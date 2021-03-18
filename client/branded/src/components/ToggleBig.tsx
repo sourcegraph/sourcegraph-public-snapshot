@@ -20,6 +20,11 @@ interface Props {
      */
     onHover?: (value: boolean) => void
 
+    /**
+     * Called when the user focuses on the toggle.
+     */
+    onFocus?: (value: boolean) => void
+
     /** The title attribute (tooltip). */
     title?: string
 
@@ -41,6 +46,7 @@ export const ToggleBig: React.FunctionComponent<Props> = ({
     tabIndex,
     onToggle,
     onHover,
+    onFocus,
     dataTest,
 }) => {
     function onClick(): void {
@@ -55,6 +61,12 @@ export const ToggleBig: React.FunctionComponent<Props> = ({
         }
     }
 
+    function onToggleFocus(): void {
+        if (onFocus) {
+            onFocus(!value)
+        }
+    }
+
     return (
         <button
             type="button"
@@ -65,6 +77,7 @@ export const ToggleBig: React.FunctionComponent<Props> = ({
             onClick={onClick}
             tabIndex={tabIndex}
             onMouseOver={onMouseOver}
+            onFocus={onToggleFocus}
             disabled={!!disabled}
             role="switch"
             aria-checked={value}
