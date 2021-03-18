@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-//go:embed .
+//go:embed *
 var assetsFS embed.FS
 
 var Assets = http.FS(assetsFS)
