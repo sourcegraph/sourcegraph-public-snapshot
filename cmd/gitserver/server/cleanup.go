@@ -224,20 +224,19 @@ func (s *Server) cleanupRepos(addrs []string) {
 		return false, gitGC(dir)
 	}
 
-	removeWrongShard := func(dir GitDir) (done bool, err error) {
-		if len(addrs) == 0 {
+	mkRemoveWrongShardFn := func(hostname string) func(dir GitDir) (done bool, err error) {
+		return func(dir GitDir) (done bool, err error) {
+			addr := gitserver.AddrForRepo(s.name(dir), addrs)
+			if hostnameMatch(hostname, addr) {
+				return false, nil
+			}
+			log15.Info("removing repo for wrong shard", "repo", dir)
+			if err := s.removeRepoDirectory(dir); err != nil {
+				return true, err
+			}
+			reposRemoved.Inc()
 			return false, nil
 		}
-		addr := gitserver.AddrForRepo(s.name(dir), addrs)
-		if s.hostnameMatch(addr) {
-			return false, nil
-		}
-		log15.Info("removing repo for wrong shard", "repo", dir)
-		if err := s.removeRepoDirectory(dir); err != nil {
-			return true, err
-		}
-		reposRemoved.Inc()
-		return false, nil
 	}
 
 	type cleanupFn struct {
@@ -267,9 +266,22 @@ func (s *Server) cleanupRepos(addrs []string) {
 		// invocations of git add, packing refs, pruning reflog, rerere metadata or stale
 		// working trees. May also update ancillary indexes such as the commit-graph.
 		{"garbage collect", performGC},
-		// Repos are sharded across gitserver instances based on their name. Remove repos
-		// that no longer belong on this shard.
-		{"remove wrong shard", removeWrongShard},
+	}
+
+	// Repos are sharded across gitserver instances based on their name and the
+	// position of the gitserver in our list of gitserver addresses. Remove repos
+	// that no longer belong on this shard.
+	//
+	// We only add shard cleanup if we have a valid hostname.
+	if hostname, err := s.getHostname(); err == nil {
+		wrongShardCleanup := cleanupFn{Name: "remove wrong shard", Do: mkRemoveWrongShardFn(hostname)}
+		if hostnameFound(hostname, addrs) {
+			cleanups = append(cleanups, wrongShardCleanup)
+		} else {
+			log15.Warn("Not running shard cleanup, hostname not valid", "hostname", hostname)
+		}
+	} else {
+		log15.Warn("Not running shard cleanup, error getting hostname", "error", err)
 	}
 
 	err := bestEffortWalk(s.ReposDir, func(dir string, fi os.FileInfo) error {

@@ -136,8 +136,8 @@ func TestCleanupWrongShard(t *testing.T) {
 	repo1 := mkRepo("repo1")
 	repo2 := mkRepo("repo2")
 	s := &Server{
-		Hostname: "addr1",
 		ReposDir: root,
+		hostname: "addr1",
 	}
 	s.Handler() // Handler as a side-effect sets up Server
 	s.cleanupRepos([]string{"addr1", "addr2"})
@@ -547,6 +547,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 	s := &Server{
 		ReposDir: root,
 		DB:       db,
+		hostname: "test",
 	}
 
 	// Remove everything but github.com/foo/survivor

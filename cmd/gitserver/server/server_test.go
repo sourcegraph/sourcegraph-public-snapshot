@@ -472,6 +472,7 @@ func makeTestServer(ctx context.Context, repoDir, remote string, db dbutil.DB) *
 			return &GitRepoSyncer{}, nil
 		},
 		DB:               db,
+		hostname:         "test",
 		ctx:              ctx,
 		locker:           &RepositoryLocker{},
 		cloneLimiter:     mutablelimiter.New(1),
@@ -603,7 +604,6 @@ func TestHandleRepoUpdate(t *testing.T) {
 	reposDir := tmpDir(t)
 
 	s := makeTestServer(ctx, reposDir, remote, db)
-	s.ctx = context.Background()
 
 	// We need some of the side effects here
 	_ = s.Handler()
@@ -624,7 +624,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 
 	want := &types.GitserverRepo{
 		RepoID:      dbRepo.ID,
-		ShardID:     "",
+		ShardID:     s.hostname,
 		CloneStatus: types.CloneStatusCloned,
 	}
 	fromDB, err := database.GitserverRepos(db).GetByID(ctx, dbRepo.ID)
@@ -650,7 +650,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 
 	want = &types.GitserverRepo{
 		RepoID:      dbRepo.ID,
-		ShardID:     "",
+		ShardID:     s.hostname,
 		CloneStatus: types.CloneStatusCloned,
 		LastError:   "fail",
 	}
@@ -870,12 +870,21 @@ func TestHostnameMatch(t *testing.T) {
 			addr:        "gitserver-0.prod.default.namespace",
 			shouldMatch: true,
 		},
+		{
+			hostname:    "",
+			addr:        "",
+			shouldMatch: false,
+		},
+		{
+			hostname:    "",
+			addr:        "gitserver",
+			shouldMatch: false,
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run("", func(t *testing.T) {
-			s := Server{Hostname: tc.hostname}
-			have := s.hostnameMatch(tc.addr)
+			have := hostnameMatch(tc.hostname, tc.addr)
 			if have != tc.shouldMatch {
 				t.Fatalf("Want %v, got %v", tc.shouldMatch, have)
 			}
@@ -892,20 +901,13 @@ func TestSyncRepoState(t *testing.T) {
 		t.Helper()
 		return runCmd(t, remoteDir, name, arg...)
 	}
-
-	// Setup a repo with a commit so we can see if we can clone it.
-	cmd("git", "init", ".")
-	cmd("sh", "-c", "echo hello world > hello.txt")
-	cmd("git", "add", "hello.txt")
-	cmd("git", "commit", "-m", "hello")
+	_ = makeSingleCommitRepo(cmd)
 
 	reposDir := tmpDir(t)
 	repoName := api.RepoName("example.com/foo/bar")
 	hostname := "test"
 
 	s := makeTestServer(ctx, reposDir, remoteDir, db)
-	s.Hostname = hostname
-	s.ctx = ctx
 
 	_, err := s.cloneRepo(ctx, repoName, &cloneOptions{Block: true})
 	if err != nil {

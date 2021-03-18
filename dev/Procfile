@@ -1,4 +1,4 @@
-gitserver: env HOSTNAME=$SRC_GIT_SERVER_1 gitserver
+gitserver: gitserver
 query-runner: query-runner
 repo-updater: repo-updater
 searcher: searcher

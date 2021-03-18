@@ -24,6 +24,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -136,12 +137,18 @@ type Server struct {
 	// usually set to return a GitRepoSyncer.
 	GetVCSSyncer func(context.Context, api.RepoName) (VCSSyncer, error)
 
-	// Hostname is how we identify this instance of gitserver. Generally it is the
-	// actual hostname but can also be overridden by the HOSTNAME environment variable.
-	Hostname string
-
 	// shared db handle
 	DB dbutil.DB
+
+	// hostnameMu protects hostname
+	hostnameMu sync.RWMutex
+	// used to set the hostname
+	hostnameOnce sync.Once
+
+	// hostname stores this server's hostname as seen by frontend. It starts empty
+	// and is populated by the first incoming request from frontend. We require frontend
+	// and our view of the hostname to be the same as we shard repos based on it.
+	hostname string
 
 	// skipCloneForTests is set by tests to avoid clones.
 	skipCloneForTests bool
@@ -249,30 +256,49 @@ func (s *Server) Handler() http.Handler {
 		s.cloneableLimiter.SetLimit(limit)
 	})
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/archive", s.handleArchive)
-	mux.HandleFunc("/exec", s.handleExec)
-	mux.HandleFunc("/p4-exec", s.handleP4Exec)
-	mux.HandleFunc("/list", s.handleList)
-	mux.HandleFunc("/list-gitolite", s.handleListGitolite)
-	mux.HandleFunc("/is-repo-cloneable", s.handleIsRepoCloneable)
-	mux.HandleFunc("/is-repo-cloned", s.handleIsRepoCloned)
-	mux.HandleFunc("/repos", s.handleRepoInfo)
-	mux.HandleFunc("/repos-stats", s.handleReposStats)
-	mux.HandleFunc("/repo-clone-progress", s.handleRepoCloneProgress)
-	mux.HandleFunc("/delete", s.handleRepoDelete)
-	mux.HandleFunc("/repo-update", s.handleRepoUpdate)
-	mux.HandleFunc("/getGitolitePhabricatorMetadata", s.handleGetGitolitePhabricatorMetadata)
-	mux.HandleFunc("/create-commit-from-patch", s.handleCreateCommitFromPatch)
-	mux.HandleFunc("/ping", func(w http.ResponseWriter, _ *http.Request) {
+	// hostnameMiddleware causes us to try and set the server hostname to that of the
+	// hostname received in requests from frontend. It will only set it once.
+	hostnameMiddleware := func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+			// Fast path skips work if hostname already set
+			if _, err := s.getHostname(); err == nil {
+				h.ServeHTTP(rw, r)
+				return
+			}
+			hostname := hostnameFromFrontend(r)
+			addrs := conf.Get().ServiceConnections.GitServers
+			if hostnameFound(hostname, addrs) {
+				s.setHostnameOnce(hostname)
+			}
+			h.ServeHTTP(rw, r)
+		})
+	}
+
+	router := mux.NewRouter()
+	router.Use(hostnameMiddleware)
+	router.HandleFunc("/archive", s.handleArchive)
+	router.HandleFunc("/exec", s.handleExec)
+	router.HandleFunc("/p4-exec", s.handleP4Exec)
+	router.HandleFunc("/list", s.handleList)
+	router.HandleFunc("/list-gitolite", s.handleListGitolite)
+	router.HandleFunc("/is-repo-cloneable", s.handleIsRepoCloneable)
+	router.HandleFunc("/is-repo-cloned", s.handleIsRepoCloned)
+	router.HandleFunc("/repos", s.handleRepoInfo)
+	router.HandleFunc("/repos-stats", s.handleReposStats)
+	router.HandleFunc("/repo-clone-progress", s.handleRepoCloneProgress)
+	router.HandleFunc("/delete", s.handleRepoDelete)
+	router.HandleFunc("/repo-update", s.handleRepoUpdate)
+	router.HandleFunc("/getGitolitePhabricatorMetadata", s.handleGetGitolitePhabricatorMetadata)
+	router.HandleFunc("/create-commit-from-patch", s.handleCreateCommitFromPatch)
+	router.HandleFunc("/ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	mux.Handle("/git/", http.StripPrefix("/git", &gitServiceHandler{
+	router.Handle("/git/", http.StripPrefix("/git", &gitServiceHandler{
 		Dir: func(d string) string { return string(s.dir(api.RepoName(d))) },
 	}))
 
-	return mux
+	return router
 }
 
 // Janitor does clean up tasks over s.ReposDir and is expected to run in a
@@ -297,19 +323,67 @@ func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int)
 	}
 }
 
+func (s *Server) getHostname() (string, error) {
+	s.hostnameMu.RLock()
+	defer s.hostnameMu.RUnlock()
+	if s.hostname == "" {
+		return "", errors.New("hostname not set")
+	}
+	return s.hostname, nil
+}
+
+// setHostnameOnce sets hostname only once if h is not blank
+func (s *Server) setHostnameOnce(h string) {
+	if h == "" {
+		return
+	}
+	s.hostnameOnce.Do(func() {
+		s.hostnameMu.Lock()
+		defer s.hostnameMu.Unlock()
+		s.hostname = h
+	})
+}
+
+// hostnameFound returns true only if our hostname can be found in addrs
+func hostnameFound(hostname string, addrs []string) bool {
+	for _, a := range addrs {
+		if hostnameMatch(hostname, a) {
+			return true
+		}
+	}
+	return false
+}
+
 // hostnameMatch checks whether the hostname matches the given address.
 // If we don't find an exact match, we look at the initial prefix.
-func (s *Server) hostnameMatch(addr string) bool {
-	if !strings.HasPrefix(addr, s.Hostname) {
+func hostnameMatch(hostname string, addr string) bool {
+	if hostname == "" || addr == "" {
 		return false
 	}
-	if addr == s.Hostname {
+	if !strings.HasPrefix(addr, hostname) {
+		return false
+	}
+	if addr == hostname {
 		return true
 	}
 	// We know that s.Hostname is shorter than addr so we can safely check the next
 	// char
-	next := addr[len(s.Hostname)]
+	next := addr[len(hostname)]
 	return next == '.' || next == ':'
+}
+
+// hostnameFromFrontend returns the hostname provided from the request only if it
+// is from one of our frontend instances.
+func hostnameFromFrontend(r *http.Request) string {
+	ua := r.Header.Get("User-Agent")
+	actor := r.Header.Get(protocol.HeaderSourcegraphActor)
+	// TODO: This feels a bit brittle as we may change the name of our frontend
+	// instance at some point and also because the name itself it set based on the
+	// binary name. See client.NewClient
+	if ua == "frontend" && actor == "internal" {
+		return r.Host
+	}
+	return ""
 }
 
 var (
@@ -328,16 +402,12 @@ var (
 )
 
 func (s *Server) syncRepoState(addrs []string, batchSize, perSecond int) error {
-	// Sanity check our host exists in addrs before starting any work
-	var found bool
-	for _, a := range addrs {
-		if s.hostnameMatch(a) {
-			found = true
-			break
-		}
+	hostname, err := s.getHostname()
+	if err != nil {
+		return errors.Wrap(err, "getting hostname")
 	}
-	if !found {
-		return fmt.Errorf("gitserver hostname, %q, not found in list", s.Hostname)
+	if !hostnameFound(hostname, addrs) {
+		return fmt.Errorf("gitserver hostname, %q, not found in list of addresses", hostname)
 	}
 
 	ctx := s.ctx
@@ -392,7 +462,7 @@ func (s *Server) syncRepoState(addrs []string, batchSize, perSecond int) error {
 
 		repoSyncStateCounter.WithLabelValues("check").Inc()
 		// Ensure we're only dealing with repos we are responsible for
-		if addr := gitserver.AddrForRepo(repo.Name, addrs); !s.hostnameMatch(addr) {
+		if addr := gitserver.AddrForRepo(repo.Name, addrs); !hostnameMatch(hostname, addr) {
 			repoSyncStateCounter.WithLabelValues("other_shard").Inc()
 			return nil
 		}
@@ -409,8 +479,8 @@ func (s *Server) syncRepoState(addrs []string, batchSize, perSecond int) error {
 			}
 			shouldUpdate = true
 		}
-		if repo.ShardID != s.Hostname {
-			repo.ShardID = s.Hostname
+		if repo.ShardID != hostname {
+			repo.ShardID = hostname
 			shouldUpdate = true
 		}
 		cloneStatus := cloneStatus(cloned, cloning)
@@ -789,7 +859,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 				ev.AddField("repo", req.Repo)
 				ev.AddField("cmd", cmd)
 				ev.AddField("args", args)
-				ev.AddField("actor", r.Header.Get("X-Sourcegraph-Actor"))
+				ev.AddField("actor", r.Header.Get(protocol.HeaderSourcegraphActor))
 				ev.AddField("ensure_revision", req.EnsureRevision)
 				ev.AddField("ensure_revision_status", ensureRevisionStatus)
 				ev.AddField("client", r.UserAgent())
@@ -1019,7 +1089,7 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 				ev.AddField("p4port", req.P4Port)
 				ev.AddField("cmd", cmd)
 				ev.AddField("args", args)
-				ev.AddField("actor", r.Header.Get("X-Sourcegraph-Actor"))
+				ev.AddField("actor", r.Header.Get(protocol.HeaderSourcegraphActor))
 				ev.AddField("client", r.UserAgent())
 				ev.AddField("duration_ms", duration.Milliseconds())
 				ev.AddField("stdout_size", stdoutN)
@@ -1090,6 +1160,10 @@ func (s *Server) setLastError(ctx context.Context, name api.RepoName, error stri
 	if s.DB == nil {
 		return nil
 	}
+	hostname, err := s.getHostname()
+	if err != nil {
+		return err
+	}
 	tx, err := database.Repos(s.DB).Transact(ctx)
 	if err != nil {
 		return err
@@ -1100,7 +1174,7 @@ func (s *Server) setLastError(ctx context.Context, name api.RepoName, error stri
 	if err != nil {
 		return err
 	}
-	return database.NewGitserverReposWith(tx).SetLastError(ctx, repo.ID, error, s.Hostname)
+	return database.NewGitserverReposWith(tx).SetLastError(ctx, repo.ID, error, hostname)
 }
 
 // setLastErrorNonFatal is the same as setLastError but only logs errors
@@ -1118,6 +1192,10 @@ func (s *Server) setCloneStatus(ctx context.Context, name api.RepoName, status t
 	if s.DB == nil {
 		return nil
 	}
+	hostname, err := s.getHostname()
+	if err != nil {
+		return err
+	}
 	tx, err := database.Repos(s.DB).Transact(ctx)
 	if err != nil {
 		return err
@@ -1128,7 +1206,7 @@ func (s *Server) setCloneStatus(ctx context.Context, name api.RepoName, status t
 	if err != nil {
 		return err
 	}
-	return database.NewGitserverReposWith(tx).SetCloneStatus(ctx, repo.ID, status, s.Hostname)
+	return database.NewGitserverReposWith(tx).SetCloneStatus(ctx, repo.ID, status, hostname)
 }
 
 // setCloneStatusNonFatal is the same as setCloneStatus but only logs errors
