@@ -256,7 +256,8 @@ func (c *Changeset) RecordID() int { return int(c.ID) }
 // Clone returns a clone of a Changeset.
 func (c *Changeset) Clone() *Changeset {
 	tt := *c
-	tt.BatchChanges = c.BatchChanges[:len(c.BatchChanges):len(c.BatchChanges)]
+	tt.BatchChanges = make([]BatchChangeAssoc, len(c.BatchChanges))
+	copy(tt.BatchChanges, c.BatchChanges)
 	return &tt
 }
 
@@ -793,7 +794,17 @@ func WithExternalID(id string) func(*Changeset) bool {
 
 // ChangesetsStats holds stats information on a list of changesets.
 type ChangesetsStats struct {
-	Retrying, Failed, Processing, Unpublished, Draft, Open, Merged, Closed, Deleted, Total int32
+	Retrying    int32
+	Failed      int32
+	Processing  int32
+	Unpublished int32
+	Draft       int32
+	Open        int32
+	Merged      int32
+	Closed      int32
+	Deleted     int32
+	Archived    int32
+	Total       int32
 }
 
 // ChangesetEventKindFor returns the ChangesetEventKind for the given

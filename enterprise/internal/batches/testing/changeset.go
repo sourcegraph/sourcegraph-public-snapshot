@@ -40,7 +40,8 @@ type TestChangesetOpts struct {
 
 	OwnedByBatchChange int64
 
-	Closing bool
+	Closing  bool
+	Archived bool
 
 	Metadata interface{}
 }
@@ -104,7 +105,9 @@ func BuildChangeset(opts TestChangesetOpts) *batches.Changeset {
 	}
 
 	if opts.BatchChange != 0 {
-		changeset.BatchChanges = []batches.BatchChangeAssoc{{BatchChangeID: opts.BatchChange}}
+		changeset.BatchChanges = []batches.BatchChangeAssoc{
+			{BatchChangeID: opts.BatchChange, Archived: opts.Archived},
+		}
 	}
 
 	if opts.DiffStatAdded > 0 || opts.DiffStatChanged > 0 || opts.DiffStatDeleted > 0 {
