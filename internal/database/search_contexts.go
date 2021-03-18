@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -117,7 +116,7 @@ VALUES (%s,%s,%s,%s,%s)
 RETURNING %s;
 `
 
-func (s *SearchContextsStore) CreateSearchContextWithRepositoryRevisions(ctx context.Context, searchContext *types.SearchContext, repositoryRevisions []*search.RepositoryRevisions) (*types.SearchContext, error) {
+func (s *SearchContextsStore) CreateSearchContextWithRepositoryRevisions(ctx context.Context, searchContext *types.SearchContext, repositoryRevisions []*types.SearchContextRepositoryRevisions) (*types.SearchContext, error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return nil, err
@@ -137,7 +136,7 @@ func (s *SearchContextsStore) CreateSearchContextWithRepositoryRevisions(ctx con
 	return searchContext, nil
 }
 
-func (s *SearchContextsStore) SetSearchContextRepositoryRevisions(ctx context.Context, searchContextID int32, repositoryRevisions []*search.RepositoryRevisions) error {
+func (s *SearchContextsStore) SetSearchContextRepositoryRevisions(ctx context.Context, searchContextID int32, repositoryRevisions []*types.SearchContextRepositoryRevisions) error {
 	if len(repositoryRevisions) == 0 {
 		return nil
 	}
@@ -155,7 +154,7 @@ func (s *SearchContextsStore) SetSearchContextRepositoryRevisions(ctx context.Co
 
 	values := []*sqlf.Query{}
 	for _, repoRev := range repositoryRevisions {
-		for _, revision := range repoRev.RevSpecs() {
+		for _, revision := range repoRev.Revisions {
 			values = append(values, sqlf.Sprintf(
 				"(%s, %s, %s)",
 				searchContextID, repoRev.Repo.ID, revision,
@@ -226,7 +225,7 @@ JOIN
 WHERE sc.search_context_id = %d
 `
 
-func (s *SearchContextsStore) GetSearchContextRepositoryRevisions(ctx context.Context, searchContextID int32) ([]*search.RepositoryRevisions, error) {
+func (s *SearchContextsStore) GetSearchContextRepositoryRevisions(ctx context.Context, searchContextID int32) ([]*types.SearchContextRepositoryRevisions, error) {
 	authzConds, err := AuthzQueryConds(ctx, s.Handle().DB())
 	if err != nil {
 		return nil, err
@@ -255,21 +254,17 @@ func (s *SearchContextsStore) GetSearchContextRepositoryRevisions(ctx context.Co
 		repositoryIDsToName[repoID] = repoName
 	}
 
-	var out []*search.RepositoryRevisions
+	var out []*types.SearchContextRepositoryRevisions
 	for repoID := range repositoryIDsToRevisions {
 		revisions := repositoryIDsToRevisions[repoID]
 		sort.Strings(revisions)
 
-		revisionSpecs := make([]search.RevisionSpecifier, len(revisions))
-		for idx, revision := range revisions {
-			revisionSpecs[idx] = search.RevisionSpecifier{RevSpec: revision}
-		}
-		out = append(out, &search.RepositoryRevisions{
+		out = append(out, &types.SearchContextRepositoryRevisions{
 			Repo: &types.RepoName{
 				ID:   api.RepoID(repoID),
 				Name: api.RepoName(repositoryIDsToName[repoID]),
 			},
-			Revs: revisionSpecs,
+			Revisions: revisions,
 		})
 	}
 

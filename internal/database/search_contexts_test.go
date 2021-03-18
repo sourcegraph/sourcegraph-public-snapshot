@@ -7,12 +7,11 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func createSearchContexts(ctx context.Context, store *SearchContextsStore, searchContexts []*types.SearchContext) ([]*types.SearchContext, error) {
-	emptyRepositoryRevisions := []*search.RepositoryRevisions{}
+	emptyRepositoryRevisions := []*types.SearchContextRepositoryRevisions{}
 	createdSearchContexts := make([]*types.SearchContext, len(searchContexts))
 	for idx, searchContext := range searchContexts {
 		createdSearchContext, err := store.CreateSearchContextWithRepositoryRevisions(ctx, searchContext, emptyRepositoryRevisions)
@@ -136,9 +135,9 @@ func TestSearchContexts_CreateAndSetRepositoryRevisions(t *testing.T) {
 	repoBName := &types.RepoName{ID: repoB.ID, Name: repoB.Name}
 
 	// Create a search context with initial repository revisions
-	initialRepositoryRevisions := []*search.RepositoryRevisions{
-		{Repo: repoAName, Revs: []search.RevisionSpecifier{{RevSpec: "branch-1"}, {RevSpec: "branch-6"}}},
-		{Repo: repoBName, Revs: []search.RevisionSpecifier{{RevSpec: "branch-2"}}},
+	initialRepositoryRevisions := []*types.SearchContextRepositoryRevisions{
+		{Repo: repoAName, Revisions: []string{"branch-1", "branch-6"}},
+		{Repo: repoBName, Revisions: []string{"branch-2"}},
 	}
 	searchContext, err := sc.CreateSearchContextWithRepositoryRevisions(
 		ctx,
@@ -157,9 +156,9 @@ func TestSearchContexts_CreateAndSetRepositoryRevisions(t *testing.T) {
 	}
 
 	// Modify the repository revisions for the search context
-	modifiedRepositoryRevisions := []*search.RepositoryRevisions{
-		{Repo: repoAName, Revs: []search.RevisionSpecifier{{RevSpec: "branch-1"}, {RevSpec: "branch-3"}}},
-		{Repo: repoBName, Revs: []search.RevisionSpecifier{{RevSpec: "branch-0"}, {RevSpec: "branch-2"}, {RevSpec: "branch-4"}}},
+	modifiedRepositoryRevisions := []*types.SearchContextRepositoryRevisions{
+		{Repo: repoAName, Revisions: []string{"branch-1", "branch-3"}},
+		{Repo: repoBName, Revisions: []string{"branch-0", "branch-2", "branch-4"}},
 	}
 	err = sc.SetSearchContextRepositoryRevisions(ctx, searchContext.ID, modifiedRepositoryRevisions)
 	if err != nil {
