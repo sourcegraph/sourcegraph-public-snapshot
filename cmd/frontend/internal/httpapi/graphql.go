@@ -83,7 +83,7 @@ func serveGraphQL(schema *graphql.Schema, rlw *graphqlbackend.RateLimitWatcher, 
 			traceData.cost = cost
 		}
 
-		if rl, enabled := rlw.Get(); enabled {
+		if rl, enabled := rlw.Get(); enabled && costErr == nil {
 			limited, result, err := rl.RateLimit(uid, isIP, cost.FieldCount)
 			if err != nil {
 				log15.Error("checking GraphQL rate limit", "error", err)
