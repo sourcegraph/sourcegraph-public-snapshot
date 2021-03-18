@@ -38,13 +38,13 @@ export const File: React.FunctionComponent<FileProps> = props => {
                             data-tree-path={props.entryInfo.path}
                         >
                             <div className="tree__row-contents-text">
+                                {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
                                 <span
                                     // needed because of dynamic styling
                                     // eslint-disable-next-line react/forbid-dom-props
                                     style={treePadding(props.depth, true)}
                                     className="tree__row-icon"
                                     onClick={props.noopRowClick}
-                                    tabIndex={-1}
                                 >
                                     <SourceRepositoryIcon className="icon-inline" />
                                 </span>

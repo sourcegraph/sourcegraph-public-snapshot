@@ -294,6 +294,12 @@ export class Tree extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
+            /**
+             * TODO: Improve accessibility here.
+             * We should not be stealing focus here, we should let the user focus on the actual items listed.
+             * Issue: https://github.com/sourcegraph/sourcegraph/issues/19167
+             */
+            // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/tabindex-no-positive, jsx-a11y/no-noninteractive-tabindex
             <div className="tree" tabIndex={1} onKeyDown={this.onKeyDown} ref={this.setTreeElement}>
                 <TreeRoot
                     ref={reference => {
