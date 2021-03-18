@@ -510,43 +510,36 @@ func getRevsForMatchedRepo(repo api.RepoName, pats []patternRevspec) (matched []
 		return
 	}
 	// if two repo specs match, and both provided non-empty rev lists,
-	// we want their intersection
-	allowedRevs := make(map[search.RevisionSpecifier]int, len(revLists[0]))
+	// we want their intersection, so we count the number of times we
+	// see a revision in the rev lists, and make sure it matches the number
+	// of rev lists
+	revCounts := make(map[search.RevisionSpecifier]int, len(revLists[0]))
 
-	// in theory, "master-by-default" entries won't even be participating
-	// in this.
-	for _, revList := range revLists {
+	var aliveCount int
+	for i, revList := range revLists {
+		aliveCount = 0
 		for _, rev := range revList {
-			allowedRevs[rev] += 1
+			seenCount := revCounts[rev]
+			if seenCount == i {
+				aliveCount += 1
+				revCounts[rev] = seenCount + 1
+			}
 		}
 	}
 
-	// remove any revs that didn't exist in every rev list
-	for rev, seenCount := range allowedRevs {
-		if seenCount != len(revLists) {
-			delete(allowedRevs, rev)
-		}
-	}
-
-	if len(allowedRevs) > 0 {
-		matched = make([]search.RevisionSpecifier, 0, len(allowedRevs))
-		for rev := range allowedRevs {
-			matched = append(matched, rev)
+	if aliveCount > 0 {
+		matched = make([]search.RevisionSpecifier, 0, len(revCounts))
+		for rev, seenCount := range revCounts {
+			if seenCount == len(revLists) {
+				matched = append(matched, rev)
+			}
 		}
 		sort.Slice(matched, func(i, j int) bool { return matched[i].Less(matched[j]) })
 		return
 	}
 
-	// build a list of the revspecs which broke this, return it
-	// as the "clashing" list.
-	allRevs := make(map[search.RevisionSpecifier]struct{}, len(revLists[0]))
-	for _, revList := range revLists {
-		for _, rev := range revList {
-			allRevs[rev] = struct{}{}
-		}
-	}
-	clashing = make([]search.RevisionSpecifier, 0, len(allRevs))
-	for rev := range allRevs {
+	clashing = make([]search.RevisionSpecifier, 0, len(revCounts))
+	for rev := range revCounts {
 		clashing = append(clashing, rev)
 	}
 	// ensure that lists are always returned in sorted order.
