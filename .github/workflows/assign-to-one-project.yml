@@ -1,0 +1,20 @@
+name: frontend-platform-project-inbox
+
+on:
+  issues:
+    types: [opened, labeled]
+env:
+  MY_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  assign_one_project:
+    runs-on: ubuntu-latest
+    name: Assign to one project
+    steps:
+    - name: Assign issues with 'team/frontend-platform' label to the Frontend Platform team board
+      uses: srggrs/assign-one-project-github-action@1.2.1
+      if: |
+        contains(github.event.issue.labels.*.name, 'team/frontend-platform')
+      with:
+        project: 'https://github.com/orgs/sourcegraph/projects/144'
+        column_name: 'Inbox 📥'
