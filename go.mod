@@ -105,7 +105,6 @@ require (
 	github.com/keegancsmith/rpc v1.3.0
 	github.com/keegancsmith/sqlf v1.1.0
 	github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513
-	github.com/kevinburke/go-bindata v3.21.0+incompatible
 	github.com/klauspost/compress v1.11.0 // indirect
 	github.com/kr/text v0.2.0
 	github.com/kylelemons/godebug v1.1.0
@@ -145,10 +144,8 @@ require (
 	github.com/shurcooL/go v0.0.0-20200502201357-93f07166e636 // indirect
 	github.com/shurcooL/highlight_diff v0.0.0-20181222201841-111da2e7d480 // indirect
 	github.com/shurcooL/highlight_go v0.0.0-20191220051317-782971ddf21b // indirect
-	github.com/shurcooL/httpfs v0.0.0-20190707220628-8d4bc4ba7749
 	github.com/shurcooL/httpgzip v0.0.0-20190720172056-320755c1c1b0
 	github.com/shurcooL/octicon v0.0.0-20191102190552-cbb32d6a785c // indirect
-	github.com/shurcooL/vfsgen v0.0.0-20200824052919-0d455de96546
 	github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d // indirect
 	github.com/sourcegraph/batch-change-utils v0.0.0-20210309183117-206c057cc03e
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
