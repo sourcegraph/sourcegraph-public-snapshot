@@ -12,6 +12,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -232,8 +233,7 @@ func outOfDateAlert(args AlertFuncArgs) []*Alert {
 
 // This should be removed from 3.27
 func deprecationAlert(args AlertFuncArgs) []*Alert {
-	sourcegraphDotcom, _ := strconv.ParseBool(env.Get("SOURECGRAPHDOTCOM_MODE", "false", "determines Sourcegraph environment type"))
-	if sourcegraphDotcom == true {
+	if envvar.SourcegraphDotComMode() {
 		return nil
 	}
 
