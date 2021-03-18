@@ -42,8 +42,9 @@ func initHTTPTestGitServer(t *testing.T, httpStatusCode int, resp string) {
 
 	t.Cleanup(func() { s.Close() })
 
-	// Strip the protocol from the URI while patching the gitserver client's addres, since the
-	// gitsever implementation does not want the protocol in the address.
+	// Strip the protocol from the URI while patching the gitserver client's
+	// addresses, since the gitserver implementation does not want the protocol in
+	// the address.
 	gitserver.DefaultClient.Addrs = func() []string {
 		return []string{strings.TrimPrefix(s.URL, "http://")}
 	}

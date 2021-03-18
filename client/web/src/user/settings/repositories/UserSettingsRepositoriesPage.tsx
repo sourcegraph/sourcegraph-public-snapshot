@@ -50,13 +50,6 @@ const Row: React.FunctionComponent<RowProps> = props => (
 type Status = undefined | 'pending' | ErrorLike
 const emptyFilters: FilteredConnectionFilter[] = []
 
-const getHelpfulBanner = (MessageLink: JSX.Element): JSX.Element => (
-    <div className="border rounded p-3">
-        <h3>You have not added any repositories to Sourcegraph</h3>
-        <small>{MessageLink} to start searching your code with Sourcegraph.</small>
-    </div>
-)
-
 /**
  * A page displaying the repositories for this user.
  */
@@ -67,32 +60,31 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     routingPrefix,
     telemetryService,
 }) => {
-    const [hasRepos, setHasRepos] = useState(false)
+    const [hasRepos, setHasRepos] = useState<boolean | null>(null)
     const [externalServices, setExternalServices] = useState<ListExternalServiceFields[]>()
     const [pendingOrError, setPendingOrError] = useState<Status>()
 
-    const showResults = (services: ListExternalServiceFields[] | undefined): JSX.Element => {
-        // no code hosts added
-        if (!services || services.length === 0) {
-            const ConnectCodeHostsLink = (
+    const noReposState = (
+        <div className="border rounded p-3">
+            <h3>You have not added any repositories to Sourcegraph</h3>
+            <small>
                 <Link className="text-primary" to={`${routingPrefix}/code-hosts`}>
                     Connect code hosts
-                </Link>
-            )
-            return getHelpfulBanner(ConnectCodeHostsLink)
-        }
-
-        // code hosts added but don't have any repos
-        if (services.every(({ repoCount }) => repoCount === 0)) {
-            const AddReposLink = (
+                </Link>{' '}
+                to start searching your own repositories, or{' '}
                 <Link className="text-primary" to={`${routingPrefix}/repositories/manage`}>
-                    Add repositories
-                </Link>
-            )
-            return getHelpfulBanner(AddReposLink)
-        }
-
-        // otherwise, if we have connected code hosts and they have repos - list repositories
+                    add public repositories
+                </Link>{' '}
+                from GitHub or GitLab.
+            </small>
+        </div>
+    )
+    const showResults = (): JSX.Element => {
+        const emptyState = (
+            <div className="border rounded p-3">
+                <small>No repositories matched.</small>
+            </div>
+        )
         return (
             <FilteredConnection<SiteAdminRepositoryFields, Omit<UserRepositoriesResult, 'node'>>
                 className="table mt-3"
@@ -108,6 +100,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 filters={filters}
                 history={history}
                 location={location}
+                emptyElement={emptyState}
                 totalCountSummaryComponent={TotalCountSummary}
                 hideControlsWhenEmpty={true}
                 inputClassName="user-settings-repos__filter-input"
@@ -233,6 +226,8 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             const conn = value as Connection<SiteAdminRepositoryFields>
             if (conn.totalCount !== 0) {
                 setHasRepos(true)
+            } else {
+                setHasRepos(false)
             }
         }
     }, [])
@@ -253,18 +248,16 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             <PageTitle title="Repositories" />
             <div className="d-flex justify-content-between align-items-center">
                 <h2 className="mb-2">Repositories</h2>
-                {filters[1] && filters[1].values.length !== 1 && (
-                    <Link
-                        className="btn btn-primary test-goto-add-external-service-page"
-                        to={`${routingPrefix}/repositories/manage`}
-                    >
-                        {(hasRepos && <>Manage Repositories</>) || (
-                            <>
-                                <AddIcon className="icon-inline" /> Add repositories
-                            </>
-                        )}
-                    </Link>
-                )}
+                <Link
+                    className="btn btn-primary test-goto-add-external-service-page"
+                    to={`${routingPrefix}/repositories/manage`}
+                >
+                    {(hasRepos && <>Manage Repositories</>) || (
+                        <>
+                            <AddIcon className="icon-inline" /> Add repositories
+                        </>
+                    )}
+                </Link>
             </div>
             <p className="text-muted pb-2">
                 All repositories synced with Sourcegraph from{' '}
@@ -273,7 +266,10 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 </Link>
             </p>
             {externalServices ? (
-                showResults(externalServices)
+                <>
+                    {hasRepos === false && noReposState}
+                    {(hasRepos || hasRepos === null) && showResults()}
+                </>
             ) : (
                 <div className="d-flex justify-content-center mt-4">
                     <LoadingSpinner className="icon-inline" />

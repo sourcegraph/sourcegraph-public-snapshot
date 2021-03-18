@@ -26,9 +26,10 @@ func TestPipeline(t *testing.T) {
 	test := func(input string) string {
 		pipelinePlan, _ := Pipeline(InitLiteral(input))
 		nodes, _ := Run(InitLiteral(input))
+		manualPlan, _ := MapPlan(ToPlan(Dnf(nodes)), ConcatRevFilters)
 		if diff := cmp.Diff(
 			planToString(Dnf(pipelinePlan.ToParseTree())),
-			planToString(Dnf(nodes)),
+			planToString(Dnf(manualPlan.ToParseTree())),
 		); diff != "" {
 			return diff
 		}

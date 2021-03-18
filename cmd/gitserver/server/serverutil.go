@@ -264,7 +264,7 @@ var repoLastFetched = func(dir GitDir) (time.Time, error) {
 //
 // This breaks on file systems that do not record mtime. This is a Sourcegraph
 // extension to track last time a repo changed. The file is updated by
-// setLastChanged via doRepoUpdate2.
+// setLastChanged via doBackgroundRepoUpdate.
 //
 // As a special case, tries both the directory given, and the .git subdirectory,
 // because we're a bit inconsistent about which name to use.
