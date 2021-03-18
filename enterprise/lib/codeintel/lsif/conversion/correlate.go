@@ -4,18 +4,22 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
 	"github.com/inconshreveable/log15"
+	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/datastructures"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/pathexistence"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 )
 
 // Correlate reads LSIF data from the given reader and returns a correlation state object with
 // the same data canonicalized and pruned for storage.
-func Correlate(ctx context.Context, r io.Reader, dumpID int, root string, getChildren pathexistence.GetChildrenFunc) (*GroupedBundleDataChans, error) {
+func Correlate(ctx context.Context, r io.Reader, root string, getChildren pathexistence.GetChildrenFunc) (*semantic.GroupedBundleDataChans, error) {
 	// Read raw upload stream and return a correlation state
 	state, err := correlateFromReader(ctx, r, root)
 	if err != nil {
@@ -31,12 +35,54 @@ func Correlate(ctx context.Context, r io.Reader, dumpID int, root string, getChi
 	}
 
 	// Convert data to the format we send to the writer
-	groupedBundleData, err := groupBundleData(ctx, state, dumpID)
+	groupedBundleData, err := groupBundleData(ctx, state)
 	if err != nil {
 		return nil, err
 	}
 
 	return groupedBundleData, nil
+}
+
+func CorrelateLocalGit(ctx context.Context, dumpPath, projectRoot string) (*semantic.GroupedBundleDataChans, error) {
+	absoluteProjectRoot, err := filepath.Abs(projectRoot)
+	if err != nil {
+		return nil, errors.Wrap(err, "Error getting absolute root of project: "+projectRoot)
+	}
+
+	gitRoot, err := gitRoot(absoluteProjectRoot)
+	if err != nil {
+		return nil, errors.Wrap(err, "Error getting git root of project: "+absoluteProjectRoot)
+	}
+
+	getChildrenFunc := pathexistence.LocalGitGetChildrenFunc(gitRoot)
+
+	relRoot, err := filepath.Rel(gitRoot, absoluteProjectRoot)
+	// workaround: filepath.Rel returns a path starting with '../' if gitRoot and root are equal
+	if gitRoot == absoluteProjectRoot {
+		relRoot = ""
+	}
+
+	file, err := os.Open(dumpPath)
+	if err != nil {
+		return nil, errors.Wrap(err, "Error opening dump path: "+dumpPath)
+	}
+	defer file.Close()
+
+	bundle, err := Correlate(context.Background(), file, relRoot, getChildrenFunc)
+	if err != nil {
+		return nil, errors.Wrap(err, "Error correlating dump: "+dumpPath)
+	}
+
+	return bundle, nil
+}
+
+func gitRoot(path string) (string, error) {
+	cmd := exec.Command("git", "-C", path, "rev-parse", "--show-toplevel")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", err
+	}
+	return strings.Split(string(out), "\n")[0], nil
 }
 
 // correlateFromReader reads the given upload stream and returns a correlation state object.

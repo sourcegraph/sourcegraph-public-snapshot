@@ -1,7 +1,6 @@
 package conversion
 
 import (
-	"sort"
 	"strconv"
 	"strings"
 
@@ -9,26 +8,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 )
-
-func sortedRangeIDs(ranges map[semantic.ID]semantic.RangeData) []semantic.ID {
-	var rngIDs []semantic.ID
-	for rngID := range ranges {
-		rngIDs = append(rngIDs, rngID)
-	}
-
-	sort.Slice(rngIDs, func(i, j int) bool {
-		return semantic.CompareRanges(ranges[rngIDs[i]], ranges[rngIDs[j]]) < 0
-	})
-
-	return rngIDs
-}
-
-func getDefRef(resultID semantic.ID, meta semantic.MetaData, resultChunks map[int]semantic.ResultChunkData) ([]semantic.DocumentIDRangeID, semantic.ResultChunkData) {
-	chunkID := semantic.HashKey(resultID, meta.NumResultChunks)
-	chunk := resultChunks[chunkID]
-	docRngIDs := chunk.DocumentIDRangeIDs[resultID]
-	return docRngIDs, chunk
-}
 
 func newID() (semantic.ID, error) {
 	uuid, err := uuid.NewRandom()

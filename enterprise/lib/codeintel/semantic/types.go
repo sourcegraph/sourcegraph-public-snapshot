@@ -145,3 +145,28 @@ type PackageReference struct {
 	Version string
 	Filter  []byte // a bloom filter of identifiers imported by this dependent
 }
+
+// GroupedBundleData{Chans,Maps} is a view of a correlation State that sorts data by it's containing document
+// and shared data into sharded result chunks. The fields of this type are what is written to
+// persistent storage and what is read in the query path. The Chans version allows pipelining
+// and parallelizing the work, while the Maps version can be modified for e.g. local development
+// via the REPL or patching for incremental indexing.
+type GroupedBundleDataChans struct {
+	Meta              MetaData
+	Documents         chan KeyedDocumentData
+	ResultChunks      chan IndexedResultChunkData
+	Definitions       chan MonikerLocations
+	References        chan MonikerLocations
+	Packages          []Package
+	PackageReferences []PackageReference
+}
+
+type GroupedBundleDataMaps struct {
+	Meta              MetaData
+	Documents         map[string]DocumentData
+	ResultChunks      map[int]ResultChunkData
+	Definitions       map[string]map[string][]LocationData
+	References        map[string]map[string][]LocationData
+	Packages          []Package
+	PackageReferences []PackageReference
+}

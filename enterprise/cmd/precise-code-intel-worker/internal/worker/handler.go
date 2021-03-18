@@ -16,6 +16,7 @@ import (
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/conversion"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -86,7 +87,7 @@ func (h *handler) handle(ctx context.Context, workerStore dbworkerstore.Store, d
 	}
 
 	return false, withUploadData(ctx, h.uploadStore, upload.ID, func(r io.Reader) (err error) {
-		groupedBundleData, err := conversion.Correlate(ctx, r, upload.ID, upload.Root, getChildren)
+		groupedBundleData, err := conversion.Correlate(ctx, r, upload.Root, getChildren)
 		if err != nil {
 			return errors.Wrap(err, "conversion.Correlate")
 		}
@@ -207,7 +208,7 @@ func withUploadData(ctx context.Context, uploadStore uploadstore.Store, id int, 
 }
 
 // writeData transactionally writes the given grouped bundle data into the given LSIF store.
-func writeData(ctx context.Context, lsifStore LSIFStore, id int, groupedBundleData *conversion.GroupedBundleDataChans) (err error) {
+func writeData(ctx context.Context, lsifStore LSIFStore, id int, groupedBundleData *semantic.GroupedBundleDataChans) (err error) {
 	tx, err := lsifStore.Transact(ctx)
 	if err != nil {
 		return err
