@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import { from } from 'rxjs'
+import { combineLatest, from, ReplaySubject } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { getContributedActionItems } from '../contributions/contributions'
 import { TelemetryProps } from '../telemetry/telemetryService'
@@ -8,6 +8,8 @@ import { ActionsProps } from './ActionsContainer'
 import classNames from 'classnames'
 import { useObservable } from '../util/useObservable'
 import { wrapRemoteObservable } from '../api/client/api/common'
+import { Context, ContributionScope } from '../api/extension/api/context/context'
+import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
 export interface ActionNavItemsClassProps {
     /**
@@ -53,15 +55,25 @@ export interface ActionsNavItemsProps
 export const ActionsNavItems: React.FunctionComponent<ActionsNavItemsProps> = props => {
     const { scope, extraContext, extensionsController, menu, wrapInList } = props
 
+    const scopeChanges = useMemo(() => new ReplaySubject<ContributionScope>(1), [])
+    useDeepCompareEffectNoCheck(() => {
+        scopeChanges.next(scope)
+    }, [scope])
+
+    const extraContextChanges = useMemo(() => new ReplaySubject<Context>(1), [])
+    useDeepCompareEffectNoCheck(() => {
+        extraContextChanges.next(extraContext)
+    }, [extraContext])
+
     const contributions = useObservable(
         useMemo(
             () =>
-                from(extensionsController.extHostAPI).pipe(
-                    switchMap(extensionHostAPI =>
+                combineLatest([scopeChanges, extraContextChanges, from(extensionsController.extHostAPI)]).pipe(
+                    switchMap(([scope, extraContext, extensionHostAPI]) =>
                         wrapRemoteObservable(extensionHostAPI.getContributions(scope, extraContext))
                     )
                 ),
-            [scope, extraContext, extensionsController.extHostAPI]
+            [scopeChanges, extraContextChanges, extensionsController]
         )
     )
 
