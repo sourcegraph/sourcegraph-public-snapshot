@@ -18,7 +18,7 @@ Migrations are handled by the [migrate](https://github.com/golang-migrate/migrat
 
 ## Migrating up and down
 
-Up migrations happen automatically on server start-up after running the generate scripts. They can also be run manually using the migrate CLI:
+Up migrations happen automatically on server start-up. They can also be run manually using the migrate CLI:
 
 - run `./dev/db/migrate.sh <db_name> -h` for a list of options
 - run `./dev/db/migrate.sh <db_name> up` to move forward to the latest migration
@@ -42,10 +42,9 @@ There will be up/down `.sql` migration files created in the instance's migration
 
 **NOTE**: the migration runner does not use transactions. Use the explicit transaction blocks added to the migration script template.
 
-After adding SQL statements to those files, embed them into the Go code and update the schema doc:
+After adding SQL statements to those files, update the schema doc:
 
 ```
-go generate ./migrations/...
 go generate ./internal/database/
 ```
 
@@ -74,8 +73,6 @@ On longer running branches, you might find that your migration now conflicts wit
 3. Once you start rebasing, you'll get an error like this on your migration commit:
 
    ```
-   Auto-merging migrations/frontend/bindata.go
-   CONFLICT (content): Merge conflict in migrations/frontend/bindata.go
    Auto-merging internal/database/schema.md
    error: could not apply 4931031d10... Add migrations.
    Resolve all conflicts manually, mark them as resolved with
@@ -85,14 +82,12 @@ On longer running branches, you might find that your migration now conflicts wit
    Could not apply 4931031d10... Add migrations.
    ```
 
-   We need to renumber your migration, and regenerate the generated files.
+   We need to renumber your migration.
 
 4. You can renumber your migration by `git mv`-ing the relevant up and down files, or with this script: `./dev/db/rebase_migration.sh <database> <either your up or down file>`
-5. Once done, you need to regenerate the schema and bindata. If you use `rebase_migration.sh`, it will suggest what to do, but it's roughly:
+5. Once done, you need to regenerate the schema. If you use `rebase_migration.sh`, it will suggest what to do, but it's roughly:
 
    ```bash
-   rm migrations/<database>/bindata.go
-   go generate ./migrations/<database>
    ./dev/db/migrate.sh <database> up
    go generate ./internal/<database>
    ```
