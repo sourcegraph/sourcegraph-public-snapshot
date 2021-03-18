@@ -2,11 +2,10 @@ package diff
 
 import (
 	"context"
-	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/hexops/autogold"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/conversion"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 )
@@ -15,7 +14,6 @@ var dumpPath = "./testdata/project1/dump.lsif"
 var dumpPermutedPath = "./testdata/project1/dump-permuted.lsif"
 var dumpOldPath = "./testdata/project1/dump-old.lsif"
 var dumpNewPath = "./testdata/project1/dump-new.lsif"
-var diffPath = "./testdata/project1/diff.txt"
 
 func TestNoDiffOnPermutedDumps(t *testing.T) {
 	bundle1, err := conversion.CorrelateLocalGit(
@@ -66,14 +64,6 @@ func TestDiffOnEditedDumps(t *testing.T) {
 		semantic.GroupedBundleDataChansToMaps(bundle1),
 		semantic.GroupedBundleDataChansToMaps(bundle2),
 	)
-	diffSnapshot, err := os.ReadFile(diffPath)
-	if err != nil {
-		t.Fatalf("Unexpected error reading diff snapshot: %v", err)
-	}
 
-	diffdiff := cmp.Diff(computedDiff, string(diffSnapshot))
-
-	if diffdiff != "" {
-		t.Fatalf("Diff of old and new dumps didn't match snapshot:\n%v", diffdiff)
-	}
+	autogold.Equal(t, autogold.Raw(computedDiff))
 }

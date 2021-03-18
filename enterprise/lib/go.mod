@@ -11,6 +11,7 @@ require (
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/google/go-cmp v0.5.4
 	github.com/google/uuid v1.1.2
+	github.com/hexops/autogold v1.3.0
 	github.com/inconshreveable/log15 v0.0.0-20200109203555-b30bc20e4fd1
 	github.com/json-iterator/go v1.1.10
 	github.com/pkg/errors v0.9.1
