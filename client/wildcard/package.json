@@ -10,8 +10,5 @@
     "eslint": "eslint --cache '**/*.[jt]s?(x)'",
     "stylelint": "stylelint 'src/**/*.scss' --quiet",
     "test": "jest"
-  },
-  "dependencies": {
-    "use-resize-observer": "^7.0.0"
   }
 }
