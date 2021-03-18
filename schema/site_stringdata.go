@@ -1346,10 +1346,20 @@ const SiteSchemaJSON = `{
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["cloudkms", "noop"]
+          "enum": ["cloudkms", "mounted", "noop"]
         }
       },
-      "oneOf": [{ "$ref": "#/definitions/CloudKMSEncryptionKey" }, { "$ref": "#/definitions/NoOpEncryptionKey" }],
+      "oneOf": [
+        {
+          "$ref": "#/definitions/CloudKMSEncryptionKey"
+        },
+        {
+          "$ref": "#/definitions/MountedEncryptionKey"
+        },
+        {
+          "$ref": "#/definitions/NoOpEncryptionKey"
+        }
+      ],
       "!go": {
         "taggedUnionType": true
       }
@@ -1364,6 +1374,26 @@ const SiteSchemaJSON = `{
           "const": "cloudkms"
         },
         "keyname": {
+          "type": "string"
+        }
+      }
+    },
+    "MountedEncryptionKey": {
+      "description": "This encryption key is mounted from a given file path or an environment variable.",
+      "type": "object",
+      "required": ["type", "keyname"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "mounted"
+        },
+        "keyname": {
+          "type": "string"
+        },
+        "filepath": {
+          "type": "string"
+        },
+        "envVarName": {
           "type": "string"
         }
       }
