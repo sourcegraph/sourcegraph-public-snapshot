@@ -108,6 +108,7 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                         {lineNumbers && (
                             <>
                                 {line.kind !== DiffHunkLineType.ADDED ? (
+                                    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
                                     <td
                                         className="diff-hunk__num"
                                         data-line={oldLine - 1}
@@ -120,6 +121,7 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                                 )}
 
                                 {line.kind !== DiffHunkLineType.DELETED ? (
+                                    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
                                     <td
                                         className="diff-hunk__num"
                                         data-line={newLine - 1}
