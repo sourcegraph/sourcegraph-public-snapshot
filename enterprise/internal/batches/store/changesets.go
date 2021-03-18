@@ -252,9 +252,9 @@ func countChangesetsQuery(opts *CountChangesetsOpts, authzConds *sqlf.Query) *sq
 		batchChangeID := strconv.Itoa(int(opts.BatchChangeID))
 		preds = append(preds, sqlf.Sprintf("changesets.batch_change_ids ? %s", batchChangeID))
 		if opts.OnlyArchived {
-			preds = append(preds, sqlf.Sprintf("batch_change_ids->%s ? 'archived' AND batch_change_ids->%s->>'archived' = 'true'", batchChangeID, batchChangeID))
+			preds = append(preds, archivedInBatchChange(batchChangeID))
 		} else if !opts.IncludeArchived {
-			preds = append(preds, sqlf.Sprintf("NOT (batch_change_ids->%s ? 'archived' AND batch_change_ids->%s->>'archived' = 'true')", batchChangeID, batchChangeID))
+			preds = append(preds, sqlf.Sprintf("NOT (%s)", archivedInBatchChange(batchChangeID)))
 		}
 	}
 	if opts.PublicationState != nil {
@@ -523,9 +523,9 @@ func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf
 		preds = append(preds, sqlf.Sprintf("changesets.batch_change_ids ? %s", batchChangeID))
 
 		if opts.OnlyArchived {
-			preds = append(preds, sqlf.Sprintf("batch_change_ids->%s ? 'archived' AND batch_change_ids->%s->>'archived' = 'true'", batchChangeID, batchChangeID))
+			preds = append(preds, archivedInBatchChange(batchChangeID))
 		} else if !opts.IncludeArchived {
-			preds = append(preds, sqlf.Sprintf("NOT (batch_change_ids->%s ? 'archived' AND batch_change_ids->%s->>'archived' = 'true')", batchChangeID, batchChangeID))
+			preds = append(preds, sqlf.Sprintf("NOT (%s)", archivedInBatchChange(batchChangeID)))
 		}
 	}
 
@@ -916,6 +916,10 @@ WHERE
 	%s
 `
 
+func archivedInBatchChange(batchChangeID string) *sqlf.Query {
+	return sqlf.Sprintf("COALESCE((batch_change_ids->%s->'archived')::bool, false)", batchChangeID)
+}
+
 func getChangesetsStatsQuery(batchChangeID int64) *sqlf.Query {
 	batchChangeIDStr := strconv.Itoa(int(batchChangeID))
 
@@ -925,16 +929,16 @@ func getChangesetsStatsQuery(batchChangeID int64) *sqlf.Query {
 	}
 
 	publishedAndCompleted := sqlf.Sprintf("changesets.publication_state = 'PUBLISHED' AND changesets.reconciler_state = 'completed'")
-	archivedIn := sqlf.Sprintf("(batch_change_ids->%s ? 'archived' AND batch_change_ids->%s->>'archived' = 'true')", batchChangeIDStr, batchChangeIDStr)
+	archived := archivedInBatchChange(batchChangeIDStr)
 
 	return sqlf.Sprintf(
 		getChangesetStatsFmtstr,
-		publishedAndCompleted, archivedIn,
-		publishedAndCompleted, archivedIn,
-		publishedAndCompleted, archivedIn,
-		publishedAndCompleted, archivedIn,
-		publishedAndCompleted, archivedIn,
-		publishedAndCompleted, archivedIn,
+		publishedAndCompleted, archived,
+		publishedAndCompleted, archived,
+		publishedAndCompleted, archived,
+		publishedAndCompleted, archived,
+		publishedAndCompleted, archived,
+		publishedAndCompleted, archived,
 		sqlf.Join(preds, " AND "),
 	)
 }
