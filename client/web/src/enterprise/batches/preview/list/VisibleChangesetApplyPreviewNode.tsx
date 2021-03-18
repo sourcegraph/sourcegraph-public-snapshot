@@ -191,10 +191,13 @@ const ExpandedSection: React.FunctionComponent<
             <div className="overflow-auto mb-4">
                 <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
                     <li className="nav-item">
-                        <a
-                            href=""
+                        <button
+                            type="button"
                             onClick={onSelectDiff}
                             className={classNames(
+                                'btn',
+                                'btn-link',
+                                'text-decoration-none',
                                 'nav-link',
                                 selectedTab === 'diff' &&
                                     'active visible-changeset-apply-preview-node__tab-link--active'
@@ -206,13 +209,16 @@ const ExpandedSection: React.FunctionComponent<
                                     <CheckboxBlankCircleIcon className="icon-inline visible-changeset-apply-preview-node__change-indicator" />
                                 </small>
                             )}
-                        </a>
+                        </button>
                     </li>
                     <li className="nav-item">
-                        <a
-                            href=""
+                        <button
+                            type="button"
                             onClick={onSelectDescription}
                             className={classNames(
+                                'btn',
+                                'btn-link',
+                                'text-decoration-none',
                                 'nav-link',
                                 selectedTab === 'description' &&
                                     'active visible-changeset-apply-preview-node__tab-link--active'
@@ -224,13 +230,16 @@ const ExpandedSection: React.FunctionComponent<
                                     <CheckboxBlankCircleIcon className="icon-inline visible-changeset-apply-preview-node__change-indicator" />
                                 </small>
                             )}
-                        </a>
+                        </button>
                     </li>
                     <li className="nav-item">
-                        <a
-                            href=""
+                        <button
+                            type="button"
                             onClick={onSelectCommits}
                             className={classNames(
+                                'btn',
+                                'btn-link',
+                                'text-decoration-none',
                                 'nav-link',
                                 selectedTab === 'commits' &&
                                     'active visible-changeset-apply-preview-node__tab-link--active'
@@ -244,7 +253,7 @@ const ExpandedSection: React.FunctionComponent<
                                     <CheckboxBlankCircleIcon className="icon-inline visible-changeset-apply-preview-node__change-indicator" />
                                 </small>
                             )}
-                        </a>
+                        </button>
                     </li>
                 </ul>
             </div>
