@@ -232,6 +232,11 @@ func outOfDateAlert(args AlertFuncArgs) []*Alert {
 
 // This should be removed from 3.27
 func deprecationAlert(args AlertFuncArgs) []*Alert {
+	sourcegraph_dotcom, _ := strconv.ParseBool(env.Get("SOURECGRAPHDOTCOM_MODE", "false", "determines Sourcegraph environment type"))
+	if sourcegraph_dotcom == true {
+		return nil
+	}
+
 	cv, err := semver.NewVersion(version.Version())
 	if err != nil {
 		log15.Error("cannot determine version", "error", err)
