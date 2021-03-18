@@ -258,7 +258,7 @@
     "webpack": "^4.44.2",
     "webpack-bundle-analyzer": "^3.9.0",
     "webpack-dev-server": "^3.11.1",
-    "worker-loader": "^3.0.4",
+    "worker-loader": "^3.0.8",
     "yarn-deduplicate": "^3.1.0"
   },
   "dependencies": {
