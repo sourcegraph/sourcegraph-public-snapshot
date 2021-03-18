@@ -228,7 +228,7 @@
     "prettier": "^2.2.1",
     "puppeteer": "5.5.0",
     "puppeteer-firefox": "^0.5.1",
-    "raw-loader": "^4.0.1",
+    "raw-loader": "^4.0.2",
     "react-docgen-typescript-webpack-plugin": "^1.1.0",
     "react-hot-loader": "^4.13.0",
     "react-test-renderer": "^16.14.0",
