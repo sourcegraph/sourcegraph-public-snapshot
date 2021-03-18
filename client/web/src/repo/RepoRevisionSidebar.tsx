@@ -50,52 +50,60 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
     }
 
     return (
-        <Resizable defaultSize={256} position="right" storageKey={SIZE_STORAGE_KEY}>
-            <Tabs className="w-100" defaultIndex={tabIndex} onChange={handleTabsChange}>
-                <div className="tablist-wrapper d-flex w-100 align-items-center">
-                    <TabList>
-                        <Tab>Files</Tab>
-                        <Tab>Symbols</Tab>
-                    </TabList>
-                    <Button
-                        onClick={handleSidebarToggle}
-                        className="bg-transparent border-0 ml-auto p-1 position-relative focus-behaviour"
-                        title="Close sidebar"
+        <Resizable
+            defaultSize={256}
+            handlePosition="right"
+            storageKey={SIZE_STORAGE_KEY}
+            element={
+                <Tabs className="w-100" defaultIndex={tabIndex} onChange={handleTabsChange}>
+                    <div className="tablist-wrapper d-flex w-100 align-items-center">
+                        <TabList>
+                            <Tab>Files</Tab>
+                            <Tab>Symbols</Tab>
+                        </TabList>
+                        <Button
+                            onClick={handleSidebarToggle}
+                            className="bg-transparent border-0 ml-auto p-1 position-relative focus-behaviour"
+                            title="Close sidebar"
+                        >
+                            <CloseIcon className="icon-inline" />
+                        </Button>
+                    </div>
+                    <div
+                        aria-hidden={true}
+                        className="d-flex overflow-auto repo-revision-container__tabpanels explorer"
                     >
-                        <CloseIcon className="icon-inline" />
-                    </Button>
-                </div>
-                <div aria-hidden={true} className="d-flex overflow-auto repo-revision-container__tabpanels explorer">
-                    <TabPanels className="w-100">
-                        <TabPanel tabIndex={-1}>
-                            <Tree
-                                key="files"
-                                repoName={props.repoName}
-                                revision={props.revision}
-                                commitID={props.commitID}
-                                history={props.history}
-                                location={props.location}
-                                scrollRootSelector=".explorer"
-                                activePath={props.filePath}
-                                activePathIsDir={props.isDir}
-                                sizeKey={`Resizable:${SIZE_STORAGE_KEY}`}
-                                extensionsController={props.extensionsController}
-                                isLightTheme={props.isLightTheme}
-                            />
-                        </TabPanel>
-                        <TabPanel className="h-100">
-                            <RepoRevisionSidebarSymbols
-                                key="symbols"
-                                repoID={props.repoID}
-                                revision={props.revision}
-                                activePath={props.filePath}
-                                history={props.history}
-                                location={props.location}
-                            />
-                        </TabPanel>
-                    </TabPanels>
-                </div>
-            </Tabs>
-        </Resizable>
+                        <TabPanels className="w-100">
+                            <TabPanel tabIndex={-1}>
+                                <Tree
+                                    key="files"
+                                    repoName={props.repoName}
+                                    revision={props.revision}
+                                    commitID={props.commitID}
+                                    history={props.history}
+                                    location={props.location}
+                                    scrollRootSelector=".explorer"
+                                    activePath={props.filePath}
+                                    activePathIsDir={props.isDir}
+                                    sizeKey={`Resizable:${SIZE_STORAGE_KEY}`}
+                                    extensionsController={props.extensionsController}
+                                    isLightTheme={props.isLightTheme}
+                                />
+                            </TabPanel>
+                            <TabPanel className="h-100">
+                                <RepoRevisionSidebarSymbols
+                                    key="symbols"
+                                    repoID={props.repoID}
+                                    revision={props.revision}
+                                    activePath={props.filePath}
+                                    history={props.history}
+                                    location={props.location}
+                                />
+                            </TabPanel>
+                        </TabPanels>
+                    </div>
+                </Tabs>
+            }
+        />
     )
 }

@@ -151,7 +151,7 @@ export const Panel = React.memo<Props>(props => {
                         )
                     ),
                     map(({ panelViews, extensionHostAPI }) =>
-                        panelViews.map(panelView => {
+                        panelViews.map((panelView: PanelViewWithComponent) => {
                             const locationProviderID = panelView.component?.locationProvider
                             if (locationProviderID) {
                                 const panelViewWithProvider: PanelViewWithComponent = {
@@ -181,21 +181,28 @@ export const Panel = React.memo<Props>(props => {
         )
     )
 
-    const panelViews = [...(builtinPanels || []), ...(extensionPanels || [])]
+    const panelViews = useMemo(() => [...(builtinPanels || []), ...(extensionPanels || [])], [
+        builtinPanels,
+        extensionPanels,
+    ])
 
-    const items = panelViews
-        ? panelViews
-              .map(
-                  (panelView): PanelItem => ({
-                      label: panelView.title,
-                      id: panelView.id,
-                      priority: panelView.priority,
-                      element: <PanelView {...props} panelView={panelView} />,
-                      hasLocations: !!panelView.locationProvider,
-                  })
-              )
-              .sort((a, b) => b.priority - a.priority)
-        : []
+    const items = useMemo(
+        () =>
+            panelViews
+                ? panelViews
+                      .map(
+                          (panelView): PanelItem => ({
+                              label: panelView.title,
+                              id: panelView.id,
+                              priority: panelView.priority,
+                              element: <PanelView {...props} panelView={panelView} />,
+                              hasLocations: !!panelView.locationProvider,
+                          })
+                      )
+                      .sort((a, b) => b.priority - a.priority)
+                : [],
+        [panelViews, props]
+    )
 
     const handleActiveTab = useCallback(
         (index: number): void => {
@@ -204,15 +211,18 @@ export const Panel = React.memo<Props>(props => {
         [hash, history, items, pathname]
     )
 
+    console.log('items', items)
+
     useEffect(() => {
+        console.log('entra')
         setTabIndex(items.findIndex(({ id }) => id === `${hash.split('=')[1]}`))
     }, [items, hash])
 
     return !areExtensionsReady ? (
         <ExtensionsLoadingPanelView />
     ) : items ? (
-        <Tabs className="w-100" defaultIndex={tabIndex} onChange={handleActiveTab}>
-            <div className="d-flex">
+        <Tabs className="panel" index={tabIndex} onChange={handleActiveTab}>
+            <div className="tablist-wrapper bg-body d-flex justify-content-between">
                 <TabList>
                     {items.map(({ label, id }) => (
                         <Tab key={id}>{label}</Tab>
@@ -261,9 +271,11 @@ export const Panel = React.memo<Props>(props => {
 
 /** A wrapper around Panel that makes it resizable. */
 export const ResizablePanel: React.FunctionComponent<Props> = props => (
-    <div className="w-100">
-        <Resizable position="top" defaultSize={350} storageKey="panel-size">
-            <Panel {...props} />
-        </Resizable>
-    </div>
+    <Resizable
+        className="resizable-panel"
+        handlePosition="top"
+        defaultSize={350}
+        storageKey="panel-size"
+        element={<Panel {...props} />}
+    />
 )

@@ -101,6 +101,8 @@ export const ActionsNavItems: React.FunctionComponent<ActionsNavItemsProps> = pr
         </React.Fragment>
     ))
 
+    console.log(actionItems)
+
     if (wrapInList) {
         return actionItems.current.length > 0 ? <ul className={props.listClass}>{actionItems.current}</ul> : null
     }
