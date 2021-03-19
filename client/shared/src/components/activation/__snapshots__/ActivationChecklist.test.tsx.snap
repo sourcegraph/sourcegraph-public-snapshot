@@ -57,12 +57,11 @@ exports[`ActivationChecklist render 0/1 complete 1`] = `
                 />
               </svg>
             </span>
-            <a
+            <span
               className="activation-checklist__title"
-              href=""
             >
               title1
-            </a>
+            </span>
           </div>
           <div>
             <svg
@@ -157,12 +156,11 @@ exports[`ActivationChecklist render 0/1 complete 2`] = `
                 />
               </svg>
             </span>
-            <a
+            <span
               className="activation-checklist__title"
-              href=""
             >
               title1
-            </a>
+            </span>
           </div>
           <div>
             <svg
@@ -257,12 +255,11 @@ exports[`ActivationChecklist render 1/1 complete 1`] = `
                 />
               </svg>
             </span>
-            <a
+            <span
               className="activation-checklist__title"
-              href=""
             >
               title1
-            </a>
+            </span>
           </div>
           <div>
             <svg

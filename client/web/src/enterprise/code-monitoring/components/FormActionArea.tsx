@@ -205,7 +205,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
             {!showEmailNotificationForm && (
                 <button
                     type="button"
-                    className="btn btn-outline-secondary code-monitor-form__card--button card test-edit-action"
+                    className="btn btn-outline-secondary code-monitor-form__card--button card test-action-button"
                     aria-label="Edit action: Send email notifications"
                     disabled={disabled}
                     onClick={toggleEmailNotificationForm}

@@ -413,12 +413,11 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                     />
                                   </svg>
                                 </span>
-                                <a
+                                <span
                                   class="activation-checklist__title"
-                                  href=""
                                 >
                                   Add repositories
-                                </a>
+                                </span>
                               </div>
                               <div>
                                 <svg
@@ -500,12 +499,11 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                     />
                                   </svg>
                                 </span>
-                                <a
+                                <span
                                   class="activation-checklist__title"
-                                  href=""
                                 >
                                   Search your code
-                                </a>
+                                </span>
                               </div>
                               <div>
                                 <svg
@@ -600,12 +598,11 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                     />
                                   </svg>
                                 </span>
-                                <a
+                                <span
                                   class="activation-checklist__title"
-                                  href=""
                                 >
                                   Find some references
-                                </a>
+                                </span>
                               </div>
                               <div>
                                 <svg
@@ -687,12 +684,11 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                     />
                                   </svg>
                                 </span>
-                                <a
+                                <span
                                   class="activation-checklist__title"
-                                  href=""
                                 >
                                   Configure SSO or share with teammates
-                                </a>
+                                </span>
                               </div>
                               <div>
                                 <svg
@@ -1008,12 +1004,11 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                           />
                                         </svg>
                                       </span>
-                                      <a
+                                      <span
                                         class="activation-checklist__title"
-                                        href=""
                                       >
                                         Add repositories
-                                      </a>
+                                      </span>
                                     </div>
                                     <div>
                                       <svg
@@ -1077,12 +1072,11 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                           />
                                         </svg>
                                       </span>
-                                      <a
+                                      <span
                                         class="activation-checklist__title"
-                                        href=""
                                       >
                                         Search your code
-                                      </a>
+                                      </span>
                                     </div>
                                     <div>
                                       <svg
@@ -1146,12 +1140,11 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                           />
                                         </svg>
                                       </span>
-                                      <a
+                                      <span
                                         class="activation-checklist__title"
-                                        href=""
                                       >
                                         Find some references
-                                      </a>
+                                      </span>
                                     </div>
                                     <div>
                                       <svg
@@ -1215,12 +1208,11 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                           />
                                         </svg>
                                       </span>
-                                      <a
+                                      <span
                                         class="activation-checklist__title"
-                                        href=""
                                       >
                                         Configure SSO or share with teammates
-                                      </a>
+                                      </span>
                                     </div>
                                     <div>
                                       <svg
@@ -1295,12 +1287,11 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                               className="activation-checklist-item__icon"
                                             />
                                           </span>
-                                          <a
+                                          <span
                                             className="activation-checklist__title"
-                                            href=""
                                           >
                                             Add repositories
-                                          </a>
+                                          </span>
                                         </div>
                                         <div>
                                           <Memo(CheckboxBlankCircleOutlineIcon)
@@ -1397,12 +1388,11 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                               className="activation-checklist-item__icon"
                                             />
                                           </span>
-                                          <a
+                                          <span
                                             className="activation-checklist__title"
-                                            href=""
                                           >
                                             Search your code
-                                          </a>
+                                          </span>
                                         </div>
                                         <div>
                                           <Memo(CheckboxBlankCircleOutlineIcon)
@@ -1497,12 +1487,11 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                               className="activation-checklist-item__icon"
                                             />
                                           </span>
-                                          <a
+                                          <span
                                             className="activation-checklist__title"
-                                            href=""
                                           >
                                             Find some references
-                                          </a>
+                                          </span>
                                         </div>
                                         <div>
                                           <Memo(CheckboxBlankCircleOutlineIcon)
@@ -1584,12 +1573,11 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                               className="activation-checklist-item__icon"
                                             />
                                           </span>
-                                          <a
+                                          <span
                                             className="activation-checklist__title"
-                                            href=""
                                           >
                                             Configure SSO or share with teammates
-                                          </a>
+                                          </span>
                                         </div>
                                         <div>
                                           <Memo(CheckboxBlankCircleOutlineIcon)

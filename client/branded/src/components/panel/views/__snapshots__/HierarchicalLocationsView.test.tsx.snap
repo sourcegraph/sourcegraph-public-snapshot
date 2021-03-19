@@ -162,9 +162,10 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
       <div
         className="list-group list-group-flush hierarchical-locations-view__list test-hierarchical-locations-view-list"
       >
-        <span
-          className="list-group-item hierarchical-locations-view__item active"
+        <button
+          className="list-group-item list-group-item-action hierarchical-locations-view__item active"
           onClick={[Function]}
+          type="button"
         >
           <span
             className="hierarchical-locations-view__item-name"
@@ -188,10 +189,11 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
           >
             2
           </span>
-        </span>
-        <span
-          className="list-group-item hierarchical-locations-view__item "
+        </button>
+        <button
+          className="list-group-item list-group-item-action hierarchical-locations-view__item "
           onClick={[Function]}
+          type="button"
         >
           <span
             className="hierarchical-locations-view__item-name"
@@ -215,11 +217,12 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
           >
             3
           </span>
-        </span>
+        </button>
       </div>
       <div
         className="resizable__handle resizable__handle--right "
         onMouseDown={[Function]}
+        role="presentation"
       />
     </div>
     <div

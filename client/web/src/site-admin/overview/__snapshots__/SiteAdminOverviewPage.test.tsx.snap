@@ -279,12 +279,11 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
                       />
                     </svg>
                   </span>
-                  <a
+                  <span
                     className="activation-checklist__title"
-                    href=""
                   >
                     Add repositories
-                  </a>
+                  </span>
                 </div>
                 <div>
                   <svg
