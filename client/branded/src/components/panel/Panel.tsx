@@ -263,9 +263,11 @@ export const Panel = React.memo<Props>(props => {
                 </div>
             </div>
             <TabPanels>
-                {items.map(({ id, element }, index) => (
-                    <TabPanel key={id}>{index === tabIndex ? element : null}</TabPanel>
-                ))}
+                {activeTab ? (
+                    items.map(({ id, element }) => <TabPanel key={id}>{id === activeTab.id ? element : null}</TabPanel>)
+                ) : (
+                    <EmptyPanelView />
+                )}
             </TabPanels>
         </Tabs>
     ) : (
