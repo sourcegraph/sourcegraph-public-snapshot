@@ -9680,7 +9680,10 @@ type ChangesetApplyPreviewConnectionStats {
     The changeset is removed from some of the associated batch changes.
     """
     detach: Int!
-
+    """
+    The changeset is still attached to the batch change but marked as archived.
+    """
+    archive: Int!
     """
     The amount of changesets that are added to the batch change in this operation.
     """

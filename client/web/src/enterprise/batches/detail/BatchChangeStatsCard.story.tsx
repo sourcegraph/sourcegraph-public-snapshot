@@ -18,6 +18,7 @@ add('All states', () => (
                     merged: 10,
                     draft: 5,
                     open: 10,
+                    archived: 18,
                     total: 100,
                     unpublished: 55,
                 }}
@@ -38,6 +39,7 @@ add('Batch change closed', () => (
                     merged: 10,
                     draft: 0,
                     open: 10,
+                    archived: 18,
                     total: 100,
                     unpublished: 60,
                 }}
@@ -58,6 +60,7 @@ add('Batch change done', () => (
                     merged: 80,
                     draft: 0,
                     open: 0,
+                    archived: 18,
                     total: 100,
                     unpublished: 0,
                 }}

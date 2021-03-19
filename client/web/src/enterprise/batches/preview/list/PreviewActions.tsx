@@ -198,6 +198,18 @@ export const PreviewActionUnknown: React.FunctionComponent<{ className?: string;
         <span>Unknown</span>
     </div>
 )
+export const PreviewActionArchive: React.FunctionComponent<{ label?: string; className?: string }> = ({
+    label = 'Archive',
+    className,
+}) => (
+    <div className={classNames(className, iconClassNames)}>
+        <ArchiveIcon
+            className="text-muted mr-1 icon-inline"
+            data-tooltip="This changeset will be archived in this batch change"
+        />
+        <span>{label}</span>
+    </div>
+)
 export enum NoActionReason {
     NO_ACCESS = 'no-access',
 }
@@ -211,18 +223,5 @@ export const PreviewActionNoAction: React.FunctionComponent<{ className?: string
     <div className={classNames(className, iconClassNames, 'text-muted')}>
         <BlankCircleIcon className="icon-inline mr-1" data-tooltip={reason} />
         <span>No action</span>
-    </div>
-)
-
-export const PreviewActionArchive: React.FunctionComponent<{ label?: string; className?: string }> = ({
-    label = 'Archive',
-    className,
-}) => (
-    <div className={classNames(className, iconClassNames)}>
-        <ArchiveIcon
-            className="text-muted mr-1 icon-inline"
-            data-tooltip="This changeset will be archived in this batch change"
-        />
-        <span>{label}</span>
     </div>
 )
