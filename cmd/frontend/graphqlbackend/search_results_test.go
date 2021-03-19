@@ -1463,6 +1463,7 @@ func fileResult(db dbutil.DB, uri string, lineMatches []*result.LineMatch, symbo
 		db: db,
 		FileMatch: result.FileMatch{
 			URI:         uri,
+			Repo:        &types.RepoName{Name: api.RepoName(uri)},
 			LineMatches: lineMatches,
 			Symbols:     symbolMatches,
 		},

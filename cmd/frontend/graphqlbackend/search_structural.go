@@ -167,6 +167,7 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, db dbutil.DB, args *search.Te
 				URI:      fileMatchURI(repoRev.Repo.Name, "", file.FileName),
 				Repo:     repoRev.Repo,
 				CommitID: api.CommitID(file.Version),
+				InputRev: nil,
 			},
 			RepoResolver: repoResolvers[repoRev.Repo.Name],
 		}
