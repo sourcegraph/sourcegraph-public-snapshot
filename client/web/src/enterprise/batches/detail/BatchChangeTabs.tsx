@@ -99,43 +99,37 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
             <div className="overflow-auto mb-2">
                 <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
                     <li className="nav-item">
-                        <button
-                            type="button"
+                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+                        <a
+                            href=""
+                            role="button"
                             onClick={onSelectChangesets}
-                            className={classNames(
-                                'btn',
-                                'text-decoration-none',
-                                selectedTab === 'changesets' ? 'btn-primary' : 'btn-link'
-                            )}
+                            className={classNames('nav-link', selectedTab === 'changesets' && 'active')}
                         >
                             <SourceBranchIcon className="icon-inline text-muted mr-1" /> Changesets
-                        </button>
+                        </a>
                     </li>
                     <li className="nav-item test-batches-chart-tab">
-                        <button
-                            type="button"
+                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+                        <a
+                            href=""
+                            role="button"
                             onClick={onSelectChart}
-                            className={classNames(
-                                'btn',
-                                'text-decoration-none',
-                                selectedTab === 'chart' ? 'btn-primary' : 'btn-link'
-                            )}
+                            className={classNames('nav-link', selectedTab === 'chart' && 'active')}
                         >
                             <ChartLineVariantIcon className="icon-inline text-muted mr-1" /> Burndown chart
-                        </button>
+                        </a>
                     </li>
                     <li className="nav-item test-batches-spec-tab">
-                        <button
-                            type="button"
+                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+                        <a
+                            href=""
+                            role="button"
                             onClick={onSelectSpec}
-                            className={classNames(
-                                'btn',
-                                'text-decoration-none',
-                                selectedTab === 'spec' ? 'btn-primary' : 'btn-link'
-                            )}
+                            className={classNames('nav-link', selectedTab === 'spec' && 'active')}
                         >
                             <FileDocumentIcon className="icon-inline text-muted mr-1" /> Spec
-                        </button>
+                        </a>
                     </li>
                 </ul>
             </div>

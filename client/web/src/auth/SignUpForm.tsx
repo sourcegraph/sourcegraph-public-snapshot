@@ -119,7 +119,6 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
         },
         []
     )
-
     return (
         <>
             {error && <ErrorAlert className="mt-4 mb-0" error={error} />}
