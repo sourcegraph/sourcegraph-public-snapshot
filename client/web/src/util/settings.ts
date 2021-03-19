@@ -70,7 +70,7 @@ export function experimentalFeaturesFromSettings(
         showMultilineSearchConsole = false,
         showQueryBuilder = false,
         enableSmartQuery = true,
-        codeMonitoring = false,
+        codeMonitoring = true, // Default to true if not set
     } = experimentalFeatures
 
     return {

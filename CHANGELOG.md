@@ -21,6 +21,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Syntax highlighting for Elixir, Elm, REG, Julia, Move, Nix, Puppet, VimL, Coq. [#19282](https://github.com/sourcegraph/sourcegraph/pull/19282)
 - `BUILD.in` files are now highlighted as Bazel/Starlark build files. Thanks to @jjwon0 [#19282](https://github.com/sourcegraph/sourcegraph/pull/19282)
 - `*.pyst` and `*.pyst-include` are now highlighted as Python files. Thanks to @jjwon0 [#19282](https://github.com/sourcegraph/sourcegraph/pull/19282)
+- The code monitoring feature flag is now enabled by default. [#19295](https://github.com/sourcegraph/sourcegraph/pull/19295)
 
 ### Changed
 
