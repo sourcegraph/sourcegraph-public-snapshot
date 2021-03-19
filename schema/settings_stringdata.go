@@ -26,9 +26,9 @@ const SettingsSchemaJSON = `{
           }
         },
         "codeMonitoring": {
-          "description": "Enables code monitoring on directory pages.",
+          "description": "Enables code monitoring.",
           "type": "boolean",
-          "default": false,
+          "default": true,
           "!go": {
             "pointer": true
           }

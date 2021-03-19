@@ -50,6 +50,25 @@ var builtinExtensions = map[string]bool{
 	"sourcegraph/vhdl":       true,
 }
 
+func defaultSettings(db dbutil.DB) map[string]interface{} {
+	extensionIDs := []string{}
+	for id := range builtinExtensions {
+		extensionIDs = append(extensionIDs, id)
+	}
+	extensionIDs = ExtensionRegistry(db).FilterRemoteExtensions(extensionIDs)
+	extensions := map[string]bool{}
+	for _, id := range extensionIDs {
+		extensions[id] = true
+	}
+
+	return map[string]interface{}{
+		"experimentalFeatures": map[string]interface{}{
+			"searchStreaming": true,
+		},
+		"extensions": extensions,
+	}
+}
+
 const singletonDefaultSettingsGQLID = "DefaultSettings"
 
 type defaultSettingsResolver struct {
@@ -64,16 +83,7 @@ func marshalDefaultSettingsGQLID(defaultSettingsID string) graphql.ID {
 func (r *defaultSettingsResolver) ID() graphql.ID { return marshalDefaultSettingsGQLID(r.gqlID) }
 
 func (r *defaultSettingsResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
-	extensionIDs := []string{}
-	for id := range builtinExtensions {
-		extensionIDs = append(extensionIDs, id)
-	}
-	extensionIDs = ExtensionRegistry(r.db).FilterRemoteExtensions(extensionIDs)
-	extensions := map[string]bool{}
-	for _, id := range extensionIDs {
-		extensions[id] = true
-	}
-	contents, err := json.Marshal(map[string]map[string]bool{"extensions": extensions})
+	contents, err := json.Marshal(defaultSettings(r.db))
 	if err != nil {
 		return nil, err
 	}

@@ -7,6 +7,7 @@ import { ViewContent, ViewContentProps } from '../../views/ViewContent'
 import { WidthProvider, Responsive, Layout as ReactGridLayout, Layouts as ReactGridLayouts } from 'react-grid-layout'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { ViewProviderResult } from '../../../../shared/src/api/extension/extensionHostApi'
+import { ErrorBoundary } from '../../components/ErrorBoundary'
 
 // TODO use a method to get width that also triggers when file explorer is closed
 // (WidthProvider only listens to window resize events)
@@ -82,25 +83,36 @@ export const ViewGrid: React.FunctionComponent<ViewGridProps> = props => {
             >
                 {props.views.map(({ id, view }) => (
                     <div key={id} className={classNames('card view-grid__item')}>
-                        {view === undefined ? (
-                            <div className="flex-grow-1 d-flex flex-column align-items-center justify-content-center">
-                                <LoadingSpinner /> Loading code insight
-                            </div>
-                        ) : isErrorLike(view) ? (
-                            <ErrorAlert className="m-0" error={view} />
-                        ) : (
-                            <>
-                                <h3 className="view-grid__view-title">{view.title}</h3>
-                                {view.subtitle && <div className="view-grid__view-subtitle">{view.subtitle}</div>}
-                                <ViewContent
-                                    {...props}
-                                    settingsCascade={props.settingsCascade}
-                                    viewContent={view.content}
-                                    viewID={id}
-                                    containerClassName="view-grid__item"
-                                />
-                            </>
-                        )}
+                        <ErrorBoundary
+                            location={props.location}
+                            extraContext={
+                                <>
+                                    <p>ID: {id}</p>
+                                    <pre>View: {JSON.stringify(view, null, 2)}</pre>
+                                </>
+                            }
+                            className="pt-0"
+                        >
+                            {view === undefined ? (
+                                <div className="flex-grow-1 d-flex flex-column align-items-center justify-content-center">
+                                    <LoadingSpinner /> Loading code insight
+                                </div>
+                            ) : isErrorLike(view) ? (
+                                <ErrorAlert className="m-0" error={view} />
+                            ) : (
+                                <>
+                                    <h3 className="view-grid__view-title">{view.title}</h3>
+                                    {view.subtitle && <div className="view-grid__view-subtitle">{view.subtitle}</div>}
+                                    <ViewContent
+                                        {...props}
+                                        settingsCascade={props.settingsCascade}
+                                        viewContent={view.content}
+                                        viewID={id}
+                                        containerClassName="view-grid__item"
+                                    />
+                                </>
+                            )}
+                        </ErrorBoundary>
                     </div>
                 ))}
             </ResponsiveGridLayout>

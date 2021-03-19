@@ -118,7 +118,7 @@ func TestCleanupInactive(t *testing.T) {
 	}
 }
 
-func TestCleanupWrongShard(t *testing.T) {
+func TestRemoveWrongShard(t *testing.T) {
 	root, err := ioutil.TempDir("", "gitserver-test-")
 	if err != nil {
 		t.Fatal(err)
@@ -547,7 +547,6 @@ func TestRemoveRepoDirectory(t *testing.T) {
 	s := &Server{
 		ReposDir: root,
 		DB:       db,
-		hostname: "test",
 	}
 
 	// Remove everything but github.com/foo/survivor

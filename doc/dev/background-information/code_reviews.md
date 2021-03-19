@@ -69,7 +69,7 @@ An effective PR minimizes the amount of effort that is required for the reviewer
 
 Do:
 
-- Prefer small PRs. If a large PR is unavoidable, try to organize it into smaller commits (with [good commit messages](commit_messages.md)) that are reviewable independently (and indicate this to the reviewer in the description).
+- Prefer small and incremental PRs. If a large PR is unavoidable, try to organize it into smaller commits (with [good commit messages](commit_messages.md)) that are reviewable independently (and indicate this to the reviewer in the description).
 - Create a draft PR first and review your own diff as if you were reviewing someone else's change. This helps you empathize with your reviewer and can help catch silly mistakes before your reviewer sees them (e.g. forgetting to `git add` a file, forgetting to remove debugging code, etc.).
 - Create meaningful PR title and description that communicates **what** the PR does and **why** (the **how** is the diff).
   - Include links to relevant issues (e.g. "closes #1234", "helps #5678").
@@ -79,6 +79,11 @@ Do:
 - Make it clear whose review(s) you are waiting for.
 - Politely remind your reviewer that you are waiting for a review if they haven't responded after one business day.
 - If you need to work on your PR after a first round of reviews, try not to force push commits that erase the latest reviewed commit or any commit prior to that. This makes it easy for reviewers to pick up where they left off in the previous round.
+
+Don't:
+
+- Submit a PR that would cause the main branch to [non-releaseable](https://about.sourcegraph.com/handbook/engineering/continuous_releasability).
+- Submit PRs with multiple overlapping concerns. Every PR should have an obvious goals. PRs tackling multiple issues at once should be split into more highly-focused PRs when possible. For example, a necessary refactor for a feature addition should be split into a (prerequisite) refactor PR, followed by a (subsequent) feature addition PR. Highly cohesive PRs enable reviewers to effectively hold the state of the change in their head.
 
 ## What makes an effective code review?
 
