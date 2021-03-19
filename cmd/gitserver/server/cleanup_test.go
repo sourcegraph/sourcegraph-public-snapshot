@@ -118,42 +118,6 @@ func TestCleanupInactive(t *testing.T) {
 	}
 }
 
-func TestCleanupWrongShard(t *testing.T) {
-	root, err := ioutil.TempDir("", "gitserver-test-")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(root)
-
-	mkRepo := func(name string) string {
-		repo := path.Join(root, name, ".git")
-		cmd := exec.Command("git", "--bare", "init", repo)
-		if err := cmd.Run(); err != nil {
-			t.Fatal(err)
-		}
-		return repo
-	}
-	repo1 := mkRepo("repo1")
-	repo2 := mkRepo("repo2")
-	s := &Server{
-		Hostname: "addr1",
-		ReposDir: root,
-	}
-	s.Handler() // Handler as a side-effect sets up Server
-	s.cleanupRepos([]string{"addr1", "addr2"})
-
-	// repo1 maps to addr1
-	// repo2 maps to addr2
-
-	// We therefore expect repo1 to be retained and repo2 should be removed
-	if _, err := os.Stat(repo1); os.IsNotExist(err) {
-		t.Error("expected repo1 not to be removed")
-	}
-	if _, err := os.Stat(repo2); err == nil {
-		t.Error("expected repo2 to be removed during clean up")
-	}
-}
-
 // Note that the exact values (e.g. 50 commits) below are related to git's
 // internal heuristics regarding whether or not to invoke `git gc --auto`.
 //
