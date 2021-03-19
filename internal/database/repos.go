@@ -537,7 +537,7 @@ func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (re
 	}
 	s.ensureStore()
 
-	opt.Select = repoColumns[:2]
+	opt.Select = minimalColumns(repoColumns)
 	if len(opt.OrderBy) == 0 {
 		opt.OrderBy = append(opt.OrderBy, RepoListSort{Field: RepoListID})
 	}
