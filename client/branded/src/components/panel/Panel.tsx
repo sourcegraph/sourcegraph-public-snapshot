@@ -263,8 +263,8 @@ export const Panel = React.memo<Props>(props => {
                 </div>
             </div>
             <TabPanels>
-                {items.map(({ id, element }) => (
-                    <TabPanel key={id}>{element}</TabPanel>
+                {items.map(({ id, element }, index) => (
+                    <TabPanel key={id}>{index === tabIndex ? element : null}</TabPanel>
                 ))}
             </TabPanels>
         </Tabs>
