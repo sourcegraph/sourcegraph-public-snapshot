@@ -1137,7 +1137,7 @@ describe('e2e test suite', () => {
     })
 
     describe('Saved searches', () => {
-        test.only('Save search from search results page', async () => {
+        test('Save search from search results page', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/search?q=test')
             await driver.page.waitForSelector('.test-save-search-link', { visible: true })
             await driver.page.click('.test-save-search-link')
