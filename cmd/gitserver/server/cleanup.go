@@ -227,7 +227,7 @@ func (s *Server) cleanupRepos(addrs []string) {
 	mkRemoveWrongShardFn := func(hostname string) func(dir GitDir) (done bool, err error) {
 		return func(dir GitDir) (done bool, err error) {
 			addr := gitserver.AddrForRepo(s.name(dir), addrs)
-			if hostnameMatch(hostname, addr) {
+			if hostname == addr {
 				return false, nil
 			}
 			log15.Info("removing repo for wrong shard", "repo", dir)

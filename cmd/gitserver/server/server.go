@@ -347,29 +347,11 @@ func (s *Server) setHostnameOnce(h string) {
 // hostnameFound returns true only if our hostname can be found in addrs
 func hostnameFound(hostname string, addrs []string) bool {
 	for _, a := range addrs {
-		if hostnameMatch(hostname, a) {
+		if hostname == a {
 			return true
 		}
 	}
 	return false
-}
-
-// hostnameMatch checks whether the hostname matches the given address.
-// If we don't find an exact match, we look at the initial prefix.
-func hostnameMatch(hostname string, addr string) bool {
-	if hostname == "" || addr == "" {
-		return false
-	}
-	if !strings.HasPrefix(addr, hostname) {
-		return false
-	}
-	if addr == hostname {
-		return true
-	}
-	// We know that s.Hostname is shorter than addr so we can safely check the next
-	// char
-	next := addr[len(hostname)]
-	return next == '.' || next == ':'
 }
 
 // hostnameFromFrontend returns the hostname provided from the request only if it
@@ -462,7 +444,7 @@ func (s *Server) syncRepoState(addrs []string, batchSize, perSecond int) error {
 
 		repoSyncStateCounter.WithLabelValues("check").Inc()
 		// Ensure we're only dealing with repos we are responsible for
-		if addr := gitserver.AddrForRepo(repo.Name, addrs); !hostnameMatch(hostname, addr) {
+		if addr := gitserver.AddrForRepo(repo.Name, addrs); hostname != addr {
 			repoSyncStateCounter.WithLabelValues("other_shard").Inc()
 			return nil
 		}
