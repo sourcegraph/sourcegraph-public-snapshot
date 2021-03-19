@@ -1,6 +1,9 @@
 package result
 
 import (
+	"net/url"
+	"strings"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -22,7 +25,21 @@ type FileMatch struct {
 }
 
 func (fm *FileMatch) CalculatedURI() string {
-	return fm.URI
+	var b strings.Builder
+	var ref string
+	if fm.InputRev != nil {
+		ref = url.QueryEscape(*fm.InputRev)
+	}
+	b.Grow(len(fm.Repo.Name) + len(ref) + len(fm.Path) + len("git://?#"))
+	b.WriteString("git://")
+	b.WriteString(string(fm.Repo.Name))
+	if ref != "" {
+		b.WriteByte('?')
+		b.WriteString(ref)
+	}
+	b.WriteByte('#')
+	b.WriteString(fm.Path)
+	return b.String()
 }
 
 func (fm *FileMatch) ResultCount() int {
