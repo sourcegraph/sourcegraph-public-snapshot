@@ -48,6 +48,7 @@ All notable changes to Sourcegraph are documented in this file.
 - An issue causing repository results containing spaces to not be clickable in some cases. [#18668](https://github.com/sourcegraph/sourcegraph/pull/18668)
 - Closing a batch change now correctly closes the entailed changesets, when requested by the user. [#18957](https://github.com/sourcegraph/sourcegraph/pull/18957)
 - TypesScript highlighting bug. [#15930](https://github.com/sourcegraph/sourcegraph/issues/15930)
+- The number of shards is now reported accurately in Site Admin > Repository Status > Settings > Indexing. [#19265](https://github.com/sourcegraph/sourcegraph/pull/19265)
 
 ### Removed
 
