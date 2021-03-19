@@ -91,6 +91,33 @@ func Run(step step) ([]Node, error) {
 	return step(nil)
 }
 
+func Validate(disjuncts [][]Node) error {
+	for _, disjunct := range disjuncts {
+		if err := validate(disjunct); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// MapPlan applies a pass to all queries in a plan. It expects a valid plan.
+// guarantee transformation succeeds.
+func MapPlan(plan Plan, pass pass) (Plan, error) {
+	updated := make([]Q, 0, len(plan))
+	for _, query := range plan {
+		updated = append(updated, pass(query))
+	}
+	return updated, nil
+}
+
+func ToPlan(disjuncts [][]Node) Plan {
+	plan := make([]Q, 0, len(disjuncts))
+	for _, disjunct := range disjuncts {
+		plan = append(plan, Q(disjunct))
+	}
+	return plan
+}
+
 // Pipeline processes zero or more steps to produce a query. The first step must
 // be Init, otherwise this function is a no-op.
 func Pipeline(steps ...step) (Plan, error) {
@@ -99,13 +126,10 @@ func Pipeline(steps ...step) (Plan, error) {
 		return nil, err
 	}
 
-	plan := make([]Q, 0, len(nodes))
-	for _, disjunct := range Dnf(nodes) {
-		err = validate(disjunct)
-		if err != nil {
-			return nil, err
-		}
-		plan = append(plan, Q(disjunct))
+	disjuncts := Dnf(nodes)
+	if err := Validate(disjuncts); err != nil {
+		return nil, err
 	}
-	return plan, nil
+
+	return MapPlan(ToPlan(disjuncts), ConcatRevFilters)
 }

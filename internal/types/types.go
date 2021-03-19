@@ -1455,6 +1455,15 @@ type InsightUsageStatistics struct {
 	DataPointClicks  *int32
 }
 
+type CodeMonitoringUsageStatistics struct {
+	CodeMonitoringPageViews                       *int32
+	CreateCodeMonitorPageViews                    *int32
+	CreateCodeMonitorPageViewsWithTriggerQuery    *int32
+	CreateCodeMonitorPageViewsWithoutTriggerQuery *int32
+	ManageCodeMonitorPageViews                    *int32
+	CodeMonitorEmailLinkClicks                    *int32
+}
+
 // Secret represents the secrets table
 type Secret struct {
 	ID int32
@@ -1486,4 +1495,13 @@ type SearchContext struct {
 	Public          bool
 	NamespaceUserID int32 // if non-zero, the owner is this user. NamespaceUserID/NamespaceOrgID are mutually exclusive.
 	NamespaceOrgID  int32 // if non-zero, the owner is this organization. NamespaceUserID/NamespaceOrgID are mutually exclusive.
+}
+
+// SearchContextRepositoryRevisions is a simple wrapper for a repository and its revisions
+// contained in a search context. It is made compatible with search.RepositoryRevisions, so it can be easily
+// converted when needed. We could use search.RepositoryRevisions directly instead, but it
+// introduces an import cycle with `internal/vcs/git` package when used in `internal/database/search_contexts.go`.
+type SearchContextRepositoryRevisions struct {
+	Repo      *RepoName
+	Revisions []string
 }

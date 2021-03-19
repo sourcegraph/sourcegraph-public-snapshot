@@ -10,7 +10,6 @@
     "test:regression:codeintel": "mocha ./src/regression/codeintel.test.ts",
     "test:regression:config-settings": "mocha ./src/regression/config-settings.test.ts",
     "test:regression:core": "mocha ./src/regression/core.test.ts",
-    "test:regression:extensions": "mocha ./src/regression/extensions.test.ts",
     "test:regression:init": "mocha ./src/regression/init.test.ts",
     "test:regression:integrations": "mocha ./src/regression/integrations.test.ts",
     "test:regression:onboarding": "mocha ./src/regression/onboarding.test.ts",

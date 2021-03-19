@@ -1343,7 +1343,7 @@ Foreign-key constraints:
       Column       |           Type           |                          Modifiers                           
 -------------------+--------------------------+--------------------------------------------------------------
  id                | bigint                   | not null default nextval('search_contexts_id_seq'::regclass)
- name              | text                     | not null
+ name              | citext                   | not null
  description       | text                     | not null
  public            | boolean                  | not null
  namespace_user_id | integer                  | 

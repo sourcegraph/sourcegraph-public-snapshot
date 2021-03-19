@@ -87,11 +87,9 @@ done
 cat <<EOF
 Done!
 
-Don't forget to regenerate the bindata and schema before continuing your
+Don't forget to regenerate schema before continuing your
 rebase:
 
-    rm migrations/$database/bindata.go
-    go generate ./migrations/$database
     ./dev/db/migrate.sh $database up
     go generate ./internal/database
 

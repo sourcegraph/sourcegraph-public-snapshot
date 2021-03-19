@@ -37,6 +37,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -857,8 +858,9 @@ func (r *searchResolver) evaluate(ctx context.Context, q query.Q) (*SearchResult
 // or repogroup field, we should invalidate resolved repos, since multiple
 // repos, revisions, or repogroups imply that different repos may need to be
 // resolved.
-func invalidateRepoCache(q []query.Node) bool {
+func invalidateRepoCache(plan query.Plan) bool {
 	var seenRepo, seenRevision, seenRepoGroup, seenContext int
+	q := plan.ToParseTree()
 	query.VisitField(q, query.FieldRepo, func(_ string, _ bool, _ query.Annotation) {
 		seenRepo += 1
 	})
@@ -875,52 +877,56 @@ func invalidateRepoCache(q []query.Node) bool {
 }
 
 func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolver, err error) {
-	return r.resultsRecursive(ctx, r.Query)
+	return r.resultsRecursive(ctx, r.Plan)
 }
 
-func (r *searchResolver) resultsRecursive(ctx context.Context, q query.Q) (srr *SearchResultsResolver, err error) {
+func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) (srr *SearchResultsResolver, err error) {
 	tr, ctx := trace.New(ctx, "Results", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	if invalidateRepoCache(q) {
+	if invalidateRepoCache(plan) {
 		r.invalidateRepoCache = true
 	}
-	r.setQuery(q)
-
-	expanded, err := substitutePredicates(r.Query, func(p query.Predicate) (*SearchResultsResolver, error) {
-		// Disable streaming for subqueries so we can use
-		// the results rather than sending them back to the caller
-		orig := r.stream
-		r.stream = nil
-		defer func() { r.stream = orig }()
-
-		r.invalidateRepoCache = true
-		return r.resultsRecursive(ctx, p.Query(r.Query))
-	})
-	if err != nil && errors.Is(err, ErrPredicateNoResults) {
-		return &SearchResultsResolver{}, nil
-	} else if err != nil {
-		return nil, err
-	}
-	r.setQuery(expanded)
 
 	wantCount := defaultMaxSearchResults
 	if count := r.Query.Count(); count != nil {
 		wantCount = *count
 	}
 
-	for _, disjunct := range query.Dnf(r.Query) {
-		disjunct = query.ConcatRevFilters(disjunct)
-		newResult, err := r.evaluate(ctx, disjunct)
+	for _, q := range plan {
+		predicatePlan, err := substitutePredicates(q, func(pred query.Predicate) (*SearchResultsResolver, error) {
+			// Disable streaming for subqueries so we can use
+			// the results rather than sending them back to the caller
+			orig := r.stream
+			r.stream = nil
+			defer func() { r.stream = orig }()
+
+			r.invalidateRepoCache = true
+			return r.resultsRecursive(ctx, pred.Plan(q))
+		})
+		if err != nil && errors.Is(err, ErrPredicateNoResults) {
+			continue
+		}
 		if err != nil {
-			// Fail if any subquery fails.
+			// Fail if predicate processing fails.
 			return nil, err
 		}
+		if predicatePlan != nil {
+			// If a predicate filter generated a new plan, evaluate that plan.
+			return r.resultsRecursive(ctx, predicatePlan)
+		}
+
+		newResult, err := r.evaluate(ctx, q)
+		if err != nil {
+			// Fail if any subexpression fails.
+			return nil, err
+		}
+
 		if newResult != nil {
-			newResult.SearchResults = selectResults(newResult.SearchResults, r.Query)
+			newResult.SearchResults = selectResults(newResult.SearchResults, q)
 			srr = union(srr, newResult)
 			if len(srr.SearchResults) > wantCount {
 				srr.SearchResults = srr.SearchResults[:wantCount]
@@ -966,7 +972,7 @@ func searchResultsToRepoNodes(srs []SearchResultResolver) ([]query.Node, error) 
 // query with a longer timeout.
 func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*SearchResultsResolver, error) {
 	start := time.Now()
-	rr, err := r.doResults(ctx, "")
+	rr, err := r.doResults(ctx, result.TypeEmpty)
 
 	// If we encountered a context timeout, it indicates one of the many result
 	// type searchers (file, diff, symbol, etc) completely timed out and could not
@@ -988,8 +994,10 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 
 // substitutePredicates replaces all the predicates in a query with their expanded form. The predicates
 // are expanded using the doExpand function.
-func substitutePredicates(q query.Q, evaluate func(query.Predicate) (*SearchResultsResolver, error)) (newQ query.Q, topErr error) {
-	newQ = query.MapParameter(q, func(field, value string, neg bool, ann query.Annotation) query.Node {
+func substitutePredicates(q query.Q, evaluate func(query.Predicate) (*SearchResultsResolver, error)) (query.Plan, error) {
+	var topErr error
+	success := false
+	newQ := query.MapParameter(q, func(field, value string, neg bool, ann query.Annotation) query.Node {
 		orig := query.Parameter{
 			Field:      field,
 			Value:      value,
@@ -1045,6 +1053,9 @@ func substitutePredicates(q query.Q, evaluate func(query.Predicate) (*SearchResu
 			return nil
 		}
 
+		// A predicate was successfully evaluated and has results.
+		success = true
+
 		// No need to return an operator for only one result
 		if len(nodes) == 1 {
 			return nodes[0]
@@ -1056,7 +1067,10 @@ func substitutePredicates(q query.Q, evaluate func(query.Predicate) (*SearchResu
 		}
 	})
 
-	return newQ, topErr
+	if topErr != nil || !success {
+		return nil, topErr
+	}
+	return query.ToPlan(query.Dnf(newQ)), topErr
 }
 
 var ErrPredicateNoResults = errors.New("no results returned for predicate")
@@ -1139,7 +1153,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	for {
 		// Query search results.
 		var err error
-		v, err = r.doResults(ctx, "")
+		v, err = r.doResults(ctx, result.TypeEmpty)
 		if err != nil {
 			return nil, err // do not cache errors.
 		}
@@ -1416,24 +1430,31 @@ func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, cont
 	return ctx, cancel, nil
 }
 
-func (r *searchResolver) determineResultTypes(args search.TextParameters, forceOnlyResultType string) (resultTypes []string) {
+func (r *searchResolver) determineResultTypes(args search.TextParameters, forceTypes result.Types) result.Types {
 	// Determine which types of results to return.
-	if forceOnlyResultType != "" {
-		resultTypes = []string{forceOnlyResultType}
+	var rts result.Types
+	if forceTypes != 0 {
+		rts = forceTypes
 	} else {
-		resultTypes, _ = r.Query.StringValues(query.FieldType)
-		if len(resultTypes) == 0 {
-			resultTypes = []string{"file", "path", "repo"}
+		stringTypes, _ := r.Query.StringValues(query.FieldType)
+		if len(stringTypes) == 0 {
+			rts = result.TypeFile | result.TypePath | result.TypeRepo
+		} else {
+			for _, stringType := range stringTypes {
+				rts = rts.With(result.TypeFromString[stringType])
+			}
 		}
 	}
-	for _, resultType := range resultTypes {
-		if resultType == "file" {
-			args.PatternInfo.PatternMatchesContent = true
-		} else if resultType == "path" {
-			args.PatternInfo.PatternMatchesPath = true
-		}
+
+	if rts.Has(result.TypeFile) {
+		args.PatternInfo.PatternMatchesContent = true
 	}
-	return resultTypes
+
+	if rts.Has(result.TypePath) {
+		args.PatternInfo.PatternMatchesPath = true
+	}
+
+	return rts
 }
 
 func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (resolved searchrepos.Resolved, res *SearchResultsResolver, err error) {
@@ -1696,7 +1717,7 @@ func (r *searchResolver) isGlobalSearch() bool {
 // regardless of what `type:` is specified in the query string.
 //
 // Partial results AND an error may be returned.
-func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType string) (_ *SearchResultsResolver, err error) {
+func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.Types) (_ *SearchResultsResolver, err error) {
 	tr, ctx := trace.New(ctx, "doResults", r.rawQuery())
 	defer func() {
 		tr.SetError(err)
@@ -1716,7 +1737,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	options.fileMatchLimit = int32(limit)
 	if r.PatternType == query.SearchTypeStructural {
 		options = &getPatternInfoOptions{performStructuralSearch: true}
-		forceOnlyResultType = "file"
+		forceResultTypes = result.TypeFile
 	}
 	if r.PatternType == query.SearchTypeLiteral {
 		options = &getPatternInfoOptions{performLiteralSearch: true}
@@ -1731,7 +1752,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	if r.PatternType == query.SearchTypeStructural && p.Pattern == "" {
 		r.PatternType = query.SearchTypeLiteral
 		p.IsStructuralPat = false
-		forceOnlyResultType = ""
+		forceResultTypes = result.Types(0)
 	}
 
 	args := search.TextParameters{
@@ -1749,12 +1770,11 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return nil, &badRequestError{err}
 	}
 
-	resultTypes := r.determineResultTypes(args, forceOnlyResultType)
-	tr.LazyPrintf("resultTypes: %v", resultTypes)
+	resultTypes := r.determineResultTypes(args, forceResultTypes)
+	tr.LazyPrintf("resultTypes: %s", resultTypes)
 	var (
-		requiredWg      sync.WaitGroup
-		optionalWg      sync.WaitGroup
-		seenResultTypes = make(map[string]struct{})
+		requiredWg sync.WaitGroup
+		optionalWg sync.WaitGroup
 	)
 
 	waitGroup := func(required bool) *sync.WaitGroup {
@@ -1793,20 +1813,12 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		_, _, _, _ = agg.get()
 	}()
 
-	isFileOrPath := func() bool {
-		for _, rt := range resultTypes {
-			if rt == "file" || rt == "path" {
-				return true
-			}
-		}
-		return false
-	}
-
+	isFileOrPath := resultTypes.Has(result.TypeFile) || resultTypes.Has(result.TypePath)
 	isIndexedSearch := args.PatternInfo.Index != query.No
 
 	// performance optimization: call zoekt early, resolve repos concurrently, filter
 	// search results with resolved repos.
-	if r.isGlobalSearch() && isIndexedSearch && isFileOrPath() {
+	if r.isGlobalSearch() && isIndexedSearch && isFileOrPath {
 		argsIndexed := args
 		argsIndexed.Mode = search.ZoektGlobalSearch
 		wg := waitGroup(true)
@@ -1857,55 +1869,53 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	// results before the above reporting.
 	args.RepoPromise.Resolve(resolved.RepoRevs)
 
-	searchedFileContentsOrPaths := false
-	for _, resultType := range resultTypes {
-		resultType := resultType // shadow so it doesn't change in the goroutine
-		if _, seen := seenResultTypes[resultType]; seen {
-			continue
-		}
-		seenResultTypes[resultType] = struct{}{}
-		switch resultType {
-		case "repo":
-			wg := waitGroup(true)
-			wg.Add(1)
-			goroutine.Go(func() {
-				defer wg.Done()
-				_ = agg.doRepoSearch(ctx, &args, int32(limit))
-			})
-		case "symbol":
-			wg := waitGroup(len(resultTypes) == 1)
-			wg.Add(1)
-			goroutine.Go(func() {
-				defer wg.Done()
-				_ = agg.doSymbolSearch(ctx, &args, limit)
-			})
-		case "file", "path":
-			if searchedFileContentsOrPaths || args.Mode == search.NoFilePath {
-				// type:file and type:path use same searchFilesInRepos, so don't call 2x.
-				continue
-			}
-			searchedFileContentsOrPaths = true
+	if resultTypes.Has(result.TypeRepo) {
+		wg := waitGroup(true)
+		wg.Add(1)
+		goroutine.Go(func() {
+			defer wg.Done()
+			_ = agg.doRepoSearch(ctx, &args, int32(limit))
+		})
+
+	}
+
+	if resultTypes.Has(result.TypeSymbol) {
+		wg := waitGroup(resultTypes.Without(result.TypeSymbol) == 0)
+		wg.Add(1)
+		goroutine.Go(func() {
+			defer wg.Done()
+			_ = agg.doSymbolSearch(ctx, &args, limit)
+		})
+	}
+
+	if resultTypes.Has(result.TypeFile | result.TypePath) {
+		if args.Mode != search.NoFilePath {
 			wg := waitGroup(true)
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
 				_ = agg.doFilePathSearch(ctx, &args)
 			})
-		case "diff":
-			wg := waitGroup(len(resultTypes) == 1)
-			wg.Add(1)
-			goroutine.Go(func() {
-				defer wg.Done()
-				_ = agg.doDiffSearch(ctx, &args)
-			})
-		case "commit":
-			wg := waitGroup(len(resultTypes) == 1)
-			wg.Add(1)
-			goroutine.Go(func() {
-				defer wg.Done()
-				_ = agg.doCommitSearch(ctx, &args)
-			})
 		}
+	}
+
+	if resultTypes.Has(result.TypeDiff) {
+		wg := waitGroup(resultTypes.Without(result.TypeDiff) == 0)
+		wg.Add(1)
+		goroutine.Go(func() {
+			defer wg.Done()
+			_ = agg.doDiffSearch(ctx, &args)
+		})
+	}
+
+	if resultTypes.Has(result.TypeCommit) {
+		wg := waitGroup(resultTypes.Without(result.TypeCommit) == 0)
+		wg.Add(1)
+		goroutine.Go(func() {
+			defer wg.Done()
+			_ = agg.doCommitSearch(ctx, &args)
+		})
+
 	}
 
 	hasStartedAllBackends = true

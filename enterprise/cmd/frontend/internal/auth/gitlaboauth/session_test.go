@@ -61,7 +61,8 @@ func TestSessionIssuerHelper_CreateCodeHostConnection(t *testing.T) {
 {
   "url": "%s",
   "token": "%s",
-  "projectQuery": ["projects?visibility=public"]
+  "token.type": "oauth",
+  "projectQuery": ["projects?id_before=0"]
 }
 `, mockGitLabCom.ServiceID, tok.AccessToken),
 		NamespaceUserID: act.UID,

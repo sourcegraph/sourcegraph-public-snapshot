@@ -1,19 +1,12 @@
 BEGIN;
 
--- Insert migration here. See README.md. Highlights:
---  * Always use IF EXISTS. eg: DROP TABLE IF EXISTS global_dep_private;
---  * All migrations must be backward-compatible. Old versions of Sourcegraph
---    need to be able to read/write post migration.
---  * Historically we advised against transactions since we thought the
---    migrate library handled it. However, it does not! /facepalm
-
 CREATE TABLE IF NOT EXISTS search_contexts (
     id BIGSERIAL PRIMARY KEY,
-    name text NOT NULL,
+    name citext NOT NULL,
     description text NOT NULL,
     public boolean NOT NULL,
-    namespace_user_id int4,
-    namespace_org_id int4,
+    namespace_user_id integer,
+    namespace_org_id integer,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     deleted_at timestamp with time zone,

@@ -230,7 +230,12 @@ func (s *RepoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, er
 		joins = append(joins, sqlf.Sprintf("JOIN external_service_repos e ON (repo.id = e.repo_id AND e.external_service_id IN (%s))", sqlf.Join(serviceIDQuery, ",")))
 	} else if opt.UserID != 0 {
 		joins = append(joins, sqlf.Sprintf(`JOIN external_service_repos e ON (repo.id = e.repo_id)
-												   JOIN external_services es on es.id = e.external_service_id AND es.namespace_user_id = %s`, opt.UserID))
+												   JOIN external_services es on es.id = e.external_service_id`))
+		if opt.IncludeUserPublicRepos {
+			conds = append(conds, sqlf.Sprintf("(es.namespace_user_id = %d OR EXISTS (SELECT 1 FROM user_public_repos WHERE user_id = %d AND repo_id = repo.id)) AND es.deleted_at IS NULL", opt.UserID, opt.UserID))
+		} else {
+			conds = append(conds, sqlf.Sprintf("es.namespace_user_id = %d AND es.deleted_at IS NULL", opt.UserID))
+		}
 	}
 
 	if opt.NoCloned || opt.OnlyCloned {

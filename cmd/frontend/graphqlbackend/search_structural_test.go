@@ -90,14 +90,15 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 
 	ctx := context.Background()
 
-	q, err := query.ParseLiteral(`patterntype:structural index:only foo`)
+	p, err := query.Pipeline(query.InitLiteral(`patterntype:structural index:only foo`))
 	if err != nil {
 		t.Fatal(err)
 	}
 	resolver := &searchResolver{
 		db: db,
 		SearchInputs: &SearchInputs{
-			Query:        q,
+			Plan:         p,
+			Query:        p.ToParseTree(),
 			PatternType:  query.SearchTypeStructural,
 			UserSettings: &schema.Settings{},
 		},
