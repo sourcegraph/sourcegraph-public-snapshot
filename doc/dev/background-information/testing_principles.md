@@ -2,7 +2,7 @@
 
 This file documents how we test code at Sourcegraph.
 
-_For practical information on how we test things in the [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph) repository, see "[Testing](testing.md)"._
+Related pages: [How to run tests](../how-to/testing.md) | [Testing Go code](languages/testing_go_code.md) | [Testing web code](testing_web_code.md)
 
 ## Philosophy
 
@@ -115,9 +115,3 @@ Once you've been invited to the Sourcegraph organization and created a Percy acc
 ## Conventions
 
 - **Naming tests in Go code.** We strive to follow the same naming convention for Go test functions as described for [naming example functions in the Go testing package](https://golang.org/pkg/testing/#hdr-Examples).
-
-## See also
-
-- [Documentation for running tests in sourcegraph/sourcegraph](testing.md)
-- [Go-specific testing guide](https://about.sourcegraph.com/handbook/engineering/languages/testing_go_code)
-- [Web-specific testing guide](https://about.sourcegraph.com/handbook/engineering/web/testing)
