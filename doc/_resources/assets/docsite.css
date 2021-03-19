@@ -533,12 +533,6 @@ body > #page > main > #content {
   z-index: 1;
   font-size: 16px;
 }
-/* Firefox fix for misaligned hash link. Prevents hash marks for links from being under the content on Firefox. */
-@-moz-document url-prefix() {
-    .markdown-body .anchor::before {
-        top: -26px;
-    }
-}
 .markdown-body .anchor:focus {
   outline: none;
 }
