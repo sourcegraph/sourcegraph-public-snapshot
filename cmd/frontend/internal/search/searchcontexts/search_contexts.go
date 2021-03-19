@@ -43,7 +43,7 @@ func ResolveSearchContextSpec(ctx context.Context, db dbutil.DB, searchContextSp
 	return searchContext, nil
 }
 
-func CreateSearchContextWithRepositoryRevisions(ctx context.Context, db dbutil.DB, searchContext *types.SearchContext, repositoryRevisions []*search.RepositoryRevisions) (*types.SearchContext, error) {
+func CreateSearchContextWithRepositoryRevisions(ctx context.Context, db dbutil.DB, searchContext *types.SearchContext, repositoryRevisions []*types.SearchContextRepositoryRevisions) (*types.SearchContext, error) {
 	if IsGlobalSearchContext(searchContext) {
 		return nil, errors.New("cannot override global search context")
 	}
@@ -80,6 +80,23 @@ func GetUsersSearchContexts(ctx context.Context, db dbutil.DB) ([]*types.SearchC
 	return searchContexts, nil
 }
 
+func GetRepositoryRevisions(ctx context.Context, db dbutil.DB, searchContextID int32) ([]*search.RepositoryRevisions, error) {
+	searchContextRepositoryRevisions, err := database.SearchContexts(db).GetSearchContextRepositoryRevisions(ctx, searchContextID)
+	if err != nil {
+		return nil, err
+	}
+
+	repositoryRevisions := make([]*search.RepositoryRevisions, 0, len(searchContextRepositoryRevisions))
+	for _, searchContextRepositoryRevision := range searchContextRepositoryRevisions {
+		revisionSpecs := make([]search.RevisionSpecifier, 0, len(searchContextRepositoryRevision.Revisions))
+		for _, revision := range searchContextRepositoryRevision.Revisions {
+			revisionSpecs = append(revisionSpecs, search.RevisionSpecifier{RevSpec: revision})
+		}
+		repositoryRevisions = append(repositoryRevisions, &search.RepositoryRevisions{Repo: searchContextRepositoryRevision.Repo, Revs: revisionSpecs})
+	}
+	return repositoryRevisions, nil
+}
+
 func IsAutoDefinedSearchContext(searchContext *types.SearchContext) bool {
 	return searchContext.ID == 0
 }
@@ -112,7 +129,7 @@ func GetSearchContextSpec(searchContext *types.SearchContext) string {
 	return searchContextSpecPrefix + searchContext.Name
 }
 
-func getVersionContextRepositoryRevisions(ctx context.Context, versionContext *schema.VersionContext) ([]*search.RepositoryRevisions, error) {
+func getVersionContextRepositoryRevisions(ctx context.Context, versionContext *schema.VersionContext) ([]*types.SearchContextRepositoryRevisions, error) {
 	repositoriesToRevisions := map[string][]string{}
 	for _, revision := range versionContext.Revisions {
 		repositoriesToRevisions[revision.Repo] = append(repositoriesToRevisions[revision.Repo], revision.Rev)
@@ -129,16 +146,11 @@ func getVersionContextRepositoryRevisions(ctx context.Context, versionContext *s
 		return nil, err
 	}
 
-	repositoryRevisions := make([]*search.RepositoryRevisions, len(repositoryNames))
+	repositoryRevisions := make([]*types.SearchContextRepositoryRevisions, len(repositoryNames))
 	for idx, repositoryName := range repositoryNames {
 		revisions := repositoriesToRevisions[string(repositoryName.Name)]
 		sort.Strings(revisions)
-
-		revisionSpecs := []search.RevisionSpecifier{}
-		for _, revision := range revisions {
-			revisionSpecs = append(revisionSpecs, search.RevisionSpecifier{RevSpec: revision})
-		}
-		repositoryRevisions[idx] = &search.RepositoryRevisions{Repo: repositoryName, Revs: revisionSpecs}
+		repositoryRevisions[idx] = &types.SearchContextRepositoryRevisions{Repo: repositoryName, Revisions: revisions}
 	}
 
 	return repositoryRevisions, nil

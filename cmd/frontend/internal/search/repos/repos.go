@@ -183,7 +183,7 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 	// For auto-defined search contexts we only search the main branch
 	var searchContextRepositoryRevisions []*search.RepositoryRevisions
 	if !searchcontexts.IsAutoDefinedSearchContext(searchContext) {
-		searchContextRepositoryRevisions, err = database.SearchContexts(r.DB).GetSearchContextRepositoryRevisions(ctx, searchContext.ID)
+		searchContextRepositoryRevisions, err = searchcontexts.GetRepositoryRevisions(ctx, r.DB, searchContext.ID)
 		if err != nil {
 			return Resolved{}, err
 		}

@@ -72,7 +72,7 @@ func (r searchContextResolver) Repositories(ctx context.Context) ([]*searchConte
 
 	searchContextRepositories := make([]*searchContextRepositoryResolver, len(repoRevs))
 	for idx, repoRev := range repoRevs {
-		searchContextRepositories[idx] = &searchContextRepositoryResolver{NewRepositoryResolver(r.db, repoRev.Repo.ToRepo()), repoRev.RevSpecs()}
+		searchContextRepositories[idx] = &searchContextRepositoryResolver{NewRepositoryResolver(r.db, repoRev.Repo.ToRepo()), repoRev.Revisions}
 	}
 	return searchContextRepositories, nil
 }
