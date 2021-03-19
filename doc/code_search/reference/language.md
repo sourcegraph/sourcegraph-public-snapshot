@@ -302,6 +302,80 @@ conflict with the syntax of parameters in this Sourcegraph language.
 
 **Example:** `repo:sourcegraph content:"repo:sourcegraph"` [↗](https://sourcegraph.com/search?q=repo:sourcegraph+content:%22repo:sourcegraph%22&patternType=literal)
 
+### Select
+
+<script>
+ComplexDiagram(
+	Terminal("select:"),
+	Choice(0,
+		Terminal("repo"),
+		Terminal("file"),
+		Terminal("path"),
+		Terminal("content"),
+		Sequence(
+			Terminal("symbol"),
+			Optional(
+				Sequence(
+					Terminal("."),
+					Terminal("symbol kind", {href: "#symbol-kind"})),
+				'skip')))).addTo();
+</script>
+
+Selects the specified result type from the set of search results. If a query produces results that aren't of the
+selected type, the results will be converted to the selected type.
+
+For example, the query `file:package.json lodash` will return content matches for `lodash` in `package.json` files.
+If `select:repo` is added, the repository those matches belong to is pulled out and it now only returns
+_repositories_ that contain `package.json` files that contain the term `lodash`. All selected results are deduplicated,
+so if there are multiple content matches in a repository, `select:repo` will still only return unique results.
+
+A query like `type:commit example select:symbol` will return no results because commits have no associated symbol
+and cannot be converted to that type.
+
+**Example:**
+`fmt.Errorf select:repo` [↗](https://sourcegraph.com/search?q=fmt.Errorf+select:repo&patternType=literal)
+`zoektSearch select:file` [↗](https://sourcegraph.com/search?q=zoektSearch+select:file&patternType=literal)
+
+#### Symbol Kind
+
+<script>
+ComplexDiagram(
+	Choice(0,
+		Terminal("file"),
+		Terminal("module"),
+		Terminal("namespace"),
+		Terminal("package"),
+		Terminal("class"),
+		Terminal("method"),
+		Terminal("property"),
+		Terminal("field"),
+		Terminal("constructor"),
+		Terminal("enum"),
+		Terminal("interface"),
+		Terminal("function"),
+		Terminal("variable"),
+		Terminal("constant"),
+		Terminal("string"),
+		Terminal("number"),
+		Terminal("boolean"),
+		Terminal("array"),
+		Terminal("object"),
+		Terminal("key"),
+		Terminal("null"),
+		Terminal("enum-member"),
+		Terminal("struct"),
+		Terminal("event"),
+		Terminal("operator"),
+		Terminal("type-parameter"))).addTo();
+</script>
+
+Select a specific kind of symbol. For example `type:symbol select:symbol.function zoektSearch` will only return functions that contain the
+literal `Search`.
+
+**Example:**
+`type:symbol zoektSearch select:symbol.function` [↗](https://sourcegraph.com/search?q=fmt.Errorf+select:repo&patternType=literal)
+
+
 ### Type
 
 <script>
@@ -597,77 +671,4 @@ ComplexDiagram(
 			Terminal("space"))).addTo();
 </script>
 
-
-## Select
-
-<script>
-ComplexDiagram(
-	Terminal("select:"),
-	Choice(0,
-		Terminal("repo"),
-		Terminal("file"),
-		Terminal("path"),
-		Terminal("content"),
-		Sequence(
-			Terminal("symbol"),
-			Optional(
-				Sequence(
-					Terminal("."),
-					Terminal("symbol kind", {href: "#symbol-kind"})),
-				'skip')))).addTo();
-</script>
-
-Selects the specified result type from the set of search results. If a query produces results that aren't of the 
-selected type, the results will be converted to the selected type. 
-
-For example, the query `file:package.json lodash` will return content matches for `lodash` in `package.json` files. 
-If `select:repo` is added, the repository those matches belong to is pulled out and it now only returns 
-_repositories_ that contain `package.json` files that contain the term `lodash`. All selected results are deduplicated,
-so if there are multiple content matches in a repository, `select:repo` will still only return unique results.
-
-A query like `type:commit example select:symbol` will return no results because commits have no associated symbol
-and cannot be converted to that type.
-
-**Example:**
-`fmt.Errorf select:repo` [↗](https://sourcegraph.com/search?q=fmt.Errorf+select:repo&patternType=literal)
-`zoektSearch select:file` [↗](https://sourcegraph.com/search?q=zoektSearch+select:file&patternType=literal)
-
-### Symbol kind
-
-<script>
-ComplexDiagram(
-	Choice(0,
-		Terminal("file"),
-		Terminal("module"),
-		Terminal("namespace"),
-		Terminal("package"),
-		Terminal("class"),
-		Terminal("method"),
-		Terminal("property"),
-		Terminal("field"),
-		Terminal("constructor"),
-		Terminal("enum"),
-		Terminal("interface"),
-		Terminal("function"),
-		Terminal("variable"),
-		Terminal("constant"),
-		Terminal("string"),
-		Terminal("number"),
-		Terminal("boolean"),
-		Terminal("array"),
-		Terminal("object"),
-		Terminal("key"),
-		Terminal("null"),
-		Terminal("enum-member"),
-		Terminal("struct"),
-		Terminal("event"),
-		Terminal("operator"),
-		Terminal("type-parameter"))).addTo();
-</script>
-
-Select a specific kind of symbol. For example `type:symbol select:symbol.function zoektSearch` will only return functions that contain the 
-literal `Search`.
-
-**Example:**
-`type:symbol zoektSearch select:symbol.function` [↗](https://sourcegraph.com/search?q=fmt.Errorf+select:repo&patternType=literal)
 
