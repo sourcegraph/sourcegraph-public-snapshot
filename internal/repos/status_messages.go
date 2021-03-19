@@ -81,8 +81,7 @@ type ExternalServiceSyncError struct {
 }
 
 type SyncError struct {
-	Message      string
-	RepositoryId int32
+	Message string
 }
 
 type StatusMessage struct {

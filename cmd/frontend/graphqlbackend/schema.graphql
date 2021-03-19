@@ -7707,11 +7707,6 @@ type SyncError {
     The message of this status message
     """
     message: String!
-
-    """
-    The repository that failed to sync
-    """
-    repository: Repository!
 }
 
 """
