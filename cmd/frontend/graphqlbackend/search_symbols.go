@@ -215,17 +215,6 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 	return fileMatches, err
 }
 
-// makeFileMatchURI makes a git://repo?rev#path URI from a symbol
-// search result to use in a fileMatchResolver
-func makeFileMatchURI(repoURL, inputRev, symbolFragment string) string {
-	uri := "git:/" + repoURL
-	if inputRev != "" {
-		uri += "?" + inputRev
-	}
-	uri += "#" + symbolFragment
-	return uri
-}
-
 // unescapePattern expects a regexp pattern of the form /^ ... $/ and unescapes
 // the pattern inside it.
 func unescapePattern(pattern string) string {

@@ -3,9 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -302,21 +300,6 @@ func repoHasFilesWithNamesMatching(ctx context.Context, searcherURLs *endpoint.M
 	}
 
 	return true, nil
-}
-
-func fileMatchURI(name api.RepoName, ref, path string) string {
-	var b strings.Builder
-	ref = url.QueryEscape(ref)
-	b.Grow(len(name) + len(ref) + len(path) + len("git://?#"))
-	b.WriteString("git://")
-	b.WriteString(string(name))
-	if ref != "" {
-		b.WriteByte('?')
-		b.WriteString(ref)
-	}
-	b.WriteByte('#')
-	b.WriteString(path)
-	return b.String()
 }
 
 var mockSearchFilesInRepos func(args *search.TextParameters) ([]*FileMatchResolver, *streaming.Stats, error)
