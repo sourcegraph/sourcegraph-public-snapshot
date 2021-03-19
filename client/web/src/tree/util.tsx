@@ -15,6 +15,7 @@ export interface SingleChildGitTree extends TreeEntryInfo {
     children: SingleChildGitTree[]
 }
 
+/** Scroll the Tree when the list is being navigated with the keyboard */
 export function scrollIntoView(element: Element, scrollRoot: Element): void {
     if (!scrollRoot.getBoundingClientRect) {
         return element.scrollIntoView()
@@ -31,6 +32,12 @@ export function scrollIntoView(element: Element, scrollRoot: Element): void {
     } else if (elementBelow) {
         element.scrollIntoView(false)
     }
+
+    /**
+     * ScrollIntoView with options as params is not compatible with the Safari browser.
+     * Force the scroll to keep left: 0 to avoid horizontal scrolling when the text is too long.
+     */
+    scrollRoot.scrollLeft = 0
 }
 
 export const getDomElement = (path: string): Element | null =>
@@ -38,7 +45,7 @@ export const getDomElement = (path: string): Element | null =>
 
 export const treePadding = (depth: number, isTree: boolean): React.CSSProperties => ({
     marginLeft: `${depth * 12 + (isTree ? 0 : 12) + 12}px`,
-    paddingRight: '16px',
+    paddingRight: '1rem',
 })
 
 export const maxEntries = 2500
