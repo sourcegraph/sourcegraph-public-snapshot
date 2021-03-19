@@ -436,7 +436,7 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 		if count := r.Query.Count(); count != nil {
 			stableResultCount = int32(*count)
 			if stableResultCount > maxSearchResultsPerPaginatedRequest {
-				return alertForQuery(r.db, r.rawQuery(), fmt.Errorf("Stable searches are limited to at max count:%d results. Consider removing 'stable:', narrowing the search with 'repo:', or using the paginated search API.", maxSearchResultsPerPaginatedRequest)).wrap(), nil
+				return alertForQuery(r.db, r.rawQuery(), fmt.Errorf("Stable searches are limited to at max count:%d results. Consider removing 'stable:', narrowing the search with 'repo:', or using the paginated search API.", maxSearchResultsPerPaginatedRequest)).wrap(r.db), nil
 			}
 		}
 
@@ -731,7 +731,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 			case <-ctx.Done():
 				usedTime := time.Since(start)
 				suggestTime := longer(2, usedTime)
-				return alertForTimeout(r.db, usedTime, suggestTime, r).wrap(), nil
+				return alertForTimeout(r.db, usedTime, suggestTime, r).wrap(r.db), nil
 			default:
 			}
 
@@ -760,7 +760,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 		tryCount *= 2
 		if tryCount > maxTryCount {
 			// We've capped out what we're willing to do, throw alert.
-			return alertForCappedAndExpression(r.db).wrap(), nil
+			return alertForCappedAndExpression(r.db).wrap(r.db), nil
 		}
 	}
 	result.IsLimitHit = !exhausted
@@ -844,7 +844,7 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopePar
 func (r *searchResolver) evaluate(ctx context.Context, q query.Q) (*SearchResultsResolver, error) {
 	scopeParameters, pattern, err := query.PartitionSearchPattern(q)
 	if err != nil {
-		return alertForQuery(r.db, "", err).wrap(), nil
+		return alertForQuery(r.db, "", err).wrap(r.db), nil
 	}
 	if pattern == nil {
 		r.setQuery(scopeParameters)
@@ -987,7 +987,7 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 	if shouldShowAlert {
 		usedTime := time.Since(start)
 		suggestTime := longer(2, usedTime)
-		return alertForTimeout(r.db, usedTime, suggestTime, r).wrap(), nil
+		return alertForTimeout(r.db, usedTime, suggestTime, r).wrap(r.db), nil
 	}
 	return rr, err
 }
