@@ -69,7 +69,6 @@ An effective PR minimizes the amount of effort that is required for the reviewer
 
 Do:
 
-- For highly cohesive PRs with a large number of changes (which is sometimes unavoidable), 
 - Create a draft PR first and review your own diff as if you were reviewing someone else's change. This helps you empathize with your reviewer and can help catch silly mistakes before your reviewer sees them (e.g. forgetting to `git add` a file, forgetting to remove debugging code, etc.).
 - Create meaningful PR title and description that communicates **what** the PR does and **why** (the **how** is the diff).
   - Include links to relevant issues (e.g. "closes #1234", "helps #5678").
