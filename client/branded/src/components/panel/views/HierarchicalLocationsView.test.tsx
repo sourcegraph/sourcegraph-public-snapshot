@@ -79,43 +79,6 @@ describe('<HierarchicalLocationsView />', () => {
         ).toMatchSnapshot()
     })
 
-    test("registers a 'Group by file' contribution", async () => {
-        const { props, registerContributions } = getProps()
-        renderer.create(<HierarchicalLocationsView {...props} />)
-        await promisify(nextTick)()
-        expect(registerContributions.called).toBe(true)
-        const expected: Raw<Contributions> = {
-            actions: [
-                {
-                    id: 'panel.locations.groupByFile',
-                    title: 'Group by file',
-                    category: 'Locations (panel)',
-                    command: 'updateConfiguration',
-                    commandArguments: [
-                        ['panel.locations.groupByFile'],
-                        // eslint-disable-next-line no-template-curly-in-string
-                        '${!config.panel.locations.groupByFile}',
-                        null,
-                        'json',
-                    ],
-                    actionItem: {
-                        // eslint-disable-next-line no-template-curly-in-string
-                        label: '${config.panel.locations.groupByFile && "Ungroup" || "Group"} by file',
-                    },
-                },
-            ],
-            menus: {
-                'panel/toolbar': [
-                    {
-                        action: 'panel.locations.groupByFile',
-                        when: 'panel.locations.hasResults && panel.activeView.hasLocations',
-                    },
-                ],
-            },
-        }
-        expect(registerContributions.getCall(0).args[0]).toMatchObject(expected)
-    })
-
     const SAMPLE_LOCATION: Location = {
         uri: 'git://github.com/foo/bar',
         range: {
