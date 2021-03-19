@@ -230,7 +230,6 @@ func searchFilesInRepo(ctx context.Context, db dbutil.DB, searcherURLs *endpoint
 		return nil, false, err
 	}
 
-	workspace := fileMatchURI(repo.Name, rev, "")
 	repoResolver := NewRepositoryResolver(db, repo.ToRepo())
 	resolvers := make([]*FileMatchResolver, 0, len(matches))
 	for _, fm := range matches {
@@ -255,7 +254,6 @@ func searchFilesInRepo(ctx context.Context, db dbutil.DB, searcherURLs *endpoint
 				LineMatches: lineMatches,
 				LimitHit:    fm.LimitHit,
 				Repo:        repo,
-				URI:         workspace + fm.Path,
 				CommitID:    commit,
 				InputRev:    &rev,
 			},

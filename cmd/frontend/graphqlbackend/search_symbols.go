@@ -194,24 +194,22 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 			BaseURI: baseURI,
 			Lang:    strings.ToLower(symbol.Language),
 		}
-		uri := makeFileMatchURI(repoResolver.URL(), inputRev, symbolRes.Symbol.Path)
-		if fileMatch, ok := fileMatchesByURI[uri]; ok {
-			fileMatch.FileMatch.Symbols = append(fileMatch.FileMatch.Symbols, symbolRes)
+		newFileMatchResolver := &FileMatchResolver{
+			db: db,
+			FileMatch: result.FileMatch{
+				Path:     symbolRes.Symbol.Path,
+				Symbols:  []*result.SymbolMatch{symbolRes},
+				Repo:     repoRevs.Repo,
+				CommitID: commitID,
+				InputRev: &inputRev,
+			},
+			RepoResolver: repoResolver,
+		}
+		if oldFileMatchResolver, ok := fileMatchesByURI[newFileMatchResolver.CalculatedURI()]; ok {
+			oldFileMatchResolver.FileMatch.Symbols = append(oldFileMatchResolver.FileMatch.Symbols, symbolRes)
 		} else {
-			fileMatch := &FileMatchResolver{
-				db: db,
-				FileMatch: result.FileMatch{
-					Path:     symbolRes.Symbol.Path,
-					Symbols:  []*result.SymbolMatch{symbolRes},
-					URI:      uri,
-					Repo:     repoRevs.Repo,
-					CommitID: commitID,
-					InputRev: &inputRev,
-				},
-				RepoResolver: repoResolver,
-			}
-			fileMatchesByURI[uri] = fileMatch
-			fileMatches = append(fileMatches, fileMatch)
+			fileMatchesByURI[newFileMatchResolver.CalculatedURI()] = newFileMatchResolver
+			fileMatches = append(fileMatches, newFileMatchResolver)
 		}
 	}
 	return fileMatches, err

@@ -114,7 +114,6 @@ func TestSearchSuggestions(t *testing.T) {
 			}
 			fm := mkFileMatch(db, &types.RepoName{Name: "repo"}, "dir/file")
 			rev := "rev"
-			fm.URI = "git://repo?rev#dir/file"
 			fm.CommitID = "rev"
 			fm.InputRev = &rev
 			return []*FileMatchResolver{fm}, &streaming.Stats{}, nil
@@ -175,7 +174,6 @@ func TestSearchSuggestions(t *testing.T) {
 			}
 			mk := func(name api.RepoName, path string) *FileMatchResolver {
 				fm := mkFileMatch(db, &types.RepoName{Name: name}, path)
-				fm.URI = fileMatchURI(name, "rev", path)
 				fm.CommitID = "rev"
 				rev := "rev"
 				fm.InputRev = &rev

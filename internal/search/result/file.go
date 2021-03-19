@@ -14,7 +14,6 @@ type FileMatch struct {
 	LimitHit    bool
 
 	Symbols  []*SymbolMatch  `json:"-"`
-	URI      string          `json:"-"`
 	Repo     *types.RepoName `json:"-"`
 	CommitID api.CommitID    `json:"-"`
 
