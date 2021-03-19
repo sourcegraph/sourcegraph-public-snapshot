@@ -143,7 +143,8 @@ type ChangesetAssertions struct {
 	AttachedTo []int64
 	DetachFrom []int64
 
-	ArchiveIn int64
+	ArchiveIn                  int64
+	ArchivedInOwnerBatchChange bool
 }
 
 func AssertChangeset(t *testing.T, c *batches.Changeset, a ChangesetAssertions) {
@@ -243,6 +244,21 @@ func AssertChangeset(t *testing.T, c *batches.Changeset, a ChangesetAssertions) 
 		}
 		if !found {
 			t.Fatalf("no changeset batchChange association set to archive")
+		}
+	}
+
+	if a.ArchivedInOwnerBatchChange {
+		found := false
+		for _, assoc := range c.BatchChanges {
+			if assoc.BatchChangeID == c.OwnedByBatchChangeID {
+				found = true
+				if !assoc.Archived {
+					t.Fatalf("changeset association to %d not set to Archived", c.OwnedByBatchChangeID)
+				}
+			}
+		}
+		if !found {
+			t.Fatalf("no changeset batchChange association archived")
 		}
 	}
 

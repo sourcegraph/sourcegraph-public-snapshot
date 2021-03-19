@@ -797,7 +797,6 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
 				IncludeArchived: truePtr,
-				OnlyArchived:    truePtr,
 			},
 			wantSafe: true,
 			wantParsed: store.ListChangesetsOpts{
