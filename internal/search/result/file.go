@@ -21,6 +21,10 @@ type FileMatch struct {
 	InputRev *string `json:"-"`
 }
 
+func (fm *FileMatch) CalculatedURI() string {
+	return fm.URI
+}
+
 func (fm *FileMatch) ResultCount() int {
 	rc := len(fm.Symbols)
 	for _, m := range fm.LineMatches {

@@ -50,7 +50,7 @@ func (fm *FileMatchResolver) Equal(other *FileMatchResolver) bool {
 }
 
 func (fm *FileMatchResolver) Key() string {
-	return fm.URI
+	return fm.CalculatedURI()
 }
 
 func (fm *FileMatchResolver) File() *GitTreeEntryResolver {
@@ -87,7 +87,7 @@ func (fm *FileMatchResolver) RevSpec() *gitRevSpec {
 }
 
 func (fm *FileMatchResolver) Resource() string {
-	return fm.URI
+	return fm.CalculatedURI()
 }
 
 func (fm *FileMatchResolver) Symbols() []symbolResolver {

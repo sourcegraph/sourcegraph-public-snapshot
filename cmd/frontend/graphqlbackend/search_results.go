@@ -582,7 +582,7 @@ func intersectMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 	rightFileMatches := make(map[string]*FileMatchResolver)
 	for _, r := range right.SearchResults {
 		if fileMatch, ok := r.ToFileMatch(); ok {
-			rightFileMatches[fileMatch.URI] = fileMatch
+			rightFileMatches[fileMatch.CalculatedURI()] = fileMatch
 		}
 	}
 
@@ -593,7 +593,7 @@ func intersectMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 			continue
 		}
 
-		rightFileMatch := rightFileMatches[leftFileMatch.URI]
+		rightFileMatch := rightFileMatches[leftFileMatch.CalculatedURI()]
 		if rightFileMatch == nil {
 			continue
 		}
