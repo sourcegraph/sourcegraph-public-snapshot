@@ -1848,7 +1848,8 @@ and cannot be converted to that type.
   </table>
 </div>
 
-Select a subtype of symbol.
+Select a specific kind of symbol. For example `select:symbol.function Search` will only return functions that contain the 
+literal `Search`.
 
 **Example:**
 `type:symbol zoektSearch select:symbol.function` [↗](https://sourcegraph.com/search?q=fmt.Errorf+select:repo&patternType=literal)
