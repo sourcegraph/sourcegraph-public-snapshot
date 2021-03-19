@@ -1049,7 +1049,7 @@ func TestSearchResolver_evaluateWarning(t *testing.T) {
 	})
 
 	_, err := query.ParseRegexp("file:foo or or or")
-	gotAlert := alertForQuery(db, "", err)
+	gotAlert := alertForQuery("", err)
 	t.Run("warn for unsupported ambiguous and/or query", func(t *testing.T) {
 		if !strings.HasPrefix(gotAlert.description, wantPrefix) {
 			t.Fatalf("got alert description %s, want %s", got.alert.description, wantPrefix)
