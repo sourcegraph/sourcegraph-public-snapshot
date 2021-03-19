@@ -1,4 +1,4 @@
-package scheduler
+package window
 
 import (
 	"strconv"
@@ -6,61 +6,70 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-type windowRate struct {
-	n    int
-	unit windowRateUnit
+// Window represents a single rollout window configured on a site.
+type Window struct {
+	days  []time.Weekday
+	start *windowTime
+	end   *windowTime
+	rate  rate
 }
 
-type windowRateUnit int
+type rate struct {
+	n    int
+	unit rateUnit
+}
+
+type rateUnit int
 
 const (
-	windowRatePerSecond = iota
-	windowRatePerMinute
-	windowRatePerHour
+	ratePerSecond = iota
+	ratePerMinute
+	ratePerHour
 )
 
-func parseWindowRateUnit(raw string) (windowRateUnit, error) {
+func parseRateUnit(raw string) (rateUnit, error) {
+	// We're not going to replicate the full schema validation regex here; we'll
+	// assume that the conf package did that satisfactorily and just parse what
+	// we need to, ensuring we can't panic.
 	if raw == "" {
-		return windowRatePerSecond, errors.Errorf("malformed unit: %q", raw)
+		return ratePerSecond, errors.Errorf("malformed unit: %q", raw)
 	}
 
 	switch raw[0] {
 	case 's':
-		return windowRatePerSecond, nil
+		return ratePerSecond, nil
 	case 'm':
-		return windowRatePerMinute, nil
+		return ratePerMinute, nil
 	case 'h':
-		return windowRatePerHour, nil
+		return ratePerHour, nil
 	default:
-		return windowRatePerSecond, errors.Errorf("malformed unit: %q", raw)
+		return ratePerSecond, errors.Errorf("malformed unit: %q", raw)
 	}
 }
 
-func parseWindowRate(raw interface{}) (windowRate, error) {
+func parseRate(raw interface{}) (rate, error) {
 	switch v := raw.(type) {
 	case int:
 		if v == 0 {
-			return windowRate{n: 0}, nil
+			return rate{n: 0}, nil
 		}
-		return windowRate{}, errors.Errorf("malformed rate (numeric values can only be 0): %d", v)
+		return rate{}, errors.Errorf("malformed rate (numeric values can only be 0): %d", v)
 
 	case string:
 		s := strings.ToLower(v)
 		if s == "unlimited" {
-			return windowRate{n: -1}, nil
+			return rate{n: -1}, nil
 		}
 
-		wr := windowRate{}
+		wr := rate{}
 		parts := strings.SplitN(s, "/", 2)
 		if len(parts) != 2 {
-			return windowRate{}, errors.Errorf("malformed rate: %q", raw)
+			return rate{}, errors.Errorf("malformed rate: %q", raw)
 		}
 
 		var err error
@@ -69,7 +78,7 @@ func parseWindowRate(raw interface{}) (windowRate, error) {
 			return wr, errors.Errorf("malformed rate: %q", raw)
 		}
 
-		wr.unit, err = parseWindowRateUnit(parts[1])
+		wr.unit, err = parseRateUnit(parts[1])
 		if err != nil {
 			return wr, errors.Errorf("malformed rate: %q", raw)
 		}
@@ -77,7 +86,7 @@ func parseWindowRate(raw interface{}) (windowRate, error) {
 		return wr, nil
 
 	default:
-		return windowRate{}, errors.Errorf("malformed rate: unknown type %T", raw)
+		return rate{}, errors.Errorf("malformed rate: unknown type %T", raw)
 	}
 }
 
@@ -121,15 +130,8 @@ func parseTimePart(s string) (int8, error) {
 	return int8(part), nil
 }
 
-type RolloutWindow struct {
-	days  []time.Weekday
-	start *windowTime
-	end   *windowTime
-	rate  windowRate
-}
-
-func parseRolloutWindow(raw *schema.BatchChangeRolloutWindow) (RolloutWindow, error) {
-	w := RolloutWindow{}
+func parseWindow(raw *schema.BatchChangeRolloutWindow) (Window, error) {
+	w := Window{}
 	var errs *multierror.Error
 
 	if raw == nil {
@@ -155,7 +157,7 @@ func parseRolloutWindow(raw *schema.BatchChangeRolloutWindow) (RolloutWindow, er
 		errs = multierror.Append(errs, errors.Wrap(err, "end time"))
 	}
 
-	w.rate, err = parseWindowRate(raw.Rate)
+	w.rate, err = parseRate(raw.Rate)
 	if err != nil {
 		errs = multierror.Append(errs, err)
 	}
@@ -166,7 +168,7 @@ func parseRolloutWindow(raw *schema.BatchChangeRolloutWindow) (RolloutWindow, er
 func parseWeekday(raw string) (time.Weekday, error) {
 	// We're not going to replicate the full schema validation regex here; we'll
 	// assume that the conf package did that satisfactorily and just parse what
-	// we need to.
+	// we need to, ensuring we can't panic.
 	if len(raw) < 3 {
 		return time.Sunday, errors.Errorf("unknown weekday: %q", raw)
 	}
@@ -189,45 +191,4 @@ func parseWeekday(raw string) (time.Weekday, error) {
 	default:
 		return time.Sunday, errors.Errorf("unknown weekday: %q", raw)
 	}
-}
-
-type RolloutWindowConfiguration struct {
-	windows []RolloutWindow
-}
-
-func NewRolloutWindowConfiguration() *RolloutWindowConfiguration {
-	rwc := &RolloutWindowConfiguration{
-		windows: []RolloutWindow{},
-	}
-
-	conf.Watch(func() {
-		if err := rwc.updateFromConfig(conf.Get().BatchChangesRolloutWindows); err != nil {
-			log15.Warn("ignoring erroneous batchChanges.rolloutWindows configuration", "err", err)
-		}
-	})
-
-	return rwc
-}
-
-func ValidateRolloutWindowConfiguration(raw *[]*schema.BatchChangeRolloutWindow) error {
-	return (&RolloutWindowConfiguration{
-		windows: []RolloutWindow{},
-	}).updateFromConfig(raw)
-}
-
-func (rwc *RolloutWindowConfiguration) updateFromConfig(raw *[]*schema.BatchChangeRolloutWindow) error {
-	if raw == nil {
-		return nil
-	}
-
-	var errs *multierror.Error
-	for i, rawWindow := range *raw {
-		if window, err := parseRolloutWindow(rawWindow); err != nil {
-			errs = multierror.Append(errs, errors.Wrapf(err, "window %d", i))
-		} else {
-			rwc.windows = append(rwc.windows, window)
-		}
-	}
-
-	return errs.ErrorOrNil()
 }
