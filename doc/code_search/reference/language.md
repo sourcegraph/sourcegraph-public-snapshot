@@ -439,36 +439,41 @@ A pattern to search. By default the pattern is searched literally. The kind of s
         <td class="ks"></td>
         <td class="d"><code class="c"><a href="#repogroup">repogroup</a></code></td>
         <td class="ke"></td>
-        <tr class="r">
-          <td class="ks"></td>
-          <td class="d"><code class="c"><a href="#repo-has-file">repo has file</a></code></td>
-          <td class="ke"></td>
-        </tr>
-        <tr class="r">
-          <td class="ks"></td>
-          <td class="d"><code class="c"><a href="#repo-has-commit-after">repo has commit after</a></code></td>
-          <td class="ke"></td>
-        </tr>
-        <tr class="r">
-          <td class="ks"></td>
-          <td class="d"><code class="c"><a href="#count">count</a></code></td>
-          <td class="ke"></td>
-        </tr>
-        <tr class="r">
-          <td class="ks"></td>
-          <td class="d"><code class="c"><a href="#timeout">timeout</a></code></td>
-          <td class="ke"></td>
-        </tr>
-        <tr class="r">
-          <td class="ks"></td>
-          <td class="d"><code class="c"><a href="#visibility">visibility</a></code></td>
-          <td class="ke"></td>
-        </tr>
-        <tr class="r">
-          <td class="ls"></td>
-          <td class="d"><code class="c"><a href="#pattern-type">pattern type</a></code></td>
-          <td class="le"></td>
-        </tr>
+      </tr>
+      <tr class="r">
+        <td class="ks"></td>
+        <td class="d"><code class="c"><a href="#repo-has-file">repo has file</a></code></td>
+        <td class="ke"></td>
+      </tr>
+      <tr class="r">
+        <td class="ks"></td>
+        <td class="d"><code class="c"><a href="#repo-has-commit-after">repo has commit after</a></code></td>
+        <td class="ke"></td>
+      </tr>
+      <tr class="r">
+        <td class="ks"></td>
+        <td class="d"><code class="c"><a href="#count">count</a></code></td>
+        <td class="ke"></td>
+      </tr>
+      <tr class="r">
+        <td class="ks"></td>
+        <td class="d"><code class="c"><a href="#timeout">timeout</a></code></td>
+        <td class="ke"></td>
+      </tr>
+      <tr class="r">
+        <td class="ks"></td>
+        <td class="d"><code class="c"><a href="#visibility">visibility</a></code></td>
+        <td class="ke"></td>
+      </tr>
+      <tr class="r">
+        <td class="ks"></td>
+        <td class="d"><code class="c"><a href="#pattern-type">pattern type</a></code></td>
+        <td class="ke"></td>
+      </tr>
+      <tr class="r">
+        <td class="ls"></td>
+        <td class="d"><code class="c"><a href="#select">select</a></code></td>
+        <td class="le"></td>
       </tr>
     </tbody>
   </table>
@@ -1576,6 +1581,278 @@ Include results which have commit messages containing the string.
   </table>
 </div>
 
+
+
+## Select
+
+<div name="r">
+  <table class="r">
+    <tbody>
+      <tr class="r">
+        <td class="d"></td>
+        <td class="d"><code class="c">select:</code></td>
+        <td class="d">
+          <table class="r">
+            <tbody>
+              <tr class="r">
+                <td class="d">
+                  <table class="r">
+                    <tbody>
+                      <tr class="r">
+                        <td class="ts"></td>
+                        <td class="d"><code class="c">symbol</code></td>
+                        <td class="te">
+                        </td>
+                      </tr>
+                      <tr class="r">
+                        <td class="ks"></td>
+                        <td class="d"><code class="c">repo</code></td>
+                        <td class="ke"></td>
+                      </tr>
+                      <tr class="r">
+                        <td class="ks"></td>
+                        <td class="d"><code class="c">path</code></td>
+                        <td class="ke"></td>
+                      </tr>
+                      <tr class="r">
+                        <td class="ks"></td>
+                        <td class="d"><code class="c">file</code></td>
+                        <td class="le"></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </td>
+                <td class="d"></td>
+                <td class="te"></td>
+              </tr>
+              <tr class="r">
+                <td class="d">
+                  <table class="r">
+                    <tbody>
+                      <tr class="r">
+                        <td class="ls"></td>
+                        <td class=d><code class="c">symbol</code></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </td>
+                <td class="d">
+                  <table class="r">
+                    <tbody>
+                      <tr class="r">
+                        <td class="ts"></td>
+                        <td class="d"></td>
+                        <td class="d"></td>
+                        <td class="d"/>
+                        <td class="te"></td>
+                      </tr>
+                      <tr class="r">
+                        <td class="ls"></td>
+                        <td class="d"><code class="c">.</code></td>
+                        <td class="d"/>
+                        <td class="d"><code class="c"><a href="#symbol-kind">symbol kind</a></code></td>
+                        <td class="le">
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </td>
+                <td class="le"></td>
+              </tr>
+            </tbody>
+          </table>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+Selects the specified result type from the set of search results. If a query produces results that aren't of the 
+selected type, the results will be converted to the selected type. 
+
+For example, the query `file:package.json lodash` will return content matches for `lodash` in `package.json` files. 
+If `select:repo` is added, the repository those matches belong to is pulled out and it now only returns 
+_repositories_ that contain `package.json` files that contain the term `lodash`. All selected results are deduplicated,
+so if there are multiple content matches in a repository, `select:repo` will still only return unique results.
+
+A query like `type:commit example select:symbol` will return no results because commits have no associated symbol
+and cannot be converted to that type.
+
+**Example:**
+`fmt.Errorf select:repo` [↗](https://sourcegraph.com/search?q=fmt.Errorf+select:repo&patternType=literal)
+`zoektSearch select:file` [↗](https://sourcegraph.com/search?q=zoektSearch+select:file&patternType=literal)
+
+### Symbol kind
+
+
+<div name="r">
+  <table class="r">
+    <tbody>
+      <tr class="r">
+        <td class="ts"/>
+        <td class="d"><code class="c">file</code></td>
+        <td class="te"/>
+      </tr>
+      <tr class="r">
+        <td class="ks"/>
+        <td class="d"><code class="c">module</code></td>
+        <td class="ke"/>
+      </tr>
+      <tr class="r">
+        <td class="ks"/>
+        <td class="d"><code class="c">namespace</code></td>
+        <td class="ke"/>
+      </tr>
+      <tr class="r">
+        <td class="ks"/>
+        <td class="d"><code class="c">package</code></td>
+        <td class="ke"/>
+      </tr>
+      <tr class="r">
+        <td class="ks"/>
+        <td class="d"><code class="c">class</code></td>
+        <td class="ke"/>
+      </tr>
+      <tr class="r">
+        <td class="ks"/>
+        <td class="d"><code class="c">file</code></td>
+        <td class="ke"/>
+      </tr>
+      <tr class="r">
+        <td class="ks"/>
+        <td class="d"><code class="c">module</code></td>
+        <td class="ke"/>
+      </tr>
+      <tr class="r">
+        <td class="ks"/>
+        <td class="d"><code class="c">namespace</code></td>
+        <td class="ke"/>
+      </tr>
+      <tr class="r">
+        <td class="ks"/>
+        <td class="d"><code class="c">package</code></td>
+        <td class="ke"/>
+      </tr>
+      <tr class="r">
+        <td class="ks"/>
+        <td class="d"><code class="c">class</code></td>
+        <td class="ke"/>
+      </tr>
+      <tr class="r">
+        <td class="ks"/>
+        <td class="d"><code class="c">method</code></td>
+        <td class="ke"/>
+      </tr>
+      <tr class="r">
+        <td class="ks"/>
+        <td class="d"><code class="c">property</code></td>
+        <td class="ke"/>
+      </tr>
+      <tr class="r">
+        <td class="ks"/>
+        <td class="d"><code class="c">field</code></td>
+        <td class="ke"/>
+      </tr>
+      <tr class="r">
+        <td class="ks"/>
+        <td class="d"><code class="c">constructor</code></td>
+        <td class="ke"/>
+      </tr>
+      <tr class="r">
+        <td class="ks"/>
+        <td class="d"><code class="c">enum</code></td>
+        <td class="ke"/>
+      </tr>
+      <tr class="r">
+        <td class="ks"/>
+        <td class="d"><code class="c">interface</code></td>
+        <td class="ke"/>
+      </tr>
+      <tr class="r">
+        <td class="ks"/>
+        <td class="d"><code class="c">function</code></td>
+        <td class="ke"/>
+      </tr>
+      <tr class="r">
+        <td class="ks"/>
+        <td class="d"><code class="c">variable</code></td>
+        <td class="ke"/>
+      </tr>
+      <tr class="r">
+        <td class="ks"/>
+        <td class="d"><code class="c">constant</code></td>
+        <td class="ke"/>
+      </tr>
+      <tr class="r">
+        <td class="ks"/>
+        <td class="d"><code class="c">string</code></td>
+        <td class="ke"/>
+      </tr>
+      <tr class="r">
+        <td class="ks"/>
+        <td class="d"><code class="c">number</code></td>
+        <td class="ke"/>
+      </tr>
+      <tr class="r">
+        <td class="ks"/>
+        <td class="d"><code class="c">boolean</code></td>
+        <td class="ke"/>
+      </tr>
+      <tr class="r">
+        <td class="ks"/>
+        <td class="d"><code class="c">array</code></td>
+        <td class="ke"/>
+      </tr>
+      <tr class="r">
+        <td class="ks"/>
+        <td class="d"><code class="c">object</code></td>
+        <td class="ke"/>
+      </tr>
+      <tr class="r">
+        <td class="ks"/>
+        <td class="d"><code class="c">key</code></td>
+        <td class="ke"/>
+      </tr>
+      <tr class="r">
+        <td class="ks"/>
+        <td class="d"><code class="c">null</code></td>
+        <td class="ke"/>
+      </tr>
+      <tr class="r">
+        <td class="ks"/>
+        <td class="d"><code class="c">enum-member</code></td>
+        <td class="ke"/>
+      </tr>
+      <tr class="r">
+        <td class="ks"/>
+        <td class="d"><code class="c">struct</code></td>
+        <td class="ke"/>
+      </tr>
+      <tr class="r">
+        <td class="ks"/>
+        <td class="d"><code class="c">event</code></td>
+        <td class="ke"/>
+      </tr>
+      <tr class="r">
+        <td class="ks"/>
+        <td class="d"><code class="c">operator</code></td>
+        <td class="ke"/>
+      </tr>
+      <tr class="r">
+        <td class="ls"/>
+        <td class="d"><code class="c">type-parameter</code></td>
+        <td class="le"/>
+      </tr>
+
+    </tbody>
+  </table>
+</div>
+
+Select a specific kind of symbol. For example `type:symbol select:symbol.function zoektSearch` will only return functions that contain the 
+literal `Search`.
+
+**Example:**
+`type:symbol zoektSearch select:symbol.function` [↗](https://sourcegraph.com/search?q=fmt.Errorf+select:repo&patternType=literal)
 
 <br>
 <sub>Attribution: The railroad diagrams use assets generated by the <a href="https://github.com/h2database/h2database">H2 Database Engine project</a> and licensed under MPL 2.0.</sub>
