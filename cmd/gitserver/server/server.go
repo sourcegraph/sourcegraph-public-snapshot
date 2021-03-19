@@ -144,7 +144,6 @@ type Server struct {
 	hostnameMu sync.RWMutex
 	// used to set the hostname
 	hostnameOnce sync.Once
-
 	// hostname stores this server's hostname as seen by frontend. It starts empty
 	// and is populated by the first incoming request from frontend. We require frontend
 	// and our view of the hostname to be the same as we shard repos based on it.
