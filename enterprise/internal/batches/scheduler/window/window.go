@@ -41,11 +41,11 @@ func parseRateUnit(raw string) (rateUnit, error) {
 	}
 
 	switch raw[0] {
-	case 's':
+	case 's', 'S':
 		return ratePerSecond, nil
-	case 'm':
+	case 'm', 'M':
 		return ratePerMinute, nil
-	case 'h':
+	case 'h', 'H':
 		return ratePerHour, nil
 	default:
 		return ratePerSecond, errors.Errorf("malformed unit: %q", raw)
@@ -74,7 +74,7 @@ func parseRate(raw interface{}) (rate, error) {
 
 		var err error
 		wr.n, err = strconv.Atoi(parts[0])
-		if err != nil {
+		if err != nil || wr.n < 0 {
 			return wr, errors.Errorf("malformed rate: %q", raw)
 		}
 
