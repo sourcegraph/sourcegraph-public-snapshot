@@ -1095,11 +1095,6 @@ describe('e2e test suite', () => {
     })
 
     describe('Search component', () => {
-        test('redirects to a URL with &patternType=regexp if no patternType in URL', async () => {
-            await driver.page.goto(sourcegraphBaseUrl + '/search?q=test')
-            await driver.assertWindowLocation('/search?q=test&patternType=regexp')
-        })
-
         test('regexp toggle appears and updates patternType query parameter when clicked', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/search?q=test&patternType=literal')
             // Wait for monaco query input to load to avoid race condition with the intermediate input
@@ -1142,14 +1137,14 @@ describe('e2e test suite', () => {
     })
 
     describe('Saved searches', () => {
-        test('Save search from search results page', async () => {
+        test.only('Save search from search results page', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/search?q=test')
             await driver.page.waitForSelector('.test-save-search-link', { visible: true })
             await driver.page.click('.test-save-search-link')
             await driver.page.waitForSelector('.test-saved-search-modal')
             await driver.page.waitForSelector('.test-saved-search-modal-save-button')
             await driver.page.click('.test-saved-search-modal-save-button')
-            await driver.assertWindowLocation('/users/test/searches/add?query=test&patternType=regexp')
+            await driver.assertWindowLocation('/users/test/searches/add?query=test&patternType=literal')
 
             await driver.page.waitForSelector('.test-saved-search-form-input-description', { visible: true })
             await driver.page.click('.test-saved-search-form-input-description')
