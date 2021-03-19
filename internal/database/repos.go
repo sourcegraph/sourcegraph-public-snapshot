@@ -169,7 +169,7 @@ func (s *RepoStore) GetByIDs(ctx context.Context, ids ...api.RepoID) ([]*types.R
 	}
 	q := sqlf.Sprintf("id IN (%s)", sqlf.Join(items, ","))
 	var repos []*types.Repo
-	err := s.getReposBySQL(ctx, false, nil, q, nil, func(rows *sql.Rows) error {
+	err := s.getReposBySQL(ctx, false, nil, q, nil, nil, func(rows *sql.Rows) error {
 		var repo types.Repo
 
 		if err := scanRepo(rows, &repo); err != nil {
@@ -259,6 +259,7 @@ func (s *RepoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, er
 }
 
 const getRepoByQueryFmtstr = `
+%%s -- Populates "queryPrefix", i.e. CTEs
 SELECT %s
 FROM %%s
 WHERE
@@ -311,7 +312,7 @@ func minimalColumns(columns []string) []string {
 
 func (s *RepoStore) getBySQL(ctx context.Context, queryConds, querySuffix *sqlf.Query) ([]*types.Repo, error) {
 	var repos []*types.Repo
-	err := s.getReposBySQL(ctx, false, nil, queryConds, querySuffix, func(rows *sql.Rows) error {
+	err := s.getReposBySQL(ctx, false, nil, queryConds, nil, querySuffix, func(rows *sql.Rows) error {
 		var repo types.Repo
 
 		if err := scanRepo(rows, &repo); err != nil {
@@ -327,12 +328,15 @@ func (s *RepoStore) getBySQL(ctx context.Context, queryConds, querySuffix *sqlf.
 	return repos, nil
 }
 
-func (s *RepoStore) getReposBySQL(ctx context.Context, minimal bool, fromClause, queryConds, querySuffix *sqlf.Query, scanRepo func(*sql.Rows) error) error {
+func (s *RepoStore) getReposBySQL(ctx context.Context, minimal bool, fromClause, queryConds, queryPrefix, querySuffix *sqlf.Query, scanRepo func(*sql.Rows) error) error {
 	if fromClause == nil {
 		fromClause = sqlf.Sprintf("repo")
 	}
 	if queryConds == nil {
 		queryConds = sqlf.Sprintf("TRUE")
+	}
+	if queryPrefix == nil {
+		queryPrefix = sqlf.Sprintf("")
 	}
 	if querySuffix == nil {
 		querySuffix = sqlf.Sprintf("")
@@ -350,6 +354,7 @@ func (s *RepoStore) getReposBySQL(ctx context.Context, minimal bool, fromClause,
 
 	q := sqlf.Sprintf(
 		fmt.Sprintf(getRepoByQueryFmtstr, strings.Join(columns, ",")),
+		queryPrefix,
 		fromClause,
 		queryConds,
 		authzConds, // 🚨 SECURITY: Enforce repository permissions
@@ -664,7 +669,10 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, minimal bool, opt
 		return err
 	}
 
-	joins := []*sqlf.Query{}
+	var (
+		queryPrefix *sqlf.Query
+		joins       []*sqlf.Query
+	)
 
 	if len(opt.ExternalServiceIDs) != 0 {
 		serviceIDQuery := []*sqlf.Query{}
@@ -673,13 +681,12 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, minimal bool, opt
 		}
 		joins = append(joins, sqlf.Sprintf("JOIN external_service_repos e ON (repo.id = e.repo_id AND e.external_service_id IN (%s))", sqlf.Join(serviceIDQuery, ",")))
 	} else if opt.UserID != 0 {
-		joins = append(joins, sqlf.Sprintf("JOIN external_service_repos esr ON repo.id = esr.repo_id"))
-		joins = append(joins, sqlf.Sprintf("JOIN external_services es ON esr.external_service_id = es.id"))
+		cte := sqlf.Sprintf(userReposQuery, opt.UserID)
 		if opt.IncludeUserPublicRepos {
-			conds = append(conds, sqlf.Sprintf("(es.namespace_user_id = %d OR EXISTS (SELECT 1 FROM user_public_repos WHERE user_id = %d AND repo_id = repo.id)) AND es.deleted_at IS NULL", opt.UserID, opt.UserID))
-		} else {
-			conds = append(conds, sqlf.Sprintf("es.namespace_user_id = %d AND es.deleted_at IS NULL", opt.UserID))
+			cte = sqlf.Sprintf("%s UNION %s", cte, sqlf.Sprintf(userPublicReposQuery, opt.UserID))
 		}
+		queryPrefix = sqlf.Sprintf("WITH user_repos AS (\n%s\n)", cte)
+		joins = append(joins, sqlf.Sprintf("JOIN user_repos ON user_repos.id = repo.id"))
 	}
 
 	if opt.NoCloned || opt.OnlyCloned {
@@ -701,8 +708,19 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, minimal bool, opt
 	querySuffix := sqlf.Sprintf("%s %s", opt.OrderBy.SQL(), opt.LimitOffset.SQL())
 	tr.LogFields(trace.SQL(queryConds), trace.SQL(querySuffix))
 
-	return s.getReposBySQL(ctx, minimal, fromClause, queryConds, querySuffix, scanRepo)
+	return s.getReposBySQL(ctx, minimal, fromClause, queryConds, queryPrefix, querySuffix, scanRepo)
 }
+
+const userReposQuery = `
+SELECT repo_id as id
+FROM external_service_repos esr
+JOIN external_services es ON esr.external_service_id = es.id
+WHERE es.namespace_user_id = %d AND es.deleted_at IS NULL
+`
+
+const userPublicReposQuery = `
+SELECT repo_id as id FROM user_public_repos WHERE user_id = %d
+`
 
 type ListDefaultReposOptions struct {
 	// If true, will only include uncloned default repos
