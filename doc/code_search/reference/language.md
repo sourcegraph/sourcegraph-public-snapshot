@@ -1848,7 +1848,7 @@ and cannot be converted to that type.
   </table>
 </div>
 
-Select a specific kind of symbol. For example `select:symbol.function Search` will only return functions that contain the 
+Select a specific kind of symbol. For example `type:symbol select:symbol.function zoektSearch` will only return functions that contain the 
 literal `Search`.
 
 **Example:**
