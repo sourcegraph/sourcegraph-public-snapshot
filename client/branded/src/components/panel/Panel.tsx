@@ -222,6 +222,8 @@ export const Panel = React.memo<Props>(props => {
         setTabIndex(items.findIndex(({ id }) => id === `${hash.split('=')[1]}`))
     }, [items, hash])
 
+    const activeTab: PanelItem | undefined = items[tabIndex]
+
     return !areExtensionsReady ? (
         <ExtensionsLoadingPanelView />
     ) : items ? (
@@ -233,22 +235,24 @@ export const Panel = React.memo<Props>(props => {
                     ))}
                 </TabList>
                 <div className="align-items-center d-flex mr-2">
-                    <ActionsNavItems
-                        {...props}
-                        // TODO remove references to Bootstrap from shared, get class name from prop
-                        // This is okay for now because the Panel is currently only used in the webapp
-                        listClass="d-flex justify-content-end list-unstyled m-0 align-items-center"
-                        listItemClass="pr-4"
-                        // actionItemClass="d-flex flex-nowrap"
-                        actionItemIconClass="icon-inline"
-                        menu={ContributableMenu.PanelToolbar}
-                        scope={{
-                            type: 'panelView',
-                            id: items[tabIndex].id,
-                            hasLocations: Boolean(items[tabIndex].hasLocations),
-                        }}
-                        wrapInList={true}
-                    />
+                    {activeTab && (
+                        <ActionsNavItems
+                            {...props}
+                            // TODO remove references to Bootstrap from shared, get class name from prop
+                            // This is okay for now because the Panel is currently only used in the webapp
+                            listClass="d-flex justify-content-end list-unstyled m-0 align-items-center"
+                            listItemClass="pr-4"
+                            // actionItemClass="d-flex flex-nowrap"
+                            actionItemIconClass="icon-inline"
+                            menu={ContributableMenu.PanelToolbar}
+                            scope={{
+                                type: 'panelView',
+                                id: activeTab.id,
+                                hasLocations: Boolean(activeTab.hasLocations),
+                            }}
+                            wrapInList={true}
+                        />
+                    )}
                     <Button
                         onClick={handlePanelClose}
                         className="bg-transparent border-0 ml-auto p-1 position-relative"
