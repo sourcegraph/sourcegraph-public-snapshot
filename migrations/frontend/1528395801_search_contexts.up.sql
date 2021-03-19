@@ -2,7 +2,7 @@ BEGIN;
 
 CREATE TABLE IF NOT EXISTS search_contexts (
     id BIGSERIAL PRIMARY KEY,
-    name text NOT NULL,
+    name citext NOT NULL,
     description text NOT NULL,
     public boolean NOT NULL,
     namespace_user_id integer,
@@ -25,15 +25,15 @@ CREATE TABLE IF NOT EXISTS search_contexts (
 );
 
 CREATE UNIQUE INDEX search_contexts_name_namespace_user_id_unique
-    ON search_contexts (UPPER(name), namespace_user_id)
+    ON search_contexts (name, namespace_user_id)
     WHERE namespace_user_id IS NOT NULL;
 
 CREATE UNIQUE INDEX search_contexts_name_namespace_org_id_unique
-    ON search_contexts (UPPER(name), namespace_org_id)
+    ON search_contexts (name, namespace_org_id)
     WHERE namespace_org_id IS NOT NULL;
 
 CREATE UNIQUE INDEX search_contexts_name_without_namespace_unique
-    ON search_contexts (UPPER(name))
+    ON search_contexts (name)
     WHERE namespace_user_id IS NULL AND namespace_org_id IS NULL;
 
 CREATE TABLE IF NOT EXISTS search_context_repos (

@@ -254,7 +254,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
         useMemo(
             () =>
                 from(props.extensionsController.extHostAPI).pipe(
-                    switchMap(extensionHostAPI => extensionHostAPI.getWorkspaceRoots()),
+                    switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getWorkspaceRoots())),
                     map(workspaceRoots => workspaceRoots[0]?.uri)
                 ),
             [props.extensionsController]
