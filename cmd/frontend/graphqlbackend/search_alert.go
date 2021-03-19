@@ -623,8 +623,8 @@ func pathParentsByFrequency(paths []string) []string {
 // calculate a very large value for duration if start takes on the nil-value of
 // year 1. As a workaround, wrap instantiates start with time.now().
 // TODO(rvantonder): #10801.
-func (a searchAlert) wrap() *SearchResultsResolver {
-	return &SearchResultsResolver{db: a.db, alert: &a}
+func (a searchAlert) wrap(db dbutil.DB) *SearchResultsResolver {
+	return &SearchResultsResolver{db: db, alert: &a}
 }
 
 // capFirst capitalizes the first rune in the given string. It can be safely
@@ -648,7 +648,7 @@ func (a searchAlert) Results(context.Context) (*SearchResultsResolver, error) {
 		description:     a.description,
 		proposedQueries: a.proposedQueries,
 	}
-	return alert.wrap(), nil
+	return alert.wrap(a.db), nil
 }
 
 func (searchAlert) Suggestions(context.Context, *searchSuggestionsArgs) ([]SearchSuggestionResolver, error) {
