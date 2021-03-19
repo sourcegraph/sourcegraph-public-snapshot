@@ -211,10 +211,7 @@ export const Panel = React.memo<Props>(props => {
         [hash, history, items, pathname]
     )
 
-    console.log('items', items)
-
     useEffect(() => {
-        console.log('entra')
         setTabIndex(items.findIndex(({ id }) => id === `${hash.split('=')[1]}`))
     }, [items, hash])
 
@@ -238,15 +235,11 @@ export const Panel = React.memo<Props>(props => {
                         // actionItemClass="d-flex flex-nowrap"
                         actionItemIconClass="icon-inline"
                         menu={ContributableMenu.PanelToolbar}
-                        scope={
-                            items[tabIndex]
-                                ? {
-                                      type: 'panelView',
-                                      id: items[tabIndex].id,
-                                      hasLocations: Boolean(items[tabIndex].hasLocations),
-                                  }
-                                : undefined
-                        }
+                        scope={{
+                            type: 'panelView',
+                            id: items[tabIndex].id,
+                            hasLocations: Boolean(items[tabIndex].hasLocations),
+                        }}
                         wrapInList={true}
                     />
                     <Button
