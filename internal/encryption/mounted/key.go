@@ -1,61 +1,144 @@
 package mounted
 
+import "C"
 import (
 	"context"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"hash/crc32"
+	"io"
 	"os"
+	"strings"
 
 	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type Key struct {
 	keyname string
-	secret  string
+	secret  []byte
 }
 
 func (k *Key) ID(ctx context.Context) (string, error) {
 	return k.keyname, nil
 }
 
-// TODO: Define this.
-func (k *Key) Encrypt(ctx context.Context, value []byte) ([]byte, error) {
-	return []byte{}, nil
+func (k *Key) Encrypt(ctx context.Context, plaintext []byte) ([]byte, error) {
+	block, err := aes.NewCipher(k.secret)
+	if err != nil {
+		return nil, err
+	}
+
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
+
+	nonce := make([]byte, gcm.NonceSize())
+	_, err = io.ReadFull(rand.Reader, nonce)
+	if err != nil {
+		return nil, err
+	}
+
+	ciphertext := gcm.Seal(nonce, nonce, plaintext, nil)
+
+	out := encryptedValue{
+		KeyName:    k.keyname,
+		Ciphertext: ciphertext,
+		Checksum:   crc32Sum(plaintext),
+	}
+	jsonKey, err := json.Marshal(out)
+	if err != nil {
+		return nil, err
+	}
+	buf := base64.StdEncoding.EncodeToString(jsonKey)
+	return []byte(buf), err
 }
 
-// TODO: Define this.
-func Decrypt(ctx context.Context, cipherText []byte) (*encryption.Secret, error) {
-	return nil, nil
+func (k *Key) Decrypt(ctx context.Context, ciphertext []byte) (*encryption.Secret, error) {
+	block, err := aes.NewCipher(k.secret)
+	if err != nil {
+		return nil, err
+	}
+
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(ciphertext) < gcm.NonceSize() {
+		return nil, errors.New("malformed ciphertext")
+	}
+
+	buf, err := base64.StdEncoding.DecodeString(string(ciphertext))
+	if err != nil {
+		return nil, err
+	}
+	// unmarshal the encrypted value into encryptedValue, this struct contains the raw
+	// ciphertext, the key name, and a crc32 checksum
+	ev := encryptedValue{}
+	err = json.Unmarshal(buf, &ev)
+	if err != nil {
+		return nil, err
+	}
+	if !strings.HasPrefix(ev.KeyName, k.keyname) {
+		return nil, errors.New("invalid key name, are you trying to decrypt something with the wrong key?")
+	}
+
+	plaintext, err := gcm.Open(nil, ciphertext[:gcm.NonceSize()], ciphertext[gcm.NonceSize():], nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if crc32Sum(plaintext) != ev.Checksum {
+		return nil, errors.New("invalid checksum, either the wrong key was used, or the request was corrupted in transit")
+	}
+	s := encryption.NewSecret(string(plaintext))
+	return &s, nil
 }
 
 func NewKey(ctx context.Context, k schema.MountedEncryptionKey) (*Key, error) {
+	var secret []byte
 	if k.EnvVarName != "" && k.Filepath == "" {
-		secret := os.Getenv(k.EnvVarName)
-		if secret == "" {
-			return nil, errors.Errorf("env variable %q is not set", k.EnvVarName)
-		}
+		secret = []byte(os.Getenv(k.EnvVarName))
 
-		return &Key{
-			keyname: k.Keyname,
-			secret:  secret,
-		}, nil
 	} else if k.Filepath != "" && k.EnvVarName == "" {
-		f, err := os.Stat(k.Filepath)
+		keyBytes, err := os.ReadFile(k.Filepath)
 		if err != nil {
-			return nil, errors.Errorf("failed to locate file %q: %v", k.Filepath, err)
+			return nil, errors.Errorf("error reading secret file for %q: %v", k.Keyname, err)
 		}
-
-		secret, err := os.ReadFile(f.Name())
-		if err != nil {
-			return nil, errors.Errorf("")
-		}
-
-		return &Key{
-			keyname: k.Keyname,
-			secret:  string(secret),
-		}, nil
+		secret = keyBytes
+	} else {
+		// Either the user has set none of EnvVarName or Filepath or both in their config. Either way we return an error.
+		return nil, errors.Errorf(
+			"must use only one of EnvVarName and Filepath, EnvVarName: %q, Filepath: %q",
+			k.EnvVarName, k.Filepath,
+		)
 	}
 
-	// Either the user has set none of EnvVarName or Filepath or both in their config. Either way we return an error.
-	return nil, errors.Errorf("must use only one of EnvVarName and Filepath, EnvVarName: %q, Filepath: %q", k.EnvVarName, k.Filepath)
+	if len(secret) != 32 {
+		return nil, fmt.Errorf("invalid key length: %d, expected 32 bytes", len(secret))
+	}
+
+	return &Key{
+		keyname: k.Keyname,
+		secret:  secret,
+	}, nil
+}
+
+type encryptedValue struct {
+	KeyName    string
+	Ciphertext []byte
+	Checksum   uint32
+}
+
+func crc32Sum(data []byte) uint32 {
+	t := crc32.MakeTable(crc32.Castagnoli)
+	return crc32.Checksum(data, t)
 }
