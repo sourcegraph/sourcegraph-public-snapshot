@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"

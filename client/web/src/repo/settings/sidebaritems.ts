@@ -1,8 +1,8 @@
 import { RepoSettingsSideBarGroups } from './RepoSettingsSidebar'
-import GearIcon from 'mdi-react/GearIcon'
+import CogOutlineIcon from 'mdi-react/CogOutlineIcon'
 
 export const settingsGroup = {
-    header: { label: 'Settings', icon: GearIcon },
+    header: { label: 'Settings', icon: CogOutlineIcon },
     items: [
         {
             to: '',

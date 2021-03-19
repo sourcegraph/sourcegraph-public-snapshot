@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -105,7 +106,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 	}
 
 	expRepoIDs := []extsvc.RepoID{"1", "2", "3"}
-	if diff := cmp.Diff(expRepoIDs, repoIDs); diff != "" {
+	if diff := cmp.Diff(expRepoIDs, repoIDs.Exacts); diff != "" {
 		t.Fatal(diff)
 	}
 }

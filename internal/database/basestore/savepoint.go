@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 

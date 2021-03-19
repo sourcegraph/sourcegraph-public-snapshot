@@ -1,0 +1,21 @@
+- Reference: test.go:(2:8)-(2:36) -> test.go:(5:8)-(5:11)
+- Definition: test.go:(4:5)-(4:14) -> test.go:(4:5)-(4:14)
+- Moniker: test.go:(4:5)-(4:14) -> export:gomod:github.com/sourcegraph/sourcegraph/enterprise/lib@v3.25.0-3f0a00693ea0:github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic/diff/testdata/project1:Function1
+- Reference: test.go:(5:8)-(5:11) -> test.go:(5:8)-(5:11)
++ Reference: test.go:(5:12)-(5:16) -> test.go:(5:12)-(5:16)
++ Hover: test.go:(9:1)-(9:7)
+    ```go
+    struct field Field1 int
+    ```
++ Moniker: test.go:(9:1)-(9:7) -> export:gomod:github.com/sourcegraph/sourcegraph/enterprise/lib@v3.25.0-3f0a00693ea0:github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic/diff/testdata/project1:Struct1.Field1
+- Hover: test.go:(11:1)-(11:7)
+    ```go
+    struct field field3 string
+    ```
++ Definition: test.go:(11:1)-(11:7) -> test.go:(11:1)-(11:7)
+- MonikerDefinition: gomod:github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic/diff/testdata/project1:Function1 -> test.go:(4:5)-(4:14)
++ MonikerDefinition: gomod:github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic/diff/testdata/project1:Struct1.Field1 -> test.go:(9:1)-(9:7)
+- MonikerReference: gomod:github.com/google/go-cmp/cmp -> test.go:(5:8)-(5:11)
++ MonikerReference: gomod:github.com/google/go-cmp/cmp:Diff -> test.go:(5:12)-(5:16)
+- MonikerReference: gomod:github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic/diff/testdata/project1:Function1 -> test.go:(4:5)-(4:14)
++ MonikerReference: gomod:github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic/diff/testdata/project1:Struct1.Field1 -> test.go:(9:1)-(9:7)

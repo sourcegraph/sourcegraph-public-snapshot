@@ -2,8 +2,10 @@ package repos
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"reflect"
+	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -12,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
@@ -19,6 +22,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
+
+var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
+
+func TestMain(m *testing.M) {
+	flag.Parse()
+	m.Run()
+}
 
 type mockNamespaceStore struct {
 	GetByNameMock func(ctx context.Context, name string) (*database.Namespace, error)
@@ -286,6 +296,22 @@ func TestSearchRevspecs(t *testing.T) {
 	}
 }
 
+func BenchmarkGetRevsForMatchedRepo(b *testing.B) {
+	b.Run("2 conflicting", func(b *testing.B) {
+		pats, _ := findPatternRevs([]string{".*o@123456", "foo@234567"})
+		for i := 0; i < b.N; i++ {
+			_, _ = getRevsForMatchedRepo("foo", pats)
+		}
+	})
+
+	b.Run("multiple overlapping", func(b *testing.B) {
+		pats, _ := findPatternRevs([]string{".*o@a:b:c:d", "foo@b:c:d:e", "foo@c:d:e:f"})
+		for i := 0; i < b.N; i++ {
+			_, _ = getRevsForMatchedRepo("foo", pats)
+		}
+	})
+}
+
 func TestDefaultRepositories(t *testing.T) {
 	tcs := []struct {
 		name             string
@@ -368,58 +394,6 @@ func TestDefaultRepositories(t *testing.T) {
 	}
 }
 
-func TestHasTypeRepo(t *testing.T) {
-	tests := []struct {
-		query           string
-		wantHasTypeRepo bool
-	}{
-		{
-			query:           "sourcegraph type:repo",
-			wantHasTypeRepo: true,
-		},
-		{
-			query:           "sourcegraph type:symbol type:repo",
-			wantHasTypeRepo: true,
-		},
-		{
-			query:           "(sourcegraph type:repo) or (goreman type:repo)",
-			wantHasTypeRepo: true,
-		},
-		{
-			query:           "sourcegraph repohasfile:Dockerfile type:repo",
-			wantHasTypeRepo: true,
-		},
-		{
-			query:           "repo:sourcegraph type:repo",
-			wantHasTypeRepo: true,
-		},
-		{
-			query:           "repo:sourcegraph",
-			wantHasTypeRepo: false,
-		},
-		{
-			query:           "repository",
-			wantHasTypeRepo: false,
-		},
-		{
-			query:           "",
-			wantHasTypeRepo: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.query, func(t *testing.T) {
-			q, err := query.ProcessAndOr(tt.query, query.ParserOptions{SearchType: query.SearchTypeLiteral})
-			if err != nil {
-				t.Fatal(err)
-			}
-			if got := hasTypeRepo(q); got != tt.wantHasTypeRepo {
-				t.Fatalf("got %t, expected %t", got, tt.wantHasTypeRepo)
-			}
-		})
-	}
-}
-
 func TestUseDefaultReposIfMissingOrGlobalSearchContext(t *testing.T) {
 	orig := envvar.SourcegraphDotComMode()
 	envvar.MockSourcegraphDotComMode(true)
@@ -491,6 +465,8 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(orig)
 
+	db := dbtest.NewDB(t, *dsn)
+
 	const (
 		wantName   = "alice"
 		wantUserID = 123
@@ -504,9 +480,34 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 		if op.UserID != wantUserID {
 			t.Errorf("got %q, want %q", op.UserID, wantUserID)
 		}
-		return []*types.RepoName{}, nil
+		return []*types.RepoName{
+			{
+				ID:   1,
+				Name: "example.com/a",
+			},
+			{
+				ID:   2,
+				Name: "example.com/b",
+			},
+			{
+				ID:   3,
+				Name: "example.com/c",
+			},
+			{
+				ID:   4,
+				Name: "external.com/a",
+			},
+			{
+				ID:   5,
+				Name: "external.com/b",
+			},
+			{
+				ID:   6,
+				Name: "external.com/c",
+			},
+		}, nil
 	}
-	database.Mocks.Repos.Count = func(ctx context.Context, op database.ReposListOptions) (int, error) { return 0, nil }
+	database.Mocks.Repos.Count = func(ctx context.Context, op database.ReposListOptions) (int, error) { return 3, nil }
 	defer func() {
 		database.Mocks.Repos.ListRepoNames = nil
 		database.Mocks.Repos.Count = nil
@@ -524,9 +525,27 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 		Query:             queryInfo,
 		SearchContextSpec: "@" + wantName,
 	}
-	repositoryResolver := &Resolver{NamespaceStore: namespaceStore}
-	_, err = repositoryResolver.Resolve(context.Background(), op)
+	repositoryResolver := &Resolver{DB: db, NamespaceStore: namespaceStore}
+	resolved, err := repositoryResolver.Resolve(context.Background(), op)
 	if err != nil {
 		t.Fatal(err)
+	}
+	var got []api.RepoName
+	for _, rev := range resolved.RepoRevs {
+		got = append(got, rev.Repo.Name)
+	}
+	sort.Slice(got, func(i, j int) bool {
+		return got[i] < got[j]
+	})
+	want := []api.RepoName{
+		"example.com/a",
+		"example.com/b",
+		"example.com/c",
+		"external.com/a",
+		"external.com/b",
+		"external.com/c",
+	}
+	if diff := cmp.Diff(got, want, nil); diff != "" {
+		t.Errorf("unexpected diff: %s", diff)
 	}
 }

@@ -28,6 +28,7 @@ import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
 import { ExtensionAlertAnimationProps } from './UserNavItem'
+import { LayoutRouteProps } from '../routes'
 
 interface Props
     extends SettingsCascadeProps,
@@ -54,7 +55,8 @@ interface Props
     onNavbarQueryChange: (queryState: QueryState) => void
     isSourcegraphDotCom: boolean
     isSearchRelatedPage: boolean
-    showCampaigns: boolean
+    showBatchChanges: boolean
+    routes: readonly LayoutRouteProps<{}>[]
 
     // Whether globbing is enabled for filters.
     globbing: boolean
@@ -72,7 +74,7 @@ interface Props
      */
     variant: 'default' | 'low-profile' | 'low-profile-with-logo' | 'no-search-input'
 
-    setVersionContext: (versionContext: string | undefined) => void
+    setVersionContext: (versionContext: string | undefined) => Promise<void>
     availableVersionContexts: VersionContext[] | undefined
 
     minimalNavLinks?: boolean

@@ -5,13 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"sort"
-	"strconv"
 	"sync"
 
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -58,7 +57,7 @@ type SearchArgs struct {
 
 type SearchImplementer interface {
 	Results(context.Context) (*SearchResultsResolver, error)
-	Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error)
+	Suggestions(context.Context, *searchSuggestionsArgs) ([]SearchSuggestionResolver, error)
 	//lint:ignore U1000 is used by graphql via reflection
 	Stats(context.Context) (*searchResultsStats, error)
 
@@ -92,30 +91,22 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 		return nil, errors.New("Structural search is disabled in the site configuration.")
 	}
 
-	var q query.Q
+	var plan query.Plan
 	globbing := getBoolPtr(settings.SearchGlobbing, false)
 	tr.LogFields(otlog.Bool("globbing", globbing))
-	q, err = query.ProcessAndOr(args.Query, query.ParserOptions{SearchType: searchType, Globbing: globbing})
+	plan, err = query.Pipeline(
+		query.Init(args.Query, searchType),
+		query.With(globbing, query.Globbing),
+	)
 	if err != nil {
 		return alertForQuery(db, args.Query, err), nil
 	}
-	if getBoolPtr(settings.SearchUppercase, false) {
-		q = query.SearchUppercase(q)
-	}
 	tr.LazyPrintf("parsing done")
-
-	// If stable:truthy is specified, make the query return a stable result ordering.
-	if q.BoolValue(query.FieldStable) {
-		args, q, err = queryForStableResults(args, q)
-		if err != nil {
-			return alertForQuery(db, args.Query, err), nil
-		}
-	}
 
 	// If the request is a paginated one, decode those arguments now.
 	var pagination *searchPaginationInfo
 	if args.First != nil {
-		pagination, err = processPaginationRequest(args, q)
+		pagination, err = processPaginationRequest(args, plan.ToParseTree())
 		if err != nil {
 			return nil, err
 		}
@@ -130,7 +121,7 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 		defaultLimit = defaultMaxSearchResults
 	}
 
-	if sp, _ := q.StringValue(query.FieldSelect); sp != "" && args.Stream != nil {
+	if sp, _ := plan.ToParseTree().StringValue(query.FieldSelect); sp != "" && args.Stream != nil {
 		// Invariant: error already checked
 		selectPath, _ := filter.SelectPathFromString(sp)
 		args.Stream = WithSelect(args.Stream, selectPath)
@@ -139,7 +130,8 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 	return &searchResolver{
 		db: db,
 		SearchInputs: &SearchInputs{
-			Query:          q,
+			Plan:           plan,
+			Query:          plan.ToParseTree(),
 			OriginalQuery:  args.Query,
 			VersionContext: args.VersionContext,
 			UserSettings:   settings,
@@ -159,35 +151,6 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 
 func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchImplementer, error) {
 	return NewSearchImplementer(ctx, r.db, args)
-}
-
-// queryForStableResults transforms a query that returns a stable result
-// ordering. The transformed query uses pagination underneath the hood.
-func queryForStableResults(args *SearchArgs, q query.Q) (*SearchArgs, query.Q, error) {
-	if q.BoolValue(query.FieldStable) {
-		var stableResultCount int32
-		if _, countPresent := q.Fields()["count"]; countPresent {
-			count, _ := q.StringValue(query.FieldCount)
-			count64, err := strconv.ParseInt(count, 10, 32)
-			if err != nil {
-				return nil, nil, err
-			}
-			stableResultCount = int32(count64)
-			if stableResultCount > maxSearchResultsPerPaginatedRequest {
-				return nil, nil, fmt.Errorf("Stable searches are limited to at max count:%d results. Consider removing 'stable:', narrowing the search with 'repo:', or using the paginated search API.", maxSearchResultsPerPaginatedRequest)
-			}
-		} else {
-			stableResultCount = defaultMaxSearchResults
-		}
-		args.First = &stableResultCount
-		fileValue := "file"
-		// Pagination only works for file content searches, and will
-		// raise an error otherwise. If stable is explicitly set, this
-		// is implied. So, force this query to only return file content
-		// results.
-		q = query.OverrideField(q, "type", fileValue)
-	}
-	return args, q, nil
 }
 
 func processPaginationRequest(args *SearchArgs, q query.Q) (*searchPaginationInfo, error) {
@@ -242,7 +205,7 @@ func detectSearchType(version string, patternType *string) (query.SearchType, er
 }
 
 func overrideSearchType(input string, searchType query.SearchType) query.SearchType {
-	q, err := query.ParseAndOr(input, query.SearchTypeLiteral)
+	q, err := query.Parse(input, query.SearchTypeLiteral)
 	q = query.LowercaseFieldNames(q)
 	if err != nil {
 		// If parsing fails, return the default search type. Any actual
@@ -271,7 +234,8 @@ func getBoolPtr(b *bool, def bool) bool {
 
 // SearchInputs contains fields we set before kicking off search.
 type SearchInputs struct {
-	Query          query.Q               // the query
+	Plan           query.Plan            // the comprehensive query plan
+	Query          query.Q               // the current basic query being evaluated, one part of query.Plan
 	OriginalQuery  string                // the raw string of the original search query
 	Pagination     *searchPaginationInfo // pagination information, or nil if the request is not paginated.
 	PatternType    query.SearchType
@@ -312,9 +276,8 @@ func (r *searchResolver) rawQuery() string {
 }
 
 func (r *searchResolver) countIsSet() bool {
-	count, _ := r.Query.StringValues(query.FieldCount)
-	max, _ := r.Query.StringValues(query.FieldMax)
-	return len(count) > 0 || len(max) > 0
+	count := r.Query.Count()
+	return count != nil
 }
 
 const defaultMaxSearchResults = 30
@@ -333,19 +296,9 @@ func (inputs SearchInputs) MaxResults() int {
 	if inputs.Query == nil {
 		return 0
 	}
-	count, _ := inputs.Query.StringValues(query.FieldCount)
-	if len(count) > 0 {
-		n, _ := strconv.Atoi(count[0])
-		if n > 0 {
-			return n
-		}
-	}
-	max, _ := inputs.Query.StringValues(query.FieldMax)
-	if len(max) > 0 {
-		n, _ := strconv.Atoi(max[0])
-		if n > 0 {
-			return n
-		}
+
+	if count := inputs.Query.Count(); count != nil {
+		return *count
 	}
 
 	if inputs.DefaultLimit != 0 {
@@ -405,7 +358,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		}
 	}
 
-	repoFilters, minusRepoFilters := r.Query.RegexpPatterns(query.FieldRepo)
+	repoFilters, minusRepoFilters := r.Query.Repositories()
 	if effectiveRepoFieldValues != nil {
 		repoFilters = effectiveRepoFieldValues
 	}
@@ -419,22 +372,26 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		settingArchived = *v
 	}
 
-	forkStr, _ := r.Query.StringValue(query.FieldFork)
-	fork := query.ParseYesNoOnly(forkStr)
-	if fork == query.Invalid && !searchrepos.ExactlyOneRepo(repoFilters) && !settingForks {
+	fork := query.No
+	if searchrepos.ExactlyOneRepo(repoFilters) || settingForks {
 		// fork defaults to No unless either of:
 		// (1) exactly one repo is being searched, or
 		// (2) user/org/global setting includes forks
-		fork = query.No
+		fork = query.Yes
+	}
+	if setFork := r.Query.Fork(); setFork != nil {
+		fork = *setFork
 	}
 
-	archivedStr, _ := r.Query.StringValue(query.FieldArchived)
-	archived := query.ParseYesNoOnly(archivedStr)
-	if archived == query.Invalid && !searchrepos.ExactlyOneRepo(repoFilters) && !settingArchived {
+	archived := query.No
+	if searchrepos.ExactlyOneRepo(repoFilters) || settingArchived {
 		// archived defaults to No unless either of:
 		// (1) exactly one repo is being searched, or
 		// (2) user/org/global setting includes archives in all searches
-		archived = query.No
+		archived = query.Yes
+	}
+	if setArchived := r.Query.Archived(); setArchived != nil {
+		archived = *setArchived
 	}
 
 	visibilityStr, _ := r.Query.StringValue(query.FieldVisibility)
@@ -465,7 +422,12 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		CommitAfter:        commitAfter,
 		Query:              r.Query,
 	}
-	repositoryResolver := &searchrepos.Resolver{Zoekt: r.zoekt, DefaultReposFunc: database.GlobalDefaultRepos.List, NamespaceStore: database.Namespaces(r.db)}
+	repositoryResolver := &searchrepos.Resolver{
+		DB:               r.db,
+		Zoekt:            r.zoekt,
+		DefaultReposFunc: backend.Repos.ListDefault,
+		NamespaceStore:   database.Namespaces(r.db),
+	}
 	resolved, err := repositoryResolver.Resolve(ctx, options)
 	tr.LazyPrintf("resolveRepositories - done")
 	if effectiveRepoFieldValues == nil {
@@ -475,7 +437,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	return resolved, err
 }
 
-func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*searchSuggestionResolver, error) {
+func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]SearchSuggestionResolver, error) {
 	resolved, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -509,10 +471,13 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 		return nil, err
 	}
 
-	var suggestions []*searchSuggestionResolver
+	var suggestions []SearchSuggestionResolver
 	for i, result := range fileResults {
 		assumedScore := len(fileResults) - i // Greater score is first, so we inverse the index.
-		suggestions = append(suggestions, newSearchSuggestionResolver(result.File(), assumedScore))
+		suggestions = append(suggestions, gitTreeSuggestionResolver{
+			gitTreeEntry: result.File(),
+			score:        assumedScore,
+		})
 	}
 	return suggestions, nil
 }
@@ -531,90 +496,6 @@ func (e *badRequestError) Error() string {
 
 func (e *badRequestError) Cause() error {
 	return e.err
-}
-
-// searchSuggestionResolver is a resolver for the GraphQL union type `SearchSuggestion`
-type searchSuggestionResolver struct {
-	// result is either a RepositoryResolver or a GitTreeEntryResolver
-	result interface{}
-	// score defines how well this item matches the query for sorting purposes
-	score int
-	// length holds the length of the item name as a second sorting criterium
-	length int
-	// label to sort alphabetically by when all else is equal.
-	label string
-}
-
-func (r *searchSuggestionResolver) ToRepository() (*RepositoryResolver, bool) {
-	res, ok := r.result.(*RepositoryResolver)
-	return res, ok
-}
-
-func (r *searchSuggestionResolver) ToFile() (*GitTreeEntryResolver, bool) {
-	res, ok := r.result.(*GitTreeEntryResolver)
-	return res, ok
-}
-
-func (r *searchSuggestionResolver) ToGitBlob() (*GitTreeEntryResolver, bool) {
-	res, ok := r.result.(*GitTreeEntryResolver)
-	return res, ok && res.stat.Mode().IsRegular()
-}
-
-func (r *searchSuggestionResolver) ToGitTree() (*GitTreeEntryResolver, bool) {
-	res, ok := r.result.(*GitTreeEntryResolver)
-	return res, ok && res.stat.Mode().IsDir()
-}
-
-func (r *searchSuggestionResolver) ToSymbol() (*symbolResolver, bool) {
-	s, ok := r.result.(*symbolResolver)
-	return s, ok
-}
-
-func (r *searchSuggestionResolver) ToLanguage() (*languageResolver, bool) {
-	res, ok := r.result.(*languageResolver)
-	return res, ok
-}
-
-// newSearchSuggestionResolver returns a new searchSuggestionResolver wrapping the
-// given result.
-//
-// A panic occurs if the type of result is not a *RepositoryResolver, *GitTreeEntryResolver,
-// *searchSymbolResult or *languageResolver.
-func newSearchSuggestionResolver(result interface{}, score int) *searchSuggestionResolver {
-	switch r := result.(type) {
-	case *RepositoryResolver:
-		return &searchSuggestionResolver{result: r, score: score, length: len(r.Name()), label: r.Name()}
-
-	case *GitTreeEntryResolver:
-		return &searchSuggestionResolver{result: r, score: score, length: len(r.Path()), label: r.Path()}
-
-	case symbolResolver:
-		return &searchSuggestionResolver{result: r, score: score, length: len(r.symbol.Name + " " + r.symbol.Parent), label: r.symbol.Name + " " + r.symbol.Parent}
-
-	case *languageResolver:
-		return &searchSuggestionResolver{result: r, score: score, length: len(r.Name()), label: r.Name()}
-
-	default:
-		panic("never here")
-	}
-}
-
-func sortSearchSuggestions(s []*searchSuggestionResolver) {
-	sort.Slice(s, func(i, j int) bool {
-		// Sort by score
-		a, b := s[i], s[j]
-		if a.score != b.score {
-			return a.score > b.score
-		}
-		// Prefer shorter strings for the same match score
-		// E.g. prefer gorilla/mux over gorilla/muxy, Microsoft/vscode over g3ortega/vscode-crystal
-		if a.length != b.length {
-			return a.length < b.length
-		}
-
-		// All else equal, sort alphabetically.
-		return a.label < b.label
-	})
 }
 
 // handleRepoSearchResult handles the limitHit and searchErr returned by a search function,
@@ -645,8 +526,6 @@ func handleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timed
 		status |= search.RepoStatusTimedout
 	} else if searchErr != nil {
 		fatalErr = searchErr
-	} else {
-		status |= search.RepoStatusSearched
 	}
 	return streaming.Stats{
 		Status:     search.RepoStatusSingleton(repoRev.Repo.ID, status),

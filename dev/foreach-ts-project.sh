@@ -15,6 +15,7 @@ DIRS=(
   client/shared
   client/branded
   client/browser
+  client/wildcard
   client/packages/sourcegraph-extension-api
   client/packages/@sourcegraph/eslint-plugin-sourcegraph
   client/packages/@sourcegraph/extension-api-types
@@ -34,6 +35,12 @@ run_command() {
     set -x
     cd "$dir" && eval "${MAYBE_TIME_PREFIX} ${ARGS}"
   )
+
+  # shellcheck disable=SC2181
+  # We are checking the sub-shell, following SC2181 would make this unreadable
+  if [[ $? -ne 0 ]]; then
+    echo "^^^ +++"
+  fi
 }
 export -f run_command
 

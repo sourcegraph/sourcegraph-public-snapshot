@@ -49,7 +49,7 @@ const isSearchResults = (value: unknown): value is GQL.ISearchResults =>
     value.__typename === 'SearchResults'
 
 export interface SearchResultsListProps
-    extends ExtensionsControllerProps<'executeCommand' | 'services'>,
+    extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         TelemetryProps,
         SettingsCascadeProps,
@@ -359,7 +359,6 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                             className="m-2"
                             data-testid="search-results-list-error"
                             error={this.props.resultsOrError}
-                            history={this.props.history}
                         />
                     ) : (
                         (() => {

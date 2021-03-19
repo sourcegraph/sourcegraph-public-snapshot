@@ -322,6 +322,12 @@ func ScanBalancedPattern(buf []byte) (scanned string, count int, ok bool) {
 
 	// looks ahead to see if there are any recognized fields or operators.
 	keepScanning := func() bool {
+		// Keep scanning in case we see a reserved predicate keyword, which may
+		// contain subsequent parantheses. TODO (@camdencheek) See #19075 for more info
+		if string(result) == "contains" {
+			return true
+		}
+
 		if field, _, _ := ScanField(buf); field != "" {
 			// This "pattern" contains a recognized field, reject it.
 			return false
@@ -1004,8 +1010,8 @@ func (p *parser) tryFallbackParser(in string) ([]Node, error) {
 	return newOperator(nodes, And), nil
 }
 
-// ParseAndOr a raw input string into a parse tree comprising Nodes.
-func ParseAndOr(in string, searchType SearchType) ([]Node, error) {
+// Parse parses a raw input string into a parse tree comprising Nodes.
+func Parse(in string, searchType SearchType) ([]Node, error) {
 	if strings.TrimSpace(in) == "" {
 		return nil, nil
 	}
@@ -1052,53 +1058,14 @@ func ParseAndOr(in string, searchType SearchType) ([]Node, error) {
 	return newOperator(nodes, And), nil
 }
 
-type ParserOptions struct {
-	SearchType SearchType
-
-	// treat repo, file, or repohasfile values as glob syntax if true.
-	Globbing bool
-}
-
-// ProcessAndOr query parses and validates an and/or query for a given search type.
-func ProcessAndOr(in string, options ParserOptions) (Q, error) {
-	var query []Node
-	var err error
-
-	query, err = ParseAndOr(in, options.SearchType)
-	if err != nil {
-		return nil, err
-	}
-	query = Map(query, LowercaseFieldNames, SubstituteAliases(options.SearchType))
-
-	switch options.SearchType {
-	case SearchTypeLiteral:
-		query = Map(query, substituteConcat(space))
-	case SearchTypeStructural:
-		query = Map(query, labelStructural, ellipsesForHoles, substituteConcat(space))
-	case SearchTypeRegex:
-		query = Map(query, escapeParensHeuristic, substituteConcat(fuzzyRegexp))
-	}
-
-	if options.Globbing {
-		query, err = mapGlobToRegex(query)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	for _, disjunct := range Dnf(query) {
-		err = validate(disjunct)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return query, nil
+func ParseSearchType(in string, searchType SearchType) (Q, error) {
+	return Run(Init(in, searchType))
 }
 
 func ParseLiteral(in string) (Q, error) {
-	return ProcessAndOr(in, ParserOptions{SearchType: SearchTypeLiteral})
+	return Run(Init(in, SearchTypeLiteral))
 }
 
 func ParseRegexp(in string) (Q, error) {
-	return ProcessAndOr(in, ParserOptions{SearchType: SearchTypeRegex})
+	return Run(Init(in, SearchTypeRegex))
 }

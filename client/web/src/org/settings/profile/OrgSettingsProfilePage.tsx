@@ -1,6 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React, { useCallback, useEffect, useState } from 'react'
-import { RouteComponentProps } from 'react-router'
 import { ORG_DISPLAY_NAME_MAX_LENGTH } from '../..'
 import { Form } from '../../../../../branded/src/components/Form'
 import { PageTitle } from '../../../components/PageTitle'
@@ -9,15 +8,15 @@ import { OrgAreaPageProps } from '../../area/OrgArea'
 import { updateOrganization } from '../../backend'
 import { ErrorAlert } from '../../../components/alerts'
 import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
+import { Timestamp } from '../../../components/time/Timestamp'
+import { PageHeader } from '../../../components/PageHeader'
 
-interface Props
-    extends Pick<OrgAreaPageProps, 'org' | 'onOrganizationUpdate'>,
-        Pick<RouteComponentProps<{}>, 'history'> {}
+interface Props extends Pick<OrgAreaPageProps, 'org' | 'onOrganizationUpdate'> {}
 
 /**
  * The organization profile settings page.
  */
-export const OrgSettingsProfilePage: React.FunctionComponent<Props> = ({ history, org, onOrganizationUpdate }) => {
+export const OrgSettingsProfilePage: React.FunctionComponent<Props> = ({ org, onOrganizationUpdate }) => {
     useEffect(() => {
         eventLogger.logViewEvent('OrgSettingsProfile')
     }, [org.id])
@@ -65,7 +64,21 @@ export const OrgSettingsProfilePage: React.FunctionComponent<Props> = ({ history
     return (
         <div className="org-settings-profile-page">
             <PageTitle title={org.name} />
-            <h2>Organization profile</h2>
+            <PageHeader
+                path={[{ text: 'Organisation profile' }]}
+                headingElement="h2"
+                className="org-settings-profile-page__heading"
+            />
+            <p>
+                {org.displayName ? (
+                    <>
+                        {org.displayName} ({org.name})
+                    </>
+                ) : (
+                    org.name
+                )}{' '}
+                was created <Timestamp date={org.createdAt} />.
+            </p>
             <Form className="org-settings-profile-page" onSubmit={onSubmit}>
                 <div className="form-group">
                     <label>Display name</label>
@@ -95,7 +108,7 @@ export const OrgSettingsProfilePage: React.FunctionComponent<Props> = ({ history
                 >
                     <small>Updated!</small>
                 </div>
-                {isErrorLike(isLoading) && <ErrorAlert error={isLoading} history={history} />}
+                {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
             </Form>
         </div>
     )

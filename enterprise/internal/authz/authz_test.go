@@ -30,7 +30,7 @@ func (m gitlabAuthzProviderParams) Repos(ctx context.Context, repos []*types.Rep
 	panic("should never be called")
 }
 
-func (m gitlabAuthzProviderParams) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account) (mine *extsvc.Account, err error) {
+func (m gitlabAuthzProviderParams) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account, verifiedEmails []string) (mine *extsvc.Account, err error) {
 	panic("should never be called")
 }
 
@@ -48,7 +48,7 @@ func (m gitlabAuthzProviderParams) URN() string {
 
 func (m gitlabAuthzProviderParams) Validate() []string { return nil }
 
-func (m gitlabAuthzProviderParams) FetchUserPerms(context.Context, *extsvc.Account) ([]extsvc.RepoID, error) {
+func (m gitlabAuthzProviderParams) FetchUserPerms(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 	panic("should never be called")
 }
 
@@ -464,8 +464,11 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			bitbucketServers: test.bitbucketServerConnections,
 		}
 
-		allowAccessByDefault, authzProviders, seriousProblems, _ :=
-			ProvidersFromConfig(context.Background(), &test.cfg, &store)
+		allowAccessByDefault, authzProviders, seriousProblems, _ := ProvidersFromConfig(
+			context.Background(),
+			&test.cfg,
+			&store,
+		)
 		if allowAccessByDefault != test.expAuthzAllowAccessByDefault {
 			t.Errorf("allowAccessByDefault: (actual) %v != (expected) %v", asJSON(t, allowAccessByDefault), asJSON(t, test.expAuthzAllowAccessByDefault))
 		}

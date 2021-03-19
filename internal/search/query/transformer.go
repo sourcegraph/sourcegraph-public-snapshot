@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"unicode"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
@@ -24,8 +23,7 @@ func SubstituteAliases(searchType SearchType) func(nodes []Node) []Node {
 		"msg":      FieldMessage,
 		"revision": FieldRev,
 	}
-	var mapper func(nodes []Node) []Node
-	mapper = func(nodes []Node) []Node {
+	mapper := func(nodes []Node) []Node {
 		return MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
 			if field == "content" {
 				if searchType == SearchTypeRegex {
@@ -252,8 +250,8 @@ func fuzzifyGlobPattern(value string) string {
 	return "**" + value + "**"
 }
 
-// mapGlobToRegex translates glob to regexp for fields repo, file, and repohasfile.
-func mapGlobToRegex(nodes []Node) ([]Node, error) {
+// Globbing translates glob to regexp for fields repo, file, and repohasfile.
+func Globbing(nodes []Node) ([]Node, error) {
 	var globErrors []globError
 
 	nodes = MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
@@ -340,30 +338,6 @@ func Hoist(nodes []Node) ([]Node, error) {
 		return Pattern{Value: value, Negated: negated, Annotation: annotation}
 	})
 	return append(scopeParameters, newOperator(pattern, expression.Kind)...), nil
-}
-
-// SearchUppercase adds case:yes to queries if any pattern is mixed-case.
-func SearchUppercase(nodes []Node) []Node {
-	var foundMixedCase bool
-	VisitPattern(nodes, func(value string, _ bool, _ Annotation) {
-		if match := containsUppercase(value); match {
-			foundMixedCase = true
-		}
-	})
-	if foundMixedCase {
-		nodes = append(nodes, Parameter{Field: "case", Value: "yes"})
-		return newOperator(nodes, And)
-	}
-	return nodes
-}
-
-func containsUppercase(s string) bool {
-	for _, r := range s {
-		if unicode.IsUpper(r) && unicode.IsLetter(r) {
-			return true
-		}
-	}
-	return false
 }
 
 // partition partitions nodes into left and right groups. A node is put in the
@@ -742,4 +716,8 @@ func AddRegexpField(q Q, field, pattern string) string {
 		q = newOperator(append(q, Parameter{Field: field, Value: pattern}), And)
 	}
 	return StringHuman(q)
+}
+
+func identity(nodes []Node) ([]Node, error) {
+	return nodes, nil
 }

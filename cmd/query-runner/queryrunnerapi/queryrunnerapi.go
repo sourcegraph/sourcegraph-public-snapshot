@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
@@ -104,6 +105,7 @@ func (c *client) post(path string, data interface{}) error {
 	if err != nil {
 		return errors.Wrap(err, "Post "+u.String())
 	}
+	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusOK {
 		return nil
 	}

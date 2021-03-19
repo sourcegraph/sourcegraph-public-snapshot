@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"

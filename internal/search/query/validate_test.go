@@ -91,10 +91,14 @@ func TestAndOrQuery_Validation(t *testing.T) {
 			input: "-context:a",
 			want:  `field "context" does not support negation`,
 		},
+		{
+			input: "type:symbol select:symbol.timelime",
+			want:  "invalid field 'timelime' on select type 'symbol'",
+		},
 	}
 	for _, c := range cases {
 		t.Run("validate and/or query", func(t *testing.T) {
-			_, err := ProcessAndOr(c.input, ParserOptions{c.searchType, false})
+			_, err := Pipeline(Init(c.input, c.searchType))
 			if err == nil {
 				t.Fatal(fmt.Sprintf("expected test for %s to fail", c.input))
 			}
@@ -131,7 +135,7 @@ func TestAndOrQuery_IsCaseSensitive(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			query, err := ProcessAndOr(c.input, ParserOptions{SearchTypeRegex, false})
+			query, err := ParseRegexp(c.input)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -161,7 +165,7 @@ func TestAndOrQuery_RegexpPatterns(t *testing.T) {
 		},
 	}
 	t.Run("for regexp field", func(t *testing.T) {
-		query, err := ProcessAndOr(c.query, ParserOptions{SearchTypeRegex, false})
+		query, err := ParseRegexp(c.query)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -247,7 +251,7 @@ func TestPartitionSearchPattern(t *testing.T) {
 	}
 	for _, tt := range cases {
 		t.Run("partition search pattern", func(t *testing.T) {
-			q, _ := ParseAndOr(tt.input, SearchTypeRegex)
+			q, _ := Parse(tt.input, SearchTypeRegex)
 			scopeParameters, pattern, err := PartitionSearchPattern(q)
 			if err != nil {
 				if diff := cmp.Diff(tt.want, err.Error()); diff != "" {
@@ -282,59 +286,114 @@ func TestForAll(t *testing.T) {
 }
 
 func TestContainsRefGlobs(t *testing.T) {
-	tests := []struct {
-		query    string
+	cases := []struct {
+		input    string
 		want     bool
 		globbing bool
 	}{
 		{
-			query: "repo:foo",
+			input: "repo:foo",
 			want:  false,
 		},
 		{
-			query: "repo:foo@bar",
+			input: "repo:foo@bar",
 			want:  false,
 		},
 		{
-			query: "repo:foo@*ref/tags",
+			input: "repo:foo@*ref/tags",
 			want:  true,
 		},
 		{
-			query: "repo:foo@*!refs/tags",
+			input: "repo:foo@*!refs/tags",
 			want:  true,
 		},
 		{
-			query: "repo:foo@bar:*refs/heads",
+			input: "repo:foo@bar:*refs/heads",
 			want:  true,
 		},
 		{
-			query: "repo:foo@refs/tags/v3.14.3",
+			input: "repo:foo@refs/tags/v3.14.3",
 			want:  false,
 		},
 		{
-			query: "repo:foo@*refs/tags/v3.14.?",
+			input: "repo:foo@*refs/tags/v3.14.?",
 			want:  true,
 		},
 		{
-			query:    "repo:*foo*@v3.14.3",
+			input:    "repo:*foo*@v3.14.3",
 			globbing: true,
 			want:     false,
 		},
 		{
-			query: "repo:foo@v3.14.3 repo:foo@*refs/tags/v3.14.* bar",
+			input: "repo:foo@v3.14.3 repo:foo@*refs/tags/v3.14.* bar",
 			want:  true,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.input, func(t *testing.T) {
+			query, err := Run(sequence(
+				Init(c.input, SearchTypeLiteral),
+				Globbing,
+			))
+			if err != nil {
+				t.Error(err)
+			}
+			got := ContainsRefGlobs(query)
+			if got != c.want {
+				t.Errorf("got %t, expected %t", got, c.want)
+			}
+		})
+	}
+}
+
+func TestHasTypeRepo(t *testing.T) {
+	tests := []struct {
+		query           string
+		wantHasTypeRepo bool
+	}{
+		{
+			query:           "sourcegraph type:repo",
+			wantHasTypeRepo: true,
+		},
+		{
+			query:           "sourcegraph type:symbol type:repo",
+			wantHasTypeRepo: true,
+		},
+		{
+			query:           "(sourcegraph type:repo) or (goreman type:repo)",
+			wantHasTypeRepo: true,
+		},
+		{
+			query:           "sourcegraph repohasfile:Dockerfile type:repo",
+			wantHasTypeRepo: true,
+		},
+		{
+			query:           "repo:sourcegraph type:repo",
+			wantHasTypeRepo: true,
+		},
+		{
+			query:           "repo:sourcegraph",
+			wantHasTypeRepo: false,
+		},
+		{
+			query:           "repository",
+			wantHasTypeRepo: false,
+		},
+		{
+			query:           "",
+			wantHasTypeRepo: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.query, func(t *testing.T) {
-			qInfo, err := ProcessAndOr(tt.query, ParserOptions{SearchType: SearchTypeLiteral, Globbing: tt.globbing})
+			q, err := ParseLiteral(tt.query)
 			if err != nil {
-				t.Error(err)
+				t.Fatal(err)
 			}
-			got := ContainsRefGlobs(qInfo)
-			if got != tt.want {
-				t.Errorf("got %t, expected %t", got, tt.want)
+			if got := HasTypeRepo(q); got != tt.wantHasTypeRepo {
+				t.Fatalf("got %t, expected %t", got, tt.wantHasTypeRepo)
 			}
 		})
 	}

@@ -1,18 +1,37 @@
-name: Changelog progress
+name: Progress bot
 on:
+  workflow_dispatch:
+    inputs:
+      since:
+        description: 'Time period to report'
+        required: false
+        default: '24h'
+      dry:
+        description: 'Only output message that would be sent to Slack'
+        required: false
+        default: 'false'
+      channel:
+        description: 'Slack channel to send message to'
+        required: false
+        default: 'progress'
   schedule:
   - cron: "0 0 * * *"   # Every day 00:00 UTC (4pm PST)
 jobs:
-  sync-progress-channel:
+  report-to-slack:
     runs-on: ubuntu-latest
-    name: Sync changelog to progress channel
-    env:
-      WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_PROGRESS_CHANNEL }}
-      # # Replace with this URL for testing:
-      # WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_TEST_CHANNEL }}
+    name: Report the last 24h of CHANGELOG to the progress channel
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 1000
-      - run: ./dev/report_progress_to_slack.py
-        shell: bash
+      - name: Set up GCP key
+        run: |
+          echo ${{ secrets.PROGRESS_BOT_GCP_ACCOUNT_KEY }} | base64 -d > progress-bot-credentials.json
+      - name: Report to Slack
+        uses: docker://sourcegraph/progress-bot:latest
+        env:
+          SINCE: ${{ github.event.inputs.since || '24h' }}
+          DRY: ${{ github.event.inputs.dry || 'false' }}
+          CHANNEL: ${{ github.event.inputs.channel || 'progress' }}
+          GOOGLE_APPLICATION_CREDENTIALS: progress-bot-credentials.json
+          SLACK_API_TOKEN: ${{ secrets.PROGRESS_BOT_SLACK_API_TOKEN }}

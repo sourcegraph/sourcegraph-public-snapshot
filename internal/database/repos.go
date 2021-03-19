@@ -35,6 +35,11 @@ type RepoNotFoundErr struct {
 	Name api.RepoName
 }
 
+func IsRepoNotFoundErr(err error) bool {
+	_, ok := err.(*RepoNotFoundErr)
+	return ok
+}
+
 func (e *RepoNotFoundErr) Error() string {
 	if e.Name != "" {
 		return fmt.Sprintf("repo not found: name=%q", e.Name)
@@ -49,7 +54,7 @@ func (e *RepoNotFoundErr) NotFound() bool {
 	return true
 }
 
-// RepoStore is a DB-backed implementation of the Repos.
+// RepoStore handles access to the repo table
 type RepoStore struct {
 	*basestore.Store
 
@@ -61,7 +66,8 @@ func Repos(db dbutil.DB) *RepoStore {
 	return &RepoStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
-// NewRepoStoreWithDB instantiates and returns a new RepoStore using the other store handle.
+// NewRepoStoreWithDB instantiates and returns a new RepoStore using the other
+// store handle.
 func ReposWith(other basestore.ShareableStore) *RepoStore {
 	return &RepoStore{Store: basestore.NewWithHandle(other.Handle())}
 }
@@ -224,7 +230,16 @@ func (s *RepoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, er
 		joins = append(joins, sqlf.Sprintf("JOIN external_service_repos e ON (repo.id = e.repo_id AND e.external_service_id IN (%s))", sqlf.Join(serviceIDQuery, ",")))
 	} else if opt.UserID != 0 {
 		joins = append(joins, sqlf.Sprintf(`JOIN external_service_repos e ON (repo.id = e.repo_id)
-												   JOIN external_services es on es.id = e.external_service_id AND es.namespace_user_id = %s`, opt.UserID))
+												   JOIN external_services es on es.id = e.external_service_id`))
+		if opt.IncludeUserPublicRepos {
+			conds = append(conds, sqlf.Sprintf("(es.namespace_user_id = %d OR EXISTS (SELECT 1 FROM user_public_repos WHERE user_id = %d AND repo_id = repo.id)) AND es.deleted_at IS NULL", opt.UserID, opt.UserID))
+		} else {
+			conds = append(conds, sqlf.Sprintf("es.namespace_user_id = %d AND es.deleted_at IS NULL", opt.UserID))
+		}
+	}
+
+	if opt.NoCloned || opt.OnlyCloned {
+		joins = append(joins, sqlf.Sprintf("LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
 	}
 
 	predQ := sqlf.Sprintf("TRUE")
@@ -283,7 +298,6 @@ var getBySQLColumns = []string{
 	"repo.description",
 	"repo.fork",
 	"repo.archived",
-	"repo.cloned",
 	"repo.created_at",
 	"repo.updated_at",
 	"repo.deleted_at",
@@ -375,7 +389,6 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 		&dbutil.NullString{S: &r.Description},
 		&r.Fork,
 		&r.Archived,
-		&r.Cloned,
 		&r.CreatedAt,
 		&dbutil.NullTime{Time: &r.UpdatedAt},
 		&dbutil.NullTime{Time: &r.DeletedAt},
@@ -476,6 +489,14 @@ type ReposListOptions struct {
 	// ExternalRepos of repos to list. When zero-valued, this is omitted from the predicate set.
 	ExternalRepos []api.ExternalRepoSpec
 
+	// ExternalRepoIncludePrefixes is the list of specs to include repos using
+	// prefix matching. When zero-valued, this is omitted from the predicate set.
+	ExternalRepoIncludePrefixes []api.ExternalRepoSpec
+
+	// ExternalRepoExcludePrefixes is the list of specs to exclude repos using
+	// prefix matching. When zero-valued, this is omitted from the predicate set.
+	ExternalRepoExcludePrefixes []api.ExternalRepoSpec
+
 	// PatternQuery is an expression tree of patterns to query. The atoms of
 	// the query are strings which are regular expression patterns.
 	PatternQuery query.Q
@@ -524,6 +545,10 @@ type ReposListOptions struct {
 
 	// UseOr decides between ANDing or ORing the predicates together.
 	UseOr bool
+
+	// IncludeUserPublicRepos will include repos from the user_public_repos table if this field is true, and the user_id
+	// is non-zero. Note that these are not repos owned by this user, just ones they are interested in.
+	IncludeUserPublicRepos bool
 
 	*LimitOffset
 }
@@ -639,21 +664,29 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, minimal bool, opt
 		return err
 	}
 
-	fromClause := sqlf.Sprintf("repo")
+	joins := []*sqlf.Query{}
+
 	if len(opt.ExternalServiceIDs) != 0 {
 		serviceIDQuery := []*sqlf.Query{}
 		for _, id := range opt.ExternalServiceIDs {
 			serviceIDQuery = append(serviceIDQuery, sqlf.Sprintf("%s", id))
 		}
-		fromClause = sqlf.Sprintf("repo JOIN external_service_repos e ON (repo.id = e.repo_id AND e.external_service_id IN (%s))", sqlf.Join(serviceIDQuery, ","))
+		joins = append(joins, sqlf.Sprintf("JOIN external_service_repos e ON (repo.id = e.repo_id AND e.external_service_id IN (%s))", sqlf.Join(serviceIDQuery, ",")))
 	} else if opt.UserID != 0 {
-		fromClause = sqlf.Sprintf(`
-			repo
-				JOIN external_service_repos esr ON repo.id = esr.repo_id
-				JOIN external_services es ON esr.external_service_id = es.id
-		`)
-		conds = append(conds, sqlf.Sprintf("es.namespace_user_id = %d AND es.deleted_at IS NULL", opt.UserID))
+		joins = append(joins, sqlf.Sprintf("JOIN external_service_repos esr ON repo.id = esr.repo_id"))
+		joins = append(joins, sqlf.Sprintf("JOIN external_services es ON esr.external_service_id = es.id"))
+		if opt.IncludeUserPublicRepos {
+			conds = append(conds, sqlf.Sprintf("(es.namespace_user_id = %d OR EXISTS (SELECT 1 FROM user_public_repos WHERE user_id = %d AND repo_id = repo.id)) AND es.deleted_at IS NULL", opt.UserID, opt.UserID))
+		} else {
+			conds = append(conds, sqlf.Sprintf("es.namespace_user_id = %d AND es.deleted_at IS NULL", opt.UserID))
+		}
 	}
+
+	if opt.NoCloned || opt.OnlyCloned {
+		joins = append(joins, sqlf.Sprintf("LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
+	}
+
+	fromClause := sqlf.Sprintf("repo %s", sqlf.Join(joins, " "))
 
 	queryConds := sqlf.Sprintf("TRUE")
 	if len(conds) > 0 {
@@ -709,7 +742,15 @@ WHERE
       AND es.deleted_at IS NULL
       AND repo.deleted_at IS NULL
       AND %s
-`, cloneClause, cloneClause)
+
+UNION
+
+SELECT repo.id, repo.name FROM repo
+WHERE
+	EXISTS (SELECT 1 FROM user_public_repos WHERE repo_id = repo.id)
+	AND repo.deleted_at IS NULL
+	AND %s
+`, cloneClause, cloneClause, cloneClause)
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
@@ -735,7 +776,6 @@ WHERE
 func (s *RepoStore) Create(ctx context.Context, repos ...*types.Repo) (err error) {
 	tr, ctx := trace.New(ctx, "repos.Create", "")
 	defer func() {
-
 		tr.SetError(err)
 		tr.Finish()
 	}()
@@ -1131,6 +1171,22 @@ func (*RepoStore) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error)
 		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n OR ")))
 	}
 
+	if len(opt.ExternalRepoIncludePrefixes) > 0 {
+		er := make([]*sqlf.Query, 0, len(opt.ExternalRepoIncludePrefixes))
+		for _, spec := range opt.ExternalRepoIncludePrefixes {
+			er = append(er, sqlf.Sprintf("(external_id LIKE %s AND external_service_type = %s AND external_service_id = %s)", spec.ID+"%", spec.ServiceType, spec.ServiceID))
+		}
+		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n OR ")))
+	}
+
+	if len(opt.ExternalRepoExcludePrefixes) > 0 {
+		er := make([]*sqlf.Query, 0, len(opt.ExternalRepoExcludePrefixes))
+		for _, spec := range opt.ExternalRepoExcludePrefixes {
+			er = append(er, sqlf.Sprintf("(external_id NOT LIKE %s AND external_service_type = %s AND external_service_id = %s)", spec.ID+"%", spec.ServiceType, spec.ServiceID))
+		}
+		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n AND ")))
+	}
+
 	if opt.NoForks {
 		conds = append(conds, sqlf.Sprintf("NOT fork"))
 	}
@@ -1144,10 +1200,16 @@ func (*RepoStore) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error)
 		conds = append(conds, sqlf.Sprintf("archived"))
 	}
 	if opt.NoCloned {
-		conds = append(conds, sqlf.Sprintf("NOT cloned"))
+		// TODO(ryanslade): After 3.26 has been released we can assume that gitserver_repos is populated
+		// We'll remove repo.cloned and can then switch to this:
+		// conds = append(conds, sqlf.Sprintf("gr.clone_status IS NULL OR gr.clone_status = 'not_cloned'"))
+		conds = append(conds, sqlf.Sprintf("(gr.clone_status = 'not_cloned' OR (gr.clone_status IS NULL AND NOT repo.cloned))"))
 	}
 	if opt.OnlyCloned {
-		conds = append(conds, sqlf.Sprintf("cloned"))
+		// TODO(ryanslade): After 3.26 has been released we can assume that gitserver_repos is populated
+		// We'll remove repo.cloned and can then switch to this:
+		// conds = append(conds, sqlf.Sprintf("gr.clone_status = 'cloned'"))
+		conds = append(conds, sqlf.Sprintf("(gr.clone_status = 'cloned' OR (gr.clone_status IS NULL AND repo.cloned))"))
 	}
 	if opt.NoPrivate {
 		conds = append(conds, sqlf.Sprintf("NOT private"))

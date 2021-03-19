@@ -24,7 +24,7 @@ import { TreeFields } from '../graphql-operations'
 import { getFileDecorations } from '../backend/features'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { ThemeProps } from '../../../shared/src/theme'
-import { FileDecorationsByPath } from '../../../shared/src/api/extension/flatExtensionApi'
+import { FileDecorationsByPath } from '../../../shared/src/api/extension/extensionHostApi'
 
 const maxEntries = 2500
 
@@ -33,7 +33,6 @@ const errorWidth = (width?: string): { width: string } => ({
 })
 
 export interface TreeRootProps extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps {
-    history: H.History
     location: H.Location
     activeNode: TreeNode
     activePath: string
@@ -191,7 +190,6 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                         className="tree__row tree__row-alert"
                         prefix="Error loading tree"
                         error={treeOrError}
-                        history={this.props.history}
                     />
                 ) : (
                     <table className="tree-layer" tabIndex={0}>

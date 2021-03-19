@@ -203,7 +203,7 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 			authzProvider := newSudoProvider(test.op, nil)
 			for _, c := range test.calls {
 				t.Run(c.description, func(t *testing.T) {
-					acct, err := authzProvider.FetchAccount(ctx, c.user, c.current)
+					acct, err := authzProvider.FetchAccount(ctx, c.user, c.current, nil)
 					if err != nil {
 						t.Fatalf("unexpected error: %v", err)
 					}
@@ -311,7 +311,7 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 	}
 
 	expRepoIDs := []extsvc.RepoID{"1", "2", "3"}
-	if diff := cmp.Diff(expRepoIDs, repoIDs); diff != "" {
+	if diff := cmp.Diff(expRepoIDs, repoIDs.Exacts); diff != "" {
 		t.Fatal(diff)
 	}
 }

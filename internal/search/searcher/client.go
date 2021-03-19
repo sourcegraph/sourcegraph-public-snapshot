@@ -14,6 +14,7 @@ import (
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -57,7 +58,7 @@ func Search(ctx context.Context, searcherURLs *endpoint.Map, repo api.RepoName, 
 	q := url.Values{
 		"Repo":            []string{string(repo)},
 		"Commit":          []string{string(commit)},
-		"Branch":          []string{string(branch)},
+		"Branch":          []string{branch},
 		"Pattern":         []string{p.Pattern},
 		"ExcludePattern":  []string{p.ExcludePattern},
 		"IncludePatterns": p.IncludePatterns,

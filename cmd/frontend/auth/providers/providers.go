@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

@@ -1,6 +1,6 @@
 import * as H from 'history'
 import classnames from 'classnames'
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState, useEffect } from 'react'
 import { PageHeader } from '../../components/PageHeader'
 import { PageTitle } from '../../components/PageTitle'
 import { AuthenticatedUser } from '../../auth'
@@ -17,7 +17,8 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { Settings } from '../../schema/settings.schema'
 import { CodeMonitoringLogo } from './CodeMonitoringLogo'
-import { StatusBadge } from '../../components/StatusBadge'
+import { FeedbackBadge } from '../../components/FeedbackBadge'
+import { eventLogger } from '../../tracking/eventLogger'
 
 export interface CodeMonitoringPageProps
     extends Pick<CodeMonitoringProps, 'fetchUserCodeMonitors' | 'toggleCodeMonitorEnabled'>,
@@ -31,6 +32,8 @@ type CodeMonitorFilter = 'all' | 'user'
 
 export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps> = props => {
     const { authenticatedUser, fetchUserCodeMonitors, toggleCodeMonitorEnabled } = props
+
+    useEffect(() => eventLogger.logViewEvent('CodeMonitoringPage'), [])
 
     const queryConnection = useCallback(
         (args: Partial<ListUserCodeMonitorsVariables>) =>
@@ -74,7 +77,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
         <div className="code-monitoring-page">
             <PageTitle title="Code Monitoring" />
             <PageHeader
-                annotation={<StatusBadge status="prototype" feedback={{ mailto: 'support@sourcegraph.com' }} />}
+                annotation={<FeedbackBadge status="prototype" feedback={{ mailto: 'support@sourcegraph.com' }} />}
                 path={[
                     {
                         icon: CodeMonitoringLogo,
@@ -87,7 +90,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                     !isErrorLike(userHasCodeMonitors) && (
                         <Link to="/code-monitoring/new" className="btn btn-secondary">
                             <PlusIcon className="icon-inline" />
-                            Create new code monitor
+                            Create code monitor
                         </Link>
                     )
                 }

@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -19,6 +20,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -28,7 +30,7 @@ import (
 func TestClient_ListCloned(t *testing.T) {
 	addrs := []string{"gitserver-0", "gitserver-1"}
 	cli := &gitserver.Client{
-		Addrs: func(ctx context.Context) []string { return addrs },
+		Addrs: func() []string { return addrs },
 		HTTPClient: httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
 			switch r.URL.String() {
 			case "http://gitserver-0/list?cloned":
@@ -102,7 +104,7 @@ func TestClient_Archive(t *testing.T) {
 	defer srv.Close()
 
 	cli := gitserver.NewClient(&http.Client{})
-	cli.Addrs = func(context.Context) []string {
+	cli.Addrs = func() []string {
 		u, _ := url.Parse(srv.URL)
 		return []string{u.Host}
 	}
@@ -249,4 +251,123 @@ func createSimpleGitRepo(t *testing.T, root string) string {
 	}
 
 	return dir
+}
+
+func TestAddrForRepo(t *testing.T) {
+	addrs := []string{"gitserver-1", "gitserver-2", "gitserver-3"}
+
+	testCases := []struct {
+		name string
+		repo api.RepoName
+		want string
+	}{
+		{
+			name: "repo1",
+			repo: api.RepoName("repo1"),
+			want: "gitserver-3",
+		},
+		{
+			name: "check we normalise",
+			repo: api.RepoName("repo1.git"),
+			want: "gitserver-3",
+		},
+		{
+			name: "another repo",
+			repo: api.RepoName("github.com/sourcegraph/sourcegraph.git"),
+			want: "gitserver-2",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := gitserver.AddrForRepo(tc.repo, addrs)
+			if got != tc.want {
+				t.Fatalf("Want %q, got %q", tc.want, got)
+			}
+		})
+	}
+}
+
+func TestClient_P4Exec(t *testing.T) {
+	root, err := ioutil.TempDir("", t.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = os.RemoveAll(root) }()
+
+	tests := []struct {
+		name     string
+		host     string
+		user     string
+		password string
+		args     []string
+		handler  http.HandlerFunc
+		wantBody string
+		wantErr  string
+	}{
+		{
+			name:     "check request body",
+			host:     "ssl:111.222.333.444:1666",
+			user:     "admin",
+			password: "pa$$word",
+			args:     []string{"protects"},
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				body, err := io.ReadAll(r.Body)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				wantBody := `{"p4port":"ssl:111.222.333.444:1666","p4user":"admin","p4passwd":"pa$$word","args":["protects"]}`
+				if diff := cmp.Diff(wantBody, string(body)); diff != "" {
+					t.Fatalf("Mismatch (-want +got):\n%s", diff)
+				}
+
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte("example output"))
+			},
+			wantBody: "example output",
+			wantErr:  "<nil>",
+		},
+		{
+			name: "error response",
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusBadRequest)
+				_, _ = w.Write([]byte("example error"))
+			},
+			wantErr: "unexpected status code: 400 - example error",
+		},
+	}
+
+	ctx := context.Background()
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			server := httptest.NewServer(test.handler)
+			defer server.Close()
+
+			cli := gitserver.NewClient(&http.Client{})
+			cli.Addrs = func() []string {
+				u, _ := url.Parse(server.URL)
+				return []string{u.Host}
+			}
+
+			rc, _, err := cli.P4Exec(ctx, test.host, test.user, test.password, test.args...)
+			if diff := cmp.Diff(test.wantErr, fmt.Sprintf("%v", err)); diff != "" {
+				t.Fatalf("Mismatch (-want +got):\n%s", diff)
+			}
+
+			var body []byte
+			if rc != nil {
+				defer func() { _ = rc.Close() }()
+
+				body, err = io.ReadAll(rc)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			if diff := cmp.Diff(test.wantBody, string(body)); diff != "" {
+				t.Fatalf("Mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
 }

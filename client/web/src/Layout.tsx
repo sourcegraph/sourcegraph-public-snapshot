@@ -43,7 +43,6 @@ import {
     parseSearchURL,
     SearchContextProps,
     isSearchContextSpecAvailable,
-    appendContextFilterToQuery,
 } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -56,7 +55,7 @@ import { SurveyToast } from './marketing/SurveyToast'
 import { ThemeProps } from '../../shared/src/theme'
 import { ThemePreferenceProps } from './theme'
 import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_SHOW_HELP } from './keyboardShortcuts/keyboardShortcuts'
-import { QueryState, submitSearch } from './search/helpers'
+import { QueryState } from './search/helpers'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { Settings } from './schema/settings.schema'
@@ -70,6 +69,9 @@ import { useObservable } from '../../shared/src/util/useObservable'
 import { useExtensionAlertAnimation } from './nav/UserNavItem'
 import { CodeMonitoringProps } from './enterprise/code-monitoring'
 import { UserRepositoriesUpdateProps } from './util'
+import { FilterKind, findFilter } from '../../shared/src/search/query/validate'
+import { FilterType } from '../../shared/src/search/query/filters'
+import { omitContextFilter } from '../../shared/src/search/query/transformer'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -139,7 +141,7 @@ export interface LayoutProps
     showQueryBuilder: boolean
     enableSmartQuery: boolean
     isSourcegraphDotCom: boolean
-    showCampaigns: boolean
+    showBatchChanges: boolean
     fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>
     children?: never
 }
@@ -166,13 +168,28 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         setVersionContext,
         setSelectedSearchContextSpec,
     } = props
-    const { query = '', patternType, caseSensitive, versionContext, searchContextSpec } = useMemo(
-        () => parseSearchURL(location.search),
-        [location.search]
-    )
+
+    const { query = '', patternType, caseSensitive, versionContext } = useMemo(() => parseSearchURL(location.search), [
+        location.search,
+    ])
+
     useEffect(() => {
-        if (query !== currentQuery) {
-            setParsedSearchQuery(query)
+        const globalContextFilter = findFilter(query, FilterType.context, FilterKind.Global)
+        const searchContextSpec = globalContextFilter?.value ? globalContextFilter.value.value : undefined
+
+        let finalQuery = query
+        if (
+            globalContextFilter &&
+            searchContextSpec &&
+            isSearchContextSpecAvailable(searchContextSpec, availableSearchContexts)
+        ) {
+            // If a global search context spec is available to the user, we omit it from the
+            // query and move it to the search contexts dropdown
+            finalQuery = omitContextFilter(finalQuery, globalContextFilter)
+        }
+
+        if (finalQuery !== currentQuery) {
+            setParsedSearchQuery(finalQuery)
         }
 
         // Only override filters from URL if there is a search query
@@ -186,30 +203,13 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             }
 
             if (versionContext !== currentVersionContext) {
-                setVersionContext(versionContext)
-            }
-
-            // If a user navigates to a search url with a context parameter containing an unavailable
-            // search context, we add it to the query and resubmit the search
-            const shouldAppendSearchContextSpecToQuery =
-                typeof searchContextSpec !== 'undefined' &&
-                availableSearchContexts.length > 0 &&
-                !isSearchContextSpecAvailable(searchContextSpec, availableSearchContexts)
-
-            if (shouldAppendSearchContextSpecToQuery) {
-                submitSearch({
-                    history,
-                    query: appendContextFilterToQuery(query, searchContextSpec),
-                    patternType: currentPatternType,
-                    caseSensitive: currentCaseSensitive,
-                    selectedSearchContextSpec: searchContextSpec,
-                    source: 'nav',
-                    versionContext: currentVersionContext,
+                setVersionContext(versionContext).catch(error => {
+                    console.error('Error sending version context to extensions', error)
                 })
             }
 
-            if (searchContextSpec !== selectedSearchContextSpec) {
-                setSelectedSearchContextSpec(searchContextSpec || '')
+            if (searchContextSpec && searchContextSpec !== selectedSearchContextSpec) {
+                setSelectedSearchContextSpec(searchContextSpec)
             }
         }
     }, [
@@ -227,7 +227,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         setPatternType,
         setVersionContext,
         versionContext,
-        searchContextSpec,
         setSelectedSearchContextSpec,
         availableSearchContexts,
     ])
@@ -314,7 +313,13 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             )}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
             <ErrorBoundary location={props.location}>
-                <Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
+                <Suspense
+                    fallback={
+                        <div className="flex flex-1">
+                            <LoadingSpinner className="icon-inline m-2" />
+                        </div>
+                    }
+                >
                     <Switch>
                         {/* eslint-disable react/jsx-no-bind */}
                         {props.routes.map(

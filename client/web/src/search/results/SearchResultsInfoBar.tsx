@@ -17,7 +17,7 @@ import { FilterKind, findFilter } from '../../../../shared/src/search/query/vali
 import { Link } from '../../../../shared/src/components/Link'
 
 export interface SearchResultsInfoBarProps
-    extends ExtensionsControllerProps<'executeCommand' | 'services'>,
+    extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         TelemetryProps,
         Pick<PatternTypeProps, 'patternType'>,
@@ -74,12 +74,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
             return null
         }
         const globalTypeFilterInQuery = findFilter(props.query, 'type', FilterKind.Global)
-        const globalTypeFilterValue =
-            globalTypeFilterInQuery?.value?.type === 'literal'
-                ? globalTypeFilterInQuery.value.value
-                : globalTypeFilterInQuery?.value?.type === 'quoted'
-                ? globalTypeFilterInQuery.value.quotedValue
-                : undefined
+        const globalTypeFilterValue = globalTypeFilterInQuery?.value ? globalTypeFilterInQuery.value.value : undefined
         const canCreateMonitorFromQuery = globalTypeFilterValue === 'diff' || globalTypeFilterValue === 'commit'
         if (!canCreateMonitorFromQuery) {
             return null
@@ -95,6 +90,9 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
             </li>
         )
     }, [props.enableCodeMonitoring, props.query, props.patternType, props.location.search])
+
+    const extraContext = useMemo(() => ({ searchQuery: props.query || null }), [props.query])
+
     return (
         <div className={classNames(props.className, 'search-results-info-bar')} data-testid="results-info-bar">
             <small className="search-results-info-bar__row">
@@ -104,7 +102,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                 <ul className="nav align-items-center justify-content-end">
                     <ActionsNavItems
                         {...props}
-                        extraContext={{ searchQuery: props.query || null }}
+                        extraContext={extraContext}
                         menu={ContributableMenu.SearchResultsToolbar}
                         wrapInList={false}
                         showLoadingSpinnerDuringExecution={true}

@@ -14,9 +14,9 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -160,7 +160,7 @@ func (r *RepositoryComparisonResolver) Commits(
 ) *gitCommitConnectionResolver {
 	return &gitCommitConnectionResolver{
 		db:            r.db,
-		revisionRange: string(r.baseRevspec) + ".." + string(r.headRevspec),
+		revisionRange: r.baseRevspec + ".." + r.headRevspec,
 		first:         args.First,
 		repo:          r.repo,
 	}

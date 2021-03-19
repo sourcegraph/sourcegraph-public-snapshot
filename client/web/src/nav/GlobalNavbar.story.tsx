@@ -7,10 +7,10 @@ import { NOOP_TELEMETRY_SERVICE } from '../../../shared/src/telemetry/telemetryS
 import { ThemePreference } from '../theme'
 import { ThemeProps } from '../../../shared/src/theme'
 import { SearchPatternType } from '../graphql-operations'
-import { Services } from '../../../shared/src/api/client/services'
 import { SourcegraphContext } from '../jscontext'
 import { SuiteFunction } from 'mocha'
 import { AuthenticatedUser } from '../auth'
+import { extensionsController } from '../../../shared/src/util/searchTestHelpers'
 
 window.context = { assetsRoot: 'https://sourcegraph.com/.assets' } as SourcegraphContext & SuiteFunction
 
@@ -29,13 +29,11 @@ const defaultProps = (
     },
     location: history.location,
     history,
-    extensionsController: {
-        services: {} as Services,
-    } as any,
+    extensionsController,
     telemetryService: NOOP_TELEMETRY_SERVICE,
     themePreference: ThemePreference.Light,
     onThemePreferenceChange: () => undefined,
-    setVersionContext: () => undefined,
+    setVersionContext: () => Promise.resolve(undefined),
     availableVersionContexts: [],
     globbing: false,
     enableSmartQuery: false,
@@ -58,9 +56,10 @@ const defaultProps = (
     navbarSearchQueryState: { query: '' },
     onNavbarQueryChange: () => {},
     isExtensionAlertAnimating: false,
-    showCampaigns: true,
+    showBatchChanges: true,
     activation: undefined,
     hideNavLinks: false,
+    routes: [],
 })
 
 const { add } = storiesOf('web/nav/GlobalNav', module)

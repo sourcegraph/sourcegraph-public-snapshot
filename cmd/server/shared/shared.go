@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/joho/godotenv"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goreman"
 )
@@ -128,10 +129,14 @@ func Main() {
 
 	postgresExporterLine := fmt.Sprintf(`postgres_exporter: env DATA_SOURCE_NAME="%s" postgres_exporter --log.level=%s`, dbutil.PostgresDSN("", "postgres", os.Getenv), convertLogLevel(os.Getenv("SRC_LOG_LEVEL")))
 
+	// TODO: This should be fixed properly.
+	// Tell `gitserver` that its `hostname` is what the others think of as gitserver hostnames.
+	gitserverLine := fmt.Sprintf(`gitserver: env HOSTNAME=%q gitserver`, os.Getenv("SRC_GIT_SERVERS"))
+
 	procfile := []string{
 		nginx,
 		`frontend: env CONFIGURATION_MODE=server frontend`,
-		`gitserver: gitserver`,
+		gitserverLine,
 		`query-runner: query-runner`,
 		`symbols: symbols`,
 		`searcher: searcher`,
@@ -169,10 +174,12 @@ func Main() {
 		procfile = append(procfile, redisCacheLine)
 	}
 
-	if line, err := maybePostgresProcFile(); err != nil {
+	postgresLine, err := maybePostgresProcFile()
+	if err != nil {
 		log.Fatal(err)
-	} else if line != "" {
-		procfile = append(procfile, line)
+	}
+	if postgresLine != "" {
+		procfile = append(procfile, postgresLine)
 	}
 
 	procfile = append(procfile, maybeZoektProcFile()...)
@@ -185,6 +192,12 @@ func Main() {
 		// example use case is connecting to postgres even though frontend is
 		// dying due to a bad migration.
 		procDiedAction = goreman.Ignore
+	}
+
+	// If in restore mode, only run PostgreSQL
+	if restore, _ := strconv.ParseBool(os.Getenv("PGRESTORE")); restore {
+		procfile = []string{}
+		procfile = append(procfile, postgresLine)
 	}
 
 	err = goreman.Start([]byte(strings.Join(procfile, "\n")), goreman.Options{

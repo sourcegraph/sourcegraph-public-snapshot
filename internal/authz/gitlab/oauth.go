@@ -67,7 +67,7 @@ func (p *OAuthProvider) ServiceType() string {
 	return p.codeHost.ServiceType
 }
 
-func (p *OAuthProvider) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account) (mine *extsvc.Account, err error) {
+func (p *OAuthProvider) FetchAccount(context.Context, *types.User, []*extsvc.Account, []string) (mine *extsvc.Account, err error) {
 	return nil, nil
 }
 
@@ -79,7 +79,7 @@ func (p *OAuthProvider) FetchAccount(ctx context.Context, user *types.User, curr
 // callers to decide whether to discard.
 //
 // API docs: https://docs.gitlab.com/ee/api/projects.html#list-all-projects
-func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Account) ([]extsvc.RepoID, error) {
+func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 	if account == nil {
 		return nil, errors.New("no account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {

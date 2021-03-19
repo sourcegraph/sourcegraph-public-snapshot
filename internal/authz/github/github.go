@@ -40,7 +40,7 @@ var _ authz.Provider = (*Provider)(nil)
 
 // FetchAccount implements the authz.Provider interface. It always returns nil, because the GitHub
 // API doesn't currently provide a way to fetch user by external SSO account.
-func (p *Provider) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account) (mine *extsvc.Account, err error) {
+func (p *Provider) FetchAccount(context.Context, *types.User, []*extsvc.Account, []string) (mine *extsvc.Account, err error) {
 	return nil, nil
 }
 
@@ -68,7 +68,7 @@ func (p *Provider) Validate() (problems []string) {
 // callers to decide whether to discard.
 //
 // API docs: https://developer.github.com/v3/repos/#list-repositories-for-the-authenticated-user
-func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) ([]extsvc.RepoID, error) {
+func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 	if account == nil {
 		return nil, errors.New("no account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
@@ -94,7 +94,9 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 		var repos []*github.Repository
 		repos, hasNextPage, _, err = client.ListAffiliatedRepositories(ctx, github.VisibilityPrivate, page)
 		if err != nil {
-			return repoIDs, err
+			return &authz.ExternalUserPermissions{
+				Exacts: repoIDs,
+			}, err
 		}
 
 		for _, r := range repos {
@@ -102,7 +104,9 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 		}
 	}
 
-	return repoIDs, nil
+	return &authz.ExternalUserPermissions{
+		Exacts: repoIDs,
+	}, nil
 }
 
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to

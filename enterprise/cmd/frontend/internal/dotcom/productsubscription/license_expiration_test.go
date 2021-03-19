@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/efritz/glock"
+	"github.com/derision-test/glock"
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"

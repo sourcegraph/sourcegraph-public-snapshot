@@ -119,7 +119,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=",
 		"MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=",
 	}
-	if diff := cmp.Diff(wantRepoIDs, repoIDs); diff != "" {
+	if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
 		t.Fatalf("RpoeIDs mismatch (-want +got):\n%s", diff)
 	}
 }

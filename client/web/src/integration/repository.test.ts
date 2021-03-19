@@ -135,7 +135,7 @@ describe('Repository', () => {
                                             person: {
                                                 avatarURL: '',
                                                 name: 'Sourcegraph Bot',
-                                                email: 'campaigns@sourcegraph.com',
+                                                email: 'batch-changes@sourcegraph.com',
                                                 displayName: 'Sourcegraph Bot',
                                                 user: null,
                                             },
@@ -145,7 +145,7 @@ describe('Repository', () => {
                                             person: {
                                                 avatarURL: '',
                                                 name: 'Sourcegraph Bot',
-                                                email: 'campaigns@sourcegraph.com',
+                                                email: 'batch-changes@sourcegraph.com',
                                                 displayName: 'Sourcegraph Bot',
                                                 user: null,
                                             },
@@ -479,7 +479,7 @@ describe('Repository', () => {
             )?.replace(/\u00A0/g, ' ')
             assert.strictEqual(
                 searchQuery,
-                'repo:^github\\.com/ggilmore/q-test$ file:"^Geoffrey\'s random queries\\\\.32r242442bf/% token\\\\.4288249258\\\\.sql"'
+                "repo:^github\\.com/ggilmore/q-test$ file:^Geoffrey's\\ random\\ queries\\.32r242442bf/%\\ token\\.4288249258\\.sql"
             )
 
             await driver.page.waitForSelector('.test-go-to-code-host')

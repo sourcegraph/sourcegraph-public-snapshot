@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"time"
 
@@ -23,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -36,9 +36,13 @@ import (
 )
 
 var (
-	reposDir        = env.Get("SRC_REPOS_DIR", "/data/repos", "Root dir containing repos.")
-	wantPctFree     = env.Get("SRC_REPOS_DESIRED_PERCENT_FREE", "10", "Target percentage of free space on disk.")
-	janitorInterval = env.Get("SRC_REPOS_JANITOR_INTERVAL", "1m", "Interval between cleanup runs")
+	reposDir                     = env.Get("SRC_REPOS_DIR", "/data/repos", "Root dir containing repos.")
+	wantPctFree                  = env.MustGetInt("SRC_REPOS_DESIRED_PERCENT_FREE", 10, "Target percentage of free space on disk.")
+	janitorInterval              = env.MustGetDuration("SRC_REPOS_JANITOR_INTERVAL", 1*time.Minute, "Interval between cleanup runs")
+	syncRepoStateInterval        = env.MustGetDuration("SRC_REPOS_SYNC_STATE_INTERVAL", 10*time.Minute, "Interval between state syncs")
+	syncRepoStateBatchSize       = env.MustGetInt("SRC_REPOS_SYNC_STATE_BATCH_SIZE", 500, "Number of upserts to perform per batch")
+	syncRepoStateUpsertPerSecond = env.MustGetInt("SRC_REPOS_SYNC_STATE_UPSERT_PER_SEC", 500, "The number of upserted rows allowed per second across all gitserver instances")
+	envHostname                  = env.Get("HOSTNAME", "", "Hostname override")
 )
 
 func main() {
@@ -60,15 +64,17 @@ func main() {
 		log.Fatalf("failed to create SRC_REPOS_DIR: %s", err)
 	}
 
-	wantPctFree2, err := parsePercent(wantPctFree)
+	wantPctFree2, err := getPercent(wantPctFree)
 	if err != nil {
-		log.Fatalf("parsing $SRC_REPOS_DESIRED_PERCENT_FREE: %v", err)
+		log.Fatalf("SRC_REPOS_DESIRED_PERCENT_FREE is out of range: %v", err)
 	}
 
-	repoStore, externalServiceStore, err := getStores()
+	db, err := getDB()
 	if err != nil {
 		log.Fatalf("failed to initialize database stores: %v", err)
 	}
+	repoStore := database.Repos(db)
+	externalServiceStore := database.ExternalServices(db)
 
 	gitserver := server.Server{
 		ReposDir:           reposDir,
@@ -116,6 +122,8 @@ func main() {
 			}
 			return &server.GitRepoSyncer{}, nil
 		},
+		Hostname: hostnameBestEffort(),
+		DB:       db,
 	}
 	gitserver.RegisterMetrics()
 
@@ -131,17 +139,8 @@ func main() {
 	handler := ot.Middleware(gitserver.Handler())
 
 	go debugserver.Start()
-
-	janitorInterval2, err := time.ParseDuration(janitorInterval)
-	if err != nil {
-		log.Fatalf("parsing $SRC_REPOS_JANITOR_INTERVAL: %v", err)
-	}
-	go func() {
-		for {
-			gitserver.Janitor()
-			time.Sleep(janitorInterval2)
-		}
-	}()
+	go gitserver.Janitor(janitorInterval)
+	go gitserver.SyncRepoState(syncRepoStateInterval, syncRepoStateBatchSize, syncRepoStateUpsertPerSecond)
 
 	port := "3178"
 	host := ""
@@ -180,11 +179,15 @@ func main() {
 	gitserver.Stop()
 }
 
-func parsePercent(s string) (int, error) {
-	p, err := strconv.Atoi(s)
-	if err != nil {
-		return 0, errors.Wrap(err, "converting string to int")
+func hostnameBestEffort() string {
+	if envHostname != "" {
+		return envHostname
 	}
+	h, _ := os.Hostname()
+	return h
+}
+
+func getPercent(p int) (int, error) {
 	if p < 0 {
 		return 0, fmt.Errorf("negative value given for percentage: %d", p)
 	}
@@ -196,7 +199,7 @@ func parsePercent(s string) (int, error) {
 
 // getStores initializes a connection to the database and returns RepoStore and
 // ExternalServiceStore.
-func getStores() (*database.RepoStore, *database.ExternalServiceStore, error) {
+func getDB() (dbutil.DB, error) {
 	//
 	// START FLAILING
 
@@ -219,10 +222,5 @@ func getStores() (*database.RepoStore, *database.ExternalServiceStore, error) {
 		}
 	})
 
-	h, err := dbconn.New(dsn, "gitserver")
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return database.Repos(h), database.ExternalServices(h), nil
+	return dbconn.New(dsn, "gitserver")
 }

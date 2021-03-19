@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/jordan-wright/email"
+
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 )
 

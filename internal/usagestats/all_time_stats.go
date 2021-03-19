@@ -5,6 +5,7 @@ import (
 	"sync/atomic"
 
 	"github.com/gomodule/redigo/redis"
+
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 

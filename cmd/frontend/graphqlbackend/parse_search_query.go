@@ -92,13 +92,16 @@ func (r *schemaResolver) ParseSearchQuery(ctx context.Context, args *struct {
 
 	globbing := getBoolPtr(settings.SearchGlobbing, false)
 
-	q, err := query.ProcessAndOr(args.Query, query.ParserOptions{SearchType: searchType, Globbing: globbing})
+	plan, err := query.Pipeline(
+		query.Init(args.Query, searchType),
+		query.With(globbing, query.Globbing),
+	)
 	if err != nil {
 		return nil, err
 	}
 
 	var jsons []interface{}
-	for _, node := range q {
+	for _, node := range plan.ToParseTree() {
 		jsons = append(jsons, toJSON(node))
 	}
 	json, err := json.Marshal(jsons)

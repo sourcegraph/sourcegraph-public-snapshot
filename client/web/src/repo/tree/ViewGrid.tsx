@@ -4,10 +4,9 @@ import classNames from 'classnames'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ErrorAlert } from '../../components/alerts'
 import { ViewContent, ViewContentProps } from '../../views/ViewContent'
-import * as H from 'history'
 import { WidthProvider, Responsive, Layout as ReactGridLayout, Layouts as ReactGridLayouts } from 'react-grid-layout'
-import { ViewProviderResult } from '../../../../shared/src/api/client/services/viewService'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { ViewProviderResult } from '../../../../shared/src/api/extension/extensionHostApi'
 
 // TODO use a method to get width that also triggers when file explorer is closed
 // (WidthProvider only listens to window resize events)
@@ -18,7 +17,6 @@ export interface ViewGridProps
         TelemetryProps {
     views: ViewProviderResult[]
     className?: string
-    history: H.History
 }
 
 const breakpointNames = ['xs', 'sm', 'md', 'lg'] as const
@@ -89,7 +87,7 @@ export const ViewGrid: React.FunctionComponent<ViewGridProps> = props => {
                                 <LoadingSpinner /> Loading code insight
                             </div>
                         ) : isErrorLike(view) ? (
-                            <ErrorAlert className="m-0" error={view} history={props.history} />
+                            <ErrorAlert className="m-0" error={view} />
                         ) : (
                             <>
                                 <h3 className="view-grid__view-title">{view.title}</h3>

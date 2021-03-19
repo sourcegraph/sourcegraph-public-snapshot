@@ -6,49 +6,50 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 func TestRepoStatusMap(t *testing.T) {
 	aM := map[api.RepoID]RepoStatus{
-		1: RepoStatusSearched,
+		1: RepoStatusTimedout,
 		2: RepoStatusCloning,
-		3: RepoStatusSearched | RepoStatusIndexed,
-		4: RepoStatusIndexed,
+		3: RepoStatusTimedout | RepoStatusLimitHit,
+		4: RepoStatusLimitHit,
 	}
 	a := mkStatusMap(aM)
 	b := mkStatusMap(map[api.RepoID]RepoStatus{
 		2: RepoStatusCloning,
-		4: RepoStatusSearched,
+		4: RepoStatusTimedout,
 		5: RepoStatusMissing,
 	})
 	c := mkStatusMap(map[api.RepoID]RepoStatus{
-		8: RepoStatusSearched | RepoStatusIndexed,
-		9: RepoStatusSearched,
+		8: RepoStatusTimedout | RepoStatusLimitHit,
+		9: RepoStatusTimedout,
 	})
 
 	// Get
 	if got, want := a.Get(10), RepoStatus(0); got != want {
 		t.Errorf("a.Get(10) got %s want %s", got, want)
 	}
-	if got, want := a.Get(3), RepoStatusSearched|RepoStatusIndexed; got != want {
+	if got, want := a.Get(3), RepoStatusTimedout|RepoStatusLimitHit; got != want {
 		t.Errorf("a.Get(3) got %s want %s", got, want)
 	}
 
 	// Any
-	if !c.Any(RepoStatusIndexed) {
-		t.Error("c.Any(RepoStatusIndexed) should be true")
+	if !c.Any(RepoStatusLimitHit) {
+		t.Error("c.Any(RepoStatusLimitHit) should be true")
 	}
 	if c.Any(RepoStatusCloning) {
 		t.Error("c.Any(RepoStatusCloning) should be false")
 	}
 
 	// All
-	if !c.All(RepoStatusSearched) {
-		t.Error("c.All(RepoStatusSearched) should be true")
+	if !c.All(RepoStatusTimedout) {
+		t.Error("c.All(RepoStatusTimedout) should be true")
 	}
-	if c.All(RepoStatusIndexed) {
-		t.Error("c.All(RepoStatusIndexed) should be false")
+	if c.All(RepoStatusLimitHit) {
+		t.Error("c.All(RepoStatusLimitHit) should be false")
 	}
 
 	// Len
@@ -57,8 +58,8 @@ func TestRepoStatusMap(t *testing.T) {
 	}
 
 	// Update
-	c.Update(9, RepoStatusIndexed)
-	if got, want := c.Get(9), RepoStatusSearched|RepoStatusIndexed; got != want {
+	c.Update(9, RepoStatusLimitHit)
+	if got, want := c.Get(9), RepoStatusTimedout|RepoStatusLimitHit; got != want {
 		t.Errorf("c.Get(9) got %s want %s", got, want)
 	}
 
@@ -92,8 +93,8 @@ func TestRepoStatusMap(t *testing.T) {
 			t.Errorf("a.Filter(%s) diff (-want, +got):\n%s", status, d)
 		}
 	}
-	assertAFilter(RepoStatusSearched, []int{1, 3})
-	assertAFilter(RepoStatusTimedout, []int{})
+	assertAFilter(RepoStatusTimedout, []int{1, 3})
+	assertAFilter(RepoStatusMissing, []int{})
 
 	// Union
 	t.Logf("%s", &a)
@@ -101,10 +102,10 @@ func TestRepoStatusMap(t *testing.T) {
 	b.Union(&a)
 	t.Logf("%s", &b)
 	abUnionWant := mkStatusMap(map[api.RepoID]RepoStatus{
-		1: RepoStatusSearched,
+		1: RepoStatusTimedout,
 		2: RepoStatusCloning,
-		3: RepoStatusSearched | RepoStatusIndexed,
-		4: RepoStatusSearched | RepoStatusIndexed,
+		3: RepoStatusTimedout | RepoStatusLimitHit,
+		4: RepoStatusTimedout | RepoStatusLimitHit,
 		5: RepoStatusMissing,
 	})
 	assertReposStatusEqual(t, abUnionWant, b)
@@ -122,16 +123,16 @@ func TestRepoStatusMap_nil(t *testing.T) {
 	x.Iterate(func(api.RepoID, RepoStatus) {
 		t.Error("Iterate should be empty")
 	})
-	x.Filter(RepoStatusSearched, func(api.RepoID) {
+	x.Filter(RepoStatusTimedout, func(api.RepoID) {
 		t.Error("Filter should be empty")
 	})
 	if got, want := x.Get(10), RepoStatus(0); got != want {
 		t.Errorf("Get got %s want %s", got, want)
 	}
-	if x.Any(RepoStatusSearched) {
+	if x.Any(RepoStatusTimedout) {
 		t.Error("Any should be false")
 	}
-	if x.All(RepoStatusSearched) {
+	if x.All(RepoStatusTimedout) {
 		t.Error("All should be false")
 	}
 	if got, want := x.Len(), 0; got != want {
@@ -140,9 +141,9 @@ func TestRepoStatusMap_nil(t *testing.T) {
 }
 
 func TestRepoStatusSingleton(t *testing.T) {
-	x := RepoStatusSingleton(123, RepoStatusSearched|RepoStatusIndexed)
+	x := RepoStatusSingleton(123, RepoStatusTimedout|RepoStatusLimitHit)
 	want := mkStatusMap(map[api.RepoID]RepoStatus{
-		123: RepoStatusSearched | RepoStatusIndexed,
+		123: RepoStatusTimedout | RepoStatusLimitHit,
 	})
 	assertReposStatusEqual(t, want, x)
 }

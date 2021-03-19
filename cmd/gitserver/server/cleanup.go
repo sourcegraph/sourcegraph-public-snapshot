@@ -22,8 +22,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -75,9 +77,9 @@ const reposStatsName = "repos-stats.json"
 // 2. Remove stale lock files.
 // 3. Remove repos based on disk pressure.
 // 4. Reclone repos after a while. (simulate git gc)
-func (s *Server) cleanupRepos() {
+// 5. Remove repos on disk that don't belong in this shard
+func (s *Server) cleanupRepos(addrs []string) {
 	janitorRunning.Set(1)
-
 	defer janitorRunning.Set(0)
 
 	bCtx, bCancel := s.serverContext()
@@ -110,6 +112,14 @@ func (s *Server) cleanupRepos() {
 
 	ensureGitAttributes := func(dir GitDir) (done bool, err error) {
 		return false, setGitAttributes(dir)
+	}
+
+	scrubRemoteURL := func(dir GitDir) (done bool, err error) {
+		cmd := exec.Command("git", "remote", "remove", "origin")
+		dir.Set(cmd)
+		// ignore error since we fail if the remote has already been scrubbed.
+		_ = cmd.Run()
+		return false, nil
 	}
 
 	maybeReclone := func(dir GitDir) (done bool, err error) {
@@ -214,6 +224,22 @@ func (s *Server) cleanupRepos() {
 		return false, gitGC(dir)
 	}
 
+	removeWrongShard := func(dir GitDir) (done bool, err error) {
+		if len(addrs) == 0 {
+			return false, nil
+		}
+		addr := gitserver.AddrForRepo(s.name(dir), addrs)
+		if s.hostnameMatch(addr) {
+			return false, nil
+		}
+		log15.Info("removing repo for wrong shard", "repo", dir)
+		if err := s.removeRepoDirectory(dir); err != nil {
+			return true, err
+		}
+		reposRemoved.Inc()
+		return false, nil
+	}
+
 	type cleanupFn struct {
 		Name string
 		Do   func(GitDir) (bool, error)
@@ -222,24 +248,28 @@ func (s *Server) cleanupRepos() {
 		{"compute statistics", computeStats},
 		// Do some sanity checks on the repository.
 		{"maybe remove corrupt", maybeRemoveCorrupt},
-		// If git is interrupted it can leave lock files lying around. It does
-		// not clean these up, and instead fails commands.
+		// If git is interrupted it can leave lock files lying around. It does not clean
+		// these up, and instead fails commands.
 		{"remove stale locks", removeStaleLocks},
-		// We always want to have the same git attributes file at
-		// info/attributes.
+		// We always want to have the same git attributes file at info/attributes.
 		{"ensure git attributes", ensureGitAttributes},
-		// Old git clones accumulate loose git objects that waste space and
-		// slow down git operations. Periodically do a fresh clone to avoid
-		// these problems. git gc is slow and resource intensive. It is
-		// cheaper and faster to just reclone the repository.
+		// 2021-03-01 (tomas,keegan) we used to store an authenticated remote URL on
+		// disk. We no longer need it so we can scrub it.
+		{"scrub remote URL", scrubRemoteURL},
+		// Old git clones accumulate loose git objects that waste space and slow down git
+		// operations. Periodically do a fresh clone to avoid these problems. git gc is
+		// slow and resource intensive. It is cheaper and faster to just reclone the
+		// repository.
 		{"maybe reclone", maybeReclone},
-		// Runs a number of housekeeping tasks within the current repository,
-		// such as compressing file revisions (to reduce disk space and increase
-		// performance), removing unreachable objects which may have been created
-		// from prior invocations of git add, packing refs, pruning reflog, rerere
-		// metadata or stale working trees. May also update ancillary indexes such
-		// as the commit-graph.
+		// Runs a number of housekeeping tasks within the current repository, such as
+		// compressing file revisions (to reduce disk space and increase performance),
+		// removing unreachable objects which may have been created from prior
+		// invocations of git add, packing refs, pruning reflog, rerere metadata or stale
+		// working trees. May also update ancillary indexes such as the commit-graph.
 		{"garbage collect", performGC},
+		// Repos are sharded across gitserver instances based on their name. Remove repos
+		// that no longer belong on this shard.
+		{"remove wrong shard", removeWrongShard},
 	}
 
 	err := bestEffortWalk(s.ReposDir, func(dir string, fi os.FileInfo) error {
@@ -463,6 +493,7 @@ func dirSize(d string) int64 {
 //
 // Additionally it removes parent empty directories up until s.ReposDir.
 func (s *Server) removeRepoDirectory(gitDir GitDir) error {
+	ctx := context.Background()
 	dir := string(gitDir)
 
 	// Rename out of the location so we can atomically stop using the repo.
@@ -477,6 +508,9 @@ func (s *Server) removeRepoDirectory(gitDir GitDir) error {
 
 	// Everything after this point is just cleanup, so any error that occurs
 	// should not be returned, just logged.
+
+	// Set as not_cloned in the database
+	s.setCloneStatusNonFatal(ctx, s.name(gitDir), types.CloneStatusNotCloned)
 
 	// Cleanup empty parent directories. We just attempt to remove and if we
 	// have a failure we assume it's due to the directory having other
@@ -621,7 +655,7 @@ func getRepositoryType(dir GitDir) (string, error) {
 func setRecloneTime(dir GitDir, now time.Time) error {
 	err := gitConfigSet(dir, "sourcegraph.recloneTimestamp", strconv.FormatInt(now.Unix(), 10))
 	if err != nil {
-		ensureHead(dir)
+		ensureHEAD(dir)
 		return errors.Wrap(err, "failed to update recloneTimestamp")
 	}
 	return nil

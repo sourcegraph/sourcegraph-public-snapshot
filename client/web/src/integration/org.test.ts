@@ -194,7 +194,9 @@ describe('Organizations', () => {
                 }
                 testContext.overrideGraphQL(graphQlResults)
 
-                await driver.page.goto(testContext.driver.sourcegraphBaseUrl + '/organizations/sourcegraph/members')
+                await driver.page.goto(
+                    testContext.driver.sourcegraphBaseUrl + '/organizations/sourcegraph/settings/members'
+                )
 
                 await driver.page.waitForSelector('.test-remove-org-member')
 

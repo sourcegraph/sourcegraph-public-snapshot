@@ -299,12 +299,12 @@ func (r *RepositoryResolver) Label() (Markdown, error) {
 	} else {
 		label = r.Name()
 	}
-	text := "[" + label + "](/" + label + ")"
+	text := "[" + label + "](" + r.URL() + ")"
 	return Markdown(text), nil
 }
 
 func (r *RepositoryResolver) Detail() Markdown {
-	return Markdown("Repository name match")
+	return Markdown("Repository match")
 }
 
 func (r *RepositoryResolver) Matches() []*searchResultMatchResolver {
@@ -319,6 +319,11 @@ func (r *RepositoryResolver) ToCommitSearchResult() (*CommitSearchResultResolver
 
 func (r *RepositoryResolver) ResultCount() int32 {
 	return 1
+}
+
+func (r *RepositoryResolver) Limit(limit int) int {
+	// Always represents one result and limit > 0 so we just return limit - 1.
+	return limit - 1
 }
 
 func (r *RepositoryResolver) Type(ctx context.Context) (*types.Repo, error) {

@@ -104,7 +104,13 @@ func newGitLabSource(svc *types.ExternalService, c *schema.GitLabConnection, cf 
 
 	provider := gitlab.NewClientProvider(baseURL, cli)
 
-	client := provider.GetPATClient(c.Token, "")
+	var client *gitlab.Client
+	switch c.TokenType {
+	case "oauth":
+		client = provider.GetOAuthClient(c.Token)
+	default:
+		client = provider.GetPATClient(c.Token, "")
+	}
 
 	if !envvar.SourcegraphDotComMode() || svc.CloudDefault {
 		client.RateLimitMonitor().SetCollector(&ratelimit.MetricsCollector{
@@ -563,7 +569,7 @@ func readSystemNotes(it func() ([]*gitlab.Note, error)) ([]*gitlab.Note, error) 
 		}
 
 		for _, note := range page {
-			// We're only interested in system notes for campaigns, since they
+			// We're only interested in system notes for batch changes, since they
 			// include the review state changes we need; let's not even bother
 			// storing the non-system ones.
 			if note.System {

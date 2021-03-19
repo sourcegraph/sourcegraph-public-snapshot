@@ -5,26 +5,26 @@ import { ExternalServiceKind } from '../../../graphql-operations'
 export const hints: Partial<Record<ExternalServiceKind, React.ReactFragment>> = {
     [ExternalServiceKind.GITHUB]: (
         <small>
-            <Link
-                to="https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/creating-a-personal-access-token"
-                target="_blank"
-                rel="noopener noreferrer"
-            >
-                Create a new access token
+            <Link to="https://github.com/settings/tokens/new?scopes=repo" target="_blank" rel="noopener noreferrer">
+                Create a new personal access token
             </Link>
-            <span className="text-muted"> on GitHub.com with repo or public_repo scope.</span>
+            <span className="text-muted">
+                {' '}
+                on <b>GitHub.com</b> with <code className="user-code-hosts-page__code--inline">repo</code> scope.
+            </span>
         </small>
     ),
     [ExternalServiceKind.GITLAB]: (
         <small>
-            <Link
-                to="https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html#creating-a-personal-access-token"
-                target="_blank"
-                rel="noopener noreferrer"
-            >
-                Create a new access token
+            <Link to="https://gitlab.com/-/profile/personal_access_tokens" target="_blank" rel="noopener noreferrer">
+                Create a new personal access token
             </Link>
-            <span className="text-muted"> on GitLab.com with read_user, read_api, and read_repository scope.</span>
+            <span className="text-muted">
+                {' '}
+                on <b>GitLab.com</b> with <code className="user-code-hosts-page__code--inline">read_user</code>,{' '}
+                <code className="user-code-hosts-page__code--inline">read_api</code>, and{' '}
+                <code className="user-code-hosts-page__code--inline">read_repository</code> scope.
+            </span>
         </small>
     ),
 }

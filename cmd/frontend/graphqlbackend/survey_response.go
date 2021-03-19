@@ -9,13 +9,13 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -131,17 +131,17 @@ type HappinessFeedbackSubmissionInput struct {
 	Score int32
 	// Feedback is the answer to "What's going well? What could be better?".
 	Feedback *string
-	// The URL that the happiness feedback was submitted from
-	CurrentURL string
+	// The path that the happiness feedback was submitted from
+	CurrentPath *string
 }
 
 type happinessFeedbackSubmissionForHubSpot struct {
-	Email      *string `url:"email"`
-	Score      int32   `url:"happiness_score"`
-	Feedback   *string `url:"happiness_feedback"`
-	CurrentURL string  `url:"happiness_current_url"`
-	IsTest     bool    `url:"happiness_is_test"`
-	SiteID     string  `url:"site_id"`
+	Email       *string `url:"email"`
+	Score       int32   `url:"happiness_score"`
+	Feedback    *string `url:"happiness_feedback"`
+	CurrentPath *string `url:"happiness_current_url"`
+	IsTest      bool    `url:"happiness_is_test"`
+	SiteID      string  `url:"site_id"`
 }
 
 // SubmitHappinessFeedback records a new happiness feedback response by the current user.
@@ -172,12 +172,12 @@ func (r *schemaResolver) SubmitHappinessFeedback(ctx context.Context, args *stru
 
 	// Submit form to HubSpot
 	if err := hubspotutil.Client().SubmitForm(hubspotutil.HappinessFeedbackFormID, &happinessFeedbackSubmissionForHubSpot{
-		Email:      email,
-		Score:      args.Input.Score,
-		Feedback:   args.Input.Feedback,
-		CurrentURL: args.Input.CurrentURL,
-		IsTest:     env.InsecureDev,
-		SiteID:     siteid.Get(),
+		Email:       email,
+		Score:       args.Input.Score,
+		Feedback:    args.Input.Feedback,
+		CurrentPath: args.Input.CurrentPath,
+		IsTest:      env.InsecureDev,
+		SiteID:      siteid.Get(),
 	}); err != nil {
 		// Log an error, but don't return one if the only failure was in submitting feedback results to HubSpot.
 		log15.Error("Unable to submit happiness feedback results to Sourcegraph remote", "error", err)

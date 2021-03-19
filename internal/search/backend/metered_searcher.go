@@ -12,20 +12,17 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
-var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Name:    "src_zoekt_request_duration_seconds",
 	Help:    "Time (in seconds) spent on request.",
 	Buckets: prometheus.DefBuckets,
 }, []string{"hostname", "category", "code"})
-
-func init() {
-	prometheus.MustRegister(requestDuration)
-}
 
 type meteredSearcher struct {
 	zoekt.Streamer
@@ -40,7 +37,7 @@ func NewMeteredSearcher(hostname string, z zoekt.Streamer) zoekt.Streamer {
 	}
 }
 
-func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, c zoekt.Sender) error {
+func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, c zoekt.Sender) (err error) {
 	start := time.Now()
 
 	// isLeaf is true if this is a zoekt.Searcher which does a network
@@ -62,6 +59,10 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 	}
 
 	tr, ctx := trace.New(ctx, "zoekt."+cat, queryString(q), tags...)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 	if opts != nil {
 		tr.LogFields(
 			log.Bool("opts.estimate_doc_count", opts.EstimateDocCount),
@@ -74,7 +75,6 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 			log.Int("opts.max_doc_display_count", opts.MaxDocDisplayCount),
 		)
 	}
-	defer tr.Finish()
 
 	if isLeaf && opts != nil && ot.ShouldTrace(ctx) {
 		// Replace any existing spanContext with a new one, given we've done additional tracing
@@ -113,7 +113,11 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		first sync.Once
 	)
 
-	err := m.Streamer.StreamSearch(ctx, q, opts, ZoektStreamFunc(func(zsr *zoekt.SearchResult) {
+	mu := sync.Mutex{}
+	statsAgg := &zoekt.Stats{}
+	nFilesMatches := 0
+
+	err = m.Streamer.StreamSearch(ctx, q, opts, ZoektStreamFunc(func(zsr *zoekt.SearchResult) {
 		first.Do(func() {
 			if isLeaf {
 				tr.LogFields(
@@ -124,33 +128,37 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		})
 
 		if zsr != nil {
-			tr.LogFields(
-				log.Int("filematches", len(zsr.Files)),
-				log.Int64("rpc.latency_ms", (time.Since(start)-zsr.Stats.Duration-zsr.Stats.Wait).Milliseconds()),
-				log.Int64("stats.content_bytes_loaded", zsr.Stats.ContentBytesLoaded),
-				log.Int64("stats.index_bytes_loaded", zsr.Stats.IndexBytesLoaded),
-				log.Int("stats.crashes", zsr.Stats.Crashes),
-				log.Int64("stats.duration_ms", zsr.Stats.Duration.Milliseconds()),
-				log.Int("stats.file_count", zsr.Stats.FileCount),
-				log.Int("stats.shard_files_considered", zsr.Stats.ShardFilesConsidered),
-				log.Int("stats.files_considered", zsr.Stats.FilesConsidered),
-				log.Int("stats.files_loaded", zsr.Stats.FilesLoaded),
-				log.Int("stats.files_skipped", zsr.Stats.FilesSkipped),
-				log.Int("stats.shards_skipped", zsr.Stats.ShardsSkipped),
-				log.Int("stats.match_count", zsr.Stats.MatchCount),
-				log.Int("stats.ngram_matches", zsr.Stats.NgramMatches),
-				log.Int64("stats.wait_ms", zsr.Stats.Wait.Milliseconds()),
-			)
+			mu.Lock()
+			statsAgg.Add(zsr.Stats)
+			nFilesMatches += len(zsr.Files)
+			mu.Unlock()
 
 			c.Send(zsr)
 		}
 	}))
-	if err != nil {
-		return err
-	}
+
+	tr.LogFields(
+		log.Int("filematches", nFilesMatches),
+
+		// Zoekt stats.
+		log.Int64("stats.content_bytes_loaded", statsAgg.ContentBytesLoaded),
+		log.Int64("stats.index_bytes_loaded", statsAgg.IndexBytesLoaded),
+		log.Int("stats.crashes", statsAgg.Crashes),
+		log.Int("stats.file_count", statsAgg.FileCount),
+		log.Int("stats.files_considered", statsAgg.FilesConsidered),
+		log.Int("stats.files_loaded", statsAgg.FilesLoaded),
+		log.Int("stats.files_skipped", statsAgg.FilesSkipped),
+		log.Int("stats.match_count", statsAgg.MatchCount),
+		log.Int("stats.ngram_matches", statsAgg.NgramMatches),
+		log.Int("stats.shard_files_considered", statsAgg.ShardFilesConsidered),
+		log.Int("stats.shards_skipped", statsAgg.ShardsSkipped),
+		log.Int64("stats.wait_ms", statsAgg.Wait.Milliseconds()),
+	)
+
 	// Record total duration of stream
 	requestDuration.WithLabelValues(m.hostname, cat, code).Observe(time.Since(start).Seconds())
-	return nil
+
+	return err
 }
 
 func (m *meteredSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {

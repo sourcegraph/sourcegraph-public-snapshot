@@ -18,14 +18,16 @@ type CodeIntelAggregatedEvent struct {
 // This is sent from private instances to the cloud frontends, where it is further
 // massaged and inserted into a BigQuery.
 type NewCodeIntelUsageStatistics struct {
-	StartOfWeek                    time.Time
-	WAUs                           *int32
-	PreciseWAUs                    *int32
-	SearchBasedWAUs                *int32
-	CrossRepositoryWAUs            *int32
-	PreciseCrossRepositoryWAUs     *int32
-	SearchBasedCrossRepositoryWAUs *int32
-	EventSummaries                 []CodeIntelEventSummary
+	StartOfWeek                         time.Time
+	WAUs                                *int32
+	PreciseWAUs                         *int32
+	SearchBasedWAUs                     *int32
+	CrossRepositoryWAUs                 *int32
+	PreciseCrossRepositoryWAUs          *int32
+	SearchBasedCrossRepositoryWAUs      *int32
+	EventSummaries                      []CodeIntelEventSummary
+	NumRepositoriesWithUploadRecords    *int32
+	NumRepositoriesWithoutUploadRecords *int32
 }
 
 type CodeIntelEventSummary struct {

@@ -104,7 +104,7 @@ func (p *SudoProvider) ServiceType() string {
 // FetchAccount satisfies the authz.Provider interface. It iterates through the current list of
 // linked external accounts, find the one (if it exists) that matches the authn provider specified
 // in the SudoProvider struct, and fetches the user account from the GitLab API using that identity.
-func (p *SudoProvider) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account) (mine *extsvc.Account, err error) {
+func (p *SudoProvider) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account, _ []string) (mine *extsvc.Account, err error) {
 	if user == nil {
 		return nil, nil
 	}
@@ -195,7 +195,7 @@ func (p *SudoProvider) fetchAccountByUsername(ctx context.Context, username stri
 // callers to decide whether to discard.
 //
 // API docs: https://docs.gitlab.com/ee/api/projects.html#list-all-projects
-func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Account) ([]extsvc.RepoID, error) {
+func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 	if account == nil {
 		return nil, errors.New("no account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
@@ -216,7 +216,7 @@ func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Accou
 // (access level: 20 => Reporter access) by the authenticated or impersonated user in the client.
 // It may return partial but valid results in case of error, and it is up to callers to decide
 // whether to discard.
-func listProjects(ctx context.Context, client *gitlab.Client) ([]extsvc.RepoID, error) {
+func listProjects(ctx context.Context, client *gitlab.Client) (*authz.ExternalUserPermissions, error) {
 	q := make(url.Values)
 	q.Add("visibility", "private")  // This method is meant to return only private projects
 	q.Add("min_access_level", "20") // 20 => Reporter access (i.e. have access to project code)
@@ -231,7 +231,9 @@ func listProjects(ctx context.Context, client *gitlab.Client) ([]extsvc.RepoID, 
 	for {
 		projects, next, err := client.ListProjects(ctx, nextURL)
 		if err != nil {
-			return projectIDs, err
+			return &authz.ExternalUserPermissions{
+				Exacts: projectIDs,
+			}, err
 		}
 
 		for _, p := range projects {
@@ -244,7 +246,9 @@ func listProjects(ctx context.Context, client *gitlab.Client) ([]extsvc.RepoID, 
 		nextURL = *next
 	}
 
-	return projectIDs, nil
+	return &authz.ExternalUserPermissions{
+		Exacts: projectIDs,
+	}, nil
 }
 
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to

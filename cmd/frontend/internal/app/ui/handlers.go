@@ -20,19 +20,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/hubspot"
-	"github.com/sourcegraph/sourcegraph/internal/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/routevar"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -86,6 +86,19 @@ func repoShortName(name api.RepoName) string {
 	return strings.Join(split[1:], "/")
 }
 
+// serveErrorHandler is a function signature used in newCommon and
+// mockNewCommon. This is used as syntactic sugar to prevent programmer's
+// (fragile creatures from planet Earth) from crashing out.
+type serveErrorHandler func(w http.ResponseWriter, r *http.Request, err error, statusCode int)
+
+// mockNewCommon is used in tests to mock newCommon (duh!).
+//
+// Ensure that the mock is reset at the end of every test by adding a call like the following:
+//	defer func() {
+//		mockNewCommon = nil
+//	}()
+var mockNewCommon func(w http.ResponseWriter, r *http.Request, title string, serveError serveErrorHandler) (*Common, error)
+
 // newCommon builds a *Common data structure, returning an error if one occurs.
 //
 // In the event of the repository having been renamed, the request is handled
@@ -101,7 +114,11 @@ func repoShortName(name api.RepoName) string {
 //
 // In the case of a repository that is cloning, a Common data structure is
 // returned but it has an incomplete RevSpec.
-func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError func(w http.ResponseWriter, r *http.Request, err error, statusCode int)) (*Common, error) {
+func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError serveErrorHandler) (*Common, error) {
+	if mockNewCommon != nil {
+		return mockNewCommon(w, r, title, serveError)
+	}
+
 	common := &Common{
 		Injected: InjectedHTML{
 			HeadTop:    template.HTML(conf.Get().HtmlHeadTop),

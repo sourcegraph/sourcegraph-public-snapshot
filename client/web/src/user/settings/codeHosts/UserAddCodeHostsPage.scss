@@ -1,10 +1,31 @@
-.add-user-code-hosts-page {
+.user-code-hosts-page {
     &__icon--inside {
         position: absolute;
-        right: 0.25rem;
-        top: 0.5rem;
+        right: 0.45rem;
+        top: 0.55rem;
     }
     &__icon--dashed {
         color: var(--border-color);
+    }
+    &__modal--plain {
+        background-color: var(--theme-bg-plain);
+    }
+    &__code--inline {
+        font-size: 0.75rem;
+        line-height: (20/14);
+    }
+
+    $gitlab: #6e49cb;
+
+    &__btn--gitlab {
+        @include button-variant(
+            $gitlab,
+            darken($gitlab, 7.5%),
+            darken($gitlab, 10%),
+            lighten($gitlab, 5%),
+            lighten($gitlab, 10%),
+            darken($gitlab, 30%)
+        );
+        color: $white;
     }
 }

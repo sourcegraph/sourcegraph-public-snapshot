@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	globalSearchContextName = "global"
+	GlobalSearchContextName = "global"
 	searchContextSpecPrefix = "@"
 )
 
@@ -54,11 +54,11 @@ func GetUsersSearchContexts(ctx context.Context) ([]*types.SearchContext, error)
 
 func IsGlobalSearchContextSpec(searchContextSpec string) bool {
 	// Empty search context spec resolves to global search context
-	return searchContextSpec == "" || searchContextSpec == globalSearchContextName
+	return searchContextSpec == "" || searchContextSpec == GlobalSearchContextName
 }
 
 func IsGlobalSearchContext(searchContext *types.SearchContext) bool {
-	return searchContext != nil && searchContext.Name == globalSearchContextName
+	return searchContext != nil && searchContext.Name == GlobalSearchContextName
 }
 
 func GetUserSearchContext(name string, userID int32) *types.SearchContext {
@@ -66,7 +66,7 @@ func GetUserSearchContext(name string, userID int32) *types.SearchContext {
 }
 
 func GetGlobalSearchContext() *types.SearchContext {
-	return &types.SearchContext{Name: globalSearchContextName, Description: "All repositories on Sourcegraph"}
+	return &types.SearchContext{Name: GlobalSearchContextName, Description: "All repositories on Sourcegraph"}
 }
 
 func GetSearchContextSpec(searchContext *types.SearchContext) string {

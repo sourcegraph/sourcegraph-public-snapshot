@@ -67,12 +67,6 @@
             }
           }
         },
-        "automation": {
-          "description": "DEPRECATED: Enables the experimental code change management campaigns feature. This field has been deprecated in favour of campaigns.enabled",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "enabled"
-        },
         "structuralSearch": {
           "description": "Enables structural search.",
           "type": "string",
@@ -259,29 +253,32 @@
       ],
       "group": "Experimental"
     },
-    "automation.readAccess.enabled": {
-      "description": "DEPRECATED: The automation feature was renamed to campaigns. Use `campaigns.readAccess.enabled` instead.",
-      "type": "boolean",
-      "!go": { "pointer": true },
-      "group": "Campaigns"
-    },
     "campaigns.enabled": {
-      "description": "Enables/disables the campaigns feature.",
+      "description": "DEPRECATED: Use batchChanges.enabled instead. Enables/disables the campaigns feature.",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "Campaigns",
       "default": true
     },
-    "campaigns.readAccess.enabled": {
-      "description": "DEPRECATED: Enables read-only access to campaigns for non-site-admin users. This doesn't have an effect anymore.",
+    "campaigns.restrictToAdmins": {
+      "description": "DEPRECATED: Use batchChanges.restrictToAdmins instead. When enabled, only site admins can create and apply campaigns.",
       "type": "boolean",
       "!go": { "pointer": true },
-      "group": "Campaigns"
-    },
-    "campaigns.restrictToAdmins": {
-      "description": "When enabled, only site admins can create and apply campaigns.",
-      "type": "boolean",
       "group": "Campaigns",
+      "default": false
+    },
+    "batchChanges.enabled": {
+      "description": "Enables/disables the Batch Changes feature.",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "BatchChanges",
+      "default": true
+    },
+    "batchChanges.restrictToAdmins": {
+      "description": "When enabled, only site admins can create and apply batch changes.",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "BatchChanges",
       "default": false
     },
     "codeIntelAutoIndexing.enabled": {
@@ -771,6 +768,25 @@
       "type": "integer",
       "group": "Debug",
       "examples": [["10000"]]
+    },
+    "insights.historical.frames": {
+      "description": "(debug) number of historical insights timeframes to populate",
+      "type": "integer",
+      "group": "Debug",
+      "examples": [["6"]]
+    },
+    "insights.historical.frameLength": {
+      "description": "(debug) duration of historical insights timeframes, one point per repository will be recorded in each timeframe.",
+      "type": "string",
+      "group": "Debug",
+      "examples": ["30d"]
+    },
+    "insights.historical.speedFactor": {
+      "description": "(debug) Speed factor for building historical insights data. A value like 1.5 indicates approximately to use 1.5x as much repo-updater and gitserver resources.",
+      "!go": { "pointer": true },
+      "type": "number",
+      "group": "Debug",
+      "examples": ["1.0"]
     },
     "htmlHeadTop": {
       "description": "HTML to inject at the top of the `<head>` element on each page, for analytics scripts",
@@ -1283,7 +1299,7 @@
     "NotifierOpsGenie": {
       "description": "OpsGenie notifier",
       "type": "object",
-      "required": ["type", "apiKey"],
+      "required": ["type"],
       "properties": {
         "type": {
           "type": "string",

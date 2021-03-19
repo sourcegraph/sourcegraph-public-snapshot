@@ -48,6 +48,9 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                     </strong>
                   </a>
                 </span>
+                <span
+                  className="ml-2"
+                />
               </div>
               <small
                 className="result-container__toggle-matches-container"
@@ -131,9 +134,6 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                     </code>
                   </VisibilitySensor>
                 </a>
-                <div
-                  className="file-match-children__item-badge-row test-badge-row"
-                />
               </div>
             </div>
           </div>
@@ -263,6 +263,9 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                     </strong>
                   </a>
                 </span>
+                <span
+                  className="ml-2"
+                />
               </div>
               <small
                 className="result-container__toggle-matches-container"
@@ -370,9 +373,6 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                     </code>
                   </VisibilitySensor>
                 </a>
-                <div
-                  className="file-match-children__item-badge-row test-badge-row"
-                />
               </div>
             </div>
           </div>
@@ -431,6 +431,9 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                     </strong>
                   </a>
                 </span>
+                <span
+                  className="ml-2"
+                />
               </div>
               <small
                 className="result-container__toggle-matches-container"
@@ -514,9 +517,6 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                     </code>
                   </VisibilitySensor>
                 </a>
-                <div
-                  className="file-match-children__item-badge-row test-badge-row"
-                />
               </div>
             </div>
           </div>

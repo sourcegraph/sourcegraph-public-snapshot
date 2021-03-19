@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -100,7 +101,7 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, db dbutil.DB, args *search.Te
 
 	// Set all repos to "timed out"
 	if since(t0) >= searchOpts.MaxWallTime {
-		c.Send(SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout | search.RepoStatusIndexed)}})
+		c.Send(SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout)}})
 	}
 
 	// We always return approximate results (limitHit true) unless we run the branch to perform a more complete search.
@@ -117,7 +118,7 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, db dbutil.DB, args *search.Te
 			return err
 		}
 		if since(t0) >= searchOpts.MaxWallTime {
-			c.Send(SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout | search.RepoStatusIndexed)}})
+			c.Send(SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout)}})
 		}
 		// This is the only place limitHit can be set false, meaning we covered everything.
 		limitHit = resp.FilesSkipped+resp.ShardsSkipped > 0
@@ -160,10 +161,10 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, db dbutil.DB, args *search.Te
 		}
 		matches[i] = &FileMatchResolver{
 			db: db,
-			FileMatch: FileMatch{
+			FileMatch: result.FileMatch{
 				Path:     file.FileName,
 				LimitHit: fileLimitHit,
-				uri:      fileMatchURI(repoRev.Repo.Name, "", file.FileName),
+				URI:      fileMatchURI(repoRev.Repo.Name, "", file.FileName),
 				Repo:     repoRev.Repo,
 				CommitID: api.CommitID(file.Version),
 			},

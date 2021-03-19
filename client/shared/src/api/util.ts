@@ -1,7 +1,8 @@
-import { ProxyMarked, transferHandlers, releaseProxy, TransferHandler, Remote } from 'comlink'
-import { Observable, Observer, Subscription } from 'rxjs'
+import { ProxyMarked, transferHandlers, releaseProxy, TransferHandler, Remote, proxyMarker } from 'comlink'
+import { Observable, Observer, PartialObserver, Subscription } from 'rxjs'
 import { Subscribable, Unsubscribable } from 'sourcegraph'
 import { hasProperty } from '../util/types'
+import { ProxySubscribable } from './extension/api/common'
 
 /**
  * Tests whether a value is a WHATWG URL object.
@@ -34,7 +35,9 @@ export function registerComlinkTransferHandlers(): void {
  *
  * @param subscriptionPromise A Promise for a Subscription proxied from the other thread
  */
-export const syncSubscription = (subscriptionPromise: Promise<Remote<Unsubscribable & ProxyMarked>>): Subscription =>
+export const syncRemoteSubscription = (
+    subscriptionPromise: Promise<Remote<Unsubscribable & ProxyMarked>>
+): Subscription =>
     // We cannot pass the proxy subscription directly to Rx because it is a Proxy that looks like a function
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
     new Subscription(async () => {
@@ -42,6 +45,14 @@ export const syncSubscription = (subscriptionPromise: Promise<Remote<Unsubscriba
         await subscriptionProxy.unsubscribe()
         subscriptionProxy[releaseProxy]()
     })
+
+/**
+ * Creates a synchronous Subscription that will unsubscribe the given Promise<Subscription> asynchronously.
+ *
+ * @param subscriptionPromise A Promise for a Subscription
+ */
+export const syncPromiseSubscription = (subscriptionPromise: Promise<Unsubscribable>): Subscription =>
+    new Subscription(() => subscriptionPromise.then(subscription => subscription.unsubscribe()))
 
 /**
  * Runs f and returns a resolved promise with its value or a rejected promise with its exception,
@@ -139,3 +150,23 @@ export const pretendRemote = <T>(object: Partial<T>): Remote<T> =>
             throw new Error(`unspecified property in the stub: "${property.toString()}"`)
         },
     }) as unknown) as Remote<T>
+
+/**
+ * For proxySubscribables to be passed as stubs to pretendRemote.
+ *
+ * In unit tests, callers of `proxySubscribable` and `wrapRemoteObservable` will actually
+ * be on the same thread, so comlink won't be involved to intercept symbol methods (e.g. [releaseProxy]).
+ * We have to add them ourselves to prevent TypeErrors when unsubscribing from proxySubscribables.
+ */
+export const pretendProxySubscribable = <T>(subscribable: Subscribable<T>): ProxySubscribable<T> => ({
+    [proxyMarker]: true,
+    subscribe(observer): Unsubscribable & ProxyMarked {
+        const subscription = subscribable.subscribe((observer as unknown) as PartialObserver<T>)
+
+        return {
+            [proxyMarker]: true,
+            unsubscribe: () => subscription.unsubscribe(),
+            [releaseProxy]: () => undefined,
+        } as Unsubscribable & ProxyMarked
+    },
+})

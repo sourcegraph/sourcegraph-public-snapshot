@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	searchresult "github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -159,10 +160,10 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 		return nil, &badRequestError{err}
 	}
 
-	resultTypes := r.determineResultTypes(args, "")
+	resultTypes := r.determineResultTypes(args, searchresult.TypeEmpty)
 	tr.LazyPrintf("resultTypes: %v", resultTypes)
 
-	if len(resultTypes) != 1 || resultTypes[0] != "file" {
+	if resultTypes != searchresult.TypeFile {
 		return nil, fmt.Errorf("experimental paginated search currently only supports 'file' (text match) result types. Found %q", resultTypes)
 	}
 
@@ -266,7 +267,7 @@ func paginatedSearchFilesInRepos(ctx context.Context, db dbutil.DB, args *search
 		// fileResults is not sorted so we must sort it now. fileCommon may or
 		// may not be sorted, but we do not rely on its order.
 		sort.Slice(fileResults, func(i, j int) bool {
-			return fileResults[i].uri < fileResults[j].uri
+			return fileResults[i].URI < fileResults[j].URI
 		})
 		results := make([]SearchResultResolver, 0, len(fileResults))
 		for _, r := range fileResults {

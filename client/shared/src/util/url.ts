@@ -1,10 +1,11 @@
 import { Position, Range, Selection } from '@sourcegraph/extension-api-types'
-import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
 import { replaceRange } from './strings'
 import { discreteValueAliases } from '../search/query/filters'
 import { tryCatch } from './errors'
 import { SearchPatternType } from '../graphql-operations'
 import { findFilter, FilterKind } from '../search/query/validate'
+import { appendContextFilter } from '../search/query/transformer'
+import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
 
 export interface RepoSpec {
     /**
@@ -595,20 +596,20 @@ export function buildSearchURLQuery(
     const globalPatternType = findFilter(queryParameter, 'patterntype', FilterKind.Global)
     if (globalPatternType?.value) {
         const { start, end } = globalPatternType.range
-        patternTypeParameter =
-            globalPatternType.value.type === 'literal'
-                ? globalPatternType.value.value
-                : globalPatternType.value.quotedValue
+        patternTypeParameter = globalPatternType.value.value
         queryParameter = replaceRange(queryParameter, { start: Math.max(0, start - 1), end }).trim()
     }
 
     const globalCase = findFilter(queryParameter, 'case', FilterKind.Global)
     if (globalCase?.value) {
         // When case:value is explicit in the query, override any previous value of caseParameter.
-        const globalCaseParameterValue =
-            globalCase.value.type === 'literal' ? globalCase.value.value : globalCase.value.quotedValue
+        const globalCaseParameterValue = globalCase.value.value
         caseParameter = discreteValueAliases.yes.includes(globalCaseParameterValue) ? 'yes' : 'no'
         queryParameter = replaceRange(queryParameter, globalCase.range)
+    }
+
+    if (searchContextSpec) {
+        queryParameter = appendContextFilter(queryParameter, searchContextSpec)
     }
 
     searchParameters.set('q', queryParameter)
@@ -620,10 +621,6 @@ export function buildSearchURLQuery(
 
     if (versionContext) {
         searchParameters.set('c', versionContext)
-    }
-
-    if (searchContextSpec) {
-        searchParameters.set('context', searchContextSpec)
     }
 
     if (searchParametersList) {

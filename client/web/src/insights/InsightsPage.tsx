@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo } from 'react'
 import { useObservable } from '../../../shared/src/util/useObservable'
-import { ContributableViewContainer } from '../../../shared/src/api/protocol'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { ViewGrid, ViewGridProps } from '../repo/tree/ViewGrid'
 import { InsightsIcon } from './icon'
@@ -9,10 +8,13 @@ import { Link } from '../../../shared/src/components/Link'
 import GearIcon from 'mdi-react/GearIcon'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { PageHeader } from '../components/PageHeader'
-import { StatusBadge } from '../components/StatusBadge'
+import { FeedbackBadge } from '../components/FeedbackBadge'
 import { Page } from '../components/Page'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { getCombinedViews } from './backend'
+import { from } from 'rxjs'
+import { switchMap } from 'rxjs/operators'
+import { wrapRemoteObservable } from '../../../shared/src/api/client/api/common'
 
 interface InsightsPageProps extends ExtensionsControllerProps, Omit<ViewGridProps, 'views'>, TelemetryProps {}
 
@@ -20,8 +22,12 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
     const views = useObservable(
         useMemo(
             () =>
-                getCombinedViews(ContributableViewContainer.InsightsPage, {}, props.extensionsController.services.view),
-            [props.extensionsController.services.view]
+                getCombinedViews(() =>
+                    from(props.extensionsController.extHostAPI).pipe(
+                        switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getInsightsViews({})))
+                    )
+                ),
+            [props.extensionsController]
         )
     )
 
@@ -41,7 +47,7 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
         <div className="w-100">
             <Page>
                 <PageHeader
-                    annotation={<StatusBadge status="prototype" feedback={{ mailto: 'support@sourcegraph.com' }} />}
+                    annotation={<FeedbackBadge status="prototype" feedback={{ mailto: 'support@sourcegraph.com' }} />}
                     path={[{ icon: InsightsIcon, text: 'Code insights' }]}
                     actions={
                         <>

@@ -19,9 +19,11 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // GitDir is an absolute path to a GIT_DIR.
@@ -61,6 +63,16 @@ func (s *Server) name(dir GitDir) api.RepoName {
 	name = strings.Trim(name, string(filepath.Separator)) // remove /
 	name = filepath.ToSlash(name)                         // filepath -> path
 	return protocol.NormalizeRepo(api.RepoName(name))
+}
+
+func cloneStatus(cloned, cloning bool) types.CloneStatus {
+	switch {
+	case cloned:
+		return types.CloneStatusCloned
+	case cloning:
+		return types.CloneStatusCloning
+	}
+	return types.CloneStatusNotCloned
 }
 
 func isAlwaysCloningTest(name api.RepoName) bool {
@@ -252,7 +264,7 @@ var repoLastFetched = func(dir GitDir) (time.Time, error) {
 //
 // This breaks on file systems that do not record mtime. This is a Sourcegraph
 // extension to track last time a repo changed. The file is updated by
-// setLastChanged via doRepoUpdate2.
+// setLastChanged via doBackgroundRepoUpdate.
 //
 // As a special case, tries both the directory given, and the .git subdirectory,
 // because we're a bit inconsistent about which name to use.

@@ -27,9 +27,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
-	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -82,12 +82,6 @@ func TestIndexedSearch(t *testing.T) {
 				useFullDeadline: false,
 				since:           func(time.Time) time.Duration { return time.Second - time.Millisecond },
 			},
-			wantCommon: streaming.Stats{
-				Status: mkStatusMap(map[string]search.RepoStatus{
-					"foo/bar":    search.RepoStatusSearched | search.RepoStatusIndexed,
-					"foo/foobar": search.RepoStatusSearched | search.RepoStatusIndexed,
-				}),
-			},
 			wantErr: false,
 		},
 		{
@@ -101,8 +95,8 @@ func TestIndexedSearch(t *testing.T) {
 			},
 			wantCommon: streaming.Stats{
 				Status: mkStatusMap(map[string]search.RepoStatus{
-					"foo/bar":    search.RepoStatusIndexed | search.RepoStatusTimedout,
-					"foo/foobar": search.RepoStatusIndexed | search.RepoStatusTimedout,
+					"foo/bar":    search.RepoStatusTimedout,
+					"foo/foobar": search.RepoStatusTimedout,
 				}),
 			},
 		},
@@ -171,12 +165,6 @@ func TestIndexedSearch(t *testing.T) {
 				"",
 				"",
 			},
-			wantCommon: streaming.Stats{
-				Status: mkStatusMap(map[string]search.RepoStatus{
-					"foo/bar":    search.RepoStatusSearched | search.RepoStatusIndexed,
-					"foo/foobar": search.RepoStatusSearched | search.RepoStatusIndexed,
-				}),
-			},
 			wantErr: false,
 		},
 		{
@@ -202,11 +190,6 @@ func TestIndexedSearch(t *testing.T) {
 				since: func(time.Time) time.Duration { return 0 },
 			},
 			wantMatchCount: 3,
-			wantCommon: streaming.Stats{
-				Status: mkStatusMap(map[string]search.RepoStatus{
-					"foo/bar": search.RepoStatusSearched | search.RepoStatusIndexed,
-				}),
-			},
 			wantMatchURLs: []string{
 				"git://foo/bar?HEAD#baz.go",
 				"git://foo/bar?dev#baz.go",
@@ -236,11 +219,6 @@ func TestIndexedSearch(t *testing.T) {
 						FileName:   "baz.go",
 					},
 				},
-			},
-			wantCommon: streaming.Stats{
-				Status: mkStatusMap(map[string]search.RepoStatus{
-					"foo/bar": search.RepoStatusSearched | search.RepoStatusIndexed,
-				}),
 			},
 			wantUnindexed: makeRepositoryRevisions("foo/bar@unindexed"),
 			wantMatchURLs: []string{
@@ -731,7 +709,7 @@ func BenchmarkSearchResults(b *testing.B) {
 	b.ReportAllocs()
 
 	for n := 0; n < b.N; n++ {
-		q, err := query.ProcessAndOr(`print index:only count:350`, query.ParserOptions{SearchType: query.SearchTypeLiteral})
+		q, err := query.ParseLiteral(`print index:only count:350`)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -1041,20 +1019,20 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 	repo := NewRepositoryResolver(db, &types.Repo{Name: "foo"})
 
 	results := zoektFileMatchToSymbolResults(repo, "master", file)
-	var symbols []protocol.Symbol
+	var symbols []result.Symbol
 	for _, res := range results {
 		// Check the fields which are not specific to the symbol
-		if got, want := res.lang, "go"; got != want {
+		if got, want := res.Lang, "go"; got != want {
 			t.Fatalf("lang: got %q want %q", got, want)
 		}
-		if got, want := res.baseURI.URL.String(), "git://foo?master"; got != want {
+		if got, want := res.BaseURI.URL.String(), "git://foo?master"; got != want {
 			t.Fatalf("baseURI: got %q want %q", got, want)
 		}
 
-		symbols = append(symbols, res.symbol)
+		symbols = append(symbols, res.Symbol)
 	}
 
-	want := []protocol.Symbol{{
+	want := []result.Symbol{{
 		Name:    "a",
 		Line:    10,
 		Pattern: "/^symbol a symbol b$/",
@@ -1134,4 +1112,33 @@ func TestContextWithoutDeadline_cancel(t *testing.T) {
 	case <-time.After(10 * time.Second):
 		t.Fatal("expected context to be done")
 	}
+}
+
+func TestBufferedSender(t *testing.T) {
+	// We create an unbuffered Sender, which means a call to Send blocks if there is
+	// no consumer.
+	c := make(chan *zoekt.SearchResult)
+	defer close(c)
+	unbufferedMockSender := searchbackend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
+		c <- event
+	})
+
+	// We add a buffer to unbufferedMockSender. A call to Send should not block anymore.
+	bufferedMockSender, cleanup := bufferedSender(1, unbufferedMockSender)
+	defer cleanup()
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		// Should not block.
+		bufferedMockSender.Send(&zoekt.SearchResult{Files: generateZoektMatches(1)})
+
+	}()
+	select {
+	case <-done:
+	case <-time.After(1 * time.Second):
+		t.Errorf("bufferedMockSender.Send did not return in time")
+	}
+	// Drain the buffer to make sure that cleanup() can return.
+	<-c
 }

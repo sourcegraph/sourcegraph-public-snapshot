@@ -20,6 +20,7 @@ import (
 	zoektquery "github.com/google/zoekt/query"
 	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
@@ -118,16 +119,6 @@ type zoektSearchStreamEvent struct {
 	limitHit bool
 	partial  map[api.RepoID]struct{}
 	err      error
-}
-
-func zoektSearchStream(ctx context.Context, args *search.TextPatternInfo, repoBranches map[string][]string, since func(t time.Time) time.Duration, endpoints []string, useFullDeadline bool) <-chan zoektSearchStreamEvent {
-	c := make(chan zoektSearchStreamEvent)
-	go func() {
-		defer close(c)
-		_, _, _, _ = zoektSearch(ctx, args, repoBranches, since, endpoints, useFullDeadline, c)
-	}()
-
-	return c
 }
 
 const defaultMaxSearchResults = 30
@@ -242,7 +233,7 @@ func zoektSearch(ctx context.Context, args *search.TextPatternInfo, repoBranches
 
 func writeZip(ctx context.Context, w io.Writer, fileMatches []zoekt.FileMatch) (err error) {
 	bytesWritten := 0
-	span, ctx := ot.StartSpanFromContext(ctx, "WriteZip")
+	span, _ := ot.StartSpanFromContext(ctx, "WriteZip")
 	defer func() {
 		span.LogFields(log.Int("bytes_written", bytesWritten))
 		span.Finish()

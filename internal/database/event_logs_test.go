@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -335,6 +336,71 @@ func TestEventLogs_codeIntelligenceWeeklyUsersCount(t *testing.T) {
 
 	if count != len(users1) {
 		t.Errorf("unexpected count. want=%d have=%d", len(users1), count)
+	}
+}
+
+func TestEventLogs_TestCodeIntelligenceRepositoryCounts(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	ctx := context.Background()
+	now := time.Now()
+
+	repos := []struct {
+		id        int
+		name      string
+		deletedAt *time.Time
+	}{
+		{1, "test01", nil},
+		{2, "test02", nil},
+		{3, "test03", nil},
+		{4, "test04", nil},  // (no LSIF data)
+		{5, "test05", &now}, // deleted
+	}
+	for _, repo := range repos {
+		query := sqlf.Sprintf(
+			"INSERT INTO repo (id, name, deleted_at) VALUES (%s, %s, %s)",
+			repo.id,
+			repo.name,
+			repo.deletedAt,
+		)
+		if _, err := db.Exec(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+			t.Fatalf("unexpected error preparing database: %s", err.Error())
+		}
+	}
+
+	uploads := []struct {
+		repositoryID int
+	}{
+		{1},
+		{1}, // duplicate
+		{2},
+		{3},
+		{5}, // deleted repository
+		{6}, // missing repository
+	}
+	for i, upload := range uploads {
+		query := sqlf.Sprintf(
+			"INSERT INTO lsif_uploads (repository_id, commit, indexer, num_parts, uploaded_parts, state) VALUES (%s, %s, 'idx', 1, '{}', 'completed')",
+			upload.repositoryID,
+			fmt.Sprintf("%040d", i),
+		)
+		if _, err := db.Exec(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+			t.Fatalf("unexpected error preparing database: %s", err.Error())
+		}
+	}
+
+	withUploads, withoutUploads, err := EventLogs(db).CodeIntelligenceRepositoryCounts(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if withUploads != 3 {
+		t.Errorf("unexpected number of repositories with uploads. want=%d have=%d", 3, withUploads)
+	}
+	if withoutUploads != 1 {
+		t.Errorf("unexpected number of repositories without uploads. want=%d have=%d", 1, withoutUploads)
 	}
 }
 

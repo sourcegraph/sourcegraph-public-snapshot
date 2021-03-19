@@ -30,6 +30,8 @@ export interface CodeMonitorFormProps extends Partial<Pick<CodeMonitoringProps, 
     codeMonitor?: CodeMonitorFields
     /* Whether to show the delete button */
     showDeleteButton?: boolean
+    /* Optional trigger query to pre-populate the trigger form */
+    triggerQuery?: string
 }
 
 interface FormCompletionSteps {
@@ -45,21 +47,16 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
     codeMonitor,
     showDeleteButton,
     deleteCodeMonitor,
-    location,
+    triggerQuery,
 }) => {
     const LOADING = 'loading' as const
-
-    const triggerQueryFromURL = useMemo(
-        () => (codeMonitor ? undefined : new URLSearchParams(location.search).get('trigger-query')),
-        [codeMonitor, location.search]
-    )
 
     const [currentCodeMonitorState, setCodeMonitor] = useState<CodeMonitorFields>(
         codeMonitor ?? {
             id: '',
             description: '',
             enabled: true,
-            trigger: { id: '', query: triggerQueryFromURL ?? '' },
+            trigger: { id: '', query: triggerQuery ?? '' },
             actions: {
                 nodes: [],
             },
@@ -190,7 +187,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                         onQueryChange={onQueryChange}
                         triggerCompleted={formCompletion.triggerCompleted}
                         setTriggerCompleted={setTriggerCompleted}
-                        startExpanded={!!triggerQueryFromURL}
+                        startExpanded={!!triggerQuery}
                     />
                 </div>
                 <div
@@ -217,12 +214,15 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                                 value={currentCodeMonitorState.enabled}
                                 onToggle={onEnabledChange}
                                 className="mr-2"
+                                aria-describedby="code-monitor-form__toggle-description"
                             />{' '}
                         </div>
-                        <div className="flex-column">
-                            <div>Active</div>
+                        <div className="flex-column" id="code-monitor-form__toggle-description">
+                            <div>{currentCodeMonitorState.enabled ? 'Active' : 'Inactive'}</div>
                             <div className="text-muted">
-                                Code monitor will watch for the trigger and run actions in response
+                                {currentCodeMonitorState.enabled
+                                    ? 'Code monitor will watch for the trigger and run actions in response'
+                                    : 'Code monitor will not respond to trigger events'}
                             </div>
                         </div>
                     </div>

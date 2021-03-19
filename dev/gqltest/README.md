@@ -1,6 +1,6 @@
 # GraphQL integration tests
 
-This directory contains GraphQL-based integration tests in the form of standard Go tests.
+This directory contains API-based integration tests in the form of standard Go tests. It is called gqltest since most of our API is GraphQL. However, the test suite has been extended to test other endpoints such as streaming search.
 
 ## How to set up credentials
 
@@ -25,6 +25,15 @@ export BITBUCKET_SERVER_USERNAME=<REDACTED>
 ```
 
 You need to run `direnv allow` after editing the `.envrc` file.
+
+Alternatively you can use the 1password CLI tool:
+
+```sh
+# dev-private token for ghe.sgdev.org
+op get item bw4nttlfqve3rc6xqzbqq7l7pm | jq -r '.. | select(.t? == "token name: dev-private") | @sh "export GITHUB_TOKEN=\(.v)"'
+# AWS and Bitbucket tokens
+op get item 5q5lnpirajegt7uifngeabrak4 | jq -r '.details.sections[] | .fields[] | @sh "export \(.t)=\(.v)"
+```
 
 ## How to run tests
 

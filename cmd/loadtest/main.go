@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
@@ -75,6 +76,7 @@ func search(v GQLSearchVars) (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("response error: %s", err)
 	}
+	defer resp.Body.Close()
 	var res GraphQLResponseSearch
 	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
 		return 0, fmt.Errorf("could not decode response body: %s", err)

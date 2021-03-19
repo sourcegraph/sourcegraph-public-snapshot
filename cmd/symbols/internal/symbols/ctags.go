@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	ctags "github.com/sourcegraph/go-ctags"
+
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 

@@ -22,7 +22,7 @@ import (
 	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/webhookhandlers"
 	frontendsearch "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
+	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
@@ -197,7 +197,7 @@ func (h *errorHandler) Handle(w http.ResponseWriter, r *http.Request, status int
 
 	var displayErrBody string
 	if h.WriteErrBody {
-		displayErrBody = string(errBody)
+		displayErrBody = errBody
 	}
 	http.Error(w, displayErrBody, status)
 	traceSpan := opentracing.SpanFromContext(r.Context())

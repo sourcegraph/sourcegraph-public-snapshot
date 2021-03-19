@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -41,6 +42,7 @@ type Resolved struct {
 }
 
 type Resolver struct {
+	DB               dbutil.DB
 	Zoekt            *searchbackend.Zoekt
 	DefaultReposFunc defaultReposFunc
 	NamespaceStore   interface {
@@ -115,7 +117,7 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 
 	var defaultRepos []*types.RepoName
 
-	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 && !hasTypeRepo(op.Query) && searchcontexts.IsGlobalSearchContext(searchContext) {
+	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 && !query.HasTypeRepo(op.Query) && searchcontexts.IsGlobalSearchContext(searchContext) {
 		start := time.Now()
 		defaultRepos, err = defaultRepositories(ctx, r.DefaultReposFunc, r.Zoekt, excludePatterns)
 		if err != nil {
@@ -154,16 +156,17 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 
 		if searchContext != nil && searchContext.UserID != 0 {
 			options.UserID = searchContext.UserID
+			options.IncludeUserPublicRepos = true
 		}
 
 		// PERF: We Query concurrently since Count and List call can be slow
 		// on Sourcegraph.com (100ms+).
 		excludedC := make(chan ExcludedRepos)
 		go func() {
-			excludedC <- computeExcludedRepositories(ctx, op.Query, options)
+			excludedC <- computeExcludedRepositories(ctx, r.DB, op.Query, options)
 		}()
 
-		repos, err = database.GlobalRepos.ListRepoNames(ctx, options)
+		repos, err = database.Repos(r.DB).ListRepoNames(ctx, options)
 		tr.LazyPrintf("Repos.List - done")
 
 		excluded = <-excludedC
@@ -430,7 +433,7 @@ type ExcludedRepos struct {
 
 // computeExcludedRepositories returns a list of excluded repositories (Forks or
 // archives) based on the search Query.
-func computeExcludedRepositories(ctx context.Context, q query.Q, op database.ReposListOptions) (excluded ExcludedRepos) {
+func computeExcludedRepositories(ctx context.Context, db dbutil.DB, q query.Q, op database.ReposListOptions) (excluded ExcludedRepos) {
 	if q == nil {
 		return ExcludedRepos{}
 	}
@@ -440,9 +443,7 @@ func computeExcludedRepositories(ctx context.Context, q query.Q, op database.Rep
 	var wg sync.WaitGroup
 	var numExcludedForks, numExcludedArchived int
 
-	forkStr, _ := q.StringValue(query.FieldFork)
-	fork := query.ParseYesNoOnly(forkStr)
-	if fork == query.Invalid && !ExactlyOneRepo(op.IncludePatterns) {
+	if q.Fork() == nil && !ExactlyOneRepo(op.IncludePatterns) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -452,16 +453,14 @@ func computeExcludedRepositories(ctx context.Context, q query.Q, op database.Rep
 			selectForks.OnlyForks = true
 			selectForks.NoForks = false
 			var err error
-			numExcludedForks, err = database.GlobalRepos.Count(ctx, selectForks)
+			numExcludedForks, err = database.Repos(db).Count(ctx, selectForks)
 			if err != nil {
 				log15.Warn("repo count for excluded fork", "err", err)
 			}
 		}()
 	}
 
-	archivedStr, _ := q.StringValue(query.FieldArchived)
-	archived := query.ParseYesNoOnly(archivedStr)
-	if archived == query.Invalid && !ExactlyOneRepo(op.IncludePatterns) {
+	if q.Archived() == nil && !ExactlyOneRepo(op.IncludePatterns) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -471,7 +470,7 @@ func computeExcludedRepositories(ctx context.Context, q query.Q, op database.Rep
 			selectArchived.OnlyArchived = true
 			selectArchived.NoArchived = false
 			var err error
-			numExcludedArchived, err = database.GlobalRepos.Count(ctx, selectArchived)
+			numExcludedArchived, err = database.Repos(db).Count(ctx, selectArchived)
 			if err != nil {
 				log15.Warn("repo count for excluded archive", "err", err)
 			}
@@ -511,38 +510,35 @@ func getRevsForMatchedRepo(repo api.RepoName, pats []patternRevspec) (matched []
 		return
 	}
 	// if two repo specs match, and both provided non-empty rev lists,
-	// we want their intersection
-	allowedRevs := make(map[search.RevisionSpecifier]struct{}, len(revLists[0]))
-	allRevs := make(map[search.RevisionSpecifier]struct{}, len(revLists[0]))
-	// starting point: everything is "true" if it is currently allowed
-	for _, rev := range revLists[0] {
-		allowedRevs[rev] = struct{}{}
-		allRevs[rev] = struct{}{}
-	}
-	// in theory, "master-by-default" entries won't even be participating
-	// in this.
-	for _, revList := range revLists[1:] {
-		restrictedRevs := make(map[search.RevisionSpecifier]struct{}, len(revList))
+	// we want their intersection, so we count the number of times we
+	// see a revision in the rev lists, and make sure it matches the number
+	// of rev lists
+	revCounts := make(map[search.RevisionSpecifier]int, len(revLists[0]))
+
+	var aliveCount int
+	for i, revList := range revLists {
+		aliveCount = 0
 		for _, rev := range revList {
-			allRevs[rev] = struct{}{}
-			if _, ok := allowedRevs[rev]; ok {
-				restrictedRevs[rev] = struct{}{}
+			if revCounts[rev] == i {
+				aliveCount += 1
 			}
+			revCounts[rev] += 1
 		}
-		allowedRevs = restrictedRevs
 	}
-	if len(allowedRevs) > 0 {
-		matched = make([]search.RevisionSpecifier, 0, len(allowedRevs))
-		for rev := range allowedRevs {
-			matched = append(matched, rev)
+
+	if aliveCount > 0 {
+		matched = make([]search.RevisionSpecifier, 0, len(revCounts))
+		for rev, seenCount := range revCounts {
+			if seenCount == len(revLists) {
+				matched = append(matched, rev)
+			}
 		}
 		sort.Slice(matched, func(i, j int) bool { return matched[i].Less(matched[j]) })
 		return
 	}
-	// build a list of the revspecs which broke this, return it
-	// as the "clashing" list.
-	clashing = make([]search.RevisionSpecifier, 0, len(allRevs))
-	for rev := range allRevs {
+
+	clashing = make([]search.RevisionSpecifier, 0, len(revCounts))
+	for rev := range revCounts {
 		clashing = append(clashing, rev)
 	}
 	// ensure that lists are always returned in sorted order.
@@ -574,19 +570,6 @@ func findPatternRevs(includePatterns []string) (includePatternRevs []patternRevs
 		}
 	}
 	return
-}
-
-func hasTypeRepo(q query.Q) bool {
-	fields := q.Fields()
-	if len(fields["type"]) == 0 {
-		return false
-	}
-	for _, t := range fields["type"] {
-		if t.Value() == "repo" {
-			return true
-		}
-	}
-	return false
 }
 
 type defaultReposFunc func(ctx context.Context) ([]*types.RepoName, error)

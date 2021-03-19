@@ -149,7 +149,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		es, err := store.ExternalServiceStore.List(ctx, database.ExternalServicesListOptions{
 			// On Cloud we only want to fetch site level external services here where the
 			// cloud_default flag has been set.
-			NamespaceUserID:  -1,
+			NoNamespace:      true,
 			OnlyCloudDefault: true,
 			Kinds:            []string{extsvc.KindGitHub, extsvc.KindGitLab},
 		})

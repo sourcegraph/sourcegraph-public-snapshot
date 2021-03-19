@@ -24,7 +24,18 @@ exports[`GlobalNavbar default 1`] = `
       copyQueryButton={false}
       defaultSearchContextSpec=""
       enableSmartQuery={false}
-      extensionsController={Object {}}
+      extensionsController={
+        Object {
+          "commandErrors": Observable {
+            "_isScalar": false,
+            "_subscribe": [Function],
+          },
+          "executeCommand": [Function],
+          "extHostAPI": Promise {},
+          "registerCommand": [Function],
+          "unsubscribe": [Function],
+        }
+      }
       globbing={false}
       history={
         Object {
@@ -81,6 +92,7 @@ exports[`GlobalNavbar default 1`] = `
       parsedSearchQuery="r:golang/oauth2 test f:travis"
       patternType="literal"
       platformContext={Object {}}
+      routes={Array []}
       selectedSearchContextSpec=""
       setCaseSensitivity={[Function]}
       setPatternType={[Function]}
@@ -91,7 +103,7 @@ exports[`GlobalNavbar default 1`] = `
           "subjects": null,
         }
       }
-      showCampaigns={false}
+      showBatchChanges={false}
       showOnboardingTour={false}
       showSearchContext={false}
       telemetryService={Object {}}

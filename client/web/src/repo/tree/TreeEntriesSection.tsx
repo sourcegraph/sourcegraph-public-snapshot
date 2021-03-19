@@ -5,7 +5,7 @@ import { Link } from '../../../../shared/src/components/Link'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { FileDecorator } from '../../tree/FileDecorator'
 import { identity } from 'lodash'
-import { FileDecorationsByPath } from '../../../../shared/src/api/extension/flatExtensionApi'
+import { FileDecorationsByPath } from '../../../../shared/src/api/extension/extensionHostApi'
 
 /**
  * Use a multi-column layout for tree entries when there are at least this many. See TreeEntriesSection.scss

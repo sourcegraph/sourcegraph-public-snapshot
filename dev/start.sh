@@ -72,7 +72,9 @@ export SRC_LOG_FORMAT=${SRC_LOG_FORMAT:-condensed}
 export GITHUB_BASE_URL=${GITHUB_BASE_URL:-http://127.0.0.1:3180}
 export SRC_REPOS_DIR=$HOME/.sourcegraph/repos
 export INSECURE_DEV=1
-export SRC_GIT_SERVERS=127.0.0.1:3178
+# In dev we only expect to have one gitserver instance
+export SRC_GIT_SERVER_1=127.0.0.1:3178
+export SRC_GIT_SERVERS=$SRC_GIT_SERVER_1
 export GOLANGSERVER_SRC_GIT_SERVERS=host.docker.internal:3178
 export SEARCHER_URL=http://127.0.0.1:3181
 export REPO_UPDATER_URL=http://127.0.0.1:3182
@@ -101,6 +103,10 @@ export JAEGER_SERVER_URL=http://localhost:16686
 # Caddy / HTTPS configuration
 export SOURCEGRAPH_HTTPS_DOMAIN="${SOURCEGRAPH_HTTPS_DOMAIN:-"sourcegraph.test"}"
 export SOURCEGRAPH_HTTPS_PORT="${SOURCEGRAPH_HTTPS_PORT:-"3443"}"
+
+# Disable the code insights historical enqueuer by default, as it is expected to take up a
+# significant amount of resources and most devs at Sourcegraph will not care about it.
+export DISABLE_CODE_INSIGHTS_HISTORICAL="${DISABLE_CODE_INSIGHTS_HISTORICAL:-"true"}"
 
 # Enable sharded indexed search mode
 [ -n "${DISABLE_SEARCH_SHARDING-}" ] || export INDEXED_SEARCH_SERVERS="localhost:3070 localhost:3071"
@@ -165,7 +171,7 @@ export PATH="$PWD/.bin:$PWD/node_modules/.bin:$PATH"
 tmp_install_procfile=$(mktemp -t procfile_install_XXXXXXX)
 
 cat >"${tmp_install_procfile}" <<EOF
-yarn: cd $(pwd) && yarn --silent --no-progress
+yarn: cd $(pwd) && yarn --no-progress
 go-install: cd $(pwd) && ./dev/go-install.sh
 ctags-image: cd $(pwd) && ./cmd/symbols/build-ctags.sh
 EOF

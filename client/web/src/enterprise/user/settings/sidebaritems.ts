@@ -19,10 +19,10 @@ export const enterpriseUserSettingsSideBarItems: UserSettingsSidebarItems = {
             condition: () => authExp,
         },
         {
-            to: '/campaigns',
-            label: 'Campaigns',
+            to: '/batch-changes',
+            label: 'Batch Changes',
             condition: ({ isSourcegraphDotCom, user: { viewerCanAdminister } }) =>
-                !isSourcegraphDotCom && window.context.campaignsEnabled && viewerCanAdminister,
+                !isSourcegraphDotCom && window.context.batchChangesEnabled && viewerCanAdminister,
         },
         ...userSettingsSideBarItems.account.slice(2),
         {
@@ -31,6 +31,8 @@ export const enterpriseUserSettingsSideBarItems: UserSettingsSidebarItems = {
             exact: true,
             condition: ({ authenticatedUser }) => !!authenticatedUser.siteAdmin,
         },
+    ],
+    misc: [
         {
             to: '/event-log',
             label: 'Event log',
