@@ -15,17 +15,21 @@ import { ActionItem, ActionItemAction } from '../../../../shared/src/actions/Act
 import PlusIcon from 'mdi-react/PlusIcon'
 import { Link } from 'react-router-dom'
 import { Key } from 'ts-key-enum'
-import { focusable } from 'tabbable'
-import { head } from 'lodash'
+import { focusable, FocusableElement } from 'tabbable'
+import { head, last } from 'lodash'
 import { useCarousel } from '../../components/useCarousel'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import { haveInitialExtensionsLoaded } from '../../../../shared/src/api/features'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
-// Action items bar and toggle are two separate components due to their placement in the DOM tree
-
 const scrollButtonClassName = 'action-items__scroll'
+
+function arrowable(element: HTMLElement): FocusableElement[] {
+    return focusable(element).filter(
+        elm => !elm.classList.contains('disabled') && !elm.classList.contains(scrollButtonClassName)
+    )
+}
 
 export function useWebActionItems(): Pick<ActionItemsBarProps, 'useActionItemsBar'> &
     Pick<ActionItemsToggleProps, 'useActionItemsToggle'> {
@@ -46,9 +50,17 @@ export function useWebActionItems(): Pick<ActionItemsBarProps, 'useActionItemsBa
     useEffect(() => {
         function onKeyDownToggle(event: KeyboardEvent): void {
             if (event.key === Key.ArrowDown && barReference) {
-                const firstBarFocusable = head(focusable(barReference))
-                if (firstBarFocusable) {
-                    firstBarFocusable.focus()
+                const firstBarArrowable = head(arrowable(barReference))
+                if (firstBarArrowable) {
+                    firstBarArrowable.focus()
+                    event.preventDefault()
+                }
+            }
+
+            if (event.key === Key.ArrowUp && barReference) {
+                const lastBarArrowable = last(arrowable(barReference))
+                if (lastBarArrowable) {
+                    lastBarArrowable.focus()
                     event.preventDefault()
                 }
             }
@@ -56,20 +68,18 @@ export function useWebActionItems(): Pick<ActionItemsBarProps, 'useActionItemsBa
 
         function onKeyDownBar(event: KeyboardEvent): void {
             if (event.target instanceof HTMLElement && toggleReference && barReference) {
-                const focusableChildren = focusable(barReference).filter(
-                    elm => !elm.classList.contains('disabled') && !elm.classList.contains(scrollButtonClassName)
-                )
-                const indexOfTarget = focusableChildren.indexOf(event.target)
+                const arrowableChildren = arrowable(barReference)
+                const indexOfTarget = arrowableChildren.indexOf(event.target)
 
                 if (event.key === Key.ArrowDown) {
-                    // If this is the last focusable element, go back to the toggle
-                    if (indexOfTarget === focusableChildren.length - 1) {
+                    // If this is the last arrowable element, go back to the toggle
+                    if (indexOfTarget === arrowableChildren.length - 1) {
                         toggleReference.focus()
                         event.preventDefault()
                         return
                     }
 
-                    const itemToFocus = focusableChildren[indexOfTarget + 1]
+                    const itemToFocus = arrowableChildren[indexOfTarget + 1]
                     if (itemToFocus instanceof HTMLElement) {
                         itemToFocus.focus()
                         event.preventDefault()
@@ -78,14 +88,14 @@ export function useWebActionItems(): Pick<ActionItemsBarProps, 'useActionItemsBa
                 }
 
                 if (event.key === Key.ArrowUp) {
-                    // If this is the first focusable element, go back to the toggle
+                    // If this is the first arrowable element, go back to the toggle
                     if (indexOfTarget === 0) {
                         toggleReference.focus()
                         event.preventDefault()
                         return
                     }
 
-                    const itemToFocus = focusableChildren[indexOfTarget - 1]
+                    const itemToFocus = arrowableChildren[indexOfTarget - 1]
                     if (itemToFocus instanceof HTMLElement) {
                         itemToFocus.focus()
                         event.preventDefault()
@@ -195,7 +205,7 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
                             ...items,
                             // TODO(tj): Temporary: testing default icons DELETE BEFORE MERGING
                             ...new Array(20).fill(null).map<ActionItemAction>((_value, index) => ({
-                                active: false,
+                                active: true,
                                 action: {
                                     category: String(index).slice(-1),
                                     command: 'open',
@@ -203,30 +213,37 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
                                     id: `fake-${index}`,
                                 },
                             })),
-                        ].map((item, index) => (
-                            <li key={item.action.id} className="action-items__list-item">
-                                <ActionItem
-                                    {...props}
-                                    {...item}
-                                    className={classNames(
-                                        actionItemClassName,
-                                        !item.action.actionItem?.iconURL &&
-                                            `action-items__action--no-icon action-items__icon-${
-                                                (index % 5) + 1
-                                            } text-sm`
-                                    )}
-                                    dataContent={
-                                        !item.action.actionItem?.iconURL ? item.action.category?.slice(0, 1) : undefined
-                                    }
-                                    variant="actionItem"
-                                    iconClassName="action-items__icon"
-                                    pressedClassName="action-items__action--pressed"
-                                    inactiveClassName="action-items__action--inactive"
-                                    hideLabel={true}
-                                    tabIndex={-1}
-                                />
-                            </li>
-                        ))}
+                        ].map((item, index) => {
+                            const hasIconURL = !!item.action.actionItem?.iconURL
+                            const className = classNames(
+                                actionItemClassName,
+                                !hasIconURL &&
+                                    `action-items__action--no-icon action-items__icon-${(index % 5) + 1} text-sm`
+                            )
+                            const inactiveClassName = hasIconURL
+                                ? 'action-items__action--inactive'
+                                : 'action-items__action--no-icon-inactive'
+
+                            const dataContent = !hasIconURL ? item.action.category?.slice(0, 1) : undefined
+
+                            return (
+                                <li key={item.action.id} className="action-items__list-item">
+                                    <ActionItem
+                                        {...props}
+                                        {...item}
+                                        className={className}
+                                        dataContent={dataContent}
+                                        variant="actionItem"
+                                        iconClassName="action-items__icon"
+                                        pressedClassName="action-items__action--pressed"
+                                        inactiveClassName={inactiveClassName}
+                                        hideLabel={true}
+                                        tabIndex={-1}
+                                        hideExternalLinkIcon={true}
+                                    />
+                                </li>
+                            )
+                        })}
                     </ul>
                 )}
             </ActionsContainer>

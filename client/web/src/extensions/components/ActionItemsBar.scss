@@ -107,6 +107,13 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
                 content: attr(data-content);
                 border-radius: (2 / 16) + rem;
             }
+
+            &-inactive {
+                &::after {
+                    background-color: var(--disabled-action-bg-color) !important;
+                    color: var(--disabled-action-text-color) !important;
+                }
+            }
         }
     }
 

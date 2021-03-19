@@ -91,6 +91,8 @@ export interface ActionItemProps extends ActionItemAction, ActionItemComponentPr
 
     /** Override default tab index */
     tabIndex?: number
+
+    hideExternalLinkIcon?: boolean
 }
 
 const LOADING = 'loading' as const
@@ -255,7 +257,9 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                 tabIndex={this.props.tabIndex}
             >
                 {content}{' '}
-                {primaryTo && isExternalLink(primaryTo) && <OpenInNewIcon className={this.props.iconClassName} />}
+                {!this.props.hideExternalLinkIcon && primaryTo && isExternalLink(primaryTo) && (
+                    <OpenInNewIcon className={this.props.iconClassName} />
+                )}
                 {showLoadingSpinner && (
                     <div className="action-item__loader">
                         <LoadingSpinner className={this.props.iconClassName} />
@@ -297,9 +301,6 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
         // If the action we're running is *not* opening a URL by using the event target's default handler, then
         // ensure the default event handler for the <LinkOrButton> doesn't run (which might open the URL).
         event.preventDefault()
-
-        // Do not show focus ring on element after running action.
-        event.currentTarget.blur()
 
         this.commandExecutions.next({
             command: action.command,

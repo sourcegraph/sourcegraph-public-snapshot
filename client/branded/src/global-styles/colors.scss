@@ -117,6 +117,8 @@ $text-muted: var(--text-muted);
     --search-keyword-color: #{$oc-grape-7};
     --infobar-warning-color: #{$oc-red-8};
     --web-content-link-color: #1c7cd6;
+    --disabled-action-bg-color: #{$oc-gray-3};
+    --disabled-action-text-color: #{$oc-gray-5};
 }
 .theme-dark {
     // Affects default browser styles
@@ -149,4 +151,6 @@ $text-muted: var(--text-muted);
     --search-keyword-color: #{$oc-grape-4};
     --infobar-warning-color: #{$oc-red-6};
     --web-content-link-color: #329af0;
+    --disabled-action-bg-color: #{$oc-gray-8};
+    --disabled-action-text-color: #{$oc-gray-9};
 }
