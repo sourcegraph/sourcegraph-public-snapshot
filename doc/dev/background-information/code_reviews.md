@@ -85,10 +85,6 @@ Don't:
 - Submit a PR that would cause the main branch to [non-releaseable](https://about.sourcegraph.com/handbook/engineering/continuous_releasability).
 - Submit PRs with multiple overlapping concerns. Every PR should have an obvious goals. PRs tackling multiple issues at once should be split into more highly-focused PRs when possible. For example, a necessary refactor for a feature addition should be split into a (prerequisite) refactor PR, followed by a (subsequent) feature addition PR. Highly cohesive PRs enable reviewers to effectively hold the state of the change in their head.
 
-Try to avoid:
-
-- Submitting PRs larger than a few hundred significant lines of code (added, removed, or updated; excluding test and generate code). Large PRs should be split into smaller PRs when possible. Alternatively, avoid larger PRs into smaller commits (with [good commit messages](commit_messages.md)) that are reviewable independently (and indicate this to the reviewer in the description).
-
 ## What makes an effective code review?
 
 Please read:
