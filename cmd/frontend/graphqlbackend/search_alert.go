@@ -658,7 +658,7 @@ func alertForError(err error, inputs *SearchInputs) *searchAlert {
 			priority:       5,
 		}
 	} else if strings.Contains(err.Error(), "Out of memory") {
-		a := searchAlert{
+		alert = &searchAlert{
 			prometheusType: "structural_search_needs_more_memory__give_searcher_more_memory",
 			title:          "Structural search needs more memory",
 			description:    `Running your structural search requires more memory. You could try reducing the number of repositories with the "repo:" filter. If you are an administrator, try double the memory allocated for the "searcher" service. If you're unsure, reach out to us at support@sourcegraph.com.`,
