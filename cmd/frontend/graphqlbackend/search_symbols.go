@@ -205,10 +205,10 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 			},
 			RepoResolver: repoResolver,
 		}
-		if oldFileMatchResolver, ok := fileMatchesByURI[newFileMatchResolver.CalculatedURI()]; ok {
+		if oldFileMatchResolver, ok := fileMatchesByURI[newFileMatchResolver.URL()]; ok {
 			oldFileMatchResolver.FileMatch.Symbols = append(oldFileMatchResolver.FileMatch.Symbols, symbolRes)
 		} else {
-			fileMatchesByURI[newFileMatchResolver.CalculatedURI()] = newFileMatchResolver
+			fileMatchesByURI[newFileMatchResolver.URL()] = newFileMatchResolver
 			fileMatches = append(fileMatches, newFileMatchResolver)
 		}
 	}

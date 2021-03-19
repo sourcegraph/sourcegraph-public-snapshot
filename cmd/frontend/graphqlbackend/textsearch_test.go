@@ -260,7 +260,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 
 	resultURIs := make([]string, len(results))
 	for i, result := range results {
-		resultURIs[i] = result.CalculatedURI()
+		resultURIs[i] = result.URL()
 	}
 	sort.Strings(resultURIs)
 

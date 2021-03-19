@@ -23,7 +23,7 @@ type FileMatch struct {
 	InputRev *string `json:"-"`
 }
 
-func (fm *FileMatch) CalculatedURI() string {
+func (fm *FileMatch) URL() string {
 	var b strings.Builder
 	var ref string
 	if fm.InputRev != nil {

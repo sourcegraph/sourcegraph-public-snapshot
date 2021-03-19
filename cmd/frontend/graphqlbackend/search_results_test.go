@@ -1472,7 +1472,7 @@ func fileResult(db dbutil.DB, uri string, lineMatches []*result.LineMatch, symbo
 func resultToString(r SearchResultResolver) string {
 	switch v := r.(type) {
 	case *FileMatchResolver:
-		return fmt.Sprintf("File:%s", v.CalculatedURI())
+		return fmt.Sprintf("File:%s", v.URL())
 	case *RepositoryResolver:
 		return fmt.Sprintf("Repository:%s", v.URL())
 	case *CommitSearchResultResolver:
@@ -1688,7 +1688,7 @@ func searchResultResolversToString(srrs []SearchResultResolver) string {
 			for _, line := range v.FileMatch.LineMatches {
 				lines = append(lines, line.Preview)
 			}
-			return fmt.Sprintf("File{url:%s,symbols:[%s],lineMatches:[%s]}", v.CalculatedURI(), strings.Join(symbols, ","), strings.Join(lines, ","))
+			return fmt.Sprintf("File{url:%s,symbols:[%s],lineMatches:[%s]}", v.URL(), strings.Join(symbols, ","), strings.Join(lines, ","))
 		case *CommitSearchResultResolver:
 			if v.DiffPreview() != nil {
 				return fmt.Sprintf("Diff:%s", v.URL())
