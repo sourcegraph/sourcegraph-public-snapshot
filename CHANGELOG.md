@@ -27,6 +27,10 @@ All notable changes to Sourcegraph are documented in this file.
 - `*.pyst` and `*.pyst-include` are now highlighted as Python files. Thanks to @jjwon0 [#19282](https://github.com/sourcegraph/sourcegraph/pull/19282)
 - The code monitoring feature flag is now enabled by default. [#19295](https://github.com/sourcegraph/sourcegraph/pull/19295)
 - New query field `select` enables returning only results of the desired type. See [documentation](https://docs.sourcegraph.com/code_search/reference/language#select) for details. [#19236](https://github.com/sourcegraph/sourcegraph/pull/19236)
+- Syntax highlighting for Elixer, Elm, REG, Julia, Move, Nix, Puppet, VimL thanks to @rvantonder
+- `BUILD.in` files are now highlighted as Bazel/Starlark build files. Thanks to @jjwon0
+- `*.pyst` and `*.pyst-include` are now highlighted as Python files. Thanks to @jjwon0
+- Added a `search.defaultCaseSensitive` setting to configure whether query patterns should be treated case sensitivitely by default.
 
 ### Changed
 
