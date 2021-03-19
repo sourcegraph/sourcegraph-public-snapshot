@@ -1675,6 +1675,9 @@ If `select:repo` is added, the repository those matches belong to is pulled out 
 _repositories_ that contain `package.json` files that contain the term `lodash`. All selected results are deduplicated,
 so if there are multiple content matches in a repository, `select:repo` will still only return unique results.
 
+A query like `type:commit example select:symbol` will return no results because commits have no associated symbol
+and cannot be converted to that type.
+
 **Example:**
 `fmt.Errorf select:repo` [↗](https://sourcegraph.com/search?q=fmt.Errorf+select:repo&patternType=literal)
 `zoektSearch select:file` [↗](https://sourcegraph.com/search?q=zoektSearch+select:file&patternType=literal)
