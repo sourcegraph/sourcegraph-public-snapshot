@@ -655,29 +655,29 @@ func alertForError(err error, inputs *SearchInputs) *searchAlert {
 			prometheusType: "structural_search_needs_more_memory",
 			title:          "Structural search needs more memory",
 			description:    "Running your structural search may require more memory. If you are running the query on many repositories, try reducing the number of repositories with the `repo:` filter.",
+			priority:       5,
 		}
-		alert.priority = 5
 	} else if strings.Contains(err.Error(), "Out of memory") {
 		a := searchAlert{
 			prometheusType: "structural_search_needs_more_memory__give_searcher_more_memory",
 			title:          "Structural search needs more memory",
 			description:    `Running your structural search requires more memory. You could try reducing the number of repositories with the "repo:" filter. If you are an administrator, try double the memory allocated for the "searcher" service. If you're unsure, reach out to us at support@sourcegraph.com.`,
+			priority:       4,
 		}
-		a.priority = 4
 	} else if errors.As(err, &rErr) {
 		alert = &searchAlert{
 			prometheusType: "exceeded_diff_commit_search_limit",
 			title:          fmt.Sprintf("Too many matching repositories for %s search to handle", rErr.ResultType),
 			description:    fmt.Sprintf(`%s search can currently only handle searching across %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'.`, strings.Title(rErr.ResultType), rErr.Max),
+			priority:       2,
 		}
-		alert.priority = 2
 	} else if errors.As(err, &tErr) {
 		alert = &searchAlert{
 			prometheusType: "exceeded_diff_commit_with_time_search_limit",
 			title:          fmt.Sprintf("Too many matching repositories for %s search to handle", tErr.ResultType),
 			description:    fmt.Sprintf(`%s search can currently only handle searching across %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search.`, strings.Title(tErr.ResultType), tErr.Max),
+			priority:       1,
 		}
-		alert.priority = 1
 	}
 	return alert
 }
