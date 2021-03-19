@@ -8,6 +8,10 @@ Upgrades should happen across consecutive minor versions of Sourcegraph. For exa
 
 **Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
 
+## 3.25 -> 3.26
+
+> NOTE: ⚠️ From **3.27** onwards we will only support PostgreSQL versions **starting from 12**.
+
 ## 3.24 -> 3.25
 
 - Go `1.15` introduced changes to SSL/TLS connection validation which requires certificates to include a `SAN`. This field was not included in older certificates and clients relied on the `CN` field. You might see an error like `x509: certificate relies on legacy Common Name field`. We recommend that customers using Sourcegraph with an external database and and connecting to it using SSL/TLS check whether the certificate is up to date.

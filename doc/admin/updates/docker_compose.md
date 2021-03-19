@@ -11,9 +11,9 @@ Upgrades should happen across consecutive minor versions of Sourcegraph. For exa
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
-## 3.24 -> 3.25
+## 3.25 -> 3.26
 
-TODO
+> NOTE: ⚠️ From **3.27** onwards we will only support PostgreSQL versions **starting from 12**.
 
 ## 3.24 -> 3.25
 
