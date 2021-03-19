@@ -142,6 +142,8 @@ type ChangesetAssertions struct {
 
 	AttachedTo []int64
 	DetachFrom []int64
+
+	ArchiveIn int64
 }
 
 func AssertChangeset(t *testing.T, c *batches.Changeset, a ChangesetAssertions) {
@@ -227,6 +229,21 @@ func AssertChangeset(t *testing.T, c *batches.Changeset, a ChangesetAssertions) 
 	sort.Slice(a.AttachedTo, func(i, j int) bool { return a.AttachedTo[i] < a.AttachedTo[j] })
 	if diff := cmp.Diff(a.AttachedTo, attachedTo); diff != "" {
 		t.Fatalf("changeset AttachedTo wrong. (-want +got):\n%s", diff)
+	}
+
+	if a.ArchiveIn != 0 {
+		found := false
+		for _, assoc := range c.BatchChanges {
+			if assoc.BatchChangeID == a.ArchiveIn {
+				found = true
+				if !assoc.Archive {
+					t.Fatalf("changeset association to %d not set to Archive", a.ArchiveIn)
+				}
+			}
+		}
+		if !found {
+			t.Fatalf("no changeset batchChange association set to archive")
+		}
 	}
 
 	if want := c.FailureMessage; want != nil {
