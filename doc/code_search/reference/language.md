@@ -44,226 +44,84 @@ td.r {
     padding: 3px !important;
 }
 
-.ts {
-    border: 0px !important;
-    padding: 0px !important;
-    margin: 0px !important;
-    border-collapse: collapse !important;
-    vertical-align: top !important;
-    width: 16px !important;
-    height: 24px !important;
-    background-image: url(../img/div-ts.png);
-    background-size: 16px 512px !important;
-    min-width: 16px; // prevent narrow screen width from removing lines
+
+svg.railroad-diagram path {
+    stroke-width: 2;
+    stroke: var(--text-color);
+    fill: rgba(0,0,0,0);
 }
 
-body.theme-dark .ts {
-    background-image: url(../img/div-ts-dark.png);
+svg.railroad-diagram text {
+    font: 14px var(--monospace-font-family);
+	fill: var(--text-color);
+    text-anchor: middle;
+    white-space: pre;
 }
-
-.te {
-    border: 0px !important;
-    padding: 0px !important;
-    margin: 0px !important;
-    border-collapse: collapse !important;
-    vertical-align: top !important;
-    width: 16px !important;
-    height: 24px !important;
-    background-image: url(../img/div-te.png);
-    background-size: 16px 512px !important;
-    min-width: 16px; // prevent narrow screen width from removing lines
+svg.railroad-diagram a text {
+	fill: var(--link-color);
 }
-
-body.theme-dark .te {
-    background-image: url(../img/div-te-dark.png);
+svg.railroad-diagram a:hover text {
+	text-decoration: underline;
 }
-
-.le {
-    border: 0px !important;
-    padding: 0px !important;
-    margin: 0px !important;
-    border-collapse: collapse !important;
-    vertical-align: top !important;
-    width: 16px !important;
-    height: 24px !important;
-    background-image: url(../img/div-le.png);
-    background-size: 16px 512px !important;
+svg.railroad-diagram text.diagram-text {
+    font-size: 12px;
 }
-
-body.theme-dark .le {
-    background-image: url(../img/div-le-dark.png);
+svg.railroad-diagram text.diagram-arrow {
+    font-size: 16px;
 }
-
-.ls {
-    border: 0px !important;
-    padding: 0px !important;
-    margin: 0px !important;
-    border-collapse: collapse !important;
-    vertical-align: top !important;
-    width: 16px !important;
-    height: 24px !important;
-    background-image: url(../img/div-ls.png);
-    background-size: 16px 512px !important;
+svg.railroad-diagram text.label {
+    text-anchor: start;
 }
-
-body.theme-dark .ls {
-    background-image: url(../img/div-ls-dark.png);
+svg.railroad-diagram text.comment {
+    font: italic 12px monospace;
 }
-
-.ke {
-    border: 0px !important;
-    padding: 0px !important;
-    margin: 0px !important;
-    border-collapse: collapse !important;
-    vertical-align: top !important;
-    width: 16px !important;
-    height: 24px !important;
-    background-image: url(../img/div-ke.png);
-    background-size: 16px 512px !important;
+svg.railroad-diagram g.non-terminal text {
+    /*font-style: italic;*/
 }
-
-body.theme-dark .ke {
-    background-image: url(../img/div-ke-dark.png);
+svg.railroad-diagram rect {
+    stroke-width: 2;
+    stroke: var(--text-color);
+	fill: none;
 }
-
-.ks {
-    border: 0px !important;
-    padding: 0px !important;
-    margin: 0px !important;
-    border-collapse: collapse !important;
-    vertical-align: top !important;
-    width: 16px !important;
-    height: 24px !important;
-    background-image: url(../img/div-ks.png);
-    background-size: 16px 512px !important;
+svg.railroad-diagram rect.group-box {
+    stroke: gray;
+    stroke-dasharray: 10 5;
 }
-
-body.theme-dark .ks {
-    background-image: url(../img/div-ks-dark.png);
+svg.railroad-diagram path.diagram-text {
+    stroke-width: 3;
+    stroke: var(--text-color);
+    cursor: help;
 }
-
-.d {
-    border: 0px !important;
-    padding: 0px !important;
-    margin: 0px !important;
-    border-collapse: collapse !important;
-    vertical-align: top !important;
-    min-width: 16px !important;
-    height: 24px !important;
-    background-image: url(../img/div-d.png);
-    background-size: 1024px 512px !important;
-}
-
-body.theme-dark .d {
-    background-image: url(../img/div-d-dark.png);
-}
-
-.e {
-    border: 0px !important;
-    padding: 0px !important;
-    margin: 0px !important;
-    border-collapse: collapse !important;
-    vertical-align: top !important;
-    min-width: 16px !important;
-    height: 24px !important;
-    background-image: url(../img/div-e.png);
-    background-size: 1024px 512px !important;
-}
-
-body.theme-dark .e {
-    background-image: url(../img/div-e-dark.png);
-}
-
-.c {
-    padding: 0px 3px !important;
-    margin: 0px 0px !important;
-    border: 2px solid !important;
-    -moz-border-radius: 0.4em !important;
-    -webkit-border-radius: 0.4em !important;
-    -khtml-border-radius: 0.4em !important;
-    border-radius: 0.4em !important;
-    white-space: nowrap;
-}
-
-body.theme-dark .c {
-    background-image: url(../img/div-c-dark.png);
+svg.railroad-diagram g.diagram-text:hover path.diagram-text {
+    fill: #eee;
 }
 
 </style>
-
 
 This page provides a visual breakdown of our Search Query Language and a handful
 of examples to get you started. It is complementary to our [syntax reference](../reference/queries.md) and illustrates syntax using railroad diagrams instead of
 tables.
 
-**How to read railroad diagrams.** Follow the lines in these railroad diagrams from left
-to right to see how pieces of syntax combine. When a line splits it means there
-are multiple options available. When it is possible to repeat a previous syntax,
-you'll see a line lead into a box that looks like this:
+**How to read railroad diagrams.** Follow the lines in these railroad diagrams to see
+how pieces of syntax combine. When a line splits it means there are multiple options
+available. When it is possible to repeat a previous syntax, the split line will loop back
+on itself like this:
 
-<table class="r">
-  <tbody>
-    <tr class="r">
-      <table class="r">
-        <tbody>
-          <tr class="r">
-            <td class="ts"></td>
-            <td class="d"> </td>
-            <td class="te"></td>
-          </tr>
-          <tr class="r">
-            <td class="ls"></td>
-            <td class="d"><code class="c">...</code></td>
-            <td class="le"></td>
-          </tr>
-        </tbody>
-      </table>
-    </tr>
-  </tbody>
-</table>
+<script>
+ComplexDiagram(
+		OneOrMore(
+			Terminal("repeatable"))).addTo();
+</script>
 
 ## Basic query
 
-<div name="r">
-  <table class="r">
-    <tbody>
-      <tr class="r">
-        <td class="d">
-          <table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="ts"></td>
-                <td class="d"><code class="c"><a href="#search-pattern">search pattern</a></code></td>
-                <td class="te"></td>
-              </tr>
-              <tr class="r">
-                <td class="ls"></td>
-                <td class="d"><code class="c"><a href="#parameter">parameter</a></code></td>
-                <td class="le"></td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-        <td class="d">
-          <table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="ts"></td>
-                <td class="d"> </td>
-                <td class="te"></td>
-              </tr>
-              <tr class="r">
-                <td class="ls"></td>
-                <td class="d"><code class="c">...</code></td>
-                <td class="le"></td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+<script>
+ComplexDiagram(
+	OneOrMore(
+		Choice(0,
+			Terminal("search pattern", {href: "#search-pattern"}),
+			Terminal("parameter", {href: "#parameter"})))).addTo();
+</script>
 
 At a basic level, a query consists of [search patterns](#search-pattern) and [parameters](#parameter). Typical queries contain one or more space-separated search patterns that describe what to search, and parameters refine searches by filtering results or changing search behavior.
 
@@ -271,91 +129,20 @@ At a basic level, a query consists of [search patterns](#search-pattern) and [pa
 
 ## Expression
 
-<div name="r">
-  <table class="r">
-    <tbody>
-      <tr class="r">
-        <td class="d">
-          <table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="d"></td>
-                <td class="d"><code class="c"><a href="#basic-query">basic query</a></code></td>
-                <td class="d"></td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-        <td class="d">
-          <table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="ts"></td>
-                <td class="d"> </td>
-                <td class="d"></td>
-              </tr>
-              <tr class="r">
-                <td class="ks"></td>
-                <td class="d"><code class="c">AND</code></td>
-                <td class="te"></td>
-              </tr>
-              <tr class="r">
-                <td class="ls"></td>
-                <td class="d"><code class="c">OR</code></td>
-                <td class="le"></td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-        <td class="d">
-          <table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="d"></td>
-              </tr>
-              <tr class="r">
-                <td class="d"><code class="c"><a href="#basic-query">basic query</a></code></td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-        <td class="d">
-          <table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="d"></td>
-                <td class="d"> </td>
-                <td class="d"></td>
-              </tr>
-              <tr class="r">
-                <td class="ts"></td>
-                <td class="d"> </td>
-                <td class="te"></td>
-              </tr>
-              <tr class="r">
-                <td class="ls"></td>
-                <td class="d"><code class="c">...</code></td>
-                <td class="le"></td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-        <td class="d">
-          <table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="te"></td>
-              </tr>
-              <tr class="r">
-                <td class="le"> </td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+
+<script>
+ComplexDiagram(
+	Terminal("basic query", {href: "#basic-query"}),
+	ZeroOrMore(
+		Sequence(
+			Choice(0,
+				Terminal("AND"),
+				Terminal("OR")),
+			Terminal("basic query", {href: "#basic-query"})),
+		null,
+		'skip')).addTo();
+</script>
+
 
 Build query expressions by combining [basic queries](#basic-query) and operators like `AND` or `OR`.
 Group expressions with parentheses to build more complex expressions. If there are no balanced parentheses, `AND` operators bind tighter, so `foo or bar and baz` means `foo or (bar and baz)`. You may also use lowercase `and` or `or`.
@@ -365,22 +152,12 @@ Group expressions with parentheses to build more complex expressions. If there a
 
 ## Search pattern
 
-<div name="r">
-  <table class="r">
-    <tbody>
-      <tr class="r">
-        <td class="ts"></td>
-        <td class="d"><code class="c"><a href="#string">string</a></code></td>
-        <td class="te"></td>
-      </tr>
-      <tr class="r">
-        <td class="ls"></td>
-        <td class="d"><code class="c"><a href="#quoted-string">quoted string</a></code></td>
-        <td class="le"></td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+<script>
+ComplexDiagram(
+	Choice(0,
+		Terminal("string", {href: "#string"}),
+		Terminal("quoted string", {href: "#quoted-string"}))).addTo();
+</script>
 
 A pattern to search. By default the pattern is searched literally. The kind of search may be toggled to change how a pattern matches:
 <ul class="r">
@@ -392,6 +169,7 @@ A pattern to search. By default the pattern is searched literally. The kind of s
 
 ## Parameter
 
+<<<<<<< HEAD
 <div name="r">
   <table class="r">
     <tbody>
@@ -478,102 +256,54 @@ A pattern to search. By default the pattern is searched literally. The kind of s
     </tbody>
   </table>
 </div>
+=======
+<script>
+ComplexDiagram(
+	Choice(0,
+		Terminal("repo", {href: "#repo"}),
+		Terminal("file", {href: "#file"}),
+		Terminal("content", {href: "#content"}),
+		Terminal("language", {href: "#language"}),
+		Terminal("type", {href: "#type"}),
+		Terminal("case", {href: "#case"}),
+		Terminal("fork", {href: "#fork"}),
+		Terminal("archived", {href: "#archived"}),
+		Terminal("repogroup", {href: "#repogroup"}),
+		Terminal("repohasfile", {href: "#repo-has-file"}),
+		Terminal("repohascommitafter", {href: "#repo-has-commit-after"}),
+		Terminal("count", {href: "#count"}),
+		Terminal("timeout", {href: "#timeout"}),
+		Terminal("visibility", {href: "#visibility"}),
+		Terminal("patterntype", {href: "#pattern-type"}))).addTo();
+</script>
+>>>>>>> dc654c3d66 (search: Use generated railroad diagrams)
 
 Search parameters allow you to filter search results or modify search behavior.
 
 ### Repo
 
-<div name="r">
-  <table class="r">
-    <tbody>
-      <tr class="r">
-        <td class="d">
-          <table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="ts"></td>
-                <td class="d">&nbsp;</td>
-                <td class="d">&nbsp;</td>
-                <td class="d">&nbsp;</td>
-                <td class="te"></td>
-              </tr>
-              <tr class="r">
-                <td class="ks"></td>
-                <td class="d"><code class="c">–</code></td>
-                <td class="d">&nbsp;</td>
-                <td class="d">&nbsp;</td>
-                <td class="ke"></td>
-              </tr>
-              <tr class="r">
-                <td class="ls"></td>
-                <td class="d"><code class="c">NOT</code></td>
-                <td class="d">&nbsp;</td>
-                <td class="d"><code class="c"><a href="#whitespace">whitespace</a></code></td>
-                <td class="le"></td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-        <td class="d"><table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="ts"></td>
-                <td class="d"><code class="c">repo:</code></td>
-                <td class="te">
-                </td>
-              </tr>
-              <tr class="r">
-                <td class="ls"></td>
-                <td class="d">
-                  <table class="r">
-                    <tbody>
-                      <tr class="r">
-                        <td class="d"><code class="c">r:</code></td>
-                        <td class="d"></td>
-                        <td class="d"></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </td>
-                <td class="le">
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-        <td class="d"><code class="c"><a href="#regular-expression">regular expression</a></code></td>
-        <td class="d">
-          <td class="d">
-            <table class="r">
-              <tbody>
-                <tr class="r">
-                  <td class="ts"></td>
-                  <td class="d">&nbsp;</td>
-                  <td class="d">
-                  <td class="d">
-                  <td class="te"></td>
-                </tr>
-                <tr class="r">
-                  <td class="ks"></td>
-                  <td class="d"><code class="c">@<a href="#revision">revision</a></code></td>
-                  <td class="d">
-                  <td class="d">
-                  <td class="ke"></td>
-                </tr>
-                <tr class="r">
-                  <td class="ls"></td>
-                  <td class="d"><code class="c"><a href="#whitespace">whitespace</a></code></td>
-                  <td class="d">
-                  <td class="d"><code class="c">rev:<a href="#revision">revision</a></code></td>
-                  <td class="le"></td>
-              </tr>
-              </tbody>
-            </table>
-          </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+<script>
+ComplexDiagram(
+		Choice(0,
+			Skip(),
+			Terminal("-"),
+			Sequence(
+				Terminal("NOT"),
+				Terminal("space", {href: "#whitespace"}))),
+		Choice(0,
+			Terminal("repo:"),
+			Terminal("r:")),
+		Terminal("regex", {href: "#regular-expression"}),
+	Choice(0,
+		Skip(),
+		Sequence(
+			Terminal("@"),
+			Terminal("revision", {href: "#revision"})),
+		Sequence(
+			Terminal("space", {href: "#whitespace"}),
+			Terminal("rev:"),
+			Terminal("revision", {href: "#revision"})))).addTo();
+</script>
 
 Search repositories that match the regular expression.
 A `-` before `repo` excludes the repository. By default
@@ -584,76 +314,16 @@ branch. You can optionally change the [revision](#revision).
 
 ### Revision
 
-<div name="r">
-  <table class="r">
-    <tbody>
-      <tr class="r">
-        <td class="d">
-          <table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="ts"></td>
-                <td class="d"><code class="c">branch name</code></td>
-                <td class="te"></td>
-              </tr>
-              <tr class="r">
-                <td class="ks"></td>
-                <td class="d"><code class="c">commit hash</code></td>
-                <td class="ke"></td>
-              </tr>
-              <tr class="r">
-                <td class="ls"></td>
-                <td class="d"><code class="c">git tag</code></td>
-                <td class="le"></td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-        <td class="d">
-          <td class="d">
-            <table class="r">
-              <tbody>
-                <tr class="r">
-                  <td class="ts"></td>
-                  <td class="d">&nbsp;</td>
-                  <td class="te"></td>
-                </tr>
-                <tr class="r">
-                  <td class="ls"></td>
-                  <td class="d">
-                    <table class="r">
-                      <tbody>
-                        <tr class="r">
-                          <td class="d"><code class="c">:<a href="#revision">revision</a></code></td>
-                          <td class="d">
-                            <table class="r">
-                              <tbody>
-                                <tr class="r">
-                                  <td class="ts"></td>
-                                  <td class="d">&nbsp;</td>
-                                  <td class="te"></td>
-                                </tr>
-                                <tr class="r">
-                                  <td class="ls"></td>
-                                  <td class="d"><code class="c">...</code></td>
-                                  <td class="le"></td>
-                                </tr>
-                              </tbody>
-                            </table>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </td>
-                  <td class="le"></td>
-                </tr>
-              </tbody>
-            </table>
-          </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+<script>
+ComplexDiagram(
+	OneOrMore(
+		Choice(0,
+			Terminal("branch name"),
+			Terminal("commit hash"),
+			Terminal("git tag")),
+		Terminal(":"))).addTo();
+</script>
+
 
 Search a repository at a given revision. For example, a branch name, commit hash, or git tag.
 
@@ -665,68 +335,19 @@ You can search multiple revisions by separating the revisions with `:`. Specify 
 
 ### File
 
-<div name="r">
-  <table class="r">
-    <tbody>
-      <tr class="r">
-        <td class="d">
-          <table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="ts"></td>
-                <td class="d">&nbsp;</td>
-                <td class="d">&nbsp;</td>
-                <td class="d">&nbsp;</td>
-                <td class="te"></td>
-              </tr>
-              <tr class="r">
-                <td class="ks"></td>
-                <td class="d"><code class="c">–</code></td>
-                <td class="d">&nbsp;</td>
-                <td class="d">&nbsp;</td>
-                <td class="ke"></td>
-              </tr>
-              <tr class="r">
-                <td class="ls"></td>
-                <td class="d"><code class="c">NOT</code></td>
-                <td class="d">&nbsp;</td>
-                <td class="d"><code class="c"><a href="#whitespace">whitespace</a></code></td>
-                <td class="le"></td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-        <td class="d"><table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="ts"></td>
-                <td class="d"><code class="c">file:</code></td>
-                <td class="te"></td>
-              </tr>
-              <tr class="r">
-                <td class="ls"></td>
-                <td class="d">
-                  <table class="r">
-                    <tbody>
-                      <tr class="r">
-                        <td class="d"><code class="c">f:</code></td>
-                        <td class="d"></td>
-                        <td class="d"></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </td>
-                <td class="le"></td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-        <td class="d"><code class="c"><a href="#regular-expression">regular expression</a></code></td>
-        <td class="d"></td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+<script>
+ComplexDiagram(
+		Choice(0,
+			Skip(),
+			Terminal("-"),
+			Sequence(
+				Terminal("NOT"),
+				Terminal("whitespace", {href: "#whitespace"}))),
+		Choice(0,
+			Terminal("file:"),
+			Terminal("f:")),
+		Terminal("regular expression", {href: "#regular-expression"})).addTo();
+</script>
 
 Search files whose full path matches the regular expression. A `-` before `file`
 excludes the file from being searched.
@@ -735,28 +356,13 @@ excludes the file from being searched.
 
 ### Language
 
-<div name="r">
-  <table class="r">
-    <tbody>
-      <tr class="r">
-        <td class="ts"></td>
-        <td class="d"><code class="c">language:</code></td>
-        <td class="te">
-        </td>
-      </tr>
-      <tr class="r">
-        <td class="ks"></td>
-        <td class="d"><code class="c">lang:</code></td>
-        <td class="ke"></td>
-      </tr>
-      <tr class="r">
-        <td class="ls"></td>
-        <td class="d"><code class="c">l:</code></td>
-        <td class="le"></td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+<script>
+ComplexDiagram(
+		Choice(0,
+			Terminal("language"),
+			Terminal("lang"),
+			Terminal("l"))).addTo();
+</script>
 
 Only search files in the specified programming language, like `typescript` or
 `python`.
@@ -765,46 +371,18 @@ Only search files in the specified programming language, like `typescript` or
 
 ### Content
 
-<div name="r">
-  <table class="r">
-    <tbody>
-      <tr class="r">
-        <td class="d"></td>
-        <td class="d">
-          <table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="ts"></td>
-                <td class="d">&nbsp;</td>
-                <td class="d">&nbsp;</td>
-                <td class="d">&nbsp;</td>
-                <td class="te"></td>
-              </tr>
-              <tr class="r">
-                <td class="ks"></td>
-                <td class="d"><code class="c">–</code></td>
-                <td class="d">&nbsp;</td>
-                <td class="d">&nbsp;</td>
-                <td class="ke"></td>
-              </tr>
-              <tr class="r">
-                <td class="ls"></td>
-                <td class="d"><code class="c">NOT</code></td>
-                <td class="d">&nbsp;</td>
-                <td class="d"><code class="c"><a href="#whitespace">whitespace</a></code></td>
-                <td class="le"></td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-        <td class="d"><code class="c">content:</code></td>
-        <td class="d"></td>
-        <td class="d"><code class="c"><a href="#quoted-string">quoted string</a></code></td>
-        <td class="d">
-      </tr>
-    </tbody>
-  </table>
-</div>
+
+<script>
+ComplexDiagram(
+		Choice(0,
+			Skip(),
+			Terminal("-"),
+			Sequence(
+				Terminal("NOT"),
+				Terminal("whitespace", {href: "#whitespace"}))),
+		Terminal("content:"),
+		Terminal("quoted string", {href: "#quoted-string"})).addTo();
+</script>
 
 Set the search pattern to search using a dedicated parameter. Useful, for
 example, when searching literally for a string like `repo:my-repo` that may
@@ -814,74 +392,20 @@ conflict with the syntax of parameters in this Sourcegraph language.
 
 ### Type
 
-<div name="r">
-  <table class="r">
-    <tbody>
-      <tr class="r">
-        <td class="d"></td>
-        <td class="d"><code class="c">type:</code></td>
-        <td class="d">
-          <table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="d">
-                  <table class="r">
-                    <tbody>
-                      <tr class="r">
-                        <td class="ts"></td>
-                        <td class="d"><code class="c">symbol</code></td>
-                        <td class="te">
-                        </td>
-                      </tr>
-                      <tr class="r">
-                        <td class="ks"></td>
-                        <td class="d"><code class="c">repo</code></td>
-                        <td class="ke"></td>
-                      </tr>
-                      <tr class="r">
-                        <td class="ks"></td>
-                        <td class="d"><code class="c">path</code></td>
-                        <td class="ke"></td>
-                      </tr>
-                      <tr class="r">
-                        <td class="ks"></td>
-                        <td class="d"><code class="c">file</code></td>
-                        <td class="le"></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </td>
-                <td class="d"></td>
-                <td class="te"></td>
-              </tr>
-              <tr class="r">
-                <td class="d">
-                  <table class="r">
-                    <tbody>
-                      <tr class="r">
-                        <td class="ks"></td>
-                        <td class="d"><code class="c">commit</code></td>
-                        <td class="te"></td>
-                      </tr>
-                      <tr class="r">
-                        <td class="ls"></td>
-                        <td class="d"><code class="c">diff</code></td>
-                        <td class="le">
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </td>
-                <td class="d"><code class="c"><a href="#commit-parameter">commit parameter</a></code></td>
-                <td class="le"></td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+<script>
+ComplexDiagram(
+		Terminal("type:"),
+		Choice(0,
+			Terminal("symbol"),
+			Terminal("repo"),
+			Terminal("path"),
+			Terminal("file"),
+			Sequence(
+				Choice(0,
+					Terminal("commit"),
+					Terminal("diff")),
+				Terminal("commit parameter", {href: "#commit-parameter"})))).addTo();
+</script>
 
 Set whether the search pattern should perform a search of a certain type.
 Notable search types are symbol, commit, and diff searches.
@@ -890,33 +414,14 @@ Notable search types are symbol, commit, and diff searches.
 
 ### Case
 
-<div name="r">
-  <table class="r">
-    <tbody>
-      <tr class="r">
-        <td class="d"></td>
-        <td class="d"><code class="c">case:</code></td>
-        <td class="d"></td>
-        <td class="d">
-          <table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="ts"></td>
-                <td class="d"><code class="c">yes</code></td>
-                <td class="te"></td>
-              </tr>
-              <tr class="r">
-                <td class="ls"></td>
-                <td class="d"><code class="c">no</code></td>
-                <td class="le"></td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+<script>
+ComplexDiagram(
+		Terminal("case:"),
+		Choice(0,
+			Terminal("yes"),
+			Terminal("no"))).addTo();
+</script>
+
 
 Set whether the search pattern should be treated case-sensitively. This is
 synonymous with the <span class="toggle-container"><img class="toggle" src=../img/case.png></span> toggle button.
@@ -926,38 +431,14 @@ synonymous with the <span class="toggle-container"><img class="toggle" src=../im
 
 ### Fork
 
-<div name="r">
-  <table class="r">
-    <tbody>
-      <tr class="r">
-        <td class="d"></td>
-        <td class="d"><code class="c">fork:</code></td>
-        <td class="d"></td>
-        <td class="d">
-          <table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="ts">
-                  <td class="d"><code class="c">yes</code></td>
-                  <td class="te">
-              </tr>
-              <tr class="r">
-                <td class="ks">
-                  <td class="d"><code class="c">no</code></td>
-                  <td class="ke">
-              </tr>
-              <tr class="r">
-                <td class="ls">
-                  <td class="d"><code class="c">only</code></td>
-                  <td class="le">
-              </tr>
-            </tbody>
-          </table>
-          </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+<script>
+ComplexDiagram(
+		Terminal("fork:"),
+		Choice(0,
+			Terminal("yes"),
+			Terminal("no"),
+			Terminal("only"))).addTo();
+</script>
 
 Set to `yes` if repository forks should be included or `only` if only forks
 should be searched. Respository forks are excluded by default.
@@ -966,38 +447,14 @@ should be searched. Respository forks are excluded by default.
 
 ### Archived
 
-<div name="r">
-  <table class="r">
-    <tbody>
-      <tr class="r">
-        <td class="d"></td>
-        <td class="d"><code class="c">archived:</code></td>
-        <td class="d"></td>
-        <td class="d">
-          <table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="ts">
-                  <td class="d"><code class="c">yes</code></td>
-                  <td class="te">
-              </tr>
-              <tr class="r">
-                <td class="ks">
-                  <td class="d"><code class="c">no</code></td>
-                  <td class="ke">
-              </tr>
-              <tr class="r">
-                <td class="ls">
-                  <td class="d"><code class="c">only</code></td>
-                  <td class="le">
-              </tr>
-            </tbody>
-          </table>
-          </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+<script>
+ComplexDiagram(
+		Terminal("archived:"),
+		Choice(0,
+			Terminal("yes"),
+			Terminal("no"),
+			Terminal("only"))).addTo();
+</script>
 
 Set to `yes` if archived repositories should be included or `only` if only
 archives should be searched. Archived repositories are excluded by default.
@@ -1006,36 +463,13 @@ archives should be searched. Archived repositories are excluded by default.
 
 ### Repo group
 
-<div name="r">
-  <table class="r">
-    <tbody>
-      <tr class="r">
-        <td class="ts"></td>
-        <td class="d"><code class="c">repogroup:</code></td>
-        <td class="te">
-        </td>
-      </tr>
-      <tr class="r">
-        <td class="ls"></td>
-        <td class="d">
-          <table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="d"><code class="c">g:</code></td>
-                <td class="d"></td>
-                <td class="d"></td>
-                <td class="d"></td>
-                <td class="d"></td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-        <td class="le">
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+<script>
+ComplexDiagram(
+		Choice(0,
+			Terminal("repogroup:"),
+			Terminal("g:")),
+		Terminal("string")).addTo()
+</script>
 
 Only include results from the named group of repositories (defined by the server
 admin). Same as using [repo](#repo) that matches all of the group’s
@@ -1046,54 +480,17 @@ exists.
 
 ### Repo has file
 
-<div name="r">
-  <table class="r">
-    <tbody>
-      <tr class="r">
-        <td class="d">
-          <table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="ts"></td>
-                <td class="d">&nbsp;</td>
-                <td class="d">&nbsp;</td>
-                <td class="d">&nbsp;</td>
-                <td class="te"></td>
-              </tr>
-              <tr class="r">
-                <td class="ks"></td>
-                <td class="d"><code class="c">–</code></td>
-                <td class="d">&nbsp;</td>
-                <td class="d">&nbsp;</td>
-                <td class="ke"></td>
-              </tr>
-              <tr class="r">
-                <td class="ls"></td>
-                <td class="d"><code class="c">NOT</code></td>
-                <td class="d">&nbsp;</td>
-                <td class="d"><code class="c"><a href="#whitespace">whitespace</a></code></td>
-                <td class="le"></td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-        <td class="d"><table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="d"></td>
-                <td class="d"><code class="c">repohasfile:</code></td>
-                <td class="d">
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-        <td class="d"><code class="c"><a href="#regular-expression">regular expression</a></code></td>
-        <td class="d">
-      </tr>
-    </tbody>
-  </table>
-</div>
+<script>
+ComplexDiagram(
+		Choice(0,
+			Skip(),
+			Terminal("-"),
+			Sequence(
+				Terminal("NOT"),
+				Terminal("whitespace", {href: "#whitespace"}))),
+		Terminal("repohasfile:"),
+		Terminal("regular expression", {href: "#regular-expression"})).addTo();
+</script>
 
 Only include results from repositories that contain a matching file. This
 keyword is a pure filter, so it requires at least one other search term in the
@@ -1104,27 +501,11 @@ matches.
 
 ### Repo has commit after
 
-<div name="r">
-  <table class="r">
-    <tbody>
-      <tr class="r">
-        <td class="d"><table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="d"></td>
-                <td class="d"><code class="c">repohascommitafter:</code></td>
-                <td class="d">
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-        <td class="d"><code class="c"><a href="#quoted-string">quoted string</a></code></td>
-        <td class="d">
-      </tr>
-    </tbody>
-  </table>
-</div>
+<script>
+ComplexDiagram(
+		Terminal("repohascommitafter:"),
+		Terminal("quoted string", {href: "#quoted-string"})).addTo();
+</script>
 
 Filter out stale repositories that don’t contain commits past the specified time
 frame. This parameter is experimental.
@@ -1133,27 +514,11 @@ frame. This parameter is experimental.
 
 ### Count
 
-<div name="r">
-  <table class="r">
-    <tbody>
-      <tr class="r">
-        <td class="d"><table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="d"></td>
-                <td class="d"><code class="c">count:</code></td>
-                <td class="d">
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-        <td class="d"><code class="c">number</code></td>
-        <td class="d">
-      </tr>
-    </tbody>
-  </table>
-</div>
+<script>
+ComplexDiagram(
+		Terminal("count:"),
+		Terminal("number")).addTo();
+</script>
 
 Retrieve at least N results. By default, Sourcegraph stops searching early and
 returns if it finds a full page of results. This is desirable for most
@@ -1164,27 +529,12 @@ first page, use the count: keyword with a larger N.
 
 ### Timeout
 
-<div name="r">
-  <table class="r">
-    <tbody>
-      <tr class="r">
-        <td class="d"><table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="d"></td>
-                <td class="d"><code class="c">timeout:</code></td>
-                <td class="d">
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-        <td class="d"><code class="c">time value</code></td>
-        <td class="d">
-      </tr>
-    </tbody>
-  </table>
-</div>
+<script>
+ComplexDiagram(
+		Terminal("timeout:"),
+		Terminal("time value")).addTo();
+</script>
+
 
 Set a search timeout. The time value is a string like 10s or 100ms, which is
 parsed by the Go time
@@ -1197,38 +547,14 @@ than 1 minute.
 
 ### Visibility
 
-<div name="r">
-  <table class="r">
-    <tbody>
-      <tr class="r">
-        <td class="d"></td>
-        <td class="d"><code class="c">visibility:</code></td>
-        <td class="d"></td>
-        <td class="d">
-          <table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="ts">
-                  <td class="d"><code class="c">any</code></td>
-                  <td class="te">
-              </tr>
-              <tr class="r">
-                <td class="ks">
-                  <td class="d"><code class="c">public</code></td>
-                  <td class="ke">
-              </tr>
-              <tr class="r">
-                <td class="ls">
-                  <td class="d"><code class="c">private</code></td>
-                  <td class="le">
-              </tr>
-            </tbody>
-          </table>
-          </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+<script>
+ComplexDiagram(
+		Terminal("visibility:"),
+		Choice(0,
+			Terminal("any"),
+			Terminal("public"),
+			Terminal("private"))).addTo();
+</script>
 
 Filter results to only public or private repositories. The default is to include
 both private and public repositories.
@@ -1237,38 +563,15 @@ both private and public repositories.
 
 ### Pattern type
 
-<div name="r">
-  <table class="r">
-    <tbody>
-      <tr class="r">
-        <td class="d"></td>
-        <td class="d"><code class="c">patterntype:</code></td>
-        <td class="d"></td>
-        <td class="d">
-          <table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="ts">
-                  <td class="d"><code class="c">literal</code></td>
-                  <td class="te">
-              </tr>
-              <tr class="r">
-                <td class="ks">
-                  <td class="d"><code class="c">regexp</code></td>
-                  <td class="ke">
-              </tr>
-              <tr class="r">
-                <td class="ls">
-                  <td class="d"><code class="c">structural</code></td>
-                  <td class="le">
-              </tr>
-            </tbody>
-          </table>
-          </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+<script>
+ComplexDiagram(
+		Terminal("patterntype:"),
+		Choice(0,
+			Terminal("literal"),
+			Terminal("regexp"),
+			Terminal("structural"))).addTo();
+</script>
+
 
 Set whether the pattern should run a literal search, regular expression search,
 or a structural search pattern. This parameter is available as a command-line and
@@ -1277,190 +580,69 @@ in [search pattern](#search-pattern).
 
 ## Regular expression
 
-<div name="r">
-  <table class="r">
-    <tbody>
-      <tr class="r">
-        <td class="d">
-          <table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="ts"></td>
-                <td class="d"><code class="c"><a href="#string">string</a></code></td>
-                <td class="te"></td>
-              </tr>
-              <tr class="r">
-                <td class="ls"></td>
-                <td class="d"><code class="c"><a href="#quoted-string">quoted string</a></code></td>
-                <td class="le"></td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+<script>
+ComplexDiagram(
+		Choice(0,
+			Terminal("string", {href: "#string"}),
+			Terminal("quoted string", {href: "#quoted-string"}))).addTo();
+</script>
 
 A string that is interpreted as a <a href="https://golang.org/s/re2syntax">RE2</a> regular expression.
 
 ## String
 
-<div name="r">
-  <table>
-  <tbody>
-  <tr class="r">
-    <td class="d"></td>
-    <td class="d"><code class="c">string</code></td>
-    <td class="d"></td>
-  </tr>
-    </tbody>
-  </table>
-</div>
+<script>
+ComplexDiagram(
+		Terminal("string")).addTo();
+</script>
 
 An unquoted string is any contiguous sequence of characters not containing whitespace.
 
-
 ## Quoted string
 
-<div name="r">
-  <table class="r">
-    <tbody>
-      <tr class="r">
-        <td class="ts"></td>
-        <td class="d"><code class="c">"any string"</code></td>
-        <td class="te"></td>
-      </tr>
-      <tr class="r">
-        <td class="ls"></td>
-        <td class="d"><code class="c">'any string'</code></td>
-        <td class="le"></td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+<script>
+ComplexDiagram(
+		Choice(0,
+			Terminal('"any string"'),
+			Terminal("'any string'"))).addTo();
+</script>
 
 Any string, including whitespace, may be quoted with single `'` or double `"`
 quotes. Quotes can be escaped with `\`.
 
 ## Commit parameter
 
-<div name="r">
-  <table class="r">
-    <tbody>
-      <tr class="r">
-        <td class="d">
-          <table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="ts"></td>
-                <td class="d"><code class="c"><a href="#author">author</a></code></td>
-                <td class="te"></td>
-              </tr>
-              <tr class="r">
-                <td class="ks"></td>
-                <td class="d"><code class="c"><a href="#before">before</a></code></td>
-                <td class="ke"></td>
-              </tr>
-              <tr class="r">
-                <td class="ks"></td>
-                <td class="d"><code class="c"><a href="#after">after</a></code></td>
-                <td class="ke"></td>
-              </tr>
-              <tr class="r">
-                <td class="ls"></td>
-                <td class="d"><code class="c"><a href="#message">message</a></code></td>
-                <td class="le"></td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-        <td class="d">
-          <table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="ts"></td>
-                <td class="d"></td>
-                <td class="te"></td>
-              </tr>
-              <tr class="r">
-                <td class="ls"></td>
-                <td class="d"><code class="c">...</code></td>
-                <td class="le"></td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+<script>
+ComplexDiagram(
+		OneOrMore(
+			Choice(0,
+				Terminal("author", {href: "#author"}),
+				Terminal("before", {href: "#before"}),
+				Terminal("after", {href: "#after"}),
+				Terminal("message", {href: "#message"})))).addTo();
+</script>
 
 Set parameters that apply only to commit and diff searches.
 
 ### Author
 
-<div name="r">
-  <table class="r">
-    <tbody>
-      <tr class="r">
-        <td class="d">
-          <table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="d"></td>
-                <td class="d"><code class="c">author:</code></td>
-                <td class="d"></td>
-                <td class="d"><code class="c"><a href="#regular expression">regular expression</a></code></td>
-                <td class="d"></td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+<script>
+ComplexDiagram(
+		Terminal("author:"),
+		Terminal("regular expression", {href: "#regular-expression"})).addTo();
+</script>
 
 Include commits or diffs that are authored by the user.
 
 ### Before
 
-<div name="r">
-  <table class="r">
-    <tbody>
-      <tr class="r">
-        <td class="d">
-          <table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="ts"></td>
-                <td class="d"><code class="c">before:</code></td>
-                <td class="te"></td>
-              </tr>
-              <tr class="r">
-                <td class="ls"></td>
-                <td class="d">
-                  <table class="r">
-                    <tbody>
-                      <tr class="r">
-                        <td class="d"><code class="c">until:</code></td>
-                        <td class="d"></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </td>
-                <td class="le"></td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-        <td class="d"><code class="c"><a href="#quoted-string">quoted string</a></code></td>
-        <td class="d"></td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+<script>
+ComplexDiagram(
+		Choice(0,
+			Terminal("before:"),
+			Terminal("until:")),
+		Terminal("quoted string", {href: "#quoted-string"})).addTo();
+</script>
 
 Include results which have a commit date before the specified time frame.
 
@@ -1468,39 +650,13 @@ Include results which have a commit date before the specified time frame.
 
 ### After
 
-<div name="r">
-  <table class="r">
-    <tbody>
-      <tr class="r">
-        <td class="d"><table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="ts"></td>
-                <td class="d"><code class="c">after:</code></td>
-                <td class="te"></td>
-              </tr>
-              <tr class="r">
-                <td class="ls"></td>
-                <td class="d">
-                  <table class="r">
-                    <tbody>
-                      <tr class="r">
-                        <td class="d"><code class="c">since:</code></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </td>
-                <td class="le"></td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-        <td class="d"><code class="c"><a href="#quoted-string">quoted string</a></code></td>
-        <td class="d"></td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+<script>
+ComplexDiagram(
+		Choice(0,
+			Terminal("after:"),
+			Terminal("since:")),
+		Terminal("quoted string", {href: "#quoted-string"})).addTo();
+</script>
 
 Include results which have a commit date before the specified time frame.
 
@@ -1508,36 +664,14 @@ Include results which have a commit date before the specified time frame.
 
 ### Message
 
-<div name="r">
-  <table class="r">
-    <tbody>
-      <tr class="r">
-        <td class="d"><table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="ts"></td>
-                <td class="d"><code class="c">message:</code></td>
-                <td class="te"></td>
-              </tr>
-              <tr class="r">
-                <td class="ks"></td>
-                <td class="d"><code class="c">msg:</code></td>
-                <td class="ke"></td>
-              </tr>
-              <tr class="r">
-                <td class="ls"></td>
-                <td class="d"><code class="c">m:</code></td>
-                <td class="le"></td>
-              </tr>
-            </tbody>
-          </table>
-          <td class="d"><code class="c"><a href="#quoted-string">quoted string</a></code></td>
-          <td class="d"></td>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+<script>
+ComplexDiagram(
+		Choice(0,
+			Terminal("message:"),
+			Terminal("msg:"),
+			Terminal("m:")),
+		Terminal("quoted string", {href: "#quoted-string"})).addTo();
+</script>
 
 Include results which have commit messages containing the string.
 
@@ -1545,127 +679,31 @@ Include results which have commit messages containing the string.
 
 ## Whitespace
 
-<div name="r">
-  <table class="r">
-    <tbody>
-      <tr class="r">
-        <td class="d">
-          <table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="d"></td>
-                <td class="d"><code class="c">space</code></td>
-                <td class="d"></td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-        <td class="d">
-          <table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="ts"></td>
-                <td class="d"> </td>
-                <td class="te"></td>
-              </tr>
-              <tr class="r">
-                <td class="ls"></td>
-                <td class="d"><code class="c">...</code></td>
-                <td class="le"></td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
+<script>
+ComplexDiagram(
+		OneOrMore(
+			Terminal("space"))).addTo();
+</script>
 
 
 ## Select
 
-<div name="r">
-  <table class="r">
-    <tbody>
-      <tr class="r">
-        <td class="d"></td>
-        <td class="d"><code class="c">select:</code></td>
-        <td class="d">
-          <table class="r">
-            <tbody>
-              <tr class="r">
-                <td class="d">
-                  <table class="r">
-                    <tbody>
-                      <tr class="r">
-                        <td class="ts"></td>
-                        <td class="d"><code class="c">symbol</code></td>
-                        <td class="te">
-                        </td>
-                      </tr>
-                      <tr class="r">
-                        <td class="ks"></td>
-                        <td class="d"><code class="c">repo</code></td>
-                        <td class="ke"></td>
-                      </tr>
-                      <tr class="r">
-                        <td class="ks"></td>
-                        <td class="d"><code class="c">path</code></td>
-                        <td class="ke"></td>
-                      </tr>
-                      <tr class="r">
-                        <td class="ks"></td>
-                        <td class="d"><code class="c">file</code></td>
-                        <td class="le"></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </td>
-                <td class="d"></td>
-                <td class="te"></td>
-              </tr>
-              <tr class="r">
-                <td class="d">
-                  <table class="r">
-                    <tbody>
-                      <tr class="r">
-                        <td class="ls"></td>
-                        <td class=d><code class="c">symbol</code></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </td>
-                <td class="d">
-                  <table class="r">
-                    <tbody>
-                      <tr class="r">
-                        <td class="ts"></td>
-                        <td class="d"></td>
-                        <td class="d"></td>
-                        <td class="d"/>
-                        <td class="te"></td>
-                      </tr>
-                      <tr class="r">
-                        <td class="ls"></td>
-                        <td class="d"><code class="c">.</code></td>
-                        <td class="d"/>
-                        <td class="d"><code class="c"><a href="#symbol-kind">symbol kind</a></code></td>
-                        <td class="le">
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </td>
-                <td class="le"></td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+<script>
+ComplexDiagram(
+	Terminal("select:"),
+	Choice(0,
+		Terminal("repo"),
+		Terminal("file"),
+		Terminal("path"),
+		Terminal("content"),
+		Sequence(
+			Terminal("symbol"),
+			Optional(
+				Sequence(
+					Terminal("."),
+					Terminal("symbol kind", {href: "#symbol-kind"})),
+				'skip')))).addTo();
+</script>
 
 Selects the specified result type from the set of search results. If a query produces results that aren't of the 
 selected type, the results will be converted to the selected type. 
@@ -1684,169 +722,36 @@ and cannot be converted to that type.
 
 ### Symbol kind
 
-
-<div name="r">
-  <table class="r">
-    <tbody>
-      <tr class="r">
-        <td class="ts"/>
-        <td class="d"><code class="c">file</code></td>
-        <td class="te"/>
-      </tr>
-      <tr class="r">
-        <td class="ks"/>
-        <td class="d"><code class="c">module</code></td>
-        <td class="ke"/>
-      </tr>
-      <tr class="r">
-        <td class="ks"/>
-        <td class="d"><code class="c">namespace</code></td>
-        <td class="ke"/>
-      </tr>
-      <tr class="r">
-        <td class="ks"/>
-        <td class="d"><code class="c">package</code></td>
-        <td class="ke"/>
-      </tr>
-      <tr class="r">
-        <td class="ks"/>
-        <td class="d"><code class="c">class</code></td>
-        <td class="ke"/>
-      </tr>
-      <tr class="r">
-        <td class="ks"/>
-        <td class="d"><code class="c">file</code></td>
-        <td class="ke"/>
-      </tr>
-      <tr class="r">
-        <td class="ks"/>
-        <td class="d"><code class="c">module</code></td>
-        <td class="ke"/>
-      </tr>
-      <tr class="r">
-        <td class="ks"/>
-        <td class="d"><code class="c">namespace</code></td>
-        <td class="ke"/>
-      </tr>
-      <tr class="r">
-        <td class="ks"/>
-        <td class="d"><code class="c">package</code></td>
-        <td class="ke"/>
-      </tr>
-      <tr class="r">
-        <td class="ks"/>
-        <td class="d"><code class="c">class</code></td>
-        <td class="ke"/>
-      </tr>
-      <tr class="r">
-        <td class="ks"/>
-        <td class="d"><code class="c">method</code></td>
-        <td class="ke"/>
-      </tr>
-      <tr class="r">
-        <td class="ks"/>
-        <td class="d"><code class="c">property</code></td>
-        <td class="ke"/>
-      </tr>
-      <tr class="r">
-        <td class="ks"/>
-        <td class="d"><code class="c">field</code></td>
-        <td class="ke"/>
-      </tr>
-      <tr class="r">
-        <td class="ks"/>
-        <td class="d"><code class="c">constructor</code></td>
-        <td class="ke"/>
-      </tr>
-      <tr class="r">
-        <td class="ks"/>
-        <td class="d"><code class="c">enum</code></td>
-        <td class="ke"/>
-      </tr>
-      <tr class="r">
-        <td class="ks"/>
-        <td class="d"><code class="c">interface</code></td>
-        <td class="ke"/>
-      </tr>
-      <tr class="r">
-        <td class="ks"/>
-        <td class="d"><code class="c">function</code></td>
-        <td class="ke"/>
-      </tr>
-      <tr class="r">
-        <td class="ks"/>
-        <td class="d"><code class="c">variable</code></td>
-        <td class="ke"/>
-      </tr>
-      <tr class="r">
-        <td class="ks"/>
-        <td class="d"><code class="c">constant</code></td>
-        <td class="ke"/>
-      </tr>
-      <tr class="r">
-        <td class="ks"/>
-        <td class="d"><code class="c">string</code></td>
-        <td class="ke"/>
-      </tr>
-      <tr class="r">
-        <td class="ks"/>
-        <td class="d"><code class="c">number</code></td>
-        <td class="ke"/>
-      </tr>
-      <tr class="r">
-        <td class="ks"/>
-        <td class="d"><code class="c">boolean</code></td>
-        <td class="ke"/>
-      </tr>
-      <tr class="r">
-        <td class="ks"/>
-        <td class="d"><code class="c">array</code></td>
-        <td class="ke"/>
-      </tr>
-      <tr class="r">
-        <td class="ks"/>
-        <td class="d"><code class="c">object</code></td>
-        <td class="ke"/>
-      </tr>
-      <tr class="r">
-        <td class="ks"/>
-        <td class="d"><code class="c">key</code></td>
-        <td class="ke"/>
-      </tr>
-      <tr class="r">
-        <td class="ks"/>
-        <td class="d"><code class="c">null</code></td>
-        <td class="ke"/>
-      </tr>
-      <tr class="r">
-        <td class="ks"/>
-        <td class="d"><code class="c">enum-member</code></td>
-        <td class="ke"/>
-      </tr>
-      <tr class="r">
-        <td class="ks"/>
-        <td class="d"><code class="c">struct</code></td>
-        <td class="ke"/>
-      </tr>
-      <tr class="r">
-        <td class="ks"/>
-        <td class="d"><code class="c">event</code></td>
-        <td class="ke"/>
-      </tr>
-      <tr class="r">
-        <td class="ks"/>
-        <td class="d"><code class="c">operator</code></td>
-        <td class="ke"/>
-      </tr>
-      <tr class="r">
-        <td class="ls"/>
-        <td class="d"><code class="c">type-parameter</code></td>
-        <td class="le"/>
-      </tr>
-
-    </tbody>
-  </table>
-</div>
+<script>
+ComplexDiagram(
+	Choice(0,
+		Terminal("file"),
+		Terminal("module"),
+		Terminal("namespace"),
+		Terminal("package"),
+		Terminal("class"),
+		Terminal("method"),
+		Terminal("property"),
+		Terminal("field"),
+		Terminal("constructor"),
+		Terminal("enum"),
+		Terminal("interface"),
+		Terminal("function"),
+		Terminal("variable"),
+		Terminal("constant"),
+		Terminal("string"),
+		Terminal("number"),
+		Terminal("boolean"),
+		Terminal("array"),
+		Terminal("object"),
+		Terminal("key"),
+		Terminal("null"),
+		Terminal("enum-member"),
+		Terminal("struct"),
+		Terminal("event"),
+		Terminal("operator"),
+		Terminal("type-parameter"))).addTo();
+</script>
 
 Select a specific kind of symbol. For example `type:symbol select:symbol.function zoektSearch` will only return functions that contain the 
 literal `Search`.
@@ -1854,5 +759,3 @@ literal `Search`.
 **Example:**
 `type:symbol zoektSearch select:symbol.function` [↗](https://sourcegraph.com/search?q=fmt.Errorf+select:repo&patternType=literal)
 
-<br>
-<sub>Attribution: The railroad diagrams use assets generated by the <a href="https://github.com/h2database/h2database">H2 Database Engine project</a> and licensed under MPL 2.0.</sub>
