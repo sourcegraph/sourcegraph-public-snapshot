@@ -16,9 +16,6 @@ import { HierarchicalLocationsView, HierarchicalLocationsViewProps } from './Hie
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { pretendProxySubscribable, pretendRemote } from '../../../../../shared/src/api/util'
 import { FlatExtensionHostAPI } from '../../../../../shared/src/api/contract'
-import { Contributions, Raw } from '../../../../../shared/src/api/protocol'
-import { promisify } from 'util'
-import { nextTick } from 'process'
 
 jest.mock('mdi-react/SourceRepositoryIcon', () => 'SourceRepositoryIcon')
 
