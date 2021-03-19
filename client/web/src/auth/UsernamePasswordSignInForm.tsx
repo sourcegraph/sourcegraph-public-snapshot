@@ -103,7 +103,7 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({
                         disabled={loading}
                         autoCapitalize="off"
                         autoFocus={true}
-                        // TODO: fix
+                        // https://github.com/whatwg/html/issues/4445
                         autoComplete="username"
                     />
                 </div>

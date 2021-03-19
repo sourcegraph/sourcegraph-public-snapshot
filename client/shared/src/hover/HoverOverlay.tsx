@@ -259,10 +259,9 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps, HoverOv
                                                     isLightTheme={this.props.isLightTheme}
                                                 />
                                             )}
-                                            {/* TODO: This should be a button to be fully accessible
-                                            Issue: https://github.com/sourcegraph/sourcegraph/issues/19273 */}
+                                            {/* Ideally this should a <button> but we can't guarantee we have the .btn-link class here. */}
                                             {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                                            <a href="" onClick={this.onAlertDismissedCallback(type)}>
+                                            <a href="" onClick={this.onAlertDismissedCallback(type)} role="button">
                                                 <small>Dismiss</small>
                                             </a>
                                         </div>

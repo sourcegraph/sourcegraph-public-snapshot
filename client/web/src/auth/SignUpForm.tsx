@@ -112,12 +112,10 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
     const externalAuthProviders = context.authProviders.filter(provider => !provider.isBuiltin)
 
     const onClickExternalAuthSignup = useCallback(
-        (serviceType: string): React.MouseEventHandler<HTMLAnchorElement> => event => {
-            event.preventDefault()
+        (serviceType: string): React.MouseEventHandler => () => {
             // TODO: Log events with keepalive=true to ensure they always outlive the webpage
             // https://github.com/sourcegraph/sourcegraph/issues/19174
             eventLogger.log('externalAuthSignupClicked', { type: serviceType })
-            window.location.href = event.currentTarget.href
         },
         []
     )
@@ -263,13 +261,9 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
                         {externalAuthProviders.map((provider, index) => (
                             // Use index as key because display name may not be unique. This is OK
                             // here because this list will not be updated during this component's lifetime.
-                            /* eslint-disable react/no-array-index-key */
-                            <div className="mb-2" key={index}>
-                                <a
-                                    href={provider.authenticationURL}
-                                    className="btn btn-secondary btn-block"
-                                    onClick={onClickExternalAuthSignup(provider.serviceType)}
-                                >
+                            /* eslint-disable react/no-array-index-key, jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */
+                            <div className="mb-2" key={index} onClick={onClickExternalAuthSignup(provider.serviceType)}>
+                                <a href={provider.authenticationURL} className="btn btn-secondary btn-block">
                                     {provider.serviceType === 'github' ? (
                                         <GithubIcon className="icon-inline" />
                                     ) : provider.serviceType === 'gitlab' ? (

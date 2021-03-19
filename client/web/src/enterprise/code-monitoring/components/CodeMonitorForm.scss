@@ -21,10 +21,6 @@
             padding: 1rem;
             margin: 1rem 0;
             border-radius: 4px;
-
-            &:disabled {
-                opacity: unset;
-            }
         }
     }
 
@@ -37,17 +33,16 @@
         min-width: 50%;
     }
 
-    &__actions {
-        &--disabled {
-            color: $gray-17 !important;
-            opacity: 0.5;
-        }
-    }
-
+    &__actions,
     &__triggers {
         &--disabled {
             color: $gray-17 !important;
             opacity: 0.5;
+
+            // Avoid applying opacity twice
+            .code-monitor-form__card--button:disabled {
+                opacity: unset;
+            }
         }
     }
 }

@@ -245,8 +245,8 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                                                     <button
                                                         key={innerIndex}
                                                         type="button"
-                                                        className={`btn list-group-item hierarchical-locations-view__item ${
-                                                            selectedGroups[index] === group.key ? 'btn-primary' : ''
+                                                        className={`list-group-item list-group-item-action hierarchical-locations-view__item ${
+                                                            selectedGroups[index] === group.key ? 'active' : ''
                                                         }`}
                                                         onClick={event =>
                                                             this.onSelectTree(event, selectedGroups, index, group.key)
@@ -257,7 +257,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                                                             title={group.key}
                                                         >
                                                             <span className="hierarchical-locations-view__item-name-text">
-                                                                {group.key}
+                                                                <RepoLink to={null} repoName={group.key} />
                                                             </span>
                                                         </span>
                                                         <span className="badge badge-secondary badge-pill hierarchical-locations-view__item-badge">

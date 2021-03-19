@@ -218,30 +218,26 @@ const BatchChangeListTabHeader: React.FunctionComponent<{
         <div className="overflow-auto mb-4">
             <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
                 <li className="nav-item">
-                    <button
-                        type="button"
+                    {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+                    <a
+                        href=""
                         onClick={onSelectBatchChanges}
-                        className={classNames(
-                            'btn',
-                            'text-decoration-none',
-                            selectedTab === 'batchChanges' ? 'btn-primary' : 'btn-link'
-                        )}
+                        className={classNames('nav-link', selectedTab === 'batchChanges' && 'active')}
+                        role="button"
                     >
                         All batch changes
-                    </button>
+                    </a>
                 </li>
                 <li className="nav-item">
-                    <button
-                        type="button"
+                    {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+                    <a
+                        href=""
                         onClick={onSelectGettingStarted}
-                        className={classNames(
-                            'btn',
-                            'text-decoration-none',
-                            selectedTab === 'gettingStarted' ? 'btn-primary' : 'btn-link'
-                        )}
+                        className={classNames('nav-link', selectedTab === 'gettingStarted' && 'active')}
+                        role="button"
                     >
                         Getting started
-                    </button>
+                    </a>
                 </li>
             </ul>
         </div>
