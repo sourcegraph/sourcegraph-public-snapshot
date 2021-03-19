@@ -9059,6 +9059,10 @@ type ChangesetsStats {
     """
     processing: Int!
     """
+    The count of archived changesets.
+    """
+    archived: Int!
+    """
     The count of all changesets.
     """
     total: Int!

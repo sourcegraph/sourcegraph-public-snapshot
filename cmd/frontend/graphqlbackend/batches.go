@@ -526,6 +526,7 @@ type ChangesetsStatsResolver interface {
 	Merged() int32
 	Closed() int32
 	Deleted() int32
+	Archived() int32
 	Total() int32
 }
 

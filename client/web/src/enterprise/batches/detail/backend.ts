@@ -36,6 +36,7 @@ const changesetsStatsFragment = gql`
         merged
         open
         unpublished
+        archived
     }
 `
 
