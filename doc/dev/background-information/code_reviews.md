@@ -69,7 +69,8 @@ An effective PR minimizes the amount of effort that is required for the reviewer
 
 Do:
 
-- Prefer small PRs. If a large PR is unavoidable, try to organize it into smaller commits (with [good commit messages](commit_messages.md)) that are reviewable independently (and indicate this to the reviewer in the description).
+- Prefer _highly cohesive_ PRs. One pull request should have one main major concern and not several. If your PR, for example, refactors code to be able to make the new feature possible, consider breaking out the refactor into a prerequisite pull request that is approved first. This will enable reviewers to effectively hold the state of the change in their head.
+- For highly cohesive PRs with a large number of changes (which is sometimes unavoidable), try to organize it into smaller commits (with [good commit messages](commit_messages.md)) that are reviewable independently (and indicate this to the reviewer in the description).
 - Create a draft PR first and review your own diff as if you were reviewing someone else's change. This helps you empathize with your reviewer and can help catch silly mistakes before your reviewer sees them (e.g. forgetting to `git add` a file, forgetting to remove debugging code, etc.).
 - Create meaningful PR title and description that communicates **what** the PR does and **why** (the **how** is the diff).
   - Include links to relevant issues (e.g. "closes #1234", "helps #5678").
