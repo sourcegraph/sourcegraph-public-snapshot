@@ -1650,7 +1650,7 @@ Include results which have commit messages containing the string.
                         <td class="ls"></td>
                         <td class="d"><code class="c">.</code></td>
                         <td class="d"/>
-                        <td class="d"><code class="c"><a href="#symbol-subtype">symbol subtype</a></code></td>
+                        <td class="d"><code class="c"><a href="#symbol-kind">symbol kind</a></code></td>
                         <td class="le">
                         </td>
                       </tr>
@@ -1667,13 +1667,19 @@ Include results which have commit messages containing the string.
   </table>
 </div>
 
-Convert to the selected result type, or filter out results that cannot be converted.
+Selects the specified result type from the set of search results. If a query produces results that aren't of the 
+selected type, the results will be converted to the selected type. 
+
+For example, the query `file:package.json lodash` will return content matches for `lodash` in `package.json` files. 
+If `select:repo` is added, the repository those matches belong to is pulled out and it now only returns 
+_repositories_ that contain `package.json` files that contain the term `lodash`. All selected results are deduplicated,
+so if there are multiple content matches in a repository, `select:repo` will still only return unique results.
 
 **Example:**
 `fmt.Errorf select:repo` [↗](https://sourcegraph.com/search?q=fmt.Errorf+select:repo&patternType=literal)
 `zoektSearch select:file` [↗](https://sourcegraph.com/search?q=zoektSearch+select:file&patternType=literal)
 
-### Symbol subtype
+### Symbol kind
 
 
 <div name="r">
