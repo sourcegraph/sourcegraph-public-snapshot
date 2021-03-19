@@ -18,8 +18,8 @@ add('All states', () => (
                     merged: 10,
                     draft: 5,
                     open: 10,
-                    archived: 18,
                     total: 100,
+                    archived: 18,
                     unpublished: 55,
                 }}
                 diff={{ added: 1000, changed: 2000, deleted: 1000 }}
