@@ -4,6 +4,7 @@ import { Key } from 'ts-key-enum'
 import { Link } from './Link'
 import classNames from 'classnames'
 import { noop } from 'lodash'
+import { isDefined } from '../util/types'
 
 const isSelectKeyPress = (event: React.KeyboardEvent): boolean =>
     event.key === Key.Enter && !event.ctrlKey && !event.shiftKey && !event.metaKey && !event.altKey
@@ -42,6 +43,9 @@ interface Props extends Pick<AnchorHTMLAttributes<never>, 'target' | 'rel'> {
     buttonLinkRef?: React.Ref<HTMLAnchorElement>
 
     ['data-content']?: string
+
+    /** Override default tab index */
+    tabIndex?: number
 }
 
 /**
@@ -62,8 +66,9 @@ export const ButtonLink: React.FunctionComponent<Props> = ({
     onSelect = noop,
     children,
     id,
-    buttonLinkRef = null,
+    buttonLinkRef: buttonLinkReference = null,
     'data-content': dataContent,
+    tabIndex,
 }) => {
     // We need to set up a keypress listener because <a onclick> doesn't get
     // triggered by enter.
@@ -85,7 +90,7 @@ export const ButtonLink: React.FunctionComponent<Props> = ({
         'aria-label': tooltip,
         role: typeof pressed === 'boolean' ? 'button' : undefined,
         'aria-pressed': pressed,
-        tabIndex: disabled ? -1 : 0,
+        tabIndex: isDefined(tabIndex) ? tabIndex : disabled ? -1 : 0,
         onClick: onSelect,
         onKeyPress: onAnchorKeyPress,
         id,
@@ -114,7 +119,7 @@ export const ButtonLink: React.FunctionComponent<Props> = ({
                 {...commonProps}
                 onClick={onClickPreventDefault}
                 onAuxClick={onClickPreventDefault}
-                ref={buttonLinkRef}
+                ref={buttonLinkReference}
                 data-content={dataContent}
             >
                 {children}
@@ -123,7 +128,7 @@ export const ButtonLink: React.FunctionComponent<Props> = ({
     }
 
     return (
-        <Link {...commonProps} to={to} target={target} rel={rel} ref={buttonLinkRef} data-content={dataContent}>
+        <Link {...commonProps} to={to} target={target} rel={rel} ref={buttonLinkReference} data-content={dataContent}>
             {children}
         </Link>
     )

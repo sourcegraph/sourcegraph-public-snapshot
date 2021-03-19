@@ -135,11 +135,6 @@ export function activateExtensions(
                                 contributionsToAdd.set(extension.id, parsedContributions)
                             }
                         }
-                        // Optimistically add contributions
-                        if (contributionsToAdd.size > 0) {
-                            state.contributions.next([...state.contributions.value, ...contributionsToAdd.values()])
-                            contributionsToAdd.clear()
-                        }
                     }),
                     map(({ toActivate, toDeactivate }) =>
                         from(
@@ -176,6 +171,11 @@ export function activateExtensions(
 
             for (const [id] of activated) {
                 previouslyActivatedExtensions.add(id)
+            }
+
+            if (contributionsToAdd.size > 0) {
+                state.contributions.next([...state.contributions.value, ...contributionsToAdd.values()])
+                contributionsToAdd.clear()
             }
 
             if (contributionsToRemove.length > 0) {

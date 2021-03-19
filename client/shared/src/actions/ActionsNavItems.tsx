@@ -60,7 +60,7 @@ export const ActionsNavItems: React.FunctionComponent<ActionsNavItemsProps> = pr
         scopeChanges.next(scope)
     }, [scope])
 
-    const extraContextChanges = useMemo(() => new ReplaySubject<Context>(1), [])
+    const extraContextChanges = useMemo(() => new ReplaySubject<Context<unknown>>(1), [])
     useDeepCompareEffectNoCheck(() => {
         extraContextChanges.next(extraContext)
     }, [extraContext])

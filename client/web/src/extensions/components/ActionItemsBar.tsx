@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { LocalStorageSubject } from '../../../../shared/src/util/LocalStorageSubject'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
@@ -14,80 +14,95 @@ import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryServic
 import { ActionItem, ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import PlusIcon from 'mdi-react/PlusIcon'
 import { Link } from 'react-router-dom'
-import { merge, combineLatest, EMPTY, fromEvent, ReplaySubject } from 'rxjs'
-import { filter, mapTo, switchMap, tap } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
-import { tabbable } from 'tabbable'
-import { head, last } from 'lodash'
+import { focusable } from 'tabbable'
+import { head } from 'lodash'
 import { useCarousel } from '../../components/useCarousel'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
+import { haveInitialExtensionsLoaded } from '../../../../shared/src/api/features'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
 // Action items bar and toggle are two separate components due to their placement in the DOM tree
 
+const scrollButtonClassName = 'action-items__scroll'
+
 export function useWebActionItems(): Pick<ActionItemsBarProps, 'useActionItemsBar'> &
     Pick<ActionItemsToggleProps, 'useActionItemsToggle'> {
-    // Need to pass in contribution point, template type. pass in default open state (we want to keep it closed on search pages by default?)
-    // Should toggle state depend on context? or should all action items bars share state for consistency during navigation?
-    // use template type dependent on menu/context
     const toggles = useMemo(() => new LocalStorageSubject('action-items-bar-expanded', true), [])
 
-    const toggleReferences = useMemo(() => new ReplaySubject<HTMLElement>(1), [])
-    const nextToggleReference = useCallback((toggle: HTMLElement) => toggleReferences.next(toggle), [toggleReferences])
+    const [toggleReference, setToggleReference] = useState<HTMLElement | null>(null)
+    const nextToggleReference = useCallback((toggle: HTMLElement) => {
+        setToggleReference(toggle)
+    }, [])
 
-    const barReferences = useMemo(() => new ReplaySubject<HTMLElement>(1), [])
-    const nextBarReference = useCallback((bar: HTMLElement) => barReferences.next(bar), [barReferences])
+    const [barReference, setBarReference] = useState<HTMLElement | null>(null)
+    const nextBarReference = useCallback((bar: HTMLElement) => {
+        setBarReference(bar)
+    }, [])
 
-    // Set up keyboard navigation for distant toggle and bar. Removes previous event
+    // Set up keyboard navigation for distant toggle and bar. Remove previous event
     // listeners whenever references change.
-    useObservable(
-        useMemo(
-            () =>
-                combineLatest([barReferences, toggleReferences]).pipe(
-                    switchMap(([bar, toggle]) => {
-                        if (toggle && bar) {
-                            const toggleTabs = fromEvent<React.KeyboardEvent>(toggle, 'keydown').pipe(
-                                filter(event => event.key === Key.Tab && !event.shiftKey),
-                                tap(event => {
-                                    const firstBarTabbable = head(tabbable(bar))
-                                    if (firstBarTabbable) {
-                                        firstBarTabbable.focus()
-                                        event.preventDefault()
-                                    }
-                                })
-                            )
+    useEffect(() => {
+        function onKeyDownToggle(event: KeyboardEvent): void {
+            if (event.key === Key.ArrowDown && barReference) {
+                const firstBarFocusable = head(focusable(barReference))
+                if (firstBarFocusable) {
+                    firstBarFocusable.focus()
+                    event.preventDefault()
+                }
+            }
+        }
 
-                            const barTabs = fromEvent<React.KeyboardEvent>(bar, 'keydown').pipe(
-                                filter(event => event.key === Key.Tab),
-                                filter(event =>
-                                    event.shiftKey ? isFirstTabbable(event.target) : isLastTabbable(event.target)
-                                ),
-                                tap(event => {
-                                    toggle.focus()
-                                    event.preventDefault()
-                                })
-                            )
+        function onKeyDownBar(event: KeyboardEvent): void {
+            if (event.target instanceof HTMLElement && toggleReference && barReference) {
+                const focusableChildren = focusable(barReference).filter(
+                    elm => !elm.classList.contains('disabled') && !elm.classList.contains(scrollButtonClassName)
+                )
+                const indexOfTarget = focusableChildren.indexOf(event.target)
 
-                            function isLastTabbable(eventTarget: EventTarget): boolean {
-                                return eventTarget === last(tabbable(bar))
-                            }
+                if (event.key === Key.ArrowDown) {
+                    // If this is the last focusable element, go back to the toggle
+                    if (indexOfTarget === focusableChildren.length - 1) {
+                        toggleReference.focus()
+                        event.preventDefault()
+                        return
+                    }
 
-                            function isFirstTabbable(eventTarget: EventTarget): boolean {
-                                return eventTarget === head(tabbable(bar))
-                            }
+                    const itemToFocus = focusableChildren[indexOfTarget + 1]
+                    if (itemToFocus instanceof HTMLElement) {
+                        itemToFocus.focus()
+                        event.preventDefault()
+                        return
+                    }
+                }
 
-                            return merge(toggleTabs, barTabs).pipe(
-                                // We don't want to rerender the subtree on keydown events
-                                mapTo(undefined)
-                            )
-                        }
-                        // Action items bar is not open, don't add event listeners
-                        return EMPTY
-                    })
-                ),
-            [barReferences, toggleReferences]
-        )
-    )
+                if (event.key === Key.ArrowUp) {
+                    // If this is the first focusable element, go back to the toggle
+                    if (indexOfTarget === 0) {
+                        toggleReference.focus()
+                        event.preventDefault()
+                        return
+                    }
+
+                    const itemToFocus = focusableChildren[indexOfTarget - 1]
+                    if (itemToFocus instanceof HTMLElement) {
+                        itemToFocus.focus()
+                        event.preventDefault()
+                        return
+                    }
+                }
+            }
+        }
+
+        toggleReference?.addEventListener('keydown', onKeyDownToggle)
+        barReference?.addEventListener('keydown', onKeyDownBar)
+
+        return () => {
+            toggleReference?.removeEventListener('keydown', onKeyDownToggle)
+            toggleReference?.removeEventListener('keydown', onKeyDownBar)
+        }
+    }, [toggleReference, barReference])
 
     const useActionItemsBar = useCallback(() => {
         // `useActionItemsBar` will be used as a hook
@@ -119,7 +134,7 @@ export interface ActionItemsBarProps extends ExtensionsControllerProps, Platform
     location: H.Location
 }
 
-export interface ActionItemsToggleProps {
+export interface ActionItemsToggleProps extends ExtensionsControllerProps<'extHostAPI'> {
     useActionItemsToggle: () => {
         isOpen: boolean | undefined
         toggle: () => void
@@ -144,6 +159,10 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
         onPositiveClicked,
     } = useCarousel({ direction: 'topToBottom' })
 
+    const haveExtensionsLoaded = useObservable(
+        useMemo(() => haveInitialExtensionsLoaded(props.extensionsController.extHostAPI), [props.extensionsController])
+    )
+
     if (!isOpen) {
         return null
     }
@@ -156,6 +175,7 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
                     type="button"
                     className="btn btn-link action-items__scroll action-items__list-item p-0 border-0"
                     onClick={onNegativeClicked}
+                    tabIndex={-1}
                 >
                     <MenuUpIcon className="icon-inline" />
                 </button>
@@ -173,9 +193,9 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
                     <ul className="action-items__list list-unstyled m-0" ref={carouselReference}>
                         {[
                             ...items,
-                            // TODO(tj): Temporary: testing default icons
+                            // TODO(tj): Temporary: testing default icons DELETE BEFORE MERGING
                             ...new Array(20).fill(null).map<ActionItemAction>((_value, index) => ({
-                                active: true,
+                                active: false,
                                 action: {
                                     category: String(index).slice(-1),
                                     command: 'open',
@@ -203,6 +223,7 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
                                     pressedClassName="action-items__action--pressed"
                                     inactiveClassName="action-items__action--inactive"
                                     hideLabel={true}
+                                    tabIndex={-1}
                                 />
                             </li>
                         ))}
@@ -214,11 +235,12 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
                     type="button"
                     className="btn btn-link action-items__scroll action-items__list-item p-0 border-0"
                     onClick={onPositiveClicked}
+                    tabIndex={-1}
                 >
                     <MenuDownIcon className="icon-inline" />
                 </button>
             )}
-            <ActionItemsDivider />
+            {haveExtensionsLoaded && <ActionItemsDivider />}
             <ul className="list-unstyled m-0">
                 <li className="action-items__list-item">
                     <Link
@@ -236,9 +258,14 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
 
 export const ActionItemsToggle: React.FunctionComponent<ActionItemsToggleProps> = ({
     useActionItemsToggle,
+    extensionsController,
     className,
 }) => {
     const { isOpen, toggle, toggleReference } = useActionItemsToggle()
+
+    const haveExtensionsLoaded = useObservable(
+        useMemo(() => haveInitialExtensionsLoaded(extensionsController.extHostAPI), [extensionsController])
+    )
 
     return (
         <li
@@ -256,7 +283,9 @@ export const ActionItemsToggle: React.FunctionComponent<ActionItemsToggleProps> 
                     onSelect={toggle}
                     buttonLinkRef={toggleReference}
                 >
-                    {isOpen ? (
+                    {!haveExtensionsLoaded ? (
+                        <LoadingSpinner className="icon-inline" />
+                    ) : isOpen ? (
                         <ChevronDoubleUpIcon className="icon-inline" />
                     ) : (
                         <PuzzleOutlineIcon className="icon-inline" />

@@ -88,6 +88,9 @@ export interface ActionItemProps extends ActionItemAction, ActionItemComponentPr
     title?: JSX.Element | null
 
     dataContent?: string
+
+    /** Override default tab index */
+    tabIndex?: number
 }
 
 const LOADING = 'loading' as const
@@ -196,6 +199,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                     data-tooltip={tooltip}
                     data-content={this.props.dataContent}
                     className={`action-item ${this.props.className || ''} ${variantClassName}`}
+                    tabIndex={this.props.tabIndex}
                 >
                     {content}
                 </span>
@@ -248,6 +252,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                 // it as a button that executes the command.
                 to={to}
                 {...newTabProps}
+                tabIndex={this.props.tabIndex}
             >
                 {content}{' '}
                 {primaryTo && isExternalLink(primaryTo) && <OpenInNewIcon className={this.props.iconClassName} />}

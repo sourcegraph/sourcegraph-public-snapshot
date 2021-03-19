@@ -267,7 +267,10 @@ export const RepoHeader: React.FunctionComponent<Props> = ({
                 </ul>
             )}
             <ul className="navbar-nav">
-                <ActionItemsToggle useActionItemsToggle={props.useActionItemsToggle} />
+                <ActionItemsToggle
+                    useActionItemsToggle={props.useActionItemsToggle}
+                    extensionsController={props.extensionsController}
+                />
             </ul>
         </nav>
     )

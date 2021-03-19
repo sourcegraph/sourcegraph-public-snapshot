@@ -24,7 +24,7 @@ export function getContributedActionItems(
             const action = contributions.actions.find(a => a.id === actionID)
             const altAction = contributions.actions.find(a => a.id === altActionID)
             if (action) {
-                allItems.push({ action, altAction, active: !!when })
+                allItems.push({ action, altAction, active: when === undefined || !!when })
             }
         }
     }

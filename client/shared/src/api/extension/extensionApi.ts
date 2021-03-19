@@ -134,9 +134,11 @@ export function createExtensionAPI(state: ExtensionHostState, mainAPI: Remote<Ma
     // TODO(tj): REMOVE TEST EXT
     window.activeViewComponentChanges.subscribe(activeViewComponent => {
         if (activeViewComponent?.type === 'CodeEditor') {
-            activeViewComponent.setStatusBarItem(createStatusBarItemType(), {
-                text: 'test status bar item',
-                tooltip: 'test tooltip',
+            ;[...Array(23).fill(null)].map((value, index) => {
+                activeViewComponent.setStatusBarItem(createStatusBarItemType(), {
+                    text: 'test status bar item',
+                    tooltip: 'test tooltip',
+                })
             })
         }
     })
