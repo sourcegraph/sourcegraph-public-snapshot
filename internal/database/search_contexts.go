@@ -31,23 +31,14 @@ func (s *SearchContextsStore) Transact(ctx context.Context) (*SearchContextsStor
 	return &SearchContextsStore{Store: txBase}, nil
 }
 
-var searchContextColumns = []*sqlf.Query{
-	sqlf.Sprintf("search_contexts.id"),
-	sqlf.Sprintf("search_contexts.name"),
-	sqlf.Sprintf("search_contexts.description"),
-	sqlf.Sprintf("search_contexts.public"),
-	sqlf.Sprintf("search_contexts.namespace_user_id"),
-	sqlf.Sprintf("search_contexts.namespace_org_id"),
-}
-
 const listSearchContextsFmtStr = `
-SELECT %s
+SELECT id, name, description, public, namespace_user_id, namespace_org_id
 FROM search_contexts
 WHERE deleted_at IS NULL AND (%s)
 `
 
 func (s *SearchContextsStore) listSearchContexts(ctx context.Context, cond *sqlf.Query) ([]*types.SearchContext, error) {
-	rows, err := s.Query(ctx, sqlf.Sprintf(listSearchContextsFmtStr, sqlf.Join(searchContextColumns, ", "), cond))
+	rows, err := s.Query(ctx, sqlf.Sprintf(listSearchContextsFmtStr, cond))
 	if err != nil {
 		return nil, err
 	}
@@ -63,12 +54,7 @@ func (s *SearchContextsStore) ListInstanceLevelSearchContexts(ctx context.Contex
 	return s.listSearchContexts(ctx, sqlf.Sprintf("namespace_user_id IS NULL AND namespace_org_id IS NULL"))
 }
 
-const getSearchContextFmtStr = `
-SELECT %s
-FROM search_contexts
-WHERE deleted_at IS NULL AND (%s)
-LIMIT 1
-`
+const getSearchContextFmtStr = listSearchContextsFmtStr + "\nLIMIT 1"
 
 type GetSearchContextOptions struct {
 	Name            string
@@ -97,11 +83,7 @@ func (s *SearchContextsStore) GetSearchContext(ctx context.Context, opts GetSear
 		conds = append(conds, sqlf.Sprintf("name = %s", opts.Name))
 	}
 
-	rows, err := s.Query(ctx, sqlf.Sprintf(
-		getSearchContextFmtStr,
-		sqlf.Join(searchContextColumns, ", "),
-		sqlf.Join(conds, "\n AND "),
-	))
+	rows, err := s.Query(ctx, sqlf.Sprintf(getSearchContextFmtStr, sqlf.Join(conds, "\n AND ")))
 	if err != nil {
 		return nil, err
 	}
@@ -112,31 +94,30 @@ func (s *SearchContextsStore) GetSearchContext(ctx context.Context, opts GetSear
 const insertSearchContextFmtStr = `
 INSERT INTO search_contexts
 (name, description, public, namespace_user_id, namespace_org_id)
-VALUES (%s,%s,%s,%s,%s)
-RETURNING %s;
+VALUES (%s, %s, %s, %s, %s)
+RETURNING id, name, description, public, namespace_user_id, namespace_org_id;
 `
 
-func (s *SearchContextsStore) CreateSearchContextWithRepositoryRevisions(ctx context.Context, searchContext *types.SearchContext, repositoryRevisions []*types.SearchContextRepositoryRevisions) (*types.SearchContext, error) {
+func (s *SearchContextsStore) CreateSearchContextWithRepositoryRevisions(ctx context.Context, searchContext *types.SearchContext, repositoryRevisions []*types.SearchContextRepositoryRevisions) (createdSearchContext *types.SearchContext, err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	searchContext, err = tx.createSearchContext(ctx, searchContext)
+	createdSearchContext, err = tx.createSearchContext(ctx, searchContext)
 	if err != nil {
 		return nil, err
 	}
 
-	err = tx.SetSearchContextRepositoryRevisions(ctx, searchContext.ID, repositoryRevisions)
+	err = tx.SetSearchContextRepositoryRevisions(ctx, createdSearchContext.ID, repositoryRevisions)
 	if err != nil {
 		return nil, err
 	}
-
-	return searchContext, nil
+	return createdSearchContext, nil
 }
 
-func (s *SearchContextsStore) SetSearchContextRepositoryRevisions(ctx context.Context, searchContextID int32, repositoryRevisions []*types.SearchContextRepositoryRevisions) error {
+func (s *SearchContextsStore) SetSearchContextRepositoryRevisions(ctx context.Context, searchContextID int32, repositoryRevisions []*types.SearchContextRepositoryRevisions) (err error) {
 	if len(repositoryRevisions) == 0 {
 		return nil
 	}
@@ -176,7 +157,6 @@ func (s *SearchContextsStore) createSearchContext(ctx context.Context, searchCon
 		searchContext.Public,
 		nullInt32Column(searchContext.NamespaceUserID),
 		nullInt32Column(searchContext.NamespaceOrgID),
-		sqlf.Join(searchContextColumns, ", "),
 	))
 	if err != nil {
 		return nil, err
@@ -254,9 +234,8 @@ func (s *SearchContextsStore) GetSearchContextRepositoryRevisions(ctx context.Co
 		repositoryIDsToName[repoID] = repoName
 	}
 
-	var out []*types.SearchContextRepositoryRevisions
-	for repoID := range repositoryIDsToRevisions {
-		revisions := repositoryIDsToRevisions[repoID]
+	out := make([]*types.SearchContextRepositoryRevisions, 0, len(repositoryIDsToRevisions))
+	for repoID, revisions := range repositoryIDsToRevisions {
 		sort.Strings(revisions)
 
 		out = append(out, &types.SearchContextRepositoryRevisions{
@@ -268,6 +247,6 @@ func (s *SearchContextsStore) GetSearchContextRepositoryRevisions(ctx context.Co
 		})
 	}
 
-	sort.Slice(out, func(i, j int) bool { return out[i].Repo.Name < out[j].Repo.Name })
+	sort.Slice(out, func(i, j int) bool { return out[i].Repo.ID < out[j].Repo.ID })
 	return out, nil
 }
