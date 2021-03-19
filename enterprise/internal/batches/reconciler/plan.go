@@ -112,6 +112,7 @@ func DeterminePlan(previousSpec, currentSpec *batches.ChangesetSpec, ch *batches
 
 	wantDetach := false
 	wantArchive := false
+	isArchived := false
 	isStillAttached := false
 	wantDetachFromOwnerBatchChange := false
 	for _, assoc := range ch.BatchChanges {
@@ -122,6 +123,7 @@ func DeterminePlan(previousSpec, currentSpec *batches.ChangesetSpec, ch *batches
 			}
 		} else if assoc.Archive && assoc.BatchChangeID == ch.OwnedByBatchChangeID {
 			wantArchive = !assoc.Archived
+			isArchived = assoc.Archived
 		} else {
 			isStillAttached = true
 		}
@@ -138,7 +140,7 @@ func DeterminePlan(previousSpec, currentSpec *batches.ChangesetSpec, ch *batches
 		pl.AddOp(batches.ReconcilerOperationClose)
 		// Close is a final operation, nothing else should overwrite it.
 		return pl, nil
-	} else if wantDetachFromOwnerBatchChange || wantArchive {
+	} else if wantDetachFromOwnerBatchChange || (wantArchive || isArchived) {
 		// If the owner batch change detaches the changeset, we don't need to do
 		// any additional writing operations, we can just return operation
 		// "detach".
