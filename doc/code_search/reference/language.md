@@ -169,100 +169,13 @@ A pattern to search. By default the pattern is searched literally. The kind of s
 
 ## Parameter
 
-<<<<<<< HEAD
-<div name="r">
-  <table class="r">
-    <tbody>
-      <tr class="r">
-        <td class="ts"></td>
-        <td class="d"><code class="c"><a href="#repo">repo</a></code></td>
-        <td class="te"></td>
-      </tr>
-      <tr class="r">
-        <td class="ks"></td>
-        <td class="d"><code class="c"><a href="#file">file</a></code></td>
-        <td class="ke"></td>
-      </tr>
-      <tr class="r">
-        <td class="ks"></td>
-        <td class="d"><code class="c"><a href="#content">content</a></code></td>
-        <td class="ke"></td>
-      </tr>
-      <tr class="r">
-        <td class="ks"></td>
-        <td class="d"><code class="c"><a href="#language">language</a></code></td>
-        <td class="ke"></td>
-      </tr>
-      <tr class="r">
-        <td class="ks"></td>
-        <td class="d"><code class="c"><a href="#type">type</a></code></td>
-        <td class="ke"></td>
-      </tr>
-      <tr class="r">
-        <td class="ks"></td>
-        <td class="d"><code class="c"><a href="#case">case</a></code></td>
-        <td class="ke"></td>
-      </tr>
-      <tr class="r">
-        <td class="ks"></td>
-        <td class="d"><code class="c"><a href="#fork">fork</a></code></td>
-        <td class="ke"></td>
-      </tr>
-      <tr class="r">
-        <td class="ks"></td>
-        <td class="d"><code class="c"><a href="#archived">archived</a></code></td>
-        <td class="ke"></td>
-      </tr>
-      <tr class="r">
-        <td class="ks"></td>
-        <td class="d"><code class="c"><a href="#repogroup">repogroup</a></code></td>
-        <td class="ke"></td>
-      </tr>
-      <tr class="r">
-        <td class="ks"></td>
-        <td class="d"><code class="c"><a href="#repo-has-file">repo has file</a></code></td>
-        <td class="ke"></td>
-      </tr>
-      <tr class="r">
-        <td class="ks"></td>
-        <td class="d"><code class="c"><a href="#repo-has-commit-after">repo has commit after</a></code></td>
-        <td class="ke"></td>
-      </tr>
-      <tr class="r">
-        <td class="ks"></td>
-        <td class="d"><code class="c"><a href="#count">count</a></code></td>
-        <td class="ke"></td>
-      </tr>
-      <tr class="r">
-        <td class="ks"></td>
-        <td class="d"><code class="c"><a href="#timeout">timeout</a></code></td>
-        <td class="ke"></td>
-      </tr>
-      <tr class="r">
-        <td class="ks"></td>
-        <td class="d"><code class="c"><a href="#visibility">visibility</a></code></td>
-        <td class="ke"></td>
-      </tr>
-      <tr class="r">
-        <td class="ks"></td>
-        <td class="d"><code class="c"><a href="#pattern-type">pattern type</a></code></td>
-        <td class="ke"></td>
-      </tr>
-      <tr class="r">
-        <td class="ls"></td>
-        <td class="d"><code class="c"><a href="#select">select</a></code></td>
-        <td class="le"></td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-=======
 <script>
 ComplexDiagram(
 	Choice(0,
 		Terminal("repo", {href: "#repo"}),
 		Terminal("file", {href: "#file"}),
 		Terminal("content", {href: "#content"}),
+		Terminal("select", {href: "#select"}),
 		Terminal("language", {href: "#language"}),
 		Terminal("type", {href: "#type"}),
 		Terminal("case", {href: "#case"}),
@@ -276,7 +189,6 @@ ComplexDiagram(
 		Terminal("visibility", {href: "#visibility"}),
 		Terminal("patterntype", {href: "#pattern-type"}))).addTo();
 </script>
->>>>>>> dc654c3d66 (search: Use generated railroad diagrams)
 
 Search parameters allow you to filter search results or modify search behavior.
 
