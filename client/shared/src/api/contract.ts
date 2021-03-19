@@ -37,7 +37,7 @@ export interface FlatExtensionHostAPI {
 
     // Workspace
     addWorkspaceRoot: (root: clientType.WorkspaceRoot) => void
-    getWorkspaceRoots: () => clientType.WorkspaceRoot[]
+    getWorkspaceRoots: () => ProxySubscribable<clientType.WorkspaceRoot[]>
     removeWorkspaceRoot: (uri: string) => void
 
     setVersionContext: (versionContext: string | undefined) => void

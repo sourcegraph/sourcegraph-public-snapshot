@@ -63,7 +63,7 @@ export function getHoverActions(
                 ),
             getWorkspaceRoots: () =>
                 from(extensionsController.extHostAPI).pipe(
-                    switchMap(extensionHostAPI => extensionHostAPI.getWorkspaceRoots())
+                    switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getWorkspaceRoots()))
                 ),
         },
         hoverContext
@@ -250,7 +250,6 @@ export const getDefinitionURL = (
                 // inside one of the current roots. This avoids navigating the user from (e.g.) a URL with a nice Git
                 // branch name to a URL with a full Git commit SHA.
                 const uri = withWorkspaceRootInputRevision(workspaceRoots || [], parseRepoURI(def.uri))
-
                 if (def.range) {
                     uri.position = {
                         line: def.range.start.line + 1,
@@ -388,7 +387,9 @@ export function registerHoverContributions({
                                     {
                                         getWorkspaceRoots: () =>
                                             from(extensionsController.extHostAPI).pipe(
-                                                switchMap(extensionHostAPI => extensionHostAPI.getWorkspaceRoots())
+                                                switchMap(extensionHostAPI =>
+                                                    wrapRemoteObservable(extensionHostAPI.getWorkspaceRoots())
+                                                )
                                             ),
                                     },
                                     parameters

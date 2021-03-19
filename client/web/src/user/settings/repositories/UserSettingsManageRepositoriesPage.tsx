@@ -330,14 +330,14 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             if (!publicRepoState.enabled) {
                 publicRepos = []
             }
-            let didError = false
-            await setUserPublicRepositories(userID, publicRepos)
-                .toPromise()
-                .catch(error => {
-                    setRepoState({ ...repoState, error: String(error) })
-                    didError = true
-                })
-            if (didError) {
+
+            setFetchingRepos('loading')
+
+            try {
+                await setUserPublicRepositories(userID, publicRepos).toPromise()
+            } catch (error) {
+                setRepoState({ ...repoState, error: String(error) })
+                setFetchingRepos(undefined)
                 return
             }
 
@@ -347,8 +347,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
             const syncTimes = new Map<string, string>()
             const codeHostRepoPromises = []
-
-            setFetchingRepos('loading')
 
             for (const host of codeHosts.hosts) {
                 const repos: string[] = []
@@ -373,6 +371,8 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 await Promise.all(codeHostRepoPromises)
             } catch (error) {
                 setRepoState({ ...repoState, error: String(error) })
+                setFetchingRepos(undefined)
+                return
             }
 
             const started = Date.now()

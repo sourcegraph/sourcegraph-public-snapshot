@@ -39,7 +39,7 @@ import { fromHoverMerged } from '../client/types/hover'
 import { ExtensionWorkspaceRoot } from './api/workspaceRoot'
 import { ExtensionHostState } from './extensionHostState'
 import { addWithRollback } from './util'
-import { WorkspaceRoot } from '@sourcegraph/extension-api-types'
+import * as clientType from '@sourcegraph/extension-api-types'
 
 export function createExtensionHostAPI(state: ExtensionHostState): FlatExtensionHostAPI {
     const getTextDocument = (uri: string): ExtensionDocument => {
@@ -82,7 +82,16 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
         syncSettingsData: settings => state.settings.next(Object.freeze(settings)),
 
         // Workspace
-        getWorkspaceRoots: () => state.roots.value.map(({ uri, inputRevision }) => ({ uri: uri.href, inputRevision })),
+        getWorkspaceRoots: () =>
+            proxySubscribable(
+                state.roots.pipe(
+                    map(workspaceRoots =>
+                        workspaceRoots.map(
+                            ({ uri, inputRevision }): clientType.WorkspaceRoot => ({ uri: uri.href, inputRevision })
+                        )
+                    )
+                )
+            ),
         addWorkspaceRoot: root => {
             state.roots.next(Object.freeze([...state.roots.value, new ExtensionWorkspaceRoot(root)]))
             state.rootChanges.next()
@@ -643,7 +652,7 @@ function callViewProviders<W extends ContributableViewContainer>(
 /**
  * A workspace root with additional metadata that is not exposed to extensions.
  */
-export interface WorkspaceRootWithMetadata extends WorkspaceRoot {
+export interface WorkspaceRootWithMetadata extends clientType.WorkspaceRoot {
     /**
      * The original input Git revision that the user requested. The {@link WorkspaceRoot#uri} value will contain
      * the Git commit SHA resolved from the input revision, but it is useful to also know the original revision
