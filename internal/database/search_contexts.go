@@ -154,7 +154,8 @@ func (s *SearchContextsStore) createSearchContext(ctx context.Context, searchCon
 		insertSearchContextFmtStr,
 		searchContext.Name,
 		searchContext.Description,
-		searchContext.Public,
+		// Always insert search context as public until private contexts are supported
+		true,
 		nullInt32Column(searchContext.NamespaceUserID),
 		nullInt32Column(searchContext.NamespaceOrgID),
 	))
