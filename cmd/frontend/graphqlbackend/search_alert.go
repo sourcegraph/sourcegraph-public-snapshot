@@ -627,6 +627,32 @@ func (a searchAlert) wrap(db dbutil.DB) *SearchResultsResolver {
 	return &SearchResultsResolver{db: db, alert: &a}
 }
 
+func (a searchAlert) wrapSearchImplementer(db dbutil.DB) *alertSearchResolver {
+	return &alertSearchResolver{
+		db:    db,
+		alert: a,
+	}
+}
+
+// alertSearchResolver is a light wrapper type around an alert that implements
+// searchResolver. This helps avoid needing to have a db on the searchAlert type
+type alertSearchResolver struct {
+	db    dbutil.DB
+	alert searchAlert
+}
+
+func (a alertSearchResolver) Results(context.Context) (*SearchResultsResolver, error) {
+	return a.alert.wrap(a.db), nil
+}
+
+func (alertSearchResolver) Suggestions(context.Context, *searchSuggestionsArgs) ([]SearchSuggestionResolver, error) {
+	return nil, nil
+}
+func (alertSearchResolver) Stats(context.Context) (*searchResultsStats, error) { return nil, nil }
+func (alertSearchResolver) Inputs() SearchInputs {
+	return SearchInputs{}
+}
+
 // capFirst capitalizes the first rune in the given string. It can be safely
 // used with UTF-8 strings.
 func capFirst(s string) string {
@@ -638,25 +664,6 @@ func capFirst(s string) string {
 		}
 		return r
 	}, s)
-}
-
-func (a searchAlert) Results(context.Context) (*SearchResultsResolver, error) {
-	alert := &searchAlert{
-		db:              a.db,
-		prometheusType:  a.prometheusType,
-		title:           a.title,
-		description:     a.description,
-		proposedQueries: a.proposedQueries,
-	}
-	return alert.wrap(a.db), nil
-}
-
-func (searchAlert) Suggestions(context.Context, *searchSuggestionsArgs) ([]SearchSuggestionResolver, error) {
-	return nil, nil
-}
-func (searchAlert) Stats(context.Context) (*searchResultsStats, error) { return nil, nil }
-func (searchAlert) Inputs() SearchInputs {
-	return SearchInputs{}
 }
 
 func alertForError(db dbutil.DB, err error, inputs *SearchInputs) *searchAlert {
