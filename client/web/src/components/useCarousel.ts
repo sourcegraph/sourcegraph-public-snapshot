@@ -1,8 +1,6 @@
 import { isEqual } from 'lodash'
-import { useCallback, useMemo } from 'react'
-import { fromEvent, merge, of, ReplaySubject, Subject } from 'rxjs'
-import { map, switchMap, withLatestFrom, tap, distinctUntilChanged } from 'rxjs/operators'
-import { useObservable } from '../../../shared/src/util/useObservable'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Subscription } from 'rxjs'
 import { observeResize } from '../util/dom'
 
 interface CarouselOptions {
@@ -59,66 +57,71 @@ const carouselClickHandlers: Record<
 }
 
 export function useCarousel({ amountToScroll = 0.9, direction }: CarouselOptions): CarouselState {
-    const carouselReferences = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
-    const nextCarouselReference = useCallback((carousel: HTMLElement) => carouselReferences.next(carousel), [
-        carouselReferences,
-    ])
+    const [carousel, setCarousel] = useState<HTMLElement | null>()
+    const nextCarousel = useCallback((carousel: HTMLElement) => {
+        setCarousel(carousel)
+    }, [])
 
-    const clicks = useMemo(() => new Subject<'positive' | 'negative'>(), [])
+    const [scrollability, setScrollability] = useState(defaultCarouselState)
 
-    const nextNegativeClick = useCallback(() => clicks.next('negative'), [clicks])
-    const nextPositiveClick = useCallback(() => clicks.next('positive'), [clicks])
+    const scrollabilityReference = useRef(scrollability)
+    scrollabilityReference.current = scrollability
 
     // Listen for UIEvents that can affect scrollability (e.g. scroll, resize)
-    const { canScrollNegative, canScrollPositive } =
-        useObservable(
-            useMemo(
-                () =>
-                    carouselReferences.pipe(
-                        switchMap(carousel => {
-                            if (!carousel) {
-                                return of(defaultCarouselState)
-                            }
+    useEffect(() => {
+        function onScroll(): void {
+            if (carousel) {
+                const newScrollability = carouselScrollHandlers[direction](carousel)
+                if (!isEqual(scrollabilityReference.current, newScrollability)) {
+                    setScrollability(newScrollability)
+                }
+            }
+        }
 
-                            // Initial scroll state
-                            const initial = of(undefined)
-                            const scrolls = fromEvent<React.UIEvent<HTMLElement>>(carousel, 'scroll')
-                            const resizes = observeResize(carousel)
+        carousel?.addEventListener('scroll', onScroll)
 
-                            return merge(initial, scrolls, resizes).pipe(
-                                map(() => carouselScrollHandlers[direction](carousel)),
-                                distinctUntilChanged((a, b) => isEqual(a, b))
-                            )
-                        })
-                    ),
-                [direction, carouselReferences]
-            )
-        ) || defaultCarouselState
+        let subscription: Subscription | undefined
+
+        if (carousel) {
+            subscription = observeResize(carousel).subscribe(() => {
+                const newScrollability = carouselScrollHandlers[direction](carousel)
+
+                if (!isEqual(scrollabilityReference.current, newScrollability)) {
+                    setScrollability(newScrollability)
+                }
+            })
+
+            // Check initial scroll state
+            const newScrollability = carouselScrollHandlers[direction](carousel)
+            if (!isEqual(scrollabilityReference.current, newScrollability)) {
+                setScrollability(newScrollability)
+            }
+        }
+
+        return () => {
+            carousel?.removeEventListener('scroll', onScroll)
+            subscription?.unsubscribe()
+        }
+    }, [carousel, direction])
 
     // Handle negative and positive click events
-    useObservable(
-        useMemo(
-            () =>
-                clicks.pipe(
-                    withLatestFrom(carouselReferences),
-                    tap(([sign, carousel]) => {
-                        if (carousel) {
-                            // TODO: check if it can be scrolled before scrolling.
-                            // Not urgent, since the component shouldn't allow invalid scrolls,
-                            // and it's a noop regardless.
-                            carouselClickHandlers[direction]({ sign, amountToScroll, carousel })
-                        }
-                    })
-                ),
-            [amountToScroll, direction, clicks, carouselReferences]
-        )
-    )
+    const onNegativeClicked = useCallback(() => {
+        if (carousel) {
+            carouselClickHandlers[direction]({ sign: 'negative', amountToScroll, carousel })
+        }
+    }, [direction, amountToScroll, carousel])
+
+    const onPositiveClicked = useCallback(() => {
+        if (carousel) {
+            carouselClickHandlers[direction]({ sign: 'positive', amountToScroll, carousel })
+        }
+    }, [direction, amountToScroll, carousel])
 
     return {
-        canScrollNegative,
-        canScrollPositive,
-        onNegativeClicked: nextNegativeClick,
-        onPositiveClicked: nextPositiveClick,
-        carouselReference: nextCarouselReference,
+        canScrollNegative: scrollability.canScrollNegative,
+        canScrollPositive: scrollability.canScrollPositive,
+        onNegativeClicked,
+        onPositiveClicked,
+        carouselReference: nextCarousel,
     }
 }
