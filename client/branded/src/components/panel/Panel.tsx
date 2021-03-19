@@ -28,6 +28,7 @@ import { useHistory, useLocation } from 'react-router'
 import { EmptyPanelView } from './views/EmptyPanelView'
 import CloseIcon from 'mdi-react/CloseIcon'
 import { PanelView } from './views/PanelView'
+import { registerPanelToolbarContributions } from './views/contributions'
 
 interface Props
     extends ExtensionsControllerProps,
@@ -203,6 +204,12 @@ export const Panel = React.memo<Props>(props => {
                 : [],
         [panelViews, props]
     )
+
+    useEffect(() => {
+        const subscription = registerPanelToolbarContributions(props.extensionsController.extHostAPI)
+
+        return () => subscription.unsubscribe()
+    }, [props.extensionsController])
 
     const handleActiveTab = useCallback(
         (index: number): void => {
