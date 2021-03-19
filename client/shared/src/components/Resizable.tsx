@@ -89,8 +89,8 @@ export class Resizable<C extends React.ReactElement> extends React.PureComponent
                 ref={this.setContainerRef}
             >
                 {this.props.element}
-                {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
                 <div
+                    role="presentation"
                     className={`resizable__handle resizable__handle--${this.props.handlePosition} ${
                         this.state.resizing ? 'resizable__handle--resizing' : ''
                     }`}
