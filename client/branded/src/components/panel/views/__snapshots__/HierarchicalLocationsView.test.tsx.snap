@@ -152,12 +152,10 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
     className="hierarchical-locations-view "
   >
     <div
-      className="d-flex overflow-scroll"
+      className="resizable resizable--right hierarchical-locations-view__resizable"
       style={
         Object {
-          "minHeight": "6rem",
-          "minWidth": "6rem",
-          "width": "230px",
+          "width": "200px",
         }
       }
     >
@@ -220,8 +218,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
         </span>
       </div>
       <div
-        aria-hidden={true}
-        className="resizable--right border-right resizable d-flex"
+        className="resizable__handle resizable__handle--right "
         onMouseDown={[Function]}
       />
     </div>
