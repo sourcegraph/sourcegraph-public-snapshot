@@ -595,9 +595,8 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 	start := time.Now()
 
 	// Invariant: this function is only reachable from callers that
-	// guarantee a root node with one ore more operands.
+	// guarantee a root node with one or more operands.
 	operands := q.Pattern.(query.Operator).Operands
-	scopeParameters := query.ToNodes(q.Parameters)
 
 	var (
 		err        error
@@ -622,19 +621,10 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 	}
 	defer cancel()
 
-	// Set count: if not specified.
-	var countStr string
-	query.VisitField(scopeParameters, "count", func(value string, _ bool, _ query.Annotation) {
-		countStr = value
-	})
-	if countStr != "" {
-		// Override "want" if count is specified.
-		want, _ = strconv.Atoi(countStr) // Invariant: count is validated.
+	if count := q.GetCount(); count != "" {
+		want, _ = strconv.Atoi(count) // Invariant: count is validated.
 	} else {
-		scopeParameters = append(scopeParameters, query.Parameter{
-			Field: "count",
-			Value: strconv.FormatInt(int64(want), 10),
-		})
+		q = q.AddCount(want)
 	}
 
 	// tryCount starts small but grows exponentially with the number of operands. It is capped at maxTryCount.
@@ -645,13 +635,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 
 	var exhausted bool
 	for {
-		scopeParameters = query.MapParameter(scopeParameters, func(field, value string, negated bool, annotation query.Annotation) query.Node {
-			if field == "count" {
-				value = strconv.FormatInt(int64(tryCount), 10)
-			}
-			return query.Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
-		})
-
+		q = q.MapCount(tryCount)
 		result, err = r.evaluatePatternExpression(ctx, q.MapPattern(operands[0]))
 		if err != nil {
 			return nil, err
@@ -712,7 +696,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 // we shortcircuit and return results immediately.
 func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*SearchResultsResolver, error) {
 	// Invariant: this function is only reachable from callers that
-	// guarantee a root node with one ore more operands.
+	// guarantee a root node with one or more operands.
 	operands := q.Pattern.(query.Operator).Operands
 
 	wantCount := defaultMaxSearchResults

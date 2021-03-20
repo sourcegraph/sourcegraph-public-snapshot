@@ -89,14 +89,56 @@ func (b Basic) ToParseTree() Q {
 		nodes = append(nodes, Node(n))
 	}
 	if b.Pattern == nil {
-		return Q(nodes)
+		return nodes
 	}
-	return Q(append(nodes, b.Pattern))
+	nodes = append(nodes, b.Pattern)
+	if hoisted, err := Hoist(nodes); err == nil {
+		return hoisted
+	}
+	return nodes
 }
 
-// MapPattern returns a copy of a basic query with the pattern part replaced by pattern.
+// MapPattern returns a copy of a basic query with updated pattern.
 func (b Basic) MapPattern(pattern Node) Basic {
 	return Basic{Parameters: b.Parameters, Pattern: pattern}
+}
+
+// MapParameters returns a copy of a basic query with updated parameters.
+func (b Basic) MapParameters(parameters []Parameter) Basic {
+	return Basic{Parameters: parameters, Pattern: b.Pattern}
+}
+
+// AddCount adds a count parameter to a basic query. Behavior of AddCount on a
+// query that already has a count parameter is undefined.
+func (b Basic) AddCount(count int) Basic {
+	return b.MapParameters(append(b.Parameters, Parameter{
+		Field: "count",
+		Value: strconv.FormatInt(int64(count), 10),
+	}))
+}
+
+// GetCount returns the string value of the "count:" field. Returns empty string if none.
+func (b Basic) GetCount() string {
+	var countStr string
+	VisitField(ToNodes(b.Parameters), "count", func(value string, _ bool, _ Annotation) {
+		countStr = value
+	})
+	return countStr
+}
+
+// MapCount returns a copy of a basic query with a count parameter set.
+func (b Basic) MapCount(count int) Basic {
+	parameters := MapParameter(ToNodes(b.Parameters), func(field, value string, negated bool, annotation Annotation) Node {
+		if field == "count" {
+			value = strconv.FormatInt(int64(count), 10)
+		}
+		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
+	})
+	return Basic{Parameters: toParameters(parameters), Pattern: b.Pattern}
+}
+
+func (b Basic) String() string {
+	return fmt.Sprintf("%s %s", Q(ToNodes(b.Parameters)).String(), Q([]Node{b.Pattern}).String())
 }
 
 // A query is a tree of Nodes. We choose the type name Q so that external uses like query.Q do not stutter.
