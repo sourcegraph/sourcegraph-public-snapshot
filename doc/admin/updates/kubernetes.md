@@ -17,9 +17,7 @@ and any manual migration steps you must perform.
 
 ## 3.25 -> 3.26
 
-TODO
-
-## 3.25 -> 3.26
+No manual migration required, follow the [standard upgrade method](../install/kubernetes/update.md) to upgrade your deployment.
 
 > NOTE: ⚠️ From **3.27** onwards we will only support PostgreSQL versions **starting from 12**.
 
