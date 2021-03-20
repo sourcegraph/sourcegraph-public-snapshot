@@ -3,7 +3,11 @@ import { storiesOf } from '@storybook/react'
 import webStyles from '../../SourcegraphWebApp.scss'
 import { StatusBar } from './StatusBar'
 import { BehaviorSubject } from 'rxjs'
-import { StatusBarItemWithKey } from '../../../../shared/src/api/client/api/codeEditor'
+import { extensionsController } from '../../../../shared/src/util/searchTestHelpers'
+import * as H from 'history'
+import { StatusBarItemWithKey } from '../../../../shared/src/api/extension/api/codeEditor'
+
+const LOCATION: H.Location = { hash: '', pathname: '/', search: '', state: undefined }
 
 const { add } = storiesOf('web/extensions/StatusBar', module).addDecorator(story => (
     <>
@@ -23,7 +27,13 @@ add('two items', () => {
             ]).asObservable(),
         []
     )
-    return <StatusBar getStatusBarItems={getStatusBarItems} repoName="test" commitID="test" filePath="test" />
+    return (
+        <StatusBar
+            getStatusBarItems={getStatusBarItems}
+            extensionsController={extensionsController}
+            location={LOCATION}
+        />
+    )
 })
 
 // TODO(tj): Carousel

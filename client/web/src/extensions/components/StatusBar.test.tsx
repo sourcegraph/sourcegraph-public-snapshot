@@ -4,6 +4,9 @@ import { StatusBar } from './StatusBar'
 import { StatusBarItemWithKey } from '../../../../shared/src/api/extension/api/codeEditor'
 import { BehaviorSubject } from 'rxjs'
 import { extensionsController } from '../../../../shared/src/util/searchTestHelpers'
+import * as H from 'history'
+
+const LOCATION: H.Location = { hash: '', pathname: '/', search: '', state: undefined }
 
 describe('StatusBar', () => {
     it('renders correctly', () => {
@@ -14,8 +17,13 @@ describe('StatusBar', () => {
             ]).asObservable()
 
         expect(
-            render(<StatusBar getStatusBarItems={getStatusBarItems} extensionsController={extensionsController} />)
-                .baseElement
+            render(
+                <StatusBar
+                    getStatusBarItems={getStatusBarItems}
+                    extensionsController={extensionsController}
+                    location={LOCATION}
+                />
+            ).baseElement
         ).toMatchSnapshot()
     })
 
