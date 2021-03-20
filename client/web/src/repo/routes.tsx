@@ -35,9 +35,18 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/commit/:revspec+',
         render: context => (
-            <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
-                <RepositoryCommitPage {...context} />
-            </RepositoryGitDataContainer>
+            <div className="repo-revision-container">
+                <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
+                    <RepositoryCommitPage {...context} />
+                </RepositoryGitDataContainer>
+                <ActionItemsBar
+                    extensionsController={context.extensionsController}
+                    platformContext={context.platformContext}
+                    useActionItemsBar={context.useActionItemsBar}
+                    location={context.location}
+                    telemetryService={context.telemetryService}
+                />
+            </div>
         ),
     },
     {
@@ -188,11 +197,20 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
     {
         path: '/-/commits',
         render: ({ resolvedRev: { commitID }, repoHeaderContributionsLifecycleProps, ...context }) => (
-            <RepositoryCommitsPage
-                {...context}
-                commitID={commitID}
-                repoHeaderContributionsLifecycleProps={repoHeaderContributionsLifecycleProps}
-            />
+            <>
+                <RepositoryCommitsPage
+                    {...context}
+                    commitID={commitID}
+                    repoHeaderContributionsLifecycleProps={repoHeaderContributionsLifecycleProps}
+                />
+                <ActionItemsBar
+                    useActionItemsBar={context.useActionItemsBar}
+                    location={context.location}
+                    extensionsController={context.extensionsController}
+                    platformContext={context.platformContext}
+                    telemetryService={context.telemetryService}
+                />
+            </>
         ),
     },
 ]

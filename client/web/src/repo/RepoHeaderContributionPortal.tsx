@@ -27,12 +27,12 @@ export class RepoHeaderContributionPortal extends React.Component<Props> {
             this.props.repoHeaderContributionsLifecycleProps !== nextProps.repoHeaderContributionsLifecycleProps ||
             this.props.position !== nextProps.position ||
             this.props.priority !== nextProps.priority ||
-            this.props.render !== nextProps.render
+            this.props.children !== nextProps.children
         )
     }
 
     public componentWillUnmount(): void {
-        const id = this.props.id as string // enforced in RepoHeaderContributionStore
+        const id = this.props.id // enforced in RepoHeaderContributionStore
         if (this.props.repoHeaderContributionsLifecycleProps) {
             // Don't need to worry about being unable to remove this because once
             // this.props.repoHeaderContributionsLifecycleProps is set (from RepoHeader), it is never unset.

@@ -238,19 +238,21 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
                             />
                         )
                 )}
-                {/* eslint-enable react/jsx-no-bind */}
             </Switch>
             <RepoHeaderContributionPortal
                 position="left"
                 id="copy-link"
-                render={() => <CopyLinkAction key="copy-link" location={props.location} />}
                 repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-            />
+            >
+                {() => <CopyLinkAction key="copy-link" location={props.location} />}
+            </RepoHeaderContributionPortal>
             <RepoHeaderContributionPortal
                 position="right"
                 priority={3}
                 id="go-to-permalink"
-                render={context => (
+                repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+            >
+                {context => (
                     <GoToPermalinkAction
                         key="go-to-permalink"
                         revision={props.revision}
@@ -260,8 +262,7 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
                         {...context}
                     />
                 )}
-                repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-            />
+            </RepoHeaderContributionPortal>
         </div>
     )
 }

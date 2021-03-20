@@ -11,7 +11,7 @@ import { ExtensionsControllerProps } from '../../../../shared/src/extensions/con
 import * as H from 'history'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
-import { ActionItem, ActionItemAction } from '../../../../shared/src/actions/ActionItem'
+import { ActionItem } from '../../../../shared/src/actions/ActionItem'
 import PlusIcon from 'mdi-react/PlusIcon'
 import { Link } from 'react-router-dom'
 import { Key } from 'ts-key-enum'
@@ -22,6 +22,8 @@ import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import { haveInitialExtensionsLoaded } from '../../../../shared/src/api/features'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { BehaviorSubject } from 'rxjs'
+import { distinctUntilChanged, map } from 'rxjs/operators'
 
 const scrollButtonClassName = 'action-items__scroll'
 
@@ -114,13 +116,24 @@ export function useWebActionItems(): Pick<ActionItemsBarProps, 'useActionItemsBa
         }
     }, [toggleReference, barReference])
 
+    const barsReferenceCounts = useMemo(() => new BehaviorSubject(0), [])
+
     const useActionItemsBar = useCallback(() => {
         // `useActionItemsBar` will be used as a hook
         // eslint-disable-next-line react-hooks/rules-of-hooks
         const isOpen = useObservable(toggles)
 
+        // Let the toggle know it's on the page
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        useEffect(() => {
+            // Use reference counter so that effect order doesn't matter
+            barsReferenceCounts.next(barsReferenceCounts.value + 1)
+
+            return () => barsReferenceCounts.next(barsReferenceCounts.value - 1)
+        }, [])
+
         return { isOpen, barReference: nextBarReference }
-    }, [toggles, nextBarReference])
+    }, [toggles, nextBarReference, barsReferenceCounts])
 
     const useActionItemsToggle = useCallback(() => {
         // `useActionItemsToggle` will be used as a hook
@@ -130,8 +143,22 @@ export function useWebActionItems(): Pick<ActionItemsBarProps, 'useActionItemsBa
         // eslint-disable-next-line react-hooks/rules-of-hooks
         const toggle = useCallback(() => toggles.next(!isOpen), [isOpen])
 
-        return { isOpen, toggle, toggleReference: nextToggleReference }
-    }, [toggles, nextToggleReference])
+        // Only show the action items toggle when the <ActionItemsBar> component is on the page
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const barInPage = !!useObservable(
+            // eslint-disable-next-line react-hooks/rules-of-hooks
+            useMemo(
+                () =>
+                    barsReferenceCounts.pipe(
+                        map(count => count > 0),
+                        distinctUntilChanged()
+                    ),
+                []
+            )
+        )
+
+        return { isOpen, toggle, barInPage, toggleReference: nextToggleReference }
+    }, [toggles, nextToggleReference, barsReferenceCounts])
 
     return {
         useActionItemsBar,
@@ -149,6 +176,7 @@ export interface ActionItemsToggleProps extends ExtensionsControllerProps<'extHo
         isOpen: boolean | undefined
         toggle: () => void
         toggleReference: React.RefCallback<HTMLElement>
+        barInPage: boolean
     }
     className?: string
 }
@@ -201,28 +229,17 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
             >
                 {items => (
                     <ul className="action-items__list list-unstyled m-0" ref={carouselReference}>
-                        {[
-                            ...items,
-                            // TODO(tj): Temporary: testing default icons DELETE BEFORE MERGING
-                            ...new Array(20).fill(null).map<ActionItemAction>((_value, index) => ({
-                                active: true,
-                                action: {
-                                    category: String(index).slice(-1),
-                                    command: 'open',
-                                    actionItem: {},
-                                    id: `fake-${index}`,
-                                },
-                            })),
-                        ].map((item, index) => {
+                        {items.map((item, index) => {
                             const hasIconURL = !!item.action.actionItem?.iconURL
                             const className = classNames(
                                 actionItemClassName,
                                 !hasIconURL &&
                                     `action-items__action--no-icon action-items__icon-${(index % 5) + 1} text-sm`
                             )
-                            const inactiveClassName = hasIconURL
-                                ? 'action-items__action--inactive'
-                                : 'action-items__action--no-icon-inactive'
+                            const inactiveClassName = classNames(
+                                'action-items__action--inactive',
+                                !hasIconURL && 'action-items__action--no-icon-inactive'
+                            )
 
                             const dataContent = !hasIconURL ? item.action.category?.slice(0, 1) : undefined
 
@@ -278,13 +295,13 @@ export const ActionItemsToggle: React.FunctionComponent<ActionItemsToggleProps> 
     extensionsController,
     className,
 }) => {
-    const { isOpen, toggle, toggleReference } = useActionItemsToggle()
+    const { isOpen, toggle, toggleReference, barInPage } = useActionItemsToggle()
 
     const haveExtensionsLoaded = useObservable(
         useMemo(() => haveInitialExtensionsLoaded(extensionsController.extHostAPI), [extensionsController])
     )
 
-    return (
+    return barInPage ? (
         <li
             data-tooltip={`${isOpen ? 'Close' : 'Open'} extensions panel`}
             className={classNames(className, 'nav-item border-left')}
@@ -310,7 +327,7 @@ export const ActionItemsToggle: React.FunctionComponent<ActionItemsToggleProps> 
                 </ButtonLink>
             </div>
         </li>
-    )
+    ) : null
 }
 
 const ActionItemsDivider: React.FunctionComponent<{ className?: string }> = ({ className }) => (

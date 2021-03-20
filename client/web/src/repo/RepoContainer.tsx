@@ -59,7 +59,7 @@ import { useLocalStorage } from '../util/useLocalStorage'
 import { Settings } from '../schema/settings.schema'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { escapeSpaces } from '../../../shared/src/search/query/filters'
-import { useWebActionItems } from '../extensions/components/ActionItemsBar'
+import { ActionItemsBarProps, useWebActionItems } from '../extensions/components/ActionItemsBar'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -78,7 +78,8 @@ export interface RepoContainerContext
         CopyQueryButtonProps,
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
-        BreadcrumbSetters {
+        BreadcrumbSetters,
+        ActionItemsBarProps {
     repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
@@ -376,6 +377,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         repo: repoOrError,
         routePrefix: repoMatchURL,
         onDidUpdateExternalLinks: setExternalLinks,
+        useActionItemsBar,
     }
 
     return (
@@ -410,7 +412,8 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 priority={2}
                 id="go-to-code-host"
                 {...repoHeaderContributionsLifecycleProps}
-                render={({ actionType }) => (
+            >
+                {({ actionType }) => (
                     <GoToCodeHostAction
                         key="go-to-code-host"
                         repo={repoOrError}
@@ -425,25 +428,10 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                         canShowPopover={canShowPopover}
                         onPopoverDismissed={onPopoverDismissed}
                         actionType={actionType}
+                        repoName={repoName}
                     />
                 )}
-                // element={
-                //     <GoToCodeHostAction
-                //         key="go-to-code-host"
-                //         repo={repoOrError}
-                //         // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
-                //         revision={rawRevision || repoOrError.defaultBranch?.displayName || 'HEAD'}
-                //         filePath={filePath}
-                //         commitRange={commitRange}
-                //         position={position}
-                //         range={range}
-                //         externalLinks={externalLinks}
-                //         fetchFileExternalLinks={fetchFileExternalLinks}
-                //         canShowPopover={canShowPopover}
-                //         onPopoverDismissed={onPopoverDismissed}
-                //     />
-                // }
-            />
+            </RepoHeaderContributionPortal>
             <ErrorBoundary location={props.location}>
                 <Switch>
                     {/* eslint-disable react/jsx-no-bind */}

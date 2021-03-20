@@ -1,6 +1,5 @@
 import * as H from 'history'
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
-import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { ErrorLike } from '../../../shared/src/util/errors'
@@ -16,7 +15,6 @@ import { ActionItemsToggle, ActionItemsToggleProps } from '../extensions/compone
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import { useBreakpoint } from '../util/dom'
-import { Subject } from 'rxjs'
 
 /**
  * Stores the list of RepoHeaderContributions, manages addition/deletion, and ensures they are sorted.
@@ -31,8 +29,8 @@ class RepoHeaderContributionStore {
     ) {}
 
     private onRepoHeaderContributionAdd(item: RepoHeaderContribution): void {
-        if (!item.render || typeof item.render !== 'function') {
-            throw new Error('RepoHeaderContribution has no render function')
+        if (!item.children || typeof item.children !== 'function') {
+            throw new Error('RepoHeaderContribution has no child render function')
         }
 
         this.setState((previousContributions: RepoHeaderContribution[]) =>
@@ -79,7 +77,7 @@ export interface RepoHeaderContribution {
     /**
      * Render function called with RepoHeaderContext
      */
-    render: (context: RepoHeaderContext) => React.ReactElement
+    children: (context: RepoHeaderContext) => React.ReactElement
 }
 
 /**
@@ -115,12 +113,7 @@ export interface RepoHeaderContext {
 
 export interface RepoHeaderActionButton extends ActionButtonDescriptor<RepoHeaderContext> {}
 
-interface Props
-    extends PlatformContextProps,
-        ExtensionsControllerProps,
-        TelemetryProps,
-        BreadcrumbsProps,
-        ActionItemsToggleProps {
+interface Props extends PlatformContextProps, TelemetryProps, BreadcrumbsProps, ActionItemsToggleProps {
     /**
      * An array of render functions for action buttons that can be configured *in addition* to action buttons
      * contributed through {@link RepoHeaderContributionsLifecycleProps} and through extensions.
@@ -200,16 +193,16 @@ export const RepoHeader: React.FunctionComponent<Props> = ({
         () =>
             repoHeaderContributions
                 .filter(({ position }) => position === 'left')
-                .map(({ render, ...rest }) => ({ ...rest, element: render({ ...context, actionType: 'nav' }) })),
+                .map(({ children, ...rest }) => ({ ...rest, element: children({ ...context, actionType: 'nav' }) })),
         [context, repoHeaderContributions]
     )
     const rightActions = useMemo(
         () =>
             repoHeaderContributions
                 .filter(({ position }) => position === 'right')
-                .map(({ render, ...rest }) => ({
+                .map(({ children, ...rest }) => ({
                     ...rest,
-                    element: render({ ...context, actionType: isLarge ? 'nav' : 'dropdown' }),
+                    element: children({ ...context, actionType: isLarge ? 'nav' : 'dropdown' }),
                 })),
         [context, repoHeaderContributions, isLarge]
     )
