@@ -1,8 +1,8 @@
-import React, { useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { StatusBarItemWithKey } from '../../../../shared/src/api/extension/api/codeEditor'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import classNames from 'classnames'
-import { Observable } from 'rxjs'
+import { Observable, timer } from 'rxjs'
 import { useCarousel } from '../../components/useCarousel'
 import MenuLeftIcon from 'mdi-react/MenuLeftIcon'
 import MenuRightIcon from 'mdi-react/MenuRightIcon'
@@ -13,16 +13,24 @@ import { ButtonLink } from '../../../../shared/src/components/LinkOrButton'
 import { urlForClientCommandOpen } from '../../../../shared/src/actions/ActionItem'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import * as H from 'history'
+import { filter, first, mapTo, switchMap } from 'rxjs/operators'
 
 interface StatusBarProps extends ExtensionsControllerProps {
     getStatusBarItems: () => Observable<StatusBarItemWithKey[] | 'loading'>
     className?: string
+    /**
+     * Used to determine when to restart timer to show "Install extensions"
+     * message when there are no status bar items. Only necessary when status bar
+     * persists beteween files (e.g. for `<Blob>`).
+     */
+    uri?: string
 }
 
 export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
     getStatusBarItems,
     className,
     extensionsController,
+    uri,
 }) => {
     const statusBarItems = useObservable(useMemo(() => getStatusBarItems(), [getStatusBarItems]))
 
@@ -30,7 +38,23 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
         useMemo(() => haveInitialExtensionsLoaded(extensionsController.extHostAPI), [extensionsController])
     )
 
-    // We need timer based on uri!
+    // Wait a generous amount of time on top of initial extension loading
+    // before showing "Install extensions" message to be forgiving of extensions
+    // that make slow network requests and forget to indicate loading state.
+    const hasEnoughTimePassed = useObservable(
+        useMemo(
+            () =>
+                haveInitialExtensionsLoaded(extensionsController.extHostAPI).pipe(
+                    filter(haveLoaded => haveLoaded),
+                    first(),
+                    switchMap(() => timer(2000).pipe(mapTo(true)))
+                ),
+            // We want to recreate the observable on uri change, so keep
+            // the unnecessary dependency.
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+            [uri, extensionsController]
+        )
+    )
 
     const {
         carouselReference,
@@ -48,8 +72,9 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                 location={location}
                 // To be clear to users that this isn't an error reported by extensions
                 // about e.g. the code they're viewing.
+                // eslint-disable-next-line react/jsx-no-bind
                 render={error => (
-                    <div className={`${className}__item ml-2`}>
+                    <div className="status-bar__item ml-2">
                         <small className="text-muted">Status bar component error: {error.message}</small>
                     </div>
                 )}
@@ -73,7 +98,8 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                                   location={location}
                               />
                           ))
-                        : haveExtensionsLoaded && (
+                        : haveExtensionsLoaded &&
+                          hasEnoughTimePassed && (
                               <StatusBarItem
                                   key="none-found"
                                   statusBarItem={{
@@ -118,32 +144,31 @@ const StatusBarItem: React.FunctionComponent<
 > = ({ statusBarItem, className = 'status-bar', component, extensionsController, location }) => {
     const [commandState, setCommandState] = useState<'loading' | null>(null)
 
-    const to =
-        statusBarItem.command &&
-        urlForClientCommandOpen(
-            { command: statusBarItem.command.id, commandArguments: statusBarItem.command.args },
-            location
-        )
+    const command = useMemo(() => statusBarItem.command, [statusBarItem.command])
 
-    const handleCommand = () => {
+    const to = useMemo(
+        () => command && urlForClientCommandOpen({ command: command.id, commandArguments: command.args }, location),
+        [command, location]
+    )
+
+    const handleCommand = useCallback(() => {
         // Do not execute the command if `to` is defined.
         // The <ButtonLink>'s default event handler will do what we want (which is to open a URL).
-        if (commandState !== 'loading' && statusBarItem.command && !to) {
+        if (commandState !== 'loading' && command && !to) {
             setCommandState('loading')
             extensionsController
-                .executeCommand({ command: statusBarItem.command.id, args: statusBarItem.command.args })
+                .executeCommand({ command: command.id, args: command.args })
                 .then(() => {
                     setCommandState(null)
                 })
                 .catch(error => {
                     // noop, errors will be displayed as notifications
-                    console.log('error??', error)
                     setCommandState(null)
                 })
         }
-    }
+    }, [commandState, extensionsController, command, to])
 
-    const noop = !statusBarItem.command
+    const noop = !command
 
     return (
         <ButtonLink
