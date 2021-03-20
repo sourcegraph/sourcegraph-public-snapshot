@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/authz/github"
 	"github.com/sourcegraph/sourcegraph/internal/authz/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/authz/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -51,6 +52,7 @@ func ProvidersFromConfig(
 			extsvc.KindGitHub,
 			extsvc.KindGitLab,
 			extsvc.KindBitbucketServer,
+			extsvc.KindPerforce,
 		},
 		LimitOffset: &database.LimitOffset{
 			Limit: 500, // The number is randomly chosen
@@ -61,6 +63,7 @@ func ProvidersFromConfig(
 		gitHubConns          []*types.GitHubConnection
 		gitLabConns          []*types.GitLabConnection
 		bitbucketServerConns []*types.BitbucketServerConnection
+		perforceConns        []*types.PerforceConnection
 	)
 	for {
 		svcs, err := store.List(ctx, opt)
@@ -96,6 +99,11 @@ func ProvidersFromConfig(
 					URN:                       svc.URN(),
 					BitbucketServerConnection: c,
 				})
+			case *schema.PerforceConnection:
+				perforceConns = append(perforceConns, &types.PerforceConnection{
+					URN:                svc.URN(),
+					PerforceConnection: c,
+				})
 			default:
 				log15.Error("ProvidersFromConfig", "error", errors.Errorf("unexpected connection type: %T", cfg))
 				continue
@@ -127,6 +135,13 @@ func ProvidersFromConfig(
 		providers = append(providers, bbsProviders...)
 		seriousProblems = append(seriousProblems, bbsProblems...)
 		warnings = append(warnings, bbsWarnings...)
+	}
+
+	if len(perforceConns) > 0 {
+		pfProviders, pfProblems, pfWarnings := perforce.NewAuthzProviders(perforceConns)
+		providers = append(providers, pfProviders...)
+		seriousProblems = append(seriousProblems, pfProblems...)
+		warnings = append(warnings, pfWarnings...)
 	}
 
 	// 🚨 SECURITY: Warn the admin when both code host authz provider and the permissions user mapping are configured.
