@@ -101,24 +101,14 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                           ))
                         : haveExtensionsLoaded &&
                           hasEnoughTimePassed && (
-                              <StatusBarItem
-                                  key="none-found"
-                                  statusBarItem={{
-                                      key: 'none-found',
-                                      text:
-                                          'No information from extensions available. Find extensions in the Sourcegraph extension registry',
-                                  }}
-                                  extensionsController={extensionsController}
-                                  component={
-                                      <small className="text-muted">
-                                          No information from extensions available.{' '}
-                                          <Link to="/extensions">
-                                              Find extensions in the Sourcegraph extension registry
-                                          </Link>
-                                      </small>
-                                  }
-                                  location={location}
-                              />
+                              <div className="status-bar__item ml-2">
+                                  <small className="text-muted">
+                                      No information from extensions available.{' '}
+                                      <Link to="/extensions">
+                                          Find extensions in the Sourcegraph extension registry
+                                      </Link>
+                                  </small>
+                              </div>
                           )}
                 </div>
                 {canScrollPositive && (
@@ -162,7 +152,7 @@ const StatusBarItem: React.FunctionComponent<
                 .then(() => {
                     setCommandState(null)
                 })
-                .catch(error => {
+                .catch(() => {
                     // noop, errors will be displayed as notifications
                     setCommandState(null)
                 })
