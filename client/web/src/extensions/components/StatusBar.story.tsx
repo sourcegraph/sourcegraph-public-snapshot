@@ -2,10 +2,12 @@ import React, { useCallback } from 'react'
 import { storiesOf } from '@storybook/react'
 import webStyles from '../../SourcegraphWebApp.scss'
 import { StatusBar } from './StatusBar'
-import { BehaviorSubject } from 'rxjs'
+import { BehaviorSubject, of } from 'rxjs'
 import { extensionsController } from '../../../../shared/src/util/searchTestHelpers'
 import * as H from 'history'
 import { StatusBarItemWithKey } from '../../../../shared/src/api/extension/api/codeEditor'
+import { pretendProxySubscribable, pretendRemote } from '../../../../shared/src/api/util'
+import { FlatExtensionHostAPI } from '../../../../shared/src/api/contract'
 
 const LOCATION: H.Location = { hash: '', pathname: '/', search: '', state: undefined }
 
@@ -30,7 +32,14 @@ add('two items', () => {
     return (
         <StatusBar
             getStatusBarItems={getStatusBarItems}
-            extensionsController={extensionsController}
+            extensionsController={{
+                ...extensionsController,
+                extHostAPI: Promise.resolve(
+                    pretendRemote<FlatExtensionHostAPI>({
+                        haveInitialExtensionsLoaded: () => pretendProxySubscribable(of(true)),
+                    })
+                ),
+            }}
             location={LOCATION}
         />
     )
