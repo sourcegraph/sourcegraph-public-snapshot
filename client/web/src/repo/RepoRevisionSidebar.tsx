@@ -75,30 +75,34 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                     >
                         <TabPanels className="w-100">
                             <TabPanel tabIndex={-1}>
-                                <Tree
-                                    key="files"
-                                    repoName={props.repoName}
-                                    revision={props.revision}
-                                    commitID={props.commitID}
-                                    history={props.history}
-                                    location={props.location}
-                                    scrollRootSelector=".explorer"
-                                    activePath={props.filePath}
-                                    activePathIsDir={props.isDir}
-                                    sizeKey={`Resizable:${SIZE_STORAGE_KEY}`}
-                                    extensionsController={props.extensionsController}
-                                    isLightTheme={props.isLightTheme}
-                                />
+                                {tabIndex === 0 && (
+                                    <Tree
+                                        key="files"
+                                        repoName={props.repoName}
+                                        revision={props.revision}
+                                        commitID={props.commitID}
+                                        history={props.history}
+                                        location={props.location}
+                                        scrollRootSelector=".explorer"
+                                        activePath={props.filePath}
+                                        activePathIsDir={props.isDir}
+                                        sizeKey={`Resizable:${SIZE_STORAGE_KEY}`}
+                                        extensionsController={props.extensionsController}
+                                        isLightTheme={props.isLightTheme}
+                                    />
+                                )}
                             </TabPanel>
                             <TabPanel className="h-100">
-                                <RepoRevisionSidebarSymbols
-                                    key="symbols"
-                                    repoID={props.repoID}
-                                    revision={props.revision}
-                                    activePath={props.filePath}
-                                    history={props.history}
-                                    location={props.location}
-                                />
+                                {tabIndex === 1 && (
+                                    <RepoRevisionSidebarSymbols
+                                        key="symbols"
+                                        repoID={props.repoID}
+                                        revision={props.revision}
+                                        activePath={props.filePath}
+                                        history={props.history}
+                                        location={props.location}
+                                    />
+                                )}
                             </TabPanel>
                         </TabPanels>
                     </div>
