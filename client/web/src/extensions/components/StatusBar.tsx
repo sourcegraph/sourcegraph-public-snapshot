@@ -6,7 +6,7 @@ import { Observable, timer } from 'rxjs'
 import { useCarousel } from '../../components/useCarousel'
 import MenuLeftIcon from 'mdi-react/MenuLeftIcon'
 import MenuRightIcon from 'mdi-react/MenuRightIcon'
-import { Link, useLocation } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { haveInitialExtensionsLoaded } from '../../../../shared/src/api/features'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { ButtonLink } from '../../../../shared/src/components/LinkOrButton'
@@ -15,7 +15,7 @@ import { ErrorBoundary } from '../../components/ErrorBoundary'
 import * as H from 'history'
 import { filter, first, mapTo, switchMap } from 'rxjs/operators'
 
-interface StatusBarProps extends ExtensionsControllerProps {
+interface StatusBarProps extends ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
     getStatusBarItems: () => Observable<StatusBarItemWithKey[] | 'loading'>
     className?: string
     /**
@@ -24,6 +24,8 @@ interface StatusBarProps extends ExtensionsControllerProps {
      * persists beteween files (e.g. for `<Blob>`).
      */
     uri?: string
+
+    location: H.Location
 }
 
 export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
@@ -31,6 +33,7 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
     className,
     extensionsController,
     uri,
+    location,
 }) => {
     const statusBarItems = useObservable(useMemo(() => getStatusBarItems(), [getStatusBarItems]))
 
@@ -63,8 +66,6 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
         onNegativeClicked,
         onPositiveClicked,
     } = useCarousel({ direction: 'leftToRight' })
-
-    const location = useLocation()
 
     return (
         <div className={classNames('status-bar w-100 border-top d-flex', className)}>
@@ -140,7 +141,7 @@ const StatusBarItem: React.FunctionComponent<
         className?: string
         component?: JSX.Element
         location: H.Location
-    } & ExtensionsControllerProps
+    } & ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>
 > = ({ statusBarItem, className = 'status-bar', component, extensionsController, location }) => {
     const [commandState, setCommandState] = useState<'loading' | null>(null)
 

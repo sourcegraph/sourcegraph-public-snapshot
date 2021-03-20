@@ -549,6 +549,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 getStatusBarItems={getStatusBarItems}
                 extensionsController={extensionsController}
                 uri={toURIWithPath(blobInfo)}
+                location={location}
             />
         </>
     )

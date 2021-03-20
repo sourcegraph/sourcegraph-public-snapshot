@@ -3,6 +3,7 @@ import { render } from '@testing-library/react'
 import { StatusBar } from './StatusBar'
 import { StatusBarItemWithKey } from '../../../../shared/src/api/extension/api/codeEditor'
 import { BehaviorSubject } from 'rxjs'
+import { extensionsController } from '../../../../shared/src/util/searchTestHelpers'
 
 describe('StatusBar', () => {
     it('renders correctly', () => {
@@ -13,7 +14,7 @@ describe('StatusBar', () => {
             ]).asObservable()
 
         expect(
-            render(<StatusBar getStatusBarItems={getStatusBarItems} repoName="test" commitID="test" filePath="test" />)
+            render(<StatusBar getStatusBarItems={getStatusBarItems} extensionsController={extensionsController} />)
                 .baseElement
         ).toMatchSnapshot()
     })
