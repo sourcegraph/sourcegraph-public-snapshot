@@ -196,6 +196,25 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
 
     const TARGET_ID = 'go-to-code-host'
 
+    // Don't show browser extension popover on small screens
+    if (props.actionType === 'dropdown') {
+        return (
+            <a
+                className="nav-link repo-header__file-action test-go-to-code-host"
+                // empty href is OK because we always set tabindex=0
+                href={hijackLink ? '' : url}
+                target="_blank"
+                rel="noopener noreferrer"
+                id={TARGET_ID}
+                onClick={onClick}
+                onAuxClick={onClick}
+            >
+                <Icon className="icon-inline" />
+                <span>View on {displayName}</span>
+            </a>
+        )
+    }
+
     return (
         <>
             <a

@@ -75,7 +75,8 @@ export interface RepoHeaderContribution {
     id: string
 
     /**
-     * Render function called with RepoHeaderContext
+     * Render function called with RepoHeaderContext.
+     * Use `actionType` to determine how to render the component.
      */
     children: (context: RepoHeaderContext) => React.ReactElement
 }
@@ -107,7 +108,7 @@ export interface RepoHeaderContext {
     repoName: string
     /** The current URI-decoded revision (e.g., "my#branch" in "my/repo@my%23branch"). */
     encodedRev?: string
-
+    /** `actionType` is 'nav' on lg screens, `dropdown` on smaller screens. */
     actionType: 'nav' | 'dropdown'
 }
 

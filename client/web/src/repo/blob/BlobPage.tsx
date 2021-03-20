@@ -225,10 +225,10 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
             >
                 {context => (
                     <ToggleHistoryPanel
+                        {...context}
                         key="toggle-blob-panel"
                         location={props.location}
                         history={props.history}
-                        {...context}
                     />
                 )}
             </RepoHeaderContributionPortal>
@@ -239,7 +239,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                     id="toggle-line-wrap"
                     repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
                 >
-                    {() => <ToggleLineWrap key="toggle-line-wrap" onDidUpdate={setWrapCode} />}
+                    {context => <ToggleLineWrap {...context} key="toggle-line-wrap" onDidUpdate={setWrapCode} />}
                 </RepoHeaderContributionPortal>
             )}
             <RepoHeaderContributionPortal
@@ -248,8 +248,14 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                 id="raw-action"
                 repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
             >
-                {() => (
-                    <GoToRawAction key="raw-action" repoName={repoName} revision={props.revision} filePath={filePath} />
+                {context => (
+                    <GoToRawAction
+                        {...context}
+                        key="raw-action"
+                        repoName={repoName}
+                        revision={props.revision}
+                        filePath={filePath}
+                    />
                 )}
             </RepoHeaderContributionPortal>
         </>
@@ -286,11 +292,12 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                     id="toggle-rendered-file-mode"
                     repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
                 >
-                    {() => (
+                    {context => (
                         <ToggleRenderedFileMode
                             key="toggle-rendered-file-mode"
                             mode={renderMode || 'rendered'}
                             location={props.location}
+                            {...context}
                         />
                     )}
                 </RepoHeaderContributionPortal>
