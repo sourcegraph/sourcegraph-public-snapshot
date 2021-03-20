@@ -212,7 +212,13 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
 
     return (
         <>
-            <StatusBar getStatusBarItems={getStatusBarItems} className="border-bottom border-top-0" />
+            {extensionInfo && (
+                <StatusBar
+                    getStatusBarItems={getStatusBarItems}
+                    className="border-bottom border-top-0"
+                    extensionsController={extensionInfo.extensionsController}
+                />
+            )}
             <div className={`file-diff-hunks ${className}`} ref={nextBlobElement}>
                 {hunks.length === 0 ? (
                     <div className="text-muted m-2">No changes</div>

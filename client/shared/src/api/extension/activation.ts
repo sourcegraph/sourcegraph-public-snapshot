@@ -63,10 +63,6 @@ export function activateExtensions(
             ),
         () => 'getScriptURL'
     )
-    // TODO(tj): optimistically show actions from extensions that haven't been activated yet?
-    // all enabled extensions, not just activated + sticky exts. tbh may not be necessary to
-    // Action items seem to blink (btwn enabled and disabled) on file navigation, look into debouncing, or loading state when viewer hasn't been loaded
-    // (and so we can't determine context yet)
 
     const previouslyActivatedExtensions = new Set<string>()
     const extensionContributions = new Map<string, Contributions>()

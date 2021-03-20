@@ -545,7 +545,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                         })
                         .toArray()}
             </div>
-            <StatusBar getStatusBarItems={getStatusBarItems} />
+            <StatusBar getStatusBarItems={getStatusBarItems} extensionsController={extensionsController} />
         </>
     )
 }

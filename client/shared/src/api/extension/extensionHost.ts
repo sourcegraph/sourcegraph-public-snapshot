@@ -186,23 +186,6 @@ function createExtensionAndExtensionHostAPIs(
             clientApplication: initData.clientApplication,
         },
     }
-    // TODO(tj): Remove demo code once status bar items are implemented in extensions
-    // extensionAPI.app.activeWindow?.activeViewComponentChanges.subscribe(viewComponent => {
-    //     if (viewComponent?.type === 'CodeEditor') {
-    //         viewComponent.setStatusBarItem({ key: 'test' }, { text: 'Coverage: 96%' })
-    //     }
-    // })
-    // extensionAPI.app.activeWindow?.activeViewComponentChanges.subscribe(viewComponent => {
-    //     if (viewComponent?.type === 'CodeEditor') {
-    //         viewComponent.setStatusBarItem(
-    //             { key: 'fake' },
-    //             { text: '2 code owners', tooltip: 'Code owners: @felixbecker, @beyang' }
-    //         )
-    //         for (let index = 0; index < 25; index++) {
-    //             viewComponent.setStatusBarItem({ key: `fake-${index}` }, { text: `Test status bar item #${index}` })
-    //         }
-    //     }
-    // })
 
     return { extensionHostAPI, extensionAPI, subscription }
 }

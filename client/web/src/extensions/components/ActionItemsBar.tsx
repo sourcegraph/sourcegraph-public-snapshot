@@ -24,6 +24,7 @@ import { haveInitialExtensionsLoaded } from '../../../../shared/src/api/features
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { BehaviorSubject } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
+import { ErrorBoundary } from '../../components/ErrorBoundary'
 
 const scrollButtonClassName = 'action-items__scroll'
 
@@ -207,85 +208,88 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
 
     return (
         <div className="action-items__bar p-0 border-left position-relative d-flex flex-column" ref={barReference}>
-            <ActionItemsDivider />
-            {canScrollNegative && (
-                <button
-                    type="button"
-                    className="btn btn-link action-items__scroll action-items__list-item p-0 border-0"
-                    onClick={onNegativeClicked}
-                    tabIndex={-1}
-                >
-                    <MenuUpIcon className="icon-inline" />
-                </button>
-            )}
-            <ActionsContainer
-                menu={ContributableMenu.EditorTitle}
-                returnInactiveMenuItems={true}
-                extensionsController={props.extensionsController}
-                empty={null}
-                location={props.location}
-                platformContext={props.platformContext}
-                telemetryService={props.telemetryService}
-            >
-                {items => (
-                    <ul className="action-items__list list-unstyled m-0" ref={carouselReference}>
-                        {items.map((item, index) => {
-                            const hasIconURL = !!item.action.actionItem?.iconURL
-                            const className = classNames(
-                                actionItemClassName,
-                                !hasIconURL &&
-                                    `action-items__action--no-icon action-items__icon-${(index % 5) + 1} text-sm`
-                            )
-                            const inactiveClassName = classNames(
-                                'action-items__action--inactive',
-                                !hasIconURL && 'action-items__action--no-icon-inactive'
-                            )
-
-                            const dataContent = !hasIconURL ? item.action.category?.slice(0, 1) : undefined
-
-                            return (
-                                <li key={item.action.id} className="action-items__list-item">
-                                    <ActionItem
-                                        {...props}
-                                        {...item}
-                                        className={className}
-                                        dataContent={dataContent}
-                                        variant="actionItem"
-                                        iconClassName="action-items__icon"
-                                        pressedClassName="action-items__action--pressed"
-                                        inactiveClassName={inactiveClassName}
-                                        hideLabel={true}
-                                        tabIndex={-1}
-                                        hideExternalLinkIcon={true}
-                                    />
-                                </li>
-                            )
-                        })}
-                    </ul>
-                )}
-            </ActionsContainer>
-            {canScrollPositive && (
-                <button
-                    type="button"
-                    className="btn btn-link action-items__scroll action-items__list-item p-0 border-0"
-                    onClick={onPositiveClicked}
-                    tabIndex={-1}
-                >
-                    <MenuDownIcon className="icon-inline" />
-                </button>
-            )}
-            {haveExtensionsLoaded && <ActionItemsDivider />}
-            <ul className="list-unstyled m-0">
-                <li className="action-items__list-item">
-                    <Link
-                        to="/extensions"
-                        className={classNames(actionItemClassName, 'action-items__list-item')}
-                        data-tooltip="Add extensions"
+            {/* To be clear to users that this isn't an error reported by extensions about e.g. the code they're viewing. */}
+            <ErrorBoundary location={props.location} render={error => <span>Component error: {error.message}</span>}>
+                <ActionItemsDivider />
+                {canScrollNegative && (
+                    <button
+                        type="button"
+                        className="btn btn-link action-items__scroll action-items__list-item p-0 border-0"
+                        onClick={onNegativeClicked}
+                        tabIndex={-1}
                     >
-                        <PlusIcon className="icon-inline" />
-                    </Link>
-                </li>
-            </ul>
+                        <MenuUpIcon className="icon-inline" />
+                    </button>
+                )}
+                <ActionsContainer
+                    menu={ContributableMenu.EditorTitle}
+                    returnInactiveMenuItems={true}
+                    extensionsController={props.extensionsController}
+                    empty={null}
+                    location={props.location}
+                    platformContext={props.platformContext}
+                    telemetryService={props.telemetryService}
+                >
+                    {items => (
+                        <ul className="action-items__list list-unstyled m-0" ref={carouselReference}>
+                            {items.map((item, index) => {
+                                const hasIconURL = !!item.action.actionItem?.iconURL
+                                const className = classNames(
+                                    actionItemClassName,
+                                    !hasIconURL &&
+                                        `action-items__action--no-icon action-items__icon-${(index % 5) + 1} text-sm`
+                                )
+                                const inactiveClassName = classNames(
+                                    'action-items__action--inactive',
+                                    !hasIconURL && 'action-items__action--no-icon-inactive'
+                                )
+
+                                const dataContent = !hasIconURL ? item.action.category?.slice(0, 1) : undefined
+
+                                return (
+                                    <li key={item.action.id} className="action-items__list-item">
+                                        <ActionItem
+                                            {...props}
+                                            {...item}
+                                            className={className}
+                                            dataContent={dataContent}
+                                            variant="actionItem"
+                                            iconClassName="action-items__icon"
+                                            pressedClassName="action-items__action--pressed"
+                                            inactiveClassName={inactiveClassName}
+                                            hideLabel={true}
+                                            tabIndex={-1}
+                                            hideExternalLinkIcon={true}
+                                        />
+                                    </li>
+                                )
+                            })}
+                        </ul>
+                    )}
+                </ActionsContainer>
+                {canScrollPositive && (
+                    <button
+                        type="button"
+                        className="btn btn-link action-items__scroll action-items__list-item p-0 border-0"
+                        onClick={onPositiveClicked}
+                        tabIndex={-1}
+                    >
+                        <MenuDownIcon className="icon-inline" />
+                    </button>
+                )}
+                {haveExtensionsLoaded && <ActionItemsDivider />}
+                <ul className="list-unstyled m-0">
+                    <li className="action-items__list-item">
+                        <Link
+                            to="/extensions"
+                            className={classNames(actionItemClassName, 'action-items__list-item')}
+                            data-tooltip="Add extensions"
+                        >
+                            <PlusIcon className="icon-inline" />
+                        </Link>
+                    </li>
+                </ul>
+            </ErrorBoundary>
         </div>
     )
 })

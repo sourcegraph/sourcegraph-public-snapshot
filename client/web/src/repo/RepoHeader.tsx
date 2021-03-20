@@ -15,6 +15,7 @@ import { ActionItemsToggle, ActionItemsToggleProps } from '../extensions/compone
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import { useBreakpoint } from '../util/dom'
+import { ErrorBoundary } from '../components/ErrorBoundary'
 
 /**
  * Stores the list of RepoHeaderContributions, manages addition/deletion, and ensures they are sorted.
@@ -229,43 +230,56 @@ export const RepoHeader: React.FunctionComponent<Props> = ({
                 ))}
             </ul>
             <div className="repo-header__spacer" />
-            {isLarge ? (
-                <ul className="navbar-nav">
-                    {rightActions.map((a, index) => (
-                        <li className="nav-item repo-header__action-list-item" key={a.id || index}>
-                            {a.element}
+            <ErrorBoundary
+                location={props.location}
+                // To be clear to users that this isn't an error reported by extensions
+                // about e.g. the code they're viewing.
+                render={error => (
+                    <ul className="navbar-nav">
+                        <li className="nav-item repo-header__action-list-item">
+                            <span>Component error: {error.message}</span>
                         </li>
-                    ))}
-                </ul>
-            ) : (
+                    </ul>
+                )}
+            >
+                {isLarge ? (
+                    <ul className="navbar-nav">
+                        {rightActions.map((a, index) => (
+                            <li className="nav-item repo-header__action-list-item" key={a.id || index}>
+                                {a.element}
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <ul className="navbar-nav">
+                        <li className="nav-item d-lg-none">
+                            <ButtonDropdown
+                                className="menu-nav-item"
+                                direction="down"
+                                isOpen={isDropdownOpen}
+                                toggle={toggleDropdownOpen}
+                            >
+                                <DropdownToggle className="bg-transparent" nav={true}>
+                                    <DotsVerticalIcon className="icon-inline" />
+                                </DropdownToggle>
+                                <DropdownMenu>
+                                    {rightActions.map((a, index) => (
+                                        <DropdownItem className="p-0" key={a.id || index}>
+                                            {a.element}
+                                        </DropdownItem>
+                                    ))}
+                                </DropdownMenu>
+                            </ButtonDropdown>
+                        </li>
+                    </ul>
+                )}
                 <ul className="navbar-nav">
-                    <li className="nav-item d-lg-none">
-                        <ButtonDropdown
-                            className="menu-nav-item"
-                            direction="down"
-                            isOpen={isDropdownOpen}
-                            toggle={toggleDropdownOpen}
-                        >
-                            <DropdownToggle className="bg-transparent" nav={true}>
-                                <DotsVerticalIcon className="icon-inline" />
-                            </DropdownToggle>
-                            <DropdownMenu>
-                                {rightActions.map((a, index) => (
-                                    <DropdownItem className="p-0" key={a.id || index}>
-                                        {a.element}
-                                    </DropdownItem>
-                                ))}
-                            </DropdownMenu>
-                        </ButtonDropdown>
-                    </li>
+                    <ActionItemsToggle
+                        useActionItemsToggle={props.useActionItemsToggle}
+                        extensionsController={props.extensionsController}
+                    />
                 </ul>
-            )}
-            <ul className="navbar-nav">
-                <ActionItemsToggle
-                    useActionItemsToggle={props.useActionItemsToggle}
-                    extensionsController={props.extensionsController}
-                />
-            </ul>
+            </ErrorBoundary>
         </nav>
     )
 }

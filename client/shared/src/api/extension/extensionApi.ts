@@ -131,17 +131,7 @@ export function createExtensionAPI(state: ExtensionHostState, mainAPI: Remote<Ma
         showMessage: message => mainAPI.showMessage(message),
         showInputBox: options => mainAPI.showInputBox(options),
     }
-    // TODO(tj): REMOVE TEST EXT
-    window.activeViewComponentChanges.subscribe(activeViewComponent => {
-        if (activeViewComponent?.type === 'CodeEditor') {
-            ;[...Array(23).fill(null)].map((value, index) => {
-                activeViewComponent.setStatusBarItem(createStatusBarItemType(), {
-                    text: 'test status bar item',
-                    tooltip: 'test tooltip',
-                })
-            })
-        }
-    })
+
     const app: typeof sourcegraph['app'] = {
         get activeWindow() {
             return window
