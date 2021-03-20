@@ -10,6 +10,7 @@ interface State {
     lastEventTarget?: HTMLElement
     content?: string
     placement?: string
+    delay?: number
 }
 
 /**
@@ -79,6 +80,7 @@ export class Tooltip extends React.PureComponent<Props, State> {
                         boundariesElement: 'window',
                     },
                 }}
+                delay={this.state.delay}
             >
                 {this.state.content}
             </BootstrapTooltip>
@@ -106,6 +108,7 @@ export class Tooltip extends React.PureComponent<Props, State> {
             subjectSeq: previousState.subject === subject ? previousState.subjectSeq : previousState.subjectSeq + 1,
             content: subject ? this.getContent(subject) : undefined,
             placement: subject ? this.getPlacement(subject) : undefined,
+            delay: subject ? this.getDelay(subject) : 0,
         }))
     }
 
@@ -141,6 +144,14 @@ export class Tooltip extends React.PureComponent<Props, State> {
             return undefined
         }
         return subject.getAttribute('data-placement') || undefined
+    }
+
+    private getDelay = (subject: HTMLElement): number | undefined => {
+        if (!document.body.contains(subject)) {
+            return undefined
+        }
+        const dataDelay = subject.getAttribute('data-delay')
+        return dataDelay ? parseInt(dataDelay, 10) : undefined
     }
 }
 

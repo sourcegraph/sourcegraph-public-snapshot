@@ -1,9 +1,7 @@
 import * as H from 'history'
-import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 import { fromEvent, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
-import { FormatListBulletedIcon } from '../../../shared/src/components/icons'
 import { Resizable } from '../../../shared/src/components/Resizable'
 import {
     Spacer,
@@ -18,6 +16,9 @@ import { Tree } from '../tree/Tree'
 import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
 import { ThemeProps } from '../../../shared/src/theme'
 import { Scalars } from '../../../shared/src/graphql-operations'
+import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
+import FileTreeIcon from 'mdi-react/FileTreeIcon'
+import classNames from 'classnames'
 
 type SidebarTabID = 'files' | 'symbols' | 'history'
 
@@ -73,11 +74,16 @@ export class RepoRevisionSidebar extends React.PureComponent<Props, State> {
             return (
                 <button
                     type="button"
-                    className={`btn btn-icon repo-revision-sidebar-toggle ${this.props.className}-toggle`}
+                    className={classNames(
+                        'btn btn-icon border-right border-bottom rounded-0',
+                        'repo-revision-sidebar__toggle',
+                        this.props.className && `${this.props.className}-toggle`
+                    )}
                     onClick={this.onSidebarToggle}
-                    data-tooltip="Show sidebar (Alt+S/Opt+S)"
+                    data-tooltip="Open file tree (Alt+S/Opt+S)"
+                    data-delay="1000"
                 >
-                    <FormatListBulletedIcon className="icon-inline" />
+                    <FileTreeIcon className="icon-inline" />
                 </button>
             )
         }
@@ -100,10 +106,11 @@ export class RepoRevisionSidebar extends React.PureComponent<Props, State> {
                                 <button
                                     type="button"
                                     onClick={this.onSidebarToggle}
-                                    className={`btn btn-icon tab_bar__close-button ${TabBorderClassName}`}
-                                    data-tooltip="Close sidebar (Alt+S/Opt+S)"
+                                    className={`btn btn-icon pr-1 repo-revision-sidebar__close-button ${TabBorderClassName}`}
+                                    data-tooltip="Collapse panel (Alt+S/Opt+S)"
+                                    data-placement="right"
                                 >
-                                    <CloseIcon className="icon-inline" />
+                                    <ChevronDoubleLeftIcon className="icon-inline" />
                                 </button>
                             </>
                         }
