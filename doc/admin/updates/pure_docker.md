@@ -11,6 +11,10 @@ Upgrades should happen across consecutive minor versions of Sourcegraph. For exa
 
 ## 3.25 -> 3.26
 
+To upgrade, please perform the changes in the following diff:
+
+https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/68ffad230fc6f99477cedd303a55b91a8c4d9acb
+
 > NOTE: ⚠️ From **3.27** onwards we will only support PostgreSQL versions **starting from 12**.
 
 ## 3.24 -> 3.25
