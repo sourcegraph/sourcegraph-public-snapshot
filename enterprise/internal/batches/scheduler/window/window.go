@@ -130,41 +130,6 @@ func parseTimePart(s string) (int8, error) {
 	return int8(part), nil
 }
 
-func parseWindow(raw *schema.BatchChangeRolloutWindow) (Window, error) {
-	w := Window{}
-	var errs *multierror.Error
-
-	if raw == nil {
-		return w, errors.New("raw window cannot be nil")
-	}
-
-	w.days = make([]time.Weekday, len(raw.Days))
-	for i := range raw.Days {
-		if day, err := parseWeekday(raw.Days[i]); err != nil {
-			errs = multierror.Append(errs, err)
-		} else {
-			w.days[i] = day
-		}
-	}
-
-	var err error
-	w.start, err = newWindowTime(raw.Start)
-	if err != nil {
-		errs = multierror.Append(errs, errors.Wrap(err, "start time"))
-	}
-	w.end, err = newWindowTime(raw.End)
-	if err != nil {
-		errs = multierror.Append(errs, errors.Wrap(err, "end time"))
-	}
-
-	w.rate, err = parseRate(raw.Rate)
-	if err != nil {
-		errs = multierror.Append(errs, err)
-	}
-
-	return w, errs.ErrorOrNil()
-}
-
 func parseWeekday(raw string) (time.Weekday, error) {
 	// We're not going to replicate the full schema validation regex here; we'll
 	// assume that the conf package did that satisfactorily and just parse what
@@ -191,4 +156,42 @@ func parseWeekday(raw string) (time.Weekday, error) {
 	default:
 		return time.Sunday, errors.Errorf("unknown weekday: %q", raw)
 	}
+}
+
+func parseWindow(raw *schema.BatchChangeRolloutWindow) (Window, error) {
+	w := Window{}
+	var errs *multierror.Error
+
+	if raw == nil {
+		return w, errors.New("raw window cannot be nil")
+	}
+
+	w.days = make([]time.Weekday, len(raw.Days))
+	for i := range raw.Days {
+		if day, err := parseWeekday(raw.Days[i]); err != nil {
+			errs = multierror.Append(errs, err)
+		} else {
+			w.days[i] = day
+		}
+	}
+
+	var err error
+	w.start, err = newWindowTime(raw.Start)
+	if err != nil {
+		errs = multierror.Append(errs, errors.Wrap(err, "start time"))
+	}
+	w.end, err = newWindowTime(raw.End)
+	if err != nil {
+		errs = multierror.Append(errs, errors.Wrap(err, "end time"))
+	}
+	if (w.start != nil && w.end == nil) || (w.start == nil && w.end != nil) {
+		errs = multierror.Append(errs, errors.New("both start and end times must be provided"))
+	}
+
+	w.rate, err = parseRate(raw.Rate)
+	if err != nil {
+		errs = multierror.Append(errs, err)
+	}
+
+	return w, errs.ErrorOrNil()
 }

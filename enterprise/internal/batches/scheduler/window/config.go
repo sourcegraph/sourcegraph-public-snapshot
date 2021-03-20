@@ -17,17 +17,15 @@ type Configuration struct {
 // NewConfiguration constructs a Configuration based on the current site
 // configuration, including watching the configuration for updates.
 func NewConfiguration() *Configuration {
-	rwc := &Configuration{
-		windows: []Window{},
-	}
+	cfg := &Configuration{}
 
 	conf.Watch(func() {
-		if err := rwc.updateFromConfig(conf.Get().BatchChangesRolloutWindows); err != nil {
+		if err := cfg.updateFromConfig(conf.Get().BatchChangesRolloutWindows); err != nil {
 			log15.Warn("ignoring erroneous batchChanges.rolloutWindows configuration", "err", err)
 		}
 	})
 
-	return rwc
+	return cfg
 }
 
 // ValidateConfiguration validates the given site configuration.
@@ -37,7 +35,12 @@ func ValidateConfiguration(raw *[]*schema.BatchChangeRolloutWindow) error {
 	}).updateFromConfig(raw)
 }
 
-func (rwc *Configuration) updateFromConfig(raw *[]*schema.BatchChangeRolloutWindow) error {
+func (cfg *Configuration) updateFromConfig(raw *[]*schema.BatchChangeRolloutWindow) error {
+	// Clear the windows.
+	cfg.windows = []Window{}
+
+	// If there's no window configuration, there are no windows, and we can just
+	// return here.
 	if raw == nil {
 		return nil
 	}
@@ -47,7 +50,7 @@ func (rwc *Configuration) updateFromConfig(raw *[]*schema.BatchChangeRolloutWind
 		if window, err := parseWindow(rawWindow); err != nil {
 			errs = multierror.Append(errs, errors.Wrapf(err, "window %d", i))
 		} else {
-			rwc.windows = append(rwc.windows, window)
+			cfg.windows = append(cfg.windows, window)
 		}
 	}
 
