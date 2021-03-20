@@ -19,6 +19,11 @@ interface Props {
     extraContext?: JSX.Element
 
     /**
+     * Custom render logic in place of <HeroPage>
+     */
+    render?: (error: Error) => JSX.Element
+
+    /**
      * Classname to pass to <HeroPage>
      */
     className?: string
@@ -80,6 +85,10 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
                         }
                     />
                 )
+            }
+
+            if (this.props.render) {
+                return this.props.render(this.state.error)
             }
 
             return (

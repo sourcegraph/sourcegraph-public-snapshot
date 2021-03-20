@@ -220,27 +220,44 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
             <RepoHeaderContributionPortal
                 position="right"
                 priority={20}
-                element={
-                    <ToggleHistoryPanel key="toggle-blob-panel" location={props.location} history={props.history} />
-                }
+                id="toggle-blob-panel"
                 repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-            />
+            >
+                {context => (
+                    <ToggleHistoryPanel
+                        {...context}
+                        key="toggle-blob-panel"
+                        location={props.location}
+                        history={props.history}
+                    />
+                )}
+            </RepoHeaderContributionPortal>
             {renderMode === 'code' && (
                 <RepoHeaderContributionPortal
                     position="right"
                     priority={99}
-                    element={<ToggleLineWrap key="toggle-line-wrap" onDidUpdate={setWrapCode} />}
+                    id="toggle-line-wrap"
                     repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-                />
+                >
+                    {context => <ToggleLineWrap {...context} key="toggle-line-wrap" onDidUpdate={setWrapCode} />}
+                </RepoHeaderContributionPortal>
             )}
             <RepoHeaderContributionPortal
                 position="right"
                 priority={30}
-                element={
-                    <GoToRawAction key="raw-action" repoName={repoName} revision={props.revision} filePath={filePath} />
-                }
+                id="raw-action"
                 repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-            />
+            >
+                {context => (
+                    <GoToRawAction
+                        {...context}
+                        key="raw-action"
+                        repoName={repoName}
+                        revision={props.revision}
+                        filePath={filePath}
+                    />
+                )}
+            </RepoHeaderContributionPortal>
         </>
     )
 
@@ -272,15 +289,18 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                 <RepoHeaderContributionPortal
                     position="right"
                     priority={100}
-                    element={
+                    id="toggle-rendered-file-mode"
+                    repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+                >
+                    {context => (
                         <ToggleRenderedFileMode
                             key="toggle-rendered-file-mode"
                             mode={renderMode || 'rendered'}
                             location={props.location}
+                            {...context}
                         />
-                    }
-                    repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-                />
+                    )}
+                </RepoHeaderContributionPortal>
             )}
             {blobInfoOrError.richHTML && renderMode === 'rendered' && (
                 <RenderedFile

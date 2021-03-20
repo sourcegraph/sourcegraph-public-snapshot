@@ -434,11 +434,8 @@ export const TreePage: React.FunctionComponent<Props> = ({
                             isLightTheme={props.isLightTheme}
                         />
                     </section>
-                    {/* eslint-disable react/jsx-no-bind */}
-                    <ActionsContainer
-                        {...props}
-                        menu={ContributableMenu.DirectoryPage}
-                        render={items => (
+                    <ActionsContainer {...props} menu={ContributableMenu.DirectoryPage} empty={null}>
+                        {items => (
                             <section className="tree-page__section">
                                 <h3 className="tree-page__section-header">Actions</h3>
                                 {items.map(item => (
@@ -451,8 +448,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                 ))}
                             </section>
                         )}
-                        empty={null}
-                    />
+                    </ActionsContainer>
                     {/* eslint-enable react/jsx-no-bind */}
                     <div className="tree-page__section">
                         <h3 className="tree-page__section-header">Changes</h3>

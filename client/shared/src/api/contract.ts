@@ -8,7 +8,6 @@ import { Contributions, Evaluated, Raw, TextDocumentPositionParameters } from '.
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { HoverMerged } from './client/types/hover'
 import { GraphQLResult } from '../graphql/graphql'
-import { Context, ContributionScope } from './extension/api/context/context'
 import { ErrorLike } from '../util/errors'
 import { ConfiguredExtension } from '../extensions/extension'
 import { DeepReplace } from '../util/types'
@@ -21,8 +20,10 @@ import {
     ViewProviderResult,
     ProgressNotification,
     PlainNotification,
+    ContributionOptions,
 } from './extension/extensionHostApi'
 import { ExecutableExtension } from './extension/activation'
+import { StatusBarItemWithKey } from './extension/api/codeEditor'
 
 /**
  * This is exposed from the extension host thread to the main thread
@@ -96,10 +97,7 @@ export interface FlatExtensionHostAPI {
      * in this object shadow (take precedence over) properties in the global context for this
      * computation.
      */
-    getContributions: <T>(
-        scope?: ContributionScope | undefined,
-        extraContext?: Context<T>
-    ) => ProxySubscribable<Evaluated<Contributions>>
+    getContributions: <T>(contributionOptions?: ContributionOptions<T>) => ProxySubscribable<Evaluated<Contributions>>
 
     // TEXT DOCUMENTS
     addTextDocumentIfNotExists: (textDocumentData: TextDocumentData) => void
@@ -154,6 +152,8 @@ export interface FlatExtensionHostAPI {
         // Construct URL object on host from string provided by main thread
         context: DeepReplace<ViewContexts['directory'], URL, string>
     ) => ProxySubscribable<ViewProviderResult[]>
+
+    getStatusBarItems: (viewerId: ViewerId) => ProxySubscribable<StatusBarItemWithKey[]>
 
     // Content
     getLinkPreviews: (url: string) => ProxySubscribable<LinkPreviewMerged | null>
