@@ -43,7 +43,7 @@ Use the `depots` field to configure which depots are mirrored/synchronized as Gi
 
 ### Repository permissions
 
-> NOTE: Permissions syncing for Perforce depots is available in Sourcegraph 3.26.1+.
+> NOTE: Permissions syncing for Perforce depots is available in Sourcegraph 3.26+.
 
 To enable permissions syncing for Perforce depots by including the `authorization` field:
 
