@@ -23,9 +23,11 @@
         }
     }
 
-    &__action-item--pressed {
-        color: var(--body-color);
-        background-color: var(--color-bg-2);
+    &__file-action {
+        span {
+            color: var(--body-color);
+            margin-left: 0.5rem;
+        }
     }
 
     .navbar-nav {

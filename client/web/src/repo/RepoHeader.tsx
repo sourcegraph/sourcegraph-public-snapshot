@@ -1,21 +1,21 @@
 import * as H from 'history'
-import React, { useState, useMemo, useEffect } from 'react'
-import { ContributableMenu } from '../../../shared/src/api/protocol'
-import { ButtonLink } from '../../../shared/src/components/LinkOrButton'
-import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
+import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { ErrorLike } from '../../../shared/src/util/errors'
-import { WebActionsNavItems } from '../components/shared'
 import { ActionButtonDescriptor } from '../util/contributions'
 import { ResolvedRevision } from './backend'
 import { Breadcrumbs, BreadcrumbsProps } from '../components/Breadcrumbs'
-import { onlyDefaultExtensionsAdded } from '../../../shared/src/extensions/extensions'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { SettingsCascadeOrError } from '../../../shared/src/settings/settings'
 import { AuthenticatedUser } from '../auth'
 import classNames from 'classnames'
 import { Scalars } from '../../../shared/src/graphql-operations'
+import { ActionItemsToggle, ActionItemsToggleProps } from '../extensions/components/ActionItemsBar'
+import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
+import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
+import { useBreakpoint } from '../util/dom'
+import { ErrorBoundary } from '../components/ErrorBoundary'
 
 /**
  * Stores the list of RepoHeaderContributions, manages addition/deletion, and ensures they are sorted.
@@ -30,27 +30,20 @@ class RepoHeaderContributionStore {
     ) {}
 
     private onRepoHeaderContributionAdd(item: RepoHeaderContribution): void {
-        if (!item.element) {
-            throw new Error('RepoHeaderContribution has no element')
-        }
-        if (typeof item.element.key !== 'string') {
-            throw new TypeError(
-                `RepoHeaderContribution (${item.element.type.toString()}) element must have a string key`
-            )
+        if (!item.children || typeof item.children !== 'function') {
+            throw new Error('RepoHeaderContribution has no child render function')
         }
 
         this.setState((previousContributions: RepoHeaderContribution[]) =>
             previousContributions
-                .filter(({ element }) => element.key !== item.element.key)
+                .filter(({ id }) => id !== item.id)
                 .concat(item)
                 .sort(byPriority)
         )
     }
 
-    private onRepoHeaderContributionRemove(key: string): void {
-        this.setState(previousContributions =>
-            previousContributions.filter(contribution => contribution.element.key !== key)
-        )
+    private onRepoHeaderContributionRemove(id: string): void {
+        this.setState(previousContributions => previousContributions.filter(contribution => contribution.id !== id))
     }
 
     /** Props to pass to the owner's children (that need to contribute to RepoHeader). */
@@ -72,7 +65,7 @@ function byPriority(a: { priority?: number }, b: { priority?: number }): number 
  */
 export interface RepoHeaderContribution {
     /** The position of this contribution in the RepoHeader. */
-    position: 'nav' | 'left' | 'right'
+    position: 'left' | 'right'
 
     /**
      * Controls the relative order of header action items. The items are laid out from highest priority (at the
@@ -80,17 +73,13 @@ export interface RepoHeaderContribution {
      */
     priority?: number
 
-    /**
-     * The element to display in the RepoHeader. The element *must* have a React key that is a string and is unique
-     * among all RepoHeaderContributions. If not, an exception will be thrown.
-     */
-    element: React.ReactElement
-}
+    id: string
 
-/** React props for components that store or display RepoHeaderContributions. */
-export interface RepoHeaderContributionsProps {
-    /** Contributed items to display in the RepoHeader. */
-    repoHeaderContributions: RepoHeaderContribution[]
+    /**
+     * Render function called with RepoHeaderContext.
+     * Use `actionType` to determine how to render the component.
+     */
+    children: (context: RepoHeaderContext) => React.ReactElement
 }
 
 /**
@@ -108,7 +97,7 @@ export interface RepoHeaderContributionsLifecycleProps {
          * Called when a new RepoHeader contribution is removed (and should no longer be shown in RepoHeader). The key
          * is the same as that of the contribution's element (when it was added).
          */
-        onRepoHeaderContributionRemove: (key: string) => void
+        onRepoHeaderContributionRemove: (id: string) => void
     }
 }
 
@@ -120,11 +109,13 @@ export interface RepoHeaderContext {
     repoName: string
     /** The current URI-decoded revision (e.g., "my#branch" in "my/repo@my%23branch"). */
     encodedRev?: string
+    /** `actionType` is 'nav' on lg screens, `dropdown` on smaller screens. */
+    actionType: 'nav' | 'dropdown'
 }
 
 export interface RepoHeaderActionButton extends ActionButtonDescriptor<RepoHeaderContext> {}
 
-interface Props extends PlatformContextProps, ExtensionsControllerProps, TelemetryProps, BreadcrumbsProps {
+interface Props extends PlatformContextProps, TelemetryProps, BreadcrumbsProps, ActionItemsToggleProps {
     /**
      * An array of render functions for action buttons that can be configured *in addition* to action buttons
      * contributed through {@link RepoHeaderContributionsLifecycleProps} and through extensions.
@@ -188,14 +179,39 @@ export const RepoHeader: React.FunctionComponent<Props> = ({
     )
     useEffect(() => {
         onLifecyclePropsChange(repoHeaderContributionStore.props)
-    }, [onLifecyclePropsChange, repoHeaderContributionStore])
+    }, [onLifecyclePropsChange, repoHeaderContributionStore.props])
 
-    const context: RepoHeaderContext = {
-        repoName: repo.name,
-        encodedRev: props.revision,
-    }
-    const leftActions = repoHeaderContributions.filter(({ position }) => position === 'left')
-    const rightActions = repoHeaderContributions.filter(({ position }) => position === 'right')
+    const isLarge = useBreakpoint('lg')
+
+    const context: Omit<RepoHeaderContext, 'actionType'> = useMemo(
+        () => ({
+            repoName: repo.name,
+            encodedRev: props.revision,
+        }),
+        [repo.name, props.revision]
+    )
+
+    const leftActions = useMemo(
+        () =>
+            repoHeaderContributions
+                .filter(({ position }) => position === 'left')
+                .map(({ children, ...rest }) => ({ ...rest, element: children({ ...context, actionType: 'nav' }) })),
+        [context, repoHeaderContributions]
+    )
+    const rightActions = useMemo(
+        () =>
+            repoHeaderContributions
+                .filter(({ position }) => position === 'right')
+                .map(({ children, ...rest }) => ({
+                    ...rest,
+                    element: children({ ...context, actionType: isLarge ? 'nav' : 'dropdown' }),
+                })),
+        [context, repoHeaderContributions, isLarge]
+    )
+
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+    const toggleDropdownOpen = useCallback(() => setIsDropdownOpen(isOpen => !isOpen), [])
+
     return (
         <nav
             className={classNames('repo-header navbar navbar-expand', {
@@ -208,60 +224,63 @@ export const RepoHeader: React.FunctionComponent<Props> = ({
             </div>
             <ul className="navbar-nav">
                 {leftActions.map((a, index) => (
-                    <li className="nav-item" key={a.element.key || index}>
+                    <li className="nav-item" key={a.id || index}>
                         {a.element}
                     </li>
                 ))}
             </ul>
             <div className="repo-header__spacer" />
-            {determineShowAddExtensions(props) && (
-                <div className="d-none d-xl-flex align-items-center">
-                    <ButtonLink to="/extensions" className="btn btn-outline-secondary btn-sm mx-2 text-nowrap">
-                        Add extensions
-                    </ButtonLink>
-                </div>
-            )}
-            <ul className="navbar-nav test-action-items" data-menu={ContributableMenu.EditorTitle}>
-                <WebActionsNavItems
-                    {...props}
-                    listItemClass="repo-header__action-list-item"
-                    actionItemPressedClass="repo-header__action-item--pressed"
-                    menu={ContributableMenu.EditorTitle}
-                />
-            </ul>
-            <ul className="navbar-nav">
-                {props.actionButtons.map(
-                    ({ condition = () => true, label, tooltip, icon: Icon, to }) =>
-                        condition(context) && (
-                            <li className="nav-item repo-header__action-list-item" key={label}>
-                                <ButtonLink to={to(context)} data-tooltip={tooltip}>
-                                    {Icon && <Icon className="icon-inline" />}{' '}
-                                    <span className="d-none d-lg-inline">{label}</span>
-                                </ButtonLink>
-                            </li>
-                        )
+            <ErrorBoundary
+                location={props.location}
+                // To be clear to users that this isn't an error reported by extensions
+                // about e.g. the code they're viewing.
+                // eslint-disable-next-line react/jsx-no-bind
+                render={error => (
+                    <ul className="navbar-nav">
+                        <li className="nav-item repo-header__action-list-item">
+                            <span>Component error: {error.message}</span>
+                        </li>
+                    </ul>
                 )}
-                {rightActions.map((a, index) => (
-                    <li className="nav-item repo-header__action-list-item" key={a.element.key || index}>
-                        {a.element}
-                    </li>
-                ))}
-            </ul>
+            >
+                {isLarge ? (
+                    <ul className="navbar-nav">
+                        {rightActions.map((a, index) => (
+                            <li className="nav-item repo-header__action-list-item" key={a.id || index}>
+                                {a.element}
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <ul className="navbar-nav">
+                        <li className="nav-item d-lg-none">
+                            <ButtonDropdown
+                                className="menu-nav-item"
+                                direction="down"
+                                isOpen={isDropdownOpen}
+                                toggle={toggleDropdownOpen}
+                            >
+                                <DropdownToggle className="bg-transparent" nav={true}>
+                                    <DotsVerticalIcon className="icon-inline" />
+                                </DropdownToggle>
+                                <DropdownMenu>
+                                    {rightActions.map((a, index) => (
+                                        <DropdownItem className="p-0" key={a.id || index}>
+                                            {a.element}
+                                        </DropdownItem>
+                                    ))}
+                                </DropdownMenu>
+                            </ButtonDropdown>
+                        </li>
+                    </ul>
+                )}
+                <ul className="navbar-nav">
+                    <ActionItemsToggle
+                        useActionItemsToggle={props.useActionItemsToggle}
+                        extensionsController={props.extensionsController}
+                    />
+                </ul>
+            </ErrorBoundary>
         </nav>
     )
-}
-
-/**
- * Determine whether to show the "add extensions" button. Display to all unautenticated users,
- * and only to authenticated users who have not added extensions.
- */
-function determineShowAddExtensions({
-    settingsCascade,
-    authenticatedUser,
-}: Pick<Props, 'settingsCascade' | 'authenticatedUser'>): boolean {
-    if (!authenticatedUser) {
-        return true
-    }
-
-    return onlyDefaultExtensionsAdded(settingsCascade)
 }

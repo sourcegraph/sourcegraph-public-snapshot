@@ -6,6 +6,7 @@ import { WrapDisabledIcon } from '../../../../../shared/src/components/icons'
 import { ButtonLink } from '../../../../../shared/src/components/LinkOrButton'
 import { Tooltip } from '../../../../../branded/src/components/tooltip/Tooltip'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { RepoHeaderContext } from '../../RepoHeader'
 
 /**
  * A repository header action that toggles the line wrapping behavior for long lines in code files.
@@ -17,7 +18,7 @@ export class ToggleLineWrap extends React.PureComponent<
          * false means off).
          */
         onDidUpdate: (value: boolean) => void
-    },
+    } & RepoHeaderContext,
     { value: boolean }
 > {
     private static STORAGE_KEY = 'wrap-code'
@@ -69,6 +70,19 @@ export class ToggleLineWrap extends React.PureComponent<
     }
 
     public render(): JSX.Element | null {
+        if (this.props.actionType === 'dropdown') {
+            return (
+                <ButtonLink onSelect={this.onClick} className="nav-link repo-header__file-action">
+                    {this.state.value ? (
+                        <WrapDisabledIcon className="icon-inline" />
+                    ) : (
+                        <WrapIcon className="icon-inline" />
+                    )}
+                    <span>{this.state.value ? 'Disable' : 'Enable'} wrapping long lines (Alt+Z/Opt+Z)</span>
+                </ButtonLink>
+            )
+        }
+
         return (
             <ButtonLink
                 onSelect={this.onClick}

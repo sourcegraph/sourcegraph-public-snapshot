@@ -186,6 +186,7 @@ function createExtensionAndExtensionHostAPIs(
             clientApplication: initData.clientApplication,
         },
     }
+
     return { extensionHostAPI, extensionAPI, subscription }
 }
 

@@ -2,7 +2,7 @@ import { findPositionsFromEvents } from '@sourcegraph/codeintellify'
 import * as H from 'history'
 import React, { useCallback, useMemo, useState, useEffect } from 'react'
 import { combineLatest, from, NEVER, Observable, of, ReplaySubject, Subscription } from 'rxjs'
-import { filter, first, switchMap, tap } from 'rxjs/operators'
+import { filter, first, map, switchMap, tap } from 'rxjs/operators'
 import { DecorationMapByLine, groupDecorationsByLine } from '../../../../shared/src/api/extension/api/decorations'
 import { isDefined, property } from '../../../../shared/src/util/types'
 import { toURIWithPath } from '../../../../shared/src/util/url'
@@ -15,6 +15,7 @@ import { ExtensionInfo } from './FileDiffConnection'
 import { wrapRemoteObservable } from '../../../../shared/src/api/client/api/common'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 import { useObservable } from '../../../../shared/src/util/useObservable'
+import { StatusBar } from '../../extensions/components/StatusBar'
 
 export interface FileHunksProps extends ThemeProps {
     /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
@@ -87,49 +88,85 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
         // Use `useDeepCompareEffectNoCheck` since extensionInfo can be undefined
     }, [extensionInfo])
 
+    // Observe base and head viewerIds along with reference to extension host API
+    const baseAndHeadViewerIds = useMemo(
+        () =>
+            extensionInfoChanges.pipe(
+                filter(isDefined),
+                filter(property('observeViewerId', isDefined)),
+                switchMap(extensionInfo => {
+                    const baseUri = extensionInfo.base.filePath
+                        ? toURIWithPath({
+                              repoName: extensionInfo.base.repoName,
+                              commitID: extensionInfo.base.commitID,
+                              filePath: extensionInfo.base.filePath,
+                          })
+                        : null
+                    const baseViewerIds = baseUri ? extensionInfo.observeViewerId(baseUri) : of(null)
+
+                    const headUri = extensionInfo.head.filePath
+                        ? toURIWithPath({
+                              repoName: extensionInfo.head.repoName,
+                              commitID: extensionInfo.head.commitID,
+                              filePath: extensionInfo.head.filePath,
+                          })
+                        : null
+                    const headViewerIds = headUri ? extensionInfo.observeViewerId(headUri) : of(null)
+
+                    return combineLatest([
+                        baseViewerIds,
+                        headViewerIds,
+                        from(extensionInfo.extensionsController.extHostAPI),
+                    ])
+                })
+            ),
+        [extensionInfoChanges]
+    )
+
+    // Listen for and merge status bar items from extensions for <StatusBar>
+    const getStatusBarItems = useCallback(
+        () =>
+            baseAndHeadViewerIds.pipe(
+                switchMap(([baseViewerId, headViewerId, extensionHostAPI]) =>
+                    combineLatest([
+                        baseViewerId
+                            ? wrapRemoteObservable(extensionHostAPI.getStatusBarItems(baseViewerId))
+                            : of(null),
+                        headViewerId
+                            ? wrapRemoteObservable(extensionHostAPI.getStatusBarItems(headViewerId))
+                            : of(null),
+                    ])
+                ),
+                map(([baseStatusBarItems, headStatusBarItems]) => {
+                    if (baseStatusBarItems && headStatusBarItems) {
+                        return [
+                            ...baseStatusBarItems.map(({ text, ...rest }) => ({ text: `base: ${text}`, ...rest })),
+                            ...headStatusBarItems.map(({ text, ...rest }) => ({ text: `head: ${text}`, ...rest })),
+                        ]
+                    }
+
+                    return headStatusBarItems || baseStatusBarItems || []
+                })
+            ),
+        [baseAndHeadViewerIds]
+    )
+
     // Listen for line decorations from extensions
     useObservable(
         useMemo(
             () =>
-                extensionInfoChanges.pipe(
-                    filter(isDefined),
-                    filter(property('observeViewerId', isDefined)),
-                    switchMap(extensionInfo => {
-                        const baseUri = extensionInfo.base.filePath
-                            ? toURIWithPath({
-                                  repoName: extensionInfo.base.repoName,
-                                  commitID: extensionInfo.base.commitID,
-                                  filePath: extensionInfo.base.filePath,
-                              })
-                            : null
-                        const baseViewerIds = baseUri ? extensionInfo.observeViewerId(baseUri) : of(null)
+                baseAndHeadViewerIds.pipe(
+                    switchMap(([baseViewerId, headViewerId, extensionHostAPI]) =>
+                        combineLatest([
+                            baseViewerId
+                                ? wrapRemoteObservable(extensionHostAPI.getTextDecorations(baseViewerId))
+                                : of(null),
+                            headViewerId
+                                ? wrapRemoteObservable(extensionHostAPI.getTextDecorations(headViewerId))
+                                : of(null),
+                        ])
+                    ),
 
-                        const headUri = extensionInfo.head.filePath
-                            ? toURIWithPath({
-                                  repoName: extensionInfo.head.repoName,
-                                  commitID: extensionInfo.head.commitID,
-                                  filePath: extensionInfo.head.filePath,
-                              })
-                            : null
-                        const headViewerIds = headUri ? extensionInfo.observeViewerId(headUri) : of(null)
-
-                        return combineLatest([
-                            baseViewerIds,
-                            headViewerIds,
-                            from(extensionInfo.extensionsController.extHostAPI),
-                        ]).pipe(
-                            switchMap(([baseViewerId, headViewerId, extensionHostAPI]) =>
-                                combineLatest([
-                                    baseViewerId
-                                        ? wrapRemoteObservable(extensionHostAPI.getTextDecorations(baseViewerId))
-                                        : of(null),
-                                    headViewerId
-                                        ? wrapRemoteObservable(extensionHostAPI.getTextDecorations(headViewerId))
-                                        : of(null),
-                                ])
-                            )
-                        )
-                    }),
                     tap(([baseDecorations, headDecorations]) => {
                         setDecorations({
                             base: groupDecorationsByLine(baseDecorations),
@@ -137,7 +174,8 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
                         })
                     })
                 ),
-            [extensionInfoChanges]
+
+            [baseAndHeadViewerIds]
         )
     )
 
@@ -173,37 +211,47 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
     }, [codeElements, extensionInfoChanges])
 
     return (
-        <div className={`file-diff-hunks ${className}`} ref={nextBlobElement}>
-            {hunks.length === 0 ? (
-                <div className="text-muted m-2">No changes</div>
-            ) : (
-                <div className="file-diff-hunks__container" ref={nextCodeElement}>
-                    <table className="file-diff-hunks__table">
-                        {lineNumbers && (
-                            <colgroup>
-                                <col width="40" />
-                                <col width="40" />
-                                <col />
-                            </colgroup>
-                        )}
-                        <tbody>
-                            {hunks.map((hunk, index) => (
-                                <DiffHunk
-                                    fileDiffAnchor={fileDiffAnchor}
-                                    history={history}
-                                    isLightTheme={isLightTheme}
-                                    lineNumbers={lineNumbers}
-                                    location={location}
-                                    persistLines={persistLines}
-                                    key={index}
-                                    hunk={hunk}
-                                    decorations={decorations}
-                                />
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+        <>
+            {extensionInfo && (
+                <StatusBar
+                    getStatusBarItems={getStatusBarItems}
+                    className="border-bottom border-top-0"
+                    extensionsController={extensionInfo.extensionsController}
+                    location={location}
+                />
             )}
-        </div>
+            <div className={`file-diff-hunks ${className}`} ref={nextBlobElement}>
+                {hunks.length === 0 ? (
+                    <div className="text-muted m-2">No changes</div>
+                ) : (
+                    <div className="file-diff-hunks__container" ref={nextCodeElement}>
+                        <table className="file-diff-hunks__table">
+                            {lineNumbers && (
+                                <colgroup>
+                                    <col width="40" />
+                                    <col width="40" />
+                                    <col />
+                                </colgroup>
+                            )}
+                            <tbody>
+                                {hunks.map((hunk, index) => (
+                                    <DiffHunk
+                                        fileDiffAnchor={fileDiffAnchor}
+                                        history={history}
+                                        isLightTheme={isLightTheme}
+                                        lineNumbers={lineNumbers}
+                                        location={location}
+                                        persistLines={persistLines}
+                                        key={index}
+                                        hunk={hunk}
+                                        decorations={decorations}
+                                    />
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+        </>
     )
 }

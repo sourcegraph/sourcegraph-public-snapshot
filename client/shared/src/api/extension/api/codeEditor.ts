@@ -6,22 +6,13 @@ import * as sourcegraph from 'sourcegraph'
 import { createDecorationType } from './decorations'
 import { ExtensionDocument } from './textDocument'
 import { CodeEditorData, ViewerId } from '../../viewerTypes'
-import { isEqual } from 'lodash'
+import { isEqual, uniqueId } from 'lodash'
+
+export const createStatusBarItemType = (): sourcegraph.StatusBarItemType => ({ key: uniqueId('StatusBarItemType') })
+
+export type StatusBarItemWithKey = sourcegraph.StatusBarItem & sourcegraph.StatusBarItemType
 
 const DEFAULT_DECORATION_TYPE = createDecorationType()
-
-/**
- * Returns true if all of the objects properties are empty null, undefined, empty strings or objects that are also empty.
- */
-const isEmptyObjectDeep = (value: any): boolean =>
-    Array.isArray(value)
-        ? value.every(isEmptyObjectDeep)
-        : typeof value === 'object' && value !== null
-        ? Object.values(value).every(isEmptyObjectDeep)
-        : !value
-
-const isDecorationEmpty = ({ range, isWholeLine, ...contents }: clientType.TextDocumentDecoration): boolean =>
-    isEmptyObjectDeep(contents)
 
 /** @internal */
 export class ExtensionCodeEditor implements sourcegraph.CodeEditor, ProxyMarked {
@@ -75,7 +66,22 @@ export class ExtensionCodeEditor implements sourcegraph.CodeEditor, ProxyMarked 
         )
     }
 
-    // TODO(tj): Add status bar items
+    private _statusBarItemsByType = new Map<sourcegraph.StatusBarItemType, StatusBarItemWithKey>()
+
+    private _mergedStatusBarItems = new BehaviorSubject<StatusBarItemWithKey[]>([])
+    public get mergedStatusBarItems(): Observable<StatusBarItemWithKey[]> {
+        return this._mergedStatusBarItems
+    }
+
+    public setStatusBarItem(
+        statusBarItemType: sourcegraph.StatusBarItemType,
+        statusBarItem: sourcegraph.StatusBarItem
+    ): void {
+        this._statusBarItemsByType.set(statusBarItemType, { ...statusBarItem, ...statusBarItemType })
+        this._mergedStatusBarItems.next(
+            [...this._statusBarItemsByType.values()].flat().filter(statusBarItem => isValidStatusBarItem(statusBarItem))
+        )
+    }
 
     public update(data: Pick<CodeEditorData, 'selections'>): void {
         const newSelections = data.selections.map(selection => Selection.fromPlain(selection))
@@ -89,6 +95,21 @@ export class ExtensionCodeEditor implements sourcegraph.CodeEditor, ProxyMarked 
         return { type: this.type, document: this.document }
     }
 }
+
+/**
+ * Returns true if all of the objects properties are empty null, undefined, empty strings or objects that are also empty.
+ */
+const isEmptyObjectDeep = (value: any): boolean =>
+    Array.isArray(value)
+        ? value.every(isEmptyObjectDeep)
+        : typeof value === 'object' && value !== null
+        ? Object.values(value).every(isEmptyObjectDeep)
+        : !value
+
+const isDecorationEmpty = ({ range, isWholeLine, ...contents }: clientType.TextDocumentDecoration): boolean =>
+    isEmptyObjectDeep(contents)
+
+const isValidStatusBarItem = ({ key, text }: StatusBarItemWithKey): boolean => !!key && !!text
 
 function fromTextDocumentDecoration(decoration: sourcegraph.TextDocumentDecoration): clientType.TextDocumentDecoration {
     return {

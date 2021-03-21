@@ -84,7 +84,7 @@ We're actively working on removing this limitation.
 
 If you want to learn more about code insights:
 
-- [Code insights team page](https://about.sourcegraph.com/handbook/engineering/code-insights)
+- [Code insights team page](https://about.sourcegraph.com/handbook/engineering/web/code-insights)
 - [Code insights product document (PD)](https://docs.google.com/document/d/1d34gCpt_rUOMAun8phcjNsFofGaaA_N_8znmgaugdKw/edit)
 - [Original code insights RFC](https://docs.google.com/document/d/1EHzor6I1GhVVIpl70mH-c10b1tNEl_p1xRMJ9qHQfoc/edit)
 

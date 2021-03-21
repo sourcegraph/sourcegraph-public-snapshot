@@ -1,0 +1,141 @@
+$action-item-width: 2.5rem;
+$action-item-container-width: 2.5625; // 2.5rem + 1px
+
+$default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-pink-8;
+
+.action-items {
+    &__bar {
+        width: $action-item-container-width;
+        background-color: var(--color-bg-2);
+        list-style: none;
+    }
+
+    &__toggle {
+        background-color: var(--color-bg-2);
+        padding-left: 0.625rem;
+        padding-right: 0.625rem;
+
+        &:hover {
+            background-color: var(--link-hover-bg-color);
+        }
+
+        &--open {
+            border-bottom: solid var(--color-bg-2) 1px;
+            margin-bottom: -0.0625rem;
+        }
+    }
+
+    &__toggle-container {
+        width: $action-item-container-width;
+        background-color: var(--color-bg-2);
+        padding-top: 0.125rem;
+        padding-bottom: 0.125rem;
+
+        &--open {
+            border-bottom: solid var(--color-bg-2) 1px;
+            margin-bottom: -0.0625rem;
+        }
+    }
+
+    &__divider {
+        height: 0.0625rem;
+        width: 1.25rem;
+        background-color: var(--border-color);
+        left: 0.625rem;
+
+        &:first-of-type {
+            top: 0;
+            transform: translateY(-0.0625rem);
+        }
+    }
+
+    &__list {
+        overflow-y: auto;
+        flex: 0 1 auto;
+
+        scrollbar-width: none;
+        &::-webkit-scrollbar {
+            display: none;
+        }
+    }
+
+    &__list-item {
+        user-select: none;
+        &:first-of-type {
+            margin-top: 0.375rem;
+        }
+        &:last-of-type {
+            margin-bottom: 0.375rem;
+        }
+    }
+
+    &__action {
+        width: $action-item-width;
+        height: 2rem;
+
+        &:hover {
+            background-color: var(--link-hover-bg-color);
+        }
+
+        &--pressed {
+            color: var(--body-color);
+            background-color: var(--link-hover-bg-color-2);
+
+            &:hover {
+                background-color: var(--link-hover-bg-color-2);
+            }
+        }
+
+        &--inactive {
+            pointer-events: none;
+            cursor: not-allowed;
+            filter: saturate(0%);
+            opacity: 0.7;
+        }
+
+        // Default icon generated for extensions with no iconURL
+        &--no-icon {
+            &::after {
+                color: $white;
+                // Center letter
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                height: 1rem;
+                width: 1rem;
+                font-size: (10 / 16) + rem;
+                content: attr(data-content);
+                border-radius: (2 / 16) + rem;
+            }
+
+            &-inactive {
+                &::after {
+                    background-color: var(--disabled-action-bg-color) !important;
+                    color: var(--disabled-action-text-color) !important;
+                }
+            }
+        }
+    }
+
+    &__icon {
+        height: 1rem !important;
+        width: 1rem !important;
+
+        // Default icon background color
+        @for $i from 1 through length($default-icon-colors) {
+            &-#{$i} {
+                &::after {
+                    background-color: nth($default-icon-colors, $i);
+                }
+            }
+        }
+    }
+
+    &__scroll {
+        width: $action-item-width;
+
+        &:hover {
+            background-color: var(--link-hover-bg-color);
+        }
+    }
+}

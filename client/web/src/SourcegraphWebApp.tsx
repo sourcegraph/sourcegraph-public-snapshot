@@ -62,6 +62,7 @@ import { globbingEnabledFromSettings } from './util/globbing'
 import {
     SITE_SUBJECT_NO_ADMIN,
     viewerSubjectFromSettings,
+    defaultCaseSensitiveFromSettings,
     defaultPatternTypeFromSettings,
     experimentalFeaturesFromSettings,
 } from './util/settings'
@@ -311,6 +312,8 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                         authenticatedUser,
                         ...experimentalFeaturesFromSettings(settingsCascade),
                         globbing: globbingEnabledFromSettings(settingsCascade),
+                        searchCaseSensitivity:
+                            defaultCaseSensitiveFromSettings(settingsCascade) || state.searchCaseSensitivity,
                         searchPatternType: defaultPatternTypeFromSettings(settingsCascade) || state.searchPatternType,
                         viewerSubject: viewerSubjectFromSettings(settingsCascade, authenticatedUser),
                     }))

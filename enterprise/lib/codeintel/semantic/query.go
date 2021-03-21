@@ -1,16 +1,14 @@
-package conversion
+package semantic
 
 import (
 	"errors"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 )
 
 type QueryResult struct {
-	Definitions []semantic.LocationData
-	References  []semantic.LocationData
+	Definitions []LocationData
+	References  []LocationData
 	Hover       string
-	Monikers    []semantic.MonikerData
+	Monikers    []QualifiedMonikerData
 }
 
 func Query(bundle *GroupedBundleDataMaps, path string, line, character int) ([]QueryResult, error) {
@@ -20,18 +18,22 @@ func Query(bundle *GroupedBundleDataMaps, path string, line, character int) ([]Q
 	}
 
 	var result []QueryResult
-	for _, rng := range semantic.FindRanges(document.Ranges, line, character) {
+	for _, rng := range FindRanges(document.Ranges, line, character) {
 		result = append(result, Resolve(bundle, document, rng))
 	}
 
 	return result, nil
 }
 
-func Resolve(bundle *GroupedBundleDataMaps, document semantic.DocumentData, rng semantic.RangeData) QueryResult {
+func Resolve(bundle *GroupedBundleDataMaps, document DocumentData, rng RangeData) QueryResult {
 	hover := document.HoverResults[rng.HoverResultID]
-	var monikers []semantic.MonikerData
+	var monikers []QualifiedMonikerData
 	for _, monikerID := range rng.MonikerIDs {
-		monikers = append(monikers, document.Monikers[monikerID])
+		moniker := document.Monikers[monikerID]
+		monikers = append(monikers, QualifiedMonikerData{
+			MonikerData:            moniker,
+			PackageInformationData: document.PackageInformation[moniker.PackageInformationID],
+		})
 	}
 
 	return QueryResult{
@@ -42,13 +44,13 @@ func Resolve(bundle *GroupedBundleDataMaps, document semantic.DocumentData, rng 
 	}
 }
 
-func resolveLocations(bundle *GroupedBundleDataMaps, resultID semantic.ID) []semantic.LocationData {
-	var locations []semantic.LocationData
+func resolveLocations(bundle *GroupedBundleDataMaps, resultID ID) []LocationData {
+	var locations []LocationData
 	docIDRngIDs, chunk := getDefRef(resultID, bundle.Meta, bundle.ResultChunks)
 	for _, docIDRngID := range docIDRngIDs {
 		path := chunk.DocumentPaths[docIDRngID.DocumentID]
 		rng := bundle.Documents[path].Ranges[docIDRngID.RangeID]
-		locations = append(locations, semantic.LocationData{
+		locations = append(locations, LocationData{
 			URI:            path,
 			StartLine:      rng.StartLine,
 			StartCharacter: rng.StartCharacter,
@@ -57,4 +59,11 @@ func resolveLocations(bundle *GroupedBundleDataMaps, resultID semantic.ID) []sem
 		})
 	}
 	return locations
+}
+
+func getDefRef(resultID ID, meta MetaData, resultChunks map[int]ResultChunkData) ([]DocumentIDRangeID, ResultChunkData) {
+	chunkID := HashKey(resultID, meta.NumResultChunks)
+	chunk := resultChunks[chunkID]
+	docRngIDs := chunk.DocumentIDRangeIDs[resultID]
+	return docRngIDs, chunk
 }
