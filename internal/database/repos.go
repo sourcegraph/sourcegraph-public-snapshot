@@ -221,6 +221,9 @@ func (s *RepoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, er
 	}()
 
 	opt.Select = []string{"COUNT(*)"}
+	opt.OrderBy = nil
+	opt.LimitOffset = nil
+
 	err = s.list(ctx, tr, opt, func(rows *sql.Rows) error {
 		return rows.Scan(&ct)
 	})
