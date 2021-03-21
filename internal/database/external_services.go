@@ -1126,7 +1126,8 @@ func NewExternalServiceConfigMigratorWithDB(db dbutil.DB) *ExternalServiceConfig
 	return NewExternalServiceConfigMigrator(basestore.NewWithDB(db, sql.TxOptions{}))
 }
 
-// ID of the migration row in the out_of_band_migrations table.
+// ID of the migration row in in the out_of_band_migrations table.
+// This ID was defined arbitrarily in this migration file: frontend/1528395800_external_service_config_migration.up.sql.
 func (m *ExternalServiceConfigMigrator) ID() int {
 	return 3
 }
@@ -1178,7 +1179,7 @@ func (m *ExternalServiceConfigMigrator) Up(ctx context.Context) (err error) {
 			return err
 		}
 
-		// ensure encryption round-trip is valid with keyIndent
+		// ensure encryption round-trip is valid with keyIdent
 		decrypted, err := key.Decrypt(ctx, encryptedCfg)
 		if err != nil {
 			return err
