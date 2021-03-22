@@ -472,7 +472,7 @@ func ScanBalancedParens(buf []byte) (string, int, bool) {
 
 	r = next()
 	if r != '(' {
-		panic(fmt.Sprintf("ScanDelimited expects the input buffer to start with delimiter (, but it starts with %s.", string(r)))
+		panic(fmt.Sprintf("ScanBalancedParens expects the input buffer to start with delimiter (, but it starts with %s.", string(r)))
 	}
 	balance := 1
 
