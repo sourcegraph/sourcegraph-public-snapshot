@@ -255,6 +255,10 @@ func AssertChangeset(t *testing.T, c *batches.Changeset, a ChangesetAssertions) 
 				if !assoc.Archived {
 					t.Fatalf("changeset association to %d not set to Archived", c.OwnedByBatchChangeID)
 				}
+
+				if assoc.Archive {
+					t.Fatalf("changeset association to %d set to Archive, but should be Archived already", c.OwnedByBatchChangeID)
+				}
 			}
 		}
 		if !found {
