@@ -124,13 +124,3 @@ export const ChangesetStatusProcessing: React.FunctionComponent<{ label?: JSX.El
         {label}
     </div>
 )
-
-export const ChangesetStatusArchived: React.FunctionComponent<{ label?: JSX.Element; className?: string }> = ({
-    label = <span>Archived</span>,
-    className,
-}) => (
-    <div className={classNames(iconClassNames, className)}>
-        <ArchiveIcon />
-        {label}
-    </div>
-)
