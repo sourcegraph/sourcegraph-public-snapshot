@@ -370,10 +370,10 @@ ComplexDiagram(
 </script>
 
 Select a specific kind of symbol. For example `type:symbol select:symbol.function zoektSearch` will only return functions that contain the
-literal `Search`.
+literal `zoektSearch`.
 
 **Example:**
-`type:symbol zoektSearch select:symbol.function` [↗](https://sourcegraph.com/search?q=fmt.Errorf+select:repo&patternType=literal)
+`type:symbol zoektSearch select:symbol.function` [↗](https://sourcegraph.com/search?q=type:symbol+zoektSearch+select:symbol.function&patternType=literal)
 
 
 ### Type
