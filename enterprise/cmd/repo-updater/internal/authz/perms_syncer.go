@@ -249,7 +249,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		accts = append(accts, acct)
 	}
 
-	var repoSpecs []api.ExternalRepoSpec
+	var repoSpecs, includePrefixSpecs, excludePrefixSpecs []api.ExternalRepoSpec
 	for _, acct := range accts {
 		provider := providers[acct.ServiceID]
 		if provider == nil {
@@ -309,18 +309,58 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 				)
 			}
 		}
+		if len(extIDs.IncludePrefixes) > 0 {
+			for _, includePrefix := range extIDs.IncludePrefixes {
+				includePrefixSpecs = append(includePrefixSpecs,
+					api.ExternalRepoSpec{
+						ID:          string(includePrefix),
+						ServiceType: provider.ServiceType(),
+						ServiceID:   provider.ServiceID(),
+					},
+				)
+			}
+		}
+		if len(extIDs.ExcludePrefixes) > 0 {
+			for _, excludePrefix := range extIDs.ExcludePrefixes {
+				excludePrefixSpecs = append(excludePrefixSpecs,
+					api.ExternalRepoSpec{
+						ID:          string(excludePrefix),
+						ServiceType: provider.ServiceType(),
+						ServiceID:   provider.ServiceID(),
+					},
+				)
+			}
+		}
 	}
 
-	var rs []*types.Repo
+	// Get corresponding internal database IDs
+	var repoNames []*types.RepoName
 	if len(repoSpecs) > 0 {
-		// Get corresponding internal database IDs
-		rs, err = s.reposStore.RepoStore.List(ctx, database.ReposListOptions{
-			ExternalRepos: repoSpecs,
-			OnlyPrivate:   true,
-		})
+		rs, err := s.reposStore.RepoStore.ListRepoNames(ctx,
+			database.ReposListOptions{
+				ExternalRepos: repoSpecs,
+				OnlyPrivate:   true,
+			},
+		)
 		if err != nil {
-			return errors.Wrap(err, "list external repositories")
+			return errors.Wrap(err, "list external repositories by exact matching")
 		}
+		repoNames = append(repoNames, rs...)
+	}
+	// Exclusions are relative to inclusions, so if there is no inclusion, exclusion
+	// are meaningless and no need to trigger a DB query.
+	if len(includePrefixSpecs) > 0 {
+		rs, err := s.reposStore.RepoStore.ListRepoNames(ctx,
+			database.ReposListOptions{
+				ExternalRepoIncludePrefixes: includePrefixSpecs,
+				ExternalRepoExcludePrefixes: excludePrefixSpecs,
+				OnlyPrivate:                 true,
+			},
+		)
+		if err != nil {
+			return errors.Wrap(err, "list external repositories by prefix matching")
+		}
+		repoNames = append(repoNames, rs...)
 	}
 
 	// Save permissions to database
@@ -330,8 +370,8 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		Type:   authz.PermRepos,
 		IDs:    roaring.NewBitmap(),
 	}
-	for i := range rs {
-		p.IDs.Add(uint32(rs[i].ID))
+	for i := range repoNames {
+		p.IDs.Add(uint32(repoNames[i].ID))
 	}
 
 	err = s.permsStore.SetUserPermissions(ctx, p)

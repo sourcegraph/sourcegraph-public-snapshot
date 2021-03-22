@@ -3,7 +3,7 @@ import React, { useMemo } from 'react'
 import { from } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { wrapRemoteObservable } from '../api/client/api/common'
-import { ContributionScope, Context } from '../api/extension/api/context/context'
+import { ContributionOptions } from '../api/extension/extensionHostApi'
 import { ContributableMenu } from '../api/protocol'
 import { getContributedActionItems } from '../contributions/contributions'
 import { ExtensionsControllerProps } from '../extensions/controller'
@@ -14,10 +14,9 @@ import { ActionItem, ActionItemAction } from './ActionItem'
 
 export interface ActionsProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings'> {
+        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
+        ContributionOptions {
     menu: ContributableMenu
-    scope?: ContributionScope
-    extraContext?: Context
     listClass?: string
     location: H.Location
 }
@@ -26,7 +25,7 @@ interface Props extends ActionsProps, TelemetryProps {
      * Called with the array of contributed items to produce the rendered component. If not set, uses a default
      * render function that renders a <ActionItem> for each item.
      */
-    render?: (items: ActionItemAction[]) => JSX.Element | null
+    children?: (items: ActionItemAction[]) => JSX.Element | null
 
     /**
      * If set, it is rendered when there are no contributed items for this menu. Use null to render nothing when
@@ -37,17 +36,19 @@ interface Props extends ActionsProps, TelemetryProps {
 
 /** Displays the actions in a container, with a wrapper and/or empty element. */
 export const ActionsContainer: React.FunctionComponent<Props> = props => {
-    const { scope, extraContext, extensionsController, menu, empty } = props
+    const { scope, extraContext, returnInactiveMenuItems, extensionsController, menu, empty } = props
 
     const contributions = useObservable(
         useMemo(
             () =>
                 from(extensionsController.extHostAPI).pipe(
                     switchMap(extensionHostAPI =>
-                        wrapRemoteObservable(extensionHostAPI.getContributions(scope, extraContext))
+                        wrapRemoteObservable(
+                            extensionHostAPI.getContributions({ scope, extraContext, returnInactiveMenuItems })
+                        )
                     )
                 ),
-            [scope, extraContext, extensionsController.extHostAPI]
+            [scope, extraContext, returnInactiveMenuItems, extensionsController.extHostAPI]
         )
     )
 
@@ -60,7 +61,7 @@ export const ActionsContainer: React.FunctionComponent<Props> = props => {
         return empty
     }
 
-    const render = props.render || defaultRenderItems
+    const render = props.children || defaultRenderItems
     return render(items, props)
 }
 

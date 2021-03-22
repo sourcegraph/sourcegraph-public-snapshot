@@ -88,6 +88,7 @@ const FIXTURE_ACTIONS = [
             command: 'open',
             commandArguments: ['/github.com/sourcegraph/codeintellify/-/blob/src/hoverifier.ts?subtree=true#L57:1'],
         },
+        active: true,
     },
     {
         action: {
@@ -98,6 +99,7 @@ const FIXTURE_ACTIONS = [
                 '/github.com/sourcegraph/codeintellify/-/blob/src/hoverifier.ts?subtree=true#L57:18&tab=references',
             ],
         },
+        active: true,
     },
 ]
 

@@ -107,7 +107,8 @@ $text-muted: var(--text-muted);
     --link-color: #{$gray-13};
     --link-active-color: #{$gray-18};
     --link-hover-color: #{$gray-21};
-    --link-hover-background-color: #{$gray-02};
+    --link-hover-bg-color: #{$gray-02};
+    --link-hover-bg-color-2: #{$gray-03};
     --border-color: #{$gray-04};
     --border-color-2: #{$gray-02};
     --sourcegraph-logo-text-color: #242427;
@@ -116,6 +117,8 @@ $text-muted: var(--text-muted);
     --search-keyword-color: #{$oc-grape-7};
     --infobar-warning-color: #{$oc-red-8};
     --web-content-link-color: #1c7cd6;
+    --disabled-action-bg-color: #{$oc-gray-3};
+    --disabled-action-text-color: #{$oc-gray-5};
 }
 .theme-dark {
     // Affects default browser styles
@@ -140,11 +143,14 @@ $text-muted: var(--text-muted);
     --link-color: #{$gray-07};
     --link-active-color: #{$gray-02};
     --link-hover-color: #ffffff;
-    --link-hover-background-color: #{$gray-18};
+    --link-hover-bg-color: #{$gray-18};
+    --link-hover-bg-color-2: #{$gray-17};
     --sourcegraph-logo-text-color: #ffffff;
     --search-query-text-color: #f2f4f8;
     --search-filter-keyword-color: #569cd6;
     --search-keyword-color: #{$oc-grape-4};
     --infobar-warning-color: #{$oc-red-6};
     --web-content-link-color: #329af0;
+    --disabled-action-bg-color: #{$oc-gray-8};
+    --disabled-action-text-color: #{$oc-gray-9};
 }

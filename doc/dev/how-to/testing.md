@@ -1,6 +1,6 @@
 # Testing
 
-_This documentation is specifically for the tests in the [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph) repository. For our general testing principles, please see "[Testing Principles](testing_principles.md)"._
+_This documentation is specifically for the tests in the [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph) repository. For our general testing principles, please see "[Testing Principles](../background-information/testing_principles.md)"._
 
 ## Backend tests
 
@@ -327,5 +327,5 @@ To manually test against a Kubernetes cluster, use https://k8s.sgdev.org.
 For testing with a single Docker image, run something like
 
 ```
-IMAGE=sourcegraph/server:3.25.2 ./dev/run-server-image.sh
+IMAGE=sourcegraph/server:3.26.0 ./dev/run-server-image.sh
 ```
