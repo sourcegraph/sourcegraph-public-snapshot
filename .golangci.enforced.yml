@@ -22,12 +22,12 @@ linters-settings:
   gocritic:
     disabled-checks:
       - appendAssign      # Too many false positives
-      - ifElseChain       # Noisy for not much gain
-      - exitAfterDefer    # Only occurs in auxiliary tools
-      - singleCaseSwitch  # Noisy for not much gain
+      - assignOp          # Maybe worth adding, but likely not worth the noise
       - commentFormatting # No strong benefit
       - deprecatedComment # Unnecessary
-      - assignOp          # Maybe worth adding, but likely not worth the noise
+      - exitAfterDefer    # Only occurs in auxiliary tools
+      - ifElseChain       # Noisy for not much gain
+      - singleCaseSwitch  # Noisy for not much gain
 
 issues:
   exclude-rules:
