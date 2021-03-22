@@ -1036,27 +1036,6 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 	}
 }
 
-func TestSearchResolver_evaluateWarning(t *testing.T) {
-	db := new(dbtesting.MockDB)
-
-	q, _ := query.ParseRegexp("file:foo or file:bar")
-	wantPrefix := "I'm having trouble understanding that query."
-	got, _ := (&searchResolver{db: db}).evaluate(context.Background(), q)
-	t.Run("warn for unsupported and/or query", func(t *testing.T) {
-		if !strings.HasPrefix(got.alert.description, wantPrefix) {
-			t.Fatalf("got alert description %s, want %s", got.alert.description, wantPrefix)
-		}
-	})
-
-	_, err := query.ParseRegexp("file:foo or or or")
-	gotAlert := alertForQuery("", err)
-	t.Run("warn for unsupported ambiguous and/or query", func(t *testing.T) {
-		if !strings.HasPrefix(gotAlert.description, wantPrefix) {
-			t.Fatalf("got alert description %s, want %s", got.alert.description, wantPrefix)
-		}
-	})
-}
-
 func TestGetExactFilePatterns(t *testing.T) {
 	tests := []struct {
 		in   string

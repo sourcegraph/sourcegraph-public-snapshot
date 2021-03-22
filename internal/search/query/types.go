@@ -94,6 +94,11 @@ func (b Basic) ToParseTree() Q {
 	return Q(append(nodes, b.Pattern))
 }
 
+// MapPattern returns a copy of a basic query with the pattern part replaced by pattern.
+func (b Basic) MapPattern(pattern Node) Basic {
+	return Basic{Parameters: b.Parameters, Pattern: pattern}
+}
+
 // A query is a tree of Nodes. We choose the type name Q so that external uses like query.Q do not stutter.
 type Q []Node
 
