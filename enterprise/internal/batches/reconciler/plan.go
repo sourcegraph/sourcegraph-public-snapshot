@@ -11,6 +11,7 @@ import (
 var operationPrecedence = map[batches.ReconcilerOperation]int{
 	batches.ReconcilerOperationPush:         0,
 	batches.ReconcilerOperationDetach:       0,
+	batches.ReconcilerOperationArchive:      0,
 	batches.ReconcilerOperationImport:       1,
 	batches.ReconcilerOperationPublish:      1,
 	batches.ReconcilerOperationPublishDraft: 1,
