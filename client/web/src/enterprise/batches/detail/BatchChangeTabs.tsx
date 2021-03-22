@@ -49,7 +49,7 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
     queryChangesetCountsOverTime,
     queryExternalChangesetWithFileDiffs,
 }) => {
-    const archiveEnabled = window.context.experimentalFeatures.archiveBatchChangeChangesets
+    const archiveEnabled = window.context?.experimentalFeatures?.archiveBatchChangeChangesets
     const [selectedTab, setSelectedTab] = useState<SelectedTab>(() => {
         const urlParameters = new URLSearchParams(location.search)
         if (urlParameters.get('tab') === 'chart') {
