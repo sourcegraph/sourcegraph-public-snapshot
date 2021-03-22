@@ -76,8 +76,11 @@ func (p Plan) ToParseTree() Q {
 }
 
 // Basic represents a leaf expression to evaluate in our search engine. A basic
-// query comprises (1) a single search pattern expression and (2) parameters
-// that scope the evaluation of search patterns (e.g., to repos, files, etc.).
+// query comprises:
+//   (1) a single search pattern expression, which may contain
+//       'and' or 'or' operators; and
+//   (2) parameters that scope the evaluation of search
+//       patterns (e.g., to repos, files, etc.).
 type Basic struct {
 	Pattern    Node
 	Parameters []Parameter

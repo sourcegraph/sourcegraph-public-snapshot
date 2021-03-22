@@ -700,8 +700,8 @@ func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*Search
 	operands := q.Pattern.(query.Operator).Operands
 
 	wantCount := defaultMaxSearchResults
-	if count := query.Q(query.ToNodes(q.Parameters)).Count(); count != nil {
-		wantCount = *count
+	if count := q.GetCount(); count != "" {
+		wantCount, _ = strconv.Atoi(count) // Invariant: count is already validated
 	}
 
 	result := &SearchResultsResolver{}
