@@ -9069,6 +9069,10 @@ type ChangesetsStats {
     """
     processing: Int!
     """
+    The count of archived changesets.
+    """
+    archived: Int!
+    """
     The count of all changesets.
     """
     total: Int!
@@ -9183,6 +9187,10 @@ enum ChangesetSpecOperation {
     The changeset is removed from some of the associated batch changes.
     """
     DETACH
+    """
+    The changeset is kept in the batch change, but it's marked as archived.
+    """
+    ARCHIVE
 }
 
 """
@@ -9682,7 +9690,10 @@ type ChangesetApplyPreviewConnectionStats {
     The changeset is removed from some of the associated batch changes.
     """
     detach: Int!
-
+    """
+    The changeset will still be attached to the batch change but marked as archived.
+    """
+    archive: Int!
     """
     The amount of changesets that are added to the batch change in this operation.
     """
@@ -10053,6 +10064,10 @@ type BatchChange implements Node {
         Search for changesets matching this query. Queries may include quoted substrings to match phrases, and words may be preceded by - to negate them.
         """
         search: String
+        """
+        Only return changesets that are archived in this campaign.
+        """
+        onlyArchived: Boolean = false
     ): ChangesetConnection!
 
     """

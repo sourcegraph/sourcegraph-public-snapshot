@@ -14,6 +14,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
+func TestChangeset_Clone(t *testing.T) {
+	original := &Changeset{
+		ID: 1,
+		BatchChanges: []BatchChangeAssoc{
+			{BatchChangeID: 999, IsArchived: true, Detach: true, Archive: true},
+		},
+	}
+
+	clone := original.Clone()
+	clone.BatchChanges[0].IsArchived = false
+
+	if !original.BatchChanges[0].IsArchived {
+		t.Fatalf("BatchChanges association was not cloned but is still reference")
+	}
+}
+
 func TestChangeset_DiffStat(t *testing.T) {
 	var (
 		added   int32 = 77

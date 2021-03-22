@@ -10,6 +10,7 @@ import {
     ChangesetStatusClosed,
     ChangesetStatusMerged,
     ChangesetStatusDraft,
+    ChangesetStatusArchived,
 } from './changesets/ChangesetStatusCell'
 import { pluralize } from '../../../../../shared/src/util/strings'
 import { DiffStat } from '../../../components/diff/DiffStat'
@@ -82,6 +83,10 @@ export const BatchChangeStatsCard: React.FunctionComponent<BatchChangeStatsCardP
                     />
                     <ChangesetStatusMerged
                         label={<span className="text-muted">{stats.merged} merged</span>}
+                        className="d-flex flex-grow-0 pl-2 text-truncate batch-change-stats-card__stat"
+                    />
+                    <ChangesetStatusArchived
+                        label={<span className="text-muted">{stats.archived} archived</span>}
                         className="d-flex flex-grow-0 pl-2 text-truncate batch-change-stats-card__stat"
                     />
                 </div>
