@@ -483,7 +483,7 @@ type ExpandedGitCommitDescription struct {
 type ExperimentalFeatures struct {
 	// AndOrQuery description: DEPRECATED: Interpret a search input query as an and/or query.
 	AndOrQuery string `json:"andOrQuery,omitempty"`
-	// ArchiveBatchChangeChangesets description: Enables the archiving of changesets instead of detaching them when applying a new batch spec that doesn't include these changesets
+	// ArchiveBatchChangeChangesets description: When enabled, changesets that would be detached when a new batch spec is applied will be archived instead, thereby retaining an association with the batch change.
 	ArchiveBatchChangeChangesets *bool `json:"archiveBatchChangeChangesets,omitempty"`
 	// BitbucketServerFastPerm description: DEPRECATED: Configure in Bitbucket Server config.
 	BitbucketServerFastPerm string `json:"bitbucketServerFastPerm,omitempty"`
