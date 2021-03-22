@@ -10,7 +10,7 @@ There are a few ways to perform a search with Sourcegraph:
 2. Typing a query into your browser's location bar after configuring a [browser search engine shortcut](https://docs.sourcegraph.com/integration/browser_search_engine).
 3. Using the [src CLI command](https://github.com/sourcegraph/src-cli).
 
-In all cases, clients use the [search query](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%5Cbsearch%5C%28+file:schema.graphql) in our GraphQL API that is exposed by our [frontend](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/frontend) service.
+In all cases, clients use the [search query](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:schema.graphql&patternType=literal) in our GraphQL API that is exposed by our [frontend](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/frontend) service.
 
 ## Frontend
 
