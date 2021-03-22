@@ -211,7 +211,7 @@ function referencesToFileLineMatch(uri: string, references: Badged<Location>[]):
                 offsetAndLengths: [
                     [reference.range.start.character, reference.range.end.character - reference.range.start.character],
                 ],
-                badge: reference.badge,
+                aggregableBadges: reference.aggregableBadges,
             })
         ),
     }

@@ -47,7 +47,7 @@ export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps & HoverT
             iconClassName="icon-inline"
             iconButtonClassName="btn btn-icon"
             actionItemClassName="btn btn-secondary"
-            infoAlertClassName="alert alert-info"
+            infoAlertClassName="alert alert-secondary" // #18931
             errorAlertClassName="alert alert-danger"
             onAlertDismissed={onAlertDismissed}
         />

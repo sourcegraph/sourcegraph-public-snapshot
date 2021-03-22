@@ -335,8 +335,10 @@ func extractInt(i interface{}) (int, error) {
 		return int(v), nil
 	case string:
 		return strconv.Atoi(v)
+	case nil:
+		return 0, nil
 	default:
-		return 0, fmt.Errorf("unkown limit type: %T", i)
+		return 0, fmt.Errorf("unknown limit type: %T", i)
 	}
 }
 

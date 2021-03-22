@@ -9,6 +9,10 @@ import sinon from 'sinon'
 import { mockCodeMonitorNodes } from './testing/util'
 import { EMPTY_SETTINGS_CASCADE } from '../../../../shared/src/settings/settings'
 
+jest.mock('../../tracking/eventLogger', () => ({
+    eventLogger: { logViewEvent: () => undefined },
+}))
+
 const history = H.createBrowserHistory({})
 history.replace({ pathname: '/code-monitoring' })
 const additionalProps = {

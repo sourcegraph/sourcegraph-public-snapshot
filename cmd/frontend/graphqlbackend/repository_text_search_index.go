@@ -87,7 +87,7 @@ func (r *repositoryTextSearchIndexStatus) IndexByteSize() int32 {
 }
 
 func (r *repositoryTextSearchIndexStatus) IndexShardsCount() int32 {
-	return int32(r.entry.Stats.Shards + 1)
+	return int32(r.entry.Stats.Shards)
 }
 
 func (r *repositoryTextSearchIndexStatus) NewLinesCount() int32 {

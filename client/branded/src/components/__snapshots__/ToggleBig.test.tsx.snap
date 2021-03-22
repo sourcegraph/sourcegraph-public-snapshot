@@ -22,12 +22,7 @@ exports[`ToggleBig className 1`] = `
     />
     <span
       className="toggle-big__knob d-flex flex-column justify-content-center align-items-center"
-    >
-      <Memo(CloseIcon)
-        className="toggle-big__icon"
-        size={16}
-      />
-    </span>
+    />
     <span
       className="toggle-big__text"
     >
@@ -60,12 +55,7 @@ exports[`ToggleBig disabled 1`] = `
     />
     <span
       className="toggle-big__knob d-flex flex-column justify-content-center align-items-center"
-    >
-      <Memo(CloseIcon)
-        className="toggle-big__icon"
-        size={16}
-      />
-    </span>
+    />
     <span
       className="toggle-big__text"
     >
@@ -98,12 +88,7 @@ exports[`ToggleBig value is false 1`] = `
     />
     <span
       className="toggle-big__knob d-flex flex-column justify-content-center align-items-center"
-    >
-      <Memo(CloseIcon)
-        className="toggle-big__icon"
-        size={16}
-      />
-    </span>
+    />
     <span
       className="toggle-big__text"
     >

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -84,7 +85,7 @@ func TestStatusMessages(t *testing.T) {
 		{
 			name:            "all cloned",
 			gitserverCloned: []string{"foobar"},
-			stored:          []*types.Repo{{Name: "foobar", Cloned: true}},
+			stored:          []*types.Repo{{Name: "foobar"}},
 			user:            admin,
 			res:             nil,
 		},
@@ -112,7 +113,7 @@ func TestStatusMessages(t *testing.T) {
 		},
 		{
 			name:            "subset cloned",
-			stored:          []*types.Repo{{Name: "foobar", Cloned: true}, {Name: "barfoo"}},
+			stored:          []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
 			user:            admin,
 			gitserverCloned: []string{"foobar"},
 			res: []StatusMessage{
@@ -140,7 +141,7 @@ func TestStatusMessages(t *testing.T) {
 		},
 		{
 			name:            "more cloned than stored",
-			stored:          []*types.Repo{{Name: "foobar", Cloned: true}},
+			stored:          []*types.Repo{{Name: "foobar"}},
 			user:            admin,
 			gitserverCloned: []string{"foobar", "barfoo"},
 			res:             nil,
@@ -161,14 +162,14 @@ func TestStatusMessages(t *testing.T) {
 		{
 			name:            "case insensitivity",
 			gitserverCloned: []string{"foobar"},
-			stored:          []*types.Repo{{Name: "FOOBar", Cloned: true}},
+			stored:          []*types.Repo{{Name: "FOOBar"}},
 			user:            admin,
 			res:             nil,
 		},
 		{
 			name:            "case insensitivity to gitserver names",
 			gitserverCloned: []string{"FOOBar"},
-			stored:          []*types.Repo{{Name: "FOOBar", Cloned: true}},
+			stored:          []*types.Repo{{Name: "FOOBar"}},
 			user:            admin,
 			res:             nil,
 		},
@@ -206,15 +207,11 @@ func TestStatusMessages(t *testing.T) {
 
 		t.Run(tc.name, func(t *testing.T) {
 			stored := tc.stored.Clone()
-			var cloned []string
 			for _, r := range stored {
 				r.ExternalRepo = api.ExternalRepoSpec{
 					ID:          uuid.New().String(),
 					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "https://github.com/",
-				}
-				if r.Cloned {
-					cloned = append(cloned, string(r.Name))
 				}
 			}
 
@@ -228,6 +225,36 @@ func TestStatusMessages(t *testing.T) {
 					ids = append(ids, r.ID)
 				}
 				err := database.Repos(db).Delete(ctx, ids...)
+				if err != nil {
+					t.Fatal(err)
+				}
+			})
+
+			idMapping := make(map[api.RepoName]api.RepoID)
+			for _, r := range stored {
+				lower := strings.ToLower(string(r.Name))
+				idMapping[api.RepoName(lower)] = r.ID
+			}
+
+			var cloned []string
+			// Add gitserver_repos rows
+			for _, toClone := range tc.gitserverCloned {
+				toClone = strings.ToLower(toClone)
+				id := idMapping[api.RepoName(toClone)]
+				if id == 0 {
+					continue
+				}
+				cloned = append(cloned, toClone)
+				if err := database.GitserverRepos(db).Upsert(ctx, &types.GitserverRepo{
+					RepoID:      id,
+					ShardID:     "test",
+					CloneStatus: types.CloneStatusCloned,
+				}); err != nil {
+					t.Fatal(err)
+				}
+			}
+			t.Cleanup(func() {
+				_, err = db.ExecContext(ctx, `DELETE FROM gitserver_repos`)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -253,6 +280,7 @@ func TestStatusMessages(t *testing.T) {
 				}
 			}
 
+			// TODO(ryanslade): Remove this when we remove repo.cloned column
 			err = store.SetClonedRepos(ctx, cloned...)
 			if err != nil {
 				t.Fatal(err)

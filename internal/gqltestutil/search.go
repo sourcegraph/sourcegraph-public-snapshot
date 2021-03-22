@@ -542,14 +542,18 @@ func (s *SearchStreamClient) SearchFiles(query string) (*SearchFileResults, erro
 					var r SearchFileResult
 					r.File.Name = v.Path
 					r.Repository.Name = v.Repository
-					r.RevSpec.Expr = v.Branches[0]
+					if len(v.Branches) > 0 {
+						r.RevSpec.Expr = v.Branches[0]
+					}
 					results.Results = append(results.Results, &r)
 
 				case *streamhttp.EventSymbolMatch:
 					var r SearchFileResult
 					r.File.Name = v.Path
 					r.Repository.Name = v.Repository
-					r.RevSpec.Expr = v.Branches[0]
+					if len(v.Branches) > 0 {
+						r.RevSpec.Expr = v.Branches[0]
+					}
 					results.Results = append(results.Results, &r)
 
 				case *streamhttp.EventCommitMatch:

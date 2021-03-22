@@ -8,7 +8,7 @@ import {
     mergeMap,
     switchMap,
 } from 'rxjs/operators'
-import { isDefined, isExactly, isNot, property } from '../../util/types'
+import { allOf, isDefined, isExactly, isNot, property } from '../../util/types'
 import { FlatExtensionHostAPI } from '../contract'
 import { providerResultToObservable, ProxySubscribable, proxySubscribable } from './api/common'
 import { updateContext } from './extensionHost'
@@ -29,7 +29,7 @@ import {
     mergeContributions,
     parseContributionExpressions,
 } from './api/contribution'
-import { computeContext, Context } from './api/context/context'
+import { computeContext, Context, ContributionScope } from './api/context/context'
 import { proxy } from 'comlink'
 import { ExtensionCodeEditor } from './api/codeEditor'
 import { ExtensionDirectoryViewer } from './api/directoryViewer'
@@ -39,7 +39,7 @@ import { fromHoverMerged } from '../client/types/hover'
 import { ExtensionWorkspaceRoot } from './api/workspaceRoot'
 import { ExtensionHostState } from './extensionHostState'
 import { addWithRollback } from './util'
-import { WorkspaceRoot } from '@sourcegraph/extension-api-types'
+import * as clientType from '@sourcegraph/extension-api-types'
 
 export function createExtensionHostAPI(state: ExtensionHostState): FlatExtensionHostAPI {
     const getTextDocument = (uri: string): ExtensionDocument => {
@@ -82,7 +82,16 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
         syncSettingsData: settings => state.settings.next(Object.freeze(settings)),
 
         // Workspace
-        getWorkspaceRoots: () => state.roots.value.map(({ uri, inputRevision }) => ({ uri: uri.href, inputRevision })),
+        getWorkspaceRoots: () =>
+            proxySubscribable(
+                state.roots.pipe(
+                    map(workspaceRoots =>
+                        workspaceRoots.map(
+                            ({ uri, inputRevision }): clientType.WorkspaceRoot => ({ uri: uri.href, inputRevision })
+                        )
+                    )
+                )
+            ),
         addWorkspaceRoot: root => {
             state.roots.next(Object.freeze([...state.roots.value, new ExtensionWorkspaceRoot(root)]))
             state.rootChanges.next()
@@ -338,7 +347,7 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
 
             return proxy(addWithRollback(state.contributions, parsedContributions))
         },
-        getContributions: (scope, extraContext) =>
+        getContributions: ({ scope, extraContext, returnInactiveMenuItems }: ContributionOptions = {}) =>
             // TODO(tj): memoize access from mainthread (maybe by scope and extraContext (shallow))
             proxySubscribable(
                 combineLatest([
@@ -373,7 +382,10 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
 
                         return multiContributions.map(contributions => {
                             try {
-                                return filterContributions(evaluateContributions(computedContext, contributions))
+                                const evaluatedContributions = evaluateContributions(computedContext, contributions)
+                                return returnInactiveMenuItems
+                                    ? evaluatedContributions
+                                    : filterContributions(evaluatedContributions)
                             } catch (error) {
                                 // An error during evaluation causes all of the contributions in the same entry to be
                                 // discarded.
@@ -424,6 +436,15 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                     state.directoryViewProviders
                 )
             ),
+
+        getStatusBarItems: ({ viewerId }) => {
+            const viewer = getViewer(viewerId)
+            if (viewer.type !== 'CodeEditor') {
+                return proxySubscribable(EMPTY)
+            }
+
+            return proxySubscribable(viewer.mergedStatusBarItems.pipe(debounceTime(0)))
+        },
 
         // Content
         getLinkPreviews: (url: string) =>
@@ -626,6 +647,7 @@ function callViewProviders<W extends ContributableViewContainer>(
                     concat(
                         [undefined],
                         providerResultToObservable(viewProvider.provideView(context)).pipe(
+                            defaultIfEmpty<sourcegraph.View | null | undefined>(null),
                             catchError((error): [ErrorLike] => {
                                 console.error('View provider errored:', error)
                                 return [asError(error)]
@@ -635,14 +657,14 @@ function callViewProviders<W extends ContributableViewContainer>(
                 ),
             ])
         ),
-        map(views => views.filter(isDefined))
+        map(views => views.filter(allOf(isDefined, property('view', isNot(isExactly(null))))))
     )
 }
 
 /**
  * A workspace root with additional metadata that is not exposed to extensions.
  */
-export interface WorkspaceRootWithMetadata extends WorkspaceRoot {
+export interface WorkspaceRootWithMetadata extends clientType.WorkspaceRoot {
     /**
      * The original input Git revision that the user requested. The {@link WorkspaceRoot#uri} value will contain
      * the Git commit SHA resolved from the input revision, but it is useful to also know the original revision
@@ -716,4 +738,12 @@ export const NotificationType: typeof sourcegraph.NotificationType = {
     Info: 3,
     Log: 4,
     Success: 5,
+}
+
+// Contributions
+
+export interface ContributionOptions<T = unknown> {
+    scope?: ContributionScope | undefined
+    extraContext?: Context<T>
+    returnInactiveMenuItems?: boolean
 }

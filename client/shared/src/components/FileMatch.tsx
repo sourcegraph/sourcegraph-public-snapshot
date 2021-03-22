@@ -8,7 +8,8 @@ import { FetchFileParameters } from './CodeExcerpt'
 import { EventLogger, FileMatchChildren } from './FileMatchChildren'
 import { RepoFileLink } from './RepoFileLink'
 import { Props as ResultContainerProps, ResultContainer } from './ResultContainer'
-import { BadgeAttachmentRenderOptions } from 'sourcegraph'
+import { AggregableBadge, Badge } from 'sourcegraph'
+import { LinkOrSpan } from './LinkOrSpan'
 
 const SUBSET_COUNT_KEY = 'fileMatchSubsetCount'
 
@@ -18,11 +19,9 @@ export type FileLineMatch = Partial<Pick<GQL.IFileMatch, 'revSpec' | 'symbols' |
     lineMatches: LineMatch[]
 }
 
-export type LineMatch = Pick<GQL.ILineMatch, 'preview' | 'lineNumber' | 'offsetAndLengths' | 'limitHit'> & {
-    badge?: BadgeAttachmentRenderOptions
-}
+export type LineMatch = Pick<GQL.ILineMatch, 'preview' | 'lineNumber' | 'offsetAndLengths' | 'limitHit'> & Badge
 
-export interface MatchItem {
+export interface MatchItem extends Badge {
     highlightRanges: {
         start: number
         highlightLength: number
@@ -32,7 +31,6 @@ export interface MatchItem {
      * The 0-based line number of this match.
      */
     line: number
-    badge?: BadgeAttachmentRenderOptions
 }
 
 interface Props extends SettingsCascadeProps {
@@ -94,7 +92,7 @@ export class FileMatch extends React.PureComponent<Props> {
             highlightRanges: match.offsetAndLengths.map(([start, highlightLength]) => ({ start, highlightLength })),
             preview: match.preview,
             line: match.lineNumber,
-            badge: match.badge,
+            aggregableBadges: match.aggregableBadges,
         }))
 
         const { repoAtRevURL, revDisplayName } =
@@ -118,6 +116,24 @@ export class FileMatch extends React.PureComponent<Props> {
             />
         )
 
+        const description =
+            items.length > 0 ? (
+                <>
+                    {aggregateBadges(items).map(badge => (
+                        <LinkOrSpan
+                            key={badge.text}
+                            to={badge.linkURL}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            data-tooltip={badge.hoverMessage}
+                            className="badge badge-secondary text-muted text-uppercase file-match__badge"
+                        >
+                            {badge.text}
+                        </LinkOrSpan>
+                    ))}
+                </>
+            ) : undefined
+
         let containerProps: ResultContainerProps
 
         const expandedChildren = (
@@ -136,6 +152,7 @@ export class FileMatch extends React.PureComponent<Props> {
                 defaultExpanded: this.props.expanded,
                 icon: this.props.icon,
                 title,
+                description,
                 expandedChildren,
                 allExpanded: this.props.allExpanded,
             }
@@ -146,6 +163,7 @@ export class FileMatch extends React.PureComponent<Props> {
                 defaultExpanded: this.props.expanded,
                 icon: this.props.icon,
                 title,
+                description,
                 collapsedChildren: (
                     <FileMatchChildren
                         {...this.props}
@@ -164,4 +182,13 @@ export class FileMatch extends React.PureComponent<Props> {
 
         return <ResultContainer {...containerProps} titleClassName="test-search-result-label" />
     }
+}
+
+function aggregateBadges(items: MatchItem[]): AggregableBadge[] {
+    const aggregatedBadges = new Map<string, AggregableBadge>()
+    for (const badge of items.flatMap(item => item.aggregableBadges || [])) {
+        aggregatedBadges.set(badge.text, badge)
+    }
+
+    return [...aggregatedBadges.values()].sort((a, b) => a.text.localeCompare(b.text))
 }

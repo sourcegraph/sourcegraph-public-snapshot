@@ -104,7 +104,13 @@ func newGitLabSource(svc *types.ExternalService, c *schema.GitLabConnection, cf 
 
 	provider := gitlab.NewClientProvider(baseURL, cli)
 
-	client := provider.GetPATClient(c.Token, "")
+	var client *gitlab.Client
+	switch c.TokenType {
+	case "oauth":
+		client = provider.GetOAuthClient(c.Token)
+	default:
+		client = provider.GetPATClient(c.Token, "")
+	}
 
 	if !envvar.SourcegraphDotComMode() || svc.CloudDefault {
 		client.RateLimitMonitor().SetCollector(&ratelimit.MetricsCollector{

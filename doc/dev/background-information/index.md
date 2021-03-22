@@ -35,7 +35,6 @@
 ## [Languages](languages/index.md)
 
 - [Go](languages/go.md)
-  - [Testing Go code](languages/testing_go_code.md).
 - [TypeScript](languages/typescript.md)
 - [Bash](languages/bash.md)
 - [Terraform](languages/terraform.md)
@@ -47,8 +46,8 @@
 ## Testing
 
 - [Continuous Integration](continuous_integration.md)
-- [How to run tests](testing.md)
 - [Testing Principles](testing_principles.md)
+- [Testing Go code](languages/testing_go_code.md)
 - [Testing web code](testing_web_code.md)
 
 ## Tools

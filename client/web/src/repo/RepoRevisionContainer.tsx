@@ -37,6 +37,7 @@ import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { AuthenticatedUser } from '../auth'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { RepositoryFields } from '../graphql-operations'
+import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 
 /** Props passed to sub-routes of {@link RepoRevisionContainer}. */
 export interface RepoRevisionContainerContext
@@ -55,7 +56,8 @@ export interface RepoRevisionContainerContext
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         RevisionSpec,
-        BreadcrumbSetters {
+        BreadcrumbSetters,
+        ActionItemsBarProps {
     repo: RepositoryFields
     resolvedRev: ResolvedRevision
 
@@ -84,7 +86,8 @@ interface RepoRevisionContainerProps
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         RevisionSpec,
-        BreadcrumbSetters {
+        BreadcrumbSetters,
+        ActionItemsBarProps {
     routes: readonly RepoRevisionContainerRoute[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
@@ -218,6 +221,8 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
         resolvedRev: props.resolvedRevisionOrError,
     }
 
+    const resolvedRevisionOrError = props.resolvedRevisionOrError
+
     return (
         <div className="repo-revision-container">
             <Switch>
@@ -233,27 +238,31 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
                             />
                         )
                 )}
-                {/* eslint-enable react/jsx-no-bind */}
             </Switch>
             <RepoHeaderContributionPortal
                 position="left"
-                element={<CopyLinkAction key="copy-link" location={props.location} />}
+                id="copy-link"
                 repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-            />
+            >
+                {() => <CopyLinkAction key="copy-link" location={props.location} />}
+            </RepoHeaderContributionPortal>
             <RepoHeaderContributionPortal
                 position="right"
                 priority={3}
-                element={
+                id="go-to-permalink"
+                repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+            >
+                {context => (
                     <GoToPermalinkAction
                         key="go-to-permalink"
                         revision={props.revision}
-                        commitID={props.resolvedRevisionOrError.commitID}
+                        commitID={resolvedRevisionOrError.commitID}
                         location={props.location}
                         history={props.history}
+                        {...context}
                     />
-                }
-                repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-            />
+                )}
+            </RepoHeaderContributionPortal>
         </div>
     )
 }

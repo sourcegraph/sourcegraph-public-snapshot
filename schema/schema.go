@@ -697,8 +697,10 @@ type GitLabConnection struct {
 	//
 	// It is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
-	// Token description: A GitLab access token with "api" scope. If you are enabling permissions with identity provider type "external", this token should also have "sudo" scope.
+	// Token description: A GitLab access token with "api" scope. Can be a personal access token (PAT) or an OAuth token. If you are enabling permissions with identity provider type "external", this token should also have "sudo" scope.
 	Token string `json:"token"`
+	// TokenType description: The type of the token
+	TokenType string `json:"token.type,omitempty"`
 	// Url description: URL of a GitLab instance, such as https://gitlab.example.com or (for GitLab.com) https://gitlab.com.
 	Url string `json:"url"`
 	// Webhooks description: An array of webhook configurations
@@ -1024,7 +1026,7 @@ type PerforceConnection struct {
 	Depots []string `json:"depots,omitempty"`
 	// MaxChanges description: Only import at most n changes when possible (git p4 clone --max-changes).
 	MaxChanges float64 `json:"maxChanges,omitempty"`
-	// P4Passwd description: The plain password of the user (P4PASSWD).
+	// P4Passwd description: The ticket value for the user (P4PASSWD).
 	P4Passwd string `json:"p4.passwd"`
 	// P4Port description: The Perforce Server address to be used for p4 CLI (P4PORT).
 	P4Port string `json:"p4.port"`
@@ -1209,6 +1211,8 @@ type Settings struct {
 	Quicklinks []*QuickLink `json:"quicklinks,omitempty"`
 	// SearchContextLines description: The default number of lines to show as context below and above search results. Default is 1.
 	SearchContextLines int `json:"search.contextLines,omitempty"`
+	// SearchDefaultCaseSensitive description: Whether query patterns are treated case sensitively. Patterns are case insensitive by default.
+	SearchDefaultCaseSensitive bool `json:"search.defaultCaseSensitive,omitempty"`
 	// SearchDefaultPatternType description: The default pattern type (literal or regexp) that search queries will be intepreted as.
 	SearchDefaultPatternType string `json:"search.defaultPatternType,omitempty"`
 	// SearchGlobbing description: Enables globbing for supported field values
@@ -1235,7 +1239,7 @@ type Settings struct {
 type SettingsExperimentalFeatures struct {
 	// CodeInsights description: Enables code insights on directory pages.
 	CodeInsights *bool `json:"codeInsights,omitempty"`
-	// CodeMonitoring description: Enables code monitoring on directory pages.
+	// CodeMonitoring description: Enables code monitoring.
 	CodeMonitoring *bool `json:"codeMonitoring,omitempty"`
 	// CopyQueryButton description: Enables displaying the copy query button in the search bar when hovering over the global navigation bar.
 	CopyQueryButton *bool `json:"copyQueryButton,omitempty"`
@@ -1247,8 +1251,6 @@ type SettingsExperimentalFeatures struct {
 	SearchStats *bool `json:"searchStats,omitempty"`
 	// SearchStreaming description: Enables experimental streaming support.
 	SearchStreaming *bool `json:"searchStreaming,omitempty"`
-	// ShowBadgeAttachments description: Enables the UI indicators for code intelligence precision.
-	ShowBadgeAttachments *bool `json:"showBadgeAttachments,omitempty"`
 	// ShowCodeMonitoringTestEmailButton description: Enables the 'Send test email' debugging button for code monitoring.
 	ShowCodeMonitoringTestEmailButton *bool `json:"showCodeMonitoringTestEmailButton,omitempty"`
 	// ShowEnterpriseHomePanels description: Enabled the homepage panels in the Enterprise homepage
@@ -1359,6 +1361,12 @@ type SiteConfiguration struct {
 	HtmlHeadBottom string `json:"htmlHeadBottom,omitempty"`
 	// HtmlHeadTop description: HTML to inject at the top of the `<head>` element on each page, for analytics scripts
 	HtmlHeadTop string `json:"htmlHeadTop,omitempty"`
+	// InsightsHistoricalFrameLength description: (debug) duration of historical insights timeframes, one point per repository will be recorded in each timeframe.
+	InsightsHistoricalFrameLength string `json:"insights.historical.frameLength,omitempty"`
+	// InsightsHistoricalFrames description: (debug) number of historical insights timeframes to populate
+	InsightsHistoricalFrames int `json:"insights.historical.frames,omitempty"`
+	// InsightsHistoricalSpeedFactor description: (debug) Speed factor for building historical insights data. A value like 1.5 indicates approximately to use 1.5x as much repo-updater and gitserver resources.
+	InsightsHistoricalSpeedFactor *float64 `json:"insights.historical.speedFactor,omitempty"`
 	// LicenseKey description: The license key associated with a Sourcegraph product subscription, which is necessary to activate Sourcegraph Enterprise functionality. To obtain this value, contact Sourcegraph to purchase a subscription. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	LicenseKey string `json:"licenseKey,omitempty"`
 	// Log description: Configuration for logging and alerting, including to external services.

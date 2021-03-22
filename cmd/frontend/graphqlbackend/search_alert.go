@@ -624,7 +624,7 @@ func pathParentsByFrequency(paths []string) []string {
 // year 1. As a workaround, wrap instantiates start with time.now().
 // TODO(rvantonder): #10801.
 func (a searchAlert) wrap() *SearchResultsResolver {
-	return &SearchResultsResolver{db: a.db, alert: &a, start: time.Now()}
+	return &SearchResultsResolver{db: a.db, alert: &a}
 }
 
 // capFirst capitalizes the first rune in the given string. It can be safely

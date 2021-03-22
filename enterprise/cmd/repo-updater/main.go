@@ -76,7 +76,11 @@ func startBackgroundPermsSync(ctx context.Context, syncer *authz.PermsSyncer, db
 		t := time.NewTicker(5 * time.Second)
 		for range t.C {
 			allowAccessByDefault, authzProviders, _, _ :=
-				frontendAuthz.ProvidersFromConfig(ctx, conf.Get(), ossDB.GlobalExternalServices)
+				frontendAuthz.ProvidersFromConfig(
+					ctx,
+					conf.Get(),
+					ossDB.ExternalServices(db),
+				)
 			ossAuthz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()

@@ -255,27 +255,6 @@ func TestSearchResults(t *testing.T) {
 			t.Error("calledSearchSymbols")
 		}
 	})
-
-	t.Run("test start time is not null when alert thrown", func(t *testing.T) {
-		mockDecodedViewerFinalSettings = &schema.Settings{}
-		defer func() { mockDecodedViewerFinalSettings = nil }()
-
-		for _, v := range searchVersions {
-			r, err := (&schemaResolver{db: db}).Search(context.Background(), &SearchArgs{Query: `repo:*`, Version: v})
-			if err != nil {
-				t.Fatal("Search:", err)
-			}
-
-			results, err := r.Results(context.Background())
-			if err != nil {
-				t.Fatal("Search: ", err)
-			}
-
-			if results.start.IsZero() {
-				t.Error("Start value is not set")
-			}
-		}
-	})
 }
 
 func TestOrderedFuzzyRegexp(t *testing.T) {
@@ -858,14 +837,15 @@ func TestSearchResultsHydration(t *testing.T) {
 
 	ctx := context.Background()
 
-	q, err := query.ParseLiteral(`foobar index:only count:350`)
+	p, err := query.Pipeline(query.InitLiteral(`foobar index:only count:350`))
 	if err != nil {
 		t.Fatal(err)
 	}
 	resolver := &searchResolver{
 		db: db,
 		SearchInputs: &SearchInputs{
-			Query:        q,
+			Plan:         p,
+			Query:        p.ToParseTree(),
 			UserSettings: &schema.Settings{},
 		},
 		zoekt:    z,
@@ -1048,7 +1028,6 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 				SearchResults: tt.fields.results,
 				Stats:         tt.fields.searchResultsCommon,
 				alert:         tt.fields.alert,
-				start:         tt.fields.start,
 			}
 			if got := sr.ApproximateResultCount(); got != tt.want {
 				t.Errorf("searchResultsResolver.ApproximateResultCount() = %v, want %v", got, tt.want)
@@ -1102,11 +1081,17 @@ func TestGetExactFilePatterns(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.in, func(t *testing.T) {
-			q, err := query.Pipeline(query.InitLiteral(tt.in), query.Globbing)
+			plan, err := query.Pipeline(query.InitLiteral(tt.in), query.Globbing)
 			if err != nil {
 				t.Fatal(err)
 			}
-			r := searchResolver{SearchInputs: &SearchInputs{Query: q, OriginalQuery: tt.in}}
+			r := searchResolver{
+				SearchInputs: &SearchInputs{
+					Plan:          plan,
+					Query:         plan.ToParseTree(),
+					OriginalQuery: tt.in,
+				},
+			}
 			if got := r.getExactFilePatterns(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("getExactFilePatterns() = %v, want %v", got, tt.want)
 			}
@@ -1306,16 +1291,20 @@ func TestEvaluateAnd(t *testing.T) {
 			}
 			defer func() { database.Mocks = database.MockStores{} }()
 
-			q, err := query.ParseLiteral(tt.query)
+			p, err := query.Pipeline(query.InitLiteral(tt.query))
 			if err != nil {
 				t.Fatal(err)
 			}
 			resolver := &searchResolver{
-				db:           db,
-				SearchInputs: &SearchInputs{Query: q, UserSettings: &schema.Settings{}},
-				zoekt:        z,
-				reposMu:      &sync.Mutex{},
-				resolved:     &searchrepos.Resolved{},
+				db: db,
+				SearchInputs: &SearchInputs{
+					Plan:         p,
+					Query:        p.ToParseTree(),
+					UserSettings: &schema.Settings{},
+				},
+				zoekt:    z,
+				reposMu:  &sync.Mutex{},
+				resolved: &searchrepos.Resolved{},
 			}
 			results, err := resolver.Results(ctx)
 			if err != nil {
@@ -1371,14 +1360,15 @@ func TestSearchContext(t *testing.T) {
 
 	for _, tt := range tts {
 		t.Run(tt.name, func(t *testing.T) {
-			qinfo, err := query.ParseLiteral(tt.searchQuery)
+			p, err := query.Pipeline(query.InitLiteral(tt.searchQuery))
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			resolver := searchResolver{
 				SearchInputs: &SearchInputs{
-					Query:        qinfo,
+					Plan:         p,
+					Query:        p.ToParseTree(),
 					UserSettings: &schema.Settings{},
 				},
 				reposMu:  &sync.Mutex{},

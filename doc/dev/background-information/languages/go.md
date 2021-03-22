@@ -6,9 +6,7 @@ For all things not covered in this document, defer to
 [Go Code Review Comments](https://code.google.com/p/go-wiki/wiki/CodeReviewComments)
 and [Effective Go](http://golang.org/doc/effective_go.html).
 
-We also have subsections here:
-- [Testing Go Code](#Testing)
-- [Exposing Services](#exposing-services)
+Related pages: [Testing Go code](testing_go_code.md) | [Exposing Services](../exposing-services.md)
 
 ## Panics
 
@@ -147,7 +145,3 @@ total := add([]Vector(a, b, c))...)
 If we revisit the recommended organization, we can also see the usage of new lines. Newlines are something we kind of pepper in our code without really thinking about it. However, they can be really powerful signals. I recommend that you treat them like paragraph breaks -- if you don’t use any at all, your reader is lost. If you use them too much, your message is fragmented. They can help guide the user to where the logical components are.
 
 Be intentional with them!
-
-## Testing
-
-See guidelines for [testing Go code](./testing_go_code.md).

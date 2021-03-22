@@ -1058,14 +1058,14 @@ func Parse(in string, searchType SearchType) ([]Node, error) {
 	return newOperator(nodes, And), nil
 }
 
+func ParseSearchType(in string, searchType SearchType) (Q, error) {
+	return Run(Init(in, searchType))
+}
+
 func ParseLiteral(in string) (Q, error) {
-	return Pipeline(Init(in, SearchTypeLiteral))
+	return Run(Init(in, SearchTypeLiteral))
 }
 
 func ParseRegexp(in string) (Q, error) {
-	return Pipeline(Init(in, SearchTypeRegex))
-}
-
-func ParseSearchType(in string, searchType SearchType) (Q, error) {
-	return Pipeline(Init(in, searchType))
+	return Run(Init(in, SearchTypeRegex))
 }

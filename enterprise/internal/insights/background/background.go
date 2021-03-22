@@ -65,6 +65,7 @@ func StartBackgroundJobs(ctx context.Context, mainAppDB *sql.DB) {
 		// results to TimescaleDB.
 		queryrunner.NewWorker(ctx, workerBaseStore, insightsStore, queryRunnerWorkerMetrics),
 		queryrunner.NewResetter(ctx, workerBaseStore, queryRunnerResetterMetrics),
+		queryrunner.NewCleaner(ctx, workerBaseStore, observationContext),
 
 		// TODO(slimsag): future: register another worker here for webhook querying.
 	}

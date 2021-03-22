@@ -20,9 +20,9 @@ type Predicate interface {
 	// into the predicate object.
 	ParseParams(string) error
 
-	// Query returns a Q that, when evaluated, returns a list of results
-	// that can replace the predicate
-	Query(parent Q) Q
+	// Plan generates a plan of (possibly multiple) queries to execute the
+	// behavior of a predicate in a query Q.
+	Plan(parent Q) Plan
 }
 
 var DefaultPredicateRegistry = predicateRegistry{
@@ -123,7 +123,7 @@ func (f *RepoContainsPredicate) ParseParams(params string) error {
 
 func (f *RepoContainsPredicate) Field() string { return FieldRepo }
 func (f *RepoContainsPredicate) Name() string  { return "contains" }
-func (f *RepoContainsPredicate) Query(parent Q) Q {
+func (f *RepoContainsPredicate) Plan(parent Q) Plan {
 	nodes := make([]Node, 0, 3)
 	nodes = append(nodes, Parameter{
 		Field: FieldSelect,
@@ -147,7 +147,7 @@ func (f *RepoContainsPredicate) Query(parent Q) Q {
 	}
 
 	nodes = append(nodes, nonPredicateRepos(parent)...)
-	return nodes
+	return ToPlan(Dnf(nodes))
 }
 
 // nonPredicateRepos returns the repo nodes in a query that aren't predicates

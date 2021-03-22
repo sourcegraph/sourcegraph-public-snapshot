@@ -5,7 +5,6 @@ import GithubIcon from 'mdi-react/GithubIcon'
 import React, { useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import * as H from 'history'
-import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
 import { ExtensionCategory, ExtensionManifest } from '../../../../shared/src/schema/extensionSchema'
 import { isErrorLike } from '../../../../shared/src/util/errors'
 import { isDefined } from '../../../../shared/src/util/types'
@@ -162,12 +161,7 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                                     Published on
                                 </dt>
                                 <dd>
-                                    <LinkOrSpan
-                                        to={extension.registryExtension.remoteURL}
-                                        target={extension.registryExtension.isLocal ? undefined : '_self'}
-                                    >
-                                        {extension.registryExtension.registryName}
-                                    </LinkOrSpan>
+                                    <span>{extension.registryExtension.registryName}</span>
                                 </dd>
                             </>
                         )}

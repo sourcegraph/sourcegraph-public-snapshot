@@ -4,7 +4,7 @@ import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react'
 import { escapeRegExp } from 'lodash'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { NEVER, ObservableInput, of } from 'rxjs'
-import { catchError } from 'rxjs/operators'
+import { catchError, switchMap } from 'rxjs/operators'
 import { redirectToExternalHost } from '.'
 import {
     isRepoNotFoundErrorLike,
@@ -59,6 +59,7 @@ import { useLocalStorage } from '../util/useLocalStorage'
 import { Settings } from '../schema/settings.schema'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { escapeSpaces } from '../../../shared/src/search/query/filters'
+import { ActionItemsBarProps, useWebActionItems } from '../extensions/components/ActionItemsBar'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -77,7 +78,8 @@ export interface RepoContainerContext
         CopyQueryButtonProps,
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
-        BreadcrumbSetters {
+        BreadcrumbSetters,
+        ActionItemsBarProps {
     repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
@@ -170,18 +172,28 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     )
 
     const resolvedRevisionOrError = useObservable(
-        React.useMemo(
+        useMemo(
             () =>
-                resolveRevision({ repoName, revision }).pipe(
-                    catchError(error => {
-                        if (isCloneInProgressErrorLike(error)) {
-                            return of<ErrorLike>(asError(error))
-                        }
-                        throw error
-                    }),
-                    repeatUntil(value => !isCloneInProgressErrorLike(value), { delay: 1000 }),
-                    catchError(error => of<ErrorLike>(asError(error)))
-                ),
+                of(undefined)
+                    .pipe(
+                        // Wrap in switchMap so we don't break the observable chain when
+                        // catchError returns a new observable, so repeatUntil will
+                        // properly resubscribe to the outer observable and re-fetch.
+                        switchMap(() =>
+                            resolveRevision({ repoName, revision }).pipe(
+                                catchError(error => {
+                                    if (isCloneInProgressErrorLike(error)) {
+                                        return of<ErrorLike>(asError(error))
+                                    }
+                                    throw error
+                                })
+                            )
+                        )
+                    )
+                    .pipe(
+                        repeatUntil(value => !isCloneInProgressErrorLike(value), { delay: 1000 }),
+                        catchError(error => of<ErrorLike>(asError(error)))
+                    ),
             [repoName, revision]
         )
     )
@@ -289,6 +301,8 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         })
     }, [revision, filePath, repoName, onNavbarQueryChange, globbing])
 
+    const { useActionItemsBar, useActionItemsToggle } = useWebActionItems()
+
     const isBrowserExtensionInstalled = useObservable(browserExtensionInstalled)
     const codeHostIntegrationMessaging =
         (!isErrorLike(props.settingsCascade.final) &&
@@ -363,6 +377,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         repo: repoOrError,
         routePrefix: repoMatchURL,
         onDidUpdateExternalLinks: setExternalLinks,
+        useActionItemsBar,
     }
 
     return (
@@ -376,19 +391,29 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 />
             )}
             <RepoHeader
-                {...props}
                 actionButtons={props.repoHeaderActionButtons}
+                useActionItemsToggle={useActionItemsToggle}
+                breadcrumbs={props.breadcrumbs}
                 revision={revision}
                 repo={repoOrError}
                 resolvedRev={resolvedRevisionOrError}
                 onLifecyclePropsChange={setRepoHeaderContributionsLifecycleProps}
                 isAlertDisplayed={showExtensionAlert}
+                location={props.location}
+                history={props.history}
+                settingsCascade={props.settingsCascade}
+                authenticatedUser={props.authenticatedUser}
+                platformContext={props.platformContext}
+                extensionsController={props.extensionsController}
+                telemetryService={props.telemetryService}
             />
             <RepoHeaderContributionPortal
                 position="right"
                 priority={2}
+                id="go-to-code-host"
                 {...repoHeaderContributionsLifecycleProps}
-                element={
+            >
+                {({ actionType }) => (
                     <GoToCodeHostAction
                         key="go-to-code-host"
                         repo={repoOrError}
@@ -402,9 +427,11 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                         fetchFileExternalLinks={fetchFileExternalLinks}
                         canShowPopover={canShowPopover}
                         onPopoverDismissed={onPopoverDismissed}
+                        actionType={actionType}
+                        repoName={repoName}
                     />
-                }
-            />
+                )}
+            </RepoHeaderContributionPortal>
             <ErrorBoundary location={props.location}>
                 <Switch>
                     {/* eslint-disable react/jsx-no-bind */}
@@ -429,6 +456,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                                     resolvedRevisionOrError={resolvedRevisionOrError}
                                     // must exactly match how the revision was encoded in the URL
                                     routePrefix={`${repoMatchURL}${rawRevision ? `@${rawRevision}` : ''}`}
+                                    useActionItemsBar={useActionItemsBar}
                                 />
                             )}
                         />

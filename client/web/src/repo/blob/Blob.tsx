@@ -3,7 +3,7 @@ import { getCodeElementsInRange, locateTarget } from '@sourcegraph/codeintellify
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { BehaviorSubject, combineLatest, EMPTY, from, fromEvent, ReplaySubject, Subject, Subscription } from 'rxjs'
+import { BehaviorSubject, combineLatest, EMPTY, from, fromEvent, of, ReplaySubject, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, filter, first, map, mapTo, switchMap, tap, withLatestFrom } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { groupDecorationsByLine } from '../../../../shared/src/api/extension/api/decorations'
@@ -44,6 +44,7 @@ import { Remote } from 'comlink'
 import { FlatExtensionHostAPI } from '../../../../shared/src/api/contract'
 import { getModeFromPath } from '../../../../shared/src/languages'
 import { haveInitialExtensionsLoaded } from '../../../../shared/src/api/features'
+import { StatusBar } from '../../extensions/components/StatusBar'
 
 /**
  * toPortalID builds an ID that will be used for the {@link LineDecorator} portal containers.
@@ -495,40 +496,62 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     // Passed to HoverOverlay
     const hoverState = useObservable(hoverifier.hoverStateUpdates) || {}
 
+    const getStatusBarItems = useCallback(
+        () =>
+            viewerUpdates.pipe(
+                switchMap(viewerData => {
+                    if (!viewerData) {
+                        return of('loading' as const)
+                    }
+
+                    return wrapRemoteObservable(viewerData.extensionHostAPI.getStatusBarItems(viewerData.viewerId))
+                })
+            ),
+        [viewerUpdates]
+    )
+
     return (
-        <div className={`blob ${props.className}`} ref={nextBlobElement}>
-            <code
-                className={`blob__code ${props.wrapCode ? ' blob__code--wrapped' : ''} test-blob`}
-                ref={nextCodeViewElement}
-                dangerouslySetInnerHTML={{ __html: blobInfo.html }}
-            />
-            {hoverState.hoverOverlayProps && (
-                <WebHoverOverlay
-                    {...props}
-                    {...hoverState.hoverOverlayProps}
-                    hoverRef={nextOverlayElement}
-                    onCloseButtonClick={nextCloseButtonClick}
-                    extensionsController={extensionsController}
+        <>
+            <div className={`blob ${props.className}`} ref={nextBlobElement}>
+                <code
+                    className={`blob__code ${props.wrapCode ? ' blob__code--wrapped' : ''} test-blob`}
+                    ref={nextCodeViewElement}
+                    dangerouslySetInnerHTML={{ __html: blobInfo.html }}
                 />
-            )}
-            {groupedDecorations &&
-                iterate(groupedDecorations)
-                    .map(([line, decorations]) => {
-                        const portalID = toPortalID(line)
-                        return (
-                            <LineDecorator
-                                isLightTheme={isLightTheme}
-                                key={`${portalID}-${blobInfo.filePath}`}
-                                portalID={portalID}
-                                getCodeElementFromLineNumber={domFunctions.getCodeElementFromLineNumber}
-                                line={line}
-                                decorations={decorations}
-                                codeViewElements={codeViewElements}
-                            />
-                        )
-                    })
-                    .toArray()}
-        </div>
+                {hoverState.hoverOverlayProps && (
+                    <WebHoverOverlay
+                        {...props}
+                        {...hoverState.hoverOverlayProps}
+                        hoverRef={nextOverlayElement}
+                        onCloseButtonClick={nextCloseButtonClick}
+                        extensionsController={extensionsController}
+                    />
+                )}
+                {groupedDecorations &&
+                    iterate(groupedDecorations)
+                        .map(([line, decorations]) => {
+                            const portalID = toPortalID(line)
+                            return (
+                                <LineDecorator
+                                    isLightTheme={isLightTheme}
+                                    key={`${portalID}-${blobInfo.filePath}`}
+                                    portalID={portalID}
+                                    getCodeElementFromLineNumber={domFunctions.getCodeElementFromLineNumber}
+                                    line={line}
+                                    decorations={decorations}
+                                    codeViewElements={codeViewElements}
+                                />
+                            )
+                        })
+                        .toArray()}
+            </div>
+            <StatusBar
+                getStatusBarItems={getStatusBarItems}
+                extensionsController={extensionsController}
+                uri={toURIWithPath(blobInfo)}
+                location={location}
+            />
+        </>
     )
 }
 

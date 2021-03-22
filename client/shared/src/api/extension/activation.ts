@@ -168,6 +168,7 @@ export function activateExtensions(
             for (const [id] of activated) {
                 previouslyActivatedExtensions.add(id)
             }
+
             if (contributionsToAdd.size > 0) {
                 state.contributions.next([...state.contributions.value, ...contributionsToAdd.values()])
                 contributionsToAdd.clear()
