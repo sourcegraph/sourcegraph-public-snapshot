@@ -37,19 +37,17 @@ func stringHumanPattern(nodes []Node) string {
 	return strings.Join(result, "")
 }
 
-func stringHumanParameters(nodes []Node) string {
+func stringHumanParameters(parameters []Parameter) string {
 	var result []string
-	for _, node := range nodes {
-		if n, ok := node.(Parameter); ok {
-			v := n.Value
-			if n.Annotation.Labels.isSet(Quoted) {
-				v = strconv.Quote(v)
-			}
-			if n.Negated {
-				return fmt.Sprintf("-%s:%s", n.Field, v)
-			}
-			result = append(result, fmt.Sprintf("%s:%s", n.Field, v))
+	for _, p := range parameters {
+		v := p.Value
+		if p.Annotation.Labels.isSet(Quoted) {
+			v = strconv.Quote(v)
 		}
+		if p.Negated {
+			return fmt.Sprintf("-%s:%s", p.Field, v)
+		}
+		result = append(result, fmt.Sprintf("%s:%s", p.Field, v))
 	}
 	return strings.Join(result, " ")
 }

@@ -785,10 +785,10 @@ func (r *searchResolver) evaluate(ctx context.Context, q query.Q) (*SearchResult
 		return alertForQuery("", err).wrap(r.db), nil
 	}
 	if pattern == nil {
-		r.setQuery(scopeParameters)
+		r.setQuery(query.ToNodes(scopeParameters))
 		return r.evaluateLeaf(ctx)
 	}
-	return r.evaluatePatternExpression(ctx, scopeParameters, pattern)
+	return r.evaluatePatternExpression(ctx, query.ToNodes(scopeParameters), pattern)
 }
 
 // invalidateRepoCache returns whether resolved repos should be invalidated when
