@@ -519,7 +519,6 @@ func mkFileMatch(db dbutil.DB, repo *types.RepoName, path string, lineNumbers ..
 		lines = append(lines, &result.LineMatch{LineNumber: n})
 	}
 	return mkFileMatchResolver(db, result.FileMatch{
-		URI:         fileMatchURI(repo.Name, "", path),
 		Path:        path,
 		LineMatches: lines,
 		Repo:        repo,

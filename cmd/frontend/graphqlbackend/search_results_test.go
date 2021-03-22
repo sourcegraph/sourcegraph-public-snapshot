@@ -1440,7 +1440,7 @@ func fileResult(db dbutil.DB, uri string, lineMatches []*result.LineMatch, symbo
 	return &FileMatchResolver{
 		db: db,
 		FileMatch: result.FileMatch{
-			URI:         uri,
+			Repo:        &types.RepoName{Name: api.RepoName(uri)},
 			LineMatches: lineMatches,
 			Symbols:     symbolMatches,
 		},
@@ -1450,7 +1450,7 @@ func fileResult(db dbutil.DB, uri string, lineMatches []*result.LineMatch, symbo
 func resultToString(r SearchResultResolver) string {
 	switch v := r.(type) {
 	case *FileMatchResolver:
-		return fmt.Sprintf("File:%s", v.URI)
+		return fmt.Sprintf("File:%s", v.URL())
 	case *RepositoryResolver:
 		return fmt.Sprintf("Repository:%s", v.URL())
 	case *CommitSearchResultResolver:
@@ -1500,7 +1500,7 @@ func TestUnionMerge(t *testing.T) {
 				},
 			},
 			right: SearchResultsResolver{db: db},
-			want:  autogold.Want("LeftOnly", "Commit:/a/-/commit/, Diff:/a/-/commit/, File{url:a,symbols:[],lineMatches:[]}, Repo:/a"),
+			want:  autogold.Want("LeftOnly", "Commit:/a/-/commit/, Diff:/a/-/commit/, File{url:git://a#,symbols:[],lineMatches:[]}, Repo:/a"),
 		},
 		{
 			left: SearchResultsResolver{db: db},
@@ -1513,7 +1513,7 @@ func TestUnionMerge(t *testing.T) {
 					fileResult(db, "a", nil, nil),
 				},
 			},
-			want: autogold.Want("RightOnly", "Commit:/a/-/commit/, Diff:/a/-/commit/, File{url:a,symbols:[],lineMatches:[]}, Repo:/a"),
+			want: autogold.Want("RightOnly", "Commit:/a/-/commit/, Diff:/a/-/commit/, File{url:git://a#,symbols:[],lineMatches:[]}, Repo:/a"),
 		},
 		{
 			left: SearchResultsResolver{db: db,
@@ -1532,7 +1532,7 @@ func TestUnionMerge(t *testing.T) {
 					fileResult(db, "b", nil, nil),
 				},
 			},
-			want: autogold.Want("MergeAllDifferent", "Commit:/a/-/commit/, Commit:/b/-/commit/, Diff:/a/-/commit/, Diff:/b/-/commit/, File{url:a,symbols:[],lineMatches:[]}, File{url:b,symbols:[],lineMatches:[]}, Repo:/a, Repo:/b"),
+			want: autogold.Want("MergeAllDifferent", "Commit:/a/-/commit/, Commit:/b/-/commit/, Diff:/a/-/commit/, Diff:/b/-/commit/, File{url:git://a#,symbols:[],lineMatches:[]}, File{url:git://b#,symbols:[],lineMatches:[]}, Repo:/a, Repo:/b"),
 		},
 		{
 			left: SearchResultsResolver{db: db,
@@ -1551,7 +1551,7 @@ func TestUnionMerge(t *testing.T) {
 					}, nil),
 				},
 			},
-			want: autogold.Want("MergeFileLineMatches", "File{url:b,symbols:[],lineMatches:[a,b,c,d]}"),
+			want: autogold.Want("MergeFileLineMatches", "File{url:git://b#,symbols:[],lineMatches:[a,b,c,d]}"),
 		},
 		{
 			left: SearchResultsResolver{db: db,
@@ -1570,7 +1570,7 @@ func TestUnionMerge(t *testing.T) {
 					}, nil),
 				},
 			},
-			want: autogold.Want("NoMergeFileSymbols", "File{url:a,symbols:[],lineMatches:[a,b]}, File{url:b,symbols:[],lineMatches:[c,d]}"),
+			want: autogold.Want("NoMergeFileSymbols", "File{url:git://a#,symbols:[],lineMatches:[a,b]}, File{url:git://b#,symbols:[],lineMatches:[c,d]}"),
 		},
 		{
 			left: SearchResultsResolver{db: db,
@@ -1589,7 +1589,7 @@ func TestUnionMerge(t *testing.T) {
 					}),
 				},
 			},
-			want: autogold.Want("MergeFileSymbols", "File{url:a,symbols:[a,b,c,d],lineMatches:[]}"),
+			want: autogold.Want("MergeFileSymbols", "File{url:git://a#,symbols:[a,b,c,d],lineMatches:[]}"),
 		},
 	}
 
@@ -1631,7 +1631,7 @@ func TestSearchResultDeduper(t *testing.T) {
 		},
 		{
 			[]SearchResultResolver{commitResult("a"), diffResult("a"), repoResult(db, "a"), fileResult(db, "a", nil, nil)},
-			autogold.Want("EachTypeSameURL", "Commit:/a/-/commit/, Diff:/a/-/commit/, File{url:a,symbols:[],lineMatches:[]}, Repo:/a"),
+			autogold.Want("EachTypeSameURL", "Commit:/a/-/commit/, Diff:/a/-/commit/, File{url:git://a#,symbols:[],lineMatches:[]}, Repo:/a"),
 		},
 		{
 			[]SearchResultResolver{commitResult("a"), commitResult("b"), commitResult("a"), commitResult("b")},
@@ -1666,7 +1666,7 @@ func searchResultResolversToString(srrs []SearchResultResolver) string {
 			for _, line := range v.FileMatch.LineMatches {
 				lines = append(lines, line.Preview)
 			}
-			return fmt.Sprintf("File{url:%s,symbols:[%s],lineMatches:[%s]}", v.URI, strings.Join(symbols, ","), strings.Join(lines, ","))
+			return fmt.Sprintf("File{url:%s,symbols:[%s],lineMatches:[%s]}", v.URL(), strings.Join(symbols, ","), strings.Join(lines, ","))
 		case *CommitSearchResultResolver:
 			if v.DiffPreview() != nil {
 				return fmt.Sprintf("Diff:%s", v.URL())

@@ -1,6 +1,9 @@
 package result
 
 import (
+	"net/url"
+	"strings"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -11,7 +14,6 @@ type FileMatch struct {
 	LimitHit    bool
 
 	Symbols  []*SymbolMatch  `json:"-"`
-	URI      string          `json:"-"`
 	Repo     *types.RepoName `json:"-"`
 	CommitID api.CommitID    `json:"-"`
 
@@ -19,6 +21,24 @@ type FileMatch struct {
 	// preserve the original revision specifier from the user instead of navigating them to the
 	// absolute commit ID when they select a result.
 	InputRev *string `json:"-"`
+}
+
+func (fm *FileMatch) URL() string {
+	var b strings.Builder
+	var ref string
+	if fm.InputRev != nil {
+		ref = url.QueryEscape(*fm.InputRev)
+	}
+	b.Grow(len(fm.Repo.Name) + len(ref) + len(fm.Path) + len("git://?#"))
+	b.WriteString("git://")
+	b.WriteString(string(fm.Repo.Name))
+	if ref != "" {
+		b.WriteByte('?')
+		b.WriteString(ref)
+	}
+	b.WriteByte('#')
+	b.WriteString(fm.Path)
+	return b.String()
 }
 
 func (fm *FileMatch) ResultCount() int {

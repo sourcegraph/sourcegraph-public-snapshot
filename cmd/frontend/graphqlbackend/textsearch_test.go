@@ -44,11 +44,15 @@ func TestSearchFilesInRepos(t *testing.T) {
 		switch repoName {
 		case "foo/one":
 			return []*FileMatchResolver{mkFileMatchResolver(db, result.FileMatch{
-				URI: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+				Repo:     repo,
+				InputRev: &rev,
+				Path:     "main.go",
 			})}, false, nil
 		case "foo/two":
 			return []*FileMatchResolver{mkFileMatchResolver(db, result.FileMatch{
-				URI: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+				Repo:     repo,
+				InputRev: &rev,
+				Path:     "main.go",
 			})}, false, nil
 		case "foo/empty":
 			return nil, false, nil
@@ -133,15 +137,21 @@ func TestSearchFilesInReposStream(t *testing.T) {
 		switch repoName {
 		case "foo/one":
 			return []*FileMatchResolver{mkFileMatchResolver(db, result.FileMatch{
-				URI: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+				Repo:     repo,
+				InputRev: &rev,
+				Path:     "main.go",
 			})}, false, nil
 		case "foo/two":
 			return []*FileMatchResolver{mkFileMatchResolver(db, result.FileMatch{
-				URI: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+				Repo:     repo,
+				InputRev: &rev,
+				Path:     "main.go",
 			})}, false, nil
 		case "foo/three":
 			return []*FileMatchResolver{mkFileMatchResolver(db, result.FileMatch{
-				URI: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+				Repo:     repo,
+				InputRev: &rev,
+				Path:     "main.go",
 			})}, false, nil
 		default:
 			return nil, false, errors.New("Unexpected repo")
@@ -207,7 +217,9 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 		switch repoName {
 		case "foo":
 			return []*FileMatchResolver{mkFileMatchResolver(db, result.FileMatch{
-				URI: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+				Repo:     repo,
+				InputRev: &rev,
+				Path:     "main.go",
 			})}, false, nil
 		default:
 			panic("unexpected repo")
@@ -248,7 +260,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 
 	resultURIs := make([]string, len(results))
 	for i, result := range results {
-		resultURIs[i] = result.URI
+		resultURIs[i] = result.URL()
 	}
 	sort.Strings(resultURIs)
 
