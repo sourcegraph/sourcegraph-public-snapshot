@@ -287,6 +287,14 @@ func Globbing(nodes []Node) ([]Node, error) {
 	return nodes, nil
 }
 
+func ToNodes(parameters []Parameter) []Node {
+	nodes := make([]Node, 0, len(parameters))
+	for _, p := range parameters {
+		nodes = append(nodes, p)
+	}
+	return nodes
+}
+
 // Hoist is a heuristic that rewrites simple but possibly ambiguous queries. It
 // changes certain expressions in a way that some consider to be more natural.
 // For example, the following query without parentheses is interpreted as
@@ -317,7 +325,7 @@ func Hoist(nodes []Node) ([]Node, error) {
 
 	n := len(expression.Operands)
 	var pattern []Node
-	var scopeParameters []Node
+	var scopeParameters []Parameter
 	for i, node := range expression.Operands {
 		if i == 0 || i == n-1 {
 			scopePart, patternPart, err := PartitionSearchPattern([]Node{node})
@@ -337,7 +345,7 @@ func Hoist(nodes []Node) ([]Node, error) {
 		annotation.Labels |= HeuristicHoisted
 		return Pattern{Value: value, Negated: negated, Annotation: annotation}
 	})
-	return append(scopeParameters, newOperator(pattern, expression.Kind)...), nil
+	return append(ToNodes(scopeParameters), newOperator(pattern, expression.Kind)...), nil
 }
 
 // partition partitions nodes into left and right groups. A node is put in the
