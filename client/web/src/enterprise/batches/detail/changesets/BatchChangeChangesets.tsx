@@ -82,7 +82,6 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                 onlyPublishedByThisBatchChange: null,
                 search: changesetFilters.search,
                 onlyArchived: !!onlyArchived,
-                includeArchived: false,
             }).pipe(repeatWhen(notifier => notifier.pipe(delay(5000)))),
         [
             batchChangeID,

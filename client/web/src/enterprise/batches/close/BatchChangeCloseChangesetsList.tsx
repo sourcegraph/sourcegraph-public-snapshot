@@ -79,7 +79,6 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
                 onlyPublishedByThisBatchChange: true,
                 search: null,
                 onlyArchived: false,
-                includeArchived: false,
             }).pipe(repeatWhen(notifier => notifier.pipe(delay(5000)))),
         [batchChangeID, queryChangesets]
     )

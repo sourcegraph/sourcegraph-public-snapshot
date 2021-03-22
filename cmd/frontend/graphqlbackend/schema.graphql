@@ -10058,10 +10058,6 @@ type BatchChange implements Node {
         Only return changesets that are archived in this campaign.
         """
         onlyArchived: Boolean = false
-        """
-        Include changesets that are archived in this campaign.
-        """
-        includeArchived: Boolean = false
     ): ChangesetConnection!
 
     """

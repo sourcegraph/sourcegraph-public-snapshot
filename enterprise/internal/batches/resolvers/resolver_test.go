@@ -793,16 +793,6 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 				OnlyArchived: true,
 			},
 		},
-		// Setting IncludeArchived
-		{
-			args: &graphqlbackend.ListChangesetsArgs{
-				IncludeArchived: true,
-			},
-			wantSafe: true,
-			wantParsed: store.ListChangesetsOpts{
-				IncludeArchived: true,
-			},
-		},
 	}
 	for i, tc := range tcs {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {

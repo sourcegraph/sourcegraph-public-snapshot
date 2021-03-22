@@ -747,9 +747,6 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, batchCha
 	if args.OnlyArchived {
 		opts.OnlyArchived = args.OnlyArchived
 	}
-	if args.IncludeArchived {
-		opts.IncludeArchived = args.IncludeArchived
-	}
 
 	return opts, safe, nil
 }
