@@ -1606,7 +1606,7 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 	tr.LogFields(trace.Stringer("global_search_mode", args.Mode))
 	defer func() {
 		a.error(ctx, err)
-		tr.SetError(err)
+		tr.SetErrorIfNotContext(err)
 		tr.Finish()
 	}()
 
