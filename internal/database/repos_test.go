@@ -141,6 +141,18 @@ func TestRepos_Count(t *testing.T) {
 		t.Errorf("got %d, want %d", count, want)
 	}
 
+	t.Run("order and limit options are ignored", func(t *testing.T) {
+		opts := ReposListOptions{
+			OrderBy:     []RepoListSort{{Field: RepoListID}},
+			LimitOffset: &LimitOffset{Limit: 1},
+		}
+		if count, err := Repos(db).Count(ctx, opts); err != nil {
+			t.Fatal(err)
+		} else if want := 1; count != want {
+			t.Errorf("got %d, want %d", count, want)
+		}
+	})
+
 	repos, err := Repos(db).List(ctx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)

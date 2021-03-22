@@ -1,7 +1,6 @@
 package server
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"net/url"
@@ -11,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -140,8 +138,8 @@ func decomposePerforceRemoteURL(remoteURL *url.URL) (username, password, host, d
 	return remoteURL.User.Username(), password, remoteURL.Host, remoteURL.Path, nil
 }
 
-// p4ping sends one message to the Perforce Server to check connectivity.
-func p4ping(ctx context.Context, host, username string) error {
+// p4ping sends one message to the Perforce server to check connectivity.
+func p4ping(ctx context.Context, host, username, password string) error {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
@@ -149,6 +147,7 @@ func p4ping(ctx context.Context, host, username string) error {
 	cmd.Env = append(os.Environ(),
 		"P4PORT="+host,
 		"P4USER="+username,
+		"P4PASSWD="+password,
 	)
 
 	out, err := runWith(ctx, cmd, false, nil)
@@ -164,7 +163,7 @@ func p4ping(ctx context.Context, host, username string) error {
 	return nil
 }
 
-// p4trust blindly accepts fingerprint of the Perforce Server.
+// p4trust blindly accepts fingerprint of the Perforce server.
 func p4trust(ctx context.Context, host string) error {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
@@ -187,55 +186,10 @@ func p4trust(ctx context.Context, host string) error {
 	return nil
 }
 
-// p4login performs a login operation against the Perforce Server to obtain a session.
-func p4login(ctx context.Context, host, username, password string) error {
-	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
-	defer cancel()
-
-	cmd := exec.CommandContext(ctx, "p4", "login", "-a")
-	cmd.Env = append(os.Environ(),
-		"P4PORT="+host,
-		"P4USER="+username,
-	)
-
-	var stdout bytes.Buffer
-	cmd.Stdout = &stdout
-
-	stdin, err := cmd.StdinPipe()
-	if err != nil {
-		return errors.Wrap(err, "get stdin pipe")
-	}
-
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			default:
-				time.Sleep(100 * time.Millisecond)
-			}
-
-			if strings.Contains(stdout.String(), "Enter password: ") {
-				_, err = stdin.Write([]byte(password + "\n"))
-				if err != nil {
-					log15.Error("Failed to enter p4 login password", "error", err)
-					return
-				}
-
-				log15.Debug("PerforceDepotSyncer.login.passwordEntered", "host", host, "username", username)
-				return
-			}
-		}
-	}()
-
-	_, err = runCommand(ctx, cmd)
-	return err
-}
-
-// p4pingWithLogin attempts to ping the Perforce Server and performs a login operation when needed.
-func p4pingWithLogin(ctx context.Context, host, username, password string) error {
-	// Attempt to check connectivity, may be prompted to login (again)
-	err := p4ping(ctx, host, username)
+// p4pingWithTrust attempts to ping the Perforce server and performs a trust operation when needed.
+func p4pingWithTrust(ctx context.Context, host, username, password string) error {
+	// Attempt to check connectivity, may be prompted to trust.
+	err := p4ping(ctx, host, username, password)
 	if err == nil {
 		return nil // The ping worked, session still validate for the user
 	}
@@ -244,15 +198,6 @@ func p4pingWithLogin(ctx context.Context, host, username, password string) error
 		err := p4trust(ctx, host)
 		if err != nil {
 			return errors.Wrap(err, "trust")
-		}
-		return nil
-	}
-
-	if strings.Contains(err.Error(), "Your session has expired, please login again.") ||
-		strings.Contains(err.Error(), "Perforce password (P4PASSWD) invalid or unset.") {
-		err := p4login(ctx, host, username, password)
-		if err != nil {
-			return errors.Wrap(err, "login")
 		}
 		return nil
 	}
@@ -269,7 +214,7 @@ func (s *PerforceDepotSyncer) IsCloneable(ctx context.Context, remoteURL *url.UR
 	}
 
 	// FIXME: Need to find a way to determine if depot exists instead of a general ping to the Perforce server.
-	return p4pingWithLogin(ctx, host, username, password)
+	return p4pingWithTrust(ctx, host, username, password)
 }
 
 // CloneCommand returns the command to be executed for cloning a Perforce depot as a Git repository.
@@ -279,9 +224,9 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *url.U
 		return nil, errors.Wrap(err, "decompose")
 	}
 
-	err = p4pingWithLogin(ctx, host, username, password)
+	err = p4pingWithTrust(ctx, host, username, password)
 	if err != nil {
-		return nil, errors.Wrap(err, "ping with login")
+		return nil, errors.Wrap(err, "ping with trust")
 	}
 
 	// Example: git p4 clone --bare --max-changes 1000 //Sourcegraph/@all /tmp/clone-584194180/.git
@@ -295,6 +240,7 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *url.U
 	cmd.Env = append(os.Environ(),
 		"P4PORT="+host,
 		"P4USER="+username,
+		"P4PASSWD="+password,
 	)
 
 	return cmd, nil
@@ -307,9 +253,9 @@ func (s *PerforceDepotSyncer) FetchCommand(ctx context.Context, remoteURL *url.U
 		return nil, false, errors.Wrap(err, "decompose")
 	}
 
-	err = p4pingWithLogin(ctx, host, username, password)
+	err = p4pingWithTrust(ctx, host, username, password)
 	if err != nil {
-		return nil, false, errors.Wrap(err, "ping with login")
+		return nil, false, errors.Wrap(err, "ping with trust")
 	}
 
 	// Example: git p4 sync --max-changes 1000
@@ -322,6 +268,7 @@ func (s *PerforceDepotSyncer) FetchCommand(ctx context.Context, remoteURL *url.U
 	cmd.Env = append(os.Environ(),
 		"P4PORT="+host,
 		"P4USER="+username,
+		"P4PASSWD="+password,
 	)
 
 	return cmd, false, nil

@@ -22,7 +22,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -224,22 +223,6 @@ func (s *Server) cleanupRepos(addrs []string) {
 		return false, gitGC(dir)
 	}
 
-	removeWrongShard := func(dir GitDir) (done bool, err error) {
-		if len(addrs) == 0 {
-			return false, nil
-		}
-		addr := gitserver.AddrForRepo(s.name(dir), addrs)
-		if s.hostnameMatch(addr) {
-			return false, nil
-		}
-		log15.Info("removing repo for wrong shard", "repo", dir)
-		if err := s.removeRepoDirectory(dir); err != nil {
-			return true, err
-		}
-		reposRemoved.Inc()
-		return false, nil
-	}
-
 	type cleanupFn struct {
 		Name string
 		Do   func(GitDir) (bool, error)
@@ -267,9 +250,6 @@ func (s *Server) cleanupRepos(addrs []string) {
 		// invocations of git add, packing refs, pruning reflog, rerere metadata or stale
 		// working trees. May also update ancillary indexes such as the commit-graph.
 		{"garbage collect", performGC},
-		// Repos are sharded across gitserver instances based on their name. Remove repos
-		// that no longer belong on this shard.
-		{"remove wrong shard", removeWrongShard},
 	}
 
 	err := bestEffortWalk(s.ReposDir, func(dir string, fi os.FileInfo) error {

@@ -952,7 +952,7 @@ func (s *Server) handleP4Exec(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Make sure credentials are valid before heavier operation
-	err := p4pingWithLogin(r.Context(), req.P4Port, req.P4User, req.P4Passwd)
+	err := p4pingWithTrust(r.Context(), req.P4Port, req.P4User, req.P4Passwd)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -1068,6 +1068,7 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 	cmd.Env = append(os.Environ(),
 		"P4PORT="+req.P4Port,
 		"P4USER="+req.P4User,
+		"P4PASSWD="+req.P4Passwd,
 	)
 	cmd.Stdout = stdoutW
 	cmd.Stderr = stderrW

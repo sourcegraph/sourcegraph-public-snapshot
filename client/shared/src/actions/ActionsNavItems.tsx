@@ -60,7 +60,7 @@ export const ActionsNavItems: React.FunctionComponent<ActionsNavItemsProps> = pr
         scopeChanges.next(scope)
     }, [scope])
 
-    const extraContextChanges = useMemo(() => new ReplaySubject<Context>(1), [])
+    const extraContextChanges = useMemo(() => new ReplaySubject<Context<unknown>>(1), [])
     useDeepCompareEffectNoCheck(() => {
         extraContextChanges.next(extraContext)
     }, [extraContext])
@@ -70,7 +70,7 @@ export const ActionsNavItems: React.FunctionComponent<ActionsNavItemsProps> = pr
             () =>
                 combineLatest([scopeChanges, extraContextChanges, from(extensionsController.extHostAPI)]).pipe(
                     switchMap(([scope, extraContext, extensionHostAPI]) =>
-                        wrapRemoteObservable(extensionHostAPI.getContributions(scope, extraContext))
+                        wrapRemoteObservable(extensionHostAPI.getContributions({ scope, extraContext }))
                     )
                 ),
             [scopeChanges, extraContextChanges, extensionsController]
