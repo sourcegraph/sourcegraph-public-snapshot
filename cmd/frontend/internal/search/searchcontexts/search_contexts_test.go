@@ -12,6 +12,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+func init() {
+	dbtesting.DBNameSuffix = "searchcontexts"
+}
+
 func TestResolvingValidSearchContextSpecs(t *testing.T) {
 	tests := []struct {
 		name                  string
