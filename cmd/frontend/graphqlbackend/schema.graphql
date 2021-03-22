@@ -9178,7 +9178,7 @@ enum ChangesetSpecOperation {
     """
     DETACH
     """
-    The changeset stays attached to the associated batch change that published it, but it's marked as archived.
+    The changeset is kept in the batch change, but it's marked as archived.
     """
     ARCHIVE
 }
@@ -9681,7 +9681,7 @@ type ChangesetApplyPreviewConnectionStats {
     """
     detach: Int!
     """
-    The changeset is still attached to the batch change but marked as archived.
+    The changeset will still be attached to the batch change but marked as archived.
     """
     archive: Int!
     """
@@ -10055,13 +10055,13 @@ type BatchChange implements Node {
         """
         search: String
         """
-        Only return changesets that are archived in this campaign. Default is false.
+        Only return changesets that are archived in this campaign.
         """
-        onlyArchived: Boolean
+        onlyArchived: Boolean = false
         """
-        Include changesets that are archived in this campaign. Default is false.
+        Include changesets that are archived in this campaign.
         """
-        includeArchived: Boolean
+        includeArchived: Boolean = false
     ): ChangesetConnection!
 
     """

@@ -379,6 +379,7 @@ func (e *executor) detachChangeset() {
 	}
 }
 
+// archiveChangeset sets all associations to archived that are marked as "to-be-archived".
 func (e *executor) archiveChangeset() {
 	for i, assoc := range e.ch.BatchChanges {
 		if assoc.Archive {

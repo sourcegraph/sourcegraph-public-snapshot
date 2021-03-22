@@ -145,7 +145,7 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
                         </a>
                     </li>
                     {archiveEnabled && (
-                        <li className="nav-item test-batches-spec-tab">
+                        <li className="nav-item">
                             <a
                                 href=""
                                 onClick={onSelectArchived}

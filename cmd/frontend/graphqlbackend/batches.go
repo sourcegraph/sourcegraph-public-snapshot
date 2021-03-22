@@ -481,8 +481,8 @@ type ListChangesetsArgs struct {
 	OnlyPublishedByThisBatchChange *bool
 	Search                         *string
 
-	OnlyArchived    *bool
-	IncludeArchived *bool
+	OnlyArchived    bool
+	IncludeArchived bool
 }
 
 type BatchChangeResolver interface {

@@ -140,7 +140,7 @@ func DeterminePlan(previousSpec, currentSpec *batches.ChangesetSpec, ch *batches
 		pl.AddOp(batches.ReconcilerOperationClose)
 		// Close is a final operation, nothing else should overwrite it.
 		return pl, nil
-	} else if wantDetachFromOwnerBatchChange || (wantArchive || isArchived) {
+	} else if wantDetachFromOwnerBatchChange || wantArchive || isArchived {
 		// If the owner batch change detaches the changeset, we don't need to do
 		// any additional writing operations, we can just return operation
 		// "detach".
