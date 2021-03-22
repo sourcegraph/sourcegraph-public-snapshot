@@ -78,7 +78,9 @@ export const getHoverActionItems = (
     extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>>
 ): Observable<ActionItemAction[]> =>
     from(extensionHostAPI).pipe(
-        switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getContributions(undefined, context))),
+        switchMap(extensionHostAPI =>
+            wrapRemoteObservable(extensionHostAPI.getContributions({ extraContext: context }))
+        ),
         first(),
         map(contributions => getContributedActionItems(contributions, ContributableMenu.Hover))
     )

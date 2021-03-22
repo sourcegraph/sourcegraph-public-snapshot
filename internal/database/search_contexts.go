@@ -211,7 +211,7 @@ var getSearchContextRepositoryRevisionsFmtStr = `
 SELECT sc.repo_id, sc.revision, r.name
 FROM search_context_repos sc
 JOIN
-	(SELECT id, name FROM repo WHERE (%s)) r -- populates authzConds
+	(SELECT id, name FROM repo WHERE deleted_at IS NULL AND (%s)) r -- populates authzConds
 	ON r.id = sc.repo_id
 WHERE sc.search_context_id = %d
 `

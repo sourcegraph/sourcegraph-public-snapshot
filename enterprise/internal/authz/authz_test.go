@@ -501,6 +501,7 @@ type fakeStore struct {
 	gitlabs          []*schema.GitLabConnection
 	githubs          []*schema.GitHubConnection
 	bitbucketServers []*schema.BitbucketServerConnection
+	perforces        []*schema.PerforceConnection
 }
 
 func (s fakeStore) List(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
@@ -534,6 +535,13 @@ func (s fakeStore) List(ctx context.Context, opt database.ExternalServicesListOp
 				svcs = append(svcs, &types.ExternalService{
 					Kind:   kind,
 					Config: mustMarshalJSONString(bbs),
+				})
+			}
+		case extsvc.KindPerforce:
+			for _, p := range s.perforces {
+				svcs = append(svcs, &types.ExternalService{
+					Kind:   kind,
+					Config: mustMarshalJSONString(p),
 				})
 			}
 		default:

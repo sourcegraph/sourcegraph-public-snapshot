@@ -137,98 +137,103 @@ export const FileDiffConnection: React.FunctionComponent<FileDiffConnectionProps
                                 // 5: Add new viewers
                                 return from(
                                     setViewerIds(async currentViewerIdByUri => {
-                                        const textDocumentDataByUri: Record<string, TextDocumentData> = {}
-                                        const viewerDataByUri: Record<string, ViewerData> = {}
-                                        const newUris = new Set<string>()
+                                        try {
+                                            const textDocumentDataByUri: Record<string, TextDocumentData> = {}
+                                            const viewerDataByUri: Record<string, ViewerData> = {}
+                                            const newUris = new Set<string>()
 
-                                        for (const fileDiff of fileDiffsOrError.nodes) {
-                                            // Base
-                                            if (fileDiff.oldPath) {
-                                                const uri = toURIWithPath({
-                                                    filePath: fileDiff.oldPath,
-                                                    commitID: extensionInfo.base.commitID,
-                                                    repoName: extensionInfo.base.repoName,
-                                                })
-                                                newUris.add(uri)
+                                            for (const fileDiff of fileDiffsOrError.nodes) {
+                                                // Base
+                                                if (fileDiff.oldPath) {
+                                                    const uri = toURIWithPath({
+                                                        filePath: fileDiff.oldPath,
+                                                        commitID: extensionInfo.base.commitID,
+                                                        repoName: extensionInfo.base.repoName,
+                                                    })
+                                                    newUris.add(uri)
 
-                                                if (!currentViewerIdByUri.has(uri)) {
-                                                    textDocumentDataByUri[uri] = {
-                                                        uri,
-                                                        languageId: getModeFromPath(fileDiff.oldPath),
-                                                        text: dummyText,
+                                                    if (!currentViewerIdByUri.has(uri)) {
+                                                        textDocumentDataByUri[uri] = {
+                                                            uri,
+                                                            languageId: getModeFromPath(fileDiff.oldPath),
+                                                            text: dummyText,
+                                                        }
+                                                        viewerDataByUri[uri] = {
+                                                            type: 'CodeEditor',
+                                                            resource: uri,
+                                                            selections: [],
+                                                            isActive: true,
+                                                        }
                                                     }
-                                                    viewerDataByUri[uri] = {
-                                                        type: 'CodeEditor',
-                                                        resource: uri,
-                                                        selections: [],
-                                                        isActive: true,
+                                                }
+
+                                                // Head
+                                                if (fileDiff.newPath) {
+                                                    const uri = toURIWithPath({
+                                                        filePath: fileDiff.newPath,
+                                                        commitID: extensionInfo.head.commitID,
+                                                        repoName: extensionInfo.head.repoName,
+                                                    })
+                                                    newUris.add(uri)
+
+                                                    if (!currentViewerIdByUri.has(uri)) {
+                                                        textDocumentDataByUri[uri] = {
+                                                            uri,
+                                                            languageId: getModeFromPath(fileDiff.newPath),
+                                                            text: dummyText,
+                                                        }
+                                                        viewerDataByUri[uri] = {
+                                                            type: 'CodeEditor',
+                                                            resource: uri,
+                                                            selections: [],
+                                                            isActive: true,
+                                                        }
                                                     }
                                                 }
                                             }
 
-                                            // Head
-                                            if (fileDiff.newPath) {
-                                                const uri = toURIWithPath({
-                                                    filePath: fileDiff.newPath,
-                                                    commitID: extensionInfo.head.commitID,
-                                                    repoName: extensionInfo.head.repoName,
-                                                })
-                                                newUris.add(uri)
+                                            // Determine viewers to remove
+                                            const viewersToRemove = [...currentViewerIdByUri]
+                                                .filter(([uri]) => !newUris.has(uri))
+                                                .map(([uri, viewerId]) => ({ uri, viewerId }))
+                                                .filter(property('viewerId', isDefined))
 
-                                                if (!currentViewerIdByUri.has(uri)) {
-                                                    textDocumentDataByUri[uri] = {
-                                                        uri,
-                                                        languageId: getModeFromPath(fileDiff.newPath),
-                                                        text: dummyText,
-                                                    }
-                                                    viewerDataByUri[uri] = {
-                                                        type: 'CodeEditor',
-                                                        resource: uri,
-                                                        selections: [],
-                                                        isActive: true,
-                                                    }
-                                                }
+                                            // Register all text documents. Do this before registering viewers since they depend on documents.
+                                            await Promise.all(
+                                                Object.values(textDocumentDataByUri).map(textDocumentData =>
+                                                    extensionHostAPI.addTextDocumentIfNotExists(textDocumentData)
+                                                )
+                                            )
+
+                                            // Register new viewers with extension host
+                                            const viewerIdsWithUri = await Promise.all(
+                                                Object.values(viewerDataByUri).map(viewerData =>
+                                                    extensionHostAPI
+                                                        .addViewerIfNotExists(viewerData)
+                                                        .then(viewerId => ({ uri: viewerData.resource, viewerId }))
+                                                )
+                                            )
+
+                                            // Remove unused viewers from extension host
+                                            await Promise.all(
+                                                viewersToRemove.map(({ viewerId }) =>
+                                                    extensionHostAPI.removeViewer(viewerId)
+                                                )
+                                            )
+
+                                            // Update viewerId map (for diff components)
+                                            for (const removedViewer of viewersToRemove) {
+                                                currentViewerIdByUri.delete(removedViewer.uri)
                                             }
+                                            for (const { uri, viewerId } of viewerIdsWithUri) {
+                                                currentViewerIdByUri.set(uri, viewerId)
+                                            }
+
+                                            return new Map([...currentViewerIdByUri])
+                                        } catch (error) {
+                                            console.error('Error syncing documents/viewers with extension host', error)
+                                            return new Map([...currentViewerIdByUri])
                                         }
-
-                                        // Determine viewers to remove
-                                        const viewersToRemove = [...currentViewerIdByUri]
-                                            .filter(([uri]) => !newUris.has(uri))
-                                            .map(([uri, viewerId]) => ({ uri, viewerId }))
-                                            .filter(property('viewerId', isDefined))
-
-                                        // Register all text documents. Do this before registering viewers since they depend on documents.
-                                        await Promise.all(
-                                            Object.values(textDocumentDataByUri).map(textDocumentData =>
-                                                extensionHostAPI.addTextDocumentIfNotExists(textDocumentData)
-                                            )
-                                        )
-
-                                        // Register new viewers with extension host
-                                        const viewerIdsWithUri = await Promise.all(
-                                            Object.values(viewerDataByUri).map(viewerData =>
-                                                extensionHostAPI
-                                                    .addViewerIfNotExists(viewerData)
-                                                    .then(viewerId => ({ uri: viewerData.resource, viewerId }))
-                                            )
-                                        )
-
-                                        // Remove unused viewers from extension host
-                                        await Promise.all(
-                                            viewersToRemove.map(({ viewerId }) =>
-                                                extensionHostAPI.removeViewer(viewerId)
-                                            )
-                                        )
-
-                                        // Update viewerId map (for diff components)
-                                        for (const removedViewer of viewersToRemove) {
-                                            currentViewerIdByUri.delete(removedViewer.uri)
-                                        }
-                                        for (const { uri, viewerId } of viewerIdsWithUri) {
-                                            currentViewerIdByUri.set(uri, viewerId)
-                                        }
-
-                                        return new Map([...currentViewerIdByUri])
                                     })
                                 )
                             }),

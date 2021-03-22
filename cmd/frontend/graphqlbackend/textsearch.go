@@ -372,7 +372,7 @@ func searchFilesInRepos(ctx context.Context, db dbutil.DB, args *search.TextPara
 
 	tr, ctx := trace.New(ctx, "searchFilesInRepos", fmt.Sprintf("query: %s", args.PatternInfo.Pattern))
 	defer func() {
-		tr.SetError(err)
+		tr.SetErrorIfNotContext(err)
 		tr.Finish()
 	}()
 	tr.LogFields(
