@@ -1,7 +1,3 @@
-# Run this before committing changes to this file
-# go generate github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend
-# This will happen automatically if you are running ./dev/start.sh
-#
 # See docs/api.md for guidance on schema evolution.
 #
 schema {
