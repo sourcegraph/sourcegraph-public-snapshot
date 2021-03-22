@@ -13,15 +13,15 @@ type ChangesetRewirer struct {
 	// The mappings need to be hydrated for the ChangesetRewirer to consume them.
 	mappings      store.RewirerMappings
 	batchChangeID int64
-
-	// Feature flag that can be removed once this is the default behaviour
-	ArchiveInsteadOfDetach bool
+	// feature flag that can be removed once this is the default behaviour
+	archiveInsteadOfDetach bool
 }
 
-func New(mappings store.RewirerMappings, batchChangeID int64) *ChangesetRewirer {
+func New(mappings store.RewirerMappings, batchChangeID int64, archive bool) *ChangesetRewirer {
 	return &ChangesetRewirer{
-		mappings:      mappings,
-		batchChangeID: batchChangeID,
+		mappings:               mappings,
+		batchChangeID:          batchChangeID,
+		archiveInsteadOfDetach: archive,
 	}
 }
 
@@ -186,7 +186,7 @@ func (r *ChangesetRewirer) closeChangeset(changeset *batches.Changeset) {
 				changeset.PreviousSpecID = changeset.CurrentSpecID
 			}
 
-			if r.ArchiveInsteadOfDetach {
+			if r.archiveInsteadOfDetach {
 				changeset.Archive(r.batchChangeID)
 				archive = true
 			}

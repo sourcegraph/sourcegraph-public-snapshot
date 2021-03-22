@@ -388,8 +388,7 @@ func TestRewirer_Rewire(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			r := New(tc.mappings, testBatchChangeID)
-			r.ArchiveInsteadOfDetach = tc.archiveInsteadOfDetach
+			r := New(tc.mappings, testBatchChangeID, tc.archiveInsteadOfDetach)
 
 			changesets, err := r.Rewire()
 			if err != nil && tc.wantErr == nil {

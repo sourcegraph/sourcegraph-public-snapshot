@@ -132,8 +132,7 @@ func (s *Service) ApplyBatchChange(ctx context.Context, opts ApplyBatchChangeOpt
 	}
 
 	// And execute the mapping.
-	r := rewirer.New(mappings, batchChange.ID)
-	r.ArchiveInsteadOfDetach = opts.ArchiveChangesets
+	r := rewirer.New(mappings, batchChange.ID, opts.ArchiveChangesets)
 
 	changesets, err := r.Rewire()
 	if err != nil {

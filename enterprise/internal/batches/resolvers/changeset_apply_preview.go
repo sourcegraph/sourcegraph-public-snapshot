@@ -211,8 +211,7 @@ func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) 
 			ChangesetSpec: mappingChangesetSpec,
 			Changeset:     mappingChangeset,
 			Repo:          mappingRepo,
-		}}, batchChange.ID)
-		rewirer.ArchiveInsteadOfDetach = conf.ArchiveBatchChangeChangesets()
+		}}, batchChange.ID, conf.ArchiveBatchChangeChangesets())
 		changesets, err := rewirer.Rewire()
 		if err != nil {
 			r.planErr = err
