@@ -23,6 +23,7 @@ linters-settings:
     enabled-checks:
       - unlambda
       - wrapperFunc
+      - underef
 
 issues:
   exclude-rules:

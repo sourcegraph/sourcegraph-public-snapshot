@@ -2009,7 +2009,7 @@ func compareDates(left, right *time.Time) bool {
 	if left == nil || right == nil {
 		return left != nil // Place the value that is defined first.
 	}
-	return (*left).After(*right)
+	return left.After(*right)
 }
 
 // compareSearchResults sorts repository matches, file matches, and commits.
