@@ -127,6 +127,9 @@ func TestGettingSearchContextFromVersionContext(t *testing.T) {
 }
 
 func TestConvertingVersionContextToSearchContext(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
 	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 	r := database.Repos(db)
