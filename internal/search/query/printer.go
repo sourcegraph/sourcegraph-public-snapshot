@@ -46,8 +46,9 @@ func stringHumanParameters(parameters []Parameter) string {
 		}
 		if p.Negated {
 			result = append(result, fmt.Sprintf("-%s:%s", p.Field, v))
+		} else {
+			result = append(result, fmt.Sprintf("%s:%s", p.Field, v))
 		}
-		result = append(result, fmt.Sprintf("%s:%s", p.Field, v))
 	}
 	return strings.Join(result, " ")
 }
