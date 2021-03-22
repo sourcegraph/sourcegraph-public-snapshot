@@ -28,7 +28,6 @@ linters-settings:
       - commentFormatting # No strong benefit
       - deprecatedComment # Unnecessary
       - assignOp          # Maybe worth adding, but likely not worth the noise
-      - captLocal
 
 issues:
   exclude-rules:
