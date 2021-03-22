@@ -203,7 +203,6 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 
 	return &SearchResultsResolver{
 		db:            r.db,
-		start:         start,
 		Stats:         common,
 		SearchResults: results,
 		alert:         alert,

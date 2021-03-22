@@ -113,7 +113,9 @@ type SearchResultsResolver struct {
 	limit int
 
 	alert *searchAlert
-	start time.Time // when the results started being computed
+
+	// The time it took to compute all results.
+	elapsed time.Duration
 
 	// cursor to return for paginated search requests, or nil if the request
 	// wasn't paginated.
@@ -156,10 +158,7 @@ func (sr *SearchResultsResolver) ApproximateResultCount() string {
 func (sr *SearchResultsResolver) Alert() *searchAlert { return sr.alert }
 
 func (sr *SearchResultsResolver) ElapsedMilliseconds() int32 {
-	if sr.start.IsZero() {
-		return 0
-	}
-	return int32(time.Since(sr.start).Milliseconds())
+	return int32(sr.elapsed.Milliseconds())
 }
 
 func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFilterResolver {
@@ -428,7 +427,6 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	start := time.Now()
 
 	// If the request specifies stable:truthy, use pagination to return a stable ordering.
 	if r.Query.BoolValue(query.FieldStable) {
@@ -478,67 +476,7 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 		return r.paginatedResults(ctx)
 	}
 
-	rr, err := r.resultsWithTimeoutSuggestion(ctx)
-	// Log latency for batch searches. For streams we interpret latency differently
-	// and it makes more sense to log it in streamHandler.
-	if rr != nil && r.stream == nil {
-		LogSearchLatency(ctx, r.db, r.SearchInputs, rr.ElapsedMilliseconds())
-	}
-
-	// Record what type of response we sent back via Prometheus.
-	var status, alertType string
-	switch {
-	case err == context.DeadlineExceeded || (err == nil && rr.allReposTimedout()):
-		status = "timeout"
-	case err == nil && rr.Stats.Status.Any(search.RepoStatusTimedout):
-		status = "partial_timeout"
-	case err == nil && rr.alert != nil:
-		status = "alert"
-		alertType = rr.alert.prometheusType
-	case err != nil:
-		status = "error"
-	case err == nil:
-		status = "success"
-	default:
-		status = "unknown"
-	}
-	searchResponseCounter.WithLabelValues(
-		status,
-		alertType,
-		string(trace.RequestSource(ctx)),
-		trace.GraphQLRequestName(ctx),
-	).Inc()
-
-	isSlow := time.Since(start) > logSlowSearchesThreshold()
-	if honey.Enabled() || isSlow {
-		var act actor.Actor
-		if a := actor.FromContext(ctx); a != nil {
-			act = *a
-		}
-
-		ev := honey.Event("search")
-		ev.AddField("query", r.rawQuery())
-		ev.AddField("actor_uid", act.UID)
-		ev.AddField("actor_internal", act.Internal)
-		ev.AddField("type", trace.GraphQLRequestName(ctx))
-		ev.AddField("source", string(trace.RequestSource(ctx)))
-		ev.AddField("status", status)
-		ev.AddField("alert_type", alertType)
-		ev.AddField("duration_ms", time.Since(start).Milliseconds())
-		if rr != nil {
-			ev.AddField("result_size", len(rr.SearchResults))
-		}
-
-		if honey.Enabled() {
-			_ = ev.Send()
-		}
-
-		if isSlow {
-			log15.Warn("slow search request", mapToLog15Ctx(ev.Fields())...)
-		}
-	}
-
-	return rr, err
+	return r.resultsWithTimeoutSuggestion(ctx)
 }
 
 // unionMerge performs a merge of file match results, merging line matches when
@@ -876,8 +814,82 @@ func invalidateRepoCache(plan query.Plan) bool {
 	return seenRepo+seenRepoGroup > 1 || seenRevision > 1 || seenContext > 1
 }
 
-func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolver, err error) {
-	return r.resultsRecursive(ctx, r.Plan)
+func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
+	start := time.Now()
+	srr, err := r.resultsRecursive(ctx, r.Plan)
+	elapsed := time.Since(start)
+
+	var status, alertType string
+	incCounter := func() {
+		searchResponseCounter.WithLabelValues(
+			status,
+			alertType,
+			string(trace.RequestSource(ctx)),
+			trace.GraphQLRequestName(ctx),
+		).Inc()
+	}
+
+	if err != nil {
+		// Record what type of response we sent back via Prometheus.
+		status = "error"
+		if err == context.DeadlineExceeded {
+			status = "timeout"
+		}
+		incCounter()
+	} else {
+		srr.elapsed = elapsed
+
+		// Log latency for batch searches. For streams we interpret latency differently
+		// and it makes more sense to log it in streamHandler.
+		if r.stream == nil {
+			LogSearchLatency(ctx, r.db, r.SearchInputs, srr.ElapsedMilliseconds())
+		}
+
+		// Record what type of response we sent back via Prometheus.
+		switch {
+		case srr.allReposTimedout():
+			status = "timeout"
+		case srr.Stats.Status.Any(search.RepoStatusTimedout):
+			status = "partial_timeout"
+		case srr.alert != nil:
+			status = "alert"
+			alertType = srr.alert.prometheusType
+		default:
+			status = "success"
+		}
+		incCounter()
+	}
+
+	isSlow := time.Since(start) > logSlowSearchesThreshold()
+	if honey.Enabled() || isSlow {
+		var act actor.Actor
+		if a := actor.FromContext(ctx); a != nil {
+			act = *a
+		}
+
+		ev := honey.Event("search")
+		ev.AddField("query", r.rawQuery())
+		ev.AddField("actor_uid", act.UID)
+		ev.AddField("actor_internal", act.Internal)
+		ev.AddField("type", trace.GraphQLRequestName(ctx))
+		ev.AddField("source", string(trace.RequestSource(ctx)))
+		ev.AddField("status", status)
+		ev.AddField("alert_type", alertType)
+		ev.AddField("~_ms", elapsed.Milliseconds())
+		if srr != nil {
+			ev.AddField("result_size", len(srr.SearchResults))
+		}
+
+		if honey.Enabled() {
+			_ = ev.Send()
+		}
+
+		if isSlow {
+			log15.Warn("slow search request", mapToLog15Ctx(ev.Fields())...)
+		}
+	}
+
+	return srr, err
 }
 
 func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) (srr *SearchResultsResolver, err error) {
@@ -1463,12 +1475,12 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 		if errors.Is(err, authz.ErrStalePermissions{}) {
 			log15.Debug("searchResolver.determineRepos", "err", err)
 			alert := alertForStalePermissions(r.db)
-			return searchrepos.Resolved{}, &SearchResultsResolver{db: r.db, alert: alert, start: start}, nil
+			return searchrepos.Resolved{}, &SearchResultsResolver{db: r.db, alert: alert}, nil
 		}
 		e := git.BadCommitError{}
 		if errors.As(err, &e) {
 			alert := r.alertForInvalidRevision(e.Spec)
-			return searchrepos.Resolved{}, &SearchResultsResolver{db: r.db, alert: alert, start: start}, nil
+			return searchrepos.Resolved{}, &SearchResultsResolver{db: r.db, alert: alert}, nil
 		}
 		return searchrepos.Resolved{}, nil, err
 	}
@@ -1476,11 +1488,11 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 	tr.LazyPrintf("searching %d repos, %d missing", len(resolved.RepoRevs), len(resolved.MissingRepoRevs))
 	if len(resolved.RepoRevs) == 0 {
 		alert := r.alertForNoResolvedRepos(ctx)
-		return searchrepos.Resolved{}, &SearchResultsResolver{db: r.db, alert: alert, start: start}, nil
+		return searchrepos.Resolved{}, &SearchResultsResolver{db: r.db, alert: alert}, nil
 	}
 	if resolved.OverLimit {
 		alert := r.alertForOverRepoLimit(ctx)
-		return searchrepos.Resolved{}, &SearchResultsResolver{db: r.db, alert: alert, start: start}, nil
+		return searchrepos.Resolved{}, &SearchResultsResolver{db: r.db, alert: alert}, nil
 	}
 	return resolved, nil, nil
 }
@@ -1944,7 +1956,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 
 	resultsResolver := SearchResultsResolver{
 		db:            r.db,
-		start:         start,
 		Stats:         common,
 		SearchResults: results,
 		limit:         limit,
