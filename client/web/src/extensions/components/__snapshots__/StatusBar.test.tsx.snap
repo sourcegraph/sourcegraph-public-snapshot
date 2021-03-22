@@ -12,6 +12,7 @@ exports[`StatusBar renders correctly 1`] = `
         <a
           class="status-bar__item h-100 d-flex align-items-center px-1 text-decoration-none status-bar__item--noop"
           href=""
+          role="button"
           tabindex="-1"
         >
           <small
@@ -25,6 +26,7 @@ exports[`StatusBar renders correctly 1`] = `
           class="status-bar__item h-100 d-flex align-items-center px-1 text-decoration-none status-bar__item--tooltipped status-bar__item--noop"
           data-tooltip="Code owners: @felixbecker, @beyang"
           href=""
+          role="button"
           tabindex="-1"
         >
           <small

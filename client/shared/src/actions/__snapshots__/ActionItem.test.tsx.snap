@@ -8,10 +8,10 @@ exports[`ActionItem "open" command renders as link 1`] = `
   onKeyPress={[Function]}
   tabIndex={0}
 >
-
-
+   
+  
   t
-
+   
 </a>
 `;
 
@@ -25,10 +25,10 @@ exports[`ActionItem "open" command renders as link that opens in a new tab, but 
   tabIndex={0}
   target="_blank"
 >
-
-
+   
+  
   primary
-
+   
 </a>
 `;
 
@@ -42,10 +42,10 @@ exports[`ActionItem "open" command renders as link with icon and opens a new tab
   tabIndex={0}
   target="_blank"
 >
-
-
+   
+  
   t
-
+   
   <OpenInNewIcon />
 </a>
 `;
@@ -66,10 +66,10 @@ exports[`ActionItem actionItem variant 1`] = `
     alt="d"
     src="u"
   />
-
-  g:
+   
+  g: 
   t
-
+   
 </a>
 `;
 
@@ -89,10 +89,10 @@ exports[`ActionItem non-actionItem variant 1`] = `
     alt="d"
     src="u"
   />
-
-  g:
+   
+  g: 
   t
-
+   
 </a>
 `;
 
@@ -108,7 +108,7 @@ exports[`ActionItem non-pressed actionItem 1`] = `
   tabIndex={0}
 >
    b
-
+   
 </a>
 `;
 
@@ -121,8 +121,8 @@ exports[`ActionItem noop command 1`] = `
     alt="d"
     src="u"
   />
-
-  g:
+   
+  g: 
   t
 </span>
 `;
@@ -139,7 +139,7 @@ exports[`ActionItem pressed toggle actionItem 1`] = `
   tabIndex={0}
 >
    b
-
+   
 </a>
 `;
 
@@ -152,17 +152,17 @@ exports[`ActionItem run command 1`] = `
   onAuxClick={[Function]}
   onClick={[Function]}
   onKeyPress={[Function]}
-role="button"
+  role="button"
   tabIndex={-1}
 >
   <img
     alt="d"
     src="u"
   />
-
-  g:
+   
+  g: 
   t
-
+   
 </a>
 `;
 
@@ -182,10 +182,10 @@ exports[`ActionItem run command 2`] = `
     alt="d"
     src="u"
   />
-
-  g:
+   
+  g: 
   t
-
+   
 </a>
 `;
 
@@ -205,10 +205,10 @@ exports[`ActionItem run command with error 1`] = `
     alt="d"
     src="u"
   />
-
-  g:
+   
+  g: 
   t
-
+   
 </a>
 `;
 
@@ -228,10 +228,10 @@ exports[`ActionItem run command with error with showInlineError 1`] = `
     alt="d"
     src="u"
   />
-
-  g:
+   
+  g: 
   t
-
+   
 </a>
 `;
 
@@ -251,10 +251,10 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
     alt="d"
     src="u"
   />
-
-  g:
+   
+  g: 
   t
-
+   
   <div
     className="action-item__loader"
   >
@@ -281,10 +281,10 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 2`] = `
     alt="d"
     src="u"
   />
-
-  g:
+   
+  g: 
   t
-
+   
 </a>
 `;
 
@@ -303,6 +303,6 @@ exports[`ActionItem title element 1`] = `
   <span>
     t2
   </span>
-
+   
 </a>
 `;
