@@ -14,7 +14,7 @@ In all cases, clients use the [search query](https://sourcegraph.com/search?q=re
 
 ## Frontend
 
-The frontend implements the GraphQL search resolver [here](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+"func+%28r+*schemaResolver%29+Search%28").
+The frontend implements the GraphQL search resolver [here](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+func+%28r+*schemaResolver%29+Search%28).
 
 First, the frontend [resolves which repositories need to be searched](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%22func+%28r+*searchResolver%29+resolveRepositories%28%22). It parses the query for any repository filters and then queries the database for the list of repositories that match those filters. If no filters are provided then all repositories are searched, as long as the number of repositories doesn't exceed the configured limit. Private instances default to an unlimited number of repositories, but sourcegraph.com has smaller configured limit (`"maxReposToSearch": 400` at the time of writing, but you can check the [site config for the current value](https://sourcegraph.com/site-admin/configuration)) because it isn't cost effective for us to to search/index all open source code on GitHub.
 
