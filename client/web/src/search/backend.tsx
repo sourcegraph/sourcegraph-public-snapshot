@@ -32,6 +32,8 @@ export function search(
     versionContext: string | undefined,
     extensionHostPromise: Promise<Remote<FlatExtensionHostAPI>>
 ): Observable<GQL.ISearchResults | ErrorLike> {
+    console.log('hi')
+
     const transformedQuery = from(extensionHostPromise).pipe(
         switchMap(extensionHost => wrapRemoteObservable(extensionHost.transformSearchQuery(query)))
     )

@@ -37,6 +37,7 @@ import { StreamingSearchResultsList } from './StreamingSearchResultsList'
 
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
+        ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
         Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         Pick<PatternTypeProps, 'patternType'>,
         Pick<MutableVersionContextProps, 'versionContext' | 'availableVersionContexts' | 'previousVersionContext'>,
@@ -70,6 +71,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         authenticatedUser,
         telemetryService,
         selectedSearchContextSpec,
+        extensionsController,
     } = props
 
     // Log view event on first load
@@ -105,6 +107,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     versionContext: resolveVersionContext(versionContext, availableVersionContexts),
                     searchContextSpec: selectedSearchContextSpec,
                     trace,
+                    extensionHostPromise: extensionsController.extHostAPI,
                 }).pipe(debounceTime(500)),
             [
                 streamSearch,
@@ -115,6 +118,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 availableVersionContexts,
                 trace,
                 selectedSearchContextSpec,
+                extensionsController,
             ]
         )
     )

@@ -1,6 +1,34 @@
 /* eslint-disable id-length */
-import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber, Notification } from 'rxjs'
-import { defaultIfEmpty, map, materialize, scan } from 'rxjs/operators'
+import { Remote } from 'comlink'
+import {
+    Observable,
+    fromEvent,
+    Subscription,
+    OperatorFunction,
+    pipe,
+    Subscriber,
+    Notification,
+    from,
+    timer,
+    concat,
+    of,
+} from 'rxjs'
+import {
+    defaultIfEmpty,
+    map,
+    materialize,
+    mergeMap,
+    scan,
+    switchMap,
+    first,
+    tap,
+    take,
+    takeUntil,
+    filter,
+} from 'rxjs/operators'
+import { wrapRemoteObservable } from '../../../shared/src/api/client/api/common'
+import { FlatExtensionHostAPI } from '../../../shared/src/api/contract'
+import { haveInitialExtensionsLoaded } from '../../../shared/src/api/features'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { appendContextFilter } from '../../../shared/src/search/query/transformer'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
@@ -425,6 +453,7 @@ const observeMessages = <T extends SearchEvent>(
     fromEvent(eventSource, type)
         .pipe(
             map((event: Event) => {
+                console.log('observing messages', { event })
                 if (!(event instanceof MessageEvent)) {
                     throw new TypeError(`internal error: expected MessageEvent in streaming search ${type}`)
                 }
@@ -492,6 +521,7 @@ export interface StreamSearchOptions {
     versionContext: string | undefined
     searchContextSpec: string | undefined
     trace: string | undefined
+    extensionHostPromise: Promise<Remote<FlatExtensionHostAPI>>
 }
 
 /**
@@ -508,35 +538,55 @@ function search({
     versionContext,
     searchContextSpec,
     trace,
+    extensionHostPromise,
 }: StreamSearchOptions): Observable<SearchEvent> {
-    return new Observable<SearchEvent>(observer => {
-        const finalQuery = appendContextFilter(`${query} ${caseSensitive ? 'case:yes' : ''}`, searchContextSpec)
-
-        const parameters = [
-            ['q', finalQuery],
-            ['v', version],
-            ['t', patternType as string],
-        ]
-        if (versionContext) {
-            parameters.push(['vc', versionContext])
-        }
-        if (trace) {
-            parameters.push(['trace', trace])
-        }
-        const parameterEncoded = parameters.map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&')
-
-        const eventSource = new EventSource('/search/stream?' + parameterEncoded)
-        const subscriptions = new Subscription()
-        for (const [eventType, handleMessages] of Object.entries(messageHandlers)) {
-            subscriptions.add(
-                (handleMessages as MessageHandler)(eventType as SearchEvent['type'], eventSource, observer)
+    // This observable must complete after it emits the transformed query
+    const transformedQuery = from(extensionHostPromise).pipe(
+        switchMap(extensionHost =>
+            wrapRemoteObservable(extensionHost.haveInitialExtensionsLoaded()).pipe(
+                filter(haveLoaded => haveLoaded),
+                first(),
+                switchMap(() => wrapRemoteObservable(extensionHost.transformSearchQuery(query)).pipe(first()))
             )
-        }
-        return () => {
-            subscriptions.unsubscribe()
-            eventSource.close()
-        }
-    })
+        )
+    )
+
+    return transformedQuery.pipe(
+        switchMap(
+            transformedQueryString =>
+                new Observable<SearchEvent>(observer => {
+                    const finalQuery = appendContextFilter(
+                        `${transformedQueryString} ${caseSensitive ? 'case:yes' : ''}`,
+                        searchContextSpec
+                    )
+
+                    const parameters = [
+                        ['q', finalQuery],
+                        ['v', version],
+                        ['t', patternType as string],
+                    ]
+                    if (versionContext) {
+                        parameters.push(['vc', versionContext])
+                    }
+                    if (trace) {
+                        parameters.push(['trace', trace])
+                    }
+                    const parameterEncoded = parameters.map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&')
+
+                    const eventSource = new EventSource('/search/stream?' + parameterEncoded)
+                    const subscriptions = new Subscription()
+                    for (const [eventType, handleMessages] of Object.entries(messageHandlers)) {
+                        subscriptions.add(
+                            (handleMessages as MessageHandler)(eventType as SearchEvent['type'], eventSource, observer)
+                        )
+                    }
+                    return () => {
+                        subscriptions.unsubscribe()
+                        eventSource.close()
+                    }
+                })
+        )
+    )
 }
 
 /** Initiate a streaming search and aggregate the results */
