@@ -187,6 +187,11 @@ func TestParseParameterList(t *testing.T) {
 	autogold.Want("Pattern looks like predicate", value{
 		Result: `{"Kind":2,"Operands":[{"value":"abc","negated":false},{"value":"contains(file:test)","negated":false}],"Annotation":{"labels":0,"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":0}}}}`,
 	}).Equal(t, test(`abc contains(file:test)`))
+
+	autogold.Want("Predicate contains escaped paranthesis", value{
+		Result:      `{"field":"repo","value":"contains(\\()","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":17}}`,
+	}).Equal(t, test(`repo:contains(\()`))
 }
 
 func TestScanField(t *testing.T) {
