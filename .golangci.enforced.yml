@@ -16,6 +16,12 @@ linters:
     - varcheck
     - bodyclose
     - deadcode
+    - gocritic
+
+linters-settings:
+  gocritic:
+    enabled-checks:
+      - unlambda
 
 issues:
   exclude-rules:
@@ -25,7 +31,7 @@ issues:
       linters:
         - bodyclose
 
-    # TODO (camdencheek): This is only excluded because at the time of enabling 
+    # TODO (camdencheek): This is only excluded because at the time of enabling
     # the deadcode lint, there was active work in removing other dead code in this package
     - path: enterprise/internal/codeintel
       linters:
