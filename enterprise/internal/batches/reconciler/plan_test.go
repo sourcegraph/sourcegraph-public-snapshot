@@ -220,9 +220,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			},
 		},
 		{
-			name:         "archiving",
-			previousSpec: ct.TestSpecOpts{Published: true},
-			currentSpec:  ct.TestSpecOpts{Published: true},
+			name: "archiving",
 			changeset: ct.TestChangesetOpts{
 				PublicationState:   batches.ChangesetPublicationStatePublished,
 				ExternalState:      batches.ChangesetExternalStateOpen,
@@ -234,9 +232,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			},
 		},
 		{
-			name:         "archiving already-archived changeset",
-			previousSpec: ct.TestSpecOpts{Published: true},
-			currentSpec:  ct.TestSpecOpts{Published: true},
+			name: "archiving already-archived changeset",
 			changeset: ct.TestChangesetOpts{
 				PublicationState:   batches.ChangesetPublicationStatePublished,
 				ExternalState:      batches.ChangesetExternalStateClosed,
@@ -247,19 +243,6 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			},
 			wantOperations: Operations{
 				// Expect no operations.
-			},
-		},
-		{
-			name:        "archiving a failed publish changeset",
-			currentSpec: ct.TestSpecOpts{Published: true},
-			changeset: ct.TestChangesetOpts{
-				PublicationState:   batches.ChangesetPublicationStateUnpublished,
-				ReconcilerState:    batches.ReconcilerStateFailed,
-				OwnedByBatchChange: 1234,
-				BatchChanges:       []batches.BatchChangeAssoc{{BatchChangeID: 1234, Archive: true}},
-			},
-			wantOperations: Operations{
-				batches.ReconcilerOperationArchive,
 			},
 		},
 		{

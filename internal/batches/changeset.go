@@ -197,9 +197,9 @@ func (s ChangesetCheckState) Valid() bool {
 // BatchChangeAssoc stores the details of a association to a BatchChange.
 type BatchChangeAssoc struct {
 	BatchChangeID int64 `json:"-"`
-	Detach        bool  `json:"detach"`
-	Archive       bool  `json:"archive"`
-	Archived      bool  `json:"archived"`
+	Detach        bool  `json:"detach,omitempty"`
+	Archive       bool  `json:"archive,omitempty"`
+	Archived      bool  `json:"archived,omitempty"`
 }
 
 // A Changeset is a changeset on a code host belonging to a Repository and many

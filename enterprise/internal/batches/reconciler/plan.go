@@ -121,7 +121,7 @@ func DeterminePlan(previousSpec, currentSpec *batches.ChangesetSpec, ch *batches
 			if assoc.BatchChangeID == ch.OwnedByBatchChangeID {
 				wantDetachFromOwnerBatchChange = true
 			}
-		} else if assoc.Archive && assoc.BatchChangeID == ch.OwnedByBatchChangeID {
+		} else if assoc.Archive && assoc.BatchChangeID == ch.OwnedByBatchChangeID && ch.Published() {
 			wantArchive = !assoc.Archived
 			isArchived = assoc.Archived
 		} else {
