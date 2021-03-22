@@ -45,7 +45,7 @@ func stringHumanParameters(parameters []Parameter) string {
 			v = strconv.Quote(v)
 		}
 		if p.Negated {
-			return fmt.Sprintf("-%s:%s", p.Field, v)
+			result = append(result, fmt.Sprintf("-%s:%s", p.Field, v))
 		}
 		result = append(result, fmt.Sprintf("%s:%s", p.Field, v))
 	}
