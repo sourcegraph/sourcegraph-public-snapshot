@@ -9,7 +9,7 @@ import (
 func TestParse(t *testing.T) {
 	tests := map[string]url.URL{}
 	for uriStr, want := range tests {
-		t.Run(strings.Replace(uriStr, "/", "-", -1), func(t *testing.T) {
+		t.Run(strings.ReplaceAll(uriStr, "/", "-"), func(t *testing.T) {
 			uri, err := Parse(uriStr)
 			if err != nil {
 				t.Fatal(err)
@@ -29,7 +29,7 @@ func TestParse_error(t *testing.T) {
 		"%":                    "invalid",
 	}
 	for uriStr, want := range tests {
-		t.Run(strings.Replace(uriStr, "/", "-", -1), func(t *testing.T) {
+		t.Run(strings.ReplaceAll(uriStr, "/", "-"), func(t *testing.T) {
 			uri, err := Parse(uriStr)
 			if err == nil {
 				t.Fatalf("got nil error, want %q", want)
@@ -53,7 +53,7 @@ func TestURI_CloneURL(t *testing.T) {
 		"https://github.com/foo/bar#f",
 	}
 	for _, uriStr := range uriStrs {
-		t.Run(strings.Replace(uriStr, "/", "-", -1), func(t *testing.T) {
+		t.Run(strings.ReplaceAll(uriStr, "/", "-"), func(t *testing.T) {
 			uri, err := Parse(uriStr)
 			if err != nil {
 				t.Fatal(err)
@@ -73,7 +73,7 @@ func TestURI_Rev(t *testing.T) {
 		"https://github.com/foo/bar?v#f": "v",
 	}
 	for uriStr, want := range tests {
-		t.Run(strings.Replace(uriStr, "/", "-", -1), func(t *testing.T) {
+		t.Run(strings.ReplaceAll(uriStr, "/", "-"), func(t *testing.T) {
 			uri, err := Parse(uriStr)
 			if err != nil {
 				t.Fatal(err)
@@ -100,7 +100,7 @@ func TestURI_FilePath(t *testing.T) {
 		"https://github.com/foo/bar?v#d%2Ff":  "d/f",
 	}
 	for uriStr, want := range tests {
-		t.Run(strings.Replace(uriStr, "/", "-", -1), func(t *testing.T) {
+		t.Run(strings.ReplaceAll(uriStr, "/", "-"), func(t *testing.T) {
 			uri, err := Parse(uriStr)
 			if err != nil {
 				t.Fatal(err)

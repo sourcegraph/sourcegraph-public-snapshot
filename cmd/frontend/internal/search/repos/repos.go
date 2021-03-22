@@ -667,7 +667,7 @@ func optimizeRepoPatternWithHeuristics(repoPattern string) string {
 	}
 	// Optimization: make the "." in "github.com" a literal dot
 	// so that the regexp can be optimized more effectively.
-	repoPattern = strings.Replace(repoPattern, "github.com", `github\.com`, -1)
+	repoPattern = strings.ReplaceAll(repoPattern, "github.com", `github\.com`)
 	return repoPattern
 }
 
