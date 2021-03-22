@@ -403,7 +403,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				ExternalState:    batches.ChangesetExternalStateOpen,
 				Closing:          true,
 				BatchChanges: []batches.BatchChangeAssoc{{
-					BatchChangeID: 1234, Archive: true, Archived: false,
+					BatchChangeID: 1234, Archive: true, IsArchived: false,
 				}},
 			},
 			plan: &Plan{

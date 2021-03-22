@@ -383,7 +383,7 @@ func (e *executor) detachChangeset() {
 func (e *executor) archiveChangeset() {
 	for i, assoc := range e.ch.BatchChanges {
 		if assoc.Archive {
-			e.ch.BatchChanges[i].Archived = true
+			e.ch.BatchChanges[i].IsArchived = true
 			e.ch.BatchChanges[i].Archive = false
 		}
 	}

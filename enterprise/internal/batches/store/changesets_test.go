@@ -435,7 +435,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 		t.Run("OnlyArchived", func(t *testing.T) {
 			archivedChangeset := updateForThisTest(t, changesets[0], func(ch *batches.Changeset) {
-				ch.BatchChanges[0].Archived = true
+				ch.BatchChanges[0].IsArchived = true
 			})
 
 			opts := CountChangesetsOpts{
@@ -463,12 +463,12 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 		t.Run("IncludeArchived", func(t *testing.T) {
 			archivedChangeset := updateForThisTest(t, changesets[0], func(ch *batches.Changeset) {
-				ch.BatchChanges[0].Archived = true
+				ch.BatchChanges[0].IsArchived = true
 			})
 
 			_ = updateForThisTest(t, changesets[1], func(ch *batches.Changeset) {
 				ch.BatchChanges[0].BatchChangeID = archivedChangeset.BatchChanges[0].BatchChangeID
-				ch.BatchChanges[0].Archived = false
+				ch.BatchChanges[0].IsArchived = false
 			})
 
 			opts := CountChangesetsOpts{
@@ -522,7 +522,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 		t.Run("OnlyArchived", func(t *testing.T) {
 			archivedChangeset := updateForThisTest(t, changesets[0], func(ch *batches.Changeset) {
-				ch.BatchChanges[0].Archived = true
+				ch.BatchChanges[0].IsArchived = true
 			})
 
 			opts := ListChangesetsOpts{
@@ -555,11 +555,11 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 		t.Run("IncludeArchived", func(t *testing.T) {
 			archivedChangeset := updateForThisTest(t, changesets[0], func(ch *batches.Changeset) {
-				ch.BatchChanges[0].Archived = true
+				ch.BatchChanges[0].IsArchived = true
 			})
 			_ = updateForThisTest(t, changesets[1], func(ch *batches.Changeset) {
 				ch.BatchChanges[0].BatchChangeID = archivedChangeset.BatchChanges[0].BatchChangeID
-				ch.BatchChanges[0].Archived = false
+				ch.BatchChanges[0].IsArchived = false
 			})
 
 			opts := ListChangesetsOpts{

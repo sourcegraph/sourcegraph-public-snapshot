@@ -106,7 +106,7 @@ func BuildChangeset(opts TestChangesetOpts) *batches.Changeset {
 
 	if opts.BatchChange != 0 {
 		changeset.BatchChanges = []batches.BatchChangeAssoc{
-			{BatchChangeID: opts.BatchChange, Archived: opts.Archived},
+			{BatchChangeID: opts.BatchChange, IsArchived: opts.Archived},
 		}
 	}
 
@@ -252,7 +252,7 @@ func AssertChangeset(t *testing.T, c *batches.Changeset, a ChangesetAssertions) 
 		for _, assoc := range c.BatchChanges {
 			if assoc.BatchChangeID == c.OwnedByBatchChangeID {
 				found = true
-				if !assoc.Archived {
+				if !assoc.IsArchived {
 					t.Fatalf("changeset association to %d not set to Archived", c.OwnedByBatchChangeID)
 				}
 

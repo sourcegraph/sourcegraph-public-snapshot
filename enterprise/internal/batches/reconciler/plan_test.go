@@ -238,7 +238,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 				ExternalState:      batches.ChangesetExternalStateClosed,
 				OwnedByBatchChange: 1234,
 				BatchChanges: []batches.BatchChangeAssoc{{
-					BatchChangeID: 1234, Archive: true, Archived: true,
+					BatchChangeID: 1234, Archive: true, IsArchived: true,
 				}},
 			},
 			wantOperations: Operations{
