@@ -94,7 +94,7 @@ const getMinimizableNavItems = (props: Props): JSX.Element[] => {
     return getReactElements([
         codeInsights && <InsightsNavItem />,
         codeMonitoring && <CodeMonitoringNavItem />,
-        showBatchChanges && <BatchChangesNavItem />,
+        showBatchChanges && <BatchChangesNavItem isSourcegraphDotCom={props.isSourcegraphDotCom} />,
     ])
 }
 
