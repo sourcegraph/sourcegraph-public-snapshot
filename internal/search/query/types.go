@@ -63,15 +63,35 @@ type QueryInfo interface {
 
 // A query plan represents a set of disjoint queries for the search engine to
 // execute. The result of executing a plan is the union of individual query results.
-type Plan []Q
+type Plan []Basic
 
 // ToParseTree models a plan as a parse tree of an Or-expression on plan queries.
 func (p Plan) ToParseTree() Q {
 	nodes := make([]Node, 0, len(p))
-	for _, q := range p {
-		nodes = append(nodes, Operator{Kind: And, Operands: q})
+	for _, basic := range p {
+		operands := basic.ToParseTree()
+		nodes = append(nodes, newOperator(operands, And)...)
 	}
 	return Q(newOperator(nodes, Or))
+}
+
+// Basic represents a leaf expression to evaluate in our search engine. A basic
+// query comprises (1) a single search pattern expression and (2) parameters
+// that scope the evaluation of search patterns (e.g., to repos, files, etc.).
+type Basic struct {
+	Pattern    Node
+	Parameters []Parameter
+}
+
+func (b Basic) ToParseTree() Q {
+	var nodes []Node
+	for _, n := range b.Parameters {
+		nodes = append(nodes, Node(n))
+	}
+	if b.Pattern == nil {
+		return Q(nodes)
+	}
+	return Q(append(nodes, b.Pattern))
 }
 
 // A query is a tree of Nodes. We choose the type name Q so that external uses like query.Q do not stutter.

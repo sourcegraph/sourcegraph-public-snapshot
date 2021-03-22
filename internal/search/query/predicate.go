@@ -22,7 +22,7 @@ type Predicate interface {
 
 	// Plan generates a plan of (possibly multiple) queries to execute the
 	// behavior of a predicate in a query Q.
-	Plan(parent Q) Plan
+	Plan(parent Q) (Plan, error)
 }
 
 var DefaultPredicateRegistry = predicateRegistry{
@@ -123,7 +123,7 @@ func (f *RepoContainsPredicate) ParseParams(params string) error {
 
 func (f *RepoContainsPredicate) Field() string { return FieldRepo }
 func (f *RepoContainsPredicate) Name() string  { return "contains" }
-func (f *RepoContainsPredicate) Plan(parent Q) Plan {
+func (f *RepoContainsPredicate) Plan(parent Q) (Plan, error) {
 	nodes := make([]Node, 0, 3)
 	nodes = append(nodes, Parameter{
 		Field: FieldSelect,
