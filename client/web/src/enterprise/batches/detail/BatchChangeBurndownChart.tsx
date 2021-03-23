@@ -16,6 +16,7 @@ import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { queryChangesetCountsOverTime as _queryChangesetCountsOverTime } from './backend'
 import { getYear, parseISO } from 'date-fns'
 import ArchiveIcon from 'mdi-react/ArchiveIcon'
+import { Toggle } from '../../../../../branded/src/components/Toggle'
 
 interface Props {
     batchChangeID: Scalars['ID']
@@ -179,7 +180,10 @@ export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
                     />
                 ))}
                 {archiveEnabled && (
-                    <IncludeArchivedToggle includeArchived={includeArchived} onChangeCheckbox={toggleIncludeArchived} />
+                    <>
+                        <hr />
+                        <IncludeArchivedToggle includeArchived={includeArchived} onToggle={toggleIncludeArchived} />
+                    </>
                 )}
             </div>
         </div>
@@ -226,16 +230,16 @@ const LegendLabel: React.FunctionComponent<{
 
 const IncludeArchivedToggle: React.FunctionComponent<{
     includeArchived: boolean
-    onChangeCheckbox: () => void
-}> = ({ includeArchived, onChangeCheckbox }) => (
+    onToggle: () => void
+}> = ({ includeArchived, onToggle }) => (
     <div className="d-flex align-items-center text-nowrap p-2">
         <ArchiveIcon className="text-muted batch-change-burndown-chart-legend__archive-icon mr-2 p-0" />
-        <input
+        <Toggle
             id="include-archived"
-            type="checkbox"
+            value={includeArchived}
+            onToggle={onToggle}
+            title="Include archived changesets"
             className="mr-2"
-            checked={includeArchived}
-            onChange={onChangeCheckbox}
         />
         <label htmlFor="include-archived" className="mb-0">
             Include archived
