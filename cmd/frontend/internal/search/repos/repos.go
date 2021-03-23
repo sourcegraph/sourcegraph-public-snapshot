@@ -154,8 +154,8 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 			OnlyPrivate:  op.OnlyPrivate,
 		}
 
-		if searchContext != nil && searchContext.UserID != 0 {
-			options.UserID = searchContext.UserID
+		if searchContext != nil && searchContext.NamespaceUserID != 0 {
+			options.UserID = searchContext.NamespaceUserID
 			options.IncludeUserPublicRepos = true
 		}
 
