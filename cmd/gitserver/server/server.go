@@ -258,6 +258,9 @@ func (s *Server) Handler() http.Handler {
 	// hostnameMiddleware causes us to try and set the server hostname to that of the
 	// hostname received in requests from frontend. It will only set it once.
 	hostnameMiddleware := func(h http.Handler) http.Handler {
+		// addrs never change during the lifetime of a service as they are read from an
+		// environment variable.
+		addrs := conf.Get().ServiceConnections.GitServers
 		return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 			// Fast path skips work if hostname already set
 			if _, err := s.getHostname(); err == nil {
@@ -265,7 +268,6 @@ func (s *Server) Handler() http.Handler {
 				return
 			}
 			hostname := hostnameFromFrontend(r)
-			addrs := conf.Get().ServiceConnections.GitServers
 			s.setHostnameOnce(hostname, addrs)
 			h.ServeHTTP(rw, r)
 		})
