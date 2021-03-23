@@ -230,7 +230,7 @@ func (s *Server) cleanupRepos(addrs []string) {
 			if hostname == addr {
 				return false, nil
 			}
-			log15.Info("removing repo for wrong shard", "repo", dir)
+			log15.Info("removing repo for wrong shard", "repo", dir, "hostname", hostname, "addr", addr)
 			if err := s.removeRepoDirectory(dir); err != nil {
 				return true, err
 			}
