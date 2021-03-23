@@ -1088,9 +1088,9 @@ func substitutePredicates(q query.Q, evaluate func(query.Predicate) (*SearchResu
 var ErrPredicateNoResults = errors.New("no results returned for predicate")
 
 // longer returns a suggested longer time to wait if the given duration wasn't long enough.
-func longer(N int, dt time.Duration) time.Duration {
+func longer(n int, dt time.Duration) time.Duration {
 	dt2 := func() time.Duration {
-		Ndt := time.Duration(N) * dt
+		Ndt := time.Duration(n) * dt
 		dceil := func(x float64) time.Duration {
 			return time.Duration(math.Ceil(x))
 		}
@@ -2009,7 +2009,7 @@ func compareDates(left, right *time.Time) bool {
 	if left == nil || right == nil {
 		return left != nil // Place the value that is defined first.
 	}
-	return (*left).After(*right)
+	return left.After(*right)
 }
 
 // compareSearchResults sorts repository matches, file matches, and commits.

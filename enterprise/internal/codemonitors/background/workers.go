@@ -256,7 +256,7 @@ func newQueryWithAfterFilter(q *cm.MonitorQuery) string {
 	// result. This means there is non-zero chance that we miss results whenever
 	// commits have a timestamp equal to the value of :after but arrive after this
 	// job has run.
-	afterTime := (*q.LatestResult).UTC().Add(time.Second).Format(time.RFC3339)
+	afterTime := q.LatestResult.UTC().Add(time.Second).Format(time.RFC3339)
 	return strings.Join([]string{q.QueryString, fmt.Sprintf(`after:"%s"`, afterTime)}, " ")
 }
 

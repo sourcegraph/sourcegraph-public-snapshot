@@ -1,5 +1,5 @@
 # This file contains the configuration of the enforced linters for the project.
-# Eventually, the goal is to unify this with .golangci.yml. 
+# Eventually, the goal is to unify this with .golangci.yml.
 # https://github.com/sourcegraph/sourcegraph/issues/18720
 
 
@@ -20,9 +20,14 @@ linters:
 
 linters-settings:
   gocritic:
-    enabled-checks:
-      - unlambda
-      - wrapperFunc
+    disabled-checks:
+      - appendAssign      # Too many false positives
+      - assignOp          # Maybe worth adding, but likely not worth the noise
+      - commentFormatting # No strong benefit
+      - deprecatedComment # Unnecessary
+      - exitAfterDefer    # Only occurs in auxiliary tools
+      - ifElseChain       # Noisy for not much gain
+      - singleCaseSwitch  # Noisy for not much gain
 
 issues:
   exclude-rules:

@@ -62,12 +62,9 @@ func ParseExtensionID(extensionID string) (prefix, extensionIDWithoutPrefix stri
 			return "", "", false, fmt.Errorf("remote extension lookup is forbidden (extension ID prefix %q, allowed prefixes are \"\" (default) and %q (local))", prefix, *configuredPrefix)
 		}
 		isLocal = true
-	} else {
-		// Extension ID is publisher/name.
-		if configuredPrefix == nil {
-			// Local extension on Sourcegraph.com instance.
-			isLocal = true
-		}
+	} else if configuredPrefix == nil { // Extension ID is publisher/name.
+		// Local extension on Sourcegraph.com instance.
+		isLocal = true
 	}
 
 	extensionIDWithoutPrefix = publisher + "/" + name
