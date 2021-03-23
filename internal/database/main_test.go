@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	dbtesting.DBNameSuffix = "database"
+	dbtesting.DBNameSuffix = "internal-database"
 }
 
 func TestMain(m *testing.M) {
