@@ -122,8 +122,11 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		first.Do(func() {
 			if isLeaf {
 				tr.LogFields(
+					// TODO (stefan): Remove rpc.* once we have rolled out the new stream client.
 					log.Int64("rpc.queue_latency_ms", writeRequestStart.Sub(start).Milliseconds()),
 					log.Int64("rpc.write_duration_ms", writeRequestDone.Sub(writeRequestStart).Milliseconds()),
+
+					log.Int64("stream.latency_ms", time.Since(start).Milliseconds()),
 				)
 			}
 		})
@@ -135,7 +138,9 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 			nEvents += 1
 			mu.Unlock()
 
+			startSend := time.Now()
 			c.Send(zsr)
+			log.Int64("stream.send_duration_ms", time.Since(startSend).Milliseconds())
 		}
 	}))
 
