@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -680,6 +681,33 @@ func newRepoInfo(r *types.Repo) (*protocol.RepoInfo, error) {
 			Tree:   pathAppend(root, "/browse/{path}?at={rev}"),
 			Blob:   pathAppend(root, "/browse/{path}?at={rev}"),
 			Commit: pathAppend(root, "/commits/{commit}"),
+		}
+	case extsvc.TypeBitbucketCloud:
+		{
+			repo := r.Metadata.(*bitbucketcloud.Repo)
+
+			href := repo.Links.HTML.Href
+
+			fmt.Println(repo.Links.HTML.Href)
+			// https://bitbucket.org/artemsg/bb-test-repo/src/main/main.go
+
+			// https://bitbucket.org/artemsg/bb-test-repo/browse/main.go?at=main
+			if href == "" {
+				break
+			}
+
+			// https://bitbucket.org/artemsg/bb-test-repo/src/main/main.go
+			// https://bitbucket.org/artemsg/bb-test-repo/main/main.go
+			root := href + ""
+			info.Links = &protocol.RepoLinks{
+				Root: pathAppend(root, "/{rev}/{path}"),
+				Tree: pathAppend(root, "/{rev}/{path}"),
+				Blob: pathAppend(root, "/{rev}/{path}"),
+
+				// https://bitbucket.org/artemsg/bb-test-repo/src/ab4b1b677f435d711723a9115240e28de503563a/main.go
+				Commit: pathAppend(root, "{commit}/{path}"),
+			}
+
 		}
 	case extsvc.TypeAWSCodeCommit:
 		repo := r.Metadata.(*awscodecommit.Repository)
