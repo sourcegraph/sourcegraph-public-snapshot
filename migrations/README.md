@@ -89,7 +89,7 @@ On longer running branches, you might find that your migration now conflicts wit
 
    ```bash
    ./dev/db/migrate.sh <database> up
-   go generate ./internal/<database>
+   go generate ./internal/database
    ```
 
 6. From there, `git add` your updated files, and you should be able to continue your rebase.

@@ -8,6 +8,7 @@ import AutorenewIcon from 'mdi-react/AutorenewIcon'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import classNames from 'classnames'
+import ArchiveIcon from 'mdi-react/ArchiveIcon'
 
 export interface ChangesetStatusCellProps {
     className?: string
@@ -120,6 +121,16 @@ export const ChangesetStatusProcessing: React.FunctionComponent<{ label?: JSX.El
 }) => (
     <div className={classNames(iconClassNames, className)}>
         <TimerSandIcon />
+        {label}
+    </div>
+)
+
+export const ChangesetStatusArchived: React.FunctionComponent<{ label?: JSX.Element; className?: string }> = ({
+    label = <span>Archived</span>,
+    className,
+}) => (
+    <div className={classNames(iconClassNames, className)}>
+        <ArchiveIcon />
         {label}
     </div>
 )

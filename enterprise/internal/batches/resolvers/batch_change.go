@@ -153,9 +153,7 @@ func (r *batchChangeResolver) ClosedAt() *graphqlbackend.DateTime {
 }
 
 func (r *batchChangeResolver) ChangesetsStats(ctx context.Context) (graphqlbackend.ChangesetsStatsResolver, error) {
-	stats, err := r.store.GetChangesetsStats(ctx, store.GetChangesetsStatsOpts{
-		BatchChangeID: r.batchChange.ID,
-	})
+	stats, err := r.store.GetChangesetsStats(ctx, r.batchChange.ID)
 	if err != nil {
 		return nil, err
 	}

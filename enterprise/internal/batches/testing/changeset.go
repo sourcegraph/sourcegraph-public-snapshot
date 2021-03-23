@@ -40,7 +40,8 @@ type TestChangesetOpts struct {
 
 	OwnedByBatchChange int64
 
-	Closing bool
+	Closing  bool
+	Archived bool
 
 	Metadata interface{}
 }
@@ -104,7 +105,9 @@ func BuildChangeset(opts TestChangesetOpts) *batches.Changeset {
 	}
 
 	if opts.BatchChange != 0 {
-		changeset.BatchChanges = []batches.BatchChangeAssoc{{BatchChangeID: opts.BatchChange}}
+		changeset.BatchChanges = []batches.BatchChangeAssoc{
+			{BatchChangeID: opts.BatchChange, IsArchived: opts.Archived},
+		}
 	}
 
 	if opts.DiffStatAdded > 0 || opts.DiffStatChanged > 0 || opts.DiffStatDeleted > 0 {
@@ -139,6 +142,9 @@ type ChangesetAssertions struct {
 
 	AttachedTo []int64
 	DetachFrom []int64
+
+	ArchiveIn                  int64
+	ArchivedInOwnerBatchChange bool
 }
 
 func AssertChangeset(t *testing.T, c *batches.Changeset, a ChangesetAssertions) {
@@ -224,6 +230,40 @@ func AssertChangeset(t *testing.T, c *batches.Changeset, a ChangesetAssertions) 
 	sort.Slice(a.AttachedTo, func(i, j int) bool { return a.AttachedTo[i] < a.AttachedTo[j] })
 	if diff := cmp.Diff(a.AttachedTo, attachedTo); diff != "" {
 		t.Fatalf("changeset AttachedTo wrong. (-want +got):\n%s", diff)
+	}
+
+	if a.ArchiveIn != 0 {
+		found := false
+		for _, assoc := range c.BatchChanges {
+			if assoc.BatchChangeID == a.ArchiveIn {
+				found = true
+				if !assoc.Archive {
+					t.Fatalf("changeset association to %d not set to Archive", a.ArchiveIn)
+				}
+			}
+		}
+		if !found {
+			t.Fatalf("no changeset batchChange association set to archive")
+		}
+	}
+
+	if a.ArchivedInOwnerBatchChange {
+		found := false
+		for _, assoc := range c.BatchChanges {
+			if assoc.BatchChangeID == c.OwnedByBatchChangeID {
+				found = true
+				if !assoc.IsArchived {
+					t.Fatalf("changeset association to %d not set to Archived", c.OwnedByBatchChangeID)
+				}
+
+				if assoc.Archive {
+					t.Fatalf("changeset association to %d set to Archive, but should be Archived already", c.OwnedByBatchChangeID)
+				}
+			}
+		}
+		if !found {
+			t.Fatalf("no changeset batchChange association archived")
+		}
 	}
 
 	if want := c.FailureMessage; want != nil {

@@ -26,4 +26,5 @@ func TestStringHuman(t *testing.T) {
 	autogold.Want("11", "((repo:foo or repo:bar) or ((repo:baz or repo:qux) and (a or b)))").Equal(t, test("(repo:foo or repo:bar) or (repo:baz or repo:qux) (a or b)"))
 	autogold.Want("12", "((repo:foo or repo:bar file:a) or ((repo:baz or repo:qux file:b) and a and b))").Equal(t, test("(repo:foo or repo:bar file:a) or (repo:baz or repo:qux and file:b) a and b"))
 	autogold.Want("13", "repo:foo ((not b) and (not c) and a)").Equal(t, test("repo:foo a -content:b -content:c"))
+	autogold.Want("14", "-repo:modspeed -file:pogspeed ((not Phoenicians) and Arizonan)").Equal(t, test("-repo:modspeed -file:pogspeed Arizonan -content:Phoenicians"))
 }

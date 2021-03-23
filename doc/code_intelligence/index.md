@@ -8,6 +8,7 @@ Code intelligence provides advanced code navigation features that let developers
 
 <div class="cta-group">
 <a class="btn btn-primary" href="explanations/introduction_to_code_intelligence">★ Introduction to code intelligence</a>
+<a class="btn" href="references/indexers">LSIF supported languages</a>
 </div>
 
 ## Getting started

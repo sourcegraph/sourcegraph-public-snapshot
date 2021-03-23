@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/internal/batches"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -210,7 +211,7 @@ func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) 
 			ChangesetSpec: mappingChangesetSpec,
 			Changeset:     mappingChangeset,
 			Repo:          mappingRepo,
-		}}, batchChange.ID)
+		}}, batchChange.ID, conf.ArchiveBatchChangeChangesets())
 		changesets, err := rewirer.Rewire()
 		if err != nil {
 			r.planErr = err
