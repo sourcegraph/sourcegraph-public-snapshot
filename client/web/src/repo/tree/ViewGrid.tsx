@@ -64,18 +64,14 @@ interface InterInsightDescriptionProps {
     icon: MdiReactIconComponentType
 }
 
-const stopPropagation: React.MouseEventHandler<HTMLElement> = event => event.stopPropagation();
+const stopPropagation: React.MouseEventHandler<HTMLElement> = event => event.stopPropagation()
 
 const InsightDescription: React.FunctionComponent<InterInsightDescriptionProps> = props => {
-    const { icon: Icon, title } = props;
+    const { icon: Icon, title } = props
 
     return (
-        <small
-            title={title}
-            className="view-grid__view-id text-muted"
-            onMouseDown={stopPropagation}>
-
-            <Icon className='icon-inline view-grid__view-id-icon'/>
+        <small title={title} className="view-grid__view-id text-muted" onMouseDown={stopPropagation}>
+            <Icon className="icon-inline view-grid__view-id-icon" />
 
             {title}
         </small>
@@ -85,9 +81,9 @@ const InsightDescription: React.FunctionComponent<InterInsightDescriptionProps> 
 const getInsightViewIcon = (source: ViewProviderSourceType): MdiReactIconComponentType => {
     switch (source) {
         case ViewProviderSourceType.Backend:
-            return DatabaseIcon;
+            return DatabaseIcon
         case ViewProviderSourceType.Extension:
-            return PuzzleIcon;
+            return PuzzleIcon
     }
 }
 
@@ -116,7 +112,7 @@ export const ViewGrid: React.FunctionComponent<ViewGridProps> = props => {
                 onResizeStart={onResizeOrDragStart}
                 onDragStart={onResizeOrDragStart}
             >
-                {props.views.map(({ id, view , source}) => (
+                {props.views.map(({ id, view, source }) => (
                     <div key={id} className={classNames('card view-grid__item')}>
                         <ErrorBoundary
                             location={props.location}
@@ -133,16 +129,12 @@ export const ViewGrid: React.FunctionComponent<ViewGridProps> = props => {
                                     <div className="flex-grow-1 d-flex flex-column align-items-center justify-content-center">
                                         <LoadingSpinner /> Loading code insight
                                     </div>
-                                    <InsightDescription
-                                        title={id}
-                                        icon={getInsightViewIcon(source)}/>
+                                    <InsightDescription title={id} icon={getInsightViewIcon(source)} />
                                 </>
                             ) : isErrorLike(view) ? (
                                 <>
                                     <ErrorAlert className="m-0" error={view} />
-                                    <InsightDescription
-                                        title={id}
-                                        icon={getInsightViewIcon(source)} />
+                                    <InsightDescription title={id} icon={getInsightViewIcon(source)} />
                                 </>
                             ) : (
                                 <>

@@ -51,15 +51,19 @@ export function getCombinedViews(
                             subtitle: insight.description,
                             content: [backendInsightToViewContent(insight)],
                         },
-                        source: ViewProviderSourceType.Backend
+                        source: ViewProviderSourceType.Backend,
                     })
                 )
             ),
-            catchError(error => of<ViewProviderResult[]>([{
-                id: 'Backend insight',
-                view: asError(error),
-                source: ViewProviderSourceType.Backend
-            }]))
+            catchError(error =>
+                of<ViewProviderResult[]>([
+                    {
+                        id: 'Backend insight',
+                        view: asError(error),
+                        source: ViewProviderSourceType.Backend,
+                    },
+                ])
+            )
         ),
     ]).pipe(map(([extensionViews, backendInsights]) => [...backendInsights, ...extensionViews]))
 }

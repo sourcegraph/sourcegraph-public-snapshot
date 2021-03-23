@@ -721,7 +721,7 @@ export interface ProgressNotification {
 
 export enum ViewProviderSourceType {
     Backend = 'Backend',
-    Extension = 'Extension'
+    Extension = 'Extension',
 }
 
 export interface ViewProviderResult {

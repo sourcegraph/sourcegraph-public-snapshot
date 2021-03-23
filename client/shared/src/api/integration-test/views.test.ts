@@ -72,6 +72,9 @@ describe('Views (integration)', () => {
         const views = await wrapRemoteObservable(extensionHostAPI.getGlobalPageViews({ x: 'y' }))
             .pipe(take(2), toArray())
             .toPromise()
-        expect(views).toEqual([[{ id: 'v', view: undefined, source: ViewProviderSourceType.Extension }], [{ id: 'v', view: { title: 'ty', content: [] }, source: ViewProviderSourceType.Extension }]])
+        expect(views).toEqual([
+            [{ id: 'v', view: undefined, source: ViewProviderSourceType.Extension }],
+            [{ id: 'v', view: { title: 'ty', content: [] }, source: ViewProviderSourceType.Extension }],
+        ])
     })
 })
