@@ -7,6 +7,17 @@ DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)""
 root_dir="$(dirname "${BASH_SOURCE[0]}")/../../../.."
 cd "$root_dir"
 
+function error_trap() {
+  # All steps must run, disable early exit
+  set +euo pipefails
+
+  kubectl logs --namespace="$NAMESPACE" -l app=sourcegraph-frontend -c frontend
+}
+
+function exit_trap() {
+  kubectl delete namespace "$NAMESPACE"
+}
+
 function cluster_setup() {
   git clone --depth 1 \
     https://github.com/sourcegraph/deploy-sourcegraph.git \
@@ -17,36 +28,37 @@ function cluster_setup() {
   export NAMESPACE="cluster-ci-$BUILDKITE_BUILD_NUMBER"
   kubectl create ns "$NAMESPACE" -oyaml --dry-run | kubectl apply -f -
   #shellcheck disable=SC2064
-  trap "kubectl delete namespace $NAMESPACE" EXIT
+  trap exit_trap EXIT
   kubectl apply -f "$DIR/storageClass.yaml"
   kubectl config set-context --current --namespace="$NAMESPACE"
   kubectl config current-context
   sleep 15 #wait for namespace to come up
   kubectl get -n "$NAMESPACE" pods
 
-  pushd "$DIR/deploy-sourcegraph/"
-  pwd
-  # see $DOCKER_CLUSTER_IMAGES_TXT in pipeline-steps.go for env var
-  # replace all docker image tags with previously built candidate images
-  set +e
-  set +o pipefail
-  pushd base
-  while IFS= read -r line; do
-    echo "$line"
-    grep -lr '.' -e "index.docker.io/sourcegraph/$line" --include \*.yaml | xargs sed -i -E "s#index.docker.io/sourcegraph/$line:.*#us.gcr.io/sourcegraph-dev/$line:$CANDIDATE_VERSION#g"
-  done < <(printf '%s\n' "$DOCKER_CLUSTER_IMAGES_TXT")
-  popd
-  ./create-new-cluster.sh
-  popd
+  (
+    set +eo pipefail
+    pushd "$DIR/deploy-sourcegraph/base"
+    pwd
+    # see $DOCKER_CLUSTER_IMAGES_TXT in pipeline-steps.go for env var
+    # replace all docker image tags with previously built candidate images
+    while IFS= read -r line; do
+      echo "$line"
+      grep -lr '.' -e "index.docker.io/sourcegraph/$line" --include \*.yaml | xargs sed -i -E "s#index.docker.io/sourcegraph/$line:.*#us.gcr.io/sourcegraph-dev/$line:$CANDIDATE_VERSION#g"
+    done < <(printf '%s\n' "$DOCKER_CLUSTER_IMAGES_TXT")
+  )
+
+  (
+    pushd "$DIR/deploy-sourcegraph/"
+    ./create-new-cluster.sh
+  )
 
   kubectl get pods
+
+  trap error_trap ERR
   time kubectl wait --for=condition=Ready -l app=sourcegraph-frontend pod --timeout=20m
-  set -e
-  set -o pipefail
 }
 
 function test_setup() {
-
   set +x +u
   # shellcheck disable=SC1091
   source /root/.profile
@@ -58,16 +70,16 @@ function test_setup() {
   curl "$SOURCEGRAPH_BASE_URL"
 
   # setup admin users, etc
-  pushd internal/cmd/init-sg
-  go build
-  ./init-sg initSG -baseurl="$SOURCEGRAPH_BASE_URL"
-  popd
+  (
+    pushd internal/cmd/init-sg
+    go build
+    ./init-sg initSG -baseurl="$SOURCEGRAPH_BASE_URL"
+  )
 
   # Load variables set up by init-server, disabling `-x` to avoid printing variables, setting +u to avoid blowing up on ubound ones
   set +x +u
   # shellcheck disable=SC1091
   source /root/.profile
-  set -x -u
 
   echo "TEST: Checking Sourcegraph instance is accessible"
 
