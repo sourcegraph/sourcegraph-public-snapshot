@@ -16,7 +16,7 @@ The plaintext returned by the `Key.Decrypt()` method is considered 'zero visibil
 The `encryption/keyring` package provides a way to configure encryption keys & retrieve them in a typesafe manner, it parses site config and sets the keys in a `keyring.Ring` struct, so users can either access the `keyring.Default` or inject the ring, and access specific keys safely, rather than needing to spread around the concern of correctly configuring a key.
 
 ### Composition & extension
-The `encryption.Key` interface was built to be simple, and intended to be extended through composition & embedding. For example we plan to enable key migrations using a Key implementation that wraps two other Keys, decrypting with one & encrypting with the other. You could also create an encryption.Key wrapper that implements it's own versioning system, encrypting with a 'primary' Key, but being able to decrypt data with the previous keys.
+The `encryption.Key` interface was built to be simple, and intended to be extended through composition & embedding. For example we plan to enable key migrations using a Key implementation that wraps two other Keys, decrypting with one & encrypting with the other. You could also create an encryption.Key wrapper that implements its own versioning system, encrypting with a 'primary' Key, but being able to decrypt data with the previous keys.
 
 ### Implementations
 
