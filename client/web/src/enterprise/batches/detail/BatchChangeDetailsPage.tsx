@@ -29,6 +29,7 @@ import { SupersedingBatchSpecAlert } from './SupersedingBatchSpecAlert'
 import { BatchChangesIcon } from '../icons'
 import { PageHeader } from '../../../components/PageHeader'
 import { ClosedNotice } from './ClosedNotice'
+import { ChangesetsArchivedNotice } from './ChangesetsArchivedNotice'
 
 export interface BatchChangeDetailsPageProps
     extends ThemeProps,
@@ -91,6 +92,11 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
         )
     )
 
+    const archiveEnabled = window.context?.experimentalFeatures?.archiveBatchChangeChangesets
+    const urlParameters = new URLSearchParams(location.search)
+    const archivedCount = parseInt(urlParameters.get('archivedCount') ?? '0', 10)
+    const archivedBy = urlParameters.get('archivedBy') ?? ''
+
     // Is loading.
     if (batchChange === undefined) {
         return (
@@ -142,6 +148,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 total={batchChange.changesetsStats.total}
                 className="mb-3"
             />
+            {archiveEnabled && <ChangesetsArchivedNotice archivedCount={archivedCount} specID={archivedBy} />}
             <BatchChangeStatsCard
                 closedAt={batchChange.closedAt}
                 stats={batchChange.changesetsStats}

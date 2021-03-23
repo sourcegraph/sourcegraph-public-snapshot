@@ -102,6 +102,7 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
             <CreateUpdateBatchChangeAlert
                 history={history}
                 specID={spec.id}
+                toBeArchived={spec.applyPreview.stats.archive}
                 batchChange={spec.appliesToBatchChange}
                 viewerCanAdminister={spec.viewerCanAdminister}
                 telemetryService={telemetryService}
