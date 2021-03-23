@@ -158,6 +158,8 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
             <Description history={history} description={batchChange.description} />
             <BatchChangeTabs
                 batchChange={batchChange}
+                changesetsCount={batchChange.changesetsStats.total - batchChange.changesetsStats.archived}
+                archivedCount={batchChange.changesetsStats.archived}
                 extensionsController={extensionsController}
                 history={history}
                 isLightTheme={isLightTheme}

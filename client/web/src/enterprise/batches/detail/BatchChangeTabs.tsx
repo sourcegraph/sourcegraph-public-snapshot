@@ -27,6 +27,8 @@ export interface BatchChangeTabsProps
         PlatformContextProps,
         TelemetryProps {
     batchChange: BatchChangeFields
+    changesetsCount: number
+    archivedCount: number
     history: H.History
     location: H.Location
     /** For testing only. */
@@ -45,6 +47,8 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
     platformContext,
     telemetryService,
     batchChange,
+    changesetsCount,
+    archivedCount,
     queryChangesets,
     queryChangesetCountsOverTime,
     queryExternalChangesetWithFileDiffs,
@@ -123,7 +127,8 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
                             onClick={onSelectChangesets}
                             className={classNames('nav-link', selectedTab === 'changesets' && 'active')}
                         >
-                            <SourceBranchIcon className="icon-inline text-muted mr-1" /> Changesets
+                            <SourceBranchIcon className="icon-inline text-muted mr-1" />{' '}
+                            {changesetsCount === 1 ? '1 Changeset' : `${changesetsCount} Changesets`}
                         </a>
                     </li>
                     <li className="nav-item test-batches-chart-tab">
@@ -151,7 +156,7 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
                                 onClick={onSelectArchived}
                                 className={classNames('nav-link', selectedTab === 'archived' && 'active')}
                             >
-                                <ArchiveIcon className="icon-inline text-muted mr-1" /> Archived
+                                <ArchiveIcon className="icon-inline text-muted mr-1" /> {archivedCount} Archived
                             </a>
                         </li>
                     )}
