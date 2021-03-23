@@ -1,9 +1,9 @@
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
 import * as H from 'history'
-import CloseIcon from 'mdi-react/CloseIcon'
+import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
+import FileTreeIcon from 'mdi-react/FileTreeIcon'
 import React, { useCallback } from 'react'
 import { Button } from 'reactstrap'
-import { FormatListBulletedIcon } from '../../../shared/src/components/icons'
 import { Resizable } from '../../../shared/src/components/Resizable'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { Scalars } from '../../../shared/src/graphql-operations'
@@ -22,14 +22,13 @@ interface Props extends AbsoluteRepoFile, ExtensionsControllerProps, ThemeProps 
     location: H.Location
 }
 
+const SIZE_STORAGE_KEY = 'repo-revision-sidebar'
+const TABS_KEY = 'repo-revision-sidebar-last-tab'
+const SIDEBAR_KEY = 'repo-revision-sidebar-toggle'
 /**
  * The sidebar for a specific repo revision that shows the list of files and directories.
  */
 export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
-    const SIZE_STORAGE_KEY = 'repo-revision-sidebar'
-    const TABS_KEY = 'repo-revision-sidebar-last-tab'
-    const SIDEBAR_KEY = 'repo-revision-sidebar-toggle'
-
     const [tabIndex, setTabIndex] = useLocalStorage(TABS_KEY, 0)
     const [toggleSidebar, setToggleSidebar] = useLocalStorage(SIDEBAR_KEY, true)
 
@@ -38,14 +37,14 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
 
     if (!toggleSidebar) {
         return (
-            <button
+            <Button
                 type="button"
-                className="btn btn-icon repo-revision-sidebar-toggle repo-revision-container__sidebar-toggle"
+                className="btn btn-icon repo-revision-container__toggle"
                 onClick={handleSidebarToggle}
-                data-tooltip="Show sidebar (Alt+S/Opt+S)"
+                data-tooltip="Show sidebar"
             >
-                <FormatListBulletedIcon className="icon-inline" />
-            </button>
+                <FileTreeIcon className="icon-inline" />
+            </Button>
         )
     }
 
@@ -64,9 +63,11 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                         <Button
                             onClick={handleSidebarToggle}
                             className="bg-transparent border-0 ml-auto p-1 position-relative focus-behaviour"
-                            title="Close sidebar"
+                            title="Close panel"
+                            data-tooltip="Collapse panel"
+                            data-placement="right"
                         >
-                            <CloseIcon className="icon-inline" />
+                            <ChevronDoubleLeftIcon className="icon-inline repo-revision-container__close-icon" />
                         </Button>
                     </div>
                     <div

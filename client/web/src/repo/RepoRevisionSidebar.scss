@@ -4,4 +4,18 @@
     &__tabpanels {
         height: calc(100% - 2rem);
     }
+
+    &__close-icon {
+        color: var(--link-color) !important;
+    }
+
+    &__toggle {
+        isolation: isolate;
+        width: 2.5rem;
+        height: 2.5rem;
+        margin-right: -1.25rem;
+        display: flex;
+        justify-content: center;
+        z-index: 1;
+    }
 }
