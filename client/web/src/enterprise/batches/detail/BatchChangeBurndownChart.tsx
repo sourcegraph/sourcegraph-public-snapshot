@@ -15,6 +15,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { queryChangesetCountsOverTime as _queryChangesetCountsOverTime } from './backend'
 import { getYear, parseISO } from 'date-fns'
+import ArchiveIcon from 'mdi-react/ArchiveIcon'
 
 interface Props {
     batchChangeID: Scalars['ID']
@@ -75,11 +76,16 @@ export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
     queryChangesetCountsOverTime = _queryChangesetCountsOverTime,
     width = '100%',
 }) => {
+    const archiveEnabled = window.context?.experimentalFeatures?.archiveBatchChangeChangesets
+    const [includeArchived, setIncludeArchived] = useState<boolean>(false)
+    const toggleIncludeArchived = useCallback((): void => setIncludeArchived(previousValue => !previousValue), [])
+
     const [hiddenStates, setHiddenStates] = useState<Set<keyof DisplayableChangesetCounts>>(new Set())
     const changesetCountsOverTime: ChangesetCountsOverTimeFields[] | undefined = useObservable(
-        useMemo(() => queryChangesetCountsOverTime({ batchChange: batchChangeID }), [
+        useMemo(() => queryChangesetCountsOverTime({ batchChange: batchChangeID, includeArchived }), [
             batchChangeID,
             queryChangesetCountsOverTime,
+            includeArchived,
         ])
     )
 
@@ -172,6 +178,9 @@ export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
                         setHiddenStates={setHiddenStates}
                     />
                 ))}
+                {archiveEnabled && (
+                    <IncludeArchivedToggle includeArchived={includeArchived} onChangeCheckbox={toggleIncludeArchived} />
+                )}
             </div>
         </div>
     )
@@ -207,8 +216,29 @@ const LegendLabel: React.FunctionComponent<{
                 }}
                 className="batch-change-burndown-chart-legend__color-box mr-2"
             />
-            <input type="checkbox" className="mr-2" checked={checked} onChange={onChangeCheckbox} />
-            {label}
+            <input id={stateKey} type="checkbox" className="mr-2" checked={checked} onChange={onChangeCheckbox} />
+            <label htmlFor={stateKey} className="mb-0">
+                {label}
+            </label>
         </div>
     )
 }
+
+const IncludeArchivedToggle: React.FunctionComponent<{
+    includeArchived: boolean
+    onChangeCheckbox: () => void
+}> = ({ includeArchived, onChangeCheckbox }) => (
+    <div className="d-flex align-items-center text-nowrap p-2">
+        <ArchiveIcon className="text-muted batch-change-burndown-chart-legend__archive-icon mr-2 p-0" />
+        <input
+            id="include-archived"
+            type="checkbox"
+            className="mr-2"
+            checked={includeArchived}
+            onChange={onChangeCheckbox}
+        />
+        <label htmlFor="include-archived" className="mb-0">
+            Include archived
+        </label>
+    </div>
+)

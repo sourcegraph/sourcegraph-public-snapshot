@@ -182,7 +182,8 @@ func (r *batchChangeResolver) ChangesetCountsOverTime(
 ) ([]graphqlbackend.ChangesetCountsResolver, error) {
 	publishedState := batches.ChangesetPublicationStatePublished
 	opts := store.ListChangesetsOpts{
-		BatchChangeID: r.batchChange.ID,
+		BatchChangeID:   r.batchChange.ID,
+		IncludeArchived: args.IncludeArchived,
 		// Only load fully-synced changesets, so that the data we use for computing the changeset counts is complete.
 		PublicationState: &publishedState,
 	}
