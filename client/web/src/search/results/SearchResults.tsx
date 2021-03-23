@@ -51,7 +51,7 @@ export interface SearchResultsProps
         PatternTypeProps,
         CaseSensitivityProps,
         MutableVersionContextProps,
-        Pick<CodeMonitoringProps, 'enableCodeMonitoring'>,
+        CodeMonitoringProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location

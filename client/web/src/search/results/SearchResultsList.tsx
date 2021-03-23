@@ -58,7 +58,7 @@ export interface SearchResultsListProps
         PatternTypeProps,
         CaseSensitivityProps,
         VersionContextProps,
-        Pick<CodeMonitoringProps, 'enableCodeMonitoring'>,
+        CodeMonitoringProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     location: H.Location
     history: H.History

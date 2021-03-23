@@ -46,7 +46,7 @@ export interface StreamingSearchResultsProps
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         TelemetryProps,
         ThemeProps,
-        Pick<CodeMonitoringProps, 'enableCodeMonitoring'>,
+        CodeMonitoringProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location

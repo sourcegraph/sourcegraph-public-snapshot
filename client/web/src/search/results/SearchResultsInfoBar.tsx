@@ -21,7 +21,7 @@ export interface SearchResultsInfoBarProps
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         TelemetryProps,
         Pick<PatternTypeProps, 'patternType'>,
-        Pick<CodeMonitoringProps, 'enableCodeMonitoring'> {
+        CodeMonitoringProps {
     history: H.History
     /** The currently authenticated user or null */
     authenticatedUser: AuthenticatedUser | null

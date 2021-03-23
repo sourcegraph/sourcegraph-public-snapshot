@@ -93,7 +93,7 @@ export interface LayoutProps
         SearchContextProps,
         HomePanelsProps,
         SearchStreamingProps,
-        Pick<CodeMonitoringProps, 'enableCodeMonitoring'>,
+        CodeMonitoringProps,
         SearchContextProps,
         UserRepositoriesUpdateProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
