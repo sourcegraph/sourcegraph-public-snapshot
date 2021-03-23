@@ -274,8 +274,8 @@ func (s *Server) cleanupRepos(addrs []string) {
 	//
 	// We only add shard cleanup if we have a valid hostname.
 	if hostname, err := s.getHostname(); err == nil {
-		wrongShardCleanup := cleanupFn{Name: "remove wrong shard", Do: mkRemoveWrongShardFn(hostname)}
 		if hostnameFound(hostname, addrs) {
+			wrongShardCleanup := cleanupFn{Name: "remove wrong shard", Do: mkRemoveWrongShardFn(hostname)}
 			cleanups = append(cleanups, wrongShardCleanup)
 		} else {
 			log15.Warn("Not running shard cleanup, hostname not valid", "hostname", hostname)
