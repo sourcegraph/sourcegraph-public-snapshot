@@ -164,25 +164,25 @@ interface RevisionsPopoverTab {
     type?: GitRefType
 }
 
+const LAST_TAB_STORAGE_KEY = 'RevisionsPopover.lastTab'
+
+const TABS: RevisionsPopoverTab[] = [
+    { id: 'branches', label: 'Branches', noun: 'branch', pluralNoun: 'branches', type: GitRefType.GIT_BRANCH },
+    { id: 'tags', label: 'Tags', noun: 'tag', pluralNoun: 'tags', type: GitRefType.GIT_TAG },
+    { id: 'commits', label: 'Commits', noun: 'commit', pluralNoun: 'commits' },
+]
+
 /**
  * A popover that displays a searchable list of revisions (grouped by type) for
  * the current repository.
  */
 export const RevisionsPopover: React.FunctionComponent<Props> = props => {
-    const LAST_TAB_STORAGE_KEY = 'RevisionsPopover.lastTab'
-
     useEffect(() => {
         eventLogger.logViewEvent('RevisionsPopover')
     }, [])
 
     const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
-
-    const TABS: RevisionsPopoverTab[] = [
-        { id: 'branches', label: 'Branches', noun: 'branch', pluralNoun: 'branches', type: GitRefType.GIT_BRANCH },
-        { id: 'tags', label: 'Tags', noun: 'tag', pluralNoun: 'tags', type: GitRefType.GIT_TAG },
-        { id: 'commits', label: 'Commits', noun: 'commit', pluralNoun: 'commits' },
-    ]
 
     const queryGitBranches = (args: FilteredConnectionQueryArguments): Observable<GQL.IGitRefConnection> =>
         queryGitReferences({ ...args, repo: props.repo, type: GitRefType.GIT_BRANCH, withBehindAhead: false })

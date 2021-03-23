@@ -82,6 +82,7 @@ body,
 @import './global/GlobalAlerts';
 @import './global/GlobalDebug';
 @import './global/Notices';
+@import './global/Tabs';
 @import './savedSearches/index';
 @import './search/input/SearchPage';
 @import './search/SearchConsolePage';
@@ -132,7 +133,6 @@ body,
 @import './components/diff/FileDiffNode';
 @import './components/externalServices/AddExternalServicesPage';
 @import './components/Sidebar';
-@import '../../branded/src/components/Tabs';
 @import '../../branded/src/components/panel/Panel';
 @import '../../branded/src/components/panel/views/FileLocations';
 @import '../../branded/src/components/panel/views/HierarchicalLocationsView';

@@ -261,12 +261,12 @@ interface Props extends RouteComponentProps<{}> {}
 class FilteredSurveyResponseConnection extends FilteredConnection<SurveyResponseFields, {}> {}
 class FilteredUserSurveyResponseConnection extends FilteredConnection<UserWithSurveyResponseFields, {}> {}
 
+const LAST_TAB_STORAGE_KEY = 'site-admin-survey-responses-last-tab'
 /**
  * A page displaying the survey responses on this site.
  */
 
 export const SiteAdminSurveyResponsesPage: React.FunctionComponent<Props> = props => {
-    const LAST_TAB_STORAGE_KEY = 'site-admin-survey-responses-last-tab'
     const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
 
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])

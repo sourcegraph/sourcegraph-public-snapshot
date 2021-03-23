@@ -124,6 +124,7 @@ export const Panel = React.memo<Props>(props => {
     const { hash, pathname } = useLocation()
     const history = useHistory()
     const handlePanelClose = useCallback(() => history.replace(pathname), [history, pathname])
+    const [currentTabLabel, currentTabID] = hash.split('=')
 
     const builtinPanels: PanelViewWithComponent[] | undefined = useObservable(
         useMemo(
@@ -213,20 +214,26 @@ export const Panel = React.memo<Props>(props => {
 
     const handleActiveTab = useCallback(
         (index: number): void => {
-            history.replace(`${pathname}${hash.split('=')[0]}=${items[index].id}`)
+            history.replace(`${pathname}${currentTabLabel}=${items[index].id}`)
         },
-        [hash, history, items, pathname]
+        [currentTabLabel, history, items, pathname]
     )
 
     useEffect(() => {
-        setTabIndex(items.findIndex(({ id }) => id === `${hash.split('=')[1]}`))
-    }, [items, hash])
+        setTabIndex(items.findIndex(({ id }) => id === currentTabID))
+    }, [items, hash, currentTabID])
 
     const activeTab: PanelItem | undefined = items[tabIndex]
 
-    return !areExtensionsReady ? (
-        <ExtensionsLoadingPanelView />
-    ) : items ? (
+    if (!areExtensionsReady) {
+        return <ExtensionsLoadingPanelView />
+    }
+
+    if (!items) {
+        return <EmptyPanelView />
+    }
+
+    return (
         <Tabs className="panel" index={tabIndex} onChange={handleActiveTab}>
             <div className="tablist-wrapper bg-body d-flex justify-content-between">
                 <TabList>
@@ -270,8 +277,6 @@ export const Panel = React.memo<Props>(props => {
                 )}
             </TabPanels>
         </Tabs>
-    ) : (
-        <EmptyPanelView />
     )
 })
 
