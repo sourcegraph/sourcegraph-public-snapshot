@@ -60,7 +60,7 @@ func addWebApp(pipeline *bk.Pipeline) {
 	// Webapp tests
 	pipeline.AddStep(":jest::globe_with_meridians: Test",
 		bk.Cmd("dev/ci/yarn-test.sh client/web"),
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
+		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
 // Builds and tests the browser extension.
@@ -72,7 +72,7 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 	// Browser extension tests
 	pipeline.AddStep(":jest::chrome: Test browser extension",
 		bk.Cmd("dev/ci/yarn-test.sh client/browser"),
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
+		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
 // Adds the shared frontend tests (shared between the web app and browser extension).
@@ -86,7 +86,7 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 			bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-run.sh build-web"),
 			bk.Cmd("yarn percy exec -- yarn run cover-integration"),
 			bk.Cmd("yarn nyc report -r json"),
-			bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F integration"),
+			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 
 		// Upload storybook to Chromatic
@@ -104,14 +104,19 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 		// Shared tests
 		pipeline.AddStep(":jest: Test shared client code",
 			bk.Cmd("dev/ci/yarn-test.sh client/shared"),
-			bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
+			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
+
+		// Wildcard tests
+		pipeline.AddStep(":jest: Test wildcard client code",
+			bk.Cmd("dev/ci/yarn-test.sh client/wildcard"),
+			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 	}
 }
 
 func addBrandedTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest: Test branded client code",
 		bk.Cmd("dev/ci/yarn-test.sh client/branded"),
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
+		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
 // Adds PostgreSQL backcompat tests.
@@ -123,7 +128,7 @@ func addPostgresBackcompat(pipeline *bk.Pipeline) {
 func addGoTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go: Test",
 		bk.Cmd("./dev/ci/go-test.sh"),
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F go"))
+		bk.Cmd("dev/ci/codecov.sh -c -F go"))
 }
 
 // Builds the OSS and Enterprise Go commands.
@@ -268,7 +273,7 @@ func triggerE2EandQA(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	env["VAGRANT_SERVICE_ACCOUNT"] = "buildkite@sourcegraph-ci.iam.gserviceaccount.com"
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	env["MINIMUM_UPGRADEABLE_VERSION"] = "3.25.2"
+	env["MINIMUM_UPGRADEABLE_VERSION"] = "3.26.0"
 
 	env["DOCKER_CLUSTER_IMAGES_TXT"] = clusterDockerImages(images.SourcegraphDockerImages)
 

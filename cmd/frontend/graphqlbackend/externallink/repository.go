@@ -89,7 +89,7 @@ func Commit(ctx context.Context, db dbutil.DB, repo *types.Repo, commitID api.Co
 
 	if link != nil && link.Commit != "" {
 		links = append(links, NewResolver(
-			strings.Replace(link.Commit, "{commit}", commitStr, -1),
+			strings.ReplaceAll(link.Commit, "{commit}", commitStr),
 			serviceType,
 		))
 	}

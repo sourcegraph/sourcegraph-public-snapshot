@@ -171,7 +171,6 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 			Description:  r.Description,
 			Fork:         r.Fork,
 			Archived:     r.Archived,
-			Cloned:       r.Cloned,
 			CreatedAt:    r.CreatedAt,
 			UpdatedAt:    r.UpdatedAt,
 			DeletedAt:    r.DeletedAt,

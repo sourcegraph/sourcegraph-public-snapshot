@@ -61,6 +61,19 @@ type QueryInfo interface {
 	IsCaseSensitive() bool
 }
 
+// A query plan represents a set of disjoint queries for the search engine to
+// execute. The result of executing a plan is the union of individual query results.
+type Plan []Q
+
+// ToParseTree models a plan as a parse tree of an Or-expression on plan queries.
+func (p Plan) ToParseTree() Q {
+	nodes := make([]Node, 0, len(p))
+	for _, q := range p {
+		nodes = append(nodes, Operator{Kind: And, Operands: q})
+	}
+	return Q(newOperator(nodes, Or))
+}
+
 // A query is a tree of Nodes. We choose the type name Q so that external uses like query.Q do not stutter.
 type Q []Node
 

@@ -32,6 +32,10 @@ export function fetchAllStatusMessages(): Observable<StatusMessagesResult['statu
                     message
                 }
 
+                ... on IndexingProgress {
+                    message
+                }
+
                 ... on SyncError {
                     message
                 }
@@ -148,6 +152,19 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     <StatusMessagesNavItemEntry
                         key={key}
                         title="Repositories cloning"
+                        text={message.message}
+                        showLink={this.props.isSiteAdmin}
+                        linkTo="/site-admin/external-services"
+                        linkText="Configure synced repositories"
+                        linkOnClick={this.toggleIsOpen}
+                        entryType="progress"
+                    />
+                )
+            case 'IndexingProgress':
+                return (
+                    <StatusMessagesNavItemEntry
+                        key={key}
+                        title="Repositories indexing"
                         text={message.message}
                         showLink={this.props.isSiteAdmin}
                         linkTo="/site-admin/external-services"

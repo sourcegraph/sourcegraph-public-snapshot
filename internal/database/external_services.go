@@ -925,7 +925,8 @@ func (e *ExternalServiceStore) GetAffiliatedSyncErrors(ctx context.Context, u *t
 	if u == nil {
 		return nil, errors.New("nil user")
 	}
-	q := sqlf.Sprintf(`SELECT DISTINCT ON(external_service_id) external_service_id, failure_message
+	q := sqlf.Sprintf(`
+SELECT DISTINCT ON(external_service_id) external_service_id, failure_message
 FROM external_service_sync_jobs sj
 JOIN external_services es ON sj.external_service_id = es.id
 WHERE

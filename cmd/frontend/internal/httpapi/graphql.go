@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -16,6 +15,7 @@ import (
 	"github.com/throttled/throttled/v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -35,7 +35,7 @@ func serveGraphQL(schema *graphql.Schema, rlw *graphqlbackend.RateLimitWatcher, 
 		if r.URL.RawQuery != "" {
 			requestName = r.URL.RawQuery
 		}
-		requestSource := guessSource(r)
+		requestSource := search.GuessSource(r)
 
 		// Used by the prometheus tracer
 		r = r.WithContext(trace.WithGraphQLRequestName(r.Context(), requestName))
@@ -72,8 +72,9 @@ func serveGraphQL(schema *graphql.Schema, rlw *graphqlbackend.RateLimitWatcher, 
 
 		var cost *graphqlbackend.QueryCost
 		var costErr error
+
+		// Don't attempt to estimate or rate limit a request that has failed validation
 		if len(validationErrs) == 0 {
-			// Don't attempt to estimate an invalid request
 			cost, costErr = graphqlbackend.EstimateQueryCost(params.Query, params.Variables)
 			if costErr != nil {
 				// We send errors to Honeycomb, no need to spam logs
@@ -81,16 +82,16 @@ func serveGraphQL(schema *graphql.Schema, rlw *graphqlbackend.RateLimitWatcher, 
 			}
 			traceData.costError = costErr
 			traceData.cost = cost
-		}
 
-		if rl, enabled := rlw.Get(); enabled {
-			limited, result, err := rl.RateLimit(uid, isIP, cost.FieldCount)
-			if err != nil {
-				log15.Error("checking GraphQL rate limit", "error", err)
-				traceData.limitError = err
-			} else {
-				traceData.limited = limited
-				traceData.limitResult = result
+			if rl, enabled := rlw.Get(); enabled && cost != nil {
+				limited, result, err := rl.RateLimit(uid, isIP, cost.FieldCount)
+				if err != nil {
+					log15.Error("checking GraphQL rate limit", "error", err)
+					traceData.limitError = err
+				} else {
+					traceData.limited = limited
+					traceData.limitResult = result
+				}
 			}
 		}
 
@@ -199,23 +200,4 @@ func getUID(r *http.Request) (uid string, ip bool, anonymous bool) {
 		return ip, true, anonymous
 	}
 	return "unknown", false, anonymous
-}
-
-// guessSource guesses the source the request came from (browser, other HTTP client, etc.)
-func guessSource(r *http.Request) trace.SourceType {
-	userAgent := r.UserAgent()
-	for _, guess := range []string{
-		"Mozilla",
-		"WebKit",
-		"Gecko",
-		"Chrome",
-		"Firefox",
-		"Safari",
-		"Edge",
-	} {
-		if strings.Contains(userAgent, guess) {
-			return trace.SourceBrowser
-		}
-	}
-	return trace.SourceOther
 }

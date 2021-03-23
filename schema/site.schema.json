@@ -49,6 +49,14 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "archiveBatchChangeChangesets": {
+          "description": "When enabled, changesets that would be detached when a new batch spec is applied will be archived instead, thereby retaining an association with the batch change.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "eventLogging": {
           "description": "Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.",
           "type": "string",
@@ -768,6 +776,25 @@
       "type": "integer",
       "group": "Debug",
       "examples": [["10000"]]
+    },
+    "insights.historical.frames": {
+      "description": "(debug) number of historical insights timeframes to populate",
+      "type": "integer",
+      "group": "Debug",
+      "examples": [["6"]]
+    },
+    "insights.historical.frameLength": {
+      "description": "(debug) duration of historical insights timeframes, one point per repository will be recorded in each timeframe.",
+      "type": "string",
+      "group": "Debug",
+      "examples": ["30d"]
+    },
+    "insights.historical.speedFactor": {
+      "description": "(debug) Speed factor for building historical insights data. A value like 1.5 indicates approximately to use 1.5x as much repo-updater and gitserver resources.",
+      "!go": { "pointer": true },
+      "type": "number",
+      "group": "Debug",
+      "examples": ["1.0"]
     },
     "htmlHeadTop": {
       "description": "HTML to inject at the top of the `<head>` element on each page, for analytics scripts",

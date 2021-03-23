@@ -67,9 +67,6 @@ yarn-error.log
 
 eb-bundle.zip
 
-/cmd/frontend/internal/app/assets/assets_vfsdata.go
-/cmd/frontend/internal/app/templates/data_vfsdata.go
-
 /release/
 
 /conf/private
@@ -116,6 +113,7 @@ graphql-operations.ts
 !/client/shared/node_modules
 !/client/branded/node_modules
 !/client/browser/node_modules
+!/client/wildcard/node_modules
 !/client/packages/sourcegraph-extension-api/node_modules
 !/client/packages/@sourcegraph/extension-api-types/node_modules
 # ignore everything inside node_modules
@@ -123,6 +121,7 @@ graphql-operations.ts
 /client/shared/node_modules/*
 /client/branded/node_modules/*
 /client/browser/node_modules/*
+/client/wildcard/node_modules/*
 /client/packages/sourcegraph-extension-api/node_modules/*
 /client/packages/@sourcegraph/extension-api-types/node_modules/*
 # except .bin
@@ -130,6 +129,7 @@ graphql-operations.ts
 !/client/shared/node_modules/.bin
 !/client/branded/node_modules/.bin
 !/client/browser/node_modules/.bin
+!/client/wildcard/node_modules/.bin
 !/client/packages/sourcegraph-extension-api/node_modules/.bin
 !/client/packages/@sourcegraph/extension-api-types/node_modules/.bin
 

@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/efritz/glock"
+	"github.com/derision-test/glock"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 

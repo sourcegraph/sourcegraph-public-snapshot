@@ -103,8 +103,7 @@ exports[`ActionItem non-pressed actionItem 1`] = `
   role="button"
   tabIndex={0}
 >
-   
-  b
+   b
    
 </a>
 `;
@@ -134,8 +133,7 @@ exports[`ActionItem pressed toggle actionItem 1`] = `
   role="button"
   tabIndex={0}
 >
-   
-  b
+   b
    
 </a>
 `;
@@ -149,7 +147,7 @@ exports[`ActionItem run command 1`] = `
   onAuxClick={[Function]}
   onClick={[Function]}
   onKeyPress={[Function]}
-  tabIndex={0}
+  tabIndex={-1}
 >
   <img
     src="u"
@@ -233,7 +231,7 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
   onAuxClick={[Function]}
   onClick={[Function]}
   onKeyPress={[Function]}
-  tabIndex={0}
+  tabIndex={-1}
 >
   <img
     src="u"

@@ -31,6 +31,9 @@ export interface Props {
      */
     titleClassName?: string
 
+    /** The content to display next to the title. */
+    description?: React.ReactFragment
+
     /**
      * The content of the result displayed underneath the result container's
      * header when collapsed.
@@ -117,6 +120,7 @@ export class ResultContainer extends React.PureComponent<Props, State> {
                         ) : (
                             this.props.title
                         )}
+                        {this.props.description && <span className="ml-2">{this.props.description}</span>}
                     </div>
                     {this.props.collapsible &&
                         (this.state.expanded ? (

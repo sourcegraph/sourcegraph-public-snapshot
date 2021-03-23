@@ -33,7 +33,7 @@ import { LinkWithIcon } from '../components/LinkWithIcon'
 interface Props
     extends SettingsCascadeProps<Settings>,
         KeyboardShortcutsProps,
-        ExtensionsControllerProps<'executeCommand' | 'services'>,
+        ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         ThemeProps,
         ThemePreferenceProps,
@@ -87,7 +87,7 @@ const getMinimizableNavItems = (props: Props): JSX.Element[] => {
     const { showBatchChanges, settingsCascade } = props
 
     const settings = !isErrorLike(settingsCascade.final) ? settingsCascade.final : null
-    const { codeMonitoring } = settings?.experimentalFeatures || {}
+    const codeMonitoring = settings?.experimentalFeatures?.codeMonitoring !== false
     const codeInsights =
         settings?.experimentalFeatures?.codeInsights && settings?.['insights.displayLocation.insightsPage'] !== false
 

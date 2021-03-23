@@ -9,40 +9,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
-
-func TestMakeFileMatchURIFromSymbol(t *testing.T) {
-	db := new(dbtesting.MockDB)
-
-	symbol := result.Symbol{
-		Name:    "test",
-		Path:    "foo/bar",
-		Line:    0,
-		Pattern: "",
-	}
-	baseURI, _ := gituri.Parse("https://github.com/foo/bar")
-
-	repoResolver := NewRepositoryResolver(db, &types.Repo{ID: 1, Name: "repo"})
-	sr := &result.SymbolMatch{symbol, baseURI, "go"}
-
-	tests := []struct {
-		rev  string
-		want string
-	}{
-		{"", "git://repo#foo/bar"},
-		{"test", "git://repo?test#foo/bar"},
-	}
-
-	for _, test := range tests {
-		got := makeFileMatchURI(repoResolver.URL(), test.rev, sr.URI().Fragment)
-		if got != test.want {
-			t.Errorf("rev(%v) got %v want %v", test.rev, got, test.want)
-		}
-	}
-}
 
 func TestLimitingSymbolResults(t *testing.T) {
 	db := new(dbtesting.MockDB)

@@ -349,7 +349,6 @@ export const gerritCodeHost: CodeHost = {
     name: 'Gerrit',
     codeViewResolvers,
     contentViewResolvers: [],
-    textFieldResolvers: [],
     nativeTooltipResolvers: [],
     codeViewsRequireTokenization: true,
     // This overrides the default observeMutations because we need to handle shadow DOMS.

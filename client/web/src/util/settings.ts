@@ -44,6 +44,18 @@ export function defaultPatternTypeFromSettings(settingsCascade: SettingsCascadeO
     return
 }
 
+export function defaultCaseSensitiveFromSettings(settingsCascade: SettingsCascadeOrError): boolean {
+    // Analogous to defaultPatternTypeFromSettings, but for case sensitivity.
+    if (!parseSearchURLPatternType(window.location.search)) {
+        const defaultCaseSensitive =
+            settingsCascade.final &&
+            !isErrorLike(settingsCascade.final) &&
+            (settingsCascade.final['search.defaultCaseSensitive'] as boolean)
+        return defaultCaseSensitive || false
+    }
+    return false
+}
+
 export function experimentalFeaturesFromSettings(
     settingsCascade: SettingsCascadeOrError
 ): {
@@ -70,7 +82,7 @@ export function experimentalFeaturesFromSettings(
         showMultilineSearchConsole = false,
         showQueryBuilder = false,
         enableSmartQuery = true,
-        codeMonitoring = false,
+        codeMonitoring = true, // Default to true if not set
     } = experimentalFeatures
 
     return {

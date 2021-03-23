@@ -26,9 +26,9 @@ const SettingsSchemaJSON = `{
           }
         },
         "codeMonitoring": {
-          "description": "Enables code monitoring on directory pages.",
+          "description": "Enables code monitoring.",
           "type": "boolean",
-          "default": false,
+          "default": true,
           "!go": {
             "pointer": true
           }
@@ -53,14 +53,6 @@ const SettingsSchemaJSON = `{
           "description": "Enables experimental streaming support.",
           "type": "boolean",
           "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "showBadgeAttachments": {
-          "description": "Enables the UI indicators for code intelligence precision.",
-          "type": "boolean",
-          "default": true,
           "!go": {
             "pointer": true
           }
@@ -219,6 +211,11 @@ const SettingsSchemaJSON = `{
       "type": "string",
       "pattern": "literal|regexp"
     },
+    "search.defaultCaseSensitive": {
+      "description": "Whether query patterns are treated case sensitively. Patterns are case insensitive by default.",
+      "type": "boolean",
+      "default": false
+    },
     "search.includeForks": {
       "description": "Whether searches should include searching forked repositories.",
       "type": "boolean",
@@ -312,7 +309,7 @@ const SettingsSchemaJSON = `{
       "default": false
     },
     "search.uppercase": {
-      "description": "When active, any uppercase characters in the pattern will make the entire query case-sensitive.",
+      "description": "REMOVED. Previously, when active, any uppercase characters in the pattern will make the entire query case-sensitive.",
       "type": "boolean",
       "default": false,
       "!go": {

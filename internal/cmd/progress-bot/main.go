@@ -11,8 +11,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"image/jpeg"
-	_ "image/jpeg"
+	"image/png"
 	"io"
 	"log"
 	"net/http"
@@ -36,6 +35,7 @@ func main() {
 	since := flag.Duration("since", 24*time.Hour, "Report new changelog entries since this period")
 	dry := flag.Bool("dry", false, "If true, print out the JSON payload that would be sent to the Slack API")
 	channel := flag.String("channel", "progress-bot-test", "Slack channel to post message to")
+	gcsBucket := flag.String("bucket", "sourcegraph-progress-bot-avatars", "GCS bucket to which generated group avatars are uploaded")
 
 	flag.Parse()
 
@@ -60,7 +60,9 @@ func main() {
 
 	slackClient := NewSlackClient(slack.New(os.Getenv("SLACK_API_TOKEN")))
 
-	msg, err := changelog.ToSlackMessage(slackClient, gcsClient)
+	bucket := gcsClient.Bucket(*gcsBucket)
+
+	msg, err := changelog.ToSlackMessage(slackClient, bucket)
 	if err != nil {
 		log.Printf("Failed to generate Slack message: %v", err)
 		os.Exit(0)
@@ -119,7 +121,7 @@ func (r Release) IsEmpty() bool {
 
 type Changelog []Release
 
-func (cl Changelog) ToSlackMessage(cli *SlackClient, gcs *storage.Client) (*slack.Message, error) {
+func (cl Changelog) ToSlackMessage(cli *SlackClient, bucket *storage.BucketHandle) (*slack.Message, error) {
 	var merged Release
 	for _, r := range cl {
 		merged.Added = append(merged.Added, r.Added...)
@@ -157,7 +159,7 @@ func (cl Changelog) ToSlackMessage(cli *SlackClient, gcs *storage.Client) (*slac
 		}
 
 		if len(avatarURLs) > 0 {
-			imageURL, err := NewGroupAvatarImageURL(gcs, avatarURLs)
+			imageURL, err := NewGroupAvatarImageURL(bucket, avatarURLs)
 			if err != nil {
 				log.Printf("Failed to generate group avatar: %v", err)
 			} else {
@@ -249,7 +251,7 @@ func (c *SlackClient) GetUserByEmail(email string) (*slack.User, error) {
 	return u, nil
 }
 
-func NewGroupAvatarImageURL(gcs *storage.Client, urls map[string]struct{}) (string, error) {
+func NewGroupAvatarImageURL(bucket *storage.BucketHandle, urls map[string]struct{}) (string, error) {
 	sorted := make([]string, 0, len(urls))
 
 	for url := range urls {
@@ -285,7 +287,7 @@ func NewGroupAvatarImageURL(gcs *storage.Client, urls map[string]struct{}) (stri
 				return
 			}
 
-			grids[i] = &gim.Grid{Image: &avatar, BackgroundColor: color.White}
+			grids[i] = &gim.Grid{Image: &avatar, BackgroundColor: color.Transparent}
 		}()
 	}
 
@@ -303,21 +305,21 @@ func NewGroupAvatarImageURL(gcs *storage.Client, urls map[string]struct{}) (stri
 	}
 
 	merged, err := gim.New(filtered, 3, 3, func(m *gim.MergeImage) {
-		m.BackgroundColor = color.White
+		m.BackgroundColor = color.Transparent
 	}).Merge()
 	if err != nil {
 		return "", err
 	}
 
 	var buf bytes.Buffer
-	if err = jpeg.Encode(&buf, merged, &jpeg.Options{Quality: 100}); err != nil {
+	if err = png.Encode(&buf, merged); err != nil {
 		return "", err
 	}
 
 	digest := sha256.Sum256(buf.Bytes())
 
 	ctx := context.Background()
-	obj := gcs.Bucket("progress-bot-avatars").Object(hex.EncodeToString(digest[:]))
+	obj := bucket.Object(hex.EncodeToString(digest[:]))
 	attrs, err := obj.Attrs(ctx)
 	if err == storage.ErrObjectNotExist {
 		w := obj.If(storage.Conditions{DoesNotExist: true}).NewWriter(ctx)

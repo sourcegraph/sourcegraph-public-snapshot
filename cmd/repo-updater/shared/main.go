@@ -3,6 +3,7 @@ package shared
 import (
 	"context"
 	"database/sql"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -21,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared/assets"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -48,6 +48,9 @@ import (
 )
 
 const port = "3182"
+
+//go:embed state.html.tmpl
+var stateHTMLTemplate string
 
 // EnterpriseInit is a function that allows enterprise code to be triggered when dependencies
 // created in Main are ready for use.
@@ -149,7 +152,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		es, err := store.ExternalServiceStore.List(ctx, database.ExternalServicesListOptions{
 			// On Cloud we only want to fetch site level external services here where the
 			// cloud_default flag has been set.
-			NamespaceUserID:  -1,
+			NoNamespace:      true,
 			OnlyCloudDefault: true,
 			Kinds:            []string{extsvc.KindGitHub, extsvc.KindGitLab},
 		})
@@ -298,7 +301,7 @@ func Main(enterpriseInit EnterpriseInit) {
 						return d.Truncate(time.Second)
 					},
 				})
-				template.Must(tmpl.Parse(assets.MustAssetString("state.html.tmpl")))
+				template.Must(tmpl.Parse(stateHTMLTemplate))
 				err := tmpl.Execute(w, dumps)
 				if err != nil {
 					http.Error(w, "failed to render template: "+err.Error(), http.StatusInternalServerError)

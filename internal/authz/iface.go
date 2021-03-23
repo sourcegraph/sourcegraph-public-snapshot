@@ -43,7 +43,10 @@ type Provider interface {
 	//
 	// The `user` argument should always be non-nil. If no external account can be computed for the
 	// provided user, implementations should return nil, nil.
-	FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account) (mine *extsvc.Account, err error)
+	//
+	// The `verifiedEmails` should only contain a list of verified emails that is
+	// associated to the `user`.
+	FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account, verifiedEmails []string) (mine *extsvc.Account, err error)
 
 	// FetchUserPerms returns a collection of accessible repository/project IDs (on
 	// code host) that the given account has read access on the code host. The

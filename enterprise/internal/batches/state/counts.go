@@ -2,11 +2,13 @@ package state
 
 import (
 	"fmt"
-	"sort"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/batches"
 )
+
+// timestampCount defines how many timestamps we will return for a given dateframe.
+const timestampCount = 150
 
 // ChangesetCounts represents the states in which a given set of Changesets was
 // at a given point in time
@@ -38,23 +40,19 @@ func (cc *ChangesetCounts) String() string {
 
 // CalcCounts calculates ChangesetCounts for the given Changesets and their
 // ChangesetEvents in the timeframe specified by the start and end parameters.
-// The number of ChangesetCounts returned is the number of 1 day intervals
-// between start and end, with each ChangesetCounts representing a point in
-// time at the boundary of each 24h interval.
+// The number of ChangesetCounts returned is always `timestampCount`. Between
+// start and end, it generates `timestampCount` datapoints with each ChangesetCounts
+// representing a point in time. `es` are expected to be pre-sorted.
 func CalcCounts(start, end time.Time, cs []*batches.Changeset, es ...*batches.ChangesetEvent) ([]*ChangesetCounts, error) {
-	ts := generateTimestamps(start, end)
+	ts := GenerateTimestamps(start, end)
 	counts := make([]*ChangesetCounts, len(ts))
 	for i, t := range ts {
 		counts[i] = &ChangesetCounts{Time: t}
 	}
 
-	// Sort all events once by their timestamps
-	events := ChangesetEvents(es)
-	sort.Sort(events)
-
 	// Grouping Events by their Changeset ID
 	byChangesetID := make(map[int64]ChangesetEvents)
-	for _, e := range events {
+	for _, e := range es {
 		id := e.Changeset()
 		byChangesetID[id] = append(byChangesetID[id], e)
 	}
@@ -107,11 +105,12 @@ func CalcCounts(start, end time.Time, cs []*batches.Changeset, es ...*batches.Ch
 	return counts, nil
 }
 
-func generateTimestamps(start, end time.Time) []time.Time {
-	// Walk backwards from `end` to >= `start` in 1 day intervals
-	// Backwards so we always end exactly on `end`
+func GenerateTimestamps(start, end time.Time) []time.Time {
+	timeStep := end.Sub(start) / timestampCount
+	// Walk backwards from `end` to >= `start` in equal intervals.
+	// Backwards so we always end exactly on `end`.
 	ts := []time.Time{}
-	for t := end; !t.Before(start); t = t.AddDate(0, 0, -1) {
+	for t := end; !t.Before(start); t = t.Add(-timeStep) {
 		ts = append(ts, t)
 	}
 

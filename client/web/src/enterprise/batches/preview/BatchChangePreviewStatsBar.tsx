@@ -3,6 +3,7 @@ import { DiffStat } from '../../../components/diff/DiffStat'
 import { BatchSpecFields } from '../../../graphql-operations'
 import { ChangesetAddedIcon, ChangesetModifiedIcon, ChangesetRemovedIcon } from './icons'
 import {
+    PreviewActionArchive,
     PreviewActionClose,
     PreviewActionImport,
     PreviewActionPublish,
@@ -52,6 +53,10 @@ export const BatchChangePreviewStatsBar: React.FunctionComponent<BatchChangePrev
                 label={`${batchSpec.applyPreview.stats.publish + batchSpec.applyPreview.stats.publishDraft} publish`}
             />
             <PreviewActionImport className={actionClassNames} label={`${batchSpec.applyPreview.stats.import} import`} />
+            <PreviewActionArchive
+                className={actionClassNames}
+                label={`${batchSpec.applyPreview.stats.archive} archive`}
+            />
         </div>
     </div>
 )

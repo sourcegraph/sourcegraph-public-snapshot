@@ -152,12 +152,15 @@ export const resolveRevision = memoizeObservable(
                 if (!data.repositoryRedirect.commit) {
                     throw new RevisionNotFoundError(revision)
                 }
-                if (!data.repositoryRedirect.defaultBranch || !data.repositoryRedirect.commit.tree) {
-                    throw new RevisionNotFoundError('HEAD')
+
+                const defaultBranch = data.repositoryRedirect.defaultBranch?.abbrevName || 'HEAD'
+
+                if (!data.repositoryRedirect.commit.tree) {
+                    throw new RevisionNotFoundError(defaultBranch)
                 }
                 return {
                     commitID: data.repositoryRedirect.commit.oid,
-                    defaultBranch: data.repositoryRedirect.defaultBranch.abbrevName,
+                    defaultBranch,
                     rootTreeURL: data.repositoryRedirect.commit.tree.url,
                 }
             })

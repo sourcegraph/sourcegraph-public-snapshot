@@ -8,6 +8,7 @@ export interface StreamingProgressProps {
     state: StreamingResultsState
     progress: Progress
     history: H.History
+    showTrace?: boolean
     onSearchAgain: (additionalFilters: string[]) => void
 }
 

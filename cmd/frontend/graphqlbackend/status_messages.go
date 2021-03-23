@@ -45,6 +45,10 @@ func (r *statusMessageResolver) ToCloningProgress() (*statusMessageResolver, boo
 	return r, r.message.Cloning != nil
 }
 
+func (r *statusMessageResolver) ToIndexingProgress() (*statusMessageResolver, bool) {
+	return r, r.message.Indexing != nil
+}
+
 func (r *statusMessageResolver) ToExternalServiceSyncError() (*statusMessageResolver, bool) {
 	return r, r.message.ExternalServiceSyncError != nil
 }

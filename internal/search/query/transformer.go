@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"unicode"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
@@ -251,8 +250,8 @@ func fuzzifyGlobPattern(value string) string {
 	return "**" + value + "**"
 }
 
-// mapGlobToRegex translates glob to regexp for fields repo, file, and repohasfile.
-func mapGlobToRegex(nodes []Node) ([]Node, error) {
+// Globbing translates glob to regexp for fields repo, file, and repohasfile.
+func Globbing(nodes []Node) ([]Node, error) {
 	var globErrors []globError
 
 	nodes = MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
@@ -288,6 +287,14 @@ func mapGlobToRegex(nodes []Node) ([]Node, error) {
 	return nodes, nil
 }
 
+func ToNodes(parameters []Parameter) []Node {
+	nodes := make([]Node, 0, len(parameters))
+	for _, p := range parameters {
+		nodes = append(nodes, p)
+	}
+	return nodes
+}
+
 // Hoist is a heuristic that rewrites simple but possibly ambiguous queries. It
 // changes certain expressions in a way that some consider to be more natural.
 // For example, the following query without parentheses is interpreted as
@@ -318,7 +325,7 @@ func Hoist(nodes []Node) ([]Node, error) {
 
 	n := len(expression.Operands)
 	var pattern []Node
-	var scopeParameters []Node
+	var scopeParameters []Parameter
 	for i, node := range expression.Operands {
 		if i == 0 || i == n-1 {
 			scopePart, patternPart, err := PartitionSearchPattern([]Node{node})
@@ -338,31 +345,7 @@ func Hoist(nodes []Node) ([]Node, error) {
 		annotation.Labels |= HeuristicHoisted
 		return Pattern{Value: value, Negated: negated, Annotation: annotation}
 	})
-	return append(scopeParameters, newOperator(pattern, expression.Kind)...), nil
-}
-
-// SearchUppercase adds case:yes to queries if any pattern is mixed-case.
-func SearchUppercase(nodes []Node) []Node {
-	var foundMixedCase bool
-	VisitPattern(nodes, func(value string, _ bool, _ Annotation) {
-		if match := containsUppercase(value); match {
-			foundMixedCase = true
-		}
-	})
-	if foundMixedCase {
-		nodes = append(nodes, Parameter{Field: "case", Value: "yes"})
-		return newOperator(nodes, And)
-	}
-	return nodes
-}
-
-func containsUppercase(s string) bool {
-	for _, r := range s {
-		if unicode.IsUpper(r) && unicode.IsLetter(r) {
-			return true
-		}
-	}
-	return false
+	return append(ToNodes(scopeParameters), newOperator(pattern, expression.Kind)...), nil
 }
 
 // partition partitions nodes into left and right groups. A node is put in the
@@ -741,4 +724,8 @@ func AddRegexpField(q Q, field, pattern string) string {
 		q = newOperator(append(q, Parameter{Field: field, Value: pattern}), And)
 	}
 	return StringHuman(q)
+}
+
+func identity(nodes []Node) ([]Node, error) {
+	return nodes, nil
 }

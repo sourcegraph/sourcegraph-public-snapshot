@@ -18,10 +18,7 @@ import { editClientSettings, fetchViewerSettings, mergeCascades, storageSettings
 import { requestGraphQlHelper } from '../backend/requestGraphQl'
 import { isHTTPAuthError } from '../../../../shared/src/backend/fetch'
 import { asError } from '../../../../shared/src/util/errors'
-import { InlineExtensionsService, shouldUseInlineExtensions } from './inlineExtensionsService'
-import { ModelService } from '../../../../shared/src/api/client/services/modelService'
-import { IExtensionsService, ExtensionsService } from '../../../../shared/src/api/client/services/extensionsService'
-
+import { getInlineExtensions, shouldUseInlineExtensions } from './inlineExtensionsService'
 export interface SourcegraphIntegrationURLs {
     /**
      * The URL of the configured Sourcegraph instance. Used for extensions, find-references, ...
@@ -144,17 +141,20 @@ export function createPlatformContext(
             // TODO(sqs): implement tooltips on the browser extension
         },
         createExtensionHost: () => createExtensionHost({ assetsURL }),
-        getScriptURLForExtension: async bundleURL => {
-            if (isInPage) {
-                return bundleURL
+        getScriptURLForExtension: () => {
+            if (isInPage || shouldUseInlineExtensions()) {
+                // inline extensions have fixed scriptURLs
+                return undefined
             }
             // We need to import the extension's JavaScript file (in importScripts in the Web Worker) from a blob:
             // URI, not its original http:/https: URL, because Chrome extensions are not allowed to be published
             // with a CSP that allowlists https://* in script-src (see
             // https://developer.chrome.com/extensions/contentSecurityPolicy#relaxing-remote-script). (Firefox
             // add-ons have an even stricter restriction.)
-            const blobURL = await background.createBlobURL(bundleURL)
-            return blobURL
+            return bundleURLs =>
+                Promise.allSettled(bundleURLs.map(bundleURL => background.createBlobURL(bundleURL))).then(results =>
+                    results.map(result => (result.status === 'rejected' ? asError(result.reason) : result.value))
+                )
         },
         urlToFile: ({ rawRepoName, ...target }, context) => {
             // We don't always resolve the rawRepoName, e.g. if there are multiple definitions.
@@ -170,14 +170,12 @@ export function createPlatformContext(
         sideloadedExtensionURL: isInPage
             ? new LocalStorageSubject<string | null>('sideloadedExtensionURL', null)
             : new ExtensionStorageSubject('sideloadedExtensionURL', null),
-        createExtensionsService(modelService: Pick<ModelService, 'activeLanguages'>): IExtensionsService {
-            // On Firefox extension, use the inline extensions service.
+        getStaticExtensions: () => {
             if (shouldUseInlineExtensions()) {
-                return new InlineExtensionsService()
+                return getInlineExtensions()
             }
 
-            // On all other platforms, use the standard extensions service.
-            return new ExtensionsService(this, modelService)
+            return undefined
         },
     }
     return context

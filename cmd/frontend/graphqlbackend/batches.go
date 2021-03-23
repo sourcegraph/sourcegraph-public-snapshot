@@ -353,6 +353,7 @@ type ChangesetApplyPreviewConnectionStatsResolver interface {
 	Reopen() int32
 	Sleep() int32
 	Detach() int32
+	Archive() int32
 
 	Added() int32
 	Modified() int32
@@ -479,6 +480,8 @@ type ListChangesetsArgs struct {
 	//new
 	OnlyPublishedByThisBatchChange *bool
 	Search                         *string
+
+	OnlyArchived bool
 }
 
 type BatchChangeResolver interface {
@@ -523,6 +526,7 @@ type ChangesetsStatsResolver interface {
 	Merged() int32
 	Closed() int32
 	Deleted() int32
+	Archived() int32
 	Total() int32
 }
 

@@ -68,13 +68,13 @@ func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlback
 	return &monitorConnection{Resolver: r, monitors: mrs, totalCount: totalCount, hasNextPage: hasNextPage}, nil
 }
 
-func (r *Resolver) MonitorByID(ctx context.Context, ID graphql.ID) (m graphqlbackend.MonitorResolver, err error) {
-	err = r.isAllowedToEdit(ctx, ID)
+func (r *Resolver) MonitorByID(ctx context.Context, id graphql.ID) (m graphqlbackend.MonitorResolver, err error) {
+	err = r.isAllowedToEdit(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 	var monitorID int64
-	err = relay.UnmarshalSpec(ID, &monitorID)
+	err = relay.UnmarshalSpec(id, &monitorID)
 	if err != nil {
 		return nil, err
 	}
@@ -260,7 +260,7 @@ func (r *Resolver) actionIDsForMonitorIDInt64(ctx context.Context, monitorID int
 	return ids, nil
 }
 
-func (r *Resolver) actionIDsForMonitorIDINT64SinglePage(ctx context.Context, q *sqlf.Query, limit int) (IDs []graphql.ID, cursor *string, err error) {
+func (r *Resolver) actionIDsForMonitorIDINT64SinglePage(ctx context.Context, q *sqlf.Query, limit int) (ids []graphql.ID, cursor *string, err error) {
 	var rows *sql.Rows
 	rows, err = r.store.Query(ctx, q)
 	if err != nil {
@@ -273,17 +273,17 @@ func (r *Resolver) actionIDsForMonitorIDINT64SinglePage(ctx context.Context, q *
 	if err != nil {
 		return nil, nil, err
 	}
-	IDs = make([]graphql.ID, 0, len(es))
+	ids = make([]graphql.ID, 0, len(es))
 	for _, e := range es {
-		IDs = append(IDs, (&monitorEmail{MonitorEmail: e}).ID())
+		ids = append(ids, (&monitorEmail{MonitorEmail: e}).ID())
 	}
 
 	// Set the cursor if the result size equals limit.
-	if len(IDs) == limit {
-		stringID := string(IDs[len(IDs)-1])
+	if len(ids) == limit {
+		stringID := string(ids[len(ids)-1])
 		cursor = &stringID
 	}
-	return IDs, cursor, nil
+	return ids, cursor, nil
 }
 
 // splitActionIDs splits actions into three buckets: create, delete and update.
