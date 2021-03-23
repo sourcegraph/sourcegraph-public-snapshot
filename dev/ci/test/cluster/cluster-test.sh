@@ -18,6 +18,14 @@ function exit_trap() {
   kubectl delete namespace "$NAMESPACE"
 }
 
+function load_profile() {
+  # Load variables set up by init-server, disabling `-x` to avoid printing variables, setting +u to avoid blowing up on ubound ones
+  set +x +u
+  # shellcheck disable=SC1091
+  source /root/.profile
+  set -x -u
+}
+
 function cluster_setup() {
   git clone --depth 1 \
     https://github.com/sourcegraph/deploy-sourcegraph.git \
@@ -59,9 +67,7 @@ function cluster_setup() {
 }
 
 function test_setup() {
-  set +x +u
-  # shellcheck disable=SC1091
-  source /root/.profile
+  load_profile
 
   dev/ci/test/setup-deps.sh
 
@@ -76,10 +82,7 @@ function test_setup() {
     ./init-sg initSG -baseurl="$SOURCEGRAPH_BASE_URL"
   )
 
-  # Load variables set up by init-server, disabling `-x` to avoid printing variables, setting +u to avoid blowing up on ubound ones
-  set +x +u
-  # shellcheck disable=SC1091
-  source /root/.profile
+  load_profile
 
   echo "TEST: Checking Sourcegraph instance is accessible"
 
