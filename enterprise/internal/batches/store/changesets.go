@@ -917,7 +917,11 @@ WHERE
 `
 
 func archivedInBatchChange(batchChangeID string) *sqlf.Query {
-	return sqlf.Sprintf("COALESCE((batch_change_ids->%s->>'isArchived')::bool, false)", batchChangeID)
+	return sqlf.Sprintf(
+		"(COALESCE((batch_change_ids->%s->>'isArchived')::bool, false) OR COALESCE((batch_change_ids->%s->>'archive')::bool, false))",
+		batchChangeID,
+		batchChangeID,
+	)
 }
 
 func getChangesetsStatsQuery(batchChangeID int64) *sqlf.Query {

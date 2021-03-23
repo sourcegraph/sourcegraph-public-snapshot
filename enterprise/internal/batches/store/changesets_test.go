@@ -434,8 +434,15 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		})
 
 		t.Run("OnlyArchived", func(t *testing.T) {
+			// Changeset is archived
 			archivedChangeset := updateForThisTest(t, changesets[0], func(ch *batches.Changeset) {
 				ch.BatchChanges[0].IsArchived = true
+			})
+
+			// This changeset is marked as to-be-archived
+			_ = updateForThisTest(t, changesets[1], func(ch *batches.Changeset) {
+				ch.BatchChanges[0].BatchChangeID = archivedChangeset.BatchChanges[0].BatchChangeID
+				ch.BatchChanges[0].Archive = true
 			})
 
 			opts := CountChangesetsOpts{
@@ -447,8 +454,8 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 				t.Fatal(err)
 			}
 
-			if count != 1 {
-				t.Fatalf("got count %d, want: %d", count, 1)
+			if count != 2 {
+				t.Fatalf("got count %d, want: %d", count, 2)
 			}
 
 			opts.OnlyArchived = false
@@ -462,13 +469,21 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		})
 
 		t.Run("IncludeArchived", func(t *testing.T) {
+			// Changeset is archived
 			archivedChangeset := updateForThisTest(t, changesets[0], func(ch *batches.Changeset) {
 				ch.BatchChanges[0].IsArchived = true
 			})
 
+			// Not archived, not marked as to-be-archived
 			_ = updateForThisTest(t, changesets[1], func(ch *batches.Changeset) {
 				ch.BatchChanges[0].BatchChangeID = archivedChangeset.BatchChanges[0].BatchChangeID
 				ch.BatchChanges[0].IsArchived = false
+			})
+
+			// Marked as to-be-archived
+			_ = updateForThisTest(t, changesets[2], func(ch *batches.Changeset) {
+				ch.BatchChanges[0].BatchChangeID = archivedChangeset.BatchChanges[0].BatchChangeID
+				ch.BatchChanges[0].Archive = true
 			})
 
 			opts := CountChangesetsOpts{
@@ -480,8 +495,8 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 				t.Fatal(err)
 			}
 
-			if count != 2 {
-				t.Fatalf("got count %d, want: %d", count, 1)
+			if count != 3 {
+				t.Fatalf("got count %d, want: %d", count, 3)
 			}
 
 			opts.IncludeArchived = false
