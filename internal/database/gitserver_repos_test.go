@@ -9,20 +9,16 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
-
-func init() {
-	dbtesting.DBNameSuffix = "gitserver"
-}
 
 func TestIterateRepoGitserverStatus(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	repo1 := &types.Repo{
@@ -92,7 +88,7 @@ func TestGitserverReposGetByID(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	_, err := GitserverRepos(db).GetByID(ctx, 1)
@@ -142,7 +138,7 @@ func TestSetCloneStatus(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 	const shardID = "test"
 
@@ -242,7 +238,7 @@ func TestSetLastError(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 	const shardID = "test"
 
@@ -333,7 +329,7 @@ func TestGitserverRepoUpsertNullShard(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	repo1 := &types.Repo{
@@ -368,7 +364,7 @@ func TestGitserverRepoUpsert(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	repo1 := &types.Repo{
