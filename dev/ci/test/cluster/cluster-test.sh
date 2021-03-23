@@ -8,9 +8,6 @@ root_dir="$(dirname "${BASH_SOURCE[0]}")/../../../.."
 cd "$root_dir"
 
 function error_trap() {
-  # All steps must run, disable early exit
-  set +euo pipefails
-
   kubectl logs --namespace="$NAMESPACE" -l app=sourcegraph-frontend -c frontend
 }
 
