@@ -3,7 +3,7 @@ import { first, take, toArray } from 'rxjs/operators'
 import { wrapRemoteObservable } from '../client/api/common'
 import { ContributableViewContainer } from '../protocol'
 import { assertToJSON, integrationTestContext } from './testHelpers'
-import { ViewProviderSourceType } from "../extension/extensionHostApi"
+import { ViewProviderSourceType } from '../extension/extensionHostApi'
 
 describe('Views (integration)', () => {
     describe('app.createPanelView', () => {
