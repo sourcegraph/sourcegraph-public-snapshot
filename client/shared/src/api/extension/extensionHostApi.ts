@@ -653,7 +653,7 @@ function callViewProviders<W extends ContributableViewContainer>(
                                 return [asError(error)]
                             })
                         )
-                    ).pipe(map(view => ({ id, view })))
+                    ).pipe(map(view => ({ id, view, source: ViewProviderSourceType.Extension })))
                 ),
             ])
         ),
@@ -719,12 +719,20 @@ export interface ProgressNotification {
     progress: ProxySubscribable<sourcegraph.Progress>
 }
 
+export enum ViewProviderSourceType {
+    Backend = 'Backend',
+    Extension = 'Extension'
+}
+
 export interface ViewProviderResult {
     /** The ID of the view provider. */
     id: string
 
     /** The result returned by the provider. */
     view: sourcegraph.View | undefined | ErrorLike
+
+    /** The source of view provider to distinguish between data from extension and data from backend */
+    source: ViewProviderSourceType
 }
 
 /**

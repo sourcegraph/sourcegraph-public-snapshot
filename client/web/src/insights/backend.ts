@@ -5,7 +5,7 @@ import { InsightsResult, InsightFields } from '../graphql-operations'
 import { LineChartContent } from 'sourcegraph'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import { asError } from '../../../shared/src/util/errors'
-import { ViewProviderResult } from '../../../shared/src/api/extension/extensionHostApi'
+import { ViewProviderResult, ViewProviderSourceType } from '../../../shared/src/api/extension/extensionHostApi'
 
 const insightFieldsFragment = gql`
     fragment InsightFields on Insight {
@@ -45,16 +45,21 @@ export function getCombinedViews(
             map(backendInsights =>
                 backendInsights.map(
                     (insight, index): ViewProviderResult => ({
-                        id: `insight.backend${index}`,
+                        id: `Backend insight ${index + 1}`,
                         view: {
                             title: insight.title,
                             subtitle: insight.description,
                             content: [backendInsightToViewContent(insight)],
                         },
+                        source: ViewProviderSourceType.Backend
                     })
                 )
             ),
-            catchError(error => of<ViewProviderResult[]>([{ id: 'insight.backend', view: asError(error) }]))
+            catchError(error => of<ViewProviderResult[]>([{
+                id: 'Backend insight',
+                view: asError(error),
+                source: ViewProviderSourceType.Backend
+            }]))
         ),
     ]).pipe(map(([extensionViews, backendInsights]) => [...backendInsights, ...extensionViews]))
 }

@@ -2,11 +2,14 @@ import React, { useCallback } from 'react'
 import { isErrorLike } from '../../../../shared/src/util/errors'
 import classNames from 'classnames'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { MdiReactIconComponentType } from 'mdi-react'
+import DatabaseIcon from 'mdi-react/DatabaseIcon'
+import PuzzleIcon from 'mdi-react/PuzzleIcon'
 import { ErrorAlert } from '../../components/alerts'
 import { ViewContent, ViewContentProps } from '../../views/ViewContent'
-import { WidthProvider, Responsive, Layout as ReactGridLayout, Layouts as ReactGridLayouts } from 'react-grid-layout'
+import { Layout as ReactGridLayout, Layouts as ReactGridLayouts, Responsive, WidthProvider } from 'react-grid-layout'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
-import { ViewProviderResult } from '../../../../shared/src/api/extension/extensionHostApi'
+import { ViewProviderResult, ViewProviderSourceType } from '../../../../shared/src/api/extension/extensionHostApi'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 
 // TODO use a method to get width that also triggers when file explorer is closed
@@ -56,6 +59,38 @@ const viewsToReactGridLayouts = (views: ViewProviderResult[]): ReactGridLayouts 
     return reactGridLayouts
 }
 
+interface InterInsightDescriptionProps {
+    title: string
+    icon: MdiReactIconComponentType
+}
+
+const stopPropagation: React.MouseEventHandler<HTMLElement> = event => event.stopPropagation();
+
+const InsightDescription: React.FunctionComponent<InterInsightDescriptionProps> = props => {
+    const { icon: Icon, title } = props;
+
+    return (
+        <small
+            title={title}
+            className="view-grid__view-id text-muted"
+            onMouseDown={stopPropagation}>
+
+            <Icon className='icon-inline view-grid__view-id-icon'/>
+
+            {title}
+        </small>
+    )
+}
+
+const getInsightViewIcon = (source: ViewProviderSourceType): MdiReactIconComponentType => {
+    switch (source) {
+        case ViewProviderSourceType.Backend:
+            return DatabaseIcon;
+        case ViewProviderSourceType.Extension:
+            return PuzzleIcon;
+    }
+}
+
 export const ViewGrid: React.FunctionComponent<ViewGridProps> = props => {
     const onResizeOrDragStart: ReactGridLayout.ItemCallback = useCallback(
         (_layout, item) => {
@@ -81,7 +116,7 @@ export const ViewGrid: React.FunctionComponent<ViewGridProps> = props => {
                 onResizeStart={onResizeOrDragStart}
                 onDragStart={onResizeOrDragStart}
             >
-                {props.views.map(({ id, view }) => (
+                {props.views.map(({ id, view , source}) => (
                     <div key={id} className={classNames('card view-grid__item')}>
                         <ErrorBoundary
                             location={props.location}
@@ -94,11 +129,21 @@ export const ViewGrid: React.FunctionComponent<ViewGridProps> = props => {
                             className="pt-0"
                         >
                             {view === undefined ? (
-                                <div className="flex-grow-1 d-flex flex-column align-items-center justify-content-center">
-                                    <LoadingSpinner /> Loading code insight
-                                </div>
+                                <>
+                                    <div className="flex-grow-1 d-flex flex-column align-items-center justify-content-center">
+                                        <LoadingSpinner /> Loading code insight
+                                    </div>
+                                    <InsightDescription
+                                        title={id}
+                                        icon={getInsightViewIcon(source)}/>
+                                </>
                             ) : isErrorLike(view) ? (
-                                <ErrorAlert className="m-0" error={view} />
+                                <>
+                                    <ErrorAlert className="m-0" error={view} />
+                                    <InsightDescription
+                                        title={id}
+                                        icon={getInsightViewIcon(source)} />
+                                </>
                             ) : (
                                 <>
                                     <h3 className="view-grid__view-title">{view.title}</h3>
