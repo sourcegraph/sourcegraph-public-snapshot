@@ -1,6 +1,8 @@
 package window
 
 import (
+	"sync"
+
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
@@ -12,6 +14,7 @@ import (
 // Configuration represents the rollout windows configured on the site.
 type Configuration struct {
 	windows []Window
+	mu      sync.RWMutex
 }
 
 // NewConfiguration constructs a Configuration based on the current site
@@ -20,7 +23,7 @@ func NewConfiguration() *Configuration {
 	cfg := &Configuration{}
 
 	conf.Watch(func() {
-		if err := cfg.updateFromConfig(conf.Get().BatchChangesRolloutWindows); err != nil {
+		if err := cfg.update(conf.Get().BatchChangesRolloutWindows); err != nil {
 			log15.Warn("ignoring erroneous batchChanges.rolloutWindows configuration", "err", err)
 		}
 	})
@@ -32,12 +35,20 @@ func NewConfiguration() *Configuration {
 func ValidateConfiguration(raw *[]*schema.BatchChangeRolloutWindow) error {
 	return (&Configuration{
 		windows: []Window{},
-	}).updateFromConfig(raw)
+	}).update(raw)
 }
 
-func (cfg *Configuration) updateFromConfig(raw *[]*schema.BatchChangeRolloutWindow) error {
-	// Clear the windows.
-	cfg.windows = []Window{}
+func (cfg *Configuration) update(raw *[]*schema.BatchChangeRolloutWindow) error {
+	// Ensure we always start with an empty window slice.
+	windows := []Window{}
+
+	// Update atomically once we're done generating the new slice.
+	defer func() {
+		cfg.mu.Lock()
+		defer cfg.mu.Unlock()
+
+		cfg.windows = windows
+	}()
 
 	// If there's no window configuration, there are no windows, and we can just
 	// return here.
@@ -50,7 +61,7 @@ func (cfg *Configuration) updateFromConfig(raw *[]*schema.BatchChangeRolloutWind
 		if window, err := parseWindow(rawWindow); err != nil {
 			errs = multierror.Append(errs, errors.Wrapf(err, "window %d", i))
 		} else {
-			cfg.windows = append(cfg.windows, window)
+			windows = append(windows, window)
 		}
 	}
 

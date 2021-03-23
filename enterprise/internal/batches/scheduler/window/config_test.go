@@ -11,11 +11,19 @@ import (
 )
 
 // We have a bunch of tests in here that rely on unexported fields in the window
-// structs. Since we control all of this, we're going to provide a common option
-// that will allow that.
-var cmpExport = cmp.AllowUnexported(Configuration{}, Window{}, rate{}, windowTime{})
+// structs. Since we control all of this, we're going to provide a common set of
+// options that will allow that.
+var (
+	cmpAllowUnexported = cmp.AllowUnexported(Window{}, rate{}, windowTime{})
+	cmpOptions         = cmp.Options{
+		cmpAllowUnexported,
+		cmp.Comparer(func(a, b *Configuration) bool {
+			return cmp.Equal(a.windows, b.windows, cmpAllowUnexported)
+		}),
+	}
+)
 
-func TestUpdateFromConfig(t *testing.T) {
+func TestUpdate(t *testing.T) {
 	t.Run("errors", func(t *testing.T) {
 		for name, tc := range map[string]struct {
 			in   *[]*schema.BatchChangeRolloutWindow
@@ -37,7 +45,7 @@ func TestUpdateFromConfig(t *testing.T) {
 			},
 		} {
 			t.Run(name, func(t *testing.T) {
-				if err := (&Configuration{}).updateFromConfig(tc.in); err == nil {
+				if err := (&Configuration{}).update(tc.in); err == nil {
 					t.Error("unexpected nil error")
 				} else if have := len(err.(*multierror.Error).Errors); have != tc.want {
 					t.Errorf("unexpected number of errors: have=%d want=%d", have, tc.want)
@@ -85,10 +93,10 @@ func TestUpdateFromConfig(t *testing.T) {
 		} {
 			t.Run(name, func(t *testing.T) {
 				cfg := &Configuration{}
-				if err := cfg.updateFromConfig(tc.in); err != nil {
+				if err := cfg.update(tc.in); err != nil {
 					t.Errorf("unexpected error: %v", err)
 				}
-				if diff := cmp.Diff(cfg, tc.want, cmpExport); diff != "" {
+				if diff := cmp.Diff(cfg, tc.want, cmpOptions); diff != "" {
 					t.Errorf("unexpected configuration (-have +want):\n%s", diff)
 				}
 			})

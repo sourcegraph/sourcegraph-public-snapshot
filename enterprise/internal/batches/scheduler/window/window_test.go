@@ -99,7 +99,7 @@ func TestParseRate(t *testing.T) {
 			t.Run(name, func(t *testing.T) {
 				if have, err := parseRate(tc.in); err != nil {
 					t.Errorf("unexpected error: %v", err)
-				} else if diff := cmp.Diff(have, tc.want, cmpExport); diff != "" {
+				} else if diff := cmp.Diff(have, tc.want, cmpOptions); diff != "" {
 					t.Errorf("unexpected rate (-have +want):\n%s", diff)
 				}
 			})
@@ -161,7 +161,7 @@ func TestNewWindowTime(t *testing.T) {
 			t.Run(tc.in, func(t *testing.T) {
 				if have, err := newWindowTime(tc.in); err != nil {
 					t.Errorf("unexpected error: %v", err)
-				} else if diff := cmp.Diff(have, tc.want, cmpExport); diff != "" {
+				} else if diff := cmp.Diff(have, tc.want, cmpOptions); diff != "" {
 					t.Errorf("unexpected window time (-have +want)\n:%s", diff)
 				}
 			})
@@ -284,7 +284,7 @@ func TestParseWindow(t *testing.T) {
 			t.Run(name, func(t *testing.T) {
 				if have, err := parseWindow(tc.in); err != nil {
 					t.Errorf("unexpected error: %v", err)
-				} else if diff := cmp.Diff(have, tc.want, cmpExport); diff != "" {
+				} else if diff := cmp.Diff(have, tc.want, cmpOptions); diff != "" {
 					t.Errorf("unexpected window (-have +want):\n%s", diff)
 				}
 			})
