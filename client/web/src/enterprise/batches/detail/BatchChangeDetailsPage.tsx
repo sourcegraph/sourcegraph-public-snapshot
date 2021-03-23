@@ -26,7 +26,7 @@ import { BatchChangeDetailsActionSection } from './BatchChangeDetailsActionSecti
 import { BatchChangeInfoByline } from './BatchChangeInfoByline'
 import { UnpublishedNotice } from './UnpublishedNotice'
 import { SupersedingBatchSpecAlert } from './SupersedingBatchSpecAlert'
-import { BatchChangesIcon } from '../icons'
+import { BatchChangesIcon } from '../../../batches/icons'
 import { PageHeader } from '../../../components/PageHeader'
 import { ClosedNotice } from './ClosedNotice'
 

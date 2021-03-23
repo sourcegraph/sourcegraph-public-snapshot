@@ -12,7 +12,7 @@ import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SearchPatternType } from '../../graphql-operations'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { WebActionsNavItems as ActionsNavItems } from '../../components/shared'
-import { CodeMonitoringProps } from '../../enterprise/code-monitoring'
+import { CodeMonitoringProps } from '../../code-monitoring'
 import { FilterKind, findFilter } from '../../../../shared/src/search/query/validate'
 import { Link } from '../../../../shared/src/components/Link'
 

@@ -12,8 +12,8 @@ import { ThemeProps } from '../../../shared/src/theme'
 import { isErrorLike } from '../../../shared/src/util/errors'
 import { AuthenticatedUser } from '../auth'
 import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/shared'
-import { BatchChangesNavItem } from '../enterprise/batches/global/nav/BatchChangesNavItem'
-import { CodeMonitoringNavItem } from '../enterprise/code-monitoring/CodeMonitoringNavItem'
+import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
+import { CodeMonitoringNavItem } from '../code-monitoring/CodeMonitoringNavItem'
 import { InsightsNavItem } from '../insights/InsightsNavLink'
 import {
     KeyboardShortcutsProps,
@@ -29,6 +29,7 @@ import { FeedbackPrompt } from './Feedback/FeedbackPrompt'
 import { LayoutRouteProps } from '../routes'
 import { getReactElements } from '../util/getReactElements'
 import { LinkWithIcon } from '../components/LinkWithIcon'
+import { CodeMonitoringProps } from '../code-monitoring'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -39,6 +40,7 @@ interface Props
         ThemePreferenceProps,
         ExtensionAlertAnimationProps,
         TelemetryProps,
+        CodeMonitoringProps,
         ActivationProps {
     location: H.Location
     history: H.History
@@ -84,16 +86,15 @@ const getAnonymousUserNavItems = (props: Props): JSX.Element[] => {
 }
 
 const getMinimizableNavItems = (props: Props): JSX.Element[] => {
-    const { showBatchChanges, settingsCascade } = props
+    const { showBatchChanges, enableCodeMonitoring, settingsCascade } = props
 
     const settings = !isErrorLike(settingsCascade.final) ? settingsCascade.final : null
-    const codeMonitoring = settings?.experimentalFeatures?.codeMonitoring !== false
     const codeInsights =
         settings?.experimentalFeatures?.codeInsights && settings?.['insights.displayLocation.insightsPage'] !== false
 
     return getReactElements([
         codeInsights && <InsightsNavItem />,
-        codeMonitoring && <CodeMonitoringNavItem />,
+        enableCodeMonitoring && <CodeMonitoringNavItem />,
         showBatchChanges && <BatchChangesNavItem isSourcegraphDotCom={props.isSourcegraphDotCom} />,
     ])
 }

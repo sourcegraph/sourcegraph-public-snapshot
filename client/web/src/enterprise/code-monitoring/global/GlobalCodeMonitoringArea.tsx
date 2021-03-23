@@ -1,6 +1,6 @@
 import React from 'react'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
-import { CodeMonitoringProps } from '..'
+import { CodeMonitoringProps } from '../../../code-monitoring'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
@@ -34,7 +34,6 @@ const CreateCodeMonitorPage = lazyComponent<CreateCodeMonitorPageProps, 'CreateC
     () => import('../CreateCodeMonitorPage'),
     'CreateCodeMonitorPage'
 )
-
 const ManageCodeMonitorPage = lazyComponent<ManageCodeMonitorPageProps, 'ManageCodeMonitorPage'>(
     () => import('../ManageCodeMonitorPage'),
     'ManageCodeMonitorPage'

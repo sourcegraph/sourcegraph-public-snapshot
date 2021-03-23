@@ -40,7 +40,7 @@ import { QueryState } from '../helpers'
 import { PerformanceWarningAlert } from '../../site/PerformanceWarningAlert'
 import { SearchResultsStats } from './SearchResultsStats'
 import { SearchAlert } from './SearchAlert'
-import { CodeMonitoringProps } from '../../enterprise/code-monitoring'
+import { CodeMonitoringProps } from '../../code-monitoring'
 
 const isSearchResults = (value: unknown): value is GQL.ISearchResults =>
     typeof value === 'object' &&
