@@ -57,7 +57,7 @@ function cluster_setup() {
     ./create-new-cluster.sh
   )
 
-  kubectl get pods
+  kubectl get -n "$NAMESPACE" pods
 
   trap error_trap ERR
   time kubectl wait --for=condition=Ready -l app=sourcegraph-frontend pod --timeout=20m
