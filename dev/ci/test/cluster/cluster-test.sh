@@ -73,11 +73,10 @@ function test_setup() {
   curl "$SOURCEGRAPH_BASE_URL"
 
   # setup admin users, etc
-  (
-    pushd internal/cmd/init-sg
-    go build
-    ./init-sg initSG -baseurl="$SOURCEGRAPH_BASE_URL"
-  )
+  pushd internal/cmd/init-sg
+  go build
+  ./init-sg initSG -baseurl="$SOURCEGRAPH_BASE_URL"
+  popd
 
   load_profile
 
