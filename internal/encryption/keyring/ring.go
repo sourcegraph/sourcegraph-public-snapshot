@@ -6,9 +6,8 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/cloudkms"
-
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/cloudkms"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -23,10 +22,10 @@ func Default() Ring {
 	return defaultRing
 }
 
-// SetDefault overrides the default keyring.
+// MockDefault overrides the default keyring.
 // Note: This function is defined for testing purpose.
 // Use Init to correctly setup a keyring.
-func SetDefault(r Ring) {
+func MockDefault(r Ring) {
 	mu.Lock()
 	defer mu.Unlock()
 	defaultRing = r
@@ -92,8 +91,6 @@ func NewKey(ctx context.Context, k *schema.EncryptionKey) (encryption.Key, error
 		return cloudkms.NewKey(ctx, k.Cloudkms.Keyname)
 	case k.Noop != nil:
 		return &encryption.NoopKey{}, nil
-	case k.Base64 != nil:
-		return &encryption.Base64Key{}, nil
 	default:
 		return nil, fmt.Errorf("couldn't configure key: %v", *k)
 	}

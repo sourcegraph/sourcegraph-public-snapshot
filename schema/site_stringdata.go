@@ -1346,10 +1346,10 @@ const SiteSchemaJSON = `{
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["cloudkms", "noop", "base64"]
+          "enum": ["cloudkms", "noop"]
         }
       },
-      "oneOf": [{ "$ref": "#/definitions/CloudKMSEncryptionKey" }, { "$ref": "#/definitions/NoOpEncryptionKey" }, { "$ref": "#/definitions/Base64EncryptionKey" }],
+      "oneOf": [{ "$ref": "#/definitions/CloudKMSEncryptionKey" }, { "$ref": "#/definitions/NoOpEncryptionKey" }],
       "!go": {
         "taggedUnionType": true
       }
@@ -1376,17 +1376,6 @@ const SiteSchemaJSON = `{
         "type": {
           "type": "string",
           "const": "noop"
-        }
-      }
-    },
-    "Base64EncryptionKey": {
-      "description": "This encryption key is a stub. MUST BE REMOVED BEFORE MERGING",
-      "type": "object",
-      "required": ["type"],
-      "properties": {
-        "type": {
-          "type": "string",
-          "const": "base64"
         }
       }
     }

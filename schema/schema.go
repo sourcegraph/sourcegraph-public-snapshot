@@ -129,11 +129,6 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header", "github", "gitlab"})
 }
 
-// Base64EncryptionKey description: This encryption key is a stub. MUST BE REMOVED BEFORE MERGING
-type Base64EncryptionKey struct {
-	Type string `json:"type"`
-}
-
 // BatchSpec description: A batch specification, which describes the batch change and what kinds of changes to make (or what existing changesets to track).
 type BatchSpec struct {
 	// ChangesetTemplate description: A template describing how to create (and update) changesets with the file changes produced by the command steps.
@@ -398,7 +393,6 @@ type Dotcom struct {
 type EncryptionKey struct {
 	Cloudkms *CloudKMSEncryptionKey
 	Noop     *NoOpEncryptionKey
-	Base64   *Base64EncryptionKey
 }
 
 func (v EncryptionKey) MarshalJSON() ([]byte, error) {
@@ -407,9 +401,6 @@ func (v EncryptionKey) MarshalJSON() ([]byte, error) {
 	}
 	if v.Noop != nil {
 		return json.Marshal(v.Noop)
-	}
-	if v.Base64 != nil {
-		return json.Marshal(v.Base64)
 	}
 	return nil, errors.New("tagged union type must have exactly 1 non-nil field value")
 }
@@ -421,14 +412,12 @@ func (v *EncryptionKey) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	switch d.DiscriminantProperty {
-	case "base64":
-		return json.Unmarshal(data, &v.Base64)
 	case "cloudkms":
 		return json.Unmarshal(data, &v.Cloudkms)
 	case "noop":
 		return json.Unmarshal(data, &v.Noop)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"cloudkms", "noop", "base64"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"cloudkms", "noop"})
 }
 
 // EncryptionKeys description: Configuration for encryption keys used to encrypt data at rest in the database.
