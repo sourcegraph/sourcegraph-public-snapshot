@@ -875,7 +875,7 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 		ev.AddField("source", string(trace.RequestSource(ctx)))
 		ev.AddField("status", status)
 		ev.AddField("alert_type", alertType)
-		ev.AddField("~_ms", elapsed.Milliseconds())
+		ev.AddField("duration_ms", elapsed.Milliseconds())
 		if srr != nil {
 			ev.AddField("result_size", len(srr.SearchResults))
 		}
