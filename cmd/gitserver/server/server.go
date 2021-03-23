@@ -142,8 +142,6 @@ type Server struct {
 
 	// hostnameMu protects hostname
 	hostnameMu sync.RWMutex
-	// used to set the hostname
-	hostnameOnce sync.Once
 	// hostname stores this server's hostname as seen by frontend. It starts empty
 	// and is populated by the first incoming request from frontend. We require frontend
 	// and our view of the hostname to be the same as we shard repos based on it.
@@ -342,11 +340,13 @@ func (s *Server) setHostnameOnce(h string, addrs []string) {
 	if !hostnameFound(h, addrs) {
 		return
 	}
-	s.hostnameOnce.Do(func() {
-		s.hostnameMu.Lock()
-		defer s.hostnameMu.Unlock()
-		s.hostname = h
-	})
+	s.hostnameMu.Lock()
+	defer s.hostnameMu.Unlock()
+	// Another caller may have already set it
+	if s.hostname != "" {
+		return
+	}
+	s.hostname = h
 }
 
 // hostnameFound returns true only if our hostname can be found in addrs
