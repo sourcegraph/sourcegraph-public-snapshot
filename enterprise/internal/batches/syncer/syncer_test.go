@@ -372,9 +372,7 @@ func (m MockSyncStore) Repos() *database.RepoStore {
 }
 
 func (m MockSyncStore) Clock() func() time.Time {
-	return func() time.Time {
-		return time.Now()
-	}
+	return time.Now
 }
 
 func (m MockSyncStore) ListCodeHosts(ctx context.Context, opts store.ListCodeHostsOpts) ([]*batches.CodeHost, error) {

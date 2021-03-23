@@ -71,6 +71,10 @@ type CloningProgress struct {
 	Message string
 }
 
+type IndexingProgress struct {
+	Message string
+}
+
 type ExternalServiceSyncError struct {
 	Message           string
 	ExternalServiceId int64
@@ -82,6 +86,7 @@ type SyncError struct {
 
 type StatusMessage struct {
 	Cloning                  *CloningProgress          `json:"cloning"`
+	Indexing                 *IndexingProgress         `json:"indexing"`
 	ExternalServiceSyncError *ExternalServiceSyncError `json:"external_service_sync_error"`
 	SyncError                *SyncError                `json:"sync_error"`
 }

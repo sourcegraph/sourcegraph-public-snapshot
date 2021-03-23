@@ -197,7 +197,9 @@ func (s ChangesetCheckState) Valid() bool {
 // BatchChangeAssoc stores the details of a association to a BatchChange.
 type BatchChangeAssoc struct {
 	BatchChangeID int64 `json:"-"`
-	Detach        bool  `json:"detach"`
+	Detach        bool  `json:"detach,omitempty"`
+	Archive       bool  `json:"archive,omitempty"`
+	IsArchived    bool  `json:"isArchived,omitempty"`
 }
 
 // A Changeset is a changeset on a code host belonging to a Repository and many
@@ -254,7 +256,8 @@ func (c *Changeset) RecordID() int { return int(c.ID) }
 // Clone returns a clone of a Changeset.
 func (c *Changeset) Clone() *Changeset {
 	tt := *c
-	tt.BatchChanges = c.BatchChanges[:len(c.BatchChanges):len(c.BatchChanges)]
+	tt.BatchChanges = make([]BatchChangeAssoc, len(c.BatchChanges))
+	copy(tt.BatchChanges, c.BatchChanges)
 	return &tt
 }
 
@@ -640,6 +643,8 @@ func (c *Changeset) Attach(batchChangeID int64) {
 	for i := range c.BatchChanges {
 		if c.BatchChanges[i].BatchChangeID == batchChangeID {
 			c.BatchChanges[i].Detach = false
+			c.BatchChanges[i].IsArchived = false
+			c.BatchChanges[i].Archive = false
 			return
 		}
 	}
@@ -653,6 +658,19 @@ func (c *Changeset) Detach(batchChangeID int64) bool {
 	for i := range c.BatchChanges {
 		if c.BatchChanges[i].BatchChangeID == batchChangeID {
 			c.BatchChanges[i].Detach = true
+			return true
+		}
+	}
+	return false
+}
+
+// Archive marks the given batch change as to-be-archived. Returns true, if the
+// batch change currently is attached to the batch change and *not* archived.
+// This function is a noop, if the given changeset was already archived.
+func (c *Changeset) Archive(batchChangeID int64) bool {
+	for i := range c.BatchChanges {
+		if c.BatchChanges[i].BatchChangeID == batchChangeID && !c.BatchChanges[i].IsArchived {
+			c.BatchChanges[i].Archive = true
 			return true
 		}
 	}
@@ -776,7 +794,17 @@ func WithExternalID(id string) func(*Changeset) bool {
 
 // ChangesetsStats holds stats information on a list of changesets.
 type ChangesetsStats struct {
-	Retrying, Failed, Processing, Unpublished, Draft, Open, Merged, Closed, Deleted, Total int32
+	Retrying    int32
+	Failed      int32
+	Processing  int32
+	Unpublished int32
+	Draft       int32
+	Open        int32
+	Merged      int32
+	Closed      int32
+	Deleted     int32
+	Archived    int32
+	Total       int32
 }
 
 // ChangesetEventKindFor returns the ChangesetEventKind for the given

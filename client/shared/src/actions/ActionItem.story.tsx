@@ -40,6 +40,7 @@ const commonProps = subtypeOf<Partial<ActionItemProps>>()({
     platformContext: PLATFORM_CONTEXT,
     telemetryService: NOOP_TELEMETRY_SERVICE,
     iconClassName: 'icon-inline',
+    active: true,
 })
 
 add('Noop action', () => (

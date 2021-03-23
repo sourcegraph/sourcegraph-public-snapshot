@@ -13,8 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/server/shared/assets"
 )
 
-var redisStoreConfTmpl = template.Must(template.New("redis-store.conf").Parse(assets.MustAssetString("redis-store.conf.tmpl")))
-var redisCacheConfTmpl = template.Must(template.New("redis-cache.conf").Parse(assets.MustAssetString("redis-cache.conf.tmpl")))
+var redisStoreConfTmpl = template.Must(template.New("redis-store.conf").Parse(assets.RedisStoreConf))
+var redisCacheConfTmpl = template.Must(template.New("redis-cache.conf").Parse(assets.RedisCacheConf))
 
 type redisProcfileConfig struct {
 	envVar  string

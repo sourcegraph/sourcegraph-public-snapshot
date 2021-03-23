@@ -259,9 +259,9 @@ func TestPartitionSearchPattern(t *testing.T) {
 				}
 				return
 			}
-			result := scopeParameters
+			result := ToNodes(scopeParameters)
 			if pattern != nil {
-				result = append(scopeParameters, pattern)
+				result = append(result, pattern)
 			}
 			got := toString(result)
 			if diff := cmp.Diff(tt.want, got); diff != "" {

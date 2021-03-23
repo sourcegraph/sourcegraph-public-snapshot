@@ -40,7 +40,7 @@ func Exec(
 ) []*gqlerrors.QueryError {
 	t.Helper()
 
-	query = strings.Replace(query, "\t", "  ", -1)
+	query = strings.ReplaceAll(query, "\t", "  ")
 
 	b, err := json.Marshal(in)
 	if err != nil {

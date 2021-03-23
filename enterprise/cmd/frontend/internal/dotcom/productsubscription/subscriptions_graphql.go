@@ -80,7 +80,7 @@ func (r *productSubscription) UUID() string {
 }
 
 func (r *productSubscription) Name() string {
-	return fmt.Sprintf("L-%s", strings.ToUpper(strings.Replace(r.v.ID, "-", "", -1)[:10]))
+	return fmt.Sprintf("L-%s", strings.ToUpper(strings.ReplaceAll(r.v.ID, "-", "")[:10]))
 }
 
 func (r *productSubscription) Account(ctx context.Context) (*graphqlbackend.UserResolver, error) {
