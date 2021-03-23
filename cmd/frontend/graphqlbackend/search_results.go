@@ -745,9 +745,9 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 
 		switch term.Kind {
 		case query.And:
-			return r.evaluateAndStream(ctx, q.MapPattern(query.Operator{Operands: term.Operands, Kind: query.And}))
+			return r.evaluateAndStream(ctx, q)
 		case query.Or:
-			return r.evaluateOr(ctx, q.MapPattern(query.Operator{Operands: term.Operands, Kind: query.Or}))
+			return r.evaluateOr(ctx, q)
 		case query.Concat:
 			r.setQuery(q.ToParseTree())
 			return r.evaluateLeaf(ctx)
