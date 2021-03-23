@@ -2,14 +2,6 @@
 
 Sourcegraph periodically sends a ping to Sourcegraph.com to help our product and customer teams. It sends only the high-level data below. It never sends code, repository names, usernames, or any other specific data. To learn more, go to the **Site admin > Pings** page on your instance. (The URL is `https://sourcegraph.example.com/site-admin/pings`.)
 
-## Connection to Sourcegraph
-1. To send pings that:
-   - Check for new product updates.
-   - Send anonymous, non-specific, aggregate metrics back to Sourcegraph.com. You can see the full list below.
-1. Sourcegraph extensions are fetched from Sourcegraph.com's extension registry (unless you are using a [private extension registry](https://docs.sourcegraph.com/admin/extensions#publish-extensions-to-a-private-extension-registry)).
-
-There are no other automatic external connections to Sourcegraph.com (or any other site on the internet).
-
 ## Critical telemetry
 
 Critical telemetry includes only the high-level data below required for billing, support, updates, and security notices.
@@ -107,3 +99,15 @@ By default, Sourcegraph also aggregates usage and performance metrics for some p
 ## CIDR Range for Sourcegraph
 
 Sourcegraph currently uses Cloudflare to provide web application security. You should allow access to all [Cloudflare IP ranges](https://www.cloudflare.com/ips/)
+
+## Connections to Sourcegraph.com
+
+Sourcegraph only connects to Sourcegraph.com for two purposes:
+
+1. The pings described above are sent, in order to:
+   - Check for new product updates.
+   - Send [anonymous, non-specific, aggregate metrics](#pings) back to Sourcegraph.com (see the full list above).
+1. [Sourcegraph extensions](../extensions/index.md) are fetched from Sourcegraph.com's extension registry (unless you are using a [private extension registry](extensions.md#publish-extensions-to-a-private-extension-registry)).
+
+There are no other automatic external connections to Sourcegraph.com (or any other site on the internet).
+
