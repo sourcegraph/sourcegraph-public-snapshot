@@ -208,14 +208,15 @@ func (r *batchChangeResolver) ChangesetCountsOverTime(
 	now := r.store.Clock()()
 	weekAgo := now.Add(-7 * 24 * time.Hour)
 	start := r.batchChange.CreatedAt.UTC()
+	if len(events) > 0 {
+		start = events[0].Timestamp().UTC()
+	}
 	// At least a week lookback, more if the batch change was created earlier.
 	if start.After(weekAgo) {
 		start = weekAgo
 	}
 	if args.From != nil {
 		start = args.From.Time.UTC()
-	} else if len(events) > 0 {
-		start = events[0].Timestamp().UTC()
 	}
 	end := now.UTC()
 	if args.To != nil && args.To.Time.Before(end) {
