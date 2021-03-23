@@ -19,6 +19,29 @@ type Window struct {
 	rate  rate
 }
 
+func (w *Window) IsActive(at time.Time) bool {
+	if len(w.days) != 0 {
+		found := false
+		for _, day := range w.days {
+			if day == at.Weekday() {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+
+	if w.start != nil && w.end != nil {
+		if want := timeOfDayFromTime(at); !(w.start.timeOfDay() <= want && want <= w.end.timeOfDay()) {
+			return false
+		}
+	}
+
+	return true
+}
+
 type rate struct {
 	n    int
 	unit rateUnit
@@ -119,6 +142,10 @@ func newWindowTime(raw string) (*windowTime, error) {
 	}
 
 	return wt, nil
+}
+
+func (wt *windowTime) timeOfDay() timeOfDay {
+	return timeOfDayFromParts(int(wt.hour), int(wt.minute))
 }
 
 func parseTimePart(s string) (int8, error) {

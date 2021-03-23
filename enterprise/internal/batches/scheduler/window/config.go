@@ -2,6 +2,7 @@ package window
 
 import (
 	"sync"
+	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
@@ -36,6 +37,32 @@ func ValidateConfiguration(raw *[]*schema.BatchChangeRolloutWindow) error {
 	return (&Configuration{
 		windows: []Window{},
 	}).update(raw)
+}
+
+func (cfg *Configuration) Current() *Window {
+	cfg.mu.RLock()
+	defer cfg.mu.RUnlock()
+
+	var window *Window
+	now := time.Now()
+	for i := range cfg.windows {
+		if cfg.windows[i].IsActive(now) {
+			window = &cfg.windows[i]
+		}
+	}
+
+	return window
+}
+
+// Estimate attempts to estimate when the given entry in a queue of changesets to be reconciled would be
+func (cfg *Configuration) Estimate(n int) time.Time {
+	// TODO: replace with real logic.
+	return time.Now()
+}
+
+// HasRolloutWindows returns true if one or more windows have been defined.
+func (cfg *Configuration) HasRolloutWindows() bool {
+	return len(cfg.windows) != 0
 }
 
 func (cfg *Configuration) update(raw *[]*schema.BatchChangeRolloutWindow) error {
