@@ -30,7 +30,6 @@ func (basic *BasicAuth) Hash() string {
 type BasicAuthWithSSH struct {
 	BasicAuth
 
-	Token      string
 	PrivateKey string
 	PublicKey  string
 	Passphrase string
