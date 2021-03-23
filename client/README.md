@@ -15,7 +15,7 @@
 
 1. Fix circular dependency in TS project-references graph **wildcard** package should not rely on **web** and probably **shared**, **branded** too. Ideally it should be an independent self-contained package.
 
-2. Decide on  package naming and update existing package names. Especially it should be done for a **shared** package because we have multiple `shared` folders inside of other packages. It's hard to understand from where dependency is coming from and it's not possible to refactor import paths using find-and-replace.
+2. Decide on package naming and update existing package names. Especially it should be done for a **shared** package because we have multiple `shared` folders inside of other packages. It's hard to understand from where dependency is coming from and it's not possible to refactor import paths using find-and-replace.
 
 3. Investigate if we can painlessly switch to `npm` workspaces.
 
