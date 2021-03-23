@@ -19,7 +19,7 @@ export const BatchChangesDotComPage: React.FunctionComponent<BatchChangesDotComP
                     className="percy-hide chromatic-ignore"
                     width="560"
                     height="315"
-                    src="https://www.youtube.com/embed/EfKwKFzOs3E"
+                    src="https://www.youtube-nocookie.com/embed/EfKwKFzOs3E"
                     frameBorder="0"
                     allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen={true}

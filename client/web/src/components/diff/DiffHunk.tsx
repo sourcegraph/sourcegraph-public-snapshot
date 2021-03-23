@@ -108,6 +108,7 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                         {lineNumbers && (
                             <>
                                 {line.kind !== DiffHunkLineType.ADDED ? (
+                                    // https://github.com/sourcegraph/sourcegraph/issues/19272
                                     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
                                     <td
                                         className="diff-hunk__num"
@@ -121,6 +122,7 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                                 )}
 
                                 {line.kind !== DiffHunkLineType.DELETED ? (
+                                    // https://github.com/sourcegraph/sourcegraph/issues/19272
                                     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
                                     <td
                                         className="diff-hunk__num"

@@ -103,7 +103,9 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({
                         disabled={loading}
                         autoCapitalize="off"
                         autoFocus={true}
-                        // https://github.com/whatwg/html/issues/4445
+                        // There is no well supported way to declare username OR email here.
+                        // Using username seems to be the best approach and should still support this behaviour.
+                        // See: https://github.com/whatwg/html/issues/4445
                         autoComplete="username"
                     />
                 </div>
