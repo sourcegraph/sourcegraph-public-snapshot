@@ -49,7 +49,7 @@ func main() {
 }
 
 func backtickStringLiteral(data string) string {
-	return "`" + strings.Replace(data, "`", "` + \"`\" + `", -1) + "`"
+	return "`" + strings.ReplaceAll(data, "`", "` + \"`\" + `") + "`"
 }
 
 // writeFileIfDifferent is like ioutil.WriteFile, except it only writes if the

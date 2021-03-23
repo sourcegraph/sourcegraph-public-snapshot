@@ -16,16 +16,28 @@ linters:
     - varcheck
     - bodyclose
     - deadcode
+    - gocritic
+
+linters-settings:
+  gocritic:
+    enabled-checks:
+      - unlambda
+      - wrapperFunc
 
 issues:
   exclude-rules:
+    # Excluded generated bindata.go from gocritic lints
+    - path: cmd/server/shared/assets/bindata.go
+      linters:
+        - gocritic
+
     # Exclude bodyclose lint from tests because leaking connections in tests
     # is a non-issue, and checking that adds unnecessary noise
     - path: _test\.go
       linters:
         - bodyclose
 
-    # TODO (camdencheek): This is only excluded because at the time of enabling 
+    # TODO (camdencheek): This is only excluded because at the time of enabling
     # the deadcode lint, there was active work in removing other dead code in this package
     - path: enterprise/internal/codeintel
       linters:
