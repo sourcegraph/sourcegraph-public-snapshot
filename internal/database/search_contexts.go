@@ -217,6 +217,10 @@ WHERE sc.search_context_id = %d
 `
 
 func (s *SearchContextsStore) GetSearchContextRepositoryRevisions(ctx context.Context, searchContextID int32) ([]*types.SearchContextRepositoryRevisions, error) {
+	if Mocks.SearchContexts.GetSearchContextRepositoryRevisions != nil {
+		return Mocks.SearchContexts.GetSearchContextRepositoryRevisions(ctx, searchContextID)
+	}
+
 	authzConds, err := AuthzQueryConds(ctx, s.Handle().DB())
 	if err != nil {
 		return nil, err

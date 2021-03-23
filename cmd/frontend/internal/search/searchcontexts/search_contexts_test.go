@@ -73,7 +73,7 @@ func TestResolvingInvalidSearchContextSpecs(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := ResolveSearchContextSpec(context.Background(), db, tt.searchContextSpec)
 			if err == nil {
-				t.Error("Expected error, but there was none")
+				t.Fatal("Expected error, but there was none")
 			}
 			if err.Error() != tt.wantErr {
 				t.Fatalf("err: got %q, expected %q", err.Error(), tt.wantErr)
@@ -130,6 +130,22 @@ func TestGettingSearchContextFromVersionContext(t *testing.T) {
 	}
 }
 
+func createRepos(ctx context.Context, repoStore *database.RepoStore) ([]*types.RepoName, error) {
+	err := repoStore.Create(ctx, &types.Repo{Name: "github.com/example/a"}, &types.Repo{Name: "github.com/example/b"})
+	if err != nil {
+		return nil, err
+	}
+	repoA, err := repoStore.GetByName(ctx, "github.com/example/a")
+	if err != nil {
+		return nil, err
+	}
+	repoB, err := repoStore.GetByName(ctx, "github.com/example/b")
+	if err != nil {
+		return nil, err
+	}
+	return []*types.RepoName{{ID: repoA.ID, Name: repoA.Name}, {ID: repoB.ID, Name: repoB.Name}}, nil
+}
+
 func TestConvertingVersionContextToSearchContext(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -138,20 +154,10 @@ func TestConvertingVersionContextToSearchContext(t *testing.T) {
 	ctx := context.Background()
 	r := database.Repos(db)
 
-	err := r.Create(ctx, &types.Repo{Name: "github.com/example/a"}, &types.Repo{Name: "github.com/example/b"})
+	repos, err := createRepos(ctx, r)
 	if err != nil {
-		t.Errorf("Expected no error, got %s", err)
+		t.Fatalf("Expected no error, got %s", err)
 	}
-	repoA, err := r.GetByName(ctx, "github.com/example/a")
-	if err != nil {
-		t.Errorf("Expected no error, got %s", err)
-	}
-	repoB, err := r.GetByName(ctx, "github.com/example/b")
-	if err != nil {
-		t.Errorf("Expected no error, got %s", err)
-	}
-	repoAName := &types.RepoName{ID: repoA.ID, Name: repoA.Name}
-	repoBName := &types.RepoName{ID: repoB.ID, Name: repoB.Name}
 
 	versionContext := &schema.VersionContext{
 		Name:        "vc1",
@@ -164,14 +170,14 @@ func TestConvertingVersionContextToSearchContext(t *testing.T) {
 	}
 
 	wantRepositoryRevisions := []*types.SearchContextRepositoryRevisions{
-		{Repo: repoAName, Revisions: []string{"branch-1", "branch-3"}},
-		{Repo: repoBName, Revisions: []string{"branch-2"}},
+		{Repo: repos[0], Revisions: []string{"branch-1", "branch-3"}},
+		{Repo: repos[1], Revisions: []string{"branch-2"}},
 	}
 	wantSearchContext := &types.SearchContext{ID: 1, Name: "vc1", Description: "vc1 description", Public: true}
 
 	gotSearchContext, err := ConvertVersionContextToSearchContext(ctx, db, versionContext)
 	if err != nil {
-		t.Errorf("Expected no error, got %s", err)
+		t.Fatalf("Expected no error, got %s", err)
 	}
 	if !reflect.DeepEqual(wantSearchContext, gotSearchContext) {
 		t.Fatalf("want search context %+v, got %+v", wantSearchContext, gotSearchContext)
@@ -179,9 +185,41 @@ func TestConvertingVersionContextToSearchContext(t *testing.T) {
 
 	gotRepositoryRevisions, err := database.SearchContexts(db).GetSearchContextRepositoryRevisions(ctx, gotSearchContext.ID)
 	if err != nil {
-		t.Errorf("Expected no error, got %s", err)
+		t.Fatalf("Expected no error, got %s", err)
 	}
 	if !reflect.DeepEqual(wantRepositoryRevisions, gotRepositoryRevisions) {
-		t.Errorf("wanted %v repository revisions, got %v", wantRepositoryRevisions, gotRepositoryRevisions)
+		t.Fatalf("wanted %+v repository revisions, got %+v", wantRepositoryRevisions, gotRepositoryRevisions)
+	}
+}
+
+func TestResolvingSearchContextRepoNames(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	db := dbtesting.GetDB(t)
+	ctx := context.Background()
+	r := database.Repos(db)
+
+	repos, err := createRepos(ctx, r)
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+	repositoryRevisions := []*types.SearchContextRepositoryRevisions{
+		{Repo: repos[0], Revisions: []string{"branch-1"}},
+		{Repo: repos[1], Revisions: []string{"branch-2"}},
+	}
+
+	searchContext, err := CreateSearchContextWithRepositoryRevisions(ctx, db, &types.SearchContext{Name: "searchcontext"}, repositoryRevisions)
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	gotRepos, err := r.ListRepoNames(ctx, database.ReposListOptions{SearchContextID: searchContext.ID})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+	if !reflect.DeepEqual(repos, gotRepos) {
+		t.Fatalf("wanted %+v repositories, got %+v", repos, gotRepos)
 	}
 }
