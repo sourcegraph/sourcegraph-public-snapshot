@@ -22,7 +22,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -224,21 +223,6 @@ func (s *Server) cleanupRepos(addrs []string) {
 		return false, gitGC(dir)
 	}
 
-	mkRemoveWrongShardFn := func(hostname string) func(dir GitDir) (done bool, err error) {
-		return func(dir GitDir) (done bool, err error) {
-			addr := gitserver.AddrForRepo(s.name(dir), addrs)
-			if hostname == addr {
-				return false, nil
-			}
-			log15.Info("removing repo for wrong shard", "repo", dir, "hostname", hostname, "addr", addr)
-			if err := s.removeRepoDirectory(dir); err != nil {
-				return true, err
-			}
-			reposRemoved.Inc()
-			return false, nil
-		}
-	}
-
 	type cleanupFn struct {
 		Name string
 		Do   func(GitDir) (bool, error)
@@ -266,22 +250,6 @@ func (s *Server) cleanupRepos(addrs []string) {
 		// invocations of git add, packing refs, pruning reflog, rerere metadata or stale
 		// working trees. May also update ancillary indexes such as the commit-graph.
 		{"garbage collect", performGC},
-	}
-
-	// Repos are sharded across gitserver instances based on their name and the
-	// position of the gitserver in our list of gitserver addresses. Remove repos
-	// that no longer belong on this shard.
-	//
-	// We only add shard cleanup if we have a valid hostname.
-	if hostname, err := s.getHostname(); err == nil {
-		if hostnameFound(hostname, addrs) {
-			wrongShardCleanup := cleanupFn{Name: "remove wrong shard", Do: mkRemoveWrongShardFn(hostname)}
-			cleanups = append(cleanups, wrongShardCleanup)
-		} else {
-			log15.Warn("Not running shard cleanup, hostname not valid", "hostname", hostname)
-		}
-	} else {
-		log15.Warn("Not running shard cleanup, error getting hostname", "error", err)
 	}
 
 	err := bestEffortWalk(s.ReposDir, func(dir string, fi os.FileInfo) error {

@@ -266,9 +266,7 @@ func (s *Server) Handler() http.Handler {
 			}
 			hostname := hostnameFromFrontend(r)
 			addrs := conf.Get().ServiceConnections.GitServers
-			if hostnameFound(hostname, addrs) {
-				s.setHostnameOnce(hostname)
-			}
+			s.setHostnameOnce(hostname, addrs)
 			h.ServeHTTP(rw, r)
 		})
 	}
@@ -322,6 +320,8 @@ func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int)
 	}
 }
 
+// getHostname get the current hostname. It returns an error if the hostname has
+// not been set yet.
 func (s *Server) getHostname() (string, error) {
 	s.hostnameMu.RLock()
 	defer s.hostnameMu.RUnlock()
@@ -332,8 +332,12 @@ func (s *Server) getHostname() (string, error) {
 }
 
 // setHostnameOnce sets hostname only once if h is not blank
-func (s *Server) setHostnameOnce(h string) {
+// and it can be found in addrs
+func (s *Server) setHostnameOnce(h string, addrs []string) {
 	if h == "" {
+		return
+	}
+	if !hostnameFound(h, addrs) {
 		return
 	}
 	s.hostnameOnce.Do(func() {
@@ -386,9 +390,6 @@ func (s *Server) syncRepoState(addrs []string, batchSize, perSecond int) error {
 	hostname, err := s.getHostname()
 	if err != nil {
 		return errors.Wrap(err, "getting hostname")
-	}
-	if !hostnameFound(hostname, addrs) {
-		return fmt.Errorf("gitserver hostname, %q, not found in list of addresses", hostname)
 	}
 
 	ctx := s.ctx
