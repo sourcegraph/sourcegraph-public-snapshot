@@ -14,7 +14,7 @@ import (
 )
 
 func init() {
-	dbtesting.DBNameSuffix = "gitserver"
+	dbtesting.DBNameSuffix = "database"
 }
 
 func TestIterateRepoGitserverStatus(t *testing.T) {
