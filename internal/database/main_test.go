@@ -11,8 +11,7 @@ import (
 )
 
 func init() {
-	// TEMP
-	dbtesting.DBNameSuffix = "gitserver"
+	dbtesting.DBNameSuffix = "database"
 }
 
 func TestMain(m *testing.M) {
