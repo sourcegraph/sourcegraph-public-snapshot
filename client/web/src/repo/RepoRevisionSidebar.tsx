@@ -54,7 +54,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
             handlePosition="right"
             storageKey={SIZE_STORAGE_KEY}
             element={
-                <Tabs className="w-100" defaultIndex={tabIndex} onChange={handleTabsChange}>
+                <Tabs className="w-100 border-right" defaultIndex={tabIndex} onChange={handleTabsChange}>
                     <div className="tablist-wrapper d-flex w-100 align-items-center">
                         <TabList>
                             <Tab>Files</Tab>
