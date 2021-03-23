@@ -147,7 +147,7 @@ func addDockerfileLint(pipeline *bk.Pipeline) {
 // Adds backend integration tests step.
 func addBackendIntegrationTests(c Config) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		if !c.isMasterDryRun && c.branch != "master" && c.branch != "main" {
+		if !c.isBackendDryRun && !c.isMasterDryRun && c.branch != "master" && c.branch != "main" {
 			return
 		}
 
@@ -350,7 +350,7 @@ func addDockerImages(c Config, final bool) func(*bk.Pipeline) {
 			}
 
 		// build candidate images but do not deploy `insiders` images
-		case c.taggedRelease || c.isMasterDryRun || c.shouldRunE2EandQA():
+		case c.taggedRelease || c.isBackendDryRun || c.shouldRunE2EandQA():
 			for _, dockerImage := range images.SourcegraphDockerImages {
 				addDockerImage(c, dockerImage, false)(pipeline)
 			}
