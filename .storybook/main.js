@@ -10,7 +10,13 @@ const shouldMinify = !!process.env.MINIFY
 
 const config = {
   stories: ['../client/**/*.story.tsx'],
-  addons: ['@storybook/addon-knobs', '@storybook/addon-actions', 'storybook-addon-designs', 'storybook-dark-mode'],
+  addons: [
+    '@storybook/addon-knobs',
+    '@storybook/addon-actions',
+    'storybook-addon-designs',
+    'storybook-dark-mode',
+    '@storybook/addon-a11y',
+  ],
 
   /**
    * @param config {import('webpack').Configuration}
