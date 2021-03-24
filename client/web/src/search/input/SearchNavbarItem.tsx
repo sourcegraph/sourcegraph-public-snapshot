@@ -33,12 +33,15 @@ interface Props
     onChange: (newValue: QueryState) => void
     globbing: boolean
     enableSmartQuery: boolean
+    isSearchAutoFocusRequired?: boolean
 }
 
 /**
  * The search item in the navbar
  */
 export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) => {
+    const autoFocus = props.isSearchAutoFocusRequired ?? true
+
     const onSubmit = useCallback(
         (event?: React.FormEvent): void => {
             event?.preventDefault()
@@ -52,6 +55,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
         queryState: props.navbarSearchState,
         setQueryState: props.onChange,
     })
+
     return (
         <Form
             className="search--navbar-item d-flex align-items-flex-start flex-grow-1 flex-shrink-past-contents"
@@ -63,7 +67,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                 hasGlobalQueryBehavior={true}
                 queryState={props.navbarSearchState}
                 onSubmit={onSubmit}
-                autoFocus={true}
+                autoFocus={autoFocus}
             />
             <SearchButton />
         </Form>
