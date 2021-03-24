@@ -511,7 +511,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 	s := &Server{
 		ReposDir: root,
 		DB:       db,
-		hostname: "test",
+		shardID:  "test",
 	}
 
 	// Remove everything but github.com/foo/survivor

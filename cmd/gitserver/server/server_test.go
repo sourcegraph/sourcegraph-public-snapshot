@@ -472,7 +472,7 @@ func makeTestServer(ctx context.Context, repoDir, remote string, db dbutil.DB) *
 			return &GitRepoSyncer{}, nil
 		},
 		DB:               db,
-		hostname:         "test",
+		shardID:          "test",
 		ctx:              ctx,
 		locker:           &RepositoryLocker{},
 		cloneLimiter:     mutablelimiter.New(1),
@@ -624,7 +624,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 
 	want := &types.GitserverRepo{
 		RepoID:      dbRepo.ID,
-		ShardID:     s.hostname,
+		ShardID:     s.shardID,
 		CloneStatus: types.CloneStatusCloned,
 	}
 	fromDB, err := database.GitserverRepos(db).GetByID(ctx, dbRepo.ID)
@@ -650,7 +650,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 
 	want = &types.GitserverRepo{
 		RepoID:      dbRepo.ID,
-		ShardID:     s.hostname,
+		ShardID:     s.shardID,
 		CloneStatus: types.CloneStatusCloned,
 		LastError:   "fail",
 	}
@@ -837,7 +837,7 @@ func TestSyncRepoState(t *testing.T) {
 
 	reposDir := tmpDir(t)
 	repoName := api.RepoName("example.com/foo/bar")
-	hostname := "test"
+	shardID := "test"
 
 	s := makeTestServer(ctx, reposDir, remoteDir, db)
 
@@ -864,7 +864,7 @@ func TestSyncRepoState(t *testing.T) {
 		t.Fatal("Expected an error")
 	}
 
-	err = s.syncRepoState([]string{hostname}, 10, 10)
+	err = s.syncRepoState([]string{shardID}, 10, 10)
 	if err != nil {
 		t.Fatal(err)
 	}

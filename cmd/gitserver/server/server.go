@@ -140,12 +140,12 @@ type Server struct {
 	// shared db handle
 	DB dbutil.DB
 
-	// hostnameMu protects hostname
-	hostnameMu sync.RWMutex
-	// hostname stores this server's hostname as seen by frontend. It starts empty
+	// shardIDMu protects shardID
+	shardIDMu sync.RWMutex
+	// shardID stores this server's shardID as seen by frontend. It starts empty
 	// and is populated by the first incoming request from frontend. We require frontend
-	// and our view of the hostname to be the same as we shard repos based on it.
-	hostname string
+	// and our view of the shardID to be the same as we shard repos based on it.
+	shardID string
 
 	// skipCloneForTests is set by tests to avoid clones.
 	skipCloneForTests bool
@@ -253,26 +253,26 @@ func (s *Server) Handler() http.Handler {
 		s.cloneableLimiter.SetLimit(limit)
 	})
 
-	// hostnameMiddleware causes us to try and set the server hostname to that of the
-	// hostname received in requests from frontend. It will only set it once.
-	hostnameMiddleware := func(h http.Handler) http.Handler {
+	// shardIDMiddleware causes us to try and set the server shardID to that of the
+	// shardID received in requests from frontend. It will only set it once.
+	shardIDMiddleware := func(h http.Handler) http.Handler {
 		// addrs never change during the lifetime of a service as they are read from an
 		// environment variable.
 		addrs := conf.Get().ServiceConnections.GitServers
 		return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-			// Fast path skips work if hostname already set
-			if _, err := s.getHostname(); err == nil {
+			// Fast path skips work if shardID already set
+			if _, err := s.getShardID(); err == nil {
 				h.ServeHTTP(rw, r)
 				return
 			}
-			hostname := hostnameFromFrontend(r)
-			s.setHostnameOnce(hostname, addrs)
+			shardID := shardIDFromFrontend(r)
+			s.setShardIDOnce(shardID, addrs)
 			h.ServeHTTP(rw, r)
 		})
 	}
 
 	router := mux.NewRouter()
-	router.Use(hostnameMiddleware)
+	router.Use(shardIDMiddleware)
 	router.HandleFunc("/archive", s.handleArchive)
 	router.HandleFunc("/exec", s.handleExec)
 	router.HandleFunc("/p4-exec", s.handleP4Exec)
@@ -320,48 +320,48 @@ func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int)
 	}
 }
 
-// getHostname get the current hostname. It returns an error if the hostname has
-// not been set yet.
-func (s *Server) getHostname() (string, error) {
-	s.hostnameMu.RLock()
-	defer s.hostnameMu.RUnlock()
-	if s.hostname == "" {
-		return "", errors.New("hostname not set")
+// getShardID get the current shardID. It returns an error if it has not been set
+// yet.
+func (s *Server) getShardID() (string, error) {
+	s.shardIDMu.RLock()
+	defer s.shardIDMu.RUnlock()
+	if s.shardID == "" {
+		return "", errors.New("shardID not set")
 	}
-	return s.hostname, nil
+	return s.shardID, nil
 }
 
-// setHostnameOnce sets hostname only once if h is not blank
+// setShardIDOnce sets shardID only once if h is not blank
 // and it can be found in addrs
-func (s *Server) setHostnameOnce(h string, addrs []string) {
+func (s *Server) setShardIDOnce(h string, addrs []string) {
 	if h == "" {
 		return
 	}
-	if !hostnameFound(h, addrs) {
+	if !shardIDFound(h, addrs) {
 		return
 	}
-	s.hostnameMu.Lock()
-	defer s.hostnameMu.Unlock()
+	s.shardIDMu.Lock()
+	defer s.shardIDMu.Unlock()
 	// Another caller may have already set it
-	if s.hostname != "" {
+	if s.shardID != "" {
 		return
 	}
-	s.hostname = h
+	s.shardID = h
 }
 
-// hostnameFound returns true only if our hostname can be found in addrs
-func hostnameFound(hostname string, addrs []string) bool {
+// shardIDFound returns true only if our shardID can be found in addrs
+func shardIDFound(shardID string, addrs []string) bool {
 	for _, a := range addrs {
-		if hostname == a {
+		if shardID == a {
 			return true
 		}
 	}
 	return false
 }
 
-// hostnameFromFrontend returns the hostname provided from the request only if it
+// shardIDFromFrontend returns the shardID provided from the request only if it
 // is from one of our frontend instances.
-func hostnameFromFrontend(r *http.Request) string {
+func shardIDFromFrontend(r *http.Request) string {
 	ua := r.Header.Get("User-Agent")
 	actor := r.Header.Get(protocol.HeaderSourcegraphActor)
 	// TODO: This feels a bit brittle as we may change the name of our frontend
@@ -389,9 +389,9 @@ var (
 )
 
 func (s *Server) syncRepoState(addrs []string, batchSize, perSecond int) error {
-	hostname, err := s.getHostname()
+	shardID, err := s.getShardID()
 	if err != nil {
-		return errors.Wrap(err, "getting hostname")
+		return errors.Wrap(err, "getting shardID")
 	}
 
 	ctx := s.ctx
@@ -446,7 +446,7 @@ func (s *Server) syncRepoState(addrs []string, batchSize, perSecond int) error {
 
 		repoSyncStateCounter.WithLabelValues("check").Inc()
 		// Ensure we're only dealing with repos we are responsible for
-		if addr := gitserver.AddrForRepo(repo.Name, addrs); hostname != addr {
+		if addr := gitserver.AddrForRepo(repo.Name, addrs); shardID != addr {
 			repoSyncStateCounter.WithLabelValues("other_shard").Inc()
 			return nil
 		}
@@ -463,8 +463,8 @@ func (s *Server) syncRepoState(addrs []string, batchSize, perSecond int) error {
 			}
 			shouldUpdate = true
 		}
-		if repo.ShardID != hostname {
-			repo.ShardID = hostname
+		if repo.ShardID != shardID {
+			repo.ShardID = shardID
 			shouldUpdate = true
 		}
 		cloneStatus := cloneStatus(cloned, cloning)
@@ -1144,7 +1144,7 @@ func (s *Server) setLastError(ctx context.Context, name api.RepoName, error stri
 	if s.DB == nil {
 		return nil
 	}
-	hostname, err := s.getHostname()
+	shardID, err := s.getShardID()
 	if err != nil {
 		return err
 	}
@@ -1158,7 +1158,7 @@ func (s *Server) setLastError(ctx context.Context, name api.RepoName, error stri
 	if err != nil {
 		return err
 	}
-	return database.NewGitserverReposWith(tx).SetLastError(ctx, repo.ID, error, hostname)
+	return database.NewGitserverReposWith(tx).SetLastError(ctx, repo.ID, error, shardID)
 }
 
 // setLastErrorNonFatal is the same as setLastError but only logs errors
@@ -1176,7 +1176,7 @@ func (s *Server) setCloneStatus(ctx context.Context, name api.RepoName, status t
 	if s.DB == nil {
 		return nil
 	}
-	hostname, err := s.getHostname()
+	shardID, err := s.getShardID()
 	if err != nil {
 		return err
 	}
@@ -1190,7 +1190,7 @@ func (s *Server) setCloneStatus(ctx context.Context, name api.RepoName, status t
 	if err != nil {
 		return err
 	}
-	return database.NewGitserverReposWith(tx).SetCloneStatus(ctx, repo.ID, status, hostname)
+	return database.NewGitserverReposWith(tx).SetCloneStatus(ctx, repo.ID, status, shardID)
 }
 
 // setCloneStatusNonFatal is the same as setCloneStatus but only logs errors
