@@ -23,7 +23,7 @@ export const ChangesetsArchivedNotice: React.FunctionComponent<ChangesetsArchive
                 </div>
                 <div className="flex-grow-1">
                     {archivedCount === 1
-                        ? '1 changeset has been archived'
+                        ? '1 changeset has been archived.'
                         : `${archivedCount} changesets have been archived.`}
                 </div>
             </div>
