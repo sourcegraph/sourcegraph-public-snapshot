@@ -10,7 +10,7 @@ import { Scalars } from '../../../shared/src/graphql-operations'
 import { ThemeProps } from '../../../shared/src/theme'
 import { AbsoluteRepoFile } from '../../../shared/src/util/url'
 import { Tree } from '../tree/Tree'
-import { useLocalStorage } from '../util/useLocalStorage'
+import { useLocalStorage } from '../../../shared/src/util/useLocalStorage'
 import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
 
 interface Props extends AbsoluteRepoFile, ExtensionsControllerProps, ThemeProps {
