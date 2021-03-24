@@ -166,7 +166,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
             {!showQueryForm && (
                 <button
                     type="button"
-                    className="btn btn-outline-secondary code-monitor-form__card--button card test-trigger-button"
+                    className="btn code-monitor-form__card--button card test-trigger-button"
                     aria-label="Edit trigger: When there are new search results"
                     onClick={toggleQueryForm}
                 >

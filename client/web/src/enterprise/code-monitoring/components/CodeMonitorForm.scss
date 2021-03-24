@@ -21,6 +21,12 @@
             padding: 1rem;
             margin: 1rem 0;
             border-radius: 4px;
+            border: 1px solid var(--border-color);
+
+            &:hover:not(:disabled) {
+                padding: calc(1rem - 1px);
+                border: 2px solid var(--color-border-active);
+            }
         }
     }
 
