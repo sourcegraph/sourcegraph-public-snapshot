@@ -1,6 +1,6 @@
 # Encryption
 
-This package provides tools to encrypt & decrypt data via the encryption.Key interface. This interface is built to wrap any encryption backend, such as cloud provider APIs, stdlib encryption libraries, or testing stubs.
+This package provides tools to encrypt & decrypt data via the `encryption.Key` interface. This interface is built to wrap any encryption backend, such as cloud provider APIs, stdlib encryption libraries, or testing stubs.
 
 This package was originally designed in [RFC 310](https://docs.google.com/document/d/1ZlQzlTRtrQbx3yi2cqmSjyq3ddcp2eKnhqekLOvzm_w/edit#)
 
