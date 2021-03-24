@@ -93,9 +93,16 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
     )
 
     const archiveEnabled = window.context?.experimentalFeatures?.archiveBatchChangeChangesets
-    const urlParameters = new URLSearchParams(location.search)
-    const archivedCount = parseInt(urlParameters.get('archivedCount') ?? '0', 10)
-    const archivedBy = urlParameters.get('archivedBy') ?? ''
+
+    const [archivedCount, archivedBy] = useMemo(() => {
+        const parameters = new URLSearchParams(location.search)
+        const count = parameters.get('archivedCount')
+        parameters.delete('archivedCount')
+
+        const archived = parameters.get('archivedBy')
+        parameters.delete('archivedBy')
+        return [parseInt(count ?? '0', 10), archived ?? '']
+    }, [location.search])
 
     // Is loading.
     if (batchChange === undefined) {
