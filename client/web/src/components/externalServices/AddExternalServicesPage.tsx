@@ -5,7 +5,7 @@ import { ThemeProps } from '../../../../shared/src/theme'
 import { ExternalServiceCard } from './ExternalServiceCard'
 import { allExternalServices, AddExternalServiceOptions } from './externalServices'
 import { AddExternalServicePage } from './AddExternalServicePage'
-import { useLocalStorage } from '../../util/useLocalStorage'
+import { useLocalStorage } from '../../../../shared/src/util/useLocalStorage'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { Scalars } from '../../graphql-operations'
 
