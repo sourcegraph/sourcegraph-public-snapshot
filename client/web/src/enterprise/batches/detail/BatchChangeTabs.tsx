@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import * as H from 'history'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { ThemeProps } from '../../../../../shared/src/theme'
@@ -53,20 +53,16 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
     queryChangesetCountsOverTime,
     queryExternalChangesetWithFileDiffs,
 }) => {
-    const archiveEnabled = window.context?.experimentalFeatures?.archiveBatchChangeChangesets
-    const [selectedTab, setSelectedTab] = useState<SelectedTab>(() => {
-        const urlParameters = new URLSearchParams(location.search)
-        if (urlParameters.get('tab') === 'chart') {
-            return 'chart'
+    const archiveEnabled = window.context?.experimentalFeatures?.archiveBatchChangeChangesets ?? false
+    const [selectedTab, setSelectedTab] = useState<SelectedTab>(
+        selectedTabFromLocation(location.search, archiveEnabled)
+    )
+    useEffect(() => {
+        const newTab = selectedTabFromLocation(location.search, archiveEnabled)
+        if (newTab !== selectedTab) {
+            setSelectedTab(newTab)
         }
-        if (urlParameters.get('tab') === 'spec') {
-            return 'spec'
-        }
-        if (urlParameters.get('tab') === 'archived') {
-            return archiveEnabled ? 'archived' : 'changesets'
-        }
-        return 'changesets'
-    })
+    }, [location.search, selectedTab, archiveEnabled])
 
     const onSelectChangesets = useCallback<React.MouseEventHandler>(
         event => {
@@ -205,4 +201,18 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
             )}
         </>
     )
+}
+
+function selectedTabFromLocation(locationSearch: string, archiveEnabled: boolean): SelectedTab {
+    const urlParameters = new URLSearchParams(locationSearch)
+    if (urlParameters.get('tab') === 'chart') {
+        return 'chart'
+    }
+    if (urlParameters.get('tab') === 'spec') {
+        return 'spec'
+    }
+    if (urlParameters.get('tab') === 'archived') {
+        return archiveEnabled ? 'archived' : 'changesets'
+    }
+    return 'changesets'
 }

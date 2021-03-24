@@ -94,17 +94,6 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
 
     const archiveEnabled = window.context?.experimentalFeatures?.archiveBatchChangeChangesets
 
-    const [archivedCount, archivedBy] = useMemo(() => {
-        const parameters = new URLSearchParams(location.search)
-        const count = parameters.get('archivedCount')
-        parameters.delete('archivedCount')
-
-        const archived = parameters.get('archivedBy')
-        parameters.delete('archivedBy')
-
-        return [parseInt(count ?? '0', 10), archived ?? '']
-    }, [location.search])
-
     // Is loading.
     if (batchChange === undefined) {
         return (
@@ -156,7 +145,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 total={batchChange.changesetsStats.total}
                 className="mb-3"
             />
-            {archiveEnabled && <ChangesetsArchivedNotice archivedCount={archivedCount} specID={archivedBy} />}
+            {archiveEnabled && <ChangesetsArchivedNotice history={history} location={location} />}
             <BatchChangeStatsCard
                 closedAt={batchChange.closedAt}
                 stats={batchChange.changesetsStats}
