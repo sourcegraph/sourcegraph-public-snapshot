@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -19,23 +18,10 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 	}
 	ctx := context.Background()
 
-	// ensure no keyring is configured
-	keyring.MockDefault(keyring.Ring{})
-
-	setupKey := func() func() {
-		keyring.MockDefault(keyring.Ring{
-			ExternalServiceKey: testKey{},
-		})
-
-		return func() {
-			keyring.MockDefault(keyring.Ring{})
-		}
-	}
-
 	t.Run("Up/Down/Progress", func(t *testing.T) {
 		db := dbtesting.GetDB(t)
 
-		migrator := NewExternalServiceConfigMigratorWithDB(db)
+		migrator := NewExternalServiceConfigMigratorWithDB(db, testKey{})
 		migrator.BatchSize = 2
 
 		requireProgressEqual := func(want float64) {
@@ -66,15 +52,6 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 
 		// progress on non-migrated table should be 0
 		requireProgressEqual(0)
-
-		// Up with no configured key shouldn't do anything
-		if err := migrator.Up(ctx); err != nil {
-			t.Fatal(err)
-		}
-		requireProgressEqual(0)
-
-		// configure key ring
-		defer setupKey()()
 
 		// Up should migrate two configs
 		if err := migrator.Up(ctx); err != nil {
@@ -112,7 +89,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 	t.Run("Up/Encryption", func(t *testing.T) {
 		db := dbtesting.GetDB(t)
 
-		migrator := NewExternalServiceConfigMigratorWithDB(db)
+		migrator := NewExternalServiceConfigMigratorWithDB(db, testKey{})
 		migrator.BatchSize = 10
 
 		// Create 10 external services
@@ -125,9 +102,6 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 				t.Fatal(err)
 			}
 		}
-
-		// setup key after storing the services
-		defer setupKey()()
 
 		// migrate the services
 		if err := migrator.Up(ctx); err != nil {
@@ -179,7 +153,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 	t.Run("Down/Decryption", func(t *testing.T) {
 		db := dbtesting.GetDB(t)
 
-		migrator := NewExternalServiceConfigMigratorWithDB(db)
+		migrator := NewExternalServiceConfigMigratorWithDB(db, testKey{})
 		migrator.BatchSize = 10
 
 		// Create 10 external services
@@ -192,9 +166,6 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 				t.Fatal(err)
 			}
 		}
-
-		// setup key after storing the services
-		defer setupKey()()
 
 		// migrate the services
 		if err := migrator.Up(ctx); err != nil {
@@ -240,9 +211,6 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 	t.Run("Up/InvalidKey", func(t *testing.T) {
 		db := dbtesting.GetDB(t)
 
-		migrator := NewExternalServiceConfigMigratorWithDB(db)
-		migrator.BatchSize = 10
-
 		// Create 10 external services
 		svcs := types.GenerateExternalServices(10, types.MakeExternalServices()...)
 		confGet := func() *conf.Unified {
@@ -255,8 +223,8 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 		}
 
 		// setup invalid key after storing the services
-		keyring.MockDefault(keyring.Ring{ExternalServiceKey: &invalidKey{}})
-		defer keyring.MockDefault(keyring.Ring{})
+		migrator := NewExternalServiceConfigMigratorWithDB(db, invalidKey{})
+		migrator.BatchSize = 10
 
 		// migrate the services, should fail
 		err := migrator.Up(ctx)
