@@ -523,9 +523,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     className="form-control"
                     name="code-host"
                     aria-label="select code host type"
-                    onBlur={event => {
-                        setCodeHostFilter(event.target.value)
-                    }}
+                    onChange={event => setCodeHostFilter(event.target.value)}
                 >
                     <option key="any" value="" label="Any" />
                     {codeHosts.hosts.map(value => (
