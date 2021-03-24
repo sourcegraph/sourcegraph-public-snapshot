@@ -9,7 +9,7 @@
 - **extension-api-types**: The Sourcegraph extension API types for client applications. Published as `@sourcegraph/extension-api-types`.
 - **shared**: Contains common TypeScript/React/SCSS client code shared between the browser extension and the web app. Everything in this package is code-host agnostic.
 - **branded**: Contains React components and implements the visual design language we use across our web app and e.g. in the options menu of the browser extension.
-- **wildcard**: Package that encapsulates storybook configuration and contains newly added Wildcard design system components. Components added to this package should obey to the latest rules and conventions added as a part of improving frontend infrastructure.
+- **wildcard**: Package that encapsulates storybook configuration and contains newly added Wildcard design system components. Components added to this package should obey the latest rules and conventions added as a part of improving frontend infrastructure.
 
 ## Further migration plan
 
