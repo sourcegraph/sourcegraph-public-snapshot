@@ -94,32 +94,30 @@ func TestStatusMessages(t *testing.T) {
 			stored:          []*types.Repo{{Name: "foobar"}},
 			user:            admin,
 			gitserverCloned: []string{},
+			repoOwner: map[api.RepoName]int64{
+				"foobar": siteLevelService.ID,
+			},
 			res: []StatusMessage{
 				{
 					Cloning: &CloningProgress{
-						Message: "1 repositories enqueued for cloning...",
+						Message: "1 repository not yet cloned",
 					},
 				},
 			},
-		},
-		{
-			// We don't show uncloned count in Cloud as it is misleading
-			name:            "nothing cloned cloud",
-			stored:          []*types.Repo{{Name: "foobar"}},
-			user:            admin,
-			gitserverCloned: []string{},
-			res:             nil,
-			cloud:           true,
 		},
 		{
 			name:            "subset cloned",
 			stored:          []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
 			user:            admin,
 			gitserverCloned: []string{"foobar"},
+			repoOwner: map[api.RepoName]int64{
+				"foobar": siteLevelService.ID,
+				"barfoo": siteLevelService.ID,
+			},
 			res: []StatusMessage{
 				{
 					Cloning: &CloningProgress{
-						Message: "1 repositories enqueued for cloning...",
+						Message: "1 repository not yet cloned",
 					},
 				},
 			},
@@ -134,7 +132,7 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					Cloning: &CloningProgress{
-						Message: "1 repositories enqueued for cloning...",
+						Message: "1 repository not yet cloned",
 					},
 				},
 			},
@@ -151,10 +149,14 @@ func TestStatusMessages(t *testing.T) {
 			stored:          []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
 			user:            admin,
 			gitserverCloned: []string{"one", "two", "three"},
+			repoOwner: map[api.RepoName]int64{
+				"foobar": siteLevelService.ID,
+				"barfoo": siteLevelService.ID,
+			},
 			res: []StatusMessage{
 				{
 					Cloning: &CloningProgress{
-						Message: "2 repositories enqueued for cloning...",
+						Message: "2 repositories not yet cloned",
 					},
 				},
 			},
@@ -278,12 +280,6 @@ func TestStatusMessages(t *testing.T) {
 						}
 					})
 				}
-			}
-
-			// TODO(ryanslade): Remove this when we remove repo.cloned column
-			err = store.SetClonedRepos(ctx, cloned...)
-			if err != nil {
-				t.Fatal(err)
 			}
 
 			clock := timeutil.NewFakeClock(time.Now(), 0)
