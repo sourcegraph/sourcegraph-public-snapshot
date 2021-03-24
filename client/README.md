@@ -2,7 +2,7 @@
 
 ## List
 
-- **web**: The web-application deployed to http://sourcegraph.com/
+- **web**: The web application deployed to http://sourcegraph.com/
 - **browser**: The Sourcegraph browser-extension adds tooltips to code on different code-hosts. [Chrome](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en).
 - **eslint-plugin-sourcegraph**: Not published package with custom ESLint rules for Sourcegraph. Isn't intended for reuse by other repositories in the Sourcegraph org.
 - **extension-api**: The package with types for the [Sourcegraph extension API](https://unpkg.com/sourcegraph/dist/docs/index.html) ([`sourcegraph.d.ts`](https://github.com/sourcegraph/sourcegraph/blob/main/packages/extension-api/src/sourcegraph.d.ts)). Published as `sourcegraph`.
