@@ -15,7 +15,6 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { queryChangesetCountsOverTime as _queryChangesetCountsOverTime } from './backend'
 import { getYear, parseISO } from 'date-fns'
-import ArchiveIcon from 'mdi-react/ArchiveIcon'
 import { Toggle } from '../../../../../branded/src/components/Toggle'
 
 interface Props {
@@ -168,13 +167,7 @@ export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
                         ))}
                 </ComposedChart>
             </ResponsiveContainer>
-            <div className="flex-grow-0 btn-group-vertical ml-2">
-                {archiveEnabled && (
-                    <>
-                        <IncludeArchivedToggle includeArchived={includeArchived} onToggle={toggleIncludeArchived} />
-                        <hr className="flex-grow-1" />
-                    </>
-                )}
+            <div className="flex-grow-0 ml-2">
                 {Object.entries(states).map(([key, state]) => (
                     <LegendLabel
                         key={key}
@@ -185,6 +178,12 @@ export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
                         setHiddenStates={setHiddenStates}
                     />
                 ))}
+                {archiveEnabled && (
+                    <>
+                        <hr className="flex-grow-1" />
+                        <IncludeArchivedToggle includeArchived={includeArchived} onToggle={toggleIncludeArchived} />
+                    </>
+                )}
             </div>
         </div>
     )
@@ -232,9 +231,8 @@ const IncludeArchivedToggle: React.FunctionComponent<{
     includeArchived: boolean
     onToggle: () => void
 }> = ({ includeArchived, onToggle }) => (
-    <div className="d-flex text-right align-items-center text-nowrap p-2">
-        <ArchiveIcon className="text-muted batch-change-burndown-chart-legend__archive-icon mr-2 p-0" />
-        <label htmlFor="include-archived" className="mb-0">
+    <div className="d-flex align-items-center justify-content-between text-nowrap mb-2">
+        <label htmlFor="include-archived" className="mb-0 pt-1">
             Include archived
         </label>
         <Toggle
