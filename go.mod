@@ -8,4 +8,5 @@ require (
 	github.com/mattn/go-colorable v0.1.7 // indirect
 	github.com/prometheus/client_golang v1.7.1
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

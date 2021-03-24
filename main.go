@@ -16,7 +16,7 @@ import (
 )
 
 const port = "8080"
-const envDataFolder = "DATA_FOLDER"
+const envConfig = "CONFIG"
 const envLogDir = "LOG_DIR"
 
 func run(ctx context.Context, wg *sync.WaitGroup) {
@@ -27,11 +27,11 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 		panic(err)
 	}
 
-	dataFolder := os.Getenv(envDataFolder)
-	if dataFolder == "" {
-		dataFolder = "/data"
+	configPath := os.Getenv(envConfig)
+	if configPath == "" {
+		configPath = "/config.yaml"
 	}
-	groupsOfQueries, err := loadQueries(dataFolder)
+	config, err := loadQueries(configPath)
 	if err != nil {
 		panic(err)
 	}
@@ -39,18 +39,19 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 OUTER:
 	for {
 		log15.Info("new iteration")
-		for group, queries := range groupsOfQueries {
-			log15.Info("new group", "group", group)
-			for _, query := range queries {
-				_, m, err := c.search(ctx, query)
+		for _, group := range config.Groups {
+			log15.Info("new group", "group", group.Name)
+			for _, qc := range group.Queries {
+				_, m, err := c.search(ctx, qc)
 				if err != nil {
 					log15.Error(err.Error())
 					continue
 				}
-				log15.Info("metrics", "group", group, "query", query, "trace", m.trace, "duration_ms", m.took)
-				durationSearchHistogram.WithLabelValues(group).Observe(float64(m.took))
+				log15.Info("metrics", "group", group.Name, "query", qc.Query, "trace", m.trace, "duration_ms", m.took)
+				durationSearchHistogram.WithLabelValues(group.Name).Observe(float64(m.took))
 			}
 		}
+
 		select {
 		case <-ctx.Done():
 			break OUTER
