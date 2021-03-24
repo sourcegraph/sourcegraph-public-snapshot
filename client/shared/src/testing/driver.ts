@@ -818,15 +818,15 @@ export async function createDriverForTest(options?: DriverOptions): Promise<Driv
 }
 
 /**
- * Get the revision info for the given browser revision (including the
- * executable path).
+ * Get the RevisionInfo (which contains the executable path) for the given
+ * browser and revision string.
  */
 function getPuppeteerBrowser(browserName: string, revision: string): RevisionInfo {
     const browserFetcher = puppeteer.createBrowserFetcher({ product: browserName })
     const revisionInfo = browserFetcher.revisionInfo(revision)
     if (!revisionInfo.local) {
         throw new Error(
-            `No local executable found for Puppeteer browser: expected ${browserName} revision "${revision}"`
+            `No local executable found for Puppeteer browser: expected ${browserName} revision "${revision}". Run "yarn run download-puppeteer-browser".`
         )
     }
 
