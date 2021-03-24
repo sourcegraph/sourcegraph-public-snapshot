@@ -691,11 +691,10 @@ func newRepoInfo(r *types.Repo) (*protocol.RepoInfo, error) {
 				break
 			}
 
-			root := href + "/src"
-			basePath := pathAppend(root, "/{rev}/{path}"),
+			basePath := pathAppend(href, "/src/{rev}/{path}")
 
 			info.Links = &protocol.RepoLinks{
-				Root:   basePath,
+				Root:   href,
 				Tree:   basePath,
 				Blob:   basePath,
 				Commit: pathAppend(href, "/commits/{commit}"),
