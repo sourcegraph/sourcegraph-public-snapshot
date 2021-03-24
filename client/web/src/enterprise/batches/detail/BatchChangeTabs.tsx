@@ -127,8 +127,8 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
                             onClick={onSelectChangesets}
                             className={classNames('nav-link', selectedTab === 'changesets' && 'active')}
                         >
-                            <SourceBranchIcon className="icon-inline text-muted mr-1" />{' '}
-                            {changesetsCount === 1 ? '1 Changeset' : `${changesetsCount} Changesets`}
+                            <SourceBranchIcon className="icon-inline text-muted mr-1" />
+                            Changesets <span className="badge badge-pill badge-secondary ml-1">{changesetsCount}</span>
                         </a>
                     </li>
                     <li className="nav-item test-batches-chart-tab">
@@ -156,7 +156,8 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
                                 onClick={onSelectArchived}
                                 className={classNames('nav-link', selectedTab === 'archived' && 'active')}
                             >
-                                <ArchiveIcon className="icon-inline text-muted mr-1" /> {archivedCount} Archived
+                                <ArchiveIcon className="icon-inline text-muted mr-1" /> Archived{' '}
+                                <span className="badge badge-pill badge-secondary ml-1">{archivedCount}</span>
                             </a>
                         </li>
                     )}
