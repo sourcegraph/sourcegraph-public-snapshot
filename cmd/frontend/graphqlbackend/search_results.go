@@ -870,6 +870,11 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 		}
 	}
 
+	searchLatencyHistogram.WithLabelValues(
+		strconv.FormatBool(err != nil),
+		string(trace.RequestSource(ctx)),
+	).Observe(time.Since(start).Seconds())
+
 	return srr, err
 }
 
