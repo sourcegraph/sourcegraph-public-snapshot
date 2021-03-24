@@ -98,7 +98,7 @@ func Generate(logger log15.Logger, opts GenerateOptions, containers ...*Containe
 				clog.Crit("Invalid rules", "err", err)
 				return err
 			}
-			fileName := strings.Replace(container.Name, "-", "_", -1) + alertRulesFileSuffix
+			fileName := strings.ReplaceAll(container.Name, "-", "_") + alertRulesFileSuffix
 			generatedAssets = append(generatedAssets, fileName)
 			err = ioutil.WriteFile(filepath.Join(opts.PrometheusDir, fileName), data, os.ModePerm)
 			if err != nil {

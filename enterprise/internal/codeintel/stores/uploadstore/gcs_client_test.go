@@ -153,10 +153,8 @@ func TestGCSUpload(t *testing.T) {
 
 	if calls := objectHandle.NewWriterFunc.History(); len(calls) != 1 {
 		t.Fatalf("unexpected number of NewWriter calls. want=%d have=%d", 1, len(calls))
-	} else {
-		if value := buf.String(); value != "TEST PAYLOAD" {
-			t.Errorf("unexpected payload. want=%s have=%s", "TEST PAYLOAD", value)
-		}
+	} else if value := buf.String(); value != "TEST PAYLOAD" {
+		t.Errorf("unexpected payload. want=%s have=%s", "TEST PAYLOAD", value)
 	}
 }
 

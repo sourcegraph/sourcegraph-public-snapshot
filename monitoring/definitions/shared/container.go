@@ -26,7 +26,7 @@ var (
 			NoAlert: true,
 			Panel:   monitoring.Panel().LegendFormat("{{name}}"),
 			Owner:   owner,
-			Interpretation: strings.Replace(`
+			Interpretation: strings.ReplaceAll(`
 				This value is the number of times a container has not been seen for more than one minute. If you observe this
 				value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
 
@@ -36,7 +36,7 @@ var (
 				- **Docker Compose:**
 					- Determine if the pod was OOM killed using 'docker inspect -f \'{{json .State}}\' {{CONTAINER_NAME}}' (look for '"OOMKilled":true') and, if so, consider increasing the memory limit of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
 					- Check the logs before the container restarted to see if there are 'panic:' messages or similar using 'docker logs {{CONTAINER_NAME}}' (note this will include logs from the previous and currently running container).
-			`, "{{CONTAINER_NAME}}", containerName, -1),
+			`, "{{CONTAINER_NAME}}", containerName),
 		}
 	}
 
@@ -48,10 +48,10 @@ var (
 			Warning:     monitoring.Alert().GreaterOrEqual(99, nil),
 			Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Interval(100).Max(100).Min(0),
 			Owner:       owner,
-			PossibleSolutions: strings.Replace(`
+			PossibleSolutions: strings.ReplaceAll(`
 			- **Kubernetes:** Consider increasing memory limit in relevant 'Deployment.yaml'.
 			- **Docker Compose:** Consider increasing 'memory:' of {{CONTAINER_NAME}} container in 'docker-compose.yml'.
-		`, "{{CONTAINER_NAME}}", containerName, -1),
+		`, "{{CONTAINER_NAME}}", containerName),
 		}
 	}
 
@@ -63,10 +63,10 @@ var (
 			Warning:     monitoring.Alert().GreaterOrEqual(99, nil),
 			Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Interval(100).Max(100).Min(0),
 			Owner:       owner,
-			PossibleSolutions: strings.Replace(`
+			PossibleSolutions: strings.ReplaceAll(`
 			- **Kubernetes:** Consider increasing CPU limits in the the relevant 'Deployment.yaml'.
 			- **Docker Compose:** Consider increasing 'cpus:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
-		`, "{{CONTAINER_NAME}}", containerName, -1),
+		`, "{{CONTAINER_NAME}}", containerName),
 		}
 	}
 

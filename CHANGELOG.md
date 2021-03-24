@@ -15,6 +15,43 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+-
+
+### Changed
+
+-
+
+### Fixed
+
+-
+
+### Removed
+
+-
+
+## 3.26.0
+
+### Added
+
+- Experimental: Sync permissions of Perforce depots through the Sourcegraph UI. To enable, use the feature flag `"experimentalFeatures": { "perforce": "enabled" }`. For more information, see [how to enable permissions for your Perforce depots](https://docs.sourcegraph.com/admin/repo/perforce). [#16705](https://github.com/sourcegraph/sourcegraph/issues/16705)
+- Added support for user email headers in the HTTP auth proxy. See [HTTP Auth Proxy docs](https://docs.sourcegraph.com/admin/auth#http-authentication-proxies) for more information.
+
+### Changed
+
+-
+
+### Fixed
+
+-
+
+### Removed
+
+-
+
+## 3.26.0
+
+### Added
+
 - Searches are streamed into Sourcegraph by default. [#19300](https://github.com/sourcegraph/sourcegraph/pull/19300)
   - This gives a faster time to first result.
   - Several heuristics around result limits have been improved. You should see more consistent result counts now.
@@ -27,6 +64,10 @@ All notable changes to Sourcegraph are documented in this file.
 - `*.pyst` and `*.pyst-include` are now highlighted as Python files. Thanks to @jjwon0 [#19282](https://github.com/sourcegraph/sourcegraph/pull/19282)
 - The code monitoring feature flag is now enabled by default. [#19295](https://github.com/sourcegraph/sourcegraph/pull/19295)
 - New query field `select` enables returning only results of the desired type. See [documentation](https://docs.sourcegraph.com/code_search/reference/language#select) for details. [#19236](https://github.com/sourcegraph/sourcegraph/pull/19236)
+- Syntax highlighting for Elixer, Elm, REG, Julia, Move, Nix, Puppet, VimL thanks to @rvantonder
+- `BUILD.in` files are now highlighted as Bazel/Starlark build files. Thanks to @jjwon0
+- `*.pyst` and `*.pyst-include` are now highlighted as Python files. Thanks to @jjwon0
+- Added a `search.defaultCaseSensitive` setting to configure whether query patterns should be treated case sensitivitely by default.
 
 ### Changed
 

@@ -135,7 +135,7 @@ func TestUserUsageStatistics_LogPageView(t *testing.T) {
 	if wantViews := int32(1); a.PageViews != wantViews {
 		t.Errorf("got %d, want %d", a.PageViews, wantViews)
 	}
-	diff := (*a.LastActiveTime).Unix() - time.Now().Unix()
+	diff := a.LastActiveTime.Unix() - time.Now().Unix()
 	if wantMaxDiff := 10; diff > int64(wantMaxDiff) || diff < -int64(wantMaxDiff) {
 		t.Errorf("got %d seconds apart, wanted less than %d seconds apart", diff, wantMaxDiff)
 	}
@@ -202,7 +202,7 @@ func TestUserUsageStatistics_LogCodeHostIntegrationUsage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	diff := (*a.LastCodeHostIntegrationTime).Unix() - time.Now().Unix()
+	diff := a.LastCodeHostIntegrationTime.Unix() - time.Now().Unix()
 	if wantMaxDiff := 10; diff > int64(wantMaxDiff) || diff < -int64(wantMaxDiff) {
 		t.Errorf("got %d seconds apart, wanted less than %d seconds apart", diff, wantMaxDiff)
 	}

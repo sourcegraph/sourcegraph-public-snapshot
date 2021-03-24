@@ -49,7 +49,7 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 	}
 
 	// Create database just for this test.
-	dbname := "insights_test_" + strings.ToLower(strings.Replace(t.Name(), "/", "_", -1))
+	dbname := "insights_test_" + strings.ToLower(strings.ReplaceAll(t.Name(), "/", "_"))
 	_, err = initConn.Exec(ctx, "DROP DATABASE IF EXISTS "+dbname+";")
 	if err != nil {
 		t.Fatal("dropping test database", err)

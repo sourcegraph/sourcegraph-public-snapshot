@@ -123,6 +123,9 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 		case batches.ReconcilerOperationDetach:
 			e.detachChangeset()
 
+		case batches.ReconcilerOperationArchive:
+			e.archiveChangeset()
+
 		default:
 			err = fmt.Errorf("executor operation %q not implemented", op)
 		}
@@ -372,6 +375,16 @@ func (e *executor) detachChangeset() {
 	for _, assoc := range e.ch.BatchChanges {
 		if assoc.Detach {
 			e.ch.RemoveBatchChangeID(assoc.BatchChangeID)
+		}
+	}
+}
+
+// archiveChangeset sets all associations to archived that are marked as "to-be-archived".
+func (e *executor) archiveChangeset() {
+	for i, assoc := range e.ch.BatchChanges {
+		if assoc.Archive {
+			e.ch.BatchChanges[i].IsArchived = true
+			e.ch.BatchChanges[i].Archive = false
 		}
 	}
 }

@@ -29,7 +29,7 @@ import {
     mergeContributions,
     parseContributionExpressions,
 } from './api/contribution'
-import { computeContext, Context } from './api/context/context'
+import { computeContext, Context, ContributionScope } from './api/context/context'
 import { proxy } from 'comlink'
 import { ExtensionCodeEditor } from './api/codeEditor'
 import { ExtensionDirectoryViewer } from './api/directoryViewer'
@@ -347,7 +347,7 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
 
             return proxy(addWithRollback(state.contributions, parsedContributions))
         },
-        getContributions: (scope, extraContext) =>
+        getContributions: ({ scope, extraContext, returnInactiveMenuItems }: ContributionOptions = {}) =>
             // TODO(tj): memoize access from mainthread (maybe by scope and extraContext (shallow))
             proxySubscribable(
                 combineLatest([
@@ -382,7 +382,10 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
 
                         return multiContributions.map(contributions => {
                             try {
-                                return filterContributions(evaluateContributions(computedContext, contributions))
+                                const evaluatedContributions = evaluateContributions(computedContext, contributions)
+                                return returnInactiveMenuItems
+                                    ? evaluatedContributions
+                                    : filterContributions(evaluatedContributions)
                             } catch (error) {
                                 // An error during evaluation causes all of the contributions in the same entry to be
                                 // discarded.
@@ -433,6 +436,15 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                     state.directoryViewProviders
                 )
             ),
+
+        getStatusBarItems: ({ viewerId }) => {
+            const viewer = getViewer(viewerId)
+            if (viewer.type !== 'CodeEditor') {
+                return proxySubscribable(EMPTY)
+            }
+
+            return proxySubscribable(viewer.mergedStatusBarItems.pipe(debounceTime(0)))
+        },
 
         // Content
         getLinkPreviews: (url: string) =>
@@ -726,4 +738,12 @@ export const NotificationType: typeof sourcegraph.NotificationType = {
     Info: 3,
     Log: 4,
     Success: 5,
+}
+
+// Contributions
+
+export interface ContributionOptions<T = unknown> {
+    scope?: ContributionScope | undefined
+    extraContext?: Context<T>
+    returnInactiveMenuItems?: boolean
 }

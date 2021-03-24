@@ -394,6 +394,44 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				DiffStat: state.DiffStat,
 			},
 		},
+		"archive open changeset": {
+			hasCurrentSpec: false,
+			changeset: ct.TestChangesetOpts{
+				PublicationState: batches.ChangesetPublicationStatePublished,
+				ExternalID:       githubPR.ID,
+				ExternalBranch:   githubHeadRef,
+				ExternalState:    batches.ChangesetExternalStateOpen,
+				Closing:          true,
+				BatchChanges: []batches.BatchChangeAssoc{{
+					BatchChangeID: 1234, Archive: true, IsArchived: false,
+				}},
+			},
+			plan: &Plan{
+				Ops: Operations{
+					batches.ReconcilerOperationClose,
+					batches.ReconcilerOperationArchive,
+				},
+			},
+			// We return a closed GitHub PR here
+			sourcerMetadata: closedGitHubPR,
+
+			wantCloseOnCodeHost: true,
+
+			wantChangeset: ct.ChangesetAssertions{
+				PublicationState: batches.ChangesetPublicationStatePublished,
+				Closing:          false,
+
+				ExternalID:     closedGitHubPR.ID,
+				ExternalBranch: git.EnsureRefPrefix(closedGitHubPR.HeadRefName),
+				ExternalState:  batches.ChangesetExternalStateClosed,
+
+				Title:    closedGitHubPR.Title,
+				Body:     closedGitHubPR.Body,
+				DiffStat: state.DiffStat,
+
+				ArchivedInOwnerBatchChange: true,
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -417,7 +455,13 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			// Create the changeset with correct associations.
 			changesetOpts := tc.changeset
 			changesetOpts.Repo = rs[0].ID
-			changesetOpts.BatchChanges = []batches.BatchChangeAssoc{{BatchChangeID: batchChange.ID}}
+			if len(changesetOpts.BatchChanges) != 0 {
+				for i := range changesetOpts.BatchChanges {
+					changesetOpts.BatchChanges[i].BatchChangeID = batchChange.ID
+				}
+			} else {
+				changesetOpts.BatchChanges = []batches.BatchChangeAssoc{{BatchChangeID: batchChange.ID}}
+			}
 			changesetOpts.OwnedByBatchChange = batchChange.ID
 			if changesetSpec != nil {
 				changesetOpts.CurrentSpec = changesetSpec.ID

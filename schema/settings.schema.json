@@ -206,6 +206,11 @@
       "type": "string",
       "pattern": "literal|regexp"
     },
+    "search.defaultCaseSensitive": {
+      "description": "Whether query patterns are treated case sensitively. Patterns are case insensitive by default.",
+      "type": "boolean",
+      "default": false
+    },
     "search.includeForks": {
       "description": "Whether searches should include searching forked repositories.",
       "type": "boolean",

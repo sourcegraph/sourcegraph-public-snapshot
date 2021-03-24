@@ -354,10 +354,8 @@ func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 
 	if len(mockDBStore.MarkQueuedFunc.History()) != 1 {
 		t.Errorf("unexpected number of MarkQueued calls. want=%d have=%d", 1, len(mockDBStore.MarkQueuedFunc.History()))
-	} else {
-		if call := mockDBStore.MarkQueuedFunc.History()[0]; call.Arg1 != 42 {
-			t.Errorf("unexpected upload id. want=%d have=%d", 42, call.Arg1)
-		}
+	} else if call := mockDBStore.MarkQueuedFunc.History()[0]; call.Arg1 != 42 {
+		t.Errorf("unexpected upload id. want=%d have=%d", 42, call.Arg1)
 	}
 
 	if len(mockUploadStore.ComposeFunc.History()) != 1 {

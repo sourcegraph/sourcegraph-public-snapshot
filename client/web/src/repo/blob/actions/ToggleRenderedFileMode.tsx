@@ -4,8 +4,9 @@ import * as React from 'react'
 import { ButtonLink } from '../../../../../shared/src/components/LinkOrButton'
 import { RenderMode } from '../../../../../shared/src/util/url'
 import { Tooltip } from '../../../../../branded/src/components/tooltip/Tooltip'
+import { RepoHeaderContext } from '../../RepoHeader'
 
-interface Props {
+interface Props extends RepoHeaderContext {
     location: H.Location
     mode: RenderMode
 }
@@ -50,6 +51,18 @@ export class ToggleRenderedFileMode extends React.PureComponent<Props> {
 
     public render(): JSX.Element | null {
         const otherMode: RenderMode = this.props.mode === 'code' ? 'rendered' : 'code'
+
+        if (this.props.actionType === 'dropdown') {
+            return (
+                <ButtonLink
+                    className="nav-link repo-header__file-action"
+                    to={this.getURLForMode(this.props.location, otherMode)}
+                >
+                    <EyeIcon className="icon-inline" />
+                    <span>{otherMode === 'code' ? 'Show raw code file' : 'Show formatted file'}</span>
+                </ButtonLink>
+            )
+        }
 
         return (
             <ButtonLink

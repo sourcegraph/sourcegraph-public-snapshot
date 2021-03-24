@@ -77,6 +77,8 @@ body,
 @import './api/ApiConsole';
 @import './extensions/ExtensionsArea';
 @import './extensions/extension/ExtensionArea';
+@import './extensions/components/StatusBar';
+@import './extensions/components/ActionItemsBar';
 @import './global/GlobalAlerts';
 @import './global/GlobalDebug';
 @import './global/Notices';
@@ -101,7 +103,7 @@ body,
 @import './repo/RepoContainer';
 @import './repo/FilePathBreadcrumbs.scss';
 @import './repo/settings/RepoSettingsArea';
-@import './repo/actions//InstallBrowserExtensionPopover.scss';
+@import './repo/actions/InstallBrowserExtensionPopover.scss';
 @import './repo/actions/InstallBrowserExtensionAlert.scss';
 @import './components/CopyableText';
 @import './components/FilteredConnection';
@@ -143,4 +145,9 @@ body,
     // Skip Reach UI styles. See https://reacttraining.com/reach-ui/styling/.
     --reach-menu-button: 1;
     --reach-accordion: 1;
+    // Media breakpoints
+    --media-sm: 576px;
+    --media-md: 768px;
+    --media-lg: 992px;
+    --media-xl: 1200px;
 }

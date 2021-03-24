@@ -154,8 +154,8 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 			OnlyPrivate:  op.OnlyPrivate,
 		}
 
-		if searchContext != nil && searchContext.UserID != 0 {
-			options.UserID = searchContext.UserID
+		if searchContext != nil && searchContext.NamespaceUserID != 0 {
+			options.UserID = searchContext.NamespaceUserID
 			options.IncludeUserPublicRepos = true
 		}
 
@@ -667,7 +667,7 @@ func optimizeRepoPatternWithHeuristics(repoPattern string) string {
 	}
 	// Optimization: make the "." in "github.com" a literal dot
 	// so that the regexp can be optimized more effectively.
-	repoPattern = strings.Replace(repoPattern, "github.com", `github\.com`, -1)
+	repoPattern = strings.ReplaceAll(repoPattern, "github.com", `github\.com`)
 	return repoPattern
 }
 
