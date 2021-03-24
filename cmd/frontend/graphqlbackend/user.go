@@ -430,7 +430,7 @@ func (r *UserResolver) CampaignsCodeHosts(ctx context.Context, args *ListCampaig
 }
 
 func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error) {
-	args.UserID = r.user.ID
+	args.UserID = &r.user.ID
 	return EnterpriseResolvers.batchChangesResolver.BatchChangesCodeHosts(ctx, args)
 }
 

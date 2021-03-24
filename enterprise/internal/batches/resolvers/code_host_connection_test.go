@@ -66,7 +66,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 			ExternalServiceURL:  ghRepo.ExternalRepo.ServiceID,
 			ExternalServiceKind: extsvc.TypeToKind(ghRepo.ExternalRepo.ServiceType),
 			Credential: apitest.BatchChangesCredential{
-				ID:                  string(marshalBatchChangesCredentialID(cred.ID)),
+				ID:                  string(marshalBatchChangesCredentialID(cred.ID, false)),
 				ExternalServiceKind: extsvc.TypeToKind(cred.ExternalServiceType),
 				ExternalServiceURL:  cred.ExternalServiceID,
 				CreatedAt:           cred.CreatedAt.Format(time.RFC3339),

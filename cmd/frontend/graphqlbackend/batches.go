@@ -177,7 +177,7 @@ type ChangesetEventsConnectionArgs struct {
 type CreateBatchChangesCredentialArgs struct {
 	ExternalServiceKind string
 	ExternalServiceURL  string
-	User                graphql.ID
+	User                *graphql.ID
 	Credential          string
 }
 
@@ -186,9 +186,10 @@ type DeleteBatchChangesCredentialArgs struct {
 }
 
 type ListBatchChangesCodeHostsArgs struct {
-	First  int32
-	After  *string
-	UserID int32
+	First                 int32
+	After                 *string
+	UserID                *int32
+	OnlyWithoutCredential bool
 }
 
 type ListViewerBatchChangesCodeHostsArgs struct {
@@ -459,6 +460,7 @@ type BatchChangesCredentialResolver interface {
 	ExternalServiceURL() string
 	SSHPublicKey() *string
 	CreatedAt() DateTime
+	IsSiteCredential() bool
 }
 
 type ChangesetCountsArgs struct {

@@ -46,17 +46,20 @@ func TestNullIDResilience(t *testing.T) {
 		marshalChangesetID(0),
 		marshalBatchSpecRandID(""),
 		marshalChangesetSpecRandID(""),
-		marshalBatchChangesCredentialID(0),
+		marshalBatchChangesCredentialID(0, false),
+		marshalBatchChangesCredentialID(0, true),
 	}
 
 	for _, id := range ids {
 		var response struct{ Node struct{ ID string } }
 
-		query := fmt.Sprintf(`query { node(id: %q) { id } }`, id)
-		apitest.MustExec(ctx, t, s, nil, &response, query)
+		query := `query($id: ID!) { node(id: $id) { id } }`
+		if errs := apitest.Exec(ctx, t, s, map[string]interface{}{"id": id}, &response, query); len(errs) > 0 {
+			t.Errorf("GraphQL request failed: %#+v", errs[0])
+		}
 
 		if have, want := response.Node.ID, ""; have != want {
-			t.Fatalf("node has wrong ID. have=%q, want=%q", have, want)
+			t.Errorf("node has wrong ID. have=%q, want=%q", have, want)
 		}
 	}
 
@@ -69,17 +72,18 @@ func TestNullIDResilience(t *testing.T) {
 		fmt.Sprintf(`mutation { createBatchChange(batchSpec: %q) { id } }`, marshalBatchSpecRandID("")),
 		fmt.Sprintf(`mutation { moveBatchChange(batchChange: %q, newName: "foobar") { id } }`, marshalBatchChangeID(0)),
 		fmt.Sprintf(`mutation { createBatchChangesCredential(externalServiceKind: GITHUB, externalServiceURL: "http://test", credential: "123123", user: %q) { id } }`, graphqlbackend.MarshalUserID(0)),
-		fmt.Sprintf(`mutation { deleteBatchChangesCredential(batchChangesCredential: %q) { alwaysNil } }`, marshalBatchChangesCredentialID(0)),
+		fmt.Sprintf(`mutation { deleteBatchChangesCredential(batchChangesCredential: %q) { alwaysNil } }`, marshalBatchChangesCredentialID(0, false)),
+		fmt.Sprintf(`mutation { deleteBatchChangesCredential(batchChangesCredential: %q) { alwaysNil } }`, marshalBatchChangesCredentialID(0, true)),
 	}
 
 	for _, m := range mutations {
 		var response struct{}
 		errs := apitest.Exec(ctx, t, s, nil, &response, m)
 		if len(errs) == 0 {
-			t.Fatalf("expected errors but none returned (mutation: %q)", m)
+			t.Errorf("expected errors but none returned (mutation: %q)", m)
 		}
 		if have, want := errs[0].Error(), fmt.Sprintf("graphql: %s", ErrIDIsZero{}); have != want {
-			t.Fatalf("wrong errors. have=%s, want=%s (mutation: %q)", have, want, m)
+			t.Errorf("wrong errors. have=%s, want=%s (mutation: %q)", have, want, m)
 		}
 	}
 }
@@ -905,7 +909,7 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 	}
 
 	input := map[string]interface{}{
-		"batchChangesCredential": marshalBatchChangesCredentialID(cred.ID),
+		"batchChangesCredential": marshalBatchChangesCredentialID(cred.ID, false),
 	}
 
 	var response struct{ DeleteBatchChangesCredential apitest.EmptyResponse }

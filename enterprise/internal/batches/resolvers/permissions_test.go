@@ -348,7 +348,7 @@ func TestPermissionLevels(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					graphqlID := string(marshalBatchChangesCredentialID(cred.ID))
+					graphqlID := string(marshalBatchChangesCredentialID(cred.ID, false))
 
 					var res struct {
 						Node apitest.BatchChangesCredential
@@ -423,7 +423,7 @@ func TestPermissionLevels(t *testing.T) {
 					}
 
 					input := map[string]interface{}{
-						"batchChangesCredential": marshalBatchChangesCredentialID(cred.ID),
+						"batchChangesCredential": marshalBatchChangesCredentialID(cred.ID, false),
 					}
 					mutationDeleteBatchChangesCredential := `
 					mutation($batchChangesCredential: ID!) {

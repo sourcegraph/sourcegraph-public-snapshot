@@ -66,7 +66,7 @@ add('Config added', () => (
                             {
                                 credential: {
                                     id: '123',
-                                    createdAt: new Date().toISOString(),
+                                    isSiteCredential: false,
                                     sshPublicKey:
                                         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
                                 },
@@ -77,7 +77,7 @@ add('Config added', () => (
                             {
                                 credential: {
                                     id: '123',
-                                    createdAt: new Date().toISOString(),
+                                    isSiteCredential: false,
                                     sshPublicKey:
                                         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
                                 },
@@ -88,7 +88,7 @@ add('Config added', () => (
                             {
                                 credential: {
                                     id: '123',
-                                    createdAt: new Date().toISOString(),
+                                    isSiteCredential: false,
                                     sshPublicKey:
                                         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
                                 },
