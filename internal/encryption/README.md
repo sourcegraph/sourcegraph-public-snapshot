@@ -1,8 +1,8 @@
 # Encryption
 
-This package provides tools to encrypt & decrypt data via the encryption.Key interface. This interface is built to wrap any encryption backend, such as cloud provider APIs, stdlib encryption libraries, or testing stubs.
+This package provides tools to encrypt & decrypt data via the `encryption.Key` interface. This interface is built to wrap any encryption backend, such as cloud provider APIs, stdlib encryption libraries, or testing stubs.
 
-This package was originally designed in [RFC 310](https://docs.google.com/document/d/1ZlQzlTRtrQbx3yi2cqmSjyq3ddcp2eKnhqekLOvzm_w/edit#)
+This package was originally designed in [RFC 310](https://docs.google.com/document/d/1ZlQzlTRtrQbx3yi2cqmSjyq3ddcp2eKnhqekLOvzm_w/edit#).
 
 ### How to use this package
 
@@ -22,12 +22,12 @@ If you need to encrypt some data, but we don't have a dedicated key for that dat
 If you want to implement a different encryption backend, you'll need to add a new Key implementation, in order to do this you should:
 
 - Create your implementation in a subpackage of encryption, eg `encryption/somebackend`.
-- Add a new `SomethingEncryptionKey` schema in `schema/site.schema.json`, with the `type` field set to the name of your implementation
+- Add a new `SomethingEncryptionKey` schema in `schema/site.schema.json`, with the `type` field set to the name of your implementation.
 - Add the name of your key to the `type` enum on the `EncryptionKey` schema definition.
 - Add a reference to the new schema to the `oneOf` array on the `EncryptionKey`. This means we generate a `schema.EncryptionKeys` type with all of the key configs as fields, this is done by the `!go: {"taggedUnionType": true}` expression on `EncryptionKey`.
 - Then add a case to the switch statement in `keyring.NewKey()` to initialise your key if the config is provided.
 
-### Zero Visibility Data (`encryption.Secret`)
+### Zero visibility data (`encryption.Secret`)
 
 The plaintext returned by the `Key.Decrypt()` method is considered 'zero visibility data'. This means that no human should ever be able to see this data, and if someone does it should be considered compromised, and be replaced. In order to make accidental disclosure more difficult the encryption package returns data in an `encryption.Secret` wrapper type. This type wraps a value in a struct with an unexported field, implementing the `Stringer` & `json.Marshaler` interfaces & redacting the data. The only method that returns the plaintext is `Secret.Secret()`, this means our handling of secrets is more auditable, and reduces the chances of accidentally leaking the value in logs.
 
