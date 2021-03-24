@@ -2,6 +2,7 @@ package batches
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/gobwas/glob"
 	"github.com/hashicorp/go-multierror"
@@ -107,6 +108,21 @@ type Group struct {
 func ParseBatchSpec(data []byte, features featureFlags) (*BatchSpec, error) {
 	var spec BatchSpec
 	if err := yaml.UnmarshalValidate(schema.BatchSpecJSON, data, &spec); err != nil {
+		if multiErr, ok := err.(*multierror.Error); ok {
+			var newMultiError *multierror.Error
+
+			for _, e := range multiErr.Errors {
+				// In case of `name` we try to make the error message more user-friendly.
+				if strings.Contains(e.Error(), "name: Does not match pattern") {
+					newMultiError = multierror.Append(newMultiError, fmt.Errorf("The batch change name can only contain word characters, dots and dashes. No whitespace or newlines allowed."))
+				} else {
+					newMultiError = multierror.Append(newMultiError, e)
+				}
+			}
+
+			return nil, newMultiError.ErrorOrNil()
+		}
+
 		return nil, err
 	}
 
