@@ -9,7 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -23,16 +23,15 @@ import (
 type ExternalServiceConfigMigrator struct {
 	store     *basestore.Store
 	BatchSize int
-	key       encryption.Key
 }
 
-func NewExternalServiceConfigMigrator(store *basestore.Store, key encryption.Key) *ExternalServiceConfigMigrator {
+func NewExternalServiceConfigMigrator(store *basestore.Store) *ExternalServiceConfigMigrator {
 	// not locking too many external services at a time to prevent congestion
-	return &ExternalServiceConfigMigrator{store: store, key: key, BatchSize: 50}
+	return &ExternalServiceConfigMigrator{store: store, BatchSize: 50}
 }
 
-func NewExternalServiceConfigMigratorWithDB(db dbutil.DB, key encryption.Key) *ExternalServiceConfigMigrator {
-	return NewExternalServiceConfigMigrator(basestore.NewWithDB(db, sql.TxOptions{}), key)
+func NewExternalServiceConfigMigratorWithDB(db dbutil.DB) *ExternalServiceConfigMigrator {
+	return NewExternalServiceConfigMigrator(basestore.NewWithDB(db, sql.TxOptions{}))
 }
 
 // ID of the migration row in in the out_of_band_migrations table.
@@ -61,6 +60,11 @@ func (m *ExternalServiceConfigMigrator) Progress(ctx context.Context) (float64, 
 // Up ensures the configuration can be decrypted with the same key before overwitting it.
 // The key id is stored alongside the encrypted configuration.
 func (m *ExternalServiceConfigMigrator) Up(ctx context.Context) (err error) {
+	key := keyring.Default().ExternalServiceKey
+	if key == nil {
+		return nil
+	}
+
 	tx, err := m.store.Transact(ctx)
 	if err != nil {
 		return err
@@ -73,18 +77,18 @@ func (m *ExternalServiceConfigMigrator) Up(ctx context.Context) (err error) {
 	}
 
 	for _, svc := range services {
-		encryptedCfg, err := m.key.Encrypt(ctx, []byte(svc.Config))
+		encryptedCfg, err := key.Encrypt(ctx, []byte(svc.Config))
 		if err != nil {
 			return err
 		}
 
-		keyIdent, err := m.key.ID(ctx)
+		keyIdent, err := key.ID(ctx)
 		if err != nil {
 			return err
 		}
 
 		// ensure encryption round-trip is valid with keyIdent
-		decrypted, err := m.key.Decrypt(ctx, encryptedCfg)
+		decrypted, err := key.Decrypt(ctx, encryptedCfg)
 		if err != nil {
 			return err
 		}
@@ -106,6 +110,11 @@ func (m *ExternalServiceConfigMigrator) Up(ctx context.Context) (err error) {
 }
 
 func (m *ExternalServiceConfigMigrator) Down(ctx context.Context) (err error) {
+	key := keyring.Default().ExternalServiceKey
+	if key == nil {
+		return nil
+	}
+
 	// For records that were encrypted, we need to decrypt the configuration,
 	// store it in plain text and remove the encryption_key_id.
 	tx, err := m.store.Transact(ctx)
@@ -120,7 +129,7 @@ func (m *ExternalServiceConfigMigrator) Down(ctx context.Context) (err error) {
 	}
 
 	for _, svc := range services {
-		secret, err := m.key.Decrypt(ctx, []byte(svc.Config))
+		secret, err := key.Decrypt(ctx, []byte(svc.Config))
 		if err != nil {
 			return err
 		}

@@ -25,6 +25,15 @@ func Default() Ring {
 	return defaultRing
 }
 
+// MockDefault overrides the default keyring.
+// Note: This function is defined for testing purpose.
+// Use Init to correctly setup a keyring.
+func MockDefault(r Ring) {
+	mu.Lock()
+	defer mu.Unlock()
+	defaultRing = r
+}
+
 func Init(ctx context.Context) error {
 	config := conf.Get().EncryptionKeys
 	ring, err := NewRing(ctx, config)
