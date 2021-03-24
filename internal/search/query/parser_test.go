@@ -175,9 +175,23 @@ func TestParseParameterList(t *testing.T) {
 		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":24}}`,
 	}).Equal(t, test(`repo:contains(file:test)`))
 
+	autogold.Want("Repo contains not predicate", value{
+		Result:      `{"field":"repo","value":"contains","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":13}}`,
+	}).Equal(t, test(`repo:contains`))
+
+	autogold.Want("Repo with something that looks kinda like predicate", value{
+		Result: `{"Kind":1,"Operands":[{"field":"repo","value":"nopredicate","negated":false},{"value":"(file:foo","negated":false}],"Annotation":{"labels":0,"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":0}}}}`,
+	}).Equal(t, test(`repo:nopredicate(file:foo or file:bar)`))
+
 	autogold.Want("Pattern looks like predicate", value{
 		Result: `{"Kind":2,"Operands":[{"value":"abc","negated":false},{"value":"contains(file:test)","negated":false}],"Annotation":{"labels":0,"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":0}}}}`,
 	}).Equal(t, test(`abc contains(file:test)`))
+
+	autogold.Want("Predicate contains escaped paranthesis", value{
+		Result:      `{"field":"repo","value":"contains(\\()","negated":false}`,
+		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":17}}`,
+	}).Equal(t, test(`repo:contains(\()`))
 }
 
 func TestScanField(t *testing.T) {

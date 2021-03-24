@@ -253,7 +253,7 @@ export const RepoHeader: React.FunctionComponent<Props> = ({
                     </ul>
                 ) : (
                     <ul className="navbar-nav">
-                        <li className="nav-item d-lg-none">
+                        <li className="nav-item">
                             <ButtonDropdown
                                 className="menu-nav-item"
                                 direction="down"

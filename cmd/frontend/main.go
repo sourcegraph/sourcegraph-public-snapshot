@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"

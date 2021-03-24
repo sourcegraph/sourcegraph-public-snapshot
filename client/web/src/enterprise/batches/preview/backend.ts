@@ -61,6 +61,7 @@ export const batchSpecFragment = gql`
             stats {
                 close
                 detach
+                archive
                 import
                 publish
                 publishDraft

@@ -2,6 +2,7 @@ import React from 'react'
 import { ChangesetApplyPreviewFields, ChangesetSpecOperation } from '../../../../graphql-operations'
 import BlankCircleIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
 import ImportIcon from 'mdi-react/ImportIcon'
+import ArchiveIcon from 'mdi-react/ArchiveIcon'
 import UploadIcon from 'mdi-react/UploadIcon'
 import TrashIcon from 'mdi-react/TrashIcon'
 import UploadNetworkIcon from 'mdi-react/UploadNetworkIcon'
@@ -70,6 +71,8 @@ const PreviewAction: React.FunctionComponent<PreviewActionProps> = ({ operation,
             return <PreviewActionPush className={className} />
         case ChangesetSpecOperation.DETACH:
             return <PreviewActionDetach className={className} />
+        case ChangesetSpecOperation.ARCHIVE:
+            return <PreviewActionArchive className={className} />
         case ChangesetSpecOperation.SYNC:
         case ChangesetSpecOperation.SLEEP:
             // We don't want to expose these states.
@@ -193,6 +196,18 @@ export const PreviewActionUnknown: React.FunctionComponent<{ className?: string;
             data-tooltip={`The operation ${operations} can't yet be displayed.`}
         />
         <span>Unknown</span>
+    </div>
+)
+export const PreviewActionArchive: React.FunctionComponent<{ label?: string; className?: string }> = ({
+    label = 'Archive',
+    className,
+}) => (
+    <div className={classNames(className, iconClassNames)}>
+        <ArchiveIcon
+            className="text-muted mr-1 icon-inline"
+            data-tooltip="This changeset will be archived in this batch change"
+        />
+        <span>{label}</span>
     </div>
 )
 export enum NoActionReason {

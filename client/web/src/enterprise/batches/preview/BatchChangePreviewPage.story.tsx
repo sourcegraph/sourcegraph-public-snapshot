@@ -72,7 +72,7 @@ const batchSpec = (): BatchSpecFields => ({
             reopen: 10,
             undraft: 10,
             update: 10,
-
+            archive: 18,
             added: 5,
             modified: 10,
             removed: 3,

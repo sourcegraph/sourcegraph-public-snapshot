@@ -38,6 +38,9 @@ func (r *changesetsStatsResolver) Closed() int32 {
 func (r *changesetsStatsResolver) Deleted() int32 {
 	return r.stats.Deleted
 }
+func (r *changesetsStatsResolver) Archived() int32 {
+	return r.stats.Archived
+}
 func (r *changesetsStatsResolver) Total() int32 {
 	return r.stats.Total
 }

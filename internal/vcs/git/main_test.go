@@ -103,7 +103,7 @@ func InitGitRepository(t testing.TB, cmds ...string) string {
 	if err := os.MkdirAll(remotes, 0700); err != nil {
 		t.Fatal(err)
 	}
-	dir, err := ioutil.TempDir(remotes, strings.Replace(t.Name(), "/", "__", -1))
+	dir, err := ioutil.TempDir(remotes, strings.ReplaceAll(t.Name(), "/", "__"))
 	if err != nil {
 		t.Fatal(err)
 	}

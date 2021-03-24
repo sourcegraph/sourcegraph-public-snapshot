@@ -13,6 +13,3 @@ fi
 
 echo "--- yarn run build-web"
 NODE_ENV=production DISABLE_TYPECHECKING=true yarn run build-web
-
-echo "--- go generate"
-go generate ./cmd/frontend/internal/app/assets ./cmd/frontend/internal/app/templates

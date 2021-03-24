@@ -38,6 +38,7 @@ const batchChangeDefaults: BatchChangeFields = {
         draft: 1,
         open: 2,
         total: 10,
+        archived: 18,
         unpublished: 4,
     },
     createdAt: subDays(now, 5).toISOString(),

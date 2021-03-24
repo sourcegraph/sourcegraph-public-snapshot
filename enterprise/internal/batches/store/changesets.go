@@ -214,6 +214,8 @@ DELETE FROM changesets WHERE id = %s
 // counting changesets.
 type CountChangesetsOpts struct {
 	BatchChangeID        int64
+	OnlyArchived         bool
+	IncludeArchived      bool
 	ExternalState        *batches.ChangesetExternalState
 	ExternalReviewState  *batches.ChangesetReviewState
 	ExternalCheckState   *batches.ChangesetCheckState
@@ -247,7 +249,13 @@ func countChangesetsQuery(opts *CountChangesetsOpts, authzConds *sqlf.Query) *sq
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
 	if opts.BatchChangeID != 0 {
-		preds = append(preds, sqlf.Sprintf("changesets.batch_change_ids ? %s", strconv.Itoa(int(opts.BatchChangeID))))
+		batchChangeID := strconv.Itoa(int(opts.BatchChangeID))
+		preds = append(preds, sqlf.Sprintf("changesets.batch_change_ids ? %s", batchChangeID))
+		if opts.OnlyArchived {
+			preds = append(preds, archivedInBatchChange(batchChangeID))
+		} else if !opts.IncludeArchived {
+			preds = append(preds, sqlf.Sprintf("NOT (%s)", archivedInBatchChange(batchChangeID)))
+		}
 	}
 	if opts.PublicationState != nil {
 		preds = append(preds, sqlf.Sprintf("changesets.publication_state = %s", *opts.PublicationState))
@@ -456,6 +464,8 @@ type ListChangesetsOpts struct {
 	LimitOpts
 	Cursor               int64
 	BatchChangeID        int64
+	OnlyArchived         bool
+	IncludeArchived      bool
 	IDs                  []int64
 	PublicationState     *batches.ChangesetPublicationState
 	ReconcilerStates     []batches.ReconcilerState
@@ -509,7 +519,14 @@ func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf
 	}
 
 	if opts.BatchChangeID != 0 {
-		preds = append(preds, sqlf.Sprintf("changesets.batch_change_ids ? %s", strconv.Itoa(int(opts.BatchChangeID))))
+		batchChangeID := strconv.Itoa(int(opts.BatchChangeID))
+		preds = append(preds, sqlf.Sprintf("changesets.batch_change_ids ? %s", batchChangeID))
+
+		if opts.OnlyArchived {
+			preds = append(preds, archivedInBatchChange(batchChangeID))
+		} else if !opts.IncludeArchived {
+			preds = append(preds, sqlf.Sprintf("NOT (%s)", archivedInBatchChange(batchChangeID)))
+		}
 	}
 
 	if len(opts.IDs) > 0 {
@@ -756,7 +773,8 @@ func (n *jsonBatchChangeChangesetSet) Scan(value interface{}) error {
 	}
 
 	for id, assoc := range m {
-		*n.Assocs = append(*n.Assocs, batches.BatchChangeAssoc{BatchChangeID: id, Detach: assoc.Detach})
+		assoc.BatchChangeID = id
+		*n.Assocs = append(*n.Assocs, assoc)
 	}
 
 	return nil
@@ -850,16 +868,10 @@ func scanChangeset(t *batches.Changeset, s scanner) error {
 	return nil
 }
 
-// GetChangesetsStatsOpts captures the query options needed for
-// retrieving changesets stats.
-type GetChangesetsStatsOpts struct {
-	BatchChangeID int64
-}
-
 // GetChangesetsStats returns statistics on all the changesets associated to the given batch change,
 // or all changesets across the instance.
-func (s *Store) GetChangesetsStats(ctx context.Context, opts GetChangesetsStatsOpts) (stats batches.ChangesetsStats, err error) {
-	q := getChangesetsStatsQuery(opts)
+func (s *Store) GetChangesetsStats(ctx context.Context, batchChangeID int64) (stats batches.ChangesetsStats, err error) {
+	q := getChangesetsStatsQuery(batchChangeID)
 	err = s.query(ctx, q, func(sc scanner) error {
 		if err := sc.Scan(
 			&stats.Total,
@@ -872,6 +884,7 @@ func (s *Store) GetChangesetsStats(ctx context.Context, opts GetChangesetsStatsO
 			&stats.Merged,
 			&stats.Open,
 			&stats.Deleted,
+			&stats.Archived,
 		); err != nil {
 			return err
 		}
@@ -891,23 +904,41 @@ SELECT
 	COUNT(*) FILTER (WHERE changesets.reconciler_state = 'failed') AS failed,
 	COUNT(*) FILTER (WHERE changesets.reconciler_state NOT IN ('failed', 'errored', 'completed')) AS processing,
 	COUNT(*) FILTER (WHERE changesets.publication_state = 'UNPUBLISHED' AND changesets.reconciler_state = 'completed') AS unpublished,
-	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.reconciler_state = 'completed' AND changesets.external_state = 'CLOSED') AS closed,
-	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.reconciler_state = 'completed' AND changesets.external_state = 'DRAFT') AS draft,
-	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.reconciler_state = 'completed' AND changesets.external_state = 'MERGED') AS merged,
-	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.reconciler_state = 'completed' AND changesets.external_state = 'OPEN') AS open,
-	COUNT(*) FILTER (WHERE changesets.publication_state = 'PUBLISHED' AND changesets.reconciler_state = 'completed' AND changesets.external_state = 'DELETED') AS deleted
+	COUNT(*) FILTER (WHERE %s AND changesets.external_state = 'CLOSED'  AND NOT %s) AS closed,
+	COUNT(*) FILTER (WHERE %s AND changesets.external_state = 'DRAFT'   AND NOT %s) AS draft,
+	COUNT(*) FILTER (WHERE %s AND changesets.external_state = 'MERGED'  AND NOT %s) AS merged,
+	COUNT(*) FILTER (WHERE %s AND changesets.external_state = 'OPEN'    AND NOT %s) AS open,
+	COUNT(*) FILTER (WHERE %s AND changesets.external_state = 'DELETED' AND NOT %s) AS deleted,
+	COUNT(*) FILTER (WHERE %s                                           AND %s) AS archived
 FROM changesets
 INNER JOIN repo on repo.id = changesets.repo_id
 WHERE
 	%s
 `
 
-func getChangesetsStatsQuery(opts GetChangesetsStatsOpts) *sqlf.Query {
+func archivedInBatchChange(batchChangeID string) *sqlf.Query {
+	return sqlf.Sprintf("COALESCE((batch_change_ids->%s->>'isArchived')::bool, false)", batchChangeID)
+}
+
+func getChangesetsStatsQuery(batchChangeID int64) *sqlf.Query {
+	batchChangeIDStr := strconv.Itoa(int(batchChangeID))
+
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
+		sqlf.Sprintf("changesets.batch_change_ids ? %s", batchChangeIDStr),
 	}
-	if opts.BatchChangeID != 0 {
-		preds = append(preds, sqlf.Sprintf("changesets.batch_change_ids ? %s", strconv.Itoa(int(opts.BatchChangeID))))
-	}
-	return sqlf.Sprintf(getChangesetStatsFmtstr, sqlf.Join(preds, " AND "))
+
+	publishedAndCompleted := sqlf.Sprintf("changesets.publication_state = 'PUBLISHED' AND changesets.reconciler_state = 'completed'")
+	archived := archivedInBatchChange(batchChangeIDStr)
+
+	return sqlf.Sprintf(
+		getChangesetStatsFmtstr,
+		publishedAndCompleted, archived,
+		publishedAndCompleted, archived,
+		publishedAndCompleted, archived,
+		publishedAndCompleted, archived,
+		publishedAndCompleted, archived,
+		publishedAndCompleted, archived,
+		sqlf.Join(preds, " AND "),
+	)
 }
