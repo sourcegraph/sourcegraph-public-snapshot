@@ -1,7 +1,7 @@
 {
   "private": true,
   "description": "The Sourcegraph web app",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/sourcegraph/sourcegraph"

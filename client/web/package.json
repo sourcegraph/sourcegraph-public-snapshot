@@ -3,7 +3,7 @@
   "name": "@sourcegraph/web",
   "version": "1.10.1",
   "description": "The Sourcegraph web app",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "scripts": {
     "test": "jest --testPathIgnorePatterns end-to-end --testPathIgnorePatterns regression integration",
     "test:regression": "mocha './src/regression/**/*.test.ts' --exit",

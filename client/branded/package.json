@@ -2,7 +2,7 @@
   "private": true,
   "name": "@sourcegraph/branded",
   "version": "1.0.0",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "scripts": {
     "eslint": "eslint --cache '**/*.[jt]s?(x)'",
     "stylelint": "stylelint 'src/**/*.scss' --quiet",
