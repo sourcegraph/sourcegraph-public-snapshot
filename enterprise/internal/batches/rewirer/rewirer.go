@@ -13,12 +13,15 @@ type ChangesetRewirer struct {
 	// The mappings need to be hydrated for the ChangesetRewirer to consume them.
 	mappings      store.RewirerMappings
 	batchChangeID int64
+	// feature flag that can be removed once this is the default behaviour
+	archiveInsteadOfDetach bool
 }
 
-func New(mappings store.RewirerMappings, batchChangeID int64) *ChangesetRewirer {
+func New(mappings store.RewirerMappings, batchChangeID int64, archive bool) *ChangesetRewirer {
 	return &ChangesetRewirer{
-		mappings:      mappings,
-		batchChangeID: batchChangeID,
+		mappings:               mappings,
+		batchChangeID:          batchChangeID,
+		archiveInsteadOfDetach: archive,
 	}
 }
 
@@ -153,6 +156,7 @@ func (r *ChangesetRewirer) attachTrackingChangeset(changeset *batches.Changeset)
 
 func (r *ChangesetRewirer) closeChangeset(changeset *batches.Changeset) {
 	reset := false
+	archive := false
 	if changeset.CurrentSpecID != 0 && changeset.OwnedByBatchChangeID == r.batchChangeID {
 		// If we have a current spec ID and the changeset was created by
 		// _this_ batch change that means we should detach and close it.
@@ -181,14 +185,22 @@ func (r *ChangesetRewirer) closeChangeset(changeset *batches.Changeset) {
 			if changeset.ReconcilerState == batches.ReconcilerStateCompleted {
 				changeset.PreviousSpecID = changeset.CurrentSpecID
 			}
+
+			if r.archiveInsteadOfDetach {
+				changeset.Archive(r.batchChangeID)
+				archive = true
+			}
+
 			changeset.Closing = true
 			reset = true
 		}
 	}
 
 	// Disassociate the changeset with the batch change.
-	if wasAttached := changeset.Detach(r.batchChangeID); wasAttached {
-		reset = true
+	if !archive {
+		if wasAttached := changeset.Detach(r.batchChangeID); wasAttached {
+			reset = true
+		}
 	}
 
 	if reset {

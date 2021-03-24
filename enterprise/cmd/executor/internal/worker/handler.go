@@ -183,5 +183,5 @@ func union(a, b map[string]string) map[string]string {
 }
 
 func scriptNameFromJobStep(job executor.Job, i int) string {
-	return fmt.Sprintf("%d.%d_%s@%s.sh", job.ID, i, strings.Replace(job.RepositoryName, "/", "_", -1), job.Commit)
+	return fmt.Sprintf("%d.%d_%s@%s.sh", job.ID, i, strings.ReplaceAll(job.RepositoryName, "/", "_"), job.Commit)
 }

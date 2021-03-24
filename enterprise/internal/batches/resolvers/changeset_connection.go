@@ -72,6 +72,8 @@ func (r *changesetsConnectionResolver) TotalCount(ctx context.Context) (int32, e
 		PublicationState:     r.opts.PublicationState,
 		TextSearch:           r.opts.TextSearch,
 		EnforceAuthz:         !r.optsSafe,
+		OnlyArchived:         r.opts.OnlyArchived,
+		IncludeArchived:      r.opts.IncludeArchived,
 	})
 	return int32(count), err
 }

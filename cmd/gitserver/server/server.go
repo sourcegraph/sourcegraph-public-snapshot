@@ -1425,7 +1425,7 @@ func newURLRedactor(parsedURL *url.URL) *urlRedactor {
 // Sensitive strings are replaced with "<redacted>".
 func (r *urlRedactor) redact(message string) string {
 	for _, s := range r.sensitive {
-		message = strings.Replace(message, s, "<redacted>", -1)
+		message = strings.ReplaceAll(message, s, "<redacted>")
 	}
 	return message
 }

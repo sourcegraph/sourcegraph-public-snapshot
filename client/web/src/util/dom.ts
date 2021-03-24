@@ -1,4 +1,4 @@
-import { head } from 'lodash'
+import { head, isArray } from 'lodash'
 import { useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { catchError, debounceTime, map } from 'rxjs/operators'
@@ -32,7 +32,15 @@ export function useBreakpoint(size: keyof typeof breakpoints, debounceMs = 50): 
             () =>
                 observeResize(document.body).pipe(
                     debounceTime(debounceMs),
-                    map(entry => (head(entry?.borderBoxSize)?.inlineSize ?? 0) >= breakpoint),
+                    map(entry => {
+                        const borderBoxSize = normalizeResizeObserverSize(entry?.borderBoxSize)
+
+                        if (!borderBoxSize) {
+                            return false
+                        }
+
+                        return borderBoxSize.inlineSize >= breakpoint
+                    }),
                     // TODO: debug log.
                     // On error, be conservative and report that the screen is smaller than the breakpoint
                     catchError(() => [false])
@@ -41,3 +49,11 @@ export function useBreakpoint(size: keyof typeof breakpoints, debounceMs = 50): 
         )
     )
 }
+
+/**
+ * Firefox `ResizeObserverSize`s are single objects, whereas Chrome's are wrapped in an array.
+ * See: https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver#examples
+ */
+const normalizeResizeObserverSize = (
+    resizeObserverSize: undefined | readonly ResizeObserverSize[] | ResizeObserverSize
+): ResizeObserverSize | undefined => (!isArray(resizeObserverSize) ? resizeObserverSize : resizeObserverSize[0])

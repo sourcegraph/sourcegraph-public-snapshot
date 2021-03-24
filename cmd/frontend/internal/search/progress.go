@@ -16,7 +16,7 @@ type progressAggregator struct {
 	MatchCount int
 	Stats      streaming.Stats
 	Limit      int
-	Trace      string // may be enmpty
+	Trace      string // may be empty
 
 	// Dirty is true if p has changed since the last call to Current.
 	Dirty bool

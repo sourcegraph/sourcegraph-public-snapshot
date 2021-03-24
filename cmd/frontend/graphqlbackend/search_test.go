@@ -340,15 +340,13 @@ func TestExactlyOneRepo(t *testing.T) {
 }
 
 func TestQuoteSuggestions(t *testing.T) {
-	db := new(dbtesting.MockDB)
-
 	t.Run("regex error", func(t *testing.T) {
 		raw := "*"
 		_, err := query.Pipeline(query.InitRegexp(raw))
 		if err == nil {
 			t.Fatalf("error returned from query.ParseRegexp(%q) is nil", raw)
 		}
-		alert := alertForQuery(db, raw, err)
+		alert := alertForQuery(raw, err)
 		if !strings.Contains(alert.description, "regexp") {
 			t.Errorf("description is '%s', want it to contain 'regexp'", alert.description)
 		}
@@ -521,7 +519,6 @@ func mkFileMatch(db dbutil.DB, repo *types.RepoName, path string, lineNumbers ..
 		lines = append(lines, &result.LineMatch{LineNumber: n})
 	}
 	return mkFileMatchResolver(db, result.FileMatch{
-		URI:         fileMatchURI(repo.Name, "", path),
 		Path:        path,
 		LineMatches: lines,
 		Repo:        repo,

@@ -668,7 +668,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 	wantExternalStates := []batches.ChangesetExternalState{"OPEN"}
 	wantReviewStates := []batches.ChangesetReviewState{"APPROVED", "INVALID"}
 	wantCheckStates := []batches.ChangesetCheckState{"PENDING", "INVALID"}
-	wantOnlyPublishedByThisBatchChange := []bool{true}
+	truePtr := func() *bool { val := true; return &val }()
 	wantSearches := []search.TextSearchTerm{{Term: "foo"}, {Term: "bar", Not: true}}
 	var batchChangeID int64 = 1
 
@@ -744,7 +744,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 		// Setting OnlyPublishedByThisCampaign true.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				OnlyPublishedByThisCampaign: &wantOnlyPublishedByThisBatchChange[0],
+				OnlyPublishedByThisCampaign: truePtr,
 			},
 			wantSafe: true,
 			wantParsed: store.ListChangesetsOpts{
@@ -755,7 +755,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 		// Setting OnlyPublishedByThisBatchChange true.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				OnlyPublishedByThisBatchChange: &wantOnlyPublishedByThisBatchChange[0],
+				OnlyPublishedByThisBatchChange: truePtr,
 			},
 			wantSafe: true,
 			wantParsed: store.ListChangesetsOpts{
@@ -781,6 +781,16 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 			wantSafe: false,
 			wantParsed: store.ListChangesetsOpts{
 				TextSearch: wantSearches[1:],
+			},
+		},
+		// Setting OnlyArchived
+		{
+			args: &graphqlbackend.ListChangesetsArgs{
+				OnlyArchived: true,
+			},
+			wantSafe: true,
+			wantParsed: store.ListChangesetsOpts{
+				OnlyArchived: true,
 			},
 		},
 	}
