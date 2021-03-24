@@ -2,7 +2,7 @@ import * as React from 'react'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { numberWithCommas } from '../../../../shared/src/util/strings'
 import { SingleValueCard } from '../../components/SingleValueCard'
-import { formatUserCount } from './helpers'
+import { formatUserCount } from '../../productSubscription/helpers'
 
 interface Props {
     /**

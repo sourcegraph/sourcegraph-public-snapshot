@@ -31,7 +31,9 @@ interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteP
         BreadcrumbsProps,
         BreadcrumbSetters,
         ExtensionAlertProps,
-        UserRepositoriesUpdateProps {}
+        UserRepositoriesUpdateProps {
+    isSourcegraphDotCom: boolean
+}
 
 export interface LayoutRouteProps<Parameters_ extends { [K in keyof Parameters_]?: string }> {
     path: string
@@ -200,37 +202,37 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/refactor-python2-to-3',
         render: props => <RepogroupPage {...props} repogroupMetadata={python2To3Metadata} />,
-        condition: props => window.context.sourcegraphDotComMode,
+        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
     },
     {
         path: '/kubernetes',
         render: props => <RepogroupPage {...props} repogroupMetadata={kubernetes} />,
-        condition: props => window.context.sourcegraphDotComMode,
+        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
     },
     {
         path: '/golang',
         render: props => <RepogroupPage {...props} repogroupMetadata={golang} />,
-        condition: props => window.context.sourcegraphDotComMode,
+        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
     },
     {
         path: '/react-hooks',
         render: props => <RepogroupPage {...props} repogroupMetadata={reactHooks} />,
-        condition: props => window.context.sourcegraphDotComMode,
+        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
     },
     {
         path: '/android',
         render: props => <RepogroupPage {...props} repogroupMetadata={android} />,
-        condition: props => window.context.sourcegraphDotComMode,
+        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
     },
     {
         path: '/stanford',
         render: props => <RepogroupPage {...props} repogroupMetadata={stanford} />,
-        condition: props => window.context.sourcegraphDotComMode,
+        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
     },
     {
         path: '/cncf',
         render: props => <RepogroupPage {...props} repogroupMetadata={cncf} />,
-        condition: props => window.context.sourcegraphDotComMode,
+        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
     },
     {
         path: '/:repoRevAndRest+',
