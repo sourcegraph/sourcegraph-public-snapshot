@@ -15,11 +15,13 @@ CONTAINER=grafana
 PORT=3370
 
 # docker containers must access things via docker host on non-linux platforms
-CONFIG_SUB_DIR="all"
 DOCKER_USER=""
+ADD_HOST_FLAG=""
 
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
-  CONFIG_SUB_DIR="linux"
+  # Linux needs an extra arg to support host.internal.docker, which is how grafana connects
+  # to the prometheus backend.
+  ADD_HOST_FLAG="--add-host=host.docker.internal:host-gateway"
 
   # Docker users on Linux will generally be using direct user mapping, which
   # means that they'll want the data in the volume mount to be owned by the
@@ -69,9 +71,9 @@ docker run --rm ${DOCKER_USER} \
   --name=${CONTAINER} \
   --cpus=1 \
   --memory=1g \
-  -p 0.0.0.0:3370:3370 \
+  -p 0.0.0.0:3370:3370 ${ADD_HOST_FLAG} \
   -v "${GRAFANA_DISK}":/var/lib/grafana \
-  -v "$(pwd)"/dev/grafana/${CONFIG_SUB_DIR}:/sg_config_grafana/provisioning/datasources \
+  -v "$(pwd)"/dev/grafana/:/sg_config_grafana/provisioning/datasources \
   -v "$(pwd)"/docker-images/grafana/config/provisioning/dashboards:/sg_grafana_additional_dashboards \
   -e DISABLE_SOURCEGRAPH_CONFIG="${DISABLE_SOURCEGRAPH_CONFIG:-'false'}" \
   ${IMAGE} >"${GRAFANA_LOG_FILE}" 2>&1 || finish
