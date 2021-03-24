@@ -21,7 +21,6 @@ import { wrapRemoteObservable } from '../../../../shared/src/api/client/api/comm
 import { ExtensionsLoadingPanelView } from './views/ExtensionsLoadingView'
 import { haveInitialExtensionsLoaded } from '../../../../shared/src/api/features'
 import { PanelViewData } from '../../../../shared/src/api/extension/extensionHostApi'
-import { Button } from 'reactstrap'
 import { ContributableMenu } from '../../../../shared/src/api/protocol'
 import { ActionsNavItems } from '../../../../shared/src/actions/ActionsNavItems'
 import { useHistory, useLocation } from 'react-router'
@@ -260,13 +259,16 @@ export const Panel = React.memo<Props>(props => {
                             wrapInList={true}
                         />
                     )}
-                    <Button
+                    <button
+                        type="button"
                         onClick={handlePanelClose}
-                        className="bg-transparent border-0 ml-auto p-1 position-relative"
+                        className="btn btn-icon"
                         title="Close panel"
+                        data-tooltip="Close panel"
+                        data-placement="left"
                     >
                         <CloseIcon className="icon-inline" />
-                    </Button>
+                    </button>
                 </div>
             </div>
             <TabPanels>
