@@ -39,7 +39,11 @@ export const SurveyCTA: React.FunctionComponent<SurveyCTAProps> = props => {
     }
 
     return (
-        <div className={props.className} onBlur={handleBlur}>
+        <div
+            aria-label="Survey score radio toggle button group"
+            className={props.className}
+            onBlur={handleBlur}>
+
             {range(0, 11).map(score => {
                 const pressed = score === props.score
                 const focused = score === focusedIndex
