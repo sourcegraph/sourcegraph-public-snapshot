@@ -34,6 +34,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Experimental: Sync permissions of Perforce depots through the Sourcegraph UI. To enable, use the feature flag `"experimentalFeatures": { "perforce": "enabled" }`. For more information, see [how to enable permissions for your Perforce depots](https://docs.sourcegraph.com/admin/repo/perforce). [#16705](https://github.com/sourcegraph/sourcegraph/issues/16705)
+- Added support for user email headers in the HTTP auth proxy. See [HTTP Auth Proxy docs](https://docs.sourcegraph.com/admin/auth#http-authentication-proxies) for more information.
 
 ### Changed
 
