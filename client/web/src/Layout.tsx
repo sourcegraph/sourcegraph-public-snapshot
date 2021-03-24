@@ -252,6 +252,11 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         props.location.pathname === '/sign-up' ||
         props.location.pathname === '/password-reset'
 
+    // TODO Change this behavior when we have global focus management system
+    // Need to know this for disable autofocus on nav search input
+    // and preserve autofocus for first textarea at survey page
+    const isSurveyPage = routeMatch === '/survey/:score?'
+
     const authRequired = useObservable(authRequiredObservable)
 
     const hideGlobalSearchInput: boolean =
@@ -308,6 +313,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                     }
                     hideNavLinks={false}
                     minimalNavLinks={minimalNavLinks}
+                    isSearchAutoFocusRequired={!isSurveyPage}
                     isExtensionAlertAnimating={isExtensionAlertAnimating}
                 />
             )}
