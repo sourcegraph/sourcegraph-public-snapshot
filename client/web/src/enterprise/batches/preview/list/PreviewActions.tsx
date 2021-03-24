@@ -205,7 +205,7 @@ export const PreviewActionArchive: React.FunctionComponent<{ label?: string; cla
     <div className={classNames(className, iconClassNames)}>
         <ArchiveIcon
             className="text-muted mr-1 icon-inline"
-            data-tooltip="This changeset will be archived in this batch change"
+            data-tooltip="This changeset will be kept and marked as archived in this batch change"
         />
         <span>{label}</span>
     </div>
