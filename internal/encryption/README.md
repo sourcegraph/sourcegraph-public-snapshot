@@ -27,7 +27,7 @@ If you want to implement a different encryption backend, you'll need to add a ne
 - Add a reference to the new schema to the `oneOf` array on the `EncryptionKey`. This means we generate a `schema.EncryptionKeys` type with all of the key configs as fields, this is done by the `!go: {"taggedUnionType": true}` expression on `EncryptionKey`.
 - Then add a case to the switch statement in `keyring.NewKey()` to initialise your key if the config is provided.
 
-### Zero Visibility Data (`encryption.Secret`)
+### Zero visibility data (`encryption.Secret`)
 
 The plaintext returned by the `Key.Decrypt()` method is considered 'zero visibility data'. This means that no human should ever be able to see this data, and if someone does it should be considered compromised, and be replaced. In order to make accidental disclosure more difficult the encryption package returns data in an `encryption.Secret` wrapper type. This type wraps a value in a struct with an unexported field, implementing the `Stringer` & `json.Marshaler` interfaces & redacting the data. The only method that returns the plaintext is `Secret.Secret()`, this means our handling of secrets is more auditable, and reduces the chances of accidentally leaking the value in logs.
 
