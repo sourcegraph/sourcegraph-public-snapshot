@@ -18,6 +18,7 @@
   - [Working with GraphQL](web/graphql.md)
   - [Styling UI](web/styling.md)
   - [Accessibility](web/accessibility.md)
+  - [Build process](web/build.md)
 - [Developing the GraphQL API](graphql_api.md)
 - [Developing batch changes](batch_changes/index.md)
 - [Developing code intelligence](codeintel/index.md)
