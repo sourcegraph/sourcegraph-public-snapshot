@@ -219,7 +219,7 @@ Example [`openidconnect` auth provider](../config/site_config.md#openid-connect-
 
 ## HTTP authentication proxies
 
-You can wrap Sourcegraph in an authentication proxy that authenticates the user and passes the user's username to Sourcegraph via HTTP headers. The most popular such authentication proxy is [pusher/oauth2_proxy](https://github.com/pusher/oauth2_proxy). Another example is [Google Identity-Aware Proxy (IAP)](https://cloud.google.com/iap/). Both work well with Sourcegraph.
+You can wrap Sourcegraph in an authentication proxy that authenticates the user and passes the user's username or email (or both) to Sourcegraph via HTTP headers. The most popular such authentication proxy is [pusher/oauth2_proxy](https://github.com/pusher/oauth2_proxy). Another example is [Google Identity-Aware Proxy (IAP)](https://cloud.google.com/iap/). Both work well with Sourcegraph.
 
 To use an authentication proxy to authenticate users to Sourcegraph, add the following lines to your site configuration:
 
@@ -229,7 +229,8 @@ To use an authentication proxy to authenticate users to Sourcegraph, add the fol
   "auth.providers": [
     {
       "type": "http-header",
-      "usernameHeader": "X-Forwarded-User"
+      "usernameHeader": "X-Forwarded-User",
+      "emailHeader": "X-Forwarded-Email"
     }
   ]
 }
