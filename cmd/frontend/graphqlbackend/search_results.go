@@ -846,7 +846,7 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 			Source:        requestSource,
 			Status:        status,
 			AlertType:     alertType,
-			Duration:      elapsed.Milliseconds(),
+			DurationMs:    elapsed.Milliseconds(),
 			ResultSize:    n,
 		})
 

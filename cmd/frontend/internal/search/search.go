@@ -279,7 +279,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Source:        string(trace.RequestSource(ctx)),
 			Status:        status,
 			AlertType:     alertType,
-			Duration:      time.Since(start).Milliseconds(),
+			DurationMs:    time.Since(start).Milliseconds(),
 			ResultSize:    progress.MatchCount,
 		})
 
