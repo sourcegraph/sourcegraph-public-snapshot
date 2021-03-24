@@ -43,12 +43,6 @@ var (
 		Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
 	}, []string{"type", "field", "error", "source", "request_name"})
 
-	searchLatencyHistogram = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "src_search_response_latency_seconds",
-		Help:    "Search response latencies in seconds.",
-		Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
-	}, []string{"error", "source"})
-
 	codeIntelSearchHistogram = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name:    "src_graphql_code_intel_search_seconds",
 		Help:    "Code intel search latencies in seconds.",
