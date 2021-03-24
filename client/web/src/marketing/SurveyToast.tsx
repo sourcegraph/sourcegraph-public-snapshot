@@ -11,6 +11,7 @@ import { AuthenticatedUser } from '../auth'
 const HAS_DISMISSED_TOAST_KEY = 'has-dismissed-survey-toast'
 
 interface SurveyCTAProps {
+    ariaLabelledby?: string
     className?: string
     score?: number
     onChange?: (score: number) => void
@@ -39,7 +40,12 @@ export const SurveyCTA: React.FunctionComponent<SurveyCTAProps> = props => {
     }
 
     return (
-        <fieldset aria-label="Survey score radio toggle button group" className={props.className} onBlur={handleBlur}>
+        <fieldset
+            aria-labelledby={props.ariaLabelledby}
+            role="radiogroup"
+            className={props.className}
+            onBlur={handleBlur}
+        >
             {range(0, 11).map(score => {
                 const pressed = score === props.score
                 const focused = score === focusedIndex
