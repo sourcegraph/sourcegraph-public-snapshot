@@ -68,7 +68,11 @@ func (r *schemaResolver) SetExternalServiceRepos(ctx context.Context, args struc
 		return nil, err
 	}
 
+	// this kicks off an async job, but has some slow validation before that happens. Considering the user repos page
+	// already handles the async job we don't need to wait for this request. any errors from this should also be picked
+	// up and fed back to the user by the notifications system.
 	go func() {
+		ctx, _ := context.WithTimeout(ctx, 60*time.Second)
 		if err := syncExternalService(ctx, es); err != nil {
 			log15.Error("error syncing external services", "error", err)
 		}
