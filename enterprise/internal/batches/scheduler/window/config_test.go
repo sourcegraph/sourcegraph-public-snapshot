@@ -79,13 +79,13 @@ func TestUpdate(t *testing.T) {
 					windows: []Window{
 						{
 							rate:  rate{n: 20, unit: ratePerHour},
-							days:  []time.Weekday{time.Monday},
+							days:  newWeekdaySet(time.Monday),
 							start: &windowTime{hour: 1, minute: 15},
 							end:   &windowTime{hour: 2, minute: 30},
 						},
 						{
 							rate: rate{n: 2, unit: ratePerHour},
-							days: []time.Weekday{},
+							days: newWeekdaySet(),
 						},
 					},
 				},

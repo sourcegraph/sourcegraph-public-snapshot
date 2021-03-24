@@ -13,33 +13,51 @@ import (
 
 // Window represents a single rollout window configured on a site.
 type Window struct {
-	days  []time.Weekday
+	days  *weekdaySet
 	start *windowTime
 	end   *windowTime
 	rate  rate
 }
 
-func (w *Window) IsActive(at time.Time) bool {
-	if len(w.days) != 0 {
-		found := false
-		for _, day := range w.days {
-			if day == at.Weekday() {
-				found = true
-				break
-			}
-		}
-		if !found {
-			return false
-		}
+func (w *Window) isTimeWithin(when timeOfDay) bool {
+	if w.start == nil || w.end == nil {
+		return true
 	}
 
-	if w.start != nil && w.end != nil {
-		if want := timeOfDayFromTime(at); !(w.start.timeOfDay() <= want && want <= w.end.timeOfDay()) {
-			return false
-		}
+	return !(when.before(w.start.timeOfDay()) || when.after(w.end.timeOfDay()))
+}
+
+// IsOpen checks if this window is currently open.
+func (w *Window) IsOpen(at time.Time) bool {
+	return w.days.includes(at.Weekday()) && w.isTimeWithin(timeOfDayFromTime(at))
+}
+
+// NextOpenAfter returns the time that this window will next be open.
+func (w *Window) NextOpenAfter(after time.Time) time.Time {
+	// If the window is currently open, then the next time it will be open is...
+	// well, now.
+	if w.IsOpen(after) {
+		return after
 	}
 
-	return true
+	// From here, the simplest way to find the next active time is to take the
+	// start time for this window (which is 00:00 if w.start is nil), then walk
+	// forward until we find a weekday where this window is open.
+	var t timeOfDay
+	if w.start != nil {
+		t = w.start.timeOfDay()
+	}
+
+	when := time.Date(after.Year(), after.Month(), after.Day(), int(t.hour), int(t.minute), 0, 0, time.UTC)
+	for {
+		if w.days.includes(when.Weekday()) && when.After(after) {
+			return when
+		} else if when.Sub(after) > 7*24*time.Hour {
+			// This should never happen!
+			panic("cannot find the next time this window is active after searching the next week")
+		}
+		when = when.Add(24 * time.Hour)
+	}
 }
 
 type rate struct {
@@ -145,7 +163,7 @@ func newWindowTime(raw string) (*windowTime, error) {
 }
 
 func (wt *windowTime) timeOfDay() timeOfDay {
-	return timeOfDayFromParts(int(wt.hour), int(wt.minute))
+	return timeOfDayFromParts(wt.hour, wt.minute)
 }
 
 func parseTimePart(s string) (int8, error) {
@@ -193,12 +211,12 @@ func parseWindow(raw *schema.BatchChangeRolloutWindow) (Window, error) {
 		return w, errors.New("raw window cannot be nil")
 	}
 
-	w.days = make([]time.Weekday, len(raw.Days))
+	w.days = newWeekdaySet()
 	for i := range raw.Days {
 		if day, err := parseWeekday(raw.Days[i]); err != nil {
 			errs = multierror.Append(errs, err)
 		} else {
-			w.days[i] = day
+			w.days.add(day)
 		}
 	}
 
@@ -213,6 +231,8 @@ func parseWindow(raw *schema.BatchChangeRolloutWindow) (Window, error) {
 	}
 	if (w.start != nil && w.end == nil) || (w.start == nil && w.end != nil) {
 		errs = multierror.Append(errs, errors.New("both start and end times must be provided"))
+	} else if w.start != nil && w.end != nil && !w.start.timeOfDay().before(w.end.timeOfDay()) {
+		errs = multierror.Append(errs, errors.New("end time must be after the start time"))
 	}
 
 	w.rate, err = parseRate(raw.Rate)

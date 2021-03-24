@@ -9,6 +9,186 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+func TestWindow_IsOpen(t *testing.T) {
+	// A time that corresponds rather closely to when this was getting written.
+	// Note that this is a Wednesday.
+	//
+	// We should be commended for not calling this variable whensday.
+	when := time.Date(2021, 3, 24, 1, 39, 44, 0, time.UTC)
+
+	for name, tc := range map[string]struct {
+		want   bool
+		at     time.Time
+		window *Window
+	}{
+		"always open": {
+			want: true,
+			at:   when,
+			window: &Window{
+				days: newWeekdaySet(),
+			},
+		},
+		"open on certain days; correct day": {
+			want: true,
+			at:   when,
+			window: &Window{
+				days: newWeekdaySet(time.Wednesday),
+			},
+		},
+		"open on certain days; incorrect day": {
+			want: false,
+			at:   when,
+			window: &Window{
+				days: newWeekdaySet(time.Thursday),
+			},
+		},
+		"open at certain times; correct time": {
+			want: true,
+			at:   when,
+			window: &Window{
+				days:  newWeekdaySet(),
+				start: &windowTime{hour: int8(1)},
+				end:   &windowTime{hour: int8(3)},
+			},
+		},
+		"open at certain times; incorrect time": {
+			want: false,
+			at:   when,
+			window: &Window{
+				days:  newWeekdaySet(),
+				start: &windowTime{hour: int8(11)},
+				end:   &windowTime{hour: int8(13)},
+			},
+		},
+		"open at certain days and times; correct day and time": {
+			want: true,
+			at:   when,
+			window: &Window{
+				days:  newWeekdaySet(time.Wednesday),
+				start: &windowTime{hour: int8(1)},
+				end:   &windowTime{hour: int8(3)},
+			},
+		},
+		"open at certain days and times; correct day only": {
+			want: false,
+			at:   when,
+			window: &Window{
+				days:  newWeekdaySet(time.Wednesday),
+				start: &windowTime{hour: int8(11)},
+				end:   &windowTime{hour: int8(13)},
+			},
+		},
+		"open at certain days and times; correct time only": {
+			want: false,
+			at:   when,
+			window: &Window{
+				days:  newWeekdaySet(time.Tuesday),
+				start: &windowTime{hour: int8(1)},
+				end:   &windowTime{hour: int8(3)},
+			},
+		},
+		"open at certain days and times; everything is terrible": {
+			want: false,
+			at:   when,
+			window: &Window{
+				days:  newWeekdaySet(time.Sunday),
+				start: &windowTime{hour: int8(11)},
+				end:   &windowTime{hour: int8(13)},
+			},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if have := tc.window.IsOpen(tc.at); have != tc.want {
+				t.Errorf("unexpected open state: have=%v want=%v", have, tc.want)
+			}
+		})
+	}
+}
+
+func TestWindow_NextOpenAfter(t *testing.T) {
+	// Please see TestWindow_IsOpen for the derivation of this pseudo-constant,
+	// and a terrible pun.
+	when := time.Date(2021, 3, 24, 1, 39, 44, 0, time.UTC)
+
+	for name, tc := range map[string]struct {
+		want   time.Time
+		after  time.Time
+		window *Window
+	}{
+		"currently open": {
+			want:  when,
+			after: when,
+			window: &Window{
+				days: newWeekdaySet(),
+			},
+		},
+		"days only": {
+			// Truncate back to the start of Wednesday, then add two days to get
+			// to the start of Friday.
+			want:  when.Truncate(24 * time.Hour).Add(2 * 24 * time.Hour),
+			after: when,
+			window: &Window{
+				days: newWeekdaySet(time.Friday),
+			},
+		},
+		"every day except Wednesday": {
+			// Truncate back to the start of Wednesday, then add one day to get
+			// to the start of Thursday.
+			want:  when.Truncate(24 * time.Hour).Add(24 * time.Hour),
+			after: when,
+			window: &Window{
+				days: newWeekdaySet(
+					time.Sunday,
+					time.Monday,
+					time.Tuesday,
+					time.Thursday,
+					time.Friday,
+					time.Saturday,
+				),
+			},
+		},
+		"times only": {
+			// Truncate back to 00:00, then add 2 hours.
+			want:  when.Truncate(24 * time.Hour).Add(2 * time.Hour),
+			after: when,
+			window: &Window{
+				days:  newWeekdaySet(),
+				start: &windowTime{hour: int8(2)},
+				end:   &windowTime{hour: int8(4)},
+			},
+		},
+		"time in the mysterious past": {
+			// Truncate to 00:00, then add exactly one day and 30 minutes.
+			want:  when.Truncate(24 * time.Hour).Add(24 * time.Hour).Add(30 * time.Minute),
+			after: when,
+			window: &Window{
+				days:  newWeekdaySet(),
+				start: &windowTime{hour: int8(0), minute: int8(30)},
+				end:   &windowTime{hour: int8(1)},
+			},
+		},
+		"times and days": {
+			// Truncate back to the start of Wednesday, then add five days to
+			// get to the start of Monday (which also means we've wrapped around
+			// Go's Weekday representation), then add another two hours to get
+			// to 02:00.
+			want:  when.Truncate(24 * time.Hour).Add(5 * 24 * time.Hour).Add(2 * time.Hour),
+			after: when,
+			window: &Window{
+				days:  newWeekdaySet(time.Monday),
+				start: &windowTime{hour: int8(2)},
+				end:   &windowTime{hour: int8(4)},
+			},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if have := tc.window.NextOpenAfter(tc.after); have != tc.want {
+				t.Errorf("unexpected next open time: have=%v want=%v", have, tc.want)
+			}
+		})
+	}
+}
+
 func TestParseRateUnit(t *testing.T) {
 	t.Run("errors", func(t *testing.T) {
 		for _, in := range []string{"", " ", "a"} {
@@ -245,6 +425,8 @@ func TestParseWindow(t *testing.T) {
 			"invalid rate":       {Rate: "x/y"},
 			"only start time":    {Start: "00:00"},
 			"only end time":      {End: "00:00"},
+			"start after end":    {Start: "01:00", End: "00:00"},
+			"start equal to end": {Start: "01:00", End: "01:00"},
 		} {
 			t.Run(name, func(t *testing.T) {
 				if _, err := parseWindow(in); err == nil {
@@ -262,7 +444,7 @@ func TestParseWindow(t *testing.T) {
 			"rate only": {
 				in: &schema.BatchChangeRolloutWindow{Rate: "unlimited"},
 				want: Window{
-					days: []time.Weekday{},
+					days: newWeekdaySet(),
 					rate: rate{n: -1},
 				},
 			},
@@ -274,7 +456,7 @@ func TestParseWindow(t *testing.T) {
 					End:   "02:30",
 				},
 				want: Window{
-					days:  []time.Weekday{time.Monday, time.Tuesday},
+					days:  newWeekdaySet(time.Monday, time.Tuesday),
 					rate:  rate{n: 20, unit: ratePerMinute},
 					start: &windowTime{hour: 1, minute: 15},
 					end:   &windowTime{hour: 2, minute: 30},
