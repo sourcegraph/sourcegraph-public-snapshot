@@ -1,6 +1,6 @@
 import React from 'react'
-import { LinkWithIcon } from '../../../../components/LinkWithIcon'
-import { BatchChangesIconNav } from '../../icons'
+import { LinkWithIcon } from '../components/LinkWithIcon'
+import { BatchChangesIconNav } from './icons'
 import classNames from 'classnames'
 
 interface Props {
