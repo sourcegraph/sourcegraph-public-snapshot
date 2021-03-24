@@ -41,6 +41,12 @@
         padding: 0.5rem 0;
     }
 
+    &__rating-radio {
+        position: absolute;
+        clip: rect(0, 0, 0, 0);
+        pointer-events: none;
+    }
+
     &__rating-btn:not(:first-of-type) {
         border-top-left-radius: 0;
         border-bottom-left-radius: 0;
