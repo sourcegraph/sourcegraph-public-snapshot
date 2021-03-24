@@ -56,6 +56,7 @@ func (s *client) search(ctx context.Context, qc QueryConfig) (*result, *metrics,
 
 	req.Header.Set("Authorization", "token "+s.token)
 	req.Header.Set("X-Sourcegraph-Should-Trace", "true")
+	req.Header.Set("User-Agent", "SearchBlitz (monitoring)")
 
 	start := time.Now()
 	resp, err := s.client.Do(req)
