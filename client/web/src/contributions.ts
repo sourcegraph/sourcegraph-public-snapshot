@@ -5,7 +5,7 @@ import { ExtensionsControllerProps } from '../../shared/src/extensions/controlle
 import { registerHighlightContributions } from '../../shared/src/highlight/contributions'
 import { registerHoverContributions } from '../../shared/src/hover/actions'
 import { PlatformContextProps } from '../../shared/src/platform/context'
-import { registerSearchStatsContributions } from './enterprise/search/stats/contributions'
+import { registerSearchStatsContributions } from './search/stats/contributions'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {
     history: H.History

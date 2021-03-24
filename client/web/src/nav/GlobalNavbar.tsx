@@ -29,6 +29,7 @@ import { BrandLogo } from '../components/branding/BrandLogo'
 import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
 import { ExtensionAlertAnimationProps } from './UserNavItem'
 import { LayoutRouteProps } from '../routes'
+import { CodeMonitoringProps } from '../code-monitoring'
 
 interface Props
     extends SettingsCascadeProps,
@@ -46,6 +47,7 @@ interface Props
         CopyQueryButtonProps,
         VersionContextProps,
         SearchContextProps,
+        CodeMonitoringProps,
         OnboardingTourProps {
     history: H.History
     location: H.Location<{ query: string }>

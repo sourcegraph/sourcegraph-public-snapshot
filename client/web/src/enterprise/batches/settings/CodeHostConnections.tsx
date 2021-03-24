@@ -9,7 +9,7 @@ import {
     Scalars,
     UserBatchChangesCodeHostsVariables,
 } from '../../../graphql-operations'
-import { BatchChangesIcon } from '../icons'
+import { BatchChangesIcon } from '../../../batches/icons'
 import { queryUserBatchChangesCodeHosts as _queryUserBatchChangesCodeHosts } from './backend'
 import { CodeHostConnectionNode, CodeHostConnectionNodeProps } from './CodeHostConnectionNode'
 

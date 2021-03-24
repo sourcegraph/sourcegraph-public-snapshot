@@ -20,7 +20,7 @@ import { SupersedingBatchSpecAlert } from '../detail/SupersedingBatchSpecAlert'
 import { queryChangesetSpecFileDiffs, queryChangesetApplyPreview } from './list/backend'
 import { BatchChangePreviewStatsBar } from './BatchChangePreviewStatsBar'
 import { PageHeader } from '../../../components/PageHeader'
-import { BatchChangesIcon } from '../icons'
+import { BatchChangesIcon } from '../../../batches/icons'
 
 export type PreviewPageAuthenticatedUser = Pick<AuthenticatedUser, 'url' | 'displayName' | 'username' | 'email'>
 

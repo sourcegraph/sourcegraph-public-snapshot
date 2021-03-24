@@ -820,35 +820,39 @@ func (s *RepoStore) ListDefaultRepos(ctx context.Context, opts ListDefaultReposO
 
 	cloneClause := sqlf.Sprintf("TRUE")
 	if opts.OnlyUncloned {
-		cloneClause = sqlf.Sprintf("NOT repo.cloned")
+		cloneClause = sqlf.Sprintf("gr.clone_status = %s", types.CloneStatusNotCloned)
 	}
 
 	q := sqlf.Sprintf(`
 -- source: internal/database/repos.go:RepoStore.ListDefaultRepos
-SELECT repo.id, repo.name FROM repo
-JOIN default_repos dr ON repo.id = dr.repo_id
-WHERE
-      repo.deleted_at IS NULL
-      AND %s
+SELECT repo.id, repo.name
+FROM repo
+         JOIN default_repos dr ON repo.id = dr.repo_id
+         JOIN gitserver_repos gr ON repo.id = gr.repo_id
+
+WHERE repo.deleted_at IS NULL
+  AND %s
 
 UNION
 
-SELECT repo.id, repo.name FROM repo
-JOIN external_service_repos esr ON repo.id = esr.repo_id
-JOIN external_services es ON esr.external_service_id = es.id
-WHERE
-      NOT es.cloud_default
-      AND es.deleted_at IS NULL
-      AND repo.deleted_at IS NULL
-      AND %s
+SELECT repo.id, repo.name
+FROM repo
+         JOIN external_service_repos esr ON repo.id = esr.repo_id
+         JOIN external_services es ON esr.external_service_id = es.id
+         JOIN gitserver_repos gr ON repo.id = gr.repo_id
+WHERE NOT es.cloud_default
+  AND es.deleted_at IS NULL
+  AND repo.deleted_at IS NULL
+  AND %s
 
 UNION
 
-SELECT repo.id, repo.name FROM repo
-WHERE
-	EXISTS (SELECT 1 FROM user_public_repos WHERE repo_id = repo.id)
-	AND repo.deleted_at IS NULL
-	AND %s
+SELECT repo.id, repo.name
+FROM repo
+         JOIN gitserver_repos gr ON repo.id = gr.repo_id
+WHERE EXISTS(SELECT 1 FROM user_public_repos WHERE repo_id = repo.id)
+  AND repo.deleted_at IS NULL
+  AND %s
 `, cloneClause, cloneClause, cloneClause)
 
 	rows, err := s.Query(ctx, q)
