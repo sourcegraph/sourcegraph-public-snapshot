@@ -172,7 +172,7 @@ export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
                 {archiveEnabled && (
                     <>
                         <IncludeArchivedToggle includeArchived={includeArchived} onToggle={toggleIncludeArchived} />
-                        <hr />
+                        <hr className="flex-grow-1" />
                     </>
                 )}
                 {Object.entries(states).map(([key, state]) => (

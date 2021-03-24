@@ -102,12 +102,8 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
         const archived = parameters.get('archivedBy')
         parameters.delete('archivedBy')
 
-        if (location.search !== parameters.toString()) {
-            history.replace({ ...location, search: parameters.toString() })
-        }
         return [parseInt(count ?? '0', 10), archived ?? '']
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [history])
+    }, [location.search])
 
     // Is loading.
     if (batchChange === undefined) {
