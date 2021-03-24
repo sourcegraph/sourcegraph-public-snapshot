@@ -14,7 +14,7 @@ add(
         <WebStory>
             {() => (
                 <MenuNavItem openByDefault={true}>
-                    <BatchChangesNavItem />
+                    <BatchChangesNavItem isSourcegraphDotCom={false} />
                     <InsightsNavItem />
                     <CodeMonitoringNavItem />
                 </MenuNavItem>
