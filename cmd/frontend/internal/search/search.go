@@ -532,6 +532,7 @@ func GuessSource(r *http.Request) trace.SourceType {
 		}
 	}
 
+	// We send some automated search requests in order to measure baseline search perf. Track the source of these.
 	if match := searchBlitzUserAgentRegexp.FindStringSubmatch(userAgent); match != nil {
 		return trace.SourceType("searchblitz_" + match[1])
 	}
