@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"sort"
@@ -783,6 +784,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *struct {
 		}
 		return nil, err
 	}
+	fmt.Println(repo)
 	return &repositoryRedirect{repo: NewRepositoryResolver(r.db, repo)}, nil
 }
 

@@ -685,27 +685,20 @@ func newRepoInfo(r *types.Repo) (*protocol.RepoInfo, error) {
 	case extsvc.TypeBitbucketCloud:
 		{
 			repo := r.Metadata.(*bitbucketcloud.Repo)
-
 			href := repo.Links.HTML.Href
 
-			fmt.Println(repo.Links.HTML.Href)
-			// https://bitbucket.org/artemsg/bb-test-repo/src/main/main.go
-
-			// https://bitbucket.org/artemsg/bb-test-repo/browse/main.go?at=main
 			if href == "" {
 				break
 			}
 
-			// https://bitbucket.org/artemsg/bb-test-repo/src/main/main.go
-			// https://bitbucket.org/artemsg/bb-test-repo/main/main.go
-			root := href + ""
-			info.Links = &protocol.RepoLinks{
-				Root: pathAppend(root, "/{rev}/{path}"),
-				Tree: pathAppend(root, "/{rev}/{path}"),
-				Blob: pathAppend(root, "/{rev}/{path}"),
+			root := href + "/src"
+			basePath := pathAppend(root, "/{rev}/{path}"),
 
-				// https://bitbucket.org/artemsg/bb-test-repo/src/ab4b1b677f435d711723a9115240e28de503563a/main.go
-				Commit: pathAppend(root, "{commit}/{path}"),
+			info.Links = &protocol.RepoLinks{
+				Root:   basePath,
+				Tree:   basePath,
+				Blob:   basePath,
+				Commit: pathAppend(href, "/commits/{commit}"),
 			}
 
 		}
