@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -67,9 +68,11 @@ func (r *schemaResolver) SetExternalServiceRepos(ctx context.Context, args struc
 		return nil, err
 	}
 
-	if err := syncExternalService(ctx, es); err != nil {
-		return nil, err
-	}
+	go func() {
+		if err := syncExternalService(ctx, es); err != nil {
+			log15.Error("error syncing external services", "error", err)
+		}
+	}()
 
 	return &EmptyResponse{}, nil
 }
