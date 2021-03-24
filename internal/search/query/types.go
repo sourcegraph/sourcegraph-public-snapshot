@@ -63,15 +63,85 @@ type QueryInfo interface {
 
 // A query plan represents a set of disjoint queries for the search engine to
 // execute. The result of executing a plan is the union of individual query results.
-type Plan []Q
+type Plan []Basic
 
 // ToParseTree models a plan as a parse tree of an Or-expression on plan queries.
 func (p Plan) ToParseTree() Q {
 	nodes := make([]Node, 0, len(p))
-	for _, q := range p {
-		nodes = append(nodes, Operator{Kind: And, Operands: q})
+	for _, basic := range p {
+		operands := basic.ToParseTree()
+		nodes = append(nodes, newOperator(operands, And)...)
 	}
 	return Q(newOperator(nodes, Or))
+}
+
+// Basic represents a leaf expression to evaluate in our search engine. A basic
+// query comprises:
+//   (1) a single search pattern expression, which may contain
+//       'and' or 'or' operators; and
+//   (2) parameters that scope the evaluation of search
+//       patterns (e.g., to repos, files, etc.).
+type Basic struct {
+	Pattern    Node
+	Parameters []Parameter
+}
+
+func (b Basic) ToParseTree() Q {
+	var nodes []Node
+	for _, n := range b.Parameters {
+		nodes = append(nodes, Node(n))
+	}
+	if b.Pattern == nil {
+		return nodes
+	}
+	nodes = append(nodes, b.Pattern)
+	if hoisted, err := Hoist(nodes); err == nil {
+		return hoisted
+	}
+	return nodes
+}
+
+// MapPattern returns a copy of a basic query with updated pattern.
+func (b Basic) MapPattern(pattern Node) Basic {
+	return Basic{Parameters: b.Parameters, Pattern: pattern}
+}
+
+// MapParameters returns a copy of a basic query with updated parameters.
+func (b Basic) MapParameters(parameters []Parameter) Basic {
+	return Basic{Parameters: parameters, Pattern: b.Pattern}
+}
+
+// AddCount adds a count parameter to a basic query. Behavior of AddCount on a
+// query that already has a count parameter is undefined.
+func (b Basic) AddCount(count int) Basic {
+	return b.MapParameters(append(b.Parameters, Parameter{
+		Field: "count",
+		Value: strconv.FormatInt(int64(count), 10),
+	}))
+}
+
+// GetCount returns the string value of the "count:" field. Returns empty string if none.
+func (b Basic) GetCount() string {
+	var countStr string
+	VisitField(ToNodes(b.Parameters), "count", func(value string, _ bool, _ Annotation) {
+		countStr = value
+	})
+	return countStr
+}
+
+// MapCount returns a copy of a basic query with a count parameter set.
+func (b Basic) MapCount(count int) Basic {
+	parameters := MapParameter(ToNodes(b.Parameters), func(field, value string, negated bool, annotation Annotation) Node {
+		if field == "count" {
+			value = strconv.FormatInt(int64(count), 10)
+		}
+		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
+	})
+	return Basic{Parameters: toParameters(parameters), Pattern: b.Pattern}
+}
+
+func (b Basic) String() string {
+	return fmt.Sprintf("%s %s", Q(ToNodes(b.Parameters)).String(), Q([]Node{b.Pattern}).String())
 }
 
 // A query is a tree of Nodes. We choose the type name Q so that external uses like query.Q do not stutter.

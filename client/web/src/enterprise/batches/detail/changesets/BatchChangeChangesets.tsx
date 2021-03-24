@@ -27,6 +27,7 @@ import { BatchChangeChangesetsHeader } from './BatchChangeChangesetsHeader'
 import { ChangesetFilters, ChangesetFilterRow } from './ChangesetFilterRow'
 import { EmptyChangesetListElement } from './EmptyChangesetListElement'
 import { EmptyChangesetSearchElement } from './EmptyChangesetSearchElement'
+import { EmptyArchivedChangesetListElement } from './EmptyArchivedChangesetListElement'
 
 interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
     batchChangeID: Scalars['ID']
@@ -35,6 +36,7 @@ interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, Extens
     location: H.Location
 
     hideFilters?: boolean
+    onlyArchived?: boolean
 
     /** For testing only. */
     queryChangesets?: typeof _queryChangesets
@@ -60,6 +62,7 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
     queryChangesets = _queryChangesets,
     queryExternalChangesetWithFileDiffs,
     expandByDefault,
+    onlyArchived,
 }) => {
     const [changesetFilters, setChangesetFilters] = useState<ChangesetFilters>({
         checkState: null,
@@ -78,6 +81,7 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                 batchChange: batchChangeID,
                 onlyPublishedByThisBatchChange: null,
                 search: changesetFilters.search,
+                onlyArchived: !!onlyArchived,
             }).pipe(repeatWhen(notifier => notifier.pipe(delay(5000)))),
         [
             batchChangeID,
@@ -86,6 +90,7 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
             changesetFilters.checkState,
             changesetFilters.search,
             queryChangesets,
+            onlyArchived,
         ]
     )
 
@@ -176,6 +181,8 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                     emptyElement={
                         filtersSelected(changesetFilters) ? (
                             <EmptyChangesetSearchElement />
+                        ) : onlyArchived ? (
+                            <EmptyArchivedChangesetListElement />
                         ) : (
                             <EmptyChangesetListElement />
                         )

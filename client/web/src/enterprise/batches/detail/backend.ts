@@ -36,6 +36,7 @@ const changesetsStatsFragment = gql`
         merged
         open
         unpublished
+        archived
     }
 `
 
@@ -202,6 +203,7 @@ export const queryChangesets = ({
     checkState,
     onlyPublishedByThisBatchChange,
     search,
+    onlyArchived,
 }: BatchChangeChangesetsVariables): Observable<
     (BatchChangeChangesetsResult['node'] & { __typename: 'BatchChange' })['changesets']
 > =>
@@ -216,6 +218,7 @@ export const queryChangesets = ({
                 $checkState: ChangesetCheckState
                 $onlyPublishedByThisBatchChange: Boolean
                 $search: String
+                $onlyArchived: Boolean
             ) {
                 node(id: $batchChange) {
                     __typename
@@ -228,6 +231,7 @@ export const queryChangesets = ({
                             checkState: $checkState
                             onlyPublishedByThisBatchChange: $onlyPublishedByThisBatchChange
                             search: $search
+                            onlyArchived: $onlyArchived
                         ) {
                             totalCount
                             pageInfo {
@@ -253,6 +257,7 @@ export const queryChangesets = ({
             checkState,
             onlyPublishedByThisBatchChange,
             search,
+            onlyArchived,
         }
     ).pipe(
         map(dataOrThrowErrors),

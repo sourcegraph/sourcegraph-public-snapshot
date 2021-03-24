@@ -434,7 +434,7 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 		if count := r.Query.Count(); count != nil {
 			stableResultCount = int32(*count)
 			if stableResultCount > maxSearchResultsPerPaginatedRequest {
-				return alertForQuery(r.db, r.rawQuery(), fmt.Errorf("Stable searches are limited to at max count:%d results. Consider removing 'stable:', narrowing the search with 'repo:', or using the paginated search API.", maxSearchResultsPerPaginatedRequest)).wrap(), nil
+				return alertForQuery(r.rawQuery(), fmt.Errorf("Stable searches are limited to at max count:%d results. Consider removing 'stable:', narrowing the search with 'repo:', or using the paginated search API.", maxSearchResultsPerPaginatedRequest)).wrap(r.db), nil
 			}
 		}
 
@@ -520,7 +520,7 @@ func intersectMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 	rightFileMatches := make(map[string]*FileMatchResolver)
 	for _, r := range right.SearchResults {
 		if fileMatch, ok := r.ToFileMatch(); ok {
-			rightFileMatches[fileMatch.URI] = fileMatch
+			rightFileMatches[fileMatch.URL()] = fileMatch
 		}
 	}
 
@@ -531,7 +531,7 @@ func intersectMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 			continue
 		}
 
-		rightFileMatch := rightFileMatches[leftFileMatch.URI]
+		rightFileMatch := rightFileMatches[leftFileMatch.URL()]
 		if rightFileMatch == nil {
 			continue
 		}
@@ -556,10 +556,10 @@ func intersect(left, right *SearchResultsResolver) *SearchResultsResolver {
 // evaluateAndStream is a wrapper around evaluateAnd which temporarily suspends
 // streaming and waits for evaluateAnd to return before streaming results back on
 // r.resultChannel.
-func (r *searchResolver) evaluateAndStream(ctx context.Context, scopeParameters []query.Node, operands []query.Node) (*SearchResultsResolver, error) {
+func (r *searchResolver) evaluateAndStream(ctx context.Context, q query.Basic) (*SearchResultsResolver, error) {
 	// Streaming disabled.
 	if r.stream == nil {
-		return r.evaluateAnd(ctx, scopeParameters, operands)
+		return r.evaluateAnd(ctx, q)
 	}
 	// For streaming search we rely on batch evaluation of
 	// results. Implementing true streaming on AND expressions will require
@@ -567,7 +567,7 @@ func (r *searchResolver) evaluateAndStream(ctx context.Context, scopeParameters 
 	r2 := *r
 	r2.stream = nil
 
-	result, err := r2.evaluateAnd(ctx, scopeParameters, operands)
+	result, err := r2.evaluateAnd(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -591,12 +591,12 @@ func (r *searchResolver) evaluateAndStream(ctx context.Context, scopeParameters 
 // and likely yields fewer than N results). If the intersection does not yield N
 // results, and is not exhaustive for every expression, we rerun the search by
 // doubling count again.
-func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []query.Node, operands []query.Node) (*SearchResultsResolver, error) {
+func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*SearchResultsResolver, error) {
 	start := time.Now()
 
-	if len(operands) == 0 {
-		return &SearchResultsResolver{}, nil
-	}
+	// Invariant: this function is only reachable from callers that
+	// guarantee a root node with one or more operands.
+	operands := q.Pattern.(query.Operator).Operands
 
 	var (
 		err        error
@@ -621,19 +621,10 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 	}
 	defer cancel()
 
-	// Set count: if not specified.
-	var countStr string
-	query.VisitField(scopeParameters, "count", func(value string, _ bool, _ query.Annotation) {
-		countStr = value
-	})
-	if countStr != "" {
-		// Override "want" if count is specified.
-		want, _ = strconv.Atoi(countStr) // Invariant: count is validated.
+	if count := q.GetCount(); count != "" {
+		want, _ = strconv.Atoi(count) // Invariant: count is validated.
 	} else {
-		scopeParameters = append(scopeParameters, query.Parameter{
-			Field: "count",
-			Value: strconv.FormatInt(int64(want), 10),
-		})
+		q = q.AddCount(want)
 	}
 
 	// tryCount starts small but grows exponentially with the number of operands. It is capped at maxTryCount.
@@ -644,14 +635,8 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 
 	var exhausted bool
 	for {
-		scopeParameters = query.MapParameter(scopeParameters, func(field, value string, negated bool, annotation query.Annotation) query.Node {
-			if field == "count" {
-				value = strconv.FormatInt(int64(tryCount), 10)
-			}
-			return query.Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
-		})
-
-		result, err = r.evaluatePatternExpression(ctx, scopeParameters, operands[0])
+		q = q.MapCount(tryCount)
+		result, err = r.evaluatePatternExpression(ctx, q.MapPattern(operands[0]))
 		if err != nil {
 			return nil, err
 		}
@@ -669,11 +654,11 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 			case <-ctx.Done():
 				usedTime := time.Since(start)
 				suggestTime := longer(2, usedTime)
-				return alertForTimeout(r.db, usedTime, suggestTime, r).wrap(), nil
+				return alertForTimeout(usedTime, suggestTime, r).wrap(r.db), nil
 			default:
 			}
 
-			termResult, err = r.evaluatePatternExpression(ctx, scopeParameters, term)
+			termResult, err = r.evaluatePatternExpression(ctx, q.MapPattern(term))
 			if err != nil {
 				return nil, err
 			}
@@ -698,7 +683,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 		tryCount *= 2
 		if tryCount > maxTryCount {
 			// We've capped out what we're willing to do, throw alert.
-			return alertForCappedAndExpression(r.db).wrap(), nil
+			return alertForCappedAndExpression().wrap(r.db), nil
 		}
 	}
 	result.IsLimitHit = !exhausted
@@ -709,19 +694,19 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 // expressions that are ORed together by searching for each subexpression. If
 // the maximum number of results are reached after evaluating a subexpression,
 // we shortcircuit and return results immediately.
-func (r *searchResolver) evaluateOr(ctx context.Context, scopeParameters []query.Node, operands []query.Node) (*SearchResultsResolver, error) {
-	if len(operands) == 0 {
-		return &SearchResultsResolver{}, nil
-	}
+func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*SearchResultsResolver, error) {
+	// Invariant: this function is only reachable from callers that
+	// guarantee a root node with one or more operands.
+	operands := q.Pattern.(query.Operator).Operands
 
 	wantCount := defaultMaxSearchResults
-	if count := query.Q(scopeParameters).Count(); count != nil {
-		wantCount = *count
+	if count := q.GetCount(); count != "" {
+		wantCount, _ = strconv.Atoi(count) // Invariant: count is already validated
 	}
 
 	result := &SearchResultsResolver{}
 	for _, term := range operands {
-		new, err := r.evaluatePatternExpression(ctx, scopeParameters, term)
+		new, err := r.evaluatePatternExpression(ctx, q.MapPattern(term))
 		if err != nil {
 			return nil, err
 		}
@@ -751,8 +736,8 @@ func (r *searchResolver) setQuery(q []query.Node) {
 }
 
 // evaluatePatternExpression evaluates a search pattern containing and/or expressions.
-func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopeParameters []query.Node, node query.Node) (*SearchResultsResolver, error) {
-	switch term := node.(type) {
+func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.Basic) (*SearchResultsResolver, error) {
+	switch term := q.Pattern.(type) {
 	case query.Operator:
 		if len(term.Operands) == 0 {
 			return &SearchResultsResolver{}, nil
@@ -760,35 +745,31 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopePar
 
 		switch term.Kind {
 		case query.And:
-			return r.evaluateAndStream(ctx, scopeParameters, term.Operands)
+			return r.evaluateAndStream(ctx, q)
 		case query.Or:
-			return r.evaluateOr(ctx, scopeParameters, term.Operands)
+			return r.evaluateOr(ctx, q)
 		case query.Concat:
-			r.setQuery(append(scopeParameters, term))
+			r.setQuery(q.ToParseTree())
 			return r.evaluateLeaf(ctx)
 		}
 	case query.Pattern:
-		r.setQuery(append(scopeParameters, term))
+		r.setQuery(q.ToParseTree())
 		return r.evaluateLeaf(ctx)
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
 		return &SearchResultsResolver{}, nil
 	}
 	// Unreachable.
-	return nil, fmt.Errorf("unrecognized type %T in evaluatePatternExpression", node)
+	return nil, fmt.Errorf("unrecognized type %T in evaluatePatternExpression", q.Pattern)
 }
 
 // evaluate evaluates all expressions of a search query.
-func (r *searchResolver) evaluate(ctx context.Context, q query.Q) (*SearchResultsResolver, error) {
-	scopeParameters, pattern, err := query.PartitionSearchPattern(q)
-	if err != nil {
-		return alertForQuery(r.db, "", err).wrap(), nil
-	}
-	if pattern == nil {
-		r.setQuery(scopeParameters)
+func (r *searchResolver) evaluate(ctx context.Context, q query.Basic) (*SearchResultsResolver, error) {
+	if q.Pattern == nil {
+		r.setQuery(query.ToNodes(q.Parameters))
 		return r.evaluateLeaf(ctx)
 	}
-	return r.evaluatePatternExpression(ctx, scopeParameters, pattern)
+	return r.evaluatePatternExpression(ctx, q)
 }
 
 // invalidateRepoCache returns whether resolved repos should be invalidated when
@@ -875,7 +856,7 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 		ev.AddField("source", string(trace.RequestSource(ctx)))
 		ev.AddField("status", status)
 		ev.AddField("alert_type", alertType)
-		ev.AddField("~_ms", elapsed.Milliseconds())
+		ev.AddField("duration_ms", elapsed.Milliseconds())
 		if srr != nil {
 			ev.AddField("result_size", len(srr.SearchResults))
 		}
@@ -917,7 +898,11 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 			defer func() { r.stream = orig }()
 
 			r.invalidateRepoCache = true
-			return r.resultsRecursive(ctx, pred.Plan(q))
+			plan, err := pred.Plan(q)
+			if err != nil {
+				return nil, err
+			}
+			return r.resultsRecursive(ctx, plan)
 		})
 		if err != nil && errors.Is(err, ErrPredicateNoResults) {
 			continue
@@ -999,17 +984,17 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 	if shouldShowAlert {
 		usedTime := time.Since(start)
 		suggestTime := longer(2, usedTime)
-		return alertForTimeout(r.db, usedTime, suggestTime, r).wrap(), nil
+		return alertForTimeout(usedTime, suggestTime, r).wrap(r.db), nil
 	}
 	return rr, err
 }
 
 // substitutePredicates replaces all the predicates in a query with their expanded form. The predicates
 // are expanded using the doExpand function.
-func substitutePredicates(q query.Q, evaluate func(query.Predicate) (*SearchResultsResolver, error)) (query.Plan, error) {
+func substitutePredicates(q query.Basic, evaluate func(query.Predicate) (*SearchResultsResolver, error)) (query.Plan, error) {
 	var topErr error
 	success := false
-	newQ := query.MapParameter(q, func(field, value string, neg bool, ann query.Annotation) query.Node {
+	newQ := query.MapParameter(q.ToParseTree(), func(field, value string, neg bool, ann query.Annotation) query.Node {
 		orig := query.Parameter{
 			Field:      field,
 			Value:      value,
@@ -1082,15 +1067,19 @@ func substitutePredicates(q query.Q, evaluate func(query.Predicate) (*SearchResu
 	if topErr != nil || !success {
 		return nil, topErr
 	}
-	return query.ToPlan(query.Dnf(newQ)), topErr
+	plan, err := query.ToPlan(query.Dnf(newQ))
+	if err != nil {
+		return nil, err
+	}
+	return plan, nil
 }
 
 var ErrPredicateNoResults = errors.New("no results returned for predicate")
 
 // longer returns a suggested longer time to wait if the given duration wasn't long enough.
-func longer(N int, dt time.Duration) time.Duration {
+func longer(n int, dt time.Duration) time.Duration {
 	dt2 := func() time.Duration {
-		Ndt := time.Duration(N) * dt
+		Ndt := time.Duration(n) * dt
 		dceil := func(x float64) time.Duration {
 			return time.Duration(math.Ceil(x))
 		}
@@ -1474,7 +1463,7 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 	if err != nil {
 		if errors.Is(err, authz.ErrStalePermissions{}) {
 			log15.Debug("searchResolver.determineRepos", "err", err)
-			alert := alertForStalePermissions(r.db)
+			alert := alertForStalePermissions()
 			return searchrepos.Resolved{}, &SearchResultsResolver{db: r.db, alert: alert}, nil
 		}
 		e := git.BadCommitError{}
@@ -1542,7 +1531,6 @@ func newAggregator(db dbutil.DB, stream Sender, inputs *SearchInputs) *aggregato
 		db:           db,
 		parentStream: stream,
 		alert: alertObserver{
-			db:     db,
 			Inputs: inputs,
 		},
 	}
@@ -2010,7 +1998,7 @@ func compareDates(left, right *time.Time) bool {
 	if left == nil || right == nil {
 		return left != nil // Place the value that is defined first.
 	}
-	return (*left).After(*right)
+	return left.After(*right)
 }
 
 // compareSearchResults sorts repository matches, file matches, and commits.
@@ -2055,8 +2043,8 @@ func compareSearchResults(left, right SearchResultResolver, exactFilePatterns ma
 	return arepo < brepo
 }
 
-func selectResults(results []SearchResultResolver, q query.Q) []SearchResultResolver {
-	v, _ := q.StringValue(query.FieldSelect)
+func selectResults(results []SearchResultResolver, q query.Basic) []SearchResultResolver {
+	v, _ := q.ToParseTree().StringValue(query.FieldSelect)
 	if v == "" {
 		return results
 	}

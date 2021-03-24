@@ -22,8 +22,6 @@ import (
 )
 
 func TestSearchPatternForSuggestion(t *testing.T) {
-	db := new(dbtesting.MockDB)
-
 	cases := []struct {
 		Name  string
 		Alert searchAlert
@@ -32,7 +30,6 @@ func TestSearchPatternForSuggestion(t *testing.T) {
 		{
 			Name: "with_regex_suggestion",
 			Alert: searchAlert{
-				db:          db,
 				title:       "An alert for regex",
 				description: "An alert for regex",
 				proposedQueries: []*searchQueryDescription{
@@ -48,7 +45,6 @@ func TestSearchPatternForSuggestion(t *testing.T) {
 		{
 			Name: "with_structural_suggestion",
 			Alert: searchAlert{
-				db:          db,
 				title:       "An alert for structural",
 				description: "An alert for structural",
 				proposedQueries: []*searchQueryDescription{
@@ -162,8 +158,6 @@ func TestAddQueryRegexpField(t *testing.T) {
 }
 
 func TestAlertForDiffCommitSearchLimits(t *testing.T) {
-	db := new(dbtesting.MockDB)
-
 	cases := []struct {
 		name                 string
 		multiErr             *multierror.Error
@@ -187,7 +181,7 @@ func TestAlertForDiffCommitSearchLimits(t *testing.T) {
 	}
 
 	for _, test := range cases {
-		alert := alertForError(db, test.multiErr, &SearchInputs{})
+		alert := alertForError(test.multiErr, &SearchInputs{})
 		haveAlertDescription := alert.description
 		if diff := cmp.Diff(test.wantAlertDescription, haveAlertDescription); diff != "" {
 			t.Fatalf("test %s, mismatched alert (-want, +got):\n%s", test.name, diff)
@@ -196,8 +190,6 @@ func TestAlertForDiffCommitSearchLimits(t *testing.T) {
 }
 
 func TestErrorToAlertStructuralSearch(t *testing.T) {
-	db := new(dbtesting.MockDB)
-
 	cases := []struct {
 		name           string
 		errors         []error
@@ -223,7 +215,7 @@ func TestErrorToAlertStructuralSearch(t *testing.T) {
 			Errors:      test.errors,
 			ErrorFormat: multierror.ListFormatFunc,
 		}
-		haveAlert := alertForError(db, multiErr, &SearchInputs{})
+		haveAlert := alertForError(multiErr, &SearchInputs{})
 
 		if haveAlert != nil && haveAlert.title != test.wantAlertTitle {
 			t.Fatalf("test %s, have alert: %q, want: %q", test.name, haveAlert.title, test.wantAlertTitle)
@@ -282,7 +274,6 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 			repoRevs:      0,
 			query:         "foo",
 			wantAlert: &searchAlert{
-				db:              db,
 				prometheusType:  "over_repo_limit",
 				title:           "Too many matching repositories",
 				proposedQueries: nil,
@@ -295,7 +286,6 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 			repoRevs:      1,
 			query:         "foo",
 			wantAlert: &searchAlert{
-				db:             db,
 				prometheusType: "over_repo_limit",
 				title:          "Too many matching repositories",
 				proposedQueries: []*searchQueryDescription{
@@ -315,7 +305,6 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 			repoRevs:      1,
 			query:         "foo",
 			wantAlert: &searchAlert{
-				db:              db,
 				prometheusType:  "over_repo_limit",
 				title:           "Too many matching repositories",
 				proposedQueries: nil,
@@ -328,7 +317,6 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 			repoRevs:      1,
 			query:         "a or (b and c)",
 			wantAlert: &searchAlert{
-				db:              db,
 				prometheusType:  "over_repo_limit",
 				title:           "Too many matching repositories",
 				proposedQueries: nil,
@@ -341,7 +329,6 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 			repoRevs:      1,
 			query:         "foo",
 			wantAlert: &searchAlert{
-				db:             db,
 				prometheusType: "over_repo_limit",
 				title:          "Too many matching repositories",
 				proposedQueries: []*searchQueryDescription{
@@ -426,7 +413,6 @@ func TestAlertForNoResolvedReposWithNonGlobalSearchContext(t *testing.T) {
 
 	searchQuery := "context:@user repo:r1 foo"
 	wantAlert := &searchAlert{
-		db:             db,
 		prometheusType: "no_resolved_repos__context_none_in_common",
 		title:          "No repositories found for your query within the context @user",
 		proposedQueries: []*searchQueryDescription{{

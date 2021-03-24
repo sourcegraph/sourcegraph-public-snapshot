@@ -2,7 +2,7 @@
 //
 // Development
 //
-// To develop, simply update the template files in cmd/frontend/internal/app/templates/ui/...
+// To develop, simply update the template files in cmd/frontend/internal/app/ui/...
 // and reload the page (the templates will be automatically reloaded).
 //
 // Testing the error page

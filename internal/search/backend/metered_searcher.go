@@ -116,6 +116,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 	mu := sync.Mutex{}
 	statsAgg := &zoekt.Stats{}
 	nFilesMatches := 0
+	nEvents := 0
 
 	err = m.Streamer.StreamSearch(ctx, q, opts, ZoektStreamFunc(func(zsr *zoekt.SearchResult) {
 		first.Do(func() {
@@ -131,6 +132,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 			mu.Lock()
 			statsAgg.Add(zsr.Stats)
 			nFilesMatches += len(zsr.Files)
+			nEvents += 1
 			mu.Unlock()
 
 			c.Send(zsr)
@@ -139,6 +141,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 
 	tr.LogFields(
 		log.Int("filematches", nFilesMatches),
+		log.Int("events", nEvents),
 
 		// Zoekt stats.
 		log.Int64("stats.content_bytes_loaded", statsAgg.ContentBytesLoaded),
