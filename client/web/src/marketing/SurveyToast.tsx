@@ -1,7 +1,7 @@
 import EmoticonIcon from 'mdi-react/EmoticonIcon'
 import React, { useState } from 'react'
 import { useHistory } from 'react-router'
-import cln from 'classnames'
+import classNames from 'classnames'
 import { eventLogger } from '../tracking/eventLogger'
 import { Toast } from './Toast'
 import { daysActiveCount } from './util'
@@ -39,7 +39,7 @@ export const SurveyCTA: React.FunctionComponent<SurveyCTAProps> = props => {
     }
 
     return (
-        <div aria-label="Survey score radio toggle button group" className={props.className} onBlur={handleBlur}>
+        <fieldset aria-label="Survey score radio toggle button group" className={props.className} onBlur={handleBlur}>
             {range(0, 11).map(score => {
                 const pressed = score === props.score
                 const focused = score === focusedIndex
@@ -47,7 +47,7 @@ export const SurveyCTA: React.FunctionComponent<SurveyCTAProps> = props => {
                 return (
                     <label
                         key={score}
-                        className={cln('btn btn-primary toast__rating-btn', { active: pressed, focus: focused })}
+                        className={classNames('btn btn-primary toast__rating-btn', { active: pressed, focus: focused })}
                     >
                         <input
                             type="radio"
@@ -62,7 +62,7 @@ export const SurveyCTA: React.FunctionComponent<SurveyCTAProps> = props => {
                     </label>
                 )
             })}
-        </div>
+        </fieldset>
     )
 }
 
