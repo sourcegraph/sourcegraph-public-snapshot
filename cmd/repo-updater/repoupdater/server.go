@@ -683,23 +683,20 @@ func newRepoInfo(r *types.Repo) (*protocol.RepoInfo, error) {
 			Commit: pathAppend(root, "/commits/{commit}"),
 		}
 	case extsvc.TypeBitbucketCloud:
-		{
-			repo := r.Metadata.(*bitbucketcloud.Repo)
-			href := repo.Links.HTML.Href
+		repo := r.Metadata.(*bitbucketcloud.Repo)
+		href := repo.Links.HTML.Href
 
-			if href == "" {
-				break
-			}
+		if href == "" {
+			break
+		}
 
-			basePath := pathAppend(href, "/src/{rev}/{path}")
+		basePath := pathAppend(href, "/src/{rev}/{path}")
 
-			info.Links = &protocol.RepoLinks{
-				Root:   href,
-				Tree:   basePath,
-				Blob:   basePath,
-				Commit: pathAppend(href, "/commits/{commit}"),
-			}
-
+		info.Links = &protocol.RepoLinks{
+			Root:   href,
+			Tree:   basePath,
+			Blob:   basePath,
+			Commit: pathAppend(href, "/commits/{commit}"),
 		}
 	case extsvc.TypeAWSCodeCommit:
 		repo := r.Metadata.(*awscodecommit.Repository)
