@@ -24,6 +24,7 @@
             border: 1px solid var(--border-color);
 
             &:hover:not(:disabled) {
+                // stylelint-disable-next-line declaration-property-unit-whitelist
                 padding: calc(1rem - 1px);
                 border: 2px solid var(--color-border-active);
             }
