@@ -328,13 +328,11 @@ func logPing(r *http.Request, pr *pingRequest, hasUpdate bool) {
 	if err != nil {
 		errorCounter.Inc()
 		log15.Warn("logPing.Marshal: failed to Marshal payload", "error", err)
-	} else {
-		if pubsub.Enabled() {
-			err := pubsub.Publish(pubSubPingsTopicID, string(message))
-			if err != nil {
-				errorCounter.Inc()
-				log15.Warn("pubsub.Publish: failed to Publish", "message", message, "error", err)
-			}
+	} else if pubsub.Enabled() {
+		err := pubsub.Publish(pubSubPingsTopicID, string(message))
+		if err != nil {
+			errorCounter.Inc()
+			log15.Warn("pubsub.Publish: failed to Publish", "message", message, "error", err)
 		}
 	}
 

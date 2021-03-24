@@ -22,7 +22,7 @@ type Predicate interface {
 
 	// Plan generates a plan of (possibly multiple) queries to execute the
 	// behavior of a predicate in a query Q.
-	Plan(parent Q) Plan
+	Plan(parent Basic) (Plan, error)
 }
 
 var DefaultPredicateRegistry = predicateRegistry{
@@ -123,7 +123,7 @@ func (f *RepoContainsPredicate) ParseParams(params string) error {
 
 func (f *RepoContainsPredicate) Field() string { return FieldRepo }
 func (f *RepoContainsPredicate) Name() string  { return "contains" }
-func (f *RepoContainsPredicate) Plan(parent Q) Plan {
+func (f *RepoContainsPredicate) Plan(parent Basic) (Plan, error) {
 	nodes := make([]Node, 0, 3)
 	nodes = append(nodes, Parameter{
 		Field: FieldSelect,
@@ -151,9 +151,9 @@ func (f *RepoContainsPredicate) Plan(parent Q) Plan {
 }
 
 // nonPredicateRepos returns the repo nodes in a query that aren't predicates
-func nonPredicateRepos(q Q) []Node {
+func nonPredicateRepos(q Basic) []Node {
 	var res []Node
-	VisitField(q, FieldRepo, func(value string, negated bool, ann Annotation) {
+	VisitField(q.ToParseTree(), FieldRepo, func(value string, negated bool, ann Annotation) {
 		if _, _, err := ParseAsPredicate(value); err == nil {
 			// Skip predicates
 			return
