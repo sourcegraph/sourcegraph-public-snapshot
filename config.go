@@ -11,4 +11,5 @@ type QueryGroupConfig struct {
 
 type QueryConfig struct {
 	Query string
+	Name  string
 }

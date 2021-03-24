@@ -49,7 +49,7 @@ func (s *client) search(ctx context.Context, qc QueryConfig) (*result, *metrics,
 		return nil, nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", s.url(), ioutil.NopCloser(&body))
+	req, err := http.NewRequestWithContext(ctx, "POST", s.url(qc.Name), ioutil.NopCloser(&body))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -84,6 +84,9 @@ func (s *client) search(ctx context.Context, qc QueryConfig) (*result, *metrics,
 	return &respDec.Data, m, nil
 }
 
-func (s *client) url() string {
+func (s *client) url(queryName string) string {
+	if queryName != "" {
+		return s.endpoint + "/.api/graphql?" + queryName
+	}
 	return s.endpoint + "/.api/graphql"
 }
