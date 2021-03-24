@@ -81,7 +81,33 @@ func NewRaw(dataSource string) (*sql.DB, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "DB not available")
 	}
+
+	if err := checkVersion(db); err != nil {
+		_ = db.Close()
+		return nil, err
+	}
+
 	return db, nil
+}
+
+var versionPattern = lazyregexp.New(`^PostgreSQL (\d+)\.`)
+
+func checkVersion(db *sql.DB) error {
+	var version string
+	if err := db.QueryRow("SELECT version();").Scan(&version); err != nil {
+		return errors.Wrap(err, "failed version check")
+	}
+
+	match := versionPattern.FindStringSubmatch(version)
+	if len(match) == 0 {
+		return fmt.Errorf("unexpected version string: %q", version)
+	}
+
+	if majorVersion, _ := strconv.Atoi(match[1]); majorVersion < 12 {
+		return fmt.Errorf("Sourcegraph requires PostgreSQL 12+")
+	}
+
+	return nil
 }
 
 var startupTimeout = func() time.Duration {
