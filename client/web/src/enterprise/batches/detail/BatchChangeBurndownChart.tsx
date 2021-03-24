@@ -169,6 +169,12 @@ export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
                 </ComposedChart>
             </ResponsiveContainer>
             <div className="flex-grow-0 btn-group-vertical ml-2">
+                {archiveEnabled && (
+                    <>
+                        <IncludeArchivedToggle includeArchived={includeArchived} onToggle={toggleIncludeArchived} />
+                        <hr />
+                    </>
+                )}
                 {Object.entries(states).map(([key, state]) => (
                     <LegendLabel
                         key={key}
@@ -179,12 +185,6 @@ export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
                         setHiddenStates={setHiddenStates}
                     />
                 ))}
-                {archiveEnabled && (
-                    <>
-                        <hr />
-                        <IncludeArchivedToggle includeArchived={includeArchived} onToggle={toggleIncludeArchived} />
-                    </>
-                )}
             </div>
         </div>
     )
@@ -232,17 +232,17 @@ const IncludeArchivedToggle: React.FunctionComponent<{
     includeArchived: boolean
     onToggle: () => void
 }> = ({ includeArchived, onToggle }) => (
-    <div className="d-flex align-items-center text-nowrap p-2">
+    <div className="d-flex text-right align-items-center text-nowrap p-2">
         <ArchiveIcon className="text-muted batch-change-burndown-chart-legend__archive-icon mr-2 p-0" />
+        <label htmlFor="include-archived" className="mb-0">
+            Include archived
+        </label>
         <Toggle
             id="include-archived"
             value={includeArchived}
             onToggle={onToggle}
             title="Include archived changesets"
-            className="mr-2"
+            className="ml-2"
         />
-        <label htmlFor="include-archived" className="mb-0">
-            Include archived
-        </label>
     </div>
 )
