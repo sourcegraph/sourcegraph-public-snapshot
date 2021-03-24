@@ -9,8 +9,8 @@ import { ErrorAlert } from '../../components/alerts'
 import { ViewContent, ViewContentProps } from '../../views/ViewContent'
 import { Layout as ReactGridLayout, Layouts as ReactGridLayouts, Responsive, WidthProvider } from 'react-grid-layout'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
-import { ViewProviderResult, ViewProviderSourceType } from '../../../../shared/src/api/extension/extensionHostApi'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
+import { ViewInsightProviderResult, ViewInsightProviderSourceType } from '../../insights/backend'
 
 // TODO use a method to get width that also triggers when file explorer is closed
 // (WidthProvider only listens to window resize events)
@@ -19,7 +19,7 @@ const ResponsiveGridLayout = WidthProvider(Responsive)
 export interface ViewGridProps
     extends Omit<ViewContentProps, 'viewContent' | 'viewID' | 'containerClassName'>,
         TelemetryProps {
-    views: ViewProviderResult[]
+    views: ViewInsightProviderResult[]
     className?: string
 }
 
@@ -33,7 +33,7 @@ const defaultItemsPerRow: Record<BreakpointName, number> = { xs: 1, sm: 2, md: 2
 const minWidths: Record<BreakpointName, number> = { xs: 1, sm: 2, md: 3, lg: 3 }
 const defaultHeight = 3
 
-const viewsToReactGridLayouts = (views: ViewProviderResult[]): ReactGridLayouts => {
+const viewsToReactGridLayouts = (views: ViewInsightProviderResult[]): ReactGridLayouts => {
     const reactGridLayouts = Object.fromEntries(
         breakpointNames.map(
             breakpointName =>
@@ -78,11 +78,11 @@ const InsightDescription: React.FunctionComponent<InterInsightDescriptionProps> 
     )
 }
 
-const getInsightViewIcon = (source: ViewProviderSourceType): MdiReactIconComponentType => {
+const getInsightViewIcon = (source: ViewInsightProviderSourceType): MdiReactIconComponentType => {
     switch (source) {
-        case ViewProviderSourceType.Backend:
+        case ViewInsightProviderSourceType.Backend:
             return DatabaseIcon
-        case ViewProviderSourceType.Extension:
+        case ViewInsightProviderSourceType.Extension:
             return PuzzleIcon
     }
 }
