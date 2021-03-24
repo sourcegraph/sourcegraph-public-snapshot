@@ -22,7 +22,7 @@ If you need to encrypt some data, but we don't have a dedicated key for that dat
 If you want to implement a different encryption backend, you'll need to add a new Key implementation, in order to do this you should:
 
 - Create your implementation in a subpackage of encryption, eg `encryption/somebackend`.
-- Add a new `SomethingEncryptionKey` schema in `schema/site.schema.json`, with the `type` field set to the name of your implementation
+- Add a new `SomethingEncryptionKey` schema in `schema/site.schema.json`, with the `type` field set to the name of your implementation.
 - Add the name of your key to the `type` enum on the `EncryptionKey` schema definition.
 - Add a reference to the new schema to the `oneOf` array on the `EncryptionKey`. This means we generate a `schema.EncryptionKeys` type with all of the key configs as fields, this is done by the `!go: {"taggedUnionType": true}` expression on `EncryptionKey`.
 - Then add a case to the switch statement in `keyring.NewKey()` to initialise your key if the config is provided.
