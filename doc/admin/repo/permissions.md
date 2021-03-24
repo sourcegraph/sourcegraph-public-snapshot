@@ -82,7 +82,7 @@ Then, [add or edit a GitLab connection](../external_service/gitlab.md#repository
 
 `$AUTH_PROVIDER_ID` and `$AUTH_PROVIDER_TYPE` identify the authentication provider to use and should
 match the fields specified in the authentication provider config
-(`auth.providers`). 
+(`auth.providers`). The authProviderID can be found in the `configID` field of the auth provider config.
 
 `$AUTH_PROVIDER_GITLAB_ID` should match the `identities.provider` returned by
 [the admin GitLab Users API endpoint](https://docs.gitlab.com/ee/api/users.html#for-admins).
