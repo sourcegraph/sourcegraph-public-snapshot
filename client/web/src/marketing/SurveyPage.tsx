@@ -59,7 +59,7 @@ class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
                 <label className="survey-form__label">
                     How likely is it that you would recommend Sourcegraph to a friend?
                 </label>
-                <SurveyCTA className="survey-form__scores" onClick={this.onScoreChange} score={this.props.score} />
+                <SurveyCTA className="survey-form__scores" onChange={this.onScoreChange} score={this.props.score} />
                 {!this.props.authenticatedUser && (
                     <div className="form-group">
                         <input
