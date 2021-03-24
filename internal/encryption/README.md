@@ -37,7 +37,7 @@ The `encryption/keyring` package provides a way to configure encryption keys & r
 
 ### Composition & extension
 
-The `encryption.Key` interface was built to be simple, and intended to be extended through composition & embedding. For example we plan to enable key migrations using a Key implementation that wraps two other Keys, decrypting with one & encrypting with the other. You could also create an encryption.Key wrapper that implements its own versioning system, encrypting with a 'primary' Key, but being able to decrypt data with the previous keys.
+The `encryption.Key` interface was built to be simple, and intended to be extended through composition & embedding. For example key migrations using a Key implementation that wraps two other Keys, decrypting with one & encrypting with the other. You could also create an encryption.Key wrapper that implements its own versioning system, encrypting with a 'primary' Key, but being able to decrypt data with the previous keys.
 
 ### Implementations
 
