@@ -105,9 +105,9 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
         if (location.search !== parameters.toString()) {
             history.replace({ ...location, search: parameters.toString() })
         }
-
         return [parseInt(count ?? '0', 10), archived ?? '']
-    }, [history, location])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [history])
 
     // Is loading.
     if (batchChange === undefined) {
