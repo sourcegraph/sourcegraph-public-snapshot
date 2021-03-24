@@ -381,7 +381,7 @@ func TestBitbucketServerSource_CloseChangeset(t *testing.T) {
 
 	for _, tc := range testCases {
 		tc := tc
-		tc.name = "BitbucketServerSource_CloseChangeset_" + strings.Replace(tc.name, " ", "_", -1)
+		tc.name = "BitbucketServerSource_CloseChangeset_" + strings.ReplaceAll(tc.name, " ", "_")
 
 		t.Run(tc.name, func(t *testing.T) {
 			cf, save := newClientFactory(t, tc.name)
@@ -450,7 +450,7 @@ func TestBitbucketServerSource_ReopenChangeset(t *testing.T) {
 
 	for _, tc := range testCases {
 		tc := tc
-		tc.name = "BitbucketServerSource_ReopenChangeset_" + strings.Replace(tc.name, " ", "_", -1)
+		tc.name = "BitbucketServerSource_ReopenChangeset_" + strings.ReplaceAll(tc.name, " ", "_")
 
 		t.Run(tc.name, func(t *testing.T) {
 			cf, save := newClientFactory(t, tc.name)
@@ -524,7 +524,7 @@ func TestBitbucketServerSource_UpdateChangeset(t *testing.T) {
 
 	for _, tc := range testCases {
 		tc := tc
-		tc.name = "BitbucketServerSource_UpdateChangeset_" + strings.Replace(tc.name, " ", "_", -1)
+		tc.name = "BitbucketServerSource_UpdateChangeset_" + strings.ReplaceAll(tc.name, " ", "_")
 
 		t.Run(tc.name, func(t *testing.T) {
 			cf, save := newClientFactory(t, tc.name)

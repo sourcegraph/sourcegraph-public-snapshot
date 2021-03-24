@@ -77,6 +77,8 @@ body,
 @import './api/ApiConsole';
 @import './extensions/ExtensionsArea';
 @import './extensions/extension/ExtensionArea';
+@import './extensions/components/StatusBar';
+@import './extensions/components/ActionItemsBar';
 @import './global/GlobalAlerts';
 @import './global/GlobalDebug';
 @import './global/Notices';
@@ -101,9 +103,8 @@ body,
 @import './repo/RepoContainer';
 @import './repo/FilePathBreadcrumbs.scss';
 @import './repo/settings/RepoSettingsArea';
-@import './repo/actions//InstallBrowserExtensionPopover.scss';
+@import './repo/actions/InstallBrowserExtensionPopover.scss';
 @import './repo/actions/InstallBrowserExtensionAlert.scss';
-@import './components/completion/CompletionWidgetDropdown';
 @import './components/CopyableText';
 @import './components/FilteredConnection';
 @import './components/SaveToolbar';
@@ -114,9 +115,6 @@ body,
 @import '../../branded/src/components/tooltip/Tooltip';
 @import './components/CtaBanner.scss';
 @import './user/settings/UserSettingsArea';
-@import './user/settings/emails/UserSettingsEmailsPage.scss';
-@import './user/settings/codeHosts/UserAddCodeHostsPage.scss';
-@import './user/settings/auth/UserSettingsSecurityPage.scss';
 @import './site-admin/SiteAdminAlert';
 @import './site/DockerForMacAlert';
 @import './user/UserAvatar';
@@ -141,9 +139,15 @@ body,
 @import '../../branded/src/components/LoaderInput';
 
 @import '../../shared/src/index';
+@import '../../wildcard/src/index';
 
 :root {
     // Skip Reach UI styles. See https://reacttraining.com/reach-ui/styling/.
     --reach-menu-button: 1;
     --reach-accordion: 1;
+    // Media breakpoints
+    --media-sm: 576px;
+    --media-md: 768px;
+    --media-lg: 992px;
+    --media-xl: 1200px;
 }

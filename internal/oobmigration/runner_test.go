@@ -7,29 +7,29 @@ import (
 	"testing"
 	"time"
 
-	"github.com/efritz/glock"
+	"github.com/derision-test/glock"
 )
 
 func TestRunner(t *testing.T) {
 	store := NewMockStoreIface()
-	tickClock := glock.NewMockClock()
-	refreshClock := glock.NewMockClock()
+	ticker := glock.NewMockTicker(time.Second)
+	refreshTicker := glock.NewMockTicker(time.Second * 30)
 
 	store.ListFunc.SetDefaultReturn([]Migration{
 		{ID: 1, Progress: 0.5},
 	}, nil)
 
-	runner := newRunner(store, time.Second*30, refreshClock)
+	runner := newRunner(store, refreshTicker)
 
 	migrator := NewMockMigrator()
 	migrator.ProgressFunc.SetDefaultReturn(0.5, nil)
 
-	if err := runner.Register(1, migrator, MigratorOptions{clock: tickClock}); err != nil {
+	if err := runner.Register(1, migrator, MigratorOptions{ticker: ticker}); err != nil {
 		t.Fatalf("unexpected error registering migrator: %s", err)
 	}
 
 	go runner.Start()
-	tickN(tickClock, 3)
+	tickN(ticker, 3)
 	runner.Stop()
 
 	if callCount := len(migrator.UpFunc.History()); callCount != 3 {
@@ -42,25 +42,25 @@ func TestRunner(t *testing.T) {
 
 func TestRunnerError(t *testing.T) {
 	store := NewMockStoreIface()
-	tickClock := glock.NewMockClock()
-	refreshClock := glock.NewMockClock()
+	ticker := glock.NewMockTicker(time.Second)
+	refreshTicker := glock.NewMockTicker(time.Second * 30)
 
 	store.ListFunc.SetDefaultReturn([]Migration{
 		{ID: 1, Progress: 0.5},
 	}, nil)
 
-	runner := newRunner(store, time.Second*30, refreshClock)
+	runner := newRunner(store, refreshTicker)
 
 	migrator := NewMockMigrator()
 	migrator.ProgressFunc.SetDefaultReturn(0.5, nil)
 	migrator.UpFunc.SetDefaultReturn(errors.New("uh-oh"))
 
-	if err := runner.Register(1, migrator, MigratorOptions{clock: tickClock}); err != nil {
+	if err := runner.Register(1, migrator, MigratorOptions{ticker: ticker}); err != nil {
 		t.Fatalf("unexpected error registering migrator: %s", err)
 	}
 
 	go runner.Start()
-	tickN(tickClock, 1)
+	tickN(ticker, 1)
 	runner.Stop()
 
 	if calls := store.AddErrorFunc.history; len(calls) != 1 {
@@ -77,10 +77,10 @@ func TestRunnerError(t *testing.T) {
 
 func TestRunnerRemovesCompleted(t *testing.T) {
 	store := NewMockStoreIface()
-	tickClock1 := glock.NewMockClock()
-	tickClock2 := glock.NewMockClock()
-	tickClock3 := glock.NewMockClock()
-	refreshClock := glock.NewMockClock()
+	ticker1 := glock.NewMockTicker(time.Second)
+	ticker2 := glock.NewMockTicker(time.Second)
+	ticker3 := glock.NewMockTicker(time.Second)
+	refreshTicker := glock.NewMockTicker(time.Second * 30)
 
 	store.ListFunc.SetDefaultReturn([]Migration{
 		{ID: 1, Progress: 0.5},
@@ -88,7 +88,7 @@ func TestRunnerRemovesCompleted(t *testing.T) {
 		{ID: 3, Progress: 0.9},
 	}, nil)
 
-	runner := newRunner(store, time.Second*30, refreshClock)
+	runner := newRunner(store, refreshTicker)
 
 	// Makes no progress
 	migrator1 := NewMockMigrator()
@@ -104,20 +104,20 @@ func TestRunnerRemovesCompleted(t *testing.T) {
 	migrator3.ProgressFunc.PushReturn(0.95, nil)
 	migrator3.ProgressFunc.SetDefaultReturn(1, nil)
 
-	if err := runner.Register(1, migrator1, MigratorOptions{clock: tickClock1}); err != nil {
+	if err := runner.Register(1, migrator1, MigratorOptions{ticker: ticker1}); err != nil {
 		t.Fatalf("unexpected error registering migrator: %s", err)
 	}
-	if err := runner.Register(2, migrator2, MigratorOptions{clock: tickClock2}); err != nil {
+	if err := runner.Register(2, migrator2, MigratorOptions{ticker: ticker2}); err != nil {
 		t.Fatalf("unexpected error registering migrator: %s", err)
 	}
-	if err := runner.Register(3, migrator3, MigratorOptions{clock: tickClock3}); err != nil {
+	if err := runner.Register(3, migrator3, MigratorOptions{ticker: ticker3}); err != nil {
 		t.Fatalf("unexpected error registering migrator: %s", err)
 	}
 
 	go runner.Start()
-	tickN(tickClock1, 5)
-	tickN(tickClock2, 5)
-	tickN(tickClock3, 5)
+	tickN(ticker1, 5)
+	tickN(ticker2, 5)
+	tickN(ticker3, 5)
 	runner.Stop()
 
 	// not finished
@@ -138,14 +138,14 @@ func TestRunnerRemovesCompleted(t *testing.T) {
 
 func TestRunMigrator(t *testing.T) {
 	store := NewMockStoreIface()
-	tickClock := glock.NewMockClock()
+	ticker := glock.NewMockTicker(time.Second)
 
 	migrator := NewMockMigrator()
 	migrator.ProgressFunc.SetDefaultReturn(0.5, nil)
 
-	runMigratorWrapped(store, migrator, tickClock, func(migrations chan<- Migration) {
+	runMigratorWrapped(store, migrator, ticker, func(migrations chan<- Migration) {
 		migrations <- Migration{ID: 1, Progress: 0.5}
-		tickN(tickClock, 3)
+		tickN(ticker, 3)
 	})
 
 	if callCount := len(migrator.UpFunc.History()); callCount != 3 {
@@ -158,15 +158,15 @@ func TestRunMigrator(t *testing.T) {
 
 func TestRunMigratorMigrationErrors(t *testing.T) {
 	store := NewMockStoreIface()
-	tickClock := glock.NewMockClock()
+	ticker := glock.NewMockTicker(time.Second)
 
 	migrator := NewMockMigrator()
 	migrator.ProgressFunc.SetDefaultReturn(0.5, nil)
 	migrator.UpFunc.SetDefaultReturn(errors.New("uh-oh"))
 
-	runMigratorWrapped(store, migrator, tickClock, func(migrations chan<- Migration) {
+	runMigratorWrapped(store, migrator, ticker, func(migrations chan<- Migration) {
 		migrations <- Migration{ID: 1, Progress: 0.5}
-		tickN(tickClock, 1)
+		tickN(ticker, 1)
 	})
 
 	if calls := store.AddErrorFunc.history; len(calls) != 1 {
@@ -183,16 +183,16 @@ func TestRunMigratorMigrationErrors(t *testing.T) {
 
 func TestRunMigratorMigrationFinishesUp(t *testing.T) {
 	store := NewMockStoreIface()
-	tickClock := glock.NewMockClock()
+	ticker := glock.NewMockTicker(time.Second)
 
 	migrator := NewMockMigrator()
 	migrator.ProgressFunc.PushReturn(0.8, nil)       // check
 	migrator.ProgressFunc.PushReturn(0.9, nil)       // after up
 	migrator.ProgressFunc.SetDefaultReturn(1.0, nil) // after up
 
-	runMigratorWrapped(store, migrator, tickClock, func(migrations chan<- Migration) {
+	runMigratorWrapped(store, migrator, ticker, func(migrations chan<- Migration) {
 		migrations <- Migration{ID: 1, Progress: 0.8}
-		tickN(tickClock, 5)
+		tickN(ticker, 5)
 	})
 
 	if callCount := len(migrator.UpFunc.History()); callCount != 2 {
@@ -205,16 +205,16 @@ func TestRunMigratorMigrationFinishesUp(t *testing.T) {
 
 func TestRunMigratorMigrationFinishesDown(t *testing.T) {
 	store := NewMockStoreIface()
-	tickClock := glock.NewMockClock()
+	ticker := glock.NewMockTicker(time.Second)
 
 	migrator := NewMockMigrator()
 	migrator.ProgressFunc.PushReturn(0.2, nil)       // check
 	migrator.ProgressFunc.PushReturn(0.1, nil)       // after down
 	migrator.ProgressFunc.SetDefaultReturn(0.0, nil) // after down
 
-	runMigratorWrapped(store, migrator, tickClock, func(migrations chan<- Migration) {
+	runMigratorWrapped(store, migrator, ticker, func(migrations chan<- Migration) {
 		migrations <- Migration{ID: 1, Progress: 0.2, ApplyReverse: true}
-		tickN(tickClock, 5)
+		tickN(ticker, 5)
 	})
 
 	if callCount := len(migrator.UpFunc.History()); callCount != 0 {
@@ -226,10 +226,8 @@ func TestRunMigratorMigrationFinishesDown(t *testing.T) {
 }
 
 func TestRunMigratorMigrationChangesDirection(t *testing.T) {
-	t.Skip("this test has a race condition. See: https://github.com/sourcegraph/sourcegraph/issues/19127")
-
 	store := NewMockStoreIface()
-	tickClock := glock.NewMockClock()
+	ticker := glock.NewMockTicker(time.Second)
 
 	migrator := NewMockMigrator()
 	migrator.ProgressFunc.PushReturn(0.2, nil) // check
@@ -239,11 +237,11 @@ func TestRunMigratorMigrationChangesDirection(t *testing.T) {
 	migrator.ProgressFunc.PushReturn(0.1, nil) // after up
 	migrator.ProgressFunc.PushReturn(0.2, nil) // after up
 
-	runMigratorWrapped(store, migrator, tickClock, func(migrations chan<- Migration) {
+	runMigratorWrapped(store, migrator, ticker, func(migrations chan<- Migration) {
 		migrations <- Migration{ID: 1, Progress: 0.2, ApplyReverse: true}
-		tickN(tickClock, 5)
+		tickN(ticker, 5)
 		migrations <- Migration{ID: 1, Progress: 0.0, ApplyReverse: false}
-		tickN(tickClock, 5)
+		tickN(ticker, 5)
 	})
 
 	if callCount := len(migrator.UpFunc.History()); callCount != 5 {
@@ -260,7 +258,7 @@ func TestRunMigratorMigrationChangesDirection(t *testing.T) {
 //
 // This method blocks until both functions return. The return of the interact function
 // cancels a context controlling the runMigrator main loop.
-func runMigratorWrapped(store storeIface, migrator Migrator, clock glock.Clock, interact func(migrations chan<- Migration)) {
+func runMigratorWrapped(store storeIface, migrator Migrator, ticker glock.Ticker, interact func(migrations chan<- Migration)) {
 	ctx, cancel := context.WithCancel(context.Background())
 	migrations := make(chan Migration)
 
@@ -271,8 +269,7 @@ func runMigratorWrapped(store storeIface, migrator Migrator, clock glock.Clock, 
 		defer wg.Done()
 
 		runMigrator(ctx, store, migrator, migrations, migratorOptions{
-			interval: time.Second,
-			clock:    clock,
+			ticker: ticker,
 		})
 	}()
 
@@ -282,9 +279,9 @@ func runMigratorWrapped(store storeIface, migrator Migrator, clock glock.Clock, 
 	wg.Wait()
 }
 
-// tickN advances the given clock by a second n time with a guaranteed reader.
-func tickN(clock *glock.MockClock, n int) {
+// tickN advances the given ticker by one second n times with a guaranteed reader.
+func tickN(ticker *glock.MockTicker, n int) {
 	for i := 0; i < n; i++ {
-		clock.BlockingAdvance(time.Second)
+		ticker.BlockingAdvance(time.Second)
 	}
 }

@@ -205,7 +205,7 @@ func (o dbExtensionsListOptions) sqlConditions() []*sqlf.Query {
 	}
 	if o.Query != "" {
 		likePattern := func(value string) string {
-			return "%" + strings.Replace(strings.ToLower(value), " ", "%", -1) + "%"
+			return "%" + strings.ReplaceAll(strings.ToLower(value), " ", "%") + "%"
 		}
 		queryConds := []*sqlf.Query{
 			sqlf.Sprintf(extensionIDExpr+" ILIKE %s", likePattern(o.Query)),

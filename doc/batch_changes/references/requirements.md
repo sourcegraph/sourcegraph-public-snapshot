@@ -2,6 +2,10 @@
 
 Batch Changes has requirements for the Sourcegraph server version, its connected code hosts and developer environments.
 
+## Sourcegraph server
+
+While the latest version of Sourcegraph server is always recommended, version 3.22 is the minimum version required to run Batch Changes.
+
 ## Code hosts
 
 Batch Changes is compatible with the following code hosts:
@@ -10,8 +14,6 @@ Batch Changes is compatible with the following code hosts:
 * Github Enterprise 2.20 and later
 * GitLab 12.7 and later (burndown charts are only supported with 13.2 and later)
 * Bitbucket Server 5.7 and later
-
->NOTE: Currently, in code hosts configured [to use SSH to clone repositories via the `gitURLType` setting](../../admin/repo/auth.md), only site admins will be able to publish changesets.
 
 ### Batch Changes effect on code host rate limits
 
@@ -26,10 +28,6 @@ We **highly recommend** enabling webhooks on code hosts where batch change chang
 ### A note on Batch Changes effect on CI systems
 
 Batch Changes makes it possible to create changesets in tens, hundreds, or thousands of repositories. Opening and updating these changesets may trigger many checks or continuous integration jobs, and in turn may stress the resources allotted to these systems. Batch Changes supports [partial publishing for changesets](../how-tos/publishing_changesets.md#publishing-a-subset-of-changesets) to help mitigate these issues. You may also consider publishing your changesets at times of low activity.  
-
-## Sourcegraph server
-
-While the latest version of Sourcegraph server is always recommended, version 3.22 is the minimum version required to run Batch Changes.
 
 ## Requirements for batch change creators
 

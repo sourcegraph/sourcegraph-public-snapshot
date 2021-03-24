@@ -37,7 +37,6 @@ body.theme-dark .markdown-body ul li:before {
 
 > WARNING: Campaigns was renamed to Sourcegraph Batch Changes in version 3.26. If you were already using it under the previous name (campaigns), backwards compatibility has been preserved. [Read more](references/name-change.md)
 
-
 <p class="lead">
 Create a batch change by specifying a search query to get a list of repositories and a script to run in each. The batch change then lets you create changesets (a generic term for pull requests or merge requests) on all affected repositories and track their progress until they're all merged. You can preview the changes and update them at any time. A batch change can also be used to track and manage manually created changesets.
 </p>
@@ -47,8 +46,6 @@ Create a batch change by specifying a search query to get a list of repositories
 <a class="btn" href="explanations/introduction_to_batch_changes">Introduction to Batch Changes</a>
 <a class="btn" href="references/requirements">Requirements</a>
 </div>
-
-> NOTE: Batch Changes requires Sourcegraph version 3.24 or later. We highly recommend using the latest versions of Sourcegraph and src-cli with Batch Changes, since we're steadily shipping new features and improvements.
 
 ## Getting started
 

@@ -10,6 +10,7 @@ module.exports = {
     'client/shared/jest.config.js',
     'client/branded/jest.config.js',
     'client/web/jest.config.js',
+    'client/wildcard/jest.config.js',
     '.storybook/jest.config.js',
   ],
 }

@@ -21,3 +21,9 @@ type GitLabConnection struct {
 	URN string
 	*schema.GitLabConnection
 }
+
+type PerforceConnection struct {
+	// The unique resource identifier of the external service.
+	URN string
+	*schema.PerforceConnection
+}

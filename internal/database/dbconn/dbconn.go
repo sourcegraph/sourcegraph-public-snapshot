@@ -301,7 +301,7 @@ func registerPrometheusCollector(db *sql.DB, dbNameSuffix string) {
 	c := prometheus.NewGaugeFunc(
 		prometheus.GaugeOpts{
 			Namespace: "src",
-			Subsystem: "pgsql" + strings.Replace(dbNameSuffix, "-", "_", -1),
+			Subsystem: "pgsql" + strings.ReplaceAll(dbNameSuffix, "-", "_"),
 			Name:      "open_connections",
 			Help:      "Number of open connections to pgsql DB, as reported by pgsql.DB.Stats()",
 		},

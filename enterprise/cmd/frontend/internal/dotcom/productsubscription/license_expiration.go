@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/efritz/glock"
+	"github.com/derision-test/glock"
 	"github.com/gomodule/redigo/redis"
 	"github.com/inconshreveable/log15"
 

@@ -20,7 +20,7 @@ import { SupersedingBatchSpecAlert } from '../detail/SupersedingBatchSpecAlert'
 import { queryChangesetSpecFileDiffs, queryChangesetApplyPreview } from './list/backend'
 import { BatchChangePreviewStatsBar } from './BatchChangePreviewStatsBar'
 import { PageHeader } from '../../../components/PageHeader'
-import { BatchChangesIcon } from '../icons'
+import { BatchChangesIcon } from '../../../batches/icons'
 
 export type PreviewPageAuthenticatedUser = Pick<AuthenticatedUser, 'url' | 'displayName' | 'username' | 'email'>
 
@@ -64,7 +64,7 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
     )
 
     useEffect(() => {
-        telemetryService.logViewEvent('CampaignApplyPage')
+        telemetryService.logViewEvent('BatchChangeApplyPage')
     }, [telemetryService])
 
     if (spec === undefined) {
@@ -102,6 +102,7 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
             <CreateUpdateBatchChangeAlert
                 history={history}
                 specID={spec.id}
+                toBeArchived={spec.applyPreview.stats.archive}
                 batchChange={spec.appliesToBatchChange}
                 viewerCanAdminister={spec.viewerCanAdminister}
                 telemetryService={telemetryService}

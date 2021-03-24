@@ -1,0 +1,56 @@
+.status-bar {
+    background-color: var(--color-bg-2);
+    height: 1.5rem;
+
+    &__items {
+        overflow-x: auto;
+        white-space: nowrap;
+
+        scrollbar-width: none;
+        &::-webkit-scrollbar {
+            display: none;
+        }
+    }
+
+    &__scroll {
+        width: 1.5rem;
+        height: 100%;
+        padding: 0;
+
+        &:hover {
+            background-color: var(--link-hover-bg-color);
+        }
+
+        &--disabled {
+            visibility: hidden;
+            width: 0;
+            margin: 0;
+        }
+    }
+
+    &__item {
+        &:not(:last-child) {
+            margin-right: 0.25rem;
+        }
+
+        &:last-child {
+            padding-right: 0.5rem !important;
+        }
+
+        &--tooltipped {
+            &:hover {
+                background-color: var(--link-hover-bg-color);
+                color: var(--link-hover-color);
+            }
+        }
+
+        &--noop {
+            cursor: default;
+        }
+    }
+
+    &__text {
+        padding-top: 0.0625rem; // 1px
+        color: var(--body-color);
+    }
+}

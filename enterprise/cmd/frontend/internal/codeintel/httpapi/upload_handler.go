@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -57,18 +58,21 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		repo, ok := ensureRepoAndCommitExist(ctx, w, repoName, commit)
-		if !ok {
-			return
-		}
-		repositoryID = int(repo.ID)
-
 		// 🚨 SECURITY: Ensure we return before proxying to the precise-code-intel-api-server upload
 		// endpoint. This endpoint is unprotected, so we need to make sure the user provides a valid
 		// token proving contributor access to the repository.
 		if !h.internal && conf.Get().LsifEnforceAuth && !isSiteAdmin(ctx) && !enforceAuth(ctx, w, r, repoName) {
 			return
 		}
+
+		// 🚨 SECURITY: It is critical to ensure if repository and commit exists after
+		// the above authz check. Otherwise, it is possible to use this endpoint to
+		// brute-force existence of repositories.
+		repo, ok := ensureRepoAndCommitExist(ctx, w, repoName, commit)
+		if !ok {
+			return
+		}
+		repositoryID = int(repo.ID)
 	}
 
 	payload, err := h.handleEnqueueErr(w, r, repositoryID)
@@ -343,7 +347,13 @@ func (h *UploadHandler) handleEnqueueMultipartFinalize(r *http.Request, upload s
 	return nil, nil
 }
 
+// 🚨 SECURITY: It is critical to call this function after necessary authz check
+// because this function would bypass authz to for testing if the repository and
+// commit exists in Sourcegraph.
 func ensureRepoAndCommitExist(ctx context.Context, w http.ResponseWriter, repoName, commit string) (*types.Repo, bool) {
+	// This function won't be able to see all repositories without bypassing authz.
+	ctx = actor.WithInternalActor(ctx)
+
 	repo, err := backend.Repos.GetByName(ctx, api.RepoName(repoName))
 	if err != nil {
 		if errcode.IsNotFound(err) {

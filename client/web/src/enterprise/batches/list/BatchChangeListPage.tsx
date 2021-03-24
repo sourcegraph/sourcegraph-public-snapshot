@@ -19,7 +19,7 @@ import {
 import PlusIcon from 'mdi-react/PlusIcon'
 import { Link } from '../../../../../shared/src/components/Link'
 import { PageHeader } from '../../../components/PageHeader'
-import { BatchChangesIcon } from '../icons'
+import { BatchChangesIcon } from '../../../batches/icons'
 import { BatchChangesListEmpty } from './BatchChangesListEmpty'
 import { BatchChangesListIntro } from './BatchChangesListIntro'
 import { filter, map, tap, withLatestFrom } from 'rxjs/operators'
@@ -78,7 +78,7 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
     openTab,
     ...props
 }) => {
-    useEffect(() => props.telemetryService.logViewEvent('CampaignsListPage'), [props.telemetryService])
+    useEffect(() => props.telemetryService.logViewEvent('BatchChangesListPage'), [props.telemetryService])
 
     /*
      * Tracks whether this is the first fetch since this page has been rendered the first time.

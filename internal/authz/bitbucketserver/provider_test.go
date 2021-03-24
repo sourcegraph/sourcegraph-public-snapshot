@@ -107,7 +107,7 @@ func testProviderFetchAccount(f *fixtures, cli *bitbucketserver.Client) func(*te
 					tc.err = "<nil>"
 				}
 
-				acct, err := p.FetchAccount(tc.ctx, tc.user, nil)
+				acct, err := p.FetchAccount(tc.ctx, tc.user, nil, nil)
 
 				if have, want := fmt.Sprint(err), tc.err; have != want {
 					t.Errorf("error:\nhave: %q\nwant: %q", have, want)

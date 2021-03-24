@@ -9,7 +9,7 @@ import { Scalars, ExternalServiceKind } from '../../../graphql-operations'
 
 const getWarningMessage = (codeHostName: string, repoCount: number | undefined): string => {
     if (!repoCount) {
-        return `If the connection with ${codeHostName} is removed, all associated repositories  will no longer be synced with Sourcegraph.`
+        return `If the connection with ${codeHostName}.com is removed, all associated repositories  will no longer be synced with Sourcegraph.`
     }
 
     const config = {
@@ -27,7 +27,7 @@ const getWarningMessage = (codeHostName: string, repoCount: number | undefined):
 
     const { verb, adjective, repoNoun } = repoCount > 1 ? config.multiple : config.single
 
-    return `There ${verb} ${repoCount} ${repoNoun} synced to Sourcegraph from ${codeHostName}. If the connection with ${codeHostName} is removed, ${adjective} will no longer be synced with Sourcegraph.`
+    return `There ${verb} ${repoCount} ${repoNoun} synced to Sourcegraph from ${codeHostName}.com. If the connection with ${codeHostName}.com is removed, ${adjective} will no longer be synced with Sourcegraph.`
 }
 
 export const RemoveCodeHostConnectionModal: React.FunctionComponent<{
@@ -68,7 +68,7 @@ export const RemoveCodeHostConnectionModal: React.FunctionComponent<{
         >
             <div className="web-content">
                 <h3 id={`heading--remove-${name}-code-host`} className="text-danger mb-4">
-                    Remove connection with {name}?
+                    Remove connection with {name}.com?
                 </h3>
                 <Form onSubmit={onConnectionRemove}>
                     <div id={`description--remove-${name}-code-host`} className="form-group mb-4">

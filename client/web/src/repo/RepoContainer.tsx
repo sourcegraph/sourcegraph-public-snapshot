@@ -1,64 +1,65 @@
+import * as H from 'history'
+import { escapeRegExp } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react'
-import { escapeRegExp } from 'lodash'
+import MenuDownIcon from 'mdi-react/MenuDownIcon'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
+import { UncontrolledPopover } from 'reactstrap'
 import { NEVER, ObservableInput, of } from 'rxjs'
-import { catchError } from 'rxjs/operators'
+import { catchError, switchMap } from 'rxjs/operators'
 import { redirectToExternalHost } from '.'
 import {
+    isCloneInProgressErrorLike,
     isRepoNotFoundErrorLike,
     isRepoSeeOtherErrorLike,
-    isCloneInProgressErrorLike,
 } from '../../../shared/src/backend/errors'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
+import { Link } from '../../../shared/src/components/Link'
+import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
+import { escapeSpaces } from '../../../shared/src/search/query/filters'
+import { VersionContextProps } from '../../../shared/src/search/util'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
-import { ErrorLike, isErrorLike, asError } from '../../../shared/src/util/errors'
+import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { ThemeProps } from '../../../shared/src/theme'
+import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+import { repeatUntil } from '../../../shared/src/util/rxjs/repeatUntil'
 import { encodeURIPathComponent, makeRepoURI } from '../../../shared/src/util/url'
+import { useLocalStorage } from '../../../shared/src/util/useLocalStorage'
+import { useObservable } from '../../../shared/src/util/useObservable'
+import { AuthenticatedUser } from '../auth'
+import { ErrorMessage } from '../components/alerts'
+import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
+import { ActionItemsBarProps, useWebActionItems } from '../extensions/components/ActionItemsBar'
+import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
+import { IS_CHROME } from '../marketing/util'
+import { Settings } from '../schema/settings.schema'
 import {
-    searchQueryForRepoRevision,
-    PatternTypeProps,
     CaseSensitivityProps,
     CopyQueryButtonProps,
+    PatternTypeProps,
     SearchContextProps,
+    searchQueryForRepoRevision,
 } from '../search'
+import { QueryState } from '../search/helpers'
+import { browserExtensionInstalled } from '../tracking/analyticsUtils'
 import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
+import { InstallBrowserExtensionAlert } from './actions/InstallBrowserExtensionAlert'
 import { fetchFileExternalLinks, fetchRepository, resolveRevision } from './backend'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
+import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { RepoRevisionContainer, RepoRevisionContainerRoute } from './RepoRevisionContainer'
+import { RepositoriesPopover } from './RepositoriesPopover'
 import { RepositoryNotFoundPage } from './RepositoryNotFoundPage'
-import { ThemeProps } from '../../../shared/src/theme'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
-import { ErrorMessage } from '../components/alerts'
-import { QueryState } from '../search/helpers'
-import * as H from 'history'
-import { VersionContextProps } from '../../../shared/src/search/util'
-import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
-import { useObservable } from '../../../shared/src/util/useObservable'
-import { repeatUntil } from '../../../shared/src/util/rxjs/repeatUntil'
-import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
-import { Link } from '../../../shared/src/components/Link'
-import { UncontrolledPopover } from 'reactstrap'
-import MenuDownIcon from 'mdi-react/MenuDownIcon'
-import { RepositoriesPopover } from './RepositoriesPopover'
-import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
-import { AuthenticatedUser } from '../auth'
-import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
-import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
-import { browserExtensionInstalled } from '../tracking/analyticsUtils'
-import { InstallBrowserExtensionAlert } from './actions/InstallBrowserExtensionAlert'
-import { IS_CHROME } from '../marketing/util'
-import { useLocalStorage } from '../util/useLocalStorage'
-import { Settings } from '../schema/settings.schema'
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import { escapeSpaces } from '../../../shared/src/search/query/filters'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -77,7 +78,8 @@ export interface RepoContainerContext
         CopyQueryButtonProps,
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
-        BreadcrumbSetters {
+        BreadcrumbSetters,
+        ActionItemsBarProps {
     repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
@@ -170,18 +172,28 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     )
 
     const resolvedRevisionOrError = useObservable(
-        React.useMemo(
+        useMemo(
             () =>
-                resolveRevision({ repoName, revision }).pipe(
-                    catchError(error => {
-                        if (isCloneInProgressErrorLike(error)) {
-                            return of<ErrorLike>(asError(error))
-                        }
-                        throw error
-                    }),
-                    repeatUntil(value => !isCloneInProgressErrorLike(value), { delay: 1000 }),
-                    catchError(error => of<ErrorLike>(asError(error)))
-                ),
+                of(undefined)
+                    .pipe(
+                        // Wrap in switchMap so we don't break the observable chain when
+                        // catchError returns a new observable, so repeatUntil will
+                        // properly resubscribe to the outer observable and re-fetch.
+                        switchMap(() =>
+                            resolveRevision({ repoName, revision }).pipe(
+                                catchError(error => {
+                                    if (isCloneInProgressErrorLike(error)) {
+                                        return of<ErrorLike>(asError(error))
+                                    }
+                                    throw error
+                                })
+                            )
+                        )
+                    )
+                    .pipe(
+                        repeatUntil(value => !isCloneInProgressErrorLike(value), { delay: 1000 }),
+                        catchError(error => of<ErrorLike>(asError(error)))
+                    ),
             [repoName, revision]
         )
     )
@@ -244,22 +256,38 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
 
     // Update the workspace roots service to reflect the current repo / resolved revision
     useEffect(() => {
-        props.extensionsController.services.workspace.roots.next(
-            resolvedRevisionOrError && !isErrorLike(resolvedRevisionOrError)
-                ? [
-                      {
-                          uri: makeRepoURI({
-                              repoName,
-                              revision: resolvedRevisionOrError.commitID,
-                          }),
-                          inputRevision: revision || '',
-                      },
-                  ]
-                : []
-        )
+        const workspaceRootUri =
+            resolvedRevisionOrError &&
+            !isErrorLike(resolvedRevisionOrError) &&
+            makeRepoURI({
+                repoName,
+                revision: resolvedRevisionOrError.commitID,
+            })
+
+        if (workspaceRootUri) {
+            props.extensionsController.extHostAPI
+                .then(extensionHostAPI =>
+                    extensionHostAPI.addWorkspaceRoot({
+                        uri: workspaceRootUri,
+                        inputRevision: revision || '',
+                    })
+                )
+                .catch(error => {
+                    console.error('Error adding workspace root', error)
+                })
+        }
+
         // Clear the Sourcegraph extensions model's roots when navigating away.
-        return () => props.extensionsController.services.workspace.roots.next([])
-    }, [props.extensionsController.services.workspace.roots, repoName, resolvedRevisionOrError, revision])
+        return () => {
+            if (workspaceRootUri) {
+                props.extensionsController.extHostAPI
+                    .then(extensionHostAPI => extensionHostAPI.removeWorkspaceRoot(workspaceRootUri))
+                    .catch(error => {
+                        console.error('Error removing workspace root', error)
+                    })
+            }
+        }
+    }, [props.extensionsController, repoName, resolvedRevisionOrError, revision])
 
     // Update the navbar query to reflect the current repo / revision
     const { globbing, onNavbarQueryChange } = props
@@ -272,6 +300,8 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
             query,
         })
     }, [revision, filePath, repoName, onNavbarQueryChange, globbing])
+
+    const { useActionItemsBar, useActionItemsToggle } = useWebActionItems()
 
     const isBrowserExtensionInstalled = useObservable(browserExtensionInstalled)
     const codeHostIntegrationMessaging =
@@ -347,6 +377,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         repo: repoOrError,
         routePrefix: repoMatchURL,
         onDidUpdateExternalLinks: setExternalLinks,
+        useActionItemsBar,
     }
 
     return (
@@ -360,19 +391,29 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 />
             )}
             <RepoHeader
-                {...props}
                 actionButtons={props.repoHeaderActionButtons}
+                useActionItemsToggle={useActionItemsToggle}
+                breadcrumbs={props.breadcrumbs}
                 revision={revision}
                 repo={repoOrError}
                 resolvedRev={resolvedRevisionOrError}
                 onLifecyclePropsChange={setRepoHeaderContributionsLifecycleProps}
                 isAlertDisplayed={showExtensionAlert}
+                location={props.location}
+                history={props.history}
+                settingsCascade={props.settingsCascade}
+                authenticatedUser={props.authenticatedUser}
+                platformContext={props.platformContext}
+                extensionsController={props.extensionsController}
+                telemetryService={props.telemetryService}
             />
             <RepoHeaderContributionPortal
                 position="right"
                 priority={2}
+                id="go-to-code-host"
                 {...repoHeaderContributionsLifecycleProps}
-                element={
+            >
+                {({ actionType }) => (
                     <GoToCodeHostAction
                         key="go-to-code-host"
                         repo={repoOrError}
@@ -386,9 +427,11 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                         fetchFileExternalLinks={fetchFileExternalLinks}
                         canShowPopover={canShowPopover}
                         onPopoverDismissed={onPopoverDismissed}
+                        actionType={actionType}
+                        repoName={repoName}
                     />
-                }
-            />
+                )}
+            </RepoHeaderContributionPortal>
             <ErrorBoundary location={props.location}>
                 <Switch>
                     {/* eslint-disable react/jsx-no-bind */}
@@ -413,6 +456,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                                     resolvedRevisionOrError={resolvedRevisionOrError}
                                     // must exactly match how the revision was encoded in the URL
                                     routePrefix={`${repoMatchURL}${rawRevision ? `@${rawRevision}` : ''}`}
+                                    useActionItemsBar={useActionItemsBar}
                                 />
                             )}
                         />

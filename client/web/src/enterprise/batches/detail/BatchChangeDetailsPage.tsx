@@ -26,9 +26,10 @@ import { BatchChangeDetailsActionSection } from './BatchChangeDetailsActionSecti
 import { BatchChangeInfoByline } from './BatchChangeInfoByline'
 import { UnpublishedNotice } from './UnpublishedNotice'
 import { SupersedingBatchSpecAlert } from './SupersedingBatchSpecAlert'
-import { BatchChangesIcon } from '../icons'
+import { BatchChangesIcon } from '../../../batches/icons'
 import { PageHeader } from '../../../components/PageHeader'
 import { ClosedNotice } from './ClosedNotice'
+import { ChangesetsArchivedNotice } from './ChangesetsArchivedNotice'
 
 export interface BatchChangeDetailsPageProps
     extends ThemeProps,
@@ -77,7 +78,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
     deleteBatchChange,
 }) => {
     useEffect(() => {
-        telemetryService.logViewEvent('CampaignDetailsPagePage')
+        telemetryService.logViewEvent('BatchChangeDetailsPage')
     }, [telemetryService])
 
     const batchChange: BatchChangeFields | null | undefined = useObservable(
@@ -90,6 +91,8 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
             [namespaceID, batchChangeName, fetchBatchChangeByNamespace]
         )
     )
+
+    const archiveEnabled = window.context?.experimentalFeatures?.archiveBatchChangeChangesets
 
     // Is loading.
     if (batchChange === undefined) {
@@ -142,6 +145,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 total={batchChange.changesetsStats.total}
                 className="mb-3"
             />
+            {archiveEnabled && <ChangesetsArchivedNotice history={history} location={location} />}
             <BatchChangeStatsCard
                 closedAt={batchChange.closedAt}
                 stats={batchChange.changesetsStats}
@@ -151,6 +155,8 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
             <Description history={history} description={batchChange.description} />
             <BatchChangeTabs
                 batchChange={batchChange}
+                changesetsCount={batchChange.changesetsStats.total - batchChange.changesetsStats.archived}
+                archivedCount={batchChange.changesetsStats.archived}
                 extensionsController={extensionsController}
                 history={history}
                 isLightTheme={isLightTheme}

@@ -656,6 +656,7 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 			resp.Error = updateErr.Error()
 		}
 	}
+
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -844,7 +845,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 
 		cloneProgress, err := s.cloneRepo(ctx, req.Repo, nil)
 		if err != nil {
-			log15.Debug("error cloning repo", "repo", req.Repo, "err", err)
+			log15.Debug("error starting repo clone", "repo", req.Repo, "err", err)
 			status = "repo-not-found"
 			w.WriteHeader(http.StatusNotFound)
 			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{CloneInProgress: false})
@@ -951,7 +952,7 @@ func (s *Server) handleP4Exec(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Make sure credentials are valid before heavier operation
-	err := p4pingWithLogin(r.Context(), req.P4Port, req.P4User, req.P4Passwd)
+	err := p4pingWithTrust(r.Context(), req.P4Port, req.P4User, req.P4Passwd)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -1067,6 +1068,7 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 	cmd.Env = append(os.Environ(),
 		"P4PORT="+req.P4Port,
 		"P4USER="+req.P4User,
+		"P4PASSWD="+req.P4Passwd,
 	)
 	cmd.Stdout = stdoutW
 	cmd.Stderr = stderrW
@@ -1083,6 +1085,58 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 	w.Header().Set("X-Exec-Error", errorString(execErr))
 	w.Header().Set("X-Exec-Exit-Status", status)
 	w.Header().Set("X-Exec-Stderr", stderr)
+}
+
+func (s *Server) setLastError(ctx context.Context, name api.RepoName, error string) (err error) {
+	if s.DB == nil {
+		return nil
+	}
+	tx, err := database.Repos(s.DB).Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	repo, err := tx.GetByName(ctx, name)
+	if err != nil {
+		return err
+	}
+	return database.NewGitserverReposWith(tx).SetLastError(ctx, repo.ID, error, s.Hostname)
+}
+
+// setLastErrorNonFatal is the same as setLastError but only logs errors
+func (s *Server) setLastErrorNonFatal(ctx context.Context, name api.RepoName, err error) {
+	var errString string
+	if err != nil {
+		errString = err.Error()
+	}
+	if err := s.setLastError(ctx, name, errString); err != nil {
+		log15.Warn("Setting last error in DB", "error", err)
+	}
+}
+
+func (s *Server) setCloneStatus(ctx context.Context, name api.RepoName, status types.CloneStatus) (err error) {
+	if s.DB == nil {
+		return nil
+	}
+	tx, err := database.Repos(s.DB).Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	repo, err := tx.GetByName(ctx, name)
+	if err != nil {
+		return err
+	}
+	return database.NewGitserverReposWith(tx).SetCloneStatus(ctx, repo.ID, status, s.Hostname)
+}
+
+// setCloneStatusNonFatal is the same as setCloneStatus but only logs errors
+func (s *Server) setCloneStatusNonFatal(ctx context.Context, name api.RepoName, status types.CloneStatus) {
+	if err := s.setCloneStatus(ctx, name, status); err != nil {
+		log15.Warn("Setting clone status in DB", "error", err)
+	}
 }
 
 // setGitAttributes writes our global gitattributes to
@@ -1221,7 +1275,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 			s.setCloneStatusNonFatal(ctx, repo, types.CloneStatusCloning)
 		}
 		defer func() {
-			// Use a different context to ensure we still update the DB even if we time out
+			// Use a background context to ensure we still update the DB even if we time out
 			s.setCloneStatusNonFatal(context.Background(), repo, cloneStatus(repoCloned(dir), false))
 		}()
 
@@ -1293,19 +1347,22 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 
 	if opts != nil && opts.Block {
 		// We are blocking, so use the passed in context.
-		if err := doClone(ctx); err != nil {
-			return "", errors.Wrapf(err, "failed to clone %s", repo)
-		}
-		return "", nil
+		err := doClone(ctx)
+		err = errors.Wrapf(err, "failed to clone %s", repo)
+		// Use a background context to ensure we still update the DB even if we time out
+		s.setLastErrorNonFatal(context.Background(), repo, err)
+		return "", err
 	}
 
 	go func() {
 		// Create a new context because this is in a background goroutine.
 		ctx, cancel := s.serverContext()
 		defer cancel()
-		if err := doClone(ctx); err != nil {
+		err := doClone(ctx)
+		if err != nil {
 			log15.Error("failed to clone repo", "repo", repo, "error", err)
 		}
+		s.setLastErrorNonFatal(ctx, repo, err)
 	}()
 
 	return "", nil
@@ -1368,7 +1425,7 @@ func newURLRedactor(parsedURL *url.URL) *urlRedactor {
 // Sensitive strings are replaced with "<redacted>".
 func (r *urlRedactor) redact(message string) string {
 	for _, s := range r.sensitive {
-		message = strings.Replace(message, s, "<redacted>", -1)
+		message = strings.ReplaceAll(message, s, "<redacted>")
 	}
 	return message
 }
@@ -1476,7 +1533,7 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName) error {
 	mu := l.mu
 	s.repoUpdateLocksMu.Unlock()
 
-	// doRepoUpdate2 can block longer than our context deadline. done will
+	// doBackgroundRepoUpdate can block longer than our context deadline. done will
 	// close when its done. We can return when either done is closed or our
 	// deadline has passed.
 	done := make(chan struct{})
@@ -1491,7 +1548,10 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName) error {
 			l.once = new(sync.Once) // Make new requests wait for next update.
 			s.repoUpdateLocksMu.Unlock()
 
-			err = s.doRepoUpdate2(repo)
+			err = s.doBackgroundRepoUpdate(repo)
+			ctx, cancel := s.serverContext()
+			defer cancel()
+			s.setLastErrorNonFatal(ctx, repo, err)
 		})
 	}()
 
@@ -1502,6 +1562,72 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName) error {
 		span.LogFields(otlog.String("event", "context canceled"))
 		return ctx.Err()
 	}
+}
+
+var doBackgroundRepoUpdateMock func(api.RepoName) error
+
+func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
+	if doBackgroundRepoUpdateMock != nil {
+		return doBackgroundRepoUpdateMock(repo)
+	}
+	// background context.
+	ctx, cancel1 := s.serverContext()
+	defer cancel1()
+
+	ctx, cancel2, err := s.acquireCloneLimiter(ctx)
+	if err != nil {
+		return err
+	}
+	defer cancel2()
+
+	repo = protocol.NormalizeRepo(repo)
+	dir := s.dir(repo)
+
+	remoteURL, err := s.getRemoteURL(ctx, repo)
+	if err != nil {
+		return errors.Wrap(err, "failed to determine Git remote URL")
+	}
+
+	syncer, err := s.GetVCSSyncer(ctx, repo)
+	if err != nil {
+		return errors.Wrap(err, "get VCS syncer")
+	}
+
+	cmd, configRemoteOpts, err := syncer.FetchCommand(ctx, remoteURL)
+	if err != nil {
+		return errors.Wrap(err, "get fetch command")
+	}
+
+	dir.Set(cmd)
+
+	// drop temporary pack files after a fetch. this function won't
+	// return until this fetch has completed or definitely-failed,
+	// either way they can't still be in use. we don't care exactly
+	// when the cleanup happens, just that it does.
+	defer s.cleanTmpFiles(dir)
+
+	if output, err := runWith(ctx, cmd, configRemoteOpts, nil); err != nil {
+		log15.Error("Failed to update", "repo", repo, "error", err, "output", string(output))
+		return errors.Wrap(err, "failed to update")
+	}
+
+	removeBadRefs(ctx, dir)
+
+	if err := setHEAD(ctx, dir, syncer, repo, remoteURL); err != nil {
+		log15.Error("Failed to ensure HEAD exists", "repo", repo, "error", err)
+		return errors.Wrap(err, "failed to ensure HEAD exists")
+	}
+
+	if err := setRepositoryType(dir, syncer.Type()); err != nil {
+		return errors.Wrap(err, `git config set "sourcegraph.type"`)
+	}
+
+	// Update the last-changed stamp.
+	if err := setLastChanged(dir); err != nil {
+		log15.Warn("Failed to update last changed time", "repo", repo, "error", err)
+	}
+
+	return nil
 }
 
 var (
@@ -1732,67 +1858,6 @@ func computeRefHash(dir GitDir) ([]byte, error) {
 	hash := make([]byte, hex.EncodedLen(hasher.Size()))
 	hex.Encode(hash, hasher.Sum(nil))
 	return hash, nil
-}
-
-func (s *Server) doRepoUpdate2(repo api.RepoName) error {
-	// background context.
-	ctx, cancel1 := s.serverContext()
-	defer cancel1()
-
-	ctx, cancel2, err := s.acquireCloneLimiter(ctx)
-	if err != nil {
-		return err
-	}
-	defer cancel2()
-
-	repo = protocol.NormalizeRepo(repo)
-	dir := s.dir(repo)
-
-	remoteURL, err := s.getRemoteURL(ctx, repo)
-	if err != nil {
-		return errors.Wrap(err, "failed to determine Git remote URL")
-	}
-
-	syncer, err := s.GetVCSSyncer(ctx, repo)
-	if err != nil {
-		return errors.Wrap(err, "get VCS syncer")
-	}
-
-	cmd, configRemoteOpts, err := syncer.FetchCommand(ctx, remoteURL)
-	if err != nil {
-		return errors.Wrap(err, "get fetch command")
-	}
-
-	dir.Set(cmd)
-
-	// drop temporary pack files after a fetch. this function won't
-	// return until this fetch has completed or definitely-failed,
-	// either way they can't still be in use. we don't care exactly
-	// when the cleanup happens, just that it does.
-	defer s.cleanTmpFiles(dir)
-
-	if output, err := runWith(ctx, cmd, configRemoteOpts, nil); err != nil {
-		log15.Error("Failed to update", "repo", repo, "error", err, "output", string(output))
-		return errors.Wrap(err, "failed to update")
-	}
-
-	removeBadRefs(ctx, dir)
-
-	if err := setHEAD(ctx, dir, syncer, repo, remoteURL); err != nil {
-		log15.Error("Failed to ensure HEAD exists", "repo", repo, "error", err)
-		return errors.Wrap(err, "failed to ensure HEAD exists")
-	}
-
-	if err := setRepositoryType(dir, syncer.Type()); err != nil {
-		return errors.Wrap(err, `git config set "sourcegraph.type"`)
-	}
-
-	// Update the last-changed stamp.
-	if err := setLastChanged(dir); err != nil {
-		log15.Warn("Failed to update last changed time", "repo", repo, "error", err)
-	}
-
-	return nil
 }
 
 func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, rev string, repoDir GitDir) (didUpdate bool) {

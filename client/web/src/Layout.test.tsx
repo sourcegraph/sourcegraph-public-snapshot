@@ -18,7 +18,7 @@ describe('Layout', () => {
         caseSensitive: false,
         setCaseSensitivity: () => {},
         versionContext: undefined,
-        setVersionContext: () => {},
+        setVersionContext: () => Promise.resolve(),
 
         // Other minimum props required to render
         routes: [],
@@ -264,7 +264,9 @@ describe('Layout', () => {
         const history = createBrowserHistory()
         history.replace({ search: 'q=r:golang/oauth2+test+f:travis&c=test' })
 
-        const setVersionContextSpy = sinon.spy()
+        const setVersionContextSpy = sinon.spy<(versionContext: string | undefined) => Promise<void>>(() =>
+            Promise.resolve()
+        )
 
         const element = mount(
             <BrowserRouter>
@@ -293,7 +295,9 @@ describe('Layout', () => {
         const history = createBrowserHistory()
         history.replace({ search: 'q=r:golang/oauth2+test+f:travis&c=test' })
 
-        const setVersionContextSpy = sinon.spy()
+        const setVersionContextSpy = sinon.spy<(versionContext: string | undefined) => Promise<void>>(() =>
+            Promise.resolve()
+        )
 
         const element = mount(
             <BrowserRouter>
@@ -321,7 +325,9 @@ describe('Layout', () => {
         const history = createBrowserHistory()
         history.replace({ search: 'q=r:golang/oauth2+test+f:travis' })
 
-        const setVersionContextSpy = sinon.spy()
+        const setVersionContextSpy = sinon.spy<(versionContext: string | undefined) => Promise<void>>(() =>
+            Promise.resolve()
+        )
 
         const element = mount(
             <BrowserRouter>
@@ -350,7 +356,9 @@ describe('Layout', () => {
         const history = createBrowserHistory()
         history.replace({ search: 'q=&c=test' })
 
-        const setVersionContextSpy = sinon.spy()
+        const setVersionContextSpy = sinon.spy<(versionContext: string | undefined) => Promise<void>>(() =>
+            Promise.resolve()
+        )
 
         const element = mount(
             <BrowserRouter>

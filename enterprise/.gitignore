@@ -14,5 +14,4 @@ yarn-error.log
 !/ui/assets/img
 !/ui/assets/img/*
 /.bin
-/cmd/frontend/internal/assets/distassets_vfsdata.go
 /vendor/.bin

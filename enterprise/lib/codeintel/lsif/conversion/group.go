@@ -13,31 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 )
 
-// GroupedBundleData{Chans,Maps} is a view of a correlation State that sorts data by it's containing document
-// and shared data into sharded result chunks. The fields of this type are what is written to
-// persistent storage and what is read in the query path. The Chans version allows pipelining
-// and parallelizing the work, while the Maps version can be modified for e.g. local development
-// via the REPL or patching for incremental indexing.
-type GroupedBundleDataChans struct {
-	Meta              semantic.MetaData
-	Documents         chan semantic.KeyedDocumentData
-	ResultChunks      chan semantic.IndexedResultChunkData
-	Definitions       chan semantic.MonikerLocations
-	References        chan semantic.MonikerLocations
-	Packages          []semantic.Package
-	PackageReferences []semantic.PackageReference
-}
-
-type GroupedBundleDataMaps struct {
-	Meta              semantic.MetaData
-	Documents         map[string]semantic.DocumentData
-	ResultChunks      map[int]semantic.ResultChunkData
-	Definitions       map[string]map[string][]semantic.LocationData
-	References        map[string]map[string][]semantic.LocationData
-	Packages          []semantic.Package
-	PackageReferences []semantic.PackageReference
-}
-
 const MaxNumResultChunks = 1000
 const ResultsPerResultChunk = 500
 
@@ -45,7 +20,7 @@ func getDefinitionResultID(r Range) int { return r.DefinitionResultID }
 func getReferenceResultID(r Range) int  { return r.ReferenceResultID }
 
 // groupBundleData converts a raw (but canonicalized) correlation State into a GroupedBundleData.
-func groupBundleData(ctx context.Context, state *State, dumpID int) (*GroupedBundleDataChans, error) {
+func groupBundleData(ctx context.Context, state *State) (*semantic.GroupedBundleDataChans, error) {
 	numResults := len(state.DefinitionData) + len(state.ReferenceData)
 	numResultChunks := int(math.Min(
 		MaxNumResultChunks,
@@ -60,13 +35,13 @@ func groupBundleData(ctx context.Context, state *State, dumpID int) (*GroupedBun
 	resultChunks := serializeResultChunks(ctx, state, numResultChunks)
 	definitionRows := gatherMonikersLocations(ctx, state, state.DefinitionData, getDefinitionResultID)
 	referenceRows := gatherMonikersLocations(ctx, state, state.ReferenceData, getReferenceResultID)
-	packages := gatherPackages(state, dumpID)
-	packageReferences, err := gatherPackageReferences(state, dumpID)
+	packages := gatherPackages(state)
+	packageReferences, err := gatherPackageReferences(state)
 	if err != nil {
 		return nil, err
 	}
 
-	return &GroupedBundleDataChans{
+	return &semantic.GroupedBundleDataChans{
 		Meta:              meta,
 		Documents:         documents,
 		ResultChunks:      resultChunks,
@@ -380,7 +355,7 @@ func (s sortableLocations) Less(i, j int) bool {
 	return s[i].StartCharacter < s[j].StartCharacter
 }
 
-func gatherPackages(state *State, dumpID int) []semantic.Package {
+func gatherPackages(state *State) []semantic.Package {
 	uniques := make(map[string]semantic.Package, state.ExportedMonikers.Len())
 	state.ExportedMonikers.Each(func(id int) {
 		source := state.MonikerData[id]
@@ -401,7 +376,7 @@ func gatherPackages(state *State, dumpID int) []semantic.Package {
 	return packages
 }
 
-func gatherPackageReferences(state *State, dumpID int) ([]semantic.PackageReference, error) {
+func gatherPackageReferences(state *State) ([]semantic.PackageReference, error) {
 	type ExpandedPackageReference struct {
 		Scheme      string
 		Name        string
@@ -439,121 +414,4 @@ func gatherPackageReferences(state *State, dumpID int) ([]semantic.PackageRefere
 	}
 
 	return packageReferences, nil
-}
-
-// CAUTION: Data is not deep copied.
-func GroupedBundleDataMapsToChans(ctx context.Context, maps *GroupedBundleDataMaps) *GroupedBundleDataChans {
-	documentChan := make(chan semantic.KeyedDocumentData, len(maps.Documents))
-	go func() {
-		defer close(documentChan)
-		for path, doc := range maps.Documents {
-			select {
-			case documentChan <- semantic.KeyedDocumentData{
-				Path:     path,
-				Document: doc,
-			}:
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
-	resultChunkChan := make(chan semantic.IndexedResultChunkData, len(maps.ResultChunks))
-	go func() {
-		defer close(resultChunkChan)
-
-		for idx, chunk := range maps.ResultChunks {
-			select {
-			case resultChunkChan <- semantic.IndexedResultChunkData{
-				Index:       idx,
-				ResultChunk: chunk,
-			}:
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
-	monikerDefsChan := make(chan semantic.MonikerLocations)
-	go func() {
-		defer close(monikerDefsChan)
-
-		for scheme, identMap := range maps.Definitions {
-			for ident, locations := range identMap {
-				select {
-				case monikerDefsChan <- semantic.MonikerLocations{
-					Scheme:     scheme,
-					Identifier: ident,
-					Locations:  locations,
-				}:
-				case <-ctx.Done():
-					return
-				}
-			}
-		}
-	}()
-	monikerRefsChan := make(chan semantic.MonikerLocations)
-	go func() {
-		defer close(monikerRefsChan)
-
-		for scheme, identMap := range maps.References {
-			for ident, locations := range identMap {
-				select {
-				case monikerRefsChan <- semantic.MonikerLocations{
-					Scheme:     scheme,
-					Identifier: ident,
-					Locations:  locations,
-				}:
-				case <-ctx.Done():
-					return
-				}
-			}
-		}
-	}()
-
-	return &GroupedBundleDataChans{
-		Meta:              maps.Meta,
-		Documents:         documentChan,
-		ResultChunks:      resultChunkChan,
-		Definitions:       monikerDefsChan,
-		References:        monikerRefsChan,
-		Packages:          maps.Packages,
-		PackageReferences: maps.PackageReferences,
-	}
-}
-
-// CAUTION: Data is not deep copied.
-func GroupedBundleDataChansToMaps(ctx context.Context, chans *GroupedBundleDataChans) *GroupedBundleDataMaps {
-	documentMap := make(map[string]semantic.DocumentData)
-	for keyedDocumentData := range chans.Documents {
-		documentMap[keyedDocumentData.Path] = keyedDocumentData.Document
-	}
-	resultChunkMap := make(map[int]semantic.ResultChunkData)
-	for indexedResultChunk := range chans.ResultChunks {
-		resultChunkMap[indexedResultChunk.Index] = indexedResultChunk.ResultChunk
-	}
-	monikerDefsMap := make(map[string]map[string][]semantic.LocationData)
-	for monikerDefs := range chans.Definitions {
-		identMap, exists := monikerDefsMap[monikerDefs.Scheme]
-		if !exists {
-			identMap = make(map[string][]semantic.LocationData)
-		}
-		identMap[monikerDefs.Identifier] = monikerDefs.Locations
-	}
-	monikerRefsMap := make(map[string]map[string][]semantic.LocationData)
-	for monikerRefs := range chans.References {
-		identMap, exists := monikerRefsMap[monikerRefs.Scheme]
-		if !exists {
-			identMap = make(map[string][]semantic.LocationData)
-		}
-		identMap[monikerRefs.Identifier] = monikerRefs.Locations
-	}
-
-	return &GroupedBundleDataMaps{
-		Meta:              chans.Meta,
-		Documents:         documentMap,
-		ResultChunks:      resultChunkMap,
-		Definitions:       monikerDefsMap,
-		References:        monikerRefsMap,
-		Packages:          chans.Packages,
-		PackageReferences: chans.PackageReferences,
-	}
 }

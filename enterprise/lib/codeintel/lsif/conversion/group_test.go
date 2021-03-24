@@ -264,7 +264,7 @@ func TestGroupBundleData(t *testing.T) {
 		}),
 	}
 
-	actualBundleData, err := groupBundleData(context.Background(), state, 42)
+	actualBundleData, err := groupBundleData(context.Background(), state)
 	if err != nil {
 		t.Fatalf("unexpected error converting correlation state to types: %s", err)
 	}

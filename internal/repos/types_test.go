@@ -444,7 +444,6 @@ func TestExternalService_Exclude(t *testing.T) {
 					Description:  r.Description,
 					Fork:         r.Fork,
 					Archived:     r.Archived,
-					Cloned:       r.Cloned,
 					CreatedAt:    r.CreatedAt,
 					UpdatedAt:    r.UpdatedAt,
 					DeletedAt:    r.DeletedAt,

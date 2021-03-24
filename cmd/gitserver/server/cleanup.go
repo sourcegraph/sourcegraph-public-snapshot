@@ -21,9 +21,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -225,22 +223,6 @@ func (s *Server) cleanupRepos(addrs []string) {
 		return false, gitGC(dir)
 	}
 
-	removeWrongShard := func(dir GitDir) (done bool, err error) {
-		if len(addrs) == 0 {
-			return false, nil
-		}
-		addr := gitserver.AddrForRepo(s.name(dir), addrs)
-		if s.hostnameMatch(addr) {
-			return false, nil
-		}
-		log15.Info("removing repo for wrong shard", "repo", dir)
-		if err := s.removeRepoDirectory(dir); err != nil {
-			return true, err
-		}
-		reposRemoved.Inc()
-		return false, nil
-	}
-
 	type cleanupFn struct {
 		Name string
 		Do   func(GitDir) (bool, error)
@@ -268,9 +250,6 @@ func (s *Server) cleanupRepos(addrs []string) {
 		// invocations of git add, packing refs, pruning reflog, rerere metadata or stale
 		// working trees. May also update ancillary indexes such as the commit-graph.
 		{"garbage collect", performGC},
-		// Repos are sharded across gitserver instances based on their name. Remove repos
-		// that no longer belong on this shard.
-		{"remove wrong shard", removeWrongShard},
 	}
 
 	err := bestEffortWalk(s.ReposDir, func(dir string, fi os.FileInfo) error {
@@ -484,30 +463,6 @@ func dirSize(d string) int64 {
 		return nil
 	})
 	return size
-}
-
-func (s *Server) setCloneStatus(ctx context.Context, name api.RepoName, status types.CloneStatus) (err error) {
-	if s.DB == nil {
-		return nil
-	}
-	tx, err := database.Repos(s.DB).Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	repo, err := tx.GetByName(ctx, name)
-	if err != nil {
-		return err
-	}
-	return database.NewGitserverReposWith(tx).SetCloneStatus(ctx, repo.ID, status, s.Hostname)
-}
-
-// setCloneStatusNonFatal is the same as setCloneStatus but only logs errors
-func (s *Server) setCloneStatusNonFatal(ctx context.Context, name api.RepoName, status types.CloneStatus) {
-	if err := s.setCloneStatus(ctx, name, status); err != nil {
-		log15.Warn("Setting clone status in DB", "error", err)
-	}
 }
 
 // removeRepoDirectory atomically removes a directory from s.ReposDir.

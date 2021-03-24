@@ -220,6 +220,32 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			},
 		},
 		{
+			name: "archiving",
+			changeset: ct.TestChangesetOpts{
+				PublicationState:   batches.ChangesetPublicationStatePublished,
+				ExternalState:      batches.ChangesetExternalStateOpen,
+				OwnedByBatchChange: 1234,
+				BatchChanges:       []batches.BatchChangeAssoc{{BatchChangeID: 1234, Archive: true}},
+			},
+			wantOperations: Operations{
+				batches.ReconcilerOperationArchive,
+			},
+		},
+		{
+			name: "archiving already-archived changeset",
+			changeset: ct.TestChangesetOpts{
+				PublicationState:   batches.ChangesetPublicationStatePublished,
+				ExternalState:      batches.ChangesetExternalStateClosed,
+				OwnedByBatchChange: 1234,
+				BatchChanges: []batches.BatchChangeAssoc{{
+					BatchChangeID: 1234, Archive: true, IsArchived: true,
+				}},
+			},
+			wantOperations: Operations{
+				// Expect no operations.
+			},
+		},
+		{
 			name: "import changeset",
 			changeset: ct.TestChangesetOpts{
 				ExternalID:       "123",

@@ -33,6 +33,7 @@
  "auth.providers": [
    {
      "type": "saml",
+     "configID": "onelogin",
      "identityProviderMetadataURL": "<issuer URL>"
    }
  ]

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/efritz/glock"
+	"github.com/derision-test/glock"
 )
 
 func TestPeriodicGoroutine(t *testing.T) {

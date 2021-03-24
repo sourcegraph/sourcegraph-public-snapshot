@@ -29,7 +29,7 @@ interface SearchConsolePageProps
             | 'onSaveQueryClick'
             | 'shouldDisplayPerformanceWarning'
         >,
-        ExtensionsControllerProps<'executeCommand' | 'services' | 'extHostAPI'> {
+        ExtensionsControllerProps<'executeCommand' | 'extHostAPI'> {
     globbing: boolean
     isMacPlatform: boolean
     history: H.History

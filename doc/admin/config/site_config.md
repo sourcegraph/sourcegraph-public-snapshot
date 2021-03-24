@@ -2,6 +2,10 @@
 
 Site configuration defines how various Sourcegraph features behave. See the [full reference](#reference) below for a comprehensive list of site configuration options.
 
+## Configuration overview
+
+[Go here](index.md) for an overview of configuring Sourcegraph.
+
 ## View and edit site configuration
 
 Site admins can view and edit site configuration on a Sourcegraph instance:

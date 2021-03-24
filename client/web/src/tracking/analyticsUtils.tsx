@@ -86,6 +86,8 @@ export function pageViewQueryParameters(url: string): EventQueryParameters {
         eventLogger.log('SavedSearchEmailClicked')
     } else if (utmSource === 'saved-search-slack') {
         eventLogger.log('SavedSearchSlackClicked')
+    } else if (utmSource === 'code-monitoring-email') {
+        eventLogger.log('CodeMonitorEmailLinkClicked')
     }
 
     return {

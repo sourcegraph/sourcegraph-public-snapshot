@@ -34,9 +34,9 @@ func toMarkdown(m string, forceList bool) (string, error) {
 
 	// Replace single quotes with backticks.
 	// Replace escaped single quotes with single quotes.
-	m = strings.Replace(m, `\'`, `$ESCAPED_SINGLE_QUOTE`, -1)
-	m = strings.Replace(m, `'`, "`", -1)
-	m = strings.Replace(m, `$ESCAPED_SINGLE_QUOTE`, "'", -1)
+	m = strings.ReplaceAll(m, `\'`, `$ESCAPED_SINGLE_QUOTE`)
+	m = strings.ReplaceAll(m, `'`, "`")
+	m = strings.ReplaceAll(m, `$ESCAPED_SINGLE_QUOTE`, "'")
 
 	// Unindent based on the indention of the last line.
 	lines := strings.Split(m, "\n")

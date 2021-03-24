@@ -19,7 +19,6 @@ export interface IClient {
 export interface Settings {
     extensions?: { [extensionID: string]: boolean }
     experimentalFeatures?: {
-        showBadgeAttachments?: boolean
         enableFastResultLoading?: boolean
     }
     [key: string]: any

@@ -1,6 +1,7 @@
 import EmoticonIcon from 'mdi-react/EmoticonIcon'
-import * as React from 'react'
-import { Link } from 'react-router-dom'
+import React, { useState } from 'react'
+import { useHistory } from 'react-router'
+import classNames from 'classnames'
 import { eventLogger } from '../tracking/eventLogger'
 import { Toast } from './Toast'
 import { daysActiveCount } from './util'
@@ -10,43 +11,65 @@ import { AuthenticatedUser } from '../auth'
 const HAS_DISMISSED_TOAST_KEY = 'has-dismissed-survey-toast'
 
 interface SurveyCTAProps {
+    ariaLabelledby?: string
     className?: string
     score?: number
-    onClick?: (score: number) => void
+    onChange?: (score: number) => void
     openSurveyInNewTab?: boolean
 }
 
-export class SurveyCTA extends React.PureComponent<SurveyCTAProps> {
-    public render(): JSX.Element | null {
-        return (
-            <div className={this.props.className}>
-                {range(0, 11).map(score => {
-                    const pressed = score === this.props.score
-                    return (
-                        /* eslint-disable react/jsx-no-bind */
-                        <Link
-                            key={score}
-                            className={`btn btn-primary toast__rating-btn ${pressed ? 'active' : ''}`}
-                            aria-pressed={pressed || undefined}
-                            onClick={() => this.onClick(score)}
-                            to={`/survey/${score}`}
-                            target={this.props.openSurveyInNewTab ? '_blank' : undefined}
-                        >
-                            {score}
-                        </Link>
-                        /* eslint-enable react/jsx-no-bind */
-                    )
-                })}
-            </div>
-        )
+export const SurveyCTA: React.FunctionComponent<SurveyCTAProps> = props => {
+    const history = useHistory()
+    const [focusedIndex, setFocusedIndex] = useState<number | null>(null)
+
+    const handleFocus = (index: number): void => {
+        setFocusedIndex(index)
     }
 
-    private onClick = (score: number): void => {
+    const handleBlur = (): void => {
+        setFocusedIndex(null)
+    }
+
+    const handleChange = (score: number): void => {
         eventLogger.log('SurveyButtonClicked', { score })
-        if (this.props.onClick) {
-            this.props.onClick(score)
+        history.push(`/survey/${score}`)
+
+        if (props.onChange) {
+            props.onChange(score)
         }
     }
+
+    return (
+        <fieldset
+            aria-labelledby={props.ariaLabelledby}
+            role="radiogroup"
+            className={props.className}
+            onBlur={handleBlur}
+        >
+            {range(0, 11).map(score => {
+                const pressed = score === props.score
+                const focused = score === focusedIndex
+
+                return (
+                    <label
+                        key={score}
+                        className={classNames('btn btn-primary toast__rating-btn', { active: pressed, focus: focused })}
+                    >
+                        <input
+                            type="radio"
+                            name="survey-score"
+                            value={score}
+                            onChange={() => handleChange(score)}
+                            onFocus={() => handleFocus(score)}
+                            className="toast__rating-radio"
+                        />
+
+                        {score}
+                    </label>
+                )
+            })}
+        </fieldset>
+    )
 }
 
 interface Props {
@@ -81,13 +104,13 @@ export class SurveyToast extends React.Component<Props, State> {
                 icon={<EmoticonIcon className="icon-inline" />}
                 title="Tell us what you think"
                 subtitle="How likely is it that you would recommend Sourcegraph to a friend?"
-                cta={<SurveyCTA onClick={this.onClickScore} openSurveyInNewTab={true} />}
+                cta={<SurveyCTA onChange={this.onChangeScore} openSurveyInNewTab={true} />}
                 onDismiss={this.onDismiss}
             />
         )
     }
 
-    private onClickScore = (): void => this.onDismiss()
+    private onChangeScore = (): void => this.onDismiss()
 
     private onDismiss = (): void => {
         localStorage.setItem(HAS_DISMISSED_TOAST_KEY, 'true')

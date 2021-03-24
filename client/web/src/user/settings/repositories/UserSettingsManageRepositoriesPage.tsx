@@ -330,25 +330,23 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             if (!publicRepoState.enabled) {
                 publicRepos = []
             }
-            let didError = false
-            await setUserPublicRepositories(userID, publicRepos)
-                .toPromise()
-                .catch(error => {
-                    setRepoState({ ...repoState, error: String(error) })
-                    didError = true
-                })
-            if (didError) {
+
+            setFetchingRepos('loading')
+
+            try {
+                await setUserPublicRepositories(userID, publicRepos).toPromise()
+            } catch (error) {
+                setRepoState({ ...repoState, error: String(error) })
+                setFetchingRepos(undefined)
                 return
             }
 
             if (!selectionState.radio) {
-                history.push(routingPrefix + '/repositories')
+                return history.push(routingPrefix + '/repositories')
             }
 
             const syncTimes = new Map<string, string>()
             const codeHostRepoPromises = []
-
-            setFetchingRepos('loading')
 
             for (const host of codeHosts.hosts) {
                 const repos: string[] = []
@@ -373,6 +371,8 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 await Promise.all(codeHostRepoPromises)
             } catch (error) {
                 setRepoState({ ...repoState, error: String(error) })
+                setFetchingRepos(undefined)
+                return
             }
 
             const started = Date.now()
@@ -499,10 +499,17 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     type="radio"
                     value="selected"
                     checked={selectionState.radio === 'selected'}
+                    disabled={codeHosts.hosts.length === 0}
                     onChange={handleRadioSelect}
                 />
                 <div className="d-flex flex-column ml-2">
-                    <p className="mb-0">Sync selected public repositories</p>
+                    <p
+                        className={
+                            'mb-0 ' + ((codeHosts.hosts.length === 0 && 'user-settings-repos__text-coming-soon') || '')
+                        }
+                    >
+                        Sync selected public repositories
+                    </p>
                 </div>
             </label>
         </Form>
@@ -516,9 +523,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     className="form-control"
                     name="code-host"
                     aria-label="select code host type"
-                    onBlur={event => {
-                        setCodeHostFilter(event.target.value)
-                    }}
+                    onChange={event => setCodeHostFilter(event.target.value)}
                 >
                     <option key="any" value="" label="Any" />
                     {codeHosts.hosts.map(value => (
@@ -661,6 +666,14 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                 Get updated when this feature launches
                             </Link>
                         </div>
+                        {codeHosts.hosts.length === 0 && (
+                            <div className="alert alert-warning">
+                                <Link to={`${routingPrefix}/code-hosts`} target="_blank" rel="noopener noreferrer">
+                                    Connect with a code host
+                                </Link>{' '}
+                                to add your own repositories to Sourcegraph.
+                            </div>
+                        )}
                         {
                             // display radio button for 'all' or 'selected' repos
                             modeSelect
@@ -734,10 +747,10 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     alwaysShowLabel={true}
                     type="submit"
                     label={
-                        (!fetchingRepos && 'Save changes') ||
-                        (fetchingRepos === 'loading' && 'Saving changes...') ||
-                        (fetchingRepos === 'slow' && 'Still working...') ||
-                        "That's a lot of code..."
+                        (!fetchingRepos && 'Save') ||
+                        (fetchingRepos === 'loading' && 'Saving...') ||
+                        (fetchingRepos === 'slow' && 'Still saving...') ||
+                        'Any time now...'
                     }
                     disabled={isLoading(fetchingRepos)}
                 />

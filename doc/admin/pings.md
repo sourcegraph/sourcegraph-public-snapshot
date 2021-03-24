@@ -46,23 +46,29 @@ By default, Sourcegraph also aggregates usage and performance metrics for some p
 - Aggregate daily, weekly, and monthly counts of:
   - Searches using each search mode (interactive search, plain-text search)
   - Searches using each search filter (e.g. "type:", "repo:", "file:", "lang:", etc.)
-- Total number of code intelligence queries (e.g., hover tooltips) per week grouped by language
-- Number of users performing code intelligence queries (e.g., hover tooltips) per week grouped by language
-<!-- depends-on-source: ~/internal/usagestats/campaigns.go -->
-- Campaign usage data
-  - Total count of page views on the campaign apply page
-  - Total count of page views on the campaign details page after creating a campaign
-  - Total count of page views on the campaign details page after updating a campaign
+- Code intelligence usage data
+  - Total number of repositories with and without an uploaded LSIF index
+  - Total number of code intelligence queries (e.g., hover tooltips) per week grouped by language
+  - Number of users performing code intelligence queries (e.g., hover tooltips) per week grouped by language
+<!-- depends-on-source: ~/internal/usagestats/batches.go -->
+- Batch Changes usage data
+  - Total count of page views on the batch change apply page
+  - Total count of page views on the batch change details page after creating a batch change
+  - Total count of page views on the batch change details page after updating a batch change
   - Total count of created changeset specs
-  - Total count of created campaign specs
-  - Total count of created campaigns
-  - Total count of closed campaigns
-  - Total count of changesets created by campaigns
+  - Total count of created batch change specs
+  - Total count of created batch changes
+  - Total count of closed batch changes
+  - Total count of changesets created by batch changes
   - Aggregate counts of lines changed, added, deleted in all changesets
-  - Total count of changesets created by campaigns that have been merged
+  - Total count of changesets created by batch changes that have been merged
   - Aggregate counts of lines changed, added, deleted in all merged changesets
-  - Total count of changesets manually added to a campaign
-  - Total count of changesets manually added to a campaign that have been merged
+  - Total count of changesets manually added to a batch change
+  - Total count of changesets manually added to a batch change that have been merged
+  - Aggregate counts of unique monthly users, by:
+    - Whether they are contributed to batch changes
+    - Whether they only viewed batch changes
+  - Weekly batch change (open, closed) and changesets counts (imported, published, unpublished, open, draft, merged, closed) for batch change cohorts created in the last 12 months
 - Aggregated counts of users created, deleted, retained, resurrected and churned within the month
 - Saved searches usage data
   - Count of saved searches
@@ -90,6 +96,13 @@ By default, Sourcegraph also aggregates usage and performance metrics for some p
   - Total counts of edits, additions, and removals of insights by type
   - Total count of clicks on the "Add more insights" and "Configure insights" buttons on the insights page
   - Weekly count of users that have created an insight, and count of users that have created their first insight this week                  
+- Code monitoring usage data
+  - Total number of views of the code monitoring page
+  - Total number of views of the create code monitor page
+  - Total number of views of the create code monitor page with a pre-populated trigger query
+  - Total number of views of the create code monitor page without a pre-populated trigger query
+  - Total number of views of the manage code monitor page
+  - Total number of clicks on the code monitor email search link
 
 ## CIDR Range for Sourcegraph
 
