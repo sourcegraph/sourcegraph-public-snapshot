@@ -59,19 +59,19 @@ const viewsToReactGridLayouts = (views: ViewInsightProviderResult[]): ReactGridL
     return reactGridLayouts
 }
 
-interface InterInsightDescriptionProps {
+interface InsightDescriptionProps {
     title: string
     icon: MdiReactIconComponentType
 }
 
 const stopPropagation: React.MouseEventHandler<HTMLElement> = event => event.stopPropagation()
 
-const InsightDescription: React.FunctionComponent<InterInsightDescriptionProps> = props => {
+const InsightDescription: React.FunctionComponent<InsightDescriptionProps> = props => {
     const { icon: Icon, title } = props
 
     return (
-        <small title={title} className="view-grid__view-id text-muted" onMouseDown={stopPropagation}>
-            <Icon className="icon-inline view-grid__view-id-icon" />
+        <small title={title} className="insight-description text-muted" onMouseDown={stopPropagation}>
+            <Icon className="icon-inline" />{' '}
 
             {title}
         </small>
