@@ -5,7 +5,6 @@ import (
 	"regexp/syntax"
 	"time"
 
-	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 
 	searcherzoekt "github.com/sourcegraph/sourcegraph/cmd/searcher/search"
@@ -16,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func buildQuery(args *search.TextParameters, repos *indexedRepoRevs, filePathPatterns zoektquery.Q, shortcircuit bool) (zoektquery.Q, error) {
@@ -49,7 +47,6 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, db dbutil.DB, args *search.Te
 	var (
 		err       error
 		limitHit  bool
-		partial   map[api.RepoID]struct{}
 		statusMap search.RepoStatusMap
 	)
 
@@ -127,23 +124,6 @@ func zoektSearchHEADOnlyFiles(ctx context.Context, db dbutil.DB, args *search.Te
 	if len(resp.Files) == 0 {
 		return nil
 	}
-
-	matchLimiter := zoektutil.MatchLimiter{Limit: int(args.PatternInfo.FileMatchLimit)}
-	repoRevFunc := func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
-		repo, inputRevs := repos.GetRepoInputRev(file)
-		return repo, inputRevs, true
-	}
-
-	var files []zoekt.FileMatch
-	partial, files = matchLimiter.Slice(resp.Files, repoRevFunc)
-	// Partial is populated with repositories we may have not fully
-	// searched due to limits.
-	for r := range partial {
-		statusMap.Update(r, search.RepoStatusLimitHit)
-	}
-
-	limitHit = limitHit || len(partial) > 0
-	resp.Files = files
 
 	maxLineMatches := 25 + k
 	matches := make([]SearchResultResolver, len(resp.Files))

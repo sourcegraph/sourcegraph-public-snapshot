@@ -254,11 +254,7 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 	// Start event stream.
 	t0 := time.Now()
 
-	// mu protects matchLimiter and foundResults.
 	mu := sync.Mutex{}
-	matchLimiter := zoektutil.MatchLimiter{
-		Limit: int(args.PatternInfo.FileMatchLimit),
-	}
 	foundResults := false
 
 	// We use reposResolved to synchronize repo resolution and event processing.
@@ -354,19 +350,6 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 				return
 			}
 
-			mu.Lock()
-			// Partial is populated with repositories we may have not fully
-			// searched due to limits.
-			partial, files := matchLimiter.Slice(files, getRepoInputRev)
-			mu.Unlock()
-
-			var statusMap search.RepoStatusMap
-			for r := range partial {
-				statusMap.Update(r, search.RepoStatusLimitHit)
-			}
-
-			limitHit = limitHit || len(partial) > 0
-
 			matches := make([]SearchResultResolver, 0, len(files))
 			repoResolvers := make(RepositoryResolverCache)
 			for _, file := range files {
@@ -420,7 +403,6 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 			c.Send(SearchEvent{
 				Results: matches,
 				Stats: streaming.Stats{
-					Status:     statusMap,
 					IsLimitHit: limitHit,
 				},
 			})
