@@ -64,6 +64,10 @@ interface InsightDescriptionProps {
     icon: MdiReactIconComponentType
 }
 
+// Since we use react-grid-layout for build draggable insight cards at insight dashboard
+// to support text selection within insight card at InsightDescription component we have to
+// capture mouse event to prevent all action from react-grid-layout library which will prevent
+// default behavior and the text will become unavailable for selection
 const stopPropagation: React.MouseEventHandler<HTMLElement> = event => event.stopPropagation()
 
 const InsightDescription: React.FunctionComponent<InsightDescriptionProps> = props => {
