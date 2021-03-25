@@ -341,6 +341,9 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	// Enqueue any external services that are due to sync NOW this will cause any
+	// recently updated external service to sync faster than the default enqueue
+	// interval.
 	s.Syncer.TriggerEnqueueSyncJobs()
 
 	err := externalServiceValidate(ctx, &req)
@@ -398,20 +401,24 @@ func externalServiceValidate(ctx context.Context, req *protocol.ExternalServiceS
 
 	results := make(chan repos.SourceResult)
 
-	go func() {
-		src.ListRepos(ctx, results)
-		close(results)
-	}()
+	if v, ok := src.(TokenValidator); ok {
+		return v.ValidateToken(ctx)
+	} else {
+		go func() {
+			src.ListRepos(ctx, results)
+			close(results)
+		}()
 
-	for res := range results {
-		if res.Err != nil {
-			// Send error to user before waiting for all results, but drain
-			// the rest of the results to not leak a blocked goroutine
-			go func() {
-				for range results {
-				}
-			}()
-			return res.Err
+		for res := range results {
+			if res.Err != nil {
+				// Send error to user before waiting for all results, but drain
+				// the rest of the results to not leak a blocked goroutine
+				go func() {
+					for range results {
+					}
+				}()
+				return res.Err
+			}
 		}
 	}
 
@@ -718,4 +725,8 @@ func isUnauthorized(err error) bool {
 
 func isTemporarilyUnavailable(err error) bool {
 	return github.IsRateLimitExceeded(err)
+}
+
+type TokenValidator interface {
+	ValidateToken(ctx context.Context) error
 }
