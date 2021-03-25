@@ -346,7 +346,17 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	// interval.
 	s.Syncer.TriggerEnqueueSyncJobs()
 
-	err := externalServiceValidate(ctx, &req)
+	src, err := repos.NewSource(&types.ExternalService{
+		ID:          req.ExternalService.ID,
+		Kind:        req.ExternalService.Kind,
+		DisplayName: req.ExternalService.DisplayName,
+		Config:      req.ExternalService.Config,
+	}, httpcli.NewExternalHTTPClientFactory())
+	if err != nil {
+		log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
+		return
+	}
+	err = externalServiceValidate(ctx, req, src)
 	if err == github.ErrIncompleteResults {
 		log15.Info("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
 		syncResult := &protocol.ExternalServiceSyncResult{
@@ -380,7 +390,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	})
 }
 
-func externalServiceValidate(ctx context.Context, req *protocol.ExternalServiceSyncRequest) error {
+func externalServiceValidate(ctx context.Context, req protocol.ExternalServiceSyncRequest, src repos.Source) error {
 	if !req.ExternalService.DeletedAt.IsZero() {
 		// We don't need to check deleted services.
 		return nil
@@ -388,16 +398,6 @@ func externalServiceValidate(ctx context.Context, req *protocol.ExternalServiceS
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-
-	src, err := repos.NewSource(&types.ExternalService{
-		ID:          req.ExternalService.ID,
-		Kind:        req.ExternalService.Kind,
-		DisplayName: req.ExternalService.DisplayName,
-		Config:      req.ExternalService.Config,
-	}, httpcli.NewExternalHTTPClientFactory())
-	if err != nil {
-		return err
-	}
 
 	results := make(chan repos.SourceResult)
 
