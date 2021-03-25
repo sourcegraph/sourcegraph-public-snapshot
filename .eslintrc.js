@@ -1,7 +1,7 @@
 // @ts-check
 
 const config = {
-  extends: ['@sourcegraph/eslint-config', 'plugin:jsx-a11y/recommended'],
+  extends: ['@sourcegraph/eslint-config'],
   env: {
     browser: true,
     node: true,
@@ -31,7 +31,7 @@ const config = {
       },
     ],
   },
-  plugins: ['@sourcegraph/sourcegraph', 'jsx-a11y'],
+  plugins: ['@sourcegraph/sourcegraph'],
   rules: {
     // Rules that are specific to this repo
     // All other rules should go into https://github.com/sourcegraph/eslint-config
@@ -64,9 +64,6 @@ const config = {
       },
     ],
     'react/jsx-no-target-blank': ['error', { allowReferrer: true }],
-    'jsx-a11y/no-onchange': 'off',
-    'jsx-a11y/no-autofocus': 'off',
-    'jsx-a11y/accessible-emoji': 'off',
   },
   overrides: [
     {

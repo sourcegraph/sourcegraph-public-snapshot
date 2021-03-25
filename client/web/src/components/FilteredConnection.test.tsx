@@ -62,7 +62,7 @@ describe('ConnectionNodes', () => {
                 loading={true}
             />
         )
-        expect(screen.queryByRole('button')).toBeNull()
+        expect(screen.queryByRole('button')).not.toBeInTheDocument()
         expect(screen.getByText('2 cats total')).toBeVisible()
         expect(screen.getByText('(showing first 1)')).toBeVisible()
         // NOTE: we also expect a LoadingSpinner, but that is not provided by ConnectionNodes.
@@ -77,7 +77,7 @@ describe('ConnectionNodes', () => {
                 noShowMore={true}
             />
         )
-        expect(screen.queryByRole('button')).toBeNull()
+        expect(screen.queryByRole('button')).not.toBeInTheDocument()
         expect(screen.getByText('2 cats total')).toBeVisible()
         expect(screen.getByText('(showing first 1)')).toBeVisible()
     })
@@ -90,8 +90,8 @@ describe('ConnectionNodes', () => {
                 loading={true}
             />
         )
-        expect(screen.queryByRole('button')).toBeNull()
-        expect(screen.queryByTestId('summary')).toBeNull()
+        expect(screen.queryByRole('button')).not.toBeInTheDocument()
+        expect(screen.queryByTestId('summary')).not.toBeInTheDocument()
     })
 
     it('calls the onShowMore callback', async () => {
@@ -116,7 +116,7 @@ describe('ConnectionNodes', () => {
                 loading={true}
             />
         )
-        expect(screen.queryByTestId('summary')).toBeNull()
+        expect(screen.queryByTestId('summary')).not.toBeInTheDocument()
     })
 
     it('shows a summary if noSummaryIfAllNodesVisible is false', () => {
@@ -129,7 +129,7 @@ describe('ConnectionNodes', () => {
             />
         )
         expect(screen.getByText('1 cat total')).toBeVisible()
-        expect(screen.queryByText('(showing first 1)')).toBeNull()
+        expect(screen.queryByText('(showing first 1)')).not.toBeInTheDocument()
 
         // Summary should come after the nodes.
         expect(screen.getByTestId('summary')!.compareDocumentPosition(screen.getByTestId('nodes'))).toEqual(
@@ -146,7 +146,7 @@ describe('ConnectionNodes', () => {
             />
         )
         expect(screen.getByText('1 cat total')).toBeVisible()
-        expect(screen.queryByText('(showing first 1)')).toBeNull()
+        expect(screen.queryByText('(showing first 1)')).not.toBeInTheDocument()
     })
 
     it('shows a summary if nodes.length is 0', () => {
@@ -158,7 +158,7 @@ describe('ConnectionNodes', () => {
             />
         )
         expect(screen.getByText('1 cat total')).toBeVisible()
-        expect(screen.queryByText('(showing first 1)')).toBeNull()
+        expect(screen.queryByText('(showing first 1)')).not.toBeInTheDocument()
     })
 
     it("shows 'No cats' if totalCount is 0", () => {
