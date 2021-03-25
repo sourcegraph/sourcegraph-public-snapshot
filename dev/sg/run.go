@@ -60,6 +60,15 @@ func run(ctx context.Context, cmds ...Command) error {
 }
 
 func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struct{}) error {
+	startedOnce := false
+	drainReloadSignal := func() {
+		// clear this signal before starting
+		select {
+		case <-reload:
+		default:
+		}
+	}
+
 	for {
 		// Build it
 		out.WriteLine(output.Linef("", output.StylePending, "Installing %s...", cmd.Name))
@@ -69,8 +78,18 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 		c.Env = makeEnv(conf.Env, cmd.Env)
 		cmdOut, err := c.CombinedOutput()
 		if err != nil {
-			// TODO: If installation fails after reloading, we need to print the output and not just exit
-			return fmt.Errorf("failed to install %q: %s (output: %s)", cmd.Name, err, cmdOut)
+			if !startedOnce {
+				return fmt.Errorf("failed to install %q: %s (output: %s)", cmd.Name, err, cmdOut)
+			} else {
+				// We drain this signal because there is one buffered
+				drainReloadSignal()
+				line := strings.Repeat("-", 80)
+				out.WriteLine(output.Linef("", output.StyleWarning, "%s\n%sFailed to reinstall %s%s: \n%s%s%s%s", line, output.StyleBold, cmd.Name, output.StyleReset, cmdOut, output.StyleWarning, line, output.StyleReset))
+				select {
+				case <-reload:
+					continue
+				}
+			}
 		}
 
 		// clear this signal before starting
@@ -116,6 +135,7 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 			})()
 		}()
 
+		startedOnce = true
 	outer:
 		for {
 			select {
