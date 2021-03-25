@@ -579,7 +579,7 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 		}
 		return searchContext, nil
 	}
-	database.Mocks.SearchContexts.GetSearchContextRepositoryRevisions = func(ctx context.Context, searchContextID int32) ([]*types.SearchContextRepositoryRevisions, error) {
+	database.Mocks.SearchContexts.GetSearchContextRepositoryRevisions = func(ctx context.Context, searchContextID int64) ([]*types.SearchContextRepositoryRevisions, error) {
 		if searchContextID != searchContext.ID {
 			t.Fatalf("got %q, want %q", searchContextID, searchContext.ID)
 		}
