@@ -61,13 +61,6 @@ func run(ctx context.Context, cmds ...Command) error {
 
 func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struct{}) error {
 	startedOnce := false
-	drainReloadSignal := func() {
-		// clear this signal before starting
-		select {
-		case <-reload:
-		default:
-		}
-	}
 
 	for {
 		// Build it
@@ -79,12 +72,12 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 		cmdOut, err := c.CombinedOutput()
 		if err != nil {
 			if !startedOnce {
+				// TODO: This should return something like an InstallErr that has nice formatting
 				return fmt.Errorf("failed to install %q: %s (output: %s)", cmd.Name, err, cmdOut)
 			} else {
-				// We drain this signal because there is one buffered
-				drainReloadSignal()
 				line := strings.Repeat("-", 80)
 				out.WriteLine(output.Linef("", output.StyleWarning, "%s\n%sFailed to reinstall %s%s: \n%s%s%s%s", line, output.StyleBold, cmd.Name, output.StyleReset, cmdOut, output.StyleWarning, line, output.StyleReset))
+				// Now we wait for a reload signal before we start to build it again
 				select {
 				case <-reload:
 					continue
@@ -92,6 +85,7 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 			}
 		}
 
+		// clear this signal before starting
 		// clear this signal before starting
 		select {
 		case <-reload:
@@ -135,6 +129,8 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 			})()
 		}()
 
+		// TODO: We should probably only set this after N seconds (or when
+		// we're sure that the command has booted up -- maybe healthchecks?)
 		startedOnce = true
 	outer:
 		for {
@@ -217,7 +213,7 @@ func (m *changeMonitor) notify(sub subscription, path string) {
 }
 
 func (m *changeMonitor) register(cmd Command) <-chan struct{} {
-	ch := make(chan struct{}, 1)
+	ch := make(chan struct{}, 0)
 	m.subscriptions = append(m.subscriptions, subscription{cmd, ch})
 	return ch
 }

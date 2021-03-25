@@ -154,8 +154,6 @@ func main() {
 	}
 	log15.Info("git-server: listening", "addr", srv.Addr)
 
-	return errors.New("this is breaking")
-
 	go func() {
 		err := srv.ListenAndServe()
 		if err != http.ErrServerClosed {
