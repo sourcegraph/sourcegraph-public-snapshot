@@ -9937,11 +9937,6 @@ extend type Query {
         Opaque pagination cursor.
         """
         after: String
-        """
-        Only returns the code hosts for which there are no site-wide credentials
-        configured.
-        """
-        onlyWithoutCredential: Boolean = false
     ): BatchChangesCodeHostConnection!
 }
 

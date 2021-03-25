@@ -186,10 +186,9 @@ type DeleteBatchChangesCredentialArgs struct {
 }
 
 type ListBatchChangesCodeHostsArgs struct {
-	First                 int32
-	After                 *string
-	UserID                *int32
-	OnlyWithoutCredential bool
+	First  int32
+	After  *string
+	UserID *int32
 }
 
 type ListViewerBatchChangesCodeHostsArgs struct {

@@ -147,8 +147,6 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 }
 
 func (e *executor) buildChangesetSource(repo *types.Repo, extSvc *types.ExternalService) (repos.ChangesetSource, error) {
-	// Pick an arbitrary external service, we're going to use a custom authenticator anyways,
-	// we're merely interested in any additional code host config here.
 	sources, err := e.sourcer(extSvc)
 	if err != nil {
 		return nil, err
@@ -158,13 +156,18 @@ func (e *executor) buildChangesetSource(repo *types.Repo, extSvc *types.External
 	}
 	src := sources[0]
 
-	ucs, ok := src.(repos.UserSource)
-	if !ok {
-		return nil, errors.Errorf("using user credentials on code host of repo %q is not implemented", repo.Name)
-	}
+	if e.au != nil {
+		// If e.au == nil that means the user that applied that last
+		// batch/changeset spec is a site-admin and we can fall back to the
+		// global credentials stored in extSvc.
+		ucs, ok := src.(repos.UserSource)
+		if !ok {
+			return nil, errors.Errorf("using user credentials on code host of repo %q is not implemented", repo.Name)
+		}
 
-	if src, err = ucs.WithAuthenticator(e.au); err != nil {
-		return nil, errors.Wrapf(err, "unable to use this specific user credential on code host of repo %q", repo.Name)
+		if src, err = ucs.WithAuthenticator(e.au); err != nil {
+			return nil, errors.Wrapf(err, "unable to use this specific user credential on code host of repo %q", repo.Name)
+		}
 	}
 
 	ccs, ok := src.(repos.ChangesetSource)
@@ -183,20 +186,8 @@ func (e *executor) buildChangesetSource(repo *types.Repo, extSvc *types.External
 func (e *executor) loadAuthenticator(ctx context.Context) (auth.Authenticator, error) {
 	if e.ch.OwnedByBatchChangeID == 0 {
 		// Unowned changesets are imported, and therefore don't need to use a user
-		// credential, since reconciliation isn't a mutating process. We try to
-		// find a site-credential and only fall-back to the external service token
-		// when we have no other option.
-		globalCred, err := e.tx.GetGlobalCredential(ctx, store.GetGlobalCredentialOpts{
-			ExternalServiceType: e.repo.ExternalRepo.ServiceType,
-			ExternalServiceID:   e.repo.ExternalRepo.ServiceID,
-		})
-		if err != nil {
-			if err == store.ErrNoResults {
-				return nil, nil
-			}
-			return nil, errors.Wrap(err, "failed to load site credential")
-		}
-		return globalCred.Credential, nil
+		// credential, since reconciliation isn't a mutating process.
+		return nil, nil
 	}
 
 	// If the changeset is owned by a batch change, we want to reconcile using
@@ -215,18 +206,20 @@ func (e *executor) loadAuthenticator(ctx context.Context) (auth.Authenticator, e
 	})
 	if err != nil {
 		if errcode.IsNotFound(err) {
-			// If no user-specific credential was found, try to find a site-wide one.
-			globalCred, err := e.tx.GetGlobalCredential(ctx, store.GetGlobalCredentialOpts{
-				ExternalServiceType: e.repo.ExternalRepo.ServiceType,
-				ExternalServiceID:   e.repo.ExternalRepo.ServiceID,
-			})
+			// We need to check if the user is an admin: if they are, then
+			// we can use the nil return from loadUserCredential() to fall
+			// back to the global credentials used for the code host. If
+			// not, then we need to error out.
+			user, err := database.UsersWith(e.tx).GetByID(ctx, batchChange.LastApplierID)
 			if err != nil {
-				if err == store.ErrNoResults {
-					return nil, ErrMissingCredentials{repo: string(e.repo.Name)}
-				}
-				return nil, errors.Wrap(err, "failed to load site credential")
+				return nil, errors.Wrap(err, "failed to load user applying the batch change")
 			}
-			return globalCred.Credential, nil
+
+			if user.SiteAdmin {
+				return nil, nil
+			}
+
+			return nil, ErrMissingCredentials{repo: string(e.repo.Name)}
 		}
 		return nil, errors.Wrap(err, "failed to load user credential")
 	}
@@ -570,6 +563,17 @@ func (e ErrNoSSHCredential) Error() string {
 func (e ErrNoSSHCredential) NonRetryable() bool { return true }
 
 func buildPushConfig(extSvcType, cloneURL string, a auth.Authenticator) (*protocol.PushConfig, error) {
+	if a == nil {
+		// This is OK: we'll just send no key and gitserver will use
+		// the keys installed locally for SSH and the token from the
+		// clone URL for https.
+		// This path is only triggered when `loadAuthenticator` returns
+		// nil, which is only the case for site-admins currently.
+		// We want to revisit this once we start disabling usage of global
+		// credentials altogether in RFC312.
+		return &protocol.PushConfig{RemoteURL: cloneURL}, nil
+	}
+
 	u, err := vcs.ParseURL(cloneURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing repository clone URL")
@@ -598,6 +602,7 @@ func buildPushConfig(extSvcType, cloneURL string, a auth.Authenticator) (*protoc
 		if err := setOAuthTokenAuth(u, extSvcType, av.Token); err != nil {
 			return nil, err
 		}
+
 	case *auth.BasicAuthWithSSH:
 		if err := setBasicAuth(u, extSvcType, av.Username, av.Password); err != nil {
 			return nil, err
@@ -639,7 +644,7 @@ func setBasicAuth(u *url.URL, extSvcType, username, password string) error {
 }
 
 type getBatchChanger interface {
-	GetBatchChange(ctx context.Context, opts store.CountBatchChangeOpts) (*batches.BatchChange, error)
+	GetBatchChange(ctx context.Context, opts store.GetBatchChangeOpts) (*batches.BatchChange, error)
 }
 
 func loadBatchChange(ctx context.Context, tx getBatchChanger, id int64) (*batches.BatchChange, error) {
@@ -647,7 +652,7 @@ func loadBatchChange(ctx context.Context, tx getBatchChanger, id int64) (*batche
 		return nil, errors.New("changeset has no owning batch change")
 	}
 
-	batchChange, err := tx.GetBatchChange(ctx, store.CountBatchChangeOpts{ID: id})
+	batchChange, err := tx.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: id})
 	if err != nil && err != store.ErrNoResults {
 		return nil, errors.Wrapf(err, "retrieving owning batch change: %d", id)
 	} else if batchChange == nil {

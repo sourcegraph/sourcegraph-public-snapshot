@@ -77,10 +77,13 @@ func (c *batchChangesCodeHostConnectionResolver) compute(ctx context.Context) (a
 			return
 		}
 
-		// Fetch all user credentials to avoid N+1 per credential resolver.
-		creds := []*database.UserCredential{}
+		// Fetch all credentials to avoid N+1 per credential resolver.
+		var userCreds []*database.UserCredential
 		if c.userID != nil {
-			creds, _, err = c.store.UserCredentials().List(ctx, database.UserCredentialsListOpts{Scope: database.UserCredentialScope{Domain: database.UserCredentialDomainBatches, UserID: *c.userID}})
+			userCreds, _, err = c.store.UserCredentials().List(ctx, database.UserCredentialsListOpts{Scope: database.UserCredentialScope{
+				Domain: database.UserCredentialDomainBatches,
+				UserID: *c.userID,
+			}})
 			if err != nil {
 				c.chsErr = err
 				return
@@ -93,7 +96,7 @@ func (c *batchChangesCodeHostConnectionResolver) compute(ctx context.Context) (a
 		}
 
 		c.credsByIDType = make(map[idType]graphqlbackend.BatchChangesCredentialResolver)
-		for _, cred := range creds {
+		for _, cred := range userCreds {
 			t := idType{
 				externalServiceID:   cred.ExternalServiceID,
 				externalServiceType: cred.ExternalServiceType,

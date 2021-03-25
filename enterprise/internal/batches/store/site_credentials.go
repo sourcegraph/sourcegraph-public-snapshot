@@ -42,7 +42,7 @@ INSERT INTO
 VALUES
 	(%s, %s, %s, %s, %s)
 RETURNING
-	id, external_service_type, external_service_id, credential, created_at, updated_at
+	%s
 `
 
 func createGlobalCredentialQuery(c *SiteCredential) *sqlf.Query {
@@ -53,6 +53,7 @@ func createGlobalCredentialQuery(c *SiteCredential) *sqlf.Query {
 		&database.NullAuthenticator{A: &c.Credential},
 		c.CreatedAt,
 		c.UpdatedAt,
+		sqlf.Join(globalCredentialColumns, ","),
 	)
 }
 
@@ -114,7 +115,7 @@ func (s *Store) GetGlobalCredential(ctx context.Context, opts GetGlobalCredentia
 var getGlobalCredentialQueryFmtstr = `
 -- source: enterprise/internal/batches/store/site_credentials.go:GetGlobalCredential
 SELECT
-	id, external_service_type, external_service_id, credential, created_at, updated_at
+	%s
 FROM batch_changes_site_credentials
 WHERE
     %s
@@ -132,7 +133,11 @@ func getGlobalCredentialQuery(opts GetGlobalCredentialOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("id = %d", opts.ID))
 	}
 
-	return sqlf.Sprintf(getGlobalCredentialQueryFmtstr, sqlf.Join(preds, "AND"))
+	return sqlf.Sprintf(
+		getGlobalCredentialQueryFmtstr,
+		sqlf.Join(globalCredentialColumns, ","),
+		sqlf.Join(preds, "AND"),
+	)
 }
 
 type ListGlobalCredentialsOpts struct {
@@ -163,13 +168,25 @@ func (s *Store) ListGlobalCredentials(ctx context.Context, opts ListGlobalCreden
 var listGlobalCredentialsQueryFmtstr = `
 -- source: enterprise/internal/batches/store/site_credentials.go:ListGlobalCredentials
 SELECT
-	id, external_service_type, external_service_id, credential, created_at, updated_at
+	%s
 FROM batch_changes_site_credentials
 ORDER BY external_service_type ASC, external_service_id ASC
 `
 
 func listGlobalCredentialsQuery(opts ListGlobalCredentialsOpts) *sqlf.Query {
-	return sqlf.Sprintf(listGlobalCredentialsQueryFmtstr + opts.ToDB())
+	return sqlf.Sprintf(
+		listGlobalCredentialsQueryFmtstr+opts.ToDB(),
+		sqlf.Join(globalCredentialColumns, ","),
+	)
+}
+
+var globalCredentialColumns = []*sqlf.Query{
+	sqlf.Sprintf("id"),
+	sqlf.Sprintf("external_service_type"),
+	sqlf.Sprintf("external_service_id"),
+	sqlf.Sprintf("credential"),
+	sqlf.Sprintf("created_at"),
+	sqlf.Sprintf("updated_at"),
 }
 
 func scanGlobalCredential(c *SiteCredential, sc scanner) error {
