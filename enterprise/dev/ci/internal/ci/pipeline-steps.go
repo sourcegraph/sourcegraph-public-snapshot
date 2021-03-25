@@ -80,10 +80,11 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		// Client integration tests
 		pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests",
-			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"), // Don't download browser, we use "download-puppeteer-browser" script instead
 			bk.Env("ENTERPRISE", "1"),
 			bk.Env("PERCY_ON", "true"),
 			bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-run.sh build-web"),
+			bk.Cmd("yarn --cwd client/shared run download-puppeteer-browser"),
 			bk.Cmd("yarn percy exec -- yarn run cover-integration"),
 			bk.Cmd("yarn nyc report -r json"),
 			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
@@ -166,12 +167,13 @@ func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 	for _, browser := range []string{"chrome"} {
 		// Run e2e tests
 		pipeline.AddStep(fmt.Sprintf(":%s: E2E for %s extension", browser, browser),
-			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"), // Don't download browser, we use "download-puppeteer-browser" script instead
 			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
 			bk.Env("BROWSER", browser),
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd("yarn --cwd client/shared run download-puppeteer-browser"),
 			bk.Cmd("pushd client/browser"),
 			bk.Cmd("yarn -s run build"),
 			bk.Cmd("yarn -s mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts"),
