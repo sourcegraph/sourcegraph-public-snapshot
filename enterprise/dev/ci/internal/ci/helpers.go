@@ -159,7 +159,6 @@ func (c Config) isPR() bool {
 		c.branch != "master" &&
 		c.branch != "main" &&
 		!c.isMasterDryRun &&
-		!c.isBackendDryRun &&
 		!c.patch
 }
 
