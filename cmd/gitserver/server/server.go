@@ -339,10 +339,6 @@ func (s *Server) maybeSetShardID(h string, addrs []string) {
 	}
 	s.shardIDMu.Lock()
 	defer s.shardIDMu.Unlock()
-	// Another caller may have already set it
-	if s.shardID == h {
-		return
-	}
 	s.shardID = h
 }
 
