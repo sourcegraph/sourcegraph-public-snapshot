@@ -17,8 +17,10 @@
 This is mostly meant for developing `sg`:
 
 ```
-go run . -config sg.config.example.yaml run-set basic
+go run . -config sg.config.example.yaml start
 ```
+
+This compiles and starts `sg`, starting the `default` command set defined in `sg.config.example.yaml`, which boots up our dev environment.
 
 ## TODOs
 
