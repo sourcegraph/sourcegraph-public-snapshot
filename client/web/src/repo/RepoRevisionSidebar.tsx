@@ -74,7 +74,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                         aria-hidden={true}
                         className="d-flex overflow-auto repo-revision-container__tabpanels explorer"
                     >
-                        <TabPanels className="w-100">
+                        <TabPanels className="w-100 test-repo-revision-sidebar">
                             <TabPanel tabIndex={-1}>
                                 {tabIndex === 0 && (
                                     <Tree
