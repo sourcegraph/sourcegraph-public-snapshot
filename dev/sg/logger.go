@@ -2,38 +2,10 @@ package main
 
 import (
 	"bytes"
-	"io"
 	"time"
 
 	"github.com/sourcegraph/batch-change-utils/output"
 )
-
-type buffers [][]byte
-
-func (v *buffers) consume(n int64) {
-	for len(*v) > 0 {
-		ln0 := int64(len((*v)[0]))
-		if ln0 > n {
-			(*v)[0] = (*v)[0][n:]
-			return
-		}
-		n -= ln0
-		*v = (*v)[1:]
-	}
-}
-
-func (v *buffers) WriteTo(w io.Writer) (n int64, err error) {
-	for _, b := range *v {
-		nb, err := w.Write(b)
-		n += int64(nb)
-		if err != nil {
-			v.consume(n)
-			return n, err
-		}
-	}
-	v.consume(n)
-	return n, nil
-}
 
 // tickDuration is the time to wait before writing the buffer contents
 // without having received a newline.
@@ -48,7 +20,8 @@ type cmdLogger struct {
 	writes chan []byte
 	done   chan struct{}
 
-	buffers buffers
+	// TODO: Let's see if we can use a simple buffer
+	buf *bytes.Buffer
 }
 
 // newCmdLogger returns a new cmdLogger instance and spawns a goroutine in the
@@ -59,32 +32,36 @@ func newCmdLogger(name string, out *output.Output) *cmdLogger {
 		out:    out,
 		writes: make(chan []byte),
 		done:   make(chan struct{}),
+		buf:    &bytes.Buffer{},
 	}
 
 	go l.writeLines()
+
 	return l
 }
 
 func (l *cmdLogger) appendAndFlush(line []byte) {
-	l.buffers = append(l.buffers, line)
+	l.append(line)
 	l.flush()
 }
 
+func (l *cmdLogger) append(line []byte) {
+	_, err := l.buf.Write(line)
+	if err != nil {
+		panic("Todododod")
+	}
+}
+
 func (l *cmdLogger) flush() {
-	if len(l.buffers) == 0 {
+	if l.buf.Len() == 0 {
 		return
 	}
-
-	var outBuf bytes.Buffer
-
-	l.buffers.WriteTo(&outBuf)
-	l.buffers = l.buffers[0:0]
-
 	// TODO: This always adds a newline, which is not always what we want. When
 	// we flush partial lines, we don't want to add a newline character. What
 	// we need to do: extend the `*output.Output` type to have a
 	// `WritefNoNewline` (yes, bad name) method.
-	l.out.Writef("%s[%s]%s %s", output.StyleBold, l.name, output.StyleReset, &outBuf)
+	l.out.Writef("%s[%s]%s %s", output.StyleBold, l.name, output.StyleReset, l.buf.String())
+	l.buf.Reset()
 }
 
 // Write handler of logger.
@@ -109,13 +86,19 @@ func (l *cmdLogger) writeLines() {
 				line, err := buf.ReadBytes('\n')
 				if len(line) > 0 {
 					if line[len(line)-1] == '\n' {
-						if len(line) != 1 || len(l.buffers) > 0 {
-							// We add our own newline.
-							l.appendAndFlush(line[0 : len(line)-1])
+						// TODO: We currently add a newline in flush(), see comment there
+						line = line[0 : len(line)-1]
+
+						// But since there *was* a newline, we need to flush,
+						// but only if there is more than a newline or there
+						// was already content.
+						if len(line) != 1 || l.buf.Len() > 0 {
+							l.append(line)
+							l.flush()
 						}
 						tick = nil
 					} else {
-						l.buffers = append(l.buffers, line)
+						l.append(line)
 						tick = time.After(tickDuration)
 					}
 				}
