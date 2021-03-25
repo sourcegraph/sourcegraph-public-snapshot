@@ -329,7 +329,7 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 
 		// The buffered backend.ZoektStreamFunc allows us to consume events from Zoekt
 		// while we wait for repo resolution.
-		bufSender, cleanup := bufferedSender(30, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
+		bufSender, cleanup := bufferedSender(120, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
 
 			mu.Lock()
 			foundResults = foundResults || event.FileCount != 0 || event.MatchCount != 0
