@@ -1,3 +1,4 @@
+/* eslint jsx-a11y/no-static-element-interactions: warn, jsx-a11y/tabindex-no-positive: warn, jsx-a11y/no-noninteractive-tabindex: warn */
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
@@ -294,6 +295,11 @@ export class Tree extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
+            /**
+             * TODO: Improve accessibility here.
+             * We should not be stealing focus here, we should let the user focus on the actual items listed.
+             * Issue: https://github.com/sourcegraph/sourcegraph/issues/19167
+             */
             <div className="tree" tabIndex={1} onKeyDown={this.onKeyDown} ref={this.setTreeElement}>
                 <TreeRoot
                     ref={reference => {

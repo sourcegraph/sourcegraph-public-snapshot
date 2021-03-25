@@ -71,7 +71,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
             </label>
             <input
               autoCapitalize="off"
-              autoComplete="username email"
+              autoComplete="username"
               autoFocus={true}
               className="form-control signin-signup-form__input"
               disabled={false}
@@ -245,7 +245,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
             </label>
             <input
               autoCapitalize="off"
-              autoComplete="username email"
+              autoComplete="username"
               autoFocus={true}
               className="form-control signin-signup-form__input"
               disabled={false}

@@ -119,41 +119,41 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
       >
         Set to
          
-        <a
-          className="mr-2"
-          href="#"
+        <button
+          className="btn btn-link btn-sm p-0 mr-2"
           onClick={[Function]}
+          type="button"
         >
           7 days
-        </a>
-        <a
-          className="mr-2"
-          href="#"
+        </button>
+        <button
+          className="btn btn-link btn-sm p-0 mr-2"
           onClick={[Function]}
+          type="button"
         >
           14 days
-        </a>
-        <a
-          className="mr-2"
-          href="#"
+        </button>
+        <button
+          className="btn btn-link btn-sm p-0 mr-2"
           onClick={[Function]}
+          type="button"
         >
           30 days
-        </a>
-        <a
-          className="mr-2"
-          href="#"
+        </button>
+        <button
+          className="btn btn-link btn-sm p-0 mr-2"
           onClick={[Function]}
+          type="button"
         >
           60 days
-        </a>
-        <a
-          className="mr-2"
-          href="#"
+        </button>
+        <button
+          className="btn btn-link btn-sm p-0 mr-2"
           onClick={[Function]}
+          type="button"
         >
           1 year
-        </a>
+        </button>
       </small>
     </div>
     <button

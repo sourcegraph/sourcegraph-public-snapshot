@@ -147,6 +147,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
     )
 
     return (
+        // eslint-disable-next-line jsx-a11y/no-static-element-interactions
         <div className="search-context-menu" onKeyDown={onMenuKeyDown}>
             <div className="search-context-menu__header d-flex">
                 <span aria-hidden="true" className="search-context-menu__header-prompt">

@@ -56,6 +56,8 @@ class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
         return (
             <Form className="survey-form" onSubmit={this.handleSubmit}>
                 {this.state.error && <p className="survey-form__error">{this.state.error.message}</p>}
+                {/* Label is associated with control through aria-labelledby */}
+                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
                 <label id="survey-form-scores" className="survey-form__label">
                     How likely is it that you would recommend Sourcegraph to a friend?
                 </label>
@@ -78,10 +80,11 @@ class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
                     </div>
                 )}
                 <div className="form-group">
-                    <label className="survey-form__label">
+                    <label className="survey-form__label" htmlFor="survey-form-score-reason">
                         What is the most important reason for the score you gave Sourcegraph?
                     </label>
                     <textarea
+                        id="survey-form-score-reason"
                         className="form-control survey-form__input"
                         onChange={this.onReasonFieldChange}
                         value={this.state.reason}
@@ -90,8 +93,11 @@ class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
                     />
                 </div>
                 <div className="form-group">
-                    <label className="survey-form__label">What could Sourcegraph do to provide a better product?</label>
+                    <label className="survey-form__label" htmlFor="survey-form-better-product">
+                        What could Sourcegraph do to provide a better product?
+                    </label>
                     <textarea
+                        id="survey-form-better-product"
                         className="form-control survey-form__input"
                         onChange={this.onBetterProductFieldChange}
                         value={this.state.betterProduct}

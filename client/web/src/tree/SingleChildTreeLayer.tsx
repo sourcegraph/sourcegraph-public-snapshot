@@ -1,3 +1,4 @@
+/* eslint jsx-a11y/mouse-events-have-key-events: warn */
 import * as React from 'react'
 import { ChildTreeLayer } from './ChildTreeLayer'
 import { Directory } from './Directory'
@@ -123,6 +124,11 @@ export class SingleChildTreeLayer extends React.Component<SingleChildTreeLayerPr
 
         return (
             <div>
+                {/*
+                    TODO: Improve accessibility here.
+                    We should support onFocus here but we currently do not let users focus directly on the actual items in this list.
+                    Issue: https://github.com/sourcegraph/sourcegraph/issues/19167
+                */}
                 <table
                     className="tree-layer"
                     onMouseOver={this.props.entryInfo.isDirectory ? this.invokeOnHover : undefined}

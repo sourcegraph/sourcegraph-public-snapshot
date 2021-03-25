@@ -404,6 +404,7 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
         <a
           href=""
           onClick={[Function]}
+          role="button"
         >
           <small>
             Dismiss

@@ -98,7 +98,9 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
 
     return (
         <>
-            <a id={anchor} />
+            {/* The empty <a> tag is to allow users to anchor links to the top of this file diff node */}
+            {/* eslint-disable-next-line jsx-a11y/anchor-has-content, jsx-a11y/anchor-is-valid */}
+            <a id={anchor} aria-hidden={true} />
             <div className={`file-diff-node test-file-diff-node card ${className || ''}`}>
                 <div className="card-header file-diff-node__header">
                     <button type="button" className="btn btn-sm btn-icon mr-2" onClick={toggleExpand}>

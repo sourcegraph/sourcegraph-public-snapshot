@@ -54,7 +54,7 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
 }
 
 describe('GlobalNavbar', () => {
-    setLinkComponent(props => <a {...props} />)
+    setLinkComponent(({ children, ...props }) => <a {...props}>{children}</a>)
     afterAll(() => setLinkComponent(() => null)) // reset global env for other tests
 
     test('default', () => expect(renderer.create(<GlobalNavbar {...PROPS} />).toJSON()).toMatchSnapshot())

@@ -17,18 +17,18 @@ add(
                     breadcrumbs={[
                         {
                             depth: 0,
-                            breadcrumb: { key: 'home', element: <a href="#">Home</a>, divider: null },
+                            breadcrumb: { key: 'home', element: <a href="/">Home</a>, divider: null },
                         },
                         {
                             depth: 1,
-                            breadcrumb: { key: 'repo_area', element: <a href="#">Repositories</a> },
+                            breadcrumb: { key: 'repo_area', element: <a href="/">Repositories</a> },
                         },
                         {
                             depth: 2,
                             breadcrumb: {
                                 key: 'repo',
                                 element: (
-                                    <a href="#">
+                                    <a href="/">
                                         sourcegraph/<span className="font-weight-semibold">sourcegraph</span>
                                     </a>
                                 ),
@@ -44,14 +44,14 @@ add(
                         },
                         {
                             depth: 4,
-                            breadcrumb: { key: 'directory1', element: <a href="#">path</a> },
+                            breadcrumb: { key: 'directory1', element: <a href="/">path</a> },
                         },
                         {
                             depth: 5,
                             breadcrumb: {
                                 key: 'directory2',
                                 divider: <span className="mx-1">/</span>,
-                                element: <a href="#">to</a>,
+                                element: <a href="/">to</a>,
                             },
                         },
                         {
@@ -59,7 +59,7 @@ add(
                             breadcrumb: {
                                 key: 'fileName',
                                 divider: <span className="mx-1">/</span>,
-                                element: <a href="#">file.tsx</a>,
+                                element: <a href="/">file.tsx</a>,
                             },
                         },
                     ]}
