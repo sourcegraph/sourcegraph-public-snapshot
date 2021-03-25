@@ -88,7 +88,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 	}
 
 	res := &externalServiceResolver{db: r.db, externalService: externalService}
-	if err := syncExternalService(ctx, externalService); err != nil {
+	if err := syncExternalService(ctx, externalService, 5*time.Second, r.RepoUpdaterClient); err != nil {
 		res.warning = fmt.Sprintf("External service created, but we encountered a problem while validating the external service: %s", err)
 	}
 
@@ -150,21 +150,23 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 	}
 
 	res := &externalServiceResolver{db: r.db, externalService: es}
-	if err = syncExternalService(ctx, es); err != nil {
+	if err = syncExternalService(ctx, es, 5*time.Second, r.RepoUpdaterClient); err != nil {
 		res.warning = fmt.Sprintf("External service updated, but we encountered a problem while validating the external service: %s", err)
 	}
 
 	return res, nil
 }
 
-// Eagerly trigger a repo-updater sync.
-func syncExternalService(ctx context.Context, svc *types.ExternalService) error {
-	// Only give 5s to validate external service sync. Usually if there is a
-	// problem it fails sooner.
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+// syncExternalService will eagerly trigger a repo-updater sync. It accepts a
+// timeout as an argument which is recommended to be 5 seconds unless the caller
+// has special requirements for it to be larger or smaller.
+func syncExternalService(ctx context.Context, svc *types.ExternalService, timeout time.Duration, client *repoupdater.Client) error {
+	// Set a timeouut to validate external service sync. It usually fails in
+	// under 5s if there is a problem.
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	_, err := repoupdater.DefaultClient.SyncExternalService(ctx, api.ExternalService{
+	_, err := client.SyncExternalService(ctx, api.ExternalService{
 		ID:              svc.ID,
 		Kind:            svc.Kind,
 		DisplayName:     svc.DisplayName,
@@ -176,18 +178,18 @@ func syncExternalService(ctx context.Context, svc *types.ExternalService) error 
 		NextSyncAt:      svc.NextSyncAt,
 		NamespaceUserID: svc.NamespaceUserID,
 	})
-	if err != nil && ctx.Err() == nil {
-		return err
-	}
 
-	return nil
+	// err is either nil or contains an actual error from the API
+	// call. And we return it nonetheless.
+	// TODO: Maybe we want to wrap this error?
+	return err
 }
 
 type deleteExternalServiceArgs struct {
 	ExternalService graphql.ID
 }
 
-func (*schemaResolver) DeleteExternalService(ctx context.Context, args *deleteExternalServiceArgs) (*EmptyResponse, error) {
+func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *deleteExternalServiceArgs) (*EmptyResponse, error) {
 	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
 		return nil, errors.New("deleting external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
@@ -221,7 +223,7 @@ func (*schemaResolver) DeleteExternalService(ctx context.Context, args *deleteEx
 	// The user doesn't care if triggering syncing failed when deleting a
 	// service, so kick off in the background.
 	go func() {
-		if err := syncExternalService(context.Background(), es); err != nil {
+		if err := syncExternalService(context.Background(), es, 5*time.Second, r.RepoUpdaterClient); err != nil {
 			log15.Warn("Performing final sync after external service deletion", "err", err)
 		}
 	}()
