@@ -80,6 +80,7 @@ interface Props
     availableVersionContexts: VersionContext[] | undefined
 
     minimalNavLinks?: boolean
+    isSearchAutoFocusRequired?: boolean
     branding?: typeof window.context.branding
 
     /** For testing only. Used because reactstrap's Popover is incompatible with react-test-renderer. */

@@ -56,10 +56,15 @@ class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
         return (
             <Form className="survey-form" onSubmit={this.handleSubmit}>
                 {this.state.error && <p className="survey-form__error">{this.state.error.message}</p>}
-                <label className="survey-form__label">
+                <label id="survey-form-scores" className="survey-form__label">
                     How likely is it that you would recommend Sourcegraph to a friend?
                 </label>
-                <SurveyCTA className="survey-form__scores" onClick={this.onScoreChange} score={this.props.score} />
+                <SurveyCTA
+                    ariaLabelledby="survey-form-scores"
+                    className="survey-form__scores"
+                    onChange={this.onScoreChange}
+                    score={this.props.score}
+                />
                 {!this.props.authenticatedUser && (
                     <div className="form-group">
                         <input

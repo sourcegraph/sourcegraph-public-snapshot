@@ -689,7 +689,9 @@ describe('Batches', () => {
                 // Expect to be back at batch change overview page.
                 assert.strictEqual(
                     await driver.page.evaluate(() => window.location.href),
-                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change'
+                    testContext.driver.sourcegraphBaseUrl +
+                        namespaceURL +
+                        '/batch-changes/test-batch-change?archivedCount=10&archivedBy=spec123'
                 )
             })
         }
