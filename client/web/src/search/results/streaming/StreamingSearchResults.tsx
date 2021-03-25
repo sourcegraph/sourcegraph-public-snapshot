@@ -193,7 +193,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
             telemetryService.log('SearchSkippedResultsAgainClicked')
             submitSearch({ ...props, query: newQuery, source: 'excludedResults' })
         },
-        [query, telemetryService, props]
+        [query, telemetryService]
     )
 
     return (
