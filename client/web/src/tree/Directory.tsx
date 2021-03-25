@@ -34,7 +34,7 @@ export const Directory: React.FunctionComponent<TreeChildProps> = (props: TreeCh
                 data-tree-is-directory="true"
                 data-tree-path={props.entryInfo.path}
             >
-                <div className="tree__row-contents-text">
+                <div className="tree__row-contents-text flex-1 justify-between">
                     <div className="d-flex">
                         <a
                             // needed because of dynamic styling
