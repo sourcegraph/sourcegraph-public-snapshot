@@ -65,7 +65,7 @@ func (l *cmdLogger) Write(p []byte) (int, error) {
 }
 
 func (l *cmdLogger) writeLines() {
-	var tick <-chan time.Time
+	tick := time.NewTicker(tickDuration)
 	for {
 		select {
 		case w, ok := <-l.writes:
@@ -91,12 +91,12 @@ func (l *cmdLogger) writeLines() {
 							}
 							l.flush()
 						}
-						tick = nil
+						tick.Stop()
 					} else {
 						if err := l.bufLine(line); err != nil {
 							break
 						}
-						tick = time.After(tickDuration)
+						tick.Reset(tickDuration)
 					}
 				}
 				if err != nil {
@@ -104,9 +104,9 @@ func (l *cmdLogger) writeLines() {
 				}
 			}
 			l.done <- struct{}{}
-		case <-tick:
+		case <-tick.C:
 			l.flush()
-			tick = nil
+			tick.Stop()
 		}
 	}
 }
