@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -52,6 +53,8 @@ func (fm *FileMatch) ResultCount() int {
 	return rc
 }
 
+func (fm *FileMatch) searchResultMarker() {}
+
 // AppendMatches appends the line matches from src as well as updating match
 // counts and limit.
 func (fm *FileMatch) AppendMatches(src *FileMatch) {
@@ -93,4 +96,38 @@ type LineMatch struct {
 	OffsetAndLengths [][2]int32
 	LineNumber       int32
 	LimitHit         bool
+}
+
+func (fm *FileMatch) Select(t filter.SelectPath) Match {
+	switch t.Type {
+	case filter.Repository:
+		return (*RepoMatch)(fm.Repo)
+	case filter.File:
+		fm.LineMatches = nil
+		fm.Symbols = nil
+		return fm
+	case filter.Symbol:
+		if len(fm.Symbols) > 0 {
+			fm.LineMatches = nil // Only return symbol match if symbols exist
+			if len(t.Fields) > 0 {
+				filteredSymbols := selectSymbolKind(fm.Symbols, t.Fields[0])
+				if len(filteredSymbols) == 0 {
+					return nil // Remove file match if there are no symbol results after filtering
+				}
+				fm.Symbols = filteredSymbols
+			}
+			return fm
+		}
+		return nil
+	case filter.Content:
+		// Only return file match if line matches exist
+		if len(fm.LineMatches) > 0 {
+			fm.Symbols = nil
+			return fm
+		}
+		return nil
+	case filter.Commit:
+		return nil
+	}
+	return nil
 }
