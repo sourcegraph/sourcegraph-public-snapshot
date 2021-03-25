@@ -288,7 +288,7 @@ func (r *Resolver) batchChangesSiteCredentialByID(ctx context.Context, id int64)
 		return nil, err
 	}
 
-	cred, err := r.store.GetGlobalCredential(ctx, store.GetGlobalCredentialOpts{ID: id})
+	cred, err := r.store.GetSiteCredential(ctx, store.GetSiteCredentialOpts{ID: id})
 	if err != nil {
 		if err == store.ErrNoResults {
 			return nil, nil
@@ -938,7 +938,7 @@ func (r *Resolver) CreateBatchChangesCredential(ctx context.Context, args *graph
 	return r.createBatchChangesSiteCredential(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), a)
 }
 
-func (r *Resolver) createBatchChangesUserCredential(ctx context.Context, externalServiceURL, externalServiceType string, a auth.Authenticator, userID int32) (_ graphqlbackend.BatchChangesCredentialResolver, err error) {
+func (r *Resolver) createBatchChangesUserCredential(ctx context.Context, externalServiceURL, externalServiceType string, a auth.Authenticator, userID int32) (graphqlbackend.BatchChangesCredentialResolver, error) {
 	// 🚨 SECURITY: Check that the requesting user can create the credential.
 	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
 		return nil, err
@@ -967,7 +967,7 @@ func (r *Resolver) createBatchChangesUserCredential(ctx context.Context, externa
 	return &batchChangesUserCredentialResolver{credential: cred}, nil
 }
 
-func (r *Resolver) createBatchChangesSiteCredential(ctx context.Context, externalServiceURL, externalServiceType string, a auth.Authenticator) (_ graphqlbackend.BatchChangesCredentialResolver, err error) {
+func (r *Resolver) createBatchChangesSiteCredential(ctx context.Context, externalServiceURL, externalServiceType string, a auth.Authenticator) (graphqlbackend.BatchChangesCredentialResolver, error) {
 	// 🚨 SECURITY: Check that a site credential can only be created
 	// by a site-admin.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
@@ -975,7 +975,7 @@ func (r *Resolver) createBatchChangesSiteCredential(ctx context.Context, externa
 	}
 
 	// Throw error documented in schema.graphql.
-	existing, err := r.store.GetGlobalCredential(ctx, store.GetGlobalCredentialOpts{
+	existing, err := r.store.GetSiteCredential(ctx, store.GetSiteCredentialOpts{
 		ExternalServiceType: externalServiceType,
 		ExternalServiceID:   externalServiceURL,
 	})
@@ -991,7 +991,7 @@ func (r *Resolver) createBatchChangesSiteCredential(ctx context.Context, externa
 		ExternalServiceType: externalServiceType,
 		Credential:          a,
 	}
-	if err := r.store.CreateGlobalCredential(ctx, cred); err != nil {
+	if err := r.store.CreateSiteCredential(ctx, cred); err != nil {
 		return nil, err
 	}
 
@@ -1024,7 +1024,7 @@ func (r *Resolver) DeleteBatchChangesCredential(ctx context.Context, args *graph
 	return r.deleteBatchChangesUserCredential(ctx, dbID)
 }
 
-func (r *Resolver) deleteBatchChangesUserCredential(ctx context.Context, credentialDBID int64) (_ *graphqlbackend.EmptyResponse, err error) {
+func (r *Resolver) deleteBatchChangesUserCredential(ctx context.Context, credentialDBID int64) (*graphqlbackend.EmptyResponse, error) {
 	// Get existing credential.
 	cred, err := r.store.UserCredentials().GetByID(ctx, credentialDBID)
 	if err != nil {
@@ -1044,14 +1044,14 @@ func (r *Resolver) deleteBatchChangesUserCredential(ctx context.Context, credent
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-func (r *Resolver) deleteBatchChangesSiteCredential(ctx context.Context, credentialDBID int64) (_ *graphqlbackend.EmptyResponse, err error) {
+func (r *Resolver) deleteBatchChangesSiteCredential(ctx context.Context, credentialDBID int64) (*graphqlbackend.EmptyResponse, error) {
 	// 🚨 SECURITY: Check that the requesting user may delete the credential.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
 	// This also fails if the credential was not found.
-	if err := r.store.DeleteGlobalCredential(ctx, credentialDBID); err != nil {
+	if err := r.store.DeleteSiteCredential(ctx, credentialDBID); err != nil {
 		return nil, err
 	}
 

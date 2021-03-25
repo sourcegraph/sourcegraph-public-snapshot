@@ -20,7 +20,7 @@ type SiteCredential struct {
 	UpdatedAt           time.Time
 }
 
-func (s *Store) CreateGlobalCredential(ctx context.Context, c *SiteCredential) error {
+func (s *Store) CreateSiteCredential(ctx context.Context, c *SiteCredential) error {
 	if c.CreatedAt.IsZero() {
 		c.CreatedAt = s.now()
 	}
@@ -29,14 +29,14 @@ func (s *Store) CreateGlobalCredential(ctx context.Context, c *SiteCredential) e
 		c.UpdatedAt = c.CreatedAt
 	}
 
-	q := createGlobalCredentialQuery(c)
+	q := createSiteCredentialQuery(c)
 	return s.query(ctx, q, func(sc scanner) error {
-		return scanGlobalCredential(c, sc)
+		return scanSiteCredential(c, sc)
 	})
 }
 
-var createGlobalCredentialQueryFmtstr = `
--- source: enterprise/internal/batches/store/site_credentials.go:CreateGlobalCredential
+var createSiteCredentialQueryFmtstr = `
+-- source: enterprise/internal/batches/store/site_credentials.go:CreateSiteCredential
 INSERT INTO
 	batch_changes_site_credentials (external_service_type, external_service_id, credential, created_at, updated_at)
 VALUES
@@ -45,20 +45,20 @@ RETURNING
 	%s
 `
 
-func createGlobalCredentialQuery(c *SiteCredential) *sqlf.Query {
+func createSiteCredentialQuery(c *SiteCredential) *sqlf.Query {
 	return sqlf.Sprintf(
-		createGlobalCredentialQueryFmtstr,
+		createSiteCredentialQueryFmtstr,
 		c.ExternalServiceType,
 		c.ExternalServiceID,
 		&database.NullAuthenticator{A: &c.Credential},
 		c.CreatedAt,
 		c.UpdatedAt,
-		sqlf.Join(globalCredentialColumns, ","),
+		sqlf.Join(siteCredentialColumns, ","),
 	)
 }
 
-func (s *Store) DeleteGlobalCredential(ctx context.Context, id int64) error {
-	res, err := s.ExecResult(ctx, deleteGlobalCredentialQuery(id))
+func (s *Store) DeleteSiteCredential(ctx context.Context, id int64) error {
+	res, err := s.ExecResult(ctx, deleteSiteCredentialQuery(id))
 	if err != nil {
 		return err
 	}
@@ -72,35 +72,35 @@ func (s *Store) DeleteGlobalCredential(ctx context.Context, id int64) error {
 	return nil
 }
 
-var deleteGlobalCredentialQueryFmtstr = `
--- source: enterprise/internal/batches/store/site_credentials.go:DeleteGlobalCredential
+var deleteSiteCredentialQueryFmtstr = `
+-- source: enterprise/internal/batches/store/site_credentials.go:DeleteSiteCredential
 DELETE FROM
 	batch_changes_site_credentials
 WHERE
 	%s
 `
 
-func deleteGlobalCredentialQuery(id int64) *sqlf.Query {
+func deleteSiteCredentialQuery(id int64) *sqlf.Query {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("id = %d", id),
 	}
 	return sqlf.Sprintf(
-		deleteGlobalCredentialQueryFmtstr,
+		deleteSiteCredentialQueryFmtstr,
 		sqlf.Join(preds, "AND"),
 	)
 }
 
-type GetGlobalCredentialOpts struct {
+type GetSiteCredentialOpts struct {
 	ID                  int64
 	ExternalServiceType string
 	ExternalServiceID   string
 }
 
-func (s *Store) GetGlobalCredential(ctx context.Context, opts GetGlobalCredentialOpts) (*SiteCredential, error) {
-	q := getGlobalCredentialQuery(opts)
+func (s *Store) GetSiteCredential(ctx context.Context, opts GetSiteCredentialOpts) (*SiteCredential, error) {
+	q := getSiteCredentialQuery(opts)
 
 	var cred SiteCredential
-	err := s.query(ctx, q, func(sc scanner) error { return scanGlobalCredential(&cred, sc) })
+	err := s.query(ctx, q, func(sc scanner) error { return scanSiteCredential(&cred, sc) })
 	if err != nil {
 		return nil, err
 	}
@@ -112,8 +112,8 @@ func (s *Store) GetGlobalCredential(ctx context.Context, opts GetGlobalCredentia
 	return &cred, nil
 }
 
-var getGlobalCredentialQueryFmtstr = `
--- source: enterprise/internal/batches/store/site_credentials.go:GetGlobalCredential
+var getSiteCredentialQueryFmtstr = `
+-- source: enterprise/internal/batches/store/site_credentials.go:GetSiteCredential
 SELECT
 	%s
 FROM batch_changes_site_credentials
@@ -121,7 +121,7 @@ WHERE
     %s
 `
 
-func getGlobalCredentialQuery(opts GetGlobalCredentialOpts) *sqlf.Query {
+func getSiteCredentialQuery(opts GetSiteCredentialOpts) *sqlf.Query {
 	preds := []*sqlf.Query{}
 	if opts.ExternalServiceType != "" {
 		preds = append(preds, sqlf.Sprintf("external_service_type = %s", opts.ExternalServiceType))
@@ -134,23 +134,23 @@ func getGlobalCredentialQuery(opts GetGlobalCredentialOpts) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf(
-		getGlobalCredentialQueryFmtstr,
-		sqlf.Join(globalCredentialColumns, ","),
+		getSiteCredentialQueryFmtstr,
+		sqlf.Join(siteCredentialColumns, ","),
 		sqlf.Join(preds, "AND"),
 	)
 }
 
-type ListGlobalCredentialsOpts struct {
+type ListSiteCredentialsOpts struct {
 	LimitOpts
 }
 
-func (s *Store) ListGlobalCredentials(ctx context.Context, opts ListGlobalCredentialsOpts) (cs []*SiteCredential, next int64, err error) {
-	q := listGlobalCredentialsQuery(opts)
+func (s *Store) ListSiteCredentials(ctx context.Context, opts ListSiteCredentialsOpts) (cs []*SiteCredential, next int64, err error) {
+	q := listSiteCredentialsQuery(opts)
 
 	cs = make([]*SiteCredential, 0, opts.DBLimit())
 	err = s.query(ctx, q, func(sc scanner) (err error) {
 		var c SiteCredential
-		if err := scanGlobalCredential(&c, sc); err != nil {
+		if err := scanSiteCredential(&c, sc); err != nil {
 			return err
 		}
 		cs = append(cs, &c)
@@ -165,22 +165,22 @@ func (s *Store) ListGlobalCredentials(ctx context.Context, opts ListGlobalCreden
 	return cs, next, err
 }
 
-var listGlobalCredentialsQueryFmtstr = `
--- source: enterprise/internal/batches/store/site_credentials.go:ListGlobalCredentials
+var listSiteCredentialsQueryFmtstr = `
+-- source: enterprise/internal/batches/store/site_credentials.go:ListSiteCredentials
 SELECT
 	%s
 FROM batch_changes_site_credentials
 ORDER BY external_service_type ASC, external_service_id ASC
 `
 
-func listGlobalCredentialsQuery(opts ListGlobalCredentialsOpts) *sqlf.Query {
+func listSiteCredentialsQuery(opts ListSiteCredentialsOpts) *sqlf.Query {
 	return sqlf.Sprintf(
-		listGlobalCredentialsQueryFmtstr+opts.ToDB(),
-		sqlf.Join(globalCredentialColumns, ","),
+		listSiteCredentialsQueryFmtstr+opts.ToDB(),
+		sqlf.Join(siteCredentialColumns, ","),
 	)
 }
 
-var globalCredentialColumns = []*sqlf.Query{
+var siteCredentialColumns = []*sqlf.Query{
 	sqlf.Sprintf("id"),
 	sqlf.Sprintf("external_service_type"),
 	sqlf.Sprintf("external_service_id"),
@@ -189,7 +189,7 @@ var globalCredentialColumns = []*sqlf.Query{
 	sqlf.Sprintf("updated_at"),
 }
 
-func scanGlobalCredential(c *SiteCredential, sc scanner) error {
+func scanSiteCredential(c *SiteCredential, sc scanner) error {
 	return sc.Scan(
 		&c.ID,
 		&c.ExternalServiceType,

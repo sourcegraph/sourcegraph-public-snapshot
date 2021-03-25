@@ -89,7 +89,7 @@ func (c *batchChangesCodeHostConnectionResolver) compute(ctx context.Context) (a
 				return
 			}
 		}
-		siteCreds, _, err := c.store.ListGlobalCredentials(ctx, store.ListGlobalCredentialsOpts{})
+		siteCreds, _, err := c.store.ListSiteCredentials(ctx, store.ListSiteCredentialsOpts{})
 		if err != nil {
 			c.chsErr = err
 			return
