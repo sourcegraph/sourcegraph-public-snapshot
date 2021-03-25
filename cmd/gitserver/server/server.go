@@ -142,9 +142,9 @@ type Server struct {
 
 	// shardIDMu protects shardID
 	shardIDMu sync.RWMutex
-	// shardID stores this server's shardID as seen by frontend. It starts empty
-	// and is populated by the first incoming request from frontend. We require frontend
-	// and our view of the shardID to be the same as we shard repos based on it.
+	// shardID stores this server's shardID as seen by frontend. It starts empty and
+	// is populated by incoming requests from frontend. We require frontend and our
+	// view of the shardID to be the same as we shard repos based on it.
 	shardID string
 
 	// skipCloneForTests is set by tests to avoid clones.
