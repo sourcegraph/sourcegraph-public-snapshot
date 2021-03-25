@@ -71,9 +71,7 @@ const InsightDescription: React.FunctionComponent<InsightDescriptionProps> = pro
 
     return (
         <small title={title} className="insight-description text-muted" onMouseDown={stopPropagation}>
-            <Icon className="icon-inline" />{' '}
-
-            {title}
+            <Icon className="icon-inline" /> {title}
         </small>
     )
 }
