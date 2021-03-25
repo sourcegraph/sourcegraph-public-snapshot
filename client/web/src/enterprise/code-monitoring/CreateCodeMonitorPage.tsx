@@ -1,22 +1,27 @@
 import * as H from 'history'
 import React, { useCallback, useEffect, useMemo } from 'react'
 import { Observable } from 'rxjs'
-import { CodeMonitoringProps } from '.'
 import { AuthenticatedUser } from '../../auth'
 import { PageTitle } from '../../components/PageTitle'
 import { CodeMonitorFields, MonitorEmailPriority } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { CodeMonitorForm } from './components/CodeMonitorForm'
+import { createCodeMonitor as _createCodeMonitor } from './backend'
 
-export interface CreateCodeMonitorPageProps extends Pick<CodeMonitoringProps, 'createCodeMonitor'> {
+export interface CreateCodeMonitorPageProps {
     location: H.Location
     history: H.History
     authenticatedUser: AuthenticatedUser
+
+    createCodeMonitor?: typeof _createCodeMonitor
 }
 
-export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPageProps> = props => {
-    const { authenticatedUser, createCodeMonitor, location } = props
-
+export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPageProps> = ({
+    authenticatedUser,
+    history,
+    location,
+    createCodeMonitor = _createCodeMonitor,
+}) => {
     const triggerQuery = useMemo(() => new URLSearchParams(location.search).get('trigger-query') ?? undefined, [
         location.search,
     ])
@@ -61,7 +66,9 @@ export const CreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPag
                 Learn more
             </a>
             <CodeMonitorForm
-                {...props}
+                history={history}
+                location={location}
+                authenticatedUser={authenticatedUser}
                 onSubmit={createMonitorRequest}
                 triggerQuery={triggerQuery}
                 submitButtonLabel="Create code monitor"

@@ -3,36 +3,7 @@
 @import './SourcegraphWebApp';
 
 // Enterprise styles
-@import './enterprise/batches/preview/list/ChangesetApplyPreviewNode';
-@import './enterprise/batches/preview/list/EmptyPreviewListElement';
-@import './enterprise/batches/preview/list/GitBranchChangesetDescriptionInfo';
-@import './enterprise/batches/preview/list/HiddenChangesetApplyPreviewNode';
-@import './enterprise/batches/preview/list/PreviewList';
-@import './enterprise/batches/preview/list/PreviewNodeIndicator';
-@import './enterprise/batches/preview/list/VisibleChangesetApplyPreviewNode';
-@import './enterprise/batches/preview/CreateUpdateBatchChangeAlert';
-@import './enterprise/batches/preview/BatchChangePreviewStatsBar';
-@import './enterprise/batches/close/BatchChangeCloseChangesetsList';
-@import './enterprise/batches/close/CloseChangesetsListEmptyElement';
-@import './enterprise/batches/close/BatchChangeCloseHeader';
-@import './enterprise/batches/close/ChangesetCloseAction';
-@import './enterprise/batches/close/ChangesetCloseNode';
-@import './enterprise/batches/close/HiddenExternalChangesetCloseNode';
-@import './enterprise/batches/close/ExternalChangesetCloseNode';
-@import './enterprise/batches/detail/changesets/BatchChangeChangesets';
-@import './enterprise/batches/detail/changesets/ChangesetLabel';
-@import './enterprise/batches/detail/changesets/ChangesetNode';
-@import './enterprise/batches/detail/changesets/EmptyChangesetListElement';
-@import './enterprise/batches/detail/changesets/ExternalChangesetNode';
-@import './enterprise/batches/detail/changesets/HiddenExternalChangesetNode';
-@import './enterprise/batches/detail/BatchChangeBurndownChart';
-@import './enterprise/batches/detail/BatchChangeTabs';
-@import './enterprise/batches/detail/BatchChangeStatsCard';
-@import './enterprise/batches/detail/BatchSpecTab';
-@import './enterprise/batches/list/BatchChangesListIntro';
-@import './enterprise/batches/list/BatchChangeListPage';
-@import './enterprise/batches/list/BatchChangeNode';
-@import './enterprise/batches/settings/AddCredentialModal';
+@import './enterprise/batches';
 @import './enterprise/extensions/registry/RegistryArea';
 @import './enterprise/extensions/registry/RegistryNewExtensionPage';
 @import './enterprise/extensions/extension/RegistryExtensionManagePage';

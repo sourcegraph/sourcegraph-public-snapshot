@@ -36,6 +36,7 @@ Once the application is created, look for a tiny link called **export metadata**
     {
       "type": "saml",
       // This value must match the "SP Entity ID" of your JumpCloud application.
+      "configID": "jumpcloud",
       "serviceProviderIssuer": "Sourcegraph",
       // You can escape the metadata to a JSON string using a tool like https://json-escape-text.now.sh.
       // Please be noted it is an online tool and could leak or record your confidential information.

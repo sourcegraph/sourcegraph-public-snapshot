@@ -6,6 +6,8 @@ import { UserAreaRoute } from './UserArea'
 
 const UserSettingsArea = lazyComponent(() => import('../settings/UserSettingsArea'), 'UserSettingsArea')
 
+const redirectToUserProfile: UserAreaRoute['render'] = props => <Redirect to={`${props.url}/settings/profile`} />
+
 export const userAreaRoutes: readonly UserAreaRoute[] = [
     {
         path: '/settings',
@@ -19,9 +21,15 @@ export const userAreaRoutes: readonly UserAreaRoute[] = [
     },
     ...namespaceAreaRoutes,
 
+    // Redirect from /users/:username -> /users/:username/settings/profile.
+    {
+        path: '/',
+        exact: true,
+        render: redirectToUserProfile,
+    },
     // Redirect from previous /users/:username/account -> /users/:username/settings/profile.
     {
         path: '/account',
-        render: props => <Redirect to={`${props.url}/settings/profile`} />,
+        render: redirectToUserProfile,
     },
 ]
