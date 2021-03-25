@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared"
@@ -51,9 +52,13 @@ func enterpriseInit(
 	codemonitorsBackground.StartBackgroundJobs(ctx, db)
 	insightsBackground.StartBackgroundJobs(ctx, db)
 
-	syncRegistry := batches.InitBackgroundJobs(ctx, db, cf)
-	if server != nil {
-		server.ChangesetSyncRegistry = syncRegistry
+	// No Batch Changes on dotcom, so we don't need to spawn the
+	// background jobs for this feature.
+	if !envvar.SourcegraphDotComMode() {
+		syncRegistry := batches.InitBackgroundJobs(ctx, db, cf)
+		if server != nil {
+			server.ChangesetSyncRegistry = syncRegistry
+		}
 	}
 
 	// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB.ExternalServices for now.
