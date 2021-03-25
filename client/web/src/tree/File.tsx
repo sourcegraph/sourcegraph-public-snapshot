@@ -85,7 +85,7 @@ export const File: React.FunctionComponent<FileProps> = props => {
                         style={treePadding(props.depth, false)}
                         tabIndex={-1}
                     >
-                        <div className="tree__row-contents-text d-flex flex-row justify-content-between">
+                        <div className="tree__row-contents-text d-flex flex-row flex-1 justify-content-between">
                             <span className="test-file-decorable-name">{props.entryInfo.name}</span>
                             {renderedFileDecorations}
                         </div>
