@@ -28,7 +28,7 @@ describe('FormActionArea', () => {
             />
         )
         act(() => {
-            const triggerButton = component.find('.test-edit-action')
+            const triggerButton = component.find('.test-action-button')
             triggerButton.simulate('click')
         })
         component = component.update()

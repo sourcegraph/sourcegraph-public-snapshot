@@ -243,7 +243,9 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps> {
                                     {/* Show Dismiss" in the bottom-right if there is a dismiss button */}
                                     {type && (
                                         <div className="hover-overlay__alert-actions">
-                                            <a href="" onClick={this.onAlertDismissedCallback(type)}>
+                                            {/* Ideally this should a <button> but we can't guarantee we have the .btn-link class here. */}
+                                            {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+                                            <a href="" onClick={this.onAlertDismissedCallback(type)} role="button">
                                                 <small>Dismiss</small>
                                             </a>
                                         </div>

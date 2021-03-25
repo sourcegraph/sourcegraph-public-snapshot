@@ -229,6 +229,7 @@ export const Panel = React.memo<Props>(props => {
                                 onClick={onDismiss}
                                 className="btn btn-icon tab-bar__end-fragment-other-element panel__dismiss"
                                 data-tooltip="Close"
+                                aria-label="Close"
                             >
                                 <CloseIcon className="icon-inline" />
                             </button>

@@ -83,8 +83,11 @@ export class SavedSearchForm extends React.Component<Props, State> {
                 </div>
                 <Form onSubmit={this.handleSubmit}>
                     <div className="saved-search-form__input">
-                        <label className="saved-search-form__label">Description:</label>
+                        <label className="saved-search-form__label" htmlFor="saved-search-form-input-description">
+                            Description:
+                        </label>
                         <input
+                            id="saved-search-form-input-description"
                             type="text"
                             name="description"
                             className="form-control test-saved-search-form-input-description"
@@ -95,8 +98,11 @@ export class SavedSearchForm extends React.Component<Props, State> {
                         />
                     </div>
                     <div className="saved-search-form__input">
-                        <label className="saved-search-form__label">Query:</label>
+                        <label className="saved-search-form__label" htmlFor="saved-search-form-input-query">
+                            Query:
+                        </label>
                         <input
+                            id="saved-search-form-input-query"
                             type="text"
                             name="query"
                             className="form-control test-saved-search-form-input-query"
@@ -107,8 +113,12 @@ export class SavedSearchForm extends React.Component<Props, State> {
                         />
                     </div>
                     <div className="saved-search-form__input">
-                        <label className="saved-search-form__label">Email notifications:</label>
-                        <div>
+                        {/* Label is for visual benefit, input has more specific label attached */}
+                        {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                        <label className="saved-search-form__label" id="saved-search-form-email-notifications">
+                            Email notifications:
+                        </label>
+                        <div aria-labelledby="saved-search-form-email-notifications">
                             <label>
                                 <input
                                     type="checkbox"
@@ -129,20 +139,21 @@ export class SavedSearchForm extends React.Component<Props, State> {
                     </div>
                     {notifySlack && slackWebhookURL && (
                         <div className="saved-search-form__input">
-                            <label className="saved-search-form__label">Slack notifications:</label>
-                            <label>
-                                <input
-                                    type="text"
-                                    name="Slack webhook URL"
-                                    className="form-control"
-                                    value={slackWebhookURL}
-                                    disabled={true}
-                                    onChange={this.createInputChangeHandler('slackWebhookURL')}
-                                />
+                            <label className="saved-search-form__label" htmlFor="saved-search-form-input-slack">
+                                Slack notifications:
                             </label>
-                            <label className="small">
+                            <input
+                                id="saved-search-form-input-slack"
+                                type="text"
+                                name="Slack webhook URL"
+                                className="form-control"
+                                value={slackWebhookURL}
+                                disabled={true}
+                                onChange={this.createInputChangeHandler('slackWebhookURL')}
+                            />
+                            <small>
                                 Slack webhooks are deprecated and will be removed in a future Sourcegraph version.
-                            </label>
+                            </small>
                         </div>
                     )}
                     {this.isUnsupportedNotifyQuery(this.state.values) && (

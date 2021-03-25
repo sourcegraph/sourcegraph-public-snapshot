@@ -2,12 +2,15 @@ import React, { useCallback } from 'react'
 import { isErrorLike } from '../../../../shared/src/util/errors'
 import classNames from 'classnames'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { MdiReactIconComponentType } from 'mdi-react'
+import DatabaseIcon from 'mdi-react/DatabaseIcon'
+import PuzzleIcon from 'mdi-react/PuzzleIcon'
 import { ErrorAlert } from '../../components/alerts'
 import { ViewContent, ViewContentProps } from '../../views/ViewContent'
-import { WidthProvider, Responsive, Layout as ReactGridLayout, Layouts as ReactGridLayouts } from 'react-grid-layout'
+import { Layout as ReactGridLayout, Layouts as ReactGridLayouts, Responsive, WidthProvider } from 'react-grid-layout'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
-import { ViewProviderResult } from '../../../../shared/src/api/extension/extensionHostApi'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
+import { ViewInsightProviderResult, ViewInsightProviderSourceType } from '../../insights/backend'
 
 // TODO use a method to get width that also triggers when file explorer is closed
 // (WidthProvider only listens to window resize events)
@@ -16,7 +19,7 @@ const ResponsiveGridLayout = WidthProvider(Responsive)
 export interface ViewGridProps
     extends Omit<ViewContentProps, 'viewContent' | 'viewID' | 'containerClassName'>,
         TelemetryProps {
-    views: ViewProviderResult[]
+    views: ViewInsightProviderResult[]
     className?: string
 }
 
@@ -30,7 +33,7 @@ const defaultItemsPerRow: Record<BreakpointName, number> = { xs: 1, sm: 2, md: 2
 const minWidths: Record<BreakpointName, number> = { xs: 1, sm: 2, md: 3, lg: 3 }
 const defaultHeight = 3
 
-const viewsToReactGridLayouts = (views: ViewProviderResult[]): ReactGridLayouts => {
+const viewsToReactGridLayouts = (views: ViewInsightProviderResult[]): ReactGridLayouts => {
     const reactGridLayouts = Object.fromEntries(
         breakpointNames.map(
             breakpointName =>
@@ -54,6 +57,32 @@ const viewsToReactGridLayouts = (views: ViewProviderResult[]): ReactGridLayouts 
         )
     )
     return reactGridLayouts
+}
+
+interface InsightDescriptionProps {
+    title: string
+    icon: MdiReactIconComponentType
+}
+
+const stopPropagation: React.MouseEventHandler<HTMLElement> = event => event.stopPropagation()
+
+const InsightDescription: React.FunctionComponent<InsightDescriptionProps> = props => {
+    const { icon: Icon, title } = props
+
+    return (
+        <small title={title} className="insight-description text-muted" onMouseDown={stopPropagation}>
+            <Icon className="icon-inline" /> {title}
+        </small>
+    )
+}
+
+const getInsightViewIcon = (source: ViewInsightProviderSourceType): MdiReactIconComponentType => {
+    switch (source) {
+        case ViewInsightProviderSourceType.Backend:
+            return DatabaseIcon
+        case ViewInsightProviderSourceType.Extension:
+            return PuzzleIcon
+    }
 }
 
 export const ViewGrid: React.FunctionComponent<ViewGridProps> = props => {
@@ -81,7 +110,7 @@ export const ViewGrid: React.FunctionComponent<ViewGridProps> = props => {
                 onResizeStart={onResizeOrDragStart}
                 onDragStart={onResizeOrDragStart}
             >
-                {props.views.map(({ id, view }) => (
+                {props.views.map(({ id, view, source }) => (
                     <div key={id} className={classNames('card view-grid__item')}>
                         <ErrorBoundary
                             location={props.location}
@@ -94,11 +123,17 @@ export const ViewGrid: React.FunctionComponent<ViewGridProps> = props => {
                             className="pt-0"
                         >
                             {view === undefined ? (
-                                <div className="flex-grow-1 d-flex flex-column align-items-center justify-content-center">
-                                    <LoadingSpinner /> Loading code insight
-                                </div>
+                                <>
+                                    <div className="flex-grow-1 d-flex flex-column align-items-center justify-content-center">
+                                        <LoadingSpinner /> Loading code insight
+                                    </div>
+                                    <InsightDescription title={id} icon={getInsightViewIcon(source)} />
+                                </>
                             ) : isErrorLike(view) ? (
-                                <ErrorAlert className="m-0" error={view} />
+                                <>
+                                    <ErrorAlert className="m-0" error={view} />
+                                    <InsightDescription title={id} icon={getInsightViewIcon(source)} />
+                                </>
                             ) : (
                                 <>
                                     <h3 className="view-grid__view-title">{view.title}</h3>
