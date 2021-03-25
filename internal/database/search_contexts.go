@@ -127,7 +127,7 @@ func (s *SearchContextsStore) CreateSearchContextWithRepositoryRevisions(ctx con
 	return createdSearchContext, nil
 }
 
-func (s *SearchContextsStore) SetSearchContextRepositoryRevisions(ctx context.Context, searchContextID int32, repositoryRevisions []*types.SearchContextRepositoryRevisions) (err error) {
+func (s *SearchContextsStore) SetSearchContextRepositoryRevisions(ctx context.Context, searchContextID int64, repositoryRevisions []*types.SearchContextRepositoryRevisions) (err error) {
 	if len(repositoryRevisions) == 0 {
 		return nil
 	}
@@ -216,7 +216,7 @@ JOIN
 WHERE sc.search_context_id = %d
 `
 
-func (s *SearchContextsStore) GetSearchContextRepositoryRevisions(ctx context.Context, searchContextID int32) ([]*types.SearchContextRepositoryRevisions, error) {
+func (s *SearchContextsStore) GetSearchContextRepositoryRevisions(ctx context.Context, searchContextID int64) ([]*types.SearchContextRepositoryRevisions, error) {
 	if Mocks.SearchContexts.GetSearchContextRepositoryRevisions != nil {
 		return Mocks.SearchContexts.GetSearchContextRepositoryRevisions(ctx, searchContextID)
 	}

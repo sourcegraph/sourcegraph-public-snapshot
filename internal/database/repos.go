@@ -395,7 +395,7 @@ type ReposListOptions struct {
 
 	// SearchContextID, if non zero, will limit the set of results to repositories listed in
 	// the search context.
-	SearchContextID int32
+	SearchContextID int64
 
 	// ServiceTypes of repos to list. When zero-valued, this is omitted from the predicate set.
 	ServiceTypes []string

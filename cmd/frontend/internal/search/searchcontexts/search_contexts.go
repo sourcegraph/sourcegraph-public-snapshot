@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"sort"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -80,7 +79,7 @@ func GetUsersSearchContexts(ctx context.Context, db dbutil.DB) ([]*types.SearchC
 	return searchContexts, nil
 }
 
-func GetRepositoryRevisions(ctx context.Context, db dbutil.DB, searchContextID int32) ([]*search.RepositoryRevisions, error) {
+func GetRepositoryRevisions(ctx context.Context, db dbutil.DB, searchContextID int64) ([]*search.RepositoryRevisions, error) {
 	searchContextRepositoryRevisions, err := database.SearchContexts(db).GetSearchContextRepositoryRevisions(ctx, searchContextID)
 	if err != nil {
 		return nil, err
@@ -129,7 +128,7 @@ func GetSearchContextSpec(searchContext *types.SearchContext) string {
 	return searchContextSpecPrefix + searchContext.Name
 }
 
-func getVersionContextRepositoryRevisions(ctx context.Context, versionContext *schema.VersionContext) ([]*types.SearchContextRepositoryRevisions, error) {
+func getVersionContextRepositoryRevisions(ctx context.Context, db dbutil.DB, versionContext *schema.VersionContext) ([]*types.SearchContextRepositoryRevisions, error) {
 	repositoriesToRevisions := map[string][]string{}
 	for _, revision := range versionContext.Revisions {
 		repositoriesToRevisions[revision.Repo] = append(repositoriesToRevisions[revision.Repo], revision.Rev)
@@ -139,9 +138,8 @@ func getVersionContextRepositoryRevisions(ctx context.Context, versionContext *s
 	for repo := range repositoriesToRevisions {
 		repositories = append(repositories, repo)
 	}
-	sort.Strings(repositories)
 
-	repositoryNames, err := database.GlobalRepos.ListRepoNames(ctx, database.ReposListOptions{Names: repositories})
+	repositoryNames, err := database.Repos(db).ListRepoNames(ctx, database.ReposListOptions{Names: repositories})
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +147,6 @@ func getVersionContextRepositoryRevisions(ctx context.Context, versionContext *s
 	repositoryRevisions := make([]*types.SearchContextRepositoryRevisions, len(repositoryNames))
 	for idx, repositoryName := range repositoryNames {
 		revisions := repositoriesToRevisions[string(repositoryName.Name)]
-		sort.Strings(revisions)
 		repositoryRevisions[idx] = &types.SearchContextRepositoryRevisions{Repo: repositoryName, Revisions: revisions}
 	}
 
@@ -162,7 +159,7 @@ func getSearchContextFromVersionContext(versionContext *schema.VersionContext) *
 }
 
 func ConvertVersionContextToSearchContext(ctx context.Context, db dbutil.DB, versionContext *schema.VersionContext) (*types.SearchContext, error) {
-	repositoryRevisions, err := getVersionContextRepositoryRevisions(ctx, versionContext)
+	repositoryRevisions, err := getVersionContextRepositoryRevisions(ctx, db, versionContext)
 	if err != nil {
 		return nil, err
 	}
