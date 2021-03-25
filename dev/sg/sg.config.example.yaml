@@ -173,6 +173,37 @@ commands:
       # This is not needed actually
       INSECURE_DEV: 1
 
+  zoekt-indexserver-0:
+    cmd: .bin/zoekt-sourcegraph-indexserver -sourcegraph_url 'http://localhost:3090' \
+      -index "$HOME/.sourcegraph/zoekt/index-0" \
+      -hostname "localhost:3070" \
+      -interval 1m \
+      -listen ":6072" \
+      -cpu_fraction 0.25
+    install: |
+      mkdir -p .bin
+      export GOBIN="${PWD}/.bin"
+      export GO111MODULE=on
+      # TODO: Do we need to install these?
+      # go install github.com/google/zoekt/cmd/zoekt-archive-index
+      # go install github.com/google/zoekt/cmd/zoekt-git-index
+      go install github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver
+    env:
+      GOGC: 50
+
+  zoekt-webserver-0:
+    cmd: .bin/zoekt-webserver \
+      -index "$HOME/.sourcegraph/zoekt/index-0" \
+      -pprof -rpc -listen ":3070"
+    install: |
+      mkdir -p .bin
+      export GOBIN="${PWD}/.bin"
+      export GO111MODULE=on
+      go install github.com/google/zoekt/cmd/zoekt-webserver
+    env:
+      JAEGER_DISABLED: false
+      GOGC: 50
+
 commandsets:
   testing:
     - frontend
@@ -189,6 +220,14 @@ commandsets:
     - docsite
     - syntect_server
     - github-proxy
+    - zoekt-indexserver-0
+    - zoekt-webserver-0
+
+  zoekt:
+    - frontend
+    - gitserver
+    - zoekt-indexserver-0
+    - zoekt-webserver-0
 
   enterprise:
     - enterprise-frontend
