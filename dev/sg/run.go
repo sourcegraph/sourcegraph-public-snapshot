@@ -55,7 +55,7 @@ func run(ctx context.Context, cmds ...Command) error {
 		}(cmd, chs[i])
 	}
 
-	wg.Done()
+	wg.Wait()
 	return <-errs
 }
 
