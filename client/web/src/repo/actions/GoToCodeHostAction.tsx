@@ -15,7 +15,7 @@ import { useObservable } from '../../../../shared/src/util/useObservable'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import { eventLogger } from '../../tracking/eventLogger'
 import { InstallBrowserExtensionPopover } from './InstallBrowserExtensionPopover'
-import { useLocalStorage } from '../../util/useLocalStorage'
+import { useLocalStorage } from '../../../../shared/src/util/useLocalStorage'
 import { RepoHeaderContext } from '../RepoHeader'
 
 interface GoToCodeHostPopoverProps {

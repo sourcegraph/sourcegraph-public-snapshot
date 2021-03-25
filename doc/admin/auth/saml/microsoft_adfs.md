@@ -93,6 +93,7 @@ Click **OK** to apply the new claim rules and close the window.
       "auth.providers": [
         {
           "type": "saml",
+          "configID": "ms_adfs"
           "identityProviderMetadataURL": "https://adfs.example.com/federationmetadata/2007-06/federationmetadata.xml"
         }
       ]

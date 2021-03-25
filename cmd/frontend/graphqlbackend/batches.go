@@ -462,8 +462,9 @@ type BatchChangesCredentialResolver interface {
 }
 
 type ChangesetCountsArgs struct {
-	From *DateTime
-	To   *DateTime
+	From            *DateTime
+	To              *DateTime
+	IncludeArchived bool
 }
 
 type ListChangesetsArgs struct {

@@ -406,30 +406,26 @@ func syncScheduler(ctx context.Context, sched scheduler, gitserverClient *gitser
 	baseRepoStore := database.ReposWith(store)
 
 	doSync := func() {
+		// Fetch all default repos that are NOT cloned so that we can add them to the
+		// scheduler
+		if u, err := baseRepoStore.ListDefaultRepos(ctx, database.ListDefaultReposOptions{OnlyUncloned: true}); err != nil {
+			log15.Error("Listing default repos", "error", err)
+			return
+		} else {
+			// Ensure that uncloned repos are known to the scheduler
+			sched.EnsureScheduled(u)
+		}
+
+		// TODO: Now that we store sync state in the DB maybe we should query from there
+		// instead of gitserver?
 		cloned, err := gitserverClient.ListCloned(ctx)
 		if err != nil {
 			log15.Warn("failed to fetch list of cloned repositories", "error", err)
 			return
 		}
 
-		err = store.SetClonedRepos(ctx, cloned...)
-		if err != nil {
-			log15.Warn("failed to set cloned repository list", "error", err)
-			return
-		}
-
-		// Fetch all default repos that are NOT cloned so that we can add them to the
-		// scheduler
-		repos, err := baseRepoStore.ListDefaultRepos(ctx, database.ListDefaultReposOptions{OnlyUncloned: true})
-		if err != nil {
-			log15.Error("Listing default repos", "error", err)
-			return
-		}
-
-		// Ensure that uncloned repos are known to the scheduler
-		sched.EnsureScheduled(repos)
-
 		// Ensure that any uncloned repos are moved to the front of the schedule
+		// TODO: Could we change this to send through only the uncloned repos?
 		sched.SetCloned(cloned)
 	}
 

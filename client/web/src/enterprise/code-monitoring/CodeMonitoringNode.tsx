@@ -8,25 +8,26 @@ import { Link } from '../../../../shared/src/components/Link'
 import { ErrorLike, isErrorLike, asError } from '../../../../shared/src/util/errors'
 import { useEventObservable } from '../../../../shared/src/util/useObservable'
 import { CodeMonitorFields, ToggleCodeMonitorEnabledResult } from '../../graphql-operations'
-import { sendTestEmail } from './backend'
+import { sendTestEmail, toggleCodeMonitorEnabled as _toggleCodeMonitorEnabled } from './backend'
 import { AuthenticatedUser } from '../../auth'
-import { CodeMonitoringProps } from '.'
 
-export interface CodeMonitorNodeProps extends Pick<CodeMonitoringProps, 'toggleCodeMonitorEnabled'> {
+export interface CodeMonitorNodeProps {
     node: CodeMonitorFields
     location: H.Location
     authentictedUser: AuthenticatedUser
     showCodeMonitoringTestEmailButton: boolean
+
+    toggleCodeMonitorEnabled?: typeof _toggleCodeMonitorEnabled
 }
 
 const LOADING = 'LOADING' as const
 
 export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
-    toggleCodeMonitorEnabled,
     location,
     node,
     authentictedUser,
     showCodeMonitoringTestEmailButton,
+    toggleCodeMonitorEnabled = _toggleCodeMonitorEnabled,
 }: CodeMonitorNodeProps) => {
     const [enabled, setEnabled] = useState<boolean>(node.enabled)
 

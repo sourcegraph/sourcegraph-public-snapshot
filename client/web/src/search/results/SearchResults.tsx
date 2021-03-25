@@ -38,7 +38,7 @@ import { AuthenticatedUser } from '../../auth'
 import { SearchPatternType } from '../../../../shared/src/graphql-operations'
 import { shouldDisplayPerformanceWarning } from '../backend'
 import { VersionContextWarning } from './VersionContextWarning'
-import { CodeMonitoringProps } from '../../enterprise/code-monitoring'
+import { CodeMonitoringProps } from '../../code-monitoring'
 import { wrapRemoteObservable } from '../../../../shared/src/api/client/api/common'
 
 export interface SearchResultsProps
@@ -51,7 +51,7 @@ export interface SearchResultsProps
         PatternTypeProps,
         CaseSensitivityProps,
         MutableVersionContextProps,
-        Pick<CodeMonitoringProps, 'enableCodeMonitoring'>,
+        CodeMonitoringProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location

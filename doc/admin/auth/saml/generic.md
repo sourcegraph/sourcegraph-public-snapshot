@@ -40,6 +40,7 @@ Example 1:
   "auth.providers": [
     {
       "type": "saml",
+      "configID": "generic",
       "identityProviderMetadataURL": "https://example.com/saml-metadata"
     }
   ]
@@ -55,6 +56,7 @@ Example 2:
   "auth.providers": [
     {
       "type": "saml",
+      "configID": "generic",
 
       // This is a long XML string you download from your identity provider.
       // You can escape it to a JSON string using a tool like

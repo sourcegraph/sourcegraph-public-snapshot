@@ -10080,6 +10080,10 @@ type BatchChange implements Node {
         current time.
         """
         to: DateTime
+        """
+        Include archived changesets in the calculation.
+        """
+        includeArchived: Boolean = false
     ): [ChangesetCounts!]!
 
     """
