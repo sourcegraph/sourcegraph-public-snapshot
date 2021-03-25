@@ -16,6 +16,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -302,12 +303,18 @@ func (s *Server) Janitor(interval time.Duration) {
 }
 
 // SyncRepoState syncs state on disk to the database for all repos and is expected to
-// run in a background goroutine.
+// run in a background goroutine. If the list of addresses is in flux we'll wait for it
+// to stabilise before syncing.
 func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int) {
+	var oldAddrs []string
 	for {
-		addrs := conf.Get().ServiceConnections.GitServers
-		if err := s.syncRepoState(addrs, batchSize, perSecond); err != nil {
-			log15.Error("Syncing repo state", "error ", err)
+		// Take a copy to ensure there's not chance of it being mutated
+		addrs := append([]string{}, conf.Get().ServiceConnections.GitServers...)
+		// If we've never run or the list of addresses has remained stable, go ahead
+		if len(oldAddrs) == 0 || reflect.DeepEqual(addrs, oldAddrs) {
+			if err := s.syncRepoState(addrs, batchSize, perSecond); err != nil {
+				log15.Error("Syncing repo state", "error ", err)
+			}
 		}
 		time.Sleep(interval)
 	}
