@@ -14,14 +14,14 @@ var tickDuration time.Duration = 2 * time.Millisecond
 // cmdLogger is a simplified version of goreman's logger:
 // https://github.com/mattn/goreman/blob/master/log.go
 type cmdLogger struct {
-	out *output.Output
+	out  *output.Output
+	name string
 
-	name   string
+	// buf is used to keep partial lines buffered before flushing them (either
+	// on the next newline or after tickDuration)
+	buf    *bytes.Buffer
 	writes chan []byte
 	done   chan struct{}
-
-	// TODO: Let's see if we can use a simple buffer
-	buf *bytes.Buffer
 }
 
 // newCmdLogger returns a new cmdLogger instance and spawns a goroutine in the
@@ -40,16 +40,9 @@ func newCmdLogger(name string, out *output.Output) *cmdLogger {
 	return l
 }
 
-func (l *cmdLogger) appendAndFlush(line []byte) {
-	l.append(line)
-	l.flush()
-}
-
-func (l *cmdLogger) append(line []byte) {
+func (l *cmdLogger) bufLine(line []byte) error {
 	_, err := l.buf.Write(line)
-	if err != nil {
-		panic("Todododod")
-	}
+	return err
 }
 
 func (l *cmdLogger) flush() {
@@ -93,12 +86,16 @@ func (l *cmdLogger) writeLines() {
 						// but only if there is more than a newline or there
 						// was already content.
 						if len(line) != 1 || l.buf.Len() > 0 {
-							l.append(line)
+							if err := l.bufLine(line); err != nil {
+								break
+							}
 							l.flush()
 						}
 						tick = nil
 					} else {
-						l.append(line)
+						if err := l.bufLine(line); err != nil {
+							break
+						}
 						tick = time.After(tickDuration)
 					}
 				}
