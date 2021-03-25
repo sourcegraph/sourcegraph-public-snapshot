@@ -254,19 +254,12 @@ func (s *Server) Handler() http.Handler {
 	})
 
 	// shardIDMiddleware causes us to try and set the server shardID to that of the
-	// shardID received in requests from frontend. It will only set it once.
+	// shardID received in requests from frontend.
 	shardIDMiddleware := func(h http.Handler) http.Handler {
-		// addrs never change during the lifetime of a service as they are read from an
-		// environment variable.
-		addrs := conf.Get().ServiceConnections.GitServers
 		return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-			// Fast path skips work if shardID already set
-			if _, err := s.getShardID(); err == nil {
-				h.ServeHTTP(rw, r)
-				return
-			}
+			addrs := conf.Get().ServiceConnections.GitServers
 			shardID := shardIDFromFrontend(r)
-			s.setShardIDOnce(shardID, addrs)
+			s.maybeSetShardID(shardID, addrs)
 			h.ServeHTTP(rw, r)
 		})
 	}
@@ -331,19 +324,23 @@ func (s *Server) getShardID() (string, error) {
 	return s.shardID, nil
 }
 
-// setShardIDOnce sets shardID only once if h is not blank
-// and it can be found in addrs
-func (s *Server) setShardIDOnce(h string, addrs []string) {
+// maybeSetShardID sets shardID if h is not blank, it can be found in addrs and
+// the new value is different.
+func (s *Server) maybeSetShardID(h string, addrs []string) {
 	if h == "" {
 		return
 	}
 	if !shardIDFound(h, addrs) {
 		return
 	}
+	if current, _ := s.getShardID(); current == h {
+		// Nothing needs to change
+		return
+	}
 	s.shardIDMu.Lock()
 	defer s.shardIDMu.Unlock()
 	// Another caller may have already set it
-	if s.shardID != "" {
+	if s.shardID == h {
 		return
 	}
 	s.shardID = h
