@@ -67,13 +67,13 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                     <div className="mb-0">
                         {isEnabled && (
                             <>
-                                <a
-                                    href=""
+                                <button
+                                    type="button"
                                     className="btn btn-link text-danger test-code-host-connection-node-btn-remove"
                                     onClick={onClickRemove}
                                 >
                                     Remove
-                                </a>
+                                </button>
                                 {node.requiresSSH && (
                                     <button type="button" onClick={onClickView} className="btn btn-secondary ml-2">
                                         View public key

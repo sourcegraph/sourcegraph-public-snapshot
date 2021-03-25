@@ -1,3 +1,4 @@
+/* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-static-element-interactions: warn */
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
@@ -38,13 +39,13 @@ export const File: React.FunctionComponent<FileProps> = props => {
                             data-tree-path={props.entryInfo.path}
                         >
                             <div className="tree__row-contents-text">
+                                {/* TODO Improve accessibility: https://github.com/sourcegraph/sourcegraph/issues/12916 */}
                                 <span
                                     // needed because of dynamic styling
                                     // eslint-disable-next-line react/forbid-dom-props
                                     style={treePadding(props.depth, true)}
                                     className="tree__row-icon"
                                     onClick={props.noopRowClick}
-                                    tabIndex={-1}
                                 >
                                     <SourceRepositoryIcon className="icon-inline" />
                                 </span>

@@ -123,6 +123,7 @@ export const BatchChangesListEmpty: React.FunctionComponent<BatchChangesListEmpt
         </p>
         <div className="text-center">
             <iframe
+                title="Batch Changes demo"
                 className="percy-hide chromatic-ignore"
                 width="100%"
                 height="600"

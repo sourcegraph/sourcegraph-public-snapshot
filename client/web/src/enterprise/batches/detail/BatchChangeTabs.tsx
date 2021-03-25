@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import * as H from 'history'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { ThemeProps } from '../../../../../shared/src/theme'
@@ -27,6 +27,8 @@ export interface BatchChangeTabsProps
         PlatformContextProps,
         TelemetryProps {
     batchChange: BatchChangeFields
+    changesetsCount: number
+    archivedCount: number
     history: H.History
     location: H.Location
     /** For testing only. */
@@ -45,24 +47,22 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
     platformContext,
     telemetryService,
     batchChange,
+    changesetsCount,
+    archivedCount,
     queryChangesets,
     queryChangesetCountsOverTime,
     queryExternalChangesetWithFileDiffs,
 }) => {
-    const archiveEnabled = window.context?.experimentalFeatures?.archiveBatchChangeChangesets
-    const [selectedTab, setSelectedTab] = useState<SelectedTab>(() => {
-        const urlParameters = new URLSearchParams(location.search)
-        if (urlParameters.get('tab') === 'chart') {
-            return 'chart'
+    const archiveEnabled = window.context?.experimentalFeatures?.archiveBatchChangeChangesets ?? false
+    const [selectedTab, setSelectedTab] = useState<SelectedTab>(
+        selectedTabFromLocation(location.search, archiveEnabled)
+    )
+    useEffect(() => {
+        const newTab = selectedTabFromLocation(location.search, archiveEnabled)
+        if (newTab !== selectedTab) {
+            setSelectedTab(newTab)
         }
-        if (urlParameters.get('tab') === 'spec') {
-            return 'spec'
-        }
-        if (urlParameters.get('tab') === 'archived') {
-            return archiveEnabled ? 'archived' : 'changesets'
-        }
-        return 'changesets'
-    })
+    }, [location.search, selectedTab, archiveEnabled])
 
     const onSelectChangesets = useCallback<React.MouseEventHandler>(
         event => {
@@ -118,17 +118,22 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
             <div className="overflow-auto mb-2">
                 <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
                     <li className="nav-item">
+                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                         <a
                             href=""
+                            role="button"
                             onClick={onSelectChangesets}
                             className={classNames('nav-link', selectedTab === 'changesets' && 'active')}
                         >
-                            <SourceBranchIcon className="icon-inline text-muted mr-1" /> Changesets
+                            <SourceBranchIcon className="icon-inline text-muted mr-1" />
+                            Changesets <span className="badge badge-pill badge-secondary ml-1">{changesetsCount}</span>
                         </a>
                     </li>
                     <li className="nav-item test-batches-chart-tab">
+                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                         <a
                             href=""
+                            role="button"
                             onClick={onSelectChart}
                             className={classNames('nav-link', selectedTab === 'chart' && 'active')}
                         >
@@ -136,8 +141,10 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
                         </a>
                     </li>
                     <li className="nav-item test-batches-spec-tab">
+                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                         <a
                             href=""
+                            role="button"
                             onClick={onSelectSpec}
                             className={classNames('nav-link', selectedTab === 'spec' && 'active')}
                         >
@@ -146,12 +153,15 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
                     </li>
                     {archiveEnabled && (
                         <li className="nav-item">
+                            {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                             <a
                                 href=""
+                                role="button"
                                 onClick={onSelectArchived}
                                 className={classNames('nav-link', selectedTab === 'archived' && 'active')}
                             >
-                                <ArchiveIcon className="icon-inline text-muted mr-1" /> Archived
+                                <ArchiveIcon className="icon-inline text-muted mr-1" /> Archived{' '}
+                                <span className="badge badge-pill badge-secondary ml-1">{archivedCount}</span>
                             </a>
                         </li>
                     )}
@@ -199,4 +209,18 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
             )}
         </>
     )
+}
+
+function selectedTabFromLocation(locationSearch: string, archiveEnabled: boolean): SelectedTab {
+    const urlParameters = new URLSearchParams(locationSearch)
+    if (urlParameters.get('tab') === 'chart') {
+        return 'chart'
+    }
+    if (urlParameters.get('tab') === 'spec') {
+        return 'spec'
+    }
+    if (urlParameters.get('tab') === 'archived') {
+        return archiveEnabled ? 'archived' : 'changesets'
+    }
+    return 'changesets'
 }

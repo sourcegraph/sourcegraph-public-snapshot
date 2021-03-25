@@ -1,3 +1,4 @@
+/* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-static-element-interactions: warn */
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
@@ -99,6 +100,8 @@ export class ResultContainer extends React.PureComponent<Props, State> {
         const stringIcon = this.props.stringIcon ? this.props.stringIcon : undefined
         return (
             <div className="test-search-result result-container" data-testid="result-container">
+                {/* TODO: Fix accessibility issues.
+                Issue: https://github.com/sourcegraph/sourcegraph/issues/19272 */}
                 <div
                     className={
                         'result-container__header' +
@@ -107,7 +110,7 @@ export class ResultContainer extends React.PureComponent<Props, State> {
                     onClick={this.toggle}
                 >
                     {stringIcon ? (
-                        <img src={stringIcon} className="icon-inline icon-inline__filtered" />
+                        <img src={stringIcon} className="icon-inline icon-inline__filtered" alt="" />
                     ) : (
                         <Icon className="icon-inline" />
                     )}
@@ -116,6 +119,8 @@ export class ResultContainer extends React.PureComponent<Props, State> {
                         data-testid="result-container-header"
                     >
                         {this.props.collapsible ? (
+                            // This is to ensure the onClick toggle handler doesn't get called
+                            // We should be able to remove this if we refactor to seperate the toggle to its own button
                             <span onClick={blockExpandAndCollapse}>{this.props.title}</span>
                         ) : (
                             this.props.title

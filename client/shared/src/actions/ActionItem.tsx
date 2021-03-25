@@ -183,7 +183,11 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
             content = (
                 <>
                     {this.props.action.iconURL && (
-                        <img src={this.props.action.iconURL} className={this.props.iconClassName} />
+                        <img
+                            src={this.props.action.iconURL}
+                            alt={this.props.action.description}
+                            className={this.props.iconClassName}
+                        />
                     )}{' '}
                     {this.props.action.category ? `${this.props.action.category}: ` : ''}
                     {this.props.action.title}

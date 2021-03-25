@@ -16,6 +16,7 @@ interface SurveyCTAProps {
     score?: number
     onChange?: (score: number) => void
     openSurveyInNewTab?: boolean
+    'aria-labelledby'?: string
 }
 
 export const SurveyCTA: React.FunctionComponent<SurveyCTAProps> = props => {
@@ -40,12 +41,7 @@ export const SurveyCTA: React.FunctionComponent<SurveyCTAProps> = props => {
     }
 
     return (
-        <fieldset
-            aria-labelledby={props.ariaLabelledby}
-            role="radiogroup"
-            className={props.className}
-            onBlur={handleBlur}
-        >
+        <fieldset aria-labelledby={props.ariaLabelledby} className={props.className} onBlur={handleBlur}>
             {range(0, 11).map(score => {
                 const pressed = score === props.score
                 const focused = score === focusedIndex

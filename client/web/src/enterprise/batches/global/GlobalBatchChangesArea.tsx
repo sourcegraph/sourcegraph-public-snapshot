@@ -14,6 +14,8 @@ import { CreateBatchChangePageProps } from '../create/CreateBatchChangePage'
 import { BatchChangeDetailsPageProps } from '../detail/BatchChangeDetailsPage'
 import { BatchChangeClosePageProps } from '../close/BatchChangeClosePage'
 import { Page } from '../../../components/Page'
+import { HeroPage } from '../../../components/HeroPage'
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 
 const BatchChangeListPage = lazyComponent<BatchChangeListPageProps, 'BatchChangeListPage'>(
     () => import('../list/BatchChangeListPage'),
@@ -65,6 +67,8 @@ export const GlobalBatchChangesArea: React.FunctionComponent<Props> = props => {
     return <AuthenticatedBatchChangesArea {...props} />
 }
 
+const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+
 interface AuthenticatedProps extends Props {
     authenticatedUser: AuthenticatedUser
 }
@@ -79,6 +83,7 @@ export const AuthenticatedBatchChangesArea = withAuthenticatedUser<Authenticated
                 render={props => <CreateBatchChangePage {...outerProps} {...props} />}
                 exact={true}
             />
+            <Route component={NotFoundPage} key="hardcoded-key" />
         </Switch>
         {/* eslint-enable react/jsx-no-bind */}
     </Page>

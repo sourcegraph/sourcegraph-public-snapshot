@@ -330,11 +330,11 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         return (
             <>
                 {this.state.didScrollToItem && (
-                    <div className="search-results-list__jump-to-top">
+                    <div className="search-results-list__jump-to-top d-flex align-items-center justify-content-center">
                         Scrolled to result {this.getCheckpoint()} based on URL.&nbsp;
-                        <a href="#" onClick={this.nextJumpToTopClick}>
+                        <button type="button" className="btn btn-link p-0" onClick={this.nextJumpToTopClick}>
                             Jump to top.
-                        </a>
+                        </button>
                     </div>
                 )}
 

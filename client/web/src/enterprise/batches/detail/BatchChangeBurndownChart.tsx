@@ -15,6 +15,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { queryChangesetCountsOverTime as _queryChangesetCountsOverTime } from './backend'
 import { getYear, parseISO } from 'date-fns'
+import { Toggle } from '../../../../../branded/src/components/Toggle'
 
 interface Props {
     batchChangeID: Scalars['ID']
@@ -75,11 +76,16 @@ export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
     queryChangesetCountsOverTime = _queryChangesetCountsOverTime,
     width = '100%',
 }) => {
+    const archiveEnabled = window.context?.experimentalFeatures?.archiveBatchChangeChangesets
+    const [includeArchived, setIncludeArchived] = useState<boolean>(false)
+    const toggleIncludeArchived = useCallback((): void => setIncludeArchived(previousValue => !previousValue), [])
+
     const [hiddenStates, setHiddenStates] = useState<Set<keyof DisplayableChangesetCounts>>(new Set())
     const changesetCountsOverTime: ChangesetCountsOverTimeFields[] | undefined = useObservable(
-        useMemo(() => queryChangesetCountsOverTime({ batchChange: batchChangeID }), [
+        useMemo(() => queryChangesetCountsOverTime({ batchChange: batchChangeID, includeArchived }), [
             batchChangeID,
             queryChangesetCountsOverTime,
+            includeArchived,
         ])
     )
 
@@ -161,7 +167,7 @@ export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
                         ))}
                 </ComposedChart>
             </ResponsiveContainer>
-            <div className="flex-grow-0 btn-group-vertical ml-2">
+            <div className="flex-grow-0 ml-2">
                 {Object.entries(states).map(([key, state]) => (
                     <LegendLabel
                         key={key}
@@ -172,6 +178,12 @@ export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
                         setHiddenStates={setHiddenStates}
                     />
                 ))}
+                {archiveEnabled && (
+                    <>
+                        <hr className="flex-grow-1" />
+                        <IncludeArchivedToggle includeArchived={includeArchived} onToggle={toggleIncludeArchived} />
+                    </>
+                )}
             </div>
         </div>
     )
@@ -207,8 +219,28 @@ const LegendLabel: React.FunctionComponent<{
                 }}
                 className="batch-change-burndown-chart-legend__color-box mr-2"
             />
-            <input type="checkbox" className="mr-2" checked={checked} onChange={onChangeCheckbox} />
-            {label}
+            <input id={stateKey} type="checkbox" className="mr-2" checked={checked} onChange={onChangeCheckbox} />
+            <label htmlFor={stateKey} className="mb-0">
+                {label}
+            </label>
         </div>
     )
 }
+
+const IncludeArchivedToggle: React.FunctionComponent<{
+    includeArchived: boolean
+    onToggle: () => void
+}> = ({ includeArchived, onToggle }) => (
+    <div className="d-flex align-items-center justify-content-between text-nowrap mb-2">
+        <label htmlFor="include-archived" className="mb-0 pt-1">
+            Include archived
+        </label>
+        <Toggle
+            id="include-archived"
+            value={includeArchived}
+            onToggle={onToggle}
+            title="Include archived changesets"
+            className="ml-2"
+        />
+    </div>
+)

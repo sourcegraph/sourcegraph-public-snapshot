@@ -1,3 +1,4 @@
+/* eslint jsx-a11y/no-noninteractive-tabindex: warn*/
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import * as React from 'react'
@@ -192,6 +193,11 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                         error={treeOrError}
                     />
                 ) : (
+                    /**
+                     * TODO: Improve accessibility here.
+                     * We should not be stealing focus here, we should let the user focus on the actual items listed.
+                     * Issue: https://github.com/sourcegraph/sourcegraph/issues/19167
+                     */
                     <table className="tree-layer" tabIndex={0}>
                         <tbody>
                             <tr>
