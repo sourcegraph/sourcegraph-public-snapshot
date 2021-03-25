@@ -1,10 +1,8 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"regexp"
@@ -92,35 +90,10 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 		c = exec.CommandContext(commandCtx, "bash", "-c", cmd.Cmd)
 		c.Dir = root
 		c.Env = makeEnv(conf.Env, cmd.Env)
-		stdout, err := c.StdoutPipe()
-		if err != nil {
-			return err
-		}
 
-		stderr, err := c.StderrPipe()
-		if err != nil {
-			return err
-		}
-
-		wg := &sync.WaitGroup{}
-
-		readIntoBuf := func(prefix string, r io.Reader) {
-			defer wg.Done()
-
-			scanner := bufio.NewScanner(r)
-			for scanner.Scan() {
-				text := strings.TrimSpace(scanner.Text())
-				if text == "" {
-					continue
-				}
-
-				out.Writef("%s[%s]%s %s", output.StyleBold, cmd.Name, output.StyleReset, text)
-			}
-		}
-
-		wg.Add(2)
-		go readIntoBuf("stdout", stdout)
-		go readIntoBuf("stderr", stderr)
+		logger := newCmdLogger(cmd.Name, out)
+		c.Stdout = logger
+		c.Stderr = logger
 
 		if err := c.Start(); err != nil {
 			return err
@@ -131,8 +104,6 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 			defer close(errs)
 
 			errs <- (func() error {
-				wg.Wait()
-
 				if err := c.Wait(); err != nil {
 					if exitErr, ok := err.(*exec.ExitError); ok {
 						return fmt.Errorf("exited with %d", exitErr.ExitCode())

@@ -121,7 +121,7 @@ commands:
       - cmd/searcher
 
   caddy:
-    cmd: .bin/caddy_2.3.0_mac_amd64 run --watch --config=dev/Caddyfile
+    cmd: .bin/caddy_2.3.0_linux_amd64 run --watch --config=dev/Caddyfile
     install_doc.darwin: "use brew install"
     install_doc.linux: "use apt install"
     env:
@@ -156,6 +156,9 @@ commands:
       INSECURE_DEV: 1
 
 commandsets:
+  testing:
+    - frontend
+    - gitserver
   default:
     - frontend
     - repo-updater
