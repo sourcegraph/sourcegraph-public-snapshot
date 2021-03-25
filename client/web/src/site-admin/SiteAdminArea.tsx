@@ -36,6 +36,7 @@ export interface SiteAdminAreaRouteContext
     site: Pick<GQL.ISite, '__typename' | 'id'>
     authenticatedUser: AuthenticatedUser
     isLightTheme: boolean
+    isSourcegraphDotCom: boolean
 
     /** This property is only used by {@link SiteAdminOverviewPage}. */
     overviewComponents: readonly React.ComponentType[]
@@ -54,6 +55,7 @@ interface SiteAdminAreaProps
     overviewComponents: readonly React.ComponentType[]
     authenticatedUser: AuthenticatedUser
     isLightTheme: boolean
+    isSourcegraphDotCom: boolean
 }
 
 const AuthenticatedSiteAdminArea: React.FunctionComponent<SiteAdminAreaProps> = props => {
@@ -77,6 +79,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<SiteAdminAreaProps> = 
         platformContext: props.platformContext,
         settingsCascade: props.settingsCascade,
         isLightTheme: props.isLightTheme,
+        isSourcegraphDotCom: props.isSourcegraphDotCom,
         activation: props.activation,
         site: { __typename: 'Site' as const, id: window.context.siteGQLID },
         overviewComponents: props.overviewComponents,

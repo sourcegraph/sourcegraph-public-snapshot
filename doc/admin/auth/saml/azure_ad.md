@@ -26,6 +26,7 @@
  "auth.providers": [
    {
      "type": "saml",
+     "configID": "azure",
      "identityProviderMetadataURL": "https://login.microsoftonline.com/7d2a00ed-73e8-4920-bbfa-ef68effe2d1e/federationmetadata/2007-06/federationmetadata.xml?appid=eff20ae4-145b-4bd3-ff3f-21edab43fe99"
    }
  ]

@@ -909,7 +909,7 @@ SELECT
 	COUNT(*) FILTER (WHERE %s AND changesets.external_state = 'MERGED'  AND NOT %s) AS merged,
 	COUNT(*) FILTER (WHERE %s AND changesets.external_state = 'OPEN'    AND NOT %s) AS open,
 	COUNT(*) FILTER (WHERE %s AND changesets.external_state = 'DELETED' AND NOT %s) AS deleted,
-	COUNT(*) FILTER (WHERE %s                                           AND %s) AS archived
+	COUNT(*) FILTER (WHERE %s)                                                      AS archived
 FROM changesets
 INNER JOIN repo on repo.id = changesets.repo_id
 WHERE
@@ -917,7 +917,11 @@ WHERE
 `
 
 func archivedInBatchChange(batchChangeID string) *sqlf.Query {
-	return sqlf.Sprintf("COALESCE((batch_change_ids->%s->>'isArchived')::bool, false)", batchChangeID)
+	return sqlf.Sprintf(
+		"(COALESCE((batch_change_ids->%s->>'isArchived')::bool, false) OR COALESCE((batch_change_ids->%s->>'archive')::bool, false))",
+		batchChangeID,
+		batchChangeID,
+	)
 }
 
 func getChangesetsStatsQuery(batchChangeID int64) *sqlf.Query {
@@ -938,7 +942,7 @@ func getChangesetsStatsQuery(batchChangeID int64) *sqlf.Query {
 		publishedAndCompleted, archived,
 		publishedAndCompleted, archived,
 		publishedAndCompleted, archived,
-		publishedAndCompleted, archived,
+		archived,
 		sqlf.Join(preds, " AND "),
 	)
 }

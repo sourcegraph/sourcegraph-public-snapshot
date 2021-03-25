@@ -18,6 +18,7 @@ add('Create', () => (
             <CreateUpdateBatchChangeAlert
                 {...props}
                 specID="123"
+                toBeArchived={18}
                 batchChange={null}
                 viewerCanAdminister={boolean('viewerCanAdminister', true)}
             />
@@ -30,6 +31,7 @@ add('Update', () => (
             <CreateUpdateBatchChangeAlert
                 {...props}
                 specID="123"
+                toBeArchived={199}
                 batchChange={{ id: '123', name: 'awesome-batch-change', url: 'http://test.test/awesome' }}
                 viewerCanAdminister={boolean('viewerCanAdminister', true)}
             />

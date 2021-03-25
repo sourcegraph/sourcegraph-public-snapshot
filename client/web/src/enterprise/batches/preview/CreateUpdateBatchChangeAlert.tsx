@@ -11,6 +11,7 @@ import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 
 export interface CreateUpdateBatchChangeAlertProps extends TelemetryProps {
     specID: string
+    toBeArchived: number
     batchChange: BatchSpecFields['appliesToBatchChange']
     viewerCanAdminister: boolean
     history: H.History
@@ -18,6 +19,7 @@ export interface CreateUpdateBatchChangeAlertProps extends TelemetryProps {
 
 export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateBatchChangeAlertProps> = ({
     specID,
+    toBeArchived,
     batchChange,
     viewerCanAdminister,
     history,
@@ -34,12 +36,17 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
             const batchChange = batchChangeID
                 ? await applyBatchChange({ batchSpec: specID, batchChange: batchChangeID })
                 : await createBatchChange({ batchSpec: specID })
-            history.push(batchChange.url)
+
+            if (toBeArchived > 0) {
+                history.push(`${batchChange.url}?archivedCount=${toBeArchived}&archivedBy=${specID}`)
+            } else {
+                history.push(batchChange.url)
+            }
             telemetryService.logViewEvent(`BatchChangeDetailsPageAfter${batchChangeID ? 'Create' : 'Update'}`)
         } catch (error) {
             setIsLoading(error)
         }
-    }, [specID, setIsLoading, history, batchChangeID, telemetryService])
+    }, [specID, setIsLoading, history, batchChangeID, telemetryService, toBeArchived])
     return (
         <>
             <div className="alert alert-info p-3 mb-3 d-block d-md-flex align-items-center body-lead">

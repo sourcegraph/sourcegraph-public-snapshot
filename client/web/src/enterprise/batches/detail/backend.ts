@@ -422,14 +422,15 @@ const changesetCountsOverTimeFragment = gql`
 
 export const queryChangesetCountsOverTime = ({
     batchChange,
+    includeArchived,
 }: ChangesetCountsOverTimeVariables): Observable<ChangesetCountsOverTimeFields[]> =>
     requestGraphQL<ChangesetCountsOverTimeResult, ChangesetCountsOverTimeVariables>(
         gql`
-            query ChangesetCountsOverTime($batchChange: ID!) {
+            query ChangesetCountsOverTime($batchChange: ID!, $includeArchived: Boolean!) {
                 node(id: $batchChange) {
                     __typename
                     ... on BatchChange {
-                        changesetCountsOverTime {
+                        changesetCountsOverTime(includeArchived: $includeArchived) {
                             ...ChangesetCountsOverTimeFields
                         }
                     }
@@ -438,7 +439,7 @@ export const queryChangesetCountsOverTime = ({
 
             ${changesetCountsOverTimeFragment}
         `,
-        { batchChange }
+        { batchChange, includeArchived }
     ).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {

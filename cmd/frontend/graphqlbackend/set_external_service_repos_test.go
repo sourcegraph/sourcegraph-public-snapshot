@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/graph-gophers/graphql-go/gqltesting"
 
@@ -69,9 +70,11 @@ func TestSetExternalServiceRepos(t *testing.T) {
 		UID:      1,
 	})
 
+	done := make(chan struct{})
 	oldClient := repoupdater.DefaultClient.HTTPClient
 	repoupdater.DefaultClient.HTTPClient = &http.Client{
 		Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+			close(done)
 			return &http.Response{
 				StatusCode: http.StatusOK,
 				Body:       ioutil.NopCloser(bytes.NewReader([]byte{})),
@@ -80,6 +83,10 @@ func TestSetExternalServiceRepos(t *testing.T) {
 	}
 
 	defer func() {
+		// wait for the async job to finish
+		<-done
+		time.Sleep(10 * time.Millisecond)
+
 		database.Mocks = database.MockStores{}
 		repoupdater.DefaultClient.HTTPClient = oldClient
 	}()
