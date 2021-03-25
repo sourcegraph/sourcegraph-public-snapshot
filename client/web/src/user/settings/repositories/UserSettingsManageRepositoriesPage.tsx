@@ -13,12 +13,11 @@ import {
     listAffiliatedRepositories,
 } from '../../../components/externalServices/backend'
 import { ErrorAlert } from '../../../components/alerts'
-import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import { repeatUntil } from '../../../../../shared/src/util/rxjs/repeatUntil'
 import { LoaderButton } from '../../../components/LoaderButton'
 import { UserRepositoriesUpdateProps } from '../../../util'
 import { queryUserPublicRepositories, setUserPublicRepositories } from '../../../site-admin/backend'
+import { PageSelector } from '../../../../../wildcard'
 
 interface Props extends RouteComponentProps, TelemetryProps, UserRepositoriesUpdateProps {
     userID: string
@@ -100,6 +99,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const [query, setQuery] = useState('')
     const [codeHostFilter, setCodeHostFilter] = useState('')
     const [codeHosts, setCodeHosts] = useState(initialCodeHostState)
+    const [filteredRepos, setFilteredRepos] = useState<Repo[]>([])
     const [fetchingRepos, setFetchingRepos] = useState<initialFetchingReposState>()
 
     const toggleTextArea = useCallback(
@@ -235,91 +235,22 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         })
     }
 
-    // filter our set of repos based on query & code host selection
-    const filteredRepos: Repo[] = []
-    for (const repo of repoState.repos) {
-        if (!repo.name.toLowerCase().includes(query)) {
-            continue
+    useEffect(() => {
+        // filter our set of repos based on query & code host selection
+        const filtered: Repo[] = []
+        for (const repo of repoState.repos) {
+            if (!repo.name.toLowerCase().includes(query)) {
+                continue
+            }
+            if (codeHostFilter !== '' && repo.codeHost?.id !== codeHostFilter) {
+                continue
+            }
+            filtered.push(repo)
         }
-        if (codeHostFilter !== '' && repo.codeHost?.id !== codeHostFilter) {
-            continue
-        }
-        filteredRepos.push(repo)
-    }
-
-    // create elements for pagination
-    const pages: JSX.Element[] = []
-    for (let page = 1; page <= Math.ceil(filteredRepos.length / PER_PAGE); page++) {
-        if (page === 1) {
-            pages.push(
-                (page !== currentPage && (
-                    <button
-                        type="button"
-                        key="prev"
-                        className="btn btn-link px-0 text-primary user-settings-repos__pageend"
-                        onClick={() => setPage(currentPage - 1)}
-                    >
-                        <ChevronLeftIcon className="icon-inline fill-primary" />
-                        Previous
-                    </button>
-                )) || (
-                    <button
-                        type="button"
-                        key="prev"
-                        className="btn btn-link px-0 text-muted user-settings-repos__pageend"
-                    >
-                        <ChevronLeftIcon className="icon-inline fill-border-color-2" />
-                        Previous
-                    </button>
-                )
-            )
-        }
-        pages.push(
-            <button
-                type="button"
-                key={page}
-                className={classNames({
-                    'btn user-settings-repos__page': true,
-                    'user-settings-repos__page--active': currentPage === page,
-                })}
-                onClick={() => setPage(page)}
-            >
-                <p
-                    className={classNames({
-                        'mb-0': true,
-                        'text-muted': currentPage === page,
-                        'text-primary': currentPage !== page,
-                    })}
-                >
-                    {page}
-                </p>
-            </button>
-        )
-        if (page === Math.ceil(filteredRepos.length / PER_PAGE)) {
-            pages.push(
-                (page !== currentPage && (
-                    <button
-                        type="button"
-                        key="next"
-                        className="btn btn-link px-0 text-primary user-settings-repos__pageend"
-                        onClick={() => setPage(currentPage + 1)}
-                    >
-                        Next
-                        <ChevronRightIcon className="icon-inline fill-primary" />
-                    </button>
-                )) || (
-                    <button
-                        type="button"
-                        key="next"
-                        className="btn btn-link px-0 text-muted user-settings-repos__pageend"
-                    >
-                        Next
-                        <ChevronRightIcon className="icon-inline user-settings-repos__chevron--inactive" />
-                    </button>
-                )
-            )
-        }
-    }
+        // set new filtered pages and reset current page to one
+        setFilteredRepos(filtered)
+        setPage(1)
+    }, [repoState.repos, codeHostFilter, query])
 
     // save changes and update code hosts
     const submit = useCallback(
@@ -696,12 +627,14 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                             repoState.loaded && rows
                                         }
                                     </table>
-                                    <div className="user-settings-repos__pages">
-                                        {
-                                            // pagination control
-                                            pages
-                                        }
-                                    </div>
+                                    {filteredRepos.length > 0 && (
+                                        <PageSelector
+                                            currentPage={currentPage}
+                                            onPageChange={setPage}
+                                            totalPages={Math.ceil(filteredRepos.length / PER_PAGE)}
+                                            className="pt-4"
+                                        />
+                                    )}
                                 </div>
                             )
                         }
