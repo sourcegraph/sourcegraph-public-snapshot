@@ -373,7 +373,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                           <button
                             aria-controls="panel--3--0"
                             aria-expanded="false"
-                            class="activation-checklist__button list-group-item list-group-item-action"
+                            class="activation-checklist__button list-group-item list-group-item-action btn-link"
                             data-reach-accordion-button=""
                             id="button--3--0"
                           >
@@ -413,9 +413,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                     />
                                   </svg>
                                 </span>
-                                <span
-                                  class="activation-checklist__title"
-                                >
+                                <span>
                                   Add repositories
                                 </span>
                               </div>
@@ -459,7 +457,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                           <button
                             aria-controls="panel--3--1"
                             aria-expanded="false"
-                            class="activation-checklist__button list-group-item list-group-item-action"
+                            class="activation-checklist__button list-group-item list-group-item-action btn-link"
                             data-reach-accordion-button=""
                             id="button--3--1"
                           >
@@ -499,9 +497,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                     />
                                   </svg>
                                 </span>
-                                <span
-                                  class="activation-checklist__title"
-                                >
+                                <span>
                                   Search your code
                                 </span>
                               </div>
@@ -558,7 +554,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                           <button
                             aria-controls="panel--3--2"
                             aria-expanded="false"
-                            class="activation-checklist__button list-group-item list-group-item-action"
+                            class="activation-checklist__button list-group-item list-group-item-action btn-link"
                             data-reach-accordion-button=""
                             id="button--3--2"
                           >
@@ -598,9 +594,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                     />
                                   </svg>
                                 </span>
-                                <span
-                                  class="activation-checklist__title"
-                                >
+                                <span>
                                   Find some references
                                 </span>
                               </div>
@@ -644,7 +638,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                           <button
                             aria-controls="panel--3--3"
                             aria-expanded="false"
-                            class="activation-checklist__button list-group-item list-group-item-action"
+                            class="activation-checklist__button list-group-item list-group-item-action btn-link"
                             data-reach-accordion-button=""
                             id="button--3--3"
                           >
@@ -684,9 +678,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                     />
                                   </svg>
                                 </span>
-                                <span
-                                  class="activation-checklist__title"
-                                >
+                                <span>
                                   Configure SSO or share with teammates
                                 </span>
                               </div>
@@ -964,7 +956,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                 "element": <button
                                   aria-controls="panel--3--0"
                                   aria-expanded="false"
-                                  class="activation-checklist__button list-group-item list-group-item-action"
+                                  class="activation-checklist__button list-group-item list-group-item-action btn-link"
                                   data-reach-accordion-button=""
                                   id="button--3--0"
                                 >
@@ -1004,9 +996,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                           />
                                         </svg>
                                       </span>
-                                      <span
-                                        class="activation-checklist__title"
-                                      >
+                                      <span>
                                         Add repositories
                                       </span>
                                     </div>
@@ -1032,7 +1022,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                 "element": <button
                                   aria-controls="panel--3--1"
                                   aria-expanded="false"
-                                  class="activation-checklist__button list-group-item list-group-item-action"
+                                  class="activation-checklist__button list-group-item list-group-item-action btn-link"
                                   data-reach-accordion-button=""
                                   id="button--3--1"
                                 >
@@ -1072,9 +1062,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                           />
                                         </svg>
                                       </span>
-                                      <span
-                                        class="activation-checklist__title"
-                                      >
+                                      <span>
                                         Search your code
                                       </span>
                                     </div>
@@ -1100,7 +1088,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                 "element": <button
                                   aria-controls="panel--3--2"
                                   aria-expanded="false"
-                                  class="activation-checklist__button list-group-item list-group-item-action"
+                                  class="activation-checklist__button list-group-item list-group-item-action btn-link"
                                   data-reach-accordion-button=""
                                   id="button--3--2"
                                 >
@@ -1140,9 +1128,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                           />
                                         </svg>
                                       </span>
-                                      <span
-                                        class="activation-checklist__title"
-                                      >
+                                      <span>
                                         Find some references
                                       </span>
                                     </div>
@@ -1168,7 +1154,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                 "element": <button
                                   aria-controls="panel--3--3"
                                   aria-expanded="false"
-                                  class="activation-checklist__button list-group-item list-group-item-action"
+                                  class="activation-checklist__button list-group-item list-group-item-action btn-link"
                                   data-reach-accordion-button=""
                                   id="button--3--3"
                                 >
@@ -1208,9 +1194,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                           />
                                         </svg>
                                       </span>
-                                      <span
-                                        class="activation-checklist__title"
-                                      >
+                                      <span>
                                         Configure SSO or share with teammates
                                       </span>
                                     </div>
@@ -1248,12 +1232,12 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                 data-state="collapsed"
                               >
                                 <AccordionButton
-                                  className="activation-checklist__button list-group-item list-group-item-action"
+                                  className="activation-checklist__button list-group-item list-group-item-action btn-link"
                                 >
                                   <button
                                     aria-controls="panel--3--0"
                                     aria-expanded={false}
-                                    className="activation-checklist__button list-group-item list-group-item-action"
+                                    className="activation-checklist__button list-group-item list-group-item-action btn-link"
                                     data-reach-accordion-button=""
                                     id="button--3--0"
                                     onClick={[Function]}
@@ -1287,9 +1271,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                               className="activation-checklist-item__icon"
                                             />
                                           </span>
-                                          <span
-                                            className="activation-checklist__title"
-                                          >
+                                          <span>
                                             Add repositories
                                           </span>
                                         </div>
@@ -1334,12 +1316,12 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                 data-state="collapsed"
                               >
                                 <AccordionButton
-                                  className="activation-checklist__button list-group-item list-group-item-action"
+                                  className="activation-checklist__button list-group-item list-group-item-action btn-link"
                                 >
                                   <button
                                     aria-controls="panel--3--1"
                                     aria-expanded={false}
-                                    className="activation-checklist__button list-group-item list-group-item-action"
+                                    className="activation-checklist__button list-group-item list-group-item-action btn-link"
                                     data-reach-accordion-button=""
                                     id="button--3--1"
                                     onClick={[Function]}
@@ -1388,9 +1370,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                               className="activation-checklist-item__icon"
                                             />
                                           </span>
-                                          <span
-                                            className="activation-checklist__title"
-                                          >
+                                          <span>
                                             Search your code
                                           </span>
                                         </div>
@@ -1448,12 +1428,12 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                 data-state="collapsed"
                               >
                                 <AccordionButton
-                                  className="activation-checklist__button list-group-item list-group-item-action"
+                                  className="activation-checklist__button list-group-item list-group-item-action btn-link"
                                 >
                                   <button
                                     aria-controls="panel--3--2"
                                     aria-expanded={false}
-                                    className="activation-checklist__button list-group-item list-group-item-action"
+                                    className="activation-checklist__button list-group-item list-group-item-action btn-link"
                                     data-reach-accordion-button=""
                                     id="button--3--2"
                                     onClick={[Function]}
@@ -1487,9 +1467,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                               className="activation-checklist-item__icon"
                                             />
                                           </span>
-                                          <span
-                                            className="activation-checklist__title"
-                                          >
+                                          <span>
                                             Find some references
                                           </span>
                                         </div>
@@ -1534,12 +1512,12 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                 data-state="collapsed"
                               >
                                 <AccordionButton
-                                  className="activation-checklist__button list-group-item list-group-item-action"
+                                  className="activation-checklist__button list-group-item list-group-item-action btn-link"
                                 >
                                   <button
                                     aria-controls="panel--3--3"
                                     aria-expanded={false}
-                                    className="activation-checklist__button list-group-item list-group-item-action"
+                                    className="activation-checklist__button list-group-item list-group-item-action btn-link"
                                     data-reach-accordion-button=""
                                     id="button--3--3"
                                     onClick={[Function]}
@@ -1573,9 +1551,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                               className="activation-checklist-item__icon"
                                             />
                                           </span>
-                                          <span
-                                            className="activation-checklist__title"
-                                          >
+                                          <span>
                                             Configure SSO or share with teammates
                                           </span>
                                         </div>

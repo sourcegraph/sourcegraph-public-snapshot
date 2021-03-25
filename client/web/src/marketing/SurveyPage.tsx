@@ -1,3 +1,4 @@
+/* eslint jsx-a11y/label-has-associated-control: warn */
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import * as React from 'react'
@@ -59,7 +60,6 @@ class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
                 {/* TODO: Fix SurveyForm accessibiliy by using form controls.
                 We're using buttons here when we should be using <input type="radio"/>
                 Issue: https://github.com/sourcegraph/sourcegraph/issues/19219 */}
-                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
                 <label className="survey-form__label" id="survey-form-score-value">
                     How likely is it that you would recommend Sourcegraph to a friend?
                 </label>

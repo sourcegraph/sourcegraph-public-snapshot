@@ -152,8 +152,10 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
                     </li>
                     {archiveEnabled && (
                         <li className="nav-item">
+                            {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                             <a
                                 href=""
+                                role="button"
                                 onClick={onSelectArchived}
                                 className={classNames('nav-link', selectedTab === 'archived' && 'active')}
                             >

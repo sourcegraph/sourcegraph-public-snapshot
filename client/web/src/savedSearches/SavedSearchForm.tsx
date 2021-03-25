@@ -113,6 +113,7 @@ export class SavedSearchForm extends React.Component<Props, State> {
                         />
                     </div>
                     <div className="saved-search-form__input">
+                        {/* Label is for visual benefit, input has more specific label attached */}
                         {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
                         <label className="saved-search-form__label" id="saved-search-form-email-notifications">
                             Email notifications:

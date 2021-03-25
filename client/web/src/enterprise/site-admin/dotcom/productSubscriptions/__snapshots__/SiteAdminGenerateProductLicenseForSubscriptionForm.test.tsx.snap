@@ -120,35 +120,35 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
         Set to
          
         <button
-          className="btn btn-link p-0 mr-2 site-admin-create-product-subscription-page__duration-button"
+          className="btn btn-link btn-sm p-0 mr-2"
           onClick={[Function]}
           type="button"
         >
           7 days
         </button>
         <button
-          className="btn btn-link p-0 mr-2 site-admin-create-product-subscription-page__duration-button"
+          className="btn btn-link btn-sm p-0 mr-2"
           onClick={[Function]}
           type="button"
         >
           14 days
         </button>
         <button
-          className="btn btn-link p-0 mr-2 site-admin-create-product-subscription-page__duration-button"
+          className="btn btn-link btn-sm p-0 mr-2"
           onClick={[Function]}
           type="button"
         >
           30 days
         </button>
         <button
-          className="btn btn-link p-0 mr-2 site-admin-create-product-subscription-page__duration-button"
+          className="btn btn-link btn-sm p-0 mr-2"
           onClick={[Function]}
           type="button"
         >
           60 days
         </button>
         <button
-          className="btn btn-link p-0 mr-2 site-admin-create-product-subscription-page__duration-button"
+          className="btn btn-link btn-sm p-0 mr-2"
           onClick={[Function]}
           type="button"
         >
