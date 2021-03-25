@@ -95,7 +95,7 @@ Examples:
 
 ### Visual testing
 
-Visual testing is useful to catch visual regressions and verify designs for new features. [More info about visual testing philosophy](testing_web_code#visual-regressions)
+Visual testing is useful to catch visual regressions and verify designs for new features. [More info about visual testing philosophy](testing_web_code.md#visual-regressions)
 
 We use [Chromatic Storybook](https://www.chromatic.com/) to detect visual changes in specific React components. Post a message in #dev-chat that you need access to Chromatic, and someone will add you to our organization (you will also receive an invitation via e-mail). You should sign into Chromatic with your GitHub account. If a PR you author has visual changes, a UI Review in Chromatic will be generated. It is recommended that a designer approves the UI review.
 
