@@ -23,6 +23,7 @@ exports[`GlobalNavbar default 1`] = `
       caseSensitive={false}
       copyQueryButton={false}
       defaultSearchContextSpec=""
+      enableCodeMonitoring={false}
       enableSmartQuery={false}
       extensionsController={
         Object {

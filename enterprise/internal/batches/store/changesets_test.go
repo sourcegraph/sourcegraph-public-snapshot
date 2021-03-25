@@ -434,8 +434,15 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		})
 
 		t.Run("OnlyArchived", func(t *testing.T) {
+			// Changeset is archived
 			archivedChangeset := updateForThisTest(t, changesets[0], func(ch *batches.Changeset) {
 				ch.BatchChanges[0].IsArchived = true
+			})
+
+			// This changeset is marked as to-be-archived
+			_ = updateForThisTest(t, changesets[1], func(ch *batches.Changeset) {
+				ch.BatchChanges[0].BatchChangeID = archivedChangeset.BatchChanges[0].BatchChangeID
+				ch.BatchChanges[0].Archive = true
 			})
 
 			opts := CountChangesetsOpts{
@@ -447,8 +454,8 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 				t.Fatal(err)
 			}
 
-			if count != 1 {
-				t.Fatalf("got count %d, want: %d", count, 1)
+			if count != 2 {
+				t.Fatalf("got count %d, want: %d", count, 2)
 			}
 
 			opts.OnlyArchived = false
@@ -462,13 +469,21 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		})
 
 		t.Run("IncludeArchived", func(t *testing.T) {
+			// Changeset is archived
 			archivedChangeset := updateForThisTest(t, changesets[0], func(ch *batches.Changeset) {
 				ch.BatchChanges[0].IsArchived = true
 			})
 
+			// Not archived, not marked as to-be-archived
 			_ = updateForThisTest(t, changesets[1], func(ch *batches.Changeset) {
 				ch.BatchChanges[0].BatchChangeID = archivedChangeset.BatchChanges[0].BatchChangeID
 				ch.BatchChanges[0].IsArchived = false
+			})
+
+			// Marked as to-be-archived
+			_ = updateForThisTest(t, changesets[2], func(ch *batches.Changeset) {
+				ch.BatchChanges[0].BatchChangeID = archivedChangeset.BatchChanges[0].BatchChangeID
+				ch.BatchChanges[0].Archive = true
 			})
 
 			opts := CountChangesetsOpts{
@@ -480,8 +495,8 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 				t.Fatal(err)
 			}
 
-			if count != 2 {
-				t.Fatalf("got count %d, want: %d", count, 1)
+			if count != 3 {
+				t.Fatalf("got count %d, want: %d", count, 3)
 			}
 
 			opts.IncludeArchived = false
@@ -1297,30 +1312,40 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		// Archived & closed changeset
 		opts4 := baseOpts
 		opts4.BatchChange = batchChangeID
-		opts4.Archived = true
+		opts4.IsArchived = true
 		opts4.OwnedByBatchChange = batchChangeID
-		opts4.ExternalState = batches.ChangesetExternalStateOpen
+		opts4.ExternalState = batches.ChangesetExternalStateClosed
 		opts4.ReconcilerState = batches.ReconcilerStateCompleted
 		opts4.PublicationState = batches.ChangesetPublicationStatePublished
 		ct.CreateChangeset(t, ctx, s, opts4)
 
-		// Open changeset in a deleted repository
+		// Marked as to-be-archived
 		opts5 := baseOpts
-		// In a deleted repository.
-		opts5.Repo = deletedRepo.ID
 		opts5.BatchChange = batchChangeID
+		opts5.Archive = true
+		opts5.OwnedByBatchChange = batchChangeID
 		opts5.ExternalState = batches.ChangesetExternalStateOpen
-		opts5.ReconcilerState = batches.ReconcilerStateCompleted
+		opts5.ReconcilerState = batches.ReconcilerStateProcessing
 		opts5.PublicationState = batches.ChangesetPublicationStatePublished
 		ct.CreateChangeset(t, ctx, s, opts5)
 
-		// Open changeset in a different batch change
+		// Open changeset in a deleted repository
 		opts6 := baseOpts
-		opts6.BatchChange = batchChangeID + 999
+		// In a deleted repository.
+		opts6.Repo = deletedRepo.ID
+		opts6.BatchChange = batchChangeID
 		opts6.ExternalState = batches.ChangesetExternalStateOpen
 		opts6.ReconcilerState = batches.ReconcilerStateCompleted
 		opts6.PublicationState = batches.ChangesetPublicationStatePublished
 		ct.CreateChangeset(t, ctx, s, opts6)
+
+		// Open changeset in a different batch change
+		opts7 := baseOpts
+		opts7.BatchChange = batchChangeID + 999
+		opts7.ExternalState = batches.ChangesetExternalStateOpen
+		opts7.ReconcilerState = batches.ReconcilerStateCompleted
+		opts7.PublicationState = batches.ChangesetPublicationStatePublished
+		ct.CreateChangeset(t, ctx, s, opts7)
 
 		haveStats, err := s.GetChangesetsStats(ctx, batchChangeID)
 		if err != nil {
@@ -1329,10 +1354,11 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 		wantStats := currentBatchChangeStats
 		wantStats.Open += 1
+		wantStats.Processing += 1
 		wantStats.Closed += 1
 		wantStats.Deleted += 1
-		wantStats.Archived += 1
-		wantStats.Total += 4
+		wantStats.Archived += 2
+		wantStats.Total += 5
 
 		if diff := cmp.Diff(wantStats, haveStats); diff != "" {
 			t.Fatalf("wrong stats returned. diff=%s", diff)

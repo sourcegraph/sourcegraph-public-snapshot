@@ -6,6 +6,10 @@ import { OrgAreaRoute } from './OrgArea'
 
 const OrgSettingsArea = lazyComponent(() => import('../settings/OrgSettingsArea'), 'OrgSettingsArea')
 
+const redirectToOrganizationProfile: OrgAreaRoute['render'] = props => (
+    <Redirect to={`${props.match.url}/settings/profile`} />
+)
+
 export const orgAreaRoutes: readonly OrgAreaRoute[] = [
     {
         path: '/settings',
@@ -13,9 +17,15 @@ export const orgAreaRoutes: readonly OrgAreaRoute[] = [
     },
     ...namespaceAreaRoutes,
 
-    // Redirect from previous /orgs/:orgname/account -> /orgs/:orgname/settings/profile.
+    // Redirect from /organizations/:orgname -> /organizations/:orgname/settings/profile.
+    {
+        path: '/',
+        exact: true,
+        render: redirectToOrganizationProfile,
+    },
+    // Redirect from previous /organizations/:orgname/account -> /organizations/:orgname/settings/profile.
     {
         path: '/account',
-        render: props => <Redirect to={`${props.match.url}/settings/profile`} />,
+        render: redirectToOrganizationProfile,
     },
 ]

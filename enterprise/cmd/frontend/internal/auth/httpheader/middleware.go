@@ -54,6 +54,7 @@ func middleware(next http.Handler) http.Handler {
 		}
 
 		rawUsername := strings.TrimPrefix(r.Header.Get(authProvider.UsernameHeader), authProvider.StripUsernameHeaderPrefix)
+		rawEmail := strings.TrimPrefix(r.Header.Get(authProvider.EmailHeader), authProvider.StripUsernameHeaderPrefix)
 
 		// Continue onto next auth provider if no header is set (in case the auth proxy allows
 		// unauthenticated users to bypass it, which some do). Also respect already authenticated
@@ -62,29 +63,48 @@ func middleware(next http.Handler) http.Handler {
 		// It would NOT add any additional security to return an error here, because a user who can
 		// access this HTTP endpoint directly can just as easily supply a fake username whose
 		// identity to assume.
-		if rawUsername == "" || actor.FromContext(r.Context()).IsAuthenticated() {
+		if (rawEmail == "" && rawUsername == "") || actor.FromContext(r.Context()).IsAuthenticated() {
 			next.ServeHTTP(w, r)
 			return
 		}
 
 		// Otherwise, get or create the user and proceed with the authenticated request.
-		username, err := auth.NormalizeUsername(rawUsername)
-		if err != nil {
-			log15.Error("Error normalizing username from HTTP auth proxy.", "username", rawUsername, "err", err)
-			http.Error(w, "unable to normalize username", http.StatusInternalServerError)
-			return
+		var (
+			username string
+			err      error
+		)
+		if rawUsername != "" {
+			username, err = auth.NormalizeUsername(rawUsername)
+			if err != nil {
+				log15.Error("Error normalizing username from HTTP auth proxy.", "username", rawUsername, "err", err)
+				http.Error(w, "unable to normalize username", http.StatusInternalServerError)
+				return
+			}
+		} else if rawEmail != "" {
+			// if they don't have a username, let's create one from their email
+			username, err = auth.NormalizeUsername(rawEmail)
+			if err != nil {
+				log15.Error("Error normalizing username from email header in HTTP auth proxy.", "email", rawEmail, "err", err)
+				http.Error(w, "unable to normalize username", http.StatusInternalServerError)
+				return
+			}
 		}
 		userID, safeErrMsg, err := auth.GetAndSaveUser(r.Context(), auth.GetAndSaveUserOp{
-			UserProps: database.NewUser{Username: username},
+			UserProps: database.NewUser{Username: username, Email: rawEmail, EmailIsVerified: true},
 			ExternalAccount: extsvc.AccountSpec{
 				ServiceType: providerType,
 				// Store rawUsername, not normalized username, to prevent two users with distinct
 				// pre-normalization usernames from being merged into the same normalized username
 				// (and therefore letting them each impersonate the other).
-				AccountID: rawUsername,
+				AccountID: func() string {
+					if rawEmail != "" {
+						return rawEmail
+					}
+					return rawUsername
+				}(),
 			},
 			CreateIfNotExist: true,
-			LookUpByUsername: true,
+			LookUpByUsername: rawEmail == "", // if the email is provided, we should look up by email, otherwise username
 		})
 		if err != nil {
 			log15.Error("unable to get/create user from SSO header", "header", authProvider.UsernameHeader, "rawUsername", rawUsername, "err", err, "userErr", safeErrMsg)

@@ -9,15 +9,16 @@ import (
 )
 
 func TestPipeline(t *testing.T) {
-	planToString := func(nodes [][]Node) string {
+	planToString := func(disjuncts [][]Node) string {
 		var plan Plan
-		for _, node := range nodes {
-			plan = append(plan, Q(node))
+		for _, disjunct := range disjuncts {
+			parameters, pattern, _ := PartitionSearchPattern(disjunct)
+			plan = append(plan, Basic{Parameters: parameters, Pattern: pattern})
 		}
 
 		var result []string
-		for _, q := range plan {
-			result = append(result, toString(q))
+		for _, basic := range plan {
+			result = append(result, toString(basic.ToParseTree()))
 		}
 		return strings.Join(result, " ")
 	}
@@ -26,7 +27,9 @@ func TestPipeline(t *testing.T) {
 	test := func(input string) string {
 		pipelinePlan, _ := Pipeline(InitLiteral(input))
 		nodes, _ := Run(InitLiteral(input))
-		manualPlan, _ := MapPlan(ToPlan(Dnf(nodes)), ConcatRevFilters)
+		disjuncts := Dnf(nodes)
+		plan, _ := ToPlan(disjuncts)
+		manualPlan := MapPlan(plan, ConcatRevFilters)
 		if diff := cmp.Diff(
 			planToString(Dnf(pipelinePlan.ToParseTree())),
 			planToString(Dnf(manualPlan.ToParseTree())),
