@@ -1,7 +1,7 @@
 // @ts-check
 
 const config = {
-  extends: ['@sourcegraph/eslint-config'],
+  extends: '@sourcegraph/eslint-config',
   env: {
     browser: true,
     node: true,
