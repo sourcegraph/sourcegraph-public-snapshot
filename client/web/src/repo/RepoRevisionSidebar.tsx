@@ -54,7 +54,11 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
             handlePosition="right"
             storageKey={SIZE_STORAGE_KEY}
             element={
-                <Tabs className="w-100 border-right" defaultIndex={tabIndex} onChange={handleTabsChange}>
+                <Tabs
+                    className="w-100 border-right test-repo-revision-sidebar"
+                    defaultIndex={tabIndex}
+                    onChange={handleTabsChange}
+                >
                     <div className="tablist-wrapper d-flex w-100 align-items-center">
                         <TabList>
                             <Tab data-test-tab="files">Files</Tab>
@@ -74,7 +78,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                         aria-hidden={true}
                         className="d-flex overflow-auto repo-revision-container__tabpanels explorer"
                     >
-                        <TabPanels className="w-100 test-repo-revision-sidebar">
+                        <TabPanels className="w-100">
                             <TabPanel tabIndex={-1}>
                                 {tabIndex === 0 && (
                                     <Tree
