@@ -1,6 +1,8 @@
 import * as H from 'history'
 import FileIcon from 'mdi-react/FileIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
+import SourceRepositoryMultipleIcon from 'mdi-react/SourceRepositoryMultipleIcon'
+import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 import { Observable } from 'rxjs'
 import { FetchFileParameters } from '../../../../../shared/src/components/CodeExcerpt'
@@ -62,25 +64,43 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
 
     const renderResult = useCallback(
         (result: GQL.GenericSearchResultInterface | GQL.IFileMatch): JSX.Element => {
-            if (result.__typename === 'FileMatch') {
-                return (
-                    <FileMatch
-                        location={location}
-                        eventLogger={eventLogger}
-                        icon={result.lineMatches && result.lineMatches.length > 0 ? SourceRepositoryIcon : FileIcon}
-                        result={result}
-                        onSelect={logSearchResultClicked}
-                        expanded={false}
-                        showAllMatches={false}
-                        isLightTheme={isLightTheme}
-                        allExpanded={allExpanded}
-                        fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                        repoDisplayName={displayRepoName(result.repository.name)}
-                        settingsCascade={settingsCascade}
-                    />
-                )
+            switch (result.__typename) {
+                case 'FileMatch':
+                    return (
+                        <FileMatch
+                            location={location}
+                            eventLogger={eventLogger}
+                            icon={result.lineMatches && result.lineMatches.length > 0 ? SourceRepositoryIcon : FileIcon}
+                            result={result}
+                            onSelect={logSearchResultClicked}
+                            expanded={false}
+                            showAllMatches={false}
+                            isLightTheme={isLightTheme}
+                            allExpanded={allExpanded}
+                            fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                            repoDisplayName={displayRepoName(result.repository.name)}
+                            settingsCascade={settingsCascade}
+                        />
+                    )
+                case 'CommitSearchResult':
+                    return (
+                        <SearchResult
+                            icon={SourceCommitIcon}
+                            result={result}
+                            isLightTheme={isLightTheme}
+                            history={history}
+                        />
+                    )
+                case 'Repository':
+                    return (
+                        <SearchResult
+                            icon={SourceRepositoryMultipleIcon}
+                            result={result}
+                            isLightTheme={isLightTheme}
+                            history={history}
+                        />
+                    )
             }
-            return <SearchResult result={result} isLightTheme={isLightTheme} history={history} />
         },
         [
             isLightTheme,
