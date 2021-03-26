@@ -58,7 +58,7 @@ func run(ctx context.Context, cmds ...Command) error {
 	wg.Wait()
 
 	fail := <-failures
-	printCmdError(out, fail.err)
+	printCmdError(out, fail.cmdName, fail.err)
 	return fail
 }
 
@@ -93,30 +93,38 @@ func (e reinstallErr) Error() string {
 	return fmt.Sprintf("reinstalling %s failed: %s", e.cmdName, e.output)
 }
 
-func printCmdError(out *output.Output, err error) {
-	var message, cmdName, cmdOut string
+func printCmdError(out *output.Output, cmdName string, err error) {
+	var message, cmdOut string
 
 	switch e := errors.Cause(err).(type) {
 	case installErr:
-		message = "Failed to build"
+		message = "Failed to build " + cmdName
 		cmdOut = e.output
-		cmdName = e.cmdName
 	case reinstallErr:
-		message = "Failed to rebuild"
+		message = "Failed to rebuild " + cmdName
 		cmdOut = e.output
-		cmdName = e.cmdName
 	default:
-		message = fmt.Sprintf("unknown command error: %s", err)
+		message = fmt.Sprintf("Error running %s: %s", cmdName, err)
 	}
 
 	separator := strings.Repeat("-", 80)
-	line := output.Linef(
-		"", output.StyleWarning,
-		"%s\n%s%s %s%s%s: \n%s%s%s%s",
-		separator, output.StyleBold, message, output.StyleBold, cmdName, output.StyleReset,
-		cmdOut, output.StyleWarning, separator, output.StyleReset,
-	)
-	out.WriteLine(line)
+	if cmdOut != "" {
+		line := output.Linef(
+			"", output.StyleWarning,
+			"%s\n%s%s %s%s%s: \n%s%s%s%s",
+			separator, output.StyleBold, message, output.StyleReset,
+			cmdOut, output.StyleWarning, separator, output.StyleReset,
+		)
+		out.WriteLine(line)
+	} else {
+		line := output.Linef(
+			"", output.StyleWarning,
+			"%s\n%s%s\n%s%s",
+			separator, output.StyleBold, message,
+			separator, output.StyleReset,
+		)
+		out.WriteLine(line)
+	}
 }
 
 func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struct{}) error {
@@ -134,7 +142,7 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 			if !startedOnce {
 				return installErr{cmdName: cmd.Name, output: string(cmdOut)}
 			} else {
-				printCmdError(out, reinstallErr{cmdName: cmd.Name, output: string(cmdOut)})
+				printCmdError(out, cmd.Name, reinstallErr{cmdName: cmd.Name, output: string(cmdOut)})
 				// Now we wait for a reload signal before we start to build it again
 				select {
 				case <-reload:
