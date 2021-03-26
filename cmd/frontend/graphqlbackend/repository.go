@@ -72,6 +72,16 @@ func NewRepositoryResolver(db dbutil.DB, repo *types.Repo) *RepositoryResolver {
 	}
 }
 
+func (r *RepositoryResolver) ToMatch() *result.RepoMatch {
+	return &result.RepoMatch{
+		RepoName: types.RepoName{
+			Name: r.name,
+			ID:   r.id,
+		},
+		Rev: r.rev,
+	}
+}
+
 func (r *schemaResolver) repositoryByID(ctx context.Context, id graphql.ID) (*RepositoryResolver, error) {
 	var repoID api.RepoID
 	if err := relay.UnmarshalSpec(id, &repoID); err != nil {

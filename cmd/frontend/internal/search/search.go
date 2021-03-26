@@ -189,7 +189,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							Kind:          sym.Kind(),
 						})
 					}
-					matchesAppend(fromSymbolMatch(fm, symbols))
+					matchesAppend(fromSymbolMatch(&fm.FileMatch, symbols))
 				} else {
 					matchesAppend(fromFileMatch(&fm.FileMatch))
 				}
@@ -420,7 +420,7 @@ func fromFileMatch(fm *result.FileMatch) *streamhttp.EventFileMatch {
 	}
 }
 
-func fromSymbolMatch(fm *graphqlbackend.FileMatchResolver, symbols []streamhttp.Symbol) *streamhttp.EventSymbolMatch {
+func fromSymbolMatch(fm *result.FileMatch, symbols []streamhttp.Symbol) *streamhttp.EventSymbolMatch {
 	var branches []string
 	if fm.InputRev != nil {
 		branches = []string{*fm.InputRev}

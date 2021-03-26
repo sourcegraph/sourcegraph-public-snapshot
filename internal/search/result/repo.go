@@ -5,7 +5,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-type RepoMatch types.RepoName
+type RepoMatch struct {
+	types.RepoName
+
+	// Rev optionally specifies a revision to go to
+	Rev string
+}
 
 func (r *RepoMatch) ResultCount() int {
 	return 1
