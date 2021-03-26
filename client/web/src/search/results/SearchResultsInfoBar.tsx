@@ -26,7 +26,7 @@ export interface SearchResultsInfoBarProps
         CodeMonitoringProps {
     history: H.History
     /** The currently authenticated user or null */
-    authenticatedUser: AuthenticatedUser | null
+    authenticatedUser: Pick<AuthenticatedUser, 'id'> | null
 
     /** The search query and if any results were found */
     query?: string
@@ -71,7 +71,7 @@ const QuotesInterpretedLiterallyNotice: React.FunctionComponent<SearchResultsInf
  * and a few actions like expand all and save query
  */
 export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarProps> = props => {
-    const CreateCodeMonitorButton = useMemo(() => {
+    const createCodeMonitorButton = useMemo(() => {
         if (!props.enableCodeMonitoring || !props.query || !props.authenticatedUser) {
             return null
         }
@@ -92,7 +92,26 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                 </Link>
             </li>
         )
-    }, [props.enableCodeMonitoring, props.query, props.patternType, props.location.search])
+    }, [props.enableCodeMonitoring, props.query, props.authenticatedUser, props.location.search, props.patternType])
+
+    const saveSearchButton = useMemo(() => {
+        if (props.showSavedQueryButton === false || !props.authenticatedUser) {
+            return null
+        }
+
+        return (
+            <li className="nav-item">
+                <button
+                    type="button"
+                    onClick={props.onSaveQueryClick}
+                    className="btn btn-sm btn-link nav-link text-decoration-none test-save-search-link"
+                >
+                    <DownloadIcon className="icon-inline mr-1" />
+                    Save search
+                </button>
+            </li>
+        )
+    }, [props.authenticatedUser, props.onSaveQueryClick, props.showSavedQueryButton])
 
     const extraContext = useMemo(() => ({ searchQuery: props.query || null }), [props.query])
 
@@ -111,22 +130,13 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                         showLoadingSpinnerDuringExecution={true}
                         actionItemClass="btn btn-sm btn-link nav-link text-decoration-none"
                     />
-                    {(CreateCodeMonitorButton || (props.showSavedQueryButton !== false && props.authenticatedUser)) && (
+
+                    {(createCodeMonitorButton || saveSearchButton) && (
                         <li className="search-results-info-bar__divider" aria-hidden="true" />
                     )}
-                    {CreateCodeMonitorButton}
-                    {props.showSavedQueryButton !== false && props.authenticatedUser && (
-                        <li className="nav-item">
-                            <button
-                                type="button"
-                                onClick={props.onSaveQueryClick}
-                                className="btn btn-sm btn-link nav-link text-decoration-none test-save-search-link"
-                            >
-                                <DownloadIcon className="icon-inline mr-1" />
-                                Save search
-                            </button>
-                        </li>
-                    )}
+                    {createCodeMonitorButton}
+                    {saveSearchButton}
+
                     {props.resultsFound && (
                         <>
                             <li className="search-results-info-bar__divider" aria-hidden="true" />
