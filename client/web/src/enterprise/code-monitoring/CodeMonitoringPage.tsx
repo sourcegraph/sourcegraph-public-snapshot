@@ -16,7 +16,6 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { Settings } from '../../schema/settings.schema'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
-import { FeedbackBadge } from '../../components/FeedbackBadge'
 import { eventLogger } from '../../tracking/eventLogger'
 import {
     fetchUserCodeMonitors as _fetchUserCodeMonitors,
