@@ -62,19 +62,12 @@ import { globbingEnabledFromSettings } from './util/globbing'
 import {
     SITE_SUBJECT_NO_ADMIN,
     viewerSubjectFromSettings,
+    defaultCaseSensitiveFromSettings,
     defaultPatternTypeFromSettings,
     experimentalFeaturesFromSettings,
 } from './util/settings'
 import { SearchPatternType } from '../../shared/src/graphql-operations'
 import { HTTPStatusError } from '../../shared/src/backend/fetch'
-import {
-    createCodeMonitor,
-    deleteCodeMonitor,
-    fetchCodeMonitor,
-    fetchUserCodeMonitors,
-    toggleCodeMonitorEnabled,
-    updateCodeMonitor,
-} from './enterprise/code-monitoring/backend'
 import { aggregateStreamingSearch } from './search/stream'
 import { ISearchContext } from '../../shared/src/graphql/schema'
 import { logCodeInsightsChanges } from './insights/analytics'
@@ -311,6 +304,8 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                         authenticatedUser,
                         ...experimentalFeaturesFromSettings(settingsCascade),
                         globbing: globbingEnabledFromSettings(settingsCascade),
+                        searchCaseSensitivity:
+                            defaultCaseSensitiveFromSettings(settingsCascade) || state.searchCaseSensitivity,
                         searchPatternType: defaultPatternTypeFromSettings(settingsCascade) || state.searchPatternType,
                         viewerSubject: viewerSubjectFromSettings(settingsCascade, authenticatedUser),
                     }))
@@ -495,12 +490,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     fetchSavedSearches={fetchSavedSearches}
                                     fetchRecentSearches={fetchRecentSearches}
                                     fetchRecentFileViews={fetchRecentFileViews}
-                                    createCodeMonitor={createCodeMonitor}
-                                    fetchUserCodeMonitors={fetchUserCodeMonitors}
-                                    fetchCodeMonitor={fetchCodeMonitor}
-                                    updateCodeMonitor={updateCodeMonitor}
-                                    deleteCodeMonitor={deleteCodeMonitor}
-                                    toggleCodeMonitorEnabled={toggleCodeMonitorEnabled}
                                     streamSearch={aggregateStreamingSearch}
                                     onUserRepositoriesUpdate={this.onUserRepositoriesUpdate}
                                 />

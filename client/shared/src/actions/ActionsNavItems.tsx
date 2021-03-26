@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react'
-import { from } from 'rxjs'
+import React, { useMemo, useRef } from 'react'
+import { combineLatest, from, ReplaySubject } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { getContributedActionItems } from '../contributions/contributions'
 import { TelemetryProps } from '../telemetry/telemetryService'
@@ -8,6 +8,8 @@ import { ActionsProps } from './ActionsContainer'
 import classNames from 'classnames'
 import { useObservable } from '../util/useObservable'
 import { wrapRemoteObservable } from '../api/client/api/common'
+import { Context, ContributionScope } from '../api/extension/api/context/context'
+import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
 export interface ActionNavItemsClassProps {
     /**
@@ -53,23 +55,36 @@ export interface ActionsNavItemsProps
 export const ActionsNavItems: React.FunctionComponent<ActionsNavItemsProps> = props => {
     const { scope, extraContext, extensionsController, menu, wrapInList } = props
 
+    const scopeChanges = useMemo(() => new ReplaySubject<ContributionScope>(1), [])
+    useDeepCompareEffectNoCheck(() => {
+        scopeChanges.next(scope)
+    }, [scope])
+
+    const extraContextChanges = useMemo(() => new ReplaySubject<Context<unknown>>(1), [])
+    useDeepCompareEffectNoCheck(() => {
+        extraContextChanges.next(extraContext)
+    }, [extraContext])
+
     const contributions = useObservable(
         useMemo(
             () =>
-                from(extensionsController.extHostAPI).pipe(
-                    switchMap(extensionHostAPI =>
-                        wrapRemoteObservable(extensionHostAPI.getContributions(scope, extraContext))
+                combineLatest([scopeChanges, extraContextChanges, from(extensionsController.extHostAPI)]).pipe(
+                    switchMap(([scope, extraContext, extensionHostAPI]) =>
+                        wrapRemoteObservable(extensionHostAPI.getContributions({ scope, extraContext }))
                     )
                 ),
-            [scope, extraContext, extensionsController.extHostAPI]
+            [scopeChanges, extraContextChanges, extensionsController]
         )
     )
 
+    const actionItems = useRef<JSX.Element[] | null>(null)
+
     if (!contributions) {
-        return null // loading
+        // Show last known list while loading, or empty if nothing has been loaded yet
+        return <>{actionItems.current}</>
     }
 
-    const actionItems = getContributedActionItems(contributions, menu).map(item => (
+    actionItems.current = getContributedActionItems(contributions, menu).map(item => (
         <React.Fragment key={item.action.id}>
             {' '}
             <li className={props.listItemClass}>
@@ -87,7 +102,7 @@ export const ActionsNavItems: React.FunctionComponent<ActionsNavItemsProps> = pr
     ))
 
     if (wrapInList) {
-        return actionItems.length > 0 ? <ul className={props.listClass}>{actionItems}</ul> : null
+        return actionItems.current.length > 0 ? <ul className={props.listClass}>{actionItems.current}</ul> : null
     }
-    return <>{actionItems}</>
+    return <>{actionItems.current}</>
 }

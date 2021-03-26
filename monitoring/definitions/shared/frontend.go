@@ -16,7 +16,7 @@ var FrontendInternalAPIErrorResponses sharedObservable = func(containerName stri
 		Warning:     monitoring.Alert().GreaterOrEqual(2, nil).For(5 * time.Minute),
 		Panel:       monitoring.Panel().LegendFormat("{{category}}").Unit(monitoring.Percentage),
 		Owner:       owner,
-		PossibleSolutions: strings.Replace(`
+		PossibleSolutions: strings.ReplaceAll(`
 			- **Single-container deployments:** Check 'docker logs $CONTAINER_ID' for logs starting with 'repo-updater' that indicate requests to the frontend service are failing.
 			- **Kubernetes:**
 				- Confirm that 'kubectl get pods' shows the 'frontend' pods are healthy.
@@ -24,6 +24,6 @@ var FrontendInternalAPIErrorResponses sharedObservable = func(containerName stri
 			- **Docker Compose:**
 				- Confirm that 'docker ps' shows the 'frontend-internal' container is healthy.
 				- Check 'docker logs {{CONTAINER_NAME}}' for logs indicating request failures to 'frontend' or 'frontend-internal'.
-		`, "{{CONTAINER_NAME}}", containerName, -1),
+		`, "{{CONTAINER_NAME}}", containerName),
 	}
 }

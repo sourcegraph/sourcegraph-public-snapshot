@@ -36,25 +36,48 @@ function fetchBackendInsights(): Observable<InsightFields[]> {
     )
 }
 
+export enum ViewInsightProviderSourceType {
+    Backend = 'Backend',
+    Extension = 'Extension',
+}
+
+export interface ViewInsightProviderResult extends ViewProviderResult {
+    /** The source of view provider to distinguish between data from extension and data from backend */
+    source: ViewInsightProviderSourceType
+}
+
 export function getCombinedViews(
     getExtensionsInsights: () => Observable<ViewProviderResult[]>
-): Observable<ViewProviderResult[]> {
+): Observable<ViewInsightProviderResult[]> {
     return combineLatest([
-        getExtensionsInsights(),
+        getExtensionsInsights().pipe(
+            map(extensionInsights =>
+                extensionInsights.map(insight => ({ ...insight, source: ViewInsightProviderSourceType.Extension }))
+            )
+        ),
         fetchBackendInsights().pipe(
             map(backendInsights =>
                 backendInsights.map(
-                    (insight, index): ViewProviderResult => ({
-                        id: `insight.backend${index}`,
+                    (insight, index): ViewInsightProviderResult => ({
+                        id: `Backend insight ${index + 1}`,
                         view: {
                             title: insight.title,
                             subtitle: insight.description,
                             content: [backendInsightToViewContent(insight)],
                         },
+                        source: ViewInsightProviderSourceType.Backend,
                     })
                 )
             ),
-            catchError(error => of<ViewProviderResult[]>([{ id: 'insight.backend', view: asError(error) }]))
+            catchError(error =>
+                of<ViewInsightProviderResult[]>([
+                    {
+                        id: 'Backend insight',
+                        view: asError(error),
+                        source: ViewInsightProviderSourceType.Backend,
+                    },
+                ])
+            )
         ),
     ]).pipe(map(([extensionViews, backendInsights]) => [...backendInsights, ...extensionViews]))
 }

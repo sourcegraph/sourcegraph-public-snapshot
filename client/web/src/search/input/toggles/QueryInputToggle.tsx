@@ -65,6 +65,8 @@ export const QueryInputToggle: React.FunctionComponent<ToggleProps> = ({ onToggl
     const isActive = props.isActive && !disabledRule
 
     return (
+        // Click events here are defined in useEffect
+        // eslint-disable-next-line jsx-a11y/click-events-have-key-events
         <div
             ref={toggleCheckbox}
             onClick={onCheckboxToggled}

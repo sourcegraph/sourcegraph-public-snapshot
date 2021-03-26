@@ -316,7 +316,7 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
 }
 
 export function filterAndRankItems(
-    items: Pick<ActionItemAction, 'action'>[],
+    items: Pick<ActionItemAction, 'action' | 'active'>[],
     query: string,
     recentActions: string[] | null
 ): ActionItemAction[] {

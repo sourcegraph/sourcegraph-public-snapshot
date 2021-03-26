@@ -72,8 +72,9 @@ func serveGraphQL(schema *graphql.Schema, rlw *graphqlbackend.RateLimitWatcher, 
 
 		var cost *graphqlbackend.QueryCost
 		var costErr error
+
+		// Don't attempt to estimate or rate limit a request that has failed validation
 		if len(validationErrs) == 0 {
-			// Don't attempt to estimate an invalid request
 			cost, costErr = graphqlbackend.EstimateQueryCost(params.Query, params.Variables)
 			if costErr != nil {
 				// We send errors to Honeycomb, no need to spam logs
@@ -81,16 +82,16 @@ func serveGraphQL(schema *graphql.Schema, rlw *graphqlbackend.RateLimitWatcher, 
 			}
 			traceData.costError = costErr
 			traceData.cost = cost
-		}
 
-		if rl, enabled := rlw.Get(); enabled {
-			limited, result, err := rl.RateLimit(uid, isIP, cost.FieldCount)
-			if err != nil {
-				log15.Error("checking GraphQL rate limit", "error", err)
-				traceData.limitError = err
-			} else {
-				traceData.limited = limited
-				traceData.limitResult = result
+			if rl, enabled := rlw.Get(); enabled && cost != nil {
+				limited, result, err := rl.RateLimit(uid, isIP, cost.FieldCount)
+				if err != nil {
+					log15.Error("checking GraphQL rate limit", "error", err)
+					traceData.limitError = err
+				} else {
+					traceData.limited = limited
+					traceData.limitResult = result
+				}
 			}
 		}
 

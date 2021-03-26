@@ -55,6 +55,7 @@ Guides to help with troubleshooting, configuring test instances, debugging, and 
 
 ### Testing Sourcegraph & CI
 
+- [How to run tests](how-to/testing.md)
 - [Configure a test instance of Phabricator and Gitolite](how-to/configure_phabricator_gitolite.md)
 - [Test a Phabricator and Gitolite instance](how-to/test_phabricator.md)
 - [Adding or changing Buildkite secrets](how-to/adding_buildkite_secrets.md)
@@ -97,7 +98,6 @@ Clarification and discussion about key concepts, architecture, and development s
 ### [Languages](background-information/languages/index.md)
 
 - [Go](background-information/languages/go.md)
-  - [Testing Go code](background-information/languages/testing_go_code.md)
 - [TypeScript](background-information/languages/typescript.md)
 - [Bash](background-information/languages/bash.md)
 - [Terraform](background-information/languages/terraform.md)
@@ -109,8 +109,8 @@ Clarification and discussion about key concepts, architecture, and development s
 ### Testing
 
 - [Continuous Integration](background-information/continuous_integration.md)
-- [How to run tests](background-information/testing.md)
 - [Testing Principles](background-information/testing_principles.md)
+- [Testing Go code](background-information/languages/testing_go_code.md)
 - [Testing web code](background-information/testing_web_code.md)
 
 ### Tools

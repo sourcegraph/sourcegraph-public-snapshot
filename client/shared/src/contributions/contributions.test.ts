@@ -25,8 +25,9 @@ describe('getContributedActionItems', () => {
         ).toEqual([
             {
                 action: { id: 'b', command: 'b', title: 'tb', description: 'db' },
+                active: true,
                 altAction: { id: 'c', command: 'c', title: 'tc', description: 'dc' },
             },
-            { action: { id: 'a', command: 'a', title: 'ta', description: 'da' }, altAction: undefined },
+            { action: { id: 'a', command: 'a', title: 'ta', description: 'da' }, active: true, altAction: undefined },
         ] as ActionItemAction[]))
 })

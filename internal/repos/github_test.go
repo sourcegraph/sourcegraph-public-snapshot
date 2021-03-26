@@ -82,7 +82,7 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 
-		tc.name = "GithubSource_CreateChangeset_" + strings.Replace(tc.name, " ", "_", -1)
+		tc.name = "GithubSource_CreateChangeset_" + strings.ReplaceAll(tc.name, " ", "_")
 
 		t.Run(tc.name, func(t *testing.T) {
 			// The GithubSource uses the github.Client under the hood, which
@@ -157,7 +157,7 @@ func TestGithubSource_CloseChangeset(t *testing.T) {
 
 	for _, tc := range testCases {
 		tc := tc
-		tc.name = "GithubSource_CloseChangeset_" + strings.Replace(tc.name, " ", "_", -1)
+		tc.name = "GithubSource_CloseChangeset_" + strings.ReplaceAll(tc.name, " ", "_")
 
 		t.Run(tc.name, func(t *testing.T) {
 			// The GithubSource uses the github.Client under the hood, which
@@ -225,7 +225,7 @@ func TestGithubSource_ReopenChangeset(t *testing.T) {
 
 	for _, tc := range testCases {
 		tc := tc
-		tc.name = "GithubSource_ReopenChangeset_" + strings.Replace(tc.name, " ", "_", -1)
+		tc.name = "GithubSource_ReopenChangeset_" + strings.ReplaceAll(tc.name, " ", "_")
 
 		t.Run(tc.name, func(t *testing.T) {
 			// The GithubSource uses the github.Client under the hood, which
@@ -295,7 +295,7 @@ func TestGithubSource_UpdateChangeset(t *testing.T) {
 
 	for _, tc := range testCases {
 		tc := tc
-		tc.name = "GithubSource_UpdateChangeset_" + strings.Replace(tc.name, " ", "_", -1)
+		tc.name = "GithubSource_UpdateChangeset_" + strings.ReplaceAll(tc.name, " ", "_")
 
 		t.Run(tc.name, func(t *testing.T) {
 			// The GithubSource uses the github.Client under the hood, which

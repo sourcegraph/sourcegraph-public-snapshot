@@ -3,9 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -50,7 +48,7 @@ func (fm *FileMatchResolver) Equal(other *FileMatchResolver) bool {
 }
 
 func (fm *FileMatchResolver) Key() string {
-	return fm.URI
+	return fm.URL()
 }
 
 func (fm *FileMatchResolver) File() *GitTreeEntryResolver {
@@ -87,7 +85,7 @@ func (fm *FileMatchResolver) RevSpec() *gitRevSpec {
 }
 
 func (fm *FileMatchResolver) Resource() string {
-	return fm.URI
+	return fm.URL()
 }
 
 func (fm *FileMatchResolver) Symbols() []symbolResolver {
@@ -230,7 +228,6 @@ func searchFilesInRepo(ctx context.Context, db dbutil.DB, searcherURLs *endpoint
 		return nil, false, err
 	}
 
-	workspace := fileMatchURI(repo.Name, rev, "")
 	repoResolver := NewRepositoryResolver(db, repo.ToRepo())
 	resolvers := make([]*FileMatchResolver, 0, len(matches))
 	for _, fm := range matches {
@@ -255,7 +252,6 @@ func searchFilesInRepo(ctx context.Context, db dbutil.DB, searcherURLs *endpoint
 				LineMatches: lineMatches,
 				LimitHit:    fm.LimitHit,
 				Repo:        repo,
-				URI:         workspace + fm.Path,
 				CommitID:    commit,
 				InputRev:    &rev,
 			},
@@ -304,21 +300,6 @@ func repoHasFilesWithNamesMatching(ctx context.Context, searcherURLs *endpoint.M
 	}
 
 	return true, nil
-}
-
-func fileMatchURI(name api.RepoName, ref, path string) string {
-	var b strings.Builder
-	ref = url.QueryEscape(ref)
-	b.Grow(len(name) + len(ref) + len(path) + len("git://?#"))
-	b.WriteString("git://")
-	b.WriteString(string(name))
-	if ref != "" {
-		b.WriteByte('?')
-		b.WriteString(ref)
-	}
-	b.WriteByte('#')
-	b.WriteString(path)
-	return b.String()
 }
 
 var mockSearchFilesInRepos func(args *search.TextParameters) ([]*FileMatchResolver, *streaming.Stats, error)
@@ -372,7 +353,7 @@ func searchFilesInRepos(ctx context.Context, db dbutil.DB, args *search.TextPara
 
 	tr, ctx := trace.New(ctx, "searchFilesInRepos", fmt.Sprintf("query: %s", args.PatternInfo.Pattern))
 	defer func() {
-		tr.SetError(err)
+		tr.SetErrorIfNotContext(err)
 		tr.Finish()
 	}()
 	tr.LogFields(
@@ -381,24 +362,17 @@ func searchFilesInRepos(ctx context.Context, db dbutil.DB, args *search.TextPara
 		trace.Stringer("global_search_mode", args.Mode),
 	)
 
-	indexedTyp := textRequest
-	if args.PatternInfo.IsStructuralPat {
-		// Structural Patterns queries zoekt just file files to reduce the set
-		// of files it searches.
-		indexedTyp = fileRequest
-	}
-
 	// performance: for global searches, we avoid calling newIndexedSearchRequest
 	// because zoekt will anyway have to search all its shards.
 	var indexed *indexedSearchRequest
 	if args.Mode == search.ZoektGlobalSearch {
 		indexed = &indexedSearchRequest{
 			args:  args,
-			typ:   indexedTyp,
+			typ:   textRequest,
 			repos: &indexedRepoRevs{},
 		}
 	} else {
-		indexed, err = newIndexedSearchRequest(ctx, db, args, indexedTyp, stream)
+		indexed, err = newIndexedSearchRequest(ctx, db, args, textRequest, stream)
 		if err != nil {
 			return err
 		}
@@ -409,63 +383,43 @@ func searchFilesInRepos(ctx context.Context, db dbutil.DB, args *search.TextPara
 		return nil
 	}
 
-	// Indexed regex and literal search go via zoekt
-	isIndexedTextSearch := args.Mode != search.SearcherOnly && !args.PatternInfo.IsStructuralPat
-	// Structural search goes via zoekt then searcher.
-	isStructuralSearch := args.Mode != search.SearcherOnly && args.PatternInfo.IsStructuralPat
-
 	g, ctx := errgroup.WithContext(ctx)
 
-	if isIndexedTextSearch {
-		g.Go(func() error {
-			return indexed.Search(ctx, stream)
-		})
+	if args.Mode != search.SearcherOnly {
+		// Run searches on indexed repositories.
+
+		if !args.PatternInfo.IsStructuralPat {
+			// Run literal and regexp searches.
+			g.Go(func() error {
+				return indexed.Search(ctx, stream)
+			})
+		} else {
+			// Run structural search (fulfilled via searcher).
+			g.Go(func() error {
+				repos := make([]*search.RepositoryRevisions, 0, len(indexed.Repos()))
+				for _, repo := range indexed.Repos() {
+					repos = append(repos, repo)
+				}
+				return callSearcherOverRepos(ctx, db, args, stream, repos, true)
+			})
+		}
 	}
 
-	if isStructuralSearch && args.PatternInfo.CombyRule != `where "backcompat" == "backcompat"` {
-		g.Go(func() error {
-			repos := make([]*search.RepositoryRevisions, 0, len(indexed.Repos()))
-			for _, repo := range indexed.Repos() {
-				repos = append(repos, repo)
-			}
-
-			return callSearcherOverRepos(ctx, db, args, stream, repos, nil, true)
-		})
-
-		g.Go(func() error {
-			return callSearcherOverRepos(ctx, db, args, stream, indexed.Unindexed, nil, false)
-		})
-	} else if isStructuralSearch {
-		g.Go(func() error {
-			return structuralSearchBackcompat(ctx, db, args, stream, indexed)
-		})
-	}
-
-	// This guard disables
-	// - unindexed structural search
-	// - unindexed search of negated content
-	if !args.PatternInfo.IsStructuralPat {
-		g.Go(func() error {
-			return callSearcherOverRepos(ctx, db, args, stream, indexed.Unindexed, nil, false)
-		})
-	}
+	// Concurrently run searcher for all unindexed repos regardless whether text, regexp, or structural search.
+	g.Go(func() error {
+		return callSearcherOverRepos(ctx, db, args, stream, indexed.Unindexed, false)
+	})
 
 	return g.Wait()
 }
 
 // callSearcherOverRepos calls searcher on searcherRepos.
-//
-// searcherReposFilteredFiles is an optional map of {repo name => file list}
-// that forces the searcher to only include the file list in the search. It is
-// currently only set when Zoekt restricts the file list for structural
-// search.
 func callSearcherOverRepos(
 	ctx context.Context,
 	db dbutil.DB,
 	args *search.TextParameters,
 	stream Sender,
 	searcherRepos []*search.RepositoryRevisions,
-	searcherReposFilteredFiles map[string][]string,
 	index bool,
 ) (err error) {
 	tr, ctx := trace.New(ctx, "searcherOverRepos", fmt.Sprintf("query: %s", args.PatternInfo.Pattern))
@@ -493,7 +447,6 @@ func callSearcherOverRepos(
 	tr.LogFields(
 		otlog.Int64("fetch_timeout_ms", fetchTimeout.Milliseconds()),
 		otlog.Int64("repos_count", int64(len(searcherRepos))),
-		otlog.Int64("repos_filtered_files_count", int64(len(searcherReposFilteredFiles))),
 	)
 
 	if len(searcherRepos) == 0 {
@@ -529,18 +482,6 @@ func callSearcherOverRepos(
 
 				// Make a new repoRev for just the operation of searching this revspec.
 				repoRev := &search.RepositoryRevisions{Repo: repoAllRevs.Repo, Revs: []search.RevisionSpecifier{{RevSpec: rev}}}
-
-				args := *args
-				if args.PatternInfo.IsStructuralPat && searcherReposFilteredFiles != nil {
-					// Modify the search query to only run for the filtered files
-					if v, ok := searcherReposFilteredFiles[string(repoRev.Repo.Name)]; ok {
-						patternCopy := *args.PatternInfo
-						args.PatternInfo = &patternCopy
-						includePatternsCopy := []string{}
-						args.PatternInfo.IncludePatterns = append(includePatternsCopy, v...)
-					}
-				}
-
 				g.Go(func() error {
 					ctx, done := limitCtx, limitDone
 					defer done()
@@ -565,63 +506,6 @@ func callSearcherOverRepos(
 	})
 
 	return g.Wait()
-}
-
-// structuralSearchBackcompat is the old way we did structural search. It runs
-// a query through zoekt first to get back a list of filepaths to search. Then
-// calls searcher limiting it to just those files.
-func structuralSearchBackcompat(ctx context.Context, db dbutil.DB, args *search.TextParameters, stream Sender, indexed *indexedSearchRequest) (err error) {
-	tr, ctx := trace.New(ctx, "structuralSearchBackcompt", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	g, ctx := errgroup.WithContext(ctx)
-
-	err = indexed.Search(ctx, StreamFunc(func(event SearchEvent) {
-		g.Go(func() error {
-			tr.LogFields(otlog.Int("matches.len", len(event.Results)))
-			stream.Send(SearchEvent{
-				Stats: event.Stats,
-			})
-
-			if len(event.Results) == 0 {
-				return nil
-			}
-
-			// For structural search, we run callSearcherOverRepos
-			// over the set of repos and files known to contain
-			// parts of the pattern as determined by Zoekt.
-
-			// A partition of {repo name => file list} that we will build from Zoekt matches
-			partition := make(map[string][]string)
-			var repos []*search.RepositoryRevisions
-
-			for _, m := range event.Results {
-				fm, ok := m.ToFileMatch()
-				if !ok {
-					return errors.New("structual search: Events from indexed.Search could not be converted to FileMatch")
-				}
-				name := string(fm.Repo.Name)
-				partition[name] = append(partition[name], fm.Path)
-			}
-
-			// Filter Zoekt repos that didn't contain matches
-			for _, repo := range indexed.Repos() {
-				if _, ok := partition[string(repo.Repo.Name)]; ok {
-					repos = append(repos, repo)
-				}
-			}
-
-			return callSearcherOverRepos(ctx, db, args, stream, repos, partition, true)
-		})
-	}))
-
-	if gErr := g.Wait(); gErr != nil {
-		err = gErr
-	}
-	return err
 }
 
 // limitSearcherRepos limits the number of repo@revs searched by the unindexed searcher codepath.

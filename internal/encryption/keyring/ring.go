@@ -6,9 +6,8 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/cloudkms"
-
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/cloudkms"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -17,10 +16,22 @@ var (
 	defaultRing Ring
 )
 
+// Default returns the default keyring, if you can avoid using this from arbitrary points in your code, please do!
+// we would rather inject the individual keys as dependencies when initialised from main(), but if that's impractical
+// it's fine to use this.
 func Default() Ring {
 	mu.RLock()
 	defer mu.RUnlock()
 	return defaultRing
+}
+
+// MockDefault overrides the default keyring.
+// Note: This function is defined for testing purpose.
+// Use Init to correctly setup a keyring.
+func MockDefault(r Ring) {
+	mu.Lock()
+	defer mu.Unlock()
+	defaultRing = r
 }
 
 func Init(ctx context.Context) error {

@@ -152,11 +152,9 @@ func getServiceProvider(ctx context.Context, pc *schema.SAMLAuthProvider) (*saml
 	if c.keyPair != nil {
 		sp.SPKeyStore = dsig.TLSCertKeyStore(*c.keyPair)
 		sp.SignAuthnRequests = pc.SignRequests == nil || *pc.SignRequests
-	} else {
+	} else if pc.SignRequests != nil && *pc.SignRequests {
 		// If the SP private key isn't specified, then the IdP must not care to validate.
-		if pc.SignRequests != nil && *pc.SignRequests {
-			return nil, errors.New("signRequests is true for SAML Service Provider but no private key and cert are given")
-		}
+		return nil, errors.New("signRequests is true for SAML Service Provider but no private key and cert are given")
 	}
 
 	// pc.Issuer's default of ${externalURL}/.auth/saml/metadata already applied (in withConfigDefaults).

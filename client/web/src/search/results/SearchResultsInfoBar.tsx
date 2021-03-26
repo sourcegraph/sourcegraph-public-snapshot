@@ -12,7 +12,7 @@ import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SearchPatternType } from '../../graphql-operations'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { WebActionsNavItems as ActionsNavItems } from '../../components/shared'
-import { CodeMonitoringProps } from '../../enterprise/code-monitoring'
+import { CodeMonitoringProps } from '../../code-monitoring'
 import { FilterKind, findFilter } from '../../../../shared/src/search/query/validate'
 import { Link } from '../../../../shared/src/components/Link'
 
@@ -21,7 +21,7 @@ export interface SearchResultsInfoBarProps
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         TelemetryProps,
         Pick<PatternTypeProps, 'patternType'>,
-        Pick<CodeMonitoringProps, 'enableCodeMonitoring'> {
+        CodeMonitoringProps {
     history: H.History
     /** The currently authenticated user or null */
     authenticatedUser: AuthenticatedUser | null
@@ -90,6 +90,9 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
             </li>
         )
     }, [props.enableCodeMonitoring, props.query, props.patternType, props.location.search])
+
+    const extraContext = useMemo(() => ({ searchQuery: props.query || null }), [props.query])
+
     return (
         <div className={classNames(props.className, 'search-results-info-bar')} data-testid="results-info-bar">
             <small className="search-results-info-bar__row">
@@ -99,7 +102,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                 <ul className="nav align-items-center justify-content-end">
                     <ActionsNavItems
                         {...props}
-                        extraContext={{ searchQuery: props.query || null }}
+                        extraContext={extraContext}
                         menu={ContributableMenu.SearchResultsToolbar}
                         wrapInList={false}
                         showLoadingSpinnerDuringExecution={true}

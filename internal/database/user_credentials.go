@@ -3,20 +3,16 @@ package database
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -31,20 +27,6 @@ type UserCredential struct {
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
 }
-
-// UserCredentialType defines all possible types of authenticators stored in the database.
-type UserCredentialType string
-
-// Define credential type strings that we'll use when encoding credentials.
-const (
-	UserCredentialTypeOAuthClient                        UserCredentialType = "OAuthClient"
-	UserCredentialTypeBasicAuth                          UserCredentialType = "BasicAuth"
-	UserCredentialTypeBasicAuthWithSSH                   UserCredentialType = "BasicAuthWithSSH"
-	UserCredentialTypeOAuthBearerToken                   UserCredentialType = "OAuthBearerToken"
-	UserCredentialTypeOAuthBearerTokenWithSSH            UserCredentialType = "OAuthBearerTokenWithSSH"
-	UserCredentialTypeBitbucketServerSudoableOAuthClient UserCredentialType = "BitbucketSudoableOAuthClient"
-	UserCredentialTypeGitLabSudoableToken                UserCredentialType = "GitLabSudoableToken"
-)
 
 // This const block contains the valid domain values for user credentials.
 const (
@@ -119,18 +101,13 @@ func (s *UserCredentialsStore) Create(ctx context.Context, scope UserCredentialS
 	}
 	s.ensureStore()
 
-	raw, err := marshalCredential(credential)
-	if err != nil {
-		return nil, errors.Wrap(err, "marshalling credential")
-	}
-
 	q := sqlf.Sprintf(
 		userCredentialsCreateQueryFmtstr,
 		scope.Domain,
 		scope.UserID,
 		scope.ExternalServiceType,
 		scope.ExternalServiceID,
-		raw,
+		&NullAuthenticator{A: &credential},
 		sqlf.Join(userCredentialsColumns, ", "),
 	)
 
@@ -151,11 +128,6 @@ func (s *UserCredentialsStore) Update(ctx context.Context, credential *UserCrede
 	}
 	s.ensureStore()
 
-	raw, err := marshalCredential(credential.Credential)
-	if err != nil {
-		return errors.Wrap(err, "marshalling credential")
-	}
-
 	credential.UpdatedAt = timeutil.Now()
 
 	q := sqlf.Sprintf(
@@ -164,7 +136,7 @@ func (s *UserCredentialsStore) Update(ctx context.Context, credential *UserCrede
 		credential.UserID,
 		credential.ExternalServiceType,
 		credential.ExternalServiceID,
-		raw,
+		&NullAuthenticator{A: &credential.Credential},
 		credential.UpdatedAt,
 		credential.ID,
 		sqlf.Join(userCredentialsColumns, ", "),
@@ -260,7 +232,7 @@ func (s *UserCredentialsStore) GetByScope(ctx context.Context, scope UserCredent
 type UserCredentialsListOpts struct {
 	*LimitOffset
 	Scope             UserCredentialScope
-	AuthenticatorType []UserCredentialType
+	AuthenticatorType []AuthenticatorType
 	ForUpdate         bool
 }
 
@@ -432,103 +404,14 @@ RETURNING %s
 func scanUserCredential(cred *UserCredential, s interface {
 	Scan(...interface{}) error
 }) error {
-	// Set up a string for the credential to be decrypted into.
-	raw := ""
-
-	if err := s.Scan(
+	return s.Scan(
 		&cred.ID,
 		&cred.Domain,
 		&cred.UserID,
 		&cred.ExternalServiceType,
 		&cred.ExternalServiceID,
-		&raw,
+		&NullAuthenticator{A: &cred.Credential},
 		&cred.CreatedAt,
 		&cred.UpdatedAt,
-	); err != nil {
-		return err
-	}
-
-	// Now we have the credential, we need to unmarshal it into the right Go
-	// type.
-	var err error
-	if cred.Credential, err = unmarshalCredential(raw); err != nil {
-		return errors.Wrap(err, "unmarshalling credential")
-	}
-
-	return nil
-}
-
-// marshalCredential encodes an Authenticator into a JSON string.
-func marshalCredential(a auth.Authenticator) (string, error) {
-	var t UserCredentialType
-	switch a.(type) {
-	case *auth.OAuthClient:
-		t = UserCredentialTypeOAuthClient
-	case *auth.BasicAuth:
-		t = UserCredentialTypeBasicAuth
-	case *auth.BasicAuthWithSSH:
-		t = UserCredentialTypeBasicAuthWithSSH
-	case *auth.OAuthBearerToken:
-		t = UserCredentialTypeOAuthBearerToken
-	case *auth.OAuthBearerTokenWithSSH:
-		t = UserCredentialTypeOAuthBearerTokenWithSSH
-	case *bitbucketserver.SudoableOAuthClient:
-		t = UserCredentialTypeBitbucketServerSudoableOAuthClient
-	case *gitlab.SudoableToken:
-		t = UserCredentialTypeGitLabSudoableToken
-	default:
-		return "", errors.Errorf("unknown Authenticator implementation type: %T", a)
-	}
-
-	raw, err := json.Marshal(struct {
-		Type UserCredentialType
-		Auth auth.Authenticator
-	}{
-		Type: t,
-		Auth: a,
-	})
-	if err != nil {
-		return "", err
-	}
-
-	return string(raw), nil
-}
-
-// unmarshalCredential decodes a JSON string into an Authenticator.
-func unmarshalCredential(raw string) (auth.Authenticator, error) {
-	// We do two unmarshals: the first just to get the type, and then the second
-	// to actually unmarshal the authenticator itself.
-	var partial struct {
-		Type UserCredentialType
-		Auth json.RawMessage
-	}
-	if err := json.Unmarshal([]byte(raw), &partial); err != nil {
-		return nil, err
-	}
-
-	var a interface{}
-	switch partial.Type {
-	case UserCredentialTypeOAuthClient:
-		a = &auth.OAuthClient{}
-	case UserCredentialTypeBasicAuth:
-		a = &auth.BasicAuth{}
-	case UserCredentialTypeBasicAuthWithSSH:
-		a = &auth.BasicAuthWithSSH{}
-	case UserCredentialTypeOAuthBearerToken:
-		a = &auth.OAuthBearerToken{}
-	case UserCredentialTypeOAuthBearerTokenWithSSH:
-		a = &auth.OAuthBearerTokenWithSSH{}
-	case UserCredentialTypeBitbucketServerSudoableOAuthClient:
-		a = &bitbucketserver.SudoableOAuthClient{}
-	case UserCredentialTypeGitLabSudoableToken:
-		a = &gitlab.SudoableToken{}
-	default:
-		return nil, errors.Errorf("unknown credential type: %s", partial.Type)
-	}
-
-	if err := json.Unmarshal(partial.Auth, &a); err != nil {
-		return nil, err
-	}
-
-	return a.(auth.Authenticator), nil
+	)
 }

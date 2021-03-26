@@ -157,13 +157,6 @@ func newIndexedSearchRequest(ctx context.Context, db dbutil.DB, args *search.Tex
 		log.Int("searcher_repos.size", len(searcherRepos)),
 	)
 
-	// We do not support non-head searches for the old structural search code path.
-	// Once the new code path (triggered by the CombyRule below) is default, this can be removed.
-	// https://github.com/sourcegraph/sourcegraph/issues/17616
-	if typ == fileRequest && indexed.NotHEADOnlySearch && args.PatternInfo.CombyRule == `where "backcompat" == "backcompat"` {
-		return nil, errors.New("structural search only supports searching the default branch https://github.com/sourcegraph/sourcegraph/issues/11906")
-	}
-
 	// Disable unindexed search
 	if args.PatternInfo.Index == query.Only {
 		searcherRepos = limitUnindexedRepos(searcherRepos, 0, stream)
@@ -329,7 +322,7 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 
 		// The buffered backend.ZoektStreamFunc allows us to consume events from Zoekt
 		// while we wait for repo resolution.
-		bufSender, cleanup := bufferedSender(30, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
+		bufSender, cleanup := bufferedSender(120, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
 
 			mu.Lock()
 			foundResults = foundResults || event.FileCount != 0 || event.MatchCount != 0
@@ -406,7 +399,6 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 							Path:        file.FileName,
 							LineMatches: lines,
 							LimitHit:    fileLimitHit,
-							URI:         fileMatchURI(repo.Name, inputRev, file.FileName),
 							Symbols:     symbols,
 							Repo:        repo,
 							CommitID:    api.CommitID(file.Version),
@@ -750,12 +742,6 @@ type indexedRepoRevs struct {
 	//
 	//  repoBranches[reporev.Repo.Name][i] <-> reporev.Revs[i]
 	repoBranches map[string][]string
-
-	// NotHEADOnlySearch is true if we are searching a branch other than HEAD.
-	//
-	// This option can be removed once structural search supports searching
-	// more than HEAD.
-	NotHEADOnlySearch bool
 }
 
 // headBranch is used as a singleton of the indexedRepoRevs.repoBranches to save
@@ -788,10 +774,6 @@ func (rb *indexedRepoRevs) Add(reporev *search.RepositoryRevisions, repo *zoekt.
 		return nil
 	}
 
-	// notHEADOnlySearch is set to true if we search any branch other than
-	// repo.Branches[0]
-	notHEADOnlySearch := false
-
 	// Assume for large searches they will mostly involve indexed
 	// revisions, so just allocate that.
 	var unindexed []search.RevisionSpecifier
@@ -807,17 +789,15 @@ func (rb *indexedRepoRevs) Add(reporev *search.RepositoryRevisions, repo *zoekt.
 		}
 
 		found := false
-		for i, branch := range repo.Branches {
+		for _, branch := range repo.Branches {
 			if branch.Name == rev.RevSpec {
 				branches = append(branches, branch.Name)
-				notHEADOnlySearch = notHEADOnlySearch || i > 0
 				found = true
 				break
 			}
 			// Check if rev is an abbrev commit SHA
 			if len(rev.RevSpec) >= 4 && strings.HasPrefix(branch.Version, rev.RevSpec) {
 				branches = append(branches, branch.Name)
-				notHEADOnlySearch = notHEADOnlySearch || i > 0
 				found = true
 				break
 			}
@@ -834,7 +814,6 @@ func (rb *indexedRepoRevs) Add(reporev *search.RepositoryRevisions, repo *zoekt.
 	if len(indexed) > 0 {
 		rb.repoRevs[string(reporev.Repo.Name)] = reporev
 		rb.repoBranches[string(reporev.Repo.Name)] = branches
-		rb.NotHEADOnlySearch = rb.NotHEADOnlySearch || notHEADOnlySearch
 	}
 
 	return unindexed

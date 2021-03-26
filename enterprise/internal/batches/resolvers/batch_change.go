@@ -153,9 +153,7 @@ func (r *batchChangeResolver) ClosedAt() *graphqlbackend.DateTime {
 }
 
 func (r *batchChangeResolver) ChangesetsStats(ctx context.Context) (graphqlbackend.ChangesetsStatsResolver, error) {
-	stats, err := r.store.GetChangesetsStats(ctx, store.GetChangesetsStatsOpts{
-		BatchChangeID: r.batchChange.ID,
-	})
+	stats, err := r.store.GetChangesetsStats(ctx, r.batchChange.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +182,8 @@ func (r *batchChangeResolver) ChangesetCountsOverTime(
 ) ([]graphqlbackend.ChangesetCountsResolver, error) {
 	publishedState := batches.ChangesetPublicationStatePublished
 	opts := store.ListChangesetsOpts{
-		BatchChangeID: r.batchChange.ID,
+		BatchChangeID:   r.batchChange.ID,
+		IncludeArchived: args.IncludeArchived,
 		// Only load fully-synced changesets, so that the data we use for computing the changeset counts is complete.
 		PublicationState: &publishedState,
 	}
@@ -210,14 +209,15 @@ func (r *batchChangeResolver) ChangesetCountsOverTime(
 	now := r.store.Clock()()
 	weekAgo := now.Add(-7 * 24 * time.Hour)
 	start := r.batchChange.CreatedAt.UTC()
+	if len(events) > 0 {
+		start = events[0].Timestamp().UTC()
+	}
 	// At least a week lookback, more if the batch change was created earlier.
 	if start.After(weekAgo) {
 		start = weekAgo
 	}
 	if args.From != nil {
 		start = args.From.Time.UTC()
-	} else if len(events) > 0 {
-		start = events[0].Timestamp().UTC()
 	}
 	end := now.UTC()
 	if args.To != nil && args.To.Time.Before(end) {

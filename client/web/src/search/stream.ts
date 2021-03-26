@@ -253,14 +253,14 @@ export function toGQLRepositoryMatch(repo: RepositoryMatch): GQL.IRepository {
     const branch = repo?.branches?.[0]
     const revision = branch ? `@${branch}` : ''
     const label = repo.repository + revision
-    const url = encodeURI(label)
+    const url = '/' + encodeURI(label)
 
     // We only need to return the subset defined in IGenericSearchResultInterface
     const gqlRepo: unknown = {
         __typename: 'Repository',
         icon: repoIcon,
         label: toMarkdown(`[${label}](${url})`),
-        url: '/' + url,
+        url,
         detail: toMarkdown('Repository match'),
         matches: [],
         name: repo.repository,

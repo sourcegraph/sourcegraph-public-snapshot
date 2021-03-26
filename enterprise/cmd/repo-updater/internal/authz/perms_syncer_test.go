@@ -123,11 +123,11 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		}
 		return nil
 	}
-	database.Mocks.Repos.List = func(v0 context.Context, args database.ReposListOptions) ([]*types.Repo, error) {
+	database.Mocks.Repos.ListRepoNames = func(v0 context.Context, args database.ReposListOptions) ([]*types.RepoName, error) {
 		if !args.OnlyPrivate {
 			return nil, errors.New("OnlyPrivate want true but got false")
 		}
-		return []*types.Repo{{ID: 1}}, nil
+		return []*types.RepoName{{ID: 1}}, nil
 	}
 	database.Mocks.UserEmails.ListByUser = func(ctx context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
 		return nil, nil
@@ -195,11 +195,11 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 	edb.Mocks.Perms.SetUserPermissions = func(_ context.Context, p *authz.UserPermissions) error {
 		return nil
 	}
-	database.Mocks.Repos.List = func(v0 context.Context, args database.ReposListOptions) ([]*types.Repo, error) {
+	database.Mocks.Repos.ListRepoNames = func(v0 context.Context, args database.ReposListOptions) ([]*types.RepoName, error) {
 		if !args.OnlyPrivate {
 			return nil, errors.New("OnlyPrivate want true but got false")
 		}
-		return []*types.Repo{{ID: 1}}, nil
+		return []*types.RepoName{{ID: 1}}, nil
 	}
 	database.Mocks.UserEmails.ListByUser = func(ctx context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
 		return nil, nil
@@ -257,6 +257,67 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 			t.Fatal("!calledTouchExpired")
 		}
 	})
+}
+
+func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
+	p := &mockProvider{
+		serviceType: extsvc.TypePerforce,
+		serviceID:   "ssl:111.222.333.444:1666",
+	}
+	authz.SetProviders(false, []authz.Provider{p})
+	defer authz.SetProviders(true, nil)
+
+	extAccount := extsvc.Account{
+		AccountSpec: extsvc.AccountSpec{
+			ServiceType: p.ServiceType(),
+			ServiceID:   p.ServiceID(),
+		},
+	}
+
+	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+		return &types.User{ID: id}, nil
+	}
+	database.Mocks.ExternalAccounts.TouchLastValid = func(ctx context.Context, id int32) error {
+		return nil
+	}
+	edb.Mocks.Perms.ListExternalAccounts = func(context.Context, int32) ([]*extsvc.Account, error) {
+		return []*extsvc.Account{&extAccount}, nil
+	}
+	edb.Mocks.Perms.SetUserPermissions = func(_ context.Context, p *authz.UserPermissions) error {
+		return nil
+	}
+	database.Mocks.Repos.ListRepoNames = func(v0 context.Context, args database.ReposListOptions) ([]*types.RepoName, error) {
+		if !args.OnlyPrivate {
+			return nil, errors.New("OnlyPrivate want true but got false")
+		} else if len(args.ExternalRepoIncludePrefixes) == 0 {
+			return nil, errors.New("ExternalRepoIncludePrefixes want non-zero but got zero")
+		} else if len(args.ExternalRepoExcludePrefixes) == 0 {
+			return nil, errors.New("ExternalRepoExcludePrefixes want non-zero but got zero")
+		}
+		return []*types.RepoName{{ID: 1}}, nil
+	}
+	database.Mocks.UserEmails.ListByUser = func(ctx context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
+		return nil, nil
+	}
+	defer func() {
+		database.Mocks = database.MockStores{}
+		edb.Mocks.Perms = edb.MockPerms{}
+	}()
+
+	permsStore := edb.Perms(nil, timeutil.Now)
+	s := NewPermsSyncer(repos.NewStore(dbconn.Global, sql.TxOptions{}), permsStore, timeutil.Now, nil)
+
+	p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
+		return &authz.ExternalUserPermissions{
+			IncludePrefixes: []extsvc.RepoID{"//Engineering/"},
+			ExcludePrefixes: []extsvc.RepoID{"//Engineering/Security/"},
+		}, nil
+	}
+
+	err := s.syncUserPerms(context.Background(), 1, false)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestPermsSyncer_syncRepoPerms(t *testing.T) {

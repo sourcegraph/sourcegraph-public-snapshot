@@ -109,6 +109,7 @@ exports[`HoverOverlay actions and hover present 1`] = `
           "id": "a",
         }
       }
+      active={true}
       className="hover-overlay__action test-tooltip-untitled"
       disabledDuringExecution={true}
       extensionsController={
@@ -244,6 +245,7 @@ exports[`HoverOverlay actions present 1`] = `
           "title": "Some title",
         }
       }
+      active={true}
       className="hover-overlay__action test-tooltip-some-title"
       disabledDuringExecution={true}
       extensionsController={
@@ -314,6 +316,7 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
           "id": "a",
         }
       }
+      active={true}
       className="hover-overlay__action test-tooltip-untitled"
       disabledDuringExecution={true}
       extensionsController={
@@ -401,6 +404,7 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
         <a
           href=""
           onClick={[Function]}
+          role="button"
         >
           <small>
             Dismiss
@@ -419,6 +423,7 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
           "id": "a",
         }
       }
+      active={true}
       className="hover-overlay__action test-tooltip-untitled"
       disabledDuringExecution={true}
       extensionsController={
@@ -515,6 +520,7 @@ exports[`HoverOverlay hover error, actions present 1`] = `
           "id": "a",
         }
       }
+      active={true}
       className="hover-overlay__action test-tooltip-untitled"
       disabledDuringExecution={true}
       extensionsController={

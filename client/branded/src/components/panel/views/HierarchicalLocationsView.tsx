@@ -12,7 +12,6 @@ import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { parseRepoURI } from '../../../../../shared/src/util/url'
-import { registerPanelToolbarContributions } from './contributions'
 import { FileLocations, FileLocationsError, FileLocationsNotFound } from './FileLocations'
 import { groupLocations } from './locations'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
@@ -131,8 +130,6 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                 )
         )
 
-        this.subscriptions.add(registerPanelToolbarContributions(this.props.extensionsController.extHostAPI))
-
         this.componentUpdates.next(this.props)
     }
 
@@ -242,9 +239,10 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                                         element={
                                             <div className="list-group list-group-flush hierarchical-locations-view__list test-hierarchical-locations-view-list">
                                                 {groups[index].map((group, innerIndex) => (
-                                                    <span
+                                                    <button
                                                         key={innerIndex}
-                                                        className={`list-group-item hierarchical-locations-view__item ${
+                                                        type="button"
+                                                        className={`list-group-item list-group-item-action hierarchical-locations-view__item ${
                                                             selectedGroups[index] === group.key ? 'active' : ''
                                                         }`}
                                                         onClick={event =>
@@ -262,7 +260,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                                                         <span className="badge badge-secondary badge-pill hierarchical-locations-view__item-badge">
                                                             {group.count}
                                                         </span>
-                                                    </span>
+                                                    </button>
                                                 ))}
                                                 {this.state.locationsOrError.isLoading && (
                                                     <LoadingSpinner className="icon-inline m-2 flex-shrink-0 test-loading-spinner" />

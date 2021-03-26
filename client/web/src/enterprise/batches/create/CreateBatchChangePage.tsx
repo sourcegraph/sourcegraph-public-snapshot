@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react'
 import { PageTitle } from '../../../components/PageTitle'
 import { PageHeader } from '../../../components/PageHeader'
-import { BatchChangesIcon } from '../icons'
+import { BatchChangesIcon } from '../../../batches/icons'
 import helloWorldSample from './samples/empty.batch.yaml'
 import combySample from './samples/comby.batch.yaml'
 import goImportsSample from './samples/go-imports.batch.yaml'
@@ -25,7 +25,8 @@ const SampleTabHeader: React.FunctionComponent<SampleTabHeaderProps> = ({ sample
     )
     return (
         <li className="nav-item">
-            <a href="" onClick={onClick} className={classNames('nav-link', active && 'active')}>
+            {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+            <a href="" onClick={onClick} className={classNames('nav-link', active && 'active')} role="button">
                 {sample.name}
             </a>
         </li>

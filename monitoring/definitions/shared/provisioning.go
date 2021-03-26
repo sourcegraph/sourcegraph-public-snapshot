@@ -25,10 +25,10 @@ var (
 			Warning:     monitoring.Alert().GreaterOrEqual(80, nil).For(14 * 24 * time.Hour),
 			Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Max(100).Min(0),
 			Owner:       owner,
-			PossibleSolutions: strings.Replace(`
+			PossibleSolutions: strings.ReplaceAll(`
 			- **Kubernetes:** Consider increasing CPU limits in the 'Deployment.yaml' for the {{CONTAINER_NAME}} service.
 			- **Docker Compose:** Consider increasing 'cpus:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
-		`, "{{CONTAINER_NAME}}", containerName, -1),
+		`, "{{CONTAINER_NAME}}", containerName),
 		}
 	}
 
@@ -40,10 +40,10 @@ var (
 			Warning:     monitoring.Alert().GreaterOrEqual(80, nil).For(14 * 24 * time.Hour),
 			Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Max(100).Min(0),
 			Owner:       owner,
-			PossibleSolutions: strings.Replace(`
+			PossibleSolutions: strings.ReplaceAll(`
 			- **Kubernetes:** Consider increasing memory limits in the 'Deployment.yaml' for the {{CONTAINER_NAME}} service.
 			- **Docker Compose:** Consider increasing 'memory:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
-		`, "{{CONTAINER_NAME}}", containerName, -1),
+		`, "{{CONTAINER_NAME}}", containerName),
 		}
 	}
 
@@ -55,10 +55,10 @@ var (
 			Warning:     monitoring.Alert().GreaterOrEqual(90, nil).For(30 * time.Minute),
 			Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Interval(100).Max(100).Min(0),
 			Owner:       owner,
-			PossibleSolutions: strings.Replace(`
+			PossibleSolutions: strings.ReplaceAll(`
 			- **Kubernetes:** Consider increasing CPU limits in the the relevant 'Deployment.yaml'.
 			- **Docker Compose:** Consider increasing 'cpus:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
-		`, "{{CONTAINER_NAME}}", containerName, -1),
+		`, "{{CONTAINER_NAME}}", containerName),
 		}
 	}
 
@@ -70,10 +70,10 @@ var (
 			Warning:     monitoring.Alert().GreaterOrEqual(90, nil),
 			Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Interval(100).Max(100).Min(0),
 			Owner:       owner,
-			PossibleSolutions: strings.Replace(`
+			PossibleSolutions: strings.ReplaceAll(`
 			- **Kubernetes:** Consider increasing memory limit in relevant 'Deployment.yaml'.
 			- **Docker Compose:** Consider increasing 'memory:' of {{CONTAINER_NAME}} container in 'docker-compose.yml'.
-		`, "{{CONTAINER_NAME}}", containerName, -1),
+		`, "{{CONTAINER_NAME}}", containerName),
 		}
 	}
 )
