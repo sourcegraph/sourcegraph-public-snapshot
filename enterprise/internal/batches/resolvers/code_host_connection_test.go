@@ -94,8 +94,10 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 		for _, tc := range tests {
 			t.Run(fmt.Sprintf("First %d", tc.firstParam), func(t *testing.T) {
 				input := map[string]interface{}{"user": userAPIID, "first": int64(tc.firstParam)}
-				var response struct{ Node apitest.User }
-				apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryUserCodeHostConnection)
+				var response struct {
+					BatchChangesCodeHosts apitest.BatchChangesCodeHostsConnection
+				}
+				apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryCodeHostConnection)
 
 				var wantEndCursor *string
 				if tc.wantEndCursor != "" {
@@ -111,7 +113,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 					Nodes: tc.wantNodes,
 				}
 
-				if diff := cmp.Diff(wantChangesets, response.Node.BatchChangesCodeHosts); diff != "" {
+				if diff := cmp.Diff(wantChangesets, response.BatchChangesCodeHosts); diff != "" {
 					t.Fatalf("wrong changesets response (-want +got):\n%s", diff)
 				}
 			})
@@ -125,10 +127,12 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 			}
 			wantHasNextPage := i != len(nodes)-1
 
-			var response struct{ Node apitest.User }
-			apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryUserCodeHostConnection)
+			var response struct {
+				BatchChangesCodeHosts apitest.BatchChangesCodeHostsConnection
+			}
+			apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryCodeHostConnection)
 
-			hosts := response.Node.BatchChangesCodeHosts
+			hosts := response.BatchChangesCodeHosts
 			if diff := cmp.Diff(1, len(hosts.Nodes)); diff != "" {
 				t.Fatalf("unexpected number of nodes (-want +got):\n%s", diff)
 			}
