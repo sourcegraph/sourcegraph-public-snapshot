@@ -197,7 +197,7 @@ type githubResult struct {
 }
 
 func (s GithubSource) ValidateToken(ctx context.Context) error {
-	_, err := s.v3Client.GetAuthenticatedUserEmails(ctx)
+	_, err := s.v3Client.GetAuthenticatedUser(ctx)
 	return err
 }
 

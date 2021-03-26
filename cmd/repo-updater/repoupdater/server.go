@@ -341,11 +341,6 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// Enqueue any external services that are due to sync NOW this will cause any
-	// recently updated external service to sync faster than the default enqueue
-	// interval.
-	s.Syncer.TriggerEnqueueSyncJobs()
-
 	src, err := repos.NewSource(&types.ExternalService{
 		ID:          req.ExternalService.ID,
 		Kind:        req.ExternalService.Kind,
@@ -373,6 +368,11 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		respond(w, http.StatusInternalServerError, err)
 		return
 	}
+
+	// Enqueue any external services that are due to sync NOW this will cause any
+	// recently updated external service to sync faster than the default enqueue
+	// interval.
+	s.Syncer.TriggerEnqueueSyncJobs()
 
 	if s.RateLimitSyncer != nil {
 		err = s.RateLimitSyncer.SyncRateLimiters(ctx)
