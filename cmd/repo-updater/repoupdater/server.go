@@ -341,9 +341,17 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	s.Syncer.TriggerEnqueueSyncJobs()
-
-	err := externalServiceValidate(ctx, &req)
+	src, err := repos.NewSource(&types.ExternalService{
+		ID:          req.ExternalService.ID,
+		Kind:        req.ExternalService.Kind,
+		DisplayName: req.ExternalService.DisplayName,
+		Config:      req.ExternalService.Config,
+	}, httpcli.NewExternalHTTPClientFactory())
+	if err != nil {
+		log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
+		return
+	}
+	err = externalServiceValidate(ctx, req, src)
 	if err == github.ErrIncompleteResults {
 		log15.Info("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
 		syncResult := &protocol.ExternalServiceSyncResult{
@@ -361,6 +369,11 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	// Enqueue any external services that are due to sync NOW this will cause any
+	// recently updated external service to sync faster than the default enqueue
+	// interval.
+	s.Syncer.TriggerEnqueueSyncJobs()
+
 	if s.RateLimitSyncer != nil {
 		err = s.RateLimitSyncer.SyncRateLimiters(ctx)
 		if err != nil {
@@ -377,7 +390,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	})
 }
 
-func externalServiceValidate(ctx context.Context, req *protocol.ExternalServiceSyncRequest) error {
+func externalServiceValidate(ctx context.Context, req protocol.ExternalServiceSyncRequest, src repos.Source) error {
 	if !req.ExternalService.DeletedAt.IsZero() {
 		// We don't need to check deleted services.
 		return nil
@@ -386,32 +399,26 @@ func externalServiceValidate(ctx context.Context, req *protocol.ExternalServiceS
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	src, err := repos.NewSource(&types.ExternalService{
-		ID:          req.ExternalService.ID,
-		Kind:        req.ExternalService.Kind,
-		DisplayName: req.ExternalService.DisplayName,
-		Config:      req.ExternalService.Config,
-	}, httpcli.NewExternalHTTPClientFactory())
-	if err != nil {
-		return err
-	}
-
 	results := make(chan repos.SourceResult)
 
-	go func() {
-		src.ListRepos(ctx, results)
-		close(results)
-	}()
+	if v, ok := src.(TokenValidator); ok {
+		return v.ValidateToken(ctx)
+	} else {
+		go func() {
+			src.ListRepos(ctx, results)
+			close(results)
+		}()
 
-	for res := range results {
-		if res.Err != nil {
-			// Send error to user before waiting for all results, but drain
-			// the rest of the results to not leak a blocked goroutine
-			go func() {
-				for range results {
-				}
-			}()
-			return res.Err
+		for res := range results {
+			if res.Err != nil {
+				// Send error to user before waiting for all results, but drain
+				// the rest of the results to not leak a blocked goroutine
+				go func() {
+					for range results {
+					}
+				}()
+				return res.Err
+			}
 		}
 	}
 
@@ -718,4 +725,8 @@ func isUnauthorized(err error) bool {
 
 func isTemporarilyUnavailable(err error) bool {
 	return github.IsRateLimitExceeded(err)
+}
+
+type TokenValidator interface {
+	ValidateToken(ctx context.Context) error
 }

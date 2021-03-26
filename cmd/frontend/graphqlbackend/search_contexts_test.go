@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -20,12 +19,14 @@ func TestSearchContexts(t *testing.T) {
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: key})
 	db := new(dbtesting.MockDB)
 
-	orig := envvar.SourcegraphDotComMode()
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(orig)
-
 	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{Username: username}, nil
+	}
+	database.Mocks.SearchContexts.ListSearchContextsByUserID = func(ctx context.Context, userID int32) ([]*types.SearchContext, error) {
+		return []*types.SearchContext{}, nil
+	}
+	database.Mocks.SearchContexts.ListInstanceLevelSearchContexts = func(ctx context.Context) ([]*types.SearchContext, error) {
+		return []*types.SearchContext{}, nil
 	}
 	defer resetMocks()
 
@@ -34,10 +35,10 @@ func TestSearchContexts(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []*searchContextResolver{
-		{sc: *searchcontexts.GetGlobalSearchContext()},
-		{sc: *searchcontexts.GetUserSearchContext(username, key)},
+		{sc: searchcontexts.GetGlobalSearchContext(), db: db},
+		{sc: searchcontexts.GetUserSearchContext(username, key), db: db},
 	}
 	if !reflect.DeepEqual(searchContexts, want) {
-		t.Errorf("got %v+, want %v+", searchContexts, want)
+		t.Errorf("got %+v, want %+v", searchContexts, want)
 	}
 }

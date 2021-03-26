@@ -9,6 +9,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"go.uber.org/atomic"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/google/zoekt"
@@ -247,15 +248,10 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 	// Start event stream.
 	t0 := time.Now()
 
-	// mu protects matchLimiter and foundResults.
-	mu := sync.Mutex{}
-	matchLimiter := zoektutil.MatchLimiter{
-		Limit: int(args.PatternInfo.FileMatchLimit),
-	}
-	foundResults := false
-
 	// We use reposResolved to synchronize repo resolution and event processing.
 	reposResolved := make(chan struct{})
+
+	mu := sync.Mutex{}
 	var getRepoInputRev zoektutil.RepoRevFunc
 	var repoRevMap map[string]*search.RepositoryRevisions
 
@@ -288,6 +284,7 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 		return nil
 	})
 
+	foundResults := atomic.Bool{}
 	g.Go(func() error {
 		ctx := ctx
 		if deadline, ok := ctx.Deadline(); ok {
@@ -324,9 +321,7 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 		// while we wait for repo resolution.
 		bufSender, cleanup := bufferedSender(120, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
 
-			mu.Lock()
-			foundResults = foundResults || event.FileCount != 0 || event.MatchCount != 0
-			mu.Unlock()
+			foundResults.CAS(false, event.FileCount != 0 || event.MatchCount != 0)
 
 			files := event.Files
 			limitHit := event.FilesSkipped+event.ShardsSkipped > 0
@@ -346,19 +341,6 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 			if getRepoInputRev == nil {
 				return
 			}
-
-			mu.Lock()
-			// Partial is populated with repositories we may have not fully
-			// searched due to limits.
-			partial, files := matchLimiter.Slice(files, getRepoInputRev)
-			mu.Unlock()
-
-			var statusMap search.RepoStatusMap
-			for r := range partial {
-				statusMap.Update(r, search.RepoStatusLimitHit)
-			}
-
-			limitHit = limitHit || len(partial) > 0
 
 			matches := make([]SearchResultResolver, 0, len(files))
 			repoResolvers := make(RepositoryResolverCache)
@@ -413,7 +395,6 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 			c.Send(SearchEvent{
 				Results: matches,
 				Stats: streaming.Stats{
-					Status:     statusMap,
 					IsLimitHit: limitHit,
 				},
 			})
@@ -435,7 +416,7 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 		return statusMap
 	}
 
-	if !foundResults && since(t0) >= searchOpts.MaxWallTime {
+	if !foundResults.Load() && since(t0) >= searchOpts.MaxWallTime {
 		c.Send(SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout)}})
 		return nil
 	}

@@ -9,7 +9,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/sourcegraph/sourcegraph",
-    "directory": "packages/@sourcegraph/extension-api-types"
+    "directory": "client/extension-api-types"
   },
   "license": "Apache-2.0",
   "main": "",
@@ -19,7 +19,7 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "eslint": "../../../../node_modules/.bin/eslint 'src/*.[jt]s?(x)'",
+    "eslint": "eslint 'src/**/*.[jt]s?(x)'",
     "prepublishOnly": "yarn run eslint"
   },
   "peerDependencies": {

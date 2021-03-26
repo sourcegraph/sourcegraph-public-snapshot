@@ -1,19 +1,20 @@
 {
-  "name": "eslint-plugin-sourcegraph",
-  "version": "0.0.0",
+  "private": true,
+  "name": "@sourcegraph/eslint-plugin-sourcegraph",
+  "version": "1.0.0",
   "description": "Custom ESLint rules for Sourcegraph",
-  "keywords": ["eslint", "eslintplugin", "eslint-plugin"],
+  "keywords": [
+    "eslint",
+    "eslintplugin",
+    "eslint-plugin"
+  ],
   "main": "lib/index.js",
   "scripts": {
-    "eslint": "../../../../node_modules/.bin/eslint",
+    "eslint": "echo 'TODO: add proper ESLint config, issue #19448'",
     "test": "mocha tests --recursive"
   },
   "dependencies": {
     "requireindex": "~1.1.0"
-  },
-  "devDependencies": {
-    "eslint": "^7.1.0",
-    "mocha": "^7.2.0"
   },
   "engines": {
     "node": ">=0.10.0"

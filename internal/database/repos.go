@@ -393,6 +393,10 @@ type ReposListOptions struct {
 	// through external services. Mutually exclusive with the ExternalServiceIDs option.
 	UserID int32
 
+	// SearchContextID, if non zero, will limit the set of results to repositories listed in
+	// the search context.
+	SearchContextID int64
+
 	// ServiceTypes of repos to list. When zero-valued, this is omitted from the predicate set.
 	ServiceTypes []string
 
@@ -746,6 +750,10 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		}
 		ctes = append(ctes, sqlf.Sprintf("user_repos AS (%s)", userReposCTE))
 		from = append(from, sqlf.Sprintf("JOIN user_repos ON user_repos.id = repo.id"))
+	} else if opt.SearchContextID != 0 {
+		// Joining on distinct search context repos to avoid returning duplicates
+		from = append(from, sqlf.Sprintf(`JOIN (SELECT DISTINCT repo_id, search_context_id FROM search_context_repos) dscr ON repo.id = dscr.repo_id`))
+		where = append(where, sqlf.Sprintf("dscr.search_context_id = %d", opt.SearchContextID))
 	}
 
 	if opt.NoCloned || opt.OnlyCloned {

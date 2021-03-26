@@ -98,4 +98,4 @@ node_modules/
 /client/web
 
 # Extensions
-/packages/sourcegraph-extension-api/dist
+/extension-api/dist

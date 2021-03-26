@@ -24,42 +24,55 @@ func FetchStatusMessages(ctx context.Context, db dbutil.DB, u *types.User, cloud
 	if u == nil {
 		return nil, errors.New("nil user")
 	}
-
 	var messages []StatusMessage
-	opts := database.ReposListOptions{
-		NoCloned: true,
-	}
-	if !u.SiteAdmin {
-		opts.UserID = u.ID
-	}
 
-	if !cloud {
-		// The number of uncloned repos on cloud is misleading due to the fact that we do
-		// on demand syncing and also remove stale repos.
-		notCloned, err := database.Repos(db).Count(ctx, opts)
-		if err != nil {
-			return nil, errors.Wrap(err, "counting uncloned repos")
-		}
-
-		if notCloned != 0 {
-			messages = append(messages, StatusMessage{
-				Cloning: &CloningProgress{
-					Message: fmt.Sprintf("%d repositories enqueued for cloning...", notCloned),
-				},
-			})
-		}
-	}
-
-	syncErrors, err := database.ExternalServices(db).GetAffiliatedSyncErrors(ctx, u)
+	// We first fetch affiliated sync errors since this will also find all the
+	// external services the user cares about.
+	externalServiceSyncErrors, err := database.ExternalServices(db).GetAffiliatedSyncErrors(ctx, u)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching sync errors")
 	}
 
-	for id, failure := range syncErrors {
+	for id, failure := range externalServiceSyncErrors {
+		if failure == "" {
+			continue
+		}
 		messages = append(messages, StatusMessage{
 			ExternalServiceSyncError: &ExternalServiceSyncError{
 				Message:           failure,
 				ExternalServiceId: id,
+			},
+		})
+	}
+
+	extsvcIDs := make([]int64, 0, len(externalServiceSyncErrors))
+	for id := range externalServiceSyncErrors {
+		extsvcIDs = append(extsvcIDs, id)
+	}
+
+	// Return early since the user doesn't have any affiliated external services
+	if len(extsvcIDs) == 0 {
+		return messages, nil
+	}
+
+	// Now, for all the affiliated external services, look for any repos they own
+	// that have not yet been cloned
+	opts := database.ReposListOptions{
+		NoCloned:           true,
+		ExternalServiceIDs: extsvcIDs,
+	}
+	notCloned, err := database.Repos(db).Count(ctx, opts)
+	if err != nil {
+		return nil, errors.Wrap(err, "counting uncloned repos")
+	}
+	if notCloned > 0 {
+		noun := "repositories"
+		if notCloned == 1 {
+			noun = "repository"
+		}
+		messages = append(messages, StatusMessage{
+			Cloning: &CloningProgress{
+				Message: fmt.Sprintf("%d %s not yet cloned", notCloned, noun),
 			},
 		})
 	}
