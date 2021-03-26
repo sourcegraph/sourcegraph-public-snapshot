@@ -87,7 +87,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         return (
             <li className="nav-item">
                 <Link to={toURL} className="btn btn-sm btn-link nav-link text-decoration-none">
-                    <CodeMonitoringLogo className="icon-inline mr-2" />
+                    <CodeMonitoringLogo className="icon-inline mr-1" />
                     Monitor
                 </Link>
             </li>
@@ -122,7 +122,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                                 onClick={props.onSaveQueryClick}
                                 className="btn btn-sm btn-link nav-link text-decoration-none test-save-search-link"
                             >
-                                <DownloadIcon className="icon-inline mr-2" />
+                                <DownloadIcon className="icon-inline mr-1" />
                                 Save search
                             </button>
                         </li>
