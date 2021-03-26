@@ -37,14 +37,14 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
 
     if (!toggleSidebar) {
         return (
-            <Button
+            <button
                 type="button"
-                className="btn btn-icon repo-revision-container__toggle"
+                className="position-absolute btn btn-icon btn-link border-right border-bottom rounded-0 repo-revision-sidebar__toggle repo-revision-container__toggle"
                 onClick={handleSidebarToggle}
                 data-tooltip="Show sidebar"
             >
                 <FileTreeIcon className="icon-inline" />
-            </Button>
+            </button>
         )
     }
 
