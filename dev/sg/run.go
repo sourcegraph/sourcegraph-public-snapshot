@@ -36,7 +36,7 @@ func run(ctx context.Context, cmds ...Command) error {
 	}
 
 	wg := sync.WaitGroup{}
-	errs := make(chan error, len(cmds))
+	failures := make(chan failedRun, len(cmds))
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -48,7 +48,7 @@ func run(ctx context.Context, cmds ...Command) error {
 
 			if err := runWatch(ctx, cmd, root, ch); err != nil {
 				if err != ctx.Err() {
-					errs <- errors.Wrap(err, fmt.Sprintf("%s failed", cmd.Name))
+					failures <- failedRun{cmdName: cmd.Name, err: err}
 					cancel()
 				}
 			}
@@ -56,7 +56,75 @@ func run(ctx context.Context, cmds ...Command) error {
 	}
 
 	wg.Wait()
-	return <-errs
+
+	failure := <-failures
+	printCmdError(out, failure.cmdName, failure.err)
+	return failure
+}
+
+// failedRun is returned by run when a command failed to run and run exits
+type failedRun struct {
+	cmdName string
+	err     error
+}
+
+func (e failedRun) Error() string {
+	return fmt.Sprintf("failed to run %s", e.cmdName)
+}
+
+// installErr is returned by runWatch if the cmd.Install step fails.
+type installErr struct {
+	cmdName string
+	output  string
+}
+
+func (e installErr) Error() string {
+	return fmt.Sprintf("install of %s failed: %s", e.cmdName, e.output)
+}
+
+// reinstallErr is used internally by runWatch to print a message when a
+// command failed to reinstall.
+type reinstallErr struct {
+	cmdName string
+	output  string
+}
+
+func (e reinstallErr) Error() string {
+	return fmt.Sprintf("reinstalling %s failed: %s", e.cmdName, e.output)
+}
+
+func printCmdError(out *output.Output, cmdName string, err error) {
+	var message, cmdOut string
+
+	switch e := errors.Cause(err).(type) {
+	case installErr:
+		message = "Failed to build " + cmdName
+		cmdOut = e.output
+	case reinstallErr:
+		message = "Failed to rebuild " + cmdName
+		cmdOut = e.output
+	default:
+		message = fmt.Sprintf("Failed to run %s: %s", cmdName, err)
+	}
+
+	separator := strings.Repeat("-", 80)
+	if cmdOut != "" {
+		line := output.Linef(
+			"", output.StyleWarning,
+			"%s\n%s%s:\n%s%s%s%s%s",
+			separator, output.StyleBold, message, output.StyleReset,
+			cmdOut, output.StyleWarning, separator, output.StyleReset,
+		)
+		out.WriteLine(line)
+	} else {
+		line := output.Linef(
+			"", output.StyleWarning,
+			"%s\n%s%s\n%s%s",
+			separator, output.StyleBold, message,
+			separator, output.StyleReset,
+		)
+		out.WriteLine(line)
+	}
 }
 
 func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struct{}) error {
@@ -72,11 +140,9 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 		cmdOut, err := c.CombinedOutput()
 		if err != nil {
 			if !startedOnce {
-				// TODO: This should return something like an InstallErr that has nice formatting
-				return fmt.Errorf("failed to install %q: %s (output: %s)", cmd.Name, err, cmdOut)
+				return installErr{cmdName: cmd.Name, output: string(cmdOut)}
 			} else {
-				line := strings.Repeat("-", 80)
-				out.WriteLine(output.Linef("", output.StyleWarning, "%s\n%sFailed to reinstall %s%s: \n%s%s%s%s", line, output.StyleBold, cmd.Name, output.StyleReset, cmdOut, output.StyleWarning, line, output.StyleReset))
+				printCmdError(out, cmd.Name, reinstallErr{cmdName: cmd.Name, output: string(cmdOut)})
 				// Now we wait for a reload signal before we start to build it again
 				select {
 				case <-reload:
