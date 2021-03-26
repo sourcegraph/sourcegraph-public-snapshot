@@ -76,7 +76,7 @@ We want to test [implementation details as little as possible](https://kentcdodd
 | System | Type of tests |
 | --- | --- |
 | Extension API <> Extension Host API | [Integration tests with Jest](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/client/shared/src/api/integration-test) |
-| Extension API <> UI | [Browser-based tests with Puppeteer](https://docs.sourcegraph.com/dev/background-information/testing#browser-based-tests) |
+| Extension API <> UI | [Browser-based tests with Puppeteer](https://docs.sourcegraph.com/dev/how-to/testing#browser-based-tests) |
 
 
 Sometimes, you'll have to write unit tests that involve the extensions platform. For example, you could be unit testing a component that communicates with the extension host API. Here are some things to keep in mind if you're writing unit tests:
