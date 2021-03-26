@@ -56,7 +56,7 @@ var (
 var (
 	rootFlagSet         = flag.NewFlagSet("sg", flag.ExitOnError)
 	configFlag          = rootFlagSet.String("config", "sg.config.yaml", "configuration file")
-	overwriteConfigFlag = rootFlagSet.String("overwrite", "sg.config.overwrites.yaml", "configuration overwrites file (for example to add credentials, should be gitignored)")
+	overwriteConfigFlag = rootFlagSet.String("overwrite", "sg.config.overwrite.yaml", "configuration overwrites file (for example to add credentials, should be gitignored)")
 	conf                *Config
 
 	rootCommand = &ffcli.Command{

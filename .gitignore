@@ -137,4 +137,4 @@ storybook-static/
 .scannerwork
 
 # sg command specific things, see ./dev/sg
-sg.config.overwrites.yaml
+sg.config.overwrite.yaml
