@@ -4,8 +4,9 @@ import { discreteValueAliases, escapeSpaces } from '../../../shared/src/search/q
 import { VersionContext } from '../schema/site.schema'
 import { SearchPatternType } from '../../../shared/src/graphql-operations'
 import { Observable } from 'rxjs'
+import { map } from 'rxjs/operators'
 import { ISavedSearch, ISearchContext } from '../../../shared/src/graphql/schema'
-import { EventLogResult } from './backend'
+import { EventLogResult, resolveSearchContextSpec } from './backend'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from './stream'
 import { findFilter, FilterKind } from '../../../shared/src/search/query/validate'
 import { VersionContextProps } from '../../../shared/src/search/util'
@@ -229,14 +230,10 @@ export function resolveVersionContext(
     return versionContext
 }
 
-export function isSearchContextSpecAvailable(spec: string, availableSearchContexts: ISearchContext[]): boolean {
-    return availableSearchContexts.map(item => item.spec).includes(spec)
+export function isSearchContextSpecAvailable(spec: string): Observable<boolean> {
+    return resolveSearchContextSpec(spec).pipe(map(searchContext => !!searchContext))
 }
 
-export function resolveSearchContextSpec(
-    spec: string,
-    availableSearchContexts: ISearchContext[],
-    defaultSpec: string
-): string {
-    return isSearchContextSpecAvailable(spec, availableSearchContexts) ? spec : defaultSpec
+export function resolveSearchContextSpecOrDefault(spec: string, defaultSpec: string): Observable<string> {
+    return resolveSearchContextSpec(spec).pipe(map(searchContext => (searchContext ? searchContext.spec : defaultSpec)))
 }
