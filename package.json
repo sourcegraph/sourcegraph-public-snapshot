@@ -304,7 +304,7 @@
     "iterare": "^1.2.1",
     "js-cookie": "^2.2.1",
     "lodash": "^4.17.20",
-    "marked": "^1.2.7",
+    "marked": "^2.0.0",
     "mdi-react": "^7.3.0",
     "minimatch": "^3.0.4",
     "monaco-editor": "^0.18.1",

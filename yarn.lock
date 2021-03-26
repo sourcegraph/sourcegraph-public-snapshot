@@ -15038,10 +15038,10 @@ markdown-to-jsx@^6.11.4:
     prop-types "^15.6.2"
     unquote "^1.1.0"
 
-marked@^1.2.7:
-  version "1.2.7"
-  resolved "https://registry.npmjs.org/marked/-/marked-1.2.7.tgz#6e14b595581d2319cdcf033a24caaf41455a01fb"
-  integrity sha512-No11hFYcXr/zkBvL6qFmAp1z6BKY3zqLMHny/JN/ey+al7qwCM2+CMBL9BOgqMxZU36fz4cCWfn2poWIf7QRXA==
+marked@^2.0.0:
+  version "2.0.1"
+  resolved "https://registry.npmjs.org/marked/-/marked-2.0.1.tgz#5e7ed7009bfa5c95182e4eb696f85e948cefcee3"
+  integrity sha512-5+/fKgMv2hARmMW7DOpykr2iLhl0NgjyELk5yn92iE7z8Se1IS9n3UsFm86hFXIkvMBmVxki8+ckcpjBeyo/hw==
 
 marky@^1.2.0:
   version "1.2.1"
@@ -20132,8 +20132,7 @@ sourcegraph@^24.0.0:
   integrity sha512-uB2SbjEzcA/HWP3Rj+INUXqQweO8HmRdVWW7zesFWZQFBcu7JTcq0pg0jeAN71glKPIyyOgZVrIm1d7KoVzfZw==
 
 "sourcegraph@link:client/extension-api":
-  version "0.0.0"
-  uid ""
+  version "25.1.0"
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"
