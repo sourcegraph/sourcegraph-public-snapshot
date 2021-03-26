@@ -10,7 +10,7 @@ import { ViewCredentialModal } from './ViewCredentialModal'
 
 export interface CodeHostConnectionNodeProps {
     node: BatchChangesCodeHostFields
-    userID?: Scalars['ID']
+    userID: Scalars['ID']
     updateList: Subject<void>
 }
 
@@ -43,7 +43,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
         updateList.next()
     }, [updateList])
 
-    const isEnabled = node.credential !== null && (!userID || !node.credential.isSiteCredential)
+    const isEnabled = node.credential !== null
 
     return (
         <>

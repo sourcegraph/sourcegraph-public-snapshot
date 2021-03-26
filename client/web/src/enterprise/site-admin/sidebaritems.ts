@@ -11,7 +11,6 @@ import {
     repositoriesGroup,
     usersGroup,
 } from '../../site-admin/sidebaritems'
-import { BatchChangesIcon } from '../../batches/icons'
 
 const configurationGroup: SiteAdminSideBarGroup = {
     ...ossConfigurationGroup,
@@ -33,19 +32,6 @@ const extensionsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Extensions',
             to: '/site-admin/registry/extensions',
-        },
-    ],
-}
-
-export const batchChangesGroup: SiteAdminSideBarGroup = {
-    header: {
-        label: 'Batch Changes',
-        icon: BatchChangesIcon,
-    },
-    items: [
-        {
-            label: 'Batch Changes',
-            to: '/site-admin/batch-changes',
         },
     ],
 }
@@ -95,7 +81,6 @@ export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = [
     usersGroup,
     maintenanceGroup,
     extensionsGroup,
-    batchChangesGroup,
     businessGroup,
     apiConsoleGroup,
 ]

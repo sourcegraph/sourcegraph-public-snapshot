@@ -9,17 +9,13 @@ import {
     Scalars,
     UserBatchChangesCodeHostsVariables,
 } from '../../../graphql-operations'
-import { BatchChangesIconFlushLeft } from '../../../batches/icons'
-import {
-    queryUserBatchChangesCodeHosts as _queryUserBatchChangesCodeHosts,
-    queryGlobalBatchChangesCodeHosts as _queryGlobalBatchChangesCodeHosts,
-} from './backend'
+import { BatchChangesIcon } from '../../../batches/icons'
+import { queryUserBatchChangesCodeHosts as _queryUserBatchChangesCodeHosts } from './backend'
 import { CodeHostConnectionNode, CodeHostConnectionNodeProps } from './CodeHostConnectionNode'
 
 export interface CodeHostConnectionsProps extends Pick<RouteComponentProps, 'history' | 'location'> {
-    userID?: Scalars['ID']
+    userID: Scalars['ID']
     queryUserBatchChangesCodeHosts?: typeof _queryUserBatchChangesCodeHosts
-    queryGlobalBatchChangesCodeHosts?: typeof _queryGlobalBatchChangesCodeHosts
 }
 
 export const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsProps> = ({
@@ -27,7 +23,6 @@ export const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsPro
     history,
     location,
     queryUserBatchChangesCodeHosts = _queryUserBatchChangesCodeHosts,
-    queryGlobalBatchChangesCodeHosts = _queryGlobalBatchChangesCodeHosts,
 }) => {
     // Subject to fire a reload of the list.
     const updateList = useMemo(() => new Subject<void>(), [])
@@ -35,21 +30,16 @@ export const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsPro
         (args: Partial<UserBatchChangesCodeHostsVariables>) => Observable<BatchChangesCodeHostsFields>
     >(
         args =>
-            userID
-                ? queryUserBatchChangesCodeHosts({
-                      user: userID,
-                      first: args.first ?? null,
-                      after: args.after ?? null,
-                  })
-                : queryGlobalBatchChangesCodeHosts({
-                      first: args.first ?? null,
-                      after: args.after ?? null,
-                  }),
+            queryUserBatchChangesCodeHosts({
+                user: userID,
+                first: args.first ?? null,
+                after: args.after ?? null,
+            }),
         [queryUserBatchChangesCodeHosts, userID]
     )
     return (
         <>
-            <PageHeader path={[{ icon: BatchChangesIconFlushLeft, text: 'Batch Changes' }]} className="mb-3" />
+            <PageHeader path={[{ icon: BatchChangesIcon, text: 'Batch Changes' }]} className="mb-3" />
             <h2>Code host tokens</h2>
             <p>Add authentication tokens to enable batch changes changeset creation on your code hosts.</p>
             <FilteredConnection<BatchChangesCodeHostFields, Omit<CodeHostConnectionNodeProps, 'node'>>

@@ -9,8 +9,6 @@ import {
     CreateBatchChangesCredentialVariables,
     DeleteBatchChangesCredentialResult,
     DeleteBatchChangesCredentialVariables,
-    GlobalBatchChangesCodeHostsResult,
-    GlobalBatchChangesCodeHostsVariables,
     Scalars,
     UserBatchChangesCodeHostsResult,
     UserBatchChangesCodeHostsVariables,
@@ -19,8 +17,8 @@ import {
 export const batchChangesCredentialFieldsFragment = gql`
     fragment BatchChangesCredentialFields on BatchChangesCredential {
         id
+        createdAt
         sshPublicKey
-        isSiteCredential
     }
 `
 
@@ -30,7 +28,7 @@ export function createBatchChangesCredential(
     return requestGraphQL<CreateBatchChangesCredentialResult, CreateBatchChangesCredentialVariables>(
         gql`
             mutation CreateBatchChangesCredential(
-                $user: ID
+                $user: ID!
                 $credential: String!
                 $externalServiceKind: ExternalServiceKind!
                 $externalServiceURL: String!
@@ -71,30 +69,6 @@ export function deleteBatchChangesCredential(id: Scalars['ID']): Promise<void> {
         .toPromise()
 }
 
-const batchChangesCodeHostsFieldsFragment = gql`
-    fragment BatchChangesCodeHostsFields on BatchChangesCodeHostConnection {
-        totalCount
-        pageInfo {
-            hasNextPage
-            endCursor
-        }
-        nodes {
-            ...BatchChangesCodeHostFields
-        }
-    }
-
-    fragment BatchChangesCodeHostFields on BatchChangesCodeHost {
-        externalServiceKind
-        externalServiceURL
-        requiresSSH
-        credential {
-            ...BatchChangesCredentialFields
-        }
-    }
-
-    ${batchChangesCredentialFieldsFragment}
-`
-
 export const queryUserBatchChangesCodeHosts = ({
     user,
     first,
@@ -113,7 +87,27 @@ export const queryUserBatchChangesCodeHosts = ({
                 }
             }
 
-            ${batchChangesCodeHostsFieldsFragment}
+            fragment BatchChangesCodeHostsFields on BatchChangesCodeHostConnection {
+                totalCount
+                pageInfo {
+                    hasNextPage
+                    endCursor
+                }
+                nodes {
+                    ...BatchChangesCodeHostFields
+                }
+            }
+
+            fragment BatchChangesCodeHostFields on BatchChangesCodeHost {
+                externalServiceKind
+                externalServiceURL
+                requiresSSH
+                credential {
+                    ...BatchChangesCredentialFields
+                }
+            }
+
+            ${batchChangesCredentialFieldsFragment}
         `,
         {
             user,
@@ -130,30 +124,5 @@ export const queryUserBatchChangesCodeHosts = ({
                 throw new Error(`Node is a ${data.node.__typename}, not a User`)
             }
             return data.node.batchChangesCodeHosts
-        })
-    )
-
-export const queryGlobalBatchChangesCodeHosts = ({
-    first,
-    after,
-}: GlobalBatchChangesCodeHostsVariables): Observable<BatchChangesCodeHostsFields> =>
-    requestGraphQL<GlobalBatchChangesCodeHostsResult, GlobalBatchChangesCodeHostsVariables>(
-        gql`
-            query GlobalBatchChangesCodeHosts($first: Int, $after: String) {
-                batchChangesCodeHosts(first: $first, after: $after) {
-                    ...BatchChangesCodeHostsFields
-                }
-            }
-
-            ${batchChangesCodeHostsFieldsFragment}
-        `,
-        {
-            first,
-            after,
-        }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => {
-            return data.batchChangesCodeHosts
         })
     )

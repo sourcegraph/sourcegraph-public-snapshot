@@ -13,7 +13,7 @@ import { ModalHeader } from './ModalHeader'
 export interface AddCredentialModalProps {
     onCancel: () => void
     afterCreate: () => void
-    userID?: Scalars['ID']
+    userID: Scalars['ID']
     externalServiceKind: ExternalServiceKind
     externalServiceURL: string
     requiresSSH: boolean
@@ -100,7 +100,7 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
             setIsLoading(true)
             try {
                 const createdCredential = await createBatchChangesCredential({
-                    user: userID ?? null,
+                    user: userID,
                     credential,
                     externalServiceKind,
                     externalServiceURL,
