@@ -2,7 +2,6 @@ package search
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -178,23 +177,7 @@ func lookupMatcher(language string) string {
 	case "xml":
 		return ".xml"
 	}
-	return ""
-}
-
-// languageMetric takes an extension and list of include patterns and returns a
-// label that describes which language is inferred for structural matching.
-func languageMetric(matcher string, includePatterns *[]string) string {
-	if matcher != "" {
-		return matcher
-	}
-
-	if len(*includePatterns) > 0 {
-		extension := filepath.Ext((*includePatterns)[0])
-		if extension != "" {
-			return fmt.Sprintf("inferred:%s", extension)
-		}
-	}
-	return "inferred:.generic"
+	return ".generic"
 }
 
 // filteredStructuralSearch filters the list of files with a regex search before passing the zip to comby
@@ -219,36 +202,68 @@ func filteredStructuralSearch(ctx context.Context, zipPath string, zipFile *stor
 		matchedPaths = append(matchedPaths, fm.Path)
 	}
 
-	return structuralSearch(ctx, zipPath, p.Pattern, p.CombyRule, "", p.Languages, matchedPaths, repo)
+	var extensionHint string
+	if len(matchedPaths) > 0 {
+		extensionHint = filepath.Ext(matchedPaths[0])
+	}
+
+	return structuralSearch(ctx, zipPath, Subset(matchedPaths), extensionHint, p.Pattern, p.CombyRule, p.Languages, repo)
 }
 
-func structuralSearch(ctx context.Context, zipPath, pattern, rule, extension string, languages, includePatterns []string, repo api.RepoName) (matches []protocol.FileMatch, limitHit bool, err error) {
+// toMatcher returns the matcher that parameterizes structural search. It
+// derives either from an explicit language, or an inferred extension hint.
+func toMatcher(languages []string, extensionHint string) string {
+	if len(languages) > 0 {
+		// Pick the first language, there is no support for applying
+		// multiple language matchers in a single search query.
+		matcher := lookupMatcher(languages[0])
+		requestTotalStructuralSearch.WithLabelValues(matcher).Inc()
+		log15.Debug("structural search", "language", languages[0], "matcher", matcher)
+		return matcher
+	}
+
+	if extensionHint != "" {
+		extension := extensionToMatcher(extensionHint)
+		requestTotalStructuralSearch.WithLabelValues("inferred:" + extension).Inc()
+		return extension
+	}
+	requestTotalStructuralSearch.WithLabelValues("inferred:.generic").Inc()
+	return ".generic"
+}
+
+// A variant type that represents whether to search all files in a Zip file
+// (type UniversalSet), or just a subset (type Subset).
+type filePatterns interface {
+	Value()
+}
+
+func (UniversalSet) Value() {}
+func (Subset) Value()       {}
+
+type UniversalSet struct{}
+type Subset []string
+
+var All UniversalSet = struct{}{}
+
+func structuralSearch(ctx context.Context, zipPath string, paths filePatterns, extensionHint, pattern, rule string, languages []string, repo api.RepoName) (matches []protocol.FileMatch, limitHit bool, err error) {
 	log15.Info("structural search", "repo", string(repo))
 
 	// Cap the number of forked processes to limit the size of zip contents being mapped to memory. Resolving #7133 could help to lift this restriction.
 	numWorkers := 4
 
-	var matcher string
-	if extension != "" {
-		matcher = extensionToMatcher(extension)
-	}
+	matcher := toMatcher(languages, extensionHint)
 
-	if len(languages) > 0 {
-		// Pick the first language, there is no support for applying
-		// multiple language matchers in a single search query.
-		matcher = lookupMatcher(languages[0])
-		log15.Debug("structural search", "language", languages[0], "matcher", matcher)
+	var filePatterns []string
+	if v, ok := paths.(Subset); ok {
+		filePatterns = []string(v)
 	}
-
-	v := languageMetric(matcher, &includePatterns)
-	requestTotalStructuralSearch.WithLabelValues(v).Inc()
 
 	args := comby.Args{
 		Input:         comby.ZipPath(zipPath),
 		Matcher:       matcher,
 		MatchTemplate: pattern,
 		MatchOnly:     true,
-		FilePatterns:  includePatterns,
+		FilePatterns:  filePatterns,
 		Rule:          rule,
 		NumWorkers:    numWorkers,
 	}
@@ -316,13 +331,13 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request) (matche
 		return nil, false, false, err
 	}
 
-	var extension string
+	var extensionHint string
 	if len(zoektMatches) > 0 {
 		filename := zoektMatches[0].FileName
-		extension = filepath.Ext(filename)
+		extensionHint = filepath.Ext(filename)
 	}
 
-	matches, limitHit, err = structuralSearch(ctx, zipFile.Name(), p.Pattern, p.CombyRule, extension, p.Languages, []string{}, p.Repo)
+	matches, limitHit, err = structuralSearch(ctx, zipFile.Name(), All, extensionHint, p.Pattern, p.CombyRule, p.Languages, p.Repo)
 	return matches, limitHit, false, err
 }
 
