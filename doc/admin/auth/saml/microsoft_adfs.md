@@ -175,7 +175,7 @@ firewall rule or due to Sourcegraph's host not respecting the TLS certificate of
 options:
 
 * Open the `federationmetadata.xml` file, transform it into a JSON string (using a tool like
-  https://json-escape-text.now.sh), and set it in the `identityProviderMetadata` field of the
+  [https://json-escape-text.now.sh](https://json-escape-text.now.sh)), and set it in the `identityProviderMetadata` field of the
   `auth.provider` SAML config. You can then delete the `identityProviderMetadataURL` field.
 * Fix the connectivity issue from Sourcegraph to ADFS by adding the appropriate firewall rule, or
   authorizing the ADFS TLS certificate on the container running Sourcegraph.
