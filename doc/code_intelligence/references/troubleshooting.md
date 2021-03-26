@@ -91,5 +91,5 @@ To gather a trace from the SPA, open your browser's developer tools, open the ne
 
 Hovering over identifiers in the source file should fire off requests to the API. Find a request matching the target type (given in the table above). If there are multiple matching requests, prefer the ones with higher latencies. The `x-trace` header should have a URL value that takes you a detailed view of that specific request. This trace is exportable from the Jaeger UI.
 
-![Network waterfall](network-waterfall.png)
-![Request headers](network-description.png)
+![Network waterfall](../img/network-waterfall.png)
+![Request headers](../img/network-description.png)
