@@ -9,17 +9,35 @@ const signale = require('signale')
  * of extension registries, in the cases where providing the source code is a
  * pre-requisite to getting approval for publishing.
  *
- * This script fetches a fresh copy of the repository, identified by commit ID.
- * This is done instead of using packaging the contents of the current working
- * copy repository, and the reason is to avoid including any build artifacts
- * that may be present. By pinning it to a commit, it's possible to use this
- * script across any branch and commit.
+ * This script fetches a fresh copy of the repository, identified by commit ID,
+ * instead of zipping the current working directory. This is done instead for
+ * these reasons:
+ *   - To avoid zipping any changes in the current tree, or any existing build
+ *     artifacts.
+ *   - To be able to exclude some unnecessary directories by deleting them
+ *     before zipping.
  *
  */
 
 // Configuration
-const commitId = '7e2ff053035368dd90801e358515f7dd7dc2d823'
+
+/**
+ * Set the commitId to build from a given revision. Because it will be
+ * downloaded from GitHub, this revision needs to exist there.
+ */
+const commitId = 'bext/release'
+
+/**
+ * If true, code intel extensions will be fetched and included in the zip, so
+ * that they can be reviewed as part of the source code. This included copy will
+ * be used when building. If not included, the code intel extensions will be
+ * automatically downloaded during the build step.
+ */
 const includeCodeIntelExtensions = true
+
+/**
+ * Inside the zip, this will be the name of the root directory.
+ */
 const rootDirectoryNameForZip = 'sourcegraph-source'
 
 // Clean up
@@ -49,6 +67,6 @@ shelljs.rm('-rf', ['dev', 'doc', 'docker-images', 'enterprise', 'internal', 'mig
 shelljs.popd()
 
 signale.await('Producing sourcegraph.zip')
-shelljs.exec(`zip -qr sourcegraph.zip ${rootDirectoryNameForZip} --exclude "${rootDirectoryNameForZip}/node_modules/*"`)
-// shelljs.rm('-rf', rootDirectoryNameForZip)
+shelljs.exec(`zip -qr sourcegraph.zip ${rootDirectoryNameForZip}`)
+shelljs.rm('-rf', rootDirectoryNameForZip)
 signale.success('Done producing sourcegraph.zip')
