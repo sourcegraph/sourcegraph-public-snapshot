@@ -7,7 +7,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -124,22 +123,6 @@ func (s *syncHandler) Handle(ctx context.Context, tx dbworkerstore.Store, record
 	store := s.store.With(tx)
 
 	return s.syncer.SyncExternalService(ctx, store, sj.ExternalServiceID, s.minSyncInterval())
-}
-
-// contextWithSignalCancel will return a context which will be cancelled if
-// signal fires. Callers need to call cancel when done.
-func contextWithSignalCancel(ctx context.Context, signal <-chan struct{}) (context.Context, context.CancelFunc) {
-	ctx, cancel := context.WithCancel(ctx)
-
-	go func() {
-		select {
-		case <-ctx.Done():
-		case <-signal:
-			cancel()
-		}
-	}()
-
-	return ctx, cancel
 }
 
 // sleep is a context aware time.Sleep
@@ -885,28 +868,4 @@ func (s *Syncer) observe(ctx context.Context, family, title string) (context.Con
 
 		tr.Finish()
 	}
-}
-
-type signal struct {
-	once sync.Once
-	c    chan struct{}
-}
-
-func (s *signal) init() {
-	s.once.Do(func() {
-		s.c = make(chan struct{}, 1)
-	})
-}
-
-func (s *signal) Trigger() {
-	s.init()
-	select {
-	case s.c <- struct{}{}:
-	default:
-	}
-}
-
-func (s *signal) Watch() <-chan struct{} {
-	s.init()
-	return s.c
 }
