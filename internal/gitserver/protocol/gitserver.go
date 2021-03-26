@@ -6,8 +6,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
-const HeaderSourcegraphActor = "X-Sourcegraph-Actor"
-
 // ExecRequest is a request to execute a command inside a git repository.
 //
 // Note that this request is deserialized by both gitserver and the frontend's
