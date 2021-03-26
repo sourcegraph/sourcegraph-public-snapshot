@@ -94,21 +94,112 @@ func TestSearchContexts_List(t *testing.T) {
 	}
 
 	wantInstanceLevelSearchContexts := createdSearchContexts[:1]
-	gotInstanceLevelSearchContexts, err := sc.ListInstanceLevelSearchContexts(ctx)
+	gotInstanceLevelSearchContexts, err := sc.ListSearchContexts(
+		ctx,
+		ListSearchContextsPageOptions{First: 1},
+		ListSearchContextsOptions{},
+	)
 	if err != nil {
 		t.Fatalf("Expected no error, got %s", err)
 	}
 	if !reflect.DeepEqual(wantInstanceLevelSearchContexts, gotInstanceLevelSearchContexts) {
-		t.Fatalf("wanted %v search contexts, got %v", wantInstanceLevelSearchContexts, wantInstanceLevelSearchContexts)
+		t.Fatalf("wanted %v search contexts, got %v", wantInstanceLevelSearchContexts, gotInstanceLevelSearchContexts)
 	}
 
 	wantUserSearchContexts := createdSearchContexts[1:]
-	gotUserSearchContexts, err := sc.ListSearchContextsByUserID(ctx, user.ID)
+	gotUserSearchContexts, err := sc.ListSearchContexts(
+		ctx,
+		ListSearchContextsPageOptions{First: 1},
+		ListSearchContextsOptions{NamespaceUserID: user.ID},
+	)
 	if err != nil {
 		t.Fatalf("Expected no error, got %s", err)
 	}
 	if !reflect.DeepEqual(wantUserSearchContexts, gotUserSearchContexts) {
 		t.Fatalf("wanted %v search contexts, got %v", wantUserSearchContexts, gotUserSearchContexts)
+	}
+}
+
+func TestSearchContexts_PaginationAndCount(t *testing.T) {
+	db := dbtesting.GetDB(t)
+	ctx := context.Background()
+	u := Users(db)
+	o := Orgs(db)
+	sc := SearchContexts(db)
+
+	user, err := u.Create(ctx, NewUser{Username: "u", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+	displayName := "My Org"
+	org, err := o.Create(ctx, "myorg", &displayName)
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	createdSearchContexts, err := createSearchContexts(ctx, sc, []*types.SearchContext{
+		{Name: "instance-v1", Public: true},
+		{Name: "instance-v2", Public: true},
+		{Name: "instance-v3", Public: true},
+		{Name: "instance-v4", Public: true},
+		{Name: "user-v1", Public: true, NamespaceUserID: user.ID},
+		{Name: "user-v2", Public: true, NamespaceUserID: user.ID},
+		{Name: "user-v3", Public: true, NamespaceUserID: user.ID},
+		{Name: "org-v1", Public: true, NamespaceOrgID: org.ID},
+		{Name: "org-v2", Public: true, NamespaceOrgID: org.ID},
+		{Name: "org-v3", Public: true, NamespaceOrgID: org.ID},
+	})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	tests := []struct {
+		name               string
+		wantSearchContexts []*types.SearchContext
+		options            ListSearchContextsOptions
+		pageOptions        ListSearchContextsPageOptions
+		totalCount         int32
+	}{
+		{
+			name:               "instance-level contexts",
+			wantSearchContexts: createdSearchContexts[1:3],
+			options:            ListSearchContextsOptions{Name: "instance-v"},
+			pageOptions:        ListSearchContextsPageOptions{First: 2, AfterID: createdSearchContexts[0].ID},
+			totalCount:         4,
+		},
+		{
+			name:               "user-level contexts",
+			wantSearchContexts: createdSearchContexts[6:7],
+			options:            ListSearchContextsOptions{NamespaceUserID: user.ID},
+			pageOptions:        ListSearchContextsPageOptions{First: 1, AfterID: createdSearchContexts[5].ID},
+			totalCount:         3,
+		},
+		{
+			name:               "org-level contexts",
+			wantSearchContexts: createdSearchContexts[7:9],
+			options:            ListSearchContextsOptions{NamespaceOrgID: org.ID},
+			pageOptions:        ListSearchContextsPageOptions{First: 2},
+			totalCount:         3,
+		},
+		{
+			name:               "by name only",
+			wantSearchContexts: []*types.SearchContext{createdSearchContexts[0], createdSearchContexts[4]},
+			options:            ListSearchContextsOptions{Name: "v1", IncludeAll: true},
+			pageOptions:        ListSearchContextsPageOptions{First: 2},
+			totalCount:         3,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotSearchContexts, err := sc.ListSearchContexts(ctx, tt.pageOptions, tt.options)
+			if err != nil {
+				t.Fatalf("Expected no error, got %s", err)
+			}
+			if !reflect.DeepEqual(tt.wantSearchContexts, gotSearchContexts) {
+				t.Fatalf("wanted %+v search contexts, got %+v", tt.wantSearchContexts, gotSearchContexts)
+			}
+		})
 	}
 }
 

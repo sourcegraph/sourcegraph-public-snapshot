@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestSearchContexts(t *testing.T) {
+func TestAutoDefinedSearchContexts(t *testing.T) {
 	key := int32(1)
 	username := "alice"
 	ctx := context.Background()
@@ -30,7 +30,7 @@ func TestSearchContexts(t *testing.T) {
 	}
 	defer resetMocks()
 
-	searchContexts, err := (&schemaResolver{db: db}).SearchContexts(ctx)
+	searchContexts, err := (&schemaResolver{db: db}).AutoDefinedSearchContexts(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
