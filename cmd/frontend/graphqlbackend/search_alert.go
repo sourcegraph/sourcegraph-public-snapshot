@@ -118,7 +118,6 @@ func (r *searchResolver) reposExist(ctx context.Context, options searchrepos.Opt
 		DB:               r.db,
 		Zoekt:            r.zoekt,
 		DefaultReposFunc: database.DefaultRepos(r.db).List,
-		NamespaceStore:   database.Namespaces(r.db),
 	}
 	resolved, err := repositoryResolver.Resolve(ctx, options)
 	return err == nil && len(resolved.RepoRevs) > 0

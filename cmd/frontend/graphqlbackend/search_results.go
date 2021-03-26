@@ -1723,7 +1723,7 @@ func (r *searchResolver) isGlobalSearch() bool {
 		return false
 	}
 	querySearchContextSpec, _ := r.Query.StringValue(query.FieldContext)
-	if envvar.SourcegraphDotComMode() && !searchcontexts.IsGlobalSearchContextSpec(querySearchContextSpec) {
+	if !searchcontexts.IsGlobalSearchContextSpec(querySearchContextSpec) {
 		return false
 	}
 	return len(r.Query.Values(query.FieldRepo)) == 0 && len(r.Query.Values(query.FieldRepoGroup)) == 0 && len(r.Query.Values(query.FieldRepoHasFile)) == 0

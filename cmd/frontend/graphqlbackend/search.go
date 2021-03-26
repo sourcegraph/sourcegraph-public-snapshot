@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -426,7 +425,6 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		DB:               r.db,
 		Zoekt:            r.zoekt,
 		DefaultReposFunc: backend.Repos.ListDefault,
-		NamespaceStore:   database.Namespaces(r.db),
 	}
 	resolved, err := repositoryResolver.Resolve(ctx, options)
 	tr.LazyPrintf("resolveRepositories - done")
