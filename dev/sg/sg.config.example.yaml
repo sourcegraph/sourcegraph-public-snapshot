@@ -41,6 +41,8 @@ commands:
     env:
       CONFIGURATION_MODE: server
       USE_ENHANCED_LANGUAGE_DETECTION: false
+      # This needs to be set on `frontend` too so that `app.html` is rendered correctly
+      WEBPACK_DEV_SERVER: 1
     watch:
       - internal
       - cmd/frontend
@@ -48,6 +50,9 @@ commands:
   enterprise-frontend:
     cmd: .bin/enterprise-frontend
     install: go build -o .bin/enterprise-frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
+    env:
+      CONFIGURATION_MODE: server
+      USE_ENHANCED_LANGUAGE_DETECTION: false
     watch:
       - internal
       - cmd/frontend
@@ -85,8 +90,6 @@ commands:
   enterprise-repo-updater:
     cmd: .bin/repo-updater
     install: go build -o .bin/repo-updater github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
-    env:
-      HOSTNAME: $SRC_GIT_SERVER_1
     watch:
       - internal
       - cmd/repo-updater
