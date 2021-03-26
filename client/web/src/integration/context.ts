@@ -1,3 +1,6 @@
+import html from 'tagged-template-noop'
+import path from 'path'
+import fs from 'fs'
 import {
     createSharedIntegrationTestContext,
     IntegrationTestContext,
@@ -7,7 +10,6 @@ import { createJsContext } from './jscontext'
 import { SourcegraphContext } from '../jscontext'
 import { WebGraphQlOperations } from '../graphql-operations'
 import { SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
-import html from 'tagged-template-noop'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { SearchEvent } from '../search/stream'
 
@@ -27,6 +29,13 @@ export interface WebIntegrationTestContext
      * @param overrides The array of events to return.
      */
     overrideSearchStreamEvents: (overrides: SearchEvent[]) => void
+}
+
+const getAppBundle = (): string => {
+    const manifestFile = path.resolve(__dirname, '../../../../ui/assets/manifest.json')
+    // eslint-disable-next-line no-sync
+    const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf-8')) as Record<string, string>
+    return manifest['app.js']
 }
 
 /**
@@ -60,7 +69,7 @@ export const createWebIntegrationTestContext = async ({
                         <script>
                             window.context = ${JSON.stringify(jsContext)}
                         </script>
-                        <script src="/.assets/scripts/app.bundle.js"></script>
+                        <script src=${getAppBundle()}></script>
                     </body>
                 </html>
             `)

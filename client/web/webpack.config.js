@@ -7,7 +7,7 @@ const path = require('path')
 const TerserPlugin = require('terser-webpack-plugin')
 const webpack = require('webpack')
 const logger = require('gulplog')
-const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
+const { WebpackManifestPlugin } = require('webpack-manifest-plugin')
 
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
 logger.info('Using mode', mode)
@@ -77,7 +77,7 @@ const config = {
   },
   output: {
     path: path.join(rootDirectory, 'ui', 'assets'),
-    filename: 'scripts/[name].bundle.js',
+    filename: 'scripts/[name].[contenthash].bundle.js',
     chunkFilename: 'scripts/[id]-[contenthash].chunk.js',
     publicPath: '/.assets/',
     globalObject: 'self',
@@ -91,7 +91,7 @@ const config = {
         NODE_ENV: JSON.stringify(mode),
       },
     }),
-    new MiniCssExtractPlugin({ filename: 'styles/[name].bundle.css' }),
+    new MiniCssExtractPlugin({ filename: 'styles/[name].[contenthash].bundle.css' }),
     new OptimizeCssAssetsPlugin(),
     new MonacoWebpackPlugin({
       languages: ['json'],
@@ -110,6 +110,7 @@ const config = {
       ],
     }),
     new webpack.IgnorePlugin(/\.flow$/, /.*/),
+    new WebpackManifestPlugin(),
     ...(shouldAnalyze ? [new BundleAnalyzerPlugin()] : []),
   ],
   resolve: {
