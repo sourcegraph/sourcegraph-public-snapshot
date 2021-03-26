@@ -104,7 +104,7 @@ func printCmdError(out *output.Output, cmdName string, err error) {
 		message = "Failed to rebuild " + cmdName
 		cmdOut = e.output
 	default:
-		message = fmt.Sprintf("Error running %s: %s", cmdName, err)
+		message = fmt.Sprintf("Failed to run %s: %s", cmdName, err)
 	}
 
 	separator := strings.Repeat("-", 80)
