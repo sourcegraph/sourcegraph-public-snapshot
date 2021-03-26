@@ -1,7 +1,7 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React, { Suspense, useCallback, useEffect, useMemo } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
-import { Observable } from 'rxjs'
+import { Observable, of } from 'rxjs'
 import { ActivationProps } from '../../shared/src/components/activation/Activation'
 import { FetchFileParameters } from '../../shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '../../shared/src/extensions/controller'
@@ -173,16 +173,23 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         location.search,
     ])
 
-    useEffect(() => {
+    const [globalContextFilter, searchContextSpec] = useMemo(() => {
         const globalContextFilter = findFilter(query, FilterType.context, FilterKind.Global)
         const searchContextSpec = globalContextFilter?.value ? globalContextFilter.value.value : undefined
+        return [globalContextFilter, searchContextSpec]
+    }, [query])
 
+    const isSearchContextAvailable = useObservable(
+        useMemo(
+            () =>
+                globalContextFilter && searchContextSpec ? isSearchContextSpecAvailable(searchContextSpec) : of(false),
+            [globalContextFilter, searchContextSpec]
+        )
+    )
+
+    useEffect(() => {
         let finalQuery = query
-        if (
-            globalContextFilter &&
-            searchContextSpec &&
-            isSearchContextSpecAvailable(searchContextSpec, availableSearchContexts)
-        ) {
+        if (globalContextFilter && isSearchContextAvailable) {
             // If a global search context spec is available to the user, we omit it from the
             // query and move it to the search contexts dropdown
             finalQuery = omitContextFilter(finalQuery, globalContextFilter)
@@ -229,6 +236,9 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         versionContext,
         setSelectedSearchContextSpec,
         availableSearchContexts,
+        globalContextFilter,
+        isSearchContextAvailable,
+        searchContextSpec,
     ])
 
     // Hack! Hardcode these routes into cmd/frontend/internal/app/ui/router.go
