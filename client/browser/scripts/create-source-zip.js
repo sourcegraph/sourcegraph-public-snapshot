@@ -12,10 +12,12 @@ const signale = require('signale')
  * This script fetches a fresh copy of the repository, identified by commit ID,
  * instead of zipping the current working directory. This is done instead for
  * these reasons:
- *   - To avoid zipping any changes in the current tree, or any existing build
- *     artifacts.
- *   - To be able to exclude some unnecessary directories by deleting them
- *     before zipping.
+ *
+ * - To avoid zipping any changes in the current tree, or any existing build
+ * artifacts.
+ *
+ * - To be able to exclude some unnecessary directories by deleting them before
+ * zipping.
  *
  */
 
