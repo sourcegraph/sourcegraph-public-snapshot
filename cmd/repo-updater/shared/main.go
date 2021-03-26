@@ -411,7 +411,7 @@ func syncScheduler(ctx context.Context, sched scheduler, gitserverClient *gitser
 		if u, err := baseRepoStore.ListDefaultRepos(ctx, database.ListDefaultReposOptions{OnlyUncloned: true}); err != nil {
 			log15.Error("Listing default repos", "error", err)
 			return
-		} else {
+		} else if !conf.Get().DisableAutoGitUpdates {
 			// Ensure that uncloned repos are known to the scheduler
 			sched.EnsureScheduled(u)
 		}
