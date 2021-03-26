@@ -17,6 +17,7 @@ import { CodeMonitoringProps } from '../../code-monitoring'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { WebActionsNavItems as ActionsNavItems } from '../../components/shared'
 import { SearchPatternType } from '../../graphql-operations'
+import { ButtonLink } from '../../../../shared/src/components/LinkOrButton'
 
 export interface SearchResultsInfoBarProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
@@ -78,18 +79,26 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         const globalTypeFilterInQuery = findFilter(props.query, 'type', FilterKind.Global)
         const globalTypeFilterValue = globalTypeFilterInQuery?.value ? globalTypeFilterInQuery.value.value : undefined
         const canCreateMonitorFromQuery = globalTypeFilterValue === 'diff' || globalTypeFilterValue === 'commit'
-        if (!canCreateMonitorFromQuery) {
-            return null
-        }
         const searchParameters = new URLSearchParams(props.location.search)
         searchParameters.set('trigger-query', `${props.query} patterntype:${props.patternType}`)
         const toURL = `/code-monitoring/new?${searchParameters.toString()}`
         return (
-            <li className="nav-item">
-                <Link to={toURL} className="btn btn-sm btn-link nav-link text-decoration-none">
+            <li
+                className="nav-item"
+                data-tooltip={
+                    !canCreateMonitorFromQuery
+                        ? 'Code monitors only support type:diff or type:commit searches.'
+                        : undefined
+                }
+            >
+                <ButtonLink
+                    disabled={!canCreateMonitorFromQuery}
+                    to={toURL}
+                    className="btn btn-sm btn-link nav-link text-decoration-none"
+                >
                     <CodeMonitoringLogo className="icon-inline mr-1" />
                     Monitor
-                </Link>
+                </ButtonLink>
             </li>
         )
     }, [props.enableCodeMonitoring, props.query, props.authenticatedUser, props.location.search, props.patternType])

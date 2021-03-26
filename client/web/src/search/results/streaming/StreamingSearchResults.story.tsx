@@ -103,6 +103,26 @@ add('diffs tab selected, code monitoring enabled, user logged in', () => (
     </WebStory>
 ))
 
+add('code tab selected, code monitoring enabled, user logged in', () => (
+    <WebStory>
+        {() => (
+            <StreamingSearchResults
+                {...defaultProps}
+                parsedSearchQuery="r:golang/oauth2 test f:travis"
+                enableCodeMonitoring={true}
+                authenticatedUser={
+                    {
+                        url: '/users/alice',
+                        displayName: 'Alice',
+                        username: 'alice',
+                        email: 'alice@email.test',
+                    } as AuthenticatedUser
+                }
+            />
+        )}
+    </WebStory>
+))
+
 add('search with quotes', () => (
     <WebStory>
         {() => <StreamingSearchResults {...defaultProps} parsedSearchQuery='r:golang/oauth2 test f:travis "test"' />}
