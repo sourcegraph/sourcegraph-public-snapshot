@@ -39,7 +39,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
         return (
             <button
                 type="button"
-                className="position-absolute btn btn-icon btn-link border-right border-bottom rounded-0 repo-revision-sidebar__toggle repo-revision-container__toggle"
+                className="position-absolute btn btn-icon btn-link border-right border-bottom rounded-0 repo-revision-container__toggle"
                 onClick={handleSidebarToggle}
                 data-tooltip="Show sidebar"
             >
@@ -59,7 +59,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                     defaultIndex={tabIndex}
                     onChange={handleTabsChange}
                 >
-                    <div className="tablist-wrapper d-flex w-100 align-items-center">
+                    <div className="tablist-wrapper d-flex w-100 align-items-center bg-transparent">
                         <TabList>
                             <Tab data-test-tab="files">Files</Tab>
                             <Tab data-test-tab="symbols">Symbols</Tab>
