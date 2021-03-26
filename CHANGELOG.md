@@ -23,7 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- Commit search returning duplicate commits. [#19460](https://github.com/sourcegraph/sourcegraph/pull/19460)
 
 ### Removed
 

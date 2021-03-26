@@ -897,36 +897,36 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 	})
 
-	t.Run("Predicate Queries", func(t *testing.T) {
-		type counts struct {
-			Repo    int
-			Commit  int
-			Content int
-			Symbol  int
-			File    int
-		}
+	type counts struct {
+		Repo    int
+		Commit  int
+		Content int
+		Symbol  int
+		File    int
+	}
 
-		countResults := func(results []*gqltestutil.AnyResult) counts {
-			var count counts
-			for _, res := range results {
-				switch v := res.Inner.(type) {
-				case gqltestutil.CommitResult:
-					count.Commit += 1
-				case gqltestutil.RepositoryResult:
-					count.Repo += 1
-				case gqltestutil.FileResult:
-					count.Symbol += len(v.Symbols)
-					for _, lm := range v.LineMatches {
-						count.Content += len(lm.OffsetAndLengths)
-					}
-					if len(v.Symbols) == 0 && len(v.LineMatches) == 0 {
-						count.File += 1
-					}
+	countResults := func(results []*gqltestutil.AnyResult) counts {
+		var count counts
+		for _, res := range results {
+			switch v := res.Inner.(type) {
+			case gqltestutil.CommitResult:
+				count.Commit += 1
+			case gqltestutil.RepositoryResult:
+				count.Repo += 1
+			case gqltestutil.FileResult:
+				count.Symbol += len(v.Symbols)
+				for _, lm := range v.LineMatches {
+					count.Content += len(lm.OffsetAndLengths)
+				}
+				if len(v.Symbols) == 0 && len(v.LineMatches) == 0 {
+					count.File += 1
 				}
 			}
-			return count
 		}
+		return count
+	}
 
+	t.Run("Predicate Queries", func(t *testing.T) {
 		tests := []struct {
 			name   string
 			query  string
@@ -1005,35 +1005,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 	})
 
 	t.Run("Select Queries", func(t *testing.T) {
-		type counts struct {
-			Repo    int
-			Commit  int
-			Content int
-			Symbol  int
-			File    int
-		}
-
-		countResults := func(results []*gqltestutil.AnyResult) counts {
-			var count counts
-			for _, res := range results {
-				switch v := res.Inner.(type) {
-				case gqltestutil.CommitResult:
-					count.Commit += 1
-				case gqltestutil.RepositoryResult:
-					count.Repo += 1
-				case gqltestutil.FileResult:
-					count.Symbol += len(v.Symbols)
-					for _, lm := range v.LineMatches {
-						count.Content += len(lm.OffsetAndLengths)
-					}
-					if len(v.Symbols) == 0 && len(v.LineMatches) == 0 {
-						count.File += 1
-					}
-				}
-			}
-			return count
-		}
-
 		tests := []struct {
 			name   string
 			query  string
@@ -1103,6 +1074,34 @@ func testSearchClient(t *testing.T, client searchClient) {
 					t.Skip("streaming not supported yet")
 				}
 
+				results, err := client.SearchAll(test.query)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				count := countResults(results)
+				if diff := cmp.Diff(test.counts, count); diff != "" {
+					t.Fatalf("mismatch (-want +got):\n%s", diff)
+				}
+			})
+		}
+	})
+
+	t.Run("Exact Counts", func(t *testing.T) {
+		tests := []struct {
+			name   string
+			query  string
+			counts counts
+		}{
+			{
+				`no duplicate commits (#19460)`,
+				`repo:^github\.com/sgtest/sourcegraph-typescript$ type:commit author:felix count:1000 before:"march 25 2021"`,
+				counts{Commit: 317},
+			},
+		}
+
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
 				results, err := client.SearchAll(test.query)
 				if err != nil {
 					t.Fatal(err)
