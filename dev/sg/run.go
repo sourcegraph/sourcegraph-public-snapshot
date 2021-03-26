@@ -132,33 +132,34 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 
 	for {
 		// Build it
-		out.WriteLine(output.Linef("", output.StylePending, "Installing %s...", cmd.Name))
+		if cmd.Install != "" {
+			out.WriteLine(output.Linef("", output.StylePending, "Installing %s...", cmd.Name))
 
-		c := exec.CommandContext(ctx, "bash", "-c", cmd.Install)
-		c.Dir = root
-		c.Env = makeEnv(conf.Env, cmd.Env)
-		cmdOut, err := c.CombinedOutput()
-		if err != nil {
-			if !startedOnce {
-				return installErr{cmdName: cmd.Name, output: string(cmdOut)}
-			} else {
-				printCmdError(out, cmd.Name, reinstallErr{cmdName: cmd.Name, output: string(cmdOut)})
-				// Now we wait for a reload signal before we start to build it again
-				select {
-				case <-reload:
-					continue
+			c := exec.CommandContext(ctx, "bash", "-c", cmd.Install)
+			c.Dir = root
+			c.Env = makeEnv(conf.Env, cmd.Env)
+			cmdOut, err := c.CombinedOutput()
+			if err != nil {
+				if !startedOnce {
+					return installErr{cmdName: cmd.Name, output: string(cmdOut)}
+				} else {
+					printCmdError(out, cmd.Name, reinstallErr{cmdName: cmd.Name, output: string(cmdOut)})
+					// Now we wait for a reload signal before we start to build it again
+					select {
+					case <-reload:
+						continue
+					}
 				}
 			}
-		}
 
-		// clear this signal before starting
-		// clear this signal before starting
-		select {
-		case <-reload:
-		default:
-		}
+			// clear this signal before starting
+			select {
+			case <-reload:
+			default:
+			}
 
-		out.WriteLine(output.Linef("", output.StyleSuccess, "%sSuccessfully installed %s%s", output.StyleBold, cmd.Name, output.StyleReset))
+			out.WriteLine(output.Linef("", output.StyleSuccess, "%sSuccessfully installed %s%s", output.StyleBold, cmd.Name, output.StyleReset))
+		}
 
 		// Run it
 		out.WriteLine(output.Linef("", output.StylePending, "Running %s...", cmd.Name))
@@ -166,7 +167,7 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 		commandCtx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
-		c = exec.CommandContext(commandCtx, "bash", "-c", cmd.Cmd)
+		c := exec.CommandContext(commandCtx, "bash", "-c", cmd.Cmd)
 		c.Dir = root
 		c.Env = makeEnv(conf.Env, cmd.Env)
 

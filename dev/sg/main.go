@@ -54,9 +54,10 @@ var (
 )
 
 var (
-	rootFlagSet = flag.NewFlagSet("sg", flag.ExitOnError)
-	configFlag  = rootFlagSet.String("config", "sg.config.yaml", "configuration file")
-	conf        *Config
+	rootFlagSet         = flag.NewFlagSet("sg", flag.ExitOnError)
+	configFlag          = rootFlagSet.String("config", "sg.config.yaml", "configuration file")
+	overwriteConfigFlag = rootFlagSet.String("overwrite", "sg.config.overwrites.yaml", "configuration overwrites file (for example to add credentials, should be gitignored)")
+	conf                *Config
 
 	rootCommand = &ffcli.Command{
 		ShortUsage:  "sg [flags] <subcommand>",
@@ -74,6 +75,14 @@ func main() {
 	conf, err = ParseConfigFile(*configFlag)
 	if err != nil {
 		os.Exit(1)
+	}
+
+	if ok, _ := fileExists(*overwriteConfigFlag); ok {
+		overwriteConf, err := ParseConfigFile(*overwriteConfigFlag)
+		if err != nil {
+			os.Exit(1)
+		}
+		conf.Merge(overwriteConf)
 	}
 
 	if err := rootCommand.Run(context.Background()); err != nil {
@@ -213,4 +222,15 @@ func startUsage(c *ffcli.Command) string {
 	fmt.Fprintln(&out, "  sg start")
 
 	return out.String()
+}
+
+func fileExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
 }
