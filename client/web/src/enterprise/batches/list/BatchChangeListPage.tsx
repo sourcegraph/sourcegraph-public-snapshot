@@ -218,7 +218,6 @@ const BatchChangeListTabHeader: React.FunctionComponent<{
         <div className="overflow-auto mb-4">
             <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
                 <li className="nav-item">
-                    {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                     <a
                         href=""
                         onClick={onSelectBatchChanges}
