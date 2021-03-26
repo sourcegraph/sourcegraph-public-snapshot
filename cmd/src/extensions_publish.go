@@ -49,6 +49,7 @@ Notes:
 	var (
 		extensionIDFlag = flagSet.String("extension-id", "", `Override the extension ID in the manifest. (default: read from -manifest file)`)
 		urlFlag         = flagSet.String("url", "", `Override the URL for the bundle. (example: set to http://localhost:1234/myext.js for local dev with parcel)`)
+		gitHeadFlag     = flagSet.String("git-head", "", "Override the current git commit for the bundle. (default: uses `git rev-parse head`")
 		manifestFlag    = flagSet.String("manifest", "package.json", `The extension manifest file.`)
 		forceFlag       = flagSet.Bool("force", false, `Force publish the extension, even if there are validation problems or other warnings.`)
 		apiFlags        = api.NewFlags(flagSet)
@@ -59,7 +60,13 @@ Notes:
 			return err
 		}
 
-		manifest, err := ioutil.ReadFile(*manifestFlag)
+		manifestPath, err := filepath.Abs(*manifestFlag)
+		if err != nil {
+			return err
+		}
+		manifestDir := filepath.Dir(manifestPath)
+
+		manifest, err := ioutil.ReadFile(manifestPath)
 		if err != nil {
 			return fmt.Errorf("%s\n\nRun this command in a directory with a %s file for an extension.\n\nSee 'src extensions %s -h' for help", err, *manifestFlag, flagSet.Name())
 		}
@@ -74,7 +81,7 @@ Notes:
 		if err != nil {
 			return err
 		}
-		manifest, err = addReadmeToManifest(manifest, filepath.Dir(*manifestFlag))
+		manifest, err = addReadmeToManifest(manifest, manifestDir)
 		if err != nil {
 			return err
 		}
@@ -87,14 +94,34 @@ Notes:
 			}
 		} else {
 			// Prepare and upload bundle.
-			if err := runManifestPrepublishScript(manifest, filepath.Dir(*manifestFlag)); err != nil {
+			if err := runManifestPrepublishScript(manifest, manifestDir); err != nil {
 				return err
 			}
 
 			var err error
-			bundle, sourceMap, err = readExtensionArtifacts(manifest, filepath.Dir(*manifestFlag))
+			bundle, sourceMap, err = readExtensionArtifacts(manifest, manifestDir)
 			if err != nil {
 				return err
+			}
+		}
+
+		if *gitHeadFlag != "" {
+			manifest, err = updatePropertyInManifest(manifest, "gitHead", *gitHeadFlag)
+			if err != nil {
+				return err
+			}
+		} else {
+			command := exec.Command("git", "rev-parse", "head")
+			command.Dir = manifestDir
+
+			out, err := command.CombinedOutput()
+			if err != nil {
+				fmt.Printf("failed to determine git head: %q\n", err)
+			} else {
+				manifest, err = updatePropertyInManifest(manifest, "gitHead", strings.TrimSpace(string(out)))
+				if err != nil {
+					return err
+				}
 			}
 		}
 

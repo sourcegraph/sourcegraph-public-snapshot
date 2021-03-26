@@ -13,6 +13,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
+- Extension publishing will now add a `gitHead` property to the extension's manifest. [#500](https://github.com/sourcegraph/src-cli/pull/500)
+
 ### Changed
 
 ### Fixed
