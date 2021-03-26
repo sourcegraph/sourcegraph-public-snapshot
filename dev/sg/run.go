@@ -36,7 +36,7 @@ func run(ctx context.Context, cmds ...Command) error {
 	}
 
 	wg := sync.WaitGroup{}
-	failures := make(chan cmdFailed, len(cmds))
+	failures := make(chan runFailed, len(cmds))
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -48,7 +48,7 @@ func run(ctx context.Context, cmds ...Command) error {
 
 			if err := runWatch(ctx, cmd, root, ch); err != nil {
 				if err != ctx.Err() {
-					failures <- cmdFailed{cmdName: cmd.Name, err: err}
+					failures <- runFailed{cmdName: cmd.Name, err: err}
 					cancel()
 				}
 			}
@@ -62,13 +62,13 @@ func run(ctx context.Context, cmds ...Command) error {
 	return fail
 }
 
-// cmdFailed is returned by run when a command failed to run and run exits
-type cmdFailed struct {
+// runFailed is returned by run when a command failed to run and run exits
+type runFailed struct {
 	cmdName string
 	err     error
 }
 
-func (e cmdFailed) Error() string {
+func (e runFailed) Error() string {
 	return fmt.Sprintf("failed to run %s", e.cmdName)
 }
 
@@ -98,16 +98,22 @@ func printCmdError(out *output.Output, err error) {
 
 	switch e := errors.Cause(err).(type) {
 	case installErr:
-		message = "Failed to install"
+		message = "Failed to build"
 		cmdOut = e.output
 		cmdName = e.cmdName
+	case reinstallErr:
+		message = "Failed to rebuild"
+		cmdOut = e.output
+		cmdName = e.cmdName
+	default:
+		message = fmt.Sprintf("unknown command error: %s", err)
 	}
 
 	separator := strings.Repeat("-", 80)
 	line := output.Linef(
 		"", output.StyleWarning,
-		"%s\n%s%s %s%s: \n%s%s%s%s",
-		separator, output.StyleBold, message, cmdName, output.StyleReset,
+		"%s\n%s%s %s%s%s: \n%s%s%s%s",
+		separator, output.StyleBold, message, output.StyleBold, cmdName, output.StyleReset,
 		cmdOut, output.StyleWarning, separator, output.StyleReset,
 	)
 	out.WriteLine(line)
