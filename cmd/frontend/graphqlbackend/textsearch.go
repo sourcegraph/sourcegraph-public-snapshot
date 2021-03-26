@@ -132,9 +132,23 @@ func (fm *FileMatchResolver) ResultCount() int32 {
 }
 
 func (fm *FileMatchResolver) Select(t filter.SelectPath) SearchResultResolver {
-	// TODO how to make this work? We want to reuse reporesolver. Also need to
-	// handle nil return.
-	return fm.FileMatch.Select(t)
+	match := fm.FileMatch.Select(t)
+	if match == nil {
+		return nil
+	}
+
+	switch v := match.(type) {
+	case *result.FileMatch:
+		return &FileMatchResolver{
+			FileMatch:    *v,
+			db:           fm.db,
+			RepoResolver: fm.RepoResolver,
+		}
+	case *result.RepoMatch:
+		return fm.RepoResolver
+	}
+
+	return nil
 }
 
 type lineMatchResolver struct {
