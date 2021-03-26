@@ -12,7 +12,6 @@ import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { parseRepoURI } from '../../../../../shared/src/util/url'
-import { registerPanelToolbarContributions } from './contributions'
 import { FileLocations, FileLocationsError, FileLocationsNotFound } from './FileLocations'
 import { groupLocations } from './locations'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
@@ -130,8 +129,6 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                     }))
                 )
         )
-
-        this.subscriptions.add(registerPanelToolbarContributions(this.props.extensionsController.extHostAPI))
 
         this.componentUpdates.next(this.props)
     }

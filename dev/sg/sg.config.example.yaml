@@ -174,12 +174,14 @@ commands:
       INSECURE_DEV: 1
 
   zoekt-indexserver-0:
-    cmd: .bin/zoekt-sourcegraph-indexserver -sourcegraph_url 'http://localhost:3090' \
-      -index "$HOME/.sourcegraph/zoekt/index-0" \
-      -hostname "localhost:3070" \
-      -interval 1m \
-      -listen ":6072" \
-      -cpu_fraction 0.25
+    cmd: |
+      .bin/zoekt-sourcegraph-indexserver \
+        -sourcegraph_url 'http://localhost:3090' \
+        -index "$HOME/.sourcegraph/zoekt/index-0" \
+        -hostname 'localhost:3070' \
+        -interval 1m \
+        -listen ":6072" \
+        -cpu_fraction 0.25
     install: |
       mkdir -p .bin
       export GOBIN="${PWD}/.bin"
@@ -192,9 +194,10 @@ commands:
       GOGC: 50
 
   zoekt-webserver-0:
-    cmd: .bin/zoekt-webserver \
-      -index "$HOME/.sourcegraph/zoekt/index-0" \
-      -pprof -rpc -listen ":3070"
+    cmd: |
+      .bin/zoekt-webserver \
+        -index "$HOME/.sourcegraph/zoekt/index-0" \
+        -pprof -rpc -listen ":3070"
     install: |
       mkdir -p .bin
       export GOBIN="${PWD}/.bin"

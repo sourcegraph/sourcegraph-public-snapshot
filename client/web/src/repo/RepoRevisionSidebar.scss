@@ -1,41 +1,21 @@
 @import './RepoRevisionSidebarSymbols';
 
-.repo-revision-sidebar {
-    isolation: isolate;
-    flex: 1 1 auto;
-    min-height: 0;
+.repo-revision-container {
+    &__tabpanels {
+        height: calc(100% - 2rem);
+    }
 
-    overflow-x: auto;
-
-    display: flex;
-    flex-direction: column;
-    position: relative;
-
-    border-right: 1px solid var(--border-color);
-    width: 100%; // necessary to prevent border-right from shrinking as width narrows
-
-    &:not(&--open) {
-        width: 0;
+    &__close-icon {
+        color: var(--link-color) !important;
     }
 
     &__toggle {
+        isolation: isolate;
         width: 2.5rem;
         height: 2.5rem;
         margin-right: -1.25rem;
-
-        .icon {
-            width: 1.125rem;
-            height: 1.125rem;
-        }
-
         display: flex;
         justify-content: center;
-    }
-
-    &__close-button {
-        color: var(--link-color);
-        &:hover {
-            color: var(--link-hover-color);
-        }
+        z-index: 1;
     }
 }

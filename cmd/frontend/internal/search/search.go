@@ -22,6 +22,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -512,6 +513,8 @@ var metricLatency = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
 }, []string{"source"})
 
+var searchBlitzUserAgentRegexp = lazyregexp.New(`^SearchBlitz \(([^\)]+)\)$`)
+
 // GuessSource guesses the source the request came from (browser, other HTTP client, etc.)
 func GuessSource(r *http.Request) trace.SourceType {
 	userAgent := r.UserAgent()
@@ -528,5 +531,11 @@ func GuessSource(r *http.Request) trace.SourceType {
 			return trace.SourceBrowser
 		}
 	}
+
+	// We send some automated search requests in order to measure baseline search perf. Track the source of these.
+	if match := searchBlitzUserAgentRegexp.FindStringSubmatch(userAgent); match != nil {
+		return trace.SourceType("searchblitz_" + match[1])
+	}
+
 	return trace.SourceOther
 }

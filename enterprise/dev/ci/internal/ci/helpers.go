@@ -158,8 +158,8 @@ func (c Config) isPR() bool {
 		!c.taggedRelease &&
 		c.branch != "master" &&
 		c.branch != "main" &&
-		!strings.HasPrefix(c.branch, "master-dry-run/") &&
-		!strings.HasPrefix(c.branch, "docker-images-patch/")
+		!c.isMasterDryRun &&
+		!c.patch
 }
 
 func (c Config) isDocsOnly() bool {

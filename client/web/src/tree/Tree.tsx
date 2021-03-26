@@ -300,7 +300,7 @@ export class Tree extends React.PureComponent<Props, State> {
              * We should not be stealing focus here, we should let the user focus on the actual items listed.
              * Issue: https://github.com/sourcegraph/sourcegraph/issues/19167
              */
-            <div className="tree" tabIndex={1} onKeyDown={this.onKeyDown} ref={this.setTreeElement}>
+            <div className="tree" tabIndex={0} onKeyDown={this.onKeyDown} ref={this.setTreeElement}>
                 <TreeRoot
                     ref={reference => {
                         if (reference) {

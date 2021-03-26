@@ -329,10 +329,18 @@ loop:
 	return sparkline, nil
 }
 
-var searchResponseCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_graphql_search_response",
-	Help: "Number of searches that have ended in the given status (success, error, timeout, partial_timeout).",
-}, []string{"status", "alert_type", "source", "request_name"})
+var (
+	searchResponseCounter = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_graphql_search_response",
+		Help: "Number of searches that have ended in the given status (success, error, timeout, partial_timeout).",
+	}, []string{"status", "alert_type", "source", "request_name"})
+
+	searchLatencyHistogram = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_search_response_latency_seconds",
+		Help:    "Search response latencies in seconds that have ended in the given status (success, error, timeout, partial_timeout).",
+		Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+	}, []string{"status", "alert_type", "source", "request_name"})
+)
 
 // LogSearchLatency records search durations in the event database. This
 // function may only be called after a search result is performed, because it
@@ -801,12 +809,15 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 	elapsed := time.Since(start)
 
 	var status, alertType string
+	requestSource := string(trace.RequestSource(ctx))
+	requestName := trace.GraphQLRequestName(ctx)
+
 	incCounter := func() {
 		searchResponseCounter.WithLabelValues(
 			status,
 			alertType,
-			string(trace.RequestSource(ctx)),
-			trace.GraphQLRequestName(ctx),
+			requestSource,
+			requestName,
 		).Inc()
 	}
 
@@ -869,6 +880,13 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 			log15.Warn("slow search request", mapToLog15Ctx(ev.Fields())...)
 		}
 	}
+
+	searchLatencyHistogram.WithLabelValues(
+		status,
+		alertType,
+		requestSource,
+		requestName,
+	).Observe(time.Since(start).Seconds())
 
 	return srr, err
 }
