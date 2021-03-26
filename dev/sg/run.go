@@ -36,7 +36,7 @@ func run(ctx context.Context, cmds ...Command) error {
 	}
 
 	wg := sync.WaitGroup{}
-	failures := make(chan runFailed, len(cmds))
+	failures := make(chan failedRun, len(cmds))
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -48,7 +48,7 @@ func run(ctx context.Context, cmds ...Command) error {
 
 			if err := runWatch(ctx, cmd, root, ch); err != nil {
 				if err != ctx.Err() {
-					failures <- runFailed{cmdName: cmd.Name, err: err}
+					failures <- failedRun{cmdName: cmd.Name, err: err}
 					cancel()
 				}
 			}
@@ -57,18 +57,18 @@ func run(ctx context.Context, cmds ...Command) error {
 
 	wg.Wait()
 
-	fail := <-failures
-	printCmdError(out, fail.cmdName, fail.err)
-	return fail
+	failure := <-failures
+	printCmdError(out, failure.cmdName, failure.err)
+	return failure
 }
 
-// runFailed is returned by run when a command failed to run and run exits
-type runFailed struct {
+// failedRun is returned by run when a command failed to run and run exits
+type failedRun struct {
 	cmdName string
 	err     error
 }
 
-func (e runFailed) Error() string {
+func (e failedRun) Error() string {
 	return fmt.Sprintf("failed to run %s", e.cmdName)
 }
 
@@ -111,7 +111,7 @@ func printCmdError(out *output.Output, cmdName string, err error) {
 	if cmdOut != "" {
 		line := output.Linef(
 			"", output.StyleWarning,
-			"%s\n%s%s %s%s%s: \n%s%s%s%s",
+			"%s\n%s%s:\n%s%s%s%s%s",
 			separator, output.StyleBold, message, output.StyleReset,
 			cmdOut, output.StyleWarning, separator, output.StyleReset,
 		)
