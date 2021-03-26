@@ -2,7 +2,6 @@
 # Eventually, the goal is to unify this with .golangci.yml.
 # https://github.com/sourcegraph/sourcegraph/issues/18720
 
-
 # See explanation of linters at https://golangci-lint.run/usage/linters/
 linters:
   disable-all: true

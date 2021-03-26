@@ -1,9 +1,9 @@
 {
   "private": true,
-  "name": "webapp",
+  "name": "@sourcegraph/web",
   "version": "1.10.1",
   "description": "The Sourcegraph web app",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "scripts": {
     "test": "jest --testPathIgnorePatterns end-to-end --testPathIgnorePatterns regression integration",
     "test:regression": "mocha './src/regression/**/*.test.ts' --exit",
@@ -26,7 +26,8 @@
     "browserslist": "browserslist",
     "analyze-bundle": "NODE_ENV=production ENTERPRISE=1 WEBPACK_ANALYZER=1 yarn build"
   },
-  "bundlesize": [{
+  "bundlesize": [
+    {
       "path": "../../ui/assets/styles/app.bundle.css"
     },
     {

@@ -1,6 +1,6 @@
 import * as H from 'history'
 import React from 'react'
-import { Markdown } from '../../../../shared/src/components/Markdown'
+import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { renderMarkdown } from '../../../../shared/src/util/markdown'
 import { BatchChangeFields } from '../../graphql-operations'
 import classNames from 'classnames'

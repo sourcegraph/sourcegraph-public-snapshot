@@ -1,5 +1,5 @@
 import React from 'react'
-import { Markdown } from '../../../../../shared/src/components/Markdown'
+import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { renderMarkdown } from '../../../../../shared/src/util/markdown'
 import { Link } from '../../../../../shared/src/components/Link'
 import classNames from 'classnames'

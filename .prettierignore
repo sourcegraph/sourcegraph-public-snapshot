@@ -23,7 +23,7 @@ doc/
 **/.cache
 **/__snapshots__
 **/__fixtures__
-client/contrib/GH2SG.bookmarklet.js
+GH2SG.bookmarklet.js
 docker-images/grafana/config/provisioning/dashboards/sourcegraph/
 storybook-static/
 browser/code-intel-extensions/
