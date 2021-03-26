@@ -865,7 +865,6 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 			log15.Warn("slow search request", searchlogs.MapToLog15Ctx(ev.Fields())...)
 		}
 	}
-
 	return srr, err
 }
 
