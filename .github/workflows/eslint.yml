@@ -1,0 +1,16 @@
+name: Eslint
+on:
+  - push
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: yarn --ignore-engines --ignore-scripts
+      - name: Generate
+        run: ./node_modules/.bin/gulp generate
+      - name: Build TypeScript
+        run: yarn run --ignore-engines build-ts
+      - name: Run eslint
+        run: yarn all:eslint
