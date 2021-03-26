@@ -80,7 +80,9 @@ func SearchOpts(ctx context.Context, k int, query *search.TextPatternInfo) zoekt
 		TotalMaxMatchCount:     100 * k,
 		ShardMaxImportantMatch: 15 * k,
 		TotalMaxImportantMatch: 25 * k,
-		MaxDocDisplayCount:     int(query.FileMatchLimit) + 2000,
+		// Ask for 2000 more results so we have results to populate
+		// RepoStatusLimitHit.
+		MaxDocDisplayCount: int(query.FileMatchLimit) + 2000,
 	}
 
 	if userProbablyWantsToWaitLonger := query.FileMatchLimit > defaultMaxSearchResults; userProbablyWantsToWaitLonger {
