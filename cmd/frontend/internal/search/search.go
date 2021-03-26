@@ -15,13 +15,16 @@ import (
 	"strings"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
@@ -242,7 +245,8 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if alert := resultsResolver.Alert(); alert != nil {
+	alert := resultsResolver.Alert()
+	if alert != nil {
 		var pqs []streamhttp.ProposedQuery
 		if proposed := alert.ProposedQueries(); proposed != nil {
 			for _, pq := range *proposed {
@@ -260,6 +264,33 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_ = eventWriter.Event("progress", progress.Final())
+
+	var status, alertType string
+	status = graphqlbackend.DetermineStatusForLogs(resultsResolver, err)
+	if alert != nil {
+		alertType = alert.PrometheusType()
+	}
+
+	isSlow := time.Since(start) > searchlogs.LogSlowSearchesThreshold()
+	if honey.Enabled() || isSlow {
+		ev := honey.SearchEvent(ctx, honey.SearchEventArgs{
+			OriginalQuery: inputs.OriginalQuery,
+			Typ:           "stream",
+			Source:        string(trace.RequestSource(ctx)),
+			Status:        status,
+			AlertType:     alertType,
+			DurationMs:    time.Since(start).Milliseconds(),
+			ResultSize:    progress.MatchCount,
+		})
+
+		if honey.Enabled() {
+			_ = ev.Send()
+		}
+
+		if isSlow {
+			log15.Warn("streaming: slow search request", searchlogs.MapToLog15Ctx(ev.Fields())...)
+		}
+	}
 }
 
 // startSearch will start a search. It returns the events channel which
