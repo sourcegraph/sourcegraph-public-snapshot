@@ -7,7 +7,7 @@ import DownloadIcon from 'mdi-react/DownloadIcon'
 import FormatQuoteOpenIcon from 'mdi-react/FormatQuoteOpenIcon'
 import React, { useMemo } from 'react'
 import { ContributableMenu } from '../../../../shared/src/api/protocol'
-import { Link } from '../../../../shared/src/components/Link'
+import { ButtonLink } from '../../../../shared/src/components/LinkOrButton'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { FilterKind, findFilter } from '../../../../shared/src/search/query/validate'
@@ -17,7 +17,6 @@ import { CodeMonitoringProps } from '../../code-monitoring'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { WebActionsNavItems as ActionsNavItems } from '../../components/shared'
 import { SearchPatternType } from '../../graphql-operations'
-import { ButtonLink } from '../../../../shared/src/components/LinkOrButton'
 
 export interface SearchResultsInfoBarProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
