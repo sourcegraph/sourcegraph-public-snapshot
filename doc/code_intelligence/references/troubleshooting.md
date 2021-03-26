@@ -14,10 +14,6 @@ A customer issue should **possibly** be routed to code intelligence if any of th
 - Search-based code intelligence queries are slow
 - Search-based code intelligence queries yield unexpected results
 
-## Known and solved issues
-
-TODO
-
 ## Gathering evidence
 
 Before bringing a code intelligence issue to the engineering team, the site-admin or customer engineer should gather the following details. Not all of these details will be necessary for all classes of errors.
