@@ -7,6 +7,7 @@ const path = require('path')
 const TerserPlugin = require('terser-webpack-plugin')
 const webpack = require('webpack')
 const logger = require('gulplog')
+const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
 const { WebpackManifestPlugin } = require('webpack-manifest-plugin')
 
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
