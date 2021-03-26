@@ -832,7 +832,7 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 
 	pruneUserCredentials(t, db)
 
-	userID := ct.CreateTestUser(t, db, false).ID
+	userID := ct.CreateTestUser(t, db, true).ID
 
 	cstore := store.New(db)
 
@@ -842,38 +842,72 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	input := map[string]interface{}{
-		"user":                graphqlbackend.MarshalUserID(userID),
-		"externalServiceKind": string(extsvc.KindGitHub),
-		"externalServiceURL":  "https://github.com/",
-		"credential":          "SOSECRET",
+	// User credential.
+	{
+		input := map[string]interface{}{
+			"user":                graphqlbackend.MarshalUserID(userID),
+			"externalServiceKind": string(extsvc.KindGitHub),
+			"externalServiceURL":  "https://github.com/",
+			"credential":          "SOSECRET",
+		}
+
+		var response struct {
+			CreateBatchChangesCredential apitest.BatchChangesCredential
+		}
+		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+		// First time it should work, because no credential exists
+		apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateCredential)
+
+		if response.CreateBatchChangesCredential.ID == "" {
+			t.Fatalf("expected credential to be created, but was not")
+		}
+
+		// Second time it should fail
+		errors := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateCredential)
+
+		if len(errors) != 1 {
+			t.Fatalf("expected single errors, but got none")
+		}
+		if have, want := errors[0].Extensions["code"], "ErrDuplicateCredential"; have != want {
+			t.Fatalf("wrong error code. want=%q, have=%q", want, have)
+		}
 	}
+	// Site credential.
+	{
+		input := map[string]interface{}{
+			"user":                nil,
+			"externalServiceKind": string(extsvc.KindGitHub),
+			"externalServiceURL":  "https://github.com/",
+			"credential":          "SOSECRET",
+		}
 
-	var response struct {
-		CreateBatchChangesCredential apitest.BatchChangesCredential
-	}
-	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+		var response struct {
+			CreateBatchChangesCredential apitest.BatchChangesCredential
+		}
+		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
-	// First time it should work, because no credential exists
-	apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateCredential)
+		// First time it should work, because no site credential exists
+		apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateCredential)
 
-	if response.CreateBatchChangesCredential.ID == "" {
-		t.Fatalf("expected credential to be created, but was not")
-	}
+		if response.CreateBatchChangesCredential.ID == "" {
+			t.Fatalf("expected credential to be created, but was not")
+		}
 
-	// Second time it should fail
-	errors := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateCredential)
+		// Second time it should fail
+		errors := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateCredential)
 
-	if len(errors) != 1 {
-		t.Fatalf("expected single errors, but got none")
-	}
-	if have, want := errors[0].Extensions["code"], "ErrDuplicateCredential"; have != want {
-		t.Fatalf("wrong error code. want=%q, have=%q", want, have)
+		if len(errors) != 1 {
+			t.Fatalf("expected single errors, but got none")
+		}
+		if have, want := errors[0].Extensions["code"], "ErrDuplicateCredential"; have != want {
+			t.Fatalf("wrong error code. want=%q, have=%q", want, have)
+		}
 	}
 }
 
 const mutationCreateCredential = `
-mutation($user: ID!, $externalServiceKind: ExternalServiceKind!, $externalServiceURL: String!, $credential: String!) {
+mutation($user: ID, $externalServiceKind: ExternalServiceKind!, $externalServiceURL: String!, $credential: String!) {
   createBatchChangesCredential(user: $user, externalServiceKind: $externalServiceKind, externalServiceURL: $externalServiceURL, credential: $credential) { id }
 }
 `
@@ -892,13 +926,22 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 
 	cstore := store.New(db)
 
-	cred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
+	authenticator := &auth.OAuthBearerToken{Token: "SOSECRET"}
+	userCred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 		Domain:              database.UserCredentialDomainBatches,
 		ExternalServiceType: extsvc.TypeGitHub,
 		ExternalServiceID:   "https://github.com/",
 		UserID:              userID,
-	}, &auth.OAuthBearerToken{Token: "SOSECRET"})
+	}, authenticator)
 	if err != nil {
+		t.Fatal(err)
+	}
+	siteCred := &store.SiteCredential{
+		ExternalServiceType: extsvc.TypeGitHub,
+		ExternalServiceID:   "https://github.com/",
+		Credential:          authenticator,
+	}
+	if err := cstore.CreateSiteCredential(ctx, siteCred); err != nil {
 		t.Fatal(err)
 	}
 
@@ -908,24 +951,50 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	input := map[string]interface{}{
-		"batchChangesCredential": marshalBatchChangesCredentialID(cred.ID, false),
+	// User credential.
+	{
+		input := map[string]interface{}{
+			"batchChangesCredential": marshalBatchChangesCredentialID(userCred.ID, false),
+		}
+
+		var response struct{ DeleteBatchChangesCredential apitest.EmptyResponse }
+		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+		// First time it should work, because a credential exists
+		apitest.MustExec(actorCtx, t, s, input, &response, mutationDeleteCredential)
+
+		// Second time it should fail
+		errors := apitest.Exec(actorCtx, t, s, input, &response, mutationDeleteCredential)
+
+		if len(errors) != 1 {
+			t.Fatalf("expected single errors, but got none")
+		}
+		if have, want := errors[0].Message, fmt.Sprintf("user credential not found: [%d]", userCred.ID); have != want {
+			t.Fatalf("wrong error code. want=%q, have=%q", want, have)
+		}
 	}
 
-	var response struct{ DeleteBatchChangesCredential apitest.EmptyResponse }
-	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+	// Site credential.
+	{
+		input := map[string]interface{}{
+			"batchChangesCredential": marshalBatchChangesCredentialID(userCred.ID, true),
+		}
 
-	// First time it should work, because a credential exists
-	apitest.MustExec(actorCtx, t, s, input, &response, mutationDeleteCredential)
+		var response struct{ DeleteBatchChangesCredential apitest.EmptyResponse }
+		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
-	// Second time it should fail
-	errors := apitest.Exec(actorCtx, t, s, input, &response, mutationDeleteCredential)
+		// First time it should work, because a credential exists
+		apitest.MustExec(actorCtx, t, s, input, &response, mutationDeleteCredential)
 
-	if len(errors) != 1 {
-		t.Fatalf("expected single errors, but got none")
-	}
-	if have, want := errors[0].Message, fmt.Sprintf("user credential not found: [%d]", cred.ID); have != want {
-		t.Fatalf("wrong error code. want=%q, have=%q", want, have)
+		// Second time it should fail
+		errors := apitest.Exec(actorCtx, t, s, input, &response, mutationDeleteCredential)
+
+		if len(errors) != 1 {
+			t.Fatalf("expected single errors, but got none")
+		}
+		if have, want := errors[0].Message, "no results"; have != want {
+			t.Fatalf("wrong error code. want=%q, have=%q", want, have)
+		}
 	}
 }
 
