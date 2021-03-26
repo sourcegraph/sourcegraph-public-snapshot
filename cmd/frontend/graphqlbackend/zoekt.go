@@ -701,9 +701,9 @@ func zoektIndexedRepos(indexedSet map[string]*zoekt.Repository, revs []*search.R
 
 		unindexedRevs := indexed.Add(reporev, repo)
 		if len(unindexedRevs) > 0 {
-			copy := *reporev
+			copy := reporev.Copy()
 			copy.Revs = unindexedRevs
-			unindexed = append(unindexed, &copy)
+			unindexed = append(unindexed, copy)
 		}
 	}
 

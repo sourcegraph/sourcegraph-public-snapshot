@@ -16,6 +16,7 @@ linters:
     - bodyclose
     - deadcode
     - gocritic
+    - govet
 
 linters-settings:
   gocritic:
@@ -27,6 +28,9 @@ linters-settings:
       - exitAfterDefer    # Only occurs in auxiliary tools
       - ifElseChain       # Noisy for not much gain
       - singleCaseSwitch  # Noisy for not much gain
+  govet:
+      disable:
+          - composites
 
 issues:
   exclude-rules:
