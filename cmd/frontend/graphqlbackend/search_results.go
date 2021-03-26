@@ -834,6 +834,13 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 		requestName,
 	).Inc()
 
+	searchLatencyHistogram.WithLabelValues(
+		status,
+		alertType,
+		requestSource,
+		requestName,
+	).Observe(elapsed.Seconds())
+
 	isSlow := time.Since(start) > searchlogs.LogSlowSearchesThreshold()
 	if honey.Enabled() || isSlow {
 		var n int
@@ -858,13 +865,6 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 			log15.Warn("slow search request", searchlogs.MapToLog15Ctx(ev.Fields())...)
 		}
 	}
-
-	searchLatencyHistogram.WithLabelValues(
-		status,
-		alertType,
-		requestSource,
-		requestName,
-	).Observe(time.Since(start).Seconds())
 
 	return srr, err
 }
