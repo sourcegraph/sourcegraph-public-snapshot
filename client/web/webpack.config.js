@@ -78,7 +78,8 @@ const config = {
   },
   output: {
     path: path.join(rootDirectory, 'ui', 'assets'),
-    filename: 'scripts/[name].[contenthash].bundle.js',
+    // https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
+    filename: mode === 'production' ? 'scripts/[name].[contenthash].bundle.js' : 'scripts/[name].bundle.js',
     chunkFilename: 'scripts/[id]-[contenthash].chunk.js',
     publicPath: '/.assets/',
     globalObject: 'self',
@@ -92,7 +93,10 @@ const config = {
         NODE_ENV: JSON.stringify(mode),
       },
     }),
-    new MiniCssExtractPlugin({ filename: 'styles/[name].[contenthash].bundle.css' }),
+    new MiniCssExtractPlugin({
+      // https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
+      filename: mode === 'production' ? 'styles/[name].[contenthash].bundle.css' : 'styles/[name].bundle.css',
+    }),
     new OptimizeCssAssetsPlugin(),
     new MonacoWebpackPlugin({
       languages: ['json'],
