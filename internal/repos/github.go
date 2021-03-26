@@ -129,7 +129,6 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 	if err != nil {
 		return nil, err
 	}
-
 	token := &auth.OAuthBearerToken{Token: c.Token}
 
 	var (
@@ -195,6 +194,11 @@ func (s GithubSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
 type githubResult struct {
 	err  error
 	repo *github.Repository
+}
+
+func (s GithubSource) ValidateToken(ctx context.Context) error {
+	_, err := s.v3Client.GetAuthenticatedUser(ctx)
+	return err
 }
 
 // ListRepos returns all Github repositories accessible to all connections configured
