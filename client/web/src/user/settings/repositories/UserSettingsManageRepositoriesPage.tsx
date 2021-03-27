@@ -6,7 +6,12 @@ import { PageTitle } from '../../../components/PageTitle'
 import { CheckboxRepositoryNode } from './RepositoryNode'
 import { Form } from '../../../../../branded/src/components/Form'
 import { Link } from '../../../../../shared/src/components/Link'
-import { ExternalServiceKind, ExternalServicesResult, Maybe } from '../../../graphql-operations'
+import {
+    ExternalServiceKind,
+    ExternalServicesResult,
+    Maybe,
+    AffiliatedRepositoriesResult,
+} from '../../../graphql-operations'
 import {
     queryExternalServices,
     setExternalServiceRepos,
@@ -107,147 +112,180 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         [publicRepoState]
     )
 
-    useCallback(() => {
-        // first we should load code hosts
-        if (!codeHosts.loaded) {
-            const codeHostSubscription = queryExternalServices({
-                first: null,
-                after: null,
-                namespace: userID,
-            }).subscribe(result => {
-                const selected: string[] = []
-                for (const host of result.nodes) {
-                    const cfg = JSON.parse(host.config) as GitHubConfig | GitLabConfig
-                    switch (host.kind) {
-                        case ExternalServiceKind.GITLAB: {
-                            const gitLabCfg = cfg as GitLabConfig
-                            if (gitLabCfg.projects !== undefined) {
-                                gitLabCfg.projects.map(project => {
-                                    selected.push(project.name)
-                                })
-                            }
-                            break
-                        }
+    const fetchAndSetExternalServices = useCallback(async (): Promise<void> => {
+        const result = await queryExternalServices({
+            first: null,
+            after: null,
+            namespace: userID,
+        }).toPromise()
 
-                        case ExternalServiceKind.GITHUB: {
-                            const gitHubCfg = cfg as GitHubConfig
-                            if (gitHubCfg.repos !== undefined) {
-                                selected.push(...gitHubCfg.repos)
-                            }
-                            break
-                        }
+        const selected: string[] = []
+
+        for (const host of result.nodes) {
+            const cfg = JSON.parse(host.config) as GitHubConfig | GitLabConfig
+            switch (host.kind) {
+                case ExternalServiceKind.GITLAB: {
+                    const gitLabCfg = cfg as GitLabConfig
+                    if (gitLabCfg.projects !== undefined) {
+                        gitLabCfg.projects.map(project => {
+                            selected.push(project.name)
+                        })
                     }
+                    break
                 }
-                setCodeHosts({
-                    loaded: true,
-                    hosts: result.nodes,
-                    configuredRepos: selected,
-                })
-                if (selected.length !== 0) {
-                    setSelectionState({
-                        repos: selectionState.repos,
-                        radio: 'selected',
-                        loaded: selectionState.loaded,
-                    })
+
+                case ExternalServiceKind.GITHUB: {
+                    const gitHubCfg = cfg as GitHubConfig
+                    if (gitHubCfg.repos !== undefined) {
+                        selected.push(...gitHubCfg.repos)
+                    }
+                    break
                 }
-                codeHostSubscription.unsubscribe()
-            })
-        }
-    }, [codeHosts, selectionState.loaded, selectionState.repos, userID])()
-
-    useCallback(() => {
-        if (publicRepoState.loaded) {
-            return
-        }
-        const userPublicReposSubscription = queryUserPublicRepositories(userID).subscribe(result => {
-            if (!result) {
-                setPublicRepoState({ ...publicRepoState, loaded: true })
-                userPublicReposSubscription.unsubscribe()
-                return
             }
+        }
 
-            let publicRepos = ''
-            for (const repo of result) {
-                publicRepos = `${publicRepos}${repo.name}\n`
-            }
-            setPublicRepoState({ repos: publicRepos, loaded: true, enabled: result.length > 0 })
-
-            userPublicReposSubscription.unsubscribe()
+        setCodeHosts({
+            loaded: true,
+            hosts: result.nodes,
+            configuredRepos: selected,
         })
-    }, [publicRepoState, userID])()
 
-    // once we've loaded code hosts and the 'selected' panel is visible, load repos and set the loading state
-    useCallback(() => {
-        if (selectionState.radio === 'selected' && !repoState.loaded && !repoState.loading) {
-            setRepoState({
-                repos: emptyRepos,
-                loading: true,
-                loaded: false,
-                error: '',
-            })
-            const listReposSubscription = listAffiliatedRepositories({
+        if (selected.length !== 0) {
+            // if user's code hosts have repos - collapse affiliated repos
+            // section
+            setSelectionState(previousSelectionState => ({
+                ...previousSelectionState,
+                radio: 'selected',
+            }))
+        }
+    }, [userID, setCodeHosts])
+
+    // fetch public repos for the "other public repositories" textarea
+    const fetchAndSetPublicRepos = useCallback(async (): Promise<void> => {
+        const result = await queryUserPublicRepositories(userID).toPromise()
+
+        if (!result) {
+            setPublicRepoState({ ...initialPublicRepoState, loaded: true })
+        } else {
+            // public repos separated by a new line
+            const publicRepos = result.map(({ name }) => name).join('\n')
+            setPublicRepoState({ repos: publicRepos, loaded: true, enabled: result.length > 0 })
+        }
+    }, [userID])
+
+    useEffect(() => {
+        fetchAndSetExternalServices().catch(error => {
+            // todo handle errors
+            console.log(error)
+        })
+    }, [fetchAndSetExternalServices])
+
+    const fetchAffiliatedRepos = useCallback(
+        async (): Promise<AffiliatedRepositoriesResult> =>
+            listAffiliatedRepositories({
                 user: userID,
                 codeHost: null,
                 query: null,
-            }).subscribe(
-                result => {
-                    setRepoState({
-                        repos: result.affiliatedRepositories.nodes,
-                        loading: false,
-                        loaded: true,
-                        error: '',
+            }).toPromise(),
+
+        [userID]
+    )
+
+    useEffect(() => {
+        // once we've loaded code hosts and the 'selected' panel is visible
+        // load repos and set the loading state
+        if (selectionState.radio === 'selected' && codeHosts.loaded) {
+            // trigger shimmer effect
+            setRepoState(previousRepoState => ({
+                ...previousRepoState,
+                loading: true,
+            }))
+
+            fetchAffiliatedRepos()
+                .then(result => {
+                    const { nodes: affiliatedRepos } = result.affiliatedRepositories
+
+                    const selectedRepos = new Map<string, Repo>()
+
+                    // create a map of user selected affiliated repos
+                    for (const repoName of codeHosts.configuredRepos) {
+                        const affiliatedRepo = affiliatedRepos.find(repo => repo.name === repoName)
+                        if (affiliatedRepo) {
+                            selectedRepos.set(repoName, affiliatedRepo)
+                        }
+                    }
+
+                    // WTF
+                    let radioState = selectionState.radio
+                    if (selectionState.radio === 'all' && selectedRepos.size > 0) {
+                        radioState = 'selected'
+                    }
+
+                    // sort affiliated repos with already selected repos at the top
+                    affiliatedRepos.sort((repoA, repoB): number => {
+                        const isRepoASelected = selectedRepos.has(repoA.name)
+                        const isRepoBSelected = selectedRepos.has(repoB.name)
+
+                        if (!isRepoASelected && isRepoBSelected) {
+                            return 1
+                        }
+
+                        if (isRepoASelected && !isRepoBSelected) {
+                            return -1
+                        }
+
+                        return 0
                     })
-                    listReposSubscription.unsubscribe()
-                },
-                error => {
+
+                    setRepoState(previousRepoState => ({
+                        ...previousRepoState,
+                        repos: affiliatedRepos,
+                        loaded: true,
+                    }))
+
+                    setSelectionState({
+                        repos: selectedRepos,
+                        radio: 'selected',
+                        loaded: true,
+                    })
+                })
+                .catch(error => {
                     setRepoState({
                         repos: emptyRepos,
                         loading: false,
                         loaded: true,
                         error: String(error),
                     })
-                }
-            )
+                })
         }
-    }, [repoState.loaded, repoState.loading, selectionState.radio, userID])()
+    }, [selectionState.radio, codeHosts.loaded, codeHosts.configuredRepos, fetchAffiliatedRepos])
 
-    // if we've loaded repos we should then populate our selection from
-    // code host config.
-    if (repoState.loaded && codeHosts.loaded && !selectionState.loaded) {
-        const selectedRepos = new Map<string, Repo>()
-
-        for (const repo of codeHosts.configuredRepos) {
-            const foundInState = repoState.repos.find(fullRepo => fullRepo.name === repo)
-            if (foundInState) {
-                selectedRepos.set(repo, foundInState)
-            }
-        }
-
-        let radioState = selectionState.radio
-        if (selectionState.radio === 'all' && selectedRepos.size > 0) {
-            radioState = 'selected'
-        }
-
-        setSelectionState({
-            repos: selectedRepos,
-            loaded: true,
-            radio: radioState,
+    useEffect(() => {
+        fetchAndSetPublicRepos().catch(error => {
+            // TODO: handle errors in the same way
+            console.error(error)
         })
-    }
+    }, [fetchAndSetPublicRepos])
 
+    // select repos by code host and query
     useEffect(() => {
         // filter our set of repos based on query & code host selection
         const filtered: Repo[] = []
+
         for (const repo of repoState.repos) {
-            if (!repo.name.toLowerCase().includes(query)) {
-                continue
-            }
+            // filtering by code hosts
             if (codeHostFilter !== '' && repo.codeHost?.id !== codeHostFilter) {
                 continue
             }
+
+            if (!repo.name.includes(query)) {
+                continue
+            }
+
             filtered.push(repo)
         }
-        // set new filtered pages and reset current page to one
+
+        // set new filtered pages and reset the pagination
         setFilteredRepos(filtered)
         setPage(1)
     }, [repoState.repos, codeHostFilter, query])
