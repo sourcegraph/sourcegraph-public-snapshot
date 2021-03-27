@@ -258,7 +258,6 @@ func commitParametersToDiffParameters(ctx context.Context, op *search.CommitPara
 			Paths: git.PathOptions{
 				IncludePatterns: op.PatternInfo.IncludePatterns,
 				ExcludePattern:  op.PatternInfo.ExcludePattern,
-				IsCaseSensitive: op.PatternInfo.PathPatternsAreCaseSensitive,
 				IsRegExp:        op.PatternInfo.PathPatternsAreRegExps,
 			},
 			Diff:              op.Diff,
@@ -527,14 +526,13 @@ func highlightMatches(pattern *regexp.Regexp, data []byte) *result.HighlightedSt
 func resolveCommitParameters(ctx context.Context, tp *search.TextParameters) (*search.TextParametersForCommitParameters, error) {
 	old := tp.PatternInfo
 	patternInfo := &search.CommitPatternInfo{
-		Pattern:                      old.Pattern,
-		IsRegExp:                     old.IsRegExp,
-		IsCaseSensitive:              old.IsCaseSensitive,
-		FileMatchLimit:               old.FileMatchLimit,
-		IncludePatterns:              old.IncludePatterns,
-		ExcludePattern:               old.ExcludePattern,
-		PathPatternsAreRegExps:       true,
-		PathPatternsAreCaseSensitive: old.PathPatternsAreCaseSensitive,
+		Pattern:                old.Pattern,
+		IsRegExp:               old.IsRegExp,
+		IsCaseSensitive:        old.IsCaseSensitive,
+		FileMatchLimit:         old.FileMatchLimit,
+		IncludePatterns:        old.IncludePatterns,
+		ExcludePattern:         old.ExcludePattern,
+		PathPatternsAreRegExps: true,
 	}
 	repos, err := getRepos(ctx, tp.RepoPromise)
 	if err != nil {

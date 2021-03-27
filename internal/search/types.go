@@ -45,8 +45,7 @@ type CommitPatternInfo struct {
 	IncludePatterns []string
 	ExcludePattern  string
 
-	PathPatternsAreRegExps       bool
-	PathPatternsAreCaseSensitive bool
+	PathPatternsAreRegExps bool
 }
 
 type SymbolsParameters struct {
@@ -181,8 +180,6 @@ type TextPatternInfo struct {
 	FilePatternsReposMustInclude []string
 	FilePatternsReposMustExclude []string
 
-	PathPatternsAreCaseSensitive bool
-
 	PatternMatchesContent bool
 	PatternMatchesPath    bool
 
@@ -228,9 +225,6 @@ func (p *TextPatternInfo) String() string {
 	}
 
 	path := "f"
-	if p.PathPatternsAreCaseSensitive {
-		path = "F"
-	}
 	if p.ExcludePattern != "" {
 		args = append(args, fmt.Sprintf("-%s:%q", path, p.ExcludePattern))
 	}

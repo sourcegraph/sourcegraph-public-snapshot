@@ -1367,7 +1367,6 @@ func getPatternInfo(q query.Q, opts *getPatternInfoOptions) (*search.TextPattern
 		FilePatternsReposMustInclude: filePatternsReposMustInclude,
 		FilePatternsReposMustExclude: filePatternsReposMustExclude,
 		Languages:                    languages,
-		PathPatternsAreCaseSensitive: q.IsCaseSensitive(),
 		CombyRule:                    strings.Join(combyRule, ""),
 		Index:                        indexValue(q),
 		Select:                       sp,

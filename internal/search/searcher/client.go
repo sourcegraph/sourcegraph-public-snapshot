@@ -93,9 +93,6 @@ func Search(ctx context.Context, searcherURLs *endpoint.Map, repo api.RepoName, 
 	if p.IsCaseSensitive {
 		q.Set("IsCaseSensitive", "true")
 	}
-	if p.PathPatternsAreCaseSensitive {
-		q.Set("PathPatternsAreCaseSensitive", "true")
-	}
 	if p.IsNegated {
 		q.Set("IsNegated", "true")
 	}

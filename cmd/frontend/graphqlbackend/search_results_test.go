@@ -453,11 +453,10 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 			Index:    query.Yes,
 		},
 		"p case:yes": {
-			Pattern:                      "p",
-			IsRegExp:                     true,
-			IsCaseSensitive:              true,
-			PathPatternsAreCaseSensitive: true,
-			Index:                        query.Yes,
+			Pattern:         "p",
+			IsRegExp:        true,
+			IsCaseSensitive: true,
+			Index:           query.Yes,
 		},
 		"p file:f": {
 			Pattern:         "p",

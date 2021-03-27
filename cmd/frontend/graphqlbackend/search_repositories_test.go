@@ -180,7 +180,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 				}),
 			}, &streaming.Stats{}, nil
 		}
-		pat := &search.TextPatternInfo{Pattern: "", FilePatternsReposMustInclude: []string{"foo"}, IsRegExp: true, FileMatchLimit: 1, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+		pat := &search.TextPatternInfo{Pattern: "", FilePatternsReposMustInclude: []string{"foo"}, IsRegExp: true, FileMatchLimit: 1, PatternMatchesContent: true, PatternMatchesPath: true}
 		shouldBeAdded, err := repoShouldBeAdded(context.Background(), db, zoekt, repo, pat)
 		if err != nil {
 			t.Fatal(err)
@@ -195,7 +195,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 		mockSearchFilesInRepos = func(args *search.TextParameters) (matches []*FileMatchResolver, common *streaming.Stats, err error) {
 			return []*FileMatchResolver{}, &streaming.Stats{}, nil
 		}
-		pat := &search.TextPatternInfo{Pattern: "", FilePatternsReposMustInclude: []string{"foo"}, IsRegExp: true, FileMatchLimit: 1, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+		pat := &search.TextPatternInfo{Pattern: "", FilePatternsReposMustInclude: []string{"foo"}, IsRegExp: true, FileMatchLimit: 1, PatternMatchesContent: true, PatternMatchesPath: true}
 		shouldBeAdded, err := repoShouldBeAdded(context.Background(), db, zoekt, repo, pat)
 		if err != nil {
 			t.Fatal(err)
@@ -217,7 +217,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 				}),
 			}, &streaming.Stats{}, nil
 		}
-		pat := &search.TextPatternInfo{Pattern: "", FilePatternsReposMustExclude: []string{"foo"}, IsRegExp: true, FileMatchLimit: 1, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+		pat := &search.TextPatternInfo{Pattern: "", FilePatternsReposMustExclude: []string{"foo"}, IsRegExp: true, FileMatchLimit: 1, PatternMatchesContent: true, PatternMatchesPath: true}
 		shouldBeAdded, err := repoShouldBeAdded(context.Background(), db, zoekt, repo, pat)
 		if err != nil {
 			t.Fatal(err)
@@ -232,7 +232,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 		mockSearchFilesInRepos = func(args *search.TextParameters) (matches []*FileMatchResolver, common *streaming.Stats, err error) {
 			return []*FileMatchResolver{}, &streaming.Stats{}, nil
 		}
-		pat := &search.TextPatternInfo{Pattern: "", FilePatternsReposMustExclude: []string{"foo"}, IsRegExp: true, FileMatchLimit: 1, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+		pat := &search.TextPatternInfo{Pattern: "", FilePatternsReposMustExclude: []string{"foo"}, IsRegExp: true, FileMatchLimit: 1, PatternMatchesContent: true, PatternMatchesPath: true}
 		shouldBeAdded, err := repoShouldBeAdded(context.Background(), db, zoekt, repo, pat)
 		if err != nil {
 			t.Fatal(err)

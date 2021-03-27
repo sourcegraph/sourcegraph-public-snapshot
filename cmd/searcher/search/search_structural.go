@@ -290,20 +290,19 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request) (matche
 
 	patternInfo :=
 		&search.TextPatternInfo{
-			Pattern:                      p.Pattern,
-			IsNegated:                    p.IsNegated,
-			IsRegExp:                     p.IsRegExp,
-			IsStructuralPat:              p.IsStructuralPat,
-			CombyRule:                    p.CombyRule,
-			IsWordMatch:                  p.IsWordMatch,
-			IsCaseSensitive:              p.IsCaseSensitive,
-			FileMatchLimit:               int32(fileMatchLimit),
-			IncludePatterns:              p.IncludePatterns,
-			ExcludePattern:               p.ExcludePattern,
-			PathPatternsAreCaseSensitive: p.PathPatternsAreCaseSensitive,
-			PatternMatchesContent:        p.PatternMatchesContent,
-			PatternMatchesPath:           p.PatternMatchesPath,
-			Languages:                    p.Languages,
+			Pattern:               p.Pattern,
+			IsNegated:             p.IsNegated,
+			IsRegExp:              p.IsRegExp,
+			IsStructuralPat:       p.IsStructuralPat,
+			CombyRule:             p.CombyRule,
+			IsWordMatch:           p.IsWordMatch,
+			IsCaseSensitive:       p.IsCaseSensitive,
+			FileMatchLimit:        int32(fileMatchLimit),
+			IncludePatterns:       p.IncludePatterns,
+			ExcludePattern:        p.ExcludePattern,
+			PatternMatchesContent: p.PatternMatchesContent,
+			PatternMatchesPath:    p.PatternMatchesPath,
+			Languages:             p.Languages,
 		}
 
 	if p.Branch == "" {
