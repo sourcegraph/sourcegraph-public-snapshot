@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react'
 import { PageTitle } from '../../../components/PageTitle'
 import { PageHeader } from '../../../components/PageHeader'
-import { BatchChangesIcon } from '../icons'
+import { BatchChangesIcon } from '../../../batches/icons'
 import helloWorldSample from './samples/empty.batch.yaml'
 import combySample from './samples/comby.batch.yaml'
 import goImportsSample from './samples/go-imports.batch.yaml'
@@ -25,7 +25,8 @@ const SampleTabHeader: React.FunctionComponent<SampleTabHeaderProps> = ({ sample
     )
     return (
         <li className="nav-item">
-            <a href="" onClick={onClick} className={classNames('nav-link', active && 'active')}>
+            {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+            <a href="" onClick={onClick} className={classNames('nav-link', active && 'active')} role="button">
                 {sample.name}
             </a>
         </li>
@@ -59,7 +60,7 @@ export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePag
                 <p>
                     The batch spec (
                     <a
-                        href="https://docs.sourcegraph.com/user/campaigns#campaign-specs"
+                        href="https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference"
                         rel="noopener noreferrer"
                         target="_blank"
                     >
@@ -96,7 +97,7 @@ export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePag
                 <hr className="mt-4" />
                 <p className="text-muted">
                     Want more help? See{' '}
-                    <a href="/help/campaigns" rel="noopener noreferrer" target="_blank">
+                    <a href="/help/batch_changes" rel="noopener noreferrer" target="_blank">
                         Batch Changes documentation
                     </a>
                     .

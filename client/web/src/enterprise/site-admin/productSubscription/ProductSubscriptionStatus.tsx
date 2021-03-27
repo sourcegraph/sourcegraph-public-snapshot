@@ -9,7 +9,7 @@ import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/
 import { numberWithCommas } from '../../../../../shared/src/util/strings'
 import { queryGraphQL } from '../../../backend/graphql'
 import { ExpirationDate } from '../../productSubscription/ExpirationDate'
-import { formatUserCount } from '../../productSubscription/helpers'
+import { formatUserCount } from '../../../productSubscription/helpers'
 import { ProductCertificate } from '../../productSubscription/ProductCertificate'
 import { TrueUpStatusSummary } from '../../productSubscription/TrueUpStatusSummary'
 import { ErrorAlert } from '../../../components/alerts'

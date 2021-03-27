@@ -67,7 +67,7 @@ describe('HoverOverlay', () => {
             renderShallow(
                 <HoverOverlay
                     {...commonProps}
-                    actionsOrError={[{ action: { id: 'a', command: 'c', title: 'Some title' } }]}
+                    actionsOrError={[{ action: { id: 'a', command: 'c', title: 'Some title' }, active: true }]}
                 />
             )
         ).toMatchSnapshot()
@@ -109,7 +109,7 @@ describe('HoverOverlay', () => {
             renderShallow(
                 <HoverOverlay
                     {...commonProps}
-                    actionsOrError={[{ action: { id: 'a', command: 'c' } }]}
+                    actionsOrError={[{ action: { id: 'a', command: 'c' }, active: true }]}
                     hoverOrError={{ contents: [{ kind: MarkupKind.Markdown, value: 'v' }] }}
                 />
             )
@@ -121,7 +121,7 @@ describe('HoverOverlay', () => {
             renderShallow(
                 <HoverOverlay
                     {...commonProps}
-                    actionsOrError={[{ action: { id: 'a', command: 'c' } }]}
+                    actionsOrError={[{ action: { id: 'a', command: 'c' }, active: true }]}
                     hoverOrError={{
                         contents: [{ kind: MarkupKind.Markdown, value: 'v' }],
                         alerts: [
@@ -144,7 +144,7 @@ describe('HoverOverlay', () => {
             renderShallow(
                 <HoverOverlay
                     {...commonProps}
-                    actionsOrError={[{ action: { id: 'a', command: 'c' } }]}
+                    actionsOrError={[{ action: { id: 'a', command: 'c' }, active: true }]}
                     hoverOrError="loading"
                 />
             )
@@ -204,7 +204,7 @@ describe('HoverOverlay', () => {
             renderShallow(
                 <HoverOverlay
                     {...commonProps}
-                    actionsOrError={[{ action: { id: 'a', command: 'c' } }]}
+                    actionsOrError={[{ action: { id: 'a', command: 'c' }, active: true }]}
                     hoverOrError={{ message: 'm', name: 'c' }}
                 />
             )

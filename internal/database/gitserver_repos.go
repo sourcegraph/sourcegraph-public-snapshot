@@ -108,6 +108,7 @@ FROM repo
 		// gitserver_repos
 		if cloneStatus != "" {
 			gr.CloneStatus = types.ParseCloneStatus(cloneStatus)
+			gr.RepoID = rgs.ID
 			rgs.GitserverRepo = &gr
 		}
 
@@ -160,24 +161,35 @@ WHERE repo_id = %s
 	return &gr, nil
 }
 
-func (s *GitserverRepoStore) SetCloneStatus(ctx context.Context, id api.RepoID, status types.CloneStatus) error {
-	q := `
-UPDATE gitserver_repos
-SET clone_status = %s
-WHERE repo_id = %s
-`
+// SetCloneStatus will attempt to update ONLY the clone status of a
+// GitServerRepo. If a matching row does not yet exist a new one will be created.
+// If the status value hasn't changed, the row will not be updated.
+func (s *GitserverRepoStore) SetCloneStatus(ctx context.Context, id api.RepoID, status types.CloneStatus, shardID string) error {
+	err := s.Exec(ctx, sqlf.Sprintf(`
+INSERT INTO gitserver_repos(repo_id, clone_status, shard_id, updated_at)
+VALUES (%s, %s, %s, now())
+ON CONFLICT (repo_id) DO UPDATE
+SET (clone_status, shard_id, updated_at) =
+    (EXCLUDED.clone_status, EXCLUDED.shard_id, now())
+    WHERE gitserver_repos.clone_status IS DISTINCT FROM EXCLUDED.clone_status
+`, id, status, shardID))
 
-	result, err := s.ExecResult(ctx, sqlf.Sprintf(q, status, id))
-	if err != nil {
-		return errors.Wrap(err, "setting clone status")
-	}
-	affected, err := result.RowsAffected()
-	if err != nil {
-		return errors.Wrap(err, "checking affected rows")
-	}
-	if affected < 1 {
-		return errors.New("no rows updated")
-	}
+	return errors.Wrap(err, "setting clone status")
+}
 
-	return nil
+// SetLastError will attempt to update ONLY the last error of a GitServerRepo. If
+// a matching row does not yet exist a new one will be created.
+// If the error value hasn't changed, the row will not be updated.
+func (s *GitserverRepoStore) SetLastError(ctx context.Context, id api.RepoID, error string, shardID string) error {
+	ns := dbutil.NewNullString(error)
+	err := s.Exec(ctx, sqlf.Sprintf(`
+INSERT INTO gitserver_repos(repo_id, last_error, shard_id, updated_at)
+VALUES (%s, %s, %s, now())
+ON CONFLICT (repo_id) DO UPDATE
+SET (last_error, shard_id, updated_at) =
+    (EXCLUDED.last_error, EXCLUDED.shard_id, now())
+    WHERE gitserver_repos.last_error IS DISTINCT FROM EXCLUDED.last_error
+`, id, ns, shardID))
+
+	return errors.Wrap(err, "setting last error")
 }

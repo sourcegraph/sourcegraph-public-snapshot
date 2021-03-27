@@ -15,6 +15,8 @@ type MockStores struct {
 	Users           MockUsers
 	UserCredentials MockUserCredentials
 	UserEmails      MockUserEmails
+	UserPublicRepos MockUserPublicRepos
+	SearchContexts  MockSearchContexts
 
 	Phabricator MockPhabricator
 

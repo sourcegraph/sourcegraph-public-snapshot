@@ -39,10 +39,20 @@ Use the `depots` field to configure which depots are mirrored/synchronized as Gi
 
 - [`depots`](perforce.md#depots)<br>A list of depot paths that can be either a depot root or an arbitrary subdirectory.
 - [`p4.user`](perforce.md#p4-user)<br>The user to be authenticated for p4 CLI, and should be capable of performing `p4 ping`, `p4 login`, `p4 trust` and any p4 commands involved with `git p4 clone` and `git p4 sync` for listed `depots`. If repository permissions are mirrored, the user needs additional ability to perform the `p4 protects`, `p4 groups`, `p4 group`, `p4 users` commands (aka. "super" access level).
+- [`p4.passwd`](perforce.md#p4-passwd)<br>The ticket value to be used for authenticating the `p4.user`. It is recommended to create tickets that do not expire.
 
 ### Repository permissions
 
-> WARNING: Permissions syncing for Perforce depots is not yet supported. All files that are synced from the Perforce Server will be readable by all Sourcegraph users. The following docs are based on prototypes and are subject to change.
+> NOTE: Permissions syncing for Perforce depots is available in Sourcegraph 3.26+.
+
+To enable permissions syncing for Perforce depots by including the `authorization` field:
+
+```json
+{
+  ...
+  "authorization": {}
+}
+```
 
 Sourcegraph only supports repository-level permissions and does not match the granularity of Perforce access control lists (which supports file-level permissions). The workaround is for site admins to sync arbitrary subdirectories of a depot, which can then enforce permissions in Sourcegraph. We suggest using the most concrete path of your permissions boundary.
 
@@ -67,7 +77,7 @@ Sourcegraph uses prefix-matching to determine if a user has access to a reposito
 
 For example, consider the following output of `p4 protects -u alice`:
 
-```
+```text
 list user * * -//...
 list user * * -//spec/...
 write user alice * //TestDepot/...

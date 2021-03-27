@@ -12,7 +12,7 @@ It takes less than a minute to run and install Sourcegraph using Docker:
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
 
-<pre class="pre-wrap start-sourcegraph-command"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.25.2</code></pre>
+<pre class="pre-wrap start-sourcegraph-command"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.26.0</code></pre>
 
 Once the server is ready (logo is displayed in the terminal), navigate to the hostname or IP address on port `7080`.  Create the admin account, then you'll be guided through setting up Sourcegraph for code searching and navigation.
 
@@ -56,13 +56,22 @@ Sourcegraph can be **tested** on Windows 10 using roughly the same steps provide
 1. [Install Docker for Windows](https://docs.docker.com/docker-for-windows/install/)
 2. Using a command prompt, follow the same [installation steps provided above](#install-sourcegraph-with-docker) but remove the `--volume` arguments. For example by pasting this:
 
-<pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> sourcegraph/server:3.25.2</code></pre>
+<pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> sourcegraph/server:3.26.0</code></pre>
 
 ## Low resource environments
 
 To test sourcegraph in a low resource environment you may want to disable some of the observability tools (Prometheus, Grafana and Jaeger).
 
 Add `-e DISABLE_OBSERVABILITY=true` to your docker run command
+
+## Starting in Postgres restore mode
+
+In order to restore a Postgres backup, you need to start on an empty database and prevent all other Sourcegraph services from starting.
+You can do this by adding `-e PGRESTORE=true` to your `docker run` command. This will start only the Postgres system and allow you to perform a restore, once it is done, simply remove that parameter from your docker command.
+
+The database is only accessible from within the container, to perform a restore you will need to copy the required files to the container and then execute the restore commands from within the container using `docker exec`.
+
+You can find examples of this procedure for `docker-compose` in our [docker-compose migration docs](../docker-compose/migrate.md).
 
 ## Insiders build
 

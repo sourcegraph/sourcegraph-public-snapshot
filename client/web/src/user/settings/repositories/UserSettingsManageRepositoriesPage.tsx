@@ -18,6 +18,7 @@ import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import { repeatUntil } from '../../../../../shared/src/util/rxjs/repeatUntil'
 import { LoaderButton } from '../../../components/LoaderButton'
 import { UserRepositoriesUpdateProps } from '../../../util'
+import { queryUserPublicRepositories, setUserPublicRepositories } from '../../../site-admin/backend'
 
 interface Props extends RouteComponentProps, TelemetryProps, UserRepositoriesUpdateProps {
     userID: string
@@ -62,6 +63,11 @@ const initialCodeHostState = {
     loaded: false,
     configuredRepos: emptyRepoNames,
 }
+const initialPublicRepoState = {
+    repos: '',
+    enabled: false,
+    loaded: false,
+}
 
 type initialFetchingReposState = undefined | 'loading' | 'slow' | 'slower'
 const isLoading = (status: initialFetchingReposState): boolean => {
@@ -88,15 +94,18 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
     // set up state hooks
     const [repoState, setRepoState] = useState(initialRepoState)
+    const [publicRepoState, setPublicRepoState] = useState(initialPublicRepoState)
     const [selectionState, setSelectionState] = useState({ repos: selectionMap, loaded: false, radio: '' })
     const [currentPage, setPage] = useState(1)
     const [query, setQuery] = useState('')
     const [codeHostFilter, setCodeHostFilter] = useState('')
     const [codeHosts, setCodeHosts] = useState(initialCodeHostState)
-    const [showTextArea, setShowTextArea] = useState(false)
     const [fetchingRepos, setFetchingRepos] = useState<initialFetchingReposState>()
 
-    const toggleTextArea = useCallback(() => setShowTextArea(!showTextArea), [showTextArea])
+    const toggleTextArea = useCallback(
+        () => setPublicRepoState({ ...publicRepoState, enabled: !publicRepoState.enabled }),
+        [publicRepoState]
+    )
 
     useCallback(() => {
         // first we should load code hosts
@@ -145,6 +154,27 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             })
         }
     }, [codeHosts, selectionState.loaded, selectionState.repos, userID])()
+
+    useCallback(() => {
+        if (publicRepoState.loaded) {
+            return
+        }
+        const userPublicReposSubscription = queryUserPublicRepositories(userID).subscribe(result => {
+            if (!result) {
+                setPublicRepoState({ ...publicRepoState, loaded: true })
+                userPublicReposSubscription.unsubscribe()
+                return
+            }
+
+            let publicRepos = ''
+            for (const repo of result) {
+                publicRepos = `${publicRepos}${repo.name}\n`
+            }
+            setPublicRepoState({ repos: publicRepos, loaded: true, enabled: result.length > 0 })
+
+            userPublicReposSubscription.unsubscribe()
+        })
+    }, [publicRepoState, userID])()
 
     // once we've loaded code hosts and the 'selected' panel is visible, load repos and set the loading state
     useCallback(() => {
@@ -197,6 +227,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         if (selectionState.radio === 'all' && selectedRepos.size > 0) {
             radioState = 'selected'
         }
+
         setSelectionState({
             repos: selectedRepos,
             loaded: true,
@@ -294,10 +325,28 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const submit = useCallback(
         async (event: FormEvent<HTMLFormElement>): Promise<void> => {
             event.preventDefault()
-            const syncTimes = new Map<string, string>()
-            const codeHostRepoPromises = []
+
+            let publicRepos = publicRepoState.repos.split('\n').filter((row): boolean => row !== '')
+            if (!publicRepoState.enabled) {
+                publicRepos = []
+            }
 
             setFetchingRepos('loading')
+
+            try {
+                await setUserPublicRepositories(userID, publicRepos).toPromise()
+            } catch (error) {
+                setRepoState({ ...repoState, error: String(error) })
+                setFetchingRepos(undefined)
+                return
+            }
+
+            if (!selectionState.radio) {
+                return history.push(routingPrefix + '/repositories')
+            }
+
+            const syncTimes = new Map<string, string>()
+            const codeHostRepoPromises = []
 
             for (const host of codeHosts.hosts) {
                 const repos: string[] = []
@@ -322,6 +371,8 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 await Promise.all(codeHostRepoPromises)
             } catch (error) {
                 setRepoState({ ...repoState, error: String(error) })
+                setFetchingRepos(undefined)
+                return
             }
 
             const started = Date.now()
@@ -373,14 +424,16 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 )
         },
         [
+            publicRepoState.repos,
+            publicRepoState.enabled,
+            userID,
             codeHosts.hosts,
-            history,
-            repoState,
-            routingPrefix,
             selectionState.radio,
             selectionState.repos,
-            userID,
+            repoState,
             onUserRepositoriesUpdate,
+            history,
+            routingPrefix,
         ]
     )
 
@@ -446,10 +499,17 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     type="radio"
                     value="selected"
                     checked={selectionState.radio === 'selected'}
+                    disabled={codeHosts.hosts.length === 0}
                     onChange={handleRadioSelect}
                 />
                 <div className="d-flex flex-column ml-2">
-                    <p className="mb-0">Sync selected public repositories</p>
+                    <p
+                        className={
+                            'mb-0 ' + ((codeHosts.hosts.length === 0 && 'user-settings-repos__text-coming-soon') || '')
+                        }
+                    >
+                        Sync selected public repositories
+                    </p>
                 </div>
             </label>
         </Form>
@@ -463,9 +523,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     className="form-control"
                     name="code-host"
                     aria-label="select code host type"
-                    onBlur={event => {
-                        setCodeHostFilter(event.target.value)
-                    }}
+                    onChange={event => setCodeHostFilter(event.target.value)}
                 >
                     <option key="any" value="" label="Any" />
                     {codeHosts.hosts.map(value => (
@@ -564,6 +622,10 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         </tbody>
     )
 
+    const handlePublicReposChanged = (event: React.ChangeEvent<HTMLTextAreaElement>): void => {
+        setPublicRepoState({ ...publicRepoState, repos: event.target.value })
+    }
+
     const loadingAnimation: JSX.Element = (
         <tbody className="container">
             <tr className="mt-2 align-items-baseline row">
@@ -604,6 +666,14 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                 Get updated when this feature launches
                             </Link>
                         </div>
+                        {codeHosts.hosts.length === 0 && (
+                            <div className="alert alert-warning">
+                                <Link to={`${routingPrefix}/code-hosts`} target="_blank" rel="noopener noreferrer">
+                                    Connect with a code host
+                                </Link>{' '}
+                                to add your own repositories to Sourcegraph.
+                            </div>
+                        )}
                         {
                             // display radio button for 'all' or 'selected' repos
                             modeSelect
@@ -613,7 +683,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                             selectionState.radio === 'selected' && (
                                 <div className="ml-4">
                                     {filterControls}
-                                    {repoState.error !== '' && <ErrorAlert error={repoState.error} />}
                                     <table role="grid" className="table">
                                         {
                                             // if we're selecting repos, and the repos are still loading, display the loading animation
@@ -638,30 +707,39 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         }
                     </div>
                 </li>
-                <li className="list-group-item p-0 user-settings-repos__container" key="add-textarea">
-                    <div className="p-4 text-muted">
-                        <h3 className="text-muted">Other public repositories (coming soon)</h3>
-                        <p className="text-muted">Public repositories on GitHub and GitLab</p>
-                        <input
-                            disabled={true}
-                            id="add-public-repos"
-                            className="mr-2 mt-2"
-                            type="checkbox"
-                            onChange={toggleTextArea}
-                            checked={showTextArea}
-                        />
-                        <label htmlFor="add-public-repos">Sync specific public repositories by URL</label>
+                {window.context.sourcegraphDotComMode && (
+                    <li className="list-group-item p-0 user-settings-repos__container" key="add-textarea">
+                        <div className="p-4">
+                            <h3>Other public repositories</h3>
+                            <p className="text-muted">Public repositories on GitHub and GitLab</p>
+                            <input
+                                id="add-public-repos"
+                                className="mr-2 mt-2"
+                                type="checkbox"
+                                onChange={toggleTextArea}
+                                checked={publicRepoState.enabled}
+                            />
+                            <label htmlFor="add-public-repos">Sync specific public repositories by URL</label>
 
-                        {showTextArea && (
-                            <div className="form-group ml-4 mt-3">
-                                <p className="mb-2">Repositories to sync</p>
-                                <textarea className="form-control" rows={5} />
-                                <p className="text-muted mt-2">Specify with complete URLs. One repository per line.</p>
-                            </div>
-                        )}
-                    </div>
-                </li>
+                            {publicRepoState.enabled && (
+                                <div className="form-group ml-4 mt-3">
+                                    <p className="mb-2">Repositories to sync</p>
+                                    <textarea
+                                        className="form-control"
+                                        rows={5}
+                                        value={publicRepoState.repos}
+                                        onChange={handlePublicReposChanged}
+                                    />
+                                    <p className="text-muted mt-2">
+                                        Specify with complete URLs. One repository per line.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </li>
+                )}
             </ul>
+            {repoState.error !== '' && <ErrorAlert className="mt-4" error={repoState.error} />}
             <Form className="mt-4 d-flex" onSubmit={submit}>
                 <LoaderButton
                     loading={isLoading(fetchingRepos)}
@@ -669,12 +747,12 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     alwaysShowLabel={true}
                     type="submit"
                     label={
-                        (!fetchingRepos && 'Save changes') ||
-                        (fetchingRepos === 'loading' && 'Saving changes...') ||
-                        (fetchingRepos === 'slow' && 'Still working...') ||
-                        "That's a lot of code..."
+                        (!fetchingRepos && 'Save') ||
+                        (fetchingRepos === 'loading' && 'Saving...') ||
+                        (fetchingRepos === 'slow' && 'Still saving...') ||
+                        'Any time now...'
                     }
-                    disabled={!selectionState.radio || isLoading(fetchingRepos)}
+                    disabled={isLoading(fetchingRepos)}
                 />
 
                 <Link

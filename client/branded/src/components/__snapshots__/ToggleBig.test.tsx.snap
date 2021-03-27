@@ -8,6 +8,7 @@ exports[`ToggleBig className 1`] = `
     className="toggle-big toggle-big__container c"
     disabled={false}
     onClick={[Function]}
+    onFocus={[Function]}
     onMouseOver={[Function]}
     role="switch"
     type="button"
@@ -21,12 +22,7 @@ exports[`ToggleBig className 1`] = `
     />
     <span
       className="toggle-big__knob d-flex flex-column justify-content-center align-items-center"
-    >
-      <Memo(CloseIcon)
-        className="toggle-big__icon"
-        size={16}
-      />
-    </span>
+    />
     <span
       className="toggle-big__text"
     >
@@ -45,6 +41,7 @@ exports[`ToggleBig disabled 1`] = `
     className="toggle-big toggle-big__container"
     disabled={true}
     onClick={[Function]}
+    onFocus={[Function]}
     onMouseOver={[Function]}
     role="switch"
     type="button"
@@ -58,12 +55,7 @@ exports[`ToggleBig disabled 1`] = `
     />
     <span
       className="toggle-big__knob d-flex flex-column justify-content-center align-items-center"
-    >
-      <Memo(CloseIcon)
-        className="toggle-big__icon"
-        size={16}
-      />
-    </span>
+    />
     <span
       className="toggle-big__text"
     >
@@ -82,6 +74,7 @@ exports[`ToggleBig value is false 1`] = `
     className="toggle-big toggle-big__container"
     disabled={false}
     onClick={[Function]}
+    onFocus={[Function]}
     onMouseOver={[Function]}
     role="switch"
     type="button"
@@ -95,12 +88,7 @@ exports[`ToggleBig value is false 1`] = `
     />
     <span
       className="toggle-big__knob d-flex flex-column justify-content-center align-items-center"
-    >
-      <Memo(CloseIcon)
-        className="toggle-big__icon"
-        size={16}
-      />
-    </span>
+    />
     <span
       className="toggle-big__text"
     >
@@ -119,6 +107,7 @@ exports[`ToggleBig value is true 1`] = `
     className="toggle-big toggle-big__container"
     disabled={false}
     onClick={[Function]}
+    onFocus={[Function]}
     onMouseOver={[Function]}
     role="switch"
     type="button"

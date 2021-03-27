@@ -8,10 +8,11 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater/authz"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater/internal/authz"
 	frontendAuthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches"
 	codemonitorsBackground "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background"
@@ -51,9 +52,13 @@ func enterpriseInit(
 	codemonitorsBackground.StartBackgroundJobs(ctx, db)
 	insightsBackground.StartBackgroundJobs(ctx, db)
 
-	syncRegistry := batches.InitBackgroundJobs(ctx, db, cf)
-	if server != nil {
-		server.ChangesetSyncRegistry = syncRegistry
+	// No Batch Changes on dotcom, so we don't need to spawn the
+	// background jobs for this feature.
+	if !envvar.SourcegraphDotComMode() {
+		syncRegistry := batches.InitBackgroundJobs(ctx, db, cf)
+		if server != nil {
+			server.ChangesetSyncRegistry = syncRegistry
+		}
 	}
 
 	// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB.ExternalServices for now.
@@ -76,7 +81,11 @@ func startBackgroundPermsSync(ctx context.Context, syncer *authz.PermsSyncer, db
 		t := time.NewTicker(5 * time.Second)
 		for range t.C {
 			allowAccessByDefault, authzProviders, _, _ :=
-				frontendAuthz.ProvidersFromConfig(ctx, conf.Get(), ossDB.GlobalExternalServices)
+				frontendAuthz.ProvidersFromConfig(
+					ctx,
+					conf.Get(),
+					ossDB.ExternalServices(db),
+				)
 			ossAuthz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()

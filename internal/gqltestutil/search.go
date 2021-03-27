@@ -48,7 +48,7 @@ func (rs SearchRepositoryResults) String() string {
 func (c *Client) SearchRepositories(query string) (SearchRepositoryResults, error) {
 	const gqlQuery = `
 query Search($query: String!) {
-	search(query: $query) {
+	search(query: $query, version: V2) {
 		results {
 			results {
 				... on Repository {
@@ -71,7 +71,7 @@ query Search($query: String!) {
 			} `json:"search"`
 		} `json:"data"`
 	}
-	err := c.GraphQL("", "", gqlQuery, variables, &resp)
+	err := c.GraphQL("", gqlQuery, variables, &resp)
 	if err != nil {
 		return nil, errors.Wrap(err, "request GraphQL")
 	}
@@ -114,7 +114,7 @@ type SearchAlert struct {
 func (c *Client) SearchFiles(query string) (*SearchFileResults, error) {
 	const gqlQuery = `
 query Search($query: String!) {
-	search(query: $query) {
+	search(query: $query, version: V2) {
 		results {
 			matchCount
 			alert {
@@ -163,7 +163,7 @@ query Search($query: String!) {
 			} `json:"search"`
 		} `json:"data"`
 	}
-	err := c.GraphQL("", "", gqlQuery, variables, &resp)
+	err := c.GraphQL("", gqlQuery, variables, &resp)
 	if err != nil {
 		return nil, errors.Wrap(err, "request GraphQL")
 	}
@@ -183,7 +183,7 @@ type SearchCommitResults struct {
 func (c *Client) SearchCommits(query string) (*SearchCommitResults, error) {
 	const gqlQuery = `
 query Search($query: String!) {
-	search(query: $query) {
+	search(query: $query, version: V2) {
 		results {
 			matchCount
 			results {
@@ -207,7 +207,7 @@ query Search($query: String!) {
 			} `json:"search"`
 		} `json:"data"`
 	}
-	err := c.GraphQL("", "", gqlQuery, variables, &resp)
+	err := c.GraphQL("", gqlQuery, variables, &resp)
 	if err != nil {
 		return nil, errors.Wrap(err, "request GraphQL")
 	}
@@ -277,7 +277,7 @@ type RepositoryResult struct {
 func (c *Client) SearchAll(query string) ([]*AnyResult, error) {
 	const gqlQuery = `
 query Search($query: String!) {
-	search(query: $query) {
+	search(query: $query, version: V2) {
 		results {
 			results {
 				__typename
@@ -318,7 +318,7 @@ query Search($query: String!) {
 			} `json:"search"`
 		} `json:"data"`
 	}
-	err := c.GraphQL("", "", gqlQuery, variables, &resp)
+	err := c.GraphQL("", gqlQuery, variables, &resp)
 	if err != nil {
 		return nil, errors.Wrap(err, "request GraphQL")
 	}
@@ -337,7 +337,7 @@ type SearchStatsResult struct {
 func (c *Client) SearchStats(query string) (*SearchStatsResult, error) {
 	const gqlQuery = `
 query SearchResultsStats($query: String!) {
-	search(query: $query) {
+	search(query: $query, version: V2) {
 		stats {
 			languages {
 				name
@@ -357,7 +357,7 @@ query SearchResultsStats($query: String!) {
 			} `json:"search"`
 		} `json:"data"`
 	}
-	err := c.GraphQL("", "", gqlQuery, variables, &resp)
+	err := c.GraphQL("", gqlQuery, variables, &resp)
 	if err != nil {
 		return nil, errors.Wrap(err, "request GraphQL")
 	}
@@ -449,7 +449,7 @@ type LanguageSuggestionResult struct {
 func (c *Client) SearchSuggestions(query string) ([]SearchSuggestionsResult, error) {
 	const gqlQuery = `
 query SearchSuggestions($query: String!) {
-	search(query: $query) {
+	search(query: $query, version: V2) {
 		suggestions {
 			__typename
 			... on Repository {
@@ -496,7 +496,7 @@ query SearchSuggestions($query: String!) {
 			} `json:"search"`
 		} `json:"data"`
 	}
-	err := c.GraphQL("", "", gqlQuery, variables, &resp)
+	err := c.GraphQL("", gqlQuery, variables, &resp)
 	if err != nil {
 		return nil, errors.Wrap(err, "request GraphQL")
 	}
@@ -542,14 +542,18 @@ func (s *SearchStreamClient) SearchFiles(query string) (*SearchFileResults, erro
 					var r SearchFileResult
 					r.File.Name = v.Path
 					r.Repository.Name = v.Repository
-					r.RevSpec.Expr = v.Branches[0]
+					if len(v.Branches) > 0 {
+						r.RevSpec.Expr = v.Branches[0]
+					}
 					results.Results = append(results.Results, &r)
 
 				case *streamhttp.EventSymbolMatch:
 					var r SearchFileResult
 					r.File.Name = v.Path
 					r.Repository.Name = v.Repository
-					r.RevSpec.Expr = v.Branches[0]
+					if len(v.Branches) > 0 {
+						r.RevSpec.Expr = v.Branches[0]
+					}
 					results.Results = append(results.Results, &r)
 
 				case *streamhttp.EventCommitMatch:

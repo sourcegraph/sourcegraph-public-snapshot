@@ -10,14 +10,7 @@ import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike, asError } from '../../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
-import {
-    AbsoluteRepoFile,
-    lprToRange,
-    makeRepoURI,
-    ModeSpec,
-    ParsedRepoURI,
-    parseHash,
-} from '../../../../shared/src/util/url'
+import { AbsoluteRepoFile, makeRepoURI, ModeSpec, ParsedRepoURI, parseHash } from '../../../../shared/src/util/url'
 import { queryGraphQL } from '../../backend/graphql'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
@@ -27,7 +20,7 @@ import { ToggleHistoryPanel } from './actions/ToggleHistoryPanel'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { Blob, BlobInfo } from './Blob'
-import { BlobPanel } from './panel/BlobPanel'
+import { useBlobPanelViews } from './panel/BlobPanel'
 import { GoToRawAction } from './GoToRawAction'
 import { RenderedFile } from './RenderedFile'
 import { ThemeProps } from '../../../../shared/src/theme'
@@ -205,10 +198,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
         return `${repoString}`
     }
 
-    // Clear the Sourcegraph extensions model's component when the blob is no longer shown.
-    useEffect(() => () => props.extensionsController.services.viewer.removeAllViewers(), [
-        props.extensionsController.services.viewer,
-    ])
+    useBlobPanelViews(props)
 
     // If url explicitly asks for a certain rendering mode, renderMode is set to that mode, else it checks:
     // - If file contains richHTML and url does not include a line number: We render in richHTML.
@@ -230,35 +220,44 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
             <RepoHeaderContributionPortal
                 position="right"
                 priority={20}
-                element={
-                    <ToggleHistoryPanel key="toggle-blob-panel" location={props.location} history={props.history} />
-                }
+                id="toggle-blob-panel"
                 repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-            />
+            >
+                {context => (
+                    <ToggleHistoryPanel
+                        {...context}
+                        key="toggle-blob-panel"
+                        location={props.location}
+                        history={props.history}
+                    />
+                )}
+            </RepoHeaderContributionPortal>
             {renderMode === 'code' && (
                 <RepoHeaderContributionPortal
                     position="right"
                     priority={99}
-                    element={<ToggleLineWrap key="toggle-line-wrap" onDidUpdate={setWrapCode} />}
+                    id="toggle-line-wrap"
                     repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-                />
+                >
+                    {context => <ToggleLineWrap {...context} key="toggle-line-wrap" onDidUpdate={setWrapCode} />}
+                </RepoHeaderContributionPortal>
             )}
             <RepoHeaderContributionPortal
                 position="right"
                 priority={30}
-                element={
-                    <GoToRawAction key="raw-action" repoName={repoName} revision={props.revision} filePath={filePath} />
-                }
+                id="raw-action"
                 repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-            />
-            <BlobPanel
-                {...props}
-                position={
-                    lprToRange(parseHash(props.location.hash))
-                        ? lprToRange(parseHash(props.location.hash))!.start
-                        : undefined
-                }
-            />
+            >
+                {context => (
+                    <GoToRawAction
+                        {...context}
+                        key="raw-action"
+                        repoName={repoName}
+                        revision={props.revision}
+                        filePath={filePath}
+                    />
+                )}
+            </RepoHeaderContributionPortal>
         </>
     )
 
@@ -290,15 +289,18 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                 <RepoHeaderContributionPortal
                     position="right"
                     priority={100}
-                    element={
+                    id="toggle-rendered-file-mode"
+                    repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+                >
+                    {context => (
                         <ToggleRenderedFileMode
                             key="toggle-rendered-file-mode"
                             mode={renderMode || 'rendered'}
                             location={props.location}
+                            {...context}
                         />
-                    }
-                    repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-                />
+                    )}
+                </RepoHeaderContributionPortal>
             )}
             {blobInfoOrError.richHTML && renderMode === 'rendered' && (
                 <RenderedFile

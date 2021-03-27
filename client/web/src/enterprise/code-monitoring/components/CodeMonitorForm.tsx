@@ -12,10 +12,10 @@ import { Form } from '../../../../../branded/src/components/Form'
 import { useEventObservable } from '../../../../../shared/src/util/useObservable'
 import { CodeMonitorFields } from '../../../graphql-operations'
 import { isEqual } from 'lodash'
-import { CodeMonitoringProps } from '..'
 import { DeleteMonitorModal } from './DeleteMonitorModal'
+import { deleteCodeMonitor as _deleteCodeMonitor } from '../backend'
 
-export interface CodeMonitorFormProps extends Partial<Pick<CodeMonitoringProps, 'deleteCodeMonitor'>> {
+export interface CodeMonitorFormProps {
     history: H.History
     location: H.Location
     authenticatedUser: AuthenticatedUser
@@ -30,6 +30,10 @@ export interface CodeMonitorFormProps extends Partial<Pick<CodeMonitoringProps, 
     codeMonitor?: CodeMonitorFields
     /* Whether to show the delete button */
     showDeleteButton?: boolean
+    /* Optional trigger query to pre-populate the trigger form */
+    triggerQuery?: string
+
+    deleteCodeMonitor?: typeof _deleteCodeMonitor
 }
 
 interface FormCompletionSteps {
@@ -44,22 +48,17 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
     submitButtonLabel,
     codeMonitor,
     showDeleteButton,
-    deleteCodeMonitor,
-    location,
+    deleteCodeMonitor = _deleteCodeMonitor,
+    triggerQuery,
 }) => {
     const LOADING = 'loading' as const
-
-    const triggerQueryFromURL = useMemo(
-        () => (codeMonitor ? undefined : new URLSearchParams(location.search).get('trigger-query')),
-        [codeMonitor, location.search]
-    )
 
     const [currentCodeMonitorState, setCodeMonitor] = useState<CodeMonitorFields>(
         codeMonitor ?? {
             id: '',
             description: '',
             enabled: true,
-            trigger: { id: '', query: triggerQueryFromURL ?? '' },
+            trigger: { id: '', query: triggerQuery ?? '' },
             actions: {
                 nodes: [],
             },
@@ -190,7 +189,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                         onQueryChange={onQueryChange}
                         triggerCompleted={formCompletion.triggerCompleted}
                         setTriggerCompleted={setTriggerCompleted}
-                        startExpanded={!!triggerQueryFromURL}
+                        startExpanded={!!triggerQuery}
                     />
                 </div>
                 <div
@@ -268,7 +267,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                     )}
                 </div>
             </Form>
-            {showDeleteButton && deleteCodeMonitor && (
+            {showDeleteButton && (
                 <DeleteMonitorModal
                     isOpen={showDeleteModal}
                     deleteCodeMonitor={deleteCodeMonitor}

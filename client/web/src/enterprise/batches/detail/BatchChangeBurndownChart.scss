@@ -1,0 +1,20 @@
+.batch-change-burndown-chart {
+    &-legend {
+        &__color-box {
+            width: 1rem;
+            height: 1rem;
+            display: inline-block;
+        }
+
+        &__archive-icon {
+            width: 1rem;
+            height: 1rem;
+        }
+    }
+    &__container {
+        @include media-breakpoint-down(xs) {
+            flex-direction: column-reverse;
+            align-items: flex-start !important;
+        }
+    }
+}

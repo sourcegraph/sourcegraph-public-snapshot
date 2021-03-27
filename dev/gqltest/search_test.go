@@ -328,7 +328,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 			zeroResult    bool
 			minMatchCount int64
 			wantAlert     *gqltestutil.SearchAlert
-			skipStream    bool
 		}{
 			// Global search
 			{
@@ -384,9 +383,8 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query: `repo:^github\.com/sgtest/java-langserver$@v1 void sendPartialResult(Object requestId, JsonPatch jsonPatch); patterntype:literal type:file`,
 			},
 			{
-				name:       "non-master branch, nonzero result stable",
-				query:      `repo:^github\.com/sgtest/java-langserver$@v1 void sendPartialResult(Object requestId, JsonPatch jsonPatch); patterntype:literal count:1 stable:yes type:file`,
-				skipStream: true,
+				name:  "non-master branch, nonzero result stable",
+				query: `repo:^github\.com/sgtest/java-langserver$@v1 void sendPartialResult(Object requestId, JsonPatch jsonPatch); patterntype:literal count:1 stable:yes type:file`,
 			},
 			{
 				name:  "indexed multiline search, nonzero result",
@@ -479,10 +477,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				if test.skipStream && isStreaming {
-					t.Skip("streaming not supported yet")
-				}
-
 				results, err := client.SearchFiles(test.query)
 				if err != nil {
 					t.Fatal(err)
@@ -511,6 +505,17 @@ func testSearchClient(t *testing.T, client searchClient) {
 
 	t.Run("timeout search options", func(t *testing.T) {
 		results, err := client.SearchFiles(`router index:no timeout:1ns`)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if results.Alert == nil {
+			t.Fatal("Want search alert but got nil")
+		}
+	})
+
+	t.Run("stable search options", func(t *testing.T) {
+		results, err := client.SearchFiles(`router stable:yes count:5001`)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -604,17 +609,14 @@ func testSearchClient(t *testing.T, client searchClient) {
 			query      string
 			zeroResult bool
 			wantAlert  *gqltestutil.SearchAlert
-
-			skipStream bool
 		}{
 			{
 				name:  `And operator, basic`,
 				query: `repo:^github\.com/sgtest/go-diff$ func and main type:file`,
 			},
 			{
-				name:       `And operator, basic with stable`,
-				query:      `repo:^github\.com/sgtest/go-diff$ func and main stable:yes type:file`,
-				skipStream: true,
+				name:  `And operator, basic with stable`,
+				query: `repo:^github\.com/sgtest/go-diff$ func and main stable:yes type:file`,
 			},
 			{
 				name:  `Or operator, single and double quoted`,
@@ -656,9 +658,8 @@ func testSearchClient(t *testing.T, client searchClient) {
 				zeroResult: true,
 			},
 			{
-				name:       `Mixed regexp and literal`,
-				query:      `repo:^github\.com/sgtest/go-diff$ func(.*) or does_not_exist_3744 type:file`,
-				skipStream: true,
+				name:  `Mixed regexp and literal`,
+				query: `repo:^github\.com/sgtest/go-diff$ patternType:regexp func(.*) or does_not_exist_3744 type:file`,
 			},
 			{
 				name:  `Mixed regexp and literal heuristic`,
@@ -670,14 +671,12 @@ func testSearchClient(t *testing.T, client searchClient) {
 				zeroResult: true,
 			},
 			{
-				name:       `Escape sequences`,
-				query:      `repo:^github\.com/sgtest/go-diff$ \' and \" and \\ and /`,
-				skipStream: true,
+				name:  `Escape sequences`,
+				query: `repo:^github\.com/sgtest/go-diff$ patternType:regexp \' and \" and \\ and /`,
 			},
 			{
-				name:       `Escaped whitespace sequences with 'and'`,
-				query:      `repo:^github\.com/sgtest/go-diff$ \ and /`,
-				skipStream: true,
+				name:  `Escaped whitespace sequences with 'and'`,
+				query: `repo:^github\.com/sgtest/go-diff$ patternType:regexp \ and /`,
 			},
 			{
 				name:  `Concat converted to spaces for literal search`,
@@ -793,10 +792,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				if test.skipStream && isStreaming {
-					t.Skip("streaming not supported yet")
-				}
-
 				results, err := client.SearchFiles(test.query)
 				if err != nil {
 					t.Fatal(err)
@@ -902,36 +897,114 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 	})
 
-	t.Run("Select Queries", func(t *testing.T) {
-		type counts struct {
-			Repo    int
-			Commit  int
-			Content int
-			Symbol  int
-			File    int
-		}
+	type counts struct {
+		Repo    int
+		Commit  int
+		Content int
+		Symbol  int
+		File    int
+	}
 
-		countResults := func(results []*gqltestutil.AnyResult) counts {
-			var count counts
-			for _, res := range results {
-				switch v := res.Inner.(type) {
-				case gqltestutil.CommitResult:
-					count.Commit += 1
-				case gqltestutil.RepositoryResult:
-					count.Repo += 1
-				case gqltestutil.FileResult:
-					count.Symbol += len(v.Symbols)
-					for _, lm := range v.LineMatches {
-						count.Content += len(lm.OffsetAndLengths)
-					}
-					if len(v.Symbols) == 0 && len(v.LineMatches) == 0 {
-						count.File += 1
-					}
+	countResults := func(results []*gqltestutil.AnyResult) counts {
+		var count counts
+		for _, res := range results {
+			switch v := res.Inner.(type) {
+			case gqltestutil.CommitResult:
+				count.Commit += 1
+			case gqltestutil.RepositoryResult:
+				count.Repo += 1
+			case gqltestutil.FileResult:
+				count.Symbol += len(v.Symbols)
+				for _, lm := range v.LineMatches {
+					count.Content += len(lm.OffsetAndLengths)
+				}
+				if len(v.Symbols) == 0 && len(v.LineMatches) == 0 {
+					count.File += 1
 				}
 			}
-			return count
+		}
+		return count
+	}
+
+	t.Run("Predicate Queries", func(t *testing.T) {
+		tests := []struct {
+			name   string
+			query  string
+			counts counts
+		}{
+			{
+				`repo contains file`,
+				`repo:contains(file:go\.mod)`,
+				counts{Repo: 2},
+			},
+			{
+				`no repo contains file`,
+				`repo:contains(file:noexist.go)`,
+				counts{},
+			},
+			{
+				`no repo contains file with pattern`,
+				`repo:contains(file:noexist.go) test`,
+				counts{},
+			},
+			{
+				`repo contains content`,
+				`repo:contains(content:nextFileFirstLine)`,
+				counts{Repo: 1},
+			},
+			{
+				`repo contains content default`,
+				`repo:contains(nextFileFirstLine)`,
+				counts{Repo: 1},
+			},
+			{
+				`or-expression on repo:contains`,
+				`repo:contains(content:does-not-exist-D2E1E74C7279) or repo:contains(content:nextFileFirstLine)`,
+				counts{Repo: 1},
+			},
+			{
+				`repo contains file then search common`,
+				`repo:contains(file:go.mod) count:100 fmt`,
+				counts{Content: 61},
+			},
+			{
+				`repo contains with matching repo filter`,
+				`repo:go-diff repo:contains(file:diff.proto)`,
+				counts{Repo: 1},
+			},
+			{
+				`repo contains with non-matching repo filter`,
+				`repo:nonexist repo:contains(file:diff.proto)`,
+				counts{Repo: 0},
+			},
+			{
+				`commit results without repo filter`,
+				`type:commit LSIF`,
+				counts{Commit: 9},
+			},
+			{
+				`commit results with repo filter`,
+				`repo:contains(file:diff.pb.go) type:commit LSIF`,
+				counts{Commit: 1},
+			},
 		}
 
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				results, err := client.SearchAll(test.query)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				count := countResults(results)
+				if diff := cmp.Diff(test.counts, count); diff != "" {
+					t.Fatalf("mismatch (-want +got):\n%s", diff)
+				}
+			})
+		}
+	})
+
+	t.Run("Select Queries", func(t *testing.T) {
 		tests := []struct {
 			name   string
 			query  string
@@ -1001,6 +1074,34 @@ func testSearchClient(t *testing.T, client searchClient) {
 					t.Skip("streaming not supported yet")
 				}
 
+				results, err := client.SearchAll(test.query)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				count := countResults(results)
+				if diff := cmp.Diff(test.counts, count); diff != "" {
+					t.Fatalf("mismatch (-want +got):\n%s", diff)
+				}
+			})
+		}
+	})
+
+	t.Run("Exact Counts", func(t *testing.T) {
+		tests := []struct {
+			name   string
+			query  string
+			counts counts
+		}{
+			{
+				`no duplicate commits (#19460)`,
+				`repo:^github\.com/sgtest/sourcegraph-typescript$ type:commit author:felix count:1000 before:"march 25 2021"`,
+				counts{Commit: 317},
+			},
+		}
+
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
 				results, err := client.SearchAll(test.query)
 				if err != nil {
 					t.Fatal(err)

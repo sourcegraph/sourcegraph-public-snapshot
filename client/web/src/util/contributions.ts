@@ -34,6 +34,7 @@ export interface NavGroupDescriptor<C extends object = {}> extends Conditional<C
     readonly header?: {
         readonly label: string
         readonly icon?: React.ComponentType<{ className?: string }>
+        readonly source?: 'server' | 'client'
     }
     readonly items: readonly NavItemDescriptor<C>[]
 }
@@ -53,6 +54,9 @@ export interface NavItemDescriptor<C extends object = {}> extends Conditional<C>
 
     /** Whether highlighting the item should only be done if `to` matches exactly */
     readonly exact?: boolean
+
+    /** The link source to determine the render strategy (react-dom link component or <a>) */
+    readonly source?: 'server' | 'client'
 }
 
 export interface NavItemWithIconDescriptor<C extends object = {}> extends NavItemDescriptor<C>, WithIcon {}

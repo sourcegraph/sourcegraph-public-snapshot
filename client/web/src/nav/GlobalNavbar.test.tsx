@@ -4,7 +4,7 @@ import { setLinkComponent } from '../../../shared/src/components/Link'
 import { ThemePreference } from '../theme'
 import { GlobalNavbar } from './GlobalNavbar'
 import { createLocation, createMemoryHistory } from 'history'
-import { NOOP_SETTINGS_CASCADE } from '../../../shared/src/util/searchTestHelpers'
+import { extensionsController, NOOP_SETTINGS_CASCADE } from '../../../shared/src/util/searchTestHelpers'
 import { SearchPatternType } from '../graphql-operations'
 
 jest.mock('../search/input/SearchNavbarItem', () => ({ SearchNavbarItem: 'SearchNavbarItem' }))
@@ -13,7 +13,7 @@ jest.mock('../components/branding/BrandLogo', () => ({ BrandLogo: 'BrandLogo' })
 const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     authenticatedUser: null,
     authRequired: false,
-    extensionsController: {} as any,
+    extensionsController,
     location: createLocation('/'),
     history: createMemoryHistory(),
     keyboardShortcuts: [],
@@ -31,13 +31,14 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     platformContext: {} as any,
     settingsCascade: NOOP_SETTINGS_CASCADE,
     showBatchChanges: false,
+    enableCodeMonitoring: false,
     telemetryService: {} as any,
     hideNavLinks: true, // used because reactstrap Popover is incompatible with react-test-renderer
     isExtensionAlertAnimating: false,
     isSearchRelatedPage: true,
     copyQueryButton: false,
     versionContext: undefined,
-    setVersionContext: () => undefined,
+    setVersionContext: () => Promise.resolve(),
     availableVersionContexts: [],
     showSearchContext: false,
     selectedSearchContextSpec: '',
@@ -53,7 +54,7 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
 }
 
 describe('GlobalNavbar', () => {
-    setLinkComponent(props => <a {...props} />)
+    setLinkComponent(({ children, ...props }) => <a {...props}>{children}</a>)
     afterAll(() => setLinkComponent(() => null)) // reset global env for other tests
 
     test('default', () => expect(renderer.create(<GlobalNavbar {...PROPS} />).toJSON()).toMatchSnapshot())

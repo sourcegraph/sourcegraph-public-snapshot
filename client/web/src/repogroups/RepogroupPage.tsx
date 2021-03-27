@@ -44,7 +44,7 @@ export interface RepogroupPageProps
         PatternTypeProps,
         CaseSensitivityProps,
         KeyboardShortcutsProps,
-        ExtensionsControllerProps<'executeCommand' | 'services'>,
+        ExtensionsControllerProps<'executeCommand'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         CopyQueryButtonProps,
         VersionContextProps,
@@ -55,7 +55,7 @@ export interface RepogroupPageProps
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
-    setVersionContext: (versionContext: string | undefined) => void
+    setVersionContext: (versionContext: string | undefined) => Promise<void>
     availableVersionContexts: VersionContext[] | undefined
 
     // Repogroup page metadata
@@ -247,7 +247,7 @@ interface RepogroupPageLogoProps extends Exclude<React.ImgHTMLAttributes<HTMLIma
  */
 const RepogroupPageLogo: React.FunctionComponent<RepogroupPageLogoProps> = props => (
     <div className="repogroup-page__logo-container d-flex align-items-center">
-        <img {...props} src={props.icon} />
+        <img {...props} src={props.icon} alt="" />
         <span className="h3 font-weight-normal mb-0 ml-1">{props.text}</span>
     </div>
 )

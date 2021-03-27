@@ -13,7 +13,7 @@ import { asError } from '../../../../../shared/src/util/errors'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { AuthenticatedUser } from '../../../auth'
 import { PageTitle } from '../../../components/PageTitle'
-import { CodeMonitoringProps } from '../../../enterprise/code-monitoring'
+import { CodeMonitoringProps } from '../../../code-monitoring'
 import { SavedSearchModal } from '../../../savedSearches/SavedSearchModal'
 import { QueryState, submitSearch } from '../../helpers'
 import { queryTelemetryData } from '../../queryTelemetry'
@@ -42,11 +42,11 @@ export interface StreamingSearchResultsProps
         Pick<MutableVersionContextProps, 'versionContext' | 'availableVersionContexts' | 'previousVersionContext'>,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
         SettingsCascadeProps,
-        ExtensionsControllerProps<'executeCommand' | 'extHostAPI' | 'services'>,
+        ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         TelemetryProps,
         ThemeProps,
-        Pick<CodeMonitoringProps, 'enableCodeMonitoring'>,
+        CodeMonitoringProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
@@ -222,6 +222,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                                 state={results?.state || 'loading'}
                                 history={props.history}
                                 onSearchAgain={onSearchAgain}
+                                showTrace={!!trace}
                             />
                         }
                     />

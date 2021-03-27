@@ -15,10 +15,14 @@
 - [Developing the web clients](web/index.md)
   - [Developing the web app](web/web_app.md)
   - [Developing the code host integrations](web/code_host_integrations.md)
+  - [Working with GraphQL](web/graphql.md)
   - [Styling UI](web/styling.md)
+  - [Accessibility](web/accessibility.md)
+  - [Build process](web/build.md)
 - [Developing the GraphQL API](graphql_api.md)
-- [Developing campaigns](campaigns/index.md)
+- [Developing batch changes](batch_changes/index.md)
 - [Developing code intelligence](codeintel/index.md)
+- [Developing code insights](insights/index.md)
 - [Developing code monitoring](codemonitoring/index.md)
 - [Developing observability](observability/index.md)
 - [Developing Sourcegraph extensions](sourcegraph_extensions.md)
@@ -34,7 +38,6 @@
 ## [Languages](languages/index.md)
 
 - [Go](languages/go.md)
-  - [Testing Go code](languages/testing_go_code.md).
 - [TypeScript](languages/typescript.md)
 - [Bash](languages/bash.md)
 - [Terraform](languages/terraform.md)
@@ -46,8 +49,8 @@
 ## Testing
 
 - [Continuous Integration](continuous_integration.md)
-- [How to run tests](testing.md)
 - [Testing Principles](testing_principles.md)
+- [Testing Go code](languages/testing_go_code.md)
 - [Testing web code](testing_web_code.md)
 
 ## Tools

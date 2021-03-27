@@ -3,15 +3,9 @@ import { catchError, map } from 'rxjs/operators'
 import { requestGraphQL } from '../backend/graphql'
 import { InsightsResult, InsightFields } from '../graphql-operations'
 import { LineChartContent } from 'sourcegraph'
-import {
-    getViewsForContainer,
-    ViewContexts,
-    ViewProviderResult,
-    ViewService,
-} from '../../../shared/src/api/client/services/viewService'
-import { ContributableViewContainer } from '../../../shared/src/api/protocol'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import { asError } from '../../../shared/src/util/errors'
+import { ViewProviderResult } from '../../../shared/src/api/extension/extensionHostApi'
 
 const insightFieldsFragment = gql`
     fragment InsightFields on Insight {
@@ -42,27 +36,48 @@ function fetchBackendInsights(): Observable<InsightFields[]> {
     )
 }
 
-export function getCombinedViews<W extends ContributableViewContainer>(
-    where: W,
-    parameters: ViewContexts[W],
-    viewService: Pick<ViewService, 'getWhere'>
-): Observable<ViewProviderResult[]> {
+export enum ViewInsightProviderSourceType {
+    Backend = 'Backend',
+    Extension = 'Extension',
+}
+
+export interface ViewInsightProviderResult extends ViewProviderResult {
+    /** The source of view provider to distinguish between data from extension and data from backend */
+    source: ViewInsightProviderSourceType
+}
+
+export function getCombinedViews(
+    getExtensionsInsights: () => Observable<ViewProviderResult[]>
+): Observable<ViewInsightProviderResult[]> {
     return combineLatest([
-        getViewsForContainer(where, parameters, viewService),
+        getExtensionsInsights().pipe(
+            map(extensionInsights =>
+                extensionInsights.map(insight => ({ ...insight, source: ViewInsightProviderSourceType.Extension }))
+            )
+        ),
         fetchBackendInsights().pipe(
             map(backendInsights =>
                 backendInsights.map(
-                    (insight, index): ViewProviderResult => ({
-                        id: `insight.backend${index}`,
+                    (insight, index): ViewInsightProviderResult => ({
+                        id: `Backend insight ${index + 1}`,
                         view: {
                             title: insight.title,
                             subtitle: insight.description,
                             content: [backendInsightToViewContent(insight)],
                         },
+                        source: ViewInsightProviderSourceType.Backend,
                     })
                 )
             ),
-            catchError(error => of<ViewProviderResult[]>([{ id: 'insight.backend', view: asError(error) }]))
+            catchError(error =>
+                of<ViewInsightProviderResult[]>([
+                    {
+                        id: 'Backend insight',
+                        view: asError(error),
+                        source: ViewInsightProviderSourceType.Backend,
+                    },
+                ])
+            )
         ),
     ]).pipe(map(([extensionViews, backendInsights]) => [...backendInsights, ...extensionViews]))
 }

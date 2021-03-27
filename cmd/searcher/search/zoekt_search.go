@@ -6,12 +6,11 @@ import (
 	"errors"
 	"io"
 	"regexp/syntax"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/zoekt"
-
-	"sync"
-	"sync/atomic"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -26,7 +25,6 @@ import (
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 var zoektOnce sync.Once
@@ -121,16 +119,6 @@ type zoektSearchStreamEvent struct {
 	err      error
 }
 
-func zoektSearchStream(ctx context.Context, args *search.TextPatternInfo, repoBranches map[string][]string, since func(t time.Time) time.Duration, endpoints []string, useFullDeadline bool) <-chan zoektSearchStreamEvent {
-	c := make(chan zoektSearchStreamEvent)
-	go func() {
-		defer close(c)
-		_, _, _, _ = zoektSearch(ctx, args, repoBranches, since, endpoints, useFullDeadline, c)
-	}()
-
-	return c
-}
-
 const defaultMaxSearchResults = 30
 
 // zoektSearch searches repositories using zoekt, returning file contents for
@@ -219,16 +207,6 @@ func zoektSearch(ctx context.Context, args *search.TextPatternInfo, repoBranches
 	if len(resp.Files) == 0 {
 		return nil, false, nil, nil
 	}
-
-	matchLimiter := zoektutil.MatchLimiter{Limit: int(args.FileMatchLimit)}
-	repoRevFunc := func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
-		return repo, revs, false
-	}
-
-	var files []zoekt.FileMatch
-	partial, files = matchLimiter.Slice(resp.Files, repoRevFunc)
-	limitHit = limitHit || len(partial) > 0
-	resp.Files = files
 
 	maxLineMatches := 25 + k
 	for _, file := range resp.Files {

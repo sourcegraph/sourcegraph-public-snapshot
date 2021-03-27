@@ -1,13 +1,12 @@
 import * as H from 'history'
 import classnames from 'classnames'
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState, useEffect } from 'react'
 import { PageHeader } from '../../components/PageHeader'
 import { PageTitle } from '../../components/PageTitle'
 import { AuthenticatedUser } from '../../auth'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { CodeMonitorFields, ListUserCodeMonitorsResult, ListUserCodeMonitorsVariables } from '../../graphql-operations'
 import { Link } from '../../../../shared/src/components/Link'
-import { CodeMonitoringProps } from '.'
 import PlusIcon from 'mdi-react/PlusIcon'
 import { CodeMonitorNode, CodeMonitorNodeProps } from './CodeMonitoringNode'
 import { catchError, map, startWith } from 'rxjs/operators'
@@ -16,21 +15,34 @@ import { useObservable } from '../../../../shared/src/util/useObservable'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { Settings } from '../../schema/settings.schema'
-import { CodeMonitoringLogo } from './CodeMonitoringLogo'
+import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { FeedbackBadge } from '../../components/FeedbackBadge'
+import { eventLogger } from '../../tracking/eventLogger'
+import {
+    fetchUserCodeMonitors as _fetchUserCodeMonitors,
+    toggleCodeMonitorEnabled as _toggleCodeMonitorEnabled,
+} from './backend'
 
-export interface CodeMonitoringPageProps
-    extends Pick<CodeMonitoringProps, 'fetchUserCodeMonitors' | 'toggleCodeMonitorEnabled'>,
-        SettingsCascadeProps<Settings> {
+export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings> {
     authenticatedUser: AuthenticatedUser
     location: H.Location
     history: H.History
+
+    fetchUserCodeMonitors?: typeof _fetchUserCodeMonitors
+    toggleCodeMonitorEnabled?: typeof _toggleCodeMonitorEnabled
 }
 
 type CodeMonitorFilter = 'all' | 'user'
 
-export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps> = props => {
-    const { authenticatedUser, fetchUserCodeMonitors, toggleCodeMonitorEnabled } = props
+export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps> = ({
+    history,
+    location,
+    settingsCascade,
+    authenticatedUser,
+    fetchUserCodeMonitors = _fetchUserCodeMonitors,
+    toggleCodeMonitorEnabled = _toggleCodeMonitorEnabled,
+}) => {
+    useEffect(() => eventLogger.logViewEvent('CodeMonitoringPage'), [])
 
     const queryConnection = useCallback(
         (args: Partial<ListUserCodeMonitorsVariables>) =>
@@ -87,7 +99,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                     !isErrorLike(userHasCodeMonitors) && (
                         <Link to="/code-monitoring/new" className="btn btn-secondary">
                             <PlusIcon className="icon-inline" />
-                            Create new code monitor
+                            Create code monitor
                         </Link>
                     )
                 }
@@ -236,18 +248,18 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                                     Omit<CodeMonitorNodeProps, 'node'>,
                                     (ListUserCodeMonitorsResult['node'] & { __typename: 'User' })['monitors']
                                 >
-                                    location={props.location}
-                                    history={props.history}
+                                    location={location}
+                                    history={history}
                                     defaultFirst={10}
                                     queryConnection={queryConnection}
                                     hideSearch={true}
                                     nodeComponent={CodeMonitorNode}
                                     nodeComponentProps={{
-                                        authentictedUser: props.authenticatedUser,
-                                        location: props.location,
+                                        authentictedUser: authenticatedUser,
+                                        location,
                                         showCodeMonitoringTestEmailButton:
-                                            (!isErrorLike(props.settingsCascade.final) &&
-                                                props.settingsCascade.final?.experimentalFeatures
+                                            (!isErrorLike(settingsCascade.final) &&
+                                                settingsCascade.final?.experimentalFeatures
                                                     ?.showCodeMonitoringTestEmailButton) ||
                                             false,
                                         toggleCodeMonitorEnabled,

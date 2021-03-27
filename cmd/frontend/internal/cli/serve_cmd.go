@@ -31,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/vfsutil"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
@@ -171,6 +172,12 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	// can register migration routines to run in the background while they have work
 	// remaining.
 	outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(db, time.Second*30)
+
+	// Run a background job to handle encryption of external service configuration.
+	migrator := database.NewExternalServiceConfigMigratorWithDB(db)
+	if err := outOfBandMigrationRunner.Register(migrator.ID(), migrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
+		log.Fatalf("failed to run external service encryption job encryption: %v", err)
+	}
 
 	// Run enterprise setup hook
 	enterprise := enterpriseSetupHook(db, outOfBandMigrationRunner)

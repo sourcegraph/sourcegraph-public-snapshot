@@ -107,7 +107,7 @@ func processTopLevel(nodes []Node) ([]Node, error) {
 // search patterns (e.g., to repos, files, etc.). It validates that a query
 // contains at most one search pattern expression and that scope parameters do
 // not contain nested expressions.
-func PartitionSearchPattern(nodes []Node) (parameters []Node, pattern Node, err error) {
+func PartitionSearchPattern(nodes []Node) (parameters []Parameter, pattern Node, err error) {
 	if len(nodes) == 1 {
 		nodes, err = processTopLevel(nodes)
 		if err != nil {
@@ -472,7 +472,7 @@ func ParseYesNoOnly(s string) YesNoOnly {
 
 func ContainsRefGlobs(q Q) bool {
 	containsRefGlobs := false
-	if repoFilterValues, _ := q.RegexpPatterns(FieldRepo); len(repoFilterValues) > 0 {
+	if repoFilterValues, _ := q.Repositories(); len(repoFilterValues) > 0 {
 		for _, v := range repoFilterValues {
 			repoRev := strings.SplitN(v, "@", 2)
 			if len(repoRev) == 1 { // no revision

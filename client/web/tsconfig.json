@@ -1,6 +1,5 @@
 {
   "extends": "../../tsconfig.json",
-  "references": [{ "path": "../shared" }, { "path": "../branded" }, { "path": "../../schema" }],
   "compilerOptions": {
     "module": "commonjs",
     "baseUrl": ".",
@@ -18,6 +17,7 @@
       },
     ],
   },
+  "references": [{ "path": "../shared" }, { "path": "../branded" }, { "path": "../../schema" }],
   "include": ["**/*", ".*", "./src/**/*.json"],
   "exclude": ["../../node_modules", "./node_modules", "./out", "src/end-to-end", "src/regression", "src/integration"],
 }

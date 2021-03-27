@@ -8,8 +8,7 @@ Array [
       className="action-item actions-nav-items__action-item action-item--variant-action-item"
       data-tooltip="This is Action A"
     >
-       
-      Action A
+       Action A
     </span>
   </li>,
 ]

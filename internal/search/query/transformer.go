@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"unicode"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
@@ -251,8 +250,8 @@ func fuzzifyGlobPattern(value string) string {
 	return "**" + value + "**"
 }
 
-// mapGlobToRegex translates glob to regexp for fields repo, file, and repohasfile.
-func mapGlobToRegex(nodes []Node) ([]Node, error) {
+// Globbing translates glob to regexp for fields repo, file, and repohasfile.
+func Globbing(nodes []Node) ([]Node, error) {
 	var globErrors []globError
 
 	nodes = MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
@@ -288,6 +287,24 @@ func mapGlobToRegex(nodes []Node) ([]Node, error) {
 	return nodes, nil
 }
 
+func ToNodes(parameters []Parameter) []Node {
+	nodes := make([]Node, 0, len(parameters))
+	for _, p := range parameters {
+		nodes = append(nodes, p)
+	}
+	return nodes
+}
+
+// Converts a flat list of nodes to parameters. Invariant: nodes are parameters.
+// This function is intended for internal use only, which assumes the invariant.
+func toParameters(nodes []Node) []Parameter {
+	var parameters []Parameter
+	for _, n := range nodes {
+		parameters = append(parameters, n.(Parameter))
+	}
+	return parameters
+}
+
 // Hoist is a heuristic that rewrites simple but possibly ambiguous queries. It
 // changes certain expressions in a way that some consider to be more natural.
 // For example, the following query without parentheses is interpreted as
@@ -318,7 +335,7 @@ func Hoist(nodes []Node) ([]Node, error) {
 
 	n := len(expression.Operands)
 	var pattern []Node
-	var scopeParameters []Node
+	var scopeParameters []Parameter
 	for i, node := range expression.Operands {
 		if i == 0 || i == n-1 {
 			scopePart, patternPart, err := PartitionSearchPattern([]Node{node})
@@ -338,31 +355,7 @@ func Hoist(nodes []Node) ([]Node, error) {
 		annotation.Labels |= HeuristicHoisted
 		return Pattern{Value: value, Negated: negated, Annotation: annotation}
 	})
-	return append(scopeParameters, newOperator(pattern, expression.Kind)...), nil
-}
-
-// SearchUppercase adds case:yes to queries if any pattern is mixed-case.
-func SearchUppercase(nodes []Node) []Node {
-	var foundMixedCase bool
-	VisitPattern(nodes, func(value string, _ bool, _ Annotation) {
-		if match := containsUppercase(value); match {
-			foundMixedCase = true
-		}
-	})
-	if foundMixedCase {
-		nodes = append(nodes, Parameter{Field: "case", Value: "yes"})
-		return newOperator(nodes, And)
-	}
-	return nodes
-}
-
-func containsUppercase(s string) bool {
-	for _, r := range s {
-		if unicode.IsUpper(r) && unicode.IsLetter(r) {
-			return true
-		}
-	}
-	return false
+	return append(ToNodes(scopeParameters), newOperator(pattern, expression.Kind)...), nil
 }
 
 // partition partitions nodes into left and right groups. A node is put in the
@@ -652,23 +645,24 @@ func FuzzifyRegexPatterns(nodes []Node) []Node {
 	})
 }
 
-// concatRevFilters removes rev: filters from []Node and attaches their value as @rev to the repo: filters.
-// Invariant: Guaranteed to succeed on a validated and DNF query.
-func ConcatRevFilters(nodes []Node) []Node {
+// concatRevFilters removes rev: filters from parameters and attaches their value as @rev to the repo: filters.
+// Invariant: Guaranteed to succeed on a validat Basic query.
+func ConcatRevFilters(b Basic) Basic {
 	var revision string
-	nodes = MapField(nodes, FieldRev, func(value string, _ bool) Node {
+	nodes := MapField(ToNodes(b.Parameters), FieldRev, func(value string, _ bool) Node {
 		revision = value
 		return nil // remove this node
 	})
 	if revision == "" {
-		return nodes
+		return b
 	}
-	return MapField(nodes, FieldRepo, func(value string, negated bool) Node {
+	modified := MapField(nodes, FieldRepo, func(value string, negated bool) Node {
 		if !negated {
 			return Parameter{Value: value + "@" + revision, Field: FieldRepo, Negated: negated}
 		}
 		return Parameter{Value: value, Field: FieldRepo, Negated: negated}
 	})
+	return Basic{Parameters: toParameters(modified), Pattern: b.Pattern}
 }
 
 // labelStructural converts Literal labels to Structural labels. Structural
@@ -741,4 +735,17 @@ func AddRegexpField(q Q, field, pattern string) string {
 		q = newOperator(append(q, Parameter{Field: field, Value: pattern}), And)
 	}
 	return StringHuman(q)
+}
+
+func identity(nodes []Node) ([]Node, error) {
+	return nodes, nil
+}
+
+// Converts a parse tree to a basic query by attempting to obtain a valid partition.
+func ToBasicQuery(nodes []Node) (*Basic, error) {
+	parameters, pattern, err := PartitionSearchPattern(nodes)
+	if err != nil {
+		return nil, err
+	}
+	return &Basic{Parameters: parameters, Pattern: pattern}, nil
 }

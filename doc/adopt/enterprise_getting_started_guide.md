@@ -1,6 +1,6 @@
 # Enterprise Getting Started Guide
 
-If you're deploying a new Enterprise instance, this page covers our most frequently referenced pieces of documentation. Admins will be interested in the documentation for their specific deployment method; users will want to check out info on our search syntax, operators, campaigns, and browser extension.
+If you're deploying a new Enterprise instance, this page covers our most frequently referenced pieces of documentation. Admins will be interested in the documentation for their specific deployment method; users will want to check out info on our search syntax, operators, batch changes, and browser extension.
 
 ## Admin articles
 
@@ -24,7 +24,7 @@ If you're deploying a new Enterprise instance, this page covers our most frequen
 - [Digital Ocean installation](../admin/install/docker-compose/digitalocean.md)
 - [Google Cloud installlation](../admin/install/docker-compose/google_cloud.md)
 
-### Kube admin
+### Kubernetes admin
 - [Basic installation guide](../admin/install/kubernetes/index.md)
 - [Provisioning a Kubernetes cluster](../admin/install/kubernetes/configure.md#configuring-sourcegraph)
 - [Amazon EKS](../admin/install/kubernetes/eks.md)
@@ -32,9 +32,11 @@ If you're deploying a new Enterprise instance, this page covers our most frequen
 - [Google Kubernetes Engine](https://cloud.google.com/kubernetes-engine/docs/quickstart)
 - [Azure](../admin/install/kubernetes/azure.md)
 - [Scaling](../admin/install/kubernetes/scale.md#improving-performance-with-a-large-number-of-repositories) 
+- [Ingress controller](../admin/install/kubernetes/configure.md#ingress-controller-recommended)
+- [Common configuration](../admin/install/kubernetes/configure.md#common-configuration)
 
 ## User articles
 - [Search syntax](../code_search/reference/queries.md)
 - [Search operators](../code_search/reference/queries.md#keywords-all-searches)
-- [Example campaigns](../campaigns/tutorials/index.md)
+- [Example batch changes](../batch_changes/tutorials/index.md)
 - [Sourcegraph browser extension](../integration/browser_extension.md)

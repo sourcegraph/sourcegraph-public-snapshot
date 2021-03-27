@@ -1,10 +1,11 @@
+/* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-noninteractive-element-interactions: warn */
 import * as H from 'history'
 import * as React from 'react'
 import {
     decorationAttachmentStyleForTheme,
     DecorationMapByLine,
     decorationStyleForTheme,
-} from '../../../../shared/src/api/client/services/decoration'
+} from '../../../../shared/src/api/extension/api/decorations'
 import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
 import { property, isDefined } from '../../../../shared/src/util/types'
 import { ThemeProps } from '../../../../shared/src/theme'
@@ -108,6 +109,8 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                         {lineNumbers && (
                             <>
                                 {line.kind !== DiffHunkLineType.ADDED ? (
+                                    // TODO: Improve accessibility
+                                    // https://github.com/sourcegraph/sourcegraph/issues/19272
                                     <td
                                         className="diff-hunk__num"
                                         data-line={oldLine - 1}
@@ -120,6 +123,8 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                                 )}
 
                                 {line.kind !== DiffHunkLineType.DELETED ? (
+                                    // TODO: Improve accessibility
+                                    // https://github.com/sourcegraph/sourcegraph/issues/19272
                                     <td
                                         className="diff-hunk__num"
                                         data-line={newLine - 1}

@@ -23,8 +23,20 @@ exports[`GlobalNavbar default 1`] = `
       caseSensitive={false}
       copyQueryButton={false}
       defaultSearchContextSpec=""
+      enableCodeMonitoring={false}
       enableSmartQuery={false}
-      extensionsController={Object {}}
+      extensionsController={
+        Object {
+          "commandErrors": Observable {
+            "_isScalar": false,
+            "_subscribe": [Function],
+          },
+          "executeCommand": [Function],
+          "extHostAPI": Promise {},
+          "registerCommand": [Function],
+          "unsubscribe": [Function],
+        }
+      }
       globbing={false}
       history={
         Object {

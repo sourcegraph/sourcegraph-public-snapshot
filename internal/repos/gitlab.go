@@ -104,7 +104,13 @@ func newGitLabSource(svc *types.ExternalService, c *schema.GitLabConnection, cf 
 
 	provider := gitlab.NewClientProvider(baseURL, cli)
 
-	client := provider.GetPATClient(c.Token, "")
+	var client *gitlab.Client
+	switch c.TokenType {
+	case "oauth":
+		client = provider.GetOAuthClient(c.Token)
+	default:
+		client = provider.GetPATClient(c.Token, "")
+	}
 
 	if !envvar.SourcegraphDotComMode() || svc.CloudDefault {
 		client.RateLimitMonitor().SetCollector(&ratelimit.MetricsCollector{
@@ -142,6 +148,11 @@ func (s GitLabSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
 	sc.client = sc.client.WithAuthenticator(a)
 
 	return &sc, nil
+}
+
+func (s GitLabSource) ValidateToken(ctx context.Context) error {
+	err := s.client.ValidateToken(ctx)
+	return err
 }
 
 // ListRepos returns all GitLab repositories accessible to all connections configured

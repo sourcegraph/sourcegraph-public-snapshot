@@ -1,3 +1,4 @@
+/* eslint jsx-a11y/mouse-events-have-key-events: warn */
 import * as H from 'history'
 import * as React from 'react'
 import { EMPTY, merge, of, Subject, Subscription } from 'rxjs'
@@ -34,7 +35,7 @@ import { ExtensionsControllerProps } from '../../../shared/src/extensions/contro
 import { FileDecoration } from 'sourcegraph'
 import { getFileDecorations } from '../backend/features'
 import { ThemeProps } from '../../../shared/src/theme'
-import { FileDecorationsByPath } from '../../../shared/src/api/extension/flatExtensionApi'
+import { FileDecorationsByPath } from '../../../shared/src/api/extension/extensionHostApi'
 
 export interface TreeLayerProps extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps {
     location: H.Location
@@ -287,6 +288,11 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
         // Every other layer is a row in the file tree, and will fetch and render its children (if any) when expanded.
         return (
             <div>
+                {/*
+                    TODO: Improve accessibility here.
+                    We should support onFocus here but we currently do not let users focus directly on the actual items in this list.
+                    Issue: https://github.com/sourcegraph/sourcegraph/issues/19167
+                */}
                 <table className="tree-layer" onMouseOver={entryInfo.isDirectory ? this.invokeOnHover : undefined}>
                     <tbody>
                         {entryInfo.isDirectory ? (

@@ -16,7 +16,7 @@ import { DocumentHighlight } from 'sourcegraph'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { Remote } from 'comlink'
 import { FlatExtensionHostAPI } from '../../../shared/src/api/contract'
-import { FileDecorationsByPath } from '../../../shared/src/api/extension/flatExtensionApi'
+import { FileDecorationsByPath } from '../../../shared/src/api/extension/extensionHostApi'
 
 /**
  * Fetches hover information for the given location.

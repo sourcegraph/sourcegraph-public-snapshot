@@ -2,6 +2,7 @@ package trace
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -133,6 +134,17 @@ func (t *Trace) SetError(err error) {
 	t.trace.SetError()
 	t.span.LogFields(log.Error(err))
 	ext.Error.Set(t.span, true)
+}
+
+// SetErrorIfNotContext calls SetError unless err is context.Canceled or
+// context.DeadlineExceeded.
+func (t *Trace) SetErrorIfNotContext(err error) {
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		t.trace.LazyPrintf("error: %v", err)
+		t.span.LogFields(log.Error(err))
+		return
+	}
+	t.SetError(err)
 }
 
 // Finish declares that this trace and span is complete.

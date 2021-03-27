@@ -13,8 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/server/shared/assets"
 )
 
-var redisStoreConfTmpl = template.Must(template.New("redis-store.conf").Parse(assets.MustAssetString("redis-store.conf.tmpl")))
-var redisCacheConfTmpl = template.Must(template.New("redis-cache.conf").Parse(assets.MustAssetString("redis-cache.conf.tmpl")))
+var redisStoreConfTmpl = template.Must(template.New("redis-store.conf").Parse(assets.RedisStoreConf))
+var redisCacheConfTmpl = template.Must(template.New("redis-cache.conf").Parse(assets.RedisCacheConf))
 
 type redisProcfileConfig struct {
 	envVar  string
@@ -114,16 +114,16 @@ func redisFixAOF(rootDataDir string, c redisProcfileConfig) {
 		cmd.Stdin = &yesReader{Expletive: []byte("y\n")}
 		e.Run(cmd)
 		if err := e.Error(); err != nil {
-			l("Repairing %s appendonly.aof failed:\n%s", c.name, output.String())
+			pgPrintf("Repairing %s appendonly.aof failed:\n%s", c.name, output.String())
 		}
 		close(done)
 	}()
 	select {
 	case <-done:
 	case <-time.After(5 * time.Second):
-		l("Running redis-check-aof --fix %q...", aofPath)
+		pgPrintf("Running redis-check-aof --fix %q...", aofPath)
 		<-done
-		l("Finished running redis-check-aof")
+		pgPrintf("Finished running redis-check-aof")
 	}
 }
 

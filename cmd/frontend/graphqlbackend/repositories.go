@@ -316,27 +316,6 @@ func repoNamesToStrings(repoNames []api.RepoName) []string {
 	return strings
 }
 
-func toRepositoryResolvers(db dbutil.DB, repos []*types.RepoName) []*RepositoryResolver {
-	if len(repos) == 0 {
-		return []*RepositoryResolver{}
-	}
-
-	resolvers := make([]*RepositoryResolver, len(repos))
-	for i := range repos {
-		resolvers[i] = NewRepositoryResolver(db, repos[i].ToRepo())
-	}
-
-	return resolvers
-}
-
-func toRepoNames(repos []*types.RepoName) []api.RepoName {
-	names := make([]api.RepoName, len(repos))
-	for i, repo := range repos {
-		names[i] = repo.Name
-	}
-	return names
-}
-
 func toDBRepoListColumn(ob string) database.RepoListColumn {
 	switch ob {
 	case "REPO_URI", "REPOSITORY_NAME":

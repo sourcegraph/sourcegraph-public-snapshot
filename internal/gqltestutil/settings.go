@@ -31,7 +31,7 @@ mutation OverwriteSettings($subject: ID!, $lastID: Int, $contents: String!) {
 		"lastID":   lastID,
 		"contents": contents,
 	}
-	err = c.GraphQL("", "", query, variables, nil)
+	err = c.GraphQL("", query, variables, nil)
 	if err != nil {
 		return errors.Wrap(err, "request GraphQL")
 	}
@@ -65,7 +65,7 @@ query ViewerSettings {
 			} `json:"viewerSettings"`
 		} `json:"data"`
 	}
-	err := c.GraphQL("", "", query, nil, &resp)
+	err := c.GraphQL("", query, nil, &resp)
 	if err != nil {
 		return 0, errors.Wrap(err, "request GraphQL")
 	}
@@ -101,7 +101,7 @@ query ViewerSettings {
 			} `json:"viewerSettings"`
 		} `json:"data"`
 	}
-	err := c.GraphQL("", "", query, nil, &resp)
+	err := c.GraphQL("", query, nil, &resp)
 	if err != nil {
 		return "", errors.Wrap(err, "request GraphQL")
 	}
@@ -131,7 +131,7 @@ query Site {
 			} `json:"site"`
 		} `json:"data"`
 	}
-	err := c.GraphQL("", "", query, nil, &resp)
+	err := c.GraphQL("", query, nil, &resp)
 	if err != nil {
 		return nil, errors.Wrap(err, "request GraphQL")
 	}
@@ -161,7 +161,7 @@ mutation UpdateSiteConfiguration($input: String!) {
 	variables := map[string]interface{}{
 		"input": string(input),
 	}
-	err = c.GraphQL("", "", query, variables, nil)
+	err = c.GraphQL("", query, variables, nil)
 	if err != nil {
 		return errors.Wrap(err, "request GraphQL")
 	}

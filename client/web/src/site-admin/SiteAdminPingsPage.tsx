@@ -61,22 +61,23 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                 specific data.
             </p>
             <h3>Most recent ping</h3>
-            <p>
-                {latestPing === undefined ? (
+            {latestPing === undefined ? (
+                <p>
                     <LoadingSpinner className="icon-inline" />
-                ) : isEmpty(latestPing) ? (
-                    <p>No recent ping data to display.</p>
-                ) : (
-                    <MonacoEditor
-                        {...props}
-                        language="json"
-                        options={options}
-                        height={300}
-                        editorWillMount={noop}
-                        value={JSON.stringify(latestPing, undefined, 4)}
-                    />
-                )}
-            </p>
+                </p>
+            ) : isEmpty(latestPing) ? (
+                <p>No recent ping data to display.</p>
+            ) : (
+                <MonacoEditor
+                    {...props}
+                    language="json"
+                    options={options}
+                    height={300}
+                    editorWillMount={noop}
+                    value={JSON.stringify(latestPing, undefined, 4)}
+                    className="mb-3"
+                />
+            )}
             <h3>Critical telemetry</h3>
             <p>
                 Critical telemetry includes only the high-level data below required for billing, support, updates, and
@@ -134,17 +135,30 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                         <li>Searches using each search filter (e.g. "type:", "repo:", "file:", "lang:", etc.)</li>
                     </ul>
                 </li>
-                <li>Total number of code intelligence queries (e.g., hover tooltips) per week grouped by language</li>
                 <li>
-                    Number of users performing code intelligence queries (e.g., hover tooltips) per week grouped by
-                    language
+                    Code intelligence usage data
+                    <ul>
+                        <li>Total number of repositories with and without an uploaded LSIF index</li>
+                        <li>
+                            Total number of code intelligence queries (e.g., hover tooltips) per week grouped by
+                            language
+                        </li>
+                        <li>
+                            Number of users performing code intelligence queries (e.g., hover tooltips) per week grouped
+                            by language
+                        </li>
+                    </ul>
                 </li>
                 <li>
                     Batch changes usage data
                     <ul>
                         <li>Total count of page views on the batch change apply page</li>
-                        <li>Total count of page views on the batch change details page after creating a campaige</li>
-                        <li>Total count of page views on the batch change details page after updating a campaige</li>
+                        <li>
+                            Total count of page views on the batch change details page after creating a batch change
+                        </li>
+                        <li>
+                            Total count of page views on the batch change details page after updating a batch change
+                        </li>
                         <li>Total count of created changeset specs</li>
                         <li>Total count of created batch specs</li>
                         <li>Total count of created batch changes</li>
@@ -155,6 +169,17 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                         <li>Aggregate counts of lines changed, added, deleted in merged changeset</li>
                         <li>Total count of changesets manually added to a batch change</li>
                         <li>Total count of changesets manually added to a batch change that have been merged</li>
+                        <li>
+                            Aggregate counts of unique monthly users, by:
+                            <ul>
+                                <li>Whether they are contributed to batch changes</li>
+                                <li>Whether they only viewed batch changes</li>
+                            </ul>
+                        </li>
+                        <li>
+                            Weekly batch change (open, closed) and changesets counts (imported, published, unpublished,
+                            open, draft, merged, closed) for batch change cohorts created in the last 12 months
+                        </li>
                     </ul>
                 </li>
                 <li>
@@ -229,6 +254,21 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                             Weekly count of users that have created an insight, and count of users that have created
                             their first insight this week
                         </li>
+                    </ul>
+                </li>
+                <li>
+                    Code monitoring usage data
+                    <ul>
+                        <li>Total number of views of the code monitoring page</li>
+                        <li>Total number of views of the create code monitor page</li>
+                        <li>
+                            Total number of views of the create code monitor page with a pre-populated trigger query
+                        </li>
+                        <li>
+                            Total number of views of the create code monitor page without a pre-populated trigger query
+                        </li>
+                        <li>Total number of views of the manage code monitor page</li>
+                        <li>Total number of clicks on the code monitor email search link</li>
                     </ul>
                 </li>
             </ul>

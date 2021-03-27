@@ -23,8 +23,8 @@ These categories may be more or less important depending on the piece of UI.
 ### Visual regressions
 
 A visual regression is a bug where the component behaves correctly, but no longer looks as intended.
-We use Percy screenshot tests to catch these.
-Percy can take screenshots in end-to-end tests, integration tests and in Storybooks.
+We use Percy screenshot tests and Chromatic Storybook tests to catch these.
+Percy can take screenshots in end-to-end tests and client integration tests. Chromatic can take screenshots in Storybook tests.
 Storybook tests can be seen as a form of unit test for a component.
 Any story that is added to our codebase is automatically screenshotted on every CI build (but only in its initial state).
 

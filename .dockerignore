@@ -67,8 +67,6 @@ yarn-error.log
 
 eb-bundle.zip
 
-/cmd/frontend/internal/app/assets/assets_vfsdata.go
-
 /release/
 
 /conf/private
@@ -100,4 +98,4 @@ node_modules/
 /client/web
 
 # Extensions
-/packages/sourcegraph-extension-api/dist
+/extension-api/dist

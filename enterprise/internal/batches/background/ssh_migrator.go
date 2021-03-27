@@ -32,8 +32,8 @@ var _ oobmigration.Migrator = &sshMigrator{}
 // credential type that ends on WithSSH is considered migrated.
 func (m *sshMigrator) Progress(ctx context.Context) (float64, error) {
 	unmigratedMigratorTypes := []*sqlf.Query{
-		sqlf.Sprintf("%s", strconv.Quote(string(database.UserCredentialTypeBasicAuth))),
-		sqlf.Sprintf("%s", strconv.Quote(string(database.UserCredentialTypeOAuthBearerToken))),
+		sqlf.Sprintf("%s", strconv.Quote(string(database.AuthenticatorTypeBasicAuth))),
+		sqlf.Sprintf("%s", strconv.Quote(string(database.AuthenticatorTypeOAuthBearerToken))),
 	}
 	progress, _, err := basestore.ScanFirstFloat(
 		m.store.Query(ctx, sqlf.Sprintf(
@@ -72,7 +72,7 @@ func (m *sshMigrator) Up(ctx context.Context) error {
 		LimitOffset: &database.LimitOffset{
 			Limit: sshMigrationCountPerRun,
 		},
-		AuthenticatorType: []database.UserCredentialType{database.UserCredentialTypeBasicAuth, database.UserCredentialTypeOAuthBearerToken},
+		AuthenticatorType: []database.AuthenticatorType{database.AuthenticatorTypeBasicAuth, database.AuthenticatorTypeOAuthBearerToken},
 		ForUpdate:         true,
 	})
 	if err != nil {
@@ -128,7 +128,7 @@ func (m *sshMigrator) Down(ctx context.Context) error {
 		LimitOffset: &database.LimitOffset{
 			Limit: sshMigrationCountPerRun,
 		},
-		AuthenticatorType: []database.UserCredentialType{database.UserCredentialTypeBasicAuthWithSSH, database.UserCredentialTypeOAuthBearerTokenWithSSH},
+		AuthenticatorType: []database.AuthenticatorType{database.AuthenticatorTypeBasicAuthWithSSH, database.AuthenticatorTypeOAuthBearerTokenWithSSH},
 		ForUpdate:         true,
 	})
 	for _, cred := range credentials {

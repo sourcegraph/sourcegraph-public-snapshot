@@ -48,6 +48,9 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                     </strong>
                   </a>
                 </span>
+                <span
+                  className="ml-2"
+                />
               </div>
               <small
                 className="result-container__toggle-matches-container"
@@ -131,9 +134,6 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                     </code>
                   </VisibilitySensor>
                 </a>
-                <div
-                  className="file-match-children__item-badge-row test-badge-row"
-                />
               </div>
             </div>
           </div>
@@ -162,9 +162,10 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
       <div
         className="list-group list-group-flush hierarchical-locations-view__list test-hierarchical-locations-view-list"
       >
-        <span
-          className="list-group-item hierarchical-locations-view__item active"
+        <button
+          className="list-group-item list-group-item-action hierarchical-locations-view__item active"
           onClick={[Function]}
+          type="button"
         >
           <span
             className="hierarchical-locations-view__item-name"
@@ -188,10 +189,11 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
           >
             2
           </span>
-        </span>
-        <span
-          className="list-group-item hierarchical-locations-view__item "
+        </button>
+        <button
+          className="list-group-item list-group-item-action hierarchical-locations-view__item "
           onClick={[Function]}
+          type="button"
         >
           <span
             className="hierarchical-locations-view__item-name"
@@ -215,11 +217,12 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
           >
             3
           </span>
-        </span>
+        </button>
       </div>
       <div
         className="resizable__handle resizable__handle--right "
         onMouseDown={[Function]}
+        role="presentation"
       />
     </div>
     <div
@@ -263,6 +266,9 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                     </strong>
                   </a>
                 </span>
+                <span
+                  className="ml-2"
+                />
               </div>
               <small
                 className="result-container__toggle-matches-container"
@@ -370,9 +376,6 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                     </code>
                   </VisibilitySensor>
                 </a>
-                <div
-                  className="file-match-children__item-badge-row test-badge-row"
-                />
               </div>
             </div>
           </div>
@@ -431,6 +434,9 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                     </strong>
                   </a>
                 </span>
+                <span
+                  className="ml-2"
+                />
               </div>
               <small
                 className="result-container__toggle-matches-container"
@@ -514,9 +520,6 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                     </code>
                   </VisibilitySensor>
                 </a>
-                <div
-                  className="file-match-children__item-badge-row test-badge-row"
-                />
               </div>
             </div>
           </div>

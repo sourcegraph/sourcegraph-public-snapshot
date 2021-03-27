@@ -37,7 +37,7 @@ func NewMeteredSearcher(hostname string, z zoekt.Streamer) zoekt.Streamer {
 	}
 }
 
-func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, c zoekt.Sender) error {
+func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, c zoekt.Sender) (err error) {
 	start := time.Now()
 
 	// isLeaf is true if this is a zoekt.Searcher which does a network
@@ -59,6 +59,10 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 	}
 
 	tr, ctx := trace.New(ctx, "zoekt."+cat, queryString(q), tags...)
+	defer func() {
+		tr.SetErrorIfNotContext(err)
+		tr.Finish()
+	}()
 	if opts != nil {
 		tr.LogFields(
 			log.Bool("opts.estimate_doc_count", opts.EstimateDocCount),
@@ -71,7 +75,6 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 			log.Int("opts.max_doc_display_count", opts.MaxDocDisplayCount),
 		)
 	}
-	defer tr.Finish()
 
 	if isLeaf && opts != nil && ot.ShouldTrace(ctx) {
 		// Replace any existing spanContext with a new one, given we've done additional tracing
@@ -113,13 +116,20 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 	mu := sync.Mutex{}
 	statsAgg := &zoekt.Stats{}
 	nFilesMatches := 0
+	nEvents := 0
+	var totalSendTimeMs int64
 
-	err := m.Streamer.StreamSearch(ctx, q, opts, ZoektStreamFunc(func(zsr *zoekt.SearchResult) {
+	err = m.Streamer.StreamSearch(ctx, q, opts, ZoektStreamFunc(func(zsr *zoekt.SearchResult) {
 		first.Do(func() {
 			if isLeaf {
+				if !writeRequestStart.IsZero() {
+					tr.LogFields(
+						log.Int64("rpc.queue_latency_ms", writeRequestStart.Sub(start).Milliseconds()),
+						log.Int64("rpc.write_duration_ms", writeRequestDone.Sub(writeRequestStart).Milliseconds()),
+					)
+				}
 				tr.LogFields(
-					log.Int64("rpc.queue_latency_ms", writeRequestStart.Sub(start).Milliseconds()),
-					log.Int64("rpc.write_duration_ms", writeRequestDone.Sub(writeRequestStart).Milliseconds()),
+					log.Int64("stream.latency_ms", time.Since(start).Milliseconds()),
 				)
 			}
 		})
@@ -128,16 +138,23 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 			mu.Lock()
 			statsAgg.Add(zsr.Stats)
 			nFilesMatches += len(zsr.Files)
+			nEvents += 1
 			mu.Unlock()
 
+			startSend := time.Now()
 			c.Send(zsr)
+			sendTimeMs := time.Since(startSend).Milliseconds()
+
+			mu.Lock()
+			totalSendTimeMs += sendTimeMs
+			mu.Unlock()
 		}
 	}))
-	if err != nil {
-		return err
-	}
+
 	tr.LogFields(
 		log.Int("filematches", nFilesMatches),
+		log.Int("events", nEvents),
+		log.Int64("stream.total_send_time_ms", totalSendTimeMs),
 
 		// Zoekt stats.
 		log.Int64("stats.content_bytes_loaded", statsAgg.ContentBytesLoaded),
@@ -156,7 +173,8 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 
 	// Record total duration of stream
 	requestDuration.WithLabelValues(m.hostname, cat, code).Observe(time.Since(start).Seconds())
-	return nil
+
+	return err
 }
 
 func (m *meteredSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {

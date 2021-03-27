@@ -12,11 +12,20 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
+	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -70,9 +79,21 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	events, inputs, results := h.startSearch(ctx, args)
 
+	traceURL := ""
+	if span := opentracing.SpanFromContext(ctx); span != nil {
+		spanURL := trace.SpanURL(span)
+		// URLs starting with # don't have a trace. eg
+		// "#tracer-not-enabled"
+		if !strings.HasPrefix(spanURL, "#") {
+			traceURL = spanURL
+		}
+	}
+
+	start := time.Now()
 	progress := progressAggregator{
-		Start: time.Now(),
+		Start: start,
 		Limit: inputs.MaxResults(),
+		Trace: traceURL,
 	}
 
 	// Display is the number of results we send down. If display is < 0 we
@@ -189,6 +210,11 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if first && matchesBuf.Len() > 0 {
 			first = false
 			matchesFlush()
+
+			metricLatency.WithLabelValues(string(GuessSource(r))).
+				Observe(time.Since(start).Seconds())
+
+			graphqlbackend.LogSearchLatency(ctx, h.db, &inputs, int32(time.Since(start).Milliseconds()))
 		}
 	}
 
@@ -219,7 +245,8 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if alert := resultsResolver.Alert(); alert != nil {
+	alert := resultsResolver.Alert()
+	if alert != nil {
 		var pqs []streamhttp.ProposedQuery
 		if proposed := alert.ProposedQueries(); proposed != nil {
 			for _, pq := range *proposed {
@@ -237,6 +264,33 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_ = eventWriter.Event("progress", progress.Final())
+
+	var status, alertType string
+	status = graphqlbackend.DetermineStatusForLogs(resultsResolver, err)
+	if alert != nil {
+		alertType = alert.PrometheusType()
+	}
+
+	isSlow := time.Since(start) > searchlogs.LogSlowSearchesThreshold()
+	if honey.Enabled() || isSlow {
+		ev := honey.SearchEvent(ctx, honey.SearchEventArgs{
+			OriginalQuery: inputs.OriginalQuery,
+			Typ:           "stream",
+			Source:        string(trace.RequestSource(ctx)),
+			Status:        status,
+			AlertType:     alertType,
+			DurationMs:    time.Since(start).Milliseconds(),
+			ResultSize:    progress.MatchCount,
+		})
+
+		if honey.Enabled() {
+			_ = ev.Send()
+		}
+
+		if isSlow {
+			log15.Warn("streaming: slow search request", searchlogs.MapToLog15Ctx(ev.Fields())...)
+		}
+	}
 }
 
 // startSearch will start a search. It returns the events channel which
@@ -310,7 +364,7 @@ func parseURLQuery(q url.Values) (*args, error) {
 	a := args{
 		Query:          get("q", ""),
 		Version:        get("v", "V2"),
-		PatternType:    get("t", "literal"),
+		PatternType:    get("t", ""),
 		VersionContext: get("vc", ""),
 	}
 
@@ -482,4 +536,37 @@ func (j *jsonArrayBuf) Flush() error {
 
 func (j *jsonArrayBuf) Len() int {
 	return j.buf.Len()
+}
+
+var metricLatency = promauto.NewHistogramVec(prometheus.HistogramOpts{
+	Name:    "src_search_streaming_latency_seconds",
+	Help:    "Histogram with time to first result in seconds",
+	Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+}, []string{"source"})
+
+var searchBlitzUserAgentRegexp = lazyregexp.New(`^SearchBlitz \(([^\)]+)\)$`)
+
+// GuessSource guesses the source the request came from (browser, other HTTP client, etc.)
+func GuessSource(r *http.Request) trace.SourceType {
+	userAgent := r.UserAgent()
+	for _, guess := range []string{
+		"Mozilla",
+		"WebKit",
+		"Gecko",
+		"Chrome",
+		"Firefox",
+		"Safari",
+		"Edge",
+	} {
+		if strings.Contains(userAgent, guess) {
+			return trace.SourceBrowser
+		}
+	}
+
+	// We send some automated search requests in order to measure baseline search perf. Track the source of these.
+	if match := searchBlitzUserAgentRegexp.FindStringSubmatch(userAgent); match != nil {
+		return trace.SourceType("searchblitz_" + match[1])
+	}
+
+	return trace.SourceOther
 }

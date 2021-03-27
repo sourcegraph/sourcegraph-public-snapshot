@@ -1,16 +1,15 @@
 {
   "private": true,
-  "name": "webapp",
+  "name": "@sourcegraph/web",
   "version": "1.10.1",
   "description": "The Sourcegraph web app",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "scripts": {
     "test": "jest --testPathIgnorePatterns end-to-end --testPathIgnorePatterns regression integration",
     "test:regression": "mocha './src/regression/**/*.test.ts' --exit",
     "test:regression:codeintel": "mocha ./src/regression/codeintel.test.ts",
     "test:regression:config-settings": "mocha ./src/regression/config-settings.test.ts",
     "test:regression:core": "mocha ./src/regression/core.test.ts",
-    "test:regression:extensions": "mocha ./src/regression/extensions.test.ts",
     "test:regression:init": "mocha ./src/regression/init.test.ts",
     "test:regression:integrations": "mocha ./src/regression/integrations.test.ts",
     "test:regression:onboarding": "mocha ./src/regression/onboarding.test.ts",
@@ -27,7 +26,8 @@
     "browserslist": "browserslist",
     "analyze-bundle": "NODE_ENV=production ENTERPRISE=1 WEBPACK_ANALYZER=1 yarn build"
   },
-  "bundlesize": [{
+  "bundlesize": [
+    {
       "path": "../../ui/assets/styles/app.bundle.css"
     },
     {

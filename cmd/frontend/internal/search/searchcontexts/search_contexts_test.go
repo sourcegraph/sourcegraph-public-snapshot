@@ -2,18 +2,21 @@ package searchcontexts
 
 import (
 	"context"
+	"errors"
+	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestResolvingValidSearchContextSpecs(t *testing.T) {
-	orig := envvar.SourcegraphDotComMode()
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(orig)
+func init() {
+	dbtesting.DBNameSuffix = "searchcontexts"
+}
 
+func TestResolvingValidSearchContextSpecs(t *testing.T) {
 	tests := []struct {
 		name                  string
 		searchContextSpec     string
@@ -24,12 +27,15 @@ func TestResolvingValidSearchContextSpecs(t *testing.T) {
 		{name: "resolve empty search context as global", searchContextSpec: "", wantSearchContextName: "global"},
 	}
 
-	getNamespaceByName := func(ctx context.Context, name string) (*database.Namespace, error) {
+	db := new(dbtesting.MockDB)
+	database.Mocks.Namespaces.GetByName = func(ctx context.Context, name string) (*database.Namespace, error) {
 		return &database.Namespace{Name: name, User: 1}, nil
 	}
+	defer func() { database.Mocks.Namespaces.GetByName = nil }()
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			searchContext, err := ResolveSearchContextSpec(context.Background(), tt.searchContextSpec, getNamespaceByName)
+			searchContext, err := ResolveSearchContextSpec(context.Background(), db, tt.searchContextSpec)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -41,26 +47,33 @@ func TestResolvingValidSearchContextSpecs(t *testing.T) {
 }
 
 func TestResolvingInvalidSearchContextSpecs(t *testing.T) {
-	orig := envvar.SourcegraphDotComMode()
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(orig)
-
 	tests := []struct {
 		name              string
 		searchContextSpec string
 		wantErr           string
 	}{
-		{name: "invalid format", searchContextSpec: "+user", wantErr: "search context '+user' does not have the correct format (global or @username)"},
+		{name: "invalid format", searchContextSpec: "+user", wantErr: "search context not found"},
 		{name: "user not found", searchContextSpec: "@user", wantErr: "search context '@user' not found"},
 		{name: "empty user not found", searchContextSpec: "@", wantErr: "search context '@' not found"},
 	}
 
-	getNamespaceByName := func(ctx context.Context, name string) (*database.Namespace, error) { return &database.Namespace{}, nil }
+	db := new(dbtesting.MockDB)
+	database.Mocks.Namespaces.GetByName = func(ctx context.Context, name string) (*database.Namespace, error) {
+		return &database.Namespace{}, nil
+	}
+	database.Mocks.SearchContexts.GetSearchContext = func(ctx context.Context, opts database.GetSearchContextOptions) (*types.SearchContext, error) {
+		return nil, errors.New("search context not found")
+	}
+	defer func() {
+		database.Mocks.Namespaces.GetByName = nil
+		database.Mocks.SearchContexts.GetSearchContext = nil
+	}()
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := ResolveSearchContextSpec(context.Background(), tt.searchContextSpec, getNamespaceByName)
+			_, err := ResolveSearchContextSpec(context.Background(), db, tt.searchContextSpec)
 			if err == nil {
-				t.Error("Expected error, but there was none")
+				t.Fatal("Expected error, but there was none")
 			}
 			if err.Error() != tt.wantErr {
 				t.Fatalf("err: got %q, expected %q", err.Error(), tt.wantErr)
@@ -76,7 +89,7 @@ func TestConstructingSearchContextSpecs(t *testing.T) {
 		wantSearchContextSpec string
 	}{
 		{name: "global search context", searchContext: GetGlobalSearchContext(), wantSearchContextSpec: "global"},
-		{name: "user search context", searchContext: &types.SearchContext{Name: "user"}, wantSearchContextSpec: "@user"},
+		{name: "user search context", searchContext: &types.SearchContext{Name: "user", NamespaceUserID: 1}, wantSearchContextSpec: "@user"},
 	}
 
 	for _, tt := range tests {
@@ -86,5 +99,127 @@ func TestConstructingSearchContextSpecs(t *testing.T) {
 				t.Fatalf("got %q, expected %q", searchContextSpec, tt.wantSearchContextSpec)
 			}
 		})
+	}
+}
+
+func TestGettingSearchContextFromVersionContext(t *testing.T) {
+	tests := []struct {
+		name              string
+		versionContext    *schema.VersionContext
+		wantSearchContext *types.SearchContext
+	}{
+		{
+			name:              "simple version context",
+			versionContext:    &schema.VersionContext{Name: "vc1", Description: "vc1 description"},
+			wantSearchContext: &types.SearchContext{Name: "vc1", Description: "vc1 description", Public: true},
+		},
+		{
+			name:              "version context with spaces in name",
+			versionContext:    &schema.VersionContext{Name: "Version Context  2", Description: "Version Context 2 description"},
+			wantSearchContext: &types.SearchContext{Name: "Version_Context_2", Description: "Version Context 2 description", Public: true},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotSearchContext := getSearchContextFromVersionContext(tt.versionContext)
+			if !reflect.DeepEqual(tt.wantSearchContext, gotSearchContext) {
+				t.Fatalf("want %+v, got %+v", tt.wantSearchContext, gotSearchContext)
+			}
+		})
+	}
+}
+
+func createRepos(ctx context.Context, repoStore *database.RepoStore) ([]*types.RepoName, error) {
+	err := repoStore.Create(ctx, &types.Repo{Name: "github.com/example/a"}, &types.Repo{Name: "github.com/example/b"})
+	if err != nil {
+		return nil, err
+	}
+	repoA, err := repoStore.GetByName(ctx, "github.com/example/a")
+	if err != nil {
+		return nil, err
+	}
+	repoB, err := repoStore.GetByName(ctx, "github.com/example/b")
+	if err != nil {
+		return nil, err
+	}
+	return []*types.RepoName{{ID: repoA.ID, Name: repoA.Name}, {ID: repoB.ID, Name: repoB.Name}}, nil
+}
+
+func TestConvertingVersionContextToSearchContext(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	ctx := context.Background()
+	r := database.Repos(db)
+
+	repos, err := createRepos(ctx, r)
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	versionContext := &schema.VersionContext{
+		Name:        "vc1",
+		Description: "vc1 description",
+		Revisions: []*schema.VersionContextRevision{
+			{Repo: "github.com/example/a", Rev: "branch-1"},
+			{Repo: "github.com/example/a", Rev: "branch-3"},
+			{Repo: "github.com/example/b", Rev: "branch-2"},
+		},
+	}
+
+	wantRepositoryRevisions := []*types.SearchContextRepositoryRevisions{
+		{Repo: repos[0], Revisions: []string{"branch-1", "branch-3"}},
+		{Repo: repos[1], Revisions: []string{"branch-2"}},
+	}
+	wantSearchContext := &types.SearchContext{ID: 1, Name: "vc1", Description: "vc1 description", Public: true}
+
+	gotSearchContext, err := ConvertVersionContextToSearchContext(ctx, db, versionContext)
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+	if !reflect.DeepEqual(wantSearchContext, gotSearchContext) {
+		t.Fatalf("want search context %+v, got %+v", wantSearchContext, gotSearchContext)
+	}
+
+	gotRepositoryRevisions, err := database.SearchContexts(db).GetSearchContextRepositoryRevisions(ctx, gotSearchContext.ID)
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+	if !reflect.DeepEqual(wantRepositoryRevisions, gotRepositoryRevisions) {
+		t.Fatalf("wanted %+v repository revisions, got %+v", wantRepositoryRevisions, gotRepositoryRevisions)
+	}
+}
+
+func TestResolvingSearchContextRepoNames(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	db := dbtesting.GetDB(t)
+	ctx := context.Background()
+	r := database.Repos(db)
+
+	repos, err := createRepos(ctx, r)
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+	repositoryRevisions := []*types.SearchContextRepositoryRevisions{
+		{Repo: repos[0], Revisions: []string{"branch-1"}},
+		{Repo: repos[1], Revisions: []string{"branch-2"}},
+	}
+
+	searchContext, err := CreateSearchContextWithRepositoryRevisions(ctx, db, &types.SearchContext{Name: "searchcontext"}, repositoryRevisions)
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	gotRepos, err := r.ListRepoNames(ctx, database.ReposListOptions{SearchContextID: searchContext.ID})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+	if !reflect.DeepEqual(repos, gotRepos) {
+		t.Fatalf("wanted %+v repositories, got %+v", repos, gotRepos)
 	}
 }

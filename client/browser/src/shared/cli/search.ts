@@ -51,12 +51,16 @@ export class SearchCommand {
     public action = async (query: string, disposition?: string): Promise<void> => {
         const sourcegraphURL = await observeSourcegraphURL(IS_EXTENSION).pipe(take(1)).toPromise()
 
-        const patternType = await this.getDefaultSearchPatternType(sourcegraphURL)
+        const [patternType, caseSensitive] = await this.getDefaultSearchSettings(sourcegraphURL)
 
         const props = {
             url: isURL.test(query)
                 ? query
-                : `${sourcegraphURL}/search?${buildSearchURLQuery(query, patternType, false)}&utm_source=omnibox`,
+                : `${sourcegraphURL}/search?${buildSearchURLQuery(
+                      query,
+                      patternType,
+                      caseSensitive
+                  )}&utm_source=omnibox`,
         }
 
         switch (disposition) {
@@ -76,9 +80,11 @@ export class SearchCommand {
     private lastSourcegraphUrl = ''
     private settingsTimeoutHandler = 0
     private defaultPatternType = SearchPatternType.literal
+    private defaultCaseSensitive = false
     private readonly settingsTimeoutDuration = 60 * 60 * 1000 // one hour
 
-    private async getDefaultSearchPatternType(sourcegraphURL: string): Promise<SearchPatternType> {
+    // Returns the pattern type to use, and whether the query should be treated case sensitively.
+    private async getDefaultSearchSettings(sourcegraphURL: string): Promise<[SearchPatternType, boolean]> {
         try {
             // Refresh settings when either:
             // - First search
@@ -101,6 +107,8 @@ export class SearchCommand {
                 if (isDefined(settings) && isNot<ErrorLike | Settings, ErrorLike>(isErrorLike)(settings)) {
                     this.defaultPatternType =
                         (settings['search.defaultPatternType'] as SearchPatternType) || this.defaultPatternType
+                    this.defaultCaseSensitive =
+                        (settings['search.defaultCaseSensitive'] as boolean) || this.defaultCaseSensitive
                 }
 
                 this.lastSourcegraphUrl = sourcegraphURL
@@ -112,6 +120,6 @@ export class SearchCommand {
             // Ignore errors trying to get settings, fall to return default below
         }
 
-        return this.defaultPatternType
+        return [this.defaultPatternType, this.defaultCaseSensitive]
     }
 }

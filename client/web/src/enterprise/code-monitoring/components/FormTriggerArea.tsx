@@ -1,5 +1,5 @@
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React, { useState, useCallback, useMemo } from 'react'
 import { Link } from '../../../../../shared/src/components/Link'
 import { buildSearchURLQuery } from '../../../../../shared/src/util/url'
@@ -93,20 +93,6 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
     return (
         <>
             <h3>Trigger</h3>
-            {!showQueryForm && !triggerCompleted && (
-                <button
-                    type="button"
-                    onClick={toggleQueryForm}
-                    className="code-monitor-form__card--button card p-3 w-100 test-trigger-button text-left"
-                >
-                    <div className="code-monitor-form__card-link btn-link font-weight-bold p-0">
-                        When there are new search results
-                    </div>
-                    <span className="text-muted">
-                        This trigger will fire when new search results are found for a given search query.
-                    </span>
-                </button>
-            )}
             {showQueryForm && (
                 <div className="code-monitor-form__card card p-3">
                     <div className="font-weight-bold">When there are new search results</div>
@@ -119,7 +105,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                             <div className="d-flex flex-column flex-grow-1">
                                 <input
                                     type="text"
-                                    className={classnames(
+                                    className={classNames(
                                         'trigger-area__query-input-field form-control my-2 test-trigger-input',
                                         deriveInputClassName(queryState)
                                     )}
@@ -177,25 +163,39 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                     </div>
                 </div>
             )}
-            {!showQueryForm && triggerCompleted && (
-                <div className="code-monitor-form__card--button card p-3" onClick={toggleQueryForm}>
-                    <div className="d-flex justify-content-between align-items-center">
+            {!showQueryForm && (
+                <button
+                    type="button"
+                    className="btn code-monitor-form__card--button card test-trigger-button"
+                    aria-label="Edit trigger: When there are new search results"
+                    onClick={toggleQueryForm}
+                >
+                    <div className="d-flex justify-content-between align-items-center w-100">
                         <div>
-                            <div className="font-weight-bold">When there are new search results</div>
-                            <code
-                                className="trigger-area__query-label text-break text-muted test-existing-query"
-                                data-testid="trigger-query-existing"
+                            <div
+                                className={classNames(
+                                    'font-weight-bold',
+                                    !triggerCompleted && 'code-monitor-form__card-link btn-link'
+                                )}
                             >
-                                {query}
-                            </code>
+                                When there are new search results
+                            </div>
+                            {triggerCompleted ? (
+                                <code
+                                    className="trigger-area__query-label text-break text-muted test-existing-query"
+                                    data-testid="trigger-query-existing"
+                                >
+                                    {query}
+                                </code>
+                            ) : (
+                                <span className="text-muted">
+                                    This trigger will fire when new search results are found for a given search query.
+                                </span>
+                            )}
                         </div>
-                        <div>
-                            <button type="button" className="btn btn-link p-0 text-left test-edit-trigger">
-                                Edit
-                            </button>
-                        </div>
+                        {triggerCompleted && <div className="btn-link">Edit</div>}
                     </div>
-                </div>
+                </button>
             )}
             <small className="text-muted">
                 {' '}

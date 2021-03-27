@@ -1,6 +1,7 @@
 package state
 
 import (
+	"sort"
 	"testing"
 	"time"
 
@@ -122,9 +123,9 @@ func TestCalcCounts(t *testing.T) {
 				event(t, daysAgo(1), batches.ChangesetEventKindGitHubMerged, 1),
 			},
 			want: []*ChangesetCounts{
-				{Time: daysAgo(2).Add(-18 * time.Hour), Total: 0, Merged: 0},
-				{Time: daysAgo(1).Add(-18 * time.Hour), Total: 1, Open: 1, OpenPending: 1},
-				{Time: now.Add(-18 * time.Hour), Total: 1, Merged: 1},
+				{Time: daysAgo(3), Total: 0, Merged: 0},
+				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 1},
+				{Time: daysAgo(1), Total: 1, Merged: 1},
 			},
 		},
 		{
@@ -1435,13 +1436,29 @@ func TestCalcCounts(t *testing.T) {
 				tc.end = now
 			}
 
+			sort.Sort(ChangesetEvents(tc.events))
+
 			have, err := CalcCounts(tc.start, tc.end, tc.changesets, tc.events...)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(have, tc.want); diff != "" {
-				t.Errorf("wrong counts calculated. diff=%s", diff)
+			tzs := GenerateTimestamps(tc.start, tc.end)
+			want := make([]*ChangesetCounts, 0, len(tzs))
+			idx := 0
+			for i := range tzs {
+				tz := tzs[i]
+				currentWant := tc.want[idx]
+				for len(tc.want) > idx+1 && !tz.Before(tc.want[idx+1].Time) {
+					idx++
+					currentWant = tc.want[idx]
+				}
+				wantEntry := *currentWant
+				wantEntry.Time = tz
+				want = append(want, &wantEntry)
+			}
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatalf("wrong counts calculated. diff=%s", diff)
 			}
 		})
 	}

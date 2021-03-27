@@ -29,6 +29,7 @@ import { BrandLogo } from '../components/branding/BrandLogo'
 import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
 import { ExtensionAlertAnimationProps } from './UserNavItem'
 import { LayoutRouteProps } from '../routes'
+import { CodeMonitoringProps } from '../code-monitoring'
 
 interface Props
     extends SettingsCascadeProps,
@@ -46,6 +47,7 @@ interface Props
         CopyQueryButtonProps,
         VersionContextProps,
         SearchContextProps,
+        CodeMonitoringProps,
         OnboardingTourProps {
     history: H.History
     location: H.Location<{ query: string }>
@@ -74,10 +76,11 @@ interface Props
      */
     variant: 'default' | 'low-profile' | 'low-profile-with-logo' | 'no-search-input'
 
-    setVersionContext: (versionContext: string | undefined) => void
+    setVersionContext: (versionContext: string | undefined) => Promise<void>
     availableVersionContexts: VersionContext[] | undefined
 
     minimalNavLinks?: boolean
+    isSearchAutoFocusRequired?: boolean
     branding?: typeof window.context.branding
 
     /** For testing only. Used because reactstrap's Popover is incompatible with react-test-renderer. */

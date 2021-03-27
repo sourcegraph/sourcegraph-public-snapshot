@@ -1,6 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { PageTitle } from '../../../components/PageTitle'
-import { RepositoriesResult, SiteAdminRepositoryFields, UserRepositoriesResult } from '../../../graphql-operations'
+import {
+    RepositoriesResult,
+    SiteAdminRepositoryFields,
+    UserRepositoriesResult,
+    ListExternalServiceFields,
+} from '../../../graphql-operations'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import {
     Connection,
@@ -54,21 +60,53 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     routingPrefix,
     telemetryService,
 }) => {
-    const [hasRepos, setHasRepos] = useState(false)
+    const [hasRepos, setHasRepos] = useState<boolean | null>(null)
+    const [externalServices, setExternalServices] = useState<ListExternalServiceFields[]>()
     const [pendingOrError, setPendingOrError] = useState<Status>()
-    const [showFilteredConnection, setShowFilteredConnection] = useState(true)
 
-    const NoResults: JSX.Element = (
+    const noReposState = (
         <div className="border rounded p-3">
             <h3>You have not added any repositories to Sourcegraph</h3>
             <small>
-                <Link className="text-primary" to={`${routingPrefix}/repositories/manage`}>
-                    Add repositories
+                <Link className="text-primary" to={`${routingPrefix}/code-hosts`}>
+                    Connect code hosts
                 </Link>{' '}
-                to start searching your code with Sourcegraph.
+                to start searching your own repositories, or{' '}
+                <Link className="text-primary" to={`${routingPrefix}/repositories/manage`}>
+                    add public repositories
+                </Link>{' '}
+                from GitHub or GitLab.
             </small>
         </div>
     )
+    const showResults = (): JSX.Element => {
+        const emptyState = (
+            <div className="border rounded p-3">
+                <small>No repositories matched.</small>
+            </div>
+        )
+        return (
+            <FilteredConnection<SiteAdminRepositoryFields, Omit<UserRepositoriesResult, 'node'>>
+                className="table mt-3"
+                defaultFirst={15}
+                compact={false}
+                noun="repository"
+                pluralNoun="repositories"
+                queryConnection={queryRepositories}
+                nodeComponent={Row}
+                listComponent="table"
+                listClassName="w-100"
+                onUpdate={updated}
+                filters={filters}
+                history={history}
+                location={location}
+                emptyElement={emptyState}
+                totalCountSummaryComponent={TotalCountSummary}
+                hideControlsWhenEmpty={true}
+                inputClassName="user-settings-repos__filter-input"
+            />
+        )
+    }
 
     const filters =
         useObservable<FilteredConnectionFilter[]>(
@@ -78,14 +116,21 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                         repeatUntil(
                             result => {
                                 let pending: Status
-                                const now = new Date().getTime()
+                                const now = new Date()
 
-                                // show filtered connection if any code hosts has at least one repo
-                                setShowFilteredConnection(result.nodes.some(({ repoCount }) => repoCount !== 0))
+                                setExternalServices(result.nodes)
 
                                 for (const node of result.nodes) {
-                                    // if the next sync time is not blank, or in the future we must not be syncing
-                                    if (node.nextSyncAt !== '' && now - new Date(node.nextSyncAt).getTime() > 0) {
+                                    const nextSyncAt = new Date(node.nextSyncAt)
+
+                                    // when the service was just added both
+                                    // createdAt and updatedAt will have the same timestamp
+                                    if (node.createdAt === node.updatedAt) {
+                                        continue
+                                    }
+
+                                    // if the next sync is in the future we must not be syncing
+                                    if (now > nextSyncAt) {
                                         pending = 'pending'
                                     }
                                 }
@@ -104,7 +149,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                                 },
                                 ...result.nodes.map(node => ({
                                     value: node.id,
-                                    label: node.displayName,
+                                    label: node.displayName.split(' ')[0],
                                     tooltip: '',
                                     args: { externalServiceID: node.id },
                                 })),
@@ -181,6 +226,8 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             const conn = value as Connection<SiteAdminRepositoryFields>
             if (conn.totalCount !== 0) {
                 setHasRepos(true)
+            } else {
+                setHasRepos(false)
             }
         }
     }, [])
@@ -201,18 +248,16 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             <PageTitle title="Repositories" />
             <div className="d-flex justify-content-between align-items-center">
                 <h2 className="mb-2">Repositories</h2>
-                {filters[1] && filters[1].values.length !== 1 && (
-                    <Link
-                        className="btn btn-primary test-goto-add-external-service-page"
-                        to={`${routingPrefix}/repositories/manage`}
-                    >
-                        {(hasRepos && <>Manage Repositories</>) || (
-                            <>
-                                <AddIcon className="icon-inline" /> Add repositories
-                            </>
-                        )}
-                    </Link>
-                )}
+                <Link
+                    className="btn btn-primary test-goto-add-external-service-page"
+                    to={`${routingPrefix}/repositories/manage`}
+                >
+                    {(hasRepos && <>Manage Repositories</>) || (
+                        <>
+                            <AddIcon className="icon-inline" /> Add repositories
+                        </>
+                    )}
+                </Link>
             </div>
             <p className="text-muted pb-2">
                 All repositories synced with Sourcegraph from{' '}
@@ -220,27 +265,15 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                     connected code hosts
                 </Link>
             </p>
-            {showFilteredConnection ? (
-                <FilteredConnection<SiteAdminRepositoryFields, Omit<UserRepositoriesResult, 'node'>>
-                    className="table mt-3"
-                    defaultFirst={15}
-                    compact={false}
-                    noun="repository"
-                    pluralNoun="repositories"
-                    queryConnection={queryRepositories}
-                    nodeComponent={Row}
-                    listComponent="table"
-                    listClassName="w-100"
-                    onUpdate={updated}
-                    filters={filters}
-                    history={history}
-                    location={location}
-                    totalCountSummaryComponent={TotalCountSummary}
-                    hideControlsWhenEmpty={true}
-                    inputClassName="user-settings-repos__filter-input"
-                />
+            {externalServices ? (
+                <>
+                    {hasRepos === false && noReposState}
+                    {(hasRepos || hasRepos === null) && showResults()}
+                </>
             ) : (
-                NoResults
+                <div className="d-flex justify-content-center mt-4">
+                    <LoadingSpinner className="icon-inline" />
+                </div>
             )}
         </div>
     )

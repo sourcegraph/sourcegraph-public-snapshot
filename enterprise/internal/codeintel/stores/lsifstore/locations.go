@@ -96,11 +96,10 @@ func (s *Store) locations(ctx context.Context, bundleID int, ids []semantic.ID, 
 	}
 	traceLog(log.Int("totalCount", totalCount))
 
-	// Filter out all data in rangeIDsByResultID that falls outside of the current page
-	rangeIDsByResultID = limitResultMap(ids, rangeIDsByResultID, limit, offset)
-
-	// gather the set of paths for documents we need to fetch from the limited map
-	paths := pathsFromResultMap(rangeIDsByResultID)
+	// Filter out all data in rangeIDsByResultID that falls outside of the current page. This
+	// also returns the set of paths for documents we will need to fetch to resolve the results
+	// of the current page.
+	rangeIDsByResultID, paths := limitResultMap(ids, rangeIDsByResultID, limit, offset)
 	traceLog(
 		log.Int("numPaths", len(paths)),
 		log.String("paths", strings.Join(paths, ", ")),
@@ -116,23 +115,31 @@ func (s *Store) locations(ctx context.Context, bundleID int, ids []semantic.ID, 
 	return locationsByResultID, totalCount, nil
 }
 
-// limitResultMap returns a map symmetric to the given rangeIDsByResultID including only the location results
-// the current page specified by limit and offset.
-func limitResultMap(ids []semantic.ID, rangeIDsByResultID map[semantic.ID]map[string][]semantic.ID, limit, offset int) map[semantic.ID]map[string][]semantic.ID {
+// limitResultMap returns a map symmetric to the given rangeIDsByResultID that includes only the
+// location results on the current page specified by limit and offset, as well as a deduplicated
+// and sorted list of paths that exist in the second-level of the returned map.
+func limitResultMap(ids []semantic.ID, rangeIDsByResultID map[semantic.ID]map[string][]semantic.ID, limit, offset int) (limited map[semantic.ID]map[string][]semantic.ID, referencedPaths []string) {
 	limitedRangeIDsByResultID := make(map[semantic.ID]map[string][]semantic.ID, len(rangeIDsByResultID))
 
+	// Get a deduplicated and ordered set of paths that exist in the second-level of the given
+	// map. Iterating by sorted path names here tends to require fewer documents being opened
+	// per page. Alternatively, iterating by result identifier (which we had done previously)
+	// can make us open the same document on multiple disjoint pages in the result set.
+	paths := pathsFromResultMap(rangeIDsByResultID)
+
+	// We append paths to the following (re-used) slice whenever we add a previously unseen
+	// path to the second-level of the returned map.
+	filteredPaths := paths[:0]
+
 outer:
-	for _, id := range ids {
-		rangeIDsByDocument := map[string][]semantic.ID{}
-		limitedRangeIDsByResultID[id] = rangeIDsByDocument
+	for _, path := range paths {
+		for _, id := range ids {
+			rangeIDsByDocument, ok := limitedRangeIDsByResultID[id]
+			if !ok {
+				rangeIDsByDocument = map[string][]semantic.ID{}
+				limitedRangeIDsByResultID[id] = rangeIDsByDocument
+			}
 
-		paths := make([]string, 0, len(rangeIDsByResultID[id]))
-		for path := range rangeIDsByResultID[id] {
-			paths = append(paths, path)
-		}
-		sort.Strings(paths)
-
-		for _, path := range paths {
 			rangeIDs := rangeIDsByResultID[id][path]
 
 			if offset < len(rangeIDs) {
@@ -154,16 +161,24 @@ outer:
 				limit -= len(rangeIDs)
 			}
 
+			// Assign adjusted slice of ranges into map
 			rangeIDsByDocument[path] = rangeIDs
 
+			// If we haven't added this path added it to the filtered path set. Since
+			// our _outer_ iteration is paths, if it exists in the set it will be the
+			// most recent element (inserted when processing same path, previous id).
+			if len(filteredPaths) == 0 || filteredPaths[len(filteredPaths)-1] != path {
+				filteredPaths = append(filteredPaths, path)
+			}
+
 			if limit == 0 {
-				// Hit end of page
+				// Page cannot fit any more results
 				break outer
 			}
 		}
 	}
 
-	return limitedRangeIDsByResultID
+	return limitedRangeIDsByResultID, filteredPaths
 }
 
 // pathsFromResultMap returns a deduplicated and sorted set of document paths present in the given map.

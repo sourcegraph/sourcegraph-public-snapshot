@@ -2,6 +2,8 @@ import React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { getModeFromPath } from '../../../shared/src/languages'
 import { isLegacyFragment, parseHash, toRepoURL } from '../../../shared/src/util/url'
+import { ErrorBoundary } from '../components/ErrorBoundary'
+import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
 import { lazyComponent } from '../util/lazyComponent'
 import { formatHash } from '../util/url'
 import { RepoContainerRoute } from './RepoContainer'
@@ -33,9 +35,18 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/commit/:revspec+',
         render: context => (
-            <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
-                <RepositoryCommitPage {...context} />
-            </RepositoryGitDataContainer>
+            <div className="repo-revision-container">
+                <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
+                    <RepositoryCommitPage {...context} />
+                </RepositoryGitDataContainer>
+                <ActionItemsBar
+                    extensionsController={context.extensionsController}
+                    platformContext={context.platformContext}
+                    useActionItemsBar={context.useActionItemsBar}
+                    location={context.location}
+                    telemetryService={context.telemetryService}
+                />
+            </div>
         ),
     },
     {
@@ -154,22 +165,31 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                     />
                     {!hideRepoRevisionContent && (
                         <div className="repo-revision-container__content">
-                            {objectType === 'blob' ? (
-                                <BlobPage
-                                    {...context}
-                                    {...repoRevisionProps}
-                                    repoID={repo.id}
-                                    repoName={repo.name}
-                                    mode={mode}
-                                    repoHeaderContributionsLifecycleProps={
-                                        context.repoHeaderContributionsLifecycleProps
-                                    }
-                                />
-                            ) : (
-                                <TreePage {...context} {...repoRevisionProps} repo={repo} />
-                            )}
+                            <ErrorBoundary location={context.location}>
+                                {objectType === 'blob' ? (
+                                    <BlobPage
+                                        {...context}
+                                        {...repoRevisionProps}
+                                        repoID={repo.id}
+                                        repoName={repo.name}
+                                        mode={mode}
+                                        repoHeaderContributionsLifecycleProps={
+                                            context.repoHeaderContributionsLifecycleProps
+                                        }
+                                    />
+                                ) : (
+                                    <TreePage {...context} {...repoRevisionProps} repo={repo} />
+                                )}
+                            </ErrorBoundary>
                         </div>
                     )}
+                    <ActionItemsBar
+                        useActionItemsBar={context.useActionItemsBar}
+                        location={context.location}
+                        extensionsController={context.extensionsController}
+                        platformContext={context.platformContext}
+                        telemetryService={context.telemetryService}
+                    />
                 </>
             )
         },
@@ -177,11 +197,20 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
     {
         path: '/-/commits',
         render: ({ resolvedRev: { commitID }, repoHeaderContributionsLifecycleProps, ...context }) => (
-            <RepositoryCommitsPage
-                {...context}
-                commitID={commitID}
-                repoHeaderContributionsLifecycleProps={repoHeaderContributionsLifecycleProps}
-            />
+            <>
+                <RepositoryCommitsPage
+                    {...context}
+                    commitID={commitID}
+                    repoHeaderContributionsLifecycleProps={repoHeaderContributionsLifecycleProps}
+                />
+                <ActionItemsBar
+                    useActionItemsBar={context.useActionItemsBar}
+                    location={context.location}
+                    extensionsController={context.extensionsController}
+                    platformContext={context.platformContext}
+                    telemetryService={context.telemetryService}
+                />
+            </>
         ),
     },
 ]

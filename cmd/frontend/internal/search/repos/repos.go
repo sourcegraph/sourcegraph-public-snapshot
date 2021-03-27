@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -41,11 +42,9 @@ type Resolved struct {
 }
 
 type Resolver struct {
+	DB               dbutil.DB
 	Zoekt            *searchbackend.Zoekt
 	DefaultReposFunc defaultReposFunc
-	NamespaceStore   interface {
-		GetByName(context.Context, string) (*database.Namespace, error)
-	}
 }
 
 func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
@@ -108,7 +107,7 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 		}
 	}
 
-	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, op.SearchContextSpec, r.NamespaceStore.GetByName)
+	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.DB, op.SearchContextSpec)
 	if err != nil {
 		return Resolved{}, err
 	}
@@ -152,18 +151,21 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 			OnlyPrivate:  op.OnlyPrivate,
 		}
 
-		if searchContext != nil && searchContext.UserID != 0 {
-			options.UserID = searchContext.UserID
+		if searchContext.ID != 0 {
+			options.SearchContextID = searchContext.ID
+		} else if searchContext.NamespaceUserID != 0 {
+			options.UserID = searchContext.NamespaceUserID
+			options.IncludeUserPublicRepos = true
 		}
 
 		// PERF: We Query concurrently since Count and List call can be slow
 		// on Sourcegraph.com (100ms+).
 		excludedC := make(chan ExcludedRepos)
 		go func() {
-			excludedC <- computeExcludedRepositories(ctx, op.Query, options)
+			excludedC <- computeExcludedRepositories(ctx, r.DB, op.Query, options)
 		}()
 
-		repos, err = database.GlobalRepos.ListRepoNames(ctx, options)
+		repos, err = database.Repos(r.DB).ListRepoNames(ctx, options)
 		tr.LazyPrintf("Repos.List - done")
 
 		excluded = <-excludedC
@@ -178,6 +180,15 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 	var missingRepoRevs []*search.RepositoryRevisions
 	tr.LazyPrintf("Associate/validate revs - start")
 
+	// For auto-defined search contexts we only search the main branch
+	var searchContextRepositoryRevisions []*search.RepositoryRevisions
+	if !searchcontexts.IsAutoDefinedSearchContext(searchContext) {
+		searchContextRepositoryRevisions, err = searchcontexts.GetRepositoryRevisions(ctx, r.DB, searchContext.ID)
+		if err != nil {
+			return Resolved{}, err
+		}
+	}
+
 	for _, repo := range repos {
 		var repoRev search.RepositoryRevisions
 		var revs []search.RevisionSpecifier
@@ -187,6 +198,14 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 				if vcRepoRev.Repo == string(repo.Name) {
 					repoRev.Repo = repo
 					revs = append(revs, search.RevisionSpecifier{RevSpec: vcRepoRev.Rev})
+				}
+			}
+		} else if len(searchContextRepositoryRevisions) > 0 {
+			for _, repositoryRevisions := range searchContextRepositoryRevisions {
+				if repo.ID == repositoryRevisions.Repo.ID {
+					repoRev.Repo = repo
+					revs = repositoryRevisions.Revs
+					break
 				}
 			}
 		} else {
@@ -430,7 +449,7 @@ type ExcludedRepos struct {
 
 // computeExcludedRepositories returns a list of excluded repositories (Forks or
 // archives) based on the search Query.
-func computeExcludedRepositories(ctx context.Context, q query.Q, op database.ReposListOptions) (excluded ExcludedRepos) {
+func computeExcludedRepositories(ctx context.Context, db dbutil.DB, q query.Q, op database.ReposListOptions) (excluded ExcludedRepos) {
 	if q == nil {
 		return ExcludedRepos{}
 	}
@@ -450,7 +469,7 @@ func computeExcludedRepositories(ctx context.Context, q query.Q, op database.Rep
 			selectForks.OnlyForks = true
 			selectForks.NoForks = false
 			var err error
-			numExcludedForks, err = database.GlobalRepos.Count(ctx, selectForks)
+			numExcludedForks, err = database.Repos(db).Count(ctx, selectForks)
 			if err != nil {
 				log15.Warn("repo count for excluded fork", "err", err)
 			}
@@ -467,7 +486,7 @@ func computeExcludedRepositories(ctx context.Context, q query.Q, op database.Rep
 			selectArchived.OnlyArchived = true
 			selectArchived.NoArchived = false
 			var err error
-			numExcludedArchived, err = database.GlobalRepos.Count(ctx, selectArchived)
+			numExcludedArchived, err = database.Repos(db).Count(ctx, selectArchived)
 			if err != nil {
 				log15.Warn("repo count for excluded archive", "err", err)
 			}
@@ -507,38 +526,35 @@ func getRevsForMatchedRepo(repo api.RepoName, pats []patternRevspec) (matched []
 		return
 	}
 	// if two repo specs match, and both provided non-empty rev lists,
-	// we want their intersection
-	allowedRevs := make(map[search.RevisionSpecifier]struct{}, len(revLists[0]))
-	allRevs := make(map[search.RevisionSpecifier]struct{}, len(revLists[0]))
-	// starting point: everything is "true" if it is currently allowed
-	for _, rev := range revLists[0] {
-		allowedRevs[rev] = struct{}{}
-		allRevs[rev] = struct{}{}
-	}
-	// in theory, "master-by-default" entries won't even be participating
-	// in this.
-	for _, revList := range revLists[1:] {
-		restrictedRevs := make(map[search.RevisionSpecifier]struct{}, len(revList))
+	// we want their intersection, so we count the number of times we
+	// see a revision in the rev lists, and make sure it matches the number
+	// of rev lists
+	revCounts := make(map[search.RevisionSpecifier]int, len(revLists[0]))
+
+	var aliveCount int
+	for i, revList := range revLists {
+		aliveCount = 0
 		for _, rev := range revList {
-			allRevs[rev] = struct{}{}
-			if _, ok := allowedRevs[rev]; ok {
-				restrictedRevs[rev] = struct{}{}
+			if revCounts[rev] == i {
+				aliveCount += 1
 			}
+			revCounts[rev] += 1
 		}
-		allowedRevs = restrictedRevs
 	}
-	if len(allowedRevs) > 0 {
-		matched = make([]search.RevisionSpecifier, 0, len(allowedRevs))
-		for rev := range allowedRevs {
-			matched = append(matched, rev)
+
+	if aliveCount > 0 {
+		matched = make([]search.RevisionSpecifier, 0, len(revCounts))
+		for rev, seenCount := range revCounts {
+			if seenCount == len(revLists) {
+				matched = append(matched, rev)
+			}
 		}
 		sort.Slice(matched, func(i, j int) bool { return matched[i].Less(matched[j]) })
 		return
 	}
-	// build a list of the revspecs which broke this, return it
-	// as the "clashing" list.
-	clashing = make([]search.RevisionSpecifier, 0, len(allRevs))
-	for rev := range allRevs {
+
+	clashing = make([]search.RevisionSpecifier, 0, len(revCounts))
+	for rev := range revCounts {
 		clashing = append(clashing, rev)
 	}
 	// ensure that lists are always returned in sorted order.
@@ -667,7 +683,7 @@ func optimizeRepoPatternWithHeuristics(repoPattern string) string {
 	}
 	// Optimization: make the "." in "github.com" a literal dot
 	// so that the regexp can be optimized more effectively.
-	repoPattern = strings.Replace(repoPattern, "github.com", `github\.com`, -1)
+	repoPattern = strings.ReplaceAll(repoPattern, "github.com", `github\.com`)
 	return repoPattern
 }
 
