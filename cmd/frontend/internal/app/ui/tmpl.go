@@ -2,14 +2,17 @@ package ui
 
 import (
 	"bytes"
+	"crypto/md5"
 	_ "embed"
 	"fmt"
 	"html/template"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/ui/assets"
 )
 
 //go:embed app.html
@@ -26,6 +29,41 @@ var (
 
 	_, noAssetVersionString = os.LookupEnv("WEBPACK_DEV_SERVER")
 )
+
+// Functions that are exposed to templates.
+var funcMap = template.FuncMap{
+	"version": func(fp string) (string, error) {
+		if noAssetVersionString {
+			return "", nil
+		}
+
+		// Check the cache for the version.
+		versionCacheMu.RLock()
+		version, ok := versionCache[fp]
+		versionCacheMu.RUnlock()
+		if ok {
+			return version, nil
+		}
+
+		// Read file contents and calculate MD5 sum to represent version.
+		f, err := assets.Assets.Open(fp)
+		if err != nil {
+			return "", err
+		}
+		defer f.Close()
+		data, err := ioutil.ReadAll(f)
+		if err != nil {
+			return "", err
+		}
+		version = fmt.Sprintf("%x", md5.Sum(data))
+
+		// Update cache.
+		versionCacheMu.Lock()
+		versionCache[fp] = version
+		versionCacheMu.Unlock()
+		return version, nil
+	},
+}
 
 var (
 	loadTemplateMu    sync.RWMutex
@@ -67,7 +105,7 @@ func doLoadTemplate(path string) (*template.Template, error) {
 	default:
 		return nil, fmt.Errorf("invalid template path %q", path)
 	}
-	tmpl, err := template.New(path).Parse(data)
+	tmpl, err := template.New(path).Funcs(funcMap).Parse(data)
 	if err != nil {
 		return nil, fmt.Errorf("ui: failed to parse template %q: %v", path, err)
 	}
