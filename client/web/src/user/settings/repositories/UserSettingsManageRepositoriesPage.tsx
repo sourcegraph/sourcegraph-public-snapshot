@@ -17,11 +17,12 @@ import {
     setExternalServiceRepos,
     listAffiliatedRepositories,
 } from '../../../components/externalServices/backend'
-import { ErrorAlert } from '../../../components/alerts'
 import { repeatUntil } from '../../../../../shared/src/util/rxjs/repeatUntil'
 import { LoaderButton } from '../../../components/LoaderButton'
 import { UserRepositoriesUpdateProps } from '../../../util'
 import { queryUserPublicRepositories, setUserPublicRepositories } from '../../../site-admin/backend'
+import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { PageSelector } from '../../../../../wildcard'
 
 interface Props extends RouteComponentProps, TelemetryProps, UserRepositoriesUpdateProps {
@@ -57,9 +58,8 @@ const initialRepoState = {
     repos: emptyRepos,
     loading: false,
     loaded: false,
-    error: '',
 }
-const selectionMap = new Map<string, Repo>()
+
 const emptyHosts: ExternalServicesResult['externalServices']['nodes'] = []
 const emptyRepoNames: string[] = []
 const initialCodeHostState = {
@@ -72,14 +72,63 @@ const initialPublicRepoState = {
     enabled: false,
     loaded: false,
 }
+const initialSelectionState = {
+    repos: new Map<string, Repo>(),
+    loaded: false,
+    radio: '',
+}
 
 type initialFetchingReposState = undefined | 'loading' | 'slow' | 'slower'
+type affiliateRepoProblemType = undefined | string | ErrorLike | ErrorLike[]
+
 const isLoading = (status: initialFetchingReposState): boolean => {
     if (!status) {
         return false
     }
 
     return ['loading', 'slow', 'slower'].includes(status)
+}
+
+const displayWarning = (warning: string, hint?: JSX.Element): JSX.Element => (
+    <div className="alert alert-warning mt-3" role="alert">
+        <AlertCircleIcon key={warning} className="icon icon-inline" /> {warning}. {hint}{' '}
+        {hint ? 'for more details' : null}
+    </div>
+)
+
+const displayError = (error: ErrorLike, hint?: JSX.Element): JSX.Element => (
+    <div className="alert alert-danger mt-3" role="alert">
+        <AlertCircleIcon key={error.message} className="icon icon-inline" /> {error.message}. {hint}{' '}
+        {hint ? 'for more details' : null}
+    </div>
+)
+
+const displayAffiliateRepoProblems = (
+    problem: affiliateRepoProblemType,
+    hint?: JSX.Element
+): JSX.Element | (JSX.Element | null)[] | null => {
+    debugger
+    if (typeof problem === 'string') {
+        return displayWarning(problem, hint)
+    }
+
+    if (isErrorLike(problem)) {
+        return displayError(problem, hint)
+    }
+
+    if (Array.isArray(problem)) {
+        return problem.map(prob => {
+            if (typeof prob === 'string') {
+                return displayWarning(prob, hint)
+            }
+
+            if (isErrorLike(prob)) {
+                return displayError(prob, hint)
+            }
+        })
+    }
+
+    return null
 }
 
 /**
@@ -99,13 +148,24 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     // set up state hooks
     const [repoState, setRepoState] = useState(initialRepoState)
     const [publicRepoState, setPublicRepoState] = useState(initialPublicRepoState)
-    const [selectionState, setSelectionState] = useState({ repos: selectionMap, loaded: false, radio: '' })
+    const [codeHosts, setCodeHosts] = useState(initialCodeHostState)
+    const [selectionState, setSelectionState] = useState(initialSelectionState)
     const [currentPage, setPage] = useState(1)
     const [query, setQuery] = useState('')
     const [codeHostFilter, setCodeHostFilter] = useState('')
-    const [codeHosts, setCodeHosts] = useState(initialCodeHostState)
     const [filteredRepos, setFilteredRepos] = useState<Repo[]>([])
     const [fetchingRepos, setFetchingRepos] = useState<initialFetchingReposState>()
+
+    // since we're making many different GraphQL requests - track affiliate and
+    // manually added public repo errors separately
+    const [affiliateRepoProblems, setAffiliateRepoProblems] = useState<affiliateRepoProblemType>()
+    const [otherPublicRepoError, setOtherPublicRepoError] = useState<undefined | ErrorLike>()
+
+    const ExternalServiceProblemHint = (
+        <Link className="text-primary" to={`${routingPrefix}/code-hosts`}>
+            Check code host connections
+        </Link>
+    )
 
     const toggleTextArea = useCallback(
         () => setPublicRepoState({ ...publicRepoState, enabled: !publicRepoState.enabled }),
@@ -120,8 +180,28 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         }).toPromise()
 
         const selected: string[] = []
+        // if external services may return code hosts with errors or warnings -
+        // we can't safely continue
+        const codeHostProblems = []
 
         for (const host of result.nodes) {
+            let hostHasProblems = false
+
+            if (host.lastSyncError) {
+                hostHasProblems = true
+                codeHostProblems.push(asError(`${host.displayName} sync error: ${host.lastSyncError}`))
+            }
+
+            if (host.warning) {
+                hostHasProblems = true
+                codeHostProblems.push(asError(`${host.displayName} warning: ${host.warning}`))
+            }
+
+            if (hostHasProblems) {
+                // skip this code hots
+                continue
+            }
+
             const cfg = JSON.parse(host.config) as GitHubConfig | GitLabConfig
             switch (host.kind) {
                 case ExternalServiceKind.GITLAB: {
@@ -142,6 +222,10 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     break
                 }
             }
+        }
+
+        if (codeHostProblems.length > 0) {
+            setAffiliateRepoProblems(codeHostProblems)
         }
 
         setCodeHosts({
@@ -175,8 +259,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
     useEffect(() => {
         fetchAndSetExternalServices().catch(error => {
-            // todo handle errors
-            console.log(error)
+            setAffiliateRepoProblems(asError(error))
         })
     }, [fetchAndSetExternalServices])
 
@@ -215,7 +298,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         }
                     }
 
-                    // WTF
+                    // TODO: figure this out
                     let radioState = selectionState.radio
                     if (selectionState.radio === 'all' && selectedRepos.size > 0) {
                         radioState = 'selected'
@@ -250,21 +333,18 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     })
                 })
                 .catch(error => {
+                    setAffiliateRepoProblems(asError(error))
                     setRepoState({
                         repos: emptyRepos,
                         loading: false,
                         loaded: true,
-                        error: String(error),
                     })
                 })
         }
     }, [selectionState.radio, codeHosts.loaded, codeHosts.configuredRepos, fetchAffiliatedRepos])
 
     useEffect(() => {
-        fetchAndSetPublicRepos().catch(error => {
-            // TODO: handle errors in the same way
-            console.error(error)
-        })
+        fetchAndSetPublicRepos().catch(error => setOtherPublicRepoError(asError(error)))
     }, [fetchAndSetPublicRepos])
 
     // select repos by code host and query
@@ -305,7 +385,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             try {
                 await setUserPublicRepositories(userID, publicRepos).toPromise()
             } catch (error) {
-                setRepoState({ ...repoState, error: String(error) })
+                setOtherPublicRepoError(asError(error))
                 setFetchingRepos(undefined)
                 return
             }
@@ -339,7 +419,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             try {
                 await Promise.all(codeHostRepoPromises)
             } catch (error) {
-                setRepoState({ ...repoState, error: String(error) })
+                setAffiliateRepoProblems(asError(error))
                 setFetchingRepos(undefined)
                 return
             }
@@ -384,9 +464,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 )
                 .subscribe(
                     () => {},
-                    error => {
-                        setRepoState({ ...repoState, error: String(error) })
-                    },
+                    error => setAffiliateRepoProblems(asError(error)),
                     () => {
                         externalServiceSubscription.unsubscribe()
                     }
@@ -399,7 +477,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             codeHosts.hosts,
             selectionState.radio,
             selectionState.repos,
-            repoState,
             onUserRepositoriesUpdate,
             history,
             routingPrefix,
@@ -426,13 +503,13 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 />
                 <div className="d-flex flex-column ml-2">
                     <p
-                        className="mb-0 user-settings-repos__text-coming-soon
+                        className="mb-0 user-settings-repos__text-disabled
 "
                     >
                         Sync all repositories (coming soon)
                     </p>
                     <p
-                        className="user-settings-repos__text-coming-soon
+                        className="user-settings-repos__text-disabled
 "
                     >
                         Will sync all current and future public and private repositories
@@ -450,13 +527,13 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 />
                 <div className="d-flex flex-column ml-2">
                     <p
-                        className="mb-0 user-settings-repos__text-coming-soon
+                        className="mb-0 user-settings-repos__text-disabled
 "
                     >
                         Sync all repositories from selected organizations or users (coming soon)
                     </p>
                     <p
-                        className="user-settings-repos__text-coming-soon
+                        className="user-settings-repos__text-disabled
 "
                     >
                         Will sync all current and future public and private repositories
@@ -468,14 +545,16 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     type="radio"
                     value="selected"
                     checked={selectionState.radio === 'selected'}
-                    disabled={codeHosts.hosts.length === 0}
+                    disabled={affiliateRepoProblems !== undefined || codeHosts.hosts.length === 0}
                     onChange={handleRadioSelect}
                 />
                 <div className="d-flex flex-column ml-2">
                     <p
-                        className={
-                            'mb-0 ' + ((codeHosts.hosts.length === 0 && 'user-settings-repos__text-coming-soon') || '')
-                        }
+                        className={classNames({
+                            'user-settings-repos__text-disabled':
+                                affiliateRepoProblems !== undefined || codeHosts.hosts.length === 0,
+                            'mb-0': true,
+                        })}
                     >
                         Sync selected public repositories
                     </p>
@@ -635,14 +714,13 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                 Get updated when this feature launches
                             </Link>
                         </div>
-                        {codeHosts.hosts.length === 0 && (
+                        {codeHosts.loaded && codeHosts.hosts.length === 0 && (
                             <div className="alert alert-warning">
-                                <Link to={`${routingPrefix}/code-hosts`} target="_blank" rel="noopener noreferrer">
-                                    Connect with a code host
-                                </Link>{' '}
-                                to add your own repositories to Sourcegraph.
+                                <Link to={`${routingPrefix}/code-hosts`}>Connect with a code host</Link> to add your own
+                                repositories to Sourcegraph.
                             </div>
                         )}
+                        {displayAffiliateRepoProblems(affiliateRepoProblems, ExternalServiceProblemHint)}
                         {
                             // display radio button for 'all' or 'selected' repos
                             modeSelect
@@ -650,7 +728,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         {
                             // if we're in 'selected' mode, show a list of all the repos on the code hosts to select from
                             selectionState.radio === 'selected' && (
-                                <div className="ml-4">
+                                <div className="ml-4 user-settings-repos__no">
                                     {filterControls}
                                     <table role="grid" className="table">
                                         {
@@ -710,7 +788,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     </li>
                 )}
             </ul>
-            {repoState.error !== '' && <ErrorAlert className="mt-4" error={repoState.error} />}
+            {isErrorLike(otherPublicRepoError) && displayError(otherPublicRepoError)}
             <Form className="mt-4 d-flex" onSubmit={submit}>
                 <LoaderButton
                     loading={isLoading(fetchingRepos)}
