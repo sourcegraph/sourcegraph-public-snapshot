@@ -2,6 +2,7 @@ package ui
 
 import (
 	"context"
+	"encoding/json"
 	"html/template"
 	"log"
 	"net/http"
@@ -15,6 +16,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+
+	"github.com/sourcegraph/sourcegraph/ui/assets"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -58,6 +61,24 @@ type Metadata struct {
 	ShowPreview bool
 }
 
+type WebpackManifest struct {
+	// AppBundleName contains the file name of the main
+	// Webpack bundle that serves as the entrypoint
+	// for the webapp code.
+	AppBundleName string `json:"app.js"`
+}
+
+func loadManifest() (*WebpackManifest, error) {
+	out := WebpackManifest{}
+
+	err := json.Unmarshal(assets.WebpackManifestJSON, &out)
+	if err != nil {
+		return nil, errors.Wrap(err, "when parsing json")
+	}
+
+	return &out, nil
+}
+
 type Common struct {
 	Injected InjectedHTML
 	Metadata *Metadata
@@ -65,6 +86,8 @@ type Common struct {
 	AssetURL string
 	Title    string
 	Error    *pageError
+
+	Manifest *WebpackManifest
 
 	WebpackDevServer bool // whether the Webpack dev server is running (WEBPACK_DEV_SERVER env var)
 
@@ -119,6 +142,11 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 		return mockNewCommon(w, r, title, serveError)
 	}
 
+	manifest, err := loadManifest()
+	if err != nil {
+		return nil, errors.Wrap(err, "when loading webpack manifest")
+	}
+
 	common := &Common{
 		Injected: InjectedHTML{
 			HeadTop:    template.HTML(conf.Get().HtmlHeadTop),
@@ -129,6 +157,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 		Context:  jscontext.NewJSContextFromRequest(r),
 		AssetURL: assetsutil.URL("").String(),
 		Title:    title,
+		Manifest: manifest,
 		Metadata: &Metadata{
 			Title:       globals.Branding().BrandName,
 			Description: "Sourcegraph is a web-based code search and navigation tool for dev teams. Search, navigate, and review code. Find answers.",
