@@ -108,7 +108,7 @@
     "p-retry": "^2.0.0",
     "postcss-loader": "^3.0.0",
     "pretty-bytes": "^5.0.0",
-    "puppeteer": "~1.8.0",
+    "puppeteer": "~1.13.0",
     "react": "^16.4.2",
     "react-dom": "^16.4.2",
     "react-router": "^4.3.1",
