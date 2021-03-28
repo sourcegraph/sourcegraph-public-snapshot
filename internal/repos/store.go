@@ -273,7 +273,14 @@ func (s *Store) UpsertSources(ctx context.Context, inserts, updates, deletes map
 		)
 	}
 
-	return s.Exec(ctx, q)
+	err = s.Exec(ctx, q)
+	if err != nil {
+		return err
+	}
+
+	// if we deleted some sources we must manually run the soft_delete_orphan_repo_by_external_service_repos function
+	// to cleanup orphaned repos
+	return s.Exec(ctx, sqlf.Sprintf(`SELECT soft_delete_orphan_repo_by_external_service_repos()`))
 }
 
 var upsertSourcesQueryFmtstr = upsertSourcesFmtstrPrefix + upsertSourcesFmtstrSuffix
