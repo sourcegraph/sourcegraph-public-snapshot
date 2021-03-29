@@ -67,12 +67,14 @@ var (
 
 func main() {
 	if err := rootCommand.Parse(os.Args[1:]); err != nil {
+		fmt.Println(rootCommand.ShortUsage)
 		os.Exit(1)
 	}
 
 	var err error
 	conf, err = ParseConfigFile(*configFlag)
 	if err != nil {
+		fmt.Println(err)
 		os.Exit(1)
 	}
 
