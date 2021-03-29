@@ -56,7 +56,7 @@ var (
 var (
 	rootFlagSet         = flag.NewFlagSet("sg", flag.ExitOnError)
 	configFlag          = rootFlagSet.String("config", "sg.config.yaml", "configuration file")
-	overwriteConfigFlag = rootFlagSet.String("overwrite", "sg.config.overwrite.yaml", "configuration overwrites file (for example to add credentials, should be gitignored)")
+	overwriteConfigFlag = rootFlagSet.String("overwrite", "sg.config.overwrite.yaml", "configuration overwrites file that is gitignored and can be used to, for example, add credentials")
 	conf                *Config
 
 	rootCommand = &ffcli.Command{
@@ -74,12 +74,14 @@ func main() {
 	var err error
 	conf, err = ParseConfigFile(*configFlag)
 	if err != nil {
+		out.WriteLine(output.Linef("", output.StyleWarning, "Failed to parse %s%s%s%s as configuration file:%s\n%s\n", output.StyleBold, *configFlag, output.StyleReset, output.StyleWarning, output.StyleReset, err))
 		os.Exit(1)
 	}
 
 	if ok, _ := fileExists(*overwriteConfigFlag); ok {
 		overwriteConf, err := ParseConfigFile(*overwriteConfigFlag)
 		if err != nil {
+			out.WriteLine(output.Linef("", output.StyleWarning, "Failed to parse %s%s%s%s as overwrites configuration file:%s\n%s\n", output.StyleBold, *overwriteConfigFlag, output.StyleReset, output.StyleWarning, output.StyleReset, err))
 			os.Exit(1)
 		}
 		conf.Merge(overwriteConf)
