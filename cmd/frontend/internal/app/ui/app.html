@@ -57,7 +57,7 @@
 		<br>
 		You need to enable JavaScript to run this app.
 	</noscript>
-	<script src="{{.AssetURL}}/scripts/app.bundle.js?{{version "scripts/app.bundle.js"}}"></script>
+	<script src="{{.AssetURL}}/scripts/{{.Manifest.AppBundleName}}"></script>
 	{{.Injected.BodyBottom}}
 </body>
 
