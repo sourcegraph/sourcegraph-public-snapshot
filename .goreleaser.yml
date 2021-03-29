@@ -43,7 +43,7 @@ brews:
       bin.install "src"
 dockers:
   - dockerfile: Dockerfile.release
-  - image_templates:
+    image_templates:
     - "sourcegraph/src-cli:{{ .Tag }}"
     - "sourcegraph/src-cli:{{ .Major }}"
     - "sourcegraph/src-cli:{{ .Major }}.{{ .Minor }}"

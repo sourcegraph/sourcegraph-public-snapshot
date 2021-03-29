@@ -21,6 +21,12 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Removed
 
+## 3.26.2
+
+### Fixed
+
+- Publishing of Docker images for `src` was broken after release 3.24.3. This has been fixed, and [`sourcegraph/src-cli` images](https://hub.docker.com/r/sourcegraph/src-cli) are available once again. [#501](https://github.com/sourcegraph/src-cli/issues/501)
+
 ## 3.26.1
 
 ### Fixed
