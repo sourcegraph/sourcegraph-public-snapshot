@@ -3,6 +3,7 @@
 package endpoint
 
 import (
+	"context"
 	"fmt"
 	"hash/crc32"
 	"io/ioutil"
@@ -10,7 +11,6 @@ import (
 	"sort"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
@@ -18,10 +18,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
-	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/cache"
 )
 
 // Map is a consistent hash map to URLs. It uses the kubernetes API to watch
@@ -81,13 +81,8 @@ func New(urlspec string) *Map {
 		}
 
 		// Kick off watcher in the background
-		go func() {
-			for {
-				err := inform(client.CoreV1().Endpoints(ns), m, u)
-				log15.Debug("failed to watch kubernetes endpoint", "name", u.Service, "error", err)
-				time.Sleep(time.Second)
-			}
-		}()
+		_ = inform(client, m, u)
+		log15.Debug("failed to watch kubernetes endpoint", "name", u.Service, "error", err)
 
 		return endpointsToMap(u, *endpoints)
 	}
@@ -174,40 +169,70 @@ func (m *Map) getUrls() (*hashMap, error) {
 	return urls, err
 }
 
-func inform(client v1.EndpointsInterface, m *Map, u *k8sURL) error {
+func inform(client kubernetes.Interface, m *Map, u *k8sURL) cache.SharedIndexInformer {
 
-	// TODO(Dax): We shouldn't use watch directly, use an informer here
-	watcher, err := client.Watch(metav1.ListOptions{
-		FieldSelector: "metadata.name=" + u.Service,
+	factory := informers.NewSharedInformerFactory(client, 0)
+	// TODO watch only "searcher" endpoint
+	informer := factory.Core().V1().Endpoints().Informer()
+	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			// Cast the obj as node
+			endpoint := obj.(*corev1.Endpoints)
+			fmt.Println("Added", endpoint)
+		},
+		DeleteFunc: func(obj interface{}) {
+			// Cast the obj as node
+			endpoint := obj.(*corev1.Endpoints)
+			fmt.Println("Deleted ", endpoint)
+		},
+		UpdateFunc: func(old, new interface{}) {
+			// Cast the obj as node
+			endpoint := new.(*corev1.Endpoints)
+			fmt.Println("Updated ", endpoint)
+		},
 	})
-	if err != nil {
-		return errors.Wrap(err, "could not create watcher")
-	}
 
-	defer watcher.Stop()
+	//stopper := make(chan struct{})
+	//defer close(stopper)
+	//defer runtime.HandleCrash()
+	go informer.Run(context.Background().Done())
+	fmt.Println("started informer")
 
-	for {
-		event := <-watcher.ResultChan()
-		e := event.Object
-		endpoints, ok := e.(*corev1.Endpoints)
-		if !ok {
-			return errors.Wrap(err, "object from watcher is not an endpoint")
-		}
+	return informer
 
-		if event.Type == watch.Error {
-			return errors.Wrap(err, "watcher error")
-		}
-
-		if event.Type != watch.Added && event.Type != watch.Modified {
-			// Either we are error or the endpoint has been removed.
-			log15.Warn(`eventType is not "added" or "modified"`, "eventType", event.Type, "subsets", endpoints.Subsets)
-			endpoints.Subsets = nil
-		}
-		urls, err := endpointsToMap(u, *endpoints)
-		m.mu.Lock()
-		m.urls, m.err = urls, err
-		m.mu.Unlock()
-	}
+	//// TODO(Dax): We shouldn't use watch directly, use an informer here
+	//
+	//watcher, err := client.Watch(metav1.ListOptions{
+	//	FieldSelector: "metadata.name=" + u.Service,
+	//})
+	//if err != nil {
+	//	return errors.Wrap(err, "could not create watcher")
+	//}
+	//
+	//defer watcher.Stop()
+	//
+	//for {
+	//	event := <-watcher.ResultChan()
+	//	e := event.Object
+	//	endpoints, ok := e.(*corev1.Endpoints)
+	//	if !ok {
+	//		return errors.Wrap(err, "object from watcher is not an endpoint")
+	//	}
+	//
+	//	if event.Type == watch.Error {
+	//		return errors.Wrap(err, "watcher error")
+	//	}
+	//
+	//	if event.Type != watch.Added && event.Type != watch.Modified {
+	//		// Either we are error or the endpoint has been removed.
+	//		log15.Warn(`eventType is not "added" or "modified"`, "eventType", event.Type, "subsets", endpoints.Subsets)
+	//		endpoints.Subsets = nil
+	//	}
+	//	urls, err := endpointsToMap(u, *endpoints)
+	//	m.mu.Lock()
+	//	m.urls, m.err = urls, err
+	//	m.mu.Unlock()
+	//}
 }
 
 func endpointsToMap(u *k8sURL, eps corev1.Endpoints) (*hashMap, error) {
