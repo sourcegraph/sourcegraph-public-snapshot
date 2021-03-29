@@ -239,6 +239,21 @@ func triggerAsync(c Config) func(*bk.Pipeline) {
 	}
 }
 
+func triggerUpdaterPipeline(c Config) func(*bk.Pipeline) {
+	if !c.isMainBranch() {
+		// no-op
+		return func(*bk.Pipeline) {}
+	}
+
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddStep(":github: :date: :k8s: Trigger k8s updates if current commit is tip of 'main'",
+			bk.Cmd(".buildkite/updater/trigger-if-tip-of-main.sh"),
+			bk.Concurrency(1),
+			bk.ConcurrencyGroup("sourcegraph/sourcegraph-k8s-update-trigger"),
+		)
+	}
+}
+
 // images used by cluster-qa test
 func clusterDockerImages(images []string) string {
 	var clusterImages []string
