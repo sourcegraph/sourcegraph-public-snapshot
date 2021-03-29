@@ -18,6 +18,7 @@ linters:
     - gocritic
     - govet
     - staticcheck
+    - unused
 
 linters-settings:
   gocritic:
