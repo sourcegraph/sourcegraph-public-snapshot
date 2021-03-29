@@ -31,6 +31,11 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
         setShowQueryForm(show => !show)
     }, [])
 
+    const [isValidQuery, setIsValidQuery] = useState(false)
+    const [hasTypeDiffOrCommitFilter, setHasTypeDiffOrCommitFilter] = useState(false)
+    const [hasRepoFilter, setHasRepoFilter] = useState(false)
+    const [hasPatternTypeFilter, setHasPatternTypeFilter] = useState(false)
+
     const [queryState, nextQueryFieldChange, queryInputReference, overrideState] = useInputValidation(
         useMemo(
             () => ({
@@ -38,32 +43,57 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                 synchronousValidators: [
                     (value: string) => {
                         const tokens = scanSearchQuery(value)
+
+                        const isValidQuery = tokens.type === 'success'
+                        setIsValidQuery(isValidQuery)
+
+                        let hasTypeDiffOrCommitFilter = false
+                        let hasRepoFilter = false
+                        let hasPatternTypeFilter = false
+
                         if (tokens.type === 'success') {
                             const filters = tokens.term.filter(token => token.type === 'filter')
-                            const hasTypeDiffOrCommitFilter = filters.some(
+                            hasTypeDiffOrCommitFilter = filters.some(
                                 filter =>
                                     filter.type === 'filter' &&
                                     resolveFilter(filter.field.value)?.type === FilterType.type &&
                                     filter.value &&
                                     isDiffOrCommit(filter.value.value)
                             )
-                            if (!hasTypeDiffOrCommitFilter) {
-                                return 'Code monitors require queries to specify either `type:commit` or `type:diff`.'
-                            }
-                            const hasPattern = tokens.term.some(term => term.type === 'pattern')
-                            const hasPatternTypeFilter = filters.some(
+
+                            hasRepoFilter = filters.some(
+                                filter =>
+                                    filter.type === 'filter' &&
+                                    resolveFilter(filter.field.value)?.type === FilterType.repo &&
+                                    filter.value
+                            )
+
+                            hasPatternTypeFilter = filters.some(
                                 filter =>
                                     filter.type === 'filter' &&
                                     resolveFilter(filter.field.value)?.type === FilterType.patterntype &&
                                     filter.value &&
                                     validateFilter(filter.field.value, filter.value)
                             )
-                            if (!hasPatternTypeFilter && hasPattern) {
-                                return 'Code monitors require queries to specify a `patternType:` of literal or regexp.'
-                            }
-                            return undefined
                         }
-                        return 'Failed to parse query'
+
+                        setHasTypeDiffOrCommitFilter(hasTypeDiffOrCommitFilter)
+                        setHasRepoFilter(hasRepoFilter)
+                        setHasPatternTypeFilter(hasPatternTypeFilter)
+
+                        if (!isValidQuery) {
+                            return 'Failed to parse query'
+                        }
+
+                        if (!hasTypeDiffOrCommitFilter) {
+                            return 'Code monitors require queries to specify either `type:commit` or `type:diff`.'
+                        }
+
+                        if (!hasRepoFilter) {
+                            return 'Code monitors require queries to specify a `repo:` filter.'
+                        }
+
+                        return undefined
                     },
                 ],
             }),
@@ -76,9 +106,9 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
             event.preventDefault()
             setShowQueryForm(false)
             setTriggerCompleted(true)
-            onQueryChange(queryState.value)
+            onQueryChange(`${queryState.value}${hasPatternTypeFilter ? '' : ' patternType:literal'}`)
         },
-        [setTriggerCompleted, setShowQueryForm, onQueryChange, queryState]
+        [setTriggerCompleted, setShowQueryForm, onQueryChange, queryState, hasPatternTypeFilter]
     )
 
     const cancelForm: React.FormEventHandler = useCallback(
@@ -106,7 +136,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                 <input
                                     type="text"
                                     className={classNames(
-                                        'trigger-area__query-input-field form-control my-2 test-trigger-input',
+                                        'trigger-area__query-input-field form-control my-2 test-trigger-input text-monospace',
                                         deriveInputClassName(queryState)
                                     )}
                                     onChange={nextQueryFieldChange}
@@ -117,19 +147,33 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                     spellCheck={false}
                                     data-testid="trigger-query-edit"
                                 />
-                                {queryState.kind === 'INVALID' && (
-                                    <small className="trigger-area__query-input-error-message invalid-feedback test-trigger-error">
-                                        {queryState.reason}
-                                    </small>
-                                )}
-                                {(queryState.kind === 'NOT_VALIDATED' ||
-                                    queryState.kind === 'VALID' ||
-                                    queryState.kind === 'LOADING') && (
-                                    <small className="text-muted mt-1">
-                                        Code monitors only support <code className="bg-code">type:diff</code> and{' '}
-                                        <code className="bg-code">type:commit</code> search queries.
-                                    </small>
-                                )}
+
+                                <ul>
+                                    <li>
+                                        <input type="checkbox" disabled={true} checked={hasTypeDiffOrCommitFilter} />
+                                        Contains a <code>type:diff</code> or <code>type:commit</code> filter
+                                        <span
+                                            data-tooltip="type:diff targets code present in new commits, while type:commit targets commit messages"
+                                            data-placement="bottom"
+                                        >
+                                            ?
+                                        </span>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" disabled={true} checked={hasRepoFilter} />
+                                        Contains a <code>repo:</code> filter
+                                        <span
+                                            data-tooltip="Code monitors can watch a maximum of 50 repos at a time. Target your query with repo: filters to narrow down your search."
+                                            data-placement="bottom"
+                                        >
+                                            ?
+                                        </span>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" disabled={true} checked={isValidQuery} />
+                                        Is a valid search query
+                                    </li>
+                                </ul>
                             </div>
                             <div className="trigger-area__query-input-preview-link p-2 my-2">
                                 <Link
