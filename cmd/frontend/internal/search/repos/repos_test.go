@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
 	"reflect"
 	"sort"
 	"testing"
@@ -27,7 +28,7 @@ var dsn = flag.String("dsn", "", "Database connection string to use in integrati
 
 func TestMain(m *testing.M) {
 	flag.Parse()
-	m.Run()
+	os.Exit(m.Run())
 }
 
 type mockNamespaceStore struct {
