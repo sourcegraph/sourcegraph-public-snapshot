@@ -148,7 +148,7 @@ func addDockerfileLint(pipeline *bk.Pipeline) {
 // Adds backend integration tests step.
 func addBackendIntegrationTests(c Config) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		if !c.isBackendDryRun && !c.isMasterDryRun && c.branch != "master" && c.branch != "main" {
+		if !c.isBackendDryRun && !c.isMasterDryRun && c.branch != "master" && !c.isMainBranch() {
 			return
 		}
 
@@ -253,7 +253,7 @@ func clusterDockerImages(images []string) string {
 
 func triggerE2EandQA(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	var async bool
-	if c.branch == "main" {
+	if c.isMainBranch() {
 		async = true
 	} else {
 		async = false
@@ -346,7 +346,7 @@ func addDockerImages(c Config, final bool) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		switch {
 		// build candidate images and deploy `insiders` images
-		case c.branch == "main":
+		case c.isMainBranch():
 			for _, dockerImage := range images.SourcegraphDockerImages {
 				addDockerImage(c, dockerImage, true)(pipeline)
 			}
