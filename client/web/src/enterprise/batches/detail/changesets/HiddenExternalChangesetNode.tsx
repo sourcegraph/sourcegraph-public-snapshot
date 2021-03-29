@@ -5,10 +5,15 @@ import { HiddenExternalChangesetInfoCell } from './HiddenExternalChangesetInfoCe
 
 export interface HiddenExternalChangesetNodeProps {
     node: Pick<HiddenExternalChangesetFields, 'id' | 'nextSyncAt' | 'updatedAt' | 'state' | '__typename'>
+    enableSelect?: boolean
 }
 
-export const HiddenExternalChangesetNode: React.FunctionComponent<HiddenExternalChangesetNodeProps> = ({ node }) => (
+export const HiddenExternalChangesetNode: React.FunctionComponent<HiddenExternalChangesetNodeProps> = ({
+    node,
+    enableSelect,
+}) => (
     <>
+        {enableSelect && <span className="d-none d-sm-block" />}
         <span className="d-none d-sm-block" />
         <ChangesetStatusCell
             state={node.state}

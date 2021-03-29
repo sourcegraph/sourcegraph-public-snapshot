@@ -23,11 +23,13 @@ import { property, isDefined } from '../../../../../../shared/src/util/types'
 import { useObservable } from '../../../../../../shared/src/util/useObservable'
 import { ChangesetFields, Scalars } from '../../../../graphql-operations'
 import { getLSPTextDocumentPositionParameters } from '../../utils'
-import { BatchChangeChangesetsHeader } from './BatchChangeChangesetsHeader'
+import { BatchChangeChangesetsHeader, BatchChangeChangesetsHeaderWithCheckboxes } from './BatchChangeChangesetsHeader'
 import { ChangesetFilters, ChangesetFilterRow } from './ChangesetFilterRow'
 import { EmptyChangesetListElement } from './EmptyChangesetListElement'
 import { EmptyChangesetSearchElement } from './EmptyChangesetSearchElement'
 import { EmptyArchivedChangesetListElement } from './EmptyArchivedChangesetListElement'
+import { ChangesetSelectRow } from './ChangesetSelectRow'
+import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
     batchChangeID: Scalars['ID']
@@ -37,6 +39,8 @@ interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, Extens
 
     hideFilters?: boolean
     onlyArchived?: boolean
+
+    enableSelect?: boolean
 
     /** For testing only. */
     queryChangesets?: typeof _queryChangesets
@@ -63,7 +67,42 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
     queryExternalChangesetWithFileDiffs,
     expandByDefault,
     onlyArchived,
+    enableSelect,
 }) => {
+    const [selectedChangesets, setSelectedChangesets] = useState<Set<string>>(new Set())
+    const onSelect = (id: string, selected: boolean) => {
+        if (selected) {
+            setSelectedChangesets(() => new Set([...selectedChangesets, id]))
+        } else {
+            setSelectedChangesets(new Set([...selectedChangesets].filter(x => x !== id)))
+        }
+    }
+
+    const deselectAll = () => setSelectedChangesets(new Set([]))
+    const changesetSelected = (id: string) => selectedChangesets.has(id)
+
+    const [isSubmittingSelected, setIsSubmittingSelected] = useState<boolean | Error>(false)
+    const onSubmitSelected = useCallback(async () => {
+        if (
+            !confirm(
+                `Are you sure you want to detach ${selectedChangesets.size} ${pluralize(
+                    'changesets',
+                    selectedChangesets.size
+                )}?`
+            )
+        ) {
+            return
+        }
+        setIsSubmittingSelected(true)
+        try {
+            console.log('~~~ DETACHING CHANGESETS ~~~', selectedChangesets)
+
+            telemetryService.logViewEvent(`BatchChangeDetailsPageDetachArchivedChangesets`)
+        } catch (error) {
+            setIsSubmittingSelected(error)
+        }
+    }, [selectedChangesets, setIsSubmittingSelected])
+
     const [changesetFilters, setChangesetFilters] = useState<ChangesetFilters>({
         checkState: null,
         state: null,
@@ -150,8 +189,15 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
 
     return (
         <>
-            {!hideFilters && (
+            {!hideFilters && selectedChangesets.size === 0 && (
                 <ChangesetFilterRow history={history} location={location} onFiltersChange={setChangesetFilters} />
+            )}
+            {viewerCanAdminister && selectedChangesets.size > 0 && (
+                <ChangesetSelectRow
+                    selected={selectedChangesets}
+                    onSubmit={onSubmitSelected}
+                    deselectAll={deselectAll}
+                />
             )}
             <div className="list-group position-relative" ref={nextContainerElement}>
                 <FilteredConnection<ChangesetFields, Omit<ChangesetNodeProps, 'node'>>
@@ -165,6 +211,9 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                         extensionInfo: { extensionsController, hoverifier },
                         expandByDefault,
                         queryExternalChangesetWithFileDiffs,
+                        enableSelect,
+                        onSelect,
+                        isSelected: changesetSelected,
                     }}
                     queryConnection={queryChangesetsConnection}
                     hideSearch={true}
@@ -175,8 +224,14 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                     location={location}
                     useURLQuery={true}
                     listComponent="div"
-                    listClassName="batch-change-changesets__grid mb-3"
-                    headComponent={BatchChangeChangesetsHeader}
+                    listClassName={
+                        enableSelect
+                            ? 'batch-change-changesets__grid-with-checkboxes mb-3'
+                            : 'batch-change-changesets__grid mb-3'
+                    }
+                    headComponent={
+                        enableSelect ? BatchChangeChangesetsHeaderWithCheckboxes : BatchChangeChangesetsHeader
+                    }
                     // Only show the empty element, if no filters are selected.
                     emptyElement={
                         filtersSelected(changesetFilters) ? (
