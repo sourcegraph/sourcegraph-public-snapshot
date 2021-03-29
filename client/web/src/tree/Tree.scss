@@ -4,16 +4,11 @@
     isolation: isolate;
     flex: 1 1 auto;
     width: 100%;
-    overflow: auto;
     white-space: pre;
     line-height: (20/14);
     font-size: 0.875rem;
 
     user-select: none;
-
-    table {
-        border-spacing: 0;
-    }
 
     &__cell {
         padding-left: 0;
@@ -23,8 +18,6 @@
     &__row {
         color: var(--body-color);
         width: 100%;
-        display: table;
-
         &:hover {
             background-color: var(--color-bg-3);
         }
@@ -40,7 +33,6 @@
 
         &--active {
             width: 100%;
-            display: table;
             background-color: var(--primary) !important;
             color: $white !important;
         }
@@ -75,7 +67,6 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            width: 100%;
         }
     }
 
@@ -91,11 +82,5 @@
 
 .tree-layer {
     width: 100%;
-
-    // Remove user-agent focus ring.
     outline: none;
-}
-
-.tree-row {
-    width: 100%;
 }

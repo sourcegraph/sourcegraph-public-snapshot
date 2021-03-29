@@ -118,7 +118,7 @@ func CompareLocations(a LocationData, b LocationData) int {
 	return 0
 }
 
-// ComparePosition compres the range r with the position constructed from line and character.
+// ComparePosition compares the range r with the position constructed from line and character.
 // Returns -1 if the position occurs before the range, +1 if it occurs after, and 0 if the
 // position is inside of the range.
 func ComparePosition(r RangeData, line, character int) int {
@@ -134,7 +134,7 @@ func ComparePosition(r RangeData, line, character int) int {
 		return 1
 	}
 
-	if line == r.EndLine && character > r.EndCharacter {
+	if line == r.EndLine && character >= r.EndCharacter {
 		return -1
 	}
 

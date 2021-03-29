@@ -108,7 +108,7 @@
       "label": "eslint:extension-api",
       "type": "npm",
       "script": "eslint",
-      "path": "client/packages/sourcegraph-extension-api/",
+      "path": "client/extension-api/",
       "problemMatcher": ["$eslint-stylish"],
     },
   ],

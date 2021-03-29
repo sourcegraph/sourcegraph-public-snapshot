@@ -31,6 +31,7 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     platformContext: {} as any,
     settingsCascade: NOOP_SETTINGS_CASCADE,
     showBatchChanges: false,
+    enableCodeMonitoring: false,
     telemetryService: {} as any,
     hideNavLinks: true, // used because reactstrap Popover is incompatible with react-test-renderer
     isExtensionAlertAnimating: false,
@@ -53,7 +54,7 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
 }
 
 describe('GlobalNavbar', () => {
-    setLinkComponent(props => <a {...props} />)
+    setLinkComponent(({ children, ...props }) => <a {...props}>{children}</a>)
     afterAll(() => setLinkComponent(() => null)) // reset global env for other tests
 
     test('default', () => expect(renderer.create(<GlobalNavbar {...PROPS} />).toJSON()).toMatchSnapshot())

@@ -235,7 +235,7 @@ func TestClient_GetDiffInfo(t *testing.T) {
 func newClient(t testing.TB, name string) (*phabricator.Client, func()) {
 	t.Helper()
 
-	cassete := filepath.Join("testdata/vcr/", strings.Replace(name, " ", "-", -1))
+	cassete := filepath.Join("testdata/vcr/", strings.ReplaceAll(name, " ", "-"))
 	rec, err := httptestutil.NewRecorder(cassete, *update, func(i *cassette.Interaction) error {
 		// Remove all tokens
 		i.Request.Body = ""

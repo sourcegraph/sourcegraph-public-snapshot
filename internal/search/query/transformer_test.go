@@ -892,7 +892,7 @@ func TestConcatRevFilters(t *testing.T) {
 		},
 		{
 			input: "repo:foo bar and bas rev:a",
-			want:  `("repo:foo@a" "bar" "bas")`,
+			want:  `("repo:foo@a" (and "bar" "bas"))`,
 		},
 		{
 			input: "(repo:foo rev:a) or (repo:foo rev:b)",
@@ -906,12 +906,12 @@ func TestConcatRevFilters(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
 			query, _ := Parse(c.input, SearchTypeRegex)
-			queries := Dnf(query)
+			plan, _ := ToPlan(Dnf(query))
 
 			var queriesStr []string
-			for _, q := range queries {
-				qConcat := ConcatRevFilters(q)
-				queriesStr = append(queriesStr, toString(qConcat))
+			for _, basic := range plan {
+				p := ConcatRevFilters(basic)
+				queriesStr = append(queriesStr, toString(p.ToParseTree()))
 			}
 			got := "(" + strings.Join(queriesStr, ") OR (") + ")"
 			if diff := cmp.Diff(c.want, got); diff != "" {
@@ -942,8 +942,9 @@ func TestConcatRevFiltersTopLevelAnd(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
 			query, _ := Parse(c.input, SearchTypeRegex)
-			qConcat := ConcatRevFilters(query)
-			if diff := cmp.Diff(c.want, toString(qConcat)); diff != "" {
+			plan, _ := ToPlan(Dnf(query))
+			p := MapPlan(plan, ConcatRevFilters)
+			if diff := cmp.Diff(c.want, toString(p.ToParseTree())); diff != "" {
 				t.Error(diff)
 			}
 		})

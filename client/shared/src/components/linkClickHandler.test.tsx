@@ -15,6 +15,7 @@ describe('createLinkClickHandler', () => {
         const root = document.createElement('div')
         document.body.append(root)
         ReactDOM.render(
+            // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
             <div onClick={createLinkClickHandler(history)}>
                 <a href="https://sourcegraph.test/else/where">Test</a>
             </div>,
@@ -44,6 +45,7 @@ describe('createLinkClickHandler', () => {
         const root = document.createElement('div')
         document.body.append(root)
         ReactDOM.render(
+            // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
             <div onClick={createLinkClickHandler(history)}>
                 <a href="https://github.com/some/where">Test</a>
             </div>,

@@ -40,6 +40,7 @@ type Config struct {
 	patchNoTest         bool
 	isQuick             bool
 	isMasterDryRun      bool
+	isBackendDryRun     bool
 
 	// profilingEnabled, if true, tells buildkite to print timing and resource utilization information
 	// for each command
@@ -71,6 +72,8 @@ func ComputeConfig() Config {
 	if patchNoTest || patch {
 		version = version + "_patch"
 	}
+
+	isBackendDryRun := strings.HasPrefix(branch, "backend-dry-run/")
 
 	isMasterDryRun := strings.HasPrefix(branch, "master-dry-run/")
 
@@ -110,6 +113,7 @@ func ComputeConfig() Config {
 		patchNoTest:         patchNoTest,
 		isQuick:             isQuick,
 		isMasterDryRun:      isMasterDryRun,
+		isBackendDryRun:     isBackendDryRun,
 		profilingEnabled:    profilingEnabled,
 		isBextNightly:       os.Getenv("BEXT_NIGHTLY") == "true",
 	}
@@ -154,8 +158,8 @@ func (c Config) isPR() bool {
 		!c.taggedRelease &&
 		c.branch != "master" &&
 		c.branch != "main" &&
-		!strings.HasPrefix(c.branch, "master-dry-run/") &&
-		!strings.HasPrefix(c.branch, "docker-images-patch/")
+		!c.isMasterDryRun &&
+		!c.patch
 }
 
 func (c Config) isDocsOnly() bool {

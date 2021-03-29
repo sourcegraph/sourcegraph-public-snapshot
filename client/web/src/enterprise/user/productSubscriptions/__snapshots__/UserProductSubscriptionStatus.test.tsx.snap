@@ -8,6 +8,7 @@ exports[`UserProductSubscriptionStatus toggle: license key hidden 1`] = `
     className="card-body d-flex align-items-center"
   >
     <img
+      alt="Sourcegraph logo"
       className="product-certificate__logo mr-1 p-2"
       src="/.assets/img/sourcegraph-mark.svg"
     />
@@ -71,6 +72,7 @@ exports[`UserProductSubscriptionStatus toggle: license key revealed 1`] = `
     className="card-body d-flex align-items-center"
   >
     <img
+      alt="Sourcegraph logo"
       className="product-certificate__logo mr-1 p-2"
       src="/.assets/img/sourcegraph-mark.svg"
     />

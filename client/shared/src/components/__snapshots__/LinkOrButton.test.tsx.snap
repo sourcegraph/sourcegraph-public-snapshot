@@ -7,6 +7,7 @@ exports[`LinkOrButton render a button when "to" is undefined 1`] = `
   onAuxClick={[Function]}
   onClick={[Function]}
   onKeyPress={[Function]}
+  role="button"
   tabIndex={0}
 >
   foo

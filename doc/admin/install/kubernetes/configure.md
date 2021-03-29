@@ -639,6 +639,8 @@ kubectl apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
 
 Available overlays are the subdirectories of `overlays` (only give the name of the subdirectory, not the full path as an argument).
 
+You only need to apply one of the three overlays; each builds on the overlay listed before. So, for example, using the non-root overlay will also install Sourcegraph in a non-default namespace.
+
 ### Namespaced overlay
 
 This overlay adds a namespace declaration to all the manifests. You can change the namespace by editing

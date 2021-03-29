@@ -90,6 +90,7 @@ export class Resizable<C extends React.ReactElement> extends React.PureComponent
             >
                 {this.props.element}
                 <div
+                    role="presentation"
                     className={`resizable__handle resizable__handle--${this.props.handlePosition} ${
                         this.state.resizing ? 'resizable__handle--resizing' : ''
                     }`}

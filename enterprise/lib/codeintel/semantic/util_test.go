@@ -55,6 +55,42 @@ func TestFindRanges(t *testing.T) {
 	}
 }
 
+func TestFindNoRanges(t *testing.T) {
+	ranges := []RangeData{
+		{
+			StartLine:      0,
+			StartCharacter: 1,
+			EndLine:        0,
+			EndCharacter:   2,
+		},
+		{
+			StartLine:      1,
+			StartCharacter: 5,
+			EndLine:        1,
+			EndCharacter:   6,
+		},
+		{
+			StartLine:      2,
+			StartCharacter: 3,
+			EndLine:        2,
+			EndCharacter:   4,
+		},
+	}
+
+	m := map[ID]RangeData{}
+	for i, r := range ranges {
+		m[ID(strconv.Itoa(i))] = r
+	}
+
+	for i := range ranges {
+		actual := FindRanges(m, i, 4)
+		var expected []RangeData
+		if diff := cmp.Diff(expected, actual); diff != "" {
+			t.Errorf("unexpected findRanges result %d (-want +got):\n%s", i, diff)
+		}
+	}
+}
+
 func TestFindRangesOrder(t *testing.T) {
 	ranges := []RangeData{
 		{
@@ -99,7 +135,6 @@ func TestFindRangesOrder(t *testing.T) {
 	if diff := cmp.Diff(expected, actual); diff != "" {
 		t.Errorf("unexpected findRanges result (-want +got):\n%s", diff)
 	}
-
 }
 
 func TestComparePosition(t *testing.T) {
@@ -117,7 +152,7 @@ func TestComparePosition(t *testing.T) {
 	}{
 		{5, 11, 0},
 		{5, 12, 0},
-		{5, 13, 0},
+		{5, 13, -1},
 		{4, 12, +1},
 		{5, 10, +1},
 		{5, 14, -1},

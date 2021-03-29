@@ -15,7 +15,7 @@ import { useObservable } from '../../../../shared/src/util/useObservable'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import { eventLogger } from '../../tracking/eventLogger'
 import { InstallBrowserExtensionPopover } from './InstallBrowserExtensionPopover'
-import { useLocalStorage } from '../../util/useLocalStorage'
+import { useLocalStorage } from '../../../../shared/src/util/useLocalStorage'
 import { RepoHeaderContext } from '../RepoHeader'
 
 interface GoToCodeHostPopoverProps {
@@ -199,6 +199,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
     // Don't show browser extension popover on small screens
     if (props.actionType === 'dropdown') {
         return (
+            // eslint-disable-next-line jsx-a11y/anchor-is-valid
             <a
                 className="nav-link repo-header__file-action test-go-to-code-host"
                 // empty href is OK because we always set tabindex=0
@@ -217,6 +218,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
 
     return (
         <>
+            {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
             <a
                 className="nav-link test-go-to-code-host"
                 // empty href is OK because we always set tabindex=0

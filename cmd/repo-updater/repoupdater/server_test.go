@@ -1174,6 +1174,42 @@ func TestServer_handleSchedulePermsSync(t *testing.T) {
 	}
 }
 
+func TestExternalServiceValidate_ValidatesToken(t *testing.T) {
+	var (
+		src    repos.Source
+		called bool
+		ctx    = context.Background()
+	)
+	src = testSource{
+		fn: func() error {
+			called = true
+			return nil
+		},
+	}
+	err := externalServiceValidate(ctx, protocol.ExternalServiceSyncRequest{}, src)
+	if err != nil {
+		t.Errorf("expected nil, got %v", err)
+	}
+	if !called {
+		t.Errorf("expected called, got not called")
+	}
+}
+
+type testSource struct {
+	fn func() error
+}
+
+func (t testSource) ListRepos(ctx context.Context, results chan repos.SourceResult) {
+}
+
+func (t testSource) ExternalServices() types.ExternalServices {
+	return nil
+}
+
+func (t testSource) ValidateToken(ctx context.Context) error {
+	return t.fn()
+}
+
 func formatJSON(s string) string {
 	formatted, err := jsonc.Format(s, nil)
 	if err != nil {

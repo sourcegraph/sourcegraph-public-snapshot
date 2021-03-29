@@ -25,6 +25,7 @@ Ensure the following values are set for the application configuration in the ide
   - `email` (required): the user's email
   - `login` (optional): the user's username
   - `displayName` (optional): the full name of the user
+- **Name ID**: `email`
 
 ## 2. Add a SAML auth provider to Sourcegraph site configuration
 
@@ -40,6 +41,7 @@ Example 1:
   "auth.providers": [
     {
       "type": "saml",
+      "configID": "generic",
       "identityProviderMetadataURL": "https://example.com/saml-metadata"
     }
   ]
@@ -55,6 +57,7 @@ Example 2:
   "auth.providers": [
     {
       "type": "saml",
+      "configID": "generic",
 
       // This is a long XML string you download from your identity provider.
       // You can escape it to a JSON string using a tool like

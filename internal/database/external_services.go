@@ -610,7 +610,7 @@ func (e *ExternalServiceStore) maybeDecryptConfig(ctx context.Context, config st
 //
 // 🚨 SECURITY: The value of `Unrestricted` field is disregarded and will always
 // be recalculated based on whether `"authorization"` is presented in `Config`.
-func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.ExternalService) error {
+func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.ExternalService) (err error) {
 	if Mocks.ExternalServices.Upsert != nil {
 		return Mocks.ExternalServices.Upsert(ctx, svcs...)
 	}
@@ -623,17 +623,25 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 		s.Unrestricted = !gjson.Get(s.Config, "authorization").Exists()
 	}
 
-	q, err := e.upsertExternalServicesQuery(ctx, svcs)
+	tx, err := e.Transact(ctx)
 	if err != nil {
 		return err
 	}
-	rows, err := e.Query(ctx, q)
+	defer func() { err = tx.Done(err) }()
+
+	q, err := tx.upsertExternalServicesQuery(ctx, svcs)
+	if err != nil {
+		return err
+	}
+
+	rows, err := tx.Query(ctx, q)
 	if err != nil {
 		return err
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	i := 0
+	var possiblyOrphaned bool
 	for rows.Next() {
 		var keyIdent string
 		err = rows.Scan(
@@ -655,15 +663,25 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			return err
 		}
 
-		svcs[i].Config, err = e.maybeDecryptConfig(ctx, svcs[i].Config, keyIdent)
+		svcs[i].Config, err = tx.maybeDecryptConfig(ctx, svcs[i].Config, keyIdent)
 		if err != nil {
 			return err
+		}
+
+		if !svcs[i].DeletedAt.IsZero() {
+			possiblyOrphaned = true
 		}
 
 		i++
 	}
 
-	return err
+	if possiblyOrphaned {
+		// if we deleted at least one external service we must manually run the soft_delete_orphan_repo_by_external_service_repos function
+		// to cleanup orphaned repos
+		return tx.Exec(ctx, sqlf.Sprintf(`SELECT soft_delete_orphan_repo_by_external_service_repos()`))
+	}
+
+	return nil
 }
 
 func (e *ExternalServiceStore) upsertExternalServicesQuery(ctx context.Context, svcs []*types.ExternalService) (*sqlf.Query, error) {
@@ -849,13 +867,19 @@ func (e externalServiceNotFoundError) NotFound() bool {
 // Delete deletes an external service.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin or owner of the external service.
-func (e *ExternalServiceStore) Delete(ctx context.Context, id int64) error {
+func (e *ExternalServiceStore) Delete(ctx context.Context, id int64) (err error) {
 	if Mocks.ExternalServices.Delete != nil {
 		return Mocks.ExternalServices.Delete(ctx, id)
 	}
 	e.ensureStore()
 
-	res, err := e.Handle().DB().ExecContext(ctx, "UPDATE external_services SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
+	tx, err := e.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	res, err := tx.ExecResult(ctx, sqlf.Sprintf("UPDATE external_services SET deleted_at=now() WHERE id=%s AND deleted_at IS NULL", id))
 	if err != nil {
 		return err
 	}
@@ -866,7 +890,8 @@ func (e *ExternalServiceStore) Delete(ctx context.Context, id int64) error {
 	if nrows == 0 {
 		return externalServiceNotFoundError{id: id}
 	}
-	return nil
+
+	return tx.Exec(ctx, sqlf.Sprintf(`SELECT soft_delete_orphan_repo_by_external_service_repos()`))
 }
 
 // GetByID returns the external service for id.
@@ -914,10 +939,12 @@ LIMIT 1
 	return lastError, err
 }
 
-// GetAffiliatedSyncErrors returns the most recent failure message for each
-// external service. If the latest run did not have an error, it will be excluded
-// from the map. We fetch external services owned by the supplied user and if
-// they are a site admin we also return site level external services.
+// GetAffiliatedSyncErrors returns the most recent sync failure message for each
+// external service affiliated with the supplied user. If the latest run did not
+// have an error, the string will be empty. We fetch external services owned by
+// the supplied user and if they are a site admin we additionally return site
+// level external services. We exclude cloud_default repos as they are never
+// synced.
 func (e *ExternalServiceStore) GetAffiliatedSyncErrors(ctx context.Context, u *types.User) (map[int64]string, error) {
 	if Mocks.ExternalServices.ListSyncErrors != nil {
 		return Mocks.ExternalServices.ListSyncErrors(ctx)
@@ -926,14 +953,16 @@ func (e *ExternalServiceStore) GetAffiliatedSyncErrors(ctx context.Context, u *t
 		return nil, errors.New("nil user")
 	}
 	q := sqlf.Sprintf(`
-SELECT DISTINCT ON(external_service_id) external_service_id, failure_message
-FROM external_service_sync_jobs sj
-JOIN external_services es ON sj.external_service_id = es.id
-WHERE
-  state IN ('completed','errored','failed')
-  AND finished_at IS NOT NULL
-  AND ((es.namespace_user_id = %s) OR (%s AND es.namespace_user_id IS NULL))
-ORDER BY external_service_id, finished_at DESC
+SELECT DISTINCT ON (es.id) es.id, essj.failure_message
+FROM external_services es
+         LEFT JOIN external_service_sync_jobs essj
+                   ON es.id = essj.external_service_id
+                       AND essj.state IN ('completed', 'errored', 'failed')
+                       AND essj.finished_at IS NOT NULL
+WHERE ((es.namespace_user_id = %s) OR (%s AND es.namespace_user_id IS NULL))
+  AND es.deleted_at IS NULL
+  AND NOT es.cloud_default
+ORDER BY es.id, essj.finished_at DESC
 `, u.ID, u.SiteAdmin)
 
 	rows, err := e.Query(ctx, q)
@@ -949,9 +978,7 @@ ORDER BY external_service_id, finished_at DESC
 		if err := rows.Scan(&svcID, &message); err != nil {
 			return nil, err
 		}
-		if message.Valid {
-			messages[svcID] = message.String
-		}
+		messages[svcID] = message.String
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

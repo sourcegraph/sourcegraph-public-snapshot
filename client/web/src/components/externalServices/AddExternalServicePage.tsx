@@ -1,6 +1,6 @@
 import * as H from 'history'
 import React, { useEffect, useCallback, useState } from 'react'
-import { Markdown } from '../../../../shared/src/components/Markdown'
+import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { asError, isErrorLike } from '../../../../shared/src/util/errors'
 import { renderMarkdown } from '../../../../shared/src/util/markdown'
 import { PageTitle } from '../PageTitle'

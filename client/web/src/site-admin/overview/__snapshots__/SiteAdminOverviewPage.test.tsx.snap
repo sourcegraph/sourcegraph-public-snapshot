@@ -237,7 +237,7 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
             <button
               aria-controls="panel--1---1"
               aria-expanded={true}
-              className="activation-checklist__button list-group-item list-group-item-action"
+              className="activation-checklist__button list-group-item list-group-item-action btn-link"
               data-reach-accordion-button=""
               id="button--1---1"
               onClick={[Function]}
@@ -279,12 +279,9 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
                       />
                     </svg>
                   </span>
-                  <a
-                    className="activation-checklist__title"
-                    href=""
-                  >
+                  <span>
                     Add repositories
-                  </a>
+                  </span>
                 </div>
                 <div>
                   <svg

@@ -59,9 +59,11 @@ exports[`ActionItem actionItem variant 1`] = `
   onAuxClick={[Function]}
   onClick={[Function]}
   onKeyPress={[Function]}
+  role="button"
   tabIndex={0}
 >
   <img
+    alt="d"
     src="u"
   />
    
@@ -80,9 +82,11 @@ exports[`ActionItem non-actionItem variant 1`] = `
   onAuxClick={[Function]}
   onClick={[Function]}
   onKeyPress={[Function]}
+  role="button"
   tabIndex={0}
 >
   <img
+    alt="d"
     src="u"
   />
    
@@ -114,6 +118,7 @@ exports[`ActionItem noop command 1`] = `
   data-tooltip="d"
 >
   <img
+    alt="d"
     src="u"
   />
    
@@ -147,9 +152,11 @@ exports[`ActionItem run command 1`] = `
   onAuxClick={[Function]}
   onClick={[Function]}
   onKeyPress={[Function]}
+  role="button"
   tabIndex={-1}
 >
   <img
+    alt="d"
     src="u"
   />
    
@@ -168,9 +175,11 @@ exports[`ActionItem run command 2`] = `
   onAuxClick={[Function]}
   onClick={[Function]}
   onKeyPress={[Function]}
+  role="button"
   tabIndex={0}
 >
   <img
+    alt="d"
     src="u"
   />
    
@@ -189,9 +198,11 @@ exports[`ActionItem run command with error 1`] = `
   onAuxClick={[Function]}
   onClick={[Function]}
   onKeyPress={[Function]}
+  role="button"
   tabIndex={0}
 >
   <img
+    alt="d"
     src="u"
   />
    
@@ -210,9 +221,11 @@ exports[`ActionItem run command with error with showInlineError 1`] = `
   onAuxClick={[Function]}
   onClick={[Function]}
   onKeyPress={[Function]}
+  role="button"
   tabIndex={0}
 >
   <img
+    alt="d"
     src="u"
   />
    
@@ -231,9 +244,11 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
   onAuxClick={[Function]}
   onClick={[Function]}
   onKeyPress={[Function]}
+  role="button"
   tabIndex={-1}
 >
   <img
+    alt="d"
     src="u"
   />
    
@@ -259,9 +274,11 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 2`] = `
   onAuxClick={[Function]}
   onClick={[Function]}
   onKeyPress={[Function]}
+  role="button"
   tabIndex={0}
 >
   <img
+    alt="d"
     src="u"
   />
    
@@ -280,6 +297,7 @@ exports[`ActionItem title element 1`] = `
   onAuxClick={[Function]}
   onClick={[Function]}
   onKeyPress={[Function]}
+  role="button"
   tabIndex={0}
 >
   <span>

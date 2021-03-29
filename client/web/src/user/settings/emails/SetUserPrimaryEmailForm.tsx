@@ -79,7 +79,7 @@ export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails
                     id="setUserPrimaryEmailForm-email"
                     className="custom-select form-control-lg mr-sm-2"
                     value={primaryEmail}
-                    onBlur={onPrimaryEmailSelect}
+                    onChange={onPrimaryEmailSelect}
                     required={true}
                     disabled={options.length === 1 || statusOrError === 'loading'}
                 >

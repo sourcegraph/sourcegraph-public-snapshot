@@ -40,19 +40,22 @@ func TestSearchRepositories(t *testing.T) {
 			return nil, nil, err
 		}
 		repoName := repos[0].Repo.Name
+		rev := "1a2b3c"
 		switch repoName {
 		case "foo/one":
 			return []*FileMatchResolver{
 				mkFileMatchResolver(db, result.FileMatch{
-					URI:  "git://" + string(repoName) + "?1a2b3c#" + "f.go",
-					Repo: &types.RepoName{ID: 123},
+					Repo:     &types.RepoName{ID: 123, Name: repoName},
+					InputRev: &rev,
+					Path:     "f.go",
 				}),
 			}, &streaming.Stats{}, nil
 		case "bar/one":
 			return []*FileMatchResolver{
 				mkFileMatchResolver(db, result.FileMatch{
-					URI:  "git://" + string(repoName) + "?1a2b3c#" + "f.go",
-					Repo: &types.RepoName{ID: 789},
+					Repo:     &types.RepoName{ID: 789, Name: repoName},
+					InputRev: &rev,
+					Path:     "f.go",
 				}),
 			}, &streaming.Stats{}, nil
 		case "foo/no-match":
@@ -146,12 +149,14 @@ func TestRepoShouldBeAdded(t *testing.T) {
 			return nil, nil, err
 		}
 		repoName := repos[0].Repo.Name
+		rev := "1a2b3c"
 		switch repoName {
 		case "foo/one":
 			return []*FileMatchResolver{
 				mkFileMatchResolver(db, result.FileMatch{
-					URI:  "git://" + string(repoName) + "?1a2b3c#" + "foo.go",
-					Repo: &types.RepoName{ID: 123},
+					Repo:     &types.RepoName{ID: 123, Name: repoName},
+					InputRev: &rev,
+					Path:     "foo.go",
 				}),
 			}, &streaming.Stats{}, nil
 		case "foo/no-match":
@@ -166,10 +171,12 @@ func TestRepoShouldBeAdded(t *testing.T) {
 	t.Run("repo should be included in results, query has repoHasFile filter", func(t *testing.T) {
 		repo := &search.RepositoryRevisions{Repo: &types.RepoName{ID: 123, Name: "foo/one"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
 		mockSearchFilesInRepos = func(args *search.TextParameters) (matches []*FileMatchResolver, common *streaming.Stats, err error) {
+			rev := "1a2b3c"
 			return []*FileMatchResolver{
 				mkFileMatchResolver(db, result.FileMatch{
-					URI:  "git://" + string(repo.Repo.Name) + "?1a2b3c#" + "foo.go",
-					Repo: &types.RepoName{ID: 123},
+					Repo:     &types.RepoName{ID: 123, Name: repo.Repo.Name},
+					InputRev: &rev,
+					Path:     "foo.go",
 				}),
 			}, &streaming.Stats{}, nil
 		}
@@ -201,10 +208,12 @@ func TestRepoShouldBeAdded(t *testing.T) {
 	t.Run("repo shouldn't be included in results, query has -repoHasFile filter", func(t *testing.T) {
 		repo := &search.RepositoryRevisions{Repo: &types.RepoName{ID: 123, Name: "foo/one"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
 		mockSearchFilesInRepos = func(args *search.TextParameters) (matches []*FileMatchResolver, common *streaming.Stats, err error) {
+			rev := "1a2b3c"
 			return []*FileMatchResolver{
 				mkFileMatchResolver(db, result.FileMatch{
-					URI:  "git://" + string(repo.Repo.Name) + "?1a2b3c#" + "foo.go",
-					Repo: &types.RepoName{ID: 123},
+					Repo:     &types.RepoName{ID: 123, Name: repo.Repo.Name},
+					InputRev: &rev,
+					Path:     "foo.go",
 				}),
 			}, &streaming.Stats{}, nil
 		}

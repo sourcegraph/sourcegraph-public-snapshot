@@ -1,0 +1,117 @@
+###########################################################
+#                                                         #
+#                 EXAMPLE CONFIG FILE                     #
+#                                                         #
+#  See sg.config.yaml in repository root for real config. #
+#                                                         #
+###########################################################
+
+env:
+  SRC_LOG_LEVEL: info
+  SRC_LOG_FORMAT: condensed
+  SRC_GIT_SERVER_1: 127.0.0.1:3178
+  SRC_GIT_SERVERS: 127.0.0.1:3178
+
+  # Env vars are expanded
+  SRC_REPOS_DIR: $HOME/.sourcegraph/repos
+
+  # [...]
+
+commands:
+  frontend:
+    cmd: ulimit -n 10000 && .bin/frontend
+    install: go build -o .bin/frontend github.com/sourcegraph/sourcegraph/cmd/frontend
+    env:
+      CONFIGURATION_MODE: server
+      USE_ENHANCED_LANGUAGE_DETECTION: false
+      # This needs to be set on `frontend` too so that `app.html` is rendered correctly
+      WEBPACK_DEV_SERVER: 1
+    watch:
+      - internal
+      - cmd/frontend
+
+  enterprise-frontend:
+    cmd: .bin/enterprise-frontend
+    install: go build -o .bin/enterprise-frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
+    env:
+      CONFIGURATION_MODE: server
+      USE_ENHANCED_LANGUAGE_DETECTION: false
+    watch:
+      - internal
+      - cmd/frontend
+      - enterprise/cmd/frontend
+
+  gitserver:
+    cmd: .bin/gitserver
+    install: go build -o .bin/gitserver github.com/sourcegraph/sourcegraph/cmd/gitserver
+    env:
+      HOSTNAME: 127.0.0.1:3178
+    watch:
+      - internal
+      - cmd/gitserver
+
+  repo-updater:
+    cmd: .bin/repo-updater
+    install: go build -o .bin/repo-updater github.com/sourcegraph/sourcegraph/cmd/repo-updater
+    watch:
+      - internal
+      - cmd/repo-updater
+
+  caddy:
+    cmd: .bin/caddy run --watch --config=dev/Caddyfile
+    install: |
+      case "$(go env GOOS)" in
+        linux)
+          os="linux"
+          ;;
+        darwin)
+          os="mac"
+          ;;
+      esac
+      name="caddy_${CADDY_VERSION}_${os}_amd64"
+      target="$PWD/.bin/caddy"
+      url="https://github.com/caddyserver/caddy/releases/download/v${CADDY_VERSION}/${name}.tar.gz"
+
+      if [ ! -f "${target}" ]; then
+        echo "downloading ${url}" 1>&2
+        curl -sS -L -f "${url}" | tar -xz --to-stdout "caddy" >"${target}.tmp"
+        mv "${target}.tmp" "${target}"
+        chmod +x ${target}
+      fi
+    env:
+      CADDY_VERSION: 2.3.0
+      SOURCEGRAPH_HTTPS_DOMAIN: sourcegraph.test
+      SOURCEGRAPH_HTTPS_PORT: 3443
+
+  web:
+    cmd: ./node_modules/.bin/gulp --silent --color dev
+    install: yarn --no-progress
+    env:
+      WEBPACK_DEV_SERVER: 1
+      NODE_ENV: development
+      NODE_OPTIONS: "--max_old_space_size=4096"
+
+commandsets:
+  minimal:
+    - frontend
+    - gitserver
+
+  default:
+    - frontend
+    - repo-updater
+    - gitserver
+    - web
+
+tests:
+  # These can be run with `sg test [name]`
+  # Every command is run from the repository root.
+  backend:
+    cmd: go test ./...
+  backend-integration:
+    cmd: cd dev/gqltest && go test -long -base-url $BASE_URL -email $EMAIL -username $USERNAME -password $PASSWORD ./gqltest
+    env:
+      # These are defaults. They can be overwritten by setting the env vars when
+      # running the command.
+      BASE_URL: "http://localhost:3080"
+      EMAIL: "joe@sourcegraph.com"
+      PASSWORD: "12345"

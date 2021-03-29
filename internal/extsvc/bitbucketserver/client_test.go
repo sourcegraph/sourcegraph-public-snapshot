@@ -395,7 +395,7 @@ func TestClient_LoadPullRequest(t *testing.T) {
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			name := "PullRequests-" + strings.Replace(tc.name, " ", "-", -1)
+			name := "PullRequests-" + strings.ReplaceAll(tc.name, " ", "-")
 			cli, save := NewTestClient(t, name, *update)
 			defer save()
 
@@ -418,7 +418,7 @@ func TestClient_LoadPullRequest(t *testing.T) {
 				return
 			}
 
-			checkGolden(t, "LoadPullRequest-"+strings.Replace(tc.name, " ", "-", -1), pr)
+			checkGolden(t, "LoadPullRequest-"+strings.ReplaceAll(tc.name, " ", "-"), pr)
 		})
 	}
 }
@@ -537,7 +537,7 @@ func TestClient_CreatePullRequest(t *testing.T) {
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			name := "CreatePullRequest-" + strings.Replace(tc.name, " ", "-", -1)
+			name := "CreatePullRequest-" + strings.ReplaceAll(tc.name, " ", "-")
 
 			cli, save := NewTestClient(t, name, *update)
 			defer save()
@@ -621,7 +621,7 @@ func TestClient_DeclinePullRequest(t *testing.T) {
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			name := "DeclinePullRequest-" + strings.Replace(tc.name, " ", "-", -1)
+			name := "DeclinePullRequest-" + strings.ReplaceAll(tc.name, " ", "-")
 
 			cli, save := NewTestClient(t, name, *update)
 			defer save()
@@ -718,7 +718,7 @@ func TestClient_LoadPullRequestActivities(t *testing.T) {
 				return
 			}
 
-			checkGolden(t, "LoadPullRequestActivities-"+strings.Replace(tc.name, " ", "-", -1), pr)
+			checkGolden(t, "LoadPullRequestActivities-"+strings.ReplaceAll(tc.name, " ", "-"), pr)
 		})
 	}
 }

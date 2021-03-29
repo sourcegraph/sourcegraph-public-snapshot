@@ -45,9 +45,6 @@ type Resolver struct {
 	DB               dbutil.DB
 	Zoekt            *searchbackend.Zoekt
 	DefaultReposFunc defaultReposFunc
-	NamespaceStore   interface {
-		GetByName(context.Context, string) (*database.Namespace, error)
-	}
 }
 
 func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
@@ -110,7 +107,7 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 		}
 	}
 
-	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, op.SearchContextSpec, r.NamespaceStore.GetByName)
+	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.DB, op.SearchContextSpec)
 	if err != nil {
 		return Resolved{}, err
 	}
@@ -154,8 +151,10 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 			OnlyPrivate:  op.OnlyPrivate,
 		}
 
-		if searchContext != nil && searchContext.UserID != 0 {
-			options.UserID = searchContext.UserID
+		if searchContext.ID != 0 {
+			options.SearchContextID = searchContext.ID
+		} else if searchContext.NamespaceUserID != 0 {
+			options.UserID = searchContext.NamespaceUserID
 			options.IncludeUserPublicRepos = true
 		}
 
@@ -181,6 +180,15 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 	var missingRepoRevs []*search.RepositoryRevisions
 	tr.LazyPrintf("Associate/validate revs - start")
 
+	// For auto-defined search contexts we only search the main branch
+	var searchContextRepositoryRevisions []*search.RepositoryRevisions
+	if !searchcontexts.IsAutoDefinedSearchContext(searchContext) {
+		searchContextRepositoryRevisions, err = searchcontexts.GetRepositoryRevisions(ctx, r.DB, searchContext.ID)
+		if err != nil {
+			return Resolved{}, err
+		}
+	}
+
 	for _, repo := range repos {
 		var repoRev search.RepositoryRevisions
 		var revs []search.RevisionSpecifier
@@ -190,6 +198,14 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 				if vcRepoRev.Repo == string(repo.Name) {
 					repoRev.Repo = repo
 					revs = append(revs, search.RevisionSpecifier{RevSpec: vcRepoRev.Rev})
+				}
+			}
+		} else if len(searchContextRepositoryRevisions) > 0 {
+			for _, repositoryRevisions := range searchContextRepositoryRevisions {
+				if repo.ID == repositoryRevisions.Repo.ID {
+					repoRev.Repo = repo
+					revs = repositoryRevisions.Revs
+					break
 				}
 			}
 		} else {
@@ -667,7 +683,7 @@ func optimizeRepoPatternWithHeuristics(repoPattern string) string {
 	}
 	// Optimization: make the "." in "github.com" a literal dot
 	// so that the regexp can be optimized more effectively.
-	repoPattern = strings.Replace(repoPattern, "github.com", `github\.com`, -1)
+	repoPattern = strings.ReplaceAll(repoPattern, "github.com", `github\.com`)
 	return repoPattern
 }
 

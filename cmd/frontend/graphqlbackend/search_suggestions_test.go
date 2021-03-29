@@ -113,8 +113,9 @@ func TestSearchSuggestions(t *testing.T) {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
 			fm := mkFileMatch(db, &types.RepoName{Name: "repo"}, "dir/file")
-			fm.URI = "git://repo?rev#dir/file"
+			rev := "rev"
 			fm.CommitID = "rev"
+			fm.InputRev = &rev
 			return []*FileMatchResolver{fm}, &streaming.Stats{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
@@ -173,8 +174,9 @@ func TestSearchSuggestions(t *testing.T) {
 			}
 			mk := func(name api.RepoName, path string) *FileMatchResolver {
 				fm := mkFileMatch(db, &types.RepoName{Name: name}, path)
-				fm.URI = fileMatchURI(name, "rev", path)
 				fm.CommitID = "rev"
+				rev := "rev"
+				fm.InputRev = &rev
 				return fm
 			}
 			return []*FileMatchResolver{

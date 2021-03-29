@@ -114,11 +114,14 @@ export const ButtonLink: React.FunctionComponent<Props> = ({
         return (
             // Need empty href for styling reasons
             // Use onAuxClick so that middle-clicks are caught.
+            // Ideally this should a <button> but we can't guarantee we have the .btn-link class here.
+            // eslint-disable-next-line jsx-a11y/anchor-is-valid
             <a
                 href=""
                 {...commonProps}
                 onClick={onClickPreventDefault}
                 onAuxClick={onClickPreventDefault}
+                role="button"
                 ref={buttonLinkReference}
                 data-content={dataContent}
             >

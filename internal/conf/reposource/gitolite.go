@@ -33,7 +33,7 @@ func (c Gitolite) CloneURLToRepoName(cloneURL string) (repoName api.RepoName, er
 // the prefix concatenated with the Gitolite name. Gitolite permits the "@" character, but
 // Sourcegraph does not, so "@" characters are rewritten to be "-".
 func GitoliteRepoName(prefix, gitoliteName string) api.RepoName {
-	gitoliteNameWithNoIllegalChars := strings.Replace(gitoliteName, "@", "-", -1)
+	gitoliteNameWithNoIllegalChars := strings.ReplaceAll(gitoliteName, "@", "-")
 	return api.RepoName(strings.NewReplacer(
 		"{prefix}", prefix,
 		"{gitoliteName}", gitoliteNameWithNoIllegalChars,

@@ -11,6 +11,7 @@
     `email`: user.mail (required)<br>
     `name`: user.userprincipalname (optional)<br>
     `login`: user.userprincipalname (optional)<br>
+  * **Name ID**: `email`
   * You can leave the other configuration values set to their defaults.
 1. Record the value of the "App Federation Metadata Url". You'll need this in the next section.
 
@@ -26,6 +27,7 @@
  "auth.providers": [
    {
      "type": "saml",
+     "configID": "azure",
      "identityProviderMetadataURL": "https://login.microsoftonline.com/7d2a00ed-73e8-4920-bbfa-ef68effe2d1e/federationmetadata/2007-06/federationmetadata.xml?appid=eff20ae4-145b-4bd3-ff3f-21edab43fe99"
    }
  ]
