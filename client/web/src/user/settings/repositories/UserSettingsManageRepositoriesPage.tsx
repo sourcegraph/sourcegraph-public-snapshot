@@ -106,8 +106,7 @@ const displayError = (error: ErrorLike, hint?: JSX.Element): JSX.Element => (
 const displayAffiliateRepoProblems = (
     problem: affiliateRepoProblemType,
     hint?: JSX.Element
-): JSX.Element | (JSX.Element | null)[] | null => {
-    debugger
+): JSX.Element | JSX.Element[] | null => {
     if (typeof problem === 'string') {
         return displayWarning(problem, hint)
     }
@@ -117,15 +116,7 @@ const displayAffiliateRepoProblems = (
     }
 
     if (Array.isArray(problem)) {
-        return problem.map(prob => {
-            if (typeof prob === 'string') {
-                return displayWarning(prob, hint)
-            }
-
-            if (isErrorLike(prob)) {
-                return displayError(prob, hint)
-            }
-        })
+        return displayAffiliateRepoProblems(problem)
     }
 
     return null
@@ -298,12 +289,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         }
                     }
 
-                    // TODO: figure this out
-                    let radioState = selectionState.radio
-                    if (selectionState.radio === 'all' && selectedRepos.size > 0) {
-                        radioState = 'selected'
-                    }
-
                     // sort affiliated repos with already selected repos at the top
                     affiliatedRepos.sort((repoA, repoB): number => {
                         const isRepoASelected = selectedRepos.has(repoA.name)
@@ -328,7 +313,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
                     setSelectionState({
                         repos: selectedRepos,
-                        radio: 'selected',
+                        radio: selectionState.radio,
                         loaded: true,
                     })
                 })
