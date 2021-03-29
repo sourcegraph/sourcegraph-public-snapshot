@@ -623,7 +623,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         className="mr-3"
                         type="checkbox"
                         checked={selectionState.repos.size !== 0 && selectionState.repos.size === filteredRepos.length}
-                        onClick={selectAll}
+                        onChange={selectAll}
                     />
                     <label
                         htmlFor="select-all-repos"
