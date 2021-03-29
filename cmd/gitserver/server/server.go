@@ -253,18 +253,15 @@ func (s *Server) Handler() http.Handler {
 		s.cloneableLimiter.SetLimit(limit)
 	})
 
+	s.rpsLimiter = rate.NewLimiter(rate.Inf, 10)
 	setRPSLimiter := func() {
-		maxRequestsPerSecond := conf.Get().GitMaxCodehostRequestsPerSecond
-		burst := 10
-
-		if maxRequestsPerSecond == -1 {
-			s.rpsLimiter = rate.NewLimiter(rate.Inf, burst)
+		if maxRequestsPerSecond := conf.Get().GitMaxCodehostRequestsPerSecond; maxRequestsPerSecond == -1 {
+			// As a special case, -1 means no limiting
+			s.rpsLimiter.SetLimit(rate.Inf)
 		} else {
-			s.rpsLimiter = rate.NewLimiter(rate.Limit(maxRequestsPerSecond), burst)
+			s.rpsLimiter.SetLimit(rate.Limit(maxRequestsPerSecond))
 		}
 	}
-
-	setRPSLimiter()
 	conf.Watch(func() {
 		setRPSLimiter()
 	})
