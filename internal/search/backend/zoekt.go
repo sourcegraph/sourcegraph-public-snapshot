@@ -65,17 +65,11 @@ var sourcegraphDotComMode, _ = strconv.ParseBool(os.Getenv("SOURCEGRAPHDOTCOM_MO
 // ZoektDial connects to a Searcher HTTP RPC server at address (host:port).
 func ZoektDial(endpoint string) zoekt.Streamer {
 	client := rpc.Client(endpoint)
-
-	batchClient := &StreamSearchAdapter{client}
 	streamClient := &zoektStream{
 		Searcher: client,
 		Client:   zoektstream.NewClient("http://"+endpoint, zoektHTTPClient),
 	}
-
-	if sourcegraphDotComMode {
-		return NewMeteredSearcher(endpoint, streamClient)
-	}
-	return NewMeteredSearcher(endpoint, batchClient)
+	return NewMeteredSearcher(endpoint, streamClient)
 }
 
 type zoektStream struct {
