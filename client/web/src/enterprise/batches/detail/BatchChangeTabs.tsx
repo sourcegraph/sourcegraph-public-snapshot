@@ -18,7 +18,6 @@ import { BatchChangeChangesets } from './changesets/BatchChangeChangesets'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import ArchiveIcon from 'mdi-react/ArchiveIcon'
 import { BatchSpecTab } from './BatchSpecTab'
-import { getCurrentHub } from '@sentry/hub'
 
 type SelectedTab = 'changesets' | 'chart' | 'spec' | 'archived'
 

@@ -5,6 +5,7 @@ import { ThemeProps } from '../../../../../../shared/src/theme'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { Subject } from 'rxjs'
 import {
+    detachChangesets,
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
 } from '../backend'
@@ -70,16 +71,16 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
     enableSelect,
 }) => {
     const [selectedChangesets, setSelectedChangesets] = useState<Set<string>>(new Set())
-    const onSelect = (id: string, selected: boolean) => {
+    const onSelect = (id: string, selected: boolean): void => {
         if (selected) {
             setSelectedChangesets(() => new Set([...selectedChangesets, id]))
         } else {
-            setSelectedChangesets(new Set([...selectedChangesets].filter(x => x !== id)))
+            setSelectedChangesets(new Set([...selectedChangesets].filter(selectedId => selectedId !== id)))
         }
     }
 
-    const deselectAll = () => setSelectedChangesets(new Set([]))
-    const changesetSelected = (id: string) => selectedChangesets.has(id)
+    const deselectAll = useCallback((): void => setSelectedChangesets(new Set([])), [setSelectedChangesets])
+    const changesetSelected = (id: string): boolean => selectedChangesets.has(id)
 
     const [isSubmittingSelected, setIsSubmittingSelected] = useState<boolean | Error>(false)
     const onSubmitSelected = useCallback(async () => {
@@ -95,13 +96,13 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
         }
         setIsSubmittingSelected(true)
         try {
-            console.log('~~~ DETACHING CHANGESETS ~~~', selectedChangesets)
-
-            telemetryService.logViewEvent(`BatchChangeDetailsPageDetachArchivedChangesets`)
+            await detachChangesets(batchChangeID, [...selectedChangesets])
+            deselectAll()
+            telemetryService.logViewEvent('BatchChangeDetailsPageDetachArchivedChangesets')
         } catch (error) {
             setIsSubmittingSelected(error)
         }
-    }, [selectedChangesets, setIsSubmittingSelected])
+    }, [batchChangeID, selectedChangesets, setIsSubmittingSelected, deselectAll, telemetryService])
 
     const [changesetFilters, setChangesetFilters] = useState<ChangesetFilters>({
         checkState: null,
@@ -197,6 +198,7 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                     selected={selectedChangesets}
                     onSubmit={onSubmitSelected}
                     deselectAll={deselectAll}
+                    isSubmitting={isSubmittingSelected}
                 />
             )}
             <div className="list-group position-relative" ref={nextContainerElement}>

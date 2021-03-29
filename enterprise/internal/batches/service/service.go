@@ -560,3 +560,57 @@ type usernameSource interface {
 }
 
 var _ usernameSource = &repos.BitbucketServerSource{}
+
+// DetachChangeset detaches the given Changeset from the given BatchChange
+// by checking whether the actor in the context has permission to enqueue a
+// reconciler run and then enqueues it by calling ResetQueued.
+func (s *Service) DetachChangeset(ctx context.Context, batchChangeID int64, changesetID []int64) (err error) {
+	traceTitle := fmt.Sprintf("batchChangeID: %d, changeset: %d", batchChangeID, changesetID)
+	tr, ctx := trace.New(ctx, "service.DetachChangeset", traceTitle)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// Load the BatchChange to check for admin rights.
+	batchChange, err := s.store.GetBatchChange(ctx, store.CountBatchChangeOpts{ID: batchChangeID})
+	if err != nil {
+		return err
+	}
+
+	// 🚨 SECURITY: Only the Author of the batch change can detach changesets.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, batchChange.InitialApplierID); err != nil {
+		return err
+	}
+
+	cs, _, err := s.store.ListChangesets(ctx, store.ListChangesetsOpts{
+		IDs: changesetID,
+		// We only want to detach the changesets the user has access to
+		EnforceAuthz: true,
+	})
+	if err != nil {
+		return err
+	}
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	for _, changeset := range cs {
+		for i, assoc := range changeset.BatchChanges {
+			if assoc.BatchChangeID == batchChangeID {
+				changeset.BatchChanges[i].Detach = true
+			}
+		}
+
+		changeset.ResetQueued()
+
+		if err := tx.UpdateChangeset(ctx, changeset); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
