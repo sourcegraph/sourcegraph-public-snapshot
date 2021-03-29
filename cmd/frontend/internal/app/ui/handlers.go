@@ -72,7 +72,7 @@ func loadManifest() (*WebpackManifest, error) {
 
 	err := json.Unmarshal(assets.WebpackManifestJSON, &out)
 	if err != nil {
-		return nil, errors.Wrap(err, "when parsing json")
+		return nil, errors.Wrap(err, "parsing manifest json")
 	}
 
 	return &out, nil
