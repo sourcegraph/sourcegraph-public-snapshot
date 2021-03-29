@@ -23,7 +23,7 @@ import { UserRepositoriesUpdateProps } from '../../../util'
 import { queryUserPublicRepositories, setUserPublicRepositories } from '../../../site-admin/backend'
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import { PageSelector } from '../../../../../wildcard'
+import { PageSelector } from '@sourcegraph/wildcard'
 
 interface Props extends RouteComponentProps, TelemetryProps, UserRepositoriesUpdateProps {
     userID: string
