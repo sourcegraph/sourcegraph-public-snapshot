@@ -26,7 +26,7 @@ In many scenarios we may find that it makes sense to use third-party libraries f
 
 #### Behavior Hook
 
-These hooks should capture key behavior and accessibility patterns that can be isolated from UI elements. For many simple components, this hook won't be necessary or requied. For larger components this becomes more meaningful.
+These hooks should capture key behavior and accessibility patterns that can be isolated from UI elements. For many simple components, this hook won't be necessary or required. For larger components this becomes more meaningful.
 
 For example, a `<Modal>` component might use `useToggleState` to handle displaying and hiding the modal, but we might have additional _behaviour_ like keyboard shortcuts and accessibility attributes that are relevant to this pattern. This is where something like `useModalBehavior` would make sense.
 
@@ -34,7 +34,7 @@ Like our state hooks, it may make sense to use suitable third-party libraries fo
 
 #### Component
 
-Now we have extracted our state and behaviour into seperate hooks, our UI component should just focus on displaying simple elements with specific styles.
+Now we have extracted our state and behaviour into separate hooks, our UI component should just focus on displaying simple elements with specific styles.
 
 For most scenarios, **it doesn't make sense to use third-party libraries here.** When compared to other applications, it will ultimately be our UI that will significantly differ, not our UX.
 
