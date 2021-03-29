@@ -715,7 +715,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         {
                             // if we're in 'selected' mode, show a list of all the repos on the code hosts to select from
                             selectionState.radio === 'selected' && (
-                                <div className="ml-4 user-settings-repos__no">
+                                <div className="ml-4">
                                     {filterControls}
                                     <table role="grid" className="table">
                                         {
