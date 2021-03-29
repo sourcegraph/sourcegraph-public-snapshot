@@ -255,7 +255,7 @@ func (s *Server) Handler() http.Handler {
 
 	s.rpsLimiter = rate.NewLimiter(rate.Inf, 10)
 	setRPSLimiter := func() {
-		if maxRequestsPerSecond := conf.Get().GitMaxCodehostRequestsPerSecond; maxRequestsPerSecond == -1 {
+		if maxRequestsPerSecond := conf.GitMaxCodehostRequestsPerSecond(); maxRequestsPerSecond == -1 {
 			// As a special case, -1 means no limiting
 			s.rpsLimiter.SetLimit(rate.Inf)
 		} else {
