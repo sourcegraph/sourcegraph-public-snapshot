@@ -2,14 +2,15 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 	neturl "net/url"
 	"os"
 	"path"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/inconshreveable/log15"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -119,7 +120,11 @@ func (r *GitTreeEntryResolver) IsRecursive() bool { return r.isRecursive }
 
 func (r *GitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 	if submodule := r.Submodule(); submodule != nil {
-		repoName, err := cloneURLToRepoName(ctx, submodule.URL())
+		url := submodule.URL()
+		if strings.HasPrefix(url, "../") {
+			url = path.Join(r.Repository().Name(), url)
+		}
+		repoName, err := cloneURLToRepoName(ctx, url)
 		if err != nil {
 			log15.Error("Failed to resolve submodule repository name from clone URL", "cloneURL", submodule.URL(), "err", err)
 			return "", nil
@@ -190,7 +195,7 @@ func cloneURLToRepoName(ctx context.Context, cloneURL string) (string, error) {
 		return "", err
 	}
 	if repoName == "" {
-		return "", fmt.Errorf("No matching code host found for %s", cloneURL)
+		return "", errors.Errorf("no matching code host found for %s", cloneURL)
 	}
 	return string(repoName), nil
 }
