@@ -22,12 +22,6 @@ func TestAutoDefinedSearchContexts(t *testing.T) {
 	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{Username: username}, nil
 	}
-	database.Mocks.SearchContexts.ListSearchContextsByUserID = func(ctx context.Context, userID int32) ([]*types.SearchContext, error) {
-		return []*types.SearchContext{}, nil
-	}
-	database.Mocks.SearchContexts.ListInstanceLevelSearchContexts = func(ctx context.Context) ([]*types.SearchContext, error) {
-		return []*types.SearchContext{}, nil
-	}
 	defer resetMocks()
 
 	searchContexts, err := (&schemaResolver{db: db}).AutoDefinedSearchContexts(ctx)
