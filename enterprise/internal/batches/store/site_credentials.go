@@ -81,12 +81,9 @@ WHERE
 `
 
 func deleteSiteCredentialQuery(id int64) *sqlf.Query {
-	preds := []*sqlf.Query{
-		sqlf.Sprintf("id = %d", id),
-	}
 	return sqlf.Sprintf(
 		deleteSiteCredentialQueryFmtstr,
-		sqlf.Join(preds, "AND"),
+		sqlf.Sprintf("id = %d", id),
 	)
 }
 
