@@ -12,6 +12,7 @@ It shouldn't be difficult for us to build accessible frontends providing we foll
 
 ### Tooling
 There is a lot of useful tooling to help us catch and fix acccessibility issues in our code.
+
 - [eslint-plugin-jsx-a11y](https://github.com/jsx-eslint/eslint-plugin-jsx-a11y). Statically analyze our JSX for potential accessibility violations.
 - [@storybook/addon-a11y](https://storybook.js.org/addons/@storybook/addon-a11y). This addon uses [axe-core](https://github.com/dequelabs/axe-core) to audit rendered components and raise accessibility issues. It also has some useful features to simulate vision impairments such as blurred vision and color blindness.
 - [Lighthouse](https://developers.google.com/web/tools/lighthouse) allows you to run accessibility audits anywhere.
