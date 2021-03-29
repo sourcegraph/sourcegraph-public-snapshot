@@ -842,8 +842,7 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// User credential.
-	{
+	t.Run("User credential", func(t *testing.T) {
 		input := map[string]interface{}{
 			"user":                graphqlbackend.MarshalUserID(userID),
 			"externalServiceKind": string(extsvc.KindGitHub),
@@ -872,9 +871,8 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 		if have, want := errors[0].Extensions["code"], "ErrDuplicateCredential"; have != want {
 			t.Fatalf("wrong error code. want=%q, have=%q", want, have)
 		}
-	}
-	// Site credential.
-	{
+	})
+	t.Run("Site credential", func(t *testing.T) {
 		input := map[string]interface{}{
 			"user":                nil,
 			"externalServiceKind": string(extsvc.KindGitHub),
@@ -903,7 +901,7 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 		if have, want := errors[0].Extensions["code"], "ErrDuplicateCredential"; have != want {
 			t.Fatalf("wrong error code. want=%q, have=%q", want, have)
 		}
-	}
+	})
 }
 
 const mutationCreateCredential = `
@@ -951,8 +949,7 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// User credential.
-	{
+	t.Run("User credential", func(t *testing.T) {
 		input := map[string]interface{}{
 			"batchChangesCredential": marshalBatchChangesCredentialID(userCred.ID, false),
 		}
@@ -972,10 +969,9 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 		if have, want := errors[0].Message, fmt.Sprintf("user credential not found: [%d]", userCred.ID); have != want {
 			t.Fatalf("wrong error code. want=%q, have=%q", want, have)
 		}
-	}
+	})
 
-	// Site credential.
-	{
+	t.Run("Site credential", func(t *testing.T) {
 		input := map[string]interface{}{
 			"batchChangesCredential": marshalBatchChangesCredentialID(userCred.ID, true),
 		}
@@ -995,7 +991,7 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 		if have, want := errors[0].Message, "no results"; have != want {
 			t.Fatalf("wrong error code. want=%q, have=%q", want, have)
 		}
-	}
+	})
 }
 
 const mutationDeleteCredential = `
