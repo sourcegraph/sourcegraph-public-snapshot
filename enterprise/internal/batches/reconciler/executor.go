@@ -77,7 +77,7 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 	}
 
 	// Figure out which authenticator we should use to modify the changeset.
-	e.au, err = e.loadAuthenticator(ctx)
+	e.au, err = loadAuthenticator(ctx, e.tx, e.ch, e.repo)
 	if err != nil {
 		return err
 	}
@@ -183,8 +183,8 @@ func (e *executor) buildChangesetSource(repo *types.Repo, extSvc *types.External
 // global configuration should be used (ie the applying user is an admin and
 // doesn't have a credential configured for the code host, or the changeset
 // isn't owned by a batch change).
-func (e *executor) loadAuthenticator(ctx context.Context) (auth.Authenticator, error) {
-	if e.ch.OwnedByBatchChangeID == 0 {
+func loadAuthenticator(ctx context.Context, s *store.Store, ch *batches.Changeset, r *types.Repo) (auth.Authenticator, error) {
+	if ch.OwnedByBatchChangeID == 0 {
 		// Unowned changesets are imported, and therefore don't need to use a user
 		// credential, since reconciliation isn't a mutating process.
 		return nil, nil
@@ -193,16 +193,16 @@ func (e *executor) loadAuthenticator(ctx context.Context) (auth.Authenticator, e
 	// If the changeset is owned by a batch change, we want to reconcile using
 	// the user's credentials, which means we need to know which user last
 	// applied the owning batch change. Let's go find out.
-	batchChange, err := loadBatchChange(ctx, e.tx, e.ch.OwnedByBatchChangeID)
+	batchChange, err := loadBatchChange(ctx, s, ch.OwnedByBatchChangeID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load owning batch change")
 	}
 
-	cred, err := e.tx.UserCredentials().GetByScope(ctx, database.UserCredentialScope{
+	cred, err := s.UserCredentials().GetByScope(ctx, database.UserCredentialScope{
 		Domain:              database.UserCredentialDomainBatches,
 		UserID:              batchChange.LastApplierID,
-		ExternalServiceType: e.repo.ExternalRepo.ServiceType,
-		ExternalServiceID:   e.repo.ExternalRepo.ServiceID,
+		ExternalServiceType: r.ExternalRepo.ServiceType,
+		ExternalServiceID:   r.ExternalRepo.ServiceID,
 	})
 	if err != nil {
 		if errcode.IsNotFound(err) {
@@ -210,7 +210,7 @@ func (e *executor) loadAuthenticator(ctx context.Context) (auth.Authenticator, e
 			// we can use the nil return from loadUserCredential() to fall
 			// back to the global credentials used for the code host. If
 			// not, then we need to error out.
-			user, err := database.UsersWith(e.tx).GetByID(ctx, batchChange.LastApplierID)
+			user, err := database.UsersWith(s).GetByID(ctx, batchChange.LastApplierID)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to load user applying the batch change")
 			}
@@ -219,7 +219,7 @@ func (e *executor) loadAuthenticator(ctx context.Context) (auth.Authenticator, e
 				return nil, nil
 			}
 
-			return nil, ErrMissingCredentials{repo: string(e.repo.Name)}
+			return nil, ErrMissingCredentials{repo: string(r.Name)}
 		}
 		return nil, errors.Wrap(err, "failed to load user credential")
 	}
