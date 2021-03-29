@@ -3242,6 +3242,24 @@ type SearchContext implements Node {
     default organization search context ("@org").
     """
     autoDefined: Boolean!
+    """
+    Repositories and their revisions that will be searched when querying.
+    """
+    repositories: [SearchContextRepository!]!
+}
+
+"""
+(experimental) Specifies a set of revisions to be searched within a repository.
+"""
+type SearchContextRepository {
+    """
+    The repository to be searched.
+    """
+    repository: Repository!
+    """
+    The set of revisions to be searched.
+    """
+    revisions: [String!]!
 }
 
 """
