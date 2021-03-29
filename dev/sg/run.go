@@ -14,7 +14,6 @@ import (
 
 	// TODO - deduplicate me
 	"github.com/sourcegraph/batch-change-utils/output"
-
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 )
 
