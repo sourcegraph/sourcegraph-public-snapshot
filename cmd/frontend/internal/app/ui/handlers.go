@@ -2,7 +2,6 @@ package ui
 
 import (
 	"context"
-	"encoding/json"
 	"html/template"
 	"log"
 	"net/http"
@@ -16,6 +15,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+
+	jsoniter "github.com/json-iterator/go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -70,7 +71,7 @@ type WebpackManifest struct {
 func loadManifest() (*WebpackManifest, error) {
 	out := WebpackManifest{}
 
-	err := json.Unmarshal(assets.WebpackManifestJSON, &out)
+	err := jsoniter.Unmarshal(assets.WebpackManifestJSON, &out)
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing manifest json")
 	}
