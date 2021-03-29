@@ -3,8 +3,6 @@ package backend
 import (
 	"context"
 	"net/http"
-	"os"
-	"strconv"
 
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
@@ -56,11 +54,6 @@ func (s *StreamSearchAdapter) StreamSearch(ctx context.Context, q query.Q, opts 
 func (s *StreamSearchAdapter) String() string {
 	return "streamSearchAdapter{" + s.Searcher.String() + "}"
 }
-
-// Temporarily store if we are on sourcegraph.com mode. We don't want to
-// introduce a dependency on frontend/envvar so just duplicating how we do
-// this.
-var sourcegraphDotComMode, _ = strconv.ParseBool(os.Getenv("SOURCEGRAPHDOTCOM_MODE"))
 
 // ZoektDial connects to a Searcher HTTP RPC server at address (host:port).
 func ZoektDial(endpoint string) zoekt.Streamer {
