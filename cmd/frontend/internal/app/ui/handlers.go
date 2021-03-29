@@ -143,7 +143,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 
 	manifest, err := loadManifest()
 	if err != nil {
-		return nil, errors.Wrap(err, "when loading webpack manifest")
+		return nil, errors.Wrap(err, "loading webpack manifest")
 	}
 
 	common := &Common{
