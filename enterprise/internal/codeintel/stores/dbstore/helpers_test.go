@@ -31,15 +31,6 @@ func (r printableRank) String() string {
 	return strconv.Itoa(*r.value)
 }
 
-type printableTime struct{ value *time.Time }
-
-func (r printableTime) String() string {
-	if r.value == nil {
-		return "nil"
-	}
-	return fmt.Sprintf("%v", *r.value)
-}
-
 // makeCommit formats an integer as a 40-character git commit hash.
 func makeCommit(i int) string {
 	return fmt.Sprintf("%040d", i)
