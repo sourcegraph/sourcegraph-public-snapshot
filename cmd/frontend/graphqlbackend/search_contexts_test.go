@@ -33,6 +33,16 @@ func TestAutoDefinedSearchContexts(t *testing.T) {
 		{sc: searchcontexts.GetUserSearchContext(username, key), db: db},
 	}
 	if !reflect.DeepEqual(searchContexts, want) {
-		t.Errorf("got %+v, want %+v", searchContexts, want)
+		t.Fatalf("got %+v, want %+v", searchContexts, want)
+	}
+
+	for _, resolver := range searchContexts {
+		repositories, err := resolver.Repositories(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(repositories) != 0 {
+			t.Fatal("auto-defined search contexts should not return repositories")
+		}
 	}
 }
