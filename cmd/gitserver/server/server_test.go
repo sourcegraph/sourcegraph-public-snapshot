@@ -22,6 +22,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -476,6 +477,7 @@ func makeTestServer(ctx context.Context, repoDir, remote string, db dbutil.DB) *
 		locker:           &RepositoryLocker{},
 		cloneLimiter:     mutablelimiter.New(1),
 		cloneableLimiter: mutablelimiter.New(1),
+		rpsLimiter:       rate.NewLimiter(rate.Inf, 10),
 	}
 }
 
