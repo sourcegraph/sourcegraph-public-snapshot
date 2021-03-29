@@ -6,19 +6,19 @@
 linters:
   disable-all: true
   enable:
-    - ineffassign
-    - typecheck
-    - nolintlint
-    - unconvert
-    - goimports
-    - gosimple
-    - varcheck
     - bodyclose
     - deadcode
     - gocritic
+    - goimports
+    - gosimple
     - govet
+    - ineffassign
+    - nolintlint
     - staticcheck
+    - typecheck
+    - unconvert
     - unused
+    - varcheck
 
 linters-settings:
   gocritic:
