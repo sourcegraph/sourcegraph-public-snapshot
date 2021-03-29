@@ -1,38 +1,21 @@
+###########################################################
+#                                                         #
+#                 EXAMPLE CONFIG FILE                     #
+#                                                         #
+#  See sg.config.yaml in repository root for real config. #
+#                                                         #
+###########################################################
+
 env:
-  SRC_REPOS_DIR: $HOME/.sourcegraph/repos
   SRC_LOG_LEVEL: info
   SRC_LOG_FORMAT: condensed
   SRC_GIT_SERVER_1: 127.0.0.1:3178
   SRC_GIT_SERVERS: 127.0.0.1:3178
 
-  # Enable sharded indexed search mode:
-  INDEXED_SEARCH_SERVERS: localhost:3070 localhost:3071
+  # Env vars are expanded
+  SRC_REPOS_DIR: $HOME/.sourcegraph/repos
 
-  DEPLOY_TYPE: dev
-
-  SRC_HTTP_ADDR: ":3082"
-
-  GITHUB_BASE_URL: http://127.0.0.1:3180
-  # I don't think we even need to set these?
-  SEARCHER_URL: http://127.0.0.1:3181
-  REPO_UPDATER_URL: http://127.0.0.1:3182
-  REDIS_ENDPOINT: 127.0.0.1:6379
-  QUERY_RUNNER_URL: http://localhost:3183
-  SYMBOLS_URL: http://localhost:3184
-  SRC_SYNTECT_SERVER: http://localhost:9238
-  SRC_FRONTEND_INTERNAL: localhost:3090
-  GRAFANA_SERVER_URL: http://localhost:3370
-  PROMETHEUS_URL: http://localhost:9090
-  JAEGER_SERVER_URL: http://localhost:16686
-  ZOEKT_HOST: localhost:3070
-
-  SRC_PROF_HTTP: "" # This needs to be empty?
-  OVERRIDE_AUTH_SECRET: sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ
-  # Settings/config
-  SITE_CONFIG_FILE: ./dev/site-config.json
-  SITE_CONFIG_ALLOW_EDITS: true
-  GLOBAL_SETTINGS_FILE: ./dev/global-settings.json
-  GLOBAL_SETTINGS_ALLOW_EDITS: true
+  # [...]
 
 commands:
   frontend:
@@ -67,61 +50,12 @@ commands:
       - internal
       - cmd/gitserver
 
-  github-proxy:
-    cmd: .bin/github-proxy
-    install: go build -o .bin/github-proxy github.com/sourcegraph/sourcegraph/cmd/github-proxy
-    env:
-      HOSTNAME: 127.0.0.1:3178
-    watch:
-      - cmd/github-proxy
-      - internal/debugserver"
-      - internal/env
-      - internal/logging
-      - internal/trace
-      - internal/tracer
-
   repo-updater:
     cmd: .bin/repo-updater
     install: go build -o .bin/repo-updater github.com/sourcegraph/sourcegraph/cmd/repo-updater
     watch:
       - internal
       - cmd/repo-updater
-
-  enterprise-repo-updater:
-    cmd: .bin/repo-updater
-    install: go build -o .bin/repo-updater github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
-    watch:
-      - internal
-      - cmd/repo-updater
-      - enterprise/cmd/repo-updater
-
-  query-runner:
-    cmd: .bin/query-runner
-    install: go build -o .bin/query-runner github.com/sourcegraph/sourcegraph/cmd/query-runner
-    watch:
-      - internal
-      - cmd/query-runner
-
-  symbols:
-    cmd: .bin/symbols
-    install: |
-      ./dev/libsqlite3-pcre/build.sh &&
-      ./cmd/symbols/build-ctags.sh &&
-      go build -o .bin/symbols github.com/sourcegraph/sourcegraph/cmd/symbols
-    env:
-      LIBSQLITE3_PCRE: ./dev/libsqlite3-pcre/build.sh libpath
-      CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
-      CTAGS_PROCESSES: 2
-    watch:
-      - internal
-      - cmd/symbols
-
-  searcher:
-    cmd: .bin/searcher
-    install: go build -o .bin/searcher github.com/sourcegraph/sourcegraph/cmd/searcher
-    watch:
-      - internal
-      - cmd/searcher
 
   caddy:
     cmd: .bin/caddy run --watch --config=dev/Caddyfile
@@ -157,106 +91,20 @@ commands:
       NODE_ENV: development
       NODE_OPTIONS: "--max_old_space_size=4096"
 
-  docsite:
-    cmd: .bin/docsite_${VERSION} -config doc/docsite.json serve -http=localhost:5080
-    install: |
-      curl -sS -L -f \
-      "https://github.com/sourcegraph/docsite/releases/download/${VERSION}/docsite_${VERSION}_$(go env GOOS)_$(go env GOARCH)" \
-      -o .bin/docsite_${VERSION} && chmod +x .bin/docsite_${VERSION}
-    env:
-      VERSION: v1.7.0
-
-  syntect_server:
-    cmd: |
-      docker run --name=syntect_server --rm -p9238:9238 \
-      -e WORKERS=1 -e ROCKET_ADDRESS=0.0.0.0 \
-      sourcegraph/syntect_server:9089f98@sha256:83ff65809e6647b466bd400de4c438a32feeabe8e791b12e15c67c84529ad2de
-    install: docker inspect syntect_server >/dev/null 2>&1 && docker rm -f syntect_server || true
-    env:
-      # This is not needed actually
-      INSECURE_DEV: 1
-
-  zoekt-indexserver-0:
-    cmd: |
-      .bin/zoekt-sourcegraph-indexserver \
-        -sourcegraph_url 'http://localhost:3090' \
-        -index "$HOME/.sourcegraph/zoekt/index-0" \
-        -hostname 'localhost:3070' \
-        -interval 1m \
-        -listen ":6072" \
-        -cpu_fraction 0.25
-    install: |
-      mkdir -p .bin
-      export GOBIN="${PWD}/.bin"
-      export GO111MODULE=on
-      # TODO: Do we need to install these?
-      # go install github.com/google/zoekt/cmd/zoekt-archive-index
-      # go install github.com/google/zoekt/cmd/zoekt-git-index
-      go install github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver
-    env:
-      GOGC: 50
-
-  zoekt-webserver-0:
-    cmd: |
-      .bin/zoekt-webserver \
-        -index "$HOME/.sourcegraph/zoekt/index-0" \
-        -pprof -rpc -listen ":3070"
-    install: |
-      mkdir -p .bin
-      export GOBIN="${PWD}/.bin"
-      export GO111MODULE=on
-      go install github.com/google/zoekt/cmd/zoekt-webserver
-    env:
-      JAEGER_DISABLED: false
-      GOGC: 50
-
 commandsets:
-  testing:
+  minimal:
     - frontend
     - gitserver
+
   default:
     - frontend
     - repo-updater
     - gitserver
-    - searcher
-    - symbols
-    - query-runner
     - web
-    - caddy
-    - docsite
-    - syntect_server
-    - github-proxy
-    - zoekt-indexserver-0
-    - zoekt-webserver-0
-
-  zoekt:
-    - frontend
-    - gitserver
-    - zoekt-indexserver-0
-    - zoekt-webserver-0
-
-  enterprise:
-    - enterprise-frontend
-    - enterprise-repo-updater
-    - gitserver
-    - searcher
-    - symbols
-    - query-runner
-    - web
-    - caddy
-    - docsite
-    - syntect_server
-    - github-proxy
-
-  # Another set that can be run with `sg run-set monitoring`:
-  monitoring:
-    # - jaeger
-    # - prometheus
-    # - grafana
-    # - postgres_exporter
 
 tests:
   # These can be run with `sg test [name]`
+  # Every command is run from the repository root.
   backend:
     cmd: go test ./...
   backend-integration:
@@ -267,9 +115,3 @@ tests:
       BASE_URL: "http://localhost:3080"
       EMAIL: "joe@sourcegraph.com"
       PASSWORD: "12345"
-  frontend:
-    cmd: yarn run jest --testPathIgnorePatterns end-to-end regression integration storybook
-  frontend-e2e:
-    cmd: yarn run mocha ./client/web/src/end-to-end/end-to-end.test.ts
-    env:
-      TS_NODE_PROJECT: client/web/src/end-to-end/tsconfig.json

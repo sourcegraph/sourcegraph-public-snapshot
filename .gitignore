@@ -135,3 +135,6 @@ storybook-static/
 
 # sonarqube
 .scannerwork
+
+# sg command specific things, see ./dev/sg
+sg.config.overwrite.yaml
