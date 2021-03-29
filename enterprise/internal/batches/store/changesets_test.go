@@ -1552,7 +1552,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 
 	t.Run("ignore closed batch change", func(t *testing.T) {
 		closedBatchChangeID := changesets[0].BatchChanges[0].BatchChangeID
-		c, err := s.GetBatchChange(ctx, CountBatchChangeOpts{ID: closedBatchChangeID})
+		c, err := s.GetBatchChange(ctx, GetBatchChangeOpts{ID: closedBatchChangeID})
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -9868,9 +9868,9 @@ extend type Mutation {
     """
     createBatchChangesCredential(
         """
-        The user for which to create the credential.
+        The user for which to create the credential. If null is provided, a site-wide credential is created.
         """
-        user: ID!
+        user: ID
 
         """
         The kind of external service being configured.
@@ -9929,6 +9929,20 @@ extend type Query {
         """
         name: String!
     ): BatchChange
+
+    """
+    All globally configured code hosts usable with Batch Changes.
+    """
+    batchChangesCodeHosts(
+        """
+        Returns the first n code hosts from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): BatchChangesCodeHostConnection!
 }
 
 """
@@ -10394,6 +10408,11 @@ type BatchChangesCredential implements Node {
     The date and time this token has been created at.
     """
     createdAt: DateTime!
+
+    """
+    Whether the configured credential is a site credential, that is available globally.
+    """
+    isSiteCredential: Boolean!
 }
 
 """

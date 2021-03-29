@@ -57,6 +57,22 @@ Triggers:
 
 ```
 
+# Table "public.batch_changes_site_credentials"
+```
+        Column         |           Type           |                                  Modifiers                                  
+-----------------------+--------------------------+-----------------------------------------------------------------------------
+ id                    | bigint                   | not null default nextval('batch_changes_site_credentials_id_seq'::regclass)
+ external_service_type | text                     | not null
+ external_service_id   | text                     | not null
+ credential            | text                     | not null
+ created_at            | timestamp with time zone | not null default now()
+ updated_at            | timestamp with time zone | not null default now()
+Indexes:
+    "batch_changes_site_credentials_pkey" PRIMARY KEY, btree (id)
+    "batch_changes_site_credentials_unique" UNIQUE, btree (external_service_type, external_service_id)
+
+```
+
 # Table "public.batch_specs"
 ```
       Column       |           Type           |                        Modifiers                         
