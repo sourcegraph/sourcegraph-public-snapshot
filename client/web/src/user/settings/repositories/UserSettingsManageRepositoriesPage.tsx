@@ -343,7 +343,9 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 continue
             }
 
-            if (!repo.name.includes(query)) {
+            const queryLoweCase = query.toLowerCase()
+            const nameLowerCase = repo.name.toLowerCase()
+            if (!nameLowerCase.includes(queryLoweCase)) {
                 continue
             }
 
