@@ -879,7 +879,52 @@ func (e *ExternalServiceStore) Delete(ctx context.Context, id int64) (err error)
 	}
 	defer func() { err = tx.Done(err) }()
 
-	res, err := tx.ExecResult(ctx, sqlf.Sprintf("UPDATE external_services SET deleted_at=now() WHERE id=%s AND deleted_at IS NULL", id))
+	// Create a temporary table where we'll store repos affected by the deletion of
+	// the external service
+	if err := tx.Exec(ctx, sqlf.Sprintf(`
+CREATE TEMPORARY TABLE
+    deleted_repos(
+    repo_id int
+) ON COMMIT DROP`)); err != nil {
+		return errors.Wrap(err, "creating temporary table")
+	}
+
+	// Delete external service <-> repo relationships, storing the affected repos
+	if err := tx.Exec(ctx, sqlf.Sprintf(`
+	WITH deleted AS (
+	   DELETE FROM external_service_repos
+	       WHERE external_service_id = %s
+	       RETURNING repo_id
+	)
+	INSERT INTO deleted_repos
+	SELECT repo_id from deleted
+`, id)); err != nil {
+		return errors.Wrap(err, "populating temporary table")
+	}
+
+	// Soft delete orphaned repos
+	if err := tx.Exec(ctx, sqlf.Sprintf(`
+	UPDATE repo
+	SET name       = soft_deleted_repository_name(name),
+	   deleted_at = TRANSACTION_TIMESTAMP()
+	WHERE deleted_at IS NULL
+	 AND EXISTS (SELECT FROM deleted_repos WHERE repo.id = deleted_repos.repo_id)
+	 AND NOT EXISTS (
+	       SELECT FROM external_service_repos
+	       WHERE repo_id = repo.id
+	   );
+`)); err != nil {
+		return errors.Wrap(err, "cleaning up potentially orphaned repos")
+	}
+
+	// Soft delete external service
+	res, err := tx.ExecResult(ctx, sqlf.Sprintf(`
+	-- Soft delete external service
+	UPDATE external_services
+	SET deleted_at=TRANSACTION_TIMESTAMP()
+	WHERE id = %s
+	 AND deleted_at IS NULL;
+	`, id))
 	if err != nil {
 		return err
 	}
@@ -890,8 +935,7 @@ func (e *ExternalServiceStore) Delete(ctx context.Context, id int64) (err error)
 	if nrows == 0 {
 		return externalServiceNotFoundError{id: id}
 	}
-
-	return tx.Exec(ctx, sqlf.Sprintf(`SELECT soft_delete_orphan_repo_by_external_service_repos()`))
+	return nil
 }
 
 // GetByID returns the external service for id.
