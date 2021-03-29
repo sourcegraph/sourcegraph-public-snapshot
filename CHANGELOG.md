@@ -15,7 +15,9 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
--
+- Experimental: Sync permissions of Perforce depots through the Sourcegraph UI. To enable, use the feature flag `"experimentalFeatures": { "perforce": "enabled" }`. For more information, see [how to enable permissions for your Perforce depots](https://docs.sourcegraph.com/admin/repo/perforce). [#16705](https://github.com/sourcegraph/sourcegraph/issues/16705)
+- Added support for user email headers in the HTTP auth proxy. See [HTTP Auth Proxy docs](https://docs.sourcegraph.com/admin/auth#http-authentication-proxies) for more information.
+- Ignore locked and disabled GitHub Enterprise repositories. [#19500](https://github.com/sourcegraph/sourcegraph/pull/19500)
 
 ### Changed
 
@@ -24,25 +26,6 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Commit search returning duplicate commits. [#19460](https://github.com/sourcegraph/sourcegraph/pull/19460)
-
-### Removed
-
--
-
-## 3.26.0
-
-### Added
-
-- Experimental: Sync permissions of Perforce depots through the Sourcegraph UI. To enable, use the feature flag `"experimentalFeatures": { "perforce": "enabled" }`. For more information, see [how to enable permissions for your Perforce depots](https://docs.sourcegraph.com/admin/repo/perforce). [#16705](https://github.com/sourcegraph/sourcegraph/issues/16705)
-- Added support for user email headers in the HTTP auth proxy. See [HTTP Auth Proxy docs](https://docs.sourcegraph.com/admin/auth#http-authentication-proxies) for more information.
-
-### Changed
-
--
-
-### Fixed
-
--
 
 ### Removed
 
