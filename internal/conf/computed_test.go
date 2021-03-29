@@ -115,7 +115,6 @@ func TestAuthPasswordResetLinkDuration(t *testing.T) {
 }
 
 func TestGitMaxCodehostRequestsPerSecond(t *testing.T) {
-
 	tests := []struct {
 		name string
 		sc   *Unified
