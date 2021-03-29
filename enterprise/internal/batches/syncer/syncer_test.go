@@ -386,11 +386,3 @@ type MockRepoStore struct {
 func (m MockRepoStore) Get(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 	return m.get(ctx, id)
 }
-
-type MockExternalServiceStore struct {
-	list func(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error)
-}
-
-func (m MockExternalServiceStore) List(ctx context.Context, args database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-	return m.list(ctx, args)
-}
