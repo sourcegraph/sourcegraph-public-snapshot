@@ -594,7 +594,7 @@ ComplexDiagram(
 </script>
 
 Any string, including whitespace, may be quoted with single `'` or double `"`
-quotes. Quotes can be escaped with `\`.
+quotes. Quotes can be escaped with `\`. Literal `\` characters will need to be escaped, eg `\\`.
 
 ## Commit parameter
 
