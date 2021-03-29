@@ -49,3 +49,23 @@ type Config struct {
 	Commandsets map[string][]string `yaml:"commandsets"`
 	Tests       map[string]Command  `yaml:"tests"`
 }
+
+// Merges merges the top-level entries of two Config objects, with the receiver
+// being modified.
+func (c *Config) Merge(other *Config) {
+	for k, v := range other.Env {
+		c.Env[k] = v
+	}
+
+	for k, v := range other.Commands {
+		c.Commands[k] = v
+	}
+
+	for k, v := range other.Commandsets {
+		c.Commandsets[k] = v
+	}
+
+	for k, v := range other.Tests {
+		c.Tests[k] = v
+	}
+}
