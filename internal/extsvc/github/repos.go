@@ -35,6 +35,8 @@ type Repository struct {
 	IsPrivate     bool   // whether the repository is private
 	IsFork        bool   // whether the repository is a fork of another repository
 	IsArchived    bool   // whether the repository is archived on the code host
+	IsLocked      bool   `json:"-"` // whether the repository is locked on the code host
+	IsDisabled    bool   `json:"-"` // whether the repository is disabled on the code host
 	// This field will always be blank on repos stored in our database because the value will be different
 	// depending on which token was used to fetch it
 	ViewerPermission string // ADMIN, WRITE, READ, or empty if unknown. Only the graphql api populates this. https://developer.github.com/v4/enum/repositorypermission/
@@ -162,10 +164,12 @@ type restRepository struct {
 	DatabaseID  int64  `json:"id"`
 	FullName    string `json:"full_name"` // same as nameWithOwner
 	Description string
-	HTMLURL     string `json:"html_url"` // web URL
-	Private     bool
-	Fork        bool
-	Archived    bool
+	HTMLURL     string                    `json:"html_url"` // web URL
+	Private     bool                      `json:"private"`
+	Fork        bool                      `json:"fork"`
+	Archived    bool                      `json:"archived"`
+	Locked      bool                      `json:"locked"`
+	Disabled    bool                      `json:"disabled"`
 	Permissions restRepositoryPermissions `json:"permissions"`
 }
 
@@ -197,6 +201,8 @@ func convertRestRepo(restRepo restRepository) *Repository {
 		IsPrivate:        restRepo.Private,
 		IsFork:           restRepo.Fork,
 		IsArchived:       restRepo.Archived,
+		IsLocked:         restRepo.Locked,
+		IsDisabled:       restRepo.Disabled,
 		ViewerPermission: convertRestRepoPermissions(restRepo.Permissions),
 	}
 }
@@ -313,6 +319,8 @@ fragment RepositoryFields on Repository {
 	isPrivate
 	isFork
 	isArchived
+	isLocked
+	isDisabled
 	viewerPermission
 }
 	`
@@ -330,6 +338,8 @@ fragment RepositoryFields on Repository {
 	isPrivate
 	isFork
 	isArchived
+	isLocked
+	isDisabled
 }
 	`
 }

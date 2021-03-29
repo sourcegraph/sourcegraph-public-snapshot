@@ -22,6 +22,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -472,11 +473,11 @@ func makeTestServer(ctx context.Context, repoDir, remote string, db dbutil.DB) *
 			return &GitRepoSyncer{}, nil
 		},
 		DB:               db,
-		shardID:          "test",
 		ctx:              ctx,
 		locker:           &RepositoryLocker{},
 		cloneLimiter:     mutablelimiter.New(1),
 		cloneableLimiter: mutablelimiter.New(1),
+		rpsLimiter:       rate.NewLimiter(rate.Inf, 10),
 	}
 }
 
@@ -604,6 +605,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	reposDir := tmpDir(t)
 
 	s := makeTestServer(ctx, reposDir, remote, db)
+	s.ctx = context.Background()
 
 	// We need some of the side effects here
 	_ = s.Handler()
@@ -624,7 +626,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 
 	want := &types.GitserverRepo{
 		RepoID:      dbRepo.ID,
-		ShardID:     s.shardID,
+		ShardID:     "",
 		CloneStatus: types.CloneStatusCloned,
 	}
 	fromDB, err := database.GitserverRepos(db).GetByID(ctx, dbRepo.ID)
@@ -650,7 +652,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 
 	want = &types.GitserverRepo{
 		RepoID:      dbRepo.ID,
-		ShardID:     s.shardID,
+		ShardID:     "",
 		CloneStatus: types.CloneStatusCloned,
 		LastError:   "fail",
 	}
@@ -824,6 +826,65 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 	})
 }
 
+func TestHostnameMatch(t *testing.T) {
+	testCases := []struct {
+		hostname    string
+		addr        string
+		shouldMatch bool
+	}{
+		{
+			hostname:    "gitserver-1",
+			addr:        "gitserver-1",
+			shouldMatch: true,
+		},
+		{
+			hostname:    "gitserver-1",
+			addr:        "gitserver-1.gitserver:3178",
+			shouldMatch: true,
+		},
+		{
+			hostname:    "gitserver-1",
+			addr:        "gitserver-10.gitserver:3178",
+			shouldMatch: false,
+		},
+		{
+			hostname:    "gitserver-1",
+			addr:        "gitserver-10",
+			shouldMatch: false,
+		},
+		{
+			hostname:    "gitserver-10",
+			addr:        "",
+			shouldMatch: false,
+		},
+		{
+			hostname:    "gitserver-10",
+			addr:        "gitserver-10:3178",
+			shouldMatch: true,
+		},
+		{
+			hostname:    "gitserver-10",
+			addr:        "gitserver-10:3178",
+			shouldMatch: true,
+		},
+		{
+			hostname:    "gitserver-0.prod",
+			addr:        "gitserver-0.prod.default.namespace",
+			shouldMatch: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run("", func(t *testing.T) {
+			s := Server{Hostname: tc.hostname}
+			have := s.hostnameMatch(tc.addr)
+			if have != tc.shouldMatch {
+				t.Fatalf("Want %v, got %v", tc.shouldMatch, have)
+			}
+		})
+	}
+}
+
 func TestSyncRepoState(t *testing.T) {
 	ctx := context.Background()
 	db := dbtesting.GetDB(t)
@@ -833,13 +894,20 @@ func TestSyncRepoState(t *testing.T) {
 		t.Helper()
 		return runCmd(t, remoteDir, name, arg...)
 	}
-	_ = makeSingleCommitRepo(cmd)
+
+	// Setup a repo with a commit so we can see if we can clone it.
+	cmd("git", "init", ".")
+	cmd("sh", "-c", "echo hello world > hello.txt")
+	cmd("git", "add", "hello.txt")
+	cmd("git", "commit", "-m", "hello")
 
 	reposDir := tmpDir(t)
 	repoName := api.RepoName("example.com/foo/bar")
-	shardID := "test"
+	hostname := "test"
 
 	s := makeTestServer(ctx, reposDir, remoteDir, db)
+	s.Hostname = hostname
+	s.ctx = ctx
 
 	_, err := s.cloneRepo(ctx, repoName, &cloneOptions{Block: true})
 	if err != nil {
@@ -864,7 +932,7 @@ func TestSyncRepoState(t *testing.T) {
 		t.Fatal("Expected an error")
 	}
 
-	err = s.syncRepoState([]string{shardID}, 10, 10)
+	err = s.syncRepoState([]string{hostname}, 10, 10)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -30,11 +30,6 @@ linters-settings:
 
 issues:
   exclude-rules:
-    # Excluded generated bindata.go from gocritic lints
-    - path: cmd/server/shared/assets/bindata.go
-      linters:
-        - gocritic
-
     # Exclude bodyclose lint from tests because leaking connections in tests
     # is a non-issue, and checking that adds unnecessary noise
     - path: _test\.go

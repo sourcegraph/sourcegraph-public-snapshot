@@ -175,7 +175,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
             })
         }
 
-        const { groups, selectedGroups, visibleLocations } = groupLocations<Location, string>(
+        const { groups, selectedGroups, visibleLocations } = groupLocations(
             this.state.locationsOrError.result.locations,
             this.state.selectedGroups || null,
             GROUPS.map(({ key }) => key),
@@ -280,6 +280,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                         fetchHighlightedFileLineRanges={this.props.fetchHighlightedFileLineRanges}
                         settingsCascade={this.props.settingsCascade}
                         versionContext={this.props.versionContext}
+                        parentContainerIsEmpty={this.state.locationsOrError.result.locations.length === 0}
                     />
                 </div>
             </div>

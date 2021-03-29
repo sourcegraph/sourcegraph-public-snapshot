@@ -7,7 +7,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -54,8 +53,6 @@ type Syncer struct {
 	// UserReposMaxPerSite can be used to override the value read from config.
 	// If zero, we'll read from config instead.
 	UserReposMaxPerSite int
-
-	enqueueSignal signal
 }
 
 // RunOptions contains options customizing Run behaviour.
@@ -67,7 +64,7 @@ type RunOptions struct {
 }
 
 // Run runs the Sync at the specified interval.
-func (s *Syncer) Run(pctx context.Context, db *sql.DB, store *Store, opts RunOptions) error {
+func (s *Syncer) Run(ctx context.Context, db *sql.DB, store *Store, opts RunOptions) error {
 	if opts.EnqueueInterval == nil {
 		opts.EnqueueInterval = func() time.Duration { return time.Minute }
 	}
@@ -79,10 +76,10 @@ func (s *Syncer) Run(pctx context.Context, db *sql.DB, store *Store, opts RunOpt
 	}
 
 	if !opts.IsCloud {
-		s.initialUnmodifiedDiffFromStore(pctx, store)
+		s.initialUnmodifiedDiffFromStore(ctx, store)
 	}
 
-	worker, resetter := NewSyncWorker(pctx, db, &syncHandler{
+	worker, resetter := NewSyncWorker(ctx, db, &syncHandler{
 		db:              db,
 		syncer:          s,
 		store:           store,
@@ -100,19 +97,14 @@ func (s *Syncer) Run(pctx context.Context, db *sql.DB, store *Store, opts RunOpt
 	go resetter.Start()
 	defer resetter.Stop()
 
-	for pctx.Err() == nil {
-		ctx, cancel := contextWithSignalCancel(pctx, s.enqueueSignal.Watch())
-
+	for ctx.Err() == nil {
 		if err := store.EnqueueSyncJobs(ctx, opts.IsCloud); err != nil && s.Logger != nil {
 			s.Logger.Error("Enqueuing sync jobs", "error", err)
 		}
-
 		sleep(ctx, opts.EnqueueInterval())
-
-		cancel()
 	}
 
-	return pctx.Err()
+	return ctx.Err()
 }
 
 type syncHandler struct {
@@ -133,22 +125,6 @@ func (s *syncHandler) Handle(ctx context.Context, tx dbworkerstore.Store, record
 	return s.syncer.SyncExternalService(ctx, store, sj.ExternalServiceID, s.minSyncInterval())
 }
 
-// contextWithSignalCancel will return a context which will be cancelled if
-// signal fires. Callers need to call cancel when done.
-func contextWithSignalCancel(ctx context.Context, signal <-chan struct{}) (context.Context, context.CancelFunc) {
-	ctx, cancel := context.WithCancel(ctx)
-
-	go func() {
-		select {
-		case <-ctx.Done():
-		case <-signal:
-			cancel()
-		}
-	}()
-
-	return ctx, cancel
-}
-
 // sleep is a context aware time.Sleep
 func sleep(ctx context.Context, d time.Duration) {
 	select {
@@ -157,9 +133,10 @@ func sleep(ctx context.Context, d time.Duration) {
 	}
 }
 
-// TriggerEnqueueSyncJobs will enqueue any pending sync jobs now.
-func (s *Syncer) TriggerEnqueueSyncJobs() {
-	s.enqueueSignal.Trigger()
+// TriggerExternalServiceSync will enqueue a sync job for the supplied external
+// service
+func (s *Syncer) TriggerExternalServiceSync(ctx context.Context, id int64) error {
+	return s.Store.EnqueueSingleSyncJob(ctx, id)
 }
 
 // SyncExternalService syncs repos using the supplied external service.
@@ -891,28 +868,4 @@ func (s *Syncer) observe(ctx context.Context, family, title string) (context.Con
 
 		tr.Finish()
 	}
-}
-
-type signal struct {
-	once sync.Once
-	c    chan struct{}
-}
-
-func (s *signal) init() {
-	s.once.Do(func() {
-		s.c = make(chan struct{}, 1)
-	})
-}
-
-func (s *signal) Trigger() {
-	s.init()
-	select {
-	case s.c <- struct{}{}:
-	default:
-	}
-}
-
-func (s *signal) Watch() <-chan struct{} {
-	s.init()
-	return s.c
 }

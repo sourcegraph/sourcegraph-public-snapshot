@@ -10,7 +10,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -127,48 +126,3 @@ func ResultCountFactor(numRepos int, fileMatchLimit int32, globalSearch bool) (k
 // RepoRevFunc is a function which maps repository names returned from Zoekt
 // into the Sourcegraph's resolved repository revisions for the search.
 type RepoRevFunc func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool)
-
-// MatchLimiter is the logic which limits files based on limit. Additionally
-// it calculates the set of repos with partial results. This information is
-// not returned by zoekt, so if zoekt indicates a limit has been hit, we
-// include all repos in partial.
-type MatchLimiter struct {
-	Limit int
-}
-
-// Slice will return the set of timed out repositories and the slice of files
-// respecting the remaining limit.
-func (m *MatchLimiter) Slice(files []zoekt.FileMatch, getRepoInputRev RepoRevFunc) (map[api.RepoID]struct{}, []zoekt.FileMatch) {
-	partial, files := limitMatches(m.Limit, files, getRepoInputRev)
-	m.Limit -= len(files)
-	return partial, files
-}
-
-func limitMatches(limit int, files []zoekt.FileMatch, getRepoInputRev RepoRevFunc) (map[api.RepoID]struct{}, []zoekt.FileMatch) {
-	if limit < 0 {
-		limit = 0
-	}
-
-	if len(files) <= limit {
-		return nil, files
-	}
-
-	resultFiles := files[:limit]
-	partialFiles := files[limit:]
-
-	partial := make(map[api.RepoID]struct{})
-	last := ""
-	for _, file := range partialFiles {
-		// PERF: skip lookup if it is the same repo as the last result
-		if file.Repository == last {
-			continue
-		}
-		last = file.Repository
-
-		if repo, _, ok := getRepoInputRev(&file); ok {
-			partial[repo.ID] = struct{}{}
-		}
-	}
-
-	return partial, resultFiles
-}

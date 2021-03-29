@@ -6,10 +6,12 @@
     }
 
     &__close-icon {
-        color: var(--link-color) !important;
+        color: var(--link-color);
     }
 
     &__toggle {
+        color: var(--link-color);
+        background-color: var(--color-bg-2);
         isolation: isolate;
         width: 2.5rem;
         height: 2.5rem;

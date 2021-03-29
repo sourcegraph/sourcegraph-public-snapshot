@@ -13,7 +13,7 @@ import {
 import * as changelog from './changelog'
 import * as campaigns from './campaigns'
 import { Config, releaseVersions } from './config'
-import { cacheFolder, formatDate, timezoneLink } from './util'
+import { cacheFolder, formatDate, timezoneLink, hubSpotFeedbackFormStub } from './util'
 import { addMinutes } from 'date-fns'
 import { readFileSync, rmdirSync, writeFileSync } from 'fs'
 import * as path from 'path'
@@ -325,6 +325,18 @@ cc @${config.captainGitHubUsername}
                 }
             }
 
+            const [previousVersion, nextVersion] = [
+                `${previous.major}.${previous.minor}`,
+                `${release.major}.${release.minor}`,
+            ]
+
+            // we join with escaped newlines for the 'sed' command
+            const upgradeGuideEntry = [
+                `## ${previousVersion} -> ${nextVersion}`,
+                'TODO',
+                hubSpotFeedbackFormStub(previousVersion),
+            ].join('\\n\\n')
+
             // Render changes
             const createdChanges = await createChangesets({
                 requiredCommands: ['comby', sed, 'find', 'go'],
@@ -361,7 +373,7 @@ cc @${config.captainGitHubUsername}
 
                             // Add a stub to add upgrade guide entries
                             notPatchRelease
-                                ? `${sed} -i -E '/GENERATE UPGRADE GUIDE ON RELEASE/a \\\n\\n## ${previous.major}.${previous.minor} -> ${release.major}.${release.minor}\\n\\nTODO' doc/admin/updates/*.md`
+                                ? `${sed} -i -E '/GENERATE UPGRADE GUIDE ON RELEASE/a \\\n\\n${upgradeGuideEntry}' doc/admin/updates/*.md`
                                 : 'echo "Skipping upgrade guide entries"',
                         ],
                         ...prBodyAndDraftState(
