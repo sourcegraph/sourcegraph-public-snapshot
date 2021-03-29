@@ -9,6 +9,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"go.uber.org/atomic"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/google/zoekt"
@@ -157,13 +158,6 @@ func newIndexedSearchRequest(ctx context.Context, db dbutil.DB, args *search.Tex
 		log.Int("searcher_repos.size", len(searcherRepos)),
 	)
 
-	// We do not support non-head searches for the old structural search code path.
-	// Once the new code path (triggered by the CombyRule below) is default, this can be removed.
-	// https://github.com/sourcegraph/sourcegraph/issues/17616
-	if typ == fileRequest && indexed.NotHEADOnlySearch && args.PatternInfo.CombyRule == `where "backcompat" == "backcompat"` {
-		return nil, errors.New("structural search only supports searching the default branch https://github.com/sourcegraph/sourcegraph/issues/11906")
-	}
-
 	// Disable unindexed search
 	if args.PatternInfo.Index == query.Only {
 		searcherRepos = limitUnindexedRepos(searcherRepos, 0, stream)
@@ -254,15 +248,10 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 	// Start event stream.
 	t0 := time.Now()
 
-	// mu protects matchLimiter and foundResults.
-	mu := sync.Mutex{}
-	matchLimiter := zoektutil.MatchLimiter{
-		Limit: int(args.PatternInfo.FileMatchLimit),
-	}
-	foundResults := false
-
 	// We use reposResolved to synchronize repo resolution and event processing.
 	reposResolved := make(chan struct{})
+
+	mu := sync.Mutex{}
 	var getRepoInputRev zoektutil.RepoRevFunc
 	var repoRevMap map[string]*search.RepositoryRevisions
 
@@ -295,6 +284,7 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 		return nil
 	})
 
+	foundResults := atomic.Bool{}
 	g.Go(func() error {
 		ctx := ctx
 		if deadline, ok := ctx.Deadline(); ok {
@@ -329,11 +319,9 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 
 		// The buffered backend.ZoektStreamFunc allows us to consume events from Zoekt
 		// while we wait for repo resolution.
-		bufSender, cleanup := bufferedSender(30, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
+		bufSender, cleanup := bufferedSender(120, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
 
-			mu.Lock()
-			foundResults = foundResults || event.FileCount != 0 || event.MatchCount != 0
-			mu.Unlock()
+			foundResults.CAS(false, event.FileCount != 0 || event.MatchCount != 0)
 
 			files := event.Files
 			limitHit := event.FilesSkipped+event.ShardsSkipped > 0
@@ -353,19 +341,6 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 			if getRepoInputRev == nil {
 				return
 			}
-
-			mu.Lock()
-			// Partial is populated with repositories we may have not fully
-			// searched due to limits.
-			partial, files := matchLimiter.Slice(files, getRepoInputRev)
-			mu.Unlock()
-
-			var statusMap search.RepoStatusMap
-			for r := range partial {
-				statusMap.Update(r, search.RepoStatusLimitHit)
-			}
-
-			limitHit = limitHit || len(partial) > 0
 
 			matches := make([]SearchResultResolver, 0, len(files))
 			repoResolvers := make(RepositoryResolverCache)
@@ -420,7 +395,6 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 			c.Send(SearchEvent{
 				Results: matches,
 				Stats: streaming.Stats{
-					Status:     statusMap,
 					IsLimitHit: limitHit,
 				},
 			})
@@ -442,7 +416,7 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 		return statusMap
 	}
 
-	if !foundResults && since(t0) >= searchOpts.MaxWallTime {
+	if !foundResults.Load() && since(t0) >= searchOpts.MaxWallTime {
 		c.Send(SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout)}})
 		return nil
 	}
@@ -749,12 +723,6 @@ type indexedRepoRevs struct {
 	//
 	//  repoBranches[reporev.Repo.Name][i] <-> reporev.Revs[i]
 	repoBranches map[string][]string
-
-	// NotHEADOnlySearch is true if we are searching a branch other than HEAD.
-	//
-	// This option can be removed once structural search supports searching
-	// more than HEAD.
-	NotHEADOnlySearch bool
 }
 
 // headBranch is used as a singleton of the indexedRepoRevs.repoBranches to save
@@ -787,10 +755,6 @@ func (rb *indexedRepoRevs) Add(reporev *search.RepositoryRevisions, repo *zoekt.
 		return nil
 	}
 
-	// notHEADOnlySearch is set to true if we search any branch other than
-	// repo.Branches[0]
-	notHEADOnlySearch := false
-
 	// Assume for large searches they will mostly involve indexed
 	// revisions, so just allocate that.
 	var unindexed []search.RevisionSpecifier
@@ -806,17 +770,15 @@ func (rb *indexedRepoRevs) Add(reporev *search.RepositoryRevisions, repo *zoekt.
 		}
 
 		found := false
-		for i, branch := range repo.Branches {
+		for _, branch := range repo.Branches {
 			if branch.Name == rev.RevSpec {
 				branches = append(branches, branch.Name)
-				notHEADOnlySearch = notHEADOnlySearch || i > 0
 				found = true
 				break
 			}
 			// Check if rev is an abbrev commit SHA
 			if len(rev.RevSpec) >= 4 && strings.HasPrefix(branch.Version, rev.RevSpec) {
 				branches = append(branches, branch.Name)
-				notHEADOnlySearch = notHEADOnlySearch || i > 0
 				found = true
 				break
 			}
@@ -833,7 +795,6 @@ func (rb *indexedRepoRevs) Add(reporev *search.RepositoryRevisions, repo *zoekt.
 	if len(indexed) > 0 {
 		rb.repoRevs[string(reporev.Repo.Name)] = reporev
 		rb.repoBranches[string(reporev.Repo.Name)] = branches
-		rb.NotHEADOnlySearch = rb.NotHEADOnlySearch || notHEADOnlySearch
 	}
 
 	return unindexed

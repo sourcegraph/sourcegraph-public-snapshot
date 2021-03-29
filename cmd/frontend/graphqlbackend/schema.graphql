@@ -717,6 +717,11 @@ type Mutation {
     exist and are cloned
     """
     SetUserPublicRepos(userID: ID!, repoURIs: [String!]!): EmptyResponse!
+
+    """
+    Converts a version context to an equivalent instance-level search context. Only available to site admins.
+    """
+    convertVersionContextToSearchContext(name: String!): SearchContext!
 }
 
 """

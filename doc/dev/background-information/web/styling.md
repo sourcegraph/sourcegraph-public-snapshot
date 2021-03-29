@@ -23,7 +23,18 @@ Components need to be able to adapt styles from CSS stylesheets already loaded o
 
 Components that need to run in different environments (any UI shared between our browser extension and the webapp) adopt styles from their environments through configurable CSS class names (as opposed to trying to replicate the styling with copied CSS).
 A component may accept multiple class names for different elements of the component.
-An example of this is `<HoverOverlay/>`: see how [the different props it accepts](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@4047521a92904054e782d341001d08d61945c86f/-/blob/shared/src/hover/HoverOverlay.tsx#L27-39) for its child components' class names are passed in the [webapp](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@4047521a92904054e782d341001d08d61945c86f/-/blob/web/src/components/shared.tsx#L35-44) and in [code host integrations](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@4047521a92904054e782d341001d08d61945c86f/-/blob/browser/src/shared/code-hosts/shared/codeHost.tsx#L443:1).
+An example of this is `<HoverOverlay/>`: see how [the different props it accepts](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@4047521a92904054e782d341001d08d61945c86f/-/blob/shared/src/hover/HoverOverlay.tsx#L27-39) for its child components' class names (such as buttons) are passed in the [webapp](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@4047521a92904054e782d341001d08d61945c86f/-/blob/web/src/components/shared.tsx#L35-44) and in [code host integrations](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@4047521a92904054e782d341001d08d61945c86f/-/blob/browser/src/shared/code-hosts/shared/codeHost.tsx#L443:1).
+They are defined for each code host referencing CSS class names **that the code host defines in its own styles**:
+- for [GitHub](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b5af21f76dbb96ceece9f0908f56b3a7145ec4f7/-/blob/client/browser/src/shared/code-hosts/github/codeHost.ts#L353-361) using the class names from GitHub's [Primer design system](https://styleguide.github.com/primer/buttons/)
+- for [Gitlab](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b5af21f76dbb96ceece9f0908f56b3a7145ec4f7/-/blob/client/browser/src/shared/code-hosts/gitlab/codeHost.ts#L203-211) using class names from Gitlab's [Pajamas design system](https://design.gitlab.com/components/button)
+- for [Bitbucket](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b5af21f76dbb96ceece9f0908f56b3a7145ec4f7/-/blob/client/browser/src/shared/code-hosts/bitbucket/codeHost.tsx#L235-242) using the class names from [Atlassian UI](https://aui.atlassian.com/aui/7.10/docs/buttons.html)
+- for [Phabricator](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b5af21f76dbb96ceece9f0908f56b3a7145ec4f7/-/blob/client/browser/src/shared/code-hosts/phabricator/codeHost.ts#L195-202) using class names found in the Phabricator UI with the browser dev tools (it doesn't have a documented design system, but is easy to reverse-engineer).
+
+This means when one of the code hosts tweaks its design, or supports multiple themes, the UI elements contributed by our code host integrations automatically adapt with no effort on our part.
+
+CSS classes as an approach represent the _lowest common denominator_ for styling between all environments, by staying close to the native web platform.
+
+You may also notice that multiple of the above code hosts define the same or very similar classes to [Bootstrap](#host-specific-ui), which makes it easy to map classes between our web app and code host environments.
 
 ### Host-specific UI
 
@@ -31,7 +42,7 @@ In the environments we control ourselves (such as our webapp, the options page o
 Any code inside our webapp can and should make use of the CSS classes that Bootstrap provides as building blocks (and should generally do so instead of writing custom styles).
 This includes classes like [cards](https://getbootstrap.com/docs/4.5/components/card/), [buttons](https://getbootstrap.com/docs/4.5/components/buttons/) or [input groups](https://getbootstrap.com/docs/4.5/components/input-group/), but also utility classes for [layout](https://getbootstrap.com/docs/4.5/utilities/flex/) and [spacing](https://getbootstrap.com/docs/4.5/utilities/spacing/).
 Please refer to the excellent [Bootstrap documentation](https://getbootstrap.com/docs/4.5/) for everything that is available for use.
-To see what our customizations look like visually (in both light and dark theme), you can find a [showcase in our Storybook](https://5f0f381c0e50750022dc6bf7-oozlspcdwk.chromatic.com/?path=/story/web-global-styles).
+To see what our customizations look like visually (in both light and dark theme), you can find a [showcase in our Storybook](https://main--5f0f381c0e50750022dc6bf7.chromatic.com/?path=/story/branded-global-styles).
 
 Components only used in a specific host environment do not need to support customization through class names.
 They can however utilize environment-agnostic components by passing our Bootstrap classes as custom `className` values.
@@ -103,7 +114,7 @@ In our webapp, it is recommended to make use of [Bootstrap's margin and padding 
 
 ### Layout
 
-We use modern CSS for our layouting needs. You can find a [small playground in our Storybook](https://5f0f381c0e50750022dc6bf7-oozlspcdwk.chromatic.com/?path=/story/web-global-styles--layout). The dev tools of modern browsers provide a lot of useful tooling to work with CSS layouts.
+We use modern CSS for our layouting needs. You can find a [small playground in our Storybook](https://main--5f0f381c0e50750022dc6bf7.chromatic.com/?path=/story/branded-global-styles--layout). The dev tools of modern browsers provide a lot of useful tooling to work with CSS layouts.
 
 Layouts should always be _responsive_ to make sure Sourcegraph is usable with different screen resolutions and window sizes, e.g. when resizing the browser window and using Sourcegraph side-by-side with an editor.
 

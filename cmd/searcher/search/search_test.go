@@ -186,7 +186,6 @@ main.go:7:}
 			IncludePatterns: []string{"file++.plus"},
 			IsStructuralPat: true,
 			IsRegExp:        true, // To test for a regression, imply that IsStructuralPat takes precedence.
-			CombyRule:       `where "backcompat" == "backcompat"`,
 		}, `
 file++.plus:1:filename contains regex metachars
 `},

@@ -30,9 +30,7 @@ export const ActivationChecklistItem: React.FunctionComponent<ActivationChecklis
             <span className="activation-checklist-item__icon-container icon-inline icon-right">
                 <ChevronRightIcon className="activation-checklist-item__icon" />
             </span>
-            <a href="" className="activation-checklist__title">
-                {props.title}
-            </a>
+            <span>{props.title}</span>
         </div>
         <div>
             {props.done ? (
@@ -62,7 +60,7 @@ export class ActivationChecklist extends React.PureComponent<ActivationChecklist
                 <Accordion collapsible={true}>
                     {this.props.steps.map(step => (
                         <AccordionItem key={step.id} className="activation-checklist__container list-group-item ">
-                            <AccordionButton className="activation-checklist__button list-group-item list-group-item-action">
+                            <AccordionButton className="activation-checklist__button list-group-item list-group-item-action btn-link">
                                 <ActivationChecklistItem
                                     key={step.id}
                                     {...step}

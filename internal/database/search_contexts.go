@@ -47,10 +47,16 @@ func (s *SearchContextsStore) listSearchContexts(ctx context.Context, cond *sqlf
 }
 
 func (s *SearchContextsStore) ListSearchContextsByUserID(ctx context.Context, userID int32) ([]*types.SearchContext, error) {
+	if Mocks.SearchContexts.ListSearchContextsByUserID != nil {
+		return Mocks.SearchContexts.ListSearchContextsByUserID(ctx, userID)
+	}
 	return s.listSearchContexts(ctx, sqlf.Sprintf("namespace_user_id = %d", userID))
 }
 
 func (s *SearchContextsStore) ListInstanceLevelSearchContexts(ctx context.Context) ([]*types.SearchContext, error) {
+	if Mocks.SearchContexts.ListInstanceLevelSearchContexts != nil {
+		return Mocks.SearchContexts.ListInstanceLevelSearchContexts(ctx)
+	}
 	return s.listSearchContexts(ctx, sqlf.Sprintf("namespace_user_id IS NULL AND namespace_org_id IS NULL"))
 }
 
@@ -63,6 +69,10 @@ type GetSearchContextOptions struct {
 }
 
 func (s *SearchContextsStore) GetSearchContext(ctx context.Context, opts GetSearchContextOptions) (*types.SearchContext, error) {
+	if Mocks.SearchContexts.GetSearchContext != nil {
+		return Mocks.SearchContexts.GetSearchContext(ctx, opts)
+	}
+
 	conds := []*sqlf.Query{}
 
 	if opts.NamespaceUserID != 0 && opts.NamespaceOrgID != 0 {
@@ -117,7 +127,7 @@ func (s *SearchContextsStore) CreateSearchContextWithRepositoryRevisions(ctx con
 	return createdSearchContext, nil
 }
 
-func (s *SearchContextsStore) SetSearchContextRepositoryRevisions(ctx context.Context, searchContextID int32, repositoryRevisions []*types.SearchContextRepositoryRevisions) (err error) {
+func (s *SearchContextsStore) SetSearchContextRepositoryRevisions(ctx context.Context, searchContextID int64, repositoryRevisions []*types.SearchContextRepositoryRevisions) (err error) {
 	if len(repositoryRevisions) == 0 {
 		return nil
 	}
@@ -206,7 +216,11 @@ JOIN
 WHERE sc.search_context_id = %d
 `
 
-func (s *SearchContextsStore) GetSearchContextRepositoryRevisions(ctx context.Context, searchContextID int32) ([]*types.SearchContextRepositoryRevisions, error) {
+func (s *SearchContextsStore) GetSearchContextRepositoryRevisions(ctx context.Context, searchContextID int64) ([]*types.SearchContextRepositoryRevisions, error) {
+	if Mocks.SearchContexts.GetSearchContextRepositoryRevisions != nil {
+		return Mocks.SearchContexts.GetSearchContextRepositoryRevisions(ctx, searchContextID)
+	}
+
 	authzConds, err := AuthzQueryConds(ctx, s.Handle().DB())
 	if err != nil {
 		return nil, err

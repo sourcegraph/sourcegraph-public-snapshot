@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react'
-import { Markdown } from '../../../shared/src/components/Markdown'
+import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { renderMarkdown } from '../../../shared/src/util/markdown'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import * as H from 'history'

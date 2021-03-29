@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react'
 import { Observable } from 'rxjs'
 import { delay, startWith, tap, mergeMap, catchError } from 'rxjs/operators'
+import classNames from 'classnames'
 import { Toggle } from '../../../../../branded/src/components/Toggle'
 import { useEventObservable } from '../../../../../shared/src/util/useObservable'
 import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
@@ -127,19 +128,6 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
             <h3 className="mb-1">Actions</h3>
             <span className="text-muted">Run any number of actions in response to an event</span>
             {/* This should be its own component when you can add multiple email actions */}
-            {!showEmailNotificationForm && !actionsCompleted && (
-                <button
-                    type="button"
-                    className="code-monitor-form__card--button card p-3 w-100 test-action-button text-left"
-                    onClick={toggleEmailNotificationForm}
-                    disabled={disabled}
-                >
-                    <div className="code-monitor-form__card-link btn-link font-weight-bold p-0">
-                        Send email notifications
-                    </div>
-                    <span className="text-muted">Deliver email notifications to specified recipients.</span>
-                </button>
-            )}
             {showEmailNotificationForm && (
                 <div className="code-monitor-form__card card p-3">
                     <div className="font-weight-bold">Send email notifications</div>
@@ -214,28 +202,45 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                     </div>
                 </div>
             )}
-            {actionsCompleted && !showEmailNotificationForm && (
-                <div className="code-monitor-form__card--button card p-3" onClick={toggleEmailNotificationForm}>
-                    <div className="d-flex justify-content-between align-items-center">
+            {!showEmailNotificationForm && (
+                <button
+                    type="button"
+                    className="btn code-monitor-form__card--button card test-action-button"
+                    aria-label="Edit action: Send email notifications"
+                    disabled={disabled}
+                    onClick={toggleEmailNotificationForm}
+                >
+                    <div className="d-flex justify-content-between align-items-center w-100">
                         <div>
-                            <div className="font-weight-bold">Send email notifications</div>
-                            <span className="text-muted test-existing-action-email">{authenticatedUser.email}</span>
-                        </div>
-                        <div className="d-flex align-items-center">
-                            <div>
-                                <Toggle
-                                    title="Enabled"
-                                    value={emailNotificationEnabled}
-                                    onToggle={toggleEmailNotificationEnabled}
-                                    className="mr-3"
-                                />
+                            <div
+                                className={classNames(
+                                    'font-weight-bold',
+                                    !actionsCompleted && 'code-monitor-form__card-link btn-link'
+                                )}
+                            >
+                                Send email notifications
                             </div>
-                            <button type="button" className="btn btn-link p-0 text-left test-edit-action">
-                                Edit
-                            </button>
+                            {actionsCompleted ? (
+                                <span className="text-muted test-existing-action-email">{authenticatedUser.email}</span>
+                            ) : (
+                                <span className="text-muted">Deliver email notifications to specified recipients.</span>
+                            )}
                         </div>
+                        {actionsCompleted && (
+                            <div className="d-flex align-items-center">
+                                <div>
+                                    <Toggle
+                                        title="Enabled"
+                                        value={emailNotificationEnabled}
+                                        onToggle={toggleEmailNotificationEnabled}
+                                        className="mr-3"
+                                    />
+                                </div>
+                                <div className="btn-link">Edit</div>
+                            </div>
+                        )}
                     </div>
-                </div>
+                </button>
             )}
             <small className="text-muted">
                 What other actions would you like to take?{' '}

@@ -74,14 +74,6 @@ Examples:
 - Tests that call our search API to test the behavior of our entire search system.
 - Tests that validate UI behavior in the browser while mocking out all network requests so no backend is required.
 
-#### Running integration tests
-
-Integration tests are run everytime a branch is merged into main, but it is possible to run them manually:
-
-- Create a branch with the `master-dry-run/` prefix, example: `master-dry-run/my-feature`
-- Push it on Github
-- Look for that branch on [Buildkite](https://buildkite.com/sourcegraph/sourcegraph)
-
 ### End-to-end tests (e2e)
 
 E2e tests test our entire product from the perspective of a user. We try to use them sparingly. Instead, we prefer to get as much confidence as possible from our [unit tests](#unit-tests) and [integration tests](#integration-tests).
@@ -103,9 +95,11 @@ Examples:
 
 ### Visual testing
 
-We use [Percy](https://percy.io/) to detect visual changes in Sourcegraph features. You may need permissions to update screenshots if your feature introduces visual changes. Post a message in #dev-chat that you need access to Percy, and someone will add you to our organization (you will also receive an invitation via e-mail). _Do not_ create an account on Percy before receiving the invitation: as Percy has been acquired by BrowserStack, if you create an account outside of the invitation flow, you will end up with a BrowserStack account that cannot be added to a Percy organization.
+Visual testing is useful to catch visual regressions and verify designs for new features. [More info about visual testing philosophy](testing_web_code.md#visual-regressions)
 
-Once you've been invited to the Sourcegraph organization and created a Percy account, you should then link it to your GitHub account.
+We use [Chromatic Storybook](https://www.chromatic.com/) to detect visual changes in specific React components. Post a message in #dev-chat that you need access to Chromatic, and someone will add you to our organization (you will also receive an invitation via e-mail). You should sign into Chromatic with your GitHub account. If a PR you author has visual changes, a UI Review in Chromatic will be generated. It is recommended that a designer approves the UI review.
+
+We use [Percy](https://percy.io/) to detect visual changes in Sourcegraph features during browser-based tests (client integration tests and end-to-end tests). You may need permissions to update screenshots if your feature introduces visual changes. Post a message in #dev-chat that you need access to Percy, and someone will add you to our organization (you will also receive an invitation via e-mail). _Do not_ create an account on Percy before receiving the invitation: as Percy has been acquired by BrowserStack, if you create an account outside of the invitation flow, you will end up with a BrowserStack account that cannot be added to a Percy organization. Once you've been invited to the Sourcegraph organization and created a Percy account, you should then link it to your GitHub account.
 
 ## Ownership
 
