@@ -208,7 +208,7 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
                     ))}
                 </TabList>
             </div>
-            <TabPanels className="bg-white">
+            <TabPanels className="revisions-popover__tabs">
                 {TABS.map(tab => (
                     <TabPanel className="" key={tab.id}>
                         {tab.type ? (

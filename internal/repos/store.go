@@ -570,6 +570,22 @@ func (s *Store) UpsertRepos(ctx context.Context, repos ...*types.Repo) (err erro
 	return nil
 }
 
+// EnqueueSingleSyncJob enqueues a single sync job for the given external
+// service if it is not already queued or processing.
+func (s *Store) EnqueueSingleSyncJob(ctx context.Context, id int64) (err error) {
+	q := sqlf.Sprintf(`
+INSERT INTO external_service_sync_jobs (external_service_id)
+SELECT %s
+WHERE NOT EXISTS(
+        SELECT 1
+        FROM external_service_sync_jobs
+        WHERE external_service_id = %s
+          AND state IN ('queued', 'processing'))
+`, id, id)
+	return s.Exec(ctx, q)
+}
+
+// EnqueueSyncJobs enqueues sync jobs for all external services that are due.
 func (s *Store) EnqueueSyncJobs(ctx context.Context, isCloud bool) (err error) {
 	tr, ctx := s.trace(ctx, "Store.EnqueueSyncJobs")
 
