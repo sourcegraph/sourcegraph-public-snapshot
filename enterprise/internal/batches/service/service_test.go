@@ -159,6 +159,11 @@ func TestServicePermissionLevels(t *testing.T) {
 				})
 				tc.assertFunc(t, err)
 			})
+
+			t.Run("DetachChangesets", func(t *testing.T) {
+				err := svc.DetachChangesets(currentUserCtx, batchChange.ID, []int64{changeset.ID})
+				tc.assertFunc(t, err)
+			})
 		})
 	}
 }
@@ -820,6 +825,51 @@ func TestService(t *testing.T) {
 		if have, want := username, fakeSource.Username; have != want {
 			t.Errorf("wrong username returned. want=%q, have=%q", want, have)
 		}
+	})
+
+	t.Run("DetachChangesets", func(t *testing.T) {
+		spec := testBatchSpec(admin.ID)
+		if err := s.CreateBatchSpec(ctx, spec); err != nil {
+			t.Fatal(err)
+		}
+
+		batchChange := testBatchChange(admin.ID, spec)
+		if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+			t.Fatal(err)
+		}
+
+		changeset := testChangeset(rs[0].ID, batchChange.ID, batches.ChangesetExternalStateOpen)
+		if err := s.CreateChangeset(ctx, changeset); err != nil {
+			t.Fatal(err)
+		}
+		alreadyDetachedChangeset := testChangeset(rs[1].ID, 0, batches.ChangesetExternalStateOpen)
+		alreadyDetachedChangeset.ReconcilerState = batches.ReconcilerStateCompleted
+		if err := s.CreateChangeset(ctx, alreadyDetachedChangeset); err != nil {
+			t.Fatal(err)
+		}
+
+		if err := svc.DetachChangesets(ctx, batchChange.ID, []int64{changeset.ID, alreadyDetachedChangeset.ID}); err != nil {
+			t.Fatal(err)
+		}
+
+		ct.ReloadAndAssertChangeset(t, ctx, s, changeset, ct.ChangesetAssertions{
+			Repo:          rs[0].ID,
+			ExternalState: batches.ChangesetExternalStateOpen,
+			ExternalID:    changeset.ExternalID,
+			// The important fields:
+			AttachedTo:      []int64{},
+			ReconcilerState: batches.ReconcilerStateQueued,
+			DetachFrom:      []int64{batchChange.ID},
+		})
+
+		ct.ReloadAndAssertChangeset(t, ctx, s, alreadyDetachedChangeset, ct.ChangesetAssertions{
+			Repo:          rs[1].ID,
+			ExternalState: batches.ChangesetExternalStateOpen,
+			ExternalID:    alreadyDetachedChangeset.ExternalID,
+			// The important fields:
+			AttachedTo:      []int64{},
+			ReconcilerState: batches.ReconcilerStateCompleted,
+		})
 	})
 }
 

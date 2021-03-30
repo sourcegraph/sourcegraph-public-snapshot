@@ -1093,7 +1093,7 @@ func (r *Resolver) DetachChangesets(ctx context.Context, args *graphqlbackend.De
 
 	// 🚨 SECURITY: DetachChangeset checks whether current user is authorized.
 	svc := service.New(r.store)
-	if err = svc.DetachChangeset(ctx, batchChangeID, changesetIDs); err != nil {
+	if err = svc.DetachChangesets(ctx, batchChangeID, changesetIDs); err != nil {
 		return nil, err
 	}
 

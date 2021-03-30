@@ -561,12 +561,17 @@ type usernameSource interface {
 
 var _ usernameSource = &repos.BitbucketServerSource{}
 
-// DetachChangeset detaches the given Changeset from the given BatchChange
+// ErrChangesetsToDetachNotFound can be returned by (*Service).DetachChangesets
+// if the number of changesets returned from the database doesn't match the
+// number if IDs passed in.
+var ErrChangesetsToDetachNotFound = errors.New("some changesets that should be detached could not be found")
+
+// DetachChangesets detaches the given Changeset from the given BatchChange
 // by checking whether the actor in the context has permission to enqueue a
 // reconciler run and then enqueues it by calling ResetQueued.
-func (s *Service) DetachChangeset(ctx context.Context, batchChangeID int64, changesetID []int64) (err error) {
-	traceTitle := fmt.Sprintf("batchChangeID: %d, changeset: %d", batchChangeID, changesetID)
-	tr, ctx := trace.New(ctx, "service.DetachChangeset", traceTitle)
+func (s *Service) DetachChangesets(ctx context.Context, batchChangeID int64, ids []int64) (err error) {
+	traceTitle := fmt.Sprintf("batchChangeID: %d, changeset: %d", batchChangeID, ids)
+	tr, ctx := trace.New(ctx, "service.DetachChangesets", traceTitle)
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -584,12 +589,16 @@ func (s *Service) DetachChangeset(ctx context.Context, batchChangeID int64, chan
 	}
 
 	cs, _, err := s.store.ListChangesets(ctx, store.ListChangesetsOpts{
-		IDs: changesetID,
+		IDs: ids,
 		// We only want to detach the changesets the user has access to
 		EnforceAuthz: true,
 	})
 	if err != nil {
 		return err
+	}
+
+	if len(cs) != len(ids) {
+		return ErrChangesetsToDetachNotFound
 	}
 
 	tx, err := s.store.Transact(ctx)
@@ -599,10 +608,16 @@ func (s *Service) DetachChangeset(ctx context.Context, batchChangeID int64, chan
 	defer func() { err = tx.Done(err) }()
 
 	for _, changeset := range cs {
+		var detach bool
 		for i, assoc := range changeset.BatchChanges {
 			if assoc.BatchChangeID == batchChangeID {
 				changeset.BatchChanges[i].Detach = true
+				detach = true
 			}
+		}
+
+		if !detach {
+			continue
 		}
 
 		changeset.ResetQueued()
