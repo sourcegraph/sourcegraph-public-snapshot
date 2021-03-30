@@ -6,18 +6,17 @@
 linters:
   disable-all: true
   enable:
-    - ineffassign
-    - typecheck
-    - nolintlint
-    - unconvert
+    - bodyclose
+    - gocritic
     - goimports
     - gosimple
-    - varcheck
-    - bodyclose
-    - deadcode
-    - gocritic
     - govet
+    - ineffassign
+    - nolintlint
     - staticcheck
+    - typecheck
+    - unconvert
+    - unused
 
 linters-settings:
   gocritic:
@@ -40,15 +39,6 @@ issues:
     - path: _test\.go
       linters:
         - bodyclose
-
-    # TODO (camdencheek): This is only excluded because at the time of enabling
-    # the deadcode lint, there was active work in removing other dead code in this package
-    - path: enterprise/internal/codeintel
-      linters:
-        - deadcode
-    - path: enterprise/cmd/frontend/internal/codeintel
-      linters:
-        - deadcode
 
 run:
   timeout: 5m

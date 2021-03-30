@@ -9,25 +9,48 @@ const signale = require('signale')
  * of extension registries, in the cases where providing the source code is a
  * pre-requisite to getting approval for publishing.
  *
- * This script fetches a fresh copy of the repository, identified by commit ID.
- * This is done instead of using packaging the contents of the current working
- * copy repository, and the reason is to avoid including any build artifacts
- * that may be present. By pinning it to a commit, it's possible to use this
- * script across any branch and commit.
+ * This script fetches a fresh copy of the repository, identified by commit ID,
+ * instead of zipping the current working directory. This is done instead for
+ * these reasons:
+ *
+ * - To avoid zipping any changes in the current tree, or any existing build
+ * artifacts.
+ *
+ * - To be able to exclude some unnecessary directories by deleting them before
+ * zipping.
  *
  */
 
 // Configuration
-const commitId = '350764282631014ea24ccd88fda459a4b19a5669'
+
+/**
+ * Set the commitId to build from a given revision. Because it will be
+ * downloaded from GitHub, this revision needs to exist there.
+ */
+const commitId = 'bext/release'
+
+/**
+ * If true, code intel extensions will be fetched and included in the zip, so
+ * that they can be reviewed as part of the source code. This included copy will
+ * be used when building. If not included, the code intel extensions will be
+ * automatically downloaded during the build step.
+ */
 const includeCodeIntelExtensions = true
+
+/**
+ * Inside the zip, this will be the name of the root directory.
+ */
 const rootDirectoryNameForZip = 'sourcegraph-source'
 
+// Clean up
 shelljs.rm('-f', 'sourcegraph.zip')
+shelljs.rm('-rf', rootDirectoryNameForZip)
+shelljs.rm('-rf', `sourcegraph-${commitId}/`)
+
 signale.await(`Downloading sourcegraph/sourcegraph at revision ${commitId}`)
 shelljs.exec(
   `curl -Ls https://github.com/sourcegraph/sourcegraph/archive/${commitId}.zip -o sourcegraph-downloaded.zip`
 )
-shelljs.rm('-rf', `sourcegraph-${commitId}/`)
 shelljs.exec('unzip -q sourcegraph-downloaded.zip')
 shelljs.rm('-f', 'sourcegraph-downloaded.zip')
 shelljs.mv(`sourcegraph-${commitId}`, rootDirectoryNameForZip)
@@ -36,11 +59,16 @@ signale.success('Downloaded and unzipped sourcegraph/sourcegraph repository')
 if (includeCodeIntelExtensions) {
   shelljs.pushd(rootDirectoryNameForZip)
   shelljs.exec('yarn install')
-  shelljs.exec('yarn --cwd browser run fetch-code-intel-extensions')
+  shelljs.exec('yarn --cwd client/browser run fetch-code-intel-extensions')
   shelljs.popd()
 }
 
+// Delete all unnecessary directories
+shelljs.pushd(rootDirectoryNameForZip)
+shelljs.rm('-rf', ['dev', 'doc', 'docker-images', 'enterprise', 'internal', 'migrations', 'monitoring', 'node_modules'])
+shelljs.popd()
+
 signale.await('Producing sourcegraph.zip')
-shelljs.exec(`zip -qr sourcegraph.zip ${rootDirectoryNameForZip} --exclude "${rootDirectoryNameForZip}/node_modules/*"`)
+shelljs.exec(`zip -qr sourcegraph.zip ${rootDirectoryNameForZip}`)
 shelljs.rm('-rf', rootDirectoryNameForZip)
 signale.success('Done producing sourcegraph.zip')

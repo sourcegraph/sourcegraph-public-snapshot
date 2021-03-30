@@ -328,12 +328,6 @@ func (s *UserExternalAccountsStore) Count(ctx context.Context, opt ExternalAccou
 	return count, err
 }
 
-func (s *UserExternalAccountsStore) deleteForDeletedUsers(ctx context.Context) error {
-	s.ensureStore()
-	_, err := s.Handle().DB().ExecContext(ctx, `UPDATE user_external_accounts SET deleted_at=now() FROM users WHERE user_external_accounts.user_id=users.id AND users.deleted_at IS NOT NULL AND user_external_accounts.deleted_at IS NULL`)
-	return err
-}
-
 func (s *UserExternalAccountsStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) (*extsvc.Account, error) {
 	s.ensureStore()
 	results, err := s.listBySQL(ctx, querySuffix)

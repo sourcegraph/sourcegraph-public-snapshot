@@ -13,7 +13,7 @@ import { ModalHeader } from './ModalHeader'
 export interface AddCredentialModalProps {
     onCancel: () => void
     afterCreate: () => void
-    userID: Scalars['ID']
+    userID: Scalars['ID'] | null
     externalServiceKind: ExternalServiceKind
     externalServiceURL: string
     requiresSSH: boolean
