@@ -63,7 +63,7 @@ yarn-error.log
 /ui/assets/extension
 /ui/.tmp
 /ui/assets/scripts/
-/ui/assets/manifest.json
+/ui/assets/webpack.manifest.json
 *.json.actual
 
 eb-bundle.zip
