@@ -4,13 +4,11 @@
 
 Linting is the process of running static checks on the codebase to catch common mistakes and provide an automatically-enforceable set of best practices. We use a tool called [`golangci-lint`](https://golangci-lint.run/), which bundles a large number of common linters into a single binary.
 
-`golangci-lint` is configured using the `.golangci.yml` and `.golangci.enforced.yml` files in the root of the repository. `.golangci.enforced.yml` contains a subset of the lints in `.golangci.yml`. In CI, the only lints that will cause a failure are the ones in `.golangci.enforced.yml`. By default, `golangci-lint` uses `.golangci.yml`, so you may see warnings in your editor or by running `golangci-lint run` that will not cause failures in CI. Eventually, we hope to unify these two configurations. A tracking issue with the progress can be found here: [#18720](https://github.com/sourcegraph/sourcegraph/issues/18720).
+`golangci-lint` is configured using the `.golangci.yml` in the root of the repository. 
 
 ## Running the linters
 
 The easiest way to check locally if your changes will pass the lint step in CI is to run `./dev/check/go-lint.sh`. This is run as part of `./dev/check/all.sh`, so if it passes, linting should be good in CI as well.
-
-To run the extended set of linters (all enforced lints + some currently unenforced but recommended lints), you can run `golangci-lint run`, which will automatically pick up the config in `.golangci.yml`.
 
 ## Ignoring lints
 
