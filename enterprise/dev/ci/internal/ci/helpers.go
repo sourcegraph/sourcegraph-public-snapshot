@@ -181,7 +181,7 @@ func (c Config) isGoOnly() bool {
 }
 
 func (c Config) shouldRunE2EandQA() bool {
-	return c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch || c.branch == "main" || c.isMasterDryRun
+	return c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch || c.branch == "main" || c.isMasterDryRun || c.branch == "dt/fix_upgrade_test"
 }
 
 // candidateImageTag provides the tag for a candidate image built for this Buildkite run.
