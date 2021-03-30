@@ -15,7 +15,7 @@ export const BatchChangesSettingsArea: React.FunctionComponent<BatchChangesSetti
     <div className="web-content test-batches-settings-page">
         <PageTitle title="Batch changes settings" />
         <CodeHostConnections
-            headerLine={<p>Add authentication tokens to enable batch changes changeset creation on your code hosts.</p>}
+            headerLine={<p>Add access tokens to enable Batch Changes changeset creation on your code hosts.</p>}
             userID={props.user.id}
             {...props}
         />

@@ -18,10 +18,10 @@ export const BatchChangesSiteConfigSettingsArea: React.FunctionComponent<BatchCh
                 <>
                     <div className="alert alert-info">
                         <InfoCircleIcon className="icon-inline mr-2" />
-                        You are configuring a <strong>global service account</strong>. The credentials on this page can
-                        be used by all users of this Sourcegraph instance to create and sync changesets.
+                        You are configuring <strong>global credentials</strong> for Batch Changes. The credentials on
+                        this page can be used by all users of this Sourcegraph instance to create and sync changesets.
                     </div>
-                    <p>Configure a service account to enable Batch Changes changeset creation for all users.</p>
+                    <p>Add access tokens to enable Batch Changes changeset creation for all users.</p>
                 </>
             }
             userID={null}
