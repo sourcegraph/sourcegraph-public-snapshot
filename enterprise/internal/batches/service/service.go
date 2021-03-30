@@ -589,7 +589,9 @@ func (s *Service) DetachChangesets(ctx context.Context, batchChangeID int64, ids
 	}
 
 	cs, _, err := s.store.ListChangesets(ctx, store.ListChangesetsOpts{
-		IDs: ids,
+		IDs:           ids,
+		BatchChangeID: batchChangeID,
+		OnlyArchived:  true,
 		// We only want to detach the changesets the user has access to
 		EnforceAuthz: true,
 	})

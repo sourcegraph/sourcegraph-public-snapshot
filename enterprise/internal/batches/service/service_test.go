@@ -838,37 +838,47 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		changeset := testChangeset(rs[0].ID, batchChange.ID, batches.ChangesetExternalStateOpen)
-		if err := s.CreateChangeset(ctx, changeset); err != nil {
-			t.Fatal(err)
-		}
-		alreadyDetachedChangeset := testChangeset(rs[1].ID, 0, batches.ChangesetExternalStateOpen)
-		alreadyDetachedChangeset.ReconcilerState = batches.ReconcilerStateCompleted
-		if err := s.CreateChangeset(ctx, alreadyDetachedChangeset); err != nil {
-			t.Fatal(err)
-		}
+		t.Run("archived changeset", func(t *testing.T) {
+			archivedChangeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+				Repo:            rs[1].ID,
+				ReconcilerState: batches.ReconcilerStateCompleted,
+				BatchChange:     batchChange.ID,
+				IsArchived:      true,
+			})
+			if err := svc.DetachChangesets(ctx, batchChange.ID, []int64{archivedChangeset.ID}); err != nil {
+				t.Fatal(err)
+			}
+			ct.ReloadAndAssertChangeset(t, ctx, s, archivedChangeset, ct.ChangesetAssertions{
+				Repo: archivedChangeset.RepoID,
+				// The important fields:
+				AttachedTo:      []int64{},
+				ReconcilerState: batches.ReconcilerStateQueued,
+				DetachFrom:      []int64{batchChange.ID},
+			})
 
-		if err := svc.DetachChangesets(ctx, batchChange.ID, []int64{changeset.ID, alreadyDetachedChangeset.ID}); err != nil {
-			t.Fatal(err)
-		}
-
-		ct.ReloadAndAssertChangeset(t, ctx, s, changeset, ct.ChangesetAssertions{
-			Repo:          rs[0].ID,
-			ExternalState: batches.ChangesetExternalStateOpen,
-			ExternalID:    changeset.ExternalID,
-			// The important fields:
-			AttachedTo:      []int64{},
-			ReconcilerState: batches.ReconcilerStateQueued,
-			DetachFrom:      []int64{batchChange.ID},
 		})
-
-		ct.ReloadAndAssertChangeset(t, ctx, s, alreadyDetachedChangeset, ct.ChangesetAssertions{
-			Repo:          rs[1].ID,
-			ExternalState: batches.ChangesetExternalStateOpen,
-			ExternalID:    alreadyDetachedChangeset.ExternalID,
-			// The important fields:
-			AttachedTo:      []int64{},
-			ReconcilerState: batches.ReconcilerStateCompleted,
+		t.Run("attached changeset", func(t *testing.T) {
+			changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+				Repo:            rs[0].ID,
+				ReconcilerState: batches.ReconcilerStateCompleted,
+				BatchChange:     batchChange.ID,
+				IsArchived:      false,
+			})
+			err := svc.DetachChangesets(ctx, batchChange.ID, []int64{changeset.ID})
+			if err != ErrChangesetsToDetachNotFound {
+				t.Fatalf("wrong error. want=%s, got=%s", ErrChangesetsToDetachNotFound, err)
+			}
+		})
+		t.Run("detached changeset", func(t *testing.T) {
+			detachedChangeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+				Repo:            rs[2].ID,
+				ReconcilerState: batches.ReconcilerStateCompleted,
+				BatchChanges:    []batches.BatchChangeAssoc{},
+			})
+			err := svc.DetachChangesets(ctx, batchChange.ID, []int64{detachedChangeset.ID})
+			if err != ErrChangesetsToDetachNotFound {
+				t.Fatalf("wrong error. want=%s, got=%s", ErrChangesetsToDetachNotFound, err)
+			}
 		})
 	})
 }
