@@ -4,6 +4,7 @@ package result
 // to ensure only those types implement Match.
 type Match interface {
 	ResultCount() int
+	Limit(int) int
 
 	// ensure only types in this package can be a Match.
 	searchResultMarker()
