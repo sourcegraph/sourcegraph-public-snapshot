@@ -2,15 +2,22 @@ package syncer
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestSyncerRun(t *testing.T) {
@@ -243,6 +250,83 @@ func TestSyncRegistry(t *testing.T) {
 		}
 	case <-time.After(1 * time.Second):
 		t.Fatal("Timed out waiting for sync")
+	}
+}
+
+func TestLoadChangesetSource(t *testing.T) {
+	ctx := context.Background()
+	sourcer := repos.NewSourcer(httpcli.NewFactory(
+		func(cli httpcli.Doer) httpcli.Doer {
+			return httpcli.DoerFunc(func(req *http.Request) (*http.Response, error) {
+				// Don't actually execute the request, just dump the authorization header
+				// in the error, so we can assert on it further down.
+				return nil, errors.New(req.Header.Get("Authorization"))
+			})
+		},
+		httpcli.NewTimeoutOpt(1*time.Second),
+	))
+
+	externalService := types.ExternalService{
+		ID:          1,
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GitHub.com",
+		Config:      `{"url": "https://github.com", "token": "123", "authorization": {}}`,
+	}
+	repo := &types.Repo{
+		Name:    api.RepoName("test-repo"),
+		URI:     "test-repo",
+		Private: true,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "external-id-123",
+			ServiceType: extsvc.TypeGitHub,
+			ServiceID:   "https://github.com/",
+		},
+		Sources: map[string]*types.SourceInfo{
+			externalService.URN(): {
+				ID:       externalService.URN(),
+				CloneURL: "https://123@github.com/sourcegraph/sourcegraph",
+			},
+		},
+	}
+
+	// Store mocks.
+	database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+		return []*types.ExternalService{&externalService}, nil
+	}
+	t.Cleanup(func() {
+		database.Mocks.ExternalServices.List = nil
+	})
+	hasCredential := false
+	syncStore := &MockSyncStore{
+		getSiteCredential: func(ctx context.Context, opts store.GetSiteCredentialOpts) (*store.SiteCredential, error) {
+			if hasCredential {
+				return &store.SiteCredential{Credential: &auth.OAuthBearerToken{Token: "456"}}, nil
+			}
+			return nil, store.ErrNoResults
+		},
+	}
+
+	// If no site-credential exists, the token from the external service should be used.
+	src, err := loadChangesetSource(ctx, sourcer, syncStore, repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := src.(*repos.GithubSource).ValidateToken(ctx); err == nil {
+		t.Fatal("unexpected nil error")
+	} else if have, want := err.Error(), "Bearer 123"; have != want {
+		t.Fatalf("invalid token used, want=%q have=%q", want, have)
+	}
+
+	// If one exists, prefer that one over the external service config ones.
+	hasCredential = true
+	src, err = loadChangesetSource(ctx, sourcer, syncStore, repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := src.(*repos.GithubSource).ValidateToken(ctx); err == nil {
+		t.Fatal("unexpected nil error")
+	} else if have, want := err.Error(), "Bearer 456"; have != want {
+		t.Fatalf("invalid token used, want=%q have=%q", want, have)
 	}
 }
 
