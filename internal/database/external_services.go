@@ -608,6 +608,9 @@ func (e *ExternalServiceStore) maybeDecryptConfig(ctx context.Context, config st
 
 // Upsert updates or inserts the given ExternalServices.
 //
+// NOTE: Deletion of an external service via Upsert is not allowed. Use Delete()
+// instead.
+//
 // 🚨 SECURITY: The value of `Unrestricted` field is disregarded and will always
 // be recalculated based on whether `"authorization"` is presented in `Config`.
 func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.ExternalService) (err error) {
@@ -629,6 +632,30 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 	}
 	defer func() { err = tx.Done(err) }()
 
+	// Get the list services that are marked as deleted. We don't know at this point
+	// whether they are marked as deleted in the DB too.
+	var deleted []int64
+	for _, es := range svcs {
+		if es.ID != 0 && es.IsDeleted() {
+			deleted = append(deleted, es.ID)
+		}
+	}
+
+	// Fetch any services marked for deletion. list() only fetches non deleted
+	// services so if we find anything here it indicates that we are marking a
+	// service as deleted that is NOT deleted in the DB
+	if len(deleted) > 0 {
+		existing, err := tx.list(ctx, ExternalServicesListOptions{IDs: deleted})
+		if err != nil {
+			return errors.Wrap(err, "fetching services marked for deletion")
+		}
+		if len(existing) > 0 {
+			// We found services marked for deletion that are currently not deleted in the
+			// DB.
+			return errors.New("deletion via Upsert() not allowed, use Delete()")
+		}
+	}
+
 	q, err := tx.upsertExternalServicesQuery(ctx, svcs)
 	if err != nil {
 		return err
@@ -641,7 +668,6 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	i := 0
-	var possiblyOrphaned bool
 	for rows.Next() {
 		var keyIdent string
 		err = rows.Scan(
@@ -668,17 +694,7 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			return err
 		}
 
-		if !svcs[i].DeletedAt.IsZero() {
-			possiblyOrphaned = true
-		}
-
 		i++
-	}
-
-	if possiblyOrphaned {
-		// if we deleted at least one external service we must manually run the soft_delete_orphan_repo_by_external_service_repos function
-		// to cleanup orphaned repos
-		return tx.Exec(ctx, sqlf.Sprintf(`SELECT soft_delete_orphan_repo_by_external_service_repos()`))
 	}
 
 	return nil
@@ -882,8 +898,8 @@ func (e *ExternalServiceStore) Delete(ctx context.Context, id int64) (err error)
 	// Create a temporary table where we'll store repos affected by the deletion of
 	// the external service
 	if err := tx.Exec(ctx, sqlf.Sprintf(`
-CREATE TEMPORARY TABLE
-    deleted_repos(
+CREATE TEMPORARY TABLE IF NOT EXISTS
+    deleted_repos_temp(
     repo_id int
 ) ON COMMIT DROP`)); err != nil {
 		return errors.Wrap(err, "creating temporary table")
@@ -896,7 +912,7 @@ CREATE TEMPORARY TABLE
 	       WHERE external_service_id = %s
 	       RETURNING repo_id
 	)
-	INSERT INTO deleted_repos
+	INSERT INTO deleted_repos_temp
 	SELECT repo_id from deleted
 `, id)); err != nil {
 		return errors.Wrap(err, "populating temporary table")
@@ -908,13 +924,21 @@ CREATE TEMPORARY TABLE
 	SET name       = soft_deleted_repository_name(name),
 	   deleted_at = TRANSACTION_TIMESTAMP()
 	WHERE deleted_at IS NULL
-	 AND EXISTS (SELECT FROM deleted_repos WHERE repo.id = deleted_repos.repo_id)
+	 AND EXISTS (SELECT FROM deleted_repos_temp WHERE repo.id = deleted_repos_temp.repo_id)
 	 AND NOT EXISTS (
 	       SELECT FROM external_service_repos
 	       WHERE repo_id = repo.id
 	   );
 `)); err != nil {
 		return errors.Wrap(err, "cleaning up potentially orphaned repos")
+	}
+
+	// Clear temporary table in case delete is called multiple times within the same
+	// transaction
+	if err := tx.Exec(ctx, sqlf.Sprintf(`
+    DELETE FROM deleted_repos_temp;
+`)); err != nil {
+		return errors.Wrap(err, "clearing temporary table")
 	}
 
 	// Soft delete external service
