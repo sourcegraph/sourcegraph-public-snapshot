@@ -22,7 +22,12 @@ const envLogDir = "LOG_DIR"
 func run(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	c, err := newClient()
+	bc, err := newClient()
+	if err != nil {
+		panic(err)
+	}
+
+	sc, err := newStreamClient()
 	if err != nil {
 		panic(err)
 	}
@@ -42,13 +47,25 @@ OUTER:
 		for _, group := range config.Groups {
 			log15.Info("new group", "group", group.Name)
 			for _, qc := range group.Queries {
-				_, m, err := c.search(ctx, qc)
-				if err != nil {
-					log15.Error(err.Error())
-					continue
+				if qc.SearchType.HasBatch() {
+					_, m, err := bc.search(ctx, qc.Query)
+					if err != nil {
+						log15.Error(err.Error())
+					} else {
+						log15.Info("metrics", "group", group.Name, "query", qc.Query, "trace", m.trace, "duration_ms", m.took)
+						durationSearchHistogram.WithLabelValues(group.Name, "batch").Observe(float64(m.took))
+					}
 				}
-				log15.Info("metrics", "group", group.Name, "query", qc.Query, "trace", m.trace, "duration_ms", m.took)
-				durationSearchHistogram.WithLabelValues(group.Name).Observe(float64(m.took))
+
+				if qc.SearchType.HasStream() {
+					_, m, err := sc.search(ctx, qc.Query)
+					if err != nil {
+						log15.Error(err.Error())
+					} else {
+						log15.Info("metrics", "group", group.Name, "query", qc.Query, "trace", m.trace, "duration_ms", m.took)
+						durationSearchHistogram.WithLabelValues(group.Name, "stream").Observe(float64(m.took))
+					}
+				}
 			}
 		}
 

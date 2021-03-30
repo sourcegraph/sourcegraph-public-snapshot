@@ -39,17 +39,17 @@ func newClient() (*client, error) {
 	}, nil
 }
 
-func (s *client) search(ctx context.Context, qc QueryConfig) (*result, *metrics, error) {
+func (s *client) search(ctx context.Context, query string) (*result, *metrics, error) {
 	var body bytes.Buffer
 	m := &metrics{}
 	if err := json.NewEncoder(&body).Encode(map[string]interface{}{
 		"query":     graphQLQuery,
-		"variables": map[string]string{"query": qc.Query},
+		"variables": map[string]string{"query": query},
 	}); err != nil {
 		return nil, nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", s.url(qc.Name), ioutil.NopCloser(&body))
+	req, err := http.NewRequestWithContext(ctx, "POST", s.url(), ioutil.NopCloser(&body))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -84,9 +84,6 @@ func (s *client) search(ctx context.Context, qc QueryConfig) (*result, *metrics,
 	return &respDec.Data, m, nil
 }
 
-func (s *client) url(queryName string) string {
-	if queryName != "" {
-		return s.endpoint + "/.api/graphql?" + queryName
-	}
+func (s *client) url() string {
 	return s.endpoint + "/.api/graphql"
 }
