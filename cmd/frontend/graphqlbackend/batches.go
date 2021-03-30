@@ -199,7 +199,7 @@ type ListViewerBatchChangesCodeHostsArgs struct {
 
 type DetachChangesetsArgs struct {
 	BatchChange graphql.ID
-	Changesets   []graphql.ID
+	Changesets  []graphql.ID
 }
 
 type BatchChangesResolver interface {
