@@ -233,6 +233,8 @@ func loadAuthenticator(ctx context.Context, s *store.Store, ch *batches.Changese
 			// then we can use the nil return from loadUserCredential() to fall
 			// back to the global credentials used for the code host. If
 			// not, then we need to error out.
+			// Once we tackle https://github.com/sourcegraph/sourcegraph/issues/16814,
+			// this code path should be removed.
 			user, err := database.UsersWith(s).GetByID(ctx, batchChange.LastApplierID)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to load user applying the batch change")
